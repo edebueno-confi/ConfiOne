@@ -180,6 +180,9 @@ Documentos históricos:
 - O resolver público agora expõe branding sanitizado mínimo (`brand_name`, `logo_asset_url`, `theme_tokens`, `seo_defaults` e `support_contacts` públicos) sem abrir acesso direto a `brand_settings`.
 - A busca pública agora expõe apenas metadados mínimos de resultado e nunca retorna `body_md` completo, `source_path`, `source_hash` ou metadados internos.
 - A Central Pública passou por polish de legibilidade, hierarquia visual e leitura mobile-first, mantendo a mesma superfície pública e o mesmo escopo funcional.
+- As superfícies públicas `/help/genius`, `/help/genius/articles` e `/help/genius/articles/:slug` agora usam header público leve, composição documental em light mode, scroll natural da página e ausência de shell interno com lateral sticky/rolagem própria.
+- A listagem pública de artigos agora oferece navegação simples por categoria, estados vazios amigáveis e leitura consistente com a base pública já publicada, sem expor conteúdo interno, rascunho ou termos técnicos crus.
+- A transição entre Support Workspace e Central Pública de Ajuda foi refinada apenas no frontend: a aba `Central de ajuda` do ticket continua no shell operacional aprovado e passou a reforçar a leitura pública antes do compartilhamento, sem qualquer mudança de backend, Supabase, migrations, RPCs, contracts, fixtures, RLS ou permissões.
 - Estratégia oficial de FAQ da plataforma criada em `docs/PLATFORM_FAQ_STRATEGY.md`.
 - Ledger documental por fase criado em `docs/DOCUMENTATION_LEDGER.md`.
 - Estratégia oficial de curadoria do corpus legado criada em `docs/KNOWLEDGE_CONTENT_CURATION_PLAN.md`.

@@ -18,6 +18,33 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.7 - Saneamento Visual Help Center
+- fase: `7.7`
+- commit: `930d58268a1fb6530ce9c00c6a1328ceef032756`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: a Central Pública de Ajuda e as superfícies de transição com Knowledge foram consolidadas como camada pública documental, com header leve, scroll natural, ausência de shell interno, leitura mais clara de artigos e consistência visual com o Support Workspace sem misturar shells.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - `/help/genius`
+  - `/help/genius/articles`
+  - `/help/genius/articles/:slug`
+  - ajuste visual de transicao na aba `Central de ajuda` em `/support/tickets/:ticketId`
+  - validacao regressiva: `/admin/knowledge`, `/support/tickets/:ticketId`, `/support/queue`
+- riscos restantes:
+  - a camada publica continua dependente dos contratos atuais de navegacao, artigos publicados e contatos publicos; quando algum dado nao vier do backend, a UI segue em fallback seguro
+  - a unificacao entre `Admin Shell` e `Support Workspace Shell` continua apenas como pendencia arquitetural futura e permanece fora desta fase
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit visual e fora deste fechamento documental ate decisao explicita
+- impacto na FAQ futura:
+  - formaliza a Central Pública como superficie documental separada dos cockpits internos, mantendo coerencia visual sem reaproveitar shell administrativo ou operacional
+  - documenta que a validacao oficial das rotas publicas considera viewport real, scroll natural da pagina, ausencia de overflow horizontal e bloqueio de qualquer exposicao de conteudo interno ou tecnico
+  - registra que a ponte visual com o Support Workspace nao cria contrato novo e apenas reforca o uso seguro dos artigos publicos existentes
+
 ### Fase 7.6 - Saneamento Visual Support Workspace V3
 - fase: `7.6`
 - commit: `fcf78cd5f3289eaec74c8a68fe0d2d0d15b49488`
