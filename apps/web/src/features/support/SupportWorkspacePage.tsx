@@ -1722,9 +1722,9 @@ function SupportQueueItem({
   return (
     <article
       className={cx(
-        'rounded-[20px] border p-4 transition',
+        'rounded-[18px] border px-4 py-3 transition',
         isSelected
-          ? 'border-[rgba(48,127,226,0.46)] bg-[rgba(48,127,226,0.08)] shadow-[0_10px_22px_rgba(19,33,79,0.08)]'
+          ? 'border-[rgba(48,127,226,0.46)] bg-[rgba(48,127,226,0.08)] shadow-[0_8px_18px_rgba(19,33,79,0.08)]'
           : 'border-[color:var(--color-border)] bg-white hover:border-[rgba(48,127,226,0.24)] hover:bg-[rgba(255,255,255,0.98)]',
       )}
     >
@@ -1737,18 +1737,18 @@ function SupportQueueItem({
           <StatusPill tone={toneForTicketStatus(ticket.status)}>
             {humanizeStatus(ticket.status)}
           </StatusPill>
-            <p className="text-xs font-medium uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
-              {humanizePriority(ticket.priority)} · {humanizeSeverity(ticket.severity)}
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
+            {humanizePriority(ticket.priority)} · {humanizeSeverity(ticket.severity)}
           </p>
         </div>
 
-        <div className="mt-3 min-w-0 space-y-2">
-          <h3 className="line-clamp-2 max-w-full text-lg font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
+        <div className="mt-2.5 min-w-0 space-y-1.5">
+          <h3 className="line-clamp-2 max-w-full text-[1.02rem] font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
             {ticket.title}
           </h3>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[color:var(--color-muted)]">
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] leading-5 text-[color:var(--color-muted)]">
             <span>Cliente: {ticketTenantLabel(ticket)}</span>
-                  <span>Responsável: {ticket.assignedToFullName ?? 'Não atribuído'}</span>
+            <span>Responsável: {ticket.assignedToFullName ?? 'Não atribuído'}</span>
             <span>Última atividade: {formatDateTime(ticket.lastMessageAt ?? ticket.updatedAt)}</span>
           </div>
         </div>
@@ -1771,21 +1771,26 @@ function SupportSummaryStrip({
   const items = [
     { label: 'Abertos', value: totalOpen },
     { label: 'Urgentes', value: highAttention },
-                  { label: 'Não atribuídos', value: unassigned },
+    { label: 'Não atribuídos', value: unassigned },
     { label: 'Aguardando cliente', value: waitingCustomer },
   ];
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-[18px] border border-[color:var(--color-border)] bg-white/88 px-3 py-3">
+    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
       {items.map((item) => (
         <div
-          className="inline-flex items-center gap-2 rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2"
+          className="flex items-center justify-between rounded-[16px] border border-[color:var(--color-border)] bg-white/94 px-3.5 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.04)]"
           key={item.label}
         >
-          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
-            {item.label}
+          <div className="space-y-0.5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+              {item.label}
+            </p>
+            <p className="text-[12px] text-[color:var(--color-muted)]">pulso da fila</p>
+          </div>
+          <span className="text-[1.2rem] font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
+            {item.value}
           </span>
-          <span className="text-sm font-semibold text-[color:var(--color-ink)]">{item.value}</span>
         </div>
       ))}
     </div>
@@ -1825,38 +1830,38 @@ function SupportTicketPreview({
   const ticketId = detail?.id ?? ticket?.id ?? null;
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-[22px] border border-[rgba(48,127,226,0.22)] bg-[linear-gradient(180deg,rgba(17,28,66,1),rgba(24,42,97,0.98))] px-5 py-5 text-white">
+    <div className="space-y-3">
+      <div className="rounded-[22px] border border-[rgba(48,127,226,0.22)] bg-[linear-gradient(180deg,rgba(17,28,66,1),rgba(24,42,97,0.98))] px-4 py-4 text-white">
         <div className="flex flex-wrap items-center gap-2">
           <StatusPill tone={toneForTicketStatus(detail?.status ?? ticket?.status ?? 'new')}>
             {humanizeStatus((detail?.status ?? ticket?.status ?? 'new') as TicketStatus)}
           </StatusPill>
-          <span className="text-xs font-medium uppercase tracking-[0.14em] text-white/66">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/66">
             {humanizeToken(detail?.priority ?? ticket?.priority ?? 'normal')} ·{' '}
             {humanizeToken(detail?.severity ?? ticket?.severity ?? 'low')}
           </span>
         </div>
 
-        <div className="mt-4 min-w-0 space-y-2">
-          <h3 className="line-clamp-3 text-[1.45rem] font-semibold tracking-[-0.05em]">{title}</h3>
-          <div className="space-y-1 text-sm text-white/72">
-            <p>Cliente B2B: {tenant}</p>
-            <p>Responsavel: {assigned}</p>
-            <p>Ultima atividade: {lastActivity}</p>
+        <div className="mt-3.5 min-w-0 space-y-2">
+          <h3 className="line-clamp-3 text-[1.24rem] font-semibold tracking-[-0.05em]">{title}</h3>
+          <div className="space-y-1 text-[12px] leading-5 text-white/76">
+            <p>Cliente: {tenant}</p>
+            <p>Responsável: {assigned}</p>
+            <p>Última atividade: {lastActivity}</p>
           </div>
         </div>
 
         {ticketId ? (
-          <div className="mt-5 flex flex-wrap gap-3">
+          <div className="mt-4 flex flex-wrap gap-2.5">
             <Link
-              className="inline-flex min-h-12 items-center justify-center rounded-full bg-white px-5 py-2 text-sm font-semibold text-[color:var(--color-brand-navy)]"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-[color:var(--color-brand-navy)]"
               to={`/support/tickets/${ticketId}`}
             >
               Atender ticket
             </Link>
             {tenantId ? (
               <Link
-                className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/22 px-5 py-2 text-sm font-semibold text-white"
+                className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/22 px-4 py-2 text-sm font-semibold text-white"
                 to={`/support/customers/${tenantId}`}
               >
                 Ver cliente
@@ -1866,15 +1871,15 @@ function SupportTicketPreview({
         ) : null}
       </div>
 
-      <div className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4 text-sm leading-6 text-[color:var(--color-muted)]">
-        <p className="font-medium text-[color:var(--color-ink)]">Previa de atendimento</p>
-        <p className="mt-2">
+      <div className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 text-sm leading-6 text-[color:var(--color-muted)]">
+        <p className="font-medium text-[color:var(--color-ink)]">Prévia de atendimento</p>
+        <p className="mt-1.5">
           {detail?.description?.trim() ||
             'Abra o ticket para responder, registrar nota interna ou ajustar status e atribuicao.'}
         </p>
         {customer ? (
-          <div className="mt-4 border-t border-[color:var(--color-border)] pt-3 text-sm">
-                <p>Contato principal: {customer.activeContacts[0]?.fullName ?? 'Não identificado'}</p>
+          <div className="mt-3 border-t border-[color:var(--color-border)] pt-3 text-[12px] leading-5">
+            <p>Contato principal: {customer.activeContacts[0]?.fullName ?? 'Não identificado'}</p>
             <p>Tickets abertos deste cliente: {customer.openTicketCount}</p>
           </div>
         ) : null}
@@ -3636,149 +3641,272 @@ function SupportWorkspaceView({
       )}
     >
       {variant === 'queue' ? (
-        <section className="rounded-[26px] border border-[color:var(--color-border)] bg-white/95 px-5 py-5 shadow-[0_16px_30px_rgba(19,33,79,0.08)]">
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusPill tone="accent">Fila</StatusPill>
-            <StatusPill>Suporte diario</StatusPill>
-          </div>
-          <div className="mt-3 space-y-1">
-            <h1 className="text-[1.9rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
-              Fila operacional
-            </h1>
-            <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-              Subsidebar para triagem, lista dominante no centro e preview curto para decidir o proximo atendimento.
-            </p>
+        <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white/96 px-4 py-4 shadow-[0_14px_26px_rgba(19,33,79,0.08)]">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusPill tone="accent">Fila</StatusPill>
+                <StatusPill>Triagem operacional</StatusPill>
+              </div>
+              <div className="space-y-1">
+                <h1 className="text-[1.7rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
+                  Fila operacional
+                </h1>
+                <p className="text-[13px] leading-5 text-[color:var(--color-muted)]">
+                  Bancada de triagem para priorizar, assumir e abrir o próximo atendimento.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {queueShortcuts.map((shortcut) => (
+                <button
+                  className={cx(
+                    'inline-flex min-h-9 items-center rounded-full border px-3.5 text-[12px] font-semibold transition',
+                    shortcut.active
+                      ? 'border-[rgba(48,127,226,0.28)] bg-[rgba(48,127,226,0.1)] text-[color:var(--color-brand-blue)]'
+                      : 'border-[color:var(--color-border)] bg-white text-[color:var(--color-muted)] hover:border-[rgba(48,127,226,0.22)] hover:text-[color:var(--color-ink)]',
+                    shortcut.disabled && 'cursor-not-allowed opacity-50',
+                  )}
+                  disabled={shortcut.disabled}
+                  key={`queue-tab:${shortcut.key}`}
+                  onClick={shortcut.apply}
+                  type="button"
+                >
+                  {shortcut.label}
+                </button>
+              ))}
+            </div>
           </div>
         </section>
       ) : null}
 
       {variant === 'queue' ? (
-        <WorkspaceSplit
-          className="xl:min-h-0 xl:flex-1"
-          layoutClassName="xl:grid-cols-[292px_minmax(0,1fr)]"
-          sidebar={
-            <ContextSubsidebar
-              description="Filtros, filas rapidas e atalhos ficam aqui para deixar a lista principal livre para a triagem."
-              title="Triagem da fila"
-            >
-              <ContextSubsidebarSection
-                description="Recortes operacionais para chegar mais rapido ao proximo ticket."
-                title="Filas rapidas"
-              >
-                <div className="grid gap-2">
-                  {queueShortcuts.map((shortcut) => (
-                    <button
-                      className={cx(
-                        'flex min-h-12 items-center justify-between gap-3 rounded-[18px] border px-4 py-3 text-left transition',
-                        shortcut.active
-                          ? 'border-[rgba(48,127,226,0.42)] bg-[rgba(48,127,226,0.08)] text-[color:var(--color-brand-blue)]'
-                          : 'border-[color:var(--color-border)] bg-white text-[color:var(--color-ink)] hover:border-[rgba(48,127,226,0.28)] hover:bg-white',
-                        shortcut.disabled && 'cursor-not-allowed opacity-50',
-                      )}
-                      disabled={shortcut.disabled}
-                      key={shortcut.key}
-                      onClick={shortcut.apply}
-                      type="button"
-                    >
-                      <span className="min-w-0">
-                        <span className="block text-sm font-semibold">{shortcut.label}</span>
-                        <span className="block text-xs text-[color:var(--color-muted)]">
-                          {shortcut.helper}
-                        </span>
-                      </span>
-                      <span className="text-xs font-semibold uppercase tracking-[0.16em]">
-                        abrir
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </ContextSubsidebarSection>
+        <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[284px_minmax(0,1fr)_362px]">
+          <aside className="space-y-2.5 rounded-[20px] border border-[color:var(--color-border)] bg-white/96 px-3 py-3 shadow-[0_12px_22px_rgba(19,33,79,0.07)]">
+            <div className="space-y-0.5">
+              <h2 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                Triagem da fila
+              </h2>
+              <p className="text-[11px] leading-4 text-[color:var(--color-muted)]">
+                Atalhos e recorte sem roubar espaço da lista.
+              </p>
+            </div>
 
-              <ContextSubsidebarSection
-                description="Ajuste o recorte sem ocupar a área de trabalho principal."
-                title="Filtros"
-              >
-                <div className="xl:max-h-[calc(100dvh-18rem)] xl:overflow-y-auto xl:pr-1">
-                  <SupportQueueToolbar
-                    assigneeOptions={assigneeOptions}
-                    embedded
-                    filters={filters}
-                    onChange={setFilters}
-                    onRefresh={() => void loadQueue(focusTicketId ?? null)}
-                    tenantOptions={tenantOptions}
-                  />
-                </div>
-              </ContextSubsidebarSection>
-            </ContextSubsidebar>
-          }
-          main={
-            <div className="space-y-4 xl:flex xl:min-h-0 xl:flex-1 xl:flex-col xl:overflow-hidden">
-              <div className="shrink-0">
-                <SupportSummaryStrip
-                  highAttention={highAttention}
-                  totalOpen={totalOpen}
-                  unassigned={unassigned}
-                  waitingCustomer={waitingCustomer}
-                />
-              </div>
-
-              <div className="grid gap-5 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,0.72fr)_minmax(320px,0.28fr)]">
-                <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white px-5 py-5 shadow-[0_14px_28px_rgba(19,33,79,0.08)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
-                  <div className="mb-4 space-y-1">
-                    <h2 className="text-lg font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                      Fila dominante
-                    </h2>
-                    <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-                      A fila continua no centro da decisao. O preview lateral so confirma o contexto antes da tratativa.
-                    </p>
-                  </div>
-                  {tickets.length === 0 ? (
-                    <EmptyState
-                      title="Sem tickets para esta combinacao de filtros"
-                      description="Nenhum ticket apareceu com esse recorte. Ajuste os filtros ou recarregue a fila."
-                    />
-                  ) : (
-                    <div className="space-y-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
-                      {tickets.map((ticket) => (
-                        <SupportQueueItem
-                          isSelected={ticket.id === selectedTicketId}
-                          key={ticket.id}
-                          onSelect={() => handleSelectTicket(ticket.id)}
-                          ticket={ticket}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </section>
-
-                <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white px-5 py-5 shadow-[0_14px_28px_rgba(19,33,79,0.08)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
-                  <div className="mb-4 space-y-1">
-                    <h2 className="text-lg font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                      Preview do ticket
-                    </h2>
-                    <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-                      Leitura curta antes de abrir o atendimento completo.
-                    </p>
-                  </div>
-                  {detailPhase === 'loading' ? (
-                    <LoadingState
-                      title="Carregando previa"
-                      description="Estamos preparando a previa do ticket selecionado."
-                    />
-                  ) : detailPhase === 'contract-unavailable' ? (
-                    <ContractUnavailableState contractName="previa operacional do ticket" />
-                  ) : detailPhase === 'error' ? (
-                    <ErrorState description={detailMessage ?? 'A prévia do ticket não ficou disponível.'} />
-                  ) : (
-                    <div className="xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
-                      <SupportTicketPreview customer={customer} detail={previewTicket} ticket={selectedQueueTicket} />
-                    </div>
-                  )}
-                </section>
+            <div className="space-y-1.5 rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                Filas rápidas
+              </p>
+              <div className="grid gap-1.5">
+                {queueShortcuts.map((shortcut) => (
+                  <button
+                    className={cx(
+                      'flex items-center justify-between gap-3 rounded-[14px] border px-3 py-1.5 text-left transition',
+                      shortcut.active
+                        ? 'border-[rgba(48,127,226,0.42)] bg-white text-[color:var(--color-brand-blue)]'
+                        : 'border-[color:var(--color-border)] bg-white/88 text-[color:var(--color-ink)] hover:border-[rgba(48,127,226,0.28)]',
+                      shortcut.disabled && 'cursor-not-allowed opacity-50',
+                    )}
+                    disabled={shortcut.disabled}
+                    key={`queue-shortcut:${shortcut.key}`}
+                    onClick={shortcut.apply}
+                    type="button"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-[12px] font-semibold leading-5">{shortcut.label}</span>
+                    </span>
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.18em]">
+                      foco
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
-          }
-        />
+
+            <div className="space-y-2 rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-2.5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                    Filtros
+                  </p>
+                  <p className="text-[11px] leading-4 text-[color:var(--color-muted)]">
+                    Recorte real da fila.
+                  </p>
+                </div>
+                <GhostButton
+                  className="min-h-8 rounded-[12px] px-2.5 text-[11px]"
+                  onClick={() => void loadQueue(focusTicketId ?? null)}
+                >
+                  Recarregar
+                </GhostButton>
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-2">
+                <label className="grid gap-1">
+                  <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Status</span>
+                  <SelectInput
+                    className="h-8.5 rounded-[12px] px-3 text-[12px]"
+                    onChange={(event) =>
+                      setFilters({ ...filters, status: event.target.value as QueueFilters['status'] })
+                    }
+                    value={filters.status}
+                  >
+                    <option value="all">Todos</option>
+                    {TICKET_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {humanizeStatus(status)}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </label>
+
+                <label className="grid gap-1">
+                  <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Prioridade</span>
+                  <SelectInput
+                    className="h-8.5 rounded-[12px] px-3 text-[12px]"
+                    onChange={(event) =>
+                      setFilters({
+                        ...filters,
+                        priority: event.target.value as QueueFilters['priority'],
+                      })
+                    }
+                    value={filters.priority}
+                  >
+                    <option value="all">Todas</option>
+                    {TICKET_PRIORITIES.map((priority) => (
+                      <option key={priority} value={priority}>
+                        {humanizePriority(priority)}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </label>
+
+                <label className="grid gap-1">
+                  <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Severidade</span>
+                  <SelectInput
+                    className="h-8.5 rounded-[12px] px-3 text-[12px]"
+                    onChange={(event) =>
+                      setFilters({
+                        ...filters,
+                        severity: event.target.value as QueueFilters['severity'],
+                      })
+                    }
+                    value={filters.severity}
+                  >
+                    <option value="all">Todas</option>
+                    {TICKET_SEVERITIES.map((severity) => (
+                      <option key={severity} value={severity}>
+                        {humanizeSeverity(severity)}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </label>
+
+                <label className="grid gap-1">
+                  <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Responsável</span>
+                  <SelectInput
+                    className="h-8.5 rounded-[12px] px-3 text-[12px]"
+                    onChange={(event) =>
+                      setFilters({
+                        ...filters,
+                        assignedToUserId: event.target.value as QueueFilters['assignedToUserId'],
+                      })
+                    }
+                    value={filters.assignedToUserId}
+                  >
+                    <option value="all">Todos</option>
+                    <option value="unassigned">Não atribuídos</option>
+                    {assigneeOptions.map((assignee) => (
+                      <option key={assignee.id} value={assignee.id}>
+                        {assignee.label}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </label>
+
+                <label className="grid gap-1 sm:col-span-2 xl:col-span-2">
+                  <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Cliente</span>
+                  <SelectInput
+                    className="h-8.5 rounded-[12px] px-3 text-[12px]"
+                    onChange={(event) =>
+                      setFilters({ ...filters, tenantId: event.target.value as QueueFilters['tenantId'] })
+                    }
+                    value={filters.tenantId}
+                  >
+                    <option value="all">Todos</option>
+                    {tenantOptions.map((tenant) => (
+                      <option key={tenant.id} value={tenant.id}>
+                        {tenant.label}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </label>
+              </div>
+            </div>
+          </aside>
+
+          <div className="space-y-3 xl:min-h-0 xl:flex xl:flex-col xl:overflow-hidden">
+            <SupportSummaryStrip
+              highAttention={highAttention}
+              totalOpen={totalOpen}
+              unassigned={unassigned}
+              waitingCustomer={waitingCustomer}
+            />
+
+            <section className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-1 xl:flex-col xl:overflow-hidden">
+              <div className="mb-3 space-y-1">
+                <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                  Fila dominante
+                </h2>
+                <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
+                  A lista central continua como eixo principal da triagem.
+                </p>
+              </div>
+              {tickets.length === 0 ? (
+                <EmptyState
+                  title="Sem tickets para esta combinação de filtros"
+                  description="Nenhum ticket apareceu com esse recorte. Ajuste os filtros ou recarregue a fila."
+                />
+              ) : (
+                <div className="space-y-2.5 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
+                  {tickets.map((ticket) => (
+                    <SupportQueueItem
+                      isSelected={ticket.id === selectedTicketId}
+                      key={ticket.id}
+                      onSelect={() => handleSelectTicket(ticket.id)}
+                      ticket={ticket}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+
+          <section className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+            <div className="mb-3 space-y-1">
+              <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                Preview do ticket
+              </h2>
+              <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
+                Contexto curto antes de abrir o atendimento completo.
+              </p>
+            </div>
+            {detailPhase === 'loading' ? (
+              <LoadingState
+                title="Carregando prévia"
+                description="Estamos preparando a leitura do ticket selecionado."
+              />
+            ) : detailPhase === 'contract-unavailable' ? (
+              <ContractUnavailableState contractName="prévia operacional do ticket" />
+            ) : detailPhase === 'error' ? (
+              <ErrorState description={detailMessage ?? 'A prévia do ticket não ficou disponível.'} />
+            ) : (
+              <div className="xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
+                <SupportTicketPreview customer={customer} detail={previewTicket} ticket={selectedQueueTicket} />
+              </div>
+            )}
+          </section>
+        </div>
       ) : detailPhase === 'idle' ? (
         <Panel
           className="bg-white"
@@ -3816,10 +3944,10 @@ function SupportWorkspaceView({
           />
         )
       ) : (
-        <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden xl:flex-row">
-          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-            <section className="shrink-0 overflow-hidden rounded-[20px] border border-[rgba(22,42,93,0.1)] bg-white shadow-[0_10px_20px_rgba(19,33,79,0.06)]">
-              <div className="px-4 py-3 sm:px-5">
+        <div className="flex h-full min-h-0 flex-col gap-2.5 overflow-hidden xl:flex-row">
+          <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-hidden">
+            <section className="shrink-0 overflow-hidden rounded-[18px] border border-[rgba(22,42,93,0.1)] bg-white shadow-[0_8px_18px_rgba(19,33,79,0.06)]">
+              <div className="px-4 py-2.5 sm:px-4.5">
                 <div className="space-y-1.5">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <StatusPill tone={toneForTicketStatus(ticketDetail.status)}>
@@ -3831,19 +3959,19 @@ function SupportWorkspaceView({
                     <StatusPill tone={toneForSeverity(ticketDetail.severity)}>
                       {humanizeSeverity(ticketDetail.severity)}
                     </StatusPill>
-                    <span className="text-[12px] font-semibold text-[color:var(--color-ink)]">
+                    <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">
                       #{ticketDetail.id.slice(0, 8)}
                     </span>
-                    <span className="text-[11px] text-[color:var(--color-muted)]">
+                    <span className="text-[10.5px] text-[color:var(--color-muted)]">
                       Criado em {formatDateTime(ticketDetail.createdAt)}
                     </span>
                   </div>
 
-                  <h3 className="max-w-4xl truncate text-[0.98rem] font-semibold tracking-[-0.03em] leading-tight text-[color:var(--color-ink)]">
+                  <h3 className="max-w-4xl truncate text-[0.94rem] font-semibold leading-tight tracking-[-0.03em] text-[color:var(--color-ink)]">
                     {ticketDetail.title}
                   </h3>
 
-                  <div className="grid gap-2 border-t border-[color:var(--color-border)] pt-2 text-[11px] md:grid-cols-2 xl:grid-cols-4">
+                  <div className="grid gap-2 border-t border-[color:var(--color-border)] pt-2 text-[10.5px] md:grid-cols-2 xl:grid-cols-4">
                     <div className="min-w-0">
                       <p className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
                         Cliente
@@ -3880,11 +4008,11 @@ function SupportWorkspaceView({
                 </div>
               </div>
 
-              <div className="border-t border-[color:var(--color-border)] px-4 sm:px-5">
+              <div className="border-t border-[color:var(--color-border)] px-4 sm:px-4.5">
                 <div className="flex items-center gap-3 overflow-x-auto">
                   <button
                     className={cx(
-                      'inline-flex min-h-7.5 shrink-0 items-center border-b-2 px-1 text-[12px] font-semibold transition',
+                      'inline-flex min-h-7 shrink-0 items-center border-b-2 px-1 text-[11.5px] font-semibold transition',
                       ticketToolbarTab === 'conversation'
                         ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
                         : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
@@ -3896,7 +4024,7 @@ function SupportWorkspaceView({
                   </button>
                   <button
                     className={cx(
-                      'inline-flex min-h-7.5 shrink-0 items-center border-b-2 px-1 text-[12px] font-semibold transition',
+                      'inline-flex min-h-7 shrink-0 items-center border-b-2 px-1 text-[11.5px] font-semibold transition',
                       ticketToolbarTab === 'knowledge'
                         ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
                         : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
@@ -3908,7 +4036,7 @@ function SupportWorkspaceView({
                   </button>
                   <button
                     className={cx(
-                      'inline-flex min-h-7.5 shrink-0 items-center border-b-2 px-1 text-[12px] font-semibold transition',
+                      'inline-flex min-h-7 shrink-0 items-center border-b-2 px-1 text-[11.5px] font-semibold transition',
                       ticketToolbarTab === 'help'
                         ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
                         : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
@@ -3920,7 +4048,7 @@ function SupportWorkspaceView({
                   </button>
                   <button
                     className={cx(
-                      'inline-flex min-h-7.5 shrink-0 items-center border-b-2 px-1 text-[12px] font-semibold transition',
+                      'inline-flex min-h-7 shrink-0 items-center border-b-2 px-1 text-[11.5px] font-semibold transition',
                       ticketToolbarTab === 'more'
                         ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
                         : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
@@ -3947,11 +4075,11 @@ function SupportWorkspaceView({
               </div>
             ) : null}
 
-            <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[20px] border border-[color:var(--color-border)] bg-white shadow-[0_10px_20px_rgba(19,33,79,0.06)]">
+            <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white shadow-[0_8px_18px_rgba(19,33,79,0.06)]">
               {ticketToolbarTab === 'conversation' ? (
                 <>
                   <div
-                    className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-5"
+                    className="min-h-0 flex-1 overflow-y-auto px-4 py-2.5 sm:px-4.5"
                     data-ticket-thread-scroll
                     ref={threadScrollContainerRef}
                   >
@@ -3959,14 +4087,14 @@ function SupportWorkspaceView({
                   </div>
 
                   <div
-                    className="shrink-0 border-t border-[color:var(--color-border)] bg-[linear-gradient(180deg,rgba(247,250,255,0.96),rgba(255,255,255,1))] px-4 py-3 sm:px-5"
+                    className="shrink-0 border-t border-[color:var(--color-border)] bg-[linear-gradient(180deg,rgba(247,250,255,0.96),rgba(255,255,255,1))] px-4 py-2.5 sm:px-4.5"
                     data-ticket-composer
                   >
                     <form className="space-y-1.5" onSubmit={handleSubmitComposer}>
                       <div className="flex flex-wrap gap-4 border-b border-[color:var(--color-border)]">
                         <button
                           className={cx(
-                            'inline-flex min-h-7.5 items-center border-b-2 px-1 text-[12px] font-semibold transition',
+                            'inline-flex min-h-7 items-center border-b-2 px-1 text-[11.5px] font-semibold transition',
                             composerMode === 'public'
                               ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
                               : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
@@ -3979,7 +4107,7 @@ function SupportWorkspaceView({
                         </button>
                         <button
                           className={cx(
-                            'inline-flex min-h-7.5 items-center border-b-2 px-1 text-[12px] font-semibold transition',
+                            'inline-flex min-h-7 items-center border-b-2 px-1 text-[11.5px] font-semibold transition',
                             composerMode === 'internal'
                               ? 'border-[color:var(--color-danger-ink)] text-[color:var(--color-danger-ink)]'
                               : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
@@ -3993,7 +4121,7 @@ function SupportWorkspaceView({
                       </div>
                       <div
                         className={cx(
-                          'rounded-[16px] border px-3.5 py-2.5 shadow-[0_8px_18px_rgba(19,33,79,0.04)] transition-colors',
+                          'rounded-[16px] border px-3 py-2 shadow-[0_8px_18px_rgba(19,33,79,0.04)] transition-colors',
                           composerMode === 'internal'
                             ? 'border-amber-200 bg-[linear-gradient(180deg,rgba(255,248,227,0.98),rgba(255,243,214,0.95))]'
                             : 'border-[color:var(--color-border)] bg-white',
@@ -4001,7 +4129,7 @@ function SupportWorkspaceView({
                       >
                         <TextareaInput
                           className={cx(
-                            'h-[142px] min-h-[142px] w-full resize-none overflow-hidden border-0 !bg-transparent px-0 py-0 text-[13px] leading-[1.35rem] shadow-none focus:border-transparent focus:ring-0',
+                            'h-[108px] min-h-[108px] w-full resize-none overflow-hidden border-0 !bg-transparent px-0 py-0 text-[12.5px] leading-[1.3rem] shadow-none focus:border-transparent focus:ring-0',
                             composerMode === 'internal' && 'placeholder:text-[rgba(125,92,13,0.68)]',
                           )}
                           onChange={(event) =>
@@ -4052,7 +4180,7 @@ function SupportWorkspaceView({
                   </div>
                 </>
               ) : (
-                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-5">
+                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-2.5 sm:px-4.5">
                   {ticketToolbarTab === 'knowledge' ? (
                     <SupportKnowledgePanel
                       articles={filteredKnowledgeArticles}
@@ -4109,7 +4237,7 @@ function SupportWorkspaceView({
           </div>
 
           <aside
-            className="min-h-0 space-y-3 overflow-y-auto pr-1 xl:w-[352px] xl:shrink-0"
+            className="min-h-0 space-y-2.5 overflow-y-auto pr-1 xl:w-[344px] xl:shrink-0"
             data-ticket-rail
           >
             <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.06)]">
@@ -4506,6 +4634,15 @@ export function SupportCustomersPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [customers, setCustomers] = useState<SupportCustomer360[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState<Uuid | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<SupportCustomer360 | null>(null);
+  const [selectedAccountContext, setSelectedAccountContext] =
+    useState<SupportCustomerAccountContext | null>(null);
+  const [selectedRecentTicketsWindow, setSelectedRecentTicketsWindow] =
+    useState<SupportCustomerRecentTicketsWindow>(emptyCustomerRecentTicketsWindow());
+  const [selectedRecentEventsWindow, setSelectedRecentEventsWindow] =
+    useState<SupportCustomerRecentEventsWindow>(emptyCustomerRecentEventsWindow());
+  const [selectedPhase, setSelectedPhase] = useState<DetailPhase>('idle');
+  const [selectedMessage, setSelectedMessage] = useState<string | null>(null);
   const [query, setQuery] = useState('');
 
   const loadCustomers = useEffectEvent(async (preferredTenantId?: Uuid | null) => {
@@ -4543,8 +4680,48 @@ export function SupportCustomersPage() {
 
       setCustomers([]);
       setSelectedTenantId(null);
+      setSelectedCustomer(null);
       setMessage(classified.message);
       setPhase(
+        classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
+      );
+    }
+  });
+
+  const loadSelectedCustomer = useEffectEvent(async (tenantId: Uuid) => {
+    setSelectedPhase('loading');
+
+    try {
+      const [detail, context, recentTickets, recentEvents] = await Promise.all([
+        getSupportCustomer360(tenantId),
+        getSupportCustomerAccountContext(tenantId),
+        getSupportCustomerRecentTickets(tenantId),
+        getSupportCustomerRecentEvents(tenantId),
+      ]);
+
+      setSelectedCustomer(detail);
+      setSelectedAccountContext(context);
+      setSelectedRecentTicketsWindow(recentTickets);
+      setSelectedRecentEventsWindow(recentEvents);
+      setSelectedMessage(null);
+      setSelectedPhase('ready');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao carregar o preview operacional do cliente.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      setSelectedCustomer(null);
+      setSelectedAccountContext(null);
+      setSelectedRecentTicketsWindow(emptyCustomerRecentTicketsWindow());
+      setSelectedRecentEventsWindow(emptyCustomerRecentEventsWindow());
+      setSelectedMessage(classified.message);
+      setSelectedPhase(
         classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
       );
     }
@@ -4578,20 +4755,25 @@ export function SupportCustomersPage() {
     );
   }, [customers, query]);
 
-  const selectedCustomer =
-    customers.find((customer) => customer.tenantId === selectedTenantId) ??
-    filteredCustomers[0] ??
-    null;
   const totalCustomers = customers.length;
   const activeCustomers = customers.filter((customer) => customer.tenantStatus === 'active').length;
   const openTickets = customers.reduce((sum, customer) => sum + customer.openTicketCount, 0);
   const activeContacts = customers.reduce((sum, customer) => sum + customer.activeContactsCount, 0);
 
   useEffect(() => {
-    if (!selectedCustomer && filteredCustomers[0]) {
+    if (!selectedTenantId && filteredCustomers[0]) {
       setSelectedTenantId(filteredCustomers[0].tenantId);
     }
-  }, [filteredCustomers, selectedCustomer]);
+  }, [filteredCustomers, selectedTenantId]);
+
+  useEffect(() => {
+    if (!selectedTenantId || phase !== 'ready') {
+      setSelectedPhase(selectedTenantId ? 'loading' : 'idle');
+      return;
+    }
+
+    void loadSelectedCustomer(selectedTenantId);
+  }, [loadSelectedCustomer, phase, selectedTenantId]);
 
   if (backendDenied) {
     return <Navigate replace state={{ reason: 'backend-permission' }} to="/access-denied" />;
@@ -4639,232 +4821,284 @@ export function SupportCustomersPage() {
     selectedCustomer?.tenantLegalName ??
     selectedCustomer?.tenantSlug ??
     'Indisponível';
-  const previewWaiting =
-    selectedCustomer
-      ? readCountFromJson(selectedCustomer.ticketStatusCounts as Record<string, unknown>, 'waiting_customer') +
-        readCountFromJson(selectedCustomer.ticketStatusCounts as Record<string, unknown>, 'waiting_support') +
-        readCountFromJson(selectedCustomer.ticketStatusCounts as Record<string, unknown>, 'waiting_engineering')
-      : 0;
+  const selectedRiskProfile = resolveCustomerRiskProfile(selectedAccountContext);
+  const selectedMigrationCard = resolveMigrationCard(selectedAccountContext);
+  const selectedOwner =
+    selectedCustomer && selectedPhase === 'ready'
+      ? resolveSupportCustomerOwner(selectedCustomer, selectedRecentTicketsWindow)
+      : null;
+  const activePreviewTabs = [
+    { id: 'accounts', label: 'Contas', active: true },
+    { id: 'contacts', label: 'Contatos', active: false },
+    { id: 'migration', label: 'Migrações', active: false },
+    { id: 'health', label: 'Saúde', active: false },
+  ];
 
   return (
-    <div className="space-y-5 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
-      <section className="rounded-[26px] border border-[color:var(--color-border)] bg-white/95 px-5 py-5 shadow-[0_16px_30px_rgba(19,33,79,0.08)]">
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusPill tone="accent">Clientes</StatusPill>
-          <StatusPill>Hub operacional</StatusPill>
-        </div>
-        <div className="mt-3 space-y-1">
-          <h1 className="text-[1.9rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
-            Carteira de clientes
-          </h1>
-          <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-            Use esta tela para localizar a conta certa antes de abrir o detalhe completo ou voltar para a fila.
-          </p>
+    <div className="space-y-4 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
+      <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white/96 px-4 py-4 shadow-[0_14px_26px_rgba(19,33,79,0.08)]">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusPill tone="accent">Clientes</StatusPill>
+              <StatusPill>Cockpit B2B</StatusPill>
+            </div>
+            <div className="space-y-1">
+              <h1 className="text-[1.7rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
+                Clientes
+              </h1>
+              <p className="text-[13px] leading-5 text-[color:var(--color-muted)]">
+                Contas, contatos, migração e saúde operacional sem virar CRM genérico.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {activePreviewTabs.map((tab) => (
+              <span
+                className={cx(
+                  'inline-flex min-h-9 items-center rounded-full border px-3.5 text-[12px] font-semibold',
+                  tab.active
+                    ? 'border-[rgba(48,127,226,0.28)] bg-[rgba(48,127,226,0.1)] text-[color:var(--color-brand-blue)]'
+                    : 'border-[color:var(--color-border)] bg-white text-[color:var(--color-muted)]',
+                )}
+                key={tab.id}
+              >
+                {tab.label}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
-      <div className="grid gap-5 xl:min-h-0 xl:flex-1 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="space-y-4 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
-          <SupportCustomerDetailCard
-            description="Busca e recortes rapidos para chegar ao cliente certo."
-            title="Encontrar cliente"
-          >
-            <div className="space-y-3">
-              <TextInput
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Buscar por nome ou slug"
-                value={query}
-              />
-              <GhostButton className="min-h-11 w-full px-4" onClick={() => void loadCustomers(selectedTenantId)}>
-                Recarregar lista
-              </GhostButton>
+      <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[276px_minmax(0,1fr)_360px]">
+        <aside className="space-y-3 rounded-[20px] border border-[color:var(--color-border)] bg-white/96 px-3.5 py-3 shadow-[0_12px_22px_rgba(19,33,79,0.07)]">
+          <div className="space-y-2">
+            <div className="space-y-1">
+              <h2 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                Segmentação
+              </h2>
+              <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
+                Recorte rápido da carteira ativa no suporte.
+              </p>
             </div>
-          </SupportCustomerDetailCard>
 
-          <SupportCustomerDetailCard
-            description="Pulso rapido da carteira carregada agora."
-            title="Resumo da carteira"
+            <TextInput
+              className="h-10 rounded-[12px] px-3 text-[12px]"
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Buscar por nome ou slug"
+              value={query}
+            />
+          </div>
+
+          <div className="space-y-2 rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+              Recortes rápidos
+            </p>
+            {[
+              { label: 'Clientes ativos', value: activeCustomers, helper: 'contas em operação' },
+              { label: 'Tickets abertos', value: openTickets, helper: 'triagem em andamento' },
+              { label: 'Contatos ativos', value: activeContacts, helper: 'pontos de contato' },
+              { label: 'Sem responsável', value: customers.filter((customer) => customer.openTicketCount === 0).length, helper: 'sem fila recente' },
+            ].map((item) => (
+              <div
+                className="flex items-center justify-between rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2.5"
+                key={item.label}
+              >
+                <div>
+                  <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">
+                    {item.label}
+                  </p>
+                  <p className="text-[11px] text-[color:var(--color-muted)]">{item.helper}</p>
+                </div>
+                <span className="text-[1.05rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                  {item.value}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <GhostButton
+            className="min-h-10 w-full rounded-[12px] px-4 text-[12px]"
+            onClick={() => void loadCustomers(selectedTenantId)}
           >
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-              <SupportCustomerMetricTile helper="contas na leitura atual" label="Clientes" value={String(totalCustomers)} />
-            <SupportCustomerMetricTile helper="contas em operação ativa" label="Ativos" value={String(activeCustomers)} />
-              <SupportCustomerMetricTile helper="itens ainda em aberto" label="Tickets abertos" value={String(openTickets)} />
-              <SupportCustomerMetricTile helper="pessoas prontas para contato" label="Contatos ativos" value={String(activeContacts)} />
-            </div>
-          </SupportCustomerDetailCard>
-
-          <SupportCustomerDetailCard
-            description="Contas mais recentes dentro do recorte atual."
-            title="Clientes carregados"
-          >
-            <div className="space-y-2">
-              {filteredCustomers.length === 0 ? (
-                <InlineNotice>Nenhum cliente apareceu com este termo.</InlineNotice>
-              ) : (
-                filteredCustomers.slice(0, 8).map((customer) => {
-                  const selected = customer.tenantId === selectedCustomer?.tenantId;
-                  const label =
-                    customer.tenantDisplayName ?? customer.tenantLegalName ?? customer.tenantSlug;
-
-                  return (
-                    <button
-                      className={cx(
-                        'w-full rounded-[18px] border px-4 py-3 text-left transition',
-                        selected
-                          ? 'border-[rgba(48,127,226,0.34)] bg-[rgba(48,127,226,0.08)]'
-                          : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] hover:border-[rgba(48,127,226,0.22)] hover:bg-white',
-                      )}
-                      key={customer.tenantId}
-                      onClick={() => setSelectedTenantId(customer.tenantId)}
-                      type="button"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="min-w-0 truncate text-sm font-semibold text-[color:var(--color-ink)]">
-                          {label}
-                        </p>
-                        <StatusPill tone={customer.tenantStatus === 'active' ? 'positive' : 'warning'}>
-                          {humanizeCustomerValue(customer.tenantStatus)}
-                        </StatusPill>
-                      </div>
-                      <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
-                        {customer.openTicketCount} ticket(s) aberto(s) · {customer.activeContactsCount} contato(s) ativo(s)
-                      </p>
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </SupportCustomerDetailCard>
+            Recarregar carteira
+          </GhostButton>
         </aside>
 
-        <div className="space-y-5 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
-          {selectedCustomer ? (
-            <>
-              <section className="rounded-[30px] border border-[color:var(--color-border)] bg-white/95 px-6 py-6 shadow-[0_18px_40px_rgba(16,30,74,0.09)]">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="min-w-0 space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <StatusPill tone={selectedCustomer.tenantStatus === 'active' ? 'positive' : 'warning'}>
-                        {humanizeCustomerValue(selectedCustomer.tenantStatus)}
-                      </StatusPill>
-                      <StatusPill>{displayCustomerValue(selectedCustomer.tenantSlug)}</StatusPill>
-                    </div>
-                    <div className="space-y-1">
-                      <h2 className="text-[2rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
-                        {previewLabel}
-                      </h2>
-                      <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-                        Resumo rapido antes de abrir o detalhe completo do cliente.
-                      </p>
-                    </div>
-                  </div>
+        <div className="space-y-3 xl:min-h-0 xl:flex xl:flex-col xl:overflow-hidden">
+          <SupportSummaryStrip
+            highAttention={customers.filter((customer) => customer.openTicketCount > 0).length}
+            totalOpen={openTickets}
+            unassigned={customers.filter((customer) => customer.totalTicketCount === 0).length}
+            waitingCustomer={customers.filter((customer) => customer.activeContactsCount === 0).length}
+          />
 
-                  <div className="flex flex-wrap gap-2">
-                    <Link to={`/support/customers/${selectedCustomer.tenantId}`}>
-                      <AppButton>Abrir detalhe do cliente</AppButton>
-                    </Link>
-                    <Link to="/support/queue">
-                      <GhostButton>Voltar para a fila</GhostButton>
-                    </Link>
-                  </div>
-                </div>
-              </section>
-
-              <div className="grid gap-5 xl:grid-cols-[minmax(0,1.16fr)_318px]">
-                <div className="space-y-5">
-                  <SupportCustomerDetailCard
-                    description="Indicadores que ajudam a decidir qual conta precisa de prioridade agora."
-                    title="Resumo operacional"
-                  >
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                      <SupportCustomerMetricTile helper="itens ativos nesta conta" label="Tickets abertos" value={String(selectedCustomer.openTicketCount)} />
-                      <SupportCustomerMetricTile helper="historico acumulado" label="Total de tickets" value={String(selectedCustomer.totalTicketCount)} />
-                      <SupportCustomerMetricTile helper="pessoas aptas para contato" label="Contatos ativos" value={String(selectedCustomer.activeContactsCount)} />
-                      <SupportCustomerMetricTile helper="itens aguardando retorno" label="Em espera" value={String(previewWaiting)} />
-                    </div>
-                  </SupportCustomerDetailCard>
-
-                  <SupportCustomerDetailCard
-                    description="Leitura curta para comparar as contas sem sair desta tela."
-                    title="Visao rapida da conta"
-                  >
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
-                        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                          Nome operacional
-                        </p>
-                        <p className="mt-2 text-sm font-semibold text-[color:var(--color-ink)]">
-                          {displayCustomerValue(selectedCustomer.tenantDisplayName)}
-                        </p>
-                      </div>
-                      <div className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
-                        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                          Razao social
-                        </p>
-                        <p className="mt-2 text-sm font-semibold text-[color:var(--color-ink)]">
-                          {displayCustomerValue(selectedCustomer.tenantLegalName)}
-                        </p>
-                      </div>
-                    </div>
-                  </SupportCustomerDetailCard>
-                </div>
-
-                <aside className="space-y-5">
-                  <SupportCustomerDetailCard
-                    className="px-4 py-4"
-            description="Atalhos úteis para continuar a operação."
-                    title="Proximos passos"
-                  >
-                    <div className="space-y-2">
-                      <Link
-                        className="inline-flex min-h-11 w-full items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,#1e63ff,#2e7cf5)] px-4 py-2 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(18,81,213,0.35)]"
-                        to={`/support/customers/${selectedCustomer.tenantId}`}
-                      >
-                        Ver perfil completo
-                      </Link>
-                      <Link
-                        className="inline-flex min-h-11 w-full items-center justify-center rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-2 text-sm font-semibold text-[color:var(--color-brand-blue)]"
-                        to="/support/queue"
-                      >
-                        Abrir fila operacional
-                      </Link>
-                    </div>
-                  </SupportCustomerDetailCard>
-
-                  <SupportCustomerDetailCard
-                    className="px-4 py-4"
-                    description="Leitura do status atual sem ocupar a área principal."
-                    title="Sinais da conta"
-                  >
-                    <div className="flex flex-wrap gap-2">
-                      <StatusPill tone={selectedCustomer.tenantStatus === 'active' ? 'positive' : 'warning'}>
-                        {humanizeCustomerValue(selectedCustomer.tenantStatus)}
-                      </StatusPill>
-                      <StatusPill>{displayCustomerValue(selectedCustomer.tenantSlug)}</StatusPill>
-                      <StatusPill>{String(selectedCustomer.totalTicketCount)} historico</StatusPill>
-                    </div>
-                  </SupportCustomerDetailCard>
-
-                  <SupportCustomerDetailCard
-                    className="px-4 py-4"
-                    description="Ultimos dados conhecidos deste cadastro."
-                    title="Atualização"
-                  >
-                    <div className="space-y-2 text-sm leading-6 text-[color:var(--color-muted)]">
-                      <p>Criado em {formatDateTime(selectedCustomer.tenantCreatedAt)}</p>
-                      <p>Atualizado em {formatDateTime(selectedCustomer.tenantUpdatedAt)}</p>
-                    </div>
-                  </SupportCustomerDetailCard>
-                </aside>
+          <section className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-1 xl:flex-col xl:overflow-hidden">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div className="space-y-1">
+                <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                  Contas prioritárias
+                </h2>
+                <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
+                  Lista central dominante para abrir a conta certa sem sair do contexto.
+                </p>
               </div>
-            </>
+              <p className="text-[12px] text-[color:var(--color-muted)]">
+                {filteredCustomers.length} conta(s) no recorte atual
+              </p>
+            </div>
+
+            {filteredCustomers.length === 0 ? (
+              <EmptyState
+                title="Nenhum cliente apareceu neste recorte"
+                description="Ajuste a busca ou recarregue a carteira para continuar."
+              />
+            ) : (
+              <div className="xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
+                <div className="space-y-2.5">
+                  {filteredCustomers.map((customer) => {
+                    const selected = customer.tenantId === selectedTenantId;
+                    const customerLabel =
+                      customer.tenantDisplayName ?? customer.tenantLegalName ?? customer.tenantSlug;
+
+                    return (
+                      <button
+                        className={cx(
+                          'w-full rounded-[18px] border px-4 py-3 text-left transition',
+                          selected
+                            ? 'border-[rgba(48,127,226,0.42)] bg-[rgba(48,127,226,0.08)] shadow-[0_8px_18px_rgba(19,33,79,0.06)]'
+                            : 'border-[color:var(--color-border)] bg-white hover:border-[rgba(48,127,226,0.24)] hover:bg-[color:var(--color-surface)]',
+                        )}
+                        key={customer.tenantId}
+                        onClick={() => setSelectedTenantId(customer.tenantId)}
+                        type="button"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <StatusPill tone={customer.tenantStatus === 'active' ? 'positive' : 'warning'}>
+                                {humanizeCustomerValue(customer.tenantStatus)}
+                              </StatusPill>
+                              <StatusPill>{displayCustomerValue(customer.tenantSlug)}</StatusPill>
+                            </div>
+                            <h3 className="truncate text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                              {customerLabel}
+                            </h3>
+                          </div>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                            {customer.openTicketCount} em aberto
+                          </p>
+                        </div>
+
+                        <div className="mt-2 grid gap-2 text-[12px] leading-5 text-[color:var(--color-muted)] md:grid-cols-4">
+                          <span>Histórico: {customer.totalTicketCount}</span>
+                          <span>Contatos: {customer.activeContactsCount}</span>
+                          <span>Razão social: {displayCustomerValue(customer.tenantLegalName)}</span>
+                          <span>Última atualização: {formatDateTime(customer.tenantUpdatedAt)}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
+
+        <aside className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+          <div className="mb-3 space-y-1">
+            <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+              Preview do cliente
+            </h2>
+            <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
+              Contexto operacional da conta antes de abrir o perfil completo.
+            </p>
+          </div>
+
+          {selectedPhase === 'loading' ? (
+            <LoadingState
+              title="Carregando preview"
+              description="Estamos preparando o contexto operacional desta conta."
+            />
+          ) : selectedPhase === 'contract-unavailable' ? (
+            <ContractUnavailableState contractName="preview operacional do cliente" />
+          ) : selectedPhase === 'error' ? (
+            <ErrorState description={selectedMessage ?? 'O preview deste cliente não ficou disponível.'} />
+          ) : selectedCustomer ? (
+            <div className="space-y-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
+              <div className="rounded-[20px] border border-[rgba(48,127,226,0.22)] bg-[linear-gradient(180deg,rgba(17,28,66,1),rgba(24,42,97,0.98))] px-4 py-4 text-white">
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusPill tone={selectedRiskProfile.tone}>{selectedRiskProfile.label}</StatusPill>
+                  <StatusPill tone={selectedMigrationCard.accentTone}>{selectedMigrationCard.phase}</StatusPill>
+                </div>
+                <div className="mt-3 space-y-1.5">
+                  <h3 className="text-[1.22rem] font-semibold tracking-[-0.05em]">{previewLabel}</h3>
+                  <div className="space-y-1 text-[12px] leading-5 text-white/76">
+                    <p>Produto: {displayCustomerValue(selectedAccountContext?.productLine ? humanizeCustomerValue(selectedAccountContext.productLine) : null)}</p>
+                    <p>Responsável: {displayCustomerValue(selectedOwner)}</p>
+                    <p>Última atividade: {formatDateTime(selectedCustomer.tenantUpdatedAt)}</p>
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2.5">
+                  <Link
+                    className="inline-flex min-h-11 items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-[color:var(--color-brand-navy)]"
+                    to={`/support/customers/${selectedCustomer.tenantId}`}
+                  >
+                    Abrir cliente
+                  </Link>
+                  <Link
+                    className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/22 px-4 py-2 text-sm font-semibold text-white"
+                    to="/support/queue"
+                  >
+                    Ver tickets
+                  </Link>
+                </div>
+              </div>
+
+              <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
+                <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">Resumo operacional</p>
+                <div className="mt-2 space-y-1.5 text-[12px] leading-5 text-[color:var(--color-muted)]">
+                  <p>Tickets abertos: {selectedCustomer.openTicketCount}</p>
+                  <p>Total de tickets: {selectedCustomer.totalTicketCount}</p>
+                  <p>Contatos ativos: {selectedCustomer.activeContactsCount}</p>
+                </div>
+              </div>
+
+              <div className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
+                <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">Contato principal</p>
+                <div className="mt-2 space-y-1.5 text-[12px] leading-5 text-[color:var(--color-muted)]">
+                  <p>
+                    {primaryContactFromCustomer(selectedCustomer)?.fullName ?? 'Indisponível'}
+                  </p>
+                  <p className="break-all">
+                    {displayCustomerValue(primaryContactFromCustomer(selectedCustomer)?.email)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
+                <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">Sinais da conta</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <StatusPill tone={selectedCustomer.tenantStatus === 'active' ? 'positive' : 'warning'}>
+                    {humanizeCustomerValue(selectedCustomer.tenantStatus)}
+                  </StatusPill>
+                  <StatusPill>{displayCustomerValue(selectedAccountContext?.accountTier)}</StatusPill>
+                  <StatusPill>
+                    {displayCustomerValue(
+                      primaryPlatformFromContext(selectedAccountContext)?.provider ?? null,
+                    )}
+                  </StatusPill>
+                </div>
+              </div>
+            </div>
           ) : (
             <EmptyState
               title="Nenhum cliente selecionado"
-              description="Escolha uma conta da lista para abrir o resumo operacional."
+              description="Escolha uma conta da lista para abrir o preview operacional."
             />
           )}
-        </div>
+        </aside>
       </div>
     </div>
   );
@@ -5053,8 +5287,8 @@ export function SupportCustomerPage() {
   ];
 
   return (
-    <div className="space-y-5 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
-      <section className="rounded-[30px] border border-[color:var(--color-border)] bg-white/95 px-6 py-6 shadow-[0_18px_40px_rgba(16,30,74,0.09)]">
+    <div className="space-y-4 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
+      <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white/96 px-4 py-4 shadow-[0_14px_26px_rgba(16,30,74,0.08)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -5063,21 +5297,21 @@ export function SupportCustomerPage() {
               <StatusPill tone={riskProfile.tone}>{riskProfile.label}</StatusPill>
             </div>
             <div className="space-y-1">
-              <h1 className="text-[2.25rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
+              <h1 className="text-[1.85rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
                 {customerLabel}
               </h1>
-              <p className="text-sm leading-6 text-[color:var(--color-muted)]">
+              <p className="text-[13px] leading-5 text-[color:var(--color-muted)]">
                 Contexto operacional completo da conta, contatos, tickets e sinais de saúde.
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <GhostButton className="min-h-11 px-4" onClick={() => window.history.back()}>
+            <GhostButton className="min-h-10 rounded-[12px] px-4 text-[12px]" onClick={() => window.history.back()}>
               Voltar
             </GhostButton>
             <Link
-              className="inline-flex min-h-11 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white px-4 py-2 text-sm font-semibold text-[color:var(--color-brand-blue)]"
+              className="inline-flex min-h-10 items-center justify-center rounded-[12px] border border-[color:var(--color-border)] bg-white px-4 py-2 text-[12px] font-semibold text-[color:var(--color-brand-blue)]"
               to="/support/queue"
             >
               Abrir fila
@@ -5085,8 +5319,8 @@ export function SupportCustomerPage() {
           </div>
         </div>
 
-        <div className="mt-5 rounded-[22px] border border-[color:var(--color-border)] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-4">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="mt-4 rounded-[18px] border border-[color:var(--color-border)] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-3.5 py-3.5">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             {[
               { label: 'Slug', value: displayCustomerValue(customer.tenantSlug) },
               {
@@ -5110,12 +5344,12 @@ export function SupportCustomerPage() {
             ].map((item) => (
               <div
                 key={item.label}
-                className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3"
+                className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-2.5"
               >
-                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
                   {item.label}
                 </p>
-                <p className="mt-2 text-sm font-semibold text-[color:var(--color-ink)]">
+                <p className="mt-1.5 text-[13px] font-semibold text-[color:var(--color-ink)]">
                   {item.value}
                 </p>
               </div>
@@ -5123,11 +5357,11 @@ export function SupportCustomerPage() {
           </div>
         </div>
 
-        <nav className="mt-5 flex flex-wrap gap-2 border-b border-[color:var(--color-border)] pb-2">
+        <nav className="mt-4 flex flex-wrap gap-2 border-b border-[color:var(--color-border)] pb-2">
           {customerTabs.map((tab) => (
             <a
               className={cx(
-                'inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold transition',
+                'inline-flex min-h-9 items-center rounded-full px-3.5 text-[12px] font-semibold transition',
                 tab.id === 'resumo'
                   ? 'bg-[rgba(48,127,226,0.1)] text-[color:var(--color-brand-blue)] shadow-[inset_0_-2px_0_var(--color-brand-blue)]'
                   : 'text-[color:var(--color-muted)] hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-ink)]',
@@ -5141,13 +5375,13 @@ export function SupportCustomerPage() {
         </nav>
       </section>
 
-      <div className="grid gap-5 xl:min-h-0 xl:flex-1 xl:grid-cols-[294px_minmax(0,1.28fr)_318px]">
-        <aside className="space-y-5 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
-          <section className="overflow-hidden rounded-[28px] bg-[linear-gradient(180deg,#071942_0%,#0b235b_58%,#103071_100%)] px-4 py-5 text-white shadow-[0_22px_42px_rgba(8,22,61,0.28)]">
-            <div className="space-y-4">
+      <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[272px_minmax(0,1fr)_318px]">
+        <aside className="space-y-4">
+          <section className="overflow-hidden rounded-[22px] bg-[linear-gradient(180deg,#071942_0%,#0b235b_58%,#103071_100%)] px-4 py-4 text-white shadow-[0_18px_34px_rgba(8,22,61,0.26)]">
+            <div className="space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-3">
-                  <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-white/92 text-lg font-semibold text-[color:var(--color-brand-blue)]">
+                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/92 text-base font-semibold text-[color:var(--color-brand-blue)]">
                     {customerLabel
                       .split(' ')
                       .slice(0, 2)
@@ -5155,7 +5389,7 @@ export function SupportCustomerPage() {
                       .join('')}
                   </div>
                   <div className="space-y-1">
-                    <h2 className="text-[1.55rem] font-semibold tracking-[-0.05em]">{customerLabel}</h2>
+                    <h2 className="text-[1.28rem] font-semibold tracking-[-0.05em]">{customerLabel}</h2>
                     <div className="flex flex-wrap gap-2">
                       <StatusPill tone={customer.tenantStatus === 'active' ? 'positive' : 'warning'}>
                         {displayCustomerValue(humanizeCustomerValue(customer.tenantStatus))}
@@ -5168,7 +5402,7 @@ export function SupportCustomerPage() {
 
               <StatusPill tone={riskProfile.tone}>{riskProfile.label}</StatusPill>
 
-              <dl className="space-y-3 text-sm">
+              <dl className="space-y-2.5 text-[13px]">
                 {[
                   {
                     label: 'Plataforma',
@@ -5191,7 +5425,7 @@ export function SupportCustomerPage() {
                 ].map((item) => (
                   <div
                     key={item.label}
-                    className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-3 last:border-b-0 last:pb-0"
+                    className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-2.5 last:border-b-0 last:pb-0"
                   >
                     <dt className="text-white/68">{item.label}</dt>
                     <dd className="text-right font-medium text-white">{item.value}</dd>
@@ -5201,13 +5435,13 @@ export function SupportCustomerPage() {
 
               <div className="space-y-2 pt-1">
                 <Link
-                  className="inline-flex min-h-11 w-full items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,#1e63ff,#2e7cf5)] px-4 py-2 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(18,81,213,0.35)]"
+                  className="inline-flex min-h-10 w-full items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,#1e63ff,#2e7cf5)] px-4 py-2 text-[13px] font-semibold text-white shadow-[0_16px_28px_rgba(18,81,213,0.35)]"
                   to="/support/queue"
                 >
                   Abrir tickets
                 </Link>
                 <button
-                  className="inline-flex min-h-11 w-full items-center justify-center rounded-[16px] border border-white/18 bg-transparent px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/8"
+                  className="inline-flex min-h-10 w-full items-center justify-center rounded-[14px] border border-white/18 bg-transparent px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-white/8"
                   onClick={() => window.history.back()}
                   type="button"
                 >
@@ -5243,30 +5477,9 @@ export function SupportCustomerPage() {
               </InlineNotice>
             )}
           </SupportCustomerDetailCard>
-
-          <SupportCustomerDetailCard
-            className="px-4 py-4"
-            description="Tags uteis para lembrar o stack e o contexto da conta."
-            title="Sinais da conta"
-          >
-            <div className="flex flex-wrap gap-2">
-              <StatusPill tone="positive">
-                {displayCustomerValue(primaryPlatform?.provider ?? null)}
-              </StatusPill>
-              <StatusPill tone="accent">
-                {displayCustomerValue(
-                  accountContext?.productLine ? humanizeCustomerValue(accountContext.productLine) : null,
-                )}
-              </StatusPill>
-              <StatusPill>
-                {displayCustomerValue(accountContext?.accountTier)}
-              </StatusPill>
-              <StatusPill tone={migrationCard.accentTone}>{migrationCard.phase}</StatusPill>
-            </div>
-          </SupportCustomerDetailCard>
         </aside>
 
-        <div className="space-y-5 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
+        <div className="space-y-4 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
           <div id="resumo">
             <SupportCustomerDetailCard
               title="Resumo operacional"
@@ -5393,7 +5606,7 @@ export function SupportCustomerPage() {
           </SupportCustomerDetailCard>
         </div>
 
-        <aside className="space-y-5 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
+        <aside className="space-y-4 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
           <SupportCustomerDetailCard
             className="px-4 py-4"
             description="Leitura curta da conta para decidir se a tratativa pede atenção extra."
