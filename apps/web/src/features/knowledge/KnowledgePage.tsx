@@ -291,6 +291,30 @@ function toneForReviewStatus(status: KnowledgeArticleReviewStatus) {
   return 'default' as const;
 }
 
+function displayReviewStatus(status: KnowledgeArticleReviewStatus) {
+  if (status === 'reviewed') {
+    return 'Revisado';
+  }
+
+  if (status === 'ready_for_publish') {
+    return 'Pronto para publicar';
+  }
+
+  if (status === 'ready_for_review') {
+    return 'Pronto para revisão';
+  }
+
+  if (status === 'needs_changes') {
+    return 'Precisa de ajustes';
+  }
+
+  if (status === 'in_review') {
+    return 'Em revisão humana';
+  }
+
+  return 'Pendente';
+}
+
 function toneForAdvisoryClassification(
   classification: KnowledgeAdvisoryClassification,
 ) {
@@ -307,6 +331,28 @@ function toneForAdvisoryClassification(
   }
 
   return 'critical' as const;
+}
+
+function displayAdvisoryClassification(
+  classification: KnowledgeAdvisoryClassification,
+) {
+  if (classification === 'public') {
+    return 'Público';
+  }
+
+  if (classification === 'internal') {
+    return 'Interno';
+  }
+
+  if (classification === 'restricted') {
+    return 'Restrito';
+  }
+
+  if (classification === 'obsolete') {
+    return 'Obsoleto';
+  }
+
+  return 'Duplicado';
 }
 
 function toneForVisibility(visibility: KnowledgeVisibility) {
@@ -387,6 +433,16 @@ function displayVisibility(visibility: KnowledgeVisibility) {
   return 'Interno';
 }
 
+function humanizeRiskFlag(flag: string) {
+  const normalized = flag.replace(/[_-]+/g, ' ').trim();
+
+  if (!normalized) {
+    return 'Risco editorial';
+  }
+
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
 function shortVisibilityLabel(visibility: KnowledgeVisibility) {
   if (visibility === 'public') {
     return 'Público';
@@ -454,6 +510,10 @@ function categoryBadgeClass(name: string | null | undefined) {
 function compactCategoryLabel(name: string | null | undefined) {
   const normalized = (name ?? '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
+  if (normalized.includes('fixture') || normalized.includes('space aware')) {
+    return 'Verificação';
+  }
+
   if (normalized.includes('operacao') || normalized.includes('reversa')) {
     return 'Operação';
   }
@@ -476,7 +536,7 @@ function compactCategoryLabel(name: string | null | undefined) {
 function displayFilterCategoryLabel(name: string | null | undefined) {
   const normalized = (name ?? '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
-  if (normalized.includes('space aware') || normalized.includes('verificacao')) {
+  if (normalized.includes('space aware') || normalized.includes('verificacao') || normalized.includes('fixture')) {
     return 'Verificação';
   }
 
@@ -711,6 +771,25 @@ export function KnowledgePage() {
   const selectedAdvisory =
     selectedArticleId ? advisoryMap.get(selectedArticleId) ?? null : null;
   const sourceHashCounts = buildSourceHashCounts(articles);
+  const legacyArticlesCount = articles.filter(
+    (article) => Boolean(article.source_path || article.source_hash),
+  ).length;
+  const manualArticlesCount = articles.length - legacyArticlesCount;
+  const duplicateArticlesCount = articles.filter((article) => {
+    const advisoryDuplicateCount =
+      advisoryMap.get(article.id)?.duplicate_group_article_count ?? 0;
+    const sourceDuplicateCount = article.source_hash
+      ? sourceHashCounts.get(article.source_hash) ?? 0
+      : 0;
+
+    return Math.max(advisoryDuplicateCount, sourceDuplicateCount) > 1;
+  }).length;
+  const reviewedArticlesCount = advisories.filter(
+    (advisory) => advisory.review_status === 'reviewed',
+  ).length;
+  const withoutAdvisoryCount = articles.filter(
+    (article) => !advisoryMap.has(article.id),
+  ).length;
   const filteredArticles = articles.filter((article) => {
     const articleAdvisory = advisoryMap.get(article.id);
 
@@ -826,6 +905,9 @@ export function KnowledgePage() {
     !editorialDraftHasPublicCategoryMismatch;
   const persistedHumanChecklist = buildPersistedHumanChecklist(humanConfirmationsDraft);
   const advisoryRiskFlags = normalizeRiskFlags(selectedAdvisory?.risk_flags);
+  const selectedHumanConfirmationsCount = HUMAN_CONFIRMATION_FIELDS.filter(
+    (field) => humanConfirmationsDraft[field.key] === true,
+  ).length;
   const statusCounts = {
     all: filteredArticles.length,
     published: filteredArticles.filter((article) => article.status === 'published').length,
@@ -853,6 +935,10 @@ export function KnowledgePage() {
   ).sort((left, right) => left.localeCompare(right, 'pt-BR'));
   const searchedArticles = filteredArticles.filter((article) => {
     if (listStatusFilter !== 'all' && article.status !== listStatusFilter) {
+      return false;
+    }
+
+    if (visibilityFilter !== 'all' && article.visibility !== visibilityFilter) {
       return false;
     }
 
@@ -2213,6 +2299,121 @@ export function KnowledgePage() {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <p className="text-[0.74rem] font-semibold uppercase tracking-[0.24em] text-[color:var(--color-muted)]">
+                Origem e triagem
+              </p>
+              <div className="grid gap-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    className={cx(
+                      'rounded-[14px] border px-3 py-2 text-left transition',
+                      originFilter === 'legacy'
+                        ? 'border-[rgba(48,127,226,0.24)] bg-[rgba(48,127,226,0.08)]'
+                        : 'border-[color:var(--color-border)] bg-white hover:bg-[color:var(--color-surface)]',
+                    )}
+                    onClick={() => setOriginFilter((current) => (current === 'legacy' ? 'all' : 'legacy'))}
+                    type="button"
+                  >
+                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                      Legado
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
+                      {legacyArticlesCount}
+                    </p>
+                    <p className="mt-1 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
+                      Material bruto ou candidato à curadoria.
+                    </p>
+                  </button>
+                  <button
+                    className={cx(
+                      'rounded-[14px] border px-3 py-2 text-left transition',
+                      originFilter === 'manual'
+                        ? 'border-[rgba(48,127,226,0.24)] bg-[rgba(48,127,226,0.08)]'
+                        : 'border-[color:var(--color-border)] bg-white hover:bg-[color:var(--color-surface)]',
+                    )}
+                    onClick={() => setOriginFilter((current) => (current === 'manual' ? 'all' : 'manual'))}
+                    type="button"
+                  >
+                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                      Manual
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
+                      {manualArticlesCount}
+                    </p>
+                    <p className="mt-1 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
+                      Texto já escrito no fluxo editorial atual.
+                    </p>
+                  </button>
+                </div>
+                <button
+                  className={cx(
+                    'rounded-[14px] border px-3 py-2 text-left transition',
+                    duplicateFilter === 'duplicates'
+                      ? 'border-[rgba(237,173,64,0.3)] bg-[rgba(255,239,204,0.82)]'
+                      : 'border-[color:var(--color-border)] bg-white hover:bg-[color:var(--color-surface)]',
+                  )}
+                  onClick={() =>
+                    setDuplicateFilter((current) =>
+                      current === 'duplicates' ? 'all' : 'duplicates',
+                    )
+                  }
+                  type="button"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                      Possível duplicidade
+                    </p>
+                    <span className="text-[0.76rem] font-semibold text-[color:var(--color-warning-ink)]">
+                      {duplicateArticlesCount}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
+                    Duplicidades devem ser revisadas durante a curadoria antes da publicação pública.
+                  </p>
+                </button>
+                <button
+                  className={cx(
+                    'rounded-[14px] border px-3 py-2 text-left transition',
+                    classificationFilter === 'without-advisory'
+                      ? 'border-[rgba(225,0,152,0.18)] bg-[rgba(225,0,152,0.06)]'
+                      : 'border-[color:var(--color-border)] bg-white hover:bg-[color:var(--color-surface)]',
+                  )}
+                  onClick={() =>
+                    setClassificationFilter((current) =>
+                      current === 'without-advisory' ? 'all' : 'without-advisory',
+                    )
+                  }
+                  type="button"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                      Sem curadoria persistida
+                    </p>
+                    <span className="text-[0.76rem] font-semibold text-[color:var(--color-brand-magenta)]">
+                      {withoutAdvisoryCount}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
+                    Itens que ainda dependem de leitura humana registrada antes de virar referência pública.
+                  </p>
+                </button>
+                <div className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                      Revisados
+                    </p>
+                    <span className="text-[0.76rem] font-semibold text-[color:var(--color-brand-blue)]">
+                      {reviewedArticlesCount}
+                    </span>
+                  </div>
+                    <p className="mt-1 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
+                      Curadoria humana já registrada para leitura editorial.
+                    </p>
+                </div>
+              </div>
+            </div>
+
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
               <Field label="Autor">
                 <SelectInput
@@ -2243,6 +2444,41 @@ export function KnowledgePage() {
                   <option value="all">Todos os períodos</option>
                 </SelectInput>
               </Field>
+
+              <Field label="Visibilidade">
+                <SelectInput
+                  className="h-9 rounded-[14px] px-3.5 text-[13px]"
+                  onChange={(event) =>
+                    setVisibilityFilter(event.target.value as ArticleVisibilityFilter)
+                  }
+                  value={visibilityFilter}
+                >
+                  <option value="all">Todas</option>
+                  <option value="public">Público</option>
+                  <option value="internal">Interno</option>
+                  <option value="restricted">Restrito</option>
+                </SelectInput>
+              </Field>
+
+              <Field label="Curadoria">
+                <SelectInput
+                  className="h-9 rounded-[14px] px-3.5 text-[13px]"
+                  onChange={(event) =>
+                    setClassificationFilter(
+                      event.target.value as ArticleClassificationFilter,
+                    )
+                  }
+                  value={classificationFilter}
+                >
+                  <option value="all">Todas</option>
+                  <option value="without-advisory">Sem leitura persistida</option>
+                  <option value="public">Público</option>
+                  <option value="internal">Interno</option>
+                  <option value="restricted">Restrito</option>
+                  <option value="duplicate">Duplicado</option>
+                  <option value="obsolete">Obsoleto</option>
+                </SelectInput>
+              </Field>
             </div>
           </div>
         </aside>
@@ -2253,6 +2489,9 @@ export function KnowledgePage() {
               <h2 className="text-[1.28rem] font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
                 Artigos ({displayArticles.length})
               </h2>
+              <p className="mt-1 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
+                A lista central prioriza triagem editorial, revisão humana e coerência entre publicação e visibilidade pública.
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <SelectInput
@@ -2266,6 +2505,41 @@ export function KnowledgePage() {
               </SelectInput>
             </div>
           </header>
+
+          <div className="grid gap-2 border-b border-[color:var(--color-border)] px-5 py-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5">
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+                Curadoria concluída
+              </p>
+              <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
+                {reviewedArticlesCount} artigo(s)
+              </p>
+            </div>
+            <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5">
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+                Backlog legado
+              </p>
+              <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
+                {legacyArticlesCount} candidato(s)
+              </p>
+            </div>
+            <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5">
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+                Possíveis duplicados
+              </p>
+              <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
+                {duplicateArticlesCount} em revisão
+              </p>
+            </div>
+            <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5">
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+                Sem advisory
+              </p>
+              <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
+                {withoutAdvisoryCount} pendente(s)
+              </p>
+            </div>
+          </div>
 
           {contentPhase === 'idle' ? (
             <div className="px-5 py-8">
@@ -2322,6 +2596,12 @@ export function KnowledgePage() {
                   <tbody>
                     {displayArticles.map((article) => {
                       const isSelected = article.id === selectedArticleId;
+                      const articleAdvisory = advisoryMap.get(article.id);
+                      const duplicateCount =
+                        articleAdvisory?.duplicate_group_article_count ??
+                        (article.source_hash
+                          ? sourceHashCounts.get(article.source_hash) ?? 0
+                          : 0);
 
                       return (
                         <tr
@@ -2385,6 +2665,20 @@ export function KnowledgePage() {
                               <p className="text-[0.72rem] leading-4 text-[color:var(--color-muted)]">
                                 {shortVisibilityLabel(article.visibility)}
                               </p>
+                              {articleAdvisory ? (
+                                <p className="text-[0.72rem] leading-4 text-[color:var(--color-muted)]">
+                                  {displayReviewStatus(articleAdvisory.review_status)}
+                                </p>
+                              ) : (
+                                <p className="text-[0.72rem] leading-4 text-[color:var(--color-muted)]">
+                                  Sem curadoria persistida
+                                </p>
+                              )}
+                              {duplicateCount > 1 ? (
+                                <p className="text-[0.72rem] leading-4 text-[color:var(--color-warning-ink)]">
+                                  Possível duplicidade
+                                </p>
+                              ) : null}
                               {article.has_editorial_draft ? (
                                 <p className="text-[0.74rem] leading-4 text-[color:var(--color-muted)]">
                                   Revisão ativa
@@ -2578,7 +2872,7 @@ export function KnowledgePage() {
                             categoryBadgeClass(articleDetail.category_name),
                           )}
                         >
-                          <span className="truncate">{articleDetail.category_name}</span>
+                          <span className="truncate">{displayFilterCategoryLabel(articleDetail.category_name)}</span>
                         </span>
                       ) : null}
                     </div>
@@ -2795,6 +3089,141 @@ export function KnowledgePage() {
                       A revisão em andamento está marcada como pública, mas a categoria escolhida ainda não está pública. Ajuste essa coerência antes de publicar a atualização.
                     </InlineNotice>
                   ) : null}
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+                        Curadoria humana
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <StatusPill tone={selectedAdvisory ? toneForReviewStatus(selectedAdvisory.review_status) : 'warning'}>
+                          {selectedAdvisory ? displayReviewStatus(selectedAdvisory.review_status) : 'Sem leitura persistida'}
+                        </StatusPill>
+                        <StatusPill tone={selectedArticleDuplicateCount > 1 ? 'warning' : 'positive'}>
+                          {selectedArticleDuplicateCount > 1
+                            ? `${selectedArticleDuplicateCount} com mesma origem`
+                            : 'Sem duplicidade evidente'}
+                        </StatusPill>
+                      </div>
+                      <p className="mt-3 text-sm leading-6 text-[color:var(--color-ink)]">
+                        {selectedAdvisory?.review_notes?.trim()
+                          ? selectedAdvisory.review_notes
+                          : 'A publicação pública continua dependente de leitura humana registrada e decisão editorial explícita.'}
+                      </p>
+                      <p className="mt-2 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
+                        {selectedHumanConfirmationsCount} de {HUMAN_CONFIRMATION_FIELDS.length} confirmações humanas persistidas.
+                      </p>
+                    </div>
+
+                    <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+                        Visibilidade governada
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <StatusPill tone={toneForVisibility(articleDetail.visibility)}>
+                          {shortVisibilityLabel(articleDetail.visibility)}
+                        </StatusPill>
+                        {selectedAdvisory ? (
+                          <StatusPill tone={toneForAdvisoryClassification(selectedAdvisory.suggested_classification)}>
+                            {displayAdvisoryClassification(selectedAdvisory.suggested_classification)}
+                          </StatusPill>
+                        ) : null}
+                      </div>
+                      <p className="mt-3 text-sm leading-6 text-[color:var(--color-ink)]">
+                        {articleDetail.visibility === 'public'
+                          ? 'Este artigo só entra na Central Pública quando status, visibilidade e categoria pública estiverem coerentes.'
+                          : articleDetail.visibility === 'restricted'
+                            ? 'Conteúdo restrito permanece fora da Central Pública e exige revisão cuidadosa antes de qualquer reutilização.'
+                            : 'Conteúdo interno não aparece no Help Center público até existir decisão humana explícita de visibilidade.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+                        Backlog legado e consolidação
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <StatusPill tone={articleDetail.source_path || articleDetail.source_hash ? 'warning' : 'accent'}>
+                          {articleDetail.source_path || articleDetail.source_hash ? 'Legado rastreado' : 'Origem manual'}
+                        </StatusPill>
+                        {selectedArticleDuplicateCount > 1 ? (
+                          <StatusPill tone="warning">Revisar duplicidade</StatusPill>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3">
+                        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                          Origem
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink)]">
+                          {articleDetail.source_path || 'Indisponível'}
+                        </p>
+                        <p className="mt-2 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
+                          Material legado deve ser tratado como candidato bruto até concluir curadoria humana.
+                        </p>
+                      </div>
+                      <div className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3">
+                        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                          Hash de origem
+                        </p>
+                        <p className="mt-2 break-all text-sm leading-6 text-[color:var(--color-ink)]">
+                          {articleDetail.source_hash || 'Indisponível'}
+                        </p>
+                        <p className="mt-2 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
+                          {selectedArticleDuplicateCount > 1
+                            ? 'Há mais de um artigo com a mesma origem rastreada nesta central. Consolidar antes de promover.'
+                            : 'Sem sinal evidente de duplicidade por origem rastreada no conjunto atual.'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedAdvisory ? (
+                    <div className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+                        Sinais editoriais persistidos
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <StatusPill tone={toneForAdvisoryClassification(selectedAdvisory.suggested_classification)}>
+                          {displayAdvisoryClassification(selectedAdvisory.suggested_classification)}
+                        </StatusPill>
+                        <StatusPill tone={toneForVisibility(selectedAdvisory.suggested_visibility)}>
+                          {shortVisibilityLabel(selectedAdvisory.suggested_visibility)}
+                        </StatusPill>
+                        <StatusPill tone={toneForReviewStatus(selectedAdvisory.review_status)}>
+                          {displayReviewStatus(selectedAdvisory.review_status)}
+                        </StatusPill>
+                      </div>
+                      <p className="mt-3 text-sm leading-6 text-[color:var(--color-ink)]">
+                        {selectedAdvisory.classification_reason || 'Indisponível'}
+                      </p>
+                      {advisoryRiskFlags.length > 0 ? (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {advisoryRiskFlags.map((flag) => (
+                            <StatusPill key={flag} tone="critical">
+                              {humanizeRiskFlag(flag)}
+                            </StatusPill>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-3 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
+                          Nenhum risco persistido nesta leitura editorial.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="rounded-[18px] border border-dashed border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+                        Curadoria pendente
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink)]">
+                        Este artigo ainda não tem leitura editorial persistida. Antes de tratar o conteúdo como elegível para o Help Center, registre revisão humana, visibilidade e contexto de publicação.
+                      </p>
+                    </div>
+                  )}
 
                   <div className="hidden rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
                     <div className="grid grid-cols-3 gap-2 border-b border-[color:var(--color-border)] pb-3">
