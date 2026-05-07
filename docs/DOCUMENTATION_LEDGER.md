@@ -18,6 +18,31 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.13 - Legacy Corpus P0 Rewrite Sprint V3
+- fase: `7.13`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: a primeira leva manual de reescrita do corpus legado foi executada para os seis artigos `P0`, gerando candidatos editoriais em markdown com titulo publico sugerido, categoria, resumo, corpo revisado, riscos, checklist e decisao recomendada, sem publicar nada e sem alterar runtime ou contrato.
+- docs alterados:
+  - `docs/knowledge/LEGACY_CORPUS_P0_REWRITE_CANDIDATES.md`
+  - `docs/knowledge/LEGACY_CORPUS_HUMAN_CURATION_SPRINT.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+  - impacto futuro indireto em `/admin/knowledge`, `/help/genius` e `/support/tickets/:ticketId` na aba `Central de ajuda`
+- riscos restantes:
+  - os candidatos seguem sem publicacao e ainda exigem revisao humana de produto e suporte/CS
+  - `Como informar a SKU durantge a troca` e `Regra por motivo` permanecem ambiguos demais para elegibilidade imediata e exigem validacao tecnica
+  - os textos ainda dependem de confirmacao final de nomenclatura e aderencia ao fluxo atual do produto
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- impacto na FAQ futura:
+  - registra o primeiro conjunto de versoes candidatas com voz B2B para o backlog legado
+  - prepara a camada editorial para uma rodada formal de aprovacao humana sem misturar essa etapa com publicacao
+
 ### Fase 7.12 - Legacy Corpus Human Curation Sprint V3
 - fase: `7.12`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

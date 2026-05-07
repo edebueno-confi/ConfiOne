@@ -45,6 +45,7 @@ Documentos prioritários:
 - `reports/KNOWLEDGE_LEGACY_CURATION_BACKLOG.md`
 - `reports/LEGACY_CORPUS_EDITORIAL_AUDIT.md`
 - `knowledge/LEGACY_CORPUS_HUMAN_CURATION_SPRINT.md`
+- `knowledge/LEGACY_CORPUS_P0_REWRITE_CANDIDATES.md`
 
 Documentos históricos:
 - `CLEANUP_REPORT.md`
@@ -841,6 +842,47 @@ Documentos históricos:
     - abrir uma sprint manual apenas para os artigos `P0`
     - consolidar a duplicidade confirmada antes de reabrir a trilha de estornos
     - manter integracoes, Correios, permissoes e automacoes financeiras fora de qualquer lote publico ate revisao especifica
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.13: Legacy Corpus P0 Rewrite Sprint V3 concluido como reescrita documental.
+  - Os seis artigos `P0` do backlog legado foram localizados no corpus real e reescritos como candidatos editoriais em `docs/knowledge/LEGACY_CORPUS_P0_REWRITE_CANDIDATES.md`.
+  - Para cada artigo, a fase registrou:
+    - caminho fonte no corpus legado
+    - categoria original
+    - resumo do conteudo encontrado
+    - riscos editoriais
+    - dependencias de revisao
+    - versao candidata em markdown
+    - decisao recomendada de elegibilidade
+  - O lote permaneceu estritamente documental:
+    - sem publicacao
+    - sem alteracao de backend
+    - sem alteracao de runtime
+    - sem alteracao de contratos
+  - Decisoes editoriais recomendadas desta leva:
+    - candidatos a publico:
+      - `Como alterar ou aprovar os produtos de uma solicitacao?`
+      - `Como cadastrar motivos para troca ou devolucao`
+      - `Posso enviar uma notificacao de analise ao cliente?`
+      - `Reenviar um e-mail ao consumidor`
+    - requer revisao tecnica antes de decidir:
+      - `Como informar a SKU durantge a troca`
+      - `Regra por motivo`
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Escopo explicitamente preservado:
+    - nenhuma alteracao em backend
+    - nenhuma alteracao em Supabase
+    - nenhuma alteracao em migrations
+    - nenhuma alteracao em RPCs
+    - nenhuma alteracao em contracts
+    - nenhuma alteracao em fixtures
+    - nenhuma alteracao em RLS
+    - nenhuma alteracao em permissoes
+  - Revisoes ainda obrigatorias antes de qualquer elegibilidade publica:
+    - produto
+    - suporte/CS
+    - validacao final de aderencia ao fluxo atual
   - Pendencias mapeadas sem implementacao nesta fase:
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 

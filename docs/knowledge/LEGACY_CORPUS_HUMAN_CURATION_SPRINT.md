@@ -316,3 +316,7 @@ Decisao sugerida:
 3. Consolidar a duplicidade confirmada de estorno antes de qualquer reescrita desse tema.
 4. Isolar clusters de alto risco em trilha interna/restrita.
 5. So depois iniciar um novo lote de publicacao publica.
+
+## Desdobramento da primeira leva P0
+As versoes candidatas da primeira sprint manual de reescrita ficaram registradas em:
+- `docs/knowledge/LEGACY_CORPUS_P0_REWRITE_CANDIDATES.md`
