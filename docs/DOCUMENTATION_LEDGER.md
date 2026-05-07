@@ -18,6 +18,30 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.5 - Correcao Visual Admin V3
+- fase: `7.5`
+- commit: `57fd409260dd9acea310b029e2f46c1ea5a1b5dd`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: o cockpit administrativo foi consolidado para viewport real do navegador, com densidade de Full HD por escala visual menor, shell baseado em `--app-viewport-height`, eliminacao de scroll global indevido e remocao de scroll na coluna esquerda das telas administrativas validadas.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - `/admin/knowledge`
+  - `/admin/access`
+  - `/admin/system`
+  - `/admin/tenants`
+- riscos restantes:
+  - a unificacao entre `Admin Shell` e `Support Workspace Shell` continua como pendencia arquitetural futura e exige auditoria previa de auth, roles, rotas, RLS, navegacao e estados de acesso antes de qualquer refactor
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit visual e fora deste fechamento documental ate decisao explicita
+- impacto na FAQ futura:
+  - formaliza que `1920x1080` e referencia visual de composicao, nao altura fisica obrigatoria da app
+  - documenta o criterio oficial de aceite do cockpit Admin em viewport real, sem scroll global e com scroll interno apenas em lista/feed/rail quando necessario
+
 ### Fase 7.4 - Admin Knowledge Editorial Revision
 - fase: `7.4`
 - commit: `HEAD da branch 7.4`

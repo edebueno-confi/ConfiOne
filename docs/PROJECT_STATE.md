@@ -706,6 +706,34 @@ Documentos históricos:
     - `npm run supabase:verify`
     - `npm run supabase:qa:local-support-fixture`
   - QA funcional local final gerou `admin-knowledge-edit-published.png`, `admin-knowledge-revision-flow.png` e `public-article-after-update.png`.
+- Fase 7.5: Correcao Visual Admin V3 concluida e registrada.
+  - O commit visual aprovado `57fd409260dd9acea310b029e2f46c1ea5a1b5dd` consolidou o cockpit Admin para viewport real do navegador, sem tratar `1920x1080` como altura fisica obrigatoria da app.
+  - O shell administrativo passou a operar com altura util real via `--app-viewport-height`, preservando sensacao de Full HD por densidade visual menor, compactacao de headers, paddings e colunas laterais.
+  - As rotas `/admin/knowledge`, `/admin/access` e `/admin/system` foram corrigidas para remover scroll global, eliminar scroll da coluna esquerda e manter scroll interno apenas no centro/feed/rail quando necessario.
+  - A rota `/admin/tenants` foi validada regressivamente apos os ajustes globais e permaneceu visualmente aprovada, com lista central dominante e rail direito proporcional/util.
+  - Validacoes visuais registradas:
+    - viewport real `1920x920`
+    - resize validado em `1440x780`
+    - refresh direto de rota
+    - navegacao entre telas Admin
+    - ausencia de scroll global, scroll horizontal e rolagem na coluna esquerda das rotas validadas
+  - Testes executados para o lote visual:
+    - `npm run web:typecheck`
+    - `npm run web:build`
+  - Escopo explicitamente preservado:
+    - nenhuma alteracao em backend
+    - nenhuma alteracao em Supabase
+    - nenhuma alteracao em migrations
+    - nenhuma alteracao em RPCs
+    - nenhuma alteracao em contracts
+    - nenhuma alteracao em fixtures
+    - nenhuma alteracao em RLS
+    - nenhuma alteracao em permissoes
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - futura unificacao entre `Admin Shell` e `Support Workspace Shell` em um App Shell unico
+    - navegacao futura segmentada por permissao e contexto do usuario
+    - pre-condicoes obrigatorias antes desse refactor: auditoria de auth, roles, rotas, RLS, navegacao e estados de acesso
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit visual e nao deve entrar em commit documental sem decisao explicita
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -731,3 +759,8 @@ Materializar um contrato backend explícito para governar publish editorial com 
 incluindo o gate entre `review_status`, confirmações humanas e publicação efetiva,
 e abrir uma estratégia suportada para revisão e republicação de artigo já publicado,
 sem depender apenas de bloqueios de UX no frontend.
+
+Pendência arquitetural futura já mapeada, mas fora do escopo atual:
+- avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único
+- segmentar navegação por permissões e contexto do usuário
+- auditar auth, roles, rotas, RLS, navegação e estados de acesso antes de qualquer implementação
