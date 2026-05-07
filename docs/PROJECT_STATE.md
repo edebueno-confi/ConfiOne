@@ -188,6 +188,8 @@ Documentos históricos:
 - A rota `/admin/knowledge` agora reforça visualmente a origem editorial governada da Central de Ajuda, distinguindo com mais clareza rascunho, revisão, publicado e visibilidade pública/interna/restrita sem alterar fluxo funcional nem contratos.
 - A aba `Central de ajuda` em `/support/tickets/:ticketId` agora deixa explícito que a ponte com Knowledge exibe apenas leitura pública aprovada e que lacunas de documentação voltam para curadoria editorial interna, sem qualquer alteração de backend, Supabase, migrations, RPCs, contracts, fixtures, RLS ou permissões.
 - O fechamento documental desta fase preserva `docs/design/blueprint/Conversas.png` como `untracked`, fora do escopo visual/produto e sem qualquer inclusão em commit até decisão explícita.
+- A rota `/admin/knowledge` agora expõe triagem editorial mais clara para backlog legado, possíveis duplicidades, revisão humana persistida e governança de visibilidade, mantendo o cockpit Admin V3 sem scroll global e sem criar mecanismo novo de deduplicação ou publish automático.
+- O rail editorial de `/admin/knowledge` agora separa explicitamente curadoria humana, visibilidade governada, backlog legado/rastreabilidade e sinais editoriais persistidos, reforçando que conteúdo legado, interno ou restrito nunca deve parecer elegível para a camada pública sem decisão humana.
 - Estratégia oficial de FAQ da plataforma criada em `docs/PLATFORM_FAQ_STRATEGY.md`.
 - Ledger documental por fase criado em `docs/DOCUMENTATION_LEDGER.md`.
 - Estratégia oficial de curadoria do corpus legado criada em `docs/KNOWLEDGE_CONTENT_CURATION_PLAN.md`.

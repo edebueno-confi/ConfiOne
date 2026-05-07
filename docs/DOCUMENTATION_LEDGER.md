@@ -18,6 +18,33 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.10 - Admin Knowledge Editorial Governance V3
+- fase: `7.10`
+- commit: `1f6b959919b1fb9d4f73f2c7133c226b021df5a6`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: o cockpit `/admin/knowledge` passou a comunicar de forma mais explícita a triagem entre backlog legado, curadoria humana, possíveis duplicidades, revisão persistida e governança de visibilidade, mantendo coerência com Help Center público e com a aba `Central de ajuda` do ticket sem criar contrato novo.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - `/admin/knowledge`
+  - validacao regressiva em `/help/genius`
+  - validacao regressiva em `/help/genius/articles`
+  - validacao regressiva em `/help/genius/articles/:slug`
+  - validacao regressiva em `/help/genius/articles/inexistente`
+  - validacao regressiva em `/support/tickets/:ticketId` na aba `Central de ajuda`
+- riscos restantes:
+  - a leitura de duplicidade continua apenas indicativa e depende da origem rastreada/advisory atual; nao existe mecanismo novo de consolidacao automatica
+  - titulos e categorias legadas ainda podem carregar linguagem tecnica do dataset historico dentro do cockpit interno, embora a governanca visual agora deixe mais claro que se trata de material de curadoria
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit visual e fora deste fechamento documental ate decisao explicita
+- impacto na FAQ futura:
+  - reforca que backlog legado e curadoria humana continuam separados da camada publica oficial
+  - documenta que publicacao publica depende de visibilidade coerente, revisao persistida e decisao humana explicita no cockpit editorial
+
 ### Fase 7.9 - Public Knowledge Taxonomy V3
 - fase: `7.9`
 - commit: `e9119b4a5b285c1f6d2928049cd39a518d3020e7`
