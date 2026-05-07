@@ -18,6 +18,32 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.6 - Saneamento Visual Support Workspace V3
+- fase: `7.6`
+- commit: `fcf78cd5f3289eaec74c8a68fe0d2d0d15b49488`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: o Support Workspace foi consolidado para viewport real do navegador com `--app-viewport-height`, removendo scroll global, eliminando o uso da coluna esquerda como solucao de rolagem e reforcando a densidade operacional dos cockpits de fila, ticket e clientes.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - `/support/queue`
+  - `/support/tickets/:ticketId`
+  - `/support/customers`
+  - `/support/customers/:tenantId`
+  - validacao regressiva: `/admin/tenants`, `/admin/knowledge`, `/admin/access`, `/admin/system`
+- riscos restantes:
+  - o lote continua dependente dos contratos atuais de contexto de cliente; onde o backend ainda nao entrega dados ricos, a UI permanece em degradacao segura com `Indisponivel`
+  - a unificacao entre `Admin Shell` e `Support Workspace Shell` continua como pendencia arquitetural futura e exige auditoria previa de auth, roles, rotas, RLS, navegacao e estados de acesso antes de qualquer refactor
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit visual e fora deste fechamento documental ate decisao explicita
+- impacto na FAQ futura:
+  - formaliza que o workspace operacional de suporte tambem adota `1920x1080` apenas como referencia visual, nao como altura fisica obrigatoria
+  - documenta que a validacao oficial do cockpit Support exige viewport real, ausencia de scroll global e scroll interno apenas em lista/thread/feed/rail quando necessario
+
 ### Fase 7.5 - Correcao Visual Admin V3
 - fase: `7.5`
 - commit: `57fd409260dd9acea310b029e2f46c1ea5a1b5dd`

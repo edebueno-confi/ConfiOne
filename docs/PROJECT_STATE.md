@@ -734,6 +734,42 @@ Documentos históricos:
     - navegacao futura segmentada por permissao e contexto do usuario
     - pre-condicoes obrigatorias antes desse refactor: auditoria de auth, roles, rotas, RLS, navegacao e estados de acesso
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit visual e nao deve entrar em commit documental sem decisao explicita
+- Fase 7.6: Saneamento Visual Support Workspace V3 concluido localmente.
+  - O commit visual aprovado `fcf78cd5f3289eaec74c8a68fe0d2d0d15b49488` consolidou o Support Workspace para viewport real do navegador, sem tratar `1920x1080` como altura fisica obrigatoria da app.
+  - O shell operacional de suporte passou a respeitar a viewport util real do navegador com `--app-viewport-height`, sem assumir `1920x1080` como altura fisica literal da app.
+  - `/support/queue` foi reconstruida como bancada de triagem operacional em tres colunas, com lateral compacta sem scroll, lista central dominante e rail de preview util.
+  - `/support/tickets/:ticketId` foi densificada como estacao de atendimento B2B, com thread central, composer amplo, nota interna destacada em amarelo claro e rail direito ordenado por contexto do cliente, acoes do ticket, conhecimento e atividade.
+  - `/support/customers` passou a operar como cockpit de contas B2B em tres colunas, com segmentacao lateral, lista central dominante e preview operacional do cliente usando apenas contratos reais; quando o contrato nao entrega contexto suficiente, a UI assume `Indisponivel`.
+  - `/support/customers/:tenantId` foi compactada para manter densidade operacional, sem scroll global e sem usar a coluna esquerda como solucao de rolagem.
+  - Validacoes visuais registradas:
+    - viewport real `1920x920`
+    - resize validado em `1440x780`
+    - refresh direto de rota
+    - navegacao entre telas Support
+    - ausencia de scroll global e scroll horizontal nas rotas validadas
+    - scroll interno restrito a lista/thread/feed/rail quando necessario
+  - Validacao regressiva do Admin apos o lote Support:
+    - `/admin/tenants`
+    - `/admin/knowledge`
+    - `/admin/access`
+    - `/admin/system`
+    - todas seguiram sem scroll global e sem regressao visual obvia no shell validado
+  - Testes executados para o lote visual:
+    - `npm run web:typecheck`
+    - `npm run web:build`
+    - `npm run supabase:qa:local-support-fixture`
+  - Escopo explicitamente preservado:
+    - nenhuma alteracao em backend
+    - nenhuma alteracao em Supabase
+    - nenhuma alteracao em migrations
+    - nenhuma alteracao em RPCs
+    - nenhuma alteracao em contracts
+    - nenhuma alteracao em fixtures
+    - nenhuma alteracao em RLS
+    - nenhuma alteracao em permissoes
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - a futura unificacao entre `Admin Shell` e `Support Workspace Shell` permanece fora de escopo
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora dos commits deste lote e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
