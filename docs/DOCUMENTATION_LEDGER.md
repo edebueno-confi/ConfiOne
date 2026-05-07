@@ -18,6 +18,33 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.8 - Public Support Transition V3
+- fase: `7.8`
+- commit: `cc4cda76fa8c6a7a95f7c4e762e5af1e7a70db6d`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: a camada publica de ajuda foi refinada para orientar contato com suporte sem prometer portal ou abertura publica de ticket, enquanto a aba `Central de ajuda` do Support Workspace reforcou o recorte do que e realmente compartilhavel com o cliente.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - `/help/genius`
+  - `/help/genius/articles`
+  - `/help/genius/articles/:slug`
+  - `/help/genius/articles/inexistente`
+  - ajuste visual de transicao em `/support/tickets/:ticketId` na aba `Central de ajuda`
+  - validacao regressiva: `/support/tickets/:ticketId` na aba `Conversar`, `/support/queue`, `/admin/knowledge`
+- riscos restantes:
+  - a camada publica continua sem abertura real de ticket, acompanhamento publico ou feedback persistido porque esses fluxos nao possuem contrato/backend nesta fase
+  - a experiencia publica continua dependente dos canais oficiais disponibilizados no branding publico; quando nao houver contato projetado pelo backend, a UX permanece apenas com orientacao segura
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit visual e fora deste fechamento documental ate decisao explicita
+- impacto na FAQ futura:
+  - documenta explicitamente que a Central Publica orienta o cliente para canais operacionais reais sem simular funcionalidades publicas inexistentes
+  - registra a ponte oficial entre leitura publica e uso interno do Support Workspace como transicao visual, nao como extensao contratual do produto
+
 ### Fase 7.7 - Saneamento Visual Help Center
 - fase: `7.7`
 - commit: `930d58268a1fb6530ce9c00c6a1328ceef032756`

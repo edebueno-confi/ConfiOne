@@ -183,6 +183,7 @@ Documentos históricos:
 - As superfícies públicas `/help/genius`, `/help/genius/articles` e `/help/genius/articles/:slug` agora usam header público leve, composição documental em light mode, scroll natural da página e ausência de shell interno com lateral sticky/rolagem própria.
 - A listagem pública de artigos agora oferece navegação simples por categoria, estados vazios amigáveis e leitura consistente com a base pública já publicada, sem expor conteúdo interno, rascunho ou termos técnicos crus.
 - A transição entre Support Workspace e Central Pública de Ajuda foi refinada apenas no frontend: a aba `Central de ajuda` do ticket continua no shell operacional aprovado e passou a reforçar a leitura pública antes do compartilhamento, sem qualquer mudança de backend, Supabase, migrations, RPCs, contracts, fixtures, RLS ou permissões.
+- A camada pública agora evita prometer abertura pública de ticket ou feedback funcional sem contrato real: a orientação ao cliente foi ajustada para usar apenas canais operacionais já acordados, links reais e mensagens honestas sobre o escopo público atual.
 - Estratégia oficial de FAQ da plataforma criada em `docs/PLATFORM_FAQ_STRATEGY.md`.
 - Ledger documental por fase criado em `docs/DOCUMENTATION_LEDGER.md`.
 - Estratégia oficial de curadoria do corpus legado criada em `docs/KNOWLEDGE_CONTENT_CURATION_PLAN.md`.
