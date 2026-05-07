@@ -43,6 +43,7 @@ Documentos prioritários:
 - `TICKET_KNOWLEDGE_LINKING_MIGRATION_DESIGN.md`
 - `TICKET_KNOWLEDGE_PUBLIC_LINK_CONTRACT_REVIEW.md`
 - `reports/KNOWLEDGE_LEGACY_CURATION_BACKLOG.md`
+- `reports/LEGACY_CORPUS_EDITORIAL_AUDIT.md`
 
 Documentos históricos:
 - `CLEANUP_REPORT.md`
@@ -780,6 +781,37 @@ Documentos históricos:
   - Pendencias mapeadas sem implementacao nesta fase:
     - a futura unificacao entre `Admin Shell` e `Support Workspace Shell` permanece fora de escopo
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora dos commits deste lote e sem status de contrato visual
+- Fase 7.11: Legacy Corpus Editorial Cleanup V3 concluido como auditoria documental.
+  - O corpus legado candidato foi localizado em `raw_knowledge/octadesk_export/latest/` e auditado sem materializacao em banco, sem publicacao automatica e sem mutacao do dado-fonte.
+  - O inventario consolidado confirma `58` artigos candidatos distribuidos em `Configurações` (`45`), `Cadastros` (`8`) e `Erros comuns e soluções` (`5`), com concentracao dominante em `Configuração de ambiente`.
+  - O lote foi fechado como saneamento editorial e governanca de conteudo, nao como lote de publicacao publica.
+  - O relatorio oficial desta fase ficou registrado em `docs/reports/LEGACY_CORPUS_EDITORIAL_AUDIT.md`.
+  - O backlog documental ja existente em `docs/reports/KNOWLEDGE_LEGACY_CURATION_BACKLOG.md` permanece como trilha operacional por artigo, enquanto o novo relatorio consolida riscos, taxonomia proposta, matriz de decisao e backlog por fase.
+  - Riscos editoriais consolidados nesta fase:
+    - linguagem tecnica e naming legado demais em parte relevante do corpus
+    - mistura entre conteudo potencialmente publico e instrucoes internas/restritas
+    - forte concentracao de artigos sensiveis em estorno, integracoes, Correios, PIX e permissoes
+    - pelo menos uma duplicidade confirmada e outros clusters tematicos candidatos a consolidacao manual
+  - Regras confirmadas por este lote:
+    - publicacao publica continua bloqueada sem curadoria humana
+    - deduplicacao real continua manual e operacional nesta fase
+    - nenhum artigo legado deve parecer publicavel por automacao, advisory ou heuristica
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Escopo explicitamente preservado:
+    - nenhuma alteracao em backend
+    - nenhuma alteracao em Supabase
+    - nenhuma alteracao em migrations
+    - nenhuma alteracao em RPCs
+    - nenhuma alteracao em contracts
+    - nenhuma alteracao em fixtures
+    - nenhuma alteracao em RLS
+    - nenhuma alteracao em permissoes
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - reescrita humana do corpus legado candidato
+    - consolidacao manual das duplicidades e sobreposicoes por tema
+    - normalizacao editorial de taxonomia antes de novos lotes de publicacao publica
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.

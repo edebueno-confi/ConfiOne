@@ -18,6 +18,31 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.11 - Legacy Corpus Editorial Cleanup V3
+- fase: `7.11`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: o corpus legado candidato da Knowledge Base foi auditado diretamente a partir do export preservado em `raw_knowledge/octadesk_export/latest/`, com relatorio editorial consolidado sobre risco, taxonomia publica proposta, clusters de duplicidade, exemplos de reescrita e backlog de curadoria, sem publicar conteudo e sem alterar o runtime.
+- docs alterados:
+  - `docs/reports/LEGACY_CORPUS_EDITORIAL_AUDIT.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+  - impacto indireto futuro em `/admin/knowledge`, `/help/genius` e `/support/tickets/:ticketId` na aba `Central de ajuda`
+- riscos restantes:
+  - a maior parte do corpus ainda exige reescrita humana antes de qualquer nova promocao para a camada publica
+  - deduplicacao real continua manual; alem da duplicidade confirmada em estorno, ha clusters tematicos que ainda precisam de consolidacao humana
+  - artigos de integracoes, permissoes, Correios, PIX e estorno automatico seguem como material sensivel e nao devem migrar para publico por heuristica
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- impacto na FAQ futura:
+  - formaliza que backlog legado e corpus publicado sao trilhas diferentes
+  - registra a taxonomia publica proposta como insumo editorial, nao como contrato materializado
+  - reforca que publicacao publica continua bloqueada sem curadoria humana e revisao operacional
+
 ### Fase 7.10 - Admin Knowledge Editorial Governance V3
 - fase: `7.10`
 - commit: `1f6b959919b1fb9d4f73f2c7133c226b021df5a6`
