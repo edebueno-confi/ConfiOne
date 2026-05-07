@@ -18,6 +18,32 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.12 - Legacy Corpus Human Curation Sprint V3
+- fase: `7.12`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: a auditoria do corpus legado foi desdobrada em uma sprint documental de curadoria humana com matriz dos `58` artigos candidatos, lote inicial seguro para reescrita, proposta manual de consolidacao de duplicidade, taxonomia publica definitiva recomendada e bloqueios explicitos de publicacao.
+- docs alterados:
+  - `docs/knowledge/LEGACY_CORPUS_HUMAN_CURATION_SPRINT.md`
+  - `docs/reports/LEGACY_CORPUS_EDITORIAL_AUDIT.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+  - impacto futuro indireto em `/admin/knowledge`, `/help/genius` e `/support/tickets/:ticketId` na aba `Central de ajuda`
+- riscos restantes:
+  - a sprint continua apenas documental; nenhum artigo foi reescrito, publicado ou consolidado no produto
+  - os temas de integracao, Correios, permissoes, estorno automatico, PIX e vale-compra seguem bloqueados para qualquer lote publico sem revisao especifica
+  - a duplicidade confirmada de formas de estorno ainda exige decisao humana sobre artigo canonico e arquivamento do duplicado
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- impacto na FAQ futura:
+  - documenta a fronteira entre backlog legado bruto, backlog curado e corpus publico oficial
+  - formaliza a taxonomia publica recomendada como base editorial para os proximos lotes humanos
+  - registra quais grupos podem entrar primeiro em reescrita e quais grupos permanecem bloqueados por risco
+
 ### Fase 7.11 - Legacy Corpus Editorial Cleanup V3
 - fase: `7.11`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

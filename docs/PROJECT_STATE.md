@@ -44,6 +44,7 @@ Documentos prioritários:
 - `TICKET_KNOWLEDGE_PUBLIC_LINK_CONTRACT_REVIEW.md`
 - `reports/KNOWLEDGE_LEGACY_CURATION_BACKLOG.md`
 - `reports/LEGACY_CORPUS_EDITORIAL_AUDIT.md`
+- `knowledge/LEGACY_CORPUS_HUMAN_CURATION_SPRINT.md`
 
 Documentos históricos:
 - `CLEANUP_REPORT.md`
@@ -811,6 +812,36 @@ Documentos históricos:
     - reescrita humana do corpus legado candidato
     - consolidacao manual das duplicidades e sobreposicoes por tema
     - normalizacao editorial de taxonomia antes de novos lotes de publicacao publica
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.12: Legacy Corpus Human Curation Sprint V3 concluido como sprint documental.
+  - O backlog legado da Knowledge Base foi transformado em uma sprint operacional de curadoria humana registrada em `docs/knowledge/LEGACY_CORPUS_HUMAN_CURATION_SPRINT.md`.
+  - A sprint consolidou uma matriz editorial priorizada para os `58` artigos candidatos, com destino recomendado, categoria publica proposta, prioridade, revisao tecnica e revisao suporte/CS por item.
+  - O lote tambem formalizou:
+    - o primeiro grupo seguro de curadoria humana
+    - a proposta manual de consolidacao da duplicidade confirmada em formas de estorno
+    - a taxonomia publica definitiva recomendada para o corpus legado
+    - a lista objetiva do que nao pode ser publicado sem revisao
+  - A entrega permaneceu estritamente documental:
+    - sem publicacao publica
+    - sem alteracao de backend
+    - sem alteracao de runtime
+    - sem alteracao de contratos
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Escopo explicitamente preservado:
+    - nenhuma alteracao em backend
+    - nenhuma alteracao em Supabase
+    - nenhuma alteracao em migrations
+    - nenhuma alteracao em RPCs
+    - nenhuma alteracao em contracts
+    - nenhuma alteracao em fixtures
+    - nenhuma alteracao em RLS
+    - nenhuma alteracao em permissoes
+  - Proximo passo recomendado:
+    - abrir uma sprint manual apenas para os artigos `P0`
+    - consolidar a duplicidade confirmada antes de reabrir a trilha de estornos
+    - manter integracoes, Correios, permissoes e automacoes financeiras fora de qualquer lote publico ate revisao especifica
+  - Pendencias mapeadas sem implementacao nesta fase:
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos

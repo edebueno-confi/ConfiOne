@@ -314,3 +314,7 @@ Um artigo legado candidato so deve seguir para camada publica quando atender sim
 - nao houve alteracao de runtime
 - nao houve alteracao de contratos
 - deduplicacao real continua manual e operacional nesta fase
+
+## Desdobramento operacional
+O plano humano de saneamento deste backlog foi desdobrado em:
+- `docs/knowledge/LEGACY_CORPUS_HUMAN_CURATION_SPRINT.md`
