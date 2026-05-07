@@ -1732,7 +1732,7 @@ export function KnowledgePage() {
           : 'Criar artigo';
 
     return (
-      <div className="space-y-3 xl:flex xl:h-[calc(100dvh-2rem)] xl:flex-col xl:overflow-hidden">
+      <div className="space-y-3 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
         <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white/95 px-6 py-4 shadow-[var(--shadow-panel)]">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-1.5">
@@ -2021,11 +2021,11 @@ export function KnowledgePage() {
   }
 
   return (
-    <div className="space-y-3 xl:flex xl:h-[calc(100dvh-2rem)] xl:flex-col xl:overflow-hidden">
-      <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white/95 px-6 py-4 shadow-[var(--shadow-panel)]">
+    <div className="space-y-3 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
+      <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white/95 px-5 py-3.5 shadow-[var(--shadow-panel)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-[1.82rem] font-semibold tracking-[-0.05em] text-[color:var(--color-ink)]">
+            <h1 className="text-[1.72rem] font-semibold tracking-[-0.05em] text-[color:var(--color-ink)]">
               Knowledge
             </h1>
             <p className="text-[0.84rem] leading-5 text-[color:var(--color-muted)]">
@@ -2042,9 +2042,9 @@ export function KnowledgePage() {
         </div>
       </section>
 
-      <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[264px_minmax(0,1fr)_392px] 2xl:grid-cols-[272px_minmax(0,1fr)_404px]">
-        <aside className="rounded-[20px] border border-[color:var(--color-border)] bg-white/94 px-4 py-4 shadow-[var(--shadow-panel)]">
-          <div className="space-y-3.5">
+      <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[252px_minmax(0,1fr)_384px] xl:overflow-hidden 2xl:grid-cols-[260px_minmax(0,1fr)_396px]">
+        <aside className="rounded-[20px] border border-[color:var(--color-border)] bg-white/94 px-3.5 py-3.5 shadow-[var(--shadow-panel)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+          <div className="space-y-3">
             <div className="space-y-1.5">
               <p className="text-[0.74rem] font-semibold uppercase tracking-[0.24em] text-[color:var(--color-muted)]">
                 Filtros
@@ -2087,7 +2087,7 @@ export function KnowledgePage() {
                 ].map(([value, label, count]) => (
                   <button
                     className={cx(
-                      'flex w-full items-center justify-between rounded-[12px] px-3 py-1.5 text-left text-[0.84rem] transition',
+                      'flex w-full items-center justify-between rounded-[12px] px-3 py-1.25 text-left text-[0.82rem] transition',
                       listStatusFilter === value
                         ? 'bg-[rgba(48,127,226,0.1)] font-medium text-[color:var(--color-brand-blue)]'
                         : 'text-[color:var(--color-ink)] hover:bg-[color:var(--color-surface)]',
@@ -2110,7 +2110,7 @@ export function KnowledgePage() {
               <div className="space-y-1">
                 <button
                   className={cx(
-                    'flex w-full items-center justify-between rounded-[12px] px-3 py-1.5 text-left text-[0.84rem] transition',
+                    'flex w-full items-center justify-between rounded-[12px] px-3 py-1.25 text-left text-[0.82rem] transition',
                     selectedCategoryId === 'all'
                       ? 'bg-[rgba(48,127,226,0.1)] font-medium text-[color:var(--color-brand-blue)]'
                       : 'text-[color:var(--color-ink)] hover:bg-[color:var(--color-surface)]',
@@ -2124,7 +2124,7 @@ export function KnowledgePage() {
                 {visibleCategories.map((category) => (
                   <button
                     className={cx(
-                      'flex w-full items-center justify-between rounded-[12px] px-3 py-1.5 text-left text-[0.84rem] transition',
+                      'flex w-full items-center justify-between rounded-[12px] px-3 py-1.25 text-left text-[0.82rem] transition',
                       selectedCategoryId === category.id
                         ? 'bg-[rgba(48,127,226,0.1)] font-medium text-[color:var(--color-brand-blue)]'
                         : 'text-[color:var(--color-ink)] hover:bg-[color:var(--color-surface)]',

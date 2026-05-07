@@ -464,11 +464,11 @@ export function SystemPage() {
   }
 
   return (
-    <div className="space-y-3 xl:flex xl:h-[calc(100dvh-2rem)] xl:flex-col xl:overflow-hidden">
-      <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white/96 px-6 py-4 shadow-[0_18px_40px_rgba(16,30,74,0.08)]">
+    <div className="space-y-3 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
+      <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white/96 px-5 py-3.5 shadow-[0_18px_40px_rgba(16,30,74,0.08)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-[1.88rem] font-semibold tracking-[-0.055em] text-[color:var(--color-ink)]">
+            <h1 className="text-[1.76rem] font-semibold tracking-[-0.055em] text-[color:var(--color-ink)]">
               System
             </h1>
             <p className="text-[0.84rem] leading-5 text-[color:var(--color-muted)]">
@@ -505,9 +505,9 @@ export function SystemPage() {
         </nav>
       </section>
 
-      <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[264px_minmax(0,1fr)_396px] 2xl:grid-cols-[272px_minmax(0,1fr)_408px]">
-        <aside className="rounded-[22px] border border-[color:var(--color-border)] bg-white/96 p-4 shadow-[0_16px_34px_rgba(16,30,74,0.08)]">
-          <div className="space-y-3.5">
+      <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[252px_minmax(0,1fr)_388px] xl:overflow-hidden 2xl:grid-cols-[260px_minmax(0,1fr)_396px]">
+        <aside className="rounded-[20px] border border-[color:var(--color-border)] bg-white/96 p-3.5 shadow-[0_16px_34px_rgba(16,30,74,0.08)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+          <div className="space-y-3">
             <div className="space-y-1">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
                 Monitoramento
@@ -523,7 +523,7 @@ export function SystemPage() {
               ].map((item) => (
                 <button
                   className={cx(
-                    'flex w-full items-center justify-between rounded-[16px] border px-3 py-2.5 text-left transition',
+                    'flex w-full items-center justify-between rounded-[15px] border px-3 py-2.25 text-left transition',
                     activeTab === item.id
                       ? 'border-[rgba(48,127,226,0.3)] bg-[rgba(48,127,226,0.08)]'
                       : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] hover:bg-white',
@@ -532,8 +532,8 @@ export function SystemPage() {
                   onClick={() => setActiveTab(item.id as SystemTab)}
                   type="button"
                 >
-                  <span className="text-[0.84rem] font-semibold text-[color:var(--color-ink)]">{item.label}</span>
-                  <span className="text-[0.76rem] text-[color:var(--color-muted)]">{item.count}</span>
+                  <span className="text-[0.8rem] font-semibold text-[color:var(--color-ink)]">{item.label}</span>
+                  <span className="text-[0.72rem] text-[color:var(--color-muted)]">{item.count}</span>
                 </button>
               ))}
             </div>
@@ -600,7 +600,7 @@ export function SystemPage() {
               />
             </label>
 
-            <AppButton className="min-h-9 w-full px-4 text-[13px]" onClick={() => void loadSurface()}>
+            <AppButton className="min-h-9 w-full px-4 text-[12.5px]" onClick={() => void loadSurface()}>
               Recarregar
             </AppButton>
           </div>

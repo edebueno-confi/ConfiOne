@@ -4,6 +4,7 @@
 :root {
   color-scheme: light;
   font-family: 'Instrument Sans', 'Segoe UI', sans-serif;
+  --app-viewport-height: 100vh;
   --color-brand-navy: #141f47;
   --color-brand-blue: #307fe2;
   --color-brand-cyan: #74d2e7;
@@ -33,7 +34,7 @@
 body {
   margin: 0;
   min-width: 320px;
-  min-height: 100vh;
+  min-height: var(--app-viewport-height);
   background:
     radial-gradient(circle at top right, rgba(48, 127, 226, 0.1), transparent 24%),
     radial-gradient(circle at bottom left, rgba(225, 0, 152, 0.08), transparent 18%),
@@ -54,7 +55,7 @@ body::before {
 }
 
 #root {
-  min-height: 100vh;
+  min-height: var(--app-viewport-height);
 }
 
 h1,

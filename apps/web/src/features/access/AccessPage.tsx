@@ -675,12 +675,12 @@ export function AccessPage() {
   }
 
   return (
-    <div className="space-y-3 xl:flex xl:h-[calc(100dvh-2rem)] xl:flex-col xl:overflow-hidden">
-      <header className="rounded-[24px] border border-[color:var(--color-border)] bg-white/96 px-6 py-4 shadow-[0_18px_40px_rgba(16,30,74,0.08)]">
+    <div className="space-y-3 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
+      <header className="rounded-[22px] border border-[color:var(--color-border)] bg-white/96 px-5 py-3.5 shadow-[0_18px_40px_rgba(16,30,74,0.08)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-[1.88rem] font-semibold tracking-[-0.055em] text-[color:var(--color-ink)]">
-            Access
+            <h1 className="text-[1.76rem] font-semibold tracking-[-0.055em] text-[color:var(--color-ink)]">
+              Access
             </h1>
             <p className="text-[0.84rem] leading-5 text-[color:var(--color-muted)]">
               Gerencie usuários, papéis, permissões e convites da plataforma.
@@ -716,9 +716,9 @@ export function AccessPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[256px_minmax(0,1fr)_396px] 2xl:grid-cols-[264px_minmax(0,1fr)_408px]">
-        <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white/96 p-4 shadow-[0_16px_34px_rgba(16,30,74,0.08)]">
-          <div className="space-y-3.5">
+      <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[248px_minmax(0,1fr)_388px] xl:overflow-hidden 2xl:grid-cols-[256px_minmax(0,1fr)_396px]">
+        <section className="rounded-[20px] border border-[color:var(--color-border)] bg-white/96 p-3.5 shadow-[0_16px_34px_rgba(16,30,74,0.08)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+          <div className="space-y-3">
             <div className="space-y-1">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
                 Filtros
@@ -751,7 +751,7 @@ export function AccessPage() {
 
             <div className="space-y-2">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">Situação</p>
-              <label className="flex items-center gap-2.5 text-[0.84rem] text-[color:var(--color-ink)]">
+              <label className="flex items-center gap-2 text-[0.82rem] text-[color:var(--color-ink)]">
                 <input
                   checked={selectedSituations.length === SITUATION_FILTERS.length}
                   className="h-4 w-4 rounded border-[color:var(--color-border)] text-[color:var(--color-brand-blue)]"
@@ -768,7 +768,7 @@ export function AccessPage() {
               </label>
               {SITUATION_FILTERS.map((item) => (
                 <label
-                  className="flex items-center gap-2.5 text-[0.84rem] text-[color:var(--color-ink)]"
+                  className="flex items-center gap-2 text-[0.82rem] text-[color:var(--color-ink)]"
                   key={item.key}
                 >
                   <input
@@ -797,7 +797,7 @@ export function AccessPage() {
               </SelectInput>
             </Field>
 
-            <GhostButton className="min-h-9 w-full text-[13px]" onClick={resetFilters}>
+            <GhostButton className="min-h-9 w-full text-[12.5px]" onClick={resetFilters}>
               Limpar filtros
             </GhostButton>
           </div>

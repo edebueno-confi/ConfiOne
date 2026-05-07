@@ -33,12 +33,12 @@ export function AdminConsoleShell() {
   const [sidebarCollapsed, setSidebarCollapsed] = usePersistedSidebarState();
 
   return (
-    <div className="min-h-dvh bg-[linear-gradient(180deg,#eef4ff_0%,#f7faff_44%,#f2f6fb_100%)] text-[color:var(--color-ink)]">
-      <div className="flex w-full gap-4 px-0 py-0 xl:min-h-dvh xl:px-4 xl:py-4">
+    <div className="bg-[linear-gradient(180deg,#eef4ff_0%,#f7faff_44%,#f2f6fb_100%)] text-[color:var(--color-ink)] xl:h-[var(--app-viewport-height)] xl:overflow-hidden">
+      <div className="flex w-full gap-4 px-0 py-0 xl:h-full xl:overflow-hidden xl:px-4 xl:py-4">
         <div className="hidden shrink-0 xl:block">
           <div
             className={cx(
-              'sticky top-4 relative h-[calc(100dvh-2rem)] max-h-[calc(100dvh-2rem)] transition-[width] duration-200',
+              'sticky top-4 relative h-[calc(var(--app-viewport-height)-2rem)] max-h-[calc(var(--app-viewport-height)-2rem)] transition-[width] duration-200',
               sidebarCollapsed ? 'w-[88px]' : 'w-[242px]',
             )}
           >
@@ -53,15 +53,15 @@ export function AdminConsoleShell() {
           </div>
         </div>
 
-        <div className="min-w-0 flex-1 px-3 py-3 sm:px-5 sm:py-5 xl:px-0 xl:py-0">
+        <div className="min-w-0 flex-1 px-3 py-3 sm:px-5 sm:py-5 xl:min-h-0 xl:px-0 xl:py-0">
           <div
             className={cx(
-              'flex w-full max-w-none flex-col gap-3',
+              'flex w-full max-w-none flex-col gap-3 xl:min-h-0 xl:h-full',
               sidebarCollapsed ? 'xl:pr-1' : '',
             )}
           >
             <AdminTopbar />
-            <main className="min-w-0">
+            <main className="min-w-0 xl:flex-1 xl:min-h-0 xl:overflow-hidden">
               <Outlet />
             </main>
           </div>
