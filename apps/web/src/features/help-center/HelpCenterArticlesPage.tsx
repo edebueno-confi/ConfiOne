@@ -160,7 +160,7 @@ export function HelpCenterArticlesPage() {
                 title="Nenhum artigo publicado"
                 description={
                   selectedCategory || searchQuery
-                    ? 'Não encontramos artigos públicos para este filtro.'
+                    ? 'Não encontramos artigos públicos para este filtro. Revise os termos da busca ou volte para a lista completa.'
                     : 'Esta central ainda não possui artigos públicos publicados para a lista geral.'
                 }
               />
@@ -215,6 +215,17 @@ export function HelpCenterArticlesPage() {
             </p>
             <p className="text-sm leading-7 text-[var(--help-ink)]">
               Use as categorias para reduzir a lista ou abra um artigo para acessar o índice lateral e os relacionados.
+            </p>
+          </div>
+        </section>
+
+        <section className="rounded-[28px] border border-[var(--help-border)] bg-white/88 p-5 shadow-[0_18px_42px_rgba(20,31,71,0.05)]">
+          <div className="space-y-3">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
+              Orientação de suporte
+            </p>
+            <p className="text-sm leading-7 text-[var(--help-ink)]">
+              Quando a base pública não resolver o caso, use o canal operacional já acordado com a sua conta para falar com o time Genius.
             </p>
           </div>
         </section>

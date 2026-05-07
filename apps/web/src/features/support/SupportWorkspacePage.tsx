@@ -1461,7 +1461,7 @@ function SupportHelpPanel({
           Conteúdo público sugerido para esta tratativa
         </h3>
         <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-                Use este painel para validar se já existe material público pronto antes de responder o cliente.
+          Use este painel para validar o que já pode ser compartilhado com o cliente sem misturar referência interna ou material restrito.
         </p>
       </div>
 
@@ -1471,12 +1471,15 @@ function SupportHelpPanel({
             <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">
               Artigos prontos para o cliente
             </h4>
-            <Link
-              className="text-[12px] font-semibold text-[color:var(--color-brand-blue)]"
-              to={helpCenterBasePath}
-            >
-              Abrir central
-            </Link>
+            <div className="flex items-center gap-2">
+              <StatusPill tone="positive">Compartilhável</StatusPill>
+              <Link
+                className="text-[12px] font-semibold text-[color:var(--color-brand-blue)]"
+                to={helpCenterBasePath}
+              >
+                Abrir central
+              </Link>
+            </div>
           </div>
 
           {publicArticles.length === 0 ? (
@@ -1578,7 +1581,7 @@ function SupportHelpPanel({
 
           <div className="rounded-[14px] border border-dashed border-[rgba(48,127,226,0.28)] bg-white/72 px-3 py-2.5">
             <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-              Revise a leitura pública antes de compartilhar. Quando não houver conteúdo pronto, siga com a resposta pública e registre a lacuna na aba Conhecimento.
+              Revise a leitura pública antes de compartilhar. Quando não houver conteúdo pronto, siga com a resposta pública pelos canais normais do ticket e registre a lacuna na aba Conhecimento.
             </p>
           </div>
         </div>

@@ -53,7 +53,7 @@ export function HelpCenterHomePage() {
     () =>
       activeQuery.length < 2
         ? 'Use pelo menos 2 caracteres para pesquisar.'
-        : 'Nenhum artigo publicado corresponde a esta busca. Tente outro termo ou navegue pelas categorias.',
+        : 'Nenhum artigo publicado corresponde a esta busca. Tente outro termo ou navegue pelas categorias desta central.',
     [activeQuery],
   );
 
@@ -204,7 +204,7 @@ export function HelpCenterHomePage() {
                     className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-3 text-[var(--help-link)] no-underline transition hover:border-[rgba(48,127,226,0.18)] hover:bg-white"
                     href={`mailto:${supportContacts.email}`}
                   >
-                    Falar com suporte
+                    Canal operacional da conta
                   </a>
                 ) : null}
                 {supportContacts.docsUrl ? (
@@ -308,7 +308,7 @@ export function HelpCenterHomePage() {
                     Como esta central funciona
                   </p>
                   <p className="mt-3 text-sm leading-7 text-[var(--help-ink)]">
-                    Aqui aparecem somente artigos aprovados para leitura pública. Quando faltar contexto adicional, use os canais oficiais abaixo.
+                    Aqui aparecem somente artigos aprovados para leitura pública. Quando faltar contexto adicional, use o canal operacional já acordado com o time Genius.
                   </p>
                 </div>
                 <InlineNotice>
@@ -317,6 +317,14 @@ export function HelpCenterHomePage() {
                 <div className="rounded-[20px] border border-dashed border-[rgba(48,127,226,0.28)] bg-[var(--help-surface)] px-4 py-4">
                   <p className="text-sm leading-7 text-[var(--help-muted)]">
                     Use a busca para localizar artigos por assunto ou abra a lista completa para navegar por categoria.
+                  </p>
+                </div>
+                <div className="rounded-[20px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-4">
+                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--help-muted)]">
+                    Quando precisar de suporte
+                  </p>
+                  <p className="mt-2 text-sm leading-7 text-[var(--help-muted)]">
+                    Esta central não abre atendimento público. Use o canal operacional já combinado com a sua conta quando precisar acionar o time Genius.
                   </p>
                 </div>
               </div>

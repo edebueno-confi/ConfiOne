@@ -11,7 +11,7 @@ import { AppButton, GhostButton, StatusPill, TextInput, cx } from '../../compone
 import type { PublicKnowledgeArticleDetailRow } from '../../contracts/public-contracts';
 import { classifyAdminError } from '../admin/admin-errors';
 import type { HelpCenterSpaceContext } from './context';
-import { useHelpCenterDocumentMeta } from './branding';
+import { sanitizePublicSupportContacts, useHelpCenterDocumentMeta } from './branding';
 import { MarkdownDocument } from './markdown';
 import { getPublicKnowledgeArticle } from './public-api';
 
@@ -330,6 +330,10 @@ export function HelpCenterArticlePage() {
     : `${context.primaryRoute.brand_name} | Artigo`;
   const articleMetaDescription = article?.summary ??
     `${context.primaryRoute.brand_name} reúne guias aprovados para consulta B2B.`;
+  const supportContacts = useMemo(
+    () => sanitizePublicSupportContacts(context.primaryRoute.support_contacts),
+    [context.primaryRoute.support_contacts],
+  );
 
   const loadArticle = useEffectEvent(
     async (targetSpaceSlug: string, targetArticleSlug: string) => {
@@ -442,7 +446,7 @@ export function HelpCenterArticlePage() {
           title="Falha ao carregar o artigo"
           description={
             message ??
-            'Não foi possível carregar este artigo neste ambiente.'
+            'Não foi possível carregar este artigo agora. Tente novamente em instantes ou volte para a central de ajuda.'
           }
           action={
             <GhostButton onClick={() => void loadArticle(spaceSlug, articleSlug)}>
@@ -459,7 +463,7 @@ export function HelpCenterArticlePage() {
       <div className="rounded-[30px] border border-[var(--help-border)] bg-white p-8 shadow-[0_20px_44px_rgba(20,31,71,0.08)]">
         <EmptyState
           title="Artigo não encontrado"
-          description="O artigo solicitado não existe, ainda não foi publicado ou não está disponível nesta central."
+          description="O artigo solicitado não está disponível nesta central pública. Volte para a lista de artigos ou siga pela navegação principal."
           action={
             <Link to={`/help/${spaceSlug}/articles`}>
               <GhostButton>Voltar para a lista de artigos</GhostButton>
@@ -508,13 +512,26 @@ export function HelpCenterArticlePage() {
               Precisa de mais ajuda?
             </h3>
             <p className="text-sm leading-7 text-[var(--help-muted)]">
-              Abra um ticket com nosso time de suporte.
+              Esta central não abre atendimento público. Quando precisar de ajuda além do artigo, use o canal operacional já combinado com a sua conta.
             </p>
-            <Link to="/login">
-              <AppButton className="w-full justify-center rounded-[16px] py-3 text-base">
-                Abrir ticket
-              </AppButton>
-            </Link>
+            <div className="grid gap-2">
+              {supportContacts.email ? (
+                <a
+                  className="inline-flex min-h-11 items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,var(--color-brand-navy),var(--color-brand-blue)_78%)] px-4 text-base font-semibold text-white no-underline shadow-[0_16px_34px_rgba(20,31,71,0.16)] transition hover:opacity-95"
+                  href={`mailto:${supportContacts.email}`}
+                >
+                  Falar com o canal da conta
+                </a>
+              ) : null}
+              <Link to={`/help/${spaceSlug}/articles`}>
+                <GhostButton className="w-full justify-center rounded-[16px] py-3 text-base">
+                  Ver outros artigos
+                </GhostButton>
+              </Link>
+            </div>
+            <p className="text-xs leading-5 text-[var(--help-muted)]">
+              Se a sua operação já tiver um canal técnico acordado com o time Genius, use esse fluxo para continuar o atendimento.
+            </p>
           </div>
         </section>
       </aside>
@@ -617,40 +634,23 @@ export function HelpCenterArticlePage() {
         <section className="rounded-[28px] border border-[var(--help-border)] bg-white p-6 shadow-[0_18px_42px_rgba(20,31,71,0.06)]">
           <div className="space-y-5">
             <h3 className="text-[1.7rem] font-semibold tracking-[-0.05em] text-[var(--help-ink-strong)]">
-              Este artigo foi útil?
+              Próximo passo
             </h3>
-            <div className="flex gap-3">
-              <button
-                className="inline-flex h-12 w-12 items-center justify-center rounded-[16px] border border-[var(--help-border)] bg-[var(--help-surface)] text-[var(--help-ink)] transition hover:border-[var(--help-accent)]/40 hover:bg-white"
-                type="button"
-              >
-                <svg
-                  aria-hidden="true"
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M7 10v11M12 21h4.65a2 2 0 0 0 1.98-1.72l1.03-7A2 2 0 0 0 17.68 10H14V5.72A1.72 1.72 0 0 0 12.28 4L7 10v11" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-              <button
-                className="inline-flex h-12 w-12 items-center justify-center rounded-[16px] border border-[var(--help-border)] bg-[var(--help-surface)] text-[var(--help-ink)] transition hover:border-[var(--help-accent)]/40 hover:bg-white"
-                type="button"
-              >
-                <svg
-                  aria-hidden="true"
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M17 14V3M12 3H7.35a2 2 0 0 0-1.98 1.72l-1.03 7A2 2 0 0 0 6.32 14H10v4.28A1.72 1.72 0 0 0 11.72 20L17 14V3" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
+            <div className="rounded-[20px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-4">
+              <p className="text-sm leading-7 text-[var(--help-ink)]">
+                Se este conteúdo não resolver o caso, reúna o contexto da operação e continue pelo canal técnico já acordado com o time Genius.
+              </p>
             </div>
+            {supportContacts.docsUrl ? (
+              <a
+                className="inline-flex min-h-11 items-center justify-center rounded-[16px] border border-[var(--help-border)] bg-white px-4 text-sm font-semibold text-[var(--help-link)] no-underline transition hover:border-[var(--help-accent)]/40 hover:bg-[var(--help-surface)]"
+                href={supportContacts.docsUrl}
+                rel="noreferrer"
+                target="_blank"
+              >
+                Abrir documentação oficial
+              </a>
+            ) : null}
           </div>
         </section>
       </aside>
