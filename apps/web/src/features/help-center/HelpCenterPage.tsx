@@ -6,7 +6,7 @@ import {
   ErrorState,
   LoadingState,
 } from '../../components/states';
-import { AppButton, GhostButton, InlineNotice, StatusPill, cx } from '../../components/ui';
+import { AppButton, GhostButton, InlineNotice, StatusPill } from '../../components/ui';
 import type {
   PublicKnowledgeArticleListRow,
   PublicKnowledgeSpaceResolverRow,
@@ -328,6 +328,103 @@ export function HelpCenterPage() {
   );
 }
 
+function PublicHelpCenterHeader({
+  brandName,
+  logoAssetUrl,
+  spaceSlug,
+  spaceDescription,
+  articleCount,
+  categoryCount,
+}: {
+  brandName: string;
+  logoAssetUrl: string | null;
+  spaceSlug: string;
+  spaceDescription: string;
+  articleCount: number;
+  categoryCount: number;
+}) {
+  const brandMonogram = (brandName || 'GS').slice(0, 2).toUpperCase();
+
+  return (
+    <header className="border-b border-[var(--help-border)] bg-white/92 shadow-[0_14px_30px_rgba(20,31,71,0.04)] backdrop-blur">
+      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-5 px-5 py-4 sm:px-6 lg:px-8">
+        <div className="flex min-w-0 items-center gap-3">
+          <Link
+            className="flex items-center gap-3 no-underline"
+            to={`/help/${spaceSlug}`}
+          >
+            {logoAssetUrl ? (
+              <img
+                alt={`Logo ${brandName}`}
+                className="h-12 w-12 rounded-[16px] border border-[var(--help-border)] bg-white object-contain p-2 shadow-[0_10px_24px_rgba(20,31,71,0.08)]"
+                src={logoAssetUrl}
+              />
+            ) : (
+              <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,var(--color-brand-navy),var(--color-brand-blue)_66%,var(--color-brand-magenta))] text-base font-semibold text-white shadow-[0_12px_26px_rgba(20,31,71,0.22)]">
+                {brandMonogram}
+              </div>
+            )}
+            <div className="min-w-0 leading-tight">
+              <p className="truncate text-[1.1rem] font-semibold tracking-[-0.03em] text-[var(--help-ink-strong)]">
+                {brandName}
+              </p>
+              <p className="truncate text-[0.92rem] text-[var(--help-muted)]">
+                Central de ajuda pública
+              </p>
+            </div>
+          </Link>
+          <StatusPill tone="positive">Publicado</StatusPill>
+        </div>
+
+        <nav className="flex flex-wrap items-center gap-2">
+          <Link
+            className="rounded-full px-3.5 py-2 text-sm font-medium text-[var(--help-ink)] no-underline transition hover:bg-[var(--help-surface)] hover:text-[var(--help-link)]"
+            to={`/help/${spaceSlug}`}
+          >
+            Visão geral
+          </Link>
+          <Link
+            className="rounded-full px-3.5 py-2 text-sm font-medium text-[var(--help-ink)] no-underline transition hover:bg-[var(--help-surface)] hover:text-[var(--help-link)]"
+            to={`/help/${spaceSlug}/articles`}
+          >
+            Artigos
+          </Link>
+          <Link
+            className="rounded-full px-3.5 py-2 text-sm font-medium text-[var(--help-ink)] no-underline transition hover:bg-[var(--help-surface)] hover:text-[var(--help-link)]"
+            to="/help"
+          >
+            Outras centrais
+          </Link>
+        </nav>
+      </div>
+
+      <div className="mx-auto max-w-[1600px] px-5 pb-5 sm:px-6 lg:px-8">
+        <div className="grid gap-4 rounded-[28px] border border-[var(--help-border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.94),rgba(244,249,255,0.98))] px-5 py-5 shadow-[0_18px_42px_rgba(20,31,71,0.05)] lg:grid-cols-[minmax(0,1.3fr)_auto] lg:items-center">
+          <div className="space-y-2">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[var(--help-muted)]">
+              Central pública
+            </p>
+            <h1 className="text-[clamp(2rem,3vw,2.8rem)] font-semibold tracking-[-0.06em] text-[var(--help-ink-strong)]">
+              {brandName}
+            </h1>
+            <p className="max-w-4xl text-sm leading-7 text-[var(--help-muted)]">
+              {spaceDescription}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2.5">
+            <StatusPill tone="positive">
+              {articleCount} artigo{articleCount === 1 ? '' : 's'} publicado{articleCount === 1 ? '' : 's'}
+            </StatusPill>
+            <StatusPill tone="accent">
+              {categoryCount} categoria{categoryCount === 1 ? '' : 's'}
+            </StatusPill>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
 export function HelpCenterSpaceLayout() {
   const location = useLocation();
   const { spaceSlug } = useParams<{ spaceSlug: string }>();
@@ -411,12 +508,6 @@ export function HelpCenterSpaceLayout() {
     () => (space ? resolvePublicLogoUrl(space.logo_asset_url) : null),
     [space],
   );
-  const topCategories =
-    context?.navigation.filter((entry) => entry.parent_category_id === null) ?? [];
-  const latestArticles: PublicKnowledgeArticleListRow[] = (context?.articles ?? []).slice(0, 5);
-  const isArticlesRoute =
-    location.pathname.endsWith('/articles') ||
-    location.pathname.includes('/articles/');
   const isArticleDetailRoute = /\/articles\/[^/]+\/?$/.test(location.pathname);
   const helpCenterTitle = space
     ? buildHelpCenterSeoTitle(space)
@@ -499,216 +590,24 @@ export function HelpCenterSpaceLayout() {
           <Outlet context={context} />
         </main>
       ) : (
-      <div className="mx-auto grid min-h-screen max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:px-8">
-        <aside className="grid content-start gap-4 lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto lg:py-2">
-          <section className="relative overflow-hidden rounded-[34px] border border-[var(--help-border)] bg-[var(--help-hero)] px-6 py-7 text-white shadow-[0_28px_80px_rgba(20,31,71,0.14)]">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_28%)]" />
-            <div className="relative space-y-5">
-              <div className="flex items-center justify-between gap-3">
-                <Link
-                  className="text-[0.72rem] font-semibold uppercase tracking-[0.26em] text-white/82 no-underline"
-                  to="/help"
-                >
-                  Central de Ajuda
-                </Link>
-                <StatusPill tone="positive">Público</StatusPill>
-              </div>
-              <div className="space-y-3">
-                {logoAssetUrl ? (
-                  <img
-                    alt={`Logo ${space.brand_name}`}
-                    className="h-16 w-16 rounded-[22px] bg-white/14 object-contain p-2 shadow-[0_14px_28px_rgba(20,31,71,0.18)]"
-                    src={logoAssetUrl}
-                  />
-                ) : (
-                  <div className="inline-flex h-14 w-14 items-center justify-center rounded-[20px] bg-white/12 text-lg font-semibold uppercase tracking-[0.16em] text-white shadow-[0_14px_28px_rgba(20,31,71,0.18)]">
-                    {(space.brand_name || space.knowledge_space_display_name)
-                      .slice(0, 2)
-                      .toUpperCase()}
-                  </div>
-                )}
-                <div className="space-y-1.5">
-                  <h1 className="text-3xl font-semibold tracking-[-0.05em] text-white">
-                    {space.brand_name}
-                  </h1>
-                  <p className="text-sm leading-7 text-white/88">
-                    {space.knowledge_space_display_name} publica apenas conteúdo aprovado para clientes B2B e operadores da plataforma.
-                  </p>
-                </div>
-              </div>
-              <div className="grid gap-3 rounded-[24px] border border-white/16 bg-[linear-gradient(180deg,rgba(12,19,42,0.36),rgba(19,31,67,0.62))] p-4 shadow-[0_14px_30px_rgba(8,13,32,0.18)]">
-                <div>
-                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-white/82">
-                      Acesso principal
-                    </p>
-                  <p className="mt-2 text-sm font-semibold text-white">
-                    /help/{space.knowledge_space_slug}
-                  </p>
-                </div>
-                {context.routes.some((route) => route.route_kind === 'domain') ? (
-                  <div>
-                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-white/82">
-                        Domínio publicado
-                      </p>
-                    <p className="mt-2 text-sm font-semibold text-white">
-                      {context.routes.find((route) => route.route_kind === 'domain')?.route_host}
-                    </p>
-                  </div>
-                ) : (
-                  <div>
-                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-white/82">
-                        Leitura
-                      </p>
-                      <p className="mt-2 text-sm leading-7 text-white/88">
-                        Leitura simples, foco nos artigos e navegação direta por categorias.
-                      </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
-
-          {supportContacts && (supportContacts.email || supportContacts.docsUrl || supportContacts.statusPageUrl || supportContacts.websiteUrl) ? (
-            <section className="rounded-[30px] border border-[var(--help-border)] bg-[color:var(--help-surface-strong)] p-5 shadow-[0_18px_42px_rgba(20,31,71,0.08)]">
-              <div className="space-y-3">
-                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
-                  Contato
-                </p>
-                <div className="grid gap-3 text-sm">
-                  {supportContacts.email ? (
-                    <a
-                      className="rounded-[22px] border border-[var(--help-border)] bg-white px-4 py-3 text-[var(--help-link)] no-underline transition hover:border-[var(--help-accent)]/30 hover:bg-[color:var(--help-surface)] hover:text-[var(--help-link-hover)]"
-                      href={`mailto:${supportContacts.email}`}
-                    >
-                      {supportContacts.email}
-                    </a>
-                  ) : null}
-                  {supportContacts.docsUrl ? (
-                    <a
-                      className="rounded-[22px] border border-[var(--help-border)] bg-white px-4 py-3 text-[var(--help-link)] no-underline transition hover:border-[var(--help-accent)]/30 hover:bg-[color:var(--help-surface)] hover:text-[var(--help-link-hover)]"
-                      href={supportContacts.docsUrl}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      Documentação oficial
-                    </a>
-                  ) : null}
-                  {supportContacts.statusPageUrl ? (
-                    <a
-                      className="rounded-[22px] border border-[var(--help-border)] bg-white px-4 py-3 text-[var(--help-link)] no-underline transition hover:border-[var(--help-accent)]/30 hover:bg-[color:var(--help-surface)] hover:text-[var(--help-link-hover)]"
-                      href={supportContacts.statusPageUrl}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      Status da plataforma
-                    </a>
-                  ) : null}
-                  {supportContacts.websiteUrl ? (
-                    <a
-                      className="rounded-[22px] border border-[var(--help-border)] bg-white px-4 py-3 text-[var(--help-link)] no-underline transition hover:border-[var(--help-accent)]/30 hover:bg-[color:var(--help-surface)] hover:text-[var(--help-link-hover)]"
-                      href={supportContacts.websiteUrl}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      Site institucional
-                    </a>
-                  ) : null}
-                </div>
-              </div>
-            </section>
-          ) : null}
-
-          <section className="rounded-[30px] border border-[var(--help-border)] bg-[color:var(--help-surface-strong)] p-5 shadow-[0_18px_42px_rgba(20,31,71,0.08)]">
-            <div className="space-y-2">
-              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
-                Navegação
-              </p>
-              <div className="grid gap-2">
-                <Link
-                  className={cx(
-                    'rounded-[20px] px-4 py-3 text-sm font-medium transition',
-                    !isArticlesRoute
-                      ? 'bg-[var(--help-accent-soft)] text-[var(--help-ink-strong)]'
-                      : 'text-[var(--help-ink)] hover:bg-[rgba(20,31,71,0.04)]',
-                  )}
-                  to={`/help/${space.knowledge_space_slug}`}
-                >
-                  Visão geral
-                </Link>
-                <Link
-                  className={cx(
-                    'rounded-[20px] px-4 py-3 text-sm font-medium transition',
-                    isArticlesRoute
-                      ? 'bg-[var(--help-accent-soft)] text-[var(--help-ink-strong)]'
-                      : 'text-[var(--help-ink)] hover:bg-[rgba(20,31,71,0.04)]',
-                  )}
-                  to={`/help/${space.knowledge_space_slug}/articles`}
-                >
-                  Todos os artigos
-                </Link>
-              </div>
-            </div>
-            <div className="mt-5 grid gap-3">
-              {topCategories.map((category) => (
-                <Link
-                  key={category.category_id}
-                  className="rounded-[22px] border border-[var(--help-border)] bg-white px-4 py-3 no-underline transition hover:border-[var(--help-accent)]/30 hover:bg-[color:var(--help-surface)]"
-                  to={`/help/${space.knowledge_space_slug}/articles`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-[var(--help-ink-strong)]">
-                        {category.category_name}
-                      </p>
-                        <p className="mt-1 text-xs leading-5 text-[var(--help-muted)]">
-                          {category.category_description ??
-                          'Categoria com artigos publicados para consulta rápida.'}
-                        </p>
-                    </div>
-                    <StatusPill tone={toneForArticleCount(category.subtree_article_count)}>
-                      {category.subtree_article_count}
-                    </StatusPill>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          <section className="rounded-[30px] border border-[var(--help-border)] bg-[color:var(--help-surface-strong)] p-5 shadow-[0_18px_42px_rgba(20,31,71,0.08)]">
-            <div className="space-y-2">
-              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
-                Últimos publicados
-              </p>
-              {latestArticles.length === 0 ? (
-                <p className="text-sm leading-6 text-[var(--help-muted)]">
-                  Ainda não existem artigos publicados visíveis nesta central.
-                </p>
-              ) : (
-                <div className="grid gap-3">
-                  {latestArticles.map((article) => (
-                    <Link
-                      key={article.id}
-                      className="rounded-[22px] border border-[var(--help-border)] bg-white px-4 py-3 no-underline transition hover:border-[var(--help-accent)]/30 hover:bg-[color:var(--help-surface)]"
-                      to={`/help/${space.knowledge_space_slug}/articles/${article.slug}`}
-                    >
-                      <p className="text-sm font-semibold text-[var(--help-ink-strong)]">
-                        {article.title}
-                      </p>
-                      <p className="mt-1 text-xs leading-5 text-[var(--help-muted)]">
-                        {article.summary ?? 'Artigo publicado para consulta.'}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
-        </aside>
-
-        <main className="grid content-start gap-6 py-1">
-          <Outlet context={context} />
-        </main>
-      </div>
+        <>
+          <PublicHelpCenterHeader
+            articleCount={context.articles.length}
+            brandName={space.brand_name}
+            categoryCount={
+              context.navigation.filter((entry) => entry.parent_category_id === null).length
+            }
+            logoAssetUrl={logoAssetUrl}
+            spaceDescription={
+              seoDefaults?.description ??
+              `${space.knowledge_space_display_name} reúne orientações públicas aprovadas para clientes e equipes operacionais.`
+            }
+            spaceSlug={space.knowledge_space_slug}
+          />
+          <main className="mx-auto grid max-w-[1600px] content-start gap-6 px-4 py-6 sm:px-6 lg:px-8">
+            <Outlet context={context} />
+          </main>
+        </>
       )}
     </div>
   );

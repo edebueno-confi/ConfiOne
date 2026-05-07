@@ -1527,7 +1527,7 @@ function SupportHelpPanel({
 
         <div className="space-y-2 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
           <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-            Conteudos ja relacionados
+            Conteúdos já relacionados
           </h4>
           {publicLinks.length === 0 ? (
             <InlineNotice>
@@ -1578,7 +1578,7 @@ function SupportHelpPanel({
 
           <div className="rounded-[14px] border border-dashed border-[rgba(48,127,226,0.28)] bg-white/72 px-3 py-2.5">
             <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-              Quando não houver conteúdo pronto, siga com a resposta pública e registre a lacuna na aba Conhecimento.
+              Revise a leitura pública antes de compartilhar. Quando não houver conteúdo pronto, siga com a resposta pública e registre a lacuna na aba Conhecimento.
             </p>
           </div>
         </div>

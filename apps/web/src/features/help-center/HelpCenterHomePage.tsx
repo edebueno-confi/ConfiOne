@@ -1,8 +1,7 @@
-import { FormEvent, useEffect, useEffectEvent, useState } from 'react';
+import { FormEvent, useEffect, useEffectEvent, useMemo, useState } from 'react';
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
 import { formatDateTime } from '../../app/format';
 import {
-  ContractUnavailableState,
   EmptyState,
   ErrorState,
   LoadingState,
@@ -43,6 +42,20 @@ export function HelpCenterHomePage() {
   const [searchMessage, setSearchMessage] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<PublicKnowledgeSearchArticleRow[]>([]);
   const activeQuery = (searchParams.get('q') ?? '').trim();
+  const featuredArticle = featuredArticles[0] ?? null;
+  const recentArticles = featuredArticles.slice(1, 4);
+  const hasSupportLinks =
+    Boolean(supportContacts.email) ||
+    Boolean(supportContacts.docsUrl) ||
+    Boolean(supportContacts.statusPageUrl) ||
+    Boolean(supportContacts.websiteUrl);
+  const emptySearchDescription = useMemo(
+    () =>
+      activeQuery.length < 2
+        ? 'Use pelo menos 2 caracteres para pesquisar.'
+        : 'Nenhum artigo publicado corresponde a esta busca. Tente outro termo ou navegue pelas categorias.',
+    [activeQuery],
+  );
 
   const loadSearch = useEffectEvent(async (query: string) => {
     try {
@@ -114,328 +127,465 @@ export function HelpCenterHomePage() {
   }
 
   return (
-    <>
-      <section className="rounded-[34px] border border-[var(--help-border)] bg-[var(--help-panel)] p-6 shadow-[var(--shadow-panel)] backdrop-blur sm:p-8">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.85fr)]">
-          <div className="space-y-4">
-            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-[var(--help-muted)]">
-              Visão geral
+    <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1.45fr)_320px]">
+      <aside className="space-y-4">
+        <section className="rounded-[28px] border border-[var(--help-border)] bg-white/88 p-5 shadow-[0_18px_42px_rgba(20,31,71,0.05)]">
+          <div className="space-y-3">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
+              Navegação rápida
             </p>
-            <h2 className="text-4xl font-semibold tracking-[-0.06em] text-[var(--help-ink-strong)]">
-              Encontre rápido a orientação certa para operar a plataforma.
-            </h2>
-            <p className="max-w-3xl text-base leading-8 text-[var(--help-muted)]">
-              Esta central reúne apenas conteúdo publicado e aprovado.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link to={`/help/${context.primaryRoute.knowledge_space_slug}/articles`}>
-                <AppButton>Ver todos os artigos</AppButton>
+            <div className="grid gap-2">
+              <Link
+                className="rounded-[18px] border border-[rgba(48,127,226,0.18)] bg-[var(--help-accent-soft)] px-4 py-3 text-sm font-medium text-[var(--help-link)] no-underline"
+                to={`/help/${context.primaryRoute.knowledge_space_slug}`}
+              >
+                Visão geral
               </Link>
-              <StatusPill tone="positive">
-                {context.articles.length} artigo{context.articles.length === 1 ? '' : 's'} publicado{context.articles.length === 1 ? '' : 's'}
-              </StatusPill>
+              <Link
+                className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-3 text-sm font-medium text-[var(--help-ink)] no-underline transition hover:border-[rgba(48,127,226,0.18)] hover:text-[var(--help-link)]"
+                to={`/help/${context.primaryRoute.knowledge_space_slug}/articles`}
+              >
+                Todos os artigos
+              </Link>
             </div>
-            <form
-              className="grid gap-3 rounded-[28px] border border-[var(--help-border)] bg-white/82 p-4 shadow-[0_18px_42px_rgba(20,31,71,0.06)] sm:grid-cols-[minmax(0,1fr)_auto]"
-              onSubmit={handleSearchSubmit}
-            >
-              <label className="grid gap-2" htmlFor="help-center-search">
-                <span className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
-                Buscar artigo
-                </span>
-                <input
-                  id="help-center-search"
-                  autoComplete="off"
-                  className="h-12 rounded-[20px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 text-sm text-[var(--help-ink-strong)] outline-none transition placeholder:text-[var(--help-muted)] focus:border-[var(--help-accent)] focus:ring-2 focus:ring-[color:var(--help-accent-soft)]"
-                  onChange={(event) => setSearchInput(event.target.value)}
-                  placeholder="Ex.: integração, configuração, transportadora"
-                  type="search"
-                  value={searchInput}
-                />
-              </label>
-              <div className="flex flex-wrap items-end gap-3">
-                <AppButton type="submit">Buscar</AppButton>
-                {(searchInput || activeQuery) ? (
-                  <GhostButton onClick={clearSearch} type="button">
-                    Limpar
-                  </GhostButton>
-                ) : null}
-              </div>
-            </form>
           </div>
-          <div className="grid gap-4 rounded-[30px] border border-[var(--help-border)] bg-white/74 p-5">
-            <div>
+        </section>
+
+        <section className="rounded-[28px] border border-[var(--help-border)] bg-white/88 p-5 shadow-[0_18px_42px_rgba(20,31,71,0.05)]">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
-              Como funciona
+                Categorias
               </p>
-              <p className="mt-3 text-sm leading-7 text-[var(--help-ink)]">
-                Aqui você encontra apenas orientações públicas e aprovadas.
-              </p>
+              <StatusPill tone="accent">{rootCategories.length}</StatusPill>
             </div>
-            <InlineNotice>
-              Cada artigo passa por revisão antes de aparecer aqui.
-            </InlineNotice>
-            {supportContacts.email || supportContacts.docsUrl || supportContacts.statusPageUrl ? (
+            <div className="grid gap-2">
+              {rootCategories.length > 0 ? (
+                rootCategories.map((category) => (
+                  <Link
+                    className="rounded-[20px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-3 no-underline transition hover:border-[rgba(48,127,226,0.18)] hover:bg-white"
+                    key={category.category_id}
+                    to={`/help/${context.primaryRoute.knowledge_space_slug}/articles?category=${category.category_id}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-[var(--help-ink-strong)]">
+                          {category.category_name}
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-[var(--help-muted)]">
+                          {category.category_description ??
+                            'Categoria com conteúdo aprovado para leitura pública.'}
+                        </p>
+                      </div>
+                      <StatusPill tone={toneForCategoryCount(category.subtree_article_count)}>
+                        {category.subtree_article_count}
+                      </StatusPill>
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <InlineNotice>
+                  Indisponível
+                </InlineNotice>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {hasSupportLinks ? (
+          <section className="rounded-[28px] border border-[var(--help-border)] bg-white/88 p-5 shadow-[0_18px_42px_rgba(20,31,71,0.05)]">
+            <div className="space-y-3">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
+                Canais oficiais
+              </p>
               <div className="grid gap-2 text-sm">
                 {supportContacts.email ? (
                   <a
-                    className="font-medium text-[var(--help-link)] no-underline hover:text-[var(--help-link-hover)]"
+                    className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-3 text-[var(--help-link)] no-underline transition hover:border-[rgba(48,127,226,0.18)] hover:bg-white"
                     href={`mailto:${supportContacts.email}`}
                   >
-                    {supportContacts.email}
+                    Falar com suporte
                   </a>
                 ) : null}
                 {supportContacts.docsUrl ? (
                   <a
-                    className="font-medium text-[var(--help-link)] no-underline hover:text-[var(--help-link-hover)]"
+                    className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-3 text-[var(--help-link)] no-underline transition hover:border-[rgba(48,127,226,0.18)] hover:bg-white"
                     href={supportContacts.docsUrl}
                     rel="noreferrer"
                     target="_blank"
                   >
-                    Abrir documentação oficial
+                    Documentação oficial
                   </a>
                 ) : null}
                 {supportContacts.statusPageUrl ? (
                   <a
-                    className="font-medium text-[var(--help-link)] no-underline hover:text-[var(--help-link-hover)]"
+                    className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-3 text-[var(--help-link)] no-underline transition hover:border-[rgba(48,127,226,0.18)] hover:bg-white"
                     href={supportContacts.statusPageUrl}
                     rel="noreferrer"
                     target="_blank"
                   >
-                    Ver status da plataforma
+                    Status da plataforma
+                  </a>
+                ) : null}
+                {supportContacts.websiteUrl ? (
+                  <a
+                    className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-3 text-[var(--help-link)] no-underline transition hover:border-[rgba(48,127,226,0.18)] hover:bg-white"
+                    href={supportContacts.websiteUrl}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Site institucional
                   </a>
                 ) : null}
               </div>
-            ) : null}
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-[30px] border border-[var(--help-border)] bg-[var(--help-panel)] p-6 shadow-[var(--shadow-panel)] backdrop-blur sm:p-8">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="space-y-2">
-            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
-              Resultado da busca
-            </p>
-            <h3 className="text-2xl font-semibold tracking-[-0.04em] text-[var(--help-ink-strong)]">
-            Procurar artigos publicados
-            </h3>
-            <p className="max-w-3xl text-sm leading-7 text-[var(--help-muted)]">
-              Use a busca para encontrar orientações públicas desta central.
-            </p>
-          </div>
-          {activeQuery ? (
-            <StatusPill tone={searchPhase === 'ready' ? 'positive' : 'default'}>
-              consulta: {activeQuery}
-            </StatusPill>
-          ) : null}
-        </div>
-
-        <div className="mt-5">
-          {searchPhase === 'idle' ? (
-            <div className="rounded-[24px] border border-dashed border-[var(--help-border)] bg-white/56 px-5 py-5 text-sm leading-7 text-[var(--help-muted)]">
-              Digite pelo menos 2 caracteres para procurar artigos nesta central.
             </div>
-          ) : null}
+          </section>
+        ) : null}
+      </aside>
 
-          {searchPhase === 'loading' ? (
-            <LoadingState
-              title="Buscando artigos publicados"
-              description="Estamos consultando o conteúdo público desta central."
-            />
-          ) : null}
-
-          {searchPhase === 'contract-unavailable' ? (
-            <ErrorState
-              title="Busca pública indisponível"
-              description="A busca desta central não está disponível neste ambiente agora."
-            />
-          ) : null}
-
-          {searchPhase === 'error' ? (
-            <ErrorState
-              title="Falha ao executar a busca"
-              description={
-                searchMessage ??
-                'Não foi possível consultar os artigos publicados neste ambiente.'
-              }
-              action={
-                <GhostButton onClick={() => void loadSearch(activeQuery)}>
-                  Tentar novamente
-                </GhostButton>
-              }
-            />
-          ) : null}
-
-          {searchPhase === 'empty' ? (
-            activeQuery.length < 2 ? (
-              <div className="rounded-[24px] border border-dashed border-[var(--help-border)] bg-white/56 px-5 py-5 text-sm leading-7 text-[var(--help-muted)]">
-                Use pelo menos 2 caracteres para pesquisar.
-              </div>
-            ) : (
-              <EmptyState
-                title="Nenhum artigo encontrado"
-                description="Nenhum artigo publicado corresponde a esta busca. Tente outro termo ou navegue pelas categorias abaixo."
-              />
-            )
-          ) : null}
-
-          {searchPhase === 'ready' ? (
-            <div className="grid gap-3">
-              {searchResults.map((article) => (
-                <Link
-                  key={article.article_id}
-                  className="rounded-[24px] border border-[var(--help-border)] bg-white/80 px-5 py-4 no-underline transition hover:border-[var(--help-accent)]/30 hover:bg-white"
-                  to={`/help/${context.primaryRoute.knowledge_space_slug}/articles/${article.slug}`}
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap gap-2">
-                        <StatusPill tone="accent">
-                          {article.category_name ?? 'Artigo público'}
-                        </StatusPill>
-                      </div>
-                      <h4 className="text-lg font-semibold tracking-[-0.03em] text-[var(--help-ink-strong)]">
-                        {article.title}
-                      </h4>
-                      <p className="max-w-3xl text-sm leading-7 text-[var(--help-muted)]">
-                        {article.summary ?? 'Artigo publicado sem resumo adicional.'}
-                      </p>
-                    </div>
-                    <div className="text-left text-xs leading-5 text-[var(--help-muted)] sm:text-right">
-                      {article.rank_score ? (
-                        <p className="font-medium text-[var(--help-ink)]">
-                          score {article.rank_score.toFixed(2)}
-                        </p>
-                      ) : null}
-                      <p className="mt-1">Atualizado em {formatDateTime(article.updated_at)}</p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      <section className="rounded-[30px] border border-[var(--help-border)] bg-[var(--help-panel)] p-6 shadow-[var(--shadow-panel)] backdrop-blur sm:p-8">
-        <div className="space-y-2">
-          <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
-              Navegar por categoria
-          </p>
-          <h3 className="text-2xl font-semibold tracking-[-0.04em] text-[var(--help-ink-strong)]">
-            Acesse os temas principais sem depender da busca.
-          </h3>
-          <p className="max-w-3xl text-sm leading-7 text-[var(--help-muted)]">
-            As categorias abaixo organizam os artigos públicos desta central.
-          </p>
-        </div>
-        <div className="mt-5 grid gap-4 xl:grid-cols-2">
-        {rootCategories.length === 0 ? (
-          <div className="xl:col-span-2">
-            <EmptyState
-              title="Sem categorias públicas visíveis"
-              description="Ainda não existem categorias públicas com artigos publicados nesta central."
-            />
-          </div>
-        ) : (
-          rootCategories.map((category) => (
-            <article
-              key={category.category_id}
-              className="rounded-[28px] border border-[var(--help-border)] bg-white/78 p-6 shadow-[0_18px_44px_rgba(20,31,71,0.05)]"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-2">
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
-                    Categoria
-                  </p>
-                  <h3 className="text-2xl font-semibold tracking-[-0.04em] text-[var(--help-ink-strong)]">
-                    {category.category_name}
-                  </h3>
-                  <p className="text-sm leading-7 text-[var(--help-muted)]">
-                    {category.category_description ??
-                      'Categoria pública aprovada para orientar uso e integração.'}
-                  </p>
-                </div>
-                <StatusPill tone={toneForCategoryCount(category.subtree_article_count)}>
-                  {category.subtree_article_count} itens
-                </StatusPill>
-              </div>
-              {category.articles.length > 0 ? (
-                <div className="mt-5 grid gap-3">
-                  {category.articles.map((article) => (
-                    <Link
-                      key={article.id}
-                      className="rounded-[22px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-3 no-underline transition hover:border-[var(--help-accent)]/30 hover:bg-white"
-                      to={`/help/${context.primaryRoute.knowledge_space_slug}/articles/${article.slug}`}
-                    >
-                      <p className="text-sm font-semibold text-[var(--help-ink-strong)]">
-                        {article.title}
-                      </p>
-                      <p className="mt-1 text-xs leading-5 text-[var(--help-muted)]">
-                        {article.summary ?? 'Artigo publicado.'}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-5 rounded-[22px] border border-dashed border-[var(--help-border)] px-4 py-4 text-sm leading-6 text-[var(--help-muted)]">
-                  A categoria já está pública, mas ainda não possui artigos publicados diretamente nela.
-                </div>
-              )}
-            </article>
-          ))
-        )}
-        </div>
-      </section>
-
-      <section className="rounded-[30px] border border-[var(--help-border)] bg-[var(--help-panel)] p-6 shadow-[var(--shadow-panel)] backdrop-blur">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="space-y-2">
-            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
-              Publicados recentemente
-            </p>
-            <h3 className="text-2xl font-semibold tracking-[-0.04em] text-[var(--help-ink-strong)]">
-              Últimos artigos visíveis
-            </h3>
-          </div>
-          <Link to={`/help/${context.primaryRoute.knowledge_space_slug}/articles`}>
-            <AppButton>Ir para a lista completa</AppButton>
-          </Link>
-        </div>
-        {featuredArticles.length === 0 ? (
-          <div className="mt-5">
-            <EmptyState
-              title="Nenhum artigo publicado ainda"
-              description="Esta central ainda não tem artigos públicos publicados."
-            />
-          </div>
-        ) : (
-          <div className="mt-5 grid gap-3">
-            {featuredArticles.map((article) => (
-              <Link
-                key={article.id}
-                className="rounded-[24px] border border-[var(--help-border)] bg-white/78 px-5 py-4 no-underline transition hover:border-[var(--help-accent)]/30 hover:bg-white"
-                to={`/help/${context.primaryRoute.knowledge_space_slug}/articles/${article.slug}`}
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-base font-semibold text-[var(--help-ink-strong)]">
-                      {article.title}
-                    </p>
-                    <p className="text-sm leading-6 text-[var(--help-muted)]">
-                      {article.summary ?? 'Artigo publicado.'}
-                    </p>
-                  </div>
-                  <StatusPill tone="default">
-                    {formatDateTime(article.updated_at)}
+      <main className="grid content-start gap-6">
+        <section className="rounded-[32px] border border-[var(--help-border)] bg-[var(--help-panel)] p-6 shadow-[var(--shadow-panel)] backdrop-blur sm:p-7">
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(260px,0.72fr)]">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusPill tone="accent">Visão geral</StatusPill>
+                  <StatusPill tone="positive">
+                    {context.articles.length} artigo{context.articles.length === 1 ? '' : 's'} publicado{context.articles.length === 1 ? '' : 's'}
                   </StatusPill>
                 </div>
-              </Link>
-            ))}
+                <h2 className="text-[clamp(2.5rem,4vw,3.8rem)] font-semibold tracking-[-0.07em] text-[var(--help-ink-strong)]">
+                  Encontre a orientação certa para operar com mais autonomia.
+                </h2>
+                <p className="max-w-3xl text-[1rem] leading-8 text-[var(--help-muted)]">
+                  Esta central reúne apenas conteúdo publicado e aprovado, com foco em tarefas, configuração e uso diário da operação.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <Link to={`/help/${context.primaryRoute.knowledge_space_slug}/articles`}>
+                  <AppButton>Ver todos os artigos</AppButton>
+                </Link>
+                {featuredArticle ? (
+                  <Link to={`/help/${context.primaryRoute.knowledge_space_slug}/articles/${featuredArticle.slug}`}>
+                    <GhostButton>Ler artigo em destaque</GhostButton>
+                  </Link>
+                ) : null}
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-3">
+                <div className="rounded-[22px] border border-[var(--help-border)] bg-white px-4 py-4">
+                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
+                    Publicados
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--help-ink-strong)]">
+                    {context.articles.length}
+                  </p>
+                </div>
+                <div className="rounded-[22px] border border-[var(--help-border)] bg-white px-4 py-4">
+                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
+                    Categorias
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--help-ink-strong)]">
+                    {rootCategories.length}
+                  </p>
+                </div>
+                <div className="rounded-[22px] border border-[var(--help-border)] bg-white px-4 py-4">
+                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
+                    Leitura
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--help-ink-strong)]">
+                    Pública
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-[var(--help-border)] bg-white/88 p-5 shadow-[0_18px_42px_rgba(20,31,71,0.05)]">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
+                    Como esta central funciona
+                  </p>
+                  <p className="mt-3 text-sm leading-7 text-[var(--help-ink)]">
+                    Aqui aparecem somente artigos aprovados para leitura pública. Quando faltar contexto adicional, use os canais oficiais abaixo.
+                  </p>
+                </div>
+                <InlineNotice>
+                  Conteúdos internos, rascunhos e materiais restritos não aparecem nesta camada.
+                </InlineNotice>
+                <div className="rounded-[20px] border border-dashed border-[rgba(48,127,226,0.28)] bg-[var(--help-surface)] px-4 py-4">
+                  <p className="text-sm leading-7 text-[var(--help-muted)]">
+                    Use a busca para localizar artigos por assunto ou abra a lista completa para navegar por categoria.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-        )}
-      </section>
-    </>
+        </section>
+
+        <section className="rounded-[32px] border border-[var(--help-border)] bg-[var(--help-panel)] p-6 shadow-[var(--shadow-panel)] backdrop-blur sm:p-7">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="space-y-2">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
+                Busca pública
+              </p>
+              <h3 className="text-2xl font-semibold tracking-[-0.05em] text-[var(--help-ink-strong)]">
+                Procurar artigos publicados
+              </h3>
+              <p className="max-w-3xl text-sm leading-7 text-[var(--help-muted)]">
+                Pesquise por configuração, integração, uso diário ou nome da categoria.
+              </p>
+            </div>
+            {activeQuery ? (
+              <StatusPill tone={searchPhase === 'ready' ? 'positive' : 'default'}>
+                busca: {activeQuery}
+              </StatusPill>
+            ) : null}
+          </div>
+
+          <form
+            className="mt-5 grid gap-3 rounded-[26px] border border-[var(--help-border)] bg-white px-4 py-4 shadow-[0_18px_42px_rgba(20,31,71,0.05)] sm:grid-cols-[minmax(0,1fr)_auto]"
+            onSubmit={handleSearchSubmit}
+          >
+            <label className="grid gap-2" htmlFor="help-center-search">
+              <span className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
+                Termo de busca
+              </span>
+              <input
+                id="help-center-search"
+                autoComplete="off"
+                className="h-12 rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 text-sm text-[var(--help-ink-strong)] outline-none transition placeholder:text-[var(--help-muted)] focus:border-[var(--help-accent)] focus:ring-2 focus:ring-[color:var(--help-accent-soft)]"
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Ex.: integração, configuração, transportadora"
+                type="search"
+                value={searchInput}
+              />
+            </label>
+            <div className="flex flex-wrap items-end gap-3">
+              <AppButton type="submit">Buscar</AppButton>
+              {(searchInput || activeQuery) ? (
+                <GhostButton onClick={clearSearch} type="button">
+                  Limpar
+                </GhostButton>
+              ) : null}
+            </div>
+          </form>
+
+          <div className="mt-5">
+            {searchPhase === 'idle' ? (
+              <div className="rounded-[24px] border border-dashed border-[var(--help-border)] bg-white/66 px-5 py-5 text-sm leading-7 text-[var(--help-muted)]">
+                Digite pelo menos 2 caracteres para procurar artigos nesta central.
+              </div>
+            ) : null}
+
+            {searchPhase === 'loading' ? (
+              <LoadingState
+                title="Buscando artigos publicados"
+                description="Estamos consultando o conteúdo público desta central."
+              />
+            ) : null}
+
+            {searchPhase === 'contract-unavailable' ? (
+              <ErrorState
+                title="Busca pública indisponível"
+                description="A busca desta central não está disponível neste ambiente agora."
+              />
+            ) : null}
+
+            {searchPhase === 'error' ? (
+              <ErrorState
+                title="Falha ao executar a busca"
+                description={
+                  searchMessage ??
+                  'Não foi possível consultar os artigos publicados neste ambiente.'
+                }
+                action={
+                  <GhostButton onClick={() => void loadSearch(activeQuery)}>
+                    Tentar novamente
+                  </GhostButton>
+                }
+              />
+            ) : null}
+
+            {searchPhase === 'empty' ? (
+              <div className="rounded-[24px] border border-dashed border-[var(--help-border)] bg-white/66 px-5 py-5 text-sm leading-7 text-[var(--help-muted)]">
+                {emptySearchDescription}
+              </div>
+            ) : null}
+
+            {searchPhase === 'ready' ? (
+              <div className="grid gap-3">
+                {searchResults.map((article) => (
+                  <Link
+                    className="rounded-[24px] border border-[var(--help-border)] bg-white px-5 py-4 no-underline transition hover:border-[var(--help-accent)]/30 hover:bg-[color:var(--help-surface)]"
+                    key={article.article_id}
+                    to={`/help/${context.primaryRoute.knowledge_space_slug}/articles/${article.slug}`}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          <StatusPill tone="accent">
+                            {article.category_name ?? 'Artigo público'}
+                          </StatusPill>
+                        </div>
+                        <h4 className="text-lg font-semibold tracking-[-0.03em] text-[var(--help-ink-strong)]">
+                          {article.title}
+                        </h4>
+                        <p className="max-w-3xl text-sm leading-7 text-[var(--help-muted)]">
+                          {article.summary ?? 'Artigo publicado sem resumo adicional.'}
+                        </p>
+                      </div>
+                      <div className="text-left text-xs leading-5 text-[var(--help-muted)] sm:text-right">
+                        <p>Atualizado em {formatDateTime(article.updated_at)}</p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
+          <div className="rounded-[32px] border border-[var(--help-border)] bg-[var(--help-panel)] p-6 shadow-[var(--shadow-panel)] backdrop-blur sm:p-7">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div className="space-y-2">
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
+                  Categorias em destaque
+                </p>
+                <h3 className="text-2xl font-semibold tracking-[-0.05em] text-[var(--help-ink-strong)]">
+                  Navegue por assunto
+                </h3>
+              </div>
+              <Link to={`/help/${context.primaryRoute.knowledge_space_slug}/articles`}>
+                <GhostButton>Ver base completa</GhostButton>
+              </Link>
+            </div>
+            {rootCategories.length === 0 ? (
+              <div className="mt-5">
+                <EmptyState
+                  title="Categorias indisponíveis"
+                  description="Os grupos públicos desta central ainda não estão visíveis neste ambiente."
+                />
+              </div>
+            ) : (
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                {rootCategories.map((category) => (
+                  <Link
+                    className="rounded-[24px] border border-[var(--help-border)] bg-white px-5 py-4 no-underline transition hover:border-[var(--help-accent)]/30 hover:bg-[color:var(--help-surface)]"
+                    key={category.category_id}
+                    to={`/help/${context.primaryRoute.knowledge_space_slug}/articles?category=${category.category_id}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-lg font-semibold tracking-[-0.03em] text-[var(--help-ink-strong)]">
+                          {category.category_name}
+                        </p>
+                        <p className="mt-2 text-sm leading-7 text-[var(--help-muted)]">
+                          {category.category_description ??
+                            'Conteúdo público aprovado para esta frente operacional.'}
+                        </p>
+                      </div>
+                      <StatusPill tone={toneForCategoryCount(category.subtree_article_count)}>
+                        {category.subtree_article_count}
+                      </StatusPill>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <aside className="space-y-4">
+            <section className="rounded-[32px] border border-[var(--help-border)] bg-white/88 p-5 shadow-[0_18px_42px_rgba(20,31,71,0.05)]">
+              <div className="space-y-3">
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
+                  Artigo em destaque
+                </p>
+                {featuredArticle ? (
+                  <Link
+                    className="block rounded-[22px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-4 no-underline transition hover:border-[rgba(48,127,226,0.18)] hover:bg-white"
+                    to={`/help/${context.primaryRoute.knowledge_space_slug}/articles/${featuredArticle.slug}`}
+                  >
+                    <p className="text-lg font-semibold tracking-[-0.03em] text-[var(--help-ink-strong)]">
+                      {featuredArticle.title}
+                    </p>
+                    <p className="mt-2 text-sm leading-7 text-[var(--help-muted)]">
+                      {featuredArticle.summary ?? 'Artigo publicado para consulta rápida.'}
+                    </p>
+                  </Link>
+                ) : (
+                  <InlineNotice>
+                    Indisponível
+                  </InlineNotice>
+                )}
+              </div>
+            </section>
+
+            <section className="rounded-[32px] border border-[var(--help-border)] bg-white/88 p-5 shadow-[0_18px_42px_rgba(20,31,71,0.05)]">
+              <div className="space-y-3">
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
+                  Publicados recentemente
+                </p>
+                {recentArticles.length > 0 ? (
+                  <div className="grid gap-2">
+                    {recentArticles.map((article) => (
+                      <Link
+                        className="rounded-[20px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-3 no-underline transition hover:border-[rgba(48,127,226,0.18)] hover:bg-white"
+                        key={article.id}
+                        to={`/help/${context.primaryRoute.knowledge_space_slug}/articles/${article.slug}`}
+                      >
+                        <p className="text-sm font-semibold text-[var(--help-ink-strong)]">
+                          {article.title}
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-[var(--help-muted)]">
+                          Atualizado em {formatDateTime(article.updated_at)}
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <InlineNotice>
+                    Indisponível
+                  </InlineNotice>
+                )}
+              </div>
+            </section>
+          </aside>
+        </section>
+      </main>
+
+      <aside className="space-y-4">
+        <section className="rounded-[32px] border border-[var(--help-border)] bg-white/88 p-5 shadow-[0_18px_42px_rgba(20,31,71,0.05)]">
+          <div className="space-y-3">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
+              Publicação
+            </p>
+            <p className="text-sm leading-7 text-[var(--help-ink)]">
+              Esta área mostra apenas conteúdos liberados para leitura pública.
+            </p>
+            <div className="grid gap-2">
+              <div className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--help-muted)]">
+                  Revisão
+                </p>
+                <p className="mt-1 text-sm text-[var(--help-ink)]">
+                  Conteúdo validado antes da publicação.
+                </p>
+              </div>
+              <div className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--help-muted)]">
+                  Escopo
+                </p>
+                <p className="mt-1 text-sm text-[var(--help-ink)]">
+                  Guias de uso, configuração e integração disponíveis nesta central.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </div>
   );
 }
