@@ -18,6 +18,33 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.9 - Public Knowledge Taxonomy V3
+- fase: `7.9`
+- commit: `e9119b4a5b285c1f6d2928049cd39a518d3020e7`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: a descoberta pública de conhecimento foi refinada para destacar jornadas operacionais usando apenas categorias e artigos já existentes, enquanto o cockpit `/admin/knowledge` passou a reforçar a origem editorial governada da Central de Ajuda e a aba `Central de ajuda` do ticket deixou mais clara a fronteira entre leitura pública aprovada e curadoria interna.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - `/help/genius`
+  - `/help/genius/articles`
+  - `/help/genius/articles/:slug`
+  - `/help/genius/articles/inexistente`
+  - ajuste visual/editorial em `/admin/knowledge`
+  - ajuste visual/editorial na aba `Central de ajuda` em `/support/tickets/:ticketId`
+- riscos restantes:
+  - a taxonomia publica continua limitada aos dados atuais de categorias e artigos publicados; nenhuma classificacao dinamica nova foi criada sem contrato
+  - a camada publica continua sem abertura publica de ticket, feedback persistido ou portal B2B, porque esses fluxos nao possuem contrato/backend nesta fase
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit visual e fora deste fechamento documental ate decisao explicita
+- impacto na FAQ futura:
+  - documenta que a descoberta publica por categoria/jornada continua editorialmente governada pelo cockpit interno de Knowledge
+  - reforca que publicado e publico nao sao sinonimos no fluxo interno e que apenas conteudo aprovado chega a camada publica
+
 ### Fase 7.8 - Public Support Transition V3
 - fase: `7.8`
 - commit: `cc4cda76fa8c6a7a95f7c4e762e5af1e7a70db6d`
