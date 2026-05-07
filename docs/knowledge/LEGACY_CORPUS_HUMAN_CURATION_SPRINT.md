@@ -320,3 +320,6 @@ Decisao sugerida:
 ## Desdobramento da primeira leva P0
 As versoes candidatas da primeira sprint manual de reescrita ficaram registradas em:
 - `docs/knowledge/LEGACY_CORPUS_P0_REWRITE_CANDIDATES.md`
+
+O gate humano formal de elegibilidade da leva `P0` ficou registrado em:
+- `docs/knowledge/KNOWLEDGE_P0_HUMAN_REVIEW_GATE.md`

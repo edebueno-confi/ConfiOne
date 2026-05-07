@@ -46,6 +46,7 @@ Documentos prioritários:
 - `reports/LEGACY_CORPUS_EDITORIAL_AUDIT.md`
 - `knowledge/LEGACY_CORPUS_HUMAN_CURATION_SPRINT.md`
 - `knowledge/LEGACY_CORPUS_P0_REWRITE_CANDIDATES.md`
+- `knowledge/KNOWLEDGE_P0_HUMAN_REVIEW_GATE.md`
 
 Documentos históricos:
 - `CLEANUP_REPORT.md`
@@ -883,6 +884,46 @@ Documentos históricos:
     - produto
     - suporte/CS
     - validacao final de aderencia ao fluxo atual
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.14: Knowledge P0 Human Review Gate V3 concluido como gate documental.
+  - A rodada formal de revisao humana dos seis candidatos `P0` foi consolidada em `docs/knowledge/KNOWLEDGE_P0_HUMAN_REVIEW_GATE.md`.
+  - O gate separou:
+    - decisao preliminar
+    - decisao final recomendada
+    - pendencia de Produto
+    - pendencia de Suporte/CS
+    - bloqueadores tecnicos e editoriais
+    - lote que pode seguir apenas para preparacao de publicacao futura
+  - Resultado consolidado do gate:
+    - elegiveis com ajustes:
+      - `Como alterar ou aprovar os produtos de uma solicitacao?`
+      - `Como cadastrar motivos para troca ou devolucao`
+      - `Posso enviar uma notificacao de analise ao cliente?`
+      - `Reenviar um e-mail ao consumidor`
+    - revisar tecnicamente antes:
+      - `Como informar a SKU durantge a troca`
+      - `Regra por motivo`
+  - O lote permaneceu estritamente documental:
+    - sem publicacao
+    - sem alteracao de backend
+    - sem alteracao de runtime
+    - sem alteracao de contracts
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Escopo explicitamente preservado:
+    - nenhuma alteracao em backend
+    - nenhuma alteracao em Supabase
+    - nenhuma alteracao em migrations
+    - nenhuma alteracao em RPCs
+    - nenhuma alteracao em contracts
+    - nenhuma alteracao em fixtures
+    - nenhuma alteracao em RLS
+    - nenhuma alteracao em permissoes
+  - Publicacao futura continua dependente de aprovacao humana explicita:
+    - Produto
+    - Suporte/CS
+    - checagem final de elegibilidade publica
   - Pendencias mapeadas sem implementacao nesta fase:
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 

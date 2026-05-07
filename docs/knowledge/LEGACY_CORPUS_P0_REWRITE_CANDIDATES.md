@@ -430,3 +430,7 @@ Requer validação antes de qualquer promoção para a camada pública.
 - confirmar se o tema de SKU durante troca pode existir como artigo público ou deve permanecer interno
 - confirmar o conjunto real de regras cobertas por `Regra por motivo`
 - revisar todo o lote com suporte/CS antes de qualquer promoção para elegibilidade pública
+
+## Gate formal de revisão humana
+O gate documental de elegibilidade desta leva ficou registrado em:
+- `docs/knowledge/KNOWLEDGE_P0_HUMAN_REVIEW_GATE.md`

@@ -18,6 +18,32 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.14 - Knowledge P0 Human Review Gate V3
+- fase: `7.14`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: a rodada formal de revisão humana dos seis artigos `P0` foi consolidada em um gate documental único, separando elegibilidade com ajustes, revisão técnica obrigatória, dono da próxima validação e bloqueadores por artigo antes de qualquer lote futuro de publicação.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_P0_HUMAN_REVIEW_GATE.md`
+  - `docs/knowledge/LEGACY_CORPUS_P0_REWRITE_CANDIDATES.md`
+  - `docs/knowledge/LEGACY_CORPUS_HUMAN_CURATION_SPRINT.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+  - impacto futuro indireto em `/admin/knowledge`, `/help/genius` e `/support/tickets/:ticketId` na aba `Central de ajuda`
+- riscos restantes:
+  - nenhum artigo foi publicado; os quatro elegíveis seguem dependentes de revisão humana explícita
+  - `Como informar a SKU durantge a troca` e `Regra por motivo` continuam bloqueados por ambiguidade funcional e dependência de validação técnica
+  - parte dos textos ainda depende de confirmação de nomenclatura atual para não carregar resíduo de UI legada
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- impacto na FAQ futura:
+  - formaliza o primeiro gate humano de elegibilidade da trilha de curadoria do corpus legado
+  - separa claramente o que já pode seguir para preparação de publicação do que ainda deve retornar para revisão técnica
+
 ### Fase 7.13 - Legacy Corpus P0 Rewrite Sprint V3
 - fase: `7.13`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`
