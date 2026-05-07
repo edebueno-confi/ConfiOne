@@ -1461,7 +1461,7 @@ function SupportHelpPanel({
           Conteúdo público sugerido para esta tratativa
         </h3>
         <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-          Use este painel para validar o que já pode ser compartilhado com o cliente sem misturar referência interna ou material restrito.
+          Use este painel para validar o que já nasceu como leitura pública aprovada, sem misturar rascunho editorial, referência interna ou material restrito.
         </p>
       </div>
 
@@ -1581,7 +1581,7 @@ function SupportHelpPanel({
 
           <div className="rounded-[14px] border border-dashed border-[rgba(48,127,226,0.28)] bg-white/72 px-3 py-2.5">
             <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-              Revise a leitura pública antes de compartilhar. Quando não houver conteúdo pronto, siga com a resposta pública pelos canais normais do ticket e registre a lacuna na aba Conhecimento.
+              Revise a leitura pública antes de compartilhar. Quando não houver conteúdo pronto, siga com a resposta pública pelos canais normais do ticket e registre a lacuna na aba Conhecimento para a curadoria editorial.
             </p>
           </div>
         </div>

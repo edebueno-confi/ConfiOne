@@ -387,6 +387,18 @@ function displayVisibility(visibility: KnowledgeVisibility) {
   return 'Interno';
 }
 
+function shortVisibilityLabel(visibility: KnowledgeVisibility) {
+  if (visibility === 'public') {
+    return 'Público';
+  }
+
+  if (visibility === 'restricted') {
+    return 'Restrito';
+  }
+
+  return 'Interno';
+}
+
 function articleContributorName(article: AdminKnowledgeArticleListItemV2Row) {
   return (
     article.updated_by_full_name ??
@@ -820,6 +832,11 @@ export function KnowledgePage() {
     draft: filteredArticles.filter((article) => article.status === 'draft').length,
     review: filteredArticles.filter((article) => article.status === 'review').length,
     archived: filteredArticles.filter((article) => article.status === 'archived').length,
+  };
+  const visibilityCounts = {
+    public: filteredArticles.filter((article) => article.visibility === 'public').length,
+    internal: filteredArticles.filter((article) => article.visibility === 'internal').length,
+    restricted: filteredArticles.filter((article) => article.visibility === 'restricted').length,
   };
   const sortedCategories = [...categories].sort((left, right) => {
     if (right.article_count !== left.article_count) {
@@ -2029,7 +2046,7 @@ export function KnowledgePage() {
               Knowledge
             </h1>
             <p className="text-[0.84rem] leading-5 text-[color:var(--color-muted)]">
-              Gerencie artigos, categorias e publicação na central de ajuda.
+              Origem editorial governada da central de ajuda pública, com separação clara entre rascunho, revisão, publicado e visibilidade.
             </p>
           </div>
           <AppButton
@@ -2148,6 +2165,51 @@ export function KnowledgePage() {
                     {showAllCategories ? '− Ver menos' : '+ Ver todas'}
                   </button>
                 ) : null}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-[0.74rem] font-semibold uppercase tracking-[0.24em] text-[color:var(--color-muted)]">
+                Curadoria pública
+              </p>
+              <div className="grid gap-2">
+                <div className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[0.82rem] font-medium text-[color:var(--color-ink)]">Rascunho</span>
+                    <span className="text-[0.76rem] text-[color:var(--color-muted)]">{statusCounts.draft}</span>
+                  </div>
+                  <p className="mt-1 text-[0.74rem] leading-5 text-[color:var(--color-muted)]">
+                    Texto ainda em preparação editorial.
+                  </p>
+                </div>
+                <div className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[0.82rem] font-medium text-[color:var(--color-ink)]">Em revisão</span>
+                    <span className="text-[0.76rem] text-[color:var(--color-muted)]">{statusCounts.review}</span>
+                  </div>
+                  <p className="mt-1 text-[0.74rem] leading-5 text-[color:var(--color-muted)]">
+                    Conteúdo aguardando revisão humana antes da publicação.
+                  </p>
+                </div>
+                <div className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[0.82rem] font-medium text-[color:var(--color-ink)]">Publicado</span>
+                    <span className="text-[0.76rem] text-[color:var(--color-muted)]">{statusCounts.published}</span>
+                  </div>
+                  <p className="mt-1 text-[0.74rem] leading-5 text-[color:var(--color-muted)]">
+                    Versão editorial disponível. A visibilidade define se ela já pode aparecer na central pública.
+                  </p>
+                </div>
+                <div className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5">
+                  <p className="text-[0.74rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+                    Visibilidade
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <StatusPill tone="positive">Público {visibilityCounts.public}</StatusPill>
+                    <StatusPill tone="accent">Interno {visibilityCounts.internal}</StatusPill>
+                    <StatusPill tone="critical">Restrito {visibilityCounts.restricted}</StatusPill>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -2320,6 +2382,9 @@ export function KnowledgePage() {
                                   {compactStatusBadgeLabel(article.status)}
                                 </span>
                               </span>
+                              <p className="text-[0.72rem] leading-4 text-[color:var(--color-muted)]">
+                                {shortVisibilityLabel(article.visibility)}
+                              </p>
                               {article.has_editorial_draft ? (
                                 <p className="text-[0.74rem] leading-4 text-[color:var(--color-muted)]">
                                   Revisão ativa
@@ -2495,6 +2560,9 @@ export function KnowledgePage() {
                           <StatusPill tone={toneForArticleStatus(articleDetail.status)}>
                             {displayArticleStatus(articleDetail.status)}
                           </StatusPill>
+                          <StatusPill tone={toneForVisibility(articleDetail.visibility)}>
+                            {shortVisibilityLabel(articleDetail.visibility)}
+                          </StatusPill>
                           {publishedEditorialDraft ? (
                             <StatusPill tone="accent">Revisão em andamento</StatusPill>
                           ) : null}
@@ -2565,6 +2633,15 @@ export function KnowledgePage() {
                         </dd>
                       </div>
                     </dl>
+
+                    <div className="space-y-2 border-t border-[color:var(--color-border)] pt-4">
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+                        Origem editorial
+                      </p>
+                      <p className="text-sm leading-6 text-[color:var(--color-ink)]">
+                        Este cockpit governa o ciclo editorial que abastece a central pública. Publicado não significa automaticamente público: a visibilidade continua separada do estágio editorial.
+                      </p>
+                    </div>
 
                     <div className="space-y-2 border-t border-[color:var(--color-border)] pt-4">
                       <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">

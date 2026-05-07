@@ -45,6 +45,31 @@ function estimateReadingTime(source: string) {
   return Math.max(1, Math.ceil(wordCount / 190));
 }
 
+function categoryJourneyLabel(name: string | null | undefined) {
+  const normalized = (name ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+  if (normalized.includes('primeiro')) {
+    return 'Entrada operacional';
+  }
+
+  if (normalized.includes('integr')) {
+    return 'Integrações e validações';
+  }
+
+  if (normalized.includes('suporte')) {
+    return 'Tratativa com suporte';
+  }
+
+  if (normalized.includes('reversa') || normalized.includes('operacao')) {
+    return 'Fluxo diário da operação';
+  }
+
+  return 'Leitura por jornada';
+}
+
 function extractArticleSections(source: string, fallbackTitle: string) {
   const sections: ArticleSectionItem[] = [];
   const usedIds = new Map<string, number>();
@@ -196,7 +221,7 @@ function PublicArticleChrome({
                       <Link
                         key={category.category_id}
                         className="rounded-[16px] px-3 py-2 no-underline transition hover:bg-[var(--help-surface)]"
-                        to={`/help/${spaceSlug}`}
+                        to={`/help/${spaceSlug}/articles?category=${category.category_id}`}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <span className="text-sm font-medium text-[var(--help-ink)]">
@@ -537,14 +562,18 @@ export function HelpCenterArticlePage() {
       </aside>
 
       <section className="rounded-[30px] border border-[var(--help-border)] bg-white px-8 py-8 shadow-[0_22px_48px_rgba(20,31,71,0.06)] sm:px-10 sm:py-9">
-        <div className="space-y-6">
-          <div className="space-y-4">
-            <StatusPill tone="accent">
-              {article.category_name ?? 'Indisponível'}
-            </StatusPill>
-            <div className="space-y-3">
-              <h1 className="text-[clamp(2.8rem,4vw,4rem)] font-semibold tracking-[-0.07em] text-[var(--help-ink-strong)]">
-                {article.title}
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <StatusPill tone="accent">
+                  {article.category_name ?? 'Indisponível'}
+                </StatusPill>
+                <StatusPill>{categoryJourneyLabel(article.category_name)}</StatusPill>
+                <StatusPill tone="positive">Conteúdo aprovado</StatusPill>
+              </div>
+              <div className="space-y-3">
+                <h1 className="text-[clamp(2.8rem,4vw,4rem)] font-semibold tracking-[-0.07em] text-[var(--help-ink-strong)]">
+                  {article.title}
               </h1>
               <div className="flex flex-wrap items-center gap-3 text-base text-[var(--help-muted)]">
                 <span>
@@ -565,6 +594,33 @@ export function HelpCenterArticlePage() {
               <p className="max-w-4xl text-[1.02rem] font-medium leading-8 text-[var(--help-link)]">
                 {article.summary ??
                   'Este artigo ajuda a orientar os pontos principais desta operação pública.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-4">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--help-muted)]">
+                Categoria
+              </p>
+              <p className="mt-2 text-sm font-semibold text-[var(--help-ink-strong)]">
+                {article.category_name ?? 'Indisponível'}
+              </p>
+            </div>
+            <div className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-4">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--help-muted)]">
+                Jornada
+              </p>
+              <p className="mt-2 text-sm font-semibold text-[var(--help-ink-strong)]">
+                {categoryJourneyLabel(article.category_name)}
+              </p>
+            </div>
+            <div className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-4">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--help-muted)]">
+                Publicação
+              </p>
+              <p className="mt-2 text-sm font-semibold text-[var(--help-ink-strong)]">
+                Conteúdo aprovado para leitura pública
               </p>
             </div>
           </div>
@@ -615,6 +671,12 @@ export function HelpCenterArticlePage() {
                         <p className="text-sm leading-6 text-[var(--help-muted)]">
                           {entry.summary ?? 'Indisponível'}
                         </p>
+                        <p className="text-xs leading-5 text-[var(--help-muted)]">
+                          {entry.category_name ?? 'Categoria pública'} ·{' '}
+                          {entry.published_at
+                            ? `Atualizado em ${formatDateTime(entry.published_at)}`
+                            : `Atualizado em ${formatDateTime(entry.updated_at)}`}
+                        </p>
                       </div>
                     </div>
                     {index < relatedArticles.length - 1 ? (
@@ -651,6 +713,14 @@ export function HelpCenterArticlePage() {
                 Abrir documentação oficial
               </a>
             ) : null}
+            <div className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-4">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--help-muted)]">
+                Curadoria
+              </p>
+              <p className="mt-2 text-sm leading-7 text-[var(--help-muted)]">
+                Este artigo faz parte da camada pública aprovada no cockpit editorial de Knowledge e permanece separado de materiais internos ou restritos.
+              </p>
+            </div>
           </div>
         </section>
       </aside>

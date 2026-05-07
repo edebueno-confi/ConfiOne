@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
 import { EmptyState } from '../../components/states';
-import { StatusPill } from '../../components/ui';
+import { AppButton, GhostButton, InlineNotice, StatusPill } from '../../components/ui';
 import { formatDateTime } from '../../app/format';
 import type { PublicKnowledgeNavigationRow } from '../../contracts/public-contracts';
 import type { HelpCenterSpaceContext } from './context';
@@ -12,9 +12,39 @@ function buildCategoryMap(navigation: PublicKnowledgeNavigationRow[]) {
   );
 }
 
+function categoryJourneyLabel(name: string | null | undefined) {
+  const normalized = (name ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+  if (normalized.includes('primeiro')) {
+    return 'Entrada operacional';
+  }
+
+  if (normalized.includes('integr')) {
+    return 'Integrações e validações';
+  }
+
+  if (normalized.includes('suporte')) {
+    return 'Tratativa com suporte';
+  }
+
+  if (normalized.includes('reversa') || normalized.includes('operacao')) {
+    return 'Fluxo diário da operação';
+  }
+
+  return 'Leitura por jornada';
+}
+
+function estimateListReadingTime(summary: string | null | undefined) {
+  const words = (summary ?? '').trim().split(/\s+/).filter(Boolean).length;
+  return `${Math.max(1, Math.ceil(Math.max(words, 24) / 18))} min`;
+}
+
 export function HelpCenterArticlesPage() {
   const context = useOutletContext<HelpCenterSpaceContext>();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const categoryMap = buildCategoryMap(context.navigation);
   const featuredCategories = context.navigation.filter(
     (entry) => entry.parent_category_id === null,
@@ -24,6 +54,7 @@ export function HelpCenterArticlesPage() {
     (category) => category.category_id === selectedCategoryId,
   ) ?? null;
   const searchQuery = searchParams.get('q')?.trim().toLowerCase() ?? '';
+  const [searchInput, setSearchInput] = useState(searchParams.get('q')?.trim() ?? '');
 
   const filteredArticles = useMemo(() => {
     return context.articles.filter((article) => {
@@ -42,6 +73,28 @@ export function HelpCenterArticlesPage() {
       return matchesCategory && matchesQuery;
     });
   }, [context.articles, searchQuery, selectedCategoryId]);
+  const highlightedArticles = filteredArticles.slice(0, 3);
+
+  function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nextQuery = searchInput.trim();
+    const nextParams = new URLSearchParams(searchParams);
+
+    if (!nextQuery) {
+      nextParams.delete('q');
+    } else {
+      nextParams.set('q', nextQuery);
+    }
+
+    setSearchParams(nextParams, { replace: nextQuery === searchQuery });
+  }
+
+  function clearSearch() {
+    setSearchInput('');
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('q');
+    setSearchParams(nextParams, { replace: true });
+  }
 
   return (
     <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1.45fr)_300px]">
@@ -126,7 +179,7 @@ export function HelpCenterArticlesPage() {
                 Base publicada de {context.primaryRoute.brand_name}
               </h2>
               <p className="max-w-3xl text-sm leading-7 text-[var(--help-muted)]">
-                Explore apenas artigos públicos aprovados, organizados para leitura rápida e navegação simples.
+                Explore apenas artigos públicos aprovados, organizados por jornada operacional para facilitar descoberta, leitura e compartilhamento seguro.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -153,6 +206,34 @@ export function HelpCenterArticlesPage() {
               ) : null}
             </div>
           ) : null}
+
+          <form
+            className="mt-5 grid gap-3 rounded-[24px] border border-[var(--help-border)] bg-white px-4 py-4 shadow-[0_18px_42px_rgba(20,31,71,0.05)] sm:grid-cols-[minmax(0,1fr)_auto]"
+            onSubmit={handleSearchSubmit}
+          >
+            <label className="grid gap-2" htmlFor="public-articles-search">
+              <span className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
+                Buscar nesta base
+              </span>
+              <input
+                id="public-articles-search"
+                autoComplete="off"
+                className="h-11 rounded-[16px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 text-sm text-[var(--help-ink-strong)] outline-none transition placeholder:text-[var(--help-muted)] focus:border-[var(--help-accent)] focus:ring-2 focus:ring-[color:var(--help-accent-soft)]"
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Ex.: integração, ticket, configuração"
+                type="search"
+                value={searchInput}
+              />
+            </label>
+            <div className="flex flex-wrap items-end gap-3">
+              <AppButton type="submit">Buscar</AppButton>
+              {(searchInput || searchQuery) ? (
+                <GhostButton onClick={clearSearch} type="button">
+                  Limpar
+                </GhostButton>
+              ) : null}
+            </div>
+          </form>
 
           {filteredArticles.length === 0 ? (
             <div className="mt-6">
@@ -183,6 +264,8 @@ export function HelpCenterArticlesPage() {
                         ) : (
                           <StatusPill tone="default">Indisponível</StatusPill>
                         )}
+                        <StatusPill>{categoryJourneyLabel(article.category_name)}</StatusPill>
+                        <StatusPill tone="positive">Aprovado</StatusPill>
                       </div>
                       <h3 className="text-xl font-semibold tracking-[-0.04em] text-[var(--help-ink-strong)]">
                         {article.title}
@@ -192,6 +275,7 @@ export function HelpCenterArticlesPage() {
                       </p>
                     </div>
                     <div className="text-left text-xs leading-5 text-[var(--help-muted)] sm:text-right">
+                      <p>{estimateListReadingTime(article.summary)} de leitura</p>
                       <p>Publicado</p>
                       <p className="mt-1 font-medium text-[var(--help-ink)]">
                         {article.published_at
@@ -214,7 +298,7 @@ export function HelpCenterArticlesPage() {
               Como navegar
             </p>
             <p className="text-sm leading-7 text-[var(--help-ink)]">
-              Use as categorias para reduzir a lista ou abra um artigo para acessar o índice lateral e os relacionados.
+              Use as categorias para abrir uma jornada operacional específica, aplique a busca quando souber o assunto e abra um artigo para acessar índice lateral e relacionados.
             </p>
           </div>
         </section>
@@ -236,7 +320,7 @@ export function HelpCenterArticlesPage() {
               Destaques
             </p>
             <div className="grid gap-2">
-              {context.articles.slice(0, 3).map((article) => (
+              {highlightedArticles.map((article) => (
                 <Link
                   className="rounded-[20px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-3 no-underline transition hover:border-[rgba(48,127,226,0.18)] hover:bg-white"
                   key={article.id}
@@ -246,11 +330,25 @@ export function HelpCenterArticlesPage() {
                     {article.title}
                   </p>
                   <p className="mt-1 text-xs leading-5 text-[var(--help-muted)]">
-                    {article.summary ?? 'Artigo público para leitura rápida.'}
+                    {article.category_name ?? 'Categoria pública'} · {estimateListReadingTime(article.summary)} de leitura
                   </p>
                 </Link>
               ))}
+              {highlightedArticles.length === 0 ? <InlineNotice>Indisponível</InlineNotice> : null}
             </div>
+          </div>
+        </section>
+
+        <section className="rounded-[28px] border border-[var(--help-border)] bg-white/88 p-5 shadow-[0_18px_42px_rgba(20,31,71,0.05)]">
+          <div className="space-y-3">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
+              Jornada atual
+            </p>
+            <p className="text-sm leading-7 text-[var(--help-ink)]">
+              {selectedCategory
+                ? `${categoryJourneyLabel(selectedCategory.category_name)} · ${selectedCategory.category_description ?? 'Conteúdo público aprovado para esta frente.'}`
+                : 'A lista completa reúne todas as jornadas públicas aprovadas desta central, sem misturar material interno ou rascunho.'}
+            </p>
           </div>
         </section>
       </aside>

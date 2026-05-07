@@ -27,11 +27,46 @@ function toneForCategoryCount(count: number) {
   return 'default' as const;
 }
 
+function categoryJourneyLabel(name: string) {
+  const normalized = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+  if (normalized.includes('primeiro')) {
+    return 'Entrada operacional';
+  }
+
+  if (normalized.includes('integr')) {
+    return 'Integrações e validações';
+  }
+
+  if (normalized.includes('suporte')) {
+    return 'Tratativa com suporte';
+  }
+
+  if (normalized.includes('reversa') || normalized.includes('operacao')) {
+    return 'Fluxo diário da operação';
+  }
+
+  return 'Leitura por jornada';
+}
+
 export function HelpCenterHomePage() {
   const context = useOutletContext<HelpCenterSpaceContext>();
   const [searchParams, setSearchParams] = useSearchParams();
   const rootCategories = context.navigation.filter(
     (entry) => entry.parent_category_id === null,
+  );
+  const categoryArticleMap = useMemo(
+    () =>
+      new Map(
+        rootCategories.map((category) => [
+          category.category_id,
+          context.articles.filter((article) => article.category_id === category.category_id),
+        ]),
+      ),
+    [context.articles, rootCategories],
   );
   const featuredArticles = context.articles.slice(0, 6);
   const supportContacts = sanitizePublicSupportContacts(
@@ -44,6 +79,19 @@ export function HelpCenterHomePage() {
   const activeQuery = (searchParams.get('q') ?? '').trim();
   const featuredArticle = featuredArticles[0] ?? null;
   const recentArticles = featuredArticles.slice(1, 4);
+  const journeyHighlights = useMemo(
+    () =>
+      rootCategories.map((category) => {
+        const relatedArticles = categoryArticleMap.get(category.category_id) ?? [];
+
+        return {
+          category,
+          spotlight: relatedArticles[0] ?? null,
+          journeyLabel: categoryJourneyLabel(category.category_name),
+        };
+      }),
+    [categoryArticleMap, rootCategories],
+  );
   const hasSupportLinks =
     Boolean(supportContacts.email) ||
     Boolean(supportContacts.docsUrl) ||
@@ -258,7 +306,7 @@ export function HelpCenterHomePage() {
                   Encontre a orientação certa para operar com mais autonomia.
                 </h2>
                 <p className="max-w-3xl text-[1rem] leading-8 text-[var(--help-muted)]">
-                  Esta central reúne apenas conteúdo publicado e aprovado, com foco em tarefas, configuração e uso diário da operação.
+                  Esta central reúne apenas conteúdo publicado e aprovado, organizado por jornadas operacionais reais de configuração, uso diário e suporte técnico B2B.
                 </p>
               </div>
 
@@ -292,10 +340,10 @@ export function HelpCenterHomePage() {
                 </div>
                 <div className="rounded-[22px] border border-[var(--help-border)] bg-white px-4 py-4">
                   <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
-                    Leitura
+                    Curadoria
                   </p>
                   <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--help-ink-strong)]">
-                    Pública
+                    Aprovada
                   </p>
                 </div>
               </div>
@@ -324,7 +372,7 @@ export function HelpCenterHomePage() {
                     Quando precisar de suporte
                   </p>
                   <p className="mt-2 text-sm leading-7 text-[var(--help-muted)]">
-                    Esta central não abre atendimento público. Use o canal operacional já combinado com a sua conta quando precisar acionar o time Genius.
+                    Esta central não abre atendimento público. Quando a leitura não resolver o caso, use o canal operacional já combinado com a sua conta para continuar com o time Genius.
                   </p>
                 </div>
               </div>
@@ -463,7 +511,7 @@ export function HelpCenterHomePage() {
                   Categorias em destaque
                 </p>
                 <h3 className="text-2xl font-semibold tracking-[-0.05em] text-[var(--help-ink-strong)]">
-                  Navegue por assunto
+                  Navegue por jornada operacional
                 </h3>
               </div>
               <Link to={`/help/${context.primaryRoute.knowledge_space_slug}/articles`}>
@@ -479,20 +527,26 @@ export function HelpCenterHomePage() {
               </div>
             ) : (
               <div className="mt-5 grid gap-3 md:grid-cols-2">
-                {rootCategories.map((category) => (
+                {journeyHighlights.map(({ category, journeyLabel, spotlight }) => (
                   <Link
                     className="rounded-[24px] border border-[var(--help-border)] bg-white px-5 py-4 no-underline transition hover:border-[var(--help-accent)]/30 hover:bg-[color:var(--help-surface)]"
                     key={category.category_id}
                     to={`/help/${context.primaryRoute.knowledge_space_slug}/articles?category=${category.category_id}`}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div>
+                      <div className="space-y-2">
+                        <StatusPill tone="accent">{journeyLabel}</StatusPill>
                         <p className="text-lg font-semibold tracking-[-0.03em] text-[var(--help-ink-strong)]">
                           {category.category_name}
                         </p>
                         <p className="mt-2 text-sm leading-7 text-[var(--help-muted)]">
                           {category.category_description ??
                             'Conteúdo público aprovado para esta frente operacional.'}
+                        </p>
+                        <p className="text-xs leading-5 text-[var(--help-muted)]">
+                          {spotlight
+                            ? `Destaque atual: ${spotlight.title}`
+                            : 'Sem destaque adicional publicado nesta jornada.'}
                         </p>
                       </div>
                       <StatusPill tone={toneForCategoryCount(category.subtree_article_count)}>
@@ -522,6 +576,12 @@ export function HelpCenterHomePage() {
                     <p className="mt-2 text-sm leading-7 text-[var(--help-muted)]">
                       {featuredArticle.summary ?? 'Artigo publicado para consulta rápida.'}
                     </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <StatusPill tone="positive">Publicado</StatusPill>
+                      <StatusPill tone="accent">
+                        {featuredArticle.category_name ?? 'Categoria pública'}
+                      </StatusPill>
+                    </div>
                   </Link>
                 ) : (
                   <InlineNotice>
@@ -558,6 +618,17 @@ export function HelpCenterHomePage() {
                     Indisponível
                   </InlineNotice>
                 )}
+              </div>
+            </section>
+
+            <section className="rounded-[32px] border border-[var(--help-border)] bg-white/88 p-5 shadow-[0_18px_42px_rgba(20,31,71,0.05)]">
+              <div className="space-y-3">
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[var(--help-muted)]">
+                  Curadoria pública
+                </p>
+                <p className="text-sm leading-7 text-[var(--help-ink)]">
+                  A origem editorial continua governada no cockpit interno de Knowledge. Aqui entram apenas leituras aprovadas para uso público.
+                </p>
               </div>
             </section>
           </aside>
