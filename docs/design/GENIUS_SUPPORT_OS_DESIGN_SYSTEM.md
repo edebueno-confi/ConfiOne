@@ -73,11 +73,15 @@ Se a implementação atual divergir do blueprint, corrigir para o blueprint.
 
 ### 4.1 Design principal
 
-A interface deve ser desenhada primeiro para:
+A interface deve ser composta primeiro com referência visual de:
 
 ```text
 1920x1080
 ```
+
+Essa medida é referência de composição, densidade e distribuição.
+
+Não representa altura física obrigatória da área útil do app.
 
 ### 4.2 Validação secundária
 
@@ -93,7 +97,44 @@ Validar também em:
 1366px
 ```
 
-### 4.4 Proibições
+### 4.4 Viewport real versus sensação Full HD
+
+`1920x1080` é referência visual de composição, não altura física obrigatória do app.
+
+A área útil real deve considerar:
+- barra do navegador;
+- abas;
+- chrome do browser;
+- barra do sistema;
+- viewport realmente disponível para o app.
+
+O layout deve ser validado usando:
+- `window.innerWidth`;
+- `window.innerHeight`;
+- não apenas screenshot nominal.
+
+Em ambiente real, o app pode operar em áreas úteis como:
+- `1920x920`;
+- `1920x900`;
+- `1440x780`.
+
+O cockpit deve caber nessa área útil sem scroll global.
+
+A sensação de Full HD deve ser obtida por escala visual menor, não por container maior.
+
+Se a viewport real disponível for menor que `1080px` de altura, o app deve:
+
+1. reduzir padding vertical;
+2. reduzir altura de cards;
+3. reduzir altura de inputs/selects;
+4. reduzir fonte secundária;
+5. reduzir gaps;
+6. compactar filtros;
+7. mover informações secundárias para tabs;
+8. preservar header, sidebar e rail;
+9. manter scroll apenas no componente central ou rail quando necessário.
+
+### 4.5 Proibições
 
 Não usar `1024px` ou `1280px` como base principal de composição.
 
@@ -105,9 +146,32 @@ Não comprimir:
 - cards de detalhe;
 - sidebars.
 
+É proibido:
+- criar container com altura baseada em `1080px` físico;
+- assumir que `100vh` equivale à área útil ideal;
+- deixar a página rolar por causa da barra do navegador;
+- resolver falta de espaço com scroll na coluna esquerda;
+- criar scroll horizontal;
+- inflar componentes para preencher blueprint.
+
 Se a tela parece boa apenas em 1280px, mas apertada ou pobre em 1920px, está errada.
 
 Em Full HD, a tela deve parecer ampla, profissional e operacional.
+
+### 4.6 Regra de QA para validação visual
+
+Em toda validação visual, reportar:
+- screenshot size;
+- `window.innerWidth`;
+- `window.innerHeight`;
+- `document.scrollingElement.scrollHeight`;
+- `document.scrollingElement.clientHeight`;
+- se há scroll global;
+- quais containers têm scroll interno.
+
+Critério correto:
+
+A tela deve parecer Full HD, mas funcionar na viewport real do navegador.
 
 ---
 
@@ -400,6 +464,29 @@ Regras:
 - não usar navegação horizontal improvisada;
 - não parecer CRUD simples;
 - usar control plane visual.
+
+### 11.3 Pendência arquitetural futura
+
+Admin e Operação devem evoluir para uma shell unificada.
+
+Direção futura:
+- App Shell único;
+- navegação renderizada por permissões e contexto do usuário;
+- `platform_admin` com acesso a áreas administrativas e operacionais;
+- agentes comuns sem acesso visual a áreas administrativas.
+
+Pré-condições obrigatórias antes de qualquer refatoração dessa unificação:
+- auditar auth;
+- auditar roles e permissões;
+- auditar rotas;
+- auditar RLS;
+- auditar navegação e estados de acesso.
+
+Não implementar nesta fase.
+
+Motivo:
+
+A fase atual é de correção do Design System, viewport real e fidelidade visual das telas Admin. Misturar unificação de shell agora aumenta risco e escopo.
 
 ---
 
