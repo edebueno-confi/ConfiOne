@@ -16,6 +16,12 @@ Registrar a primeira leva de reescrita humana dos artigos `P0` do corpus legado,
 - quando o legado for insuficiente ou ambíguo, marcar `Requer validação`
 - manter o cliente B2B como público principal
 
+## Rastro de curadoria posterior
+- o gate humano formal desta leva ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_P0_HUMAN_REVIEW_GATE.md`
+- o pacote documental de pré-publicação dos quatro elegíveis ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_P0_PUBLICATION_PREP.md`
+
 ## Artigos P0 localizados
 
 | Título original | Caminho fonte | Categoria original | Resumo do conteúdo encontrado | Riscos editoriais | Dependências de revisão |

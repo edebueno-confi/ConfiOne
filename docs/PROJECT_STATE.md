@@ -926,6 +926,47 @@ Documentos históricos:
     - checagem final de elegibilidade publica
   - Pendencias mapeadas sem implementacao nesta fase:
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.15: Knowledge P0 Publication Prep V3 concluido como pacote documental de pre-publicacao.
+  - Os quatro artigos `P0` marcados como `elegivel com ajustes` no gate humano avancaram para `docs/knowledge/KNOWLEDGE_P0_PUBLICATION_PREP.md`.
+  - O pacote consolidou, por artigo:
+    - titulo publico candidato final
+    - categoria publica final
+    - resumo publico final
+    - corpo final candidato em markdown
+    - pontos ajustados apos o gate humano
+    - pendencias humanas finais
+    - checklist de aprovacao
+    - decisao `pronto para decisao humana final, nao publicado`
+  - Artigos incluidos neste lote:
+    - `Como alterar ou aprovar os produtos de uma solicitacao?`
+    - `Como cadastrar motivos para troca ou devolucao`
+    - `Posso enviar uma notificacao de analise ao cliente?`
+    - `Reenviar um e-mail ao consumidor`
+  - Artigos mantidos fora deste lote:
+    - `Como informar a SKU durantge a troca`
+    - `Regra por motivo`
+  - O lote permaneceu estritamente documental:
+    - sem publicacao
+    - sem alteracao de backend
+    - sem alteracao de runtime
+    - sem alteracao de contracts
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Escopo explicitamente preservado:
+    - nenhuma alteracao em backend
+    - nenhuma alteracao em Supabase
+    - nenhuma alteracao em migrations
+    - nenhuma alteracao em RPCs
+    - nenhuma alteracao em contracts
+    - nenhuma alteracao em fixtures
+    - nenhuma alteracao em RLS
+    - nenhuma alteracao em permissoes
+  - Publicacao final continua dependente de aprovacao humana explicita:
+    - Produto
+    - Suporte/CS
+    - checagem final de elegibilidade publica
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -947,10 +988,9 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Materializar um contrato backend explícito para governar publish editorial com revisão humana concluída,
-incluindo o gate entre `review_status`, confirmações humanas e publicação efetiva,
-e abrir uma estratégia suportada para revisão e republicação de artigo já publicado,
-sem depender apenas de bloqueios de UX no frontend.
+Executar a decisao humana final dos quatro artigos `P0` preparados para pre-publicacao,
+fechando aprovacao de Produto e Suporte/CS artigo por artigo antes de qualquer lote futuro de publicacao,
+sem incluir os dois itens ainda bloqueados por revisao tecnica.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único

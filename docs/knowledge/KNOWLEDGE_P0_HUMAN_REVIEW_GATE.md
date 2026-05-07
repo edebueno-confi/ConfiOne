@@ -196,3 +196,10 @@ Motivo:
 - `elegível com ajustes` não significa pronto para publicar
 - `revisar tecnicamente antes` bloqueia entrada em lote de publicação futura
 - aprovação humana explícita continua obrigatória antes de qualquer próxima fase de publicação
+
+## Desdobramento posterior
+- os quatro artigos marcados como `elegível com ajustes` seguiram para pacote documental de pré-publicação em:
+  - `docs/knowledge/KNOWLEDGE_P0_PUBLICATION_PREP.md`
+- os dois artigos `revisar tecnicamente antes` permanecem fora desse lote:
+  - `Como informar a SKU durantge a troca`
+  - `Regra por motivo`

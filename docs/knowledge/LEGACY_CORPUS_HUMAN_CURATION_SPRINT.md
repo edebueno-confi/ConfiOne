@@ -323,3 +323,6 @@ As versoes candidatas da primeira sprint manual de reescrita ficaram registradas
 
 O gate humano formal de elegibilidade da leva `P0` ficou registrado em:
 - `docs/knowledge/KNOWLEDGE_P0_HUMAN_REVIEW_GATE.md`
+
+O pacote documental de pre-publicacao dos quatro artigos `P0` elegiveis com ajustes ficou registrado em:
+- `docs/knowledge/KNOWLEDGE_P0_PUBLICATION_PREP.md`

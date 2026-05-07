@@ -18,6 +18,33 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.15 - Knowledge P0 Publication Prep V3
+- fase: `7.15`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: os quatro artigos `P0` marcados como `elegível com ajustes` no gate humano foram consolidados em um pacote documental de pré-publicação com copy final candidata, checklist de aprovação, pendências humanas finais e matriz executiva pronta para decisão humana final, sem publicar nenhum conteúdo.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_P0_PUBLICATION_PREP.md`
+  - `docs/knowledge/KNOWLEDGE_P0_HUMAN_REVIEW_GATE.md`
+  - `docs/knowledge/LEGACY_CORPUS_P0_REWRITE_CANDIDATES.md`
+  - `docs/knowledge/LEGACY_CORPUS_HUMAN_CURATION_SPRINT.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+  - impacto futuro indireto em `/admin/knowledge`, `/help/genius` e `/support/tickets/:ticketId` na aba `Central de ajuda`
+- riscos restantes:
+  - nenhum artigo foi publicado; os quatro preparados continuam dependentes de aprovacao humana explicita
+  - a publicacao futura ainda depende de confirmar nomenclatura atual e aderencia do comportamento descrito no produto
+  - `Como informar a SKU durantge a troca` e `Regra por motivo` permanecem fora deste lote por bloqueio tecnico
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- impacto na FAQ futura:
+  - prepara o primeiro pacote editorial realmente pronto para decisao humana final sem misturar essa etapa com publicacao
+  - separa com clareza os artigos ja aptos a avaliacao final daqueles que ainda precisam retornar para revisao tecnica
+
 ### Fase 7.14 - Knowledge P0 Human Review Gate V3
 - fase: `7.14`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`
