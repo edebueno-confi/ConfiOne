@@ -287,6 +287,8 @@
   - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_PREP.md`
 - Preparação editorial do subcluster de prazo e pendências de postagem registrada em:
   - `docs/knowledge/KNOWLEDGE_PRAZO_PENDENCIAS_POSTAGEM_SUBCLUSTER_PREP.md`
+- Versão candidata pública de prazo de postagem registrada em:
+  - `docs/knowledge/KNOWLEDGE_PRAZO_POSTAGEM_REWRITE.md`
 
 ### Clusters candidatos
 

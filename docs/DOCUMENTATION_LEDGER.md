@@ -18,6 +18,34 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.35 - Knowledge PrazoPostagem Public Rewrite V3
+- fase: `7.35`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: a versão candidata pública segura `Como o prazo de postagem afeta a operação de troca e devolução` foi criada em documentação, com ficha editorial, corpo em markdown, checklist de validação humana e bloqueio explícito de publicação até evidência real, sem alterar conteúdo publicado nem o corpus legado bruto.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_PRAZO_POSTAGEM_REWRITE.md`
+  - `docs/knowledge/KNOWLEDGE_PRAZO_PENDENCIAS_POSTAGEM_SUBCLUSTER_PREP.md`
+  - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_PREP.md`
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+- riscos restantes:
+  - o candidato ainda depende de validacao humana de Produto e Suporte/CS
+  - detalhes de integracao, contrato, token e procedimento interno continuam explicitamente fora do escopo
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - transforma o primeiro recorte seguro de prazo logístico em candidato público governado, sem contaminar o artigo com trilhas técnicas ou internas
+
 ### Fase 7.34 - Knowledge PrazoPendenciasPostagem Subcluster Prep V3
 - fase: `7.34`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

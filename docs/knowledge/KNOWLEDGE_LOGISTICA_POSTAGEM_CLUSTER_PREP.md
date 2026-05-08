@@ -435,3 +435,5 @@
 - nenhum artigo foi publicado
 - o subcluster seguro de prazo e pendências ficou registrado em:
   - `docs/knowledge/KNOWLEDGE_PRAZO_PENDENCIAS_POSTAGEM_SUBCLUSTER_PREP.md`
+- a versão candidata pública de prazo de postagem ficou registrada em:
+  - `docs/knowledge/KNOWLEDGE_PRAZO_POSTAGEM_REWRITE.md`

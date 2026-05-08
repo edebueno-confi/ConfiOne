@@ -31,6 +31,8 @@
   - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_PREP.md`
 - A preparação editorial do subcluster de prazo e pendências de postagem ficou registrada em:
   - `docs/knowledge/KNOWLEDGE_PRAZO_PENDENCIAS_POSTAGEM_SUBCLUSTER_PREP.md`
+- A versão candidata pública de prazo de postagem ficou registrada em:
+  - `docs/knowledge/KNOWLEDGE_PRAZO_POSTAGEM_REWRITE.md`
 
 | Artigo | Categoria proposta | Prioridade | Decisão Produto | Decisão Suporte/CS | Pode publicar | Pendência principal | Evidência necessária |
 | --- | --- | --- | --- | --- | --- | --- | --- |

@@ -275,4 +275,5 @@
 - nenhum artigo foi aprovado
 - nenhuma aprovação foi simulada
 - nenhum artigo foi publicado
-
+- a versão candidata pública de prazo de postagem ficou registrada em:
+  - `docs/knowledge/KNOWLEDGE_PRAZO_POSTAGEM_REWRITE.md`

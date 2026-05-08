@@ -1549,6 +1549,33 @@ Documentos históricos:
   - Pendencias mapeadas sem implementacao nesta fase:
     - proximos lotes devem seguir por reescrita segura do subcluster ou por validacao humana apos reescrita
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.35: Knowledge PrazoPostagem Public Rewrite V3 concluido como criacao da versao candidata publica segura de prazo de postagem.
+  - A versao candidata foi criada em `docs/knowledge/KNOWLEDGE_PRAZO_POSTAGEM_REWRITE.md`.
+  - A fase transformou o artigo legado `Como Configurar o Prazo Logístico por Estado?` em candidato publico controlado com foco em:
+    - prazo de postagem e janela operacional
+    - impacto de prazo na operacao
+    - sinais observaveis de expiracao ou pendencia
+    - revisao de dados antes de acionar suporte
+  - O recorte permaneceu explicitamente fora de:
+    - integracao com Correios
+    - contrato, token e autorizacao tecnica
+    - procedimento interno de backoffice
+    - regra manual de nao gerar logistica reversa
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - o candidato depende de validacao humana de `Produto` e `Suporte/CS`
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
