@@ -6,6 +6,7 @@ import type {
   CustomerIntegrationType,
   CustomerOperationalStatus,
   CustomerProductLine,
+  EngineeringWorkItemType,
   KnowledgeArticleStatus,
   KnowledgeArticleVisibility,
   RpcAddInternalTicketNotePayload,
@@ -22,8 +23,12 @@ import type {
   RpcReopenTicketResponse,
   RpcSupportArchiveTicketArticleLinkPayload,
   RpcSupportArchiveTicketArticleLinkResponse,
+  RpcSupportCreateEngineeringWorkItemFromTicketPayload,
+  RpcSupportCreateEngineeringWorkItemFromTicketResponse,
   RpcSupportLinkTicketArticlePayload,
   RpcSupportLinkTicketArticleResponse,
+  RpcSupportLinkTicketToEngineeringWorkItemPayload,
+  RpcSupportLinkTicketToEngineeringWorkItemResponse,
   RpcSupportMarkArticleNeedsUpdatePayload,
   RpcSupportMarkArticleNeedsUpdateResponse,
   RpcSupportMarkDocumentationGapPayload,
@@ -42,7 +47,9 @@ import type {
   SupportKnowledgeArticlePickerItem,
   SupportCustomerRecentEventsWindow,
   SupportCustomerRecentTicketsWindow,
+  SupportTicketAttachment,
   SupportTicketDetail,
+  SupportTicketEngineeringLink,
   SupportTicketKnowledgeLink,
   SupportTicketQueueItem,
   SupportTicketTimelineItem,
@@ -481,6 +488,52 @@ export async function getSupportTicketTimelineRecent(
   };
 }
 
+function mapSupportTicketAttachment(
+  row: Record<string, unknown>,
+): SupportTicketAttachment {
+  return {
+    attachmentId: String(row.attachment_id),
+    ticketId: String(row.ticket_id),
+    tenantId: String(row.tenant_id),
+    messageId: (row.message_id as string | null) ?? null,
+    visibility: row.visibility as SupportTicketAttachment['visibility'],
+    fileName: String(row.file_name),
+    contentType: (row.content_type as string | null) ?? null,
+    byteSize: Number(row.byte_size ?? 0),
+    uploadedByUserId: String(row.uploaded_by_user_id),
+    uploadedByFullName: (row.uploaded_by_full_name as string | null) ?? null,
+    createdAt: String(row.created_at),
+    bucketConfigured: Boolean(row.bucket_configured),
+    storageObjectPresent: Boolean(row.storage_object_present),
+    downloadAvailable: Boolean(row.download_available),
+  };
+}
+
+function mapSupportTicketEngineeringLink(
+  row: Record<string, unknown>,
+): SupportTicketEngineeringLink {
+  return {
+    engineeringTicketLinkId: String(row.engineering_ticket_link_id),
+    ticketId: String(row.ticket_id),
+    tenantId: String(row.tenant_id),
+    handoffNote: (row.handoff_note as string | null) ?? null,
+    createdByUserId: String(row.created_by_user_id),
+    createdByFullName: (row.created_by_full_name as string | null) ?? null,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    engineeringWorkItemId: String(row.engineering_work_item_id),
+    workItemType: row.work_item_type as EngineeringWorkItemType,
+    workItemStatus: row.work_item_status as SupportTicketEngineeringLink['workItemStatus'],
+    workItemPriority: row.work_item_priority as SupportTicketEngineeringLink['workItemPriority'],
+    workItemTitle: String(row.work_item_title),
+    workItemDescription: String(row.work_item_description),
+    assignedToUserId: (row.assigned_to_user_id as string | null) ?? null,
+    assignedToFullName: (row.assigned_to_full_name as string | null) ?? null,
+    workItemCreatedAt: String(row.work_item_created_at),
+    workItemUpdatedAt: String(row.work_item_updated_at),
+  };
+}
+
 function mapSupportTicketIntakeTenant(
   row: Record<string, unknown>,
 ): SupportTicketIntakeTenant {
@@ -703,6 +756,40 @@ export async function getSupportTicketKnowledgeLinks(ticketId: Uuid) {
   return (data ?? []).map((row) => mapTicketKnowledgeLink(row as Record<string, unknown>));
 }
 
+export async function listSupportTicketAttachments(ticketId: Uuid) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_support_ticket_attachments')
+    .select('*')
+    .eq('ticket_id', ticketId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar as evidências vinculadas a este ticket.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapSupportTicketAttachment(row as Record<string, unknown>),
+  );
+}
+
+export async function listSupportTicketEngineeringLinks(ticketId: Uuid) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_support_ticket_engineering_links')
+    .select('*')
+    .eq('ticket_id', ticketId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar os handoffs técnicos deste ticket.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapSupportTicketEngineeringLink(row as Record<string, unknown>),
+  );
+}
+
 export async function listSupportKnowledgeArticlePicker(ticketId: Uuid) {
   const client = requireClient();
   const { data, error } = await client
@@ -892,4 +979,46 @@ export async function markSupportArticleNeedsUpdate(
   }
 
   return data as RpcSupportMarkArticleNeedsUpdateResponse;
+}
+
+export async function createSupportEngineeringWorkItemFromTicket(
+  payload: RpcSupportCreateEngineeringWorkItemFromTicketPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_support_create_engineering_work_item_from_ticket',
+    {
+      p_ticket_id: payload.ticketId,
+      p_work_item_type: payload.workItemType,
+      p_title: payload.title,
+      p_description: payload.description,
+      p_handoff_note: payload.handoffNote ?? null,
+    },
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao criar a demanda técnica vinculada ao ticket.');
+  }
+
+  return data as RpcSupportCreateEngineeringWorkItemFromTicketResponse;
+}
+
+export async function linkSupportTicketToEngineeringWorkItem(
+  payload: RpcSupportLinkTicketToEngineeringWorkItemPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_support_link_ticket_to_engineering_work_item',
+    {
+      p_ticket_id: payload.ticketId,
+      p_engineering_work_item_id: payload.engineeringWorkItemId,
+      p_handoff_note: payload.handoffNote ?? null,
+    },
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao vincular este ticket a uma demanda técnica.');
+  }
+
+  return data as RpcSupportLinkTicketToEngineeringWorkItemResponse;
 }

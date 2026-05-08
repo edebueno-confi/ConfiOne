@@ -39,6 +39,7 @@ import {
 import { useAuthContext } from '../auth/auth-context';
 import { classifyAdminError } from '../admin/admin-errors';
 import {
+  createSupportEngineeringWorkItemFromTicket,
   addInternalTicketNote,
   addTicketMessage,
   archiveSupportTicketArticleLink,
@@ -50,6 +51,8 @@ import {
   getSupportCustomerRecentEvents,
   getSupportCustomerRecentTickets,
   getSupportTicketDetail,
+  listSupportTicketAttachments,
+  listSupportTicketEngineeringLinks,
   getSupportTicketKnowledgeLinks,
   getSupportTicketTimelinePage,
   getSupportTicketTimelineRecent,
@@ -66,12 +69,14 @@ import {
   updateTicketStatus,
 } from './support-api';
 import {
+  ENGINEERING_WORK_ITEM_TYPES,
   TICKET_PRIORITIES,
   TICKET_SEVERITIES,
   TICKET_SOURCES,
   TICKET_STATUSES,
   type KnowledgeArticleStatus,
   type KnowledgeArticleVisibility,
+  type EngineeringWorkItemType,
   type SupportAssignableAgent,
   type SupportCustomerAccountAlert,
   type SupportCustomerAccountContext,
@@ -88,6 +93,8 @@ import {
   type SupportTicketIntakeContact,
   type SupportTicketIntakeTenant,
   type SupportTicketDetail,
+  type SupportTicketAttachment,
+  type SupportTicketEngineeringLink,
   type SupportTicketKnowledgeLink,
   type SupportTicketQueueItem,
   type SupportTicketTimelineItem,
@@ -106,6 +113,8 @@ type DetailPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'erro
 type AgentsPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type KnowledgePhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type IntakePhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
+type AttachmentPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
+type EngineeringPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type WorkspaceVariant = 'queue' | 'tickets';
 type ComposerMode = 'public' | 'internal';
 
@@ -125,6 +134,13 @@ interface TicketIntakeDraft {
   severity: TicketSeverity;
   title: string;
   description: string;
+}
+
+interface EngineeringHandoffDraft {
+  workItemType: EngineeringWorkItemType;
+  title: string;
+  description: string;
+  handoffNote: string;
 }
 
 function toneForTicketStatus(status: TicketStatus) {
@@ -483,6 +499,12 @@ function humanizeTicketEventLabel(eventType: SupportTicketTimelineItem['eventTyp
       return 'Mensagem registrada';
     case 'internal_note_added':
       return 'Nota interna registrada';
+    case 'attachment_added':
+      return 'Evidência registrada';
+    case 'escalated_to_engineering':
+      return 'Escalado para engenharia';
+    case 'linked_to_work_item':
+      return 'Vinculado a demanda técnica';
     case 'resolved':
       return 'Ticket resolvido';
     case 'cancelled':
@@ -561,6 +583,62 @@ function humanizeSupportRole(role: SupportAssignableAgent['role']) {
   }
 
   return 'Support agent';
+}
+
+function humanizeEngineeringWorkItemType(workItemType: EngineeringWorkItemType) {
+  switch (workItemType) {
+    case 'bug':
+      return 'Bug';
+    case 'improvement':
+      return 'Melhoria';
+    case 'technical_task':
+      return 'Tarefa técnica';
+    case 'investigation':
+      return 'Investigação';
+    default:
+      return humanizeToken(workItemType).replaceAll('_', ' ');
+  }
+}
+
+function humanizeEngineeringWorkItemStatus(
+  status: SupportTicketEngineeringLink['workItemStatus'],
+) {
+  switch (status) {
+    case 'triage':
+      return 'Triagem';
+    case 'accepted':
+      return 'Aceito';
+    case 'rejected':
+      return 'Rejeitado';
+    case 'in_progress':
+      return 'Em andamento';
+    case 'waiting_external':
+      return 'Aguardando externo';
+    case 'released':
+      return 'Liberado';
+    case 'cancelled':
+      return 'Cancelado';
+    default:
+      return humanizeToken(status).replaceAll('_', ' ');
+  }
+}
+
+function toneForEngineeringWorkItemStatus(
+  status: SupportTicketEngineeringLink['workItemStatus'],
+) {
+  if (status === 'released') {
+    return 'positive' as const;
+  }
+
+  if (status === 'rejected' || status === 'cancelled') {
+    return 'critical' as const;
+  }
+
+  if (status === 'triage' || status === 'waiting_external') {
+    return 'warning' as const;
+  }
+
+  return 'default' as const;
 }
 
 function formatAssignableAgentLabel(agent: SupportAssignableAgent) {
@@ -642,6 +720,23 @@ function emptyKnowledgeArticlePicker(): SupportKnowledgeArticlePickerItem[] {
   return [];
 }
 
+function emptyTicketAttachments(): SupportTicketAttachment[] {
+  return [];
+}
+
+function emptyTicketEngineeringLinks(): SupportTicketEngineeringLink[] {
+  return [];
+}
+
+function emptyEngineeringHandoffDraft(): EngineeringHandoffDraft {
+  return {
+    workItemType: 'investigation',
+    title: '',
+    description: '',
+    handoffNote: '',
+  };
+}
+
 function buildStatusChoices(currentStatus: TicketStatus) {
   const available = TICKET_STATUSES.filter(
     (status): status is TicketStatusUpdateTarget =>
@@ -680,6 +775,20 @@ function summarizeTimelineEvent(entry: SupportTicketTimelineItem) {
 
   if (entry.eventType === 'status_changed' && statusValue) {
     return `Status movido para ${humanizeStatus(statusValue as TicketStatus)}.`;
+  }
+
+  if (entry.eventType === 'escalated_to_engineering') {
+    const workItemType = readTimelineMetadataString(entry, 'work_item_type');
+    return workItemType
+      ? `Handoff técnico aberto como ${humanizeEngineeringWorkItemType(workItemType as EngineeringWorkItemType)}.`
+      : 'Handoff técnico registrado para a equipe de engenharia.';
+  }
+
+  if (entry.eventType === 'linked_to_work_item') {
+    const workItemStatus = readTimelineMetadataString(entry, 'work_item_status');
+    return workItemStatus
+      ? `Ticket vinculado a uma demanda técnica em ${humanizeEngineeringWorkItemStatus(workItemStatus as SupportTicketEngineeringLink['workItemStatus'])}.`
+      : 'Ticket vinculado a uma demanda técnica existente.';
   }
 
   if (entry.eventType === 'assigned') {
@@ -1673,11 +1782,148 @@ function SupportHelpPanel({
   );
 }
 
+function SupportTicketAttachmentsPanel({
+  attachments,
+  message,
+  phase,
+}: {
+  attachments: SupportTicketAttachment[];
+  message: string | null;
+  phase: AttachmentPhase;
+}) {
+  if (phase === 'loading' || phase === 'idle') {
+    return (
+      <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.06)]">
+        <h4 className="text-[13px] font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
+          Evidências
+        </h4>
+        <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
+          Carregando o inventário de anexos vinculados ao ticket.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.06)]">
+      <div className="space-y-1.5">
+        <h4 className="text-[13px] font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
+          Evidências
+        </h4>
+        <p className="text-sm leading-6 text-[color:var(--color-muted)]">
+          A leitura mostra apenas metadados sanitizados. O upload segue bloqueado até existir storage governado com bucket e policies seguras.
+        </p>
+      </div>
+
+      <div className="mt-3 space-y-2.5">
+        {phase === 'contract-unavailable' || phase === 'error' ? (
+          <InlineNotice tone="warning">
+            {message ?? 'A leitura operacional de evidências não ficou disponível neste ambiente.'}
+          </InlineNotice>
+        ) : attachments.length === 0 ? (
+          <InlineNotice>
+            Nenhuma evidência vinculada apareceu neste ticket. O upload ainda não está habilitado.
+          </InlineNotice>
+        ) : (
+          attachments.map((attachment) => (
+            <article
+              className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3"
+              key={attachment.attachmentId}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0 space-y-1">
+                  <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
+                    {attachment.fileName}
+                  </p>
+                  <p className="text-[12px] text-[color:var(--color-muted)]">
+                    {attachment.byteSize > 0
+                      ? `${Math.max(1, Math.round(attachment.byteSize / 1024))} KB`
+                      : 'Tamanho indisponível'}
+                    {' · '}
+                    {attachment.contentType ?? 'Tipo indisponível'}
+                  </p>
+                </div>
+                <StatusPill tone={attachment.visibility === 'internal' ? 'warning' : 'accent'}>
+                  {humanizeVisibility(attachment.visibility)}
+                </StatusPill>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <StatusPill tone={attachment.bucketConfigured ? 'positive' : 'warning'}>
+                  {attachment.bucketConfigured ? 'Bucket validado' : 'Bucket ausente'}
+                </StatusPill>
+                <StatusPill tone={attachment.storageObjectPresent ? 'positive' : 'warning'}>
+                  {attachment.storageObjectPresent ? 'Objeto localizado' : 'Objeto ausente'}
+                </StatusPill>
+                <StatusPill tone={attachment.downloadAvailable ? 'positive' : 'default'}>
+                  {attachment.downloadAvailable ? 'Download governado disponível' : 'Download indisponível'}
+                </StatusPill>
+              </div>
+              <p className="mt-2 text-[12px] leading-5 text-[color:var(--color-muted)]">
+                Registrado por {attachment.uploadedByFullName ?? 'usuário não resolvido'} em{' '}
+                {formatDateTime(attachment.createdAt)}.
+              </p>
+            </article>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+function SupportEngineeringLinkCard({
+  link,
+}: {
+  link: SupportTicketEngineeringLink;
+}) {
+  return (
+    <article className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0 space-y-1">
+          <p className="text-sm font-semibold text-[color:var(--color-ink)]">
+            {link.workItemTitle}
+          </p>
+          <p className="text-[12px] uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
+            {humanizeEngineeringWorkItemType(link.workItemType)} · {humanizePriority(link.workItemPriority)}
+          </p>
+        </div>
+        <StatusPill tone={toneForEngineeringWorkItemStatus(link.workItemStatus)}>
+          {humanizeEngineeringWorkItemStatus(link.workItemStatus)}
+        </StatusPill>
+      </div>
+      <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
+        {link.workItemDescription}
+      </p>
+      {link.handoffNote ? (
+        <div className="mt-2 rounded-[14px] border border-dashed border-[rgba(48,127,226,0.24)] bg-white px-3 py-2">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
+            Contexto do handoff
+          </p>
+          <p className="mt-1 text-sm leading-6 text-[color:var(--color-ink)]">{link.handoffNote}</p>
+        </div>
+      ) : null}
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[12px] text-[color:var(--color-muted)]">
+        <span>
+          Criado por {link.createdByFullName ?? 'usuário não resolvido'} em {formatDateTime(link.createdAt)}
+        </span>
+        <span>Responsável: {link.assignedToFullName ?? 'Indisponível'}</span>
+      </div>
+    </article>
+  );
+}
+
 function SupportMoreActionsPanel({
+  engineeringLinks,
+  engineeringMessage,
+  engineeringPhase,
+  handoffDraft,
+  handoffSubmitting,
   closeReason,
   canClose,
   canReopen,
   canUpdateStatus,
+  canCreateEngineeringHandoff,
+  onEngineeringHandoffDraftChange,
+  onEngineeringHandoffSubmit,
   onCloseReasonChange,
   onCloseSubmit,
   onReopenReasonChange,
@@ -1689,10 +1935,18 @@ function SupportMoreActionsPanel({
   submitting,
   window,
 }: {
+  engineeringLinks: SupportTicketEngineeringLink[];
+  engineeringMessage: string | null;
+  engineeringPhase: EngineeringPhase;
+  handoffDraft: EngineeringHandoffDraft;
+  handoffSubmitting: boolean;
   closeReason: string;
   canClose: boolean;
   canReopen: boolean;
   canUpdateStatus: boolean;
+  canCreateEngineeringHandoff: boolean;
+  onEngineeringHandoffDraftChange: (patch: Partial<EngineeringHandoffDraft>) => void;
+  onEngineeringHandoffSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onCloseReasonChange: (value: string) => void;
   onCloseSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onReopenReasonChange: (value: string) => void;
@@ -1717,6 +1971,113 @@ function SupportMoreActionsPanel({
 
       <div className="grid gap-3 xl:grid-cols-[minmax(0,0.92fr)_minmax(260px,0.8fr)]">
         <div className="space-y-3">
+          <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
+            <div className="space-y-1">
+              <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">
+                Escalonamento técnico
+              </h4>
+              <p className="text-sm leading-6 text-[color:var(--color-muted)]">
+                Crie uma demanda técnica estruturada quando o ticket precisar sair do fluxo de atendimento e entrar no backlog operacional de engenharia.
+              </p>
+            </div>
+
+            <div className="mt-3 space-y-2.5">
+              {engineeringPhase === 'contract-unavailable' ? (
+                <InlineNotice tone="warning">
+                  {engineeringMessage ?? 'O contrato de handoff técnico não ficou disponível neste ambiente.'}
+                </InlineNotice>
+              ) : engineeringPhase === 'error' ? (
+                <InlineNotice tone="warning">
+                  {engineeringMessage ?? 'Não foi possível carregar o handoff técnico deste ticket.'}
+                </InlineNotice>
+              ) : engineeringLinks.length === 0 ? (
+                <InlineNotice>
+                  Nenhuma demanda técnica foi vinculada ainda a este ticket.
+                </InlineNotice>
+              ) : (
+                engineeringLinks.map((link) => (
+                  <SupportEngineeringLinkCard key={link.engineeringTicketLinkId} link={link} />
+                ))
+              )}
+            </div>
+
+            <form className="mt-3 space-y-2.5 border-t border-[color:var(--color-border)] pt-3" onSubmit={onEngineeringHandoffSubmit}>
+              <Field
+                label="Tipo da demanda técnica"
+                description="Use o tipo que melhor descreve o bloco de trabalho que vai para engenharia."
+              >
+                <SelectInput
+                  onChange={(event) =>
+                    onEngineeringHandoffDraftChange({
+                      workItemType: event.target.value as EngineeringWorkItemType,
+                    })
+                  }
+                  value={handoffDraft.workItemType}
+                >
+                  {ENGINEERING_WORK_ITEM_TYPES.map((item) => (
+                    <option key={item} value={item}>
+                      {humanizeEngineeringWorkItemType(item)}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Field>
+
+              <Field label="Título técnico">
+                <TextInput
+                  onChange={(event) =>
+                    onEngineeringHandoffDraftChange({ title: event.target.value })
+                  }
+                  placeholder="Resumo curto e objetivo do problema técnico."
+                  value={handoffDraft.title}
+                />
+              </Field>
+
+              <Field label="Descrição da demanda">
+                <TextareaInput
+                  className="min-h-[96px]"
+                  onChange={(event) =>
+                    onEngineeringHandoffDraftChange({ description: event.target.value })
+                  }
+                  placeholder="Explique o impacto, o contexto e o comportamento observado."
+                  value={handoffDraft.description}
+                />
+              </Field>
+
+              <Field
+                label="Contexto do handoff"
+                description="Opcional. Use para registrar o enquadramento operacional que já foi validado pelo suporte."
+              >
+                <TextareaInput
+                  className="min-h-[84px]"
+                  onChange={(event) =>
+                    onEngineeringHandoffDraftChange({ handoffNote: event.target.value })
+                  }
+                  placeholder="Exemplo: cliente afetado, janela, impacto e o que já foi conferido."
+                  value={handoffDraft.handoffNote}
+                />
+              </Field>
+
+              <AppButton
+                className="min-h-10 rounded-[14px] px-4.5"
+                disabled={
+                  handoffSubmitting ||
+                  !canCreateEngineeringHandoff ||
+                  handoffDraft.title.trim().length === 0 ||
+                  handoffDraft.description.trim().length === 0
+                }
+                type="submit"
+              >
+                {handoffSubmitting ? 'Criando demanda...' : 'Criar demanda técnica'}
+              </AppButton>
+
+              {!canCreateEngineeringHandoff ? (
+                <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
+                  O backend não liberou criação de handoff técnico para este ticket no contexto atual.
+                </p>
+              ) : null}
+            </form>
+          </section>
+
           <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
             <form className="space-y-2.5" onSubmit={onStatusSubmit}>
               <Field
@@ -2885,6 +3246,14 @@ function SupportWorkspaceView({
     useState<SupportTicketKnowledgeLink[]>(emptyTicketKnowledgeLinks());
   const [knowledgeArticlePicker, setKnowledgeArticlePicker] =
     useState<SupportKnowledgeArticlePickerItem[]>(emptyKnowledgeArticlePicker());
+  const [attachments, setAttachments] =
+    useState<SupportTicketAttachment[]>(emptyTicketAttachments());
+  const [attachmentPhase, setAttachmentPhase] = useState<AttachmentPhase>('idle');
+  const [attachmentMessage, setAttachmentMessage] = useState<string | null>(null);
+  const [engineeringLinks, setEngineeringLinks] =
+    useState<SupportTicketEngineeringLink[]>(emptyTicketEngineeringLinks());
+  const [engineeringPhase, setEngineeringPhase] = useState<EngineeringPhase>('idle');
+  const [engineeringMessage, setEngineeringMessage] = useState<string | null>(null);
   const [knowledgePhase, setKnowledgePhase] = useState<KnowledgePhase>('idle');
   const [knowledgeMessage, setKnowledgeMessage] = useState<string | null>(null);
   const [knowledgeSearch, setKnowledgeSearch] = useState('');
@@ -2902,6 +3271,9 @@ function SupportWorkspaceView({
   const [intakeTenants, setIntakeTenants] = useState<SupportTicketIntakeTenant[]>([]);
   const [intakeContacts, setIntakeContacts] = useState<SupportTicketIntakeContact[]>([]);
   const [intakeDraft, setIntakeDraft] = useState<TicketIntakeDraft>(emptyTicketIntakeDraft());
+  const [handoffDraft, setHandoffDraft] =
+    useState<EngineeringHandoffDraft>(emptyEngineeringHandoffDraft());
+  const [handoffSubmitting, setHandoffSubmitting] = useState(false);
   const [statusDraft, setStatusDraft] = useState<TicketStatusUpdateTarget>('triage');
   const [statusNote, setStatusNote] = useState('');
   const [closeReason, setCloseReason] = useState('');
@@ -3064,6 +3436,10 @@ function SupportWorkspaceView({
     setDetailMessage(null);
     setAgentsPhase('loading');
     setAgentsMessage(null);
+    setAttachmentPhase('loading');
+    setAttachmentMessage(null);
+    setEngineeringPhase('loading');
+    setEngineeringMessage(null);
     setKnowledgePhase('loading');
     setKnowledgeMessage(null);
 
@@ -3082,6 +3458,12 @@ function SupportWorkspaceView({
         setCustomer(null);
         setCustomerRecentTickets(emptyCustomerRecentTicketsWindow());
         setCustomerRecentEvents(emptyCustomerRecentEventsWindow());
+        setAttachments(emptyTicketAttachments());
+        setAttachmentPhase('idle');
+        setAttachmentMessage(null);
+        setEngineeringLinks(emptyTicketEngineeringLinks());
+        setEngineeringPhase('idle');
+        setEngineeringMessage(null);
         setKnowledgeLinks(emptyTicketKnowledgeLinks());
         setKnowledgeArticlePicker(emptyKnowledgeArticlePicker());
         setKnowledgePhase('idle');
@@ -3106,6 +3488,9 @@ function SupportWorkspaceView({
       setDetailPhase('ready');
       setStatusDraft(detail.status === 'closed' ? 'triage' : detail.status);
       setAssignDraft(detail.assignedToUserId ?? '');
+      if (!options?.preserveSurfaceState) {
+        setHandoffDraft(emptyEngineeringHandoffDraft());
+      }
       if (!options?.preserveSurfaceState) {
         setTicketToolbarTab('conversation');
       }
@@ -3143,6 +3528,38 @@ function SupportWorkspaceView({
         setAssignableAgents([]);
         setAgentsMessage(classified.message);
         setAgentsPhase(
+          classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
+        );
+      }
+
+      try {
+        const [attachmentRows, engineeringLinkRows] = await Promise.all([
+          listSupportTicketAttachments(detail.id),
+          listSupportTicketEngineeringLinks(detail.id),
+        ]);
+        setAttachments(attachmentRows);
+        setAttachmentPhase('ready');
+        setEngineeringLinks(engineeringLinkRows);
+        setEngineeringPhase('ready');
+      } catch (error) {
+        const classified = classifyAdminError(
+          error,
+          'Falha ao carregar as evidências e os handoffs técnicos do ticket.',
+        );
+
+        if (classified.kind === 'session-expired') {
+          markSessionExpired();
+          return;
+        }
+
+        setAttachments(emptyTicketAttachments());
+        setAttachmentMessage(classified.message);
+        setAttachmentPhase(
+          classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
+        );
+        setEngineeringLinks(emptyTicketEngineeringLinks());
+        setEngineeringMessage(classified.message);
+        setEngineeringPhase(
           classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
         );
       }
@@ -3196,6 +3613,12 @@ function SupportWorkspaceView({
       setCustomerAccountContext(null);
       setCustomerRecentTickets(emptyCustomerRecentTicketsWindow());
       setCustomerRecentEvents(emptyCustomerRecentEventsWindow());
+      setAttachments(emptyTicketAttachments());
+      setAttachmentPhase('idle');
+      setAttachmentMessage(null);
+      setEngineeringLinks(emptyTicketEngineeringLinks());
+      setEngineeringPhase('idle');
+      setEngineeringMessage(null);
       setKnowledgeLinks(emptyTicketKnowledgeLinks());
       setKnowledgeArticlePicker(emptyKnowledgeArticlePicker());
       setKnowledgePhase('idle');
@@ -3248,6 +3671,12 @@ function SupportWorkspaceView({
       setCustomerAccountContext(null);
       setCustomerRecentTickets(emptyCustomerRecentTicketsWindow());
       setCustomerRecentEvents(emptyCustomerRecentEventsWindow());
+      setAttachments(emptyTicketAttachments());
+      setAttachmentPhase('idle');
+      setAttachmentMessage(null);
+      setEngineeringLinks(emptyTicketEngineeringLinks());
+      setEngineeringPhase('idle');
+      setEngineeringMessage(null);
       setKnowledgeLinks(emptyTicketKnowledgeLinks());
       setKnowledgeArticlePicker(emptyKnowledgeArticlePicker());
       setKnowledgePhase('idle');
@@ -3579,6 +4008,50 @@ function SupportWorkspaceView({
     return trimmed.length > 0 ? trimmed : null;
   }
 
+  async function handleCreateEngineeringHandoff(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!ticketDetail) {
+      return;
+    }
+
+    const title = handoffDraft.title.trim();
+    const description = handoffDraft.description.trim();
+
+    if (!ticketDetail.canUpdateStatus || title.length === 0 || description.length === 0) {
+      return;
+    }
+
+    setHandoffSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      await createSupportEngineeringWorkItemFromTicket({
+        ticketId: ticketDetail.id,
+        workItemType: handoffDraft.workItemType,
+        title,
+        description,
+        handoffNote: handoffDraft.handoffNote.trim() || null,
+      });
+      setHandoffDraft(emptyEngineeringHandoffDraft());
+      await refreshDetail(ticketDetail.id);
+      setTicketToolbarTab('more');
+      applySuccess('Demanda técnica criada e vinculada ao ticket com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao criar a demanda técnica vinculada a este ticket.',
+      );
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(classified.message);
+    } finally {
+      setHandoffSubmitting(false);
+    }
+  }
+
   async function handleArchiveKnowledgeLink(linkId: Uuid) {
     if (!ticketDetail) {
       return;
@@ -3893,6 +4366,10 @@ function SupportWorkspaceView({
   const canUsePublicComposer = ticketDetail?.canAddMessage ?? false;
   const canUseInternalComposer = ticketDetail?.canAddInternalNote ?? false;
   const knowledgeBusy = knowledgeSubmitting;
+  const canCreateEngineeringHandoff =
+    (ticketDetail?.canUpdateStatus ?? false) &&
+    engineeringPhase !== 'contract-unavailable' &&
+    engineeringPhase !== 'error';
   const selectedQueueTicket =
     tickets.find((ticket) => ticket.id === selectedTicketId) ?? null;
   const previewTicket = ticketDetail ?? null;
@@ -4810,10 +5287,20 @@ function SupportWorkspaceView({
                     />
                   ) : (
                     <SupportMoreActionsPanel
+                      canCreateEngineeringHandoff={canCreateEngineeringHandoff}
                       canClose={ticketDetail.canClose}
                       canReopen={ticketDetail.canReopen}
                       canUpdateStatus={ticketDetail.canUpdateStatus}
                       closeReason={closeReason}
+                      engineeringLinks={engineeringLinks}
+                      engineeringMessage={engineeringMessage}
+                      engineeringPhase={engineeringPhase}
+                      handoffDraft={handoffDraft}
+                      handoffSubmitting={handoffSubmitting}
+                      onEngineeringHandoffDraftChange={(patch) =>
+                        setHandoffDraft((current) => ({ ...current, ...patch }))
+                      }
+                      onEngineeringHandoffSubmit={handleCreateEngineeringHandoff}
                       onCloseReasonChange={setCloseReason}
                       onCloseSubmit={handleClose}
                       onReopenReasonChange={setReopenReason}
@@ -4846,6 +5333,12 @@ function SupportWorkspaceView({
                 />
               </div>
             </section>
+
+            <SupportTicketAttachmentsPanel
+              attachments={attachments}
+              message={attachmentMessage}
+              phase={attachmentPhase}
+            />
 
             <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.06)]">
               <div className="space-y-1.5">
