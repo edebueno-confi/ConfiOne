@@ -40,6 +40,35 @@ const FIXTURE = {
       tenantSlug: 'support-qa-b',
     },
   ],
+  accessUsers: [
+    {
+      key: 'access-tenant-admin',
+      email: 'qa.local.access-tenant-admin@genius.local',
+      password: 'Local-QA-Access-Admin-2026!',
+      fullName: 'QA Local Access Tenant Admin',
+      tenantSlug: 'support-qa-a',
+      role: 'tenant_admin',
+      status: 'active',
+    },
+    {
+      key: 'access-invited-viewer',
+      email: 'qa.local.access-invited-viewer@genius.local',
+      password: 'Local-QA-Access-Viewer-2026!',
+      fullName: 'QA Local Access Invited Viewer',
+      tenantSlug: 'support-qa-b',
+      role: 'tenant_viewer',
+      status: 'invited',
+    },
+    {
+      key: 'access-revoked-requester',
+      email: 'qa.local.access-revoked-requester@genius.local',
+      password: 'Local-QA-Access-Revoked-2026!',
+      fullName: 'QA Local Access Revoked Requester',
+      tenantSlug: 'support-qa-c',
+      role: 'tenant_requester',
+      status: 'revoked',
+    },
+  ],
   tenants: [
     {
       slug: 'support-qa-a',
@@ -973,7 +1002,13 @@ function ensureGlobalRole({ actorUserId, userId, role }) {
   `);
 }
 
-function ensureTenantMembership({ actorUserId, tenantId, userId, role = 'tenant_viewer' }) {
+function ensureTenantMembership({
+  actorUserId,
+  tenantId,
+  userId,
+  role = 'tenant_viewer',
+  status = 'active',
+}) {
   runSupabaseDbQuery(`
     insert into public.tenant_memberships (
       tenant_id,
@@ -988,7 +1023,7 @@ function ensureTenantMembership({ actorUserId, tenantId, userId, role = 'tenant_
       '${sqlEscape(tenantId)}'::uuid,
       '${sqlEscape(userId)}'::uuid,
       '${role}'::public.tenant_role,
-      'active'::public.membership_status,
+      '${status}'::public.membership_status,
       '${sqlEscape(actorUserId)}'::uuid,
       '${sqlEscape(actorUserId)}'::uuid,
       '${sqlEscape(actorUserId)}'::uuid
@@ -1003,7 +1038,7 @@ function ensureTenantMembership({ actorUserId, tenantId, userId, role = 'tenant_
   runSupabaseDbQuery(`
     update public.tenant_memberships
     set
-      status = 'active'::public.membership_status,
+      status = '${status}'::public.membership_status,
       role = '${role}'::public.tenant_role,
       updated_by_user_id = '${sqlEscape(actorUserId)}'::uuid
     where tenant_id = '${sqlEscape(tenantId)}'::uuid
@@ -2288,6 +2323,38 @@ async function main() {
     });
   }
 
+  for (const accessUser of FIXTURE.accessUsers) {
+    const authUser = await createOrUpdateAuthUser({
+      apiUrl,
+      serviceRoleKey,
+      email: accessUser.email,
+      password: accessUser.password,
+      fullName: accessUser.fullName,
+    });
+
+    const accessProfile = queryProfileByEmail(accessUser.email);
+    if (!accessProfile?.id || !accessProfile.is_active) {
+      fail(`O profile do usuario de access local ${accessUser.email} nao foi materializado corretamente.`);
+    }
+
+    const tenantId = tenantMap.get(accessUser.tenantSlug);
+    if (!tenantId) {
+      fail(`Tenant ausente para o usuario de access local ${accessUser.email}.`);
+    }
+
+    ensureTenantMembership({
+      actorUserId: profile.id,
+      tenantId,
+      userId: accessProfile.id,
+      role: accessUser.role,
+      status: accessUser.status,
+    });
+
+    operatorMap.set(accessUser.key, accessProfile.id);
+    operatorMap.set(accessUser.email, accessProfile.id);
+    operatorMap.set(authUser.id, accessProfile.id);
+  }
+
   clearFixtureTickets();
 
   const createdTickets = [];
@@ -2433,6 +2500,15 @@ async function main() {
           password: agent.password,
           tenant_slug: agent.tenantSlug,
           user_id: operatorMap.get(agent.key),
+        })),
+        access_users: FIXTURE.accessUsers.map((accessUser) => ({
+          key: accessUser.key,
+          email: accessUser.email,
+          password: accessUser.password,
+          tenant_slug: accessUser.tenantSlug,
+          role: accessUser.role,
+          status: accessUser.status,
+          user_id: operatorMap.get(accessUser.key),
         })),
         tenants: FIXTURE.tenants.map((tenant) => ({
           slug: tenant.slug,
