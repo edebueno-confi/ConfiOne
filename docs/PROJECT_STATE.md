@@ -1010,6 +1010,47 @@ Documentos históricos:
     - Suporte/CS
   - Pendencias mapeadas sem implementacao nesta fase:
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.17: Knowledge Human Approval Evidence Register V3 concluido como estrutura documental oficial.
+  - O registro oficial de evidencias humanas reais foi criado em `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`.
+  - A estrutura passou a exigir evidencia minima obrigatoria por aprovador:
+    - nome
+    - area
+    - data
+    - artigo
+    - versao revisada
+    - decisao
+    - observacao obrigatoria
+    - pendencias restantes
+    - fonte da evidencia
+  - A fase registrou os quatro artigos `P0` atualmente pendentes com:
+    - `Produto: pendente`
+    - `Suporte/CS: pendente`
+    - `pode publicar: nao`
+    - `decisao final atual: pendente`
+  - Regra aplicada nesta fase:
+    - nenhuma aprovacao foi simulada
+    - ausencia de evidencia equivale a `pendente`
+    - aprovacao parcial nao libera publicacao
+    - bloqueio de Produto ou Suporte/CS impede publicacao
+  - O lote permaneceu estritamente documental:
+    - sem aprovacao de artigo
+    - sem publicacao
+    - sem alteracao de backend
+    - sem alteracao de runtime
+    - sem alteracao de contracts
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Escopo explicitamente preservado:
+    - nenhuma alteracao em backend
+    - nenhuma alteracao em Supabase
+    - nenhuma alteracao em migrations
+    - nenhuma alteracao em RPCs
+    - nenhuma alteracao em contracts
+    - nenhuma alteracao em fixtures
+    - nenhuma alteracao em RLS
+    - nenhuma alteracao em permissoes
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -1031,8 +1072,8 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Executar a aprovacao humana explicita de Produto e Suporte/CS para os quatro artigos `P0` ainda pendentes,
-ou manter os artigos fora de qualquer lote futuro de publicacao enquanto essa aprovacao nao existir no repositorio.
+Coletar evidencias humanas reais de Produto e Suporte/CS no registro oficial da Knowledge Base,
+artigo por artigo, ou manter os quatro `P0` fora de qualquer lote de publicacao enquanto essa evidencia nao existir no repositorio.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único

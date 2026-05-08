@@ -134,3 +134,8 @@ Motivo:
 - a passagem para lote futuro de publicacao depende de aprovacao explicita de:
   - Produto
   - Suporte/CS
+
+## Vinculo com registro oficial de evidencia
+- o registro oficial de aprovacao humana real destes artigos ficou definido em:
+  - `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`
+- sem evidencia registrada nesse documento, o status continua `pendente`

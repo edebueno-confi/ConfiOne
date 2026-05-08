@@ -18,6 +18,32 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.17 - Knowledge Human Approval Evidence Register V3
+- fase: `7.17`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: foi criada a estrutura documental oficial para registrar aprovacoes humanas reais de Produto e Suporte/CS, com evidencia minima obrigatoria por aprovador e placeholders por artigo para os quatro `P0` ainda pendentes, sem aprovar nada e sem publicar conteudo.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`
+  - `docs/knowledge/KNOWLEDGE_P0_FINAL_HUMAN_DECISION.md`
+  - `docs/knowledge/KNOWLEDGE_P0_PUBLICATION_PREP.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+  - impacto futuro indireto em `/admin/knowledge`, `/help/genius` e `/support/tickets/:ticketId` na aba `Central de ajuda`
+- riscos restantes:
+  - nenhum artigo foi aprovado e nenhum artigo foi publicado
+  - os quatro `P0` continuam pendentes enquanto nao existir evidencia humana explicita no registro
+  - `Como informar a SKU durantge a troca` e `Regra por motivo` continuam fora da trilha de aprovacao final por bloqueio tecnico anterior
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- impacto na FAQ futura:
+  - cria a trilha oficial de evidencia humana antes de qualquer publicacao real
+  - evita que aprovacoes verbais ou nao rastreadas sejam tratadas como autorizacao editorial
+
 ### Fase 7.16 - Knowledge P0 Final Human Decision Gate V3
 - fase: `7.16`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`
