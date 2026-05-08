@@ -1901,12 +1901,31 @@ function SupportEngineeringLinkCard({
           <p className="mt-1 text-sm leading-6 text-[color:var(--color-ink)]">{link.handoffNote}</p>
         </div>
       ) : null}
+      {link.lastUpdateSummary ? (
+        <div className="mt-2 rounded-[14px] border border-[rgba(48,127,226,0.18)] bg-white px-3 py-2">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
+            Último retorno técnico
+          </p>
+          <p className="mt-1 text-sm leading-6 text-[color:var(--color-ink)]">{link.lastUpdateSummary}</p>
+          {link.lastUpdateNextStep ? (
+            <p className="mt-1 text-[12px] leading-5 text-[color:var(--color-muted)]">
+              Próximo passo: {link.lastUpdateNextStep}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[12px] text-[color:var(--color-muted)]">
         <span>
           Criado por {link.createdByFullName ?? 'usuário não resolvido'} em {formatDateTime(link.createdAt)}
         </span>
         <span>Responsável: {link.assignedToFullName ?? 'Indisponível'}</span>
       </div>
+      <Link
+        className="mt-2 inline-flex text-[12px] font-semibold text-[color:var(--color-brand-blue)]"
+        to={`/engineering/work-items/${link.engineeringWorkItemId}`}
+      >
+        Abrir na engenharia
+      </Link>
     </article>
   );
 }

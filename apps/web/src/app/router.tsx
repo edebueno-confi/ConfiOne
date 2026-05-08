@@ -84,6 +84,11 @@ const SupportTicketPage = lazy(async () => {
   return { default: module.SupportTicketPage };
 });
 
+const EngineeringWorkspacePage = lazy(async () => {
+  const module = await import('../features/engineering/EngineeringWorkspacePage');
+  return { default: module.EngineeringWorkspacePage };
+});
+
 const SupportCustomerPage = lazy(async () => {
   const module = await import('../features/support/SupportWorkspacePage');
   return { default: module.SupportCustomerPage };
@@ -211,6 +216,24 @@ export const router = createBrowserRouter([
           {
             path: 'customers/:tenantId',
             element: withSuspense(<SupportCustomerPage />),
+          },
+        ],
+      },
+      {
+        path: '/engineering',
+        element: withSuspense(
+          <SupportGate>
+            <SupportWorkspaceShell />
+          </SupportGate>,
+        ),
+        children: [
+          {
+            index: true,
+            element: withSuspense(<EngineeringWorkspacePage />),
+          },
+          {
+            path: 'work-items/:workItemId',
+            element: withSuspense(<EngineeringWorkspacePage />),
           },
         ],
       },

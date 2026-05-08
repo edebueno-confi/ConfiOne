@@ -33,7 +33,7 @@ function SupportNavIcon({
   icon,
   active,
 }: {
-  icon: 'queue' | 'tickets' | 'customers' | 'knowledge' | 'admin';
+  icon: 'queue' | 'tickets' | 'customers' | 'engineering' | 'knowledge' | 'admin';
   active: boolean;
 }) {
   const iconClassName = cx(
@@ -61,6 +61,13 @@ function SupportNavIcon({
         <svg aria-hidden="true" className={iconClassName} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
           <circle cx="12" cy="8" r="3.2" />
           <path d="M6.5 18.2a5.9 5.9 0 0 1 11 0" strokeLinecap="round" />
+        </svg>
+      );
+    case 'engineering':
+      return (
+        <svg aria-hidden="true" className={iconClassName} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+          <path d="M14.7 5.3 18.7 9.3M8 18l-2 1 1-2 9.6-9.6a1.8 1.8 0 0 1 2.5 2.5L9.5 19.5Z" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M5 7.5h6M5 11h4" strokeLinecap="round" />
         </svg>
       );
     case 'knowledge':
@@ -112,6 +119,12 @@ function SupportSidebar({
           isActive: (pathname: string) => pathname.startsWith('/support/customers'),
         },
         {
+          label: 'Engenharia',
+          icon: 'engineering' as const,
+          to: '/engineering',
+          isActive: (pathname: string) => pathname.startsWith('/engineering'),
+        },
+        {
           label: 'Conhecimento',
           icon: 'knowledge' as const,
           to: '/admin/knowledge',
@@ -129,7 +142,7 @@ function SupportSidebar({
           : []),
       ] satisfies Array<{
         label: string;
-        icon: 'queue' | 'tickets' | 'customers' | 'knowledge' | 'admin';
+        icon: 'queue' | 'tickets' | 'customers' | 'engineering' | 'knowledge' | 'admin';
         to: string;
         isActive: (pathname: string) => boolean;
       }>,
@@ -299,6 +312,7 @@ function SupportQuickNav() {
     { label: 'Fila', to: '/support/queue' },
     { label: 'Tickets', to: '/support/tickets' },
     { label: 'Clientes', to: '/support/customers' },
+    { label: 'Engenharia', to: '/engineering' },
     { label: 'Conhecimento', to: '/admin/knowledge' },
     ...(gate.actor?.is_platform_admin ? [{ label: 'Admin', to: '/admin/tenants' }] : []),
   ];
@@ -342,7 +356,7 @@ function SupportTopbar({
 export function SupportWorkspaceShell() {
   const [sidebarCollapsed, setSidebarCollapsed] = usePersistedSidebarState();
   const location = useLocation();
-  const isOperationalSupportRoute = /^\/support(\/|$)/.test(location.pathname);
+  const isOperationalSupportRoute = /^\/(support|engineering)(\/|$)/.test(location.pathname);
 
   return (
     <div

@@ -531,6 +531,11 @@ function mapSupportTicketEngineeringLink(
     assignedToFullName: (row.assigned_to_full_name as string | null) ?? null,
     workItemCreatedAt: String(row.work_item_created_at),
     workItemUpdatedAt: String(row.work_item_updated_at),
+    lastUpdateKind:
+      (row.last_update_kind as SupportTicketEngineeringLink['lastUpdateKind']) ?? null,
+    lastUpdateSummary: (row.last_update_summary as string | null) ?? null,
+    lastUpdateNextStep: (row.last_update_next_step as string | null) ?? null,
+    lastUpdateAt: (row.last_update_at as string | null) ?? null,
   };
 }
 
