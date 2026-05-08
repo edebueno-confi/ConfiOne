@@ -245,3 +245,5 @@ Nenhum override pode permitir publicacao de:
 ## Vinculo com pacote de intake
 - o pacote objetivo para coleta futura de evidencia humana ficou registrado em:
   - `docs/knowledge/KNOWLEDGE_P0_APPROVAL_INTAKE_PACK.md`
+- o playbook operacional para conduzir a coleta e o registro da evidencia ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_P0_APPROVAL_COLLECTION_PLAYBOOK.md`

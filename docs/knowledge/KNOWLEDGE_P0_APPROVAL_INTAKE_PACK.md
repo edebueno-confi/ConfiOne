@@ -221,3 +221,7 @@ Preparar um pacote documental objetivo para coleta futura de evidencia humana re
 - nenhuma aprovacao foi simulada
 - nenhum artigo foi publicado
 - os quatro artigos seguem pendentes de coleta de evidencia humana real
+
+## Vinculo com playbook operacional
+- o playbook operacional de coleta ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_P0_APPROVAL_COLLECTION_PLAYBOOK.md`

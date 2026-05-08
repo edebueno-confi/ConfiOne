@@ -141,3 +141,5 @@ Motivo:
 - sem evidencia registrada nesse documento, o status continua `pendente`
 - o pacote objetivo para intake de aprovacao futura ficou registrado em:
   - `docs/knowledge/KNOWLEDGE_P0_APPROVAL_INTAKE_PACK.md`
+- o playbook operacional para conduzir a coleta ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_P0_APPROVAL_COLLECTION_PLAYBOOK.md`

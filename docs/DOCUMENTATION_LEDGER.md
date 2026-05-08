@@ -18,6 +18,32 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.20 - Knowledge P0 Human Evidence Collection Readiness V3
+- fase: `7.20`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: foi criado o playbook operacional de coleta de evidencia humana para os quatro artigos `P0`, com mensagens copiaveis para `Produto` e `Suporte/CS`, orientacao de registro da evidencia, checklist de readiness e regra operacional para mensagens informais, sem aprovar nem publicar nenhum conteudo.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_P0_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/knowledge/KNOWLEDGE_P0_APPROVAL_INTAKE_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`
+  - `docs/knowledge/KNOWLEDGE_P0_FINAL_HUMAN_DECISION.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+  - nenhum workflow automatico novo em `/admin/knowledge`, `/help/genius` ou superfices relacionadas
+- riscos restantes:
+  - os quatro artigos `P0` continuam pendentes enquanto nao existir evidencia humana explicita registrada
+  - mensagens informais continuam invalidas como aprovacao isolada sem transcricao ou resumo no registro oficial
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- impacto na FAQ futura:
+  - reduz friccao operacional para coletar aprovacao humana real
+  - separa claramente intake, coleta operacional e registro oficial de evidencia
+
 ### Fase 7.19 - Knowledge P0 Approval Intake Pack V3
 - fase: `7.19`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`
