@@ -64,6 +64,14 @@ Documentos históricos:
 - Nenhum dado operacional relevante deve ser perdido.
 - Documentação deve ser viva e versionada no repositório.
 
+## Estado atual em 2026-05-08
+- A curadoria refinada da Knowledge Base está pausada; os candidatos continuam como corpus/documentação inicial.
+- O foco atual é buildout funcional da plataforma interna CX B2B técnica.
+- O lote `Support Ticket Operational Flow V3` fechou o primeiro bloco real de contratos operacionais de ticket.
+- O Support Ticket Workspace agora possui timeline paginada por RPC real e contrato dedicado para candidatos seguros de link público de Knowledge.
+- Nenhuma ação fake foi habilitada no frontend; ações sem contrato completo seguem bloqueadas para lote futuro.
+- Próximo bloco recomendado: `Customer Account Profile Operational Flow V3`.
+
 ## Estado real do repositório em 2026-04-30
 
 ### Existe
@@ -93,6 +101,7 @@ Documentos históricos:
 - Migration oficial do backend mínimo do Customer Account Profile `supabase/migrations/20260504195833_phase6_8_customer_account_profile_backend.sql`.
 - Migration oficial do backend mínimo do vínculo ticket -> Knowledge Base `supabase/migrations/20260505015350_phase6_15_ticket_knowledge_linking_backend.sql`.
 - Migration oficial do contrato de revisão editorial para artigos publicados `supabase/migrations/20260506190000_phase7_4_knowledge_editorial_revision.sql`.
+- Migration oficial do fluxo operacional de tickets `supabase/migrations/20260508143717_support_ticket_operational_flow_v3.sql`.
 - Teste local de banco em `supabase/tests/001_phase1_identity_tenancy_rls.sql`.
 - Teste local de hardening em `supabase/tests/002_phase1_1_hardening.sql`.
 - Teste local de control plane administrativo em `supabase/tests/003_phase1_2_admin_control_plane.sql`.
@@ -114,6 +123,7 @@ Documentos históricos:
 - Teste local do backend do Customer Account Profile em `supabase/tests/020_phase6_8_customer_account_profile_backend.sql`.
 - Teste local do backend do vínculo ticket -> Knowledge Base em `supabase/tests/021_phase6_15_ticket_knowledge_linking_backend.sql`.
 - Teste local do contrato de revisão editorial para artigos publicados em `supabase/tests/022_phase7_4_knowledge_editorial_revision.sql`.
+- Teste local do fluxo operacional de tickets em `supabase/tests/023_support_ticket_operational_flow.sql`.
 - Seed separado em `supabase/seeds/` e desabilitado por padrão.
 - Fluxo de bootstrap seguro do primeiro `platform_admin` em `supabase/bootstrap/`.
 - Núcleo Fase 1 implementado com `profiles`, `user_global_roles`, `tenants`, `tenant_memberships`, `tenant_contacts` e `audit.audit_logs`.
@@ -136,6 +146,7 @@ Documentos históricos:
 - Diretório contratual de agentes atribuíveis do Support Workspace materializado em `vw_support_assignable_agents`.
 - Views contratuais do Customer Account Profile materializadas em `vw_support_customer_account_context` e `vw_admin_customer_account_profiles`.
 - Views contratuais do vínculo ticket -> Knowledge Base materializadas em `vw_support_ticket_knowledge_links`, `vw_support_knowledge_article_picker` e `vw_customer_portal_ticket_knowledge_links`.
+- View contratual de candidatos seguros a link público no ticket materializada em `vw_support_knowledge_public_link_candidates`.
 - RPCs contratuais de escrita materializadas em `rpc_create_ticket`, `rpc_update_ticket_status`, `rpc_assign_ticket`, `rpc_add_ticket_message`, `rpc_add_internal_ticket_note`, `rpc_close_ticket` e `rpc_reopen_ticket`.
 - RPCs contratuais administrativas de Knowledge Base materializadas em `rpc_admin_create_knowledge_category`, `rpc_admin_create_knowledge_article_draft`, `rpc_admin_update_knowledge_article_draft`, `rpc_admin_submit_knowledge_article_for_review`, `rpc_admin_publish_knowledge_article` e `rpc_admin_archive_knowledge_article`.
 - RPCs contratuais administrativas v2 space-aware materializadas em `rpc_admin_create_knowledge_category_v2`, `rpc_admin_create_knowledge_article_draft_v2`, `rpc_admin_update_knowledge_article_draft_v2`, `rpc_admin_submit_knowledge_article_for_review_v2`, `rpc_admin_publish_knowledge_article_v2` e `rpc_admin_archive_knowledge_article_v2`.
@@ -143,6 +154,7 @@ Documentos históricos:
 - RPCs contratuais de revisão editorial para artigos publicados materializadas em `rpc_admin_begin_knowledge_article_editorial_revision_v2`, `rpc_admin_update_knowledge_article_editorial_revision_v2`, `rpc_admin_publish_knowledge_article_editorial_revision_v2` e `rpc_admin_discard_knowledge_article_editorial_revision_v2`.
 - RPCs administrativas do Customer Account Profile materializadas em `rpc_admin_upsert_customer_account_profile`, `rpc_admin_add_customer_integration`, `rpc_admin_update_customer_integration`, `rpc_admin_add_customer_customization`, `rpc_admin_update_customer_customization`, `rpc_admin_add_customer_account_alert` e `rpc_admin_archive_customer_account_alert`.
 - RPCs contratuais do vínculo ticket -> Knowledge Base materializadas em `rpc_support_link_ticket_article`, `rpc_support_archive_ticket_article_link`, `rpc_support_mark_documentation_gap` e `rpc_support_mark_article_needs_update`.
+- RPC contratual de timeline paginada materializada em `rpc_support_get_ticket_timeline`.
 - `authenticated` não possui `SELECT`, `INSERT`, `UPDATE` nem `DELETE` direto nas tabelas base de ticketing; o app lê via views e escreve via RPCs.
 - Pacote `packages/contracts` materializado com tipos TypeScript para views e RPCs de ticketing.
 - Pacote `packages/contracts` agora também materializa tipos TypeScript para os read models do Support Workspace.
@@ -209,6 +221,7 @@ Documentos históricos:
 - Desenho técnico pré-migration do perfil operacional do cliente B2B criado em `docs/CUSTOMER_ACCOUNT_PROFILE_MIGRATION_DESIGN.md`.
 - Read models oficiais do Support Workspace materializados com authz restrita a `platform_admin` e roles globais de suporte com membership ativo no tenant.
 - O detalhe do Support Workspace agora prioriza conversa e composer como fluxo principal, mantendo eventos tecnicos e controles avancados em camadas secundarias.
+- O detalhe do Support Workspace agora carrega histórico anterior por `rpc_support_get_ticket_timeline`, preservando a janela recente inicial e sem abrir leitura direta nas tabelas base.
 - O backend do Customer Account Profile agora materializa perfil operacional, stack resumida, features, customizacoes e alertas por tenant, com bloqueio de conteudo sensivel antes de persistir ou auditar.
 - Relatório oficial do inventário legado criado em `docs/reports/KNOWLEDGE_LEGACY_INVENTORY_REPORT.md`.
 - Backlog versionado oficial de curadoria legado criado em `docs/reports/KNOWLEDGE_LEGACY_CURATION_BACKLOG.md`.
@@ -561,7 +574,7 @@ Documentos históricos:
     - criar uma view dedicada para candidatos a link publico seguro
     - manter a decisao de `can_send_to_customer` e de `public_article_path` no backend
     - evitar concatenacao fragil de `/help/:spaceSlug/articles/:articleSlug` no frontend
-  - O proximo contrato candidato dessa ponte passa a ser `vw_support_knowledge_public_link_candidates`.
+  - A view dedicada dessa ponte foi materializada depois na Fase 8.2 como `vw_support_knowledge_public_link_candidates`.
 - Fase 6.18: Contextual Subsidebar UX Pattern concluida localmente.
   - O shell interno passou a formalizar 3 camadas de operacao:
     - sidebar global
@@ -1756,10 +1769,9 @@ Documentos históricos:
     - sem alteracao de Supabase
     - sem migration, RPC, contract, fixture, RLS ou permissao nova
     - `docs/design/blueprint/Conversas.png` permanece fora de escopo e fora do commit
-  - Proxima acao real:
-    - executar um lote grande de `Support Ticket Operational Flow V3`
-    - revisar/fechar contratos de criacao de ticket, timeline completa, link publico seguro de Knowledge e audit trail de mutacoes
-    - implementar frontend somente depois dos contratos backend estarem confirmados
+  - Acao real executada na Fase 8.2:
+    - `Support Ticket Operational Flow V3` fechou timeline paginada, link publico seguro de Knowledge, audit trail de mutacoes e consumo de historico anterior no workspace de ticket
+    - o proximo lote grande recomendado passa a ser `Customer Account Profile Operational Flow V3`
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -1781,7 +1793,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Executar o proximo lote tecnico grande `Support Ticket Operational Flow V3`, começando pela confirmacao dos contratos backend de ticket e Knowledge dentro do ticket antes de habilitar qualquer nova acao de runtime.
+Executar o proximo lote tecnico grande `Customer Account Profile Operational Flow V3`, começando pela confirmacao dos contratos de perfil operacional B2B, ownership de escrita entre Admin/Suporte/CS e historico paginado por tenant antes de habilitar edicao nova no frontend.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único

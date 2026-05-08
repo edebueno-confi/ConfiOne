@@ -32,7 +32,7 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 | `/admin/access` | parcial | `vw_admin_auth_context`, `vw_admin_user_lookup`, memberships | falta hardening de concessao/revogacao e trilha clara de auditoria para acesso | alto |
 | `/admin/system` | parcial | `vw_admin_audit_feed` e leituras administrativas | falta observabilidade operacional, health real e incident hints sem expor internals | medio |
 | `/support/queue` | visual pronta, funcional parcial | `vw_support_tickets_queue`, `vw_support_customer_360`, `vw_support_assignable_agents` | falta criacao operacional de ticket e filtros/sinais persistidos por contrato | medio |
-| `/support/tickets/:ticketId` | visual pronta, funcional parcial | `vw_support_ticket_detail`, `vw_support_ticket_timeline_recent`, `vw_support_customer_account_context`, RPCs de status, responsavel, mensagem, nota, fechar/reabrir | falta fluxo completo de conversa com anexos, SLA, classificacao e trilha de handoff tecnico | alto |
+| `/support/tickets/:ticketId` | funcional parcial com contrato operacional fechado | `vw_support_ticket_detail`, `vw_support_ticket_timeline_recent`, `rpc_support_get_ticket_timeline`, `vw_support_customer_account_context`, RPCs de status, responsavel, mensagem, nota, fechar/reabrir | faltam anexos, SLA, classificacao, criacao assistida e trilha de handoff tecnico | alto |
 | `/support/customers` | visual pronta, funcional parcial | `vw_support_customer_360`, `vw_support_customer_account_context` | falta busca/filtros operacionais persistidos e criacao/edicao governada de perfil de conta | medio |
 | `/support/customers/:tenantId` | visual pronta, funcional parcial | `vw_support_customer_360`, `vw_support_customer_account_context`, `vw_support_customer_recent_tickets`, `vw_support_customer_recent_events` | falta historico completo, saude operacional versionada e gestao de contatos/integracoes | alto |
 | `/help/genius` | pronta para leitura publicada | `vw_public_knowledge_space_resolver`, `vw_public_knowledge_navigation`, `vw_public_knowledge_articles_list`, `rpc_public_search_knowledge_articles` | depende de artigos publicados reais; candidatos atuais continuam internos | medio |
@@ -54,11 +54,11 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 
 | Lacuna | Tipo | Observacao |
 | --- | --- | --- |
-| Criacao de ticket pelo suporte | precisa RPC/mutacao, RLS/policy, auditoria e UI | `createTicket` existe no client, mas precisa validar superficie, permissao e fluxo de entrada |
-| Conversa com anexos e eventos completos | precisa migration/schema, views, RPCs e auditoria | timeline recente existe; anexos e historico completo precisam contrato explicito |
-| Notas internas com governanca de visibilidade | parcial; precisa auditoria e testes | RPC existe; precisa reforcar copy e criterios de uso interno |
+| Criacao de ticket pelo suporte | contrato backend existe; falta UI/fluxo de entrada | `rpc_create_ticket` foi validada como contrato real, mas a superficie operacional de criacao ainda precisa lote proprio |
+| Conversa com anexos e eventos completos | parcial; anexos ainda precisam migration/schema/RPC | timeline recente e historico paginado existem; anexos continuam fora deste lote |
+| Notas internas com governanca de visibilidade | implementado no contrato atual; manter testes e copy | RPC e eventos/audit logs foram validados no fluxo operacional |
 | Status/responsavel com SLA e motivo | precisa schema/RPC complementar | status e assign existem, mas nao ha camada de SLA/filas operacionais |
-| Central de ajuda dentro do ticket com link publico seguro | precisa contrato de leitura | gap ja mapeado: `vw_support_knowledge_public_link_candidates` |
+| Central de ajuda dentro do ticket com link publico seguro | contrato de leitura criado; falta acao governada de envio/copia | `vw_support_knowledge_public_link_candidates` retorna apenas artigos publicos publicados com rota segura |
 | Handoff tecnico/engenharia | depende de decisao de produto e schema futuro | nao deve virar campo livre sem regra de ownership |
 
 ### Customers
@@ -103,7 +103,8 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 ### Fase B: fluxos reais de ticket
 - Objetivo: transformar o ticket workspace em superficie diaria de atendimento B2B.
 - Entregaveis: criacao de ticket, conversa completa, nota interna, status/responsavel, fechamento/reabertura, Knowledge vinculada e handoff tecnico registrado.
-- Contratos necessarios: confirmar `rpc_create_ticket`; adicionar read model paginado de timeline completa; planejar anexos; implementar `vw_support_knowledge_public_link_candidates`.
+- Status Fase 8.2: `rpc_create_ticket`, mutacoes principais, audit trail, eventos, timeline paginada e candidato seguro de link publico foram validados/materializados.
+- Contratos ainda necessarios: planejar anexos; desenhar criacao assistida de ticket na UI; criar entidade de handoff tecnico; definir SLA/motivo se entrar no produto.
 - Riscos: expor nota interna ao cliente, criar transicao invalida de status, enviar artigo sem URL publica segura.
 - Dependencias: RLS de ticketing, auditoria de eventos e regra de permissao por role.
 - Criterios de aceite: todo comando passa por RPC, toda mutacao gera evento/audit trail, frontend nao monta URL publica por heuristica.
@@ -156,48 +157,50 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 
 ## Proximo lote tecnico recomendado
 
-### Lote: Support Ticket Operational Flow V3
+### Lote: Customer Account Profile Operational Flow V3
 
-Objetivo: fechar o primeiro bloco real de backend/contrato para atendimento diario, priorizando ticket workspace e Knowledge dentro do ticket.
+Objetivo: fechar o segundo bloco real do buildout, consolidando a conta B2B como contexto operacional editavel e auditavel para Suporte/CS/Admin sem virar CRM generico.
 
 Ordem sugerida:
-1. Revisar contratos existentes de ticket e confirmar se `rpc_create_ticket` esta completo em migration, tipos e RLS.
-2. Criar ou validar view paginada de timeline completa, sem substituir `vw_support_ticket_timeline_recent`.
-3. Criar `vw_support_knowledge_public_link_candidates` para retornar caminho publico seguro quando o backend permitir envio ao cliente.
-4. Garantir que todo envio de mensagem, nota interna, status, responsavel, fechamento e reabertura gere evento/audit trail.
-5. Adicionar testes de RLS para agente, gerente de suporte e platform admin.
-6. Atualizar contratos TypeScript e front somente apos contrato backend fechado.
+1. Auditar `vw_support_customer_account_context`, `vw_admin_customer_account_profiles` e RPCs administrativas de perfil.
+2. Definir ownership de escrita entre Admin, Suporte e CS antes de habilitar qualquer edicao no frontend.
+3. Criar ou validar historico paginado de tickets/eventos por tenant, sem arrays longas na primeira carga.
+4. Fechar contratos de contatos operacionais por finalidade, com auditoria e RLS.
+5. Manter integracoes, tokens, endpoints e detalhes sensiveis fora da UI comum.
+6. Atualizar `/support/customers` e `/support/customers/:tenantId` apenas apos contratos reais.
 7. Validar ticket workspace com typecheck, build e testes focados.
 
 Migrations necessarias:
-- Somente se a revisao confirmar lacuna em timeline paginada, link publico seguro ou audit trail.
+- Somente se a revisao confirmar lacuna para historico completo de contatos, eventos por tenant ou ownership operacional que nao caiba nos contratos atuais.
 
 Views necessarias:
-- `vw_support_ticket_timeline_full` ou equivalente paginado.
-- `vw_support_knowledge_public_link_candidates`.
+- Confirmar `vw_support_customer_account_context`.
+- Confirmar `vw_admin_customer_account_profiles`.
+- Criar historico paginado de tickets/eventos por tenant se as janelas recentes nao forem suficientes para a tela de cliente.
 
 RPCs necessarias:
-- Confirmar `rpc_create_ticket`.
-- Manter status, assign, message, internal note, close e reopen como unicas portas de mutacao.
+- Confirmar RPCs administrativas existentes de perfil operacional.
+- Definir se Suporte/CS terao RPCs proprias de edicao ou se a escrita permanece apenas no Admin.
+- Toda edicao de contato, alerta, integracao ou customizacao deve passar por RPC.
 
 RLS/policies:
-- Agente de suporte deve ler apenas escopo permitido.
-- Nota interna nunca pode ser exposta ao cliente.
-- Link publico so pode ser retornado quando artigo esta publicado, publico e associado a rota publica valida.
+- Suporte deve ler apenas tenants permitidos.
+- Escrita precisa validar tenant, role, ownership e motivo quando aplicavel.
+- Dados sensiveis de integracao nao podem aparecer em read model comum.
 
 Audit logs:
-- Mutacoes de ticket, assignment, status, mensagem, nota, close/reopen e vinculos de Knowledge.
+- Mutacoes de perfil, contato, alerta, integracao e customizacao precisam gerar audit trail.
 
 Fixtures/testes:
-- Ticket com cliente B2B ativo.
-- Ticket sem responsavel.
-- Ticket com artigo interno e artigo publico.
-- Agente sem permissao de publish/admin.
+- Tenant com perfil operacional completo.
+- Tenant com perfil incompleto.
+- Operador com acesso ao tenant e operador cross-tenant sem acesso.
+- Contatos por finalidade quando o modelo for fechado.
 
 Impacto no front:
-- Habilitar criacao de ticket apenas apos contrato confirmado.
-- Remover qualquer fallback de URL publica montada no cliente.
-- Melhorar estados de erro por permissao/contrato sem mudar regra de negocio.
+- Atualizar `/support/customers` e `/support/customers/:tenantId` para consumir apenas contratos reais.
+- Manter edicoes desabilitadas quando ownership ou RPC ainda nao estiverem fechados.
+- Evitar expor stack tecnica crua, tokens, endpoints, credenciais ou payloads sensiveis.
 
 ## Decisoes que ainda dependem de Produto
 - Se Support e Admin devem convergir em um App Shell unico.

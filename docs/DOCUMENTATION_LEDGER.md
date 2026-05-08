@@ -18,6 +18,44 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 8.2 - Support Ticket Operational Flow V3
+- fase: `8.2`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: o primeiro bloco operacional real de tickets foi fechado com contrato backend para timeline paginada, view de candidatos seguros de link publico de Knowledge, testes pgTAP dedicados e consumo no workspace de ticket.
+- docs alterados:
+  - `docs/SUPPORT_TICKET_OPERATIONAL_FLOW_V3.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - `rpc_support_get_ticket_timeline`
+  - `vw_support_knowledge_public_link_candidates`
+  - `vw_support_ticket_timeline`
+  - `vw_support_ticket_timeline_recent`
+  - RPCs existentes de mensagem, nota interna, status, atribuicao, fechamento e reabertura validadas como contrato real
+- telas afetadas:
+  - `/support/tickets/:ticketId`
+- runtime/UI:
+  - o ticket workspace agora permite carregar historico anterior da timeline por RPC real quando `has_more` estiver ativo
+  - a UI preserva estados de erro/loading e nao habilita acao sem contrato
+- riscos restantes:
+  - anexos ainda exigem storage/schema/RPC proprios
+  - criacao assistida de ticket no workspace ainda precisa fluxo de entrada e decisao de superficie
+  - handoff tecnico precisa entidade intermediaria e nao deve virar campo livre no ticket
+  - envio/copia governada de link publico de Knowledge ainda precisa UX e auditoria especificas
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+- impacto na FAQ futura:
+  - consolida a base operacional para explicar historico, resposta, nota interna, status, atribuicao e uso seguro de Knowledge dentro do ticket sem depender de IA ou regra no frontend
+
 ### Fase 8.1 - Buildout funcional do Genius Support OS V3
 - fase: `8.1`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

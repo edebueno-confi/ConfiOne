@@ -51,6 +51,7 @@
   - `vw_support_ticket_timeline`
   - `vw_support_customer_360`
   - `vw_support_ticket_timeline_recent`
+  - `vw_support_knowledge_public_link_candidates`
   - `vw_support_customer_recent_tickets`
   - `vw_support_customer_recent_events`
 - `platform_admin` pode ler a operacao completa
@@ -99,10 +100,12 @@
   - `vw_support_tickets_queue`
   - `vw_support_ticket_detail`
   - `vw_support_ticket_timeline_recent`
+  - `rpc_support_get_ticket_timeline`
   - `vw_support_customer_360`
   - `vw_support_customer_recent_tickets`
   - `vw_support_customer_recent_events`
   - `vw_support_assignable_agents`
+  - `vw_support_knowledge_public_link_candidates`
 - a escrita continua apenas por:
   - `rpc_update_ticket_status`
   - `rpc_assign_ticket`
@@ -110,6 +113,16 @@
   - `rpc_add_internal_ticket_note`
   - `rpc_close_ticket`
   - `rpc_reopen_ticket`
+
+## Boundary materializado na Fase 8.2
+- o historico anterior da timeline do ticket agora e carregado por `rpc_support_get_ticket_timeline`
+- a primeira carga continua usando `vw_support_ticket_timeline_recent`, mantendo payload inicial controlado
+- a RPC paginada usa cursor por `occurred_at` e `timeline_entry_id`, sem leitura direta de `ticket_messages` ou `ticket_events` pelo frontend
+- resposta publica, nota interna, status, atribuicao, fechamento e reabertura continuam usando apenas RPCs reais ja existentes
+- eventos e audit logs dessas mutacoes foram validados em pgTAP
+- candidatos de link publico seguro de Knowledge agora sao lidos por `vw_support_knowledge_public_link_candidates`
+- a view de link publico seguro nao expõe draft, internal, restricted ou artigo sem rota publica publicada
+- anexos, SLA executavel, handoff tecnico estruturado e criacao assistida de ticket continuam fora desta fase
 
 ## Diretrizes de UX da fase 6.2.1
 - a fila continua como ponto de partida e precisa dominar a triagem

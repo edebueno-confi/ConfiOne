@@ -244,6 +244,18 @@ Fase 6.17:
   - `can_send_to_customer`
   - `reason_if_blocked`
 
+Fase 8.2:
+- O lote `Support Ticket Operational Flow V3` materializou o contrato operacional faltante para historico paginado do ticket e link publico seguro de Knowledge dentro do workspace.
+- O frontend de `/support/tickets/:ticketId` passa a usar:
+  - `rpc_support_get_ticket_timeline`
+- O backend passa a oferecer:
+  - `vw_support_knowledge_public_link_candidates`
+- Regras:
+  - a timeline completa continua sendo lida por contrato, sem `SELECT` direto em `ticket_messages` ou `ticket_events`;
+  - o carregamento de historico anterior usa cursor estavel por `occurred_at` + `timeline_entry_id`;
+  - link publico seguro de Knowledge so aparece quando o artigo esta publicado, publico e possui rota publica resolvida no backend;
+  - nenhuma acao de envio automatico ao cliente foi criada nesta fase.
+
 ## Views contratuais vigentes
 
 ### `vw_tickets_list`
@@ -461,6 +473,16 @@ Fase 6.17:
   - limita a primeira carga a 25 registros mais recentes por ticket;
   - preserva a separacao entre resposta publica, nota interna e eventos de sistema;
   - nao expande acesso cross-tenant;
+  - usa `security_barrier = true`.
+
+### `vw_support_knowledge_public_link_candidates`
+- Finalidade: candidatos seguros de artigo publico para uso assistivo dentro de um ticket.
+- Retorna: `ticket_id`, `tenant_id`, contexto do tenant, `article_id`, `article_title`, `article_slug`, `article_summary`, `category_name`, `public_article_path` e `is_customer_send_allowed`.
+- Regras:
+  - filtra pelo tenant do ticket e pela permissao do Support Workspace;
+  - depende de `app_private.vw_knowledge_articles_public_contract`;
+  - retorna apenas artigos publicos publicados com `public_article_path` resolvido;
+  - nao expõe draft, internal, restricted, playbook interno ou rota montada por heuristica no frontend;
   - usa `security_barrier = true`.
 
 ### `vw_support_customer_360`
@@ -824,6 +846,19 @@ Fase 6.17:
   - gera evento `reopened`;
   - gera auditoria.
 
+### `rpc_support_get_ticket_timeline`
+- Escopo: `platform_admin`, `support_manager` e `support_agent` com acesso ao tenant do ticket.
+- Entrada: `ticket_id`, `limit`, `before_occurred_at?`, `before_timeline_entry_id?`.
+- Retorno: pagina da timeline operacional com `total_available_count`, `page_limit` e `has_more`.
+- Regras:
+  - valida ator ativo;
+  - valida acesso ao Support Workspace no tenant do ticket;
+  - limita pagina entre 1 e 100 itens;
+  - ordena por `occurred_at` + `timeline_entry_id` para cursor estavel;
+  - usa `vw_support_ticket_timeline` como fonte;
+  - nao abre `SELECT` direto nas tabelas base;
+  - falha no backend para caller sem permissao, sem fallback de frontend.
+
 ## Regras de exposição
 
 - Todas as RPCs expostas são `SECURITY DEFINER` com `SET search_path = ''`.
@@ -838,6 +873,7 @@ Fase 6.17:
   - `vw_support_ticket_detail`
   - `vw_support_ticket_timeline`
   - `vw_support_ticket_timeline_recent`
+  - `vw_support_knowledge_public_link_candidates`
   - `vw_support_customer_360`
   - `vw_support_customer_account_context`
   - `vw_support_customer_recent_tickets`
@@ -913,6 +949,7 @@ Fase 6.17:
 - `vw_support_tickets_queue`
 - `vw_support_ticket_detail`
 - `vw_support_ticket_timeline_recent`
+- `rpc_support_get_ticket_timeline`
 - `vw_support_customer_360`
 - `vw_support_customer_recent_tickets`
 - `vw_support_customer_recent_events`
@@ -966,7 +1003,7 @@ Fase 6.17:
     - `rpc_support_mark_article_needs_update`
   - review de contrato publico seguro documentada em:
     - `TICKET_KNOWLEDGE_PUBLIC_LINK_CONTRACT_REVIEW.md`
-  - proxima view candidata:
+  - view publica segura materializada em Fase 8.2:
     - `vw_support_knowledge_public_link_candidates`
   - boundary esperado:
     - frontend continua sem leitura de tabela-base
