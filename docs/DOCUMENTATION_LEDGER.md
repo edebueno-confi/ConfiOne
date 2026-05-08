@@ -2201,3 +2201,30 @@ Cada registro deve informar:
   - `npm run web:typecheck`
 - impacto na FAQ futura:
   - encerra o cluster de logística reversa e postagem com três candidatos públicos seguros mapeados e com fronteira explícita para tudo que deve continuar interno ou bloqueado
+### Fase 7.37 - Knowledge Remaining Corpus Closure V3
+- fase: `7.37`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: os clusters restantes do corpus legado foram fechados em um único pacote documental, com consolidação executiva de Primeiros passos, Operação de trocas e devoluções, Sellers e operação de loja, Cadastros e configurações operacionais e Integrações gerais, além da matriz final do corpus completo e da lista única dos oito candidatos públicos já prontos.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_REMAINING_CORPUS_CLOSURE.md`
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/knowledge/KNOWLEDGE_TAXONOMY_FUTURE_MODEL.md`
+  - `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - nenhuma
+- views/RPCs afetadas:
+  - nenhuma alteracao de backend
+  - nenhuma view ou RPC nova
+- riscos restantes:
+  - os `8` candidatos públicos continuam pendentes por ausência de validação humana real
+  - integrações, sellers, contrato, token, permissões e parametrização administrativa seguem fora da trilha pública
+  - futuras reescritas remanescentes ainda dependem de novo lote editorial ou revisão técnica específica
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - encerra a fase de classificação do corpus legado completo e desloca o próximo passo real para validação humana dos candidatos prontos, em vez de continuar abrindo micro-lotes documentais

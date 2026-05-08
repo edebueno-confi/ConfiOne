@@ -39,6 +39,8 @@
   - `docs/knowledge/KNOWLEDGE_CEP_ENDERECO_POSTAGEM_REWRITE.md`
 - O fechamento executivo do cluster de logística reversa e postagem ficou registrado em:
   - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_CLOSURE.md`
+- O fechamento executivo dos clusters restantes do corpus ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_REMAINING_CORPUS_CLOSURE.md`
 
 | Artigo | Categoria proposta | Prioridade | Decisão Produto | Decisão Suporte/CS | Pode publicar | Pendência principal | Evidência necessária |
 | --- | --- | --- | --- | --- | --- | --- | --- |

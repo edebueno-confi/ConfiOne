@@ -86,16 +86,47 @@ Nenhum override pode permitir publicacao de:
 - orientacao que exponha operacao interna indevida
 - promessa de funcionalidade inexistente
 
-## Registro atual dos artigos P0 pendentes
+## Registro atual dos candidatos prontos pendentes
 
 ### Matriz executiva
 
-| Artigo | Categoria publica | Produto | Suporte/CS | Decisao final atual | Pode publicar |
-| --- | --- | --- | --- | --- | --- |
-| Como revisar os itens de uma solicitacao | Primeiros passos | pendente | pendente | pendente | nao |
-| Como organizar motivos de troca e devolucao na operacao | Operacao de trocas e devolucoes | pendente | pendente | pendente | nao |
-| Como enviar uma atualizacao de analise ao cliente | Primeiros passos | pendente | pendente | pendente | nao |
-| Como reenviar uma comunicacao ao cliente | Operacao de trocas e devolucoes | pendente | pendente | pendente | nao |
+| Artigo | Categoria publica | Documento revisado | Produto | Suporte/CS | Decisao final atual | Pode publicar |
+| --- | --- | --- | --- | --- | --- | --- |
+| Como revisar os itens de uma solicitacao | Primeiros passos | `docs/knowledge/KNOWLEDGE_P0_PUBLICATION_PREP.md` | pendente | pendente | pendente | nao |
+| Como organizar motivos de troca e devolucao na operacao | Operacao de trocas e devolucoes | `docs/knowledge/KNOWLEDGE_MOTIVOS_TROCA_DEVOLUCAO_REWRITE.md` | pendente | pendente | pendente | nao |
+| Como enviar uma atualizacao de analise ao cliente | Primeiros passos | `docs/knowledge/KNOWLEDGE_P0_PUBLICATION_PREP.md` | pendente | pendente | pendente | nao |
+| Como reenviar uma comunicacao ao cliente | Operacao de trocas e devolucoes | `docs/knowledge/KNOWLEDGE_P0_PUBLICATION_PREP.md` | pendente | pendente | pendente | nao |
+| Formas de estorno disponiveis na operacao | Estornos e reembolsos | `docs/knowledge/KNOWLEDGE_ESTORNO_CANONICAL_REWRITE.md` | pendente | pendente | pendente | nao |
+| Como o prazo de postagem afeta a operacao de troca e devolucao | Logistica reversa e postagem | `docs/knowledge/KNOWLEDGE_PRAZO_POSTAGEM_REWRITE.md` | pendente | pendente | pendente | nao |
+| Como revisar uma pendencia de logistica reversa na operacao | Logistica reversa e postagem | `docs/knowledge/KNOWLEDGE_PENDENCIA_LOGISTICA_REVERSA_REWRITE.md` | pendente | pendente | pendente | nao |
+| O que revisar quando o CEP ou endereco impede a postagem | Erros conhecidos e troubleshooting | `docs/knowledge/KNOWLEDGE_CEP_ENDERECO_POSTAGEM_REWRITE.md` | pendente | pendente | pendente | nao |
+
+## Candidatos adicionais prontos fora do pacote P0
+
+- `Formas de estorno disponiveis na operacao`
+  - categoria publica: `Estornos e reembolsos`
+  - versao/documento revisado: `docs/knowledge/KNOWLEDGE_ESTORNO_CANONICAL_REWRITE.md`
+  - status Produto: `pendente`
+  - status Suporte/CS: `pendente`
+  - pode publicar: `nao`
+- `Como o prazo de postagem afeta a operacao de troca e devolucao`
+  - categoria publica: `Logistica reversa e postagem`
+  - versao/documento revisado: `docs/knowledge/KNOWLEDGE_PRAZO_POSTAGEM_REWRITE.md`
+  - status Produto: `pendente`
+  - status Suporte/CS: `pendente`
+  - pode publicar: `nao`
+- `Como revisar uma pendencia de logistica reversa na operacao`
+  - categoria publica: `Logistica reversa e postagem`
+  - versao/documento revisado: `docs/knowledge/KNOWLEDGE_PENDENCIA_LOGISTICA_REVERSA_REWRITE.md`
+  - status Produto: `pendente`
+  - status Suporte/CS: `pendente`
+  - pode publicar: `nao`
+- `O que revisar quando o CEP ou endereco impede a postagem`
+  - categoria publica: `Erros conhecidos e troubleshooting`
+  - versao/documento revisado: `docs/knowledge/KNOWLEDGE_CEP_ENDERECO_POSTAGEM_REWRITE.md`
+  - status Produto: `pendente`
+  - status Suporte/CS: `pendente`
+  - pode publicar: `nao`
 
 ## Fichas por artigo
 
@@ -237,10 +268,10 @@ Nenhum override pode permitir publicacao de:
 
 ## Resultado atual do registro
 - nenhum artigo foi aprovado
-- os quatro artigos `P0` seguem pendentes
+- os oito candidatos prontos seguem pendentes
 - nenhuma aprovacao foi simulada
 - nenhum artigo foi publicado
-- todos os quatro artigos continuam pendentes por ausencia de evidencia explicita de Produto e Suporte/CS
+- todos os oito candidatos continuam pendentes por ausencia de evidencia explicita de Produto e Suporte/CS
 
 ## Vinculo com pacote de intake
 - o pacote objetivo para coleta futura de evidencia humana ficou registrado em:
@@ -253,3 +284,5 @@ Nenhum override pode permitir publicacao de:
   - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
 - o playbook geral de coleta do corpus completo ficou registrado em:
   - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+- o fechamento executivo dos clusters remanescentes do corpus ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_REMAINING_CORPUS_CLOSURE.md`

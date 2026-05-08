@@ -37,6 +37,11 @@ Para o cluster `Logística reversa e postagem`, usar como referência prévia:
 - `docs/knowledge/KNOWLEDGE_CEP_ENDERECO_POSTAGEM_REWRITE.md`
 - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_CLOSURE.md`
 
+Para o corpus remanescente fora de `Estornos e reembolsos` e `Logística reversa e postagem`, usar como referência prévia:
+- `docs/knowledge/KNOWLEDGE_REMAINING_CORPUS_CLOSURE.md`
+- `docs/knowledge/KNOWLEDGE_P0_PUBLICATION_PREP.md`
+- `docs/knowledge/KNOWLEDGE_MOTIVOS_TROCA_DEVOLUCAO_REWRITE.md`
+
 ## Template único para Produto
 
 ```md

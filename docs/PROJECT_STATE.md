@@ -1608,6 +1608,35 @@ Documentos históricos:
     - os tres candidatos dependem de validacao humana de `Produto` e `Suporte/CS`
     - a publicacao continua bloqueada ate evidencia humana real
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.37: Knowledge Remaining Corpus Closure V3 concluido como fechamento documental dos clusters restantes do corpus legado.
+  - O fechamento executivo dos clusters remanescentes foi consolidado em:
+    - `docs/knowledge/KNOWLEDGE_REMAINING_CORPUS_CLOSURE.md`
+  - A fase consolidou em um único pacote:
+    - `Primeiros passos`
+    - `Operação de trocas e devoluções`
+    - `Sellers e operação de loja`
+    - `Cadastros e configurações operacionais`
+    - `Integrações gerais fora de estorno e logística`
+  - A fase formalizou a visão final do corpus:
+    - `58` artigos mapeados
+    - `8` candidatos públicos já prontos
+    - próximo passo real concentrado em validação humana, não nova documentação fragmentada
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - os `8` candidatos continuam dependentes de validacao humana de `Produto` e `Suporte/CS`
+    - temas de integracao, seller, contrato e configuracao interna permanecem fora da trilha publica
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -1629,7 +1658,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Executar novos lotes por grupo e prioridade do corpus consolidado, comecando pelos candidatos mais seguros da matriz completa, ou manter qualquer artigo fora da publicacao enquanto nao existir evidencia humana explicita no repositorio.
+Executar a validacao humana dos `8` candidatos públicos já prontos, mantendo todo o restante do corpus fora da publicação até evidência humana explícita no repositório.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único

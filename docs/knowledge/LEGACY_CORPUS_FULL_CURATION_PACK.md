@@ -295,6 +295,8 @@
   - `docs/knowledge/KNOWLEDGE_CEP_ENDERECO_POSTAGEM_REWRITE.md`
 - Fechamento executivo do cluster de logística reversa e postagem registrado em:
   - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_CLOSURE.md`
+- Fechamento executivo dos clusters restantes do corpus registrado em:
+  - `docs/knowledge/KNOWLEDGE_REMAINING_CORPUS_CLOSURE.md`
 
 ### Clusters candidatos
 

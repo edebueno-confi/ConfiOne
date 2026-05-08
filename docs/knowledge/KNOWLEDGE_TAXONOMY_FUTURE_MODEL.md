@@ -61,3 +61,5 @@ Registrar a evolucao futura recomendada da taxonomia da Knowledge Base, sem impl
 - subcategoria opcional fica registrada apenas como direcao futura de governanca e taxonomia
 - a aplicacao conceitual desse modelo sobre o corpus legado completo ficou registrada em:
   - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+- o fechamento executivo dos clusters remanescentes do corpus ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_REMAINING_CORPUS_CLOSURE.md`
