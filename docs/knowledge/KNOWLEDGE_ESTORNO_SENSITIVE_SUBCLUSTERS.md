@@ -99,6 +99,8 @@
 - Suporte/CS necessário: `sim`
 - observação objetiva:
   - o cluster mistura crédito operacional, permissão de seller e comportamento financeiro, então não está pronto para exposição pública
+- preparação editorial específica registrada em:
+  - `docs/knowledge/KNOWLEDGE_VALE_COMPRA_SUBCLUSTER_PREP.md`
 
 ### 4. Cálculo e limites de estorno
 - descrição:

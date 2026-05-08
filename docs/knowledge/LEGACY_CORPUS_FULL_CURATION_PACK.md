@@ -267,6 +267,8 @@
   - `docs/knowledge/KNOWLEDGE_ESTORNO_CANONICAL_REWRITE.md`
 - Mapeamento dos subclusters sensíveis de estorno registrado em:
   - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_SUBCLUSTERS.md`
+- Preparação editorial específica do subcluster de vale-compra registrada em:
+  - `docs/knowledge/KNOWLEDGE_VALE_COMPRA_SUBCLUSTER_PREP.md`
 
 ### Clusters candidatos
 

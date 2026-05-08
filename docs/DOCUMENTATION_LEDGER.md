@@ -18,6 +18,33 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.25 - Knowledge ValeCompra Subcluster Prep V3
+- fase: `7.25`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: o subcluster `Vale-compra e crédito` foi preparado documentalmente com leitura dos cinco artigos fonte, separação de temas internos, definição de fronteiras editoriais e matriz de futuros canônicos possíveis, sem reescrever artigos completos, aprovar ou publicar conteúdo.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_VALE_COMPRA_SUBCLUSTER_PREP.md`
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_SUBCLUSTERS.md`
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+- riscos restantes:
+  - o tema mistura reembolso, credito, retencao, seller e automacao financeira, entao continua sensivel demais para abertura publica imediata
+  - qualquer trilha futura de vale-compra depende de validacao de Produto e Suporte/CS
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - desloca o tema de vale-compra para um backlog governado proprio, em vez de deixa-lo diluido no cluster geral de estorno
+
 ### Fase 7.24 - Knowledge Estorno Sensitive Subclusters Mapping V3
 - fase: `7.24`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

@@ -11,6 +11,8 @@
   - `docs/knowledge/KNOWLEDGE_ESTORNO_CANONICAL_REWRITE.md`
 - O mapeamento dos subclusters sensíveis de estorno ficou registrado em:
   - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_SUBCLUSTERS.md`
+- A preparação editorial do subcluster de vale-compra ficou registrada em:
+  - `docs/knowledge/KNOWLEDGE_VALE_COMPRA_SUBCLUSTER_PREP.md`
 
 | Artigo | Categoria proposta | Prioridade | Decisão Produto | Decisão Suporte/CS | Pode publicar | Pendência principal | Evidência necessária |
 | --- | --- | --- | --- | --- | --- | --- | --- |

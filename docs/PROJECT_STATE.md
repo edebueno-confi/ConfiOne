@@ -1248,6 +1248,36 @@ Documentos históricos:
   - Pendencias mapeadas sem implementacao nesta fase:
     - proximos lotes de estorno devem trabalhar por subcluster, nao por artigo isolado
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.25: Knowledge ValeCompra Subcluster Prep V3 concluido como preparacao documental do subcluster de vale-compra.
+  - O mapa do subcluster foi criado em `docs/knowledge/KNOWLEDGE_VALE_COMPRA_SUBCLUSTER_PREP.md`.
+  - A fase analisou os cinco artigos fonte ligados a:
+    - automacao de estorno e vale-compra
+    - sellers autorizados a criar vale-compra
+    - alteracao de vale-compra pendente
+    - retencao via vale-compra
+    - pedidos pagos com vale-compra
+  - As fronteiras editoriais foram registradas para separar:
+    - o que pode virar orientacao publica futura
+    - o que deve permanecer interno
+    - o que exige revisao tecnica
+    - o que exige validacao financeira ou operacional
+  - A recomendacao do subcluster foi mantida como:
+    - `revisar tecnicamente antes`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos lotes de vale-compra devem continuar por recorte editorial do subcluster
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
