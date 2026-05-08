@@ -1309,6 +1309,37 @@ Documentos históricos:
   - Pendencias mapeadas sem implementacao nesta fase:
     - proximos lotes de Pix devem continuar por recorte editorial do subcluster
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.27: Knowledge RegrasMotivo Subcluster Prep V3 concluido como preparacao documental do subcluster de regras por motivo.
+  - O mapa do subcluster foi criado em `docs/knowledge/KNOWLEDGE_REGRAS_MOTIVO_SUBCLUSTER_PREP.md`.
+  - A fase analisou os artigos ligados a:
+    - cadastro de motivos
+    - regra por motivo
+    - forma de estorno por motivo
+    - excecao de logistica reversa
+    - politica de estorno do frete
+    - calculo e limite de estorno como dependencia indireta
+  - As fronteiras editoriais foram registradas para separar:
+    - orientacao publica de cadastro e organizacao de motivos
+    - regras internas de operacao
+    - efeitos financeiros
+    - efeitos logisticos
+  - A recomendacao do subcluster foi mantida como:
+    - `candidato parcial a público`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos lotes de motivo devem continuar por recorte editorial do subcluster
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.

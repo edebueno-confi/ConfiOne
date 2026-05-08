@@ -18,6 +18,33 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.27 - Knowledge RegrasMotivo Subcluster Prep V3
+- fase: `7.27`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: o subcluster `Regras e políticas por motivo` foi preparado documentalmente com leitura dos artigos fonte, separação entre cadastro de motivos, políticas de estorno, exceções logísticas e efeitos financeiros, além de definição de fronteiras editoriais e possíveis canônicos futuros, sem reescrever artigos completos, aprovar ou publicar conteúdo.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_REGRAS_MOTIVO_SUBCLUSTER_PREP.md`
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_SUBCLUSTERS.md`
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+- riscos restantes:
+  - o subcluster continua misturando politica operacional, frete, logistica reversa e forma de estorno
+  - qualquer futura abertura publica fora do cadastro de motivos depende de validacao forte de Produto e Suporte/CS
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - separa o que pode virar orientacao pública sobre motivos do que deve continuar como regra operacional interna
+
 ### Fase 7.26 - Knowledge Pix Estorno Subcluster Prep V3
 - fase: `7.26`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

@@ -144,6 +144,8 @@
 - Suporte/CS necessário: `sim`
 - observação objetiva:
   - pode virar trilha pública futura, mas só depois de separar claramente regra operacional, política financeira e exceções logísticas
+- preparação editorial específica registrada em:
+  - `docs/knowledge/KNOWLEDGE_REGRAS_MOTIVO_SUBCLUSTER_PREP.md`
 
 ### 6. Integrações e gateway
 - descrição:
