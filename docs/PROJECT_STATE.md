@@ -1789,6 +1789,23 @@ Documentos históricos:
   - `/support/customers`, `/support/customers/:tenantId` e `/support/tickets/:ticketId` seguem conectados a read models reais e não habilitam edição sem contrato seguro.
   - Acoes de escrita no frontend continuam bloqueadas; no primeiro corte somente `platform_admin` escreve via RPC administrativa.
   - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit e fora de qualquer decisao de produto.
+- Fase 8.7: Support Ticket Attachments And Escalation V3 concluido como terceiro bloco operacional real do workspace de tickets.
+  - O lote auditou `ticket_attachments` e decidiu nao habilitar upload real neste corte:
+    - nao havia bucket/policies seguras de storage prontas para multi-tenancy
+    - o frontend passou a ler apenas metadata sanitizada por `vw_support_ticket_attachments`
+    - a UI mostra bloqueio honesto para upload
+  - O handoff tecnico agora possui dominio proprio e auditavel:
+    - `engineering_work_items`
+    - `engineering_ticket_links`
+    - `rpc_support_create_engineering_work_item_from_ticket`
+    - `rpc_support_link_ticket_to_engineering_work_item`
+    - `vw_support_ticket_engineering_links`
+  - O workspace `/support/tickets/:ticketId` agora lista evidencias sanitizadas e demandas tecnicas vinculadas, sem expor bucket, path ou payload sensivel.
+  - Toda criacao de handoff gera:
+    - `ticket_event`
+    - `audit_log`
+  - O isolamento por tenant foi validado em leitura e escrita.
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -1810,7 +1827,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Executar o proximo lote tecnico grande `Knowledge Admin Operational Governance V3`, começando pela auditoria das views/RPCs v2 de Knowledge, fila de revisão editorial, estados governados e garantias de que Public Help continue lendo apenas conteúdo público/publicado.
+Executar o proximo lote tecnico grande `Engineering Workspace Operational Core V3`, começando pela auditoria do novo dominio `engineering_work_items`, fechamento da fila/detalhe tecnico e contratos reais de ownership, status e retorno ao suporte.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único

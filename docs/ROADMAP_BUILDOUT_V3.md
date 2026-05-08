@@ -105,7 +105,8 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 - Entregaveis: criacao de ticket, conversa completa, nota interna, status/responsavel, fechamento/reabertura, Knowledge vinculada e handoff tecnico registrado.
 - Status Fase 8.2: `rpc_create_ticket`, mutacoes principais, audit trail, eventos, timeline paginada e candidato seguro de link publico foram validados/materializados.
 - Status Fase 8.6: `/support/queue` passou a abrir tickets por intake real com `vw_support_ticket_intake_tenants`, `vw_support_ticket_intake_contacts` e `rpc_create_ticket`, sem criar categoria inicial fake nem leitura direta de tabela-base.
-- Contratos ainda necessarios: anexos; handoff/escalation técnico; categoria inicial formal; SLA/motivo se entrar no produto.
+- Status Fase 8.7: `/support/tickets/:ticketId` passou a ler anexos por metadata sanitizada (`vw_support_ticket_attachments`) e a registrar handoff tecnico real por `rpc_support_create_engineering_work_item_from_ticket`, com `engineering_work_items`, `engineering_ticket_links`, `ticket_event` e `audit_log`.
+- Contratos ainda necessarios: upload seguro de anexos; categoria inicial formal; SLA/motivo se entrar no produto; workspace proprio de engenharia para operar `engineering_work_items`.
 - Riscos: expor nota interna ao cliente, criar transicao invalida de status, enviar artigo sem URL publica segura.
 - Dependencias: RLS de ticketing, auditoria de eventos e regra de permissao por role.
 - Criterios de aceite: todo comando passa por RPC, toda mutacao gera evento/audit trail, frontend nao monta URL publica por heuristica.
@@ -162,45 +163,48 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 
 ## Proximo lote tecnico recomendado
 
-### Lote: Support Ticket Attachments And Escalation V3
+### Lote: Engineering Workspace Operational Core V3
 
-Objetivo: fechar o proximo bloco real do ticket workspace com anexos auditaveis, registro de handoff tecnico e escalation controlada, sem criar omnichannel, backlog tecnico solto ou mutacao sem contrato.
+Objetivo: dar superficie operacional propria para o dominio `engineering_work_items`, sem empurrar backlog tecnico, ownership e lifecycle de entrega para dentro do ticket workspace.
 
 Ordem sugerida:
-1. Auditar contrato atual de anexos e ausencia de entidade de escalation/handoff.
-2. Definir schema proprio para anexos e handoff tecnico, sem misturar com mensagens livres.
-3. Criar read models e RPCs operacionais para anexar evidencias e registrar escalation.
-4. Conectar o workspace sem expor payload tecnico cru nem abrir upload fake.
-5. Validar audit trail, tenant isolation e estados honestos de indisponibilidade.
+1. Auditar o novo dominio `engineering_work_items` e `engineering_ticket_links` criado na Fase 8.7.
+2. Fechar read models da fila e do detalhe operacional de engenharia.
+3. Criar RPCs reais de ownership, status tecnico e resolucao/retorno ao suporte.
+4. Conectar uma primeira tela interna de engenharia sem vazar payload tecnico cru.
+5. Validar tenant isolation, audit trail e retorno do handoff para o ticket.
 6. Cobrir com pgTAP, fixture QA, typecheck, build e validacao visual.
 
 Migrations necessarias:
-- Sim, para anexos e entidade de escalation/handoff tecnico.
+- provavelmente sim, para ownership tecnico, timeline tecnica e possivel retorno estruturado ao ticket.
 
 Views necessarias:
-- Read models de anexos por ticket.
-- Read models de handoff/escalation por ticket.
+- fila de `engineering_work_items`
+- detalhe de `engineering_work_items`
+- read model de links por ticket e por work item
 
 RPCs necessarias:
-- Upload/metadado governado de anexo.
-- Registro de escalation/handoff tecnico.
-- Nao criar DML direto do frontend.
+- assumir work item
+- atualizar status tecnico
+- registrar resolucao tecnica
+- devolver contexto ao ticket quando aplicavel
 
 RLS/policies:
-- Anexo e handoff devem respeitar o mesmo tenant do ticket.
-- Conteudo interno e tecnico nao pode vazar para requester nem help publico.
+- isolamento por tenant e por papel interno autorizado
+- sem leitura direta de tabelas base pelo frontend
 
 Audit logs:
-- Toda criacao/arquivo/escalação precisa gerar audit trail e evento operacional.
+- toda mudanca de ownership, status e resolucao tecnica precisa gerar audit trail.
 
 Fixtures/testes:
-- Ticket com anexos publicos e internos.
-- Handoff tecnico criado e visivel no contexto certo.
-- Estados indisponiveis quando nao houver contrato ou payload permitido.
+- work item novo
+- work item em progresso
+- work item resolvido
+- retorno visivel no ticket vinculado
 
 Impacto no front:
-- Atualizar `/support/tickets/:ticketId` com anexos e trilha de escalation.
-- Nao criar upload falso, chat omnichannel ou backlog tecnico paralelo.
+- criar a primeira superficie dedicada de engenharia
+- manter `/support/tickets/:ticketId` como origem do handoff, nao como backlog tecnico completo
 
 ## Decisoes que ainda dependem de Produto
 - Se Support e Admin devem convergir em um App Shell unico.

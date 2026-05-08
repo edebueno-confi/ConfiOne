@@ -945,6 +945,8 @@ Fase 8.2:
   - `vw_support_ticket_timeline_recent`
   - `vw_support_ticket_intake_tenants`
   - `vw_support_ticket_intake_contacts`
+  - `vw_support_ticket_attachments`
+  - `vw_support_ticket_engineering_links`
   - `vw_support_knowledge_public_link_candidates`
   - `vw_support_customer_360`
   - `vw_support_customer_account_context`
@@ -984,6 +986,8 @@ Fase 8.2:
   - `rpc_add_internal_ticket_note`
   - `rpc_close_ticket`
   - `rpc_reopen_ticket`
+  - `rpc_support_create_engineering_work_item_from_ticket`
+  - `rpc_support_link_ticket_to_engineering_work_item`
 - O app autenticado escreve Knowledge Base apenas por:
   - `rpc_admin_create_knowledge_category`
   - `rpc_admin_create_knowledge_article_draft`
@@ -1037,6 +1041,7 @@ Fase 8.2:
 - `rpc_add_internal_ticket_note`
 - `rpc_close_ticket`
 - `rpc_reopen_ticket`
+ - `rpc_support_create_engineering_work_item_from_ticket`
 
 ### Boundary mantido
 - a UI do workspace nao le tabelas base de ticketing
@@ -1044,6 +1049,27 @@ Fase 8.2:
 - a UI continua interna e B2B, sem qualquer capacidade de atendimento a shopper final
 - o intake respeita tenant explicito, solicitante opcional quando nao houver contato e status inicial controlado pelo backend
 - categoria inicial continua fora da UI por falta de contrato backend
+
+## Fase 8.7 - Support Ticket Attachments And Escalation V3
+
+### Leitura consumida pelo frontend
+- `vw_support_ticket_attachments`
+- `vw_support_ticket_engineering_links`
+
+### Escrita consumida pelo frontend
+- `rpc_support_create_engineering_work_item_from_ticket`
+
+### Regras de consumo
+- `/support/tickets/:ticketId` lista anexos apenas por metadata sanitizada; `storage_bucket` e `storage_object_path` nao sao expostos ao app.
+- o upload real permanece bloqueado porque ainda nao existe bucket/policy segura configurada para storage multi-tenant.
+- o handoff tecnico cria entidade propria de engenharia e vinculo explicito com o ticket; o ticket nao vira backlog tecnico por texto livre.
+- a leitura de work items vinculados ocorre apenas por `vw_support_ticket_engineering_links`.
+
+### Boundary mantido
+- nenhuma tabela base nova de engenharia e lida diretamente pelo frontend
+- nenhum upload inseguro foi habilitado
+- tickets fechados/cancelados nao aceitam novo handoff tecnico
+- o status tecnico continua sendo controlado pelo dominio `engineering_work_items`, sem RPC paralela para status do link
 
 ## Fase 6.3 - Support Workspace Agent Directory + Assignment UX
 

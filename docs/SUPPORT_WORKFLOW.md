@@ -276,3 +276,31 @@
 - chat widget
 - IA ativa
 - portal B2B
+
+## Passo operacional da fase 8.7
+- `/support/tickets/:ticketId` agora exibe dois apoios operacionais adicionais no rail:
+  - `Evidencias do ticket`
+  - `Handoff tecnico`
+- `Evidencias do ticket` le apenas metadata sanitizada de anexo:
+  - nome exibivel
+  - tipo MIME
+  - tamanho
+  - data de criacao
+  - autor quando disponivel
+- a interface nao recebe nem mostra `bucket`, `path`, URL assinada ou qualquer coordenada sensivel de storage
+- enquanto nao existir bucket/policy segura, o rail informa de forma honesta que upload segue indisponivel
+- `Handoff tecnico` permite criar demanda tecnica real a partir do ticket quando o caller esta autorizado
+- o handoff nao e nota interna solta:
+  - cria `engineering_work_item`
+  - cria `engineering_ticket_link`
+  - gera `ticket_event`
+  - gera `audit_log`
+- o workspace passa a mostrar work items vinculados com:
+  - tipo
+  - status
+  - prioridade
+  - severidade
+  - titulo
+  - data de abertura
+- ticket fechado ou cancelado nao aceita novo handoff
+- o andamento tecnico futuro continua pertencendo ao dominio de engenharia; o ticket apenas registra e acompanha o vinculo

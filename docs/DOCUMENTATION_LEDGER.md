@@ -2526,3 +2526,37 @@ Cada registro deve informar:
   - `npm run supabase:qa:local-support-fixture`
 - impacto na FAQ futura:
   - nenhum; lote tecnico de plataforma, sem publicacao de conteudo
+### Fase 8.7 - Support Ticket Attachments And Escalation V3
+- fase: `8.7`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: o ticket workspace passou a ler anexos por metadata sanitizada e a registrar handoff tecnico estruturado para engenharia por contrato real, com dominio proprio de `engineering_work_items`, vinculo auditavel com o ticket, `ticket_events` e `audit_log`.
+- docs alterados:
+  - `docs/SUPPORT_TICKET_ATTACHMENTS_AND_ESCALATION_V3.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - `/support/tickets/:ticketId`
+  - `/support/queue` (regressao rapida)
+- views/RPCs afetadas:
+  - `vw_support_ticket_attachments`
+  - `vw_support_ticket_engineering_links`
+  - `rpc_support_create_engineering_work_item_from_ticket`
+  - `rpc_support_link_ticket_to_engineering_work_item`
+- riscos restantes:
+  - upload real de anexos continua bloqueado ate existir bucket/policies seguras de storage
+  - a engenharia ainda nao possui workspace dedicado; o ticket apenas cria e exibe o handoff
+  - categoria inicial continua sem contrato proprio
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+- impacto na FAQ futura:
+  - nenhum; lote tecnico de plataforma, sem publicacao de conteudo
