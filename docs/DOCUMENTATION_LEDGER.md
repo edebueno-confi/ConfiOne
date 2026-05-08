@@ -18,6 +18,33 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 8.1 - Buildout funcional do Genius Support OS V3
+- fase: `8.1`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: a trilha de curadoria editorial refinada da Knowledge Base foi pausada e o foco operacional passou para o buildout funcional da plataforma, com auditoria de rotas, lacunas por dominio, backlog faseado e primeiro lote tecnico recomendado.
+- docs alterados:
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - `apps/web/src/features/support/SupportWorkspaceShell.tsx`
+- runtime/UI:
+  - removidos contadores estaticos da navegacao do `Support Workspace` para evitar sinal operacional sem contrato backend
+- riscos restantes:
+  - fluxos reais de ticket ainda dependem de confirmacao/fechamento de contratos backend
+  - Customer Account Profile operacional ainda precisa ownership entre Admin, Suporte e CS
+  - Public Help continua dependente de publicacao real de artigos no backend
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run web:typecheck`
+  - `npm run web:build`
+- impacto na FAQ futura:
+  - a Knowledge candidata permanece como corpus inicial; a prioridade imediata deixa de ser refinamento editorial e passa a ser operacao real da plataforma
+
 ### Fase 7.40 - Knowledge Human Review Reading Pack V3
 - fase: `7.40`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

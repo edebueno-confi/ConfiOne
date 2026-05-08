@@ -47,6 +47,7 @@ Documentos prioritários:
 - `knowledge/LEGACY_CORPUS_HUMAN_CURATION_SPRINT.md`
 - `knowledge/LEGACY_CORPUS_P0_REWRITE_CANDIDATES.md`
 - `knowledge/KNOWLEDGE_P0_HUMAN_REVIEW_GATE.md`
+- `ROADMAP_BUILDOUT_V3.md`
 
 Documentos históricos:
 - `CLEANUP_REPORT.md`
@@ -1728,6 +1729,37 @@ Documentos históricos:
     - registrar as respostas reais em `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`
     - manter os `8` candidatos como `pendente` ate evidencia humana explicita
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 8.1: Buildout funcional V3 iniciado como virada de foco de produto/engenharia.
+  - A curadoria editorial refinada da Knowledge Base foi pausada por decisao operacional:
+    - os `8` candidatos permanecem como corpus/documentacao inicial
+    - erros de conteudo serao tratados depois, quando a operacao real exigir
+    - nenhum artigo foi aprovado
+    - nenhum artigo foi publicado
+  - O foco atual passa a ser a construcao do bolo da plataforma:
+    - telas e fluxos operacionais faltantes
+    - contratos reais entre backend e frontend
+    - navegacao, estados e continuidade entre Knowledge, Tickets, Clientes e Central Publica
+    - operacao diaria de Suporte, CS e Admin
+  - O roadmap faseado foi criado em:
+    - `docs/ROADMAP_BUILDOUT_V3.md`
+  - O roadmap cobre:
+    - auditoria das rotas principais
+    - lacunas por dominio Admin, Support, Customers e Public Help
+    - classificacao por tipo de lacuna
+    - fases A-G de buildout funcional
+    - primeiro lote tecnico recomendado para fluxos reais de ticket
+  - Quick win de runtime implementado:
+    - remocao de contadores estaticos `8` e `12` da navegacao do `Support Workspace`
+    - motivo: os numeros nao vinham de contrato backend e poderiam simular fila/tickets inexistentes
+  - Escopo preservado:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem migration, RPC, contract, fixture, RLS ou permissao nova
+    - `docs/design/blueprint/Conversas.png` permanece fora de escopo e fora do commit
+  - Proxima acao real:
+    - executar um lote grande de `Support Ticket Operational Flow V3`
+    - revisar/fechar contratos de criacao de ticket, timeline completa, link publico seguro de Knowledge e audit trail de mutacoes
+    - implementar frontend somente depois dos contratos backend estarem confirmados
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -1736,8 +1768,8 @@ Documentos históricos:
 - Estrutura do repositório consolidada em documento próprio.
 
 ## Bloqueios vigentes
-- Não iniciar telas.
-- Não iniciar telas de tickets antes dos contratos tipados do backend.
+- Não iniciar feature operacional sem contrato backend real quando houver regra de negocio.
+- Não criar telas ou acoes que simulem comportamento sem contrato.
 - Não tratar blueprint histórico como implementação pronta.
 - Não ingerir `raw_knowledge` sem classificação de sensibilidade.
 - Não publicar automaticamente artigos legados importados.
@@ -1749,7 +1781,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Enviar o pacote de leitura humano para `Produto` e `Suporte/CS` e registrar as respostas formais no `KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`; todos os `8` candidatos seguem pendentes ate evidencia humana explicita.
+Executar o proximo lote tecnico grande `Support Ticket Operational Flow V3`, começando pela confirmacao dos contratos backend de ticket e Knowledge dentro do ticket antes de habilitar qualquer nova acao de runtime.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único
