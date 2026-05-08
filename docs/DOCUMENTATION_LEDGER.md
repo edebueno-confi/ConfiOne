@@ -18,6 +18,33 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.26 - Knowledge Pix Estorno Subcluster Prep V3
+- fase: `7.26`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: o subcluster `Pix e estorno` foi preparado documentalmente com leitura dos artigos fonte, separação de temas de automação, gateway, permissões, mudança manual de reembolso e troubleshooting, além de definição de fronteiras editoriais e de futuros canônicos possíveis, sem reescrever artigos completos, aprovar ou publicar conteúdo.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_PIX_ESTORNO_SUBCLUSTER_PREP.md`
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_SUBCLUSTERS.md`
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+- riscos restantes:
+  - Pix continua sensivel demais para abertura publica imediata por depender de pagamento, automacao, gateway e validacao financeira
+  - qualquer trilha futura de Pix depende de validacao explicita de Produto e Suporte/CS
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - impede que o tema de Pix seja tratado de forma simplista dentro do canônico geral de estorno
+
 ### Fase 7.25 - Knowledge ValeCompra Subcluster Prep V3
 - fase: `7.25`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

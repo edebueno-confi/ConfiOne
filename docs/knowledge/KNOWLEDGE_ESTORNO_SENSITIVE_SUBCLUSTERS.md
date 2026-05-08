@@ -78,6 +78,8 @@
 - Suporte/CS necessário: `sim`
 - observação objetiva:
   - não deve entrar no canônico geral enquanto o comportamento atual e os limites financeiros não forem validados
+- preparação editorial específica registrada em:
+  - `docs/knowledge/KNOWLEDGE_PIX_ESTORNO_SUBCLUSTER_PREP.md`
 
 ### 3. Vale-compra e crédito
 - descrição:

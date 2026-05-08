@@ -13,6 +13,8 @@
   - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_SUBCLUSTERS.md`
 - A preparação editorial do subcluster de vale-compra ficou registrada em:
   - `docs/knowledge/KNOWLEDGE_VALE_COMPRA_SUBCLUSTER_PREP.md`
+- A preparação editorial do subcluster de Pix e estorno ficou registrada em:
+  - `docs/knowledge/KNOWLEDGE_PIX_ESTORNO_SUBCLUSTER_PREP.md`
 
 | Artigo | Categoria proposta | Prioridade | Decisão Produto | Decisão Suporte/CS | Pode publicar | Pendência principal | Evidência necessária |
 | --- | --- | --- | --- | --- | --- | --- | --- |
