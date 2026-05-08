@@ -45,8 +45,8 @@ select is(
       and p.prosecdef
       and p.proname like 'rpc_%'
   ),
-  54,
-  'as 54 RPCs expostas existem como funcoes SECURITY DEFINER controladas'
+  57,
+  'as 57 RPCs expostas existem como funcoes SECURITY DEFINER controladas'
 );
 
 select is(
@@ -85,7 +85,11 @@ select is(
         'can_read_customer_account_admin',
         'can_manage_knowledge_base',
         'can_manage_multi_brand_foundation',
-        'can_read_knowledge_article'
+        'can_read_knowledge_article',
+        'ticket_attachment_max_bytes',
+        'ticket_attachment_allowed_content_types',
+        'can_upload_ticket_evidence_object',
+        'can_download_ticket_evidence_object'
       ]) as proname
     ),
     grants as (
@@ -155,7 +159,7 @@ select is(
     from grants
       where grantee = (select oid from pg_roles where rolname = 'authenticated')
   ),
-  54,
+  57,
   'authenticated recebe execute em todas as RPCs expostas e somente por grant explicito'
 );
 

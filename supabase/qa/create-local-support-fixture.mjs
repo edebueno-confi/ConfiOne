@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -460,6 +460,17 @@ const FIXTURE = {
         'Preparar orientação operacional para o suporte validar com o cliente.',
     },
   ],
+  attachments: [
+    {
+      ticketTitle: 'QA Support | Conciliacao de devoluções com atraso',
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      fileName: 'conciliacao-devolucoes-qa.pdf',
+      contentType: 'application/pdf',
+      body:
+        'Evidência operacional da fila de conciliação para o tenant A. Conteúdo sanitizado para validar o fluxo seguro de anexos.',
+    },
+  ],
   publicHelpCenter: {
     legacyCategorySlugs: ['primeiros-passos-genius'],
     categories: [
@@ -658,6 +669,103 @@ Arquivos soltos ou capturas sem explicação atrasam a triagem porque exigem nov
 function fail(message) {
   console.error(message);
   process.exit(1);
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function readLocalSupabaseStatusEnv() {
+  const status = spawnSync('npx', ['supabase', 'status', '-o', 'env'], {
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: 'utf-8',
+    shell: process.platform === 'win32',
+  });
+
+  if (status.status !== 0) {
+    fail(`Falha ao ler o ambiente local do Supabase: ${status.stderr || status.stdout}`);
+  }
+
+  const entries = {};
+  for (const rawLine of status.stdout.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || !line.includes('=')) {
+      continue;
+    }
+
+    const separatorIndex = line.indexOf('=');
+    const key = line.slice(0, separatorIndex);
+    const rawValue = line.slice(separatorIndex + 1).trim();
+    entries[key] = rawValue.replace(/^"/, '').replace(/"$/, '');
+  }
+
+  return entries;
+}
+
+async function isEdgeRuntimeHealthy(apiUrl) {
+  try {
+    const response = await fetch(`${apiUrl.replace(/\/$/, '')}/functions/v1/_internal/health`, {
+      method: 'HEAD',
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function ensureLocalEdgeRuntime() {
+  const localEnv = readLocalSupabaseStatusEnv();
+  const apiUrl = localEnv.API_URL;
+  const anonKey = localEnv.ANON_KEY;
+  const serviceRoleKey = localEnv.SERVICE_ROLE_KEY;
+
+  if (!apiUrl || !anonKey || !serviceRoleKey) {
+    fail('API_URL, ANON_KEY ou SERVICE_ROLE_KEY ausentes no Supabase local.');
+  }
+
+  if (await isEdgeRuntimeHealthy(apiUrl)) {
+    return { apiUrl, anonKey, serviceRoleKey };
+  }
+
+  const tempDir = mkdtempSync(join(tmpdir(), 'genius-support-edge-runtime-'));
+  const envFile = join(tempDir, '.env.edge-runtime');
+  writeFileSync(
+    envFile,
+    [
+      `API_URL=${apiUrl}`,
+      `ANON_KEY=${anonKey}`,
+      `SERVICE_ROLE_KEY=${serviceRoleKey}`,
+      `SUPABASE_URL=${apiUrl}`,
+      `SUPABASE_ANON_KEY=${anonKey}`,
+      `SUPABASE_SERVICE_ROLE_KEY=${serviceRoleKey}`,
+    ].join('\n'),
+  );
+
+  const serveCommand =
+    process.platform === 'win32'
+      ? `${process.env.ComSpec ?? 'cmd.exe'} /d /s /c "npx supabase functions serve --env-file \"${envFile}\""`
+      : `npx supabase functions serve --env-file "${envFile}"`;
+
+  const child = spawn(serveCommand, {
+    cwd: process.cwd(),
+    env: process.env,
+    shell: true,
+    detached: true,
+    stdio: 'ignore',
+  });
+  child.unref();
+
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < 30_000) {
+    if (await isEdgeRuntimeHealthy(apiUrl)) {
+      return { apiUrl, anonKey, serviceRoleKey };
+    }
+
+    await sleep(1_000);
+  }
+
+  fail('O runtime local de Edge Functions não respondeu após tentar subir o servidor.');
 }
 
 function localSupabaseCommandArgs(args) {
@@ -2245,6 +2353,19 @@ function queryEngineeringWorkItemIdByLink(linkId) {
   return result.rows?.[0]?.id ?? null;
 }
 
+function queryEngineeringWorkItemState(workItemId) {
+  const result = runSupabaseDbQuery(`
+    select
+      status::text as status,
+      assigned_to_user_id::text as assigned_to_user_id
+    from public.engineering_work_items
+    where id = '${sqlEscape(workItemId)}'::uuid
+    limit 1;
+  `);
+
+  return result.rows?.[0] ?? null;
+}
+
 async function applyEngineeringOperationViaRpc({
   actorSession,
   workItemId,
@@ -2252,33 +2373,39 @@ async function applyEngineeringOperationViaRpc({
   operation,
 }) {
   if (operation.assign) {
-    await callRpcAsUser({
-      apiUrl: actorSession.apiUrl,
-      anonKey: actorSession.anonKey,
-      accessToken: actorSession.accessToken,
-      rpcName: 'rpc_engineering_assign_work_item',
-      body: {
-        p_engineering_work_item_id: workItemId,
-        p_tenant_id: tenantId,
-        p_assigned_to_user_id: null,
-      },
-    });
+    const currentState = queryEngineeringWorkItemState(workItemId);
+    if (!currentState?.assigned_to_user_id) {
+      await callRpcAsUser({
+        apiUrl: actorSession.apiUrl,
+        anonKey: actorSession.anonKey,
+        accessToken: actorSession.accessToken,
+        rpcName: 'rpc_engineering_assign_work_item',
+        body: {
+          p_engineering_work_item_id: workItemId,
+          p_tenant_id: tenantId,
+          p_assigned_to_user_id: null,
+        },
+      });
+    }
   }
 
   if (operation.status) {
-    await callRpcAsUser({
-      apiUrl: actorSession.apiUrl,
-      anonKey: actorSession.anonKey,
-      accessToken: actorSession.accessToken,
-      rpcName: 'rpc_engineering_update_work_item_status',
-      body: {
-        p_engineering_work_item_id: workItemId,
-        p_tenant_id: tenantId,
-        p_status: operation.status,
-        p_summary: operation.statusSummary,
-        p_next_step: operation.statusNextStep ?? null,
-      },
-    });
+    const currentState = queryEngineeringWorkItemState(workItemId);
+    if (currentState?.status !== operation.status) {
+      await callRpcAsUser({
+        apiUrl: actorSession.apiUrl,
+        anonKey: actorSession.anonKey,
+        accessToken: actorSession.accessToken,
+        rpcName: 'rpc_engineering_update_work_item_status',
+        body: {
+          p_engineering_work_item_id: workItemId,
+          p_tenant_id: tenantId,
+          p_status: operation.status,
+          p_summary: operation.statusSummary,
+          p_next_step: operation.statusNextStep ?? null,
+        },
+      });
+    }
   }
 
   if (operation.updateSummary) {
@@ -2295,6 +2422,86 @@ async function applyEngineeringOperationViaRpc({
       },
     });
   }
+}
+
+function queryTicketAttachmentId(ticketId, fileName) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id
+    from public.ticket_attachments
+    where ticket_id = '${sqlEscape(ticketId)}'::uuid
+      and file_name = '${sqlEscape(fileName)}'
+    order by created_at desc
+    limit 1;
+  `);
+
+  return result.rows?.[0]?.id ?? null;
+}
+
+async function uploadTicketAttachmentViaSecureFlow({
+  actorSession,
+  ticketId,
+  tenantId,
+  attachment,
+}) {
+  const existingAttachmentId = queryTicketAttachmentId(ticketId, attachment.fileName);
+  if (existingAttachmentId) {
+    return existingAttachmentId;
+  }
+
+  const encoded = new TextEncoder().encode(attachment.body);
+  const prepared = await callRpcAsUser({
+    apiUrl: actorSession.apiUrl,
+    anonKey: actorSession.anonKey,
+    accessToken: actorSession.accessToken,
+    rpcName: 'rpc_support_create_ticket_attachment_upload',
+    body: {
+      p_ticket_id: ticketId,
+      p_tenant_id: tenantId,
+      p_original_filename: attachment.fileName,
+      p_content_type: attachment.contentType,
+      p_size_bytes: encoded.byteLength,
+    },
+  });
+
+  const uploadContract = Array.isArray(prepared) ? prepared[0] : prepared;
+  if (!uploadContract?.upload_url || !uploadContract?.upload_intent_id) {
+    fail(`Contrato de upload ausente para a evidência ${attachment.fileName}.`);
+  }
+
+  const formData = new FormData();
+  formData.append(
+    'file',
+    new Blob([encoded], { type: attachment.contentType }),
+    attachment.fileName,
+  );
+
+  const uploadResponse = await fetch(`${actorSession.apiUrl}${uploadContract.upload_url}`, {
+    method: 'POST',
+    headers: {
+      apikey: actorSession.anonKey,
+      Authorization: `Bearer ${actorSession.accessToken}`,
+    },
+    body: formData,
+  });
+
+  if (!uploadResponse.ok) {
+    const detail = await uploadResponse.text();
+    fail(
+      `Falha ao enviar evidência segura ${attachment.fileName}: ${uploadResponse.status} ${detail}`,
+    );
+  }
+
+  const payload = await uploadResponse.json().catch(() => null);
+  const attachmentId =
+    payload?.attachment?.attachment_id ??
+    payload?.attachment?.attachmentId ??
+    queryTicketAttachmentId(ticketId, attachment.fileName);
+
+  if (!attachmentId) {
+    fail(`Nao foi possivel registrar a evidência segura ${attachment.fileName}.`);
+  }
+
+  return attachmentId;
 }
 
 function clearFixtureTickets() {
@@ -2409,6 +2616,7 @@ async function ensurePublicHelpCenterFixture(authorSession) {
 async function main() {
   const envMap = runSupabaseStatusEnv();
   const { apiUrl, serviceRoleKey, anonKey } = assertLocalOnly(envMap);
+  await ensureLocalEdgeRuntime();
 
   const qaAdmin = await createOrUpdateAuthUser({
     apiUrl,
@@ -2624,6 +2832,7 @@ async function main() {
   const createdEngineeringHandoffs = [];
   const engineeringWorkItemMap = new Map();
   const createdEngineeringOperations = [];
+  const createdAttachments = [];
   const adminSession = await getSessionForKey('qa-admin');
   const contentAuthorSession = await getSessionForKey('content-author');
   const publicHelpCenter = await ensurePublicHelpCenterFixture(contentAuthorSession);
@@ -2743,6 +2952,34 @@ async function main() {
     });
   }
 
+  for (const attachment of FIXTURE.attachments ?? []) {
+    const ticketId = ticketMap.get(`${attachment.ticketTenantSlug}::${attachment.ticketTitle}`);
+    const tenantId = tenantMap.get(attachment.ticketTenantSlug);
+    if (!ticketId) {
+      fail(`Ticket ausente para evidência segura: ${attachment.ticketTitle}.`);
+    }
+    if (!tenantId) {
+      fail(`Tenant ausente para evidência segura: ${attachment.ticketTenantSlug}.`);
+    }
+
+    const actorSession = await getSessionForKey(attachment.actorKey);
+    const attachmentId = await uploadTicketAttachmentViaSecureFlow({
+      actorSession,
+      ticketId,
+      tenantId,
+      attachment,
+    });
+
+    createdAttachments.push({
+      attachment_id: attachmentId,
+      ticket_id: ticketId,
+      ticket_title: attachment.ticketTitle,
+      ticket_tenant_slug: attachment.ticketTenantSlug,
+      file_name: attachment.fileName,
+      content_type: attachment.contentType,
+    });
+  }
+
   console.log(
     JSON.stringify(
       {
@@ -2793,6 +3030,7 @@ async function main() {
         knowledge_links: createdKnowledgeLinks,
         engineering_handoffs: createdEngineeringHandoffs,
         engineering_operations: createdEngineeringOperations,
+        attachments: createdAttachments,
         public_help_center: publicHelpCenter,
         tickets: createdTickets,
       },

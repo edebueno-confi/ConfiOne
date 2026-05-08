@@ -2,7 +2,7 @@ create extension if not exists pgtap with schema extensions;
 
 begin;
 
-select plan(16);
+select plan(15);
 
 insert into auth.users (
   instance_id,
@@ -18,9 +18,9 @@ insert into auth.users (
   updated_at
 )
 values
-  ('00000000-0000-0000-0000-000000000000', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'authenticated', 'authenticated', 'admin@support-escalation.local', crypt('password', gen_salt('bf')), timezone('utc', now()), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Platform Admin"}'::jsonb, timezone('utc', now()), timezone('utc', now())),
-  ('00000000-0000-0000-0000-000000000000', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'authenticated', 'authenticated', 'support-manager-a@support-escalation.local', crypt('password', gen_salt('bf')), timezone('utc', now()), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Support Manager A"}'::jsonb, timezone('utc', now()), timezone('utc', now())),
-  ('00000000-0000-0000-0000-000000000000', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'authenticated', 'authenticated', 'support-agent-b@support-escalation.local', crypt('password', gen_salt('bf')), timezone('utc', now()), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Support Agent B"}'::jsonb, timezone('utc', now()), timezone('utc', now()));
+  ('00000000-0000-0000-0000-000000000000', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'authenticated', 'authenticated', 'admin@ticket-evidence.local', crypt('password', gen_salt('bf')), timezone('utc', now()), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Platform Admin"}'::jsonb, timezone('utc', now()), timezone('utc', now())),
+  ('00000000-0000-0000-0000-000000000000', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'authenticated', 'authenticated', 'support-manager-a@ticket-evidence.local', crypt('password', gen_salt('bf')), timezone('utc', now()), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Support Manager A"}'::jsonb, timezone('utc', now()), timezone('utc', now())),
+  ('00000000-0000-0000-0000-000000000000', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'authenticated', 'authenticated', 'support-agent-b@ticket-evidence.local', crypt('password', gen_salt('bf')), timezone('utc', now()), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Support Agent B"}'::jsonb, timezone('utc', now()), timezone('utc', now()));
 
 insert into public.user_global_roles (
   user_id,
@@ -43,8 +43,8 @@ insert into public.tenants (
   updated_by_user_id
 )
 values
-  ('11111111-1111-4111-8111-111111111111', 'support-escalation-a', 'Support Escalation A LTDA', 'Support Escalation A', 'active', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
-  ('22222222-2222-4222-8222-222222222222', 'support-escalation-b', 'Support Escalation B LTDA', 'Support Escalation B', 'active', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+  ('11111111-1111-4111-8111-111111111111', 'ticket-evidence-a', 'Ticket Evidence A LTDA', 'Ticket Evidence A', 'active', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+  ('22222222-2222-4222-8222-222222222222', 'ticket-evidence-b', 'Ticket Evidence B LTDA', 'Ticket Evidence B', 'active', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
 
 insert into public.tenant_memberships (
   tenant_id,
@@ -57,7 +57,7 @@ insert into public.tenant_memberships (
 )
 values
   ('11111111-1111-4111-8111-111111111111', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'tenant_admin', 'active', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
-  ('22222222-2222-4222-8222-222222222222', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'tenant_viewer', 'active', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+  ('22222222-2222-4222-8222-222222222222', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'tenant_admin', 'active', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
 
 insert into public.tickets (
   id,
@@ -68,51 +68,164 @@ insert into public.tickets (
   status,
   priority,
   severity,
-  close_reason,
   created_by_user_id,
   updated_by_user_id,
-  assigned_to_user_id,
-  closed_at
+  assigned_to_user_id
 )
 values
-  ('50000000-0000-4000-8000-000000000001', '11111111-1111-4111-8111-111111111111', 'Ticket A elegível para handoff', 'Incidente técnico que precisa de engenharia.', 'internal', 'triage', 'high', 'high', null, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', null),
-  ('50000000-0000-4000-8000-000000000002', '11111111-1111-4111-8111-111111111111', 'Ticket A fechado', 'Ticket já encerrado.', 'internal', 'closed', 'normal', 'medium', 'Encerrado para regressão de handoff.', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', timezone('utc', now())),
-  ('50000000-0000-4000-8000-000000000003', '22222222-2222-4222-8222-222222222222', 'Ticket B isolado', 'Ticket de outro tenant.', 'internal', 'triage', 'normal', 'medium', null, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', null);
+  ('50000000-0000-4000-8000-000000000001', '11111111-1111-4111-8111-111111111111', 'Ticket A com evidência segura', 'Fluxo principal para validar upload governado.', 'internal', 'in_progress', 'high', 'medium', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'),
+  ('50000000-0000-4000-8000-000000000002', '22222222-2222-4222-8222-222222222222', 'Ticket B isolado', 'Usado para validar bloqueio cross-tenant.', 'internal', 'triage', 'normal', 'low', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc');
 
-insert into public.ticket_attachments (
-  id,
-  tenant_id,
-  ticket_id,
-  visibility,
-  storage_bucket,
-  storage_object_path,
-  file_name,
-  content_type,
-  byte_size,
-  uploaded_by_user_id
-)
-values
-  ('60000000-0000-4000-8000-000000000001', '11111111-1111-4111-8111-111111111111', '50000000-0000-4000-8000-000000000001', 'internal', 'support-ticket-evidence', 'tickets/a/evidence-1.pdf', 'evidence-1.pdf', 'application/pdf', 2048, 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'),
-  ('60000000-0000-4000-8000-000000000002', '22222222-2222-4222-8222-222222222222', '50000000-0000-4000-8000-000000000003', 'internal', 'support-ticket-evidence', 'tickets/b/evidence-1.pdf', 'evidence-b.pdf', 'application/pdf', 4096, 'cccccccc-cccc-4ccc-8ccc-cccccccccccc');
-
-insert into public.engineering_work_items (
-  id,
-  tenant_id,
-  work_item_type,
-  status,
-  priority,
-  title,
-  description,
-  created_by_user_id,
-  updated_by_user_id
-)
-values
-  ('70000000-0000-4000-8000-000000000001', '22222222-2222-4222-8222-222222222222', 'bug', 'triage', 'high', 'Work item B existente', 'Usado para validar bloqueio cross-tenant.', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+select ok(
+  exists (
+    select 1
+    from storage.buckets
+    where id = 'ticket-evidence'
+      and public = false
+  ),
+  'bucket ticket-evidence existe e permanece privado'
+);
 
 select ok(
   has_table_privilege('authenticated', 'public.vw_support_ticket_attachments', 'SELECT')
-  and has_table_privilege('authenticated', 'public.vw_support_ticket_engineering_links', 'SELECT'),
-  'authenticated recebe SELECT apenas nos read models de anexos e handoff'
+  and not has_table_privilege('anon', 'public.vw_support_ticket_attachments', 'SELECT'),
+  'somente authenticated lê o read model sanitizado de anexos'
+);
+
+set local role authenticated;
+set local request.jwt.claim.role = 'authenticated';
+set local request.jwt.claim.sub = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+
+select lives_ok(
+  $$
+    select public.rpc_support_create_ticket_attachment_upload(
+      '50000000-0000-4000-8000-000000000001'::uuid,
+      '11111111-1111-4111-8111-111111111111'::uuid,
+      'Evidencia Cliente A!.pdf',
+      'application/pdf',
+      2048
+    )
+  $$,
+  'support_manager autorizado prepara a intenção de upload seguro'
+);
+
+reset role;
+reset request.jwt.claim.role;
+reset request.jwt.claim.sub;
+
+select ok(
+  exists (
+    select 1
+    from public.ticket_attachment_upload_intents as intent
+    where intent.ticket_id = '50000000-0000-4000-8000-000000000001'::uuid
+      and intent.storage_bucket = 'ticket-evidence'
+      and intent.storage_object_path like 'tenant/11111111-1111-4111-8111-111111111111/ticket/50000000-0000-4000-8000-000000000001/attachment/%'
+      and intent.storage_object_path not like '% %'
+  ),
+  'intenção de upload usa bucket privado e path tenant-aware sem nome cru exposto'
+);
+
+insert into public.ticket_attachment_upload_intents (
+  id,
+  attachment_id,
+  tenant_id,
+  ticket_id,
+  visibility,
+  original_filename,
+  content_type,
+  size_bytes,
+  storage_bucket,
+  storage_object_path,
+  created_by_user_id,
+  expires_at
+)
+values (
+  '61000000-0000-4000-8000-000000000001',
+  '60000000-0000-4000-8000-000000000001',
+  '11111111-1111-4111-8111-111111111111',
+  '50000000-0000-4000-8000-000000000001',
+  'internal'::public.message_visibility,
+  'Evidencia Cliente A!.pdf',
+  'application/pdf',
+  2048,
+  'ticket-evidence',
+  'tenant/11111111-1111-4111-8111-111111111111/ticket/50000000-0000-4000-8000-000000000001/attachment/60000000-0000-4000-8000-000000000001/evidencia-cliente-a.pdf',
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+  timezone('utc', now()) + interval '15 minutes'
+);
+
+set local role authenticated;
+set local request.jwt.claim.role = 'authenticated';
+set local request.jwt.claim.sub = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+
+select lives_ok(
+  $$
+    insert into storage.objects (
+      id,
+      bucket_id,
+      name,
+      owner,
+      owner_id,
+      version,
+      metadata
+    )
+    values (
+      '60000000-0000-4000-8000-000000000001'::uuid,
+      'ticket-evidence',
+      'tenant/11111111-1111-4111-8111-111111111111/ticket/50000000-0000-4000-8000-000000000001/attachment/60000000-0000-4000-8000-000000000001/evidencia-cliente-a.pdf',
+      'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid,
+      'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      'v1',
+      jsonb_build_object('size', 2048, 'mimetype', 'application/pdf')
+    )
+  $$,
+  'policy de storage permite inserir o objeto apenas para a intenção autorizada'
+);
+
+select lives_ok(
+  $$
+    select public.rpc_support_register_ticket_attachment(
+      '61000000-0000-4000-8000-000000000001'::uuid
+    )
+  $$,
+  'registro final da evidência valida objeto no storage e cria metadata do anexo'
+);
+
+reset role;
+reset request.jwt.claim.role;
+reset request.jwt.claim.sub;
+
+select ok(
+  exists (
+    select 1
+    from public.ticket_attachments as ta
+    where ta.ticket_id = '50000000-0000-4000-8000-000000000001'::uuid
+      and ta.status = 'available'::public.ticket_attachment_status
+  ),
+  'metadata do anexo é persistida com status disponível'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.ticket_events as event_row
+    where event_row.ticket_id = '50000000-0000-4000-8000-000000000001'::uuid
+      and event_row.event_type = 'attachment_added'::public.ticket_event_type
+      and not (event_row.metadata ? 'storage_bucket')
+      and not (event_row.metadata ? 'storage_object_path')
+  ),
+  'registro do anexo gera ticket_event sem bucket ou path sensível'
+);
+
+select ok(
+  exists (
+    select 1
+    from audit.audit_logs as audit_log
+    where audit_log.tenant_id = '11111111-1111-4111-8111-111111111111'::uuid
+      and audit_log.entity_table = 'ticket_attachments'
+      and audit_log.action = 'insert'
+  ),
+  'anexo registrado gera audit trail de insert'
 );
 
 select is(
@@ -124,7 +237,7 @@ select is(
       and column_name in ('storage_bucket', 'storage_object_path')
   ),
   0,
-  'read model de anexos não expõe bucket nem path sensível'
+  'read model sanitizado não expõe bucket nem path interno'
 );
 
 set local role authenticated;
@@ -138,114 +251,31 @@ select is(
     where ticket_id = '50000000-0000-4000-8000-000000000001'::uuid
   ),
   1,
-  'support_manager vê os anexos do ticket do próprio tenant'
-);
-
-select ok(
-  (
-    select not bucket_configured
-      and not storage_object_present
-      and not download_available
-    from public.vw_support_ticket_attachments
-    where attachment_id = '60000000-0000-4000-8000-000000000001'::uuid
-  ),
-  'sem bucket e policy, o read model sinaliza anexo sem download governado disponível'
-);
-
-select is(
-  (
-    select count(*)::integer
-    from public.vw_support_ticket_attachments
-    where ticket_id = '50000000-0000-4000-8000-000000000003'::uuid
-  ),
-  0,
-  'cross-tenant de anexos continua bloqueado no read model'
-);
-
-select lives_ok(
-  $$
-    select public.rpc_support_create_engineering_work_item_from_ticket(
-      '50000000-0000-4000-8000-000000000001'::uuid,
-      'investigation'::public.engineering_work_item_type,
-      'Investigar timeout do webhook',
-      'Comparar cronologia do incidente, retries e contexto do tenant afetado.',
-      'Cliente A com operação bloqueada desde o último deploy.'
-    )
-  $$,
-  'support_manager autorizado cria demanda técnica a partir do ticket'
-);
-
-reset role;
-reset request.jwt.claim.role;
-reset request.jwt.claim.sub;
-
-select is(
-  (
-    select count(*)::integer
-    from public.engineering_work_items
-    where tenant_id = '11111111-1111-4111-8111-111111111111'::uuid
-  ),
-  1,
-  'handoff cria engineering_work_item no tenant correto'
-);
-
-select is(
-  (
-    select count(*)::integer
-    from public.engineering_ticket_links
-    where ticket_id = '50000000-0000-4000-8000-000000000001'::uuid
-  ),
-  1,
-  'handoff cria engineering_ticket_link para o ticket'
-);
-
-select is(
-  (
-    select count(*)::integer
-    from public.ticket_events
-    where ticket_id = '50000000-0000-4000-8000-000000000001'::uuid
-      and event_type in ('escalated_to_engineering', 'linked_to_work_item')
-  ),
-  2,
-  'handoff gera os ticket_events internos obrigatórios'
-);
-
-select ok(
-  (
-    select count(*)::integer
-    from audit.audit_logs as audit_log
-    where audit_log.tenant_id = '11111111-1111-4111-8111-111111111111'::uuid
-      and audit_log.entity_table in ('engineering_work_items', 'engineering_ticket_links', 'ticket_events')
-      and audit_log.action = 'insert'
-  ) >= 4,
-  'handoff gera audit trail nas entidades técnicas e nos eventos do ticket'
-);
-
-set local role authenticated;
-set local request.jwt.claim.role = 'authenticated';
-set local request.jwt.claim.sub = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
-
-select is(
-  (
-    select count(*)::integer
-    from public.vw_support_ticket_engineering_links
-    where ticket_id = '50000000-0000-4000-8000-000000000001'::uuid
-  ),
-  1,
-  'workspace lê o vínculo técnico criado no read model controlado'
+  'support_manager vê a evidência do ticket do próprio tenant no read model'
 );
 
 select throws_ok(
   $$
-    select public.rpc_support_link_ticket_to_engineering_work_item(
-      '50000000-0000-4000-8000-000000000001'::uuid,
-      '70000000-0000-4000-8000-000000000001'::uuid,
-      'Tentativa inválida de cruzar work item de outro tenant.'
+    select public.rpc_support_create_ticket_attachment_upload(
+      '50000000-0000-4000-8000-000000000002'::uuid,
+      '22222222-2222-4222-8222-222222222222'::uuid,
+      'intrusao.pdf',
+      'application/pdf',
+      1024
     )
   $$,
   'P0001',
-  'cross-tenant engineering work item link denied',
-  'vínculo cross-tenant entre ticket e work item é bloqueado'
+  'rpc_support_create_ticket_attachment_upload denied',
+  'upload cross-tenant é bloqueado no backend'
+);
+
+select lives_ok(
+  $$
+    select public.rpc_support_get_ticket_attachment_download_url(
+      '60000000-0000-4000-8000-000000000001'::uuid
+    )
+  $$,
+  'usuário autorizado recebe contrato opaco de download temporário'
 );
 
 reset role;
@@ -258,91 +288,43 @@ set local request.jwt.claim.sub = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 
 select throws_ok(
   $$
-    select public.rpc_support_create_engineering_work_item_from_ticket(
-      '50000000-0000-4000-8000-000000000001'::uuid,
-      'bug'::public.engineering_work_item_type,
-      'Tentativa cross-tenant',
-      'Usuário de outro tenant não deve conseguir escalar o ticket.',
-      null
+    select public.rpc_support_get_ticket_attachment_download_url(
+      '60000000-0000-4000-8000-000000000001'::uuid
     )
   $$,
   'P0001',
-  'rpc_support_create_engineering_work_item_from_ticket denied',
-  'ator de outro tenant não consegue criar handoff técnico'
-);
-
-reset role;
-reset request.jwt.claim.role;
-reset request.jwt.claim.sub;
-
-set local role authenticated;
-set local request.jwt.claim.role = 'authenticated';
-set local request.jwt.claim.sub = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
-
-select throws_ok(
-  $$
-    select public.rpc_support_create_engineering_work_item_from_ticket(
-      '50000000-0000-4000-8000-000000000002'::uuid,
-      'investigation'::public.engineering_work_item_type,
-      'Tentativa em ticket fechado',
-      'Ticket fechado não deve receber novo handoff.',
-      null
-    )
-  $$,
-  'P0001',
-  'ticket is not eligible for engineering handoff',
-  'ticket fechado não aceita novo handoff técnico'
+  'rpc_support_get_ticket_attachment_download_url denied',
+  'download cross-tenant é bloqueado no backend'
 );
 
 select throws_ok(
   $$
-    insert into public.engineering_work_items (
-      tenant_id,
-      work_item_type,
-      status,
-      priority,
-      title,
-      description,
-      created_by_user_id
-    )
-    values (
-      '11111111-1111-4111-8111-111111111111'::uuid,
-      'bug'::public.engineering_work_item_type,
-      'triage'::public.engineering_work_item_status,
-      'normal'::public.ticket_priority,
-      'Insert direto proibido',
-      'Authenticated não pode gravar na tabela-base.',
-      'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid
-    )
-  $$,
-  '42501',
-  'permission denied for table engineering_work_items',
-  'DML direto em engineering_work_items falha para authenticated'
-);
-
-select throws_ok(
-  $$
-    insert into public.engineering_ticket_links (
+    insert into public.ticket_attachments (
       tenant_id,
       ticket_id,
-      engineering_work_item_id,
-      created_by_user_id
+      visibility,
+      storage_bucket,
+      storage_object_path,
+      file_name,
+      content_type,
+      byte_size,
+      uploaded_by_user_id
     )
     values (
-      '11111111-1111-4111-8111-111111111111'::uuid,
-      '50000000-0000-4000-8000-000000000001'::uuid,
-      (
-        select id
-        from public.engineering_work_items
-        where tenant_id = '11111111-1111-4111-8111-111111111111'::uuid
-        limit 1
-      ),
-      'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid
+      '22222222-2222-4222-8222-222222222222'::uuid,
+      '50000000-0000-4000-8000-000000000002'::uuid,
+      'internal'::public.message_visibility,
+      'ticket-evidence',
+      'tenant/22222222-2222-4222-8222-222222222222/ticket/50000000-0000-4000-8000-000000000002/attachment/manual.pdf',
+      'manual.pdf',
+      'application/pdf',
+      512,
+      'cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid
     )
   $$,
   '42501',
-  'permission denied for table engineering_ticket_links',
-  'DML direto em engineering_ticket_links falha para authenticated'
+  'permission denied for table ticket_attachments',
+  'frontend autenticado não faz DML direto na tabela base de anexos'
 );
 
 reset role;

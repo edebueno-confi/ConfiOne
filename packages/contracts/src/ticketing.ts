@@ -60,6 +60,7 @@ export const TICKET_EVENT_TYPES = [
   'cancelled',
 ] as const;
 export type TicketEventType = (typeof TICKET_EVENT_TYPES)[number];
+export type TicketAttachmentStatus = 'available' | 'archived';
 
 export const TICKET_TIMELINE_ENTRY_TYPES = ['message', 'event'] as const;
 export type TicketTimelineEntryType = (typeof TICKET_TIMELINE_ENTRY_TYPES)[number];
@@ -569,18 +570,51 @@ export interface SupportTicketKnowledgeLink {
 export interface SupportTicketAttachment {
   attachmentId: Uuid;
   ticketId: Uuid;
-  tenantId: Uuid;
-  messageId: Uuid | null;
-  visibility: TicketMessageVisibility;
-  fileName: string;
+  displayName: string;
   contentType: string | null;
-  byteSize: number;
-  uploadedByUserId: Uuid;
-  uploadedByFullName: string | null;
+  sizeBytes: number;
+  uploadedByName: string | null;
   createdAt: IsoTimestamp;
-  bucketConfigured: boolean;
-  storageObjectPresent: boolean;
-  downloadAvailable: boolean;
+  status: TicketAttachmentStatus;
+  canDownload: boolean;
+  canArchive: boolean;
+}
+
+export interface RpcSupportCreateTicketAttachmentUploadPayload {
+  ticketId: Uuid;
+  tenantId: Uuid;
+  originalFilename: string;
+  contentType: string;
+  sizeBytes: number;
+}
+
+export interface RpcSupportCreateTicketAttachmentUploadResponse {
+  attachmentId: Uuid;
+  uploadIntentId: Uuid;
+  ticketId: Uuid;
+  tenantId: Uuid;
+  displayName: string;
+  contentType: string;
+  sizeBytes: number;
+  maxSizeBytes: number;
+  expiresAt: IsoTimestamp;
+  uploadUrl: string;
+}
+
+export interface RpcSupportRegisterTicketAttachmentPayload {
+  uploadIntentId: Uuid;
+}
+
+export type RpcSupportRegisterTicketAttachmentResponse = SupportTicketAttachment;
+
+export interface RpcSupportGetTicketAttachmentDownloadUrlPayload {
+  attachmentId: Uuid;
+}
+
+export interface RpcSupportGetTicketAttachmentDownloadUrlResponse {
+  attachmentId: Uuid;
+  expiresAt: IsoTimestamp;
+  downloadUrl: string;
 }
 
 export interface EngineeringWorkItemRecord {
