@@ -263,3 +263,8 @@ Motivo:
 ## Regra final desta fase
 - este pacote representa apenas `pre-publicacao documental`
 - a decisao humana final continua obrigatoria antes de qualquer lote de publicacao
+
+## Vínculo com gate posterior
+- o gate humano final destes quatro artigos ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_P0_FINAL_HUMAN_DECISION.md`
+- como nao existe evidencia de aprovacao explicita no repositorio, todos permaneceram como `pendente` nessa etapa

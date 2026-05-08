@@ -18,6 +18,32 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.16 - Knowledge P0 Final Human Decision Gate V3
+- fase: `7.16`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: o gate humano final dos quatro artigos `P0` preparados foi consolidado em documento proprio, registrando por artigo a pendencia herdada, o estado de Produto e Suporte/CS e a decisao final de elegibilidade sem simular nenhuma aprovacao humana inexistente no repositorio.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_P0_FINAL_HUMAN_DECISION.md`
+  - `docs/knowledge/KNOWLEDGE_P0_PUBLICATION_PREP.md`
+  - `docs/knowledge/KNOWLEDGE_P0_HUMAN_REVIEW_GATE.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+  - impacto futuro indireto em `/admin/knowledge`, `/help/genius` e `/support/tickets/:ticketId` na aba `Central de ajuda`
+- riscos restantes:
+  - nenhum artigo foi publicado e nenhum artigo foi marcado como aprovado
+  - os quatro artigos continuam pendentes de aprovacao humana explicita de Produto e Suporte/CS
+  - `Como informar a SKU durantge a troca` e `Regra por motivo` permanecem fora do gate final por bloqueio tecnico anterior
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- impacto na FAQ futura:
+  - formaliza que o pacote editorial esta pronto para avaliacao humana, mas nao autorizado para publicacao
+  - impede leitura equivocada de que o simples preparo documental equivaleria a aprovacao final
+
 ### Fase 7.15 - Knowledge P0 Publication Prep V3
 - fase: `7.15`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

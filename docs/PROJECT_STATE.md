@@ -967,6 +967,49 @@ Documentos históricos:
     - checagem final de elegibilidade publica
   - Pendencias mapeadas sem implementacao nesta fase:
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.16: Knowledge P0 Final Human Decision Gate V3 concluido como gate documental final.
+  - O gate formal final dos quatro artigos `P0` preparados foi consolidado em `docs/knowledge/KNOWLEDGE_P0_FINAL_HUMAN_DECISION.md`.
+  - A fase registrou, por artigo:
+    - categoria publica
+    - pendencia final herdada
+    - decisao de Produto
+    - decisao de Suporte/CS
+    - decisao final de elegibilidade
+    - bloqueador atual
+    - responsavel pela proxima validacao
+  - Regra aplicada nesta fase:
+    - nenhuma aprovacao humana foi simulada
+    - sem evidencia explicita no repositorio, todos os quatro artigos permaneceram `pendente`
+    - nenhum artigo pode entrar em lote futuro de publicacao sem aprovacao explicita de Produto e Suporte/CS
+  - Artigos incluidos neste gate:
+    - `Como revisar os itens de uma solicitacao`
+    - `Como organizar motivos de troca e devolucao na operacao`
+    - `Como enviar uma atualizacao de analise ao cliente`
+    - `Como reenviar uma comunicacao ao cliente`
+  - Artigos mantidos fora deste gate:
+    - `Como informar a SKU durantge a troca`
+    - `Regra por motivo`
+  - O lote permaneceu estritamente documental:
+    - sem publicacao
+    - sem alteracao de backend
+    - sem alteracao de runtime
+    - sem alteracao de contracts
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Escopo explicitamente preservado:
+    - nenhuma alteracao em backend
+    - nenhuma alteracao em Supabase
+    - nenhuma alteracao em migrations
+    - nenhuma alteracao em RPCs
+    - nenhuma alteracao em contracts
+    - nenhuma alteracao em fixtures
+    - nenhuma alteracao em RLS
+    - nenhuma alteracao em permissoes
+  - Publicacao futura continua bloqueada ate aprovacao humana explicita:
+    - Produto
+    - Suporte/CS
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -988,9 +1031,8 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Executar a decisao humana final dos quatro artigos `P0` preparados para pre-publicacao,
-fechando aprovacao de Produto e Suporte/CS artigo por artigo antes de qualquer lote futuro de publicacao,
-sem incluir os dois itens ainda bloqueados por revisao tecnica.
+Executar a aprovacao humana explicita de Produto e Suporte/CS para os quatro artigos `P0` ainda pendentes,
+ou manter os artigos fora de qualquer lote futuro de publicacao enquanto essa aprovacao nao existir no repositorio.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único

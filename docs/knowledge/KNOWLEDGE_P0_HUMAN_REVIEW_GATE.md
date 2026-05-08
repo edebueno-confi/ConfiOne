@@ -200,6 +200,8 @@ Motivo:
 ## Desdobramento posterior
 - os quatro artigos marcados como `elegível com ajustes` seguiram para pacote documental de pré-publicação em:
   - `docs/knowledge/KNOWLEDGE_P0_PUBLICATION_PREP.md`
+- o gate humano final desses quatro artigos ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_P0_FINAL_HUMAN_DECISION.md`
 - os dois artigos `revisar tecnicamente antes` permanecem fora desse lote:
   - `Como informar a SKU durantge a troca`
   - `Regra por motivo`
