@@ -218,6 +218,33 @@ Fase 6.15:
   - `rpc_support_archive_ticket_article_link`
   - `rpc_support_mark_documentation_gap`
   - `rpc_support_mark_article_needs_update`
+
+Fase 8.4:
+- A governanca operacional da Knowledge Base endureceu a publicacao publica v2 sem alterar a regra de leitura publica existente.
+- O frontend administrativo continua lendo apenas:
+  - `vw_admin_knowledge_spaces`
+  - `vw_admin_knowledge_categories_v2`
+  - `vw_admin_knowledge_articles_list_v2`
+  - `vw_admin_knowledge_article_detail_v2`
+  - `vw_admin_knowledge_article_review_advisories`
+- O Public Help continua lendo apenas:
+  - `vw_public_knowledge_space_resolver`
+  - `vw_public_knowledge_navigation`
+  - `vw_public_knowledge_articles_list`
+  - `vw_public_knowledge_article_detail`
+  - `vw_public_help_categories`
+  - `rpc_public_search_knowledge_articles`
+- O ticket workspace continua lendo candidatos compartilhaveis apenas por:
+  - `vw_support_knowledge_public_link_candidates`
+- A publicacao publica por `rpc_admin_publish_knowledge_article_v2` e `rpc_admin_publish_knowledge_article_editorial_revision_v2` agora exige gate backend de evidencia humana revisada:
+  - advisory persistido;
+  - classificacao publica;
+  - visibilidade publica sugerida;
+  - `review_status = reviewed`;
+  - `reviewed_by_user_id` e `reviewed_at`;
+  - checklist humano completo em `human_confirmations`.
+- As funcoes privadas `app_private.public_knowledge_publish_confirmations_complete` e `app_private.require_public_knowledge_publish_gate` nao sao superficie publica do frontend.
+- Os 8 candidatos documentais da Knowledge seguem fora da base publica e nao foram injetados automaticamente.
 - Regras:
   - `sent_to_customer` exige artigo `public` + `published`;
   - artigo `internal` ou `restricted` nunca pode entrar no fluxo de envio ao cliente;

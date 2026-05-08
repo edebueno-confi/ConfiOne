@@ -123,7 +123,9 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 ### Fase D: Knowledge Admin funcional
 - Objetivo: sair de corpus documentado para operacao real de Knowledge governada.
 - Entregaveis: fila de revisao, status editorial, bloqueios, publicacao governada, relacionamento com tickets e lacunas de documentacao.
+- Status Fase 8.4: publicacao publica v2 endurecida no backend com gate de evidencia humana revisada e checklist humano completo; Public Help segue limitado a artigos publicos publicados; os 8 candidatos documentais seguem fora da base publica.
 - Contratos necessarios: views v2 de Knowledge, RPCs v2, advisories e ticket knowledge links.
+- Contratos ainda necessarios: UI especifica para coletar evidencia humana dos candidatos documentais; acao governada de envio/copia de artigo ao cliente; consolidacao editorial avancada se produto decidir operar deduplicacao.
 - Riscos: publicar candidato sem aprovacao, misturar interno/publico, IA virar fonte de verdade.
 - Dependencias: governanca de conteudo e definicao de papeis Produto/Suporte.
 - Criterios de aceite: artigo publico so aparece apos status publicado no backend; rascunho e interno nunca vazam para Public Help.
@@ -158,50 +160,52 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 
 ## Proximo lote tecnico recomendado
 
-### Lote: Knowledge Admin Operational Governance V3
+### Lote: Access System Observability Hardening V3
 
-Objetivo: fechar o proximo bloco real do buildout, transformando `/admin/knowledge` em superficie funcional de governanca editorial sem publicar conteudo sem contrato, sem expor rascunho no Help Center e sem usar IA como source of truth.
+Objetivo: fechar o proximo bloco real do buildout em governanca de acesso, auditoria e observabilidade operacional, sem expor logs sensiveis, secrets ou detalhes internos na UI.
 
 Ordem sugerida:
-1. Auditar views/RPCs v2 de Knowledge, advisories, revisoes editoriais e links com ticket.
-2. Separar fila de revisao, rascunhos, publicados e bloqueados em read models claros para Admin.
-3. Conectar `/admin/knowledge` aos contratos reais existentes, mantendo acoes sem contrato desabilitadas.
-4. Validar que Public Help continua lendo apenas artigo publico/publicado e nunca draft/internal/restricted.
-5. Manter integracoes, tokens, endpoints e detalhes sensiveis fora da UI comum.
-6. Atualizar `/support/customers` e `/support/customers/:tenantId` apenas apos contratos reais.
-7. Validar ticket workspace com typecheck, build e testes focados.
+1. Auditar `vw_admin_auth_context`, `vw_admin_user_lookup`, memberships, roles e `vw_admin_audit_feed`.
+2. Fechar read models para auditoria operacional navegavel e health seguro, se as views atuais nao bastarem.
+3. Criar ou validar RPCs de concessao/revogacao de acesso com motivo, ator, alvo e escopo.
+4. Garantir que nenhum segredo, token, endpoint interno, payload ou log bruto apareca em `/admin/system`.
+5. Conectar `/admin/access` e `/admin/system` aos contratos endurecidos, mantendo acoes sem contrato desabilitadas.
+6. Criar testes de RLS/grants/audit para escalacao de papel e acesso cross-tenant.
+7. Validar visualmente Admin Access/System com typecheck, build e smoke em viewport real.
 
 Migrations necessarias:
-- Somente se a revisao confirmar lacuna para historico completo de contatos, eventos por tenant ou ownership operacional que nao caiba nos contratos atuais.
+- Provavelmente necessarias para motivo obrigatorio em mutacoes de acesso, eventos de seguranca ou read model de health operacional.
 
 Views necessarias:
-- Confirmar `vw_support_customer_account_context`.
-- Confirmar `vw_admin_customer_account_profiles`.
-- Criar historico paginado de tickets/eventos por tenant se as janelas recentes nao forem suficientes para a tela de cliente.
+- Confirmar `vw_admin_auth_context`.
+- Confirmar `vw_admin_user_lookup`.
+- Confirmar `vw_admin_audit_feed`.
+- Criar read model de health/observabilidade apenas se houver fonte real segura.
 
 RPCs necessarias:
-- Confirmar RPCs administrativas existentes de perfil operacional.
-- Definir se Suporte/CS terao RPCs proprias de edicao ou se a escrita permanece apenas no Admin.
-- Toda edicao de contato, alerta, integracao ou customizacao deve passar por RPC.
+- Confirmar RPCs existentes de membership.
+- Endurecer ou criar RPCs de concessao/revogacao com motivo e audit log explicito.
+- Bloquear DML direto do frontend.
 
 RLS/policies:
-- Suporte deve ler apenas tenants permitidos.
-- Escrita precisa validar tenant, role, ownership e motivo quando aplicavel.
-- Dados sensiveis de integracao nao podem aparecer em read model comum.
+- Platform admin opera globalmente por contrato.
+- Roles comuns nao devem ler nem escrever superficie administrativa.
+- Nenhum read model deve expor segredo, token, payload bruto ou log sensivel.
 
 Audit logs:
-- Mutacoes de perfil, contato, alerta, integracao e customizacao precisam gerar audit trail.
+- Mutacoes de acesso, roles, memberships, status administrativo e health actions precisam gerar audit trail.
 
 Fixtures/testes:
-- Tenant com perfil operacional completo.
-- Tenant com perfil incompleto.
-- Operador com acesso ao tenant e operador cross-tenant sem acesso.
-- Contatos por finalidade quando o modelo for fechado.
+- Platform admin valido.
+- Usuario autenticado sem papel administrativo.
+- Membership cross-tenant.
+- Tentativa de escalacao de role bloqueada.
+- Auditoria gerada para concessao, alteracao e revogacao.
 
 Impacto no front:
-- Atualizar `/support/customers` e `/support/customers/:tenantId` para consumir apenas contratos reais.
-- Manter edicoes desabilitadas quando ownership ou RPC ainda nao estiverem fechados.
-- Evitar expor stack tecnica crua, tokens, endpoints, credenciais ou payloads sensiveis.
+- Atualizar `/admin/access` e `/admin/system` para consumir apenas contratos reais.
+- Manter acoes indisponiveis quando nao houver RPC segura.
+- Evitar termos tecnicos crus, segredos, payloads e logs internos na UI.
 
 ## Decisoes que ainda dependem de Produto
 - Se Support e Admin devem convergir em um App Shell unico.

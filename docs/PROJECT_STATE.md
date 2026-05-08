@@ -70,8 +70,10 @@ Documentos históricos:
 - O lote `Support Ticket Operational Flow V3` fechou o primeiro bloco real de contratos operacionais de ticket.
 - O Support Ticket Workspace agora possui timeline paginada por RPC real e contrato dedicado para candidatos seguros de link público de Knowledge.
 - O lote `Customer Account Profile Operational Core V3` materializou o segundo bloco operacional do buildout: perfil de cliente B2B consumido por Support Customers e pelo rail do Ticket Workspace, com leitura por views e escrita administrativa por RPC.
+- O lote `Knowledge Admin Operational Governance V3` endureceu a governanca editorial operacional: publicacao publica v2 agora exige gate backend de evidencia humana revisada e checklist humano completo antes de expor qualquer artigo publico.
 - Nenhuma ação fake foi habilitada no frontend; ações sem contrato completo seguem bloqueadas para lote futuro.
-- Próximo bloco recomendado: `Knowledge Admin Operational Governance V3`.
+- Os 8 candidatos documentais da Knowledge continuam pendentes, nao aprovados, nao publicados e nao injetados automaticamente no Help Center.
+- Próximo bloco recomendado: `Access System Observability Hardening V3`.
 
 ## Estado real do repositório em 2026-04-30
 
@@ -103,6 +105,7 @@ Documentos históricos:
 - Migration oficial do backend mínimo do vínculo ticket -> Knowledge Base `supabase/migrations/20260505015350_phase6_15_ticket_knowledge_linking_backend.sql`.
 - Migration oficial do contrato de revisão editorial para artigos publicados `supabase/migrations/20260506190000_phase7_4_knowledge_editorial_revision.sql`.
 - Migration oficial do fluxo operacional de tickets `supabase/migrations/20260508143717_support_ticket_operational_flow_v3.sql`.
+- Migration oficial de governanca operacional da Knowledge `supabase/migrations/20260508164336_knowledge_admin_operational_governance_v3.sql`.
 - Teste local de banco em `supabase/tests/001_phase1_identity_tenancy_rls.sql`.
 - Teste local de hardening em `supabase/tests/002_phase1_1_hardening.sql`.
 - Teste local de control plane administrativo em `supabase/tests/003_phase1_2_admin_control_plane.sql`.

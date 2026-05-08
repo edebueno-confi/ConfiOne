@@ -18,6 +18,49 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 8.4 - Knowledge Admin Operational Governance V3
+- fase: `8.4`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: a governanca operacional da Knowledge foi endurecida com gate backend para publicacao publica v2, exigindo advisory publico revisado e checklist humano completo antes de expor qualquer artigo publico.
+- docs alterados:
+  - `docs/KNOWLEDGE_ADMIN_OPERATIONAL_GOVERNANCE_V3.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - `rpc_admin_publish_knowledge_article_v2`
+  - `rpc_admin_publish_knowledge_article_editorial_revision_v2`
+  - `vw_admin_knowledge_article_review_advisories`
+  - `vw_public_knowledge_*`
+  - `vw_support_knowledge_public_link_candidates`
+- telas afetadas:
+  - `/admin/knowledge`
+  - `/help/genius`
+  - `/help/genius/articles`
+  - `/help/genius/articles/:slug`
+  - `/support/tickets/:ticketId` na aba `Central de ajuda`
+- runtime/UI:
+  - `/admin/knowledge` bloqueia publicacao publica quando nao ha evidencia humana persistida completa
+  - Public Help continua expondo somente conteudo publico publicado pelos read models do backend
+  - os `8` candidatos documentais continuam pendentes, nao aprovados, nao publicados e fora do Help Center publico
+- riscos restantes:
+  - UI especifica de coleta de evidencia humana dos candidatos documentais ainda precisa lote proprio
+  - envio/copia governada de artigo ao cliente ainda precisa contrato e auditoria especificos
+  - duplicacao/consolidacao editorial avancada segue fora deste corte
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+- impacto na FAQ futura:
+  - consolida o caminho seguro para operar publicacao futura da Knowledge sem transformar candidatos documentais, drafts, internos ou restritos em conteudo publico por acidente
+
 ### Fase 8.3 - Customer Account Profile Operational Core V3
 - fase: `8.3`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`
