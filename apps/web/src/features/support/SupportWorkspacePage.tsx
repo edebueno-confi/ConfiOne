@@ -212,6 +212,22 @@ function humanizeCustomerValue(value: string) {
   return humanizeToken(value).replaceAll('_', ' ');
 }
 
+function humanizeTenantStatus(value: string) {
+  if (value === 'active') {
+    return 'Ativo';
+  }
+
+  if (value === 'suspended') {
+    return 'Suspenso';
+  }
+
+  if (value === 'archived') {
+    return 'Arquivado';
+  }
+
+  return humanizeCustomerValue(value);
+}
+
 function humanizeKnowledgeVisibility(visibility: KnowledgeArticleVisibility) {
   if (visibility === 'public') {
     return 'Público';
@@ -2060,7 +2076,7 @@ function SupportCustomerRail({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <StatusPill>{customer.tenantStatus}</StatusPill>
+              <StatusPill>{humanizeTenantStatus(customer.tenantStatus)}</StatusPill>
               <StatusPill tone="accent">{customer.tenantSlug}</StatusPill>
             </div>
             <h3 className="text-base font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
@@ -2141,7 +2157,7 @@ function SupportCustomerRail({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <StatusPill>{customer.tenantStatus}</StatusPill>
+              <StatusPill>{humanizeTenantStatus(customer.tenantStatus)}</StatusPill>
               <StatusPill tone="accent">{customer.tenantSlug}</StatusPill>
             </div>
             <h3 className="text-base font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
@@ -2369,7 +2385,7 @@ function SupportAccountContextCompact({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <dt className="font-medium text-[color:var(--color-ink)]">Plataforma</dt>
             <dd className="text-right">
-                {primaryPlatform ? primaryPlatform.provider : 'Plataforma não registrada'}
+                {primaryPlatform ? primaryPlatform.provider : 'Indisponível'}
             </dd>
           </div>
           <div className="flex flex-wrap items-start justify-between gap-3 border-t border-[color:var(--color-border)] pt-3">
@@ -2377,13 +2393,13 @@ function SupportAccountContextCompact({
             <dd className="text-right">
               {integrations.length > 0
                 ? integrations.map((integration) => integration.provider).join(' · ')
-                : 'Sem integrações principais'}
+                : 'Indisponível'}
             </dd>
           </div>
           <div className="flex flex-wrap items-start justify-between gap-3 border-t border-[color:var(--color-border)] pt-3">
             <dt className="font-medium text-[color:var(--color-ink)]">Contato operacional</dt>
             <dd className="text-right">
-                {primaryContact ? `${primaryContact.fullName} · ${primaryContact.email}` : 'Não identificado'}
+                {primaryContact ? `${primaryContact.fullName} · ${primaryContact.email}` : 'Indisponível'}
             </dd>
           </div>
         </dl>
@@ -2403,7 +2419,7 @@ function SupportAccountContextCompact({
       {features.length > 0 ? (
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-            Features ativas
+            Recursos ativos
           </p>
           <div className="flex flex-wrap gap-2">
             {features.map((feature) => (
@@ -2572,25 +2588,25 @@ function SupportTicketCustomerSnapshot({
           <div className="flex items-start justify-between gap-3 border-t border-[color:var(--color-border)] pt-0.5">
             <dt className="font-medium text-[color:var(--color-ink)]">Produto</dt>
             <dd className="text-right">
-                {accountContext.productLine ? humanizeCustomerValue(accountContext.productLine) : 'Não identificado'}
+                {accountContext.productLine ? humanizeCustomerValue(accountContext.productLine) : 'Indisponível'}
             </dd>
           </div>
           <div className="flex items-start justify-between gap-3 border-t border-[color:var(--color-border)] pt-0.5">
             <dt className="font-medium text-[color:var(--color-ink)]">Porte / tier</dt>
             <dd className="text-right">
-                {accountContext.accountTier ?? 'Não identificado'}
+                {accountContext.accountTier ?? 'Indisponível'}
             </dd>
           </div>
           <div className="flex items-start justify-between gap-3 border-t border-[color:var(--color-border)] pt-0.5">
             <dt className="font-medium text-[color:var(--color-ink)]">Contato principal</dt>
             <dd className="text-right">
-                {primaryContact ? primaryContact.fullName : 'Não identificado'}
+                {primaryContact ? primaryContact.fullName : 'Indisponível'}
             </dd>
           </div>
           <div className="flex items-start justify-between gap-3 border-t border-[color:var(--color-border)] pt-0.5">
             <dt className="font-medium text-[color:var(--color-ink)]">E-mail</dt>
             <dd className="text-right break-all">
-                {primaryContact?.email ?? 'Não identificado'}
+                {primaryContact?.email ?? 'Indisponível'}
             </dd>
           </div>
         </dl>
@@ -2648,7 +2664,7 @@ function SupportAccountContextOverview({
               Plataforma e stack
             </p>
             <p className="text-sm font-medium text-[color:var(--color-ink)]">
-                {primaryPlatform ? primaryPlatform.provider : 'Plataforma não registrada'}
+                {primaryPlatform ? primaryPlatform.provider : 'Indisponível'}
             </p>
             <p className="text-sm leading-6 text-[color:var(--color-muted)]">
               {primaryPlatform
@@ -5077,7 +5093,7 @@ export function SupportCustomersPage() {
                           <div className="min-w-0 space-y-1">
                             <div className="flex flex-wrap items-center gap-2">
                               <StatusPill tone={customer.tenantStatus === 'active' ? 'positive' : 'warning'}>
-                                {humanizeCustomerValue(customer.tenantStatus)}
+                                {humanizeTenantStatus(customer.tenantStatus)}
                               </StatusPill>
                               <StatusPill>{displayCustomerValue(customer.tenantSlug)}</StatusPill>
                             </div>
@@ -5180,7 +5196,7 @@ export function SupportCustomersPage() {
                 <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">Sinais da conta</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <StatusPill tone={selectedCustomer.tenantStatus === 'active' ? 'positive' : 'warning'}>
-                    {humanizeCustomerValue(selectedCustomer.tenantStatus)}
+                    {humanizeTenantStatus(selectedCustomer.tenantStatus)}
                   </StatusPill>
                   <StatusPill>{displayCustomerValue(selectedAccountContext?.accountTier)}</StatusPill>
                   <StatusPill>
@@ -5491,7 +5507,7 @@ export function SupportCustomerPage() {
                     <h2 className="text-[1.28rem] font-semibold tracking-[-0.05em]">{customerLabel}</h2>
                     <div className="flex flex-wrap gap-2">
                       <StatusPill tone={customer.tenantStatus === 'active' ? 'positive' : 'warning'}>
-                        {displayCustomerValue(humanizeCustomerValue(customer.tenantStatus))}
+                        {displayCustomerValue(humanizeTenantStatus(customer.tenantStatus))}
                       </StatusPill>
                       <StatusPill tone={migrationCard.accentTone}>{migrationCard.phase}</StatusPill>
                     </div>
@@ -5772,7 +5788,7 @@ export function SupportCustomerPage() {
               </div>
               <div className="grid gap-2 text-sm leading-6 text-[color:var(--color-muted)]">
                 <p>Integrações operacionais: {visibleIntegrations.length}</p>
-                <p>Features ativas: {visibleFeatures.length}</p>
+                <p>Recursos ativos: {visibleFeatures.length}</p>
                 <p>Última consolidação: {latestActivity ? formatDateTime(latestActivity) : 'Indisponível'}</p>
               </div>
             </div>
