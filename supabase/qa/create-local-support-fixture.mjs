@@ -424,6 +424,19 @@ const FIXTURE = {
       },
     ],
   },
+  engineeringHandoffs: [
+    {
+      ticketTitle: 'QA Support | Webhook sem retorno na integração ERP',
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      workItemType: 'investigation',
+      title: 'Investigar timeout do webhook ERP do tenant A',
+      description:
+        'Consolidar a cronologia do incidente, revisar retries e validar por que o retorno do endpoint não confirmou o processamento.',
+      handoffNote:
+        'Cliente A com operação crítica parada. Suporte já confirmou impacto, janela e ausência de retorno na trilha externa.',
+    },
+  ],
   publicHelpCenter: {
     legacyCategorySlugs: ['primeiros-passos-genius'],
     categories: [
@@ -2144,6 +2157,60 @@ async function createSupportTicketViaRpc({
   return ticketId;
 }
 
+async function createEngineeringWorkItemFromTicketViaRpc({
+  actorSession,
+  ticketId,
+  handoff,
+}) {
+  const existingLink = runSupabaseDbQuery(`
+    select etl.id::text as id
+    from public.engineering_ticket_links as etl
+    join public.engineering_work_items as ewi
+      on ewi.id = etl.engineering_work_item_id
+     and ewi.tenant_id = etl.tenant_id
+    where etl.ticket_id = '${sqlEscape(ticketId)}'::uuid
+      and ewi.title = '${sqlEscape(handoff.title)}'
+    limit 1;
+  `);
+
+  if (existingLink.rows?.[0]?.id) {
+    return existingLink.rows[0].id;
+  }
+
+  const created = await callRpcAsUser({
+    apiUrl: actorSession.apiUrl,
+    anonKey: actorSession.anonKey,
+    accessToken: actorSession.accessToken,
+    rpcName: 'rpc_support_create_engineering_work_item_from_ticket',
+    body: {
+      p_ticket_id: ticketId,
+      p_work_item_type: handoff.workItemType,
+      p_title: handoff.title,
+      p_description: handoff.description,
+      p_handoff_note: handoff.handoffNote ?? null,
+    },
+  });
+
+  const linkId =
+    created?.id ??
+    runSupabaseDbQuery(`
+      select etl.id::text as id
+      from public.engineering_ticket_links as etl
+      join public.engineering_work_items as ewi
+        on ewi.id = etl.engineering_work_item_id
+       and ewi.tenant_id = etl.tenant_id
+      where etl.ticket_id = '${sqlEscape(ticketId)}'::uuid
+        and ewi.title = '${sqlEscape(handoff.title)}'
+      limit 1;
+    `).rows?.[0]?.id;
+
+  if (!linkId) {
+    fail(`Nao foi possivel criar o handoff técnico para o ticket ${handoff.ticketTitle}.`);
+  }
+
+  return linkId;
+}
+
 function clearFixtureTickets() {
   return null;
 }
@@ -2468,6 +2535,7 @@ async function main() {
   const knowledgeCategoryMap = new Map();
   const createdKnowledgeArticles = [];
   const createdKnowledgeLinks = [];
+  const createdEngineeringHandoffs = [];
   const adminSession = await getSessionForKey('qa-admin');
   const contentAuthorSession = await getSessionForKey('content-author');
   const publicHelpCenter = await ensurePublicHelpCenterFixture(contentAuthorSession);
@@ -2533,6 +2601,28 @@ async function main() {
     });
   }
 
+  for (const handoff of FIXTURE.engineeringHandoffs ?? []) {
+    const ticketId = ticketMap.get(`${handoff.ticketTenantSlug}::${handoff.ticketTitle}`);
+    if (!ticketId) {
+      fail(`Ticket ausente para handoff técnico: ${handoff.ticketTitle}.`);
+    }
+
+    const actorSession = await getSessionForKey(handoff.actorKey);
+    const linkId = await createEngineeringWorkItemFromTicketViaRpc({
+      actorSession,
+      ticketId,
+      handoff,
+    });
+
+    createdEngineeringHandoffs.push({
+      link_id: linkId,
+      ticket_title: handoff.ticketTitle,
+      ticket_tenant_slug: handoff.ticketTenantSlug,
+      work_item_type: handoff.workItemType,
+      title: handoff.title,
+    });
+  }
+
   console.log(
     JSON.stringify(
       {
@@ -2581,6 +2671,7 @@ async function main() {
         })),
         knowledge_articles: createdKnowledgeArticles,
         knowledge_links: createdKnowledgeLinks,
+        engineering_handoffs: createdEngineeringHandoffs,
         public_help_center: publicHelpCenter,
         tickets: createdTickets,
       },

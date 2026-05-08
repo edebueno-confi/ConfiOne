@@ -70,6 +70,26 @@ export const TICKET_KNOWLEDGE_LINK_TYPES = [
 ] as const;
 export type TicketKnowledgeLinkType = (typeof TICKET_KNOWLEDGE_LINK_TYPES)[number];
 
+export const ENGINEERING_WORK_ITEM_TYPES = [
+  'bug',
+  'improvement',
+  'technical_task',
+  'investigation',
+] as const;
+export type EngineeringWorkItemType = (typeof ENGINEERING_WORK_ITEM_TYPES)[number];
+
+export const ENGINEERING_WORK_ITEM_STATUSES = [
+  'triage',
+  'accepted',
+  'rejected',
+  'in_progress',
+  'waiting_external',
+  'released',
+  'cancelled',
+] as const;
+export type EngineeringWorkItemStatus =
+  (typeof ENGINEERING_WORK_ITEM_STATUSES)[number];
+
 export type TicketStatusUpdateTarget = Exclude<TicketStatus, 'closed'>;
 
 export type KnowledgeArticleVisibility = 'public' | 'internal' | 'restricted';
@@ -534,6 +554,71 @@ export interface SupportTicketKnowledgeLink {
   isCustomerSendAllowed: boolean;
 }
 
+export interface SupportTicketAttachment {
+  attachmentId: Uuid;
+  ticketId: Uuid;
+  tenantId: Uuid;
+  messageId: Uuid | null;
+  visibility: TicketMessageVisibility;
+  fileName: string;
+  contentType: string | null;
+  byteSize: number;
+  uploadedByUserId: Uuid;
+  uploadedByFullName: string | null;
+  createdAt: IsoTimestamp;
+  bucketConfigured: boolean;
+  storageObjectPresent: boolean;
+  downloadAvailable: boolean;
+}
+
+export interface EngineeringWorkItemRecord {
+  id: Uuid;
+  tenantId: Uuid;
+  workItemType: EngineeringWorkItemType;
+  status: EngineeringWorkItemStatus;
+  priority: TicketPriority;
+  title: string;
+  description: string;
+  createdByUserId: Uuid;
+  assignedToUserId: Uuid | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  updatedByUserId: Uuid | null;
+}
+
+export interface EngineeringTicketLinkRecord {
+  id: Uuid;
+  tenantId: Uuid;
+  ticketId: Uuid;
+  engineeringWorkItemId: Uuid;
+  handoffNote: string | null;
+  createdByUserId: Uuid;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  updatedByUserId: Uuid | null;
+}
+
+export interface SupportTicketEngineeringLink {
+  engineeringTicketLinkId: Uuid;
+  ticketId: Uuid;
+  tenantId: Uuid;
+  handoffNote: string | null;
+  createdByUserId: Uuid;
+  createdByFullName: string | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  engineeringWorkItemId: Uuid;
+  workItemType: EngineeringWorkItemType;
+  workItemStatus: EngineeringWorkItemStatus;
+  workItemPriority: TicketPriority;
+  workItemTitle: string;
+  workItemDescription: string;
+  assignedToUserId: Uuid | null;
+  assignedToFullName: string | null;
+  workItemCreatedAt: IsoTimestamp;
+  workItemUpdatedAt: IsoTimestamp;
+}
+
 export interface SupportKnowledgeArticlePickerItem {
   ticketId: Uuid;
   articleId: Uuid;
@@ -621,3 +706,21 @@ export interface RpcSupportMarkArticleNeedsUpdatePayload {
   note?: string | null;
 }
 export type RpcSupportMarkArticleNeedsUpdateResponse = TicketKnowledgeLinkRecord;
+
+export interface RpcSupportCreateEngineeringWorkItemFromTicketPayload {
+  ticketId: Uuid;
+  workItemType: EngineeringWorkItemType;
+  title: string;
+  description: string;
+  handoffNote?: string | null;
+}
+export type RpcSupportCreateEngineeringWorkItemFromTicketResponse =
+  EngineeringTicketLinkRecord;
+
+export interface RpcSupportLinkTicketToEngineeringWorkItemPayload {
+  ticketId: Uuid;
+  engineeringWorkItemId: Uuid;
+  handoffNote?: string | null;
+}
+export type RpcSupportLinkTicketToEngineeringWorkItemResponse =
+  EngineeringTicketLinkRecord;
