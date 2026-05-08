@@ -69,8 +69,9 @@ Documentos históricos:
 - O foco atual é buildout funcional da plataforma interna CX B2B técnica.
 - O lote `Support Ticket Operational Flow V3` fechou o primeiro bloco real de contratos operacionais de ticket.
 - O Support Ticket Workspace agora possui timeline paginada por RPC real e contrato dedicado para candidatos seguros de link público de Knowledge.
+- O lote `Customer Account Profile Operational Core V3` materializou o segundo bloco operacional do buildout: perfil de cliente B2B consumido por Support Customers e pelo rail do Ticket Workspace, com leitura por views e escrita administrativa por RPC.
 - Nenhuma ação fake foi habilitada no frontend; ações sem contrato completo seguem bloqueadas para lote futuro.
-- Próximo bloco recomendado: `Customer Account Profile Operational Flow V3`.
+- Próximo bloco recomendado: `Knowledge Admin Operational Governance V3`.
 
 ## Estado real do repositório em 2026-04-30
 
@@ -152,7 +153,7 @@ Documentos históricos:
 - RPCs contratuais administrativas v2 space-aware materializadas em `rpc_admin_create_knowledge_category_v2`, `rpc_admin_create_knowledge_article_draft_v2`, `rpc_admin_update_knowledge_article_draft_v2`, `rpc_admin_submit_knowledge_article_for_review_v2`, `rpc_admin_publish_knowledge_article_v2` e `rpc_admin_archive_knowledge_article_v2`.
 - RPCs contratuais advisory materializadas em `rpc_admin_update_knowledge_article_review_status` e `rpc_admin_mark_knowledge_article_reviewed`.
 - RPCs contratuais de revisão editorial para artigos publicados materializadas em `rpc_admin_begin_knowledge_article_editorial_revision_v2`, `rpc_admin_update_knowledge_article_editorial_revision_v2`, `rpc_admin_publish_knowledge_article_editorial_revision_v2` e `rpc_admin_discard_knowledge_article_editorial_revision_v2`.
-- RPCs administrativas do Customer Account Profile materializadas em `rpc_admin_upsert_customer_account_profile`, `rpc_admin_add_customer_integration`, `rpc_admin_update_customer_integration`, `rpc_admin_add_customer_customization`, `rpc_admin_update_customer_customization`, `rpc_admin_add_customer_account_alert` e `rpc_admin_archive_customer_account_alert`.
+- RPCs administrativas do Customer Account Profile materializadas em `rpc_admin_upsert_customer_account_profile`, `rpc_admin_add_customer_integration`, `rpc_admin_update_customer_integration`, `rpc_admin_add_customer_customization`, `rpc_admin_update_customer_customization`, `rpc_admin_add_customer_account_alert`, `rpc_admin_archive_customer_account_alert` e `rpc_admin_set_customer_feature_flag`.
 - RPCs contratuais do vínculo ticket -> Knowledge Base materializadas em `rpc_support_link_ticket_article`, `rpc_support_archive_ticket_article_link`, `rpc_support_mark_documentation_gap` e `rpc_support_mark_article_needs_update`.
 - RPC contratual de timeline paginada materializada em `rpc_support_get_ticket_timeline`.
 - `authenticated` não possui `SELECT`, `INSERT`, `UPDATE` nem `DELETE` direto nas tabelas base de ticketing; o app lê via views e escreve via RPCs.
@@ -1772,6 +1773,13 @@ Documentos históricos:
   - Acao real executada na Fase 8.2:
     - `Support Ticket Operational Flow V3` fechou timeline paginada, link publico seguro de Knowledge, audit trail de mutacoes e consumo de historico anterior no workspace de ticket
     - o proximo lote grande recomendado passa a ser `Customer Account Profile Operational Flow V3`
+- Fase 8.3: Customer Account Profile Operational Core V3 concluido como segundo bloco real do buildout funcional.
+  - O core existente de Customer Account Profile foi auditado e reaproveitado sem duplicar schema.
+  - A lacuna de contrato administrativo para feature flag foi fechada por `rpc_admin_set_customer_feature_flag`.
+  - A fixture QA de suporte agora cobre cliente com perfil completo e cliente sem perfil operacional para validar estados `Indisponivel`.
+  - `/support/customers`, `/support/customers/:tenantId` e `/support/tickets/:ticketId` seguem conectados a read models reais e não habilitam edição sem contrato seguro.
+  - Acoes de escrita no frontend continuam bloqueadas; no primeiro corte somente `platform_admin` escreve via RPC administrativa.
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit e fora de qualquer decisao de produto.
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -1793,7 +1801,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Executar o proximo lote tecnico grande `Customer Account Profile Operational Flow V3`, começando pela confirmacao dos contratos de perfil operacional B2B, ownership de escrita entre Admin/Suporte/CS e historico paginado por tenant antes de habilitar edicao nova no frontend.
+Executar o proximo lote tecnico grande `Knowledge Admin Operational Governance V3`, começando pela auditoria das views/RPCs v2 de Knowledge, fila de revisão editorial, estados governados e garantias de que Public Help continue lendo apenas conteúdo público/publicado.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único

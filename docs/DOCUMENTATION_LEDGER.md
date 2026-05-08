@@ -18,6 +18,45 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 8.3 - Customer Account Profile Operational Core V3
+- fase: `8.3`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: o nucleo operacional do Customer Account Profile foi fechado como contexto B2B real para Suporte/CS/Admin, reaproveitando o schema existente, adicionando RPC administrativa de feature flag, fixture QA com cliente sem perfil e consumo seguro no suporte.
+- docs alterados:
+  - `docs/CUSTOMER_ACCOUNT_PROFILE_OPERATIONAL_CORE_V3.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - `vw_support_customer_account_context`
+  - `vw_admin_customer_account_profiles`
+  - `rpc_admin_set_customer_feature_flag`
+  - RPCs administrativas existentes do Customer Account Profile validadas como contrato real
+- telas afetadas:
+  - `/support/customers`
+  - `/support/customers/:tenantId`
+  - `/support/tickets/:ticketId`
+- runtime/UI:
+  - o rail do ticket e as telas de clientes preservam leitura real do perfil operacional e exibem `Indisponivel` quando dado operacional não existe
+  - nenhuma edicao do perfil foi habilitada no frontend
+- riscos restantes:
+  - ownership de escrita para Suporte/CS ainda precisa decisão antes de qualquer UI de edição
+  - historico operacional paginado por tenant continua fora do corte MVP
+  - UI administrativa para manter perfis, integracoes, customizacoes, alertas e features ainda precisa lote próprio
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+- impacto na FAQ futura:
+  - consolida a base operacional para explicar contexto de cliente B2B, integracoes, recursos, alertas e customizacoes sem transformar a plataforma em CRM generico
+
 ### Fase 8.2 - Support Ticket Operational Flow V3
 - fase: `8.2`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

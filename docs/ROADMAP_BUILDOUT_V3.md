@@ -113,6 +113,7 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 ### Fase C: Customer Account Profile operacional
 - Objetivo: consolidar a conta B2B como contexto operacional vivo para Suporte e CS.
 - Entregaveis: perfil operacional editavel, contatos, integracoes, customizacoes, alertas, saude operacional e tickets vinculados.
+- Status Fase 8.3: core operacional materializado e conectado ao suporte com `vw_support_customer_account_context`, `vw_admin_customer_account_profiles`, RPC administrativa dedicada para feature flag, fixture QA com cliente sem perfil e estados `Indisponivel` preservados no frontend.
 - Contratos necessarios: usar `vw_support_customer_account_context`, `vw_admin_customer_account_profiles` e RPCs admin existentes; criar historico paginado se necessario.
 - Riscos: score de saude sem definicao, exposicao de integracao sensivel, edicao sem auditoria.
 - Dependencias: decisao de ownership entre Admin, Suporte e CS.
@@ -157,15 +158,15 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 
 ## Proximo lote tecnico recomendado
 
-### Lote: Customer Account Profile Operational Flow V3
+### Lote: Knowledge Admin Operational Governance V3
 
-Objetivo: fechar o segundo bloco real do buildout, consolidando a conta B2B como contexto operacional editavel e auditavel para Suporte/CS/Admin sem virar CRM generico.
+Objetivo: fechar o proximo bloco real do buildout, transformando `/admin/knowledge` em superficie funcional de governanca editorial sem publicar conteudo sem contrato, sem expor rascunho no Help Center e sem usar IA como source of truth.
 
 Ordem sugerida:
-1. Auditar `vw_support_customer_account_context`, `vw_admin_customer_account_profiles` e RPCs administrativas de perfil.
-2. Definir ownership de escrita entre Admin, Suporte e CS antes de habilitar qualquer edicao no frontend.
-3. Criar ou validar historico paginado de tickets/eventos por tenant, sem arrays longas na primeira carga.
-4. Fechar contratos de contatos operacionais por finalidade, com auditoria e RLS.
+1. Auditar views/RPCs v2 de Knowledge, advisories, revisoes editoriais e links com ticket.
+2. Separar fila de revisao, rascunhos, publicados e bloqueados em read models claros para Admin.
+3. Conectar `/admin/knowledge` aos contratos reais existentes, mantendo acoes sem contrato desabilitadas.
+4. Validar que Public Help continua lendo apenas artigo publico/publicado e nunca draft/internal/restricted.
 5. Manter integracoes, tokens, endpoints e detalhes sensiveis fora da UI comum.
 6. Atualizar `/support/customers` e `/support/customers/:tenantId` apenas apos contratos reais.
 7. Validar ticket workspace com typecheck, build e testes focados.

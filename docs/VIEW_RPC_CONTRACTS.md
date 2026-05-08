@@ -198,6 +198,7 @@ Fase 6.8:
   - `rpc_admin_update_customer_customization`
   - `rpc_admin_add_customer_account_alert`
   - `rpc_admin_archive_customer_account_alert`
+  - `rpc_admin_set_customer_feature_flag`
 - Regras:
   - `tenant_id` e obrigatorio em todas as tabelas;
   - suporte e CS internos leem apenas o contexto operacional autorizado por tenant;
@@ -935,6 +936,7 @@ Fase 8.2:
   - `rpc_admin_update_customer_customization`
   - `rpc_admin_add_customer_account_alert`
   - `rpc_admin_archive_customer_account_alert`
+  - `rpc_admin_set_customer_feature_flag`
 
 ## Fase 6.2 - Support Workspace UI Minimum
 
