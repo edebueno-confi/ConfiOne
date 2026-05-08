@@ -272,3 +272,5 @@ Motivo:
   - `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`
 - o pacote objetivo para intake de aprovacao futura ficou registrado em:
   - `docs/knowledge/KNOWLEDGE_P0_APPROVAL_INTAKE_PACK.md`
+- a versao candidata revisada especificamente para o recorte publico seguro de motivos ficou registrada em:
+  - `docs/knowledge/KNOWLEDGE_MOTIVOS_TROCA_DEVOLUCAO_REWRITE.md`

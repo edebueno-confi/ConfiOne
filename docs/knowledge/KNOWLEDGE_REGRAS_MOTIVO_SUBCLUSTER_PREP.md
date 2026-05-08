@@ -324,3 +324,17 @@
 - nenhum artigo foi aprovado
 - nenhuma aprovação foi simulada
 - nenhum artigo foi publicado
+
+## Vinculo com reescrita publica segura
+
+- a versao candidata do recorte publico seguro de motivos ficou registrada em:
+  - `docs/knowledge/KNOWLEDGE_MOTIVOS_TROCA_DEVOLUCAO_REWRITE.md`
+- essa reescrita cobre apenas:
+  - cadastro e organizacao de motivos
+  - diferenca de alto nivel entre troca e devolucao
+  - uso operacional nao tecnico dos motivos
+- continuam fora da reescrita:
+  - regras internas por motivo
+  - excecoes logisticas
+  - politicas de frete
+  - calculo, limite e forma de estorno

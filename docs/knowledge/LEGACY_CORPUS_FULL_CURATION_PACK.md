@@ -273,6 +273,8 @@
   - `docs/knowledge/KNOWLEDGE_PIX_ESTORNO_SUBCLUSTER_PREP.md`
 - Preparação editorial específica do subcluster de regras por motivo registrada em:
   - `docs/knowledge/KNOWLEDGE_REGRAS_MOTIVO_SUBCLUSTER_PREP.md`
+- Versão candidata pública do recorte seguro de motivos registrada em:
+  - `docs/knowledge/KNOWLEDGE_MOTIVOS_TROCA_DEVOLUCAO_REWRITE.md`
 
 ### Clusters candidatos
 

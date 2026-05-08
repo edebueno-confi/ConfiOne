@@ -231,3 +231,5 @@ Preparar um pacote documental objetivo para coleta futura de evidencia humana re
   - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
 - o playbook geral de coleta ficou registrado em:
   - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+- a versao candidata revisada especificamente para o recorte publico seguro de motivos ficou registrada em:
+  - `docs/knowledge/KNOWLEDGE_MOTIVOS_TROCA_DEVOLUCAO_REWRITE.md`

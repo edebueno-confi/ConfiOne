@@ -1957,3 +1957,31 @@ Cada registro deve informar:
   - auditoria visual em `.tmp/phase6-24-audit/`
 - impacto na FAQ futura:
   - encerra a fase de virada visual do Genius Support OS com shells, estados e densidade alinhados ao contrato canonicamente versionado em `docs/design/**`
+### Fase 7.28 - Knowledge Motivos Public Rewrite V3
+- fase: `7.28`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: o recorte publico seguro do subcluster de regras por motivo foi reescrito como versao candidata do artigo `Como organizar motivos de troca e devolucao na operacao`, mantendo fora do texto qualquer regra interna, excecao logistica ou politica financeira.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_MOTIVOS_TROCA_DEVOLUCAO_REWRITE.md`
+  - `docs/knowledge/KNOWLEDGE_REGRAS_MOTIVO_SUBCLUSTER_PREP.md`
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/knowledge/KNOWLEDGE_P0_PUBLICATION_PREP.md`
+  - `docs/knowledge/KNOWLEDGE_P0_APPROVAL_INTAKE_PACK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - nenhuma
+- views/RPCs afetadas:
+  - nenhuma alteracao de backend
+  - nenhuma view ou RPC nova
+- riscos restantes:
+  - a nomenclatura atual da area de motivos ainda exige validacao de Produto
+  - a classificacao entre troca e devolucao precisa ser confirmada no produto atual antes de qualquer exposicao publica
+  - qualquer leitura que sugira regra interna por motivo continua fora de escopo e bloqueada
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - abre uma trilha segura de reescrita publica para motivos de troca sem absorver a camada sensivel de regras, frete, logistica e estorno

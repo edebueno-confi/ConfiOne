@@ -1340,6 +1340,33 @@ Documentos históricos:
   - Pendencias mapeadas sem implementacao nesta fase:
     - proximos lotes de motivo devem continuar por recorte editorial do subcluster
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.28: Knowledge Motivos Public Rewrite V3 concluido como reescrita documental do recorte publico seguro de motivos.
+  - A versao candidata foi criada em `docs/knowledge/KNOWLEDGE_MOTIVOS_TROCA_DEVOLUCAO_REWRITE.md`.
+  - A fase transformou o artigo legado `Como cadastrar motivos para troca ou devolucao` em candidato publico controlado com foco em:
+    - cadastro e organizacao de motivos
+    - papel operacional de alto nivel dos motivos
+    - boas praticas nao tecnicas de nomenclatura e revisao
+  - O recorte continuou excluindo:
+    - regras internas por motivo
+    - excecoes logisticas
+    - politica de frete
+    - calculo ou limite de estorno
+    - decisoes financeiras e logisticas sensiveis
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - a publicacao continua bloqueada ate evidencia humana real
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
