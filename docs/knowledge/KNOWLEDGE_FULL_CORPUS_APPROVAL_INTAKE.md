@@ -9,6 +9,8 @@
   - `docs/knowledge/KNOWLEDGE_ESTORNO_CONSOLIDATION_PREP.md`
 - A versão candidata do canônico de estorno ficou registrada em:
   - `docs/knowledge/KNOWLEDGE_ESTORNO_CANONICAL_REWRITE.md`
+- O mapeamento dos subclusters sensíveis de estorno ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_SUBCLUSTERS.md`
 
 | Artigo | Categoria proposta | Prioridade | Decisão Produto | Decisão Suporte/CS | Pode publicar | Pendência principal | Evidência necessária |
 | --- | --- | --- | --- | --- | --- | --- | --- |

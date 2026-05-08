@@ -19,6 +19,7 @@
 Para o cluster `Formas de Estorno`, usar como referência prévia:
 - `docs/knowledge/KNOWLEDGE_ESTORNO_CONSOLIDATION_PREP.md`
 - `docs/knowledge/KNOWLEDGE_ESTORNO_CANONICAL_REWRITE.md`
+- `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_SUBCLUSTERS.md`
 
 ## Template único para Produto
 

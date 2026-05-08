@@ -124,3 +124,5 @@ Este artigo não cobre troubleshooting técnico nem validações financeiras det
 - nenhuma publicação foi feita
 - nenhuma aprovação foi simulada
 - o canônico só poderá avançar com evidência humana real registrada para `Produto` e `Suporte/CS`
+- os subclusters sensíveis que ficaram fora deste canônico foram mapeados em:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_SUBCLUSTERS.md`

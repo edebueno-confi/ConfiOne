@@ -1221,6 +1221,33 @@ Documentos históricos:
   - Pendencias mapeadas sem implementacao nesta fase:
     - publicacao bloqueada ate evidencia humana real de `Produto` e `Suporte/CS`
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.24: Knowledge Estorno Sensitive Subclusters Mapping V3 concluido como mapeamento documental dos trilhos sensiveis.
+  - O mapa consolidado foi criado em `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_SUBCLUSTERS.md`.
+  - A fase separou os subclusters:
+    - `Formas de estorno`
+    - `Pix e estorno`
+    - `Vale-compra e crédito`
+    - `Cálculo e limites de estorno`
+    - `Regras e políticas por motivo`
+    - `Integrações e gateway`
+    - `Erros e troubleshooting de estorno`
+  - O canônico `Formas de estorno disponíveis na operação` permaneceu restrito ao escopo geral e sem absorver trilhas financeiras ou técnicas sensíveis.
+  - A matriz de próximos canônicos possíveis foi registrada, com avanço futuro orientado por subcluster.
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos lotes de estorno devem trabalhar por subcluster, nao por artigo isolado
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.

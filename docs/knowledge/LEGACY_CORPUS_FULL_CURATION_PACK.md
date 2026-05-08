@@ -265,6 +265,8 @@
   - `docs/knowledge/KNOWLEDGE_ESTORNO_CONSOLIDATION_PREP.md`
 - Versão candidata reescrita do canônico registrada em:
   - `docs/knowledge/KNOWLEDGE_ESTORNO_CANONICAL_REWRITE.md`
+- Mapeamento dos subclusters sensíveis de estorno registrado em:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_SUBCLUSTERS.md`
 
 ### Clusters candidatos
 

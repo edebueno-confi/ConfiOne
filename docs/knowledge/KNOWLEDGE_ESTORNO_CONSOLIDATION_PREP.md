@@ -182,3 +182,5 @@
 - abrir um lote de reescrita editorial específico para `Estornos e reembolsos`, começando pelo artigo canônico proposto
 - submeter o canônico a validação de `Produto` e `Suporte/CS` antes de qualquer preparação de publicação
 - manter `Pix`, automação, vale-compra e políticas financeiras em trilhas separadas enquanto a revisão técnica não estiver concluída
+- o mapa desses subclusters sensíveis ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_SUBCLUSTERS.md`

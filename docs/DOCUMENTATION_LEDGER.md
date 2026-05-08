@@ -18,6 +18,34 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.24 - Knowledge Estorno Sensitive Subclusters Mapping V3
+- fase: `7.24`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: os temas sensiveis derivados de `Estornos e reembolsos` foram separados em subclusters documentais com risco, destino editorial e trilha futura propria, evitando que o canônico de formas de estorno absorva Pix, vale-compra, cálculo, limites, políticas financeiras, integrações ou troubleshooting técnico nesta fase.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_SUBCLUSTERS.md`
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_CANONICAL_REWRITE.md`
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_CONSOLIDATION_PREP.md`
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+- riscos restantes:
+  - Pix, vale-compra, cálculo e integrações seguem como trilhas de alto risco e não podem entrar em publicação sem revisão técnica forte
+  - o canônico de formas de estorno continua pendente de validação humana explícita
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - desloca a evolução editorial de estorno para grupos sensíveis governados, em vez de continuar expandindo artigos isolados
+
 ### Fase 7.23 - Knowledge Estorno Canonical Rewrite V3
 - fase: `7.23`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`
