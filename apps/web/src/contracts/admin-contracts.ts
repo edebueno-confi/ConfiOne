@@ -143,6 +143,11 @@ export interface AdminTenantMembershipRow {
   updated_at: IsoTimestamp;
   created_by_user_id: Uuid | null;
   updated_by_user_id: Uuid | null;
+  created_by_full_name?: string | null;
+  updated_by_full_name?: string | null;
+  access_state?: 'active' | 'pending' | 'blocked';
+  can_update_role?: boolean;
+  can_update_status?: boolean;
 }
 
 export interface AdminUserLookupRow {
@@ -169,6 +174,73 @@ export interface AdminAuditFeedRow {
   before_state: JsonValue | null;
   after_state: JsonValue | null;
   metadata: JsonValue | null;
+}
+
+export interface AdminAccessUserRow {
+  user_id: Uuid;
+  full_name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  is_active: boolean;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+  platform_roles: PlatformRole[];
+  tenant_roles: TenantRole[];
+  membership_count: number;
+  active_membership_count: number;
+  invited_membership_count: number;
+  revoked_membership_count: number;
+  last_access_updated_at: IsoTimestamp;
+  memberships: JsonValue;
+}
+
+export type AdminAccessMembershipRow = AdminTenantMembershipRow & {
+  access_state: 'active' | 'pending' | 'blocked';
+  created_by_full_name: string | null;
+  updated_by_full_name: string | null;
+  can_update_role: boolean;
+  can_update_status: boolean;
+};
+
+export type AdminSystemSeverity = 'ok' | 'attention' | 'critical';
+export type AdminSystemCheckStatus = AdminSystemSeverity | 'unavailable';
+
+export interface AdminSystemAuditEventRow {
+  id: Uuid;
+  occurred_at: IsoTimestamp;
+  actor_user_id: Uuid | null;
+  actor_display_name: string;
+  actor_email: string | null;
+  tenant_id: Uuid | null;
+  tenant_slug: string | null;
+  scope_label: string;
+  entity_schema: string;
+  service_key: string;
+  service_label: string;
+  entity_id: Uuid | null;
+  action: string;
+  action_label: string;
+  severity: AdminSystemSeverity;
+  impact_label: string;
+  sanitized_context: JsonValue;
+}
+
+export interface AdminSystemHealthCheckRow {
+  check_key: string;
+  label: string;
+  description: string;
+  status: AdminSystemCheckStatus;
+  area: string;
+  checked_at: IsoTimestamp;
+}
+
+export interface AdminSystemOperationalSummaryRow {
+  audit_event_count: number;
+  audit_events_24h: number;
+  critical_event_count: number;
+  attention_event_count: number;
+  observed_service_count: number;
+  last_event_at: IsoTimestamp | null;
 }
 
 export interface RpcAdminCreateTenantPayload {

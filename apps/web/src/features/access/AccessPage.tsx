@@ -32,12 +32,12 @@ import {
 } from '../../contracts/admin-contracts';
 import {
   addTenantMember,
-  listAdminMemberships,
+  listAdminAccessMemberships,
   listAdminTenants,
   lookupAdminUsers,
   updateTenantMemberRole,
   updateTenantMemberStatus,
-  type AdminTenantMembershipRow,
+  type AdminAccessMembershipRow,
   type AdminTenantsListItemRow,
   type AdminUserLookupRow,
 } from '../admin/admin-api';
@@ -78,6 +78,8 @@ interface PermissionSummary {
   invited: number;
   blocked: number;
 }
+
+type AdminTenantMembershipRow = AdminAccessMembershipRow;
 
 const PAGE_SIZE_OPTIONS = [12, 24, 48] as const;
 const TABS: Array<{ key: AccessTab; label: string }> = [
@@ -332,7 +334,7 @@ export function AccessPage() {
     try {
       const [tenantRows, membershipRows] = await Promise.all([
         listAdminTenants(),
-        listAdminMemberships(),
+        listAdminAccessMemberships(),
       ]);
 
       setBackendDenied(false);
@@ -430,6 +432,11 @@ export function AccessPage() {
 
   useEffect(() => {
     if (!selectedMembership) {
+      return;
+    }
+
+    if (!selectedMembership.can_update_role || !selectedMembership.can_update_status) {
+      setUpdateMessage('Esta ação está bloqueada pelo contrato de acesso.');
       return;
     }
 
@@ -1486,6 +1493,7 @@ export function AccessPage() {
                 <p className="text-sm font-semibold text-[color:var(--color-ink)]">Ações</p>
                 <Field label="Papel">
                   <SelectInput
+                    disabled={!selectedMembership.can_update_role}
                     onChange={(event) => setRoleDraft(event.target.value as TenantRole)}
                     value={roleDraft}
                   >
@@ -1498,6 +1506,7 @@ export function AccessPage() {
                 </Field>
                 <Field label="Situação">
                   <SelectInput
+                    disabled={!selectedMembership.can_update_status}
                     onChange={(event) => setStatusDraft(event.target.value as MembershipStatus)}
                     value={statusDraft}
                   >
@@ -1515,7 +1524,21 @@ export function AccessPage() {
                   </InlineNotice>
                 ) : null}
 
-                <AppButton className="min-h-11 w-full" disabled={updateSubmitting} type="submit">
+                {!selectedMembership.can_update_role || !selectedMembership.can_update_status ? (
+                  <InlineNotice>
+                    Alteração desabilitada pelo backend para evitar autogestão ou transição sem permissão.
+                  </InlineNotice>
+                ) : null}
+
+                <AppButton
+                  className="min-h-11 w-full"
+                  disabled={
+                    updateSubmitting ||
+                    !selectedMembership.can_update_role ||
+                    !selectedMembership.can_update_status
+                  }
+                  type="submit"
+                >
                   {updateSubmitting ? 'Salvando...' : 'Salvar alterações'}
                 </AppButton>
               </form>

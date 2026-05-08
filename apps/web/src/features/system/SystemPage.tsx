@@ -8,15 +8,15 @@ import {
 } from 'react';
 import { Navigate } from 'react-router-dom';
 import {
-  listAdminAuditFeed,
-  listAdminMemberships,
-  listAdminTenants,
-  type AdminAuditFeedRow,
-  type AdminTenantMembershipRow,
-  type AdminTenantsListItemRow,
+  getAdminSystemOperationalSummary,
+  listAdminSystemAuditEvents,
+  listAdminSystemHealthChecks,
+  type AdminSystemAuditEventRow,
+  type AdminSystemHealthCheckRow,
+  type AdminSystemOperationalSummaryRow,
 } from '../admin/admin-api';
 import { classifyAdminError } from '../admin/admin-errors';
-import { formatDateTime, humanizeToken, stringifyJsonPreview } from '../../app/format';
+import { formatDateTime } from '../../app/format';
 import {
   ContractUnavailableState,
   EmptyState,
@@ -38,42 +38,10 @@ type PagePhase = 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type SystemTab = 'health' | 'audit' | 'jobs' | 'security';
 type SystemSeverity = 'ok' | 'attention' | 'critical';
 type SystemPeriodFilter = '24h' | '7d' | '30d' | 'all';
+type AdminAuditFeedRow = AdminSystemAuditEventRow;
 
 function lower(value: string | null | undefined) {
   return String(value ?? '').toLowerCase();
-}
-
-function humanizeSystemService(entityTable: string) {
-  return humanizeToken(entityTable).replaceAll('_', ' ');
-}
-
-function classifySystemSeverity(entry: AdminAuditFeedRow): SystemSeverity {
-  const action = lower(entry.action);
-  const entity = lower(entry.entity_table);
-  const metadata = lower(stringifyJsonPreview(entry.metadata));
-
-  if (
-    action.includes('delete') ||
-    action.includes('archive') ||
-    action.includes('revoke') ||
-    metadata.includes('error') ||
-    metadata.includes('failed')
-  ) {
-    return 'critical';
-  }
-
-  if (
-    action.includes('update') ||
-    action.includes('review') ||
-    action.includes('publish') ||
-    action.includes('invite') ||
-    entity.includes('membership') ||
-    entity.includes('role')
-  ) {
-    return 'attention';
-  }
-
-  return 'ok';
 }
 
 function toneForSystemSeverity(severity: SystemSeverity) {
@@ -100,31 +68,42 @@ function humanizeSystemSeverity(severity: SystemSeverity) {
   return 'Estavel';
 }
 
+function formatSanitizedContext(value: unknown) {
+  if (!value || typeof value !== 'object') {
+    return 'Indisponível';
+  }
+
+  const context = value as {
+    metadata_keys?: unknown;
+    before_keys?: unknown;
+    after_keys?: unknown;
+  };
+  const keys = [
+    ...(Array.isArray(context.metadata_keys) ? context.metadata_keys : []),
+    ...(Array.isArray(context.before_keys) ? context.before_keys : []),
+    ...(Array.isArray(context.after_keys) ? context.after_keys : []),
+  ]
+    .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    .filter((item, index, all) => all.indexOf(item) === index);
+
+  return keys.length > 0 ? keys.join(', ') : 'Indisponível';
+}
+
 function buildSystemEventMessage(entry: AdminAuditFeedRow) {
-  const actor = entry.actor_full_name ?? entry.actor_email ?? 'Operador interno';
-  const service = humanizeSystemService(entry.entity_table);
-  const action = humanizeToken(entry.action).replaceAll('_', ' ');
-  const scope = entry.tenant_display_name ?? 'escopo global';
+  const actor = entry.actor_display_name || entry.actor_email || 'Operador interno';
+  const service = entry.service_label || 'Sistema';
+  const action = entry.action_label || 'Evento';
+  const scope = entry.scope_label || 'escopo global';
 
   return `${actor} registrou ${action.toLowerCase()} em ${service.toLowerCase()} dentro de ${scope}.`;
 }
 
 function buildSystemImpact(entry: AdminAuditFeedRow) {
-  const severity = classifySystemSeverity(entry);
-
-  if (severity === 'critical') {
-    return 'Esse registro pede verificação imediata porque altera acesso, arquivo ou mudança sensível na operação.';
-  }
-
-  if (severity === 'attention') {
-    return 'Esse evento merece acompanhamento porque muda configuração, papel ou etapa editorial com impacto operacional.';
-  }
-
-  return 'Registro informativo para rastrear rotina administrativa e manter contexto do control plane.';
+  return entry.impact_label || 'Registro informativo para manter contexto do control plane.';
 }
 
 function buildSystemActions(entry: AdminAuditFeedRow) {
-  const severity = classifySystemSeverity(entry);
+  const severity = entry.severity;
   const isSecurity = matchesSecurityLens(entry);
 
   if (severity === 'critical') {
@@ -151,7 +130,7 @@ function buildSystemActions(entry: AdminAuditFeedRow) {
 }
 
 function matchesSecurityLens(entry: AdminAuditFeedRow) {
-  const entity = lower(entry.entity_table);
+  const entity = lower(entry.service_key);
   const action = lower(entry.action);
 
   return (
@@ -213,7 +192,7 @@ function matchesTab(entry: AdminAuditFeedRow, activeTab: SystemTab) {
     return matchesJobsLens(entry);
   }
 
-  return !matchesSecurityLens(entry) || classifySystemSeverity(entry) !== 'ok';
+  return !matchesSecurityLens(entry) || entry.severity !== 'ok';
 }
 
 function SystemMetricCard({
@@ -281,8 +260,8 @@ export function SystemPage() {
   const [phase, setPhase] = useState<PagePhase>('loading');
   const [pageMessage, setPageMessage] = useState<string | null>(null);
   const [auditFeed, setAuditFeed] = useState<AdminAuditFeedRow[]>([]);
-  const [tenants, setTenants] = useState<AdminTenantsListItemRow[]>([]);
-  const [memberships, setMemberships] = useState<AdminTenantMembershipRow[]>([]);
+  const [healthChecks, setHealthChecks] = useState<AdminSystemHealthCheckRow[]>([]);
+  const [summary, setSummary] = useState<AdminSystemOperationalSummaryRow | null>(null);
   const [activeTab, setActiveTab] = useState<SystemTab>('health');
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [actionFilter, setActionFilter] = useState<string>('all');
@@ -294,16 +273,16 @@ export function SystemPage() {
 
   const loadSurface = useEffectEvent(async () => {
     try {
-      const [tenantRows, membershipRows, auditRows] = await Promise.all([
-        listAdminTenants(),
-        listAdminMemberships(),
-        listAdminAuditFeed(),
+      const [auditRows, healthRows, summaryRow] = await Promise.all([
+        listAdminSystemAuditEvents(),
+        listAdminSystemHealthChecks(),
+        getAdminSystemOperationalSummary(),
       ]);
 
       setBackendDenied(false);
-      setTenants(tenantRows);
-      setMemberships(membershipRows);
       setAuditFeed(auditRows);
+      setHealthChecks(healthRows);
+      setSummary(summaryRow);
       setPageMessage(null);
       setPhase('ready');
     } catch (error) {
@@ -322,9 +301,9 @@ export function SystemPage() {
         return;
       }
 
-      setTenants([]);
-      setMemberships([]);
       setAuditFeed([]);
+      setHealthChecks([]);
+      setSummary(null);
       setPageMessage(classified.message);
       setPhase(
         classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
@@ -346,7 +325,7 @@ export function SystemPage() {
     [auditFeed],
   );
   const distinctServices = useMemo(
-    () => Array.from(new Set(auditFeed.map((entry) => entry.entity_table))).sort(),
+    () => Array.from(new Set(auditFeed.map((entry) => entry.service_key))).sort(),
     [auditFeed],
   );
 
@@ -361,11 +340,11 @@ export function SystemPage() {
           return false;
         }
 
-        if (serviceFilter !== 'all' && entry.entity_table !== serviceFilter) {
+        if (serviceFilter !== 'all' && entry.service_key !== serviceFilter) {
           return false;
         }
 
-        if (severityFilter !== 'all' && classifySystemSeverity(entry) !== severityFilter) {
+        if (severityFilter !== 'all' && entry.severity !== severityFilter) {
           return false;
         }
 
@@ -378,12 +357,14 @@ export function SystemPage() {
         }
 
         const haystack = [
-          entry.actor_full_name ?? '',
+          entry.actor_display_name ?? '',
           entry.actor_email ?? '',
-          entry.tenant_display_name ?? '',
+          entry.scope_label ?? '',
           entry.tenant_slug ?? '',
-          entry.entity_table,
+          entry.service_key,
+          entry.service_label,
           entry.action,
+          entry.action_label,
           buildSystemEventMessage(entry),
         ]
           .join(' ')
@@ -417,28 +398,18 @@ export function SystemPage() {
       .filter(
         (entry) =>
           entry.id !== selectedEntry.id &&
-          (entry.entity_table === selectedEntry.entity_table ||
+          (entry.service_key === selectedEntry.service_key ||
             (entry.tenant_id && entry.tenant_id === selectedEntry.tenant_id)),
       )
       .slice(0, 4);
   }, [auditFeed, selectedEntry]);
 
-  const checksOkCount = auditFeed.filter(
-    (entry) => classifySystemSeverity(entry) === 'ok',
-  ).length;
-  const alertCount = auditFeed.filter(
-    (entry) => classifySystemSeverity(entry) === 'attention',
-  ).length;
-  const failureCount = auditFeed.filter(
-    (entry) => classifySystemSeverity(entry) === 'critical',
-  ).length;
-  const recentCount = auditFeed.filter((entry) => withinPeriod(entry.occurred_at, '24h')).length;
-  const activeTenantCount = tenants.filter((tenant) => tenant.status === 'active').length;
-  const activeMembershipCount = memberships.filter(
-    (membership) => membership.status === 'active',
-  ).length;
-  const suspendedTenantCount = tenants.filter((tenant) => tenant.status !== 'active').length;
-  const selectedSeverity = selectedEntry ? classifySystemSeverity(selectedEntry) : 'ok';
+  const checksOkCount = healthChecks.filter((check) => check.status === 'ok').length;
+  const unavailableCheckCount = healthChecks.filter((check) => check.status === 'unavailable').length;
+  const alertCount = summary?.attention_event_count ?? 0;
+  const failureCount = summary?.critical_event_count ?? 0;
+  const recentCount = summary?.audit_events_24h ?? 0;
+  const selectedSeverity = selectedEntry ? selectedEntry.severity : 'ok';
 
   if (backendDenied) {
     return <Navigate replace state={{ reason: 'backend-permission' }} to="/access-denied" />;
@@ -519,7 +490,7 @@ export function SystemPage() {
                 { id: 'health', label: 'Saúde geral', count: `${checksOkCount} checks` },
                 { id: 'audit', label: 'Auditoria', count: `${auditFeed.length} eventos` },
                 { id: 'jobs', label: 'Falhas recentes', count: `${failureCount} críticos` },
-                { id: 'security', label: 'Segurança', count: `${activeMembershipCount} acessos` },
+                { id: 'security', label: 'Segurança', count: `${unavailableCheckCount} pendências` },
               ].map((item) => (
                 <button
                   className={cx(
@@ -544,7 +515,7 @@ export function SystemPage() {
                 <option value="all">Todos</option>
                 {distinctActions.map((action) => (
                   <option key={action} value={action}>
-                    {humanizeToken(action).replaceAll('_', ' ')}
+                    {auditFeed.find((entry) => entry.action === action)?.action_label ?? action}
                   </option>
                 ))}
               </SelectInput>
@@ -584,7 +555,7 @@ export function SystemPage() {
                 <option value="all">Todos</option>
                 {distinctServices.map((service) => (
                   <option key={service} value={service}>
-                    {humanizeSystemService(service)}
+                    {auditFeed.find((entry) => entry.service_key === service)?.service_label ?? service}
                   </option>
                 ))}
               </SelectInput>
@@ -618,9 +589,9 @@ export function SystemPage() {
           >
             <div className="mb-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
               <SystemMetricCard helper="Em leitura estável." label="Checks verdes" value={String(checksOkCount)} />
-              <SystemMetricCard helper="Exigem atenção." label="Alertas" value={String(alertCount)} />
+              <SystemMetricCard helper="Eventos classificados pelo backend." label="Alertas" value={String(alertCount)} />
               <SystemMetricCard helper="Nas últimas 24h." label="Eventos recentes" value={String(recentCount)} />
-              <SystemMetricCard helper="Exigem escalação." label="Falhas" value={String(failureCount)} />
+              <SystemMetricCard helper="Eventos críticos do backend." label="Críticos" value={String(failureCount)} />
             </div>
             {auditFeed.length === 0 ? (
               <EmptyState
@@ -644,7 +615,7 @@ export function SystemPage() {
                 </div>
                 <div className="divide-y divide-[color:var(--color-border)]">
                   {filteredFeed.map((entry) => {
-                    const severity = classifySystemSeverity(entry);
+                    const severity = entry.severity;
                     const selected = entry.id === selectedEntry?.id;
 
                     return (
@@ -661,7 +632,7 @@ export function SystemPage() {
                       >
                         <div className="min-w-0">
                           <p className="line-clamp-1 text-sm font-semibold text-[color:var(--color-ink)]">
-                            {humanizeToken(entry.action).replaceAll('_', ' ')}
+                            {entry.action_label}
                           </p>
                         </div>
                         <div className="min-w-0">
@@ -670,7 +641,7 @@ export function SystemPage() {
                           </StatusPill>
                         </div>
                         <div className="min-w-0 text-sm text-[color:var(--color-muted)]">
-                          {humanizeSystemService(entry.entity_table)}
+                          {entry.service_label}
                         </div>
                         <div className="min-w-0">
                           <p className="line-clamp-2 text-sm leading-6 text-[color:var(--color-ink)]">
@@ -713,18 +684,18 @@ export function SystemPage() {
                       <StatusPill tone={toneForSystemSeverity(selectedSeverity)}>
                         {humanizeSystemSeverity(selectedSeverity)}
                       </StatusPill>
-                      <StatusPill>{humanizeSystemService(selectedEntry.entity_table)}</StatusPill>
+                      <StatusPill>{selectedEntry.service_label}</StatusPill>
                     </div>
                     <div className="space-y-1">
                       <h3 className="text-lg font-semibold tracking-[-0.04em]">
-                        {humanizeToken(selectedEntry.action).replaceAll('_', ' ')}
+                        {selectedEntry.action_label}
                       </h3>
                       <p className="text-sm leading-6 text-white/78">
                         {buildSystemEventMessage(selectedEntry)}
                       </p>
                     </div>
                     <div className="grid gap-2 text-sm leading-6 text-white/78">
-                      <p>Serviço: {humanizeSystemService(selectedEntry.entity_table)}</p>
+                      <p>Serviço: {selectedEntry.service_label}</p>
                       <p>Severidade: {humanizeSystemSeverity(selectedSeverity)}</p>
                       <p>Timestamp: {formatDateTime(selectedEntry.occurred_at)}</p>
                     </div>
@@ -734,9 +705,9 @@ export function SystemPage() {
                 <section className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
                   <h3 className="text-[0.98rem] font-semibold text-[color:var(--color-ink)]">Contexto</h3>
                   <div className="mt-3 grid gap-2 text-sm leading-6 text-[color:var(--color-muted)]">
-                    <p>Cliente: {selectedEntry.tenant_display_name ?? 'Indisponível'}</p>
+                    <p>Escopo: {selectedEntry.scope_label ?? 'Indisponível'}</p>
                     <p>Slug: {selectedEntry.tenant_slug ?? 'Indisponível'}</p>
-                    <p>Operador: {selectedEntry.actor_full_name ?? selectedEntry.actor_email ?? 'Indisponível'}</p>
+                    <p>Operador: {selectedEntry.actor_display_name ?? selectedEntry.actor_email ?? 'Indisponível'}</p>
                   </div>
                 </section>
 
@@ -771,10 +742,10 @@ export function SystemPage() {
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <p className="text-sm font-semibold text-[color:var(--color-ink)]">
-                              {humanizeToken(entry.action).replaceAll('_', ' ')}
+                              {entry.action_label}
                             </p>
-                            <StatusPill tone={toneForSystemSeverity(classifySystemSeverity(entry))}>
-                              {humanizeSystemSeverity(classifySystemSeverity(entry))}
+                            <StatusPill tone={toneForSystemSeverity(entry.severity)}>
+                              {humanizeSystemSeverity(entry.severity)}
                             </StatusPill>
                           </div>
                           <p className="mt-1 text-sm leading-6 text-[color:var(--color-muted)]">
@@ -787,12 +758,11 @@ export function SystemPage() {
                 </section>
 
                 <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-4">
-                  <h3 className="text-[0.98rem] font-semibold text-[color:var(--color-ink)]">Registro bruto</h3>
+                  <h3 className="text-[0.98rem] font-semibold text-[color:var(--color-ink)]">Contexto sanitizado</h3>
                   <div className="mt-3 space-y-3 text-sm leading-6 text-[color:var(--color-muted)]">
                     <p>Referência interna: {selectedEntry.entity_id ?? 'Indisponível'}</p>
-                    <p>Metadata resumida: {stringifyJsonPreview(selectedEntry.metadata)}</p>
-                    <p>Antes: {stringifyJsonPreview(selectedEntry.before_state)}</p>
-                    <p>Depois: {stringifyJsonPreview(selectedEntry.after_state)}</p>
+                    <p>Chaves disponíveis: {formatSanitizedContext(selectedEntry.sanitized_context)}</p>
+                    <p>Valores brutos e payloads sensíveis não são expostos nesta tela.</p>
                   </div>
                 </section>
               </div>

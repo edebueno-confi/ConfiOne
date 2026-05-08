@@ -2,6 +2,8 @@ import { toAppError } from '../../app/errors';
 import { requireSupabaseBrowserClient } from '../../app/supabase-browser';
 import type {
   AdminAuditFeedRow,
+  AdminAccessMembershipRow,
+  AdminAccessUserRow,
   AdminKnowledgeArticleDetailV2Row,
   AdminKnowledgeArticleEditorialDraftRow,
   AdminKnowledgeArticleListItemV2Row,
@@ -16,6 +18,9 @@ import type {
   AdminTenantMembershipRow,
   AdminTenantRecordRow,
   AdminTenantsListItemRow,
+  AdminSystemAuditEventRow,
+  AdminSystemHealthCheckRow,
+  AdminSystemOperationalSummaryRow,
   AdminUserLookupRow,
   KnowledgeAdvisoryClassification,
   KnowledgeArticleStatus,
@@ -115,6 +120,34 @@ export async function listAdminMemberships() {
   return (data ?? []) as AdminTenantMembershipRow[];
 }
 
+export async function listAdminAccessUsers() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_access_users')
+    .select('*')
+    .order('last_access_updated_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o control plane de usuários.');
+  }
+
+  return (data ?? []) as AdminAccessUserRow[];
+}
+
+export async function listAdminAccessMemberships() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_access_memberships')
+    .select('*')
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar os vínculos de acesso.');
+  }
+
+  return (data ?? []) as AdminAccessMembershipRow[];
+}
+
 export async function lookupAdminUsers(rawQuery: string, limit = 8) {
   const client = requireClient();
   const query = escapeLookupTerm(rawQuery);
@@ -150,6 +183,49 @@ export async function listAdminAuditFeed(limit = 120) {
   }
 
   return (data ?? []) as AdminAuditFeedRow[];
+}
+
+export async function listAdminSystemAuditEvents(limit = 120) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_system_audit_events')
+    .select('*')
+    .limit(limit)
+    .order('occurred_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar a auditoria administrativa sanitizada.');
+  }
+
+  return (data ?? []) as AdminSystemAuditEventRow[];
+}
+
+export async function listAdminSystemHealthChecks() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_system_health_checks')
+    .select('*')
+    .order('area', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar os checks operacionais.');
+  }
+
+  return (data ?? []) as AdminSystemHealthCheckRow[];
+}
+
+export async function getAdminSystemOperationalSummary() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_system_operational_summary')
+    .select('*')
+    .maybeSingle();
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o resumo operacional do sistema.');
+  }
+
+  return data as AdminSystemOperationalSummaryRow | null;
 }
 
 export async function listAdminKnowledgeSpaces() {
@@ -577,6 +653,8 @@ export async function markKnowledgeArticleReviewed(
 }
 
 export type {
+  AdminAccessMembershipRow,
+  AdminAccessUserRow,
   AdminAuditFeedRow,
   AdminKnowledgeArticleDetailV2Row,
   AdminKnowledgeArticleEditorialDraftRow,
@@ -592,6 +670,9 @@ export type {
   AdminTenantMembershipRow,
   AdminTenantRecordRow,
   AdminTenantsListItemRow,
+  AdminSystemAuditEventRow,
+  AdminSystemHealthCheckRow,
+  AdminSystemOperationalSummaryRow,
   AdminUserLookupRow,
   KnowledgeAdvisoryClassification,
   KnowledgeArticleStatus,
