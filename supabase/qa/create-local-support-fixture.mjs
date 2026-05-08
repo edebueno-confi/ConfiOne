@@ -170,6 +170,17 @@ const FIXTURE = {
         ],
       },
     },
+    {
+      slug: 'support-qa-c',
+      legalName: 'Support QA Tenant C Ltda',
+      displayName: 'Support QA Tenant C',
+      contact: {
+        fullName: 'Camila Sem Perfil QA',
+        email: 'camila.semperfil@support-qa-c.local',
+        phone: '+55 11 91000-0003',
+        jobTitle: 'Operação de Atendimento',
+      },
+    },
   ],
   tickets: [
     {
@@ -2137,11 +2148,13 @@ async function main() {
     const tenantId = ensureTenant(profile.id, tenant);
     tenantMap.set(tenant.slug, tenantId);
     contactMap.set(tenant.slug, ensureContact(profile.id, tenantId, tenant.contact));
-    ensureCustomerAccountProfile(profile.id, tenantId, tenant.customerAccount);
-    ensureCustomerAccountIntegrations(profile.id, tenantId, tenant.customerAccount);
-    ensureCustomerAccountFeatures(profile.id, tenantId, tenant.customerAccount);
-    ensureCustomerAccountCustomizations(profile.id, tenantId, tenant.customerAccount);
-    ensureCustomerAccountAlerts(profile.id, tenantId, tenant.customerAccount);
+    if (tenant.customerAccount) {
+      ensureCustomerAccountProfile(profile.id, tenantId, tenant.customerAccount);
+      ensureCustomerAccountIntegrations(profile.id, tenantId, tenant.customerAccount);
+      ensureCustomerAccountFeatures(profile.id, tenantId, tenant.customerAccount);
+      ensureCustomerAccountCustomizations(profile.id, tenantId, tenant.customerAccount);
+      ensureCustomerAccountAlerts(profile.id, tenantId, tenant.customerAccount);
+    }
     ensureTenantMembership({
       actorUserId: profile.id,
       tenantId,
@@ -2365,11 +2378,12 @@ async function main() {
         })),
         customer_accounts: FIXTURE.tenants.map((tenant) => ({
           tenant_slug: tenant.slug,
-          product_line: tenant.customerAccount.productLine,
-          integrations: tenant.customerAccount.integrations.length,
-          features: tenant.customerAccount.features.length,
-          customizations: tenant.customerAccount.customizations.length,
-          alerts: tenant.customerAccount.alerts.length,
+          has_profile: Boolean(tenant.customerAccount),
+          product_line: tenant.customerAccount?.productLine ?? null,
+          integrations: tenant.customerAccount?.integrations?.length ?? 0,
+          features: tenant.customerAccount?.features?.length ?? 0,
+          customizations: tenant.customerAccount?.customizations?.length ?? 0,
+          alerts: tenant.customerAccount?.alerts?.length ?? 0,
         })),
         knowledge_articles: createdKnowledgeArticles,
         knowledge_links: createdKnowledgeLinks,

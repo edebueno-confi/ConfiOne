@@ -45,8 +45,8 @@ select is(
       and p.prosecdef
       and p.proname like 'rpc_%'
   ),
-  45,
-  'as 45 RPCs expostas existem como funcoes SECURITY DEFINER controladas'
+  46,
+  'as 46 RPCs expostas existem como funcoes SECURITY DEFINER controladas'
 );
 
 select is(
@@ -152,7 +152,7 @@ select is(
     from grants
       where grantee = (select oid from pg_roles where rolname = 'authenticated')
   ),
-  45,
+  46,
   'authenticated recebe execute em todas as RPCs expostas e somente por grant explicito'
 );
 

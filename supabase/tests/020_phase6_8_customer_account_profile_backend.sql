@@ -2,7 +2,7 @@ create extension if not exists pgtap with schema extensions;
 
 begin;
 
-select plan(22);
+select plan(26);
 
 insert into auth.users (
   instance_id,
@@ -267,6 +267,20 @@ select throws_ok(
   'support_manager nao usa RPC administrativa de escrita'
 );
 
+select throws_ok(
+  $$
+    select public.rpc_admin_set_customer_feature_flag(
+      '11111111-1111-4111-8111-111111111111'::uuid,
+      'returns_portal',
+      true,
+      'operations',
+      'tentativa sem permissao administrativa'
+    )
+  $$,
+  'customer account admin required',
+  'support_manager nao usa RPC administrativa de feature flag'
+);
+
 reset role;
 reset request.jwt.claim.role;
 reset request.jwt.claim.sub;
@@ -334,6 +348,19 @@ select lives_ok(
   'platform_admin cria alerta operacional ativo'
 );
 
+select lives_ok(
+  $$
+    select public.rpc_admin_set_customer_feature_flag(
+      '11111111-1111-4111-8111-111111111111'::uuid,
+      'priority_support_window',
+      true,
+      'operations',
+      'Feature operacional validada para o recorte de suporte.'
+    )
+  $$,
+  'platform_admin materializa feature operacional por RPC dedicada'
+);
+
 select is(
   (
     select integrations_count
@@ -350,7 +377,7 @@ select is(
     from public.vw_admin_customer_account_profiles
     where tenant_id = '11111111-1111-4111-8111-111111111111'::uuid
   ),
-  2,
+  3,
   'view administrativa agrega features habilitadas do tenant'
 );
 
@@ -378,7 +405,7 @@ select is(
     from public.vw_support_customer_account_context
     where tenant_id = '11111111-1111-4111-8111-111111111111'::uuid
   ),
-  2,
+  3,
   'support_manager recebe recorte operacional de features habilitadas'
 );
 
@@ -477,6 +504,20 @@ select throws_ok(
   'RPC bloqueia operational_flags fora do shape permitido'
 );
 
+select throws_ok(
+  $$
+    select public.rpc_admin_set_customer_feature_flag(
+      '11111111-1111-4111-8111-111111111111'::uuid,
+      'unsafe_feature',
+      true,
+      'operations',
+      'https://internal.local/secret'
+    )
+  $$,
+  'customer account field "feature_notes" contains restricted content',
+  'RPC de feature flag bloqueia notas com conteudo sensivel'
+);
+
 select ok(
   exists (
     select 1
@@ -487,6 +528,18 @@ select ok(
       and audit_log.tenant_id = '11111111-1111-4111-8111-111111111111'::uuid
   ),
   'upsert do profile gera audit log'
+);
+
+select ok(
+  exists (
+    select 1
+    from audit.audit_logs as audit_log
+    where audit_log.entity_schema = 'public'
+      and audit_log.entity_table = 'customer_account_features'
+      and audit_log.action in ('insert', 'update')
+      and audit_log.tenant_id = '11111111-1111-4111-8111-111111111111'::uuid
+  ),
+  'set de feature flag gera audit log'
 );
 
 select lives_ok(
