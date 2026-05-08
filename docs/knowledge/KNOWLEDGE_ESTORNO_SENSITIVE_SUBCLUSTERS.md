@@ -236,3 +236,5 @@
 - nenhum artigo foi aprovado
 - nenhum artigo foi publicado
 - nenhuma aprovação foi simulada
+- o fechamento executivo consolidado do cluster ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_CLUSTERS_CLOSURE.md`

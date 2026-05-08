@@ -27,6 +27,7 @@ Para o cluster `Formas de Estorno`, usar como referência prévia:
 - `docs/knowledge/KNOWLEDGE_ESTORNO_TROUBLESHOOTING_SUBCLUSTER_PREP.md`
 - `docs/knowledge/KNOWLEDGE_ESTORNO_CALCULO_LIMITES_SUBCLUSTER_PREP.md`
 - `docs/knowledge/KNOWLEDGE_INTEGRACOES_GATEWAY_SUBCLUSTER_PREP.md`
+- `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_CLUSTERS_CLOSURE.md`
 
 ## Template único para Produto
 

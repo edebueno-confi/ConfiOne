@@ -18,6 +18,33 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.32 - Knowledge Estorno Sensitive Clusters Closure V3
+- fase: `7.32`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: o fechamento documental do cluster `Estornos e reembolsos` foi consolidado em uma visão executiva única, separando os recortes que podem seguir para validação humana, os que exigem revisão técnica ou humana adicional e os que permanecem bloqueados por risco, sem aprovar nem publicar qualquer conteúdo.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_CLUSTERS_CLOSURE.md`
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_SUBCLUSTERS.md`
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+- riscos restantes:
+  - apenas os recortes `Formas de estorno disponíveis na operação` e `Como organizar motivos de troca e devolução na operação` podem seguir para validação humana
+  - Pix, cálculo e limites, além de integrações e gateway, continuam bloqueados para público
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - encerra o cluster de estorno com uma régua única de avanço, bloqueio e validação antes de qualquer lote de publicação
+
 ### Fase 7.31 - Knowledge IntegracoesGateway Subcluster Prep V3
 - fase: `7.31`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

@@ -1457,6 +1457,39 @@ Documentos históricos:
   - Pendencias mapeadas sem implementacao nesta fase:
     - proximos lotes devem seguir por subcluster ou por recorte seguro validado
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.32: Knowledge Estorno Sensitive Clusters Closure V3 concluido como fechamento documental executivo do cluster de estornos e reembolsos.
+  - A consolidacao executiva foi criada em `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_CLUSTERS_CLOSURE.md`.
+  - A fase consolidou os subclusters:
+    - formas de estorno
+    - Pix e estorno
+    - vale-compra e credito
+    - regras e politicas por motivo
+    - motivos de troca e devolucao
+    - erros e troubleshooting de estorno
+    - calculo e limites de estorno
+    - integracoes e gateway
+  - As trilhas de avanço ficaram separadas entre:
+    - recortes que podem seguir para validacao humana
+    - recortes que ainda exigem revisao tecnica ou humana
+    - recortes bloqueados para publico ate novo recorte tecnico
+  - Os unicos recortes aptos a seguir para validacao humana ficaram mantidos como:
+    - `Formas de estorno disponíveis na operação`
+    - `Como organizar motivos de troca e devolução na operação`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos passos devem focar validacao humana dos dois recortes seguros ou abertura de novo cluster do corpus
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.

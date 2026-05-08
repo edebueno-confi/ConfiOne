@@ -25,6 +25,8 @@
   - `docs/knowledge/KNOWLEDGE_ESTORNO_CALCULO_LIMITES_SUBCLUSTER_PREP.md`
 - A preparação editorial do subcluster de integrações e gateway ficou registrada em:
   - `docs/knowledge/KNOWLEDGE_INTEGRACOES_GATEWAY_SUBCLUSTER_PREP.md`
+- O fechamento executivo consolidado do cluster de estorno ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_CLUSTERS_CLOSURE.md`
 
 | Artigo | Categoria proposta | Prioridade | Decisão Produto | Decisão Suporte/CS | Pode publicar | Pendência principal | Evidência necessária |
 | --- | --- | --- | --- | --- | --- | --- | --- |

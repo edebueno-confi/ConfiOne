@@ -281,6 +281,8 @@
   - `docs/knowledge/KNOWLEDGE_ESTORNO_CALCULO_LIMITES_SUBCLUSTER_PREP.md`
 - Preparação editorial específica do subcluster de integrações e gateway registrada em:
   - `docs/knowledge/KNOWLEDGE_INTEGRACOES_GATEWAY_SUBCLUSTER_PREP.md`
+- Fechamento executivo consolidado do cluster de estorno registrado em:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_CLUSTERS_CLOSURE.md`
 
 ### Clusters candidatos
 
