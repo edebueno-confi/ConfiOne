@@ -1051,6 +1051,44 @@ Documentos históricos:
     - nenhuma alteracao em permissoes
   - Pendencias mapeadas sem implementacao nesta fase:
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.18: Knowledge Governance Refinement V3 concluido como ajuste documental de governanca.
+  - A regra de bloqueio do registro humano foi refinada para separar:
+    - `bloqueio temporario`
+    - `bloqueio com possibilidade de override`
+    - `bloqueio definitivo`
+  - A regra de override passou a exigir registro explicito de:
+    - responsavel nominal
+    - area ou responsabilidade
+    - data
+    - justificativa
+    - risco aceito
+    - evidencia registrada
+    - escopo do override
+  - Limites de override registrados:
+    - override nao pode liberar segredo, token, dado sensivel, informacao tecnicamente falsa, conteudo interno restrito, exposicao operacional indevida ou promessa de funcionalidade inexistente
+  - A evolucao futura de taxonomia foi registrada em `docs/knowledge/KNOWLEDGE_TAXONOMY_FUTURE_MODEL.md` com o modelo:
+    - categoria
+    - subcategoria opcional
+    - artigo
+  - Regras conceituais definidas:
+    - categoria continua suficiente para MVP
+    - subcategoria e opcional
+    - artigo pode existir apenas com categoria
+    - nenhuma subcategoria sera simulada em frontend ou banco sem contrato real
+  - O status atual dos quatro artigos `P0` foi preservado:
+    - seguem pendentes
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de runtime
+    - sem alteracao de contracts
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.

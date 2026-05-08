@@ -8,7 +8,7 @@ Manter o registro oficial de aprovacoes humanas reais da trilha editorial da Kno
 - ausencia de evidencia equivale a `pendente`
 - aprovacao parcial nao libera publicacao
 - aprovacao com ajuste exige novo registro apos o ajuste
-- bloqueio de Produto ou Suporte/CS impede publicacao
+- bloqueio de Produto ou Suporte/CS exige classificacao governada do tipo de bloqueio
 - so pode entrar em lote de publicacao quando Produto e Suporte/CS estiverem aprovados com evidencia explicita
 
 ## Evidencia minima obrigatoria
@@ -31,6 +31,14 @@ Cada aprovacao, aprovacao com ajuste ou bloqueio deve registrar:
   - mensagem formal
   - documento assinado
 
+Quando a decisao for `bloqueado`, registrar tambem:
+- tipo de bloqueio:
+  - `bloqueio temporario`
+  - `bloqueio com possibilidade de override`
+  - `bloqueio definitivo`
+- justificativa do bloqueio
+- condicao de reavaliacao, quando existir
+
 ## Template de evidencia por aprovador
 
 ```md
@@ -43,14 +51,40 @@ Cada aprovacao, aprovacao com ajuste ou bloqueio deve registrar:
 - observacao obrigatoria:
 - pendencias restantes:
 - fonte da evidencia:
+- tipo de bloqueio:
+- justificativa do bloqueio:
+- condicao de reavaliacao:
 ```
 
 ## Regra de avancao
-- so pode entrar em lote de publicacao quando Produto e Suporte/CS estiverem aprovados
+- `aprovado` + `aprovado`: pode seguir para lote futuro de publicacao
+- `aprovado com ajuste`: exige ajuste e novo registro de revisao antes de qualquer avancao
+- `pendente`: nao publica
+- `bloqueio temporario`: nao publica ate nova revisao
+- `bloqueio com possibilidade de override`: so avanca com decisao explicita de governanca
+- `bloqueio definitivo`: nao publica
 - aprovacao parcial nao libera publicacao
-- aprovacao com ajuste exige novo registro apos ajuste
-- bloqueio de Produto ou Suporte/CS impede publicacao
 - ausencia de evidencia equivale a `pendente`
+
+## Override editorial ou de governanca
+Override so pode ocorrer com registro explicito de:
+- responsavel nominal
+- area ou responsabilidade
+- data
+- justificativa
+- risco aceito
+- evidencia registrada
+- escopo do override
+
+### Limites do override
+Nenhum override pode permitir publicacao de:
+- segredo
+- token
+- dado sensivel
+- informacao tecnicamente falsa
+- conteudo interno restrito
+- orientacao que exponha operacao interna indevida
+- promessa de funcionalidade inexistente
 
 ## Registro atual dos artigos P0 pendentes
 
@@ -203,5 +237,7 @@ Cada aprovacao, aprovacao com ajuste ou bloqueio deve registrar:
 
 ## Resultado atual do registro
 - nenhum artigo foi aprovado
+- os quatro artigos `P0` seguem pendentes
+- nenhuma aprovacao foi simulada
 - nenhum artigo foi publicado
 - todos os quatro artigos continuam pendentes por ausencia de evidencia explicita de Produto e Suporte/CS

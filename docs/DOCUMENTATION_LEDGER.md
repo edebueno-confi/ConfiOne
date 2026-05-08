@@ -18,6 +18,31 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.18 - Knowledge Governance Refinement V3
+- fase: `7.18`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: a governanca documental da Knowledge Base foi refinada para explicitar tipos de bloqueio, override editorial governado e os limites duros desse override, enquanto a evolucao futura de taxonomia com subcategoria opcional foi registrada como direcao conceitual sem qualquer implementacao tecnica.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`
+  - `docs/knowledge/KNOWLEDGE_TAXONOMY_FUTURE_MODEL.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+  - nenhuma simulacao de subcategoria em `/help/genius`, `/admin/knowledge` ou superfices relacionadas
+- riscos restantes:
+  - os quatro artigos `P0` continuam pendentes e sem aprovacao humana explicita
+  - override continua apenas como mecanismo documental governado; nao existe workflow automatico ou enforcement de sistema nesta fase
+  - subcategoria continua apenas como direcao futura e exige auditoria completa antes de qualquer implementacao
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- impacto na FAQ futura:
+  - melhora a clareza entre bloqueio temporario, bloqueio com override e bloqueio definitivo
+  - registra desde ja a hierarquia futura `categoria > subcategoria opcional > artigo` sem contaminar o MVP atual
+
 ### Fase 7.17 - Knowledge Human Approval Evidence Register V3
 - fase: `7.17`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`
