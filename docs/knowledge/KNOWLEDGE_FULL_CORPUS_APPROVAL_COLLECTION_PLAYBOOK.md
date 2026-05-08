@@ -29,6 +29,9 @@ Para o cluster `Formas de Estorno`, usar como referência prévia:
 - `docs/knowledge/KNOWLEDGE_INTEGRACOES_GATEWAY_SUBCLUSTER_PREP.md`
 - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_CLUSTERS_CLOSURE.md`
 
+Para o cluster `Logística reversa e postagem`, usar como referência prévia:
+- `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_PREP.md`
+
 ## Template único para Produto
 
 ```md

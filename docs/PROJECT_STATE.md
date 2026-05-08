@@ -1490,6 +1490,36 @@ Documentos históricos:
   - Pendencias mapeadas sem implementacao nesta fase:
     - proximos passos devem focar validacao humana dos dois recortes seguros ou abertura de novo cluster do corpus
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.33: Knowledge LogisticaPostagem Cluster Prep V3 concluido como abertura documental do cluster de logistica reversa e postagem.
+  - O mapa do cluster foi criado em `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_PREP.md`.
+  - A fase analisou os artigos ligados a:
+    - pendencia de logistica reversa
+    - prazo logistico por estado
+    - correcao de CEP e endereco
+    - regra de nao gerar logistica reversa
+    - integracao, habilitacao e erros contratuais dos Correios
+    - autorizacao de postagem e governanca de seller
+  - As fronteiras editoriais foram registradas para separar:
+    - recortes publicos potenciais por prazo, pendencia e sintomas observaveis
+    - integracao, contrato, token e operacao interna de backoffice
+    - seller, roteamento logistico e autorizacao manual de postagem
+  - A recomendacao do cluster foi mantida como:
+    - `candidato parcial a publico`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos lotes devem seguir por cluster, subcluster ou recorte seguro validado
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.

@@ -283,6 +283,8 @@
   - `docs/knowledge/KNOWLEDGE_INTEGRACOES_GATEWAY_SUBCLUSTER_PREP.md`
 - Fechamento executivo consolidado do cluster de estorno registrado em:
   - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_CLUSTERS_CLOSURE.md`
+- Preparação editorial do cluster de logística reversa e postagem registrada em:
+  - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_PREP.md`
 
 ### Clusters candidatos
 

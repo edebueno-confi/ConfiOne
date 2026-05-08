@@ -18,6 +18,32 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.33 - Knowledge LogisticaPostagem Cluster Prep V3
+- fase: `7.33`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: o cluster `Logística reversa e postagem` foi preparado documentalmente com leitura dos artigos fonte, separação entre prazo logístico, pendências de postagem, CEP/endereço, exceções de logística reversa e trilhas internas de Correios, contratos, tokens e sellers, além de definição de fronteiras editoriais e de possíveis canônicos futuros, sem reescrever artigos completos, aprovar ou publicar conteúdo.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_PREP.md`
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+- riscos restantes:
+  - o cluster continua dividido entre um recorte público potencial e uma trilha interna de integração e operação logística sensível
+  - qualquer futura abertura pública depende de reescrita segura e validação explícita de Produto e Suporte/CS, com Engenharia quando houver transportadora ou integração
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - abre uma nova trilha governada fora de estorno para tratar postagem e logística reversa por recorte seguro, sem misturar integração e contrato com ajuda pública
+
 ### Fase 7.32 - Knowledge Estorno Sensitive Clusters Closure V3
 - fase: `7.32`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`
