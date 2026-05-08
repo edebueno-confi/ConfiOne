@@ -2011,3 +2011,29 @@ Cada registro deve informar:
   - `npm run web:typecheck`
 - impacto na FAQ futura:
   - separa troubleshooting conceitual de estorno da camada sensível de integração e backoffice, preparando lotes futuros por subcluster em vez de por artigo isolado
+### Fase 7.30 - Knowledge EstornoCalculoLimites Subcluster Prep V3
+- fase: `7.30`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: o subcluster `Cálculo e limites de estorno` foi preparado documentalmente com leitura dos artigos fonte, separação entre cálculo padrão/proporcional, teto de estorno, valor manual automático, política de frete e dependências com motivo e forma de estorno, sem reescrever artigos completos, aprovar ou publicar conteúdo.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_CALCULO_LIMITES_SUBCLUSTER_PREP.md`
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_SUBCLUSTERS.md`
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - nenhuma
+- views/RPCs afetadas:
+  - nenhuma alteracao de backend
+  - nenhuma view ou RPC nova
+- riscos restantes:
+  - o subcluster continua excessivamente financeiro para help pública direta
+  - valor manual, limite percentual e frete dependem de governança operacional e decisão comercial
+  - qualquer futura abertura pública exigirá novo recorte muito mais abstrato e validado
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - mantém cálculo, teto e política financeira fora do canônico de estorno e prepara futuras decisões por subcluster, não por artigo isolado

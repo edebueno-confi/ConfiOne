@@ -123,6 +123,8 @@
 - Suporte/CS necessário: `não`
 - observação objetiva:
   - a chance de orientar incorretamente decisão financeira é alta demais para abrir reescrita pública agora
+- preparação editorial específica registrada em:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_CALCULO_LIMITES_SUBCLUSTER_PREP.md`
 
 ### 5. Regras e políticas por motivo
 - descrição:

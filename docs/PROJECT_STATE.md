@@ -1396,6 +1396,36 @@ Documentos históricos:
   - Pendencias mapeadas sem implementacao nesta fase:
     - proximos lotes de troubleshooting de estorno devem continuar por recorte editorial do subcluster
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.30: Knowledge EstornoCalculoLimites Subcluster Prep V3 concluido como preparacao documental do subcluster de calculo e limites de estorno.
+  - O mapa do subcluster foi criado em `docs/knowledge/KNOWLEDGE_ESTORNO_CALCULO_LIMITES_SUBCLUSTER_PREP.md`.
+  - A fase analisou os artigos ligados a:
+    - calculo de estorno
+    - limite maximo de estorno
+    - valor manual para estorno automatico
+    - politica para estorno do frete
+    - relacao entre motivo e forma de estorno como dependencia de politica
+  - As fronteiras editoriais foram registradas para separar:
+    - explicacao conceitual de politica de reembolso
+    - regras internas de calculo
+    - teto financeiro e valor manual
+    - politica comercial de frete
+  - A recomendacao do subcluster foi mantida como:
+    - `bloquear por risco`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos lotes de politica financeira de estorno devem continuar por recorte editorial do subcluster
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
