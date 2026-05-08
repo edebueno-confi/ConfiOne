@@ -2494,3 +2494,35 @@ Cada registro deve informar:
   - `npm run supabase:qa:local-support-fixture`
 - impacto na FAQ futura:
   - nenhum; lote tecnico de plataforma, sem publicacao ou alteracao de corpus Knowledge
+### Fase 8.6 - Support Ticket Creation And Intake V3
+- fase: `8.6`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: o fluxo real de intake de tickets foi materializado em `/support/queue`, com read models dedicados de tenants e contatos, uso exclusivo de `rpc_create_ticket`, evento inicial e audit trail preservados pelo backend.
+- docs alterados:
+  - `docs/SUPPORT_TICKET_CREATION_AND_INTAKE_V3.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - `/support/queue`
+  - `/support/tickets/:ticketId`
+- views/RPCs afetadas:
+  - `vw_support_ticket_intake_tenants`
+  - `vw_support_ticket_intake_contacts`
+  - `rpc_create_ticket`
+- riscos restantes:
+  - categoria inicial continua sem contrato proprio
+  - anexos e handoff tecnico seguem fora deste lote
+  - o intake continua restrito ao workspace interno de suporte/admin
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+- impacto na FAQ futura:
+  - nenhum; lote tecnico de plataforma, sem publicacao de conteudo

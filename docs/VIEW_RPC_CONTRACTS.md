@@ -60,6 +60,16 @@ Fase Access/System Hardening V3:
 - Severidade, servico, acao, impacto e contexto sanitizado do audit feed administrativo sao derivados no backend.
 - `rpc_admin_add_tenant_member`, `rpc_admin_update_tenant_member_role` e `rpc_admin_update_tenant_member_status` foram endurecidas contra autopromocao e transicoes fora do contrato.
 
+Fase 8.6:
+- O intake operacional de tickets agora possui read models dedicados para a fila do suporte:
+  - `vw_support_ticket_intake_tenants`
+  - `vw_support_ticket_intake_contacts`
+- `/support/queue` passou a abrir tickets apenas por:
+  - `rpc_create_ticket`
+- O frontend do intake nao le `tenants` nem `tenant_contacts` diretamente.
+- O backend continua controlando o status inicial em `new`, cria `ticket_created` e preserva o audit trail existente.
+- Categoria inicial continua sem contrato de dominio proprio e, por isso, nao foi habilitada no intake.
+
 Fase 4:
 - Knowledge Base agora possui núcleo editorial real com views internas contratuais e RPCs administrativas próprias.
 - O frontend administrativo futuro deve consumir a superfície de leitura apenas por:
@@ -562,6 +572,24 @@ Fase 8.2:
   - nao expõe usuarios de outros tenants nem dados sensiveis adicionais;
   - usa `security_barrier = true`.
 
+### `vw_support_ticket_intake_tenants`
+- Finalidade: lookup contratual de clientes B2B elegíveis para abertura de ticket no Support Workspace.
+- Retorna: `tenant_id`, `tenant_slug`, nomes do tenant, `tenant_status`, timestamps principais e contagem de contatos ativos.
+- Regras:
+  - retorna apenas tenants autorizados pelo boundary do Support Workspace;
+  - nao depende da fila atual para descobrir tenants elegiveis;
+  - permite estado explicito de tenant sem contato ativo (`has_active_contacts = false`);
+  - usa `security_barrier = true`.
+
+### `vw_support_ticket_intake_contacts`
+- Finalidade: lookup contratual de contatos ativos para o tenant selecionado no intake.
+- Retorna: `id`, `tenant_id`, `linked_user_id`, `full_name`, `email`, `phone`, `job_title`, `is_primary` e `created_at`.
+- Regras:
+  - retorna apenas contatos ativos de tenants elegiveis;
+  - nao expoe tabela-base de contatos ao frontend;
+  - permite fallback honesto de intake sem solicitante quando nao houver contato retornado;
+  - usa `security_barrier = true`.
+
 ### `vw_public_knowledge_space_resolver`
 - Finalidade: resolver público dos `knowledge_spaces` ativos para a futura Central de Ajuda.
 - Retorna: `knowledge_space` ativo, branding público sanitizado, locale, organization e chaves de roteamento por `space_slug` e domínio ativo quando existir.
@@ -825,6 +853,7 @@ Fase 8.2:
 - Regras:
   - valida tenant do caller;
   - valida `requester_contact_id` no mesmo tenant;
+  - mantem `status = new` como estado inicial controlado pelo backend;
   - cria `ticket_created` em `ticket_events`;
   - gera `audit.audit_logs`.
 
@@ -914,6 +943,8 @@ Fase 8.2:
   - `vw_support_ticket_detail`
   - `vw_support_ticket_timeline`
   - `vw_support_ticket_timeline_recent`
+  - `vw_support_ticket_intake_tenants`
+  - `vw_support_ticket_intake_contacts`
   - `vw_support_knowledge_public_link_candidates`
   - `vw_support_customer_360`
   - `vw_support_customer_account_context`
@@ -992,11 +1023,14 @@ Fase 8.2:
 - `vw_support_ticket_detail`
 - `vw_support_ticket_timeline_recent`
 - `rpc_support_get_ticket_timeline`
+- `vw_support_ticket_intake_tenants`
+- `vw_support_ticket_intake_contacts`
 - `vw_support_customer_360`
 - `vw_support_customer_recent_tickets`
 - `vw_support_customer_recent_events`
 
 ### Escrita consumida pelo frontend
+- `rpc_create_ticket`
 - `rpc_update_ticket_status`
 - `rpc_assign_ticket`
 - `rpc_add_ticket_message`
@@ -1008,6 +1042,8 @@ Fase 8.2:
 - a UI do workspace nao le tabelas base de ticketing
 - a UI nao cria mutacoes novas fora das RPCs ja aprovadas
 - a UI continua interna e B2B, sem qualquer capacidade de atendimento a shopper final
+- o intake respeita tenant explicito, solicitante opcional quando nao houver contato e status inicial controlado pelo backend
+- categoria inicial continua fora da UI por falta de contrato backend
 
 ## Fase 6.3 - Support Workspace Agent Directory + Assignment UX
 

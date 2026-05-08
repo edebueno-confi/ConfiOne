@@ -72,9 +72,10 @@ Documentos históricos:
 - O lote `Customer Account Profile Operational Core V3` materializou o segundo bloco operacional do buildout: perfil de cliente B2B consumido por Support Customers e pelo rail do Ticket Workspace, com leitura por views e escrita administrativa por RPC.
 - O lote `Knowledge Admin Operational Governance V3` endureceu a governanca editorial operacional: publicacao publica v2 agora exige gate backend de evidencia humana revisada e checklist humano completo antes de expor qualquer artigo publico.
 - O lote `Access System Observability Hardening V3` materializou read models dedicados para `/admin/access` e `/admin/system`, sanitizou audit events administrativos, conectou as telas aos contratos reais e preparou contexto Impeccable com `PRODUCT.md` e `DESIGN.md`.
+- O lote `Support Ticket Creation And Intake V3` conectou a abertura operacional de tickets em `/support/queue` ao contrato real de `rpc_create_ticket`, adicionou read models seguros de tenants/contatos para intake e cobriu o fluxo com pgTAP e fixture QA.
 - Nenhuma ação fake foi habilitada no frontend; ações sem contrato completo seguem bloqueadas para lote futuro.
 - Os 8 candidatos documentais da Knowledge continuam pendentes, nao aprovados, nao publicados e nao injetados automaticamente no Help Center.
-- Próximo bloco recomendado: `Support Ticket Creation And Intake V3`.
+- Próximo bloco recomendado: `Support Ticket Attachments And Escalation V3`.
 
 ## Estado real do repositório em 2026-04-30
 
@@ -107,6 +108,7 @@ Documentos históricos:
 - Migration oficial do contrato de revisão editorial para artigos publicados `supabase/migrations/20260506190000_phase7_4_knowledge_editorial_revision.sql`.
 - Migration oficial do fluxo operacional de tickets `supabase/migrations/20260508143717_support_ticket_operational_flow_v3.sql`.
 - Migration oficial de governanca operacional da Knowledge `supabase/migrations/20260508164336_knowledge_admin_operational_governance_v3.sql`.
+- Migration oficial do intake operacional de tickets `supabase/migrations/20260508201339_support_ticket_creation_and_intake_v3.sql`.
 - Teste local de banco em `supabase/tests/001_phase1_identity_tenancy_rls.sql`.
 - Teste local de hardening em `supabase/tests/002_phase1_1_hardening.sql`.
 - Teste local de control plane administrativo em `supabase/tests/003_phase1_2_admin_control_plane.sql`.
@@ -129,6 +131,7 @@ Documentos históricos:
 - Teste local do backend do vínculo ticket -> Knowledge Base em `supabase/tests/021_phase6_15_ticket_knowledge_linking_backend.sql`.
 - Teste local do contrato de revisão editorial para artigos publicados em `supabase/tests/022_phase7_4_knowledge_editorial_revision.sql`.
 - Teste local do fluxo operacional de tickets em `supabase/tests/023_support_ticket_operational_flow.sql`.
+- Teste local do intake operacional de tickets em `supabase/tests/024_support_ticket_creation_and_intake.sql`.
 - Seed separado em `supabase/seeds/` e desabilitado por padrão.
 - Fluxo de bootstrap seguro do primeiro `platform_admin` em `supabase/bootstrap/`.
 - Núcleo Fase 1 implementado com `profiles`, `user_global_roles`, `tenants`, `tenant_memberships`, `tenant_contacts` e `audit.audit_logs`.
@@ -148,6 +151,7 @@ Documentos históricos:
 - View contratual administrativa advisory materializada em `vw_admin_knowledge_article_review_advisories`.
 - Views contratuais públicas endurecidas materializadas em `vw_public_knowledge_space_resolver`, `vw_public_knowledge_navigation`, `vw_public_knowledge_articles_list` e `vw_public_knowledge_article_detail`.
 - Views contratuais do Support Workspace materializadas em `vw_support_tickets_queue`, `vw_support_ticket_detail`, `vw_support_ticket_timeline`, `vw_support_ticket_timeline_recent`, `vw_support_customer_360`, `vw_support_customer_recent_tickets` e `vw_support_customer_recent_events`.
+- Views contratuais de intake do Support Workspace materializadas em `vw_support_ticket_intake_tenants` e `vw_support_ticket_intake_contacts`.
 - Diretório contratual de agentes atribuíveis do Support Workspace materializado em `vw_support_assignable_agents`.
 - Views contratuais do Customer Account Profile materializadas em `vw_support_customer_account_context` e `vw_admin_customer_account_profiles`.
 - Views contratuais do vínculo ticket -> Knowledge Base materializadas em `vw_support_ticket_knowledge_links`, `vw_support_knowledge_article_picker` e `vw_customer_portal_ticket_knowledge_links`.
@@ -160,6 +164,7 @@ Documentos históricos:
 - RPCs administrativas do Customer Account Profile materializadas em `rpc_admin_upsert_customer_account_profile`, `rpc_admin_add_customer_integration`, `rpc_admin_update_customer_integration`, `rpc_admin_add_customer_customization`, `rpc_admin_update_customer_customization`, `rpc_admin_add_customer_account_alert`, `rpc_admin_archive_customer_account_alert` e `rpc_admin_set_customer_feature_flag`.
 - RPCs contratuais do vínculo ticket -> Knowledge Base materializadas em `rpc_support_link_ticket_article`, `rpc_support_archive_ticket_article_link`, `rpc_support_mark_documentation_gap` e `rpc_support_mark_article_needs_update`.
 - RPC contratual de timeline paginada materializada em `rpc_support_get_ticket_timeline`.
+- O intake operacional de `/support/queue` agora abre tickets somente por `rpc_create_ticket`, sem leitura direta de `tenants` ou `tenant_contacts`.
 - `authenticated` não possui `SELECT`, `INSERT`, `UPDATE` nem `DELETE` direto nas tabelas base de ticketing; o app lê via views e escreve via RPCs.
 - Pacote `packages/contracts` materializado com tipos TypeScript para views e RPCs de ticketing.
 - Pacote `packages/contracts` agora também materializa tipos TypeScript para os read models do Support Workspace.

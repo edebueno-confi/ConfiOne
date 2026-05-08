@@ -104,7 +104,8 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 - Objetivo: transformar o ticket workspace em superficie diaria de atendimento B2B.
 - Entregaveis: criacao de ticket, conversa completa, nota interna, status/responsavel, fechamento/reabertura, Knowledge vinculada e handoff tecnico registrado.
 - Status Fase 8.2: `rpc_create_ticket`, mutacoes principais, audit trail, eventos, timeline paginada e candidato seguro de link publico foram validados/materializados.
-- Contratos ainda necessarios: planejar anexos; desenhar criacao assistida de ticket na UI; criar entidade de handoff tecnico; definir SLA/motivo se entrar no produto.
+- Status Fase 8.6: `/support/queue` passou a abrir tickets por intake real com `vw_support_ticket_intake_tenants`, `vw_support_ticket_intake_contacts` e `rpc_create_ticket`, sem criar categoria inicial fake nem leitura direta de tabela-base.
+- Contratos ainda necessarios: anexos; handoff/escalation técnico; categoria inicial formal; SLA/motivo se entrar no produto.
 - Riscos: expor nota interna ao cliente, criar transicao invalida de status, enviar artigo sem URL publica segura.
 - Dependencias: RLS de ticketing, auditoria de eventos e regra de permissao por role.
 - Criterios de aceite: todo comando passa por RPC, toda mutacao gera evento/audit trail, frontend nao monta URL publica por heuristica.
@@ -161,44 +162,45 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 
 ## Proximo lote tecnico recomendado
 
-### Lote: Support Ticket Creation And Intake V3
+### Lote: Support Ticket Attachments And Escalation V3
 
-Objetivo: materializar o fluxo operacional de criacao/intake de tickets no Support Workspace, usando `rpc_create_ticket` e read models reais, sem criar formulario fake e sem misturar ticket com backlog tecnico.
+Objetivo: fechar o proximo bloco real do ticket workspace com anexos auditaveis, registro de handoff tecnico e escalation controlada, sem criar omnichannel, backlog tecnico solto ou mutacao sem contrato.
 
 Ordem sugerida:
-1. Auditar `rpc_create_ticket`, contatos por tenant e fila atual.
-2. Definir superficie de intake em `/support/queue` ou rota dedicada, preservando o cockpit V3.
-3. Conectar criacao de ticket a tenant, requester_contact_id, source, priority, title e description reais.
-4. Garantir audit log e evento `ticket_created`.
-5. Criar estados honestos para contatos/tenant ausentes.
-6. Criar testes de UI, typecheck, build e pgTAP se o contrato backend precisar ajuste.
+1. Auditar contrato atual de anexos e ausencia de entidade de escalation/handoff.
+2. Definir schema proprio para anexos e handoff tecnico, sem misturar com mensagens livres.
+3. Criar read models e RPCs operacionais para anexar evidencias e registrar escalation.
+4. Conectar o workspace sem expor payload tecnico cru nem abrir upload fake.
+5. Validar audit trail, tenant isolation e estados honestos de indisponibilidade.
+6. Cobrir com pgTAP, fixture QA, typecheck, build e validacao visual.
 
 Migrations necessarias:
-- Somente se o contrato atual de `rpc_create_ticket` nao cobrir algum campo obrigatorio do intake.
+- Sim, para anexos e entidade de escalation/handoff tecnico.
 
 Views necessarias:
-- Confirmar read models de contatos/tenant disponiveis para suporte.
-- Confirmar fila apos criacao do ticket.
+- Read models de anexos por ticket.
+- Read models de handoff/escalation por ticket.
 
 RPCs necessarias:
-- Usar `rpc_create_ticket`.
+- Upload/metadado governado de anexo.
+- Registro de escalation/handoff tecnico.
 - Nao criar DML direto do frontend.
 
 RLS/policies:
-- Support/admin devem criar ticket apenas em tenant autorizado.
-- Contato requester deve pertencer ao mesmo tenant.
+- Anexo e handoff devem respeitar o mesmo tenant do ticket.
+- Conteudo interno e tecnico nao pode vazar para requester nem help publico.
 
 Audit logs:
-- Criacao de ticket precisa gerar audit trail e evento operacional.
+- Toda criacao/arquivo/escalação precisa gerar audit trail e evento operacional.
 
 Fixtures/testes:
-- Tenant com contatos validos.
-- Tenant sem contato ou com dado ausente para estado `Indisponivel`.
-- Ticket criado aparece na fila.
+- Ticket com anexos publicos e internos.
+- Handoff tecnico criado e visivel no contexto certo.
+- Estados indisponiveis quando nao houver contrato ou payload permitido.
 
 Impacto no front:
-- Atualizar `/support/queue` ou entrada equivalente com formulario operacional.
-- Nao criar status, SLA ou roteamento sem contrato backend.
+- Atualizar `/support/tickets/:ticketId` com anexos e trilha de escalation.
+- Nao criar upload falso, chat omnichannel ou backlog tecnico paralelo.
 
 ## Decisoes que ainda dependem de Produto
 - Se Support e Admin devem convergir em um App Shell unico.
