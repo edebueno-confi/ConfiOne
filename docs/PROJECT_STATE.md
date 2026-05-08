@@ -1426,6 +1426,37 @@ Documentos históricos:
   - Pendencias mapeadas sem implementacao nesta fase:
     - proximos lotes de politica financeira de estorno devem continuar por recorte editorial do subcluster
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.31: Knowledge IntegracoesGateway Subcluster Prep V3 concluido como preparacao documental do subcluster de integracoes e gateway.
+  - O mapa do subcluster foi criado em `docs/knowledge/KNOWLEDGE_INTEGRACOES_GATEWAY_SUBCLUSTER_PREP.md`.
+  - A fase analisou os artigos ligados a:
+    - permissoes VTEX
+    - erro de autorizacao ao acessar pedidos na VTEX
+    - erro ao tentar realizar o estorno como sintoma dependente de status externo
+    - estorno automatico via Pix com dependencia de gateway
+    - automacao de estorno e vale-compra por status
+    - configuracoes de seller ligadas a estorno e logistica
+  - As fronteiras editoriais foram registradas para separar:
+    - orientacao publica segura e de alto nivel
+    - credenciais, tokens e permissoes internas
+    - gateway, integracao externa e procedimentos tecnicos
+    - seller, responsabilidade financeira e configuracao operacional sensivel
+  - A recomendacao do subcluster foi mantida como:
+    - `bloquear por risco`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos lotes devem seguir por subcluster ou por recorte seguro validado
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.

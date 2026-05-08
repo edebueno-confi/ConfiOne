@@ -279,6 +279,8 @@
   - `docs/knowledge/KNOWLEDGE_ESTORNO_TROUBLESHOOTING_SUBCLUSTER_PREP.md`
 - Preparação editorial específica do subcluster de cálculo e limites de estorno registrada em:
   - `docs/knowledge/KNOWLEDGE_ESTORNO_CALCULO_LIMITES_SUBCLUSTER_PREP.md`
+- Preparação editorial específica do subcluster de integrações e gateway registrada em:
+  - `docs/knowledge/KNOWLEDGE_INTEGRACOES_GATEWAY_SUBCLUSTER_PREP.md`
 
 ### Clusters candidatos
 

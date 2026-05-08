@@ -167,6 +167,8 @@
 - Suporte/CS necessário: `não`
 - observação objetiva:
   - o cluster depende de credenciais, permissões e comportamento externo do gateway/plataforma
+- preparação editorial específica registrada em:
+  - `docs/knowledge/KNOWLEDGE_INTEGRACOES_GATEWAY_SUBCLUSTER_PREP.md`
 
 ### 7. Erros e troubleshooting de estorno
 - descrição:

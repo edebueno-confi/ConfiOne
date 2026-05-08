@@ -18,6 +18,33 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.31 - Knowledge IntegracoesGateway Subcluster Prep V3
+- fase: `7.31`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: o subcluster `Integrações e gateway` foi preparado documentalmente com leitura dos artigos fonte, separação entre permissões VTEX, credenciais, erro de autorização, gateway, dependências externas, Pix integrado e governança de seller, além de definição de fronteiras editoriais e de possíveis canônicos futuros, sem reescrever artigos completos, aprovar ou publicar conteúdo.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_INTEGRACOES_GATEWAY_SUBCLUSTER_PREP.md`
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_SUBCLUSTERS.md`
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+- riscos restantes:
+  - o subcluster continua sensivel por tocar credenciais, permissões, gateway, seller e comportamento externo
+  - qualquer futura abertura publica depende de recorte novo e validacao explicita de Produto, Engenharia e Suporte/CS
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - impede que integracoes, credenciais e troubleshooting de gateway sejam diluidos indevidamente nos artigos publicos de estorno
+
 ### Fase 7.27 - Knowledge RegrasMotivo Subcluster Prep V3
 - fase: `7.27`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`
