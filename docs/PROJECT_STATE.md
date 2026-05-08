@@ -1671,6 +1671,33 @@ Documentos históricos:
     - coletar evidencia humana real para os `8` candidatos
     - manter bloqueados os temas de Pix, calculo, integracoes, Correios, contratos, sellers e troubleshooting tecnico sensivel
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.39: Knowledge Human Review Distribution Pack V3 concluido como pacote operacional de envio para revisao humana.
+  - O pacote operacional foi criado em:
+    - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_DISTRIBUTION_PACK.md`
+  - A fase consolidou para os `8` candidatos:
+    - pacote copiavel para `Produto`
+    - pacote copiavel para `Suporte/CS`
+    - resumo por artigo para revisao humana
+    - criterios objetivos de decisao por area
+    - mensagens prontas para envio
+    - tabela de resposta esperada iniciada como `pendente`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Proxima acao real:
+    - enviar o pacote para `Produto` e `Suporte/CS`
+    - registrar respostas formais em `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`
+    - manter os `8` candidatos como `pendente` ate evidencia humana explicita
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -1692,7 +1719,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Coletar e registrar evidencia humana real dos `8` candidatos publicos ja prontos, mantendo todo o restante do corpus fora da publicacao ate aprovacao explicita de `Produto` e `Suporte/CS` no repositório.
+Enviar o pacote operacional de revisao humana para `Produto` e `Suporte/CS` e registrar as respostas formais no `KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`; todos os `8` candidatos seguem pendentes ate evidencia humana explicita.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único

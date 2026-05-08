@@ -288,3 +288,5 @@ Nenhum override pode permitir publicacao de:
   - `docs/knowledge/KNOWLEDGE_REMAINING_CORPUS_CLOSURE.md`
 - o pacote final de prontidao da Knowledge Base legada ficou registrado em:
   - `docs/knowledge/KNOWLEDGE_LEGACY_CORPUS_FINAL_READINESS_PACK.md`
+- o pacote operacional copiavel para distribuicao da revisao humana ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_DISTRIBUTION_PACK.md`

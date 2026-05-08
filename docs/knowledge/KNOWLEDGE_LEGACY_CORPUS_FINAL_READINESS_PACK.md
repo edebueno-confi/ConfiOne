@@ -138,6 +138,8 @@ Os temas abaixo devem permanecer fora de novas reescritas publicas ate haver nov
 - o proximo passo e coletar evidencia humana real para os `8` candidatos
 - sem evidencia, todos continuam `pendente`
 - publicacao so deve virar lote depois da aprovacao explicita registrada em repositório
+- o pacote operacional copiavel para envio a Produto e Suporte/CS ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_DISTRIBUTION_PACK.md`
 
 ## Decisao final desta etapa
 

@@ -18,6 +18,31 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.39 - Knowledge Human Review Distribution Pack V3
+- fase: `7.39`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: o pacote operacional de distribuicao para revisao humana foi criado, com mensagens copiaveis para Produto e Suporte/CS, resumos por artigo, criterios objetivos de validacao, decisao esperada e tabela inicial de resposta para os `8` candidatos publicos.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_DISTRIBUTION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_LEGACY_CORPUS_FINAL_READINESS_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+- riscos restantes:
+  - os `8` candidatos publicos continuam pendentes por ausencia de evidencia humana real
+  - respostas genericas, ambiguas ou sem decisao por artigo nao aprovam publicacao
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - transforma a etapa de validacao humana em pacote operacional enviavel, sem alterar status editorial nem iniciar publicacao
+
 ### Fase 7.38 - Knowledge Legacy Corpus Final Readiness Pack V3
 - fase: `7.38`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`
