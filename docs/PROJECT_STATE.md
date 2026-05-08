@@ -71,9 +71,10 @@ Documentos históricos:
 - O Support Ticket Workspace agora possui timeline paginada por RPC real e contrato dedicado para candidatos seguros de link público de Knowledge.
 - O lote `Customer Account Profile Operational Core V3` materializou o segundo bloco operacional do buildout: perfil de cliente B2B consumido por Support Customers e pelo rail do Ticket Workspace, com leitura por views e escrita administrativa por RPC.
 - O lote `Knowledge Admin Operational Governance V3` endureceu a governanca editorial operacional: publicacao publica v2 agora exige gate backend de evidencia humana revisada e checklist humano completo antes de expor qualquer artigo publico.
+- O lote `Access System Observability Hardening V3` materializou read models dedicados para `/admin/access` e `/admin/system`, sanitizou audit events administrativos, conectou as telas aos contratos reais e preparou contexto Impeccable com `PRODUCT.md` e `DESIGN.md`.
 - Nenhuma ação fake foi habilitada no frontend; ações sem contrato completo seguem bloqueadas para lote futuro.
 - Os 8 candidatos documentais da Knowledge continuam pendentes, nao aprovados, nao publicados e nao injetados automaticamente no Help Center.
-- Próximo bloco recomendado: `Access System Observability Hardening V3`.
+- Próximo bloco recomendado: `Support Ticket Creation And Intake V3`.
 
 ## Estado real do repositório em 2026-04-30
 

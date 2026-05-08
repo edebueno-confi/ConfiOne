@@ -47,6 +47,19 @@ Fase 3.2:
 - `authenticated` não possui mais `SELECT` direto em `public.profiles`.
 - A tela `Access` usa nome/email -> `user_id` pela view contratual e mantém fallback manual controlado apenas quando necessário.
 
+Fase Access/System Hardening V3:
+- `/admin/access` agora possui read models dedicados de control plane:
+  - `vw_admin_access_users`
+  - `vw_admin_access_user_detail`
+  - `vw_admin_access_memberships`
+- `/admin/system` agora possui read models dedicados de observabilidade segura:
+  - `vw_admin_system_audit_events`
+  - `vw_admin_system_health_checks`
+  - `vw_admin_system_operational_summary`
+- `vw_admin_system_audit_events` substitui a leitura bruta de `vw_admin_audit_feed` na tela System e nao expoe `metadata`, `before_state` ou `after_state` brutos.
+- Severidade, servico, acao, impacto e contexto sanitizado do audit feed administrativo sao derivados no backend.
+- `rpc_admin_add_tenant_member`, `rpc_admin_update_tenant_member_role` e `rpc_admin_update_tenant_member_status` foram endurecidas contra autopromocao e transicoes fora do contrato.
+
 Fase 4:
 - Knowledge Base agora possui núcleo editorial real com views internas contratuais e RPCs administrativas próprias.
 - O frontend administrativo futuro deve consumir a superfície de leitura apenas por:

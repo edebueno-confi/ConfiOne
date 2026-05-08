@@ -2454,3 +2454,43 @@ Cada registro deve informar:
   - `npm run web:typecheck`
 - impacto na FAQ futura:
   - encerra a fase de classificação do corpus legado completo e desloca o próximo passo real para validação humana dos candidatos prontos, em vez de continuar abrindo micro-lotes documentais
+### Fase 8.5 - Access System Observability Hardening V3
+- fase: `8.5`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: governanca operacional de acesso e observabilidade administrativa endurecida com contexto Impeccable (`PRODUCT.md` e `DESIGN.md`), read models dedicados para `/admin/access` e `/admin/system`, audit feed sanitizado e telas conectadas aos contratos reais.
+- docs alterados:
+  - `PRODUCT.md`
+  - `DESIGN.md`
+  - `docs/ACCESS_SYSTEM_OBSERVABILITY_HARDENING_V3.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - `/admin/access`
+  - `/admin/system`
+- views/RPCs afetadas:
+  - `vw_admin_access_users`
+  - `vw_admin_access_user_detail`
+  - `vw_admin_access_memberships`
+  - `vw_admin_system_audit_events`
+  - `vw_admin_system_health_checks`
+  - `vw_admin_system_operational_summary`
+  - `rpc_admin_add_tenant_member`
+  - `rpc_admin_update_tenant_member_role`
+  - `rpc_admin_update_tenant_member_status`
+- riscos restantes:
+  - convite formal e reset de senha seguem sem contrato de dominio dedicado
+  - observabilidade externa real ainda depende de lote proprio
+  - motivo obrigatorio em mutacoes de acesso pode ser adicionado se Produto exigir evidencia granular
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+- impacto na FAQ futura:
+  - nenhum; lote tecnico de plataforma, sem publicacao ou alteracao de corpus Knowledge

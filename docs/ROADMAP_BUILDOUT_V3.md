@@ -29,8 +29,8 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 | `/access-denied` | pronta | gate de auth/roles | manter copy operacional e caminhos de retorno | baixo |
 | `/admin/tenants` | visual pronta, funcional parcial | `vw_admin_tenants_list`, `vw_admin_tenant_detail`, `vw_admin_tenant_memberships`, RPCs de tenant/membro/contato | falta operar ciclo completo de cliente B2B com historico e governanca de contato | medio |
 | `/admin/knowledge` | visual pronta, funcional parcial | `vw_admin_knowledge_*`, `vw_admin_knowledge_*_v2`, RPCs admin de Knowledge, advisories | falta fluxo operacional de publicacao governada, backlog de revisao e importacao controlada do corpus | alto |
-| `/admin/access` | parcial | `vw_admin_auth_context`, `vw_admin_user_lookup`, memberships | falta hardening de concessao/revogacao e trilha clara de auditoria para acesso | alto |
-| `/admin/system` | parcial | `vw_admin_audit_feed` e leituras administrativas | falta observabilidade operacional, health real e incident hints sem expor internals | medio |
+| `/admin/access` | funcional parcial com hardening operacional | `vw_admin_access_users`, `vw_admin_access_user_detail`, `vw_admin_access_memberships`, RPCs de membership endurecidas | falta convite formal, reset de senha e motivo obrigatorio por mutacao se Produto exigir | medio |
+| `/admin/system` | funcional parcial com observabilidade segura | `vw_admin_system_audit_events`, `vw_admin_system_health_checks`, `vw_admin_system_operational_summary` | falta observabilidade externa real e incident hints de fontes alem do banco local | medio |
 | `/support/queue` | visual pronta, funcional parcial | `vw_support_tickets_queue`, `vw_support_customer_360`, `vw_support_assignable_agents` | falta criacao operacional de ticket e filtros/sinais persistidos por contrato | medio |
 | `/support/tickets/:ticketId` | funcional parcial com contrato operacional fechado | `vw_support_ticket_detail`, `vw_support_ticket_timeline_recent`, `rpc_support_get_ticket_timeline`, `vw_support_customer_account_context`, RPCs de status, responsavel, mensagem, nota, fechar/reabrir | faltam anexos, SLA, classificacao, criacao assistida e trilha de handoff tecnico | alto |
 | `/support/customers` | visual pronta, funcional parcial | `vw_support_customer_360`, `vw_support_customer_account_context` | falta busca/filtros operacionais persistidos e criacao/edicao governada de perfil de conta | medio |
@@ -46,9 +46,9 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 | Lacuna | Tipo | Observacao |
 | --- | --- | --- |
 | Operar tenants/clientes B2B como conta operacional completa | precisa contrato de leitura, RPC/mutacao, RLS/policy e auditoria | tenant existe, mas perfil operacional ainda depende de consolidacao entre Admin e Support |
-| Concessao/revogacao de acesso com evidencia operacional | precisa RPC/mutacao, RLS/policy e auditoria | qualquer mudanca de role deve registrar ator, alvo, motivo e escopo |
+| Concessao/revogacao de acesso com evidencia operacional | parcialmente entregue; falta decisao de produto sobre motivo obrigatorio | RPCs de membership foram endurecidas e auditadas; convite formal/reset de senha continuam fora do corte |
 | Governance de Knowledge alem do CRUD | precisa contrato de leitura, RPC/mutacao e documentacao | falta fila de revisao real, pendencias, bloqueios e publicacao segura |
-| System/audit/observability acionavel | precisa contrato de leitura e decisao de produto | deve mostrar saude e auditoria sem expor logs sensiveis ou detalhes internos |
+| System/audit/observability acionavel | parcialmente entregue; falta observabilidade externa real | System agora consome audit feed sanitizado, health checks reais/indisponiveis e summary operacional sem payload bruto |
 
 ### Support
 
@@ -143,6 +143,7 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 ### Fase F: Access/System hardening
 - Objetivo: fechar governanca de acesso, auditoria e observabilidade operacional.
 - Entregaveis: gestao de roles/memberships, auditoria navegavel, eventos de sistema, health operacional e trilhas de seguranca.
+- Status: `Access System Observability Hardening V3` materializou `vw_admin_access_users`, `vw_admin_access_user_detail`, `vw_admin_access_memberships`, `vw_admin_system_audit_events`, `vw_admin_system_health_checks` e `vw_admin_system_operational_summary`; `/admin/access` e `/admin/system` passaram a consumir contratos reais e o audit feed de System deixou de expor payload bruto.
 - Contratos necessarios: views de auth context, audit feed, user lookup e RPCs de membership; possivel view de health operacional.
 - Riscos: escalacao indevida de role, exposicao de logs/secrets, falso senso de observabilidade.
 - Dependencias: politica de acesso por papel e taxonomia de eventos.
@@ -160,52 +161,44 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 
 ## Proximo lote tecnico recomendado
 
-### Lote: Access System Observability Hardening V3
+### Lote: Support Ticket Creation And Intake V3
 
-Objetivo: fechar o proximo bloco real do buildout em governanca de acesso, auditoria e observabilidade operacional, sem expor logs sensiveis, secrets ou detalhes internos na UI.
+Objetivo: materializar o fluxo operacional de criacao/intake de tickets no Support Workspace, usando `rpc_create_ticket` e read models reais, sem criar formulario fake e sem misturar ticket com backlog tecnico.
 
 Ordem sugerida:
-1. Auditar `vw_admin_auth_context`, `vw_admin_user_lookup`, memberships, roles e `vw_admin_audit_feed`.
-2. Fechar read models para auditoria operacional navegavel e health seguro, se as views atuais nao bastarem.
-3. Criar ou validar RPCs de concessao/revogacao de acesso com motivo, ator, alvo e escopo.
-4. Garantir que nenhum segredo, token, endpoint interno, payload ou log bruto apareca em `/admin/system`.
-5. Conectar `/admin/access` e `/admin/system` aos contratos endurecidos, mantendo acoes sem contrato desabilitadas.
-6. Criar testes de RLS/grants/audit para escalacao de papel e acesso cross-tenant.
-7. Validar visualmente Admin Access/System com typecheck, build e smoke em viewport real.
+1. Auditar `rpc_create_ticket`, contatos por tenant e fila atual.
+2. Definir superficie de intake em `/support/queue` ou rota dedicada, preservando o cockpit V3.
+3. Conectar criacao de ticket a tenant, requester_contact_id, source, priority, title e description reais.
+4. Garantir audit log e evento `ticket_created`.
+5. Criar estados honestos para contatos/tenant ausentes.
+6. Criar testes de UI, typecheck, build e pgTAP se o contrato backend precisar ajuste.
 
 Migrations necessarias:
-- Provavelmente necessarias para motivo obrigatorio em mutacoes de acesso, eventos de seguranca ou read model de health operacional.
+- Somente se o contrato atual de `rpc_create_ticket` nao cobrir algum campo obrigatorio do intake.
 
 Views necessarias:
-- Confirmar `vw_admin_auth_context`.
-- Confirmar `vw_admin_user_lookup`.
-- Confirmar `vw_admin_audit_feed`.
-- Criar read model de health/observabilidade apenas se houver fonte real segura.
+- Confirmar read models de contatos/tenant disponiveis para suporte.
+- Confirmar fila apos criacao do ticket.
 
 RPCs necessarias:
-- Confirmar RPCs existentes de membership.
-- Endurecer ou criar RPCs de concessao/revogacao com motivo e audit log explicito.
-- Bloquear DML direto do frontend.
+- Usar `rpc_create_ticket`.
+- Nao criar DML direto do frontend.
 
 RLS/policies:
-- Platform admin opera globalmente por contrato.
-- Roles comuns nao devem ler nem escrever superficie administrativa.
-- Nenhum read model deve expor segredo, token, payload bruto ou log sensivel.
+- Support/admin devem criar ticket apenas em tenant autorizado.
+- Contato requester deve pertencer ao mesmo tenant.
 
 Audit logs:
-- Mutacoes de acesso, roles, memberships, status administrativo e health actions precisam gerar audit trail.
+- Criacao de ticket precisa gerar audit trail e evento operacional.
 
 Fixtures/testes:
-- Platform admin valido.
-- Usuario autenticado sem papel administrativo.
-- Membership cross-tenant.
-- Tentativa de escalacao de role bloqueada.
-- Auditoria gerada para concessao, alteracao e revogacao.
+- Tenant com contatos validos.
+- Tenant sem contato ou com dado ausente para estado `Indisponivel`.
+- Ticket criado aparece na fila.
 
 Impacto no front:
-- Atualizar `/admin/access` e `/admin/system` para consumir apenas contratos reais.
-- Manter acoes indisponiveis quando nao houver RPC segura.
-- Evitar termos tecnicos crus, segredos, payloads e logs internos na UI.
+- Atualizar `/support/queue` ou entrada equivalente com formulario operacional.
+- Nao criar status, SLA ou roteamento sem contrato backend.
 
 ## Decisoes que ainda dependem de Produto
 - Se Support e Admin devem convergir em um App Shell unico.
