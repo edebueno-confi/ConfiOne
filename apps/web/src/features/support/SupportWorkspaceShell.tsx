@@ -190,7 +190,6 @@ function SupportSidebar({
       <nav className="mt-5 grid gap-1">
         {navigation.map((item) => {
           const active = item.isActive(location.pathname);
-          const badgeLabel = item.label === 'Fila' ? '8' : item.label === 'Tickets' ? '12' : '';
 
           return (
             <Link
@@ -216,16 +215,6 @@ function SupportSidebar({
                 <SupportNavIcon active={active} icon={item.icon} />
               </span>
               {!collapsed ? <span className="min-w-0 truncate">{item.label}</span> : null}
-              {!collapsed && badgeLabel ? (
-                <span
-                  className={cx(
-                    'ml-auto inline-flex min-h-4.5 min-w-4.5 items-center justify-center rounded-full px-1.5 text-[9px] font-semibold',
-                    active ? 'bg-white/16 text-white' : 'bg-white/10 text-white/82',
-                  )}
-                >
-                  {badgeLabel}
-                </span>
-              ) : null}
             </Link>
           );
         })}
