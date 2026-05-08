@@ -1576,6 +1576,38 @@ Documentos históricos:
   - Pendencias mapeadas sem implementacao nesta fase:
     - o candidato depende de validacao humana de `Produto` e `Suporte/CS`
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.36: Knowledge Logistica Safe Rewrites And Closure V3 concluido como fechamento documental do cluster de logistica reversa e postagem.
+  - As novas versoes candidatas foram criadas em:
+    - `docs/knowledge/KNOWLEDGE_PENDENCIA_LOGISTICA_REVERSA_REWRITE.md`
+    - `docs/knowledge/KNOWLEDGE_CEP_ENDERECO_POSTAGEM_REWRITE.md`
+  - O fechamento executivo do cluster foi consolidado em:
+    - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_CLOSURE.md`
+  - A fase fechou os tres recortes seguros do cluster:
+    - prazo de postagem
+    - pendencia de logistica reversa
+    - CEP ou endereco impedindo postagem
+  - O cluster manteve explicitamente fora da trilha publica:
+    - integracao com Correios
+    - contrato, token e autorizacao tecnica
+    - governanca de seller e roteamento logistico
+    - regra manual de nao gerar logistica reversa
+    - procedimentos internos de backoffice
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - os tres candidatos dependem de validacao humana de `Produto` e `Suporte/CS`
+    - a publicacao continua bloqueada ate evidencia humana real
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.

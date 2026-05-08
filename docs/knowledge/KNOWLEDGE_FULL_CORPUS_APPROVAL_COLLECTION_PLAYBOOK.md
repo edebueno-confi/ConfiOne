@@ -33,6 +33,9 @@ Para o cluster `Logística reversa e postagem`, usar como referência prévia:
 - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_PREP.md`
 - `docs/knowledge/KNOWLEDGE_PRAZO_PENDENCIAS_POSTAGEM_SUBCLUSTER_PREP.md`
 - `docs/knowledge/KNOWLEDGE_PRAZO_POSTAGEM_REWRITE.md`
+- `docs/knowledge/KNOWLEDGE_PENDENCIA_LOGISTICA_REVERSA_REWRITE.md`
+- `docs/knowledge/KNOWLEDGE_CEP_ENDERECO_POSTAGEM_REWRITE.md`
+- `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_CLOSURE.md`
 
 ## Template único para Produto
 

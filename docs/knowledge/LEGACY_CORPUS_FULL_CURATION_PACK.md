@@ -289,6 +289,12 @@
   - `docs/knowledge/KNOWLEDGE_PRAZO_PENDENCIAS_POSTAGEM_SUBCLUSTER_PREP.md`
 - Versão candidata pública de prazo de postagem registrada em:
   - `docs/knowledge/KNOWLEDGE_PRAZO_POSTAGEM_REWRITE.md`
+- Versão candidata pública de pendência de logística reversa registrada em:
+  - `docs/knowledge/KNOWLEDGE_PENDENCIA_LOGISTICA_REVERSA_REWRITE.md`
+- Versão candidata pública de CEP ou endereço impedindo postagem registrada em:
+  - `docs/knowledge/KNOWLEDGE_CEP_ENDERECO_POSTAGEM_REWRITE.md`
+- Fechamento executivo do cluster de logística reversa e postagem registrado em:
+  - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_CLOSURE.md`
 
 ### Clusters candidatos
 

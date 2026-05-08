@@ -437,3 +437,9 @@
   - `docs/knowledge/KNOWLEDGE_PRAZO_PENDENCIAS_POSTAGEM_SUBCLUSTER_PREP.md`
 - a versão candidata pública de prazo de postagem ficou registrada em:
   - `docs/knowledge/KNOWLEDGE_PRAZO_POSTAGEM_REWRITE.md`
+- a versão candidata pública de pendência de logística reversa ficou registrada em:
+  - `docs/knowledge/KNOWLEDGE_PENDENCIA_LOGISTICA_REVERSA_REWRITE.md`
+- a versão candidata pública de CEP ou endereço impedindo postagem ficou registrada em:
+  - `docs/knowledge/KNOWLEDGE_CEP_ENDERECO_POSTAGEM_REWRITE.md`
+- o fechamento executivo do cluster ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_CLOSURE.md`

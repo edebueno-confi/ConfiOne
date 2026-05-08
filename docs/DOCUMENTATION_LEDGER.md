@@ -2172,3 +2172,32 @@ Cada registro deve informar:
   - `npm run web:typecheck`
 - impacto na FAQ futura:
   - mantém cálculo, teto e política financeira fora do canônico de estorno e prepara futuras decisões por subcluster, não por artigo isolado
+### Fase 7.36 - Knowledge Logistica Safe Rewrites And Closure V3
+- fase: `7.36`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: o cluster `Logística reversa e postagem` foi fechado documentalmente com criação de dois novos candidatos públicos seguros, `Como revisar uma pendência de logística reversa na operação` e `O que revisar quando o CEP ou endereço impede a postagem`, além da consolidação executiva do cluster em documento próprio.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_PENDENCIA_LOGISTICA_REVERSA_REWRITE.md`
+  - `docs/knowledge/KNOWLEDGE_CEP_ENDERECO_POSTAGEM_REWRITE.md`
+  - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_CLOSURE.md`
+  - `docs/knowledge/KNOWLEDGE_PRAZO_PENDENCIAS_POSTAGEM_SUBCLUSTER_PREP.md`
+  - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_PREP.md`
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - nenhuma
+- views/RPCs afetadas:
+  - nenhuma alteracao de backend
+  - nenhuma view ou RPC nova
+- riscos restantes:
+  - os tres candidatos seguros ainda dependem de validacao humana de `Produto` e `Suporte/CS`
+  - o legado do cluster continua com forte dependência de backoffice, integração Correios, contrato, token e seller
+  - qualquer futura abertura pública fora dos três recortes seguros exigirá novo recorte editorial e validação adicional
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - encerra o cluster de logística reversa e postagem com três candidatos públicos seguros mapeados e com fronteira explícita para tudo que deve continuar interno ou bloqueado
