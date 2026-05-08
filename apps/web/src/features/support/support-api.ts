@@ -31,6 +31,8 @@ import type {
   RpcUpdateTicketStatusPayload,
   RpcUpdateTicketStatusResponse,
   SupportAssignableAgent,
+  SupportTicketIntakeContact,
+  SupportTicketIntakeTenant,
   SupportCustomerAccountAlert,
   SupportCustomerAccountContext,
   SupportCustomerAccountCustomization,
@@ -479,6 +481,38 @@ export async function getSupportTicketTimelineRecent(
   };
 }
 
+function mapSupportTicketIntakeTenant(
+  row: Record<string, unknown>,
+): SupportTicketIntakeTenant {
+  return {
+    tenantId: String(row.tenant_id),
+    tenantSlug: String(row.tenant_slug),
+    tenantDisplayName: (row.tenant_display_name as string | null) ?? null,
+    tenantLegalName: (row.tenant_legal_name as string | null) ?? null,
+    tenantStatus: String(row.tenant_status),
+    tenantCreatedAt: String(row.tenant_created_at),
+    tenantUpdatedAt: String(row.tenant_updated_at),
+    activeContactsCount: Number(row.active_contacts_count ?? 0),
+    hasActiveContacts: Boolean(row.has_active_contacts),
+  };
+}
+
+function mapSupportTicketIntakeContact(
+  row: Record<string, unknown>,
+): SupportTicketIntakeContact {
+  return {
+    id: String(row.id),
+    tenantId: String(row.tenant_id),
+    linkedUserId: (row.linked_user_id as string | null) ?? null,
+    fullName: String(row.full_name),
+    email: String(row.email),
+    phone: (row.phone as string | null) ?? null,
+    jobTitle: (row.job_title as string | null) ?? null,
+    isPrimary: Boolean(row.is_primary),
+    createdAt: String(row.created_at),
+  };
+}
+
 interface GetSupportTicketTimelinePageOptions {
   limit?: number;
   beforeOccurredAt?: string | null;
@@ -617,6 +651,41 @@ export async function listSupportAssignableAgents(tenantId: Uuid) {
   }
 
   return (data ?? []).map((row) => mapAssignableAgent(row as Record<string, unknown>));
+}
+
+export async function listSupportTicketIntakeTenants() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_support_ticket_intake_tenants')
+    .select('*')
+    .order('tenant_display_name', { ascending: true, nullsFirst: false })
+    .order('tenant_legal_name', { ascending: true, nullsFirst: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar os clientes elegíveis para abrir ticket.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapSupportTicketIntakeTenant(row as Record<string, unknown>),
+  );
+}
+
+export async function listSupportTicketIntakeContacts(tenantId: Uuid) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_support_ticket_intake_contacts')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .order('is_primary', { ascending: false })
+    .order('full_name', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar os contatos elegíveis para abrir ticket.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapSupportTicketIntakeContact(row as Record<string, unknown>),
+  );
 }
 
 export async function getSupportTicketKnowledgeLinks(ticketId: Uuid) {

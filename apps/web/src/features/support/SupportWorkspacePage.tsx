@@ -44,6 +44,7 @@ import {
   archiveSupportTicketArticleLink,
   assignTicket,
   closeTicket,
+  createTicket,
   getSupportCustomerAccountContext,
   getSupportCustomer360,
   getSupportCustomerRecentEvents,
@@ -54,6 +55,8 @@ import {
   getSupportTicketTimelineRecent,
   linkSupportTicketArticle,
   listSupportAssignableAgents,
+  listSupportTicketIntakeContacts,
+  listSupportTicketIntakeTenants,
   listSupportKnowledgeArticlePicker,
   listSupportCustomers360,
   markSupportArticleNeedsUpdate,
@@ -65,6 +68,7 @@ import {
 import {
   TICKET_PRIORITIES,
   TICKET_SEVERITIES,
+  TICKET_SOURCES,
   TICKET_STATUSES,
   type KnowledgeArticleStatus,
   type KnowledgeArticleVisibility,
@@ -81,6 +85,8 @@ import {
   type SupportCustomer360RecentEvent,
   type SupportCustomer360RecentTicket,
   type SupportKnowledgeArticlePickerItem,
+  type SupportTicketIntakeContact,
+  type SupportTicketIntakeTenant,
   type SupportTicketDetail,
   type SupportTicketKnowledgeLink,
   type SupportTicketQueueItem,
@@ -89,6 +95,7 @@ import {
   type TicketKnowledgeLinkType,
   type TicketPriority,
   type TicketSeverity,
+  type TicketSource,
   type TicketStatus,
   type TicketStatusUpdateTarget,
   type Uuid,
@@ -98,6 +105,7 @@ type PagePhase = 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type DetailPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type AgentsPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type KnowledgePhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
+type IntakePhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type WorkspaceVariant = 'queue' | 'tickets';
 type ComposerMode = 'public' | 'internal';
 
@@ -107,6 +115,16 @@ interface QueueFilters {
   severity: TicketSeverity | 'all';
   tenantId: Uuid | 'all';
   assignedToUserId: Uuid | 'all' | 'unassigned';
+}
+
+interface TicketIntakeDraft {
+  tenantId: Uuid | '';
+  requesterContactId: Uuid | '';
+  source: TicketSource;
+  priority: TicketPriority;
+  severity: TicketSeverity;
+  title: string;
+  description: string;
 }
 
 function toneForTicketStatus(status: TicketStatus) {
@@ -205,6 +223,25 @@ function humanizeSeverity(severity: TicketSeverity) {
       return 'Crítica';
     default:
       return humanizeToken(severity);
+  }
+}
+
+function humanizeSource(source: TicketSource) {
+  switch (source) {
+    case 'portal':
+      return 'Portal';
+    case 'email':
+      return 'E-mail';
+    case 'chat':
+      return 'Chat';
+    case 'phone':
+      return 'Telefone';
+    case 'api':
+      return 'API';
+    case 'internal':
+      return 'Interno';
+    default:
+      return humanizeToken(source);
   }
 }
 
@@ -542,6 +579,12 @@ function ticketTenantLabel(ticket: Pick<SupportTicketQueueItem, 'tenantDisplayNa
   return ticket.tenantDisplayName ?? ticket.tenantLegalName ?? ticket.tenantSlug;
 }
 
+function intakeTenantLabel(
+  tenant: Pick<SupportTicketIntakeTenant, 'tenantDisplayName' | 'tenantLegalName' | 'tenantSlug'>,
+) {
+  return tenant.tenantDisplayName ?? tenant.tenantLegalName ?? tenant.tenantSlug;
+}
+
 function emptyFilters(): QueueFilters {
   return {
     status: 'all',
@@ -558,6 +601,18 @@ function emptyTimelineWindow(): SupportTicketTimelineRecentWindow {
     totalAvailableCount: 0,
     recentLimit: 25,
     hasMore: false,
+  };
+}
+
+function emptyTicketIntakeDraft(): TicketIntakeDraft {
+  return {
+    tenantId: '',
+    requesterContactId: '',
+    source: 'internal',
+    priority: 'normal',
+    severity: 'medium',
+    title: '',
+    description: '',
   };
 }
 
@@ -2838,6 +2893,15 @@ function SupportWorkspaceView({
   const [assignableAgents, setAssignableAgents] = useState<SupportAssignableAgent[]>([]);
   const [agentsPhase, setAgentsPhase] = useState<AgentsPhase>('idle');
   const [agentsMessage, setAgentsMessage] = useState<string | null>(null);
+  const [intakePhase, setIntakePhase] = useState<IntakePhase>('idle');
+  const [intakeMessage, setIntakeMessage] = useState<string | null>(null);
+  const [intakeContactsMessage, setIntakeContactsMessage] = useState<string | null>(null);
+  const [intakeContactsLoading, setIntakeContactsLoading] = useState(false);
+  const [intakeSubmitting, setIntakeSubmitting] = useState(false);
+  const [showCreateTicket, setShowCreateTicket] = useState(false);
+  const [intakeTenants, setIntakeTenants] = useState<SupportTicketIntakeTenant[]>([]);
+  const [intakeContacts, setIntakeContacts] = useState<SupportTicketIntakeContact[]>([]);
+  const [intakeDraft, setIntakeDraft] = useState<TicketIntakeDraft>(emptyTicketIntakeDraft());
   const [statusDraft, setStatusDraft] = useState<TicketStatusUpdateTarget>('triage');
   const [statusNote, setStatusNote] = useState('');
   const [closeReason, setCloseReason] = useState('');
@@ -2893,6 +2957,99 @@ function SupportWorkspaceView({
       setPhase(
         classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
       );
+    }
+  });
+
+  const loadIntakeTenants = useEffectEvent(async (preferredTenantId?: Uuid | null) => {
+    setIntakePhase('loading');
+    setIntakeMessage(null);
+
+    try {
+      const rows = await listSupportTicketIntakeTenants();
+      setIntakeTenants(rows);
+      setIntakePhase('ready');
+      setIntakeMessage(null);
+      setIntakeDraft((current) => {
+        const fallbackTenantId =
+          preferredTenantId && rows.some((row) => row.tenantId === preferredTenantId)
+            ? preferredTenantId
+            : current.tenantId && rows.some((row) => row.tenantId === current.tenantId)
+              ? current.tenantId
+              : rows.length === 1
+                ? rows[0]?.tenantId ?? ''
+                : '';
+
+        if (fallbackTenantId === current.tenantId) {
+          return current;
+        }
+
+        return {
+          ...current,
+          tenantId: fallbackTenantId,
+          requesterContactId: '',
+        };
+      });
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao carregar os clientes elegíveis para abrir ticket.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      setIntakeTenants([]);
+      setIntakeContacts([]);
+      setIntakeContactsMessage(null);
+      setIntakeContactsLoading(false);
+      setIntakeMessage(classified.message);
+      setIntakePhase(
+        classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
+      );
+    }
+  });
+
+  const loadIntakeContacts = useEffectEvent(async (tenantId: Uuid) => {
+    setIntakeContactsLoading(true);
+    setIntakeContactsMessage(null);
+
+    try {
+      const rows = await listSupportTicketIntakeContacts(tenantId);
+      setIntakeContacts(rows);
+      setIntakeContactsMessage(null);
+      setIntakeDraft((current) => {
+        if (
+          current.requesterContactId &&
+          rows.some((contact) => contact.id === current.requesterContactId)
+        ) {
+          return current;
+        }
+
+        const primaryContact =
+          rows.find((contact) => contact.isPrimary) ?? rows[0] ?? null;
+
+        return {
+          ...current,
+          requesterContactId: primaryContact?.id ?? '',
+        };
+      });
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao carregar os contatos elegíveis para abrir ticket.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      setIntakeContacts([]);
+      setIntakeContactsMessage(classified.message);
+    } finally {
+      setIntakeContactsLoading(false);
     }
   });
 
@@ -3063,6 +3220,14 @@ function SupportWorkspaceView({
   }, []);
 
   useEffect(() => {
+    if (variant !== 'queue') {
+      return;
+    }
+
+    void loadIntakeTenants();
+  }, [variant]);
+
+  useEffect(() => {
     void loadQueue(focusTicketId ?? null);
   }, [
     filters.assignedToUserId,
@@ -3095,6 +3260,17 @@ function SupportWorkspaceView({
 
     void loadDetail(selectedTicketId);
   }, [selectedTicketId]);
+
+  useEffect(() => {
+    if (!intakeDraft.tenantId) {
+      setIntakeContacts([]);
+      setIntakeContactsMessage(null);
+      setIntakeContactsLoading(false);
+      return;
+    }
+
+    void loadIntakeContacts(intakeDraft.tenantId);
+  }, [intakeDraft.tenantId]);
 
   useEffect(() => {
     setDetailNotice(null);
@@ -3351,6 +3527,51 @@ function SupportWorkspaceView({
     } = { preserveSurfaceState: true },
   ) {
     await Promise.all([loadQueue(ticketId), loadDetail(ticketId, options)]);
+  }
+
+  async function handleSubmitTicketIntake(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const title = intakeDraft.title.trim();
+    const description = intakeDraft.description.trim();
+
+    if (!intakeDraft.tenantId || title.length === 0 || description.length === 0) {
+      return;
+    }
+
+    setIntakeSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      const created = await createTicket({
+        tenantId: intakeDraft.tenantId,
+        requesterContactId: intakeDraft.requesterContactId || null,
+        source: intakeDraft.source,
+        priority: intakeDraft.priority,
+        severity: intakeDraft.severity,
+        title,
+        description,
+      });
+      setShowCreateTicket(false);
+      setIntakeDraft({
+        ...emptyTicketIntakeDraft(),
+        tenantId: created.tenantId,
+      });
+      await loadIntakeTenants(created.tenantId);
+      await loadQueue(created.id);
+      void navigate(`/support/tickets/${created.id}`);
+    } catch (error) {
+      const classified = classifyAdminError(error, 'Falha ao abrir o ticket operacional.');
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      applyFailure(classified.message);
+    } finally {
+      setIntakeSubmitting(false);
+    }
   }
 
   function optionalKnowledgeNote() {
@@ -3675,6 +3896,23 @@ function SupportWorkspaceView({
   const selectedQueueTicket =
     tickets.find((ticket) => ticket.id === selectedTicketId) ?? null;
   const previewTicket = ticketDetail ?? null;
+  const selectedIntakeTenant =
+    intakeDraft.tenantId
+      ? intakeTenants.find((tenant) => tenant.tenantId === intakeDraft.tenantId) ?? null
+      : null;
+  const canOpenIntake = intakePhase === 'ready' && intakeTenants.length > 0;
+  const intakeActionLabel =
+    intakePhase === 'contract-unavailable'
+      ? 'Intake indisponível'
+      : intakePhase === 'error'
+        ? 'Intake com falha'
+        : 'Abrir ticket';
+  const intakeSubmitDisabled =
+    intakeSubmitting ||
+    intakePhase !== 'ready' ||
+    !intakeDraft.tenantId ||
+    intakeDraft.title.trim().length === 0 ||
+    intakeDraft.description.trim().length === 0;
   const queueShortcuts = [
     {
       key: 'mine',
@@ -3769,6 +4007,21 @@ function SupportWorkspaceView({
             </div>
 
             <div className="flex flex-wrap gap-2">
+              <AppButton
+                disabled={!canOpenIntake}
+                onClick={() => {
+                  setShowCreateTicket((current) => !current);
+                  setDetailNotice(null);
+                  if (!intakeDraft.tenantId && intakeTenants[0]?.tenantId) {
+                    setIntakeDraft((current) => ({
+                      ...current,
+                      tenantId: intakeTenants[0]?.tenantId ?? '',
+                    }));
+                  }
+                }}
+              >
+                {showCreateTicket ? 'Fechar intake' : intakeActionLabel}
+              </AppButton>
               {queueShortcuts.map((shortcut) => (
                 <button
                   className={cx(
@@ -3992,16 +4245,243 @@ function SupportWorkspaceView({
             </section>
           </div>
 
-          <section className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
-            <div className="mb-3 space-y-1">
-              <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                Preview do ticket
-              </h2>
-              <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-                Contexto curto antes de abrir o atendimento completo.
-              </p>
-            </div>
-            {detailPhase === 'loading' ? (
+            <section className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+              <div className="mb-3 space-y-1">
+                <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                  {showCreateTicket ? 'Intake operacional' : 'Preview do ticket'}
+                </h2>
+                <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
+                  {showCreateTicket
+                    ? 'Abra o ticket com tenant explícito, origem contratual e trilha auditável.'
+                    : 'Contexto curto antes de abrir o atendimento completo.'}
+                </p>
+              </div>
+            {showCreateTicket ? (
+              intakePhase === 'loading' ? (
+                <LoadingState
+                  title="Carregando intake"
+                  description="Estamos preparando os clientes e contatos elegíveis para abrir ticket."
+                />
+              ) : intakePhase === 'contract-unavailable' ? (
+                <ContractUnavailableState contractName="intake operacional de tickets" />
+              ) : intakePhase === 'error' ? (
+                <ErrorState
+                  action={
+                    <AppButton onClick={() => void loadIntakeTenants()}>
+                      Tentar novamente
+                    </AppButton>
+                  }
+                  description={
+                    intakeMessage ?? 'O intake operacional não ficou disponível neste ambiente.'
+                  }
+                />
+              ) : intakeTenants.length === 0 ? (
+                <EmptyState
+                  title="Nenhum cliente elegível para intake"
+                  description="O backend não liberou tenants acessíveis para abrir ticket nesta sessão."
+                />
+              ) : (
+                <div className="space-y-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
+                  <div className="rounded-[18px] border border-[rgba(48,127,226,0.2)] bg-[rgba(48,127,226,0.06)] px-4 py-3">
+                    <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">
+                      Regras do intake
+                    </p>
+                    <div className="mt-2 space-y-1 text-[12px] leading-5 text-[color:var(--color-muted)]">
+                      <p>Status inicial: o backend registra o ticket como Novo.</p>
+                      <p>
+                        Categoria inicial ainda não possui contrato próprio. O ticket nasce sem
+                        categorização adicional nesta etapa.
+                      </p>
+                    </div>
+                  </div>
+
+                  {detailNotice && detailNoticeTone === 'critical' ? (
+                    <InlineNotice tone="critical">{detailNotice}</InlineNotice>
+                  ) : null}
+
+                  <form className="space-y-3" onSubmit={(event) => void handleSubmitTicketIntake(event)}>
+                    <Field label="Cliente B2B">
+                      <SelectInput
+                        disabled={intakeSubmitting}
+                        onChange={(event) =>
+                          setIntakeDraft((current) => ({
+                            ...current,
+                            tenantId: event.target.value as Uuid | '',
+                            requesterContactId: '',
+                          }))
+                        }
+                        value={intakeDraft.tenantId}
+                      >
+                        <option value="">Selecione um cliente</option>
+                        {intakeTenants.map((tenant) => (
+                          <option key={tenant.tenantId} value={tenant.tenantId}>
+                            {intakeTenantLabel(tenant)}
+                          </option>
+                        ))}
+                      </SelectInput>
+                    </Field>
+
+                    {selectedIntakeTenant ? (
+                      <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 text-[12px] leading-5 text-[color:var(--color-muted)]">
+                        <p className="font-semibold text-[color:var(--color-ink)]">
+                          {intakeTenantLabel(selectedIntakeTenant)}
+                        </p>
+                        <p>Status da conta: {humanizeTenantStatus(selectedIntakeTenant.tenantStatus)}</p>
+                        <p>Contatos ativos disponíveis: {selectedIntakeTenant.activeContactsCount}</p>
+                      </div>
+                    ) : null}
+
+                    <Field label="Contato solicitante">
+                      <SelectInput
+                        disabled={!intakeDraft.tenantId || intakeContactsLoading || intakeSubmitting}
+                        onChange={(event) =>
+                          setIntakeDraft((current) => ({
+                            ...current,
+                            requesterContactId: event.target.value as Uuid | '',
+                          }))
+                        }
+                        value={intakeDraft.requesterContactId}
+                      >
+                        <option value="">
+                          {intakeContactsLoading
+                            ? 'Carregando contatos'
+                            : intakeContacts.length === 0
+                              ? 'Indisponível'
+                              : 'Sem solicitante vinculado'}
+                        </option>
+                        {intakeContacts.map((contact) => (
+                          <option key={contact.id} value={contact.id}>
+                            {contact.fullName} · {contact.email}
+                          </option>
+                        ))}
+                      </SelectInput>
+                    </Field>
+
+                    {intakeContactsMessage ? (
+                      <InlineNotice tone="warning">{intakeContactsMessage}</InlineNotice>
+                    ) : null}
+
+                    {!intakeContactsLoading &&
+                    intakeDraft.tenantId &&
+                    intakeContacts.length === 0 ? (
+                      <InlineNotice>
+                        Nenhum contato ativo apareceu para este cliente. O ticket pode ser aberto
+                        sem solicitante vinculado se o backend aceitar esse contexto.
+                      </InlineNotice>
+                    ) : null}
+
+                    <div className="grid gap-3 md:grid-cols-3">
+                      <Field label="Origem">
+                        <SelectInput
+                          disabled={intakeSubmitting}
+                          onChange={(event) =>
+                            setIntakeDraft((current) => ({
+                              ...current,
+                              source: event.target.value as TicketSource,
+                            }))
+                          }
+                          value={intakeDraft.source}
+                        >
+                          {TICKET_SOURCES.map((source) => (
+                            <option key={source} value={source}>
+                              {humanizeSource(source)}
+                            </option>
+                          ))}
+                        </SelectInput>
+                      </Field>
+
+                      <Field label="Prioridade">
+                        <SelectInput
+                          disabled={intakeSubmitting}
+                          onChange={(event) =>
+                            setIntakeDraft((current) => ({
+                              ...current,
+                              priority: event.target.value as TicketPriority,
+                            }))
+                          }
+                          value={intakeDraft.priority}
+                        >
+                          {TICKET_PRIORITIES.map((priority) => (
+                            <option key={priority} value={priority}>
+                              {humanizePriority(priority)}
+                            </option>
+                          ))}
+                        </SelectInput>
+                      </Field>
+
+                      <Field label="Severidade">
+                        <SelectInput
+                          disabled={intakeSubmitting}
+                          onChange={(event) =>
+                            setIntakeDraft((current) => ({
+                              ...current,
+                              severity: event.target.value as TicketSeverity,
+                            }))
+                          }
+                          value={intakeDraft.severity}
+                        >
+                          {TICKET_SEVERITIES.map((severity) => (
+                            <option key={severity} value={severity}>
+                              {humanizeSeverity(severity)}
+                            </option>
+                          ))}
+                        </SelectInput>
+                      </Field>
+                    </div>
+
+                    <Field label="Título">
+                      <TextInput
+                        disabled={intakeSubmitting}
+                        onChange={(event) =>
+                          setIntakeDraft((current) => ({
+                            ...current,
+                            title: event.target.value,
+                          }))
+                        }
+                        placeholder="Resumo objetivo do caso operacional"
+                        value={intakeDraft.title}
+                      />
+                    </Field>
+
+                    <Field label="Descrição">
+                      <TextareaInput
+                        disabled={intakeSubmitting}
+                        onChange={(event) =>
+                          setIntakeDraft((current) => ({
+                            ...current,
+                            description: event.target.value,
+                          }))
+                        }
+                        placeholder="Contexto mínimo para iniciar a triagem sem inventar regra."
+                        rows={6}
+                        value={intakeDraft.description}
+                      />
+                    </Field>
+
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--color-border)] pt-3">
+                      <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
+                        O ticket abre com trilha de auditoria, evento inicial e navegação direta
+                        para o workspace.
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <GhostButton
+                          onClick={() => {
+                            setShowCreateTicket(false);
+                            setDetailNotice(null);
+                          }}
+                          type="button"
+                        >
+                          Cancelar
+                        </GhostButton>
+                        <AppButton disabled={intakeSubmitDisabled} type="submit">
+                          {intakeSubmitting ? 'Abrindo ticket' : 'Abrir ticket'}
+                        </AppButton>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              )
+            ) : detailPhase === 'loading' ? (
               <LoadingState
                 title="Carregando prévia"
                 description="Estamos preparando a leitura do ticket selecionado."

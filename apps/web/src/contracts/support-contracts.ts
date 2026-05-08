@@ -40,6 +40,8 @@ export type {
   RpcUpdateTicketStatusPayload,
   RpcUpdateTicketStatusResponse,
   SupportAssignableAgent,
+  SupportTicketIntakeContact,
+  SupportTicketIntakeTenant,
   SupportCustomerAccountAlert,
   SupportCustomerAccountContext,
   SupportCustomerAccountCustomization,
