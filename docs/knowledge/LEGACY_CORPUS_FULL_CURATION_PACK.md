@@ -261,6 +261,8 @@
   - `Configurando as Formas de Estorno`
 - Risco de consolidação: `médio`.
 - Revisão necessária: `Produto` e `Suporte/CS`, com validação técnica do comportamento atual do estorno.
+- Plano documental específico de consolidação registrado em:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_CONSOLIDATION_PREP.md`
 
 ### Clusters candidatos
 

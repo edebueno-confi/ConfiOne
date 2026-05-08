@@ -10,10 +10,14 @@
 
 1. Selecione o grupo de trabalho por prioridade ou taxonomia pública.
 2. Confirme que todos os artigos do grupo já estão mapeados no pacote consolidado e no intake geral.
-3. Envie o template de `Produto` com o conjunto de artigos e a versão documental revisada.
-4. Envie o template de `Suporte/CS` com o mesmo conjunto e o contexto operacional de uso público.
-5. Registre cada resposta no `KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md` antes de mudar o status do artigo.
-6. Se houver aprovação parcial, mantenha pendente tudo o que não tiver evidência explícita e abra nova rodada apenas para os artigos remanescentes.
+3. Se o grupo envolver duplicidade confirmada, leia primeiro o plano documental específico de consolidação antes de pedir aprovação humana.
+4. Envie o template de `Produto` com o conjunto de artigos e a versão documental revisada.
+5. Envie o template de `Suporte/CS` com o mesmo conjunto e o contexto operacional de uso público.
+6. Registre cada resposta no `KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md` antes de mudar o status do artigo.
+7. Se houver aprovação parcial, mantenha pendente tudo o que não tiver evidência explícita e abra nova rodada apenas para os artigos remanescentes.
+
+Para o cluster `Formas de Estorno`, usar como referência prévia:
+- `docs/knowledge/KNOWLEDGE_ESTORNO_CONSOLIDATION_PREP.md`
 
 ## Template único para Produto
 

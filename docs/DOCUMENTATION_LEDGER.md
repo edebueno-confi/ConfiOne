@@ -18,6 +18,32 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.22 - Knowledge Estorno Consolidation Prep V3
+- fase: `7.22`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: a duplicidade confirmada do cluster `Formas de Estorno` foi tratada documentalmente com comparacao do corpus real, proposta de artigo canonico, mapa de consolidacao e matriz de decisao editorial, sem aprovar nem publicar qualquer conteudo.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_CONSOLIDATION_PREP.md`
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+- riscos restantes:
+  - o canônico de estorno ainda depende de validacao de `Produto` e `Suporte/CS`
+  - o tema continua sensivel por tocar meios de estorno, Pix e politica operacional
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - cria a base documental para consolidacao manual do canônico de estorno antes de qualquer lote de reescrita ou publicacao
+
 ### Fase 7.21 - Knowledge Legacy Full Corpus Curation Pack V3
 - fase: `7.21`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

@@ -5,6 +5,8 @@
 - Intake consolidado dos `58` artigos do corpus legado, para uso futuro por grupo de prioridade e categoria.
 - Todos os artigos permanecem com `Produto: pendente`, `Suporte/CS: pendente` e `pode publicar: não`.
 - Este documento não simula aprovação humana e não altera o status editorial do corpus.
+- A duplicidade confirmada de `Formas de Estorno` agora possui plano documental específico em:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_CONSOLIDATION_PREP.md`
 
 | Artigo | Categoria proposta | Prioridade | Decisão Produto | Decisão Suporte/CS | Pode publicar | Pendência principal | Evidência necessária |
 | --- | --- | --- | --- | --- | --- | --- | --- |

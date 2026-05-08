@@ -1159,6 +1159,35 @@ Documentos históricos:
     - `npm run web:typecheck`
   - Pendencias mapeadas sem implementacao nesta fase:
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.22: Knowledge Estorno Consolidation Prep V3 concluido como preparacao editorial da duplicidade confirmada de estorno.
+  - O plano documental de consolidacao foi criado em `docs/knowledge/KNOWLEDGE_ESTORNO_CONSOLIDATION_PREP.md`.
+  - A fase comparou os dois artigos legados duplicados:
+    - `Como configurar as formas de Estorno`
+    - `Configurando as Formas de Estorno`
+  - A comparacao confirmou:
+    - corpo `content.txt` identico
+    - diferencas restritas a titulo cadastrado, metadados, asset de imagem e detalhe de formatacao HTML
+  - O artigo canonico futuro recomendado foi registrado como:
+    - `Formas de estorno disponíveis na operação`
+    - categoria `Estornos e reembolsos`
+    - subcategoria futura opcional `Formas de estorno`
+  - O status editorial foi preservado:
+    - `pendente`
+    - `Produto: pendente`
+    - `Suporte/CS: pendente`
+    - `pode publicar: nao`
+    - nenhum artigo foi aprovado
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
