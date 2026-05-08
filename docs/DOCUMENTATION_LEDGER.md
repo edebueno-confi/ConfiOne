@@ -18,6 +18,33 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.23 - Knowledge Estorno Canonical Rewrite V3
+- fase: `7.23`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: a versao candidata reescrita do artigo canonico `Formas de estorno disponíveis na operação` foi criada em documentacao, com ficha editorial, corpo em markdown, checklist de validacao humana e bloqueio explicito de publicacao ate evidencia real, sem alterar conteudo publicado nem o corpus legado bruto.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_CANONICAL_REWRITE.md`
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_CONSOLIDATION_PREP.md`
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+- riscos restantes:
+  - o canônico continua dependente de validacao humana explicita
+  - Pix, vale-compra e regras financeiras seguem fora do escopo e precisam de trilha separada
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - antecipa a redacao canônica do tema de estorno sem confundir consolidacao editorial com publicacao real
+
 ### Fase 7.22 - Knowledge Estorno Consolidation Prep V3
 - fase: `7.22`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

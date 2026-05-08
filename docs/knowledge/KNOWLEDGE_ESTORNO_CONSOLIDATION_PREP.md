@@ -174,6 +174,8 @@
 - nenhuma consolidação foi aplicada automaticamente no banco ou no conteúdo publicado
 - nenhum artigo foi aprovado
 - nenhum artigo foi publicado
+- a versão candidata reescrita do canônico ficou registrada em:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_CANONICAL_REWRITE.md`
 
 ## Próximo passo recomendado para este cluster
 

@@ -7,6 +7,8 @@
 - Este documento não simula aprovação humana e não altera o status editorial do corpus.
 - A duplicidade confirmada de `Formas de Estorno` agora possui plano documental específico em:
   - `docs/knowledge/KNOWLEDGE_ESTORNO_CONSOLIDATION_PREP.md`
+- A versão candidata do canônico de estorno ficou registrada em:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_CANONICAL_REWRITE.md`
 
 | Artigo | Categoria proposta | Prioridade | Decisão Produto | Decisão Suporte/CS | Pode publicar | Pendência principal | Evidência necessária |
 | --- | --- | --- | --- | --- | --- | --- | --- |

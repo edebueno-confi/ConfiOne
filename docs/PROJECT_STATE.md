@@ -1188,6 +1188,39 @@ Documentos históricos:
     - `npm run web:typecheck`
   - Pendencias mapeadas sem implementacao nesta fase:
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.23: Knowledge Estorno Canonical Rewrite V3 concluido como versao candidata do canônico de estorno.
+  - A versao candidata foi criada em `docs/knowledge/KNOWLEDGE_ESTORNO_CANONICAL_REWRITE.md`.
+  - O artigo canonico foi registrado com:
+    - titulo `Formas de estorno disponíveis na operação`
+    - categoria `Estornos e reembolsos`
+    - subcategoria futura opcional `Formas de estorno`
+    - escopo limitado a visao geral, contexto operacional e cuidados basicos antes de revisar a configuracao
+  - O texto canônico excluiu explicitamente:
+    - Pix automatico
+    - vale-compra
+    - calculo de estorno
+    - politicas por motivo
+    - limites financeiros
+    - troubleshooting tecnico
+  - O status editorial foi preservado:
+    - `pendente`
+    - `Produto: pendente`
+    - `Suporte/CS: pendente`
+    - `pode publicar: nao`
+    - nenhum artigo foi aprovado
+    - nenhum artigo foi publicado
+  - Os dois artigos legados continuam apenas como origem historica da consolidacao.
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - publicacao bloqueada ate evidencia humana real de `Produto` e `Suporte/CS`
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
