@@ -42,6 +42,9 @@ Para o corpus remanescente fora de `Estornos e reembolsos` e `Logística reversa
 - `docs/knowledge/KNOWLEDGE_P0_PUBLICATION_PREP.md`
 - `docs/knowledge/KNOWLEDGE_MOTIVOS_TROCA_DEVOLUCAO_REWRITE.md`
 
+Para a etapa final de prontidão e coleta humana dos `8` candidatos já preparados, usar como referência obrigatória:
+- `docs/knowledge/KNOWLEDGE_LEGACY_CORPUS_FINAL_READINESS_PACK.md`
+
 ## Template único para Produto
 
 ```md

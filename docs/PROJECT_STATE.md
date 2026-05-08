@@ -1637,6 +1637,40 @@ Documentos históricos:
     - os `8` candidatos continuam dependentes de validacao humana de `Produto` e `Suporte/CS`
     - temas de integracao, seller, contrato e configuracao interna permanecem fora da trilha publica
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.38: Knowledge Legacy Corpus Final Readiness Pack V3 concluido como pacote final de prontidao da Knowledge Base legada.
+  - O pacote final foi criado em:
+    - `docs/knowledge/KNOWLEDGE_LEGACY_CORPUS_FINAL_READINESS_PACK.md`
+  - A fase consolidou o estado final do corpus:
+    - `58` artigos legados
+    - `58` artigos mapeados editorialmente
+    - `8` candidatos publicos criados e aguardando validacao humana
+    - `6` temas bloqueados por risco
+    - `17` conteudos para manter internos
+    - `17` conteudos para revisao ou reescrita futura
+    - `9` itens arquivados como legado
+    - `2` itens duplicados ou consolidados
+  - A fase registrou:
+    - matriz final dos `8` candidatos
+    - checklist unico de validacao humana para Produto e Suporte/CS
+    - instrucao operacional de registro de evidencia real
+    - lista de temas marcados como `nao mexer agora`
+    - proxima acao real como coleta de aprovacao humana, nao nova documentacao fragmentada
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - coletar evidencia humana real para os `8` candidatos
+    - manter bloqueados os temas de Pix, calculo, integracoes, Correios, contratos, sellers e troubleshooting tecnico sensivel
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -1658,7 +1692,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Executar a validacao humana dos `8` candidatos públicos já prontos, mantendo todo o restante do corpus fora da publicação até evidência humana explícita no repositório.
+Coletar e registrar evidencia humana real dos `8` candidatos publicos ja prontos, mantendo todo o restante do corpus fora da publicacao ate aprovacao explicita de `Produto` e `Suporte/CS` no repositório.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único

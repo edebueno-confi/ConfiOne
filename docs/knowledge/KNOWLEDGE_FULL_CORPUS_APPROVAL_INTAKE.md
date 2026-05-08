@@ -41,6 +41,8 @@
   - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_CLOSURE.md`
 - O fechamento executivo dos clusters restantes do corpus ficou registrado em:
   - `docs/knowledge/KNOWLEDGE_REMAINING_CORPUS_CLOSURE.md`
+- O pacote final de prontidão da Knowledge Base legada ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_LEGACY_CORPUS_FINAL_READINESS_PACK.md`
 
 | Artigo | Categoria proposta | Prioridade | Decisão Produto | Decisão Suporte/CS | Pode publicar | Pendência principal | Evidência necessária |
 | --- | --- | --- | --- | --- | --- | --- | --- |

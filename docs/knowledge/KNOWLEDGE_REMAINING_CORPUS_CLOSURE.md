@@ -342,3 +342,8 @@
 - o corpus completo agora está organizado em uma única trilha governada
 - não há necessidade de abrir novos micro-lotes de curadoria para classificar o que restava
 - o próximo passo real é validação humana dos candidatos já prontos
+
+## Pacote final de prontidão
+
+- a prontidão final da Knowledge Base legada, com a matriz dos `8` candidatos, checklist humano único e regra objetiva de próxima ação, ficou registrada em:
+  - `docs/knowledge/KNOWLEDGE_LEGACY_CORPUS_FINAL_READINESS_PACK.md`

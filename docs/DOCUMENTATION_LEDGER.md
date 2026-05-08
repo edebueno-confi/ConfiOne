@@ -18,6 +18,33 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.38 - Knowledge Legacy Corpus Final Readiness Pack V3
+- fase: `7.38`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: o pacote final de prontidao da Knowledge Base legada foi criado, consolidando o estado final dos `58` artigos, a matriz dos `8` candidatos publicos pendentes, o checklist unico de validacao humana, a instrucao operacional para registro de evidencia real e a lista de temas que nao devem ser reabertos agora.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_LEGACY_CORPUS_FINAL_READINESS_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_REMAINING_CORPUS_CLOSURE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+- riscos restantes:
+  - os `8` candidatos publicos continuam pendentes por ausencia de evidencia humana real
+  - Pix, calculo, integracoes, Correios, contrato, token, sellers e troubleshooting tecnico sensivel continuam fora de nova documentacao publica
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - encerra a etapa documental da curadoria legada e desloca o proximo passo para coleta de aprovacao humana, antes de qualquer lote de publicacao
+
 ### Fase 7.35 - Knowledge PrazoPostagem Public Rewrite V3
 - fase: `7.35`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

@@ -286,3 +286,5 @@ Nenhum override pode permitir publicacao de:
   - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
 - o fechamento executivo dos clusters remanescentes do corpus ficou registrado em:
   - `docs/knowledge/KNOWLEDGE_REMAINING_CORPUS_CLOSURE.md`
+- o pacote final de prontidao da Knowledge Base legada ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_LEGACY_CORPUS_FINAL_READINESS_PACK.md`

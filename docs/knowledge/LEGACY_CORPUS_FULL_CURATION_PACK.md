@@ -6,6 +6,8 @@
 - Este pacote consolida a classificação editorial, a prioridade de curadoria, a taxonomia pública proposta e a trilha de aprovação humana para o corpus completo.
 - Nenhum artigo foi aprovado, nenhum artigo foi publicado e nenhum status humano foi simulado nesta fase.
 - O objetivo desta fase foi transformar a trilha fragmentada dos `P0` em um backlog governado único para o corpus legado completo.
+- O pacote final de prontidão da Knowledge Base legada ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_LEGACY_CORPUS_FINAL_READINESS_PACK.md`
 
 ## Matriz consolidada
 
