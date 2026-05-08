@@ -595,6 +595,12 @@ function buildPersistedHumanChecklist(
   });
 }
 
+function hasCompleteHumanPublishEvidence(
+  confirmations: KnowledgeReviewHumanConfirmations,
+) {
+  return HUMAN_CONFIRMATION_FIELDS.every((field) => confirmations[field.key] === true);
+}
+
 function buildEditorialChecklist(
   article: AdminKnowledgeArticleDetailV2Row,
   duplicateCount: number,
@@ -891,10 +897,16 @@ export function KnowledgePage() {
   const canSubmitForReview =
     articleDetail?.status === 'draft' &&
     (editorialChecklist?.automatedReady ?? false);
+  const hasHumanPublishEvidence =
+    !!selectedAdvisory &&
+    selectedAdvisory.suggested_visibility === 'public' &&
+    selectedAdvisory.suggested_classification === 'public' &&
+    selectedAdvisory.review_status === 'reviewed' &&
+    hasCompleteHumanPublishEvidence(humanConfirmationsDraft);
   const canPublishArticle =
     articleDetail?.status === 'review' &&
     !advisoryMessage &&
-    (!selectedAdvisory || selectedAdvisory.review_status === 'reviewed') &&
+    (articleDetail.visibility !== 'public' || hasHumanPublishEvidence) &&
     !articleHasPublicCategoryMismatch;
   const canPublishEditorialRevision =
     articleDetail?.status === 'published' &&
@@ -902,6 +914,7 @@ export function KnowledgePage() {
     publishedEditorialDraft.title.trim().length > 0 &&
     publishedEditorialDraft.body_md.trim().length > 0 &&
     publishedEditorialDraft.category_id !== null &&
+    (publishedEditorialDraft.visibility !== 'public' || hasHumanPublishEvidence) &&
     !editorialDraftHasPublicCategoryMismatch;
   const persistedHumanChecklist = buildPersistedHumanChecklist(humanConfirmationsDraft);
   const advisoryRiskFlags = normalizeRiskFlags(selectedAdvisory?.risk_flags);
@@ -3045,12 +3058,16 @@ export function KnowledgePage() {
                         <p className="text-xs leading-5 text-[color:var(--color-muted)]">
                           {advisoryMessage
                             ? 'Recarregue os sinais de revisão editorial antes de publicar este artigo.'
-                            : 'Conclua a revisão editorial persistida antes de publicar este artigo.'}
+                            : articleDetail.visibility === 'public'
+                              ? 'Artigo público só pode ser publicado após advisory público revisado e todas as confirmações humanas persistidas.'
+                              : 'Conclua a revisão editorial persistida antes de publicar este artigo.'}
                         </p>
                       ) : null}
                       {articleDetail.status === 'published' && publishedEditorialDraft && !canPublishEditorialRevision ? (
                         <p className="text-xs leading-5 text-[color:var(--color-muted)]">
-                          Conclua título, categoria e conteúdo principal da revisão antes de publicar a atualização.
+                          {publishedEditorialDraft.visibility === 'public'
+                            ? 'Atualização pública só pode ser publicada após advisory público revisado e todas as confirmações humanas persistidas.'
+                            : 'Conclua título, categoria e conteúdo principal da revisão antes de publicar a atualização.'}
                         </p>
                       ) : null}
                     </div>
