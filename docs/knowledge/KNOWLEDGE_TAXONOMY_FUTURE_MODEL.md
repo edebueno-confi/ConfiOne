@@ -59,3 +59,5 @@ Registrar a evolucao futura recomendada da taxonomia da Knowledge Base, sem impl
 ## Estado atual
 - categoria + artigo continuam suficientes para o MVP atual
 - subcategoria opcional fica registrada apenas como direcao futura de governanca e taxonomia
+- a aplicacao conceitual desse modelo sobre o corpus legado completo ficou registrada em:
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`

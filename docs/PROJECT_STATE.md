@@ -1132,6 +1132,33 @@ Documentos históricos:
     - `npm run web:typecheck`
   - Pendencias mapeadas sem implementacao nesta fase:
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.21: Knowledge Legacy Full Corpus Curation Pack V3 concluido como organizacao documental em massa do corpus legado.
+  - O pacote consolidado do corpus completo foi criado em `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`.
+  - O intake geral de aprovacao humana foi criado em `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`.
+  - O playbook geral de coleta foi criado em `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`.
+  - A fase organizou documentalmente todos os `58` artigos exportados do Octadesk em uma matriz unica com:
+    - categoria publica proposta
+    - subcategoria futura opcional sugerida
+    - prioridade por grupo
+    - destino recomendado
+    - riscos editorial, tecnico e de exposicao interna
+    - necessidade de revisao de Produto e Suporte/CS
+  - A decisao operacional foi consolidar a trilha por grupo e prioridade, e nao mais por artigo isolado.
+  - O status do corpus foi preservado:
+    - todos os `58` artigos seguem pendentes
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -1153,8 +1180,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Coletar as primeiras evidencias humanas reais de Produto e Suporte/CS usando o playbook operacional, o intake pack e o registro oficial da Knowledge Base,
-artigo por artigo, ou manter os quatro `P0` fora de qualquer lote de publicacao enquanto essa evidencia nao existir no repositorio.
+Executar novos lotes por grupo e prioridade do corpus consolidado, comecando pelos candidatos mais seguros da matriz completa, ou manter qualquer artigo fora da publicacao enquanto nao existir evidencia humana explicita no repositorio.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único

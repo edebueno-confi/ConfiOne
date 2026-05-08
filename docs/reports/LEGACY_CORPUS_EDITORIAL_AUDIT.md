@@ -318,3 +318,6 @@ Um artigo legado candidato so deve seguir para camada publica quando atender sim
 ## Desdobramento operacional
 O plano humano de saneamento deste backlog foi desdobrado em:
 - `docs/knowledge/LEGACY_CORPUS_HUMAN_CURATION_SPRINT.md`
+- `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+- `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+- `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`

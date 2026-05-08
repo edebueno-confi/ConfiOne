@@ -143,3 +143,9 @@ Motivo:
   - `docs/knowledge/KNOWLEDGE_P0_APPROVAL_INTAKE_PACK.md`
 - o playbook operacional para conduzir a coleta ficou registrado em:
   - `docs/knowledge/KNOWLEDGE_P0_APPROVAL_COLLECTION_PLAYBOOK.md`
+- a fila consolidada dos `58` artigos do legado ficou registrada em:
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+- o intake geral por artigo ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+- o playbook geral de coleta ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`

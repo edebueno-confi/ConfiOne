@@ -326,3 +326,11 @@ O gate humano formal de elegibilidade da leva `P0` ficou registrado em:
 
 O pacote documental de pre-publicacao dos quatro artigos `P0` elegiveis com ajustes ficou registrado em:
 - `docs/knowledge/KNOWLEDGE_P0_PUBLICATION_PREP.md`
+
+## Vinculo com o pacote consolidado do corpus completo
+- a organizacao unica dos `58` artigos do legado ficou consolidada em:
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+- o intake geral do corpus completo ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+- o playbook geral de coleta para o corpus completo ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`

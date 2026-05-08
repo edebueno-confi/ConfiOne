@@ -247,3 +247,9 @@ Nenhum override pode permitir publicacao de:
   - `docs/knowledge/KNOWLEDGE_P0_APPROVAL_INTAKE_PACK.md`
 - o playbook operacional para conduzir a coleta e o registro da evidencia ficou registrado em:
   - `docs/knowledge/KNOWLEDGE_P0_APPROVAL_COLLECTION_PLAYBOOK.md`
+- o pacote consolidado do corpus completo ficou registrado em:
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+- o intake geral de aprovacao do corpus completo ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+- o playbook geral de coleta do corpus completo ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`

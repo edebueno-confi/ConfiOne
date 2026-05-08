@@ -18,6 +18,38 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.21 - Knowledge Legacy Full Corpus Curation Pack V3
+- fase: `7.21`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: o corpus legado completo exportado do Octadesk foi reorganizado documentalmente em uma matriz unica de `58` artigos, com prioridade, taxonomia publica proposta, subcategoria futura opcional, destino editorial, riscos e trilha consolidada de intake e coleta de aprovacao humana, sem aprovar nem publicar nenhum conteudo.
+- docs alterados:
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/reports/LEGACY_CORPUS_EDITORIAL_AUDIT.md`
+  - `docs/knowledge/LEGACY_CORPUS_HUMAN_CURATION_SPRINT.md`
+  - `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`
+  - `docs/knowledge/KNOWLEDGE_TAXONOMY_FUTURE_MODEL.md`
+  - `docs/knowledge/KNOWLEDGE_P0_APPROVAL_INTAKE_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_P0_FINAL_HUMAN_DECISION.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+  - nenhuma alteracao em `/admin/knowledge`, `/help/genius` ou rotas relacionadas
+- riscos restantes:
+  - a maior parte do corpus ainda depende de reescrita editorial, consolidacao manual ou revisao tecnica antes de qualquer gate de publicacao
+  - integracoes, Correios, sellers e estornos concentram os maiores riscos tecnicos e de exposicao interna
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - substitui a trilha fragmentada por artigo por um backlog unico orientado por grupo, prioridade e taxonomia
+
 ### Fase 7.20 - Knowledge P0 Human Evidence Collection Readiness V3
 - fase: `7.20`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

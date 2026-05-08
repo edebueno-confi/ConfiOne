@@ -225,3 +225,9 @@ Preparar um pacote documental objetivo para coleta futura de evidencia humana re
 ## Vinculo com playbook operacional
 - o playbook operacional de coleta ficou registrado em:
   - `docs/knowledge/KNOWLEDGE_P0_APPROVAL_COLLECTION_PLAYBOOK.md`
+- a expansao da trilha P0 para os `58` artigos do legado ficou consolidada em:
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+- o intake geral por artigo ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+- o playbook geral de coleta ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
