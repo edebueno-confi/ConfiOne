@@ -322,3 +322,27 @@
 - o ticket workspace passa a mostrar ultimo retorno tecnico e link para abrir a demanda no Engineering Workspace quando existir permissao e rota.
 - suporte pode acompanhar o vinculo tecnico do ticket, mas nao altera work item sem papel tecnico autorizado.
 - o workspace de engenharia nao substitui backlog de produto, sprint, kanban, chat interno ou sistema externo de notificacao.
+
+## Evidencias seguras da fase 8.9
+- `/support/tickets/:ticketId` agora pode enviar evidencias reais por fluxo governado.
+- a experiencia do operador continua simples:
+  - selecionar arquivo
+  - validar tipo e tamanho
+  - enviar
+  - ver a evidencia entrar no rail do ticket
+  - abrir download temporario quando autorizado
+- o frontend nao monta path nem signed URL:
+  - pede um intent de upload ao backend
+  - envia o arquivo para a function de upload
+  - recebe metadata sanitizada de volta
+  - pede um grant de download ao backend quando o operador quer abrir a evidencia
+- a leitura operacional do rail continua restrita a:
+  - nome exibivel
+  - tipo
+  - tamanho
+  - autor
+  - data
+  - status
+- bucket, path interno e URL assinada nao aparecem no fluxo principal.
+- a evidencia continua pertencendo ao ticket e ao tenant; upload e download cross-tenant sao bloqueados.
+- arquivamento/remocao ainda nao faz parte do fluxo porque nao existe RPC segura habilitada para isso.

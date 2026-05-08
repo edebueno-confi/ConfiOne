@@ -204,8 +204,8 @@ Resultado:
 
 ## Riscos restantes
 
-- upload seguro ainda depende de bucket, policies e contrato proprio de storage
-- engenharia ainda nao possui workspace dedicado; o ticket apenas registra e exibe o handoff
+- o lote de storage seguro ficou para um corte proprio e nao deveria ser resolvido dentro deste documento
+- o lifecycle tecnico detalhado foi movido para o Engineering Workspace dedicado e continua fora do escopo deste documento
 - categoria inicial do ticket continua fora deste lote
 - notificacao externa continua fora do escopo
 
@@ -217,3 +217,14 @@ Objetivo do proximo lote:
 
 - dar superficie operacional propria para `engineering_work_items`
 - fechar fila, detalhe, status e ownership tecnico sem empurrar isso para dentro do ticket workspace
+
+## Atualizacao posterior
+
+O lote posterior `Secure Ticket Evidence Storage V3` fechou a pendencia de storage deste documento:
+
+- bucket privado `ticket-evidence`
+- policies de upload/download por tenant/ticket
+- intent de upload por RPC
+- download temporario por grant curto
+- metadata sanitizada em `vw_support_ticket_attachments`
+- upload real habilitado no Ticket Workspace sem expor `storage_bucket` ou `storage_object_path`

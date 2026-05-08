@@ -107,7 +107,8 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 - Status Fase 8.6: `/support/queue` passou a abrir tickets por intake real com `vw_support_ticket_intake_tenants`, `vw_support_ticket_intake_contacts` e `rpc_create_ticket`, sem criar categoria inicial fake nem leitura direta de tabela-base.
 - Status Fase 8.7: `/support/tickets/:ticketId` passou a ler anexos por metadata sanitizada (`vw_support_ticket_attachments`) e a registrar handoff tecnico real por `rpc_support_create_engineering_work_item_from_ticket`, com `engineering_work_items`, `engineering_ticket_links`, `ticket_event` e `audit_log`.
 - Status Fase 8.8: `/engineering` e `/engineering/work-items/:workItemId` foram criadas como superficie propria para operar `engineering_work_items`, com fila, detalhe, ownership, status tecnico, updates estruturados e retorno ao suporte por contrato real.
-- Contratos ainda necessarios: upload seguro de anexos; categoria inicial formal; SLA/motivo se entrar no produto; notificacoes externas se Produto decidir.
+- Status Fase 8.9: `/support/tickets/:ticketId` passou a enviar evidencias reais com bucket privado `ticket-evidence`, policies por tenant/ticket, intent de upload, metadata sanitizada e download temporario curto sem expor `storage_bucket` nem `storage_object_path` ao frontend.
+- Contratos ainda necessarios: categoria inicial formal; SLA/motivo se entrar no produto; arquivamento seguro de evidencia; notificacoes externas se Produto decidir.
 - Riscos: expor nota interna ao cliente, criar transicao invalida de status, enviar artigo sem URL publica segura.
 - Dependencias: RLS de ticketing, auditoria de eventos e regra de permissao por role.
 - Criterios de aceite: todo comando passa por RPC, toda mutacao gera evento/audit trail, frontend nao monta URL publica por heuristica.
@@ -164,47 +165,48 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 
 ## Proximo lote tecnico recomendado
 
-### Lote: Secure Ticket Evidence Storage V3
+### Lote: Ticket Classification And SLA Governance V3
 
-Objetivo: fechar upload/storage seguro de evidencias do ticket sem expor bucket/path sensivel e sem permitir anexo cross-tenant.
+Objetivo: fechar classificacao operacional inicial de tickets, motivos auditaveis, prioridade/SLA governados e transicoes associadas sem inventar regra no frontend.
 
 Ordem sugerida:
-1. Auditar storage/buckets/policies existentes.
-2. Definir tabela de metadata final para evidencias reais e limites de tipo/tamanho.
-3. Criar RPC/contrato para registrar upload autorizado e arquivamento seguro.
-4. Criar read model sem `bucket`, `path`, URL permanente ou segredo.
-5. Conectar UI de upload apenas se bucket/policy estiverem seguros.
-6. Validar tenant isolation, permissao, audit trail, ticket_event e ausencia de path sensivel.
+1. Auditar enums, constraints e surface atual de status/prioridade/categoria.
+2. Definir categoria inicial formal e motivos operacionais aceitos.
+3. Criar read models auxiliares de intake/workspace para categorias e motivos.
+4. Criar RPCs para classificar ticket, revisar prioridade e operar transicoes com motivo quando necessario.
+5. Conectar fila e workspace apenas aos contratos reais.
+6. Validar SLA/prioridade/estado por tenant, auditoria e regras de transicao.
 
 Migrations necessarias:
-- sim, se nao houver bucket/policy/storage metadata final suficiente.
+- sim, para categoria inicial formal, motivos e possivel camada de SLA.
 
 Views necessarias:
-- evidencias por ticket com metadata sanitizada
-- possivel read model administrativo de governanca de anexos
+- opcoes controladas de classificacao/prioridade/SLA
+- possiveis read models de fila com sinais operacionais adicionais
 
 RPCs necessarias:
-- solicitar/registrar upload autorizado
-- arquivar/remover evidencia se houver regra segura
-- possivel geracao de URL temporaria se a arquitetura decidir
+- classificar ticket
+- revisar prioridade
+- aplicar motivo operacional
+- possivel recalculo/control plane de SLA se o dominio existir
 
 RLS/policies:
-- isolamento por tenant/ticket
-- policies de storage alinhadas a ticket e tenant
-- sem acesso direto a paths sensiveis pelo frontend
+- isolamento por tenant
+- transicoes permitidas por papel
+- nenhuma classificacao livre fora do backend
 
 Audit logs:
-- toda evidencia adicionada/arquivada precisa gerar audit trail e evento no ticket.
+- toda mudanca de classificacao, prioridade, motivo e SLA precisa gerar audit trail e `ticket_event`.
 
 Fixtures/testes:
-- ticket com evidencia real permitida
-- ticket sem evidencia
+- ticket com classificacao definida
+- ticket sem categoria inicial
 - tentativa cross-tenant bloqueada
-- path sensivel ausente no read model
+- motivo/transicao invalida bloqueados
 
 Impacto no front:
-- substituir o estado bloqueado de upload por fluxo real somente se storage estiver seguro
-- manter lista de evidencias sanitizada no ticket workspace
+- completar intake e workspace com classificacao operacional real
+- evitar copy improvisada de categoria/SLA no frontend
 
 ## Decisoes que ainda dependem de Produto
 - Se Support e Admin devem convergir em um App Shell unico.

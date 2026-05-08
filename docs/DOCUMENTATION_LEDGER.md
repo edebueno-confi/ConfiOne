@@ -18,6 +18,47 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 8.9 - Secure Ticket Evidence Storage V3
+- fase: `8.9`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: o storage seguro de evidencias do ticket foi fechado com bucket privado, policies por tenant/ticket, upload governado por intent, metadata sanitizada, download temporario por grant curto e UI conectada no Ticket Workspace sem expor bucket ou path interno.
+- docs alterados:
+  - `docs/SECURE_TICKET_EVIDENCE_STORAGE_V3.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/SUPPORT_TICKET_ATTACHMENTS_AND_ESCALATION_V3.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - `vw_support_ticket_attachments`
+  - `rpc_support_create_ticket_attachment_upload`
+  - `rpc_support_register_ticket_attachment`
+  - `rpc_support_get_ticket_attachment_download_url`
+  - edge functions `ticket-evidence-upload` e `ticket-evidence-download`
+- telas afetadas:
+  - `/support/tickets/:ticketId`
+  - `/support/queue` em regressao rapida
+- runtime/UI:
+  - o suporte agora consegue enviar evidencias reais com validacao de tipo/tamanho e refresh imediato da lista sanitizada
+  - o download passou a usar URL temporaria curta sem expor coordenada sensivel de storage ao frontend
+  - arquivamento/remocao de evidencia segue bloqueado por ausencia de RPC segura dedicada
+- riscos restantes:
+  - arquivamento seguro de evidencia continua fora do corte
+  - antivirus/scan e retencao/expurgo de storage ainda precisam lote proprio
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+- impacto na FAQ futura:
+  - consolida a explicacao futura de como evidencias de ticket entram na plataforma com governanca, download temporario e isolamento por tenant, sem vazar estrutura interna de storage
+
 ### Fase 8.8 - Engineering Workspace Operational Core V3
 - fase: `8.8`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

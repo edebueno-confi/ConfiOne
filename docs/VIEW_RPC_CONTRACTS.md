@@ -70,6 +70,25 @@ Fase 8.6:
 - O backend continua controlando o status inicial em `new`, cria `ticket_created` e preserva o audit trail existente.
 - Categoria inicial continua sem contrato de dominio proprio e, por isso, nao foi habilitada no intake.
 
+Fase 8.9:
+- O storage seguro de evidências de ticket agora foi materializado com bucket privado, metadata governada, signed URL curta e isolamento explícito por `tenant_id` + `ticket_id`.
+- O bucket oficial do domínio é:
+  - `ticket-evidence`
+- O frontend autenticado continua sem ler `ticket_attachments` nem `storage.objects` diretamente.
+- A leitura contratual de evidências continua por:
+  - `vw_support_ticket_attachments`
+- A escrita contratual de evidências passa a existir por:
+  - `rpc_support_create_ticket_attachment_upload`
+  - `rpc_support_register_ticket_attachment`
+  - `rpc_support_get_ticket_attachment_download_url`
+- O upload binário segue fluxo governado:
+  - intent por RPC
+  - envio para `ticket-evidence-upload`
+  - registro final via `rpc_support_register_ticket_attachment`
+- O download não expõe `bucket`, `path` nem URL persistente:
+  - grant curto por RPC
+  - resolução por `ticket-evidence-download`
+
 Fase 4:
 - Knowledge Base agora possui núcleo editorial real com views internas contratuais e RPCs administrativas próprias.
 - O frontend administrativo futuro deve consumir a superfície de leitura apenas por:
@@ -990,6 +1009,9 @@ Fase 8.2:
   - `rpc_add_internal_ticket_note`
   - `rpc_close_ticket`
   - `rpc_reopen_ticket`
+  - `rpc_support_create_ticket_attachment_upload`
+  - `rpc_support_register_ticket_attachment`
+  - `rpc_support_get_ticket_attachment_download_url`
   - `rpc_support_create_engineering_work_item_from_ticket`
   - `rpc_support_link_ticket_to_engineering_work_item`
   - `rpc_engineering_assign_work_item`
@@ -1109,6 +1131,55 @@ Fase 8.2:
 - suporte ve vinculos tecnicos permitidos, mas nao escreve em work item tecnico
 - `engineering_work_item` nao e ticket e nao deve virar backlog de produto generico
 - notificacao externa, SLA tecnico, upload/storage e sprint/kanban continuam fora deste contrato
+
+## Fase 8.9 - Secure Ticket Evidence Storage V3
+
+### Leitura consumida pelo frontend
+- `vw_support_ticket_attachments`
+
+### Escrita consumida pelo frontend
+- `rpc_support_create_ticket_attachment_upload`
+- `rpc_support_register_ticket_attachment`
+- `rpc_support_get_ticket_attachment_download_url`
+
+### Functions operacionais consumidas pelo frontend
+- `ticket-evidence-upload`
+- `ticket-evidence-download`
+
+### Regras de consumo
+- `/support/tickets/:ticketId` lista evidências apenas por metadata sanitizada.
+- a view contratual expõe somente:
+  - `attachment_id`
+  - `ticket_id`
+  - `display_name`
+  - `content_type`
+  - `size_bytes`
+  - `uploaded_by_name`
+  - `created_at`
+  - `status`
+  - `can_download`
+  - `can_archive`
+- a view não expõe:
+  - `storage_bucket`
+  - `storage_object_path`
+  - URL assinada persistente
+  - payload bruto de storage
+- o upload real depende de intent prévio emitido por RPC com:
+  - `tenant_id` explícito
+  - `ticket_id` explícito
+  - tipo MIME permitido
+  - tamanho máximo validado
+  - ator autenticado e autorizado no tenant do ticket
+- o download depende de grant curto emitido por RPC e resolvido por edge function com signed URL temporária.
+- `ticket_event` e `audit_log` são gerados sem registrar `bucket` ou `path` sensível no evento do ticket.
+
+### Boundary mantido
+- bucket permanece privado (`public = false`)
+- o frontend não lê `storage.objects`
+- o frontend não conhece `storage_bucket` nem `storage_object_path`
+- nenhum upload cross-tenant é aceito
+- `authenticated` continua sem DML direto em `ticket_attachments`
+- arquivamento de evidência continua fora da superfície porque não existe RPC segura habilitada para isso neste corte
 
 ## Fase 6.3 - Support Workspace Agent Directory + Assignment UX
 
