@@ -39,6 +39,14 @@ const FIXTURE = {
       globalRole: 'support_agent',
       tenantSlug: 'support-qa-b',
     },
+    {
+      key: 'engineering-member-a',
+      email: 'qa.local.engineering-member-a@genius.local',
+      password: 'Local-QA-Engineering-A-2026!',
+      fullName: 'QA Local Engineering Member A',
+      globalRole: 'engineering_member',
+      tenantSlug: 'support-qa-a',
+    },
   ],
   accessUsers: [
     {
@@ -435,6 +443,21 @@ const FIXTURE = {
         'Consolidar a cronologia do incidente, revisar retries e validar por que o retorno do endpoint não confirmou o processamento.',
       handoffNote:
         'Cliente A com operação crítica parada. Suporte já confirmou impacto, janela e ausência de retorno na trilha externa.',
+    },
+  ],
+  engineeringOperations: [
+    {
+      handoffTitle: 'Investigar timeout do webhook ERP do tenant A',
+      actorKey: 'engineering-member-a',
+      assign: true,
+      status: 'in_progress',
+      statusSummary:
+        'Engenharia iniciou a demanda e confirmou que a análise técnica deve seguir no tenant A.',
+      statusNextStep: 'Consolidar evidências antes do retorno ao suporte.',
+      updateSummary:
+        'Timeout reproduzido em ambiente controlado sem expor payload sensível.',
+      updateNextStep:
+        'Preparar orientação operacional para o suporte validar com o cliente.',
     },
   ],
   publicHelpCenter: {
@@ -2211,6 +2234,69 @@ async function createEngineeringWorkItemFromTicketViaRpc({
   return linkId;
 }
 
+function queryEngineeringWorkItemIdByLink(linkId) {
+  const result = runSupabaseDbQuery(`
+    select engineering_work_item_id::text as id
+    from public.engineering_ticket_links
+    where id = '${sqlEscape(linkId)}'::uuid
+    limit 1;
+  `);
+
+  return result.rows?.[0]?.id ?? null;
+}
+
+async function applyEngineeringOperationViaRpc({
+  actorSession,
+  workItemId,
+  tenantId,
+  operation,
+}) {
+  if (operation.assign) {
+    await callRpcAsUser({
+      apiUrl: actorSession.apiUrl,
+      anonKey: actorSession.anonKey,
+      accessToken: actorSession.accessToken,
+      rpcName: 'rpc_engineering_assign_work_item',
+      body: {
+        p_engineering_work_item_id: workItemId,
+        p_tenant_id: tenantId,
+        p_assigned_to_user_id: null,
+      },
+    });
+  }
+
+  if (operation.status) {
+    await callRpcAsUser({
+      apiUrl: actorSession.apiUrl,
+      anonKey: actorSession.anonKey,
+      accessToken: actorSession.accessToken,
+      rpcName: 'rpc_engineering_update_work_item_status',
+      body: {
+        p_engineering_work_item_id: workItemId,
+        p_tenant_id: tenantId,
+        p_status: operation.status,
+        p_summary: operation.statusSummary,
+        p_next_step: operation.statusNextStep ?? null,
+      },
+    });
+  }
+
+  if (operation.updateSummary) {
+    await callRpcAsUser({
+      apiUrl: actorSession.apiUrl,
+      anonKey: actorSession.anonKey,
+      accessToken: actorSession.accessToken,
+      rpcName: 'rpc_engineering_add_work_item_update',
+      body: {
+        p_engineering_work_item_id: workItemId,
+        p_tenant_id: tenantId,
+        p_summary: operation.updateSummary,
+        p_next_step: operation.updateNextStep ?? null,
+      },
+    });
+  }
+}
+
 function clearFixtureTickets() {
   return null;
 }
@@ -2536,6 +2622,8 @@ async function main() {
   const createdKnowledgeArticles = [];
   const createdKnowledgeLinks = [];
   const createdEngineeringHandoffs = [];
+  const engineeringWorkItemMap = new Map();
+  const createdEngineeringOperations = [];
   const adminSession = await getSessionForKey('qa-admin');
   const contentAuthorSession = await getSessionForKey('content-author');
   const publicHelpCenter = await ensurePublicHelpCenterFixture(contentAuthorSession);
@@ -2613,13 +2701,45 @@ async function main() {
       ticketId,
       handoff,
     });
+    const workItemId = queryEngineeringWorkItemIdByLink(linkId);
+    if (!workItemId) {
+      fail(`Work item ausente para o handoff técnico ${handoff.title}.`);
+    }
 
     createdEngineeringHandoffs.push({
       link_id: linkId,
+      work_item_id: workItemId,
       ticket_title: handoff.ticketTitle,
       ticket_tenant_slug: handoff.ticketTenantSlug,
       work_item_type: handoff.workItemType,
       title: handoff.title,
+    });
+    engineeringWorkItemMap.set(handoff.title, {
+      workItemId,
+      tenantId: tenantMap.get(handoff.ticketTenantSlug),
+    });
+  }
+
+  for (const operation of FIXTURE.engineeringOperations ?? []) {
+    const target = engineeringWorkItemMap.get(operation.handoffTitle);
+    if (!target?.workItemId || !target.tenantId) {
+      fail(`Work item ausente para operacao tecnica: ${operation.handoffTitle}.`);
+    }
+
+    const actorSession = await getSessionForKey(operation.actorKey);
+    await applyEngineeringOperationViaRpc({
+      actorSession,
+      workItemId: target.workItemId,
+      tenantId: target.tenantId,
+      operation,
+    });
+
+    createdEngineeringOperations.push({
+      work_item_id: target.workItemId,
+      actor_key: operation.actorKey,
+      status: operation.status ?? null,
+      assigned: Boolean(operation.assign),
+      update_registered: Boolean(operation.updateSummary),
     });
   }
 
@@ -2672,6 +2792,7 @@ async function main() {
         knowledge_articles: createdKnowledgeArticles,
         knowledge_links: createdKnowledgeLinks,
         engineering_handoffs: createdEngineeringHandoffs,
+        engineering_operations: createdEngineeringOperations,
         public_help_center: publicHelpCenter,
         tickets: createdTickets,
       },

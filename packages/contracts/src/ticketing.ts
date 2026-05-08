@@ -51,6 +51,9 @@ export const TICKET_EVENT_TYPES = [
   'attachment_added',
   'escalated_to_engineering',
   'linked_to_work_item',
+  'engineering_update_added',
+  'engineering_status_updated',
+  'engineering_returned_to_support',
   'resolved',
   'closed',
   'reopened',
@@ -84,11 +87,20 @@ export const ENGINEERING_WORK_ITEM_STATUSES = [
   'rejected',
   'in_progress',
   'waiting_external',
+  'returned_to_support',
   'released',
   'cancelled',
 ] as const;
 export type EngineeringWorkItemStatus =
   (typeof ENGINEERING_WORK_ITEM_STATUSES)[number];
+
+export const ENGINEERING_WORK_ITEM_UPDATE_KINDS = [
+  'progress_update',
+  'status_update',
+  'support_return',
+] as const;
+export type EngineeringWorkItemUpdateKind =
+  (typeof ENGINEERING_WORK_ITEM_UPDATE_KINDS)[number];
 
 export type TicketStatusUpdateTarget = Exclude<TicketStatus, 'closed'>;
 
@@ -617,6 +629,78 @@ export interface SupportTicketEngineeringLink {
   assignedToFullName: string | null;
   workItemCreatedAt: IsoTimestamp;
   workItemUpdatedAt: IsoTimestamp;
+  lastUpdateKind: EngineeringWorkItemUpdateKind | null;
+  lastUpdateSummary: string | null;
+  lastUpdateNextStep: string | null;
+  lastUpdateAt: IsoTimestamp | null;
+}
+
+export interface EngineeringWorkspaceWorkItem {
+  engineeringWorkItemId: Uuid;
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantName: string | null;
+  workItemType: EngineeringWorkItemType;
+  status: EngineeringWorkItemStatus;
+  priority: TicketPriority;
+  title: string;
+  description: string;
+  createdByUserId: Uuid;
+  createdByFullName: string | null;
+  assignedToUserId: Uuid | null;
+  assignedToFullName: string | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  updatedByUserId: Uuid | null;
+  updatedByFullName: string | null;
+  linkedTicketsCount: number;
+  originTicketId: Uuid | null;
+  originTicketTitle: string | null;
+  originTicketStatus: TicketStatus | null;
+  originTicketPriority: TicketPriority | null;
+  originTicketSeverity: TicketSeverity | null;
+  lastUpdateKind: EngineeringWorkItemUpdateKind | null;
+  lastUpdateSummary: string | null;
+  lastUpdateNextStep: string | null;
+  lastUpdateAt: IsoTimestamp | null;
+  lastUpdateByUserId: Uuid | null;
+  lastUpdateByFullName: string | null;
+  canManageEngineering: boolean;
+}
+
+export interface EngineeringWorkspaceTicketLink {
+  engineeringTicketLinkId: Uuid;
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantName: string | null;
+  engineeringWorkItemId: Uuid;
+  workItemTitle: string;
+  workItemStatus: EngineeringWorkItemStatus;
+  workItemPriority: TicketPriority;
+  ticketId: Uuid;
+  ticketTitle: string;
+  ticketStatus: TicketStatus;
+  ticketPriority: TicketPriority;
+  ticketSeverity: TicketSeverity;
+  ticketUpdatedAt: IsoTimestamp;
+  handoffNote: string | null;
+  createdByUserId: Uuid;
+  createdByFullName: string | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+}
+
+export interface EngineeringWorkspaceUpdate {
+  engineeringWorkItemUpdateId: Uuid;
+  tenantId: Uuid;
+  engineeringWorkItemId: Uuid;
+  updateKind: EngineeringWorkItemUpdateKind;
+  status: EngineeringWorkItemStatus | null;
+  summary: string;
+  nextStep: string | null;
+  createdByUserId: Uuid;
+  createdByFullName: string | null;
+  createdAt: IsoTimestamp;
 }
 
 export interface SupportKnowledgeArticlePickerItem {
@@ -723,4 +807,51 @@ export interface RpcSupportLinkTicketToEngineeringWorkItemPayload {
   handoffNote?: string | null;
 }
 export type RpcSupportLinkTicketToEngineeringWorkItemResponse =
+  EngineeringTicketLinkRecord;
+
+export interface RpcEngineeringAssignWorkItemPayload {
+  engineeringWorkItemId: Uuid;
+  tenantId: Uuid;
+  assignedToUserId?: Uuid | null;
+}
+export type RpcEngineeringAssignWorkItemResponse = EngineeringWorkItemRecord;
+
+export interface RpcEngineeringUnassignWorkItemPayload {
+  engineeringWorkItemId: Uuid;
+  tenantId: Uuid;
+}
+export type RpcEngineeringUnassignWorkItemResponse = EngineeringWorkItemRecord;
+
+export interface RpcEngineeringUpdateWorkItemStatusPayload {
+  engineeringWorkItemId: Uuid;
+  tenantId: Uuid;
+  status: EngineeringWorkItemStatus;
+  summary: string;
+  nextStep?: string | null;
+}
+export type RpcEngineeringUpdateWorkItemStatusResponse = EngineeringWorkItemRecord;
+
+export interface RpcEngineeringAddWorkItemUpdatePayload {
+  engineeringWorkItemId: Uuid;
+  tenantId: Uuid;
+  summary: string;
+  nextStep?: string | null;
+}
+export type RpcEngineeringAddWorkItemUpdateResponse = EngineeringWorkspaceUpdate;
+
+export interface RpcEngineeringReturnWorkItemToSupportPayload {
+  engineeringWorkItemId: Uuid;
+  tenantId: Uuid;
+  summary: string;
+  nextStep: string;
+}
+export type RpcEngineeringReturnWorkItemToSupportResponse = EngineeringWorkItemRecord;
+
+export interface RpcEngineeringLinkExistingWorkItemToTicketPayload {
+  engineeringWorkItemId: Uuid;
+  ticketId: Uuid;
+  tenantId: Uuid;
+  handoffNote?: string | null;
+}
+export type RpcEngineeringLinkExistingWorkItemToTicketResponse =
   EngineeringTicketLinkRecord;
