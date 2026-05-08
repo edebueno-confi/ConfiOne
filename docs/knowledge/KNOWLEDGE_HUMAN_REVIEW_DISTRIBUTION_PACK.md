@@ -15,6 +15,10 @@ Este documento não aprova, não publica e não substitui registro formal em `do
 - `ok` genérico não aprova
 - resposta ambígua mantém o artigo `pendente`
 - decisão aceita por artigo: `aprovado`, `aprovado com ajuste`, `pendente` ou `bloqueado`
+- o pacote de leitura com texto completo dos `8` artigos está em:
+  - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_READING_PACK.md`
+- a versão resumida para envio está em:
+  - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_SUMMARY.md`
 
 ## Pacote para Produto
 

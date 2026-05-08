@@ -1698,6 +1698,36 @@ Documentos históricos:
     - registrar respostas formais em `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`
     - manter os `8` candidatos como `pendente` ate evidencia humana explicita
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.40: Knowledge Human Review Reading Pack V3 concluido como pacote de leitura humano dos candidatos da Knowledge Base.
+  - O pacote principal de leitura foi criado em:
+    - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_READING_PACK.md`
+  - A versão resumida para envio foi criada em:
+    - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_SUMMARY.md`
+  - A fase consolidou o texto completo dos `8` artigos candidatos para leitura de `Produto` e `Suporte/CS`, incluindo:
+    - indice navegavel em markdown
+    - categoria publica proposta
+    - subcategoria futura opcional
+    - status editorial pendente
+    - checklist Produto por artigo
+    - checklist Suporte/CS por artigo
+    - bloco de resposta por artigo
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Proxima acao real:
+    - enviar `KNOWLEDGE_HUMAN_REVIEW_SUMMARY.md` e `KNOWLEDGE_HUMAN_REVIEW_READING_PACK.md` para `Produto` e `Suporte/CS`
+    - registrar as respostas reais em `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`
+    - manter os `8` candidatos como `pendente` ate evidencia humana explicita
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -1719,7 +1749,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Enviar o pacote operacional de revisao humana para `Produto` e `Suporte/CS` e registrar as respostas formais no `KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`; todos os `8` candidatos seguem pendentes ate evidencia humana explicita.
+Enviar o pacote de leitura humano para `Produto` e `Suporte/CS` e registrar as respostas formais no `KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`; todos os `8` candidatos seguem pendentes ate evidencia humana explicita.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único

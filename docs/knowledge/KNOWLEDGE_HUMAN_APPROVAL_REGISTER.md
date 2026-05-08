@@ -290,3 +290,7 @@ Nenhum override pode permitir publicacao de:
   - `docs/knowledge/KNOWLEDGE_LEGACY_CORPUS_FINAL_READINESS_PACK.md`
 - o pacote operacional copiavel para distribuicao da revisao humana ficou registrado em:
   - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_DISTRIBUTION_PACK.md`
+- o pacote de leitura humano com o texto completo dos oito candidatos ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_READING_PACK.md`
+- o resumo de envio do pacote de leitura ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_SUMMARY.md`

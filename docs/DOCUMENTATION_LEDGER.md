@@ -18,6 +18,33 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.40 - Knowledge Human Review Reading Pack V3
+- fase: `7.40`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: o pacote de leitura humano foi criado para permitir que Produto e Suporte/CS revisem o texto completo dos `8` artigos candidatos da Knowledge Base antes de qualquer aprovação ou publicação.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_READING_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_SUMMARY.md`
+  - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_DISTRIBUTION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_LEGACY_CORPUS_FINAL_READINESS_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+- riscos restantes:
+  - os `8` candidatos continuam pendentes por ausencia de evidencia humana real
+  - o pacote de leitura nao aprova nem publica qualquer artigo
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - cria o material revisavel com texto completo necessario para decisao humana, sem depender de frontend ou publicacao previa
+
 ### Fase 7.39 - Knowledge Human Review Distribution Pack V3
 - fase: `7.39`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

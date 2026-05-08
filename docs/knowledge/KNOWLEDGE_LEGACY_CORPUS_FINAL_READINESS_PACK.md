@@ -140,6 +140,10 @@ Os temas abaixo devem permanecer fora de novas reescritas publicas ate haver nov
 - publicacao so deve virar lote depois da aprovacao explicita registrada em repositório
 - o pacote operacional copiavel para envio a Produto e Suporte/CS ficou registrado em:
   - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_DISTRIBUTION_PACK.md`
+- o pacote de leitura humano com o texto completo dos `8` candidatos ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_READING_PACK.md`
+- o resumo de envio do pacote de leitura ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_SUMMARY.md`
 
 ## Decisao final desta etapa
 
