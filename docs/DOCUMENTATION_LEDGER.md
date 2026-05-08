@@ -18,6 +18,33 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 7.34 - Knowledge PrazoPendenciasPostagem Subcluster Prep V3
+- fase: `7.34`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: o subcluster seguro `Prazo e pendências de postagem` foi preparado documentalmente com leitura dos artigos ligados a prazo logístico, pendência de logística reversa, CEP/endereço e revisão cadastral, além da delimitação explícita da fronteira sensível com a regra de não gerar logística reversa, sem reescrever artigos completos, aprovar ou publicar conteúdo.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_PRAZO_PENDENCIAS_POSTAGEM_SUBCLUSTER_PREP.md`
+  - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_PREP.md`
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma alteracao de contrato backend
+  - nenhum ajuste em Supabase, migrations, views, RPCs, contracts, fixtures, RLS ou permissoes
+- telas afetadas:
+  - nenhuma alteracao de UI nesta fase
+- riscos restantes:
+  - o subcluster ainda depende de reescrita segura para remover navegacao interna literal e acoplamento a backoffice
+  - a fronteira com excecoes manuais de logistica reversa continua bloqueada para publicacao direta
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit documental e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - isola o primeiro recorte de logística com melhor potencial público, sem misturar integração, contrato ou seller
+
 ### Fase 7.33 - Knowledge LogisticaPostagem Cluster Prep V3
 - fase: `7.33`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

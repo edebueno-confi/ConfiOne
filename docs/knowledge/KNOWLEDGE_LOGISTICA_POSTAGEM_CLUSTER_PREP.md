@@ -433,4 +433,5 @@
 - nenhum artigo foi aprovado
 - nenhuma aprovação foi simulada
 - nenhum artigo foi publicado
-
+- o subcluster seguro de prazo e pendências ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_PRAZO_PENDENCIAS_POSTAGEM_SUBCLUSTER_PREP.md`

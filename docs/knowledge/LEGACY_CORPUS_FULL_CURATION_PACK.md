@@ -285,6 +285,8 @@
   - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_CLUSTERS_CLOSURE.md`
 - Preparação editorial do cluster de logística reversa e postagem registrada em:
   - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_PREP.md`
+- Preparação editorial do subcluster de prazo e pendências de postagem registrada em:
+  - `docs/knowledge/KNOWLEDGE_PRAZO_PENDENCIAS_POSTAGEM_SUBCLUSTER_PREP.md`
 
 ### Clusters candidatos
 

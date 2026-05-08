@@ -1520,6 +1520,35 @@ Documentos históricos:
   - Pendencias mapeadas sem implementacao nesta fase:
     - proximos lotes devem seguir por cluster, subcluster ou recorte seguro validado
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.34: Knowledge PrazoPendenciasPostagem Subcluster Prep V3 concluido como preparacao documental do subcluster seguro de prazo e pendencias de postagem.
+  - O mapa do subcluster foi criado em `docs/knowledge/KNOWLEDGE_PRAZO_PENDENCIAS_POSTAGEM_SUBCLUSTER_PREP.md`.
+  - A fase analisou os artigos ligados a:
+    - pendencia de logistica reversa
+    - prazo logistico por estado
+    - erro de CEP ou endereco incorreto
+    - alteracao de e-mail ou endereco da solicitacao
+    - fronteira sensivel com a regra de nao gerar logistica reversa
+  - As fronteiras editoriais foram registradas para separar:
+    - recortes publicos por prazo, pendencia e revisao cadastral
+    - operacao manual de backoffice
+    - excecoes internas de autorizacao de postagem
+  - A recomendacao do subcluster foi mantida como:
+    - `candidato a publico`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos lotes devem seguir por reescrita segura do subcluster ou por validacao humana apos reescrita
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.

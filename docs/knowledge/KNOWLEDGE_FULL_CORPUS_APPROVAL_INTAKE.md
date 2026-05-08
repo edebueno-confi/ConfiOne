@@ -29,6 +29,8 @@
   - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_CLUSTERS_CLOSURE.md`
 - A preparação editorial do cluster de logística reversa e postagem ficou registrada em:
   - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_PREP.md`
+- A preparação editorial do subcluster de prazo e pendências de postagem ficou registrada em:
+  - `docs/knowledge/KNOWLEDGE_PRAZO_PENDENCIAS_POSTAGEM_SUBCLUSTER_PREP.md`
 
 | Artigo | Categoria proposta | Prioridade | Decisão Produto | Decisão Suporte/CS | Pode publicar | Pendência principal | Evidência necessária |
 | --- | --- | --- | --- | --- | --- | --- | --- |
