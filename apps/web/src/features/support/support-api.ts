@@ -479,6 +479,38 @@ export async function getSupportTicketTimelineRecent(
   };
 }
 
+interface GetSupportTicketTimelinePageOptions {
+  limit?: number;
+  beforeOccurredAt?: string | null;
+  beforeTimelineEntryId?: Uuid | null;
+}
+
+export async function getSupportTicketTimelinePage(
+  ticketId: Uuid,
+  options: GetSupportTicketTimelinePageOptions = {},
+): Promise<SupportTicketTimelineRecentWindow> {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_get_ticket_timeline', {
+    p_ticket_id: ticketId,
+    p_limit: options.limit ?? 50,
+    p_before_occurred_at: options.beforeOccurredAt ?? null,
+    p_before_timeline_entry_id: options.beforeTimelineEntryId ?? null,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar a pagina da timeline do ticket.');
+  }
+
+  const rows = (data ?? []) as Record<string, unknown>[];
+
+  return {
+    totalAvailableCount: Number(rows[0]?.total_available_count ?? 0),
+    recentLimit: Number(rows[0]?.page_limit ?? options.limit ?? 50),
+    hasMore: Boolean(rows[0]?.has_more),
+    entries: rows.map((row) => mapTimelineItem(row)),
+  };
+}
+
 export async function listSupportCustomers360() {
   const client = requireClient();
   const { data, error } = await client

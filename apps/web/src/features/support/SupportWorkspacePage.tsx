@@ -50,6 +50,7 @@ import {
   getSupportCustomerRecentTickets,
   getSupportTicketDetail,
   getSupportTicketKnowledgeLinks,
+  getSupportTicketTimelinePage,
   getSupportTicketTimelineRecent,
   linkSupportTicketArticle,
   listSupportAssignableAgents,
@@ -943,9 +944,13 @@ function TechnicalTimelineRow({
 function SupportConversation({
   window,
   requesterName,
+  loadingMore = false,
+  onLoadMore,
 }: {
   window: SupportTicketTimelineRecentWindow;
   requesterName?: string | null;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 }) {
   const entries = window.entries;
   const conversationEntries = entries.filter((entry) => entry.entryType === 'message');
@@ -988,9 +993,16 @@ function SupportConversation({
       )}
 
       {window.hasMore ? (
-        <p className="text-xs leading-5 text-[color:var(--color-muted)]">
-          Historico anterior recolhido para manter a leitura rapida.
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-dashed border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
+          <p className="text-xs leading-5 text-[color:var(--color-muted)]">
+            Há histórico anterior disponível no contrato paginado da timeline.
+          </p>
+          {onLoadMore ? (
+            <GhostButton disabled={loadingMore} onClick={onLoadMore} type="button">
+              {loadingMore ? 'Carregando histórico' : 'Carregar histórico anterior'}
+            </GhostButton>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
@@ -2790,6 +2802,7 @@ function SupportWorkspaceView({
   const [timelineWindow, setTimelineWindow] = useState<SupportTicketTimelineRecentWindow>(
     emptyTimelineWindow(),
   );
+  const [timelineLoadingMore, setTimelineLoadingMore] = useState(false);
   const [customer, setCustomer] = useState<SupportCustomer360 | null>(null);
   const [customerAccountContext, setCustomerAccountContext] =
     useState<SupportCustomerAccountContext | null>(null);
@@ -2892,6 +2905,7 @@ function SupportWorkspaceView({
       if (!detail) {
         setTicketDetail(null);
         setTimelineWindow(emptyTimelineWindow());
+        setTimelineLoadingMore(false);
         setCustomer(null);
         setCustomerRecentTickets(emptyCustomerRecentTicketsWindow());
         setCustomerRecentEvents(emptyCustomerRecentEventsWindow());
@@ -2911,6 +2925,7 @@ function SupportWorkspaceView({
       ]);
       setTicketDetail(detail);
       setTimelineWindow(timelineRecent);
+      setTimelineLoadingMore(false);
       setCustomer(customerRow);
       setCustomerAccountContext(customerAccountRow);
       setCustomerRecentTickets(recentTicketsWindow);
@@ -3003,6 +3018,7 @@ function SupportWorkspaceView({
 
       setTicketDetail(null);
       setTimelineWindow(emptyTimelineWindow());
+      setTimelineLoadingMore(false);
       setCustomer(null);
       setCustomerAccountContext(null);
       setCustomerRecentTickets(emptyCustomerRecentTicketsWindow());
@@ -3046,6 +3062,7 @@ function SupportWorkspaceView({
       setDetailPhase('idle');
       setTicketDetail(null);
       setTimelineWindow(emptyTimelineWindow());
+      setTimelineLoadingMore(false);
       setCustomer(null);
       setCustomerAccountContext(null);
       setCustomerRecentTickets(emptyCustomerRecentTicketsWindow());
@@ -3066,6 +3083,7 @@ function SupportWorkspaceView({
   useEffect(() => {
     setDetailNotice(null);
     pendingThreadScrollRef.current = 'idle';
+    setTimelineLoadingMore(false);
   }, [selectedTicketId]);
 
   useEffect(() => {
@@ -3207,6 +3225,79 @@ function SupportWorkspaceView({
       applySuccess('Link público copiado com sucesso.');
     } catch {
       applyFailure('Não foi possível copiar o link público agora.');
+    }
+  }
+
+  async function handleLoadOlderTimeline() {
+    if (!ticketDetail || !timelineWindow.hasMore || timelineLoadingMore) {
+      return;
+    }
+
+    const oldestEntry = [...timelineWindow.entries].sort((left, right) => {
+      const occurredDiff =
+        new Date(left.occurredAt).getTime() - new Date(right.occurredAt).getTime();
+
+      if (occurredDiff !== 0) {
+        return occurredDiff;
+      }
+
+      return left.timelineEntryId.localeCompare(right.timelineEntryId);
+    })[0];
+
+    if (!oldestEntry) {
+      return;
+    }
+
+    setTimelineLoadingMore(true);
+    setDetailNotice(null);
+
+    try {
+      const olderPage = await getSupportTicketTimelinePage(ticketDetail.id, {
+        limit: 25,
+        beforeOccurredAt: oldestEntry.occurredAt,
+        beforeTimelineEntryId: oldestEntry.timelineEntryId,
+      });
+
+      setTimelineWindow((current) => {
+        const existingIds = new Set(
+          current.entries.map((entry) => entry.timelineEntryId),
+        );
+        const olderEntries = olderPage.entries.filter(
+          (entry) => !existingIds.has(entry.timelineEntryId),
+        );
+        const mergedEntries = [...olderEntries, ...current.entries].sort((left, right) => {
+          const occurredDiff =
+            new Date(left.occurredAt).getTime() - new Date(right.occurredAt).getTime();
+
+          if (occurredDiff !== 0) {
+            return occurredDiff;
+          }
+
+          return left.timelineEntryId.localeCompare(right.timelineEntryId);
+        });
+
+        return {
+          entries: mergedEntries,
+          totalAvailableCount:
+            olderPage.totalAvailableCount || current.totalAvailableCount,
+          recentLimit: current.recentLimit + olderEntries.length,
+          hasMore: olderPage.hasMore,
+        };
+      });
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao carregar o histórico anterior do ticket.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      applyFailure(classified.message);
+    } finally {
+      setTimelineLoadingMore(false);
     }
   }
 
@@ -4086,7 +4177,12 @@ function SupportWorkspaceView({
                     data-ticket-thread-scroll
                     ref={threadScrollContainerRef}
                   >
-                    <SupportConversation requesterName={requesterLabel} window={timelineWindow} />
+                    <SupportConversation
+                      loadingMore={timelineLoadingMore}
+                      onLoadMore={() => void handleLoadOlderTimeline()}
+                      requesterName={requesterLabel}
+                      window={timelineWindow}
+                    />
                   </div>
 
                   <div
