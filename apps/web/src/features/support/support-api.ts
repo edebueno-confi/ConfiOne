@@ -1,4 +1,5 @@
 import { toAppError } from '../../app/errors';
+import { readRuntimeConfig } from '../../app/runtime-config';
 import { requireSupabaseBrowserClient } from '../../app/supabase-browser';
 import type {
   CustomerIntegrationEnvironment,
@@ -19,6 +20,9 @@ import type {
   RpcCloseTicketResponse,
   RpcCreateTicketPayload,
   RpcCreateTicketResponse,
+  RpcSupportCreateTicketAttachmentUploadResponse,
+  RpcSupportGetTicketAttachmentDownloadUrlResponse,
+  RpcSupportRegisterTicketAttachmentResponse,
   RpcReopenTicketPayload,
   RpcReopenTicketResponse,
   RpcSupportArchiveTicketArticleLinkPayload,
@@ -63,6 +67,65 @@ import type {
 
 function requireClient() {
   return requireSupabaseBrowserClient();
+}
+
+function requireSupabaseFunctionBaseUrl() {
+  const config = readRuntimeConfig();
+
+  if (!config.ok) {
+    throw new Error('As funções seguras do Supabase não estão disponíveis neste ambiente.');
+  }
+
+  return {
+    supabaseUrl: config.config.supabaseUrl.replace(/\/$/, ''),
+    supabaseAnonKey: config.config.supabaseAnonKey,
+  };
+}
+
+async function requireActiveSessionToken() {
+  const client = requireClient();
+  const {
+    data: { session },
+    error,
+  } = await client.auth.getSession();
+
+  if (error) {
+    throw new Error('Falha ao recuperar a sessão ativa antes de chamar o backend seguro.');
+  }
+
+  if (!session?.access_token) {
+    throw new Error('A sessão ativa expirou antes da chamada segura.');
+  }
+
+  return session.access_token;
+}
+
+async function callSupabaseFunctionJson<T>(
+  relativeUrl: string,
+  init: RequestInit = {},
+): Promise<T> {
+  const { supabaseUrl, supabaseAnonKey } = requireSupabaseFunctionBaseUrl();
+  const accessToken = await requireActiveSessionToken();
+  const response = await fetch(`${supabaseUrl}${relativeUrl}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      apikey: supabaseAnonKey,
+      ...(init.headers ?? {}),
+    },
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; [key: string]: unknown }
+    | null;
+
+  if (!response.ok) {
+    throw new Error(
+      payload?.error ?? 'Falha ao chamar a função segura vinculada às evidências do ticket.',
+    );
+  }
+
+  return payload as T;
 }
 
 function mapPermissionFlags(row: Record<string, unknown>) {
@@ -494,18 +557,41 @@ function mapSupportTicketAttachment(
   return {
     attachmentId: String(row.attachment_id),
     ticketId: String(row.ticket_id),
-    tenantId: String(row.tenant_id),
-    messageId: (row.message_id as string | null) ?? null,
-    visibility: row.visibility as SupportTicketAttachment['visibility'],
-    fileName: String(row.file_name),
+    displayName: String(row.display_name),
     contentType: (row.content_type as string | null) ?? null,
-    byteSize: Number(row.byte_size ?? 0),
-    uploadedByUserId: String(row.uploaded_by_user_id),
-    uploadedByFullName: (row.uploaded_by_full_name as string | null) ?? null,
+    sizeBytes: Number(row.size_bytes ?? 0),
+    uploadedByName: (row.uploaded_by_name as string | null) ?? null,
     createdAt: String(row.created_at),
-    bucketConfigured: Boolean(row.bucket_configured),
-    storageObjectPresent: Boolean(row.storage_object_present),
-    downloadAvailable: Boolean(row.download_available),
+    status: row.status as SupportTicketAttachment['status'],
+    canDownload: Boolean(row.can_download),
+    canArchive: Boolean(row.can_archive),
+  };
+}
+
+function mapTicketAttachmentUploadContractRow(
+  row: Record<string, unknown>,
+): RpcSupportCreateTicketAttachmentUploadResponse {
+  return {
+    attachmentId: String(row.attachment_id),
+    uploadIntentId: String(row.upload_intent_id),
+    ticketId: String(row.ticket_id),
+    tenantId: String(row.tenant_id),
+    displayName: String(row.display_name),
+    contentType: String(row.content_type),
+    sizeBytes: Number(row.size_bytes ?? 0),
+    maxSizeBytes: Number(row.max_size_bytes ?? 0),
+    expiresAt: String(row.expires_at),
+    uploadUrl: String(row.upload_url),
+  };
+}
+
+function mapTicketAttachmentDownloadContractRow(
+  row: Record<string, unknown>,
+): RpcSupportGetTicketAttachmentDownloadUrlResponse {
+  return {
+    attachmentId: String(row.attachment_id),
+    expiresAt: String(row.expires_at),
+    downloadUrl: String(row.download_url),
   };
 }
 
@@ -776,6 +862,81 @@ export async function listSupportTicketAttachments(ticketId: Uuid) {
   return (data ?? []).map((row) =>
     mapSupportTicketAttachment(row as Record<string, unknown>),
   );
+}
+
+export async function uploadSupportTicketAttachment(input: {
+  ticketId: Uuid;
+  tenantId: Uuid;
+  file: File;
+}): Promise<RpcSupportRegisterTicketAttachmentResponse> {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_create_ticket_attachment_upload', {
+    p_ticket_id: input.ticketId,
+    p_tenant_id: input.tenantId,
+    p_original_filename: input.file.name,
+    p_content_type: input.file.type,
+    p_size_bytes: input.file.size,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao preparar o upload seguro da evidência.');
+  }
+
+  const contractRow = Array.isArray(data) ? data[0] : data;
+
+  if (!contractRow) {
+    throw new Error('O backend não retornou a intenção de upload esperada.');
+  }
+
+  const uploadContract = mapTicketAttachmentUploadContractRow(
+    contractRow as Record<string, unknown>,
+  );
+  const formData = new FormData();
+  formData.append('file', input.file);
+
+  const payload = await callSupabaseFunctionJson<{
+    attachment?: Record<string, unknown>;
+  }>(uploadContract.uploadUrl, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!payload.attachment) {
+    throw new Error('A função segura não devolveu o anexo registrado.');
+  }
+
+  return mapSupportTicketAttachment(payload.attachment);
+}
+
+export async function getSupportTicketAttachmentSignedUrl(
+  attachmentId: Uuid,
+): Promise<{ attachmentId: Uuid; signedUrl: string; expiresAt: string }> {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_get_ticket_attachment_download_url', {
+    p_attachment_id: attachmentId,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao preparar o download seguro da evidência.');
+  }
+
+  const contractRow = Array.isArray(data) ? data[0] : data;
+
+  if (!contractRow) {
+    throw new Error('O backend não retornou a URL temporária esperada para download.');
+  }
+
+  const downloadContract = mapTicketAttachmentDownloadContractRow(
+    contractRow as Record<string, unknown>,
+  );
+
+  return await callSupabaseFunctionJson<{
+    attachmentId: Uuid;
+    signedUrl: string;
+    expiresAt: string;
+  }>(downloadContract.downloadUrl, {
+    method: 'GET',
+  });
 }
 
 export async function listSupportTicketEngineeringLinks(ticketId: Uuid) {

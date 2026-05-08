@@ -46,6 +46,7 @@ import {
   assignTicket,
   closeTicket,
   createTicket,
+  getSupportTicketAttachmentSignedUrl,
   getSupportCustomerAccountContext,
   getSupportCustomer360,
   getSupportCustomerRecentEvents,
@@ -66,6 +67,7 @@ import {
   markSupportDocumentationGap,
   listSupportTicketsQueue,
   reopenTicket,
+  uploadSupportTicketAttachment,
   updateTicketStatus,
 } from './support-api';
 import {
@@ -117,6 +119,10 @@ type AttachmentPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | '
 type EngineeringPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type WorkspaceVariant = 'queue' | 'tickets';
 type ComposerMode = 'public' | 'internal';
+
+const TICKET_ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
+const TICKET_ATTACHMENT_ACCEPT =
+  '.pdf,.json,.jpg,.jpeg,.png,.webp,.csv,.txt,application/pdf,application/json,image/jpeg,image/png,image/webp,text/csv,text/plain';
 
 interface QueueFilters {
   status: TicketStatus | 'all';
@@ -185,6 +191,84 @@ function toneForSeverity(severity: TicketSeverity) {
 
 function humanizeVisibility(value: string) {
   return value === 'internal' ? 'Nota interna' : 'Resposta pública';
+}
+
+function formatAttachmentSize(sizeBytes: number) {
+  if (!Number.isFinite(sizeBytes) || sizeBytes <= 0) {
+    return 'Tamanho indisponível';
+  }
+
+  if (sizeBytes < 1024) {
+    return `${sizeBytes} B`;
+  }
+
+  if (sizeBytes < 1024 * 1024) {
+    return `${Math.max(1, Math.round(sizeBytes / 1024))} KB`;
+  }
+
+  return `${Math.round((sizeBytes / (1024 * 1024)) * 10) / 10} MB`;
+}
+
+function humanizeAttachmentStatus(status: SupportTicketAttachment['status']) {
+  return status === 'archived' ? 'Arquivado' : 'Disponível';
+}
+
+function toneForAttachmentStatus(status: SupportTicketAttachment['status']) {
+  return status === 'archived' ? ('warning' as const) : ('positive' as const);
+}
+
+function friendlyAttachmentUploadErrorMessage(message: string) {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes('content type is not allowed')) {
+    return 'O tipo de arquivo não está liberado para evidências deste ticket.';
+  }
+
+  if (normalized.includes('file size exceeds')) {
+    return 'O arquivo ultrapassa o limite de 10 MB para evidências.';
+  }
+
+  if (normalized.includes('file size must be greater than zero')) {
+    return 'Selecione um arquivo com conteúdo antes de enviar.';
+  }
+
+  if (normalized.includes('ticket is not eligible')) {
+    return 'Este ticket não aceita novas evidências no status atual.';
+  }
+
+  if (normalized.includes('ticket not found')) {
+    return 'O ticket não apareceu no contrato operacional para anexos.';
+  }
+
+  if (normalized.includes('upload intent expired')) {
+    return 'O preparo do upload expirou. Tente enviar o arquivo novamente.';
+  }
+
+  if (normalized.includes('rpc_support_create_ticket_attachment_upload denied')) {
+    return 'Seu acesso atual não permite enviar evidências para este ticket.';
+  }
+
+  return message;
+}
+
+function friendlyAttachmentDownloadErrorMessage(message: string) {
+  const normalized = message.toLowerCase();
+
+  if (
+    normalized.includes('download grant not found') ||
+    normalized.includes('download grant expired')
+  ) {
+    return 'O link temporário expirou antes do download. Tente novamente.';
+  }
+
+  if (
+    normalized.includes('rpc_support_get_ticket_attachment_download_url denied') ||
+    normalized.includes('ticket attachment is not available')
+  ) {
+    return 'A evidência não está disponível para download com o acesso atual.';
+  }
+
+  return message;
 }
 
 function humanizeStatus(status: TicketStatus) {
@@ -1786,10 +1870,20 @@ function SupportTicketAttachmentsPanel({
   attachments,
   message,
   phase,
+  uploading,
+  downloadingAttachmentId,
+  onDownload,
+  onRequestUpload,
+  uploadEnabled,
 }: {
   attachments: SupportTicketAttachment[];
   message: string | null;
   phase: AttachmentPhase;
+  uploading: boolean;
+  downloadingAttachmentId: string | null;
+  onDownload: (attachmentId: Uuid) => void;
+  onRequestUpload: () => void;
+  uploadEnabled: boolean;
 }) {
   if (phase === 'loading' || phase === 'idle') {
     return (
@@ -1806,13 +1900,23 @@ function SupportTicketAttachmentsPanel({
 
   return (
     <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.06)]">
-      <div className="space-y-1.5">
-        <h4 className="text-[13px] font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
-          Evidências
-        </h4>
-        <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-          A leitura mostra apenas metadados sanitizados. O upload segue bloqueado até existir storage governado com bucket e policies seguras.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1.5">
+          <h4 className="text-[13px] font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
+            Evidências
+          </h4>
+          <p className="text-sm leading-6 text-[color:var(--color-muted)]">
+            Upload governado em bucket privado com leitura sanitizada no ticket. Tipos aceitos:
+            PDF, PNG, JPG, WEBP, CSV, TXT e JSON, com até 10 MB por arquivo.
+          </p>
+        </div>
+        <AppButton
+          className="min-w-[172px]"
+          disabled={!uploadEnabled || uploading}
+          onClick={onRequestUpload}
+        >
+          {uploading ? 'Enviando evidência...' : 'Adicionar evidência'}
+        </AppButton>
       </div>
 
       <div className="mt-3 space-y-2.5">
@@ -1822,7 +1926,7 @@ function SupportTicketAttachmentsPanel({
           </InlineNotice>
         ) : attachments.length === 0 ? (
           <InlineNotice>
-            Nenhuma evidência vinculada apareceu neste ticket. O upload ainda não está habilitado.
+            Nenhuma evidência vinculada apareceu neste ticket ainda.
           </InlineNotice>
         ) : (
           attachments.map((attachment) => (
@@ -1833,33 +1937,34 @@ function SupportTicketAttachmentsPanel({
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0 space-y-1">
                   <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
-                    {attachment.fileName}
+                    {attachment.displayName}
                   </p>
                   <p className="text-[12px] text-[color:var(--color-muted)]">
-                    {attachment.byteSize > 0
-                      ? `${Math.max(1, Math.round(attachment.byteSize / 1024))} KB`
-                      : 'Tamanho indisponível'}
+                    {formatAttachmentSize(attachment.sizeBytes)}
                     {' · '}
-                    {attachment.contentType ?? 'Tipo indisponível'}
+                    {attachment.contentType ?? 'Tipo não informado'}
                   </p>
                 </div>
-                <StatusPill tone={attachment.visibility === 'internal' ? 'warning' : 'accent'}>
-                  {humanizeVisibility(attachment.visibility)}
+                <StatusPill tone={toneForAttachmentStatus(attachment.status)}>
+                  {humanizeAttachmentStatus(attachment.status)}
                 </StatusPill>
               </div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <StatusPill tone={attachment.bucketConfigured ? 'positive' : 'warning'}>
-                  {attachment.bucketConfigured ? 'Bucket validado' : 'Bucket ausente'}
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <StatusPill tone={attachment.canDownload ? 'positive' : 'default'}>
+                  {attachment.canDownload ? 'Download temporário disponível' : 'Download indisponível'}
                 </StatusPill>
-                <StatusPill tone={attachment.storageObjectPresent ? 'positive' : 'warning'}>
-                  {attachment.storageObjectPresent ? 'Objeto localizado' : 'Objeto ausente'}
-                </StatusPill>
-                <StatusPill tone={attachment.downloadAvailable ? 'positive' : 'default'}>
-                  {attachment.downloadAvailable ? 'Download governado disponível' : 'Download indisponível'}
-                </StatusPill>
+                <GhostButton
+                  className="px-3 py-1.5 text-xs"
+                  disabled={!attachment.canDownload || downloadingAttachmentId === attachment.attachmentId}
+                  onClick={() => onDownload(attachment.attachmentId)}
+                >
+                  {downloadingAttachmentId === attachment.attachmentId
+                    ? 'Preparando link...'
+                    : 'Baixar evidência'}
+                </GhostButton>
               </div>
               <p className="mt-2 text-[12px] leading-5 text-[color:var(--color-muted)]">
-                Registrado por {attachment.uploadedByFullName ?? 'usuário não resolvido'} em{' '}
+                Registrado por {attachment.uploadedByName ?? 'usuário não resolvido'} em{' '}
                 {formatDateTime(attachment.createdAt)}.
               </p>
             </article>
@@ -3269,6 +3374,8 @@ function SupportWorkspaceView({
     useState<SupportTicketAttachment[]>(emptyTicketAttachments());
   const [attachmentPhase, setAttachmentPhase] = useState<AttachmentPhase>('idle');
   const [attachmentMessage, setAttachmentMessage] = useState<string | null>(null);
+  const [attachmentSubmitting, setAttachmentSubmitting] = useState(false);
+  const [attachmentDownloadingId, setAttachmentDownloadingId] = useState<Uuid | null>(null);
   const [engineeringLinks, setEngineeringLinks] =
     useState<SupportTicketEngineeringLink[]>(emptyTicketEngineeringLinks());
   const [engineeringPhase, setEngineeringPhase] = useState<EngineeringPhase>('idle');
@@ -3309,6 +3416,7 @@ function SupportWorkspaceView({
   >('conversation');
   const threadScrollContainerRef = useRef<HTMLDivElement | null>(null);
   const pendingThreadScrollRef = useRef<'idle' | 'latest'>('idle');
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
 
   const loadQueue = useEffectEvent(async (preferredTicketId?: string | null) => {
     try {
@@ -3849,6 +3957,87 @@ function SupportWorkspaceView({
   function applyFailure(message: string) {
     setDetailNotice(message);
     setDetailNoticeTone('critical');
+  }
+
+  function openAttachmentPicker() {
+    attachmentInputRef.current?.click();
+  }
+
+  async function handleDownloadAttachment(attachmentId: Uuid) {
+    setAttachmentDownloadingId(attachmentId);
+    setDetailNotice(null);
+
+    try {
+      const payload = await getSupportTicketAttachmentSignedUrl(attachmentId);
+
+      if (typeof window !== 'undefined' && typeof window.open === 'function') {
+        window.open(payload.signedUrl, '_blank', 'noopener,noreferrer');
+      }
+
+      applySuccess('Download temporário preparado com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao preparar o download seguro da evidência.',
+      );
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(friendlyAttachmentDownloadErrorMessage(classified.message));
+    } finally {
+      setAttachmentDownloadingId(null);
+    }
+  }
+
+  async function handleAttachmentSelection(file: File | null) {
+    if (!ticketDetail || !file) {
+      return;
+    }
+
+    setDetailNotice(null);
+
+    if (file.size <= 0) {
+      applyFailure('Selecione um arquivo com conteúdo antes de enviar.');
+      return;
+    }
+
+    if (file.size > TICKET_ATTACHMENT_MAX_BYTES) {
+      applyFailure('O arquivo ultrapassa o limite de 10 MB para evidências.');
+      return;
+    }
+
+    if (!file.type) {
+      applyFailure('O arquivo selecionado precisa informar um tipo permitido.');
+      return;
+    }
+
+    setAttachmentSubmitting(true);
+
+    try {
+      await uploadSupportTicketAttachment({
+        ticketId: ticketDetail.id,
+        tenantId: ticketDetail.tenantId,
+        file,
+      });
+      await loadDetail(ticketDetail.id, { preserveSurfaceState: true });
+      applySuccess('Evidência enviada com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao enviar a evidência para o storage governado.',
+      );
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(friendlyAttachmentUploadErrorMessage(classified.message));
+    } finally {
+      if (attachmentInputRef.current) {
+        attachmentInputRef.current.value = '';
+      }
+      setAttachmentSubmitting(false);
+    }
   }
 
   async function handleCopyPublicKnowledgeLink(publicArticlePath: string) {
@@ -5355,8 +5544,22 @@ function SupportWorkspaceView({
 
             <SupportTicketAttachmentsPanel
               attachments={attachments}
+              downloadingAttachmentId={attachmentDownloadingId}
               message={attachmentMessage}
+              onDownload={handleDownloadAttachment}
+              onRequestUpload={openAttachmentPicker}
               phase={attachmentPhase}
+              uploadEnabled={detailPhase === 'ready' && ticketDetail !== null}
+              uploading={attachmentSubmitting}
+            />
+            <input
+              accept={TICKET_ATTACHMENT_ACCEPT}
+              className="hidden"
+              onChange={(event) =>
+                void handleAttachmentSelection(event.currentTarget.files?.[0] ?? null)
+              }
+              ref={attachmentInputRef}
+              type="file"
             />
 
             <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.06)]">
