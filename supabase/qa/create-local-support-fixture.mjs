@@ -1460,6 +1460,66 @@ function queryKnowledgeArticleBySlugInSpace(slug, knowledgeSpaceId) {
   return result.rows?.[0] ?? null;
 }
 
+function ensurePublicKnowledgeArticleReviewEvidence(articleId, reviewerEmail) {
+  const reviewer = queryAuthUserByEmail(reviewerEmail);
+  if (!reviewer?.id) {
+    fail(`Revisor humano ausente para evidência de Knowledge: ${reviewerEmail}.`);
+  }
+
+  runSupabaseDbQuery(`
+    insert into public.knowledge_article_review_advisories (
+      article_id,
+      source_hash,
+      suggested_visibility,
+      suggested_classification,
+      classification_reason,
+      risk_flags,
+      human_confirmations,
+      review_status,
+      review_notes,
+      reviewed_by_user_id,
+      reviewed_at,
+      created_by_user_id,
+      updated_by_user_id
+    )
+    values (
+      '${sqlEscape(articleId)}'::uuid,
+      null,
+      'public',
+      'public',
+      'Evidência humana QA para publicação pública controlada.',
+      '[]'::jsonb,
+      jsonb_build_object(
+        'title_reviewed', true,
+        'summary_reviewed', true,
+        'body_reviewed', true,
+        'category_reviewed', true,
+        'visibility_reviewed', true,
+        'no_sensitive_data_exposed', true,
+        'ready_for_review', true,
+        'ready_for_publish', true
+      ),
+      'reviewed',
+      'Fixture QA registra evidência explícita antes de publicar artigo público.',
+      '${sqlEscape(reviewer.id)}'::uuid,
+      timezone('utc', now()),
+      '${sqlEscape(reviewer.id)}'::uuid,
+      '${sqlEscape(reviewer.id)}'::uuid
+    )
+    on conflict (article_id) do update
+    set suggested_visibility = excluded.suggested_visibility,
+        suggested_classification = excluded.suggested_classification,
+        classification_reason = excluded.classification_reason,
+        risk_flags = excluded.risk_flags,
+        human_confirmations = excluded.human_confirmations,
+        review_status = excluded.review_status,
+        review_notes = excluded.review_notes,
+        reviewed_by_user_id = excluded.reviewed_by_user_id,
+        reviewed_at = excluded.reviewed_at,
+        updated_by_user_id = excluded.updated_by_user_id;
+  `);
+}
+
 function queryPublicHelpCenterArticleContractBySlug(slug) {
   const result = runSupabaseDbQuery(`
     select
@@ -1624,6 +1684,8 @@ async function ensureKnowledgeArticlePublishedV2(
   }
 
   if (existing?.status === 'review') {
+    ensurePublicKnowledgeArticleReviewEvidence(existing.id, FIXTURE.contentAuthor.email);
+
     await callRpcAsUser({
       apiUrl: adminSession.apiUrl,
       anonKey: adminSession.anonKey,
