@@ -383,6 +383,30 @@ export interface SupportAssignableAgent {
   isActive: boolean;
 }
 
+export interface SupportTicketIntakeTenant {
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantDisplayName: string | null;
+  tenantLegalName: string | null;
+  tenantStatus: string;
+  tenantCreatedAt: IsoTimestamp;
+  tenantUpdatedAt: IsoTimestamp;
+  activeContactsCount: number;
+  hasActiveContacts: boolean;
+}
+
+export interface SupportTicketIntakeContact {
+  id: Uuid;
+  tenantId: Uuid;
+  linkedUserId: Uuid | null;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  jobTitle: string | null;
+  isPrimary: boolean;
+  createdAt: IsoTimestamp;
+}
+
 export type CustomerProductLine =
   | 'genius_returns'
   | 'after_sale'

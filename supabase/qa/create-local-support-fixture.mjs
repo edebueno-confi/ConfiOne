@@ -203,12 +203,6 @@ const FIXTURE = {
       slug: 'support-qa-c',
       legalName: 'Support QA Tenant C Ltda',
       displayName: 'Support QA Tenant C',
-      contact: {
-        fullName: 'Camila Sem Perfil QA',
-        email: 'camila.semperfil@support-qa-c.local',
-        phone: '+55 11 91000-0003',
-        jobTitle: 'Operação de Atendimento',
-      },
     },
   ],
   tickets: [
@@ -317,6 +311,22 @@ const FIXTURE = {
         'Ticket aberto para acompanhar a aprovação final antes de aplicar a configuração.',
       internalNote:
         'Sem ação técnica agora. Aguarde o retorno do time responsável.',
+    },
+    {
+      tenantSlug: 'support-qa-c',
+      title: 'QA Support | Intake criado via RPC sem solicitante',
+      description:
+        'Ticket aberto pelo fluxo real de intake para validar tenant sem contato ativo vinculado.',
+      priority: 'normal',
+      severity: 'medium',
+      source: 'internal',
+      assignee: null,
+      status: 'new',
+      publicMessage:
+        'Fluxo de intake validado sem contato vinculado no momento da abertura.',
+      internalNote:
+        'Confirmar visibilidade na fila e trilha inicial de auditoria após criação via RPC.',
+      viaRpc: true,
     },
     {
       tenantSlug: 'support-qa-b',
@@ -2099,6 +2109,41 @@ function createSupportTicket({ actorUserId, tenantId, contactId, ticket }) {
   return ticketId;
 }
 
+async function createSupportTicketViaRpc({
+  actorSession,
+  tenantId,
+  contactId,
+  ticket,
+}) {
+  const existingTicketId = queryExistingSupportTicket(tenantId, ticket.title);
+  if (existingTicketId) {
+    return existingTicketId;
+  }
+
+  const created = await callRpcAsUser({
+    apiUrl: actorSession.apiUrl,
+    anonKey: actorSession.anonKey,
+    accessToken: actorSession.accessToken,
+    rpcName: 'rpc_create_ticket',
+    body: {
+      p_tenant_id: tenantId,
+      p_title: ticket.title,
+      p_description: ticket.description,
+      p_source: ticket.source,
+      p_priority: ticket.priority,
+      p_severity: ticket.severity,
+      p_requester_contact_id: contactId ?? null,
+    },
+  });
+
+  const ticketId = created?.id ?? queryExistingSupportTicket(tenantId, ticket.title);
+  if (!ticketId) {
+    fail(`Nao foi possivel criar via RPC o ticket ${ticket.title}.`);
+  }
+
+  return ticketId;
+}
+
 function clearFixtureTickets() {
   return null;
 }
@@ -2244,7 +2289,9 @@ async function main() {
   for (const tenant of FIXTURE.tenants) {
     const tenantId = ensureTenant(profile.id, tenant);
     tenantMap.set(tenant.slug, tenantId);
-    contactMap.set(tenant.slug, ensureContact(profile.id, tenantId, tenant.contact));
+    if (tenant.contact) {
+      contactMap.set(tenant.slug, ensureContact(profile.id, tenantId, tenant.contact));
+    }
     if (tenant.customerAccount) {
       ensureCustomerAccountProfile(profile.id, tenantId, tenant.customerAccount);
       ensureCustomerAccountIntegrations(profile.id, tenantId, tenant.customerAccount);
@@ -2280,8 +2327,6 @@ async function main() {
       },
     ],
   ]);
-  const sessionCache = new Map();
-
   for (const agent of FIXTURE.agents) {
     const authUser = await createOrUpdateAuthUser({
       apiUrl,
@@ -2355,44 +2400,7 @@ async function main() {
     operatorMap.set(authUser.id, accessProfile.id);
   }
 
-  clearFixtureTickets();
-
-  const createdTickets = [];
-  const ticketMap = new Map();
-  for (const ticket of FIXTURE.tickets) {
-    const tenantId = tenantMap.get(ticket.tenantSlug);
-    const contactId = contactMap.get(ticket.tenantSlug);
-
-    if (!tenantId || !contactId) {
-      fail(`Tenant ou contato ausente para o fixture ${ticket.title}.`);
-    }
-
-    const ticketId = createSupportTicket({
-      actorUserId:
-        ticket.assignee && operatorMap.has(ticket.assignee)
-          ? operatorMap.get(ticket.assignee)
-          : profile.id,
-      tenantId,
-      contactId,
-      ticket: {
-        ...ticket,
-        assignee:
-          ticket.assignee && operatorMap.has(ticket.assignee) ? operatorMap.get(ticket.assignee) : null,
-      },
-    });
-
-    createdTickets.push({
-      id: ticketId,
-      title: ticket.title,
-      tenant_slug: ticket.tenantSlug,
-      status: ticket.status,
-    });
-    ticketMap.set(`${ticket.tenantSlug}::${ticket.title}`, ticketId);
-  }
-
-  const knowledgeCategoryMap = new Map();
-  const createdKnowledgeArticles = [];
-  const createdKnowledgeLinks = [];
+  const sessionCache = new Map();
   const getSessionForKey = async (key) => {
     if (sessionCache.has(key)) {
       return sessionCache.get(key);
@@ -2412,6 +2420,54 @@ async function main() {
     sessionCache.set(key, session);
     return session;
   };
+
+  clearFixtureTickets();
+
+  const createdTickets = [];
+  const ticketMap = new Map();
+  for (const ticket of FIXTURE.tickets) {
+    const tenantId = tenantMap.get(ticket.tenantSlug);
+    const contactId = contactMap.get(ticket.tenantSlug);
+
+    if (!tenantId) {
+      fail(`Tenant ausente para o fixture ${ticket.title}.`);
+    }
+
+    const ticketId = ticket.viaRpc
+      ? await createSupportTicketViaRpc({
+          actorSession: await getSessionForKey('qa-admin'),
+          tenantId,
+          contactId: contactId ?? null,
+          ticket,
+        })
+      : createSupportTicket({
+          actorUserId:
+            ticket.assignee && operatorMap.has(ticket.assignee)
+              ? operatorMap.get(ticket.assignee)
+              : profile.id,
+          tenantId,
+          contactId,
+          ticket: {
+            ...ticket,
+            assignee:
+              ticket.assignee && operatorMap.has(ticket.assignee)
+                ? operatorMap.get(ticket.assignee)
+                : null,
+          },
+        });
+
+    createdTickets.push({
+      id: ticketId,
+      title: ticket.title,
+      tenant_slug: ticket.tenantSlug,
+      status: ticket.status,
+    });
+    ticketMap.set(`${ticket.tenantSlug}::${ticket.title}`, ticketId);
+  }
+
+  const knowledgeCategoryMap = new Map();
+  const createdKnowledgeArticles = [];
+  const createdKnowledgeLinks = [];
   const adminSession = await getSessionForKey('qa-admin');
   const contentAuthorSession = await getSessionForKey('content-author');
   const publicHelpCenter = await ensurePublicHelpCenterFixture(contentAuthorSession);
