@@ -275,6 +275,8 @@
   - `docs/knowledge/KNOWLEDGE_REGRAS_MOTIVO_SUBCLUSTER_PREP.md`
 - Versão candidata pública do recorte seguro de motivos registrada em:
   - `docs/knowledge/KNOWLEDGE_MOTIVOS_TROCA_DEVOLUCAO_REWRITE.md`
+- Preparação editorial específica do subcluster de troubleshooting de estorno registrada em:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_TROUBLESHOOTING_SUBCLUSTER_PREP.md`
 
 ### Clusters candidatos
 

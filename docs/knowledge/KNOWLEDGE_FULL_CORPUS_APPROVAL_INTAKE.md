@@ -19,6 +19,8 @@
   - `docs/knowledge/KNOWLEDGE_REGRAS_MOTIVO_SUBCLUSTER_PREP.md`
 - A versao candidata publica do recorte seguro de motivos ficou registrada em:
   - `docs/knowledge/KNOWLEDGE_MOTIVOS_TROCA_DEVOLUCAO_REWRITE.md`
+- A preparação editorial do subcluster de troubleshooting de estorno ficou registrada em:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_TROUBLESHOOTING_SUBCLUSTER_PREP.md`
 
 | Artigo | Categoria proposta | Prioridade | Decisão Produto | Decisão Suporte/CS | Pode publicar | Pendência principal | Evidência necessária |
 | --- | --- | --- | --- | --- | --- | --- | --- |

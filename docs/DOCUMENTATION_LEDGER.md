@@ -1985,3 +1985,29 @@ Cada registro deve informar:
   - `npm run web:typecheck`
 - impacto na FAQ futura:
   - abre uma trilha segura de reescrita publica para motivos de troca sem absorver a camada sensivel de regras, frete, logistica e estorno
+### Fase 7.29 - Knowledge EstornoTroubleshooting Subcluster Prep V3
+- fase: `7.29`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-07`
+- resumo funcional: o subcluster `Erros e troubleshooting de estorno` foi preparado documentalmente com leitura dos artigos fonte, separação entre sinais públicos seguros, dependências de integração, permissões VTEX, alteração manual de reembolso e temas que precisam permanecer internos, sem reescrever artigos completos, aprovar ou publicar conteúdo.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_TROUBLESHOOTING_SUBCLUSTER_PREP.md`
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_SUBCLUSTERS.md`
+  - `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`
+  - `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - nenhuma
+- views/RPCs afetadas:
+  - nenhuma alteracao de backend
+  - nenhuma view ou RPC nova
+- riscos restantes:
+  - o legado continua acoplado a VTEX, credenciais, permissões e suporte de integração
+  - ainda não existe recorte validado para troubleshooting público seguro de estorno
+  - alteração manual de reembolso continua fora de escopo público
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - separa troubleshooting conceitual de estorno da camada sensível de integração e backoffice, preparando lotes futuros por subcluster em vez de por artigo isolado

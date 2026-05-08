@@ -184,6 +184,8 @@
 - Suporte/CS necessário: `sim`
 - observação objetiva:
   - pode gerar artigos públicos de troubleshooting no futuro, mas só com revisão técnica explícita
+- preparação editorial específica registrada em:
+  - `docs/knowledge/KNOWLEDGE_ESTORNO_TROUBLESHOOTING_SUBCLUSTER_PREP.md`
 
 ## Relação com o canônico de formas de estorno
 

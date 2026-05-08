@@ -1367,6 +1367,35 @@ Documentos históricos:
   - Pendencias mapeadas sem implementacao nesta fase:
     - a publicacao continua bloqueada ate evidencia humana real
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.29: Knowledge EstornoTroubleshooting Subcluster Prep V3 concluido como preparacao documental do subcluster de troubleshooting de estorno.
+  - O mapa do subcluster foi criado em `docs/knowledge/KNOWLEDGE_ESTORNO_TROUBLESHOOTING_SUBCLUSTER_PREP.md`.
+  - A fase analisou os artigos ligados a:
+    - erro ao tentar realizar estorno
+    - erro de autorizacao na VTEX
+    - permissoes VTEX
+    - alteracao manual de forma de reembolso
+    - dependencias de gateway e status externo como contexto tecnico
+  - As fronteiras editoriais foram registradas para separar:
+    - troubleshooting publico seguro baseado em sintomas observaveis
+    - detalhes internos de credenciais e permissao
+    - integracao, gateway e backoffice manual
+  - A recomendacao do subcluster foi mantida como:
+    - `revisar tecnicamente antes`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos lotes de troubleshooting de estorno devem continuar por recorte editorial do subcluster
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.

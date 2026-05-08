@@ -24,6 +24,7 @@ Para o cluster `Formas de Estorno`, usar como referência prévia:
 - `docs/knowledge/KNOWLEDGE_PIX_ESTORNO_SUBCLUSTER_PREP.md`
 - `docs/knowledge/KNOWLEDGE_REGRAS_MOTIVO_SUBCLUSTER_PREP.md`
 - `docs/knowledge/KNOWLEDGE_MOTIVOS_TROCA_DEVOLUCAO_REWRITE.md`
+- `docs/knowledge/KNOWLEDGE_ESTORNO_TROUBLESHOOTING_SUBCLUSTER_PREP.md`
 
 ## Template único para Produto
 
