@@ -1089,6 +1089,27 @@ Documentos históricos:
     - `npm run web:typecheck`
   - Pendencias mapeadas sem implementacao nesta fase:
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.19: Knowledge P0 Approval Intake Pack V3 concluido como pacote documental de intake.
+  - O pacote objetivo para coleta futura de evidencia humana real foi criado em `docs/knowledge/KNOWLEDGE_P0_APPROVAL_INTAKE_PACK.md`.
+  - A fase consolidou:
+    - checklist de Produto
+    - checklist de Suporte/CS
+    - template copiavel de evidencia humana
+    - perguntas objetivas por artigo
+    - riscos a validar por artigo
+  - Os quatro artigos `P0` permaneceram com:
+    - `status atual: pendente`
+    - nenhuma aprovacao simulada
+    - nenhuma publicacao
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de runtime
+    - sem alteracao de contracts
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -1110,7 +1131,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Coletar evidencias humanas reais de Produto e Suporte/CS no registro oficial da Knowledge Base,
+Coletar as primeiras evidencias humanas reais de Produto e Suporte/CS usando o intake pack e o registro oficial da Knowledge Base,
 artigo por artigo, ou manter os quatro `P0` fora de qualquer lote de publicacao enquanto essa evidencia nao existir no repositorio.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:

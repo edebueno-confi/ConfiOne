@@ -241,3 +241,7 @@ Nenhum override pode permitir publicacao de:
 - nenhuma aprovacao foi simulada
 - nenhum artigo foi publicado
 - todos os quatro artigos continuam pendentes por ausencia de evidencia explicita de Produto e Suporte/CS
+
+## Vinculo com pacote de intake
+- o pacote objetivo para coleta futura de evidencia humana ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_P0_APPROVAL_INTAKE_PACK.md`

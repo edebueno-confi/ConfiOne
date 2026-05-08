@@ -139,3 +139,5 @@ Motivo:
 - o registro oficial de aprovacao humana real destes artigos ficou definido em:
   - `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`
 - sem evidencia registrada nesse documento, o status continua `pendente`
+- o pacote objetivo para intake de aprovacao futura ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_P0_APPROVAL_INTAKE_PACK.md`

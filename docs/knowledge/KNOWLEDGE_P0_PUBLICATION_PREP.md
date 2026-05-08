@@ -270,3 +270,5 @@ Motivo:
 - como nao existe evidencia de aprovacao explicita no repositorio, todos permaneceram como `pendente` nessa etapa
 - o registro oficial para futura aprovacao humana real ficou definido em:
   - `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`
+- o pacote objetivo para intake de aprovacao futura ficou registrado em:
+  - `docs/knowledge/KNOWLEDGE_P0_APPROVAL_INTAKE_PACK.md`
