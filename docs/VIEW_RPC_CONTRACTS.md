@@ -947,6 +947,10 @@ Fase 8.2:
   - `vw_support_ticket_intake_contacts`
   - `vw_support_ticket_attachments`
   - `vw_support_ticket_engineering_links`
+  - `vw_engineering_work_items_queue`
+  - `vw_engineering_work_item_detail`
+  - `vw_engineering_work_item_ticket_links`
+  - `vw_engineering_work_item_updates`
   - `vw_support_knowledge_public_link_candidates`
   - `vw_support_customer_360`
   - `vw_support_customer_account_context`
@@ -988,6 +992,12 @@ Fase 8.2:
   - `rpc_reopen_ticket`
   - `rpc_support_create_engineering_work_item_from_ticket`
   - `rpc_support_link_ticket_to_engineering_work_item`
+  - `rpc_engineering_assign_work_item`
+  - `rpc_engineering_unassign_work_item`
+  - `rpc_engineering_update_work_item_status`
+  - `rpc_engineering_add_work_item_update`
+  - `rpc_engineering_return_work_item_to_support`
+  - `rpc_engineering_link_existing_work_item_to_ticket`
 - O app autenticado escreve Knowledge Base apenas por:
   - `rpc_admin_create_knowledge_category`
   - `rpc_admin_create_knowledge_article_draft`
@@ -1070,6 +1080,35 @@ Fase 8.2:
 - nenhum upload inseguro foi habilitado
 - tickets fechados/cancelados nao aceitam novo handoff tecnico
 - o status tecnico continua sendo controlado pelo dominio `engineering_work_items`, sem RPC paralela para status do link
+
+## Fase 8.8 - Engineering Workspace Operational Core V3
+
+### Leitura consumida pelo frontend
+- `vw_engineering_work_items_queue`
+- `vw_engineering_work_item_detail`
+- `vw_engineering_work_item_ticket_links`
+- `vw_engineering_work_item_updates`
+- `vw_support_ticket_engineering_links`
+
+### Escrita consumida pelo frontend
+- `rpc_engineering_assign_work_item`
+- `rpc_engineering_unassign_work_item`
+- `rpc_engineering_update_work_item_status`
+- `rpc_engineering_add_work_item_update`
+- `rpc_engineering_return_work_item_to_support`
+
+### Regras de consumo
+- `/engineering` e `/engineering/work-items/:workItemId` leem demandas tecnicas apenas pelos read models dedicados.
+- o status tecnico e controlado pelo backend; o frontend nao monta transicao livre.
+- `engineering_work_item_updates` guarda updates estruturados de engenharia e nao substitui `ticket_messages`.
+- retorno ao suporte cria update tecnico `support_return`, gera `ticket_event` estruturado e atualiza o ticket vinculado para `waiting_support` quando permitido.
+- o ticket workspace le o ultimo retorno tecnico por `vw_support_ticket_engineering_links`, sem expor payload cru nem misturar demanda tecnica na conversa.
+
+### Boundary mantido
+- nenhuma tabela base de engenharia e lida diretamente pelo frontend
+- suporte ve vinculos tecnicos permitidos, mas nao escreve em work item tecnico
+- `engineering_work_item` nao e ticket e nao deve virar backlog de produto generico
+- notificacao externa, SLA tecnico, upload/storage e sprint/kanban continuam fora deste contrato
 
 ## Fase 6.3 - Support Workspace Agent Directory + Assignment UX
 

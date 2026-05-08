@@ -106,7 +106,8 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 - Status Fase 8.2: `rpc_create_ticket`, mutacoes principais, audit trail, eventos, timeline paginada e candidato seguro de link publico foram validados/materializados.
 - Status Fase 8.6: `/support/queue` passou a abrir tickets por intake real com `vw_support_ticket_intake_tenants`, `vw_support_ticket_intake_contacts` e `rpc_create_ticket`, sem criar categoria inicial fake nem leitura direta de tabela-base.
 - Status Fase 8.7: `/support/tickets/:ticketId` passou a ler anexos por metadata sanitizada (`vw_support_ticket_attachments`) e a registrar handoff tecnico real por `rpc_support_create_engineering_work_item_from_ticket`, com `engineering_work_items`, `engineering_ticket_links`, `ticket_event` e `audit_log`.
-- Contratos ainda necessarios: upload seguro de anexos; categoria inicial formal; SLA/motivo se entrar no produto; workspace proprio de engenharia para operar `engineering_work_items`.
+- Status Fase 8.8: `/engineering` e `/engineering/work-items/:workItemId` foram criadas como superficie propria para operar `engineering_work_items`, com fila, detalhe, ownership, status tecnico, updates estruturados e retorno ao suporte por contrato real.
+- Contratos ainda necessarios: upload seguro de anexos; categoria inicial formal; SLA/motivo se entrar no produto; notificacoes externas se Produto decidir.
 - Riscos: expor nota interna ao cliente, criar transicao invalida de status, enviar artigo sem URL publica segura.
 - Dependencias: RLS de ticketing, auditoria de eventos e regra de permissao por role.
 - Criterios de aceite: todo comando passa por RPC, toda mutacao gera evento/audit trail, frontend nao monta URL publica por heuristica.
@@ -163,48 +164,47 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 
 ## Proximo lote tecnico recomendado
 
-### Lote: Engineering Workspace Operational Core V3
+### Lote: Secure Ticket Evidence Storage V3
 
-Objetivo: dar superficie operacional propria para o dominio `engineering_work_items`, sem empurrar backlog tecnico, ownership e lifecycle de entrega para dentro do ticket workspace.
+Objetivo: fechar upload/storage seguro de evidencias do ticket sem expor bucket/path sensivel e sem permitir anexo cross-tenant.
 
 Ordem sugerida:
-1. Auditar o novo dominio `engineering_work_items` e `engineering_ticket_links` criado na Fase 8.7.
-2. Fechar read models da fila e do detalhe operacional de engenharia.
-3. Criar RPCs reais de ownership, status tecnico e resolucao/retorno ao suporte.
-4. Conectar uma primeira tela interna de engenharia sem vazar payload tecnico cru.
-5. Validar tenant isolation, audit trail e retorno do handoff para o ticket.
-6. Cobrir com pgTAP, fixture QA, typecheck, build e validacao visual.
+1. Auditar storage/buckets/policies existentes.
+2. Definir tabela de metadata final para evidencias reais e limites de tipo/tamanho.
+3. Criar RPC/contrato para registrar upload autorizado e arquivamento seguro.
+4. Criar read model sem `bucket`, `path`, URL permanente ou segredo.
+5. Conectar UI de upload apenas se bucket/policy estiverem seguros.
+6. Validar tenant isolation, permissao, audit trail, ticket_event e ausencia de path sensivel.
 
 Migrations necessarias:
-- provavelmente sim, para ownership tecnico, timeline tecnica e possivel retorno estruturado ao ticket.
+- sim, se nao houver bucket/policy/storage metadata final suficiente.
 
 Views necessarias:
-- fila de `engineering_work_items`
-- detalhe de `engineering_work_items`
-- read model de links por ticket e por work item
+- evidencias por ticket com metadata sanitizada
+- possivel read model administrativo de governanca de anexos
 
 RPCs necessarias:
-- assumir work item
-- atualizar status tecnico
-- registrar resolucao tecnica
-- devolver contexto ao ticket quando aplicavel
+- solicitar/registrar upload autorizado
+- arquivar/remover evidencia se houver regra segura
+- possivel geracao de URL temporaria se a arquitetura decidir
 
 RLS/policies:
-- isolamento por tenant e por papel interno autorizado
-- sem leitura direta de tabelas base pelo frontend
+- isolamento por tenant/ticket
+- policies de storage alinhadas a ticket e tenant
+- sem acesso direto a paths sensiveis pelo frontend
 
 Audit logs:
-- toda mudanca de ownership, status e resolucao tecnica precisa gerar audit trail.
+- toda evidencia adicionada/arquivada precisa gerar audit trail e evento no ticket.
 
 Fixtures/testes:
-- work item novo
-- work item em progresso
-- work item resolvido
-- retorno visivel no ticket vinculado
+- ticket com evidencia real permitida
+- ticket sem evidencia
+- tentativa cross-tenant bloqueada
+- path sensivel ausente no read model
 
 Impacto no front:
-- criar a primeira superficie dedicada de engenharia
-- manter `/support/tickets/:ticketId` como origem do handoff, nao como backlog tecnico completo
+- substituir o estado bloqueado de upload por fluxo real somente se storage estiver seguro
+- manter lista de evidencias sanitizada no ticket workspace
 
 ## Decisoes que ainda dependem de Produto
 - Se Support e Admin devem convergir em um App Shell unico.

@@ -73,9 +73,11 @@ Documentos históricos:
 - O lote `Knowledge Admin Operational Governance V3` endureceu a governanca editorial operacional: publicacao publica v2 agora exige gate backend de evidencia humana revisada e checklist humano completo antes de expor qualquer artigo publico.
 - O lote `Access System Observability Hardening V3` materializou read models dedicados para `/admin/access` e `/admin/system`, sanitizou audit events administrativos, conectou as telas aos contratos reais e preparou contexto Impeccable com `PRODUCT.md` e `DESIGN.md`.
 - O lote `Support Ticket Creation And Intake V3` conectou a abertura operacional de tickets em `/support/queue` ao contrato real de `rpc_create_ticket`, adicionou read models seguros de tenants/contatos para intake e cobriu o fluxo com pgTAP e fixture QA.
+- O lote `Support Ticket Attachments And Escalation V3` criou metadata sanitizada de anexos e handoff técnico real por `engineering_work_items` e `engineering_ticket_links`, mantendo upload/storage seguro fora de escopo.
+- O lote `Engineering Workspace Operational Core V3` criou o workspace operacional de engenharia com fila técnica, detalhe, ownership, status técnico, updates estruturados, retorno ao suporte, auditoria e isolamento por tenant/papel.
 - Nenhuma ação fake foi habilitada no frontend; ações sem contrato completo seguem bloqueadas para lote futuro.
 - Os 8 candidatos documentais da Knowledge continuam pendentes, nao aprovados, nao publicados e nao injetados automaticamente no Help Center.
-- Próximo bloco recomendado: `Support Ticket Attachments And Escalation V3`.
+- Próximo bloco recomendado: `Secure Ticket Evidence Storage V3`.
 
 ## Estado real do repositório em 2026-04-30
 
@@ -109,6 +111,7 @@ Documentos históricos:
 - Migration oficial do fluxo operacional de tickets `supabase/migrations/20260508143717_support_ticket_operational_flow_v3.sql`.
 - Migration oficial de governanca operacional da Knowledge `supabase/migrations/20260508164336_knowledge_admin_operational_governance_v3.sql`.
 - Migration oficial do intake operacional de tickets `supabase/migrations/20260508201339_support_ticket_creation_and_intake_v3.sql`.
+- Migrations oficiais do Engineering Workspace operacional `supabase/migrations/20260508214418_engineering_workspace_operational_core_v3.sql` e `supabase/migrations/20260508214852_engineering_workspace_operational_core_contracts_v3.sql`.
 - Teste local de banco em `supabase/tests/001_phase1_identity_tenancy_rls.sql`.
 - Teste local de hardening em `supabase/tests/002_phase1_1_hardening.sql`.
 - Teste local de control plane administrativo em `supabase/tests/003_phase1_2_admin_control_plane.sql`.
@@ -164,8 +167,10 @@ Documentos históricos:
 - RPCs administrativas do Customer Account Profile materializadas em `rpc_admin_upsert_customer_account_profile`, `rpc_admin_add_customer_integration`, `rpc_admin_update_customer_integration`, `rpc_admin_add_customer_customization`, `rpc_admin_update_customer_customization`, `rpc_admin_add_customer_account_alert`, `rpc_admin_archive_customer_account_alert` e `rpc_admin_set_customer_feature_flag`.
 - RPCs contratuais do vínculo ticket -> Knowledge Base materializadas em `rpc_support_link_ticket_article`, `rpc_support_archive_ticket_article_link`, `rpc_support_mark_documentation_gap` e `rpc_support_mark_article_needs_update`.
 - RPC contratual de timeline paginada materializada em `rpc_support_get_ticket_timeline`.
+- RPCs contratuais do Engineering Workspace materializadas em `rpc_engineering_assign_work_item`, `rpc_engineering_unassign_work_item`, `rpc_engineering_update_work_item_status`, `rpc_engineering_add_work_item_update`, `rpc_engineering_return_work_item_to_support` e `rpc_engineering_link_existing_work_item_to_ticket`.
 - O intake operacional de `/support/queue` agora abre tickets somente por `rpc_create_ticket`, sem leitura direta de `tenants` ou `tenant_contacts`.
 - `authenticated` não possui `SELECT`, `INSERT`, `UPDATE` nem `DELETE` direto nas tabelas base de ticketing; o app lê via views e escreve via RPCs.
+- `authenticated` não possui DML direto em `engineering_work_items`, `engineering_ticket_links` nem `engineering_work_item_updates`; o app lê por views e escreve por RPCs auditadas.
 - Pacote `packages/contracts` materializado com tipos TypeScript para views e RPCs de ticketing.
 - Pacote `packages/contracts` agora também materializa tipos TypeScript para os read models do Support Workspace.
 - Auditoria estrutural das views oficializada com `security_barrier = true`, filtros explícitos por caller e teste pgTAP dedicado.

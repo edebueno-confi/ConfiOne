@@ -18,6 +18,54 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 8.8 - Engineering Workspace Operational Core V3
+- fase: `8.8`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-08`
+- resumo funcional: o nucleo operacional do Engineering Workspace foi criado para operar `engineering_work_items` originados de tickets, com fila propria, detalhe tecnico, ownership, status tecnico, updates estruturados, retorno ao suporte, auditoria e isolamento por tenant/papel.
+- docs alterados:
+  - `docs/ENGINEERING_WORKSPACE_OPERATIONAL_CORE_V3.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - `vw_engineering_work_items_queue`
+  - `vw_engineering_work_item_detail`
+  - `vw_engineering_work_item_ticket_links`
+  - `vw_engineering_work_item_updates`
+  - `vw_support_ticket_engineering_links`
+  - `rpc_engineering_assign_work_item`
+  - `rpc_engineering_unassign_work_item`
+  - `rpc_engineering_update_work_item_status`
+  - `rpc_engineering_add_work_item_update`
+  - `rpc_engineering_return_work_item_to_support`
+  - `rpc_engineering_link_existing_work_item_to_ticket`
+- telas afetadas:
+  - `/engineering`
+  - `/engineering/work-items/:workItemId`
+  - `/support/tickets/:ticketId`
+  - shell do Support Workspace
+- runtime/UI:
+  - a engenharia agora possui fila e detalhe operacional dedicados sem virar Jira fake
+  - o ticket workspace mostra ultimo retorno tecnico estruturado e link para a demanda tecnica vinculada
+  - suporte enxerga vinculo tecnico permitido, mas nao altera work item sem permissao tecnica
+- riscos restantes:
+  - upload/storage seguro de evidencias continua fora do escopo
+  - categoria inicial formal, SLA tecnico e notificacoes externas ainda precisam lote proprio
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+- impacto na FAQ futura:
+  - consolida a separacao entre tratativa de suporte e demanda tecnica, permitindo explicar handoff, status tecnico e retorno ao suporte sem expor backlog interno amplo
+
 ### Fase 8.4 - Knowledge Admin Operational Governance V3
 - fase: `8.4`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

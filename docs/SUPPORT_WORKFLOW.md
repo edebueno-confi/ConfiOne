@@ -304,3 +304,21 @@
   - data de abertura
 - ticket fechado ou cancelado nao aceita novo handoff
 - o andamento tecnico futuro continua pertencendo ao dominio de engenharia; o ticket apenas registra e acompanha o vinculo
+
+## Engineering Workspace da fase 8.8
+- `/engineering` passa a ser a fila operacional propria das demandas tecnicas originadas de tickets.
+- `/engineering/work-items/:workItemId` passa a mostrar detalhe tecnico, tickets vinculados e updates estruturados.
+- o suporte continua criando handoff a partir do ticket, mas nao opera o lifecycle tecnico dentro da conversa.
+- a engenharia pode:
+  - assumir work item;
+  - remover responsavel;
+  - atualizar status tecnico;
+  - registrar update tecnico;
+  - devolver retorno estruturado ao suporte.
+- o retorno ao suporte nao e mensagem solta:
+  - grava `engineering_work_item_update`;
+  - gera `ticket_event`;
+  - aparece no ticket workspace pelo read model do vinculo tecnico.
+- o ticket workspace passa a mostrar ultimo retorno tecnico e link para abrir a demanda no Engineering Workspace quando existir permissao e rota.
+- suporte pode acompanhar o vinculo tecnico do ticket, mas nao altera work item sem papel tecnico autorizado.
+- o workspace de engenharia nao substitui backlog de produto, sprint, kanban, chat interno ou sistema externo de notificacao.
