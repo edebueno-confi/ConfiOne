@@ -1158,6 +1158,33 @@ export interface RpcCustomerGetAttachmentDownloadUrlResponse {
   downloadUrl: string;
 }
 
+export interface RpcCustomerCreateTicketAttachmentUploadPayload {
+  ticketId: Uuid;
+  tenantId: Uuid;
+  originalFilename: string;
+  contentType: string;
+  sizeBytes: number;
+}
+
+export interface RpcCustomerCreateTicketAttachmentUploadResponse {
+  attachmentId: Uuid;
+  uploadIntentId: Uuid;
+  ticketId: Uuid;
+  tenantId: Uuid;
+  displayName: string;
+  contentType: string;
+  sizeBytes: number;
+  maxSizeBytes: number;
+  expiresAt: IsoTimestamp;
+  uploadUrl: string;
+}
+
+export interface RpcCustomerRegisterTicketAttachmentPayload {
+  uploadIntentId: Uuid;
+}
+
+export type RpcCustomerRegisterTicketAttachmentResponse = CustomerPortalTicketAttachment;
+
 export interface RpcCustomerAcknowledgeTicketUpdatePayload {
   ticketId: Uuid;
   lastTimelineEntryId?: Uuid | null;

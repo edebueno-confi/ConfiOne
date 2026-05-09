@@ -540,10 +540,11 @@ const FIXTURE = {
     {
       ticketTitle: 'QA Support | Conciliacao de devoluções com atraso',
       ticketTenantSlug: 'support-qa-a',
-      actorKey: 'support-manager-a',
+      actorKey: 'customer-manager-a',
       fileName: 'conciliacao-devolucoes-portal-qa.pdf',
       contentType: 'application/pdf',
       visibility: 'customer',
+      uploadBoundary: 'customer',
       body:
         'Evidência operacional da fila de conciliação para o tenant A. Conteúdo sanitizado para validar o fluxo seguro de anexos.',
     },
@@ -2768,11 +2769,14 @@ async function uploadTicketAttachmentViaSecureFlow({
   }
 
   const encoded = new TextEncoder().encode(attachment.body);
+  const isCustomerUpload = attachment.uploadBoundary === 'customer';
   const prepared = await callRpcAsUser({
     apiUrl: actorSession.apiUrl,
     anonKey: actorSession.anonKey,
     accessToken: actorSession.accessToken,
-    rpcName: 'rpc_support_create_ticket_attachment_upload',
+    rpcName: isCustomerUpload
+      ? 'rpc_customer_create_ticket_attachment_upload'
+      : 'rpc_support_create_ticket_attachment_upload',
     body: {
       p_ticket_id: ticketId,
       p_tenant_id: tenantId,
@@ -2787,10 +2791,12 @@ async function uploadTicketAttachmentViaSecureFlow({
     fail(`Contrato de upload ausente para a evidência ${attachment.fileName}.`);
   }
 
-  applyFixtureUploadIntentVisibility({
-    uploadIntentId: uploadContract.upload_intent_id,
-    visibility: attachment.visibility,
-  });
+  if (!isCustomerUpload) {
+    applyFixtureUploadIntentVisibility({
+      uploadIntentId: uploadContract.upload_intent_id,
+      visibility: attachment.visibility,
+    });
+  }
 
   const formData = new FormData();
   formData.append(

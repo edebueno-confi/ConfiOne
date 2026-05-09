@@ -21,6 +21,7 @@ Deno.serve(async (req) => {
     const { authHeader, userId } = await requireActor(req);
     const url = new URL(req.url);
     const intentId = url.searchParams.get('intent')?.trim() ?? '';
+    const boundary = url.searchParams.get('boundary')?.trim() ?? 'support';
 
     if (!intentId) {
       return jsonResponse({ error: 'Intent de upload ausente.' }, { status: 400 });
@@ -106,12 +107,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { data: registeredRows, error: registerError } = await userClient.rpc(
-      'rpc_support_register_ticket_attachment',
-      {
-        p_upload_intent_id: intentId,
-      },
-    );
+    const registerRpc =
+      boundary === 'customer'
+        ? 'rpc_customer_register_ticket_attachment'
+        : 'rpc_support_register_ticket_attachment';
+
+    const { data: registeredRows, error: registerError } = await userClient.rpc(registerRpc, {
+      p_upload_intent_id: intentId,
+    });
 
     if (registerError) {
       await serviceClient.storage
