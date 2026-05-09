@@ -49,14 +49,30 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Grant de download expirou.' }, { status: 410 });
     }
 
-    const { data: visibleAttachment, error: visibleError } = await userClient
+    const { data: supportVisibleAttachment, error: supportVisibleError } = await userClient
       .from('vw_support_ticket_attachments')
       .select('attachment_id')
       .eq('attachment_id', String(grant.attachment_id))
       .maybeSingle();
 
-    if (visibleError) {
+    if (supportVisibleError) {
       return jsonResponse({ error: 'Falha ao validar o acesso à evidência.' }, { status: 500 });
+    }
+
+    let visibleAttachment = supportVisibleAttachment;
+
+    if (!visibleAttachment) {
+      const { data: customerVisibleAttachment, error: customerVisibleError } = await userClient
+        .from('vw_customer_portal_ticket_attachments')
+        .select('attachment_id')
+        .eq('attachment_id', String(grant.attachment_id))
+        .maybeSingle();
+
+      if (customerVisibleError) {
+        return jsonResponse({ error: 'Falha ao validar o acesso à evidência.' }, { status: 500 });
+      }
+
+      visibleAttachment = customerVisibleAttachment;
     }
 
     if (!visibleAttachment) {

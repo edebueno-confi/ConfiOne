@@ -1021,3 +1021,150 @@ export interface RpcEngineeringLinkExistingWorkItemToTicketPayload {
 }
 export type RpcEngineeringLinkExistingWorkItemToTicketResponse =
   EngineeringTicketLinkRecord;
+
+export type CustomerPortalRole = 'customer_user' | 'customer_manager';
+
+export interface CustomerPortalAuthContext {
+  userId: Uuid;
+  userFullName: string | null;
+  userEmail: string | null;
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantDisplayName: string;
+  tenantLegalName: string;
+  portalRole: CustomerPortalRole;
+  contactId: Uuid;
+  contactFullName: string;
+  contactEmail: string | null;
+  contactJobTitle: string | null;
+  canViewTickets: boolean;
+  canCreateTicket: boolean;
+  canViewAllTenantTickets: boolean;
+}
+
+export interface CustomerPortalProfileContext extends CustomerPortalAuthContext {
+  productLine: string;
+  operationalStatus: string;
+  accountTier: string;
+}
+
+export interface CustomerPortalTicketListItem {
+  ticketId: Uuid;
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantDisplayName: string;
+  requesterContactId: Uuid | null;
+  requesterContactFullName: string | null;
+  title: string;
+  customerStatusLabel: string;
+  internalStatus: TicketStatus;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  lastMessageAt: IsoTimestamp | null;
+  customerMessageCount: number;
+  customerAttachmentCount: number;
+  publicArticleCount: number;
+}
+
+export interface CustomerPortalTicketDetail {
+  ticketId: Uuid;
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantDisplayName: string;
+  requesterContactId: Uuid | null;
+  requesterContactFullName: string | null;
+  title: string;
+  description: string;
+  customerStatusLabel: string;
+  internalStatus: TicketStatus;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  resolvedAt: IsoTimestamp | null;
+  closedAt: IsoTimestamp | null;
+  canAddMessage: boolean;
+  canViewAttachments: boolean;
+  canViewPublicArticles: boolean;
+}
+
+export interface CustomerPortalTicketTimelineItem {
+  ticketId: Uuid;
+  tenantId: Uuid;
+  timelineEntryId: Uuid;
+  entryType: TicketTimelineEntryType;
+  occurredAt: IsoTimestamp;
+  actorLabel: string;
+  eventType: TicketEventType | null;
+  eventLabel: string | null;
+  body: string | null;
+}
+
+export interface CustomerPortalTicketAttachment {
+  attachmentId: Uuid;
+  ticketId: Uuid;
+  tenantId: Uuid;
+  displayName: string;
+  contentType: string | null;
+  sizeBytes: number;
+  sizeLabel: string;
+  uploadedByLabel: string;
+  createdAt: IsoTimestamp;
+  status: TicketAttachmentStatus;
+  canDownload: boolean;
+}
+
+export interface CustomerPortalKnowledgeArticle {
+  ticketId: Uuid;
+  tenantId: Uuid;
+  articleId: Uuid;
+  articleTitle: string;
+  articleSlug: string;
+  articleSummary: string | null;
+  categoryName: string | null;
+  publicArticlePath: string;
+  sentAt: IsoTimestamp;
+}
+
+export interface RpcCustomerCreateTicketPayload {
+  tenantId: Uuid;
+  title: string;
+  description: string;
+}
+export interface RpcCustomerCreateTicketResponse {
+  ticketId: Uuid;
+  tenantId: Uuid;
+  title: string;
+  customerStatusLabel: string;
+  createdAt: IsoTimestamp;
+}
+
+export interface RpcCustomerAddTicketMessagePayload {
+  ticketId: Uuid;
+  body: string;
+}
+export interface RpcCustomerAddTicketMessageResponse {
+  messageId: Uuid;
+  ticketId: Uuid;
+  tenantId: Uuid;
+  body: string;
+  createdAt: IsoTimestamp;
+}
+
+export interface RpcCustomerGetAttachmentDownloadUrlPayload {
+  attachmentId: Uuid;
+}
+export interface RpcCustomerGetAttachmentDownloadUrlResponse {
+  attachmentId: Uuid;
+  expiresAt: IsoTimestamp;
+  downloadUrl: string;
+}
+
+export interface RpcCustomerAcknowledgeTicketUpdatePayload {
+  ticketId: Uuid;
+  lastTimelineEntryId?: Uuid | null;
+}
+export interface RpcCustomerAcknowledgeTicketUpdateResponse {
+  ticketId: Uuid;
+  tenantId: Uuid;
+  acknowledgedAt: IsoTimestamp;
+  lastTimelineEntryId: Uuid | null;
+}

@@ -77,6 +77,68 @@ const FIXTURE = {
       status: 'revoked',
     },
   ],
+  customerPortalUsers: [
+    {
+      key: 'customer-user-a',
+      email: 'marina.ops@support-qa-a.local',
+      password: 'Local-QA-Customer-A-2026!',
+      fullName: 'Marina Operações QA',
+      tenantSlug: 'support-qa-a',
+      role: 'customer_user',
+      status: 'active',
+      contact: {
+        fullName: 'Marina Operações QA',
+        email: 'marina.ops@support-qa-a.local',
+        phone: '+55 11 91000-0001',
+        jobTitle: 'Coordenação de Operações',
+      },
+    },
+    {
+      key: 'customer-manager-a',
+      email: 'gestao.portal@support-qa-a.local',
+      password: 'Local-QA-Customer-Manager-A-2026!',
+      fullName: 'Gestão Portal QA Tenant A',
+      tenantSlug: 'support-qa-a',
+      role: 'customer_manager',
+      status: 'active',
+      contact: {
+        fullName: 'Gestão Portal QA Tenant A',
+        email: 'gestao.portal@support-qa-a.local',
+        phone: '+55 11 91000-0004',
+        jobTitle: 'Gestão de Atendimento B2B',
+      },
+    },
+    {
+      key: 'customer-user-b',
+      email: 'rafael.integracoes@support-qa-b.local',
+      password: 'Local-QA-Customer-B-2026!',
+      fullName: 'Rafael Integrações QA',
+      tenantSlug: 'support-qa-b',
+      role: 'customer_user',
+      status: 'active',
+      contact: {
+        fullName: 'Rafael Integrações QA',
+        email: 'rafael.integracoes@support-qa-b.local',
+        phone: '+55 11 91000-0002',
+        jobTitle: 'Analista de Integrações',
+      },
+    },
+    {
+      key: 'customer-no-access',
+      email: 'sem.acesso.portal@support-qa-b.local',
+      password: 'Local-QA-Customer-No-Access-2026!',
+      fullName: 'Cliente Sem Acesso QA',
+      tenantSlug: 'support-qa-b',
+      role: 'customer_user',
+      status: 'revoked',
+      contact: {
+        fullName: 'Cliente Sem Acesso QA',
+        email: 'sem.acesso.portal@support-qa-b.local',
+        phone: '+55 11 91000-0005',
+        jobTitle: 'Contato sem acesso ativo',
+      },
+    },
+  ],
   tenants: [
     {
       slug: 'support-qa-a',
@@ -479,8 +541,9 @@ const FIXTURE = {
       ticketTitle: 'QA Support | Conciliacao de devoluções com atraso',
       ticketTenantSlug: 'support-qa-a',
       actorKey: 'support-manager-a',
-      fileName: 'conciliacao-devolucoes-qa.pdf',
+      fileName: 'conciliacao-devolucoes-portal-qa.pdf',
       contentType: 'application/pdf',
+      visibility: 'customer',
       body:
         'Evidência operacional da fila de conciliação para o tenant A. Conteúdo sanitizado para validar o fluxo seguro de anexos.',
     },
@@ -1546,7 +1609,13 @@ function ensureContact(adminUserId, tenantId, contact) {
       '${sqlEscape(contact.email)}',
       '${sqlEscape(contact.phone)}',
       '${sqlEscape(contact.jobTitle)}',
-      true,
+      not exists (
+        select 1
+        from public.tenant_contacts
+        where tenant_id = '${sqlEscape(tenantId)}'::uuid
+          and is_primary
+          and is_active
+      ),
       true,
       '${sqlEscape(adminUserId)}'::uuid,
       '${sqlEscape(adminUserId)}'::uuid
@@ -1558,6 +1627,25 @@ function ensureContact(adminUserId, tenantId, contact) {
   if (!contactId) {
     fail(`Nao foi possivel criar o contato do tenant ${tenantId}.`);
   }
+
+  return contactId;
+}
+
+function ensureCustomerPortalContact({ actorUserId, tenantId, userId, contact }) {
+  const contactId = ensureContact(actorUserId, tenantId, contact);
+
+  runSupabaseDbQuery(`
+    update public.tenant_contacts
+    set
+      linked_user_id = '${sqlEscape(userId)}'::uuid,
+      full_name = '${sqlEscape(contact.fullName)}',
+      phone = '${sqlEscape(contact.phone)}',
+      job_title = '${sqlEscape(contact.jobTitle)}',
+      is_active = true,
+      updated_by_user_id = '${sqlEscape(actorUserId)}'::uuid
+    where id = '${sqlEscape(contactId)}'::uuid
+      and tenant_id = '${sqlEscape(tenantId)}'::uuid;
+  `);
 
   return contactId;
 }
@@ -2656,6 +2744,18 @@ function queryTicketAttachmentId(ticketId, fileName) {
   return result.rows?.[0]?.id ?? null;
 }
 
+function applyFixtureUploadIntentVisibility({ uploadIntentId, visibility }) {
+  if (visibility !== 'customer') {
+    return;
+  }
+
+  runSupabaseDbQuery(`
+    update public.ticket_attachment_upload_intents
+    set visibility = 'customer'::public.message_visibility
+    where id = '${sqlEscape(uploadIntentId)}'::uuid;
+  `);
+}
+
 async function uploadTicketAttachmentViaSecureFlow({
   actorSession,
   ticketId,
@@ -2686,6 +2786,11 @@ async function uploadTicketAttachmentViaSecureFlow({
   if (!uploadContract?.upload_url || !uploadContract?.upload_intent_id) {
     fail(`Contrato de upload ausente para a evidência ${attachment.fileName}.`);
   }
+
+  applyFixtureUploadIntentVisibility({
+    uploadIntentId: uploadContract.upload_intent_id,
+    visibility: attachment.visibility,
+  });
 
   const formData = new FormData();
   formData.append(
@@ -2980,6 +3085,57 @@ async function main() {
     operatorMap.set(authUser.id, accessProfile.id);
   }
 
+  const customerPortalUserMap = new Map();
+  for (const portalUser of FIXTURE.customerPortalUsers) {
+    const authUser = await createOrUpdateAuthUser({
+      apiUrl,
+      serviceRoleKey,
+      email: portalUser.email,
+      password: portalUser.password,
+      fullName: portalUser.fullName,
+    });
+
+    const portalProfile = queryProfileByEmail(portalUser.email);
+    if (!portalProfile?.id || !portalProfile.is_active) {
+      fail(`O profile customer-facing local ${portalUser.email} nao foi materializado corretamente.`);
+    }
+
+    const tenantId = tenantMap.get(portalUser.tenantSlug);
+    if (!tenantId) {
+      fail(`Tenant ausente para o usuario customer-facing local ${portalUser.email}.`);
+    }
+
+    const contactId = ensureCustomerPortalContact({
+      actorUserId: profile.id,
+      contact: portalUser.contact,
+      tenantId,
+      userId: portalProfile.id,
+    });
+
+    ensureTenantMembership({
+      actorUserId: profile.id,
+      tenantId,
+      userId: portalProfile.id,
+      role: portalUser.role,
+      status: portalUser.status,
+    });
+
+    operatorMap.set(portalUser.key, portalProfile.id);
+    operatorMap.set(portalUser.email, portalProfile.id);
+    operatorMap.set(authUser.id, portalProfile.id);
+    customerPortalUserMap.set(portalUser.key, {
+      contactId,
+      profileId: portalProfile.id,
+      userId: authUser.id,
+    });
+    sessionConfigByKey.set(portalUser.key, {
+      apiUrl,
+      anonKey,
+      email: portalUser.email,
+      password: portalUser.password,
+    });
+  }
+
   const sessionCache = new Map();
   const getSessionForKey = async (key) => {
     if (sessionCache.has(key)) {
@@ -3242,6 +3398,16 @@ async function main() {
           role: accessUser.role,
           status: accessUser.status,
           user_id: operatorMap.get(accessUser.key),
+        })),
+        customer_portal_users: FIXTURE.customerPortalUsers.map((portalUser) => ({
+          key: portalUser.key,
+          email: portalUser.email,
+          password: portalUser.password,
+          tenant_slug: portalUser.tenantSlug,
+          role: portalUser.role,
+          status: portalUser.status,
+          user_id: customerPortalUserMap.get(portalUser.key)?.profileId ?? null,
+          contact_id: customerPortalUserMap.get(portalUser.key)?.contactId ?? null,
         })),
         tenants: FIXTURE.tenants.map((tenant) => ({
           slug: tenant.slug,

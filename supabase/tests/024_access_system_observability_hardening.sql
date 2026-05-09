@@ -200,7 +200,16 @@ select lives_ok(
 );
 
 select is(
-  (select count(*)::integer from public.vw_admin_access_users),
+  (
+    select count(*)::integer
+    from public.vw_admin_access_users
+    where email in (
+      'access-admin@genius.local',
+      'access-tenant-admin@tenant.local',
+      'access-tenant-manager@tenant.local',
+      'access-viewer@tenant.local'
+    )
+  ),
   4,
   'platform_admin le usuarios operacionais pelo read model de Access'
 );

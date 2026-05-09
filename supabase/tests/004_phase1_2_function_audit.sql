@@ -45,8 +45,8 @@ select is(
       and p.prosecdef
       and p.proname like 'rpc_%'
   ),
-  64,
-  'as 64 RPCs expostas existem como funcoes SECURITY DEFINER controladas'
+  68,
+  'as 68 RPCs expostas existem como funcoes SECURITY DEFINER controladas'
 );
 
 select is(
@@ -93,7 +93,14 @@ select is(
         'resolve_ticket_sla_policy',
         'ticket_sla_status',
         'ticket_sla_status_label',
-        'allowed_next_ticket_statuses'
+        'allowed_next_ticket_statuses',
+        'customer_ticket_status_label',
+        'customer_ticket_event_label',
+        'customer_portal_contact_id',
+        'is_customer_portal_member',
+        'is_customer_portal_manager',
+        'can_access_customer_ticket',
+        'customer_portal_actor_label'
       ]) as proname
     ),
     grants as (
@@ -163,7 +170,7 @@ select is(
     from grants
       where grantee = (select oid from pg_roles where rolname = 'authenticated')
   ),
-  64,
+  68,
   'authenticated recebe execute em todas as RPCs expostas e somente por grant explicito'
 );
 
