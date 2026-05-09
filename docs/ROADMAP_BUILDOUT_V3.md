@@ -110,6 +110,7 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 - Status Fase 8.9: `/support/tickets/:ticketId` passou a enviar evidencias reais com bucket privado `ticket-evidence`, policies por tenant/ticket, intent de upload, metadata sanitizada e download temporario curto sem expor `storage_bucket` nem `storage_object_path` ao frontend.
 - Status Fase 8.10: classificacao operacional, motivos, prioridade/severidade, SLA interno e transicoes de status foram formalizados com `ticket_categories`, `ticket_operational_reasons`, `ticket_sla_policies`, read models e RPCs conectados ao intake/fila/workspace.
 - Status Fase 8.11: politicas de SLA por tenant, calendario de negocio MVP, fallback global seguro, recalculo backend e sinais internos de SLA foram materializados sem timer fake ou promessa publica.
+- Status Fase 8.12: a usabilidade operacional do suporte foi consolidada com ajuste conservador de copy tecnica visivel, preservando contratos, thread, composer, anexos, SLA, handoff e customer context.
 - Contratos ainda necessarios: calculo por horario util completo; pausa objetiva de SLA; automacao/notificacao de SLA se Produto decidir; arquivamento seguro de evidencia.
 - Riscos: expor nota interna ao cliente, criar transicao invalida de status, enviar artigo sem URL publica segura.
 - Dependencias: RLS de ticketing, auditoria de eventos e regra de permissao por role.
@@ -167,34 +168,34 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 
 ## Proximo lote tecnico recomendado
 
-### Lote: Support Operations Usability Completion V3
+### Lote: Customer Portal Readiness Blueprint V3
 
-Objetivo: consolidar a usabilidade operacional de `/support/queue` e `/support/tickets/:ticketId` depois de intake, classificacao, SLA por tenant, anexos seguros, handoff tecnico, Engineering Workspace e Customer Account Profile.
+Objetivo: preparar a arquitetura minima do futuro ambiente do cliente B2B sem implementar portal completo, sem criar auth paralela e sem expor dados internos.
 
 Ordem sugerida:
-1. Auditar excesso visual, duplicidade de acoes e copy tecnica.
-2. Consolidar estados vazios/loading/erro/permissao.
-3. Melhorar leitura combinada de SLA, anexos, handoff, classificacao e contexto B2B sem criar regra nova.
-4. Validar navegacao entre fila, ticket e Engineering Workspace.
-5. Rodar regressao visual/scroll e suite web.
+1. Mapear quais tickets, evidencias, artigos e estados podem ser vistos pelo cliente B2B.
+2. Mapear o que deve permanecer interno: notas, handoff tecnico, auditoria, perfil operacional sensivel e payloads.
+3. Definir auth e tenancy do portal sem criar shopper portal B2C.
+4. Definir contratos futuros de abertura/acompanhamento de ticket pelo cliente.
+5. Definir limites para anexos seguros, Knowledge contextual e visibilidade do Customer Account Profile.
 
 Migrations necessarias:
-- nao esperadas; qualquer necessidade de backend deve virar lote tecnico proprio.
+- nao neste blueprint; implementacao futura deve virar lote tecnico proprio.
 
 Views/RPCs necessarias:
-- reaproveitar contratos atuais; nao criar acao funcional nova sem contrato real.
+- apenas mapeadas no blueprint, sem criar contrato fake.
 
 RLS/policies:
-- sem alteracao prevista.
+- requisito obrigatorio do lote futuro; cliente so deve ver o proprio tenant e nunca contexto interno.
 
 Audit logs:
-- sem alteracao prevista.
+- abertura, mensagem, anexo e qualquer acao do portal futuro devem gerar trilha auditavel.
 
 Fixtures/testes:
-- usar fixture local ja expandida com SLA, evidencia, handoff e perfil de cliente.
+- planejar usuario cliente B2B autorizado, cliente sem acesso, tenant sem ticket e anexos com download temporario.
 
 Impacto no front:
-- polish operacional seguro, mantendo cockpits sem scroll global, sem scroll horizontal, sem termos tecnicos crus e com `Indisponivel` para ausencia real de dado.
+- nenhum neste bloco documental; portal completo fica fora ate decisao explicita.
 
 ## Decisoes que ainda dependem de Produto
 - Se Support e Admin devem convergir em um App Shell unico.

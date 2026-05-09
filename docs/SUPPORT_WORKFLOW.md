@@ -136,6 +136,13 @@
 - frontend continua sem calcular SLA, sem criar timer e sem inferir breach
 - pausa por status, feriados aplicados ao calculo e notificacao externa continuam fora do contrato ate decisao explicita
 
+## Boundary materializado na Fase 8.12
+- a usabilidade operacional do suporte foi revisada sem backend novo
+- copies visiveis de estados indisponiveis passaram a evitar termos de implementacao como backend/contrato quando isso nao ajuda o operador
+- a tela continua exibindo `Indisponivel` para dado ausente e copy honesta para acao bloqueada
+- thread, composer, anexos, SLA, handoff tecnico e customer context foram preservados sem criar fluxo fake
+- qualquer reorganizacao maior de densidade/rail deve partir de uso real e manter os mesmos contratos
+
 ## Boundary materializado na Fase 8.2
 - o historico anterior da timeline do ticket agora e carregado por `rpc_support_get_ticket_timeline`
 - a primeira carga continua usando `vw_support_ticket_timeline_recent`, mantendo payload inicial controlado

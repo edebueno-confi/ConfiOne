@@ -79,9 +79,10 @@ Documentos históricos:
 - O lote `Secure Ticket Evidence Storage V3` fechou o storage seguro de evidências com bucket privado `ticket-evidence`, policies por tenant/ticket, upload governado por intent, download temporário por grant curto, metadata sanitizada e UI conectada no Ticket Workspace sem expor path interno.
 - O lote `Ticket Classification And SLA Governance V3` formalizou categorias de ticket, motivos operacionais, SLA interno, matriz de transição de status, read models/RPCs e UI conectada para intake, fila e workspace sem inventar regra no frontend.
 - O lote `Tenant Support Policy And SLA Automation V3` materializou políticas de SLA por tenant, calendário de negócio MVP como metadata governada, fallback global seguro, recalculo backend e sinais internos de SLA na fila/workspace sem timer fake, pausa ou notificação externa.
+- O lote `Support Operations Usability Completion V3` consolidou copy operacional do suporte após SLA/anexos/handoff, removendo termos técnicos visíveis ao operador sem alterar contratos ou criar nova regra.
 - Nenhuma ação fake foi habilitada no frontend; ações sem contrato completo seguem bloqueadas para lote futuro.
 - Os 8 candidatos documentais da Knowledge continuam pendentes, nao aprovados, nao publicados e nao injetados automaticamente no Help Center.
-- Próximo bloco recomendado: `Support Operations Usability Completion V3`.
+- Próximo bloco recomendado: `Customer Portal Readiness Blueprint V3`.
 
 ## Estado real do repositório em 2026-04-30
 

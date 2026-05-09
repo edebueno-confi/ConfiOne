@@ -18,6 +18,40 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 8.12 - Support Operations Usability Completion V3
+- fase: `8.12`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-09`
+- resumo funcional: a usabilidade operacional do suporte foi revisada apos intake, classificacao, SLA por tenant, anexos seguros, handoff tecnico e contexto de cliente, com ajuste conservador de copy e sem backend novo.
+- docs alterados:
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+- views/RPCs afetadas:
+  - nenhum contrato novo; reaproveitados os read models/RPCs ja existentes de suporte
+- telas afetadas:
+  - `/support/queue`
+  - `/support/tickets/:ticketId`
+  - `/engineering` em regressao rapida
+- runtime/UI:
+  - copy tecnica visivel ao operador foi reduzida em estados de evidencias, handoff e acoes indisponiveis
+  - acoes seguem habilitadas apenas quando os contratos existentes permitem
+  - thread, composer, anexos, SLA, handoff e customer context foram preservados
+- riscos restantes:
+  - refinamento profundo de densidade e reorganizacao do rail deve ser feito em lote proprio se a tela ficar saturada com uso real
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+- impacto na FAQ futura:
+  - reforca a linguagem operacional que deve ser usada em orientacoes internas de suporte sem expor detalhes de implementacao
+
 ### Fase 8.11 - Tenant Support Policy And SLA Automation V3
 - fase: `8.11`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`
