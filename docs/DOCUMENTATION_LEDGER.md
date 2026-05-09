@@ -2868,3 +2868,43 @@ Cada registro deve informar:
   - `npm run supabase:qa:local-support-fixture`
 - impacto na FAQ futura:
   - nenhum; lote tecnico de plataforma, sem publicacao de conteudo
+
+### Fase 8.16 - Customer Portal Secure Evidence Upload V3
+- fase: `8.16`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-09`
+- resumo funcional: o portal cliente B2B autenticado passou a enviar evidencias reais por fluxo customer-facing seguro, reaproveitando o bucket privado `ticket-evidence` sem expor bucket, path interno ou URL permanente.
+- docs alterados:
+  - `docs/CUSTOMER_PORTAL_SECURE_EVIDENCE_UPLOAD_V3.md`
+  - `docs/CUSTOMER_PORTAL_CONTRACT_FOUNDATION_V3.md`
+  - `docs/SECURE_TICKET_EVIDENCE_STORAGE_V3.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - `/portal/tickets/:ticketId`
+  - `/support/tickets/:ticketId` (regressao/visibilidade de evidencia)
+- views/RPCs/functions afetadas:
+  - `vw_customer_portal_ticket_attachments`
+  - `vw_support_ticket_attachments`
+  - `rpc_customer_create_ticket_attachment_upload`
+  - `rpc_customer_register_ticket_attachment`
+  - `rpc_customer_get_attachment_download_url`
+  - `ticket-evidence-upload`
+  - `ticket-evidence-download`
+- riscos restantes:
+  - arquivamento/remocao customer-facing de evidencia segue sem RPC segura
+  - retencao/expurgo de storage depende de decisao propria
+  - scan real de arquivo continua fora do escopo
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+- impacto na FAQ futura:
+  - nenhum; lote de portal autenticado, sem publicacao de Knowledge

@@ -1829,6 +1829,24 @@ Documentos históricos:
     - `audit_log`
   - O isolamento por tenant foi validado em leitura e escrita.
   - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
+- Fase 8.16: Customer Portal Secure Evidence Upload V3 concluido como bloco customer-facing de evidencias.
+  - O portal B2B autenticado agora pode enviar evidencias reais em tickets permitidos do proprio tenant.
+  - O fluxo reaproveita o bucket privado `ticket-evidence`, mas com boundary customer-facing propria:
+    - `rpc_customer_create_ticket_attachment_upload`
+    - `ticket-evidence-upload?boundary=customer`
+    - `rpc_customer_register_ticket_attachment`
+    - `rpc_customer_get_attachment_download_url`
+  - A view `vw_customer_portal_ticket_attachments` continua sanitizada e nao expoe bucket, path interno, URL permanente ou payload bruto.
+  - O upload customer-facing fica limitado a PDF, PNG, JPG e WebP ate `10 MB`.
+  - Evidencia enviada pelo cliente aparece no portal e no Support Workspace como metadata segura.
+  - Toda mutacao gera `ticket_event` e `audit_log` sem vazar coordenadas de storage.
+  - Permanecem fora de escopo:
+    - arquivamento/remocao pelo cliente
+    - scan/antivirus
+    - notificacao externa
+    - IA
+    - Omni Inbox
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -1850,7 +1868,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Executar o proximo lote tecnico grande `Ticket Classification And SLA Governance V3`, começando pela auditoria dos enums, constraints e contratos atuais de status/prioridade/categoria, seguido do fechamento de categoria inicial formal, motivos operacionais auditaveis e governanca de prioridade/SLA sem inventar regra no frontend.
+Executar o proximo lote tecnico grande `Customer Portal Ticket Collaboration V3`, consolidando colaboracao customer-facing em ticket com estados de leitura, resposta, timeline e regras de fechamento/reabertura sem expor operacao interna.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único

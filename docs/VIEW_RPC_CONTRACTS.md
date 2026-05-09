@@ -1249,6 +1249,41 @@ Fase 8.2:
 - `authenticated` continua sem DML direto em `ticket_attachments`
 - arquivamento de evidência continua fora da superfície porque não existe RPC segura habilitada para isso neste corte
 
+## Fase 8.16 - Customer Portal Secure Evidence Upload V3
+
+### Leitura consumida pelo frontend
+- `vw_customer_portal_ticket_attachments`
+- `vw_support_ticket_attachments`
+
+### Escrita consumida pelo frontend
+- `rpc_customer_create_ticket_attachment_upload`
+- `rpc_customer_register_ticket_attachment`
+- `rpc_customer_get_attachment_download_url`
+
+### Functions operacionais consumidas pelo frontend
+- `ticket-evidence-upload` com `boundary=customer`
+- `ticket-evidence-download`
+
+### Regras de consumo
+- `/portal/tickets/:ticketId` envia evidencias por intent customer-facing antes do upload.
+- O bucket `ticket-evidence` permanece privado e e reaproveitado com policies especificas para cliente autenticado.
+- O upload customer-facing aceita apenas:
+  - `application/pdf`
+  - `image/jpeg`
+  - `image/png`
+  - `image/webp`
+- O limite customer-facing e `10 MB` por arquivo.
+- O cliente so pode anexar evidencia em ticket permitido do proprio tenant/contato.
+- Tickets `closed` e `cancelled` nao aceitam upload customer-facing.
+- O registro final cria metadata em `ticket_attachments` com `visibility = customer`.
+- `ticket_event` e `audit_log` sao gerados sem bucket/path sensivel.
+
+### Boundary mantido
+- O frontend nao recebe `storage_bucket`, `storage_object_path`, path interno ou URL permanente.
+- O frontend nao filtra seguranca nem monta URL de storage.
+- Upload anonimo e cross-tenant ficam bloqueados por RPC, storage policy e testes.
+- Arquivamento/remocao de evidencia pelo cliente continua bloqueado por falta de RPC segura dedicada.
+
 ## Fase 6.3 - Support Workspace Agent Directory + Assignment UX
 
 ### Leitura consumida pelo frontend

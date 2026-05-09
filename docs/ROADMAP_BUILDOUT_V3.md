@@ -117,6 +117,7 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 - Status Fase 8.13: o blueprint de readiness do portal cliente B2B foi criado sem implementar UI, auth paralela ou contratos fake.
 - Status Fase 8.14: o checkpoint geral de buildout consolidou pronto/parcial/bloqueado e os proximos blocos grandes sem implementar produto novo.
 - Status Fase 8.15: a foundation contratual customer-facing foi criada com `customer_user`/`customer_manager`, views `vw_customer_portal_*`, RPCs `rpc_customer_*`, rotas `/portal`, `/portal/tickets` e `/portal/tickets/:ticketId`, sem expor audit, engenharia, SLA interno, drafts, storage path ou Knowledge interna.
+- Status Fase 8.16: o upload customer-facing seguro de evidencias foi fechado no portal, reaproveitando o bucket privado `ticket-evidence` com policies customer, intents/RPCs proprias, edge function com `boundary=customer`, metadata sanitizada e visibilidade no Support Workspace sem path leak.
 - Contratos ainda necessarios: calculo por horario util completo; pausa objetiva de SLA; automacao/notificacao de SLA se Produto decidir; arquivamento seguro de evidencia.
 - Riscos: expor nota interna ao cliente, criar transicao invalida de status, enviar artigo sem URL publica segura.
 - Dependencias: RLS de ticketing, auditoria de eventos e regra de permissao por role.
@@ -174,16 +175,16 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 
 ## Proximo lote tecnico recomendado
 
-### Lote: Customer Portal Secure Evidence Upload V3
+### Lote: Customer Portal Ticket Collaboration V3
 
-Objetivo: permitir upload customer-facing de evidencias pelo cliente B2B autenticado, reaproveitando storage governado sem expor bucket/path nem criar upload inseguro.
+Objetivo: consolidar a colaboracao autenticada do cliente B2B dentro do ticket sem expor operacao interna.
 
 Ordem sugerida:
-1. Criar intent/RPC customer-facing de upload, separado do fluxo interno de suporte.
-2. Validar tenant, ticket, contato, tipo e tamanho no backend.
-3. Reaproveitar bucket privado `ticket-evidence` e edge function segura sem expor path.
-4. Atualizar `/portal/tickets/:ticketId` apenas com acao real e estados honestos.
-5. Cobrir cross-tenant, usuario revogado, path leak, ticket_event e audit_log.
+1. Endurecer estados de leitura e acknowledgement customer-facing.
+2. Validar resposta do cliente em ticket permitido e status aceitos.
+3. Definir regras seguras de fechamento/reabertura pelo cliente, se Produto aprovar.
+4. Consolidar timeline customer-facing com mensagens, evidencias e Knowledge enviada.
+5. Cobrir cross-tenant, usuario revogado, ticket fechado, audit_log e `ticket_event`.
 
 ### Lote alternativo: Omni Inbox Thread Foundation V3
 

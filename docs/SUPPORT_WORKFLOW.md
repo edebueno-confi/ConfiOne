@@ -375,3 +375,17 @@
 - bucket, path interno e URL assinada nao aparecem no fluxo principal.
 - a evidencia continua pertencendo ao ticket e ao tenant; upload e download cross-tenant sao bloqueados.
 - arquivamento/remocao ainda nao faz parte do fluxo porque nao existe RPC segura habilitada para isso.
+
+## Evidencias customer-facing da fase 8.16
+- O portal B2B autenticado agora tambem envia evidencias reais no ticket.
+- O fluxo customer-facing e separado do interno:
+  - intent por `rpc_customer_create_ticket_attachment_upload`;
+  - upload via `ticket-evidence-upload` com `boundary=customer`;
+  - registro por `rpc_customer_register_ticket_attachment`;
+  - download por `rpc_customer_get_attachment_download_url`.
+- O cliente so envia evidencia em ticket permitido do proprio tenant e contato.
+- Tickets `closed` e `cancelled` nao aceitam upload customer-facing.
+- O portal aceita apenas PDF, PNG, JPG e WebP ate `10 MB`.
+- O Support Workspace enxerga a evidencia enviada pelo cliente como metadata sanitizada.
+- Bucket, path interno e URL permanente continuam fora do frontend.
+- Arquivamento/remocao pelo cliente, notificacao externa, scan/antivirus, IA e Omni Inbox continuam fora do escopo.

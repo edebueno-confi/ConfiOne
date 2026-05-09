@@ -143,15 +143,14 @@ Testes pgTAP cobrem:
 - DML direto bloqueado.
 
 ## Limitacoes assumidas
-- Portal ainda nao tem upload de evidencia pelo cliente.
+- Portal agora tem upload customer-facing seguro de evidencia, documentado em `CUSTOMER_PORTAL_SECURE_EVIDENCE_UPLOAD_V3.md`.
 - Portal ainda nao tem SLA publico.
 - Portal ainda nao tem Omni Inbox, WhatsApp, email threading externo ou IA.
 - Portal ainda nao tem UI final, onboarding, gestao de usuarios do cliente ou preferencias.
 - Auth segue Supabase existente; nao foi criado provider paralelo.
 
 ## Proximos lotes recomendados
-1. `Customer Portal Secure Evidence Upload V3`: upload customer-facing seguro reaproveitando intents/storage sem expor path.
-2. `Customer Portal Ticket Collaboration V3`: estados de leitura, comentarios, anexos do cliente e regras de fechamento pelo cliente.
-3. `Omni Inbox Thread Foundation V3`: separar canal/thread de ticket sem implementar canal real.
-4. `Customer Portal Access Administration V3`: manager convidar/revogar usuarios do proprio tenant via RPC auditada.
-5. `AI Context Readiness V3`: preparar views de contexto citavel para IA sem habilitar IA.
+1. `Customer Portal Ticket Collaboration V3`: estados de leitura, comentarios, anexos do cliente e regras de fechamento pelo cliente.
+2. `Omni Inbox Thread Foundation V3`: separar canal/thread de ticket sem implementar canal real.
+3. `Customer Portal Access Administration V3`: manager convidar/revogar usuarios do proprio tenant via RPC auditada.
+4. `AI Context Readiness V3`: preparar views de contexto citavel para IA sem habilitar IA.

@@ -232,11 +232,27 @@ Resultado:
 
 ## Próximo lote recomendado
 
-- `Ticket Classification And SLA Governance V3`
+- `Customer Portal Secure Evidence Upload V3` foi executado como extensao customer-facing deste contrato de storage.
+
+## Extensao customer-facing da fase 8.16
+
+- o bucket privado `ticket-evidence` foi reaproveitado sem se tornar publico;
+- upload do cliente usa `rpc_customer_create_ticket_attachment_upload`;
+- registro final usa `rpc_customer_register_ticket_attachment`;
+- a edge function `ticket-evidence-upload` recebeu boundary explicita `customer`;
+- a view `vw_customer_portal_ticket_attachments` nao expoe bucket, path nem URL permanente;
+- evidencia enviada pelo cliente aparece no Support Workspace por metadata sanitizada;
+- tipos permitidos no portal: PDF, PNG, JPG e WebP;
+- limite customer-facing: `10 MB`;
+- arquivamento/remocao pelo cliente segue fora do contrato.
+
+## Próximo lote recomendado
+
+- `Customer Portal Ticket Collaboration V3`
 
 Objetivo do próximo lote:
 
-- fechar categoria inicial formal
-- motivos operacionais auditáveis
-- governança de prioridade/SLA
-- estados e transições com contrato explícito no backend
+- consolidar colaboração autenticada do cliente no ticket
+- revisar regras de leitura/ack
+- avaliar fechamento/reabertura customer-facing apenas se houver contrato de produto
+- preservar boundary interna de suporte, engenharia, auditoria e SLA
