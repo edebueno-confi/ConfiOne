@@ -81,9 +81,10 @@ Documentos históricos:
 - O lote `Tenant Support Policy And SLA Automation V3` materializou políticas de SLA por tenant, calendário de negócio MVP como metadata governada, fallback global seguro, recalculo backend e sinais internos de SLA na fila/workspace sem timer fake, pausa ou notificação externa.
 - O lote `Support Operations Usability Completion V3` consolidou copy operacional do suporte após SLA/anexos/handoff, removendo termos técnicos visíveis ao operador sem alterar contratos ou criar nova regra.
 - O blueprint `Customer Portal Readiness Blueprint V3` preparou o desenho futuro do portal cliente B2B sem implementar UI, auth paralela ou contratos fake.
+- O `Buildout Status Checkpoint V3` consolidou o estado atual do buildout e definiu os próximos blocos grandes recomendados sem implementar produto novo.
 - Nenhuma ação fake foi habilitada no frontend; ações sem contrato completo seguem bloqueadas para lote futuro.
 - Os 8 candidatos documentais da Knowledge continuam pendentes, nao aprovados, nao publicados e nao injetados automaticamente no Help Center.
-- Próximo bloco recomendado: `Buildout Status Checkpoint V3`.
+- Próximo bloco recomendado: `Customer Portal Contract Foundation V3`.
 
 ## Estado real do repositório em 2026-04-30
 

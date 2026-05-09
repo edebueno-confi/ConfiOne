@@ -112,6 +112,7 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 - Status Fase 8.11: politicas de SLA por tenant, calendario de negocio MVP, fallback global seguro, recalculo backend e sinais internos de SLA foram materializados sem timer fake ou promessa publica.
 - Status Fase 8.12: a usabilidade operacional do suporte foi consolidada com ajuste conservador de copy tecnica visivel, preservando contratos, thread, composer, anexos, SLA, handoff e customer context.
 - Status Fase 8.13: o blueprint de readiness do portal cliente B2B foi criado sem implementar UI, auth paralela ou contratos fake.
+- Status Fase 8.14: o checkpoint geral de buildout consolidou pronto/parcial/bloqueado e os proximos blocos grandes sem implementar produto novo.
 - Contratos ainda necessarios: calculo por horario util completo; pausa objetiva de SLA; automacao/notificacao de SLA se Produto decidir; arquivamento seguro de evidencia.
 - Riscos: expor nota interna ao cliente, criar transicao invalida de status, enviar artigo sem URL publica segura.
 - Dependencias: RLS de ticketing, auditoria de eventos e regra de permissao por role.
@@ -169,34 +170,41 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 
 ## Proximo lote tecnico recomendado
 
-### Lote: Buildout Status Checkpoint V3
+### Lote: Customer Portal Contract Foundation V3
 
-Objetivo: consolidar o estado atual apos os blocos recentes e preparar os proximos lotes grandes sem implementar nada novo.
+Objetivo: criar a fundacao contratual customer-facing do futuro portal cliente B2B, sem portal completo e sem expor dados internos.
 
 Ordem sugerida:
-1. Mapear o que esta pronto, parcial e bloqueado em suporte, engenharia, cliente, admin e Knowledge.
-2. Listar os proximos cinco blocos grandes recomendados.
-3. Separar riscos arquiteturais, UX, seguranca e produto.
-4. Confirmar que nao ha regressao de escopo para Omni Inbox ou IA.
-5. Registrar pendencias reais de produto sem abrir micro-lotes.
+1. Definir auth/tenancy customer-facing aderente a `AUTH_CONTEXT_STRATEGY.md`.
+2. Criar read models `customer_portal_*` com security barrier e testes de vazamento.
+3. Criar RPCs minimas para abertura/acompanhamento de ticket somente se regras estiverem documentadas.
+4. Reutilizar governanca de evidencias com grant curto e sem path sensivel.
+5. Validar que notas internas, engenharia, audit logs e perfil operacional sensivel nunca aparecem ao cliente.
 
 Migrations necessarias:
-- nenhuma.
+- sim, se houver roles/customer memberships ou views/RPCs customer-facing.
 
 Views/RPCs necessarias:
-- nenhuma.
+- `vw_customer_portal_tickets`
+- `vw_customer_portal_ticket_detail`
+- `vw_customer_portal_ticket_timeline`
+- RPCs `rpc_customer_portal_*` apenas para acoes explicitamente aprovadas.
 
 RLS/policies:
-- nenhuma alteracao.
+- cliente B2B so ve o proprio tenant; cross-tenant deve ser bloqueado em testes.
 
 Audit logs:
-- nenhuma alteracao.
+- toda abertura, mensagem e anexo do cliente deve gerar audit trail seguro.
 
 Fixtures/testes:
-- `npm run web:typecheck` se for exclusivamente documental.
+- usuario cliente autorizado
+- usuario cliente sem acesso
+- tenant com tickets e tenant sem tickets
+- anexos autorizados e bloqueados
+- ausencia de notas internas/handoff/audit log no portal
 
 Impacto no front:
-- nenhum.
+- nenhum ate os contratos estarem verdes; UI do portal fica para lote posterior.
 
 ## Decisoes que ainda dependem de Produto
 - Se Support e Admin devem convergir em um App Shell unico.

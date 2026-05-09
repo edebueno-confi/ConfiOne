@@ -18,6 +18,29 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 8.14 - Buildout Status Checkpoint V3
+- fase: `8.14`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-09`
+- resumo funcional: foi consolidado checkpoint geral do buildout funcional apos os blocos de suporte, SLA, evidencias, engenharia, governanca e portal readiness, sem implementar produto novo.
+- docs alterados:
+  - `docs/BUILDOUT_STATUS_CHECKPOINT_V3.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhum contrato criado ou alterado
+- telas afetadas:
+  - nenhuma tela runtime
+- runtime/UI:
+  - sem alteracao runtime
+- riscos restantes:
+  - portal cliente B2B funcional, archive/retencao de evidencias, calendario util real, admin UI de SLA e regressao E2E visual seguem como proximos blocos grandes
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - organiza a narrativa do que ja esta operacional e do que ainda precisa contrato antes de virar promessa de produto
+
 ### Fase 8.13 - Customer Portal Readiness Blueprint V3
 - fase: `8.13`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`
