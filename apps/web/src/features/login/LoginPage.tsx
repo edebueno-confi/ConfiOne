@@ -39,6 +39,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const isPortalRedirect = redirectTo === '/portal' || redirectTo.startsWith('/portal/');
 
   if (phase === 'config-error') {
     return (
@@ -52,6 +53,10 @@ export function LoginPage() {
         />
       </div>
     );
+  }
+
+  if (phase === 'authenticated' && isPortalRedirect) {
+    return <Navigate replace to={redirectTo} />;
   }
 
   if (phase === 'booting' || (phase === 'authenticated' && gate.phase === 'loading')) {
@@ -137,7 +142,7 @@ export function LoginPage() {
 
                 <div className="space-y-3">
                   <p className="text-[0.72rem] font-semibold uppercase tracking-[0.32em] text-white/58">
-                    Acesso interno
+                    Acesso autorizado
                   </p>
                   <h1 className="max-w-2xl text-[clamp(2.8rem,5vw,4.4rem)] font-semibold tracking-[-0.07em] leading-[1.02] text-white">
                     Entrar no Genius Support OS
@@ -155,7 +160,7 @@ export function LoginPage() {
 
             <div className="rounded-[26px] border border-white/12 bg-white/8 p-5">
               <p className="text-sm leading-7 text-white/78">
-                Use sua conta aprovada para entrar no ambiente interno.
+                Use sua conta aprovada para entrar na área liberada para seu papel.
               </p>
             </div>
           </div>
@@ -221,7 +226,7 @@ export function LoginPage() {
                 Acesso
               </p>
               <p className="mt-2 text-sm leading-7 text-[color:var(--color-muted)]">
-                Use sua conta aprovada para acessar o ambiente interno.
+                Use sua conta aprovada para acessar o ambiente interno ou o portal cliente.
               </p>
             </div>
           </form>

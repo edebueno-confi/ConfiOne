@@ -19,6 +19,31 @@ const AccessDeniedPage = lazy(async () => {
   return { default: module.AccessDeniedPage };
 });
 
+const CustomerPortalGate = lazy(async () => {
+  const module = await import('../features/customer-portal/CustomerPortalPage');
+  return { default: module.CustomerPortalGate };
+});
+
+const CustomerPortalLayout = lazy(async () => {
+  const module = await import('../features/customer-portal/CustomerPortalPage');
+  return { default: module.CustomerPortalLayout };
+});
+
+const CustomerPortalHomePage = lazy(async () => {
+  const module = await import('../features/customer-portal/CustomerPortalPage');
+  return { default: module.CustomerPortalHomePage };
+});
+
+const CustomerPortalTicketsPage = lazy(async () => {
+  const module = await import('../features/customer-portal/CustomerPortalPage');
+  return { default: module.CustomerPortalTicketsPage };
+});
+
+const CustomerPortalTicketPage = lazy(async () => {
+  const module = await import('../features/customer-portal/CustomerPortalPage');
+  return { default: module.CustomerPortalTicketPage };
+});
+
 const TenantsPage = lazy(async () => {
   const module = await import('../features/tenants/TenantsPage');
   return { default: module.TenantsPage };
@@ -156,6 +181,28 @@ export const router = createBrowserRouter([
       {
         path: '/access-denied',
         element: withSuspense(<AccessDeniedPage />),
+      },
+      {
+        path: '/portal',
+        element: withSuspense(
+          <CustomerPortalGate>
+            <CustomerPortalLayout />
+          </CustomerPortalGate>,
+        ),
+        children: [
+          {
+            index: true,
+            element: withSuspense(<CustomerPortalHomePage />),
+          },
+          {
+            path: 'tickets',
+            element: withSuspense(<CustomerPortalTicketsPage />),
+          },
+          {
+            path: 'tickets/:ticketId',
+            element: withSuspense(<CustomerPortalTicketPage />),
+          },
+        ],
       },
       {
         path: '/admin',
