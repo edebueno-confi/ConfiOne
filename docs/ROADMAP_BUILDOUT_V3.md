@@ -111,6 +111,7 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 - Status Fase 8.10: classificacao operacional, motivos, prioridade/severidade, SLA interno e transicoes de status foram formalizados com `ticket_categories`, `ticket_operational_reasons`, `ticket_sla_policies`, read models e RPCs conectados ao intake/fila/workspace.
 - Status Fase 8.11: politicas de SLA por tenant, calendario de negocio MVP, fallback global seguro, recalculo backend e sinais internos de SLA foram materializados sem timer fake ou promessa publica.
 - Status Fase 8.12: a usabilidade operacional do suporte foi consolidada com ajuste conservador de copy tecnica visivel, preservando contratos, thread, composer, anexos, SLA, handoff e customer context.
+- Status Fase 8.13: o blueprint de readiness do portal cliente B2B foi criado sem implementar UI, auth paralela ou contratos fake.
 - Contratos ainda necessarios: calculo por horario util completo; pausa objetiva de SLA; automacao/notificacao de SLA se Produto decidir; arquivamento seguro de evidencia.
 - Riscos: expor nota interna ao cliente, criar transicao invalida de status, enviar artigo sem URL publica segura.
 - Dependencias: RLS de ticketing, auditoria de eventos e regra de permissao por role.
@@ -168,34 +169,34 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 
 ## Proximo lote tecnico recomendado
 
-### Lote: Customer Portal Readiness Blueprint V3
+### Lote: Buildout Status Checkpoint V3
 
-Objetivo: preparar a arquitetura minima do futuro ambiente do cliente B2B sem implementar portal completo, sem criar auth paralela e sem expor dados internos.
+Objetivo: consolidar o estado atual apos os blocos recentes e preparar os proximos lotes grandes sem implementar nada novo.
 
 Ordem sugerida:
-1. Mapear quais tickets, evidencias, artigos e estados podem ser vistos pelo cliente B2B.
-2. Mapear o que deve permanecer interno: notas, handoff tecnico, auditoria, perfil operacional sensivel e payloads.
-3. Definir auth e tenancy do portal sem criar shopper portal B2C.
-4. Definir contratos futuros de abertura/acompanhamento de ticket pelo cliente.
-5. Definir limites para anexos seguros, Knowledge contextual e visibilidade do Customer Account Profile.
+1. Mapear o que esta pronto, parcial e bloqueado em suporte, engenharia, cliente, admin e Knowledge.
+2. Listar os proximos cinco blocos grandes recomendados.
+3. Separar riscos arquiteturais, UX, seguranca e produto.
+4. Confirmar que nao ha regressao de escopo para Omni Inbox ou IA.
+5. Registrar pendencias reais de produto sem abrir micro-lotes.
 
 Migrations necessarias:
-- nao neste blueprint; implementacao futura deve virar lote tecnico proprio.
+- nenhuma.
 
 Views/RPCs necessarias:
-- apenas mapeadas no blueprint, sem criar contrato fake.
+- nenhuma.
 
 RLS/policies:
-- requisito obrigatorio do lote futuro; cliente so deve ver o proprio tenant e nunca contexto interno.
+- nenhuma alteracao.
 
 Audit logs:
-- abertura, mensagem, anexo e qualquer acao do portal futuro devem gerar trilha auditavel.
+- nenhuma alteracao.
 
 Fixtures/testes:
-- planejar usuario cliente B2B autorizado, cliente sem acesso, tenant sem ticket e anexos com download temporario.
+- `npm run web:typecheck` se for exclusivamente documental.
 
 Impacto no front:
-- nenhum neste bloco documental; portal completo fica fora ate decisao explicita.
+- nenhum.
 
 ## Decisoes que ainda dependem de Produto
 - Se Support e Admin devem convergir em um App Shell unico.

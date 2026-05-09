@@ -18,6 +18,30 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 8.13 - Customer Portal Readiness Blueprint V3
+- fase: `8.13`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-09`
+- resumo funcional: foi criado blueprint tecnico do futuro portal cliente B2B, delimitando visibilidade, auth, tickets proprios, Knowledge publica, evidencias seguras e limites do Customer Account Profile sem implementar portal completo.
+- docs alterados:
+  - `docs/CUSTOMER_PORTAL_READINESS_BLUEPRINT_V3.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhum contrato criado; foram apenas mapeados contratos futuros `customer_portal_*`
+- telas afetadas:
+  - nenhuma tela runtime
+- runtime/UI:
+  - sem alteracao runtime; nenhuma UI fake de portal foi criada
+- riscos restantes:
+  - auth do cliente B2B, roles customer-facing e exposicao segura de SLA ainda dependem de decisao de Produto
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run web:typecheck`
+- impacto na FAQ futura:
+  - define fronteira entre cockpit interno e portal cliente B2B, evitando confundir cliente B2B com shopper final
+
 ### Fase 8.12 - Support Operations Usability Completion V3
 - fase: `8.12`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`
