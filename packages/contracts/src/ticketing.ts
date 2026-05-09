@@ -1086,6 +1086,25 @@ export interface CustomerPortalTicketDetail {
   canViewPublicArticles: boolean;
 }
 
+export interface CustomerPortalTicketCollaborationState {
+  ticketId: Uuid;
+  tenantId: Uuid;
+  internalStatus: TicketStatus;
+  customerStatusLabel: string;
+  canReply: boolean;
+  canAcknowledge: boolean;
+  canConfirmResolution: boolean;
+  canRequestReopen: boolean;
+  latestTimelineEntryId: Uuid | null;
+  latestTimelineEntryAt: IsoTimestamp | null;
+  lastAcknowledgedAt: IsoTimestamp | null;
+  lastAcknowledgedTimelineEntryId: Uuid | null;
+  unreadCount: number;
+  hasNewUpdates: boolean;
+  lastCustomerMessageAt: IsoTimestamp | null;
+  lastSupportResponseAt: IsoTimestamp | null;
+}
+
 export interface CustomerPortalTicketTimelineItem {
   ticketId: Uuid;
   tenantId: Uuid;
@@ -1194,4 +1213,27 @@ export interface RpcCustomerAcknowledgeTicketUpdateResponse {
   tenantId: Uuid;
   acknowledgedAt: IsoTimestamp;
   lastTimelineEntryId: Uuid | null;
+}
+
+export interface RpcCustomerConfirmTicketResolvedPayload {
+  ticketId: Uuid;
+}
+export interface RpcCustomerConfirmTicketResolvedResponse {
+  ticketId: Uuid;
+  tenantId: Uuid;
+  customerStatusLabel: string;
+  status: TicketStatus;
+  closedAt: IsoTimestamp | null;
+}
+
+export interface RpcCustomerRequestTicketReopenPayload {
+  ticketId: Uuid;
+  reason: string;
+}
+export interface RpcCustomerRequestTicketReopenResponse {
+  ticketId: Uuid;
+  tenantId: Uuid;
+  customerStatusLabel: string;
+  status: TicketStatus;
+  updatedAt: IsoTimestamp;
 }

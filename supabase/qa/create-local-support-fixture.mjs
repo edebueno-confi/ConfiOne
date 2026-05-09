@@ -443,6 +443,16 @@ const FIXTURE = {
         'Aguardando o retorno do cliente com o mapeamento final dos motivos aprovados.',
     },
   ],
+  customerPortalCollaborations: [
+    {
+      ticketTenantSlug: 'support-qa-a',
+      ticketTitle: 'QA Support | Painel de SLA interno desalinhado',
+      actorKey: 'customer-manager-a',
+      message:
+        'Confirmamos o horário de corte operacional. Podem seguir com a revisão pelo suporte.',
+      acknowledge: true,
+    },
+  ],
   knowledgeBase: {
     categories: [
       {
@@ -3218,6 +3228,49 @@ async function main() {
     ticketMap.set(`${ticket.tenantSlug}::${ticket.title}`, ticketId);
   }
 
+  const createdCustomerPortalCollaborations = [];
+  for (const collaboration of FIXTURE.customerPortalCollaborations ?? []) {
+    const ticketId = ticketMap.get(
+      `${collaboration.ticketTenantSlug}::${collaboration.ticketTitle}`,
+    );
+    const actorSession = await getSessionForKey(collaboration.actorKey);
+
+    if (!ticketId) {
+      fail(`Ticket ausente para colaboracao customer-facing: ${collaboration.ticketTitle}.`);
+    }
+
+    if (collaboration.message) {
+      await callRpcAsUser({
+        ...actorSession,
+        body: {
+          p_body: collaboration.message,
+          p_ticket_id: ticketId,
+        },
+        rpcName: 'rpc_customer_add_ticket_message',
+      });
+    }
+
+    if (collaboration.acknowledge) {
+      await callRpcAsUser({
+        ...actorSession,
+        body: {
+          p_last_timeline_entry_id: null,
+          p_ticket_id: ticketId,
+        },
+        rpcName: 'rpc_customer_acknowledge_ticket_update',
+      });
+    }
+
+    createdCustomerPortalCollaborations.push({
+      actor_key: collaboration.actorKey,
+      acknowledged: Boolean(collaboration.acknowledge),
+      message_registered: Boolean(collaboration.message),
+      ticket_id: ticketId,
+      ticket_title: collaboration.ticketTitle,
+      ticket_tenant_slug: collaboration.ticketTenantSlug,
+    });
+  }
+
   const knowledgeCategoryMap = new Map();
   const createdKnowledgeArticles = [];
   const createdKnowledgeLinks = [];
@@ -3435,6 +3488,7 @@ async function main() {
         attachments: createdAttachments,
         public_help_center: publicHelpCenter,
         tickets: createdTickets,
+        customer_portal_collaborations: createdCustomerPortalCollaborations,
       },
       null,
       2,
