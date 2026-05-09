@@ -2,8 +2,8 @@
 
 ## Fluxo padrão
 1. Ticket criado.
-2. Classificação inicial.
-3. Priorização.
+2. Classificação inicial por categoria operacional, quando disponível.
+3. Priorização e severidade com SLA interno derivado pelo backend.
 4. Atribuição.
 5. Investigação.
 6. Resposta técnico-operacional ao cliente B2B ou time interno.
@@ -106,13 +106,26 @@
   - `vw_support_customer_recent_events`
   - `vw_support_assignable_agents`
   - `vw_support_knowledge_public_link_candidates`
+  - `vw_support_ticket_classification_options`
+  - `vw_support_ticket_sla_context`
 - a escrita continua apenas por:
-  - `rpc_update_ticket_status`
+  - `rpc_support_update_ticket_status_v2`
   - `rpc_assign_ticket`
   - `rpc_add_ticket_message`
   - `rpc_add_internal_ticket_note`
   - `rpc_close_ticket`
   - `rpc_reopen_ticket`
+  - `rpc_support_update_ticket_classification`
+  - `rpc_support_update_ticket_priority_severity`
+
+## Boundary materializado na Fase 8.10
+- categorias de ticket e motivos operacionais agora sao dominio proprio, nao categorias de Knowledge
+- `rpc_create_ticket` aceita categoria e motivo inicial opcionais quando o backend fornece opcoes validas
+- status sensiveis exigem motivo operacional conforme matriz backend
+- SLA e calculado como governanca interna por `ticket_sla_policies`; nao e promessa publica automatica
+- fila e workspace exibem categoria, prioridade/severidade e SLA derivados por read model
+- frontend nao calcula prazo, nao cria timer e nao inventa transicao de status
+- toda mudanca relevante de classificacao, prioridade/severidade ou status gera `ticket_event` e audit trail
 
 ## Boundary materializado na Fase 8.2
 - o historico anterior da timeline do ticket agora e carregado por `rpc_support_get_ticket_timeline`
@@ -122,7 +135,7 @@
 - eventos e audit logs dessas mutacoes foram validados em pgTAP
 - candidatos de link publico seguro de Knowledge agora sao lidos por `vw_support_knowledge_public_link_candidates`
 - a view de link publico seguro nao expõe draft, internal, restricted ou artigo sem rota publica publicada
-- anexos, SLA executavel, handoff tecnico estruturado e criacao assistida de ticket continuam fora desta fase
+- anexos, handoff tecnico estruturado, criacao assistida, classificacao e SLA interno foram fechados em lotes posteriores; notificacoes externas e politica por tenant continuam fora desta fase
 
 ## Diretrizes de UX da fase 6.2.1
 - a fila continua como ponto de partida e precisa dominar a triagem

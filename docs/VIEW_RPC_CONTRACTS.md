@@ -89,6 +89,25 @@ Fase 8.9:
   - grant curto por RPC
   - resolução por `ticket-evidence-download`
 
+Fase 8.10:
+- A classificacao operacional de tickets agora possui dominio proprio, separado de Knowledge:
+  - `ticket_categories`
+  - `ticket_operational_reasons`
+  - `ticket_sla_policies`
+- O frontend le opcoes e SLA apenas por:
+  - `vw_support_ticket_classification_options`
+  - `vw_support_ticket_sla_context`
+  - `vw_support_tickets_queue`
+  - `vw_support_ticket_detail`
+- O frontend escreve classificacao, prioridade/severidade e status apenas por:
+  - `rpc_create_ticket`
+  - `rpc_support_update_ticket_classification`
+  - `rpc_support_update_ticket_priority_severity`
+  - `rpc_support_update_ticket_status_v2`
+- `rpc_create_ticket` passou a aceitar categoria e motivo inicial opcionais, sem tornar categoria obrigatoria para tickets legados.
+- SLA e governanca interna calculada no backend por politica ativa; o frontend nao calcula prazo nem timer.
+- Transicoes invalidas de status falham no backend e mudancas relevantes geram `ticket_event` e `audit.audit_logs`.
+
 Fase 4:
 - Knowledge Base agora possui núcleo editorial real com views internas contratuais e RPCs administrativas próprias.
 - O frontend administrativo futuro deve consumir a superfície de leitura apenas por:

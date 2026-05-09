@@ -18,6 +18,52 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 8.10 - Ticket Classification And SLA Governance V3
+- fase: `8.10`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-09`
+- resumo funcional: classificacao operacional, motivos auditaveis, prioridade/severidade, SLA interno e transicoes de status foram formalizados no backend e conectados ao intake, fila e Ticket Workspace sem regra inventada no frontend.
+- docs alterados:
+  - `docs/TICKET_CLASSIFICATION_AND_SLA_GOVERNANCE_V3.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/SUPPORT_TICKET_CREATION_AND_INTAKE_V3.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - `vw_support_ticket_classification_options`
+  - `vw_support_ticket_sla_context`
+  - `vw_support_tickets_queue`
+  - `vw_support_ticket_detail`
+  - `rpc_create_ticket`
+  - `rpc_support_update_ticket_classification`
+  - `rpc_support_update_ticket_priority_severity`
+  - `rpc_support_update_ticket_status_v2`
+- telas afetadas:
+  - `/support/queue`
+  - `/support/tickets/:ticketId`
+- runtime/UI:
+  - intake aceita categoria e motivo inicial opcionais quando fornecidos pelo backend
+  - fila exibe categoria, prioridade/severidade e SLA interno derivado por read model
+  - workspace permite classificar ticket, ajustar prioridade/severidade e transicionar status por RPC real
+  - SLA permanece governanca interna, sem timer fake e sem promessa publica
+- riscos restantes:
+  - politicas por tenant e calendario de negocio completo ainda precisam lote proprio
+  - notificacoes/automacoes de SLA continuam fora do escopo
+  - arquivamento seguro de evidencia segue pendente
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+- impacto na FAQ futura:
+  - permite explicar classificacao operacional, prioridade e SLA interno como governanca auditavel do suporte B2B, sem confundir com promessa publica ao cliente
+
 ### Fase 8.9 - Secure Ticket Evidence Storage V3
 - fase: `8.9`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

@@ -76,9 +76,10 @@ Documentos históricos:
 - O lote `Support Ticket Attachments And Escalation V3` criou metadata sanitizada de anexos e handoff técnico real por `engineering_work_items` e `engineering_ticket_links`, mantendo upload/storage seguro fora de escopo.
 - O lote `Engineering Workspace Operational Core V3` criou o workspace operacional de engenharia com fila técnica, detalhe, ownership, status técnico, updates estruturados, retorno ao suporte, auditoria e isolamento por tenant/papel.
 - O lote `Secure Ticket Evidence Storage V3` fechou o storage seguro de evidências com bucket privado `ticket-evidence`, policies por tenant/ticket, upload governado por intent, download temporário por grant curto, metadata sanitizada e UI conectada no Ticket Workspace sem expor path interno.
+- O lote `Ticket Classification And SLA Governance V3` formalizou categorias de ticket, motivos operacionais, SLA interno, matriz de transição de status, read models/RPCs e UI conectada para intake, fila e workspace sem inventar regra no frontend.
 - Nenhuma ação fake foi habilitada no frontend; ações sem contrato completo seguem bloqueadas para lote futuro.
 - Os 8 candidatos documentais da Knowledge continuam pendentes, nao aprovados, nao publicados e nao injetados automaticamente no Help Center.
-- Próximo bloco recomendado: `Ticket Classification And SLA Governance V3`.
+- Próximo bloco recomendado: `Tenant Support Policy And SLA Automation V3`.
 
 ## Estado real do repositório em 2026-04-30
 
@@ -114,6 +115,7 @@ Documentos históricos:
 - Migration oficial do intake operacional de tickets `supabase/migrations/20260508201339_support_ticket_creation_and_intake_v3.sql`.
 - Migrations oficiais do Engineering Workspace operacional `supabase/migrations/20260508214418_engineering_workspace_operational_core_v3.sql` e `supabase/migrations/20260508214852_engineering_workspace_operational_core_contracts_v3.sql`.
 - Migration oficial do storage seguro de evidências `supabase/migrations/20260508233000_secure_ticket_evidence_storage_v3.sql`.
+- Migrations oficiais da classificação e SLA de tickets `supabase/migrations/20260509001000_ticket_classification_event_types_v3.sql` e `supabase/migrations/20260509001100_ticket_classification_and_sla_governance_v3.sql`.
 - Teste local de banco em `supabase/tests/001_phase1_identity_tenancy_rls.sql`.
 - Teste local de hardening em `supabase/tests/002_phase1_1_hardening.sql`.
 - Teste local de control plane administrativo em `supabase/tests/003_phase1_2_admin_control_plane.sql`.

@@ -22,7 +22,7 @@ Fechar o fluxo real de criação e intake de tickets no Genius Support OS sem cr
 - o frontend não lê `tenants` nem `tenant_contacts` diretamente;
 - tenant sem contato ativo continua elegível, mas a UI assume esse estado como `Indisponível` e o RPC decide se o ticket pode nascer sem solicitante;
 - status inicial continua controlado pelo backend em `new`;
-- categoria inicial segue bloqueada por falta de contrato próprio e não foi inventada no frontend.
+- no lote posterior `Ticket Classification And SLA Governance V3`, categoria e motivo inicial passaram a existir como campos opcionais governados por contrato real; esta fase original nao inventou classificacao antes do backend.
 
 ## Frontend
 - `/support/queue` agora possui ação real para abrir ticket.
@@ -33,6 +33,8 @@ Fechar o fluxo real de criação e intake de tickets no Genius Support OS sem cr
   - origem
   - prioridade
   - severidade
+  - categoria operacional, quando o backend fornecer opcoes
+  - motivo operacional inicial, quando aplicavel
   - título
   - descrição
 - Após sucesso, a navegação segue para `/support/tickets/:ticketId`.
@@ -47,6 +49,6 @@ Fechar o fluxo real de criação e intake de tickets no Genius Support OS sem cr
 - um ticket de fixture agora é criado via `rpc_create_ticket`, cobrindo o caminho real de intake sem solicitante vinculado.
 
 ## Riscos restantes
-- categoria inicial ainda depende de contrato próprio;
-- anexos, notificação externa, SLA e handoff técnico continuam fora deste lote;
+- categoria inicial e SLA foram fechados em lote posterior com contrato backend real;
+- notificação externa continua fora deste lote;
 - o read model de intake foi fechado para o Support Workspace, não para requesters comuns nem portal público.
