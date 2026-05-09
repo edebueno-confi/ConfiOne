@@ -61,6 +61,7 @@ import {
   listSupportAssignableAgents,
   listSupportTicketIntakeContacts,
   listSupportTicketIntakeTenants,
+  listSupportTicketClassificationOptions,
   listSupportKnowledgeArticlePicker,
   listSupportCustomers360,
   markSupportArticleNeedsUpdate,
@@ -68,6 +69,8 @@ import {
   listSupportTicketsQueue,
   reopenTicket,
   uploadSupportTicketAttachment,
+  updateTicketClassification,
+  updateTicketPrioritySeverity,
   updateTicketStatus,
 } from './support-api';
 import {
@@ -94,6 +97,7 @@ import {
   type SupportKnowledgeArticlePickerItem,
   type SupportTicketIntakeContact,
   type SupportTicketIntakeTenant,
+  type SupportTicketClassificationOption,
   type SupportTicketDetail,
   type SupportTicketAttachment,
   type SupportTicketEngineeringLink,
@@ -128,6 +132,7 @@ interface QueueFilters {
   status: TicketStatus | 'all';
   priority: TicketPriority | 'all';
   severity: TicketSeverity | 'all';
+  categoryId: Uuid | 'all';
   tenantId: Uuid | 'all';
   assignedToUserId: Uuid | 'all' | 'unassigned';
 }
@@ -138,8 +143,23 @@ interface TicketIntakeDraft {
   source: TicketSource;
   priority: TicketPriority;
   severity: TicketSeverity;
+  categoryId: Uuid | '';
+  operationalReasonId: Uuid | '';
   title: string;
   description: string;
+}
+
+interface TicketClassificationDraft {
+  categoryId: Uuid | '';
+  operationalReasonId: Uuid | '';
+  note: string;
+}
+
+interface TicketPrioritySeverityDraft {
+  priority: TicketPriority;
+  severity: TicketSeverity;
+  operationalReasonId: Uuid | '';
+  note: string;
 }
 
 interface EngineeringHandoffDraft {
@@ -184,6 +204,22 @@ function toneForSeverity(severity: TicketSeverity) {
 
   if (severity === 'high') {
     return 'warning' as const;
+  }
+
+  return 'default' as const;
+}
+
+function toneForSlaStatus(status: SupportTicketQueueItem['slaStatus'] | SupportTicketDetail['slaStatus']) {
+  if (status === 'breached') {
+    return 'critical' as const;
+  }
+
+  if (status === 'at_risk') {
+    return 'warning' as const;
+  }
+
+  if (status === 'on_track' || status === 'complete') {
+    return 'positive' as const;
   }
 
   return 'default' as const;
@@ -752,6 +788,7 @@ function emptyFilters(): QueueFilters {
     status: 'all',
     priority: 'all',
     severity: 'all',
+    categoryId: 'all',
     tenantId: 'all',
     assignedToUserId: 'all',
   };
@@ -773,8 +810,27 @@ function emptyTicketIntakeDraft(): TicketIntakeDraft {
     source: 'internal',
     priority: 'normal',
     severity: 'medium',
+    categoryId: '',
+    operationalReasonId: '',
     title: '',
     description: '',
+  };
+}
+
+function emptyTicketClassificationDraft(): TicketClassificationDraft {
+  return {
+    categoryId: '',
+    operationalReasonId: '',
+    note: '',
+  };
+}
+
+function emptyTicketPrioritySeverityDraft(): TicketPrioritySeverityDraft {
+  return {
+    priority: 'normal',
+    severity: 'medium',
+    operationalReasonId: '',
+    note: '',
   };
 }
 
@@ -821,17 +877,29 @@ function emptyEngineeringHandoffDraft(): EngineeringHandoffDraft {
   };
 }
 
-function buildStatusChoices(currentStatus: TicketStatus) {
-  const available = TICKET_STATUSES.filter(
-    (status): status is TicketStatusUpdateTarget =>
-      status !== 'closed' && status !== currentStatus,
-  );
+function buildStatusChoices(
+  currentStatus: TicketStatus,
+  allowedNextStatuses: TicketStatus[] = [],
+): TicketStatusUpdateTarget[] {
+  const backendAllowed = allowedNextStatuses.length > 0 ? allowedNextStatuses : TICKET_STATUSES;
+  const choices: TicketStatusUpdateTarget[] = [];
 
-  if (currentStatus === 'closed') {
-    return available;
+  for (const status of backendAllowed) {
+    if (status !== 'closed' && status !== currentStatus) {
+      choices.push(status);
+    }
   }
 
-  return [currentStatus as TicketStatusUpdateTarget, ...available];
+  return choices;
+}
+
+function requiresOperationalReasonForStatus(status: TicketStatusUpdateTarget) {
+  return (
+    status === 'waiting_customer' ||
+    status === 'waiting_engineering' ||
+    status === 'resolved' ||
+    status === 'cancelled'
+  );
 }
 
 function friendlyTicketStatusErrorMessage(message: string) {
@@ -2044,7 +2112,6 @@ function SupportMoreActionsPanel({
   closeReason,
   canClose,
   canReopen,
-  canUpdateStatus,
   canCreateEngineeringHandoff,
   onEngineeringHandoffDraftChange,
   onEngineeringHandoffSubmit,
@@ -2052,10 +2119,7 @@ function SupportMoreActionsPanel({
   onCloseSubmit,
   onReopenReasonChange,
   onReopenSubmit,
-  onStatusNoteChange,
-  onStatusSubmit,
   reopenReason,
-  statusNote,
   submitting,
   window,
 }: {
@@ -2067,7 +2131,6 @@ function SupportMoreActionsPanel({
   closeReason: string;
   canClose: boolean;
   canReopen: boolean;
-  canUpdateStatus: boolean;
   canCreateEngineeringHandoff: boolean;
   onEngineeringHandoffDraftChange: (patch: Partial<EngineeringHandoffDraft>) => void;
   onEngineeringHandoffSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -2075,10 +2138,7 @@ function SupportMoreActionsPanel({
   onCloseSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onReopenReasonChange: (value: string) => void;
   onReopenSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onStatusNoteChange: (value: string) => void;
-  onStatusSubmit: (event: FormEvent<HTMLFormElement>) => void;
   reopenReason: string;
-  statusNote: string;
   submitting: boolean;
   window: SupportTicketTimelineRecentWindow;
 }) {
@@ -2203,26 +2263,9 @@ function SupportMoreActionsPanel({
           </section>
 
           <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
-            <form className="space-y-2.5" onSubmit={onStatusSubmit}>
-              <Field
-                label="Atualizar com observação"
-                description="Use quando a mudanca de andamento precisa registrar o contexto operacional."
-              >
-                <TextareaInput
-                  className="min-h-[96px]"
-                  onChange={(event) => onStatusNoteChange(event.target.value)}
-                  placeholder="Descreva o proximo passo ou o motivo da mudanca."
-                  value={statusNote}
-                />
-              </Field>
-              <AppButton
-                className="min-h-10 rounded-[14px] px-4.5"
-                disabled={submitting || !canUpdateStatus}
-                type="submit"
-              >
-                {submitting ? 'Atualizando...' : 'Salvar status com observação'}
-              </AppButton>
-            </form>
+            <InlineNotice>
+              Status, classificação e SLA são alterados no rail do ticket para preservar a matriz de transição do backend.
+            </InlineNotice>
           </section>
 
           {(canClose || canReopen) ? (
@@ -2305,9 +2348,14 @@ function SupportQueueItem({
         type="button"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <StatusPill tone={toneForTicketStatus(ticket.status)}>
-            {humanizeStatus(ticket.status)}
-          </StatusPill>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <StatusPill tone={toneForTicketStatus(ticket.status)}>
+              {humanizeStatus(ticket.status)}
+            </StatusPill>
+            <StatusPill tone={toneForSlaStatus(ticket.slaStatus)}>
+              {ticket.slaStatusLabel}
+            </StatusPill>
+          </div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
             {humanizePriority(ticket.priority)} · {humanizeSeverity(ticket.severity)}
           </p>
@@ -2319,6 +2367,7 @@ function SupportQueueItem({
           </h3>
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] leading-5 text-[color:var(--color-muted)]">
             <span>Cliente: {ticketTenantLabel(ticket)}</span>
+            <span>Categoria: {ticket.categoryName ?? 'Indisponível'}</span>
             <span>Responsável: {ticket.assignedToFullName ?? 'Não atribuído'}</span>
             <span>Última atividade: {formatDateTime(ticket.lastMessageAt ?? ticket.updatedAt)}</span>
           </div>
@@ -2394,6 +2443,9 @@ function SupportTicketPreview({
       (ticket ? ticketTenantLabel(ticket) : 'Cliente não identificado');
   const assigned =
     detail?.assignedToFullName ?? ticket?.assignedToFullName ?? 'Não atribuído';
+  const category = detail?.categoryName ?? ticket?.categoryName ?? 'Indisponível';
+  const slaLabel = detail?.slaStatusLabel ?? ticket?.slaStatusLabel ?? 'Sem política definida';
+  const slaStatus = detail?.slaStatus ?? ticket?.slaStatus ?? 'unavailable';
   const lastActivity = formatDateTime(
     detail?.lastMessageAt ?? detail?.updatedAt ?? ticket?.lastMessageAt ?? ticket?.updatedAt ?? null,
   );
@@ -2407,6 +2459,7 @@ function SupportTicketPreview({
           <StatusPill tone={toneForTicketStatus(detail?.status ?? ticket?.status ?? 'new')}>
             {humanizeStatus((detail?.status ?? ticket?.status ?? 'new') as TicketStatus)}
           </StatusPill>
+          <StatusPill tone={toneForSlaStatus(slaStatus)}>{slaLabel}</StatusPill>
           <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/66">
             {humanizeToken(detail?.priority ?? ticket?.priority ?? 'normal')} ·{' '}
             {humanizeToken(detail?.severity ?? ticket?.severity ?? 'low')}
@@ -2417,6 +2470,7 @@ function SupportTicketPreview({
           <h3 className="line-clamp-3 text-[1.24rem] font-semibold tracking-[-0.05em]">{title}</h3>
           <div className="space-y-1 text-[12px] leading-5 text-white/76">
             <p>Cliente: {tenant}</p>
+            <p>Categoria: {category}</p>
             <p>Responsável: {assigned}</p>
             <p>Última atividade: {lastActivity}</p>
           </div>
@@ -2463,6 +2517,7 @@ function SupportQueueToolbar({
   filters,
   tenantOptions,
   assigneeOptions,
+  categoryOptions,
   onChange,
   onRefresh,
   embedded = false,
@@ -2470,6 +2525,7 @@ function SupportQueueToolbar({
   filters: QueueFilters;
   tenantOptions: Array<{ id: string; label: string }>;
   assigneeOptions: Array<{ id: string; label: string }>;
+  categoryOptions: Array<{ id: string; label: string }>;
   onChange: (next: QueueFilters) => void;
   onRefresh: () => void;
   embedded?: boolean;
@@ -2530,6 +2586,22 @@ function SupportQueueToolbar({
             {TICKET_SEVERITIES.map((severity) => (
                           <option key={severity} value={severity}>
                             {humanizeSeverity(severity)}
+              </option>
+            ))}
+          </SelectInput>
+        </Field>
+
+        <Field label="Categoria">
+          <SelectInput
+            onChange={(event) =>
+              onChange({ ...filters, categoryId: event.target.value as QueueFilters['categoryId'] })
+            }
+            value={filters.categoryId}
+          >
+            <option value="all">Todas</option>
+            {categoryOptions.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.label}
               </option>
             ))}
           </SelectInput>
@@ -3396,11 +3468,19 @@ function SupportWorkspaceView({
   const [showCreateTicket, setShowCreateTicket] = useState(false);
   const [intakeTenants, setIntakeTenants] = useState<SupportTicketIntakeTenant[]>([]);
   const [intakeContacts, setIntakeContacts] = useState<SupportTicketIntakeContact[]>([]);
+  const [classificationOptions, setClassificationOptions] =
+    useState<SupportTicketClassificationOption[]>([]);
+  const [classificationOptionsMessage, setClassificationOptionsMessage] = useState<string | null>(null);
   const [intakeDraft, setIntakeDraft] = useState<TicketIntakeDraft>(emptyTicketIntakeDraft());
+  const [classificationDraft, setClassificationDraft] =
+    useState<TicketClassificationDraft>(emptyTicketClassificationDraft());
+  const [prioritySeverityDraft, setPrioritySeverityDraft] =
+    useState<TicketPrioritySeverityDraft>(emptyTicketPrioritySeverityDraft());
   const [handoffDraft, setHandoffDraft] =
     useState<EngineeringHandoffDraft>(emptyEngineeringHandoffDraft());
   const [handoffSubmitting, setHandoffSubmitting] = useState(false);
   const [statusDraft, setStatusDraft] = useState<TicketStatusUpdateTarget>('triage');
+  const [statusReasonId, setStatusReasonId] = useState<Uuid | ''>('');
   const [statusNote, setStatusNote] = useState('');
   const [closeReason, setCloseReason] = useState('');
   const [reopenReason, setReopenReason] = useState('');
@@ -3552,6 +3632,28 @@ function SupportWorkspaceView({
     }
   });
 
+  const loadClassificationOptions = useEffectEvent(async () => {
+    setClassificationOptionsMessage(null);
+
+    try {
+      const rows = await listSupportTicketClassificationOptions();
+      setClassificationOptions(rows);
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao carregar categorias e motivos operacionais.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      setClassificationOptions([]);
+      setClassificationOptionsMessage(classified.message);
+    }
+  });
+
   const loadDetail = useEffectEvent(
     async (
       ticketId: string,
@@ -3613,7 +3715,22 @@ function SupportWorkspaceView({
       setCustomerRecentTickets(recentTicketsWindow);
       setCustomerRecentEvents(recentEventsWindow);
       setDetailPhase('ready');
-      setStatusDraft(detail.status === 'closed' ? 'triage' : detail.status);
+      setStatusDraft(
+        buildStatusChoices(detail.status, detail.allowedNextStatuses)[0] ??
+          (detail.status === 'closed' ? 'triage' : (detail.status as TicketStatusUpdateTarget)),
+      );
+      setStatusReasonId('');
+      setClassificationDraft({
+        categoryId: detail.categoryId ?? '',
+        operationalReasonId: '',
+        note: '',
+      });
+      setPrioritySeverityDraft({
+        priority: detail.priority,
+        severity: detail.severity,
+        operationalReasonId: '',
+        note: '',
+      });
       setAssignDraft(detail.assignedToUserId ?? '');
       if (!options?.preserveSurfaceState) {
         setHandoffDraft(emptyEngineeringHandoffDraft());
@@ -3767,6 +3884,7 @@ function SupportWorkspaceView({
 
     didBootstrapRef.current = true;
     void loadQueue(focusTicketId ?? null);
+    void loadClassificationOptions();
   }, []);
 
   useEffect(() => {
@@ -3784,6 +3902,7 @@ function SupportWorkspaceView({
     filters.priority,
     filters.severity,
     filters.status,
+    filters.categoryId,
     filters.tenantId,
     focusTicketId,
   ]);
@@ -3901,6 +4020,52 @@ function SupportWorkspaceView({
     );
   }, [tickets]);
 
+  const ticketCategoryOptions = useMemo(
+    () => classificationOptions.filter((option) => option.optionKind === 'category'),
+    [classificationOptions],
+  );
+  const classificationReasonOptions = useMemo(
+    () =>
+      classificationOptions.filter(
+        (option) =>
+          option.optionKind === 'operational_reason' &&
+          option.reasonType === 'classification_update',
+      ),
+    [classificationOptions],
+  );
+  const priorityReasonOptions = useMemo(
+    () =>
+      classificationOptions.filter(
+        (option) =>
+          option.optionKind === 'operational_reason' &&
+          option.reasonType === 'priority_change',
+      ),
+    [classificationOptions],
+  );
+  const statusReasonOptions = useMemo(
+    () =>
+      classificationOptions.filter((option) => {
+        if (option.optionKind !== 'operational_reason') {
+          return false;
+        }
+
+        if (option.appliesToStatus && option.appliesToStatus !== statusDraft) {
+          return false;
+        }
+
+        if (statusDraft === 'resolved') {
+          return option.reasonType === 'resolution' || option.reasonType === 'status_transition';
+        }
+
+        if (statusDraft === 'cancelled') {
+          return option.reasonType === 'cancellation' || option.reasonType === 'status_transition';
+        }
+
+        return option.reasonType === 'status_transition';
+      }),
+    [classificationOptions, statusDraft],
+  );
+
   const selectedTicketSummary =
     tickets.find((ticket) => ticket.id === selectedTicketId) ?? null;
   const filteredKnowledgeArticles = useMemo(() => {
@@ -3938,7 +4103,11 @@ function SupportWorkspaceView({
   ).length;
   const waitingCustomer = tickets.filter((ticket) => ticket.isWaitingCustomer).length;
   const highAttention = tickets.filter(
-    (ticket) => ticket.priority === 'urgent' || ticket.severity === 'critical',
+    (ticket) =>
+      ticket.priority === 'urgent' ||
+      ticket.severity === 'critical' ||
+      ticket.slaStatus === 'breached' ||
+      ticket.slaStatus === 'at_risk',
   ).length;
   const unassigned = tickets.filter((ticket) => ticket.isUnassigned).length;
 
@@ -4186,6 +4355,8 @@ function SupportWorkspaceView({
         source: intakeDraft.source,
         priority: intakeDraft.priority,
         severity: intakeDraft.severity,
+        categoryId: intakeDraft.categoryId || null,
+        operationalReasonId: intakeDraft.operationalReasonId || null,
         title,
         description,
       });
@@ -4405,9 +4576,11 @@ function SupportWorkspaceView({
       await updateTicketStatus({
         ticketId: ticketDetail.id,
         status: statusDraft,
+        operationalReasonId: statusReasonId || null,
         note: statusNote.trim() || null,
       });
       setStatusNote('');
+      setStatusReasonId('');
       await refreshDetail(ticketDetail.id);
       applySuccess('Status atualizado com sucesso.');
     } catch (error) {
@@ -4417,6 +4590,69 @@ function SupportWorkspaceView({
         return;
       }
       applyFailure(friendlyTicketStatusErrorMessage(classified.message));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleUpdateClassification(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!ticketDetail || !classificationDraft.categoryId) {
+      return;
+    }
+
+    setSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      await updateTicketClassification({
+        ticketId: ticketDetail.id,
+        categoryId: classificationDraft.categoryId,
+        operationalReasonId: classificationDraft.operationalReasonId || null,
+        note: classificationDraft.note.trim() || null,
+      });
+      await refreshDetail(ticketDetail.id);
+      applySuccess('Classificação atualizada com governança do backend.');
+    } catch (error) {
+      const classified = classifyAdminError(error, 'Falha ao atualizar a classificação do ticket.');
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(classified.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleUpdatePrioritySeverity(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!ticketDetail) {
+      return;
+    }
+
+    setSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      await updateTicketPrioritySeverity({
+        ticketId: ticketDetail.id,
+        priority: prioritySeverityDraft.priority,
+        severity: prioritySeverityDraft.severity,
+        operationalReasonId: prioritySeverityDraft.operationalReasonId || null,
+        note: prioritySeverityDraft.note.trim() || null,
+      });
+      await refreshDetail(ticketDetail.id);
+      applySuccess('Prioridade, severidade e SLA recalculados pelo backend.');
+    } catch (error) {
+      const classified = classifyAdminError(error, 'Falha ao atualizar prioridade e severidade.');
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(classified.message);
     } finally {
       setSubmitting(false);
     }
@@ -4851,6 +5087,28 @@ function SupportWorkspaceView({
                 </label>
 
                 <label className="grid gap-1">
+                  <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Categoria</span>
+                  <SelectInput
+                    className="h-8.5 rounded-[12px] px-3 text-[12px]"
+                    disabled={ticketCategoryOptions.length === 0}
+                    onChange={(event) =>
+                      setFilters({
+                        ...filters,
+                        categoryId: event.target.value as QueueFilters['categoryId'],
+                      })
+                    }
+                    value={filters.categoryId}
+                  >
+                    <option value="all">Todas</option>
+                    {ticketCategoryOptions.map((category) => (
+                      <option key={category.optionId} value={category.optionId}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </label>
+
+                <label className="grid gap-1">
                   <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Responsável</span>
                   <SelectInput
                     className="h-8.5 rounded-[12px] px-3 text-[12px]"
@@ -4974,11 +5232,17 @@ function SupportWorkspaceView({
                     <div className="mt-2 space-y-1 text-[12px] leading-5 text-[color:var(--color-muted)]">
                       <p>Status inicial: o backend registra o ticket como Novo.</p>
                       <p>
-                        Categoria inicial ainda não possui contrato próprio. O ticket nasce sem
-                        categorização adicional nesta etapa.
+                        Categoria e motivo inicial são opcionais e validados por contrato real.
+                      </p>
+                      <p>
+                        SLA é governança interna calculada pelo backend; o operador não configura prazo manualmente.
                       </p>
                     </div>
                   </div>
+
+                  {classificationOptionsMessage ? (
+                    <InlineNotice tone="warning">{classificationOptionsMessage}</InlineNotice>
+                  ) : null}
 
                   {detailNotice && detailNoticeTone === 'critical' ? (
                     <InlineNotice tone="critical">{detailNotice}</InlineNotice>
@@ -5114,6 +5378,53 @@ function SupportWorkspaceView({
                       </Field>
                     </div>
 
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <Field label="Categoria operacional">
+                        <SelectInput
+                          disabled={intakeSubmitting || ticketCategoryOptions.length === 0}
+                          onChange={(event) =>
+                            setIntakeDraft((current) => ({
+                              ...current,
+                              categoryId: event.target.value as Uuid | '',
+                              operationalReasonId: event.target.value ? current.operationalReasonId : '',
+                            }))
+                          }
+                          value={intakeDraft.categoryId}
+                        >
+                          <option value="">Indisponível/sem categoria inicial</option>
+                          {ticketCategoryOptions.map((category) => (
+                            <option key={category.optionId} value={category.optionId}>
+                              {category.name}
+                            </option>
+                          ))}
+                        </SelectInput>
+                      </Field>
+
+                      <Field label="Motivo operacional inicial">
+                        <SelectInput
+                          disabled={
+                            intakeSubmitting ||
+                            !intakeDraft.categoryId ||
+                            classificationReasonOptions.length === 0
+                          }
+                          onChange={(event) =>
+                            setIntakeDraft((current) => ({
+                              ...current,
+                              operationalReasonId: event.target.value as Uuid | '',
+                            }))
+                          }
+                          value={intakeDraft.operationalReasonId}
+                        >
+                          <option value="">Sem motivo inicial</option>
+                          {classificationReasonOptions.map((reason) => (
+                            <option key={reason.optionId} value={reason.optionId}>
+                              {reason.name}
+                            </option>
+                          ))}
+                        </SelectInput>
+                      </Field>
+                    </div>
+
                     <Field label="Título">
                       <TextInput
                         disabled={intakeSubmitting}
@@ -5234,6 +5545,9 @@ function SupportWorkspaceView({
                     <StatusPill tone={toneForSeverity(ticketDetail.severity)}>
                       {humanizeSeverity(ticketDetail.severity)}
                     </StatusPill>
+                    <StatusPill tone={toneForSlaStatus(ticketDetail.slaStatus)}>
+                      {ticketDetail.slaStatusLabel}
+                    </StatusPill>
                     <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">
                       #{ticketDetail.id.slice(0, 8)}
                     </span>
@@ -5246,7 +5560,7 @@ function SupportWorkspaceView({
                     {ticketDetail.title}
                   </h3>
 
-                  <div className="grid gap-2 border-t border-[color:var(--color-border)] pt-2 text-[10.5px] md:grid-cols-2 xl:grid-cols-4">
+                  <div className="grid gap-2 border-t border-[color:var(--color-border)] pt-2 text-[10.5px] md:grid-cols-2 xl:grid-cols-6">
                     <div className="min-w-0">
                       <p className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
                         Cliente
@@ -5261,6 +5575,22 @@ function SupportWorkspaceView({
                       </p>
                       <p className="truncate font-semibold leading-4 text-[color:var(--color-ink)]">
                         {requesterLabel}
+                      </p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                        Categoria
+                      </p>
+                      <p className="truncate font-semibold leading-4 text-[color:var(--color-ink)]">
+                        {ticketDetail.categoryName ?? 'Indisponível'}
+                      </p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                        SLA interno
+                      </p>
+                      <p className="truncate font-semibold leading-4 text-[color:var(--color-ink)]">
+                        {ticketDetail.slaStatusLabel}
                       </p>
                     </div>
                     <div className="min-w-0">
@@ -5498,7 +5828,6 @@ function SupportWorkspaceView({
                       canCreateEngineeringHandoff={canCreateEngineeringHandoff}
                       canClose={ticketDetail.canClose}
                       canReopen={ticketDetail.canReopen}
-                      canUpdateStatus={ticketDetail.canUpdateStatus}
                       closeReason={closeReason}
                       engineeringLinks={engineeringLinks}
                       engineeringMessage={engineeringMessage}
@@ -5513,10 +5842,7 @@ function SupportWorkspaceView({
                       onCloseSubmit={handleClose}
                       onReopenReasonChange={setReopenReason}
                       onReopenSubmit={handleReopen}
-                      onStatusNoteChange={setStatusNote}
-                      onStatusSubmit={handleUpdateStatus}
                       reopenReason={reopenReason}
-                      statusNote={statusNote}
                       submitting={submitting}
                       window={timelineWindow}
                     />
@@ -5634,18 +5960,126 @@ function SupportWorkspaceView({
                   </form>
                 )}
 
-                <form className="space-y-2 border-t border-[color:var(--color-border)] pt-2" onSubmit={handleUpdateStatus}>
-                  <Field label="Status">
+                <form className="space-y-2 border-t border-[color:var(--color-border)] pt-2" onSubmit={handleUpdateClassification}>
+                  <Field label="Categoria operacional">
                     <SelectInput
                       className="h-8.5 rounded-[12px] px-3 text-[12px]"
+                      disabled={submitting || ticketCategoryOptions.length === 0}
                       onChange={(event) =>
-                        setStatusDraft(event.target.value as TicketStatusUpdateTarget)
+                        setClassificationDraft((current) => ({
+                          ...current,
+                          categoryId: event.target.value as Uuid | '',
+                        }))
                       }
-                      value={statusDraft}
+                      value={classificationDraft.categoryId}
                     >
-                      {buildStatusChoices(ticketDetail.status).map((status) => (
-                        <option key={status} value={status}>
-                          {humanizeStatus(status)}
+                      <option value="">Indisponível</option>
+                      {ticketCategoryOptions.map((category) => (
+                        <option key={category.optionId} value={category.optionId}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </Field>
+                  <Field label="Motivo da classificação">
+                    <SelectInput
+                      className="h-8.5 rounded-[12px] px-3 text-[12px]"
+                      disabled={submitting || classificationReasonOptions.length === 0}
+                      onChange={(event) =>
+                        setClassificationDraft((current) => ({
+                          ...current,
+                          operationalReasonId: event.target.value as Uuid | '',
+                        }))
+                      }
+                      value={classificationDraft.operationalReasonId}
+                    >
+                      <option value="">Sem motivo adicional</option>
+                      {classificationReasonOptions.map((reason) => (
+                        <option key={reason.optionId} value={reason.optionId}>
+                          {reason.name}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </Field>
+                  <TextareaInput
+                    className="min-h-[72px] text-[12px]"
+                    disabled={submitting}
+                    onChange={(event) =>
+                      setClassificationDraft((current) => ({ ...current, note: event.target.value }))
+                    }
+                    placeholder="Nota opcional da reclassificação"
+                    value={classificationDraft.note}
+                  />
+                  <AppButton
+                    className="min-h-8.5 w-full rounded-[12px] px-4 text-[12px]"
+                    disabled={
+                      submitting ||
+                      !ticketDetail.canUpdateStatus ||
+                      !classificationDraft.categoryId
+                    }
+                    type="submit"
+                  >
+                    {submitting ? 'Atualizando...' : 'Salvar classificação'}
+                  </AppButton>
+                </form>
+
+                <form className="space-y-2 border-t border-[color:var(--color-border)] pt-2" onSubmit={handleUpdatePrioritySeverity}>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Field label="Prioridade">
+                      <SelectInput
+                        className="h-8.5 rounded-[12px] px-3 text-[12px]"
+                        disabled={submitting}
+                        onChange={(event) =>
+                          setPrioritySeverityDraft((current) => ({
+                            ...current,
+                            priority: event.target.value as TicketPriority,
+                          }))
+                        }
+                        value={prioritySeverityDraft.priority}
+                      >
+                        {TICKET_PRIORITIES.map((priority) => (
+                          <option key={priority} value={priority}>
+                            {humanizePriority(priority)}
+                          </option>
+                        ))}
+                      </SelectInput>
+                    </Field>
+                    <Field label="Severidade">
+                      <SelectInput
+                        className="h-8.5 rounded-[12px] px-3 text-[12px]"
+                        disabled={submitting}
+                        onChange={(event) =>
+                          setPrioritySeverityDraft((current) => ({
+                            ...current,
+                            severity: event.target.value as TicketSeverity,
+                          }))
+                        }
+                        value={prioritySeverityDraft.severity}
+                      >
+                        {TICKET_SEVERITIES.map((severity) => (
+                          <option key={severity} value={severity}>
+                            {humanizeSeverity(severity)}
+                          </option>
+                        ))}
+                      </SelectInput>
+                    </Field>
+                  </div>
+                  <Field label="Motivo da prioridade">
+                    <SelectInput
+                      className="h-8.5 rounded-[12px] px-3 text-[12px]"
+                      disabled={submitting || priorityReasonOptions.length === 0}
+                      onChange={(event) =>
+                        setPrioritySeverityDraft((current) => ({
+                          ...current,
+                          operationalReasonId: event.target.value as Uuid | '',
+                        }))
+                      }
+                      value={prioritySeverityDraft.operationalReasonId}
+                    >
+                      <option value="">Sem motivo adicional</option>
+                      {priorityReasonOptions.map((reason) => (
+                        <option key={reason.optionId} value={reason.optionId}>
+                          {reason.name}
                         </option>
                       ))}
                     </SelectInput>
@@ -5653,6 +6087,67 @@ function SupportWorkspaceView({
                   <AppButton
                     className="min-h-8.5 w-full rounded-[12px] px-4 text-[12px]"
                     disabled={submitting || !ticketDetail.canUpdateStatus}
+                    type="submit"
+                  >
+                    {submitting ? 'Recalculando...' : 'Salvar prioridade/SLA'}
+                  </AppButton>
+                </form>
+
+                <form className="space-y-2 border-t border-[color:var(--color-border)] pt-2" onSubmit={handleUpdateStatus}>
+                  <Field label="Status">
+                    <SelectInput
+                      className="h-8.5 rounded-[12px] px-3 text-[12px]"
+                      onChange={(event) => {
+                        setStatusDraft(event.target.value as TicketStatusUpdateTarget);
+                        setStatusReasonId('');
+                      }}
+                      value={statusDraft}
+                    >
+                      {buildStatusChoices(ticketDetail.status, ticketDetail.allowedNextStatuses).length === 0 ? (
+                        <option value={statusDraft}>Sem transição disponível</option>
+                      ) : null}
+                      {buildStatusChoices(ticketDetail.status, ticketDetail.allowedNextStatuses).map((status) => (
+                        <option key={status} value={status}>
+                          {humanizeStatus(status)}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </Field>
+                  <Field label="Motivo do status">
+                    <SelectInput
+                      className="h-8.5 rounded-[12px] px-3 text-[12px]"
+                      disabled={submitting || statusReasonOptions.length === 0}
+                      onChange={(event) => setStatusReasonId(event.target.value as Uuid | '')}
+                      value={statusReasonId}
+                    >
+                      <option value="">Sem motivo adicional</option>
+                      {statusReasonOptions.map((reason) => (
+                        <option key={reason.optionId} value={reason.optionId}>
+                          {reason.name}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </Field>
+                  <TextareaInput
+                    className="min-h-[72px] text-[12px]"
+                    disabled={submitting}
+                    onChange={(event) => setStatusNote(event.target.value)}
+                    placeholder="Nota opcional para o evento de status"
+                    value={statusNote}
+                  />
+                  {requiresOperationalReasonForStatus(statusDraft) && !statusReasonId ? (
+                    <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
+                      Esta transição exige motivo operacional registrado pelo backend.
+                    </p>
+                  ) : null}
+                  <AppButton
+                    className="min-h-8.5 w-full rounded-[12px] px-4 text-[12px]"
+                    disabled={
+                      submitting ||
+                      !ticketDetail.canUpdateStatus ||
+                      buildStatusChoices(ticketDetail.status, ticketDetail.allowedNextStatuses).length === 0 ||
+                      (requiresOperationalReasonForStatus(statusDraft) && !statusReasonId)
+                    }
                     type="submit"
                   >
                     {submitting ? 'Atualizando...' : 'Salvar andamento'}

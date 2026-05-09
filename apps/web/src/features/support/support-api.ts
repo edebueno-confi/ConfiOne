@@ -23,6 +23,10 @@ import type {
   RpcSupportCreateTicketAttachmentUploadResponse,
   RpcSupportGetTicketAttachmentDownloadUrlResponse,
   RpcSupportRegisterTicketAttachmentResponse,
+  RpcSupportUpdateTicketClassificationPayload,
+  RpcSupportUpdateTicketClassificationResponse,
+  RpcSupportUpdateTicketPrioritySeverityPayload,
+  RpcSupportUpdateTicketPrioritySeverityResponse,
   RpcReopenTicketPayload,
   RpcReopenTicketResponse,
   RpcSupportArchiveTicketArticleLinkPayload,
@@ -52,6 +56,7 @@ import type {
   SupportCustomerRecentEventsWindow,
   SupportCustomerRecentTicketsWindow,
   SupportTicketAttachment,
+  SupportTicketClassificationOption,
   SupportTicketDetail,
   SupportTicketEngineeringLink,
   SupportTicketKnowledgeLink,
@@ -156,6 +161,22 @@ function mapQueueItem(row: Record<string, unknown>): SupportTicketQueueItem {
     status: row.status as SupportTicketQueueItem['status'],
     priority: row.priority as SupportTicketQueueItem['priority'],
     severity: row.severity as SupportTicketQueueItem['severity'],
+    categoryId: (row.category_id as string | null) ?? null,
+    categorySlug: (row.category_slug as string | null) ?? null,
+    categoryName: (row.category_name as string | null) ?? null,
+    categoryDescription: (row.category_description as string | null) ?? null,
+    currentOperationalReasonId:
+      (row.current_operational_reason_id as string | null) ?? null,
+    currentOperationalReasonName:
+      (row.current_operational_reason_name as string | null) ?? null,
+    slaPolicyId: (row.sla_policy_id as string | null) ?? null,
+    slaPolicyName: (row.sla_policy_name as string | null) ?? null,
+    firstResponseDueAt: (row.first_response_due_at as string | null) ?? null,
+    resolutionDueAt: (row.resolution_due_at as string | null) ?? null,
+    slaStatus: row.sla_status as SupportTicketQueueItem['slaStatus'],
+    slaStatusLabel: String(row.sla_status_label ?? 'Sem politica definida'),
+    isSlaAvailable: Boolean(row.is_sla_available),
+    slaReference: String(row.sla_reference ?? 'Governanca interna.'),
     createdByUserId: String(row.created_by_user_id),
     createdByFullName: (row.created_by_full_name as string | null) ?? null,
     assignedToUserId: (row.assigned_to_user_id as string | null) ?? null,
@@ -192,6 +213,30 @@ function mapTicketDetail(row: Record<string, unknown>): SupportTicketDetail {
     status: row.status as SupportTicketDetail['status'],
     priority: row.priority as SupportTicketDetail['priority'],
     severity: row.severity as SupportTicketDetail['severity'],
+    categoryId: (row.category_id as string | null) ?? null,
+    categorySlug: (row.category_slug as string | null) ?? null,
+    categoryName: (row.category_name as string | null) ?? null,
+    categoryDescription: (row.category_description as string | null) ?? null,
+    initialOperationalReasonId:
+      (row.initial_operational_reason_id as string | null) ?? null,
+    initialOperationalReasonName:
+      (row.initial_operational_reason_name as string | null) ?? null,
+    currentOperationalReasonId:
+      (row.current_operational_reason_id as string | null) ?? null,
+    currentOperationalReasonName:
+      (row.current_operational_reason_name as string | null) ?? null,
+    slaPolicyId: (row.sla_policy_id as string | null) ?? null,
+    slaPolicyName: (row.sla_policy_name as string | null) ?? null,
+    slaBusinessCalendarKey: (row.sla_business_calendar_key as string | null) ?? null,
+    firstResponseDueAt: (row.first_response_due_at as string | null) ?? null,
+    resolutionDueAt: (row.resolution_due_at as string | null) ?? null,
+    slaStatus: row.sla_status as SupportTicketDetail['slaStatus'],
+    slaStatusLabel: String(row.sla_status_label ?? 'Sem politica definida'),
+    isSlaAvailable: Boolean(row.is_sla_available),
+    slaReference: String(row.sla_reference ?? 'Governanca interna.'),
+    allowedNextStatuses: Array.isArray(row.allowed_next_statuses)
+      ? (row.allowed_next_statuses as SupportTicketDetail['allowedNextStatuses'])
+      : [],
     closeReason: (row.close_reason as string | null) ?? null,
     createdByUserId: String(row.created_by_user_id),
     createdByFullName: (row.created_by_full_name as string | null) ?? null,
@@ -472,6 +517,7 @@ interface ListSupportTicketsQueueOptions {
   severity?: TicketSeverity | 'all';
   tenantId?: Uuid | 'all';
   assignedToUserId?: Uuid | 'all' | 'unassigned';
+  categoryId?: Uuid | 'all';
 }
 
 export async function listSupportTicketsQueue(
@@ -503,6 +549,10 @@ export async function listSupportTicketsQueue(
     query = query.is('assigned_to_user_id', null);
   } else if (options.assignedToUserId && options.assignedToUserId !== 'all') {
     query = query.eq('assigned_to_user_id', options.assignedToUserId);
+  }
+
+  if (options.categoryId && options.categoryId !== 'all') {
+    query = query.eq('category_id', options.categoryId);
   }
 
   const { data, error } = await query;
@@ -654,6 +704,25 @@ function mapSupportTicketIntakeContact(
     jobTitle: (row.job_title as string | null) ?? null,
     isPrimary: Boolean(row.is_primary),
     createdAt: String(row.created_at),
+  };
+}
+
+function mapSupportTicketClassificationOption(
+  row: Record<string, unknown>,
+): SupportTicketClassificationOption {
+  return {
+    optionKind: row.option_kind as SupportTicketClassificationOption['optionKind'],
+    optionId: String(row.option_id),
+    slug: String(row.slug),
+    name: String(row.name),
+    description: (row.description as string | null) ?? null,
+    reasonType:
+      (row.reason_type as SupportTicketClassificationOption['reasonType']) ?? null,
+    appliesToStatus:
+      (row.applies_to_status as SupportTicketClassificationOption['appliesToStatus']) ??
+      null,
+    status: row.status as SupportTicketClassificationOption['status'],
+    sortOrder: Number(row.sort_order ?? 0),
   };
 }
 
@@ -832,6 +901,24 @@ export async function listSupportTicketIntakeContacts(tenantId: Uuid) {
   );
 }
 
+export async function listSupportTicketClassificationOptions() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_support_ticket_classification_options')
+    .select('*')
+    .order('option_kind', { ascending: true })
+    .order('sort_order', { ascending: true })
+    .order('name', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar categorias e motivos operacionais.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapSupportTicketClassificationOption(row as Record<string, unknown>),
+  );
+}
+
 export async function getSupportTicketKnowledgeLinks(ticketId: Uuid) {
   const client = requireClient();
   const { data, error } = await client
@@ -984,6 +1071,8 @@ export async function createTicket(payload: RpcCreateTicketPayload) {
     p_priority: payload.priority,
     p_severity: payload.severity,
     p_requester_contact_id: payload.requesterContactId ?? null,
+    p_category_id: payload.categoryId ?? null,
+    p_operational_reason_id: payload.operationalReasonId ?? null,
   });
 
   if (error) {
@@ -995,9 +1084,10 @@ export async function createTicket(payload: RpcCreateTicketPayload) {
 
 export async function updateTicketStatus(payload: RpcUpdateTicketStatusPayload) {
   const client = requireClient();
-  const { data, error } = await client.rpc('rpc_update_ticket_status', {
+  const { data, error } = await client.rpc('rpc_support_update_ticket_status_v2', {
     p_ticket_id: payload.ticketId,
     p_status: payload.status,
+    p_operational_reason_id: payload.operationalReasonId ?? null,
     p_note: payload.note ?? null,
   });
 
@@ -1006,6 +1096,43 @@ export async function updateTicketStatus(payload: RpcUpdateTicketStatusPayload) 
   }
 
   return data as RpcUpdateTicketStatusResponse;
+}
+
+export async function updateTicketClassification(
+  payload: RpcSupportUpdateTicketClassificationPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_update_ticket_classification', {
+    p_ticket_id: payload.ticketId,
+    p_category_id: payload.categoryId,
+    p_operational_reason_id: payload.operationalReasonId ?? null,
+    p_note: payload.note ?? null,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao atualizar a classificacao operacional do ticket.');
+  }
+
+  return data as RpcSupportUpdateTicketClassificationResponse;
+}
+
+export async function updateTicketPrioritySeverity(
+  payload: RpcSupportUpdateTicketPrioritySeverityPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_update_ticket_priority_severity', {
+    p_ticket_id: payload.ticketId,
+    p_priority: payload.priority,
+    p_severity: payload.severity,
+    p_operational_reason_id: payload.operationalReasonId ?? null,
+    p_note: payload.note ?? null,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao atualizar prioridade e severidade do ticket.');
+  }
+
+  return data as RpcSupportUpdateTicketPrioritySeverityResponse;
 }
 
 export async function assignTicket(payload: RpcAssignTicketPayload) {
