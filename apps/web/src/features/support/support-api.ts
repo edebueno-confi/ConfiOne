@@ -171,6 +171,10 @@ function mapQueueItem(row: Record<string, unknown>): SupportTicketQueueItem {
       (row.current_operational_reason_name as string | null) ?? null,
     slaPolicyId: (row.sla_policy_id as string | null) ?? null,
     slaPolicyName: (row.sla_policy_name as string | null) ?? null,
+    slaPolicyScope:
+      (row.sla_policy_scope as SupportTicketQueueItem['slaPolicyScope'] | null) ?? 'none',
+    slaBusinessCalendarName: (row.sla_business_calendar_name as string | null) ?? null,
+    slaBusinessCalendarTimezone: (row.sla_business_calendar_timezone as string | null) ?? null,
     firstResponseDueAt: (row.first_response_due_at as string | null) ?? null,
     resolutionDueAt: (row.resolution_due_at as string | null) ?? null,
     slaStatus: row.sla_status as SupportTicketQueueItem['slaStatus'],
@@ -227,7 +231,11 @@ function mapTicketDetail(row: Record<string, unknown>): SupportTicketDetail {
       (row.current_operational_reason_name as string | null) ?? null,
     slaPolicyId: (row.sla_policy_id as string | null) ?? null,
     slaPolicyName: (row.sla_policy_name as string | null) ?? null,
+    slaPolicyScope:
+      (row.sla_policy_scope as SupportTicketDetail['slaPolicyScope'] | null) ?? 'none',
     slaBusinessCalendarKey: (row.sla_business_calendar_key as string | null) ?? null,
+    slaBusinessCalendarName: (row.sla_business_calendar_name as string | null) ?? null,
+    slaBusinessCalendarTimezone: (row.sla_business_calendar_timezone as string | null) ?? null,
     firstResponseDueAt: (row.first_response_due_at as string | null) ?? null,
     resolutionDueAt: (row.resolution_due_at as string | null) ?? null,
     slaStatus: row.sla_status as SupportTicketDetail['slaStatus'],

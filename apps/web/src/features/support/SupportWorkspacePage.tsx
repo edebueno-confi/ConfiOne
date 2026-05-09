@@ -225,6 +225,33 @@ function toneForSlaStatus(status: SupportTicketQueueItem['slaStatus'] | SupportT
   return 'default' as const;
 }
 
+function humanizeSlaPolicyScope(scope: SupportTicketQueueItem['slaPolicyScope'] | SupportTicketDetail['slaPolicyScope']) {
+  if (scope === 'tenant') {
+    return 'Política do cliente';
+  }
+
+  if (scope === 'global_fallback') {
+    return 'Fallback interno';
+  }
+
+  return 'Sem política definida';
+}
+
+function formatSlaDueLabel(
+  firstResponseDueAt: string | null,
+  resolutionDueAt: string | null,
+) {
+  if (resolutionDueAt) {
+    return `Resolução: ${formatDateTime(resolutionDueAt)}`;
+  }
+
+  if (firstResponseDueAt) {
+    return `Primeira resposta: ${formatDateTime(firstResponseDueAt)}`;
+  }
+
+  return 'Prazo: Indisponível';
+}
+
 function humanizeVisibility(value: string) {
   return value === 'internal' ? 'Nota interna' : 'Resposta pública';
 }
@@ -2368,6 +2395,8 @@ function SupportQueueItem({
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] leading-5 text-[color:var(--color-muted)]">
             <span>Cliente: {ticketTenantLabel(ticket)}</span>
             <span>Categoria: {ticket.categoryName ?? 'Indisponível'}</span>
+            <span>SLA: {ticket.slaPolicyName ?? 'Sem política definida'}</span>
+            <span>{formatSlaDueLabel(ticket.firstResponseDueAt, ticket.resolutionDueAt)}</span>
             <span>Responsável: {ticket.assignedToFullName ?? 'Não atribuído'}</span>
             <span>Última atividade: {formatDateTime(ticket.lastMessageAt ?? ticket.updatedAt)}</span>
           </div>
@@ -2446,6 +2475,11 @@ function SupportTicketPreview({
   const category = detail?.categoryName ?? ticket?.categoryName ?? 'Indisponível';
   const slaLabel = detail?.slaStatusLabel ?? ticket?.slaStatusLabel ?? 'Sem política definida';
   const slaStatus = detail?.slaStatus ?? ticket?.slaStatus ?? 'unavailable';
+  const slaPolicy = detail?.slaPolicyName ?? ticket?.slaPolicyName ?? 'Sem política definida';
+  const slaDue = formatSlaDueLabel(
+    detail?.firstResponseDueAt ?? ticket?.firstResponseDueAt ?? null,
+    detail?.resolutionDueAt ?? ticket?.resolutionDueAt ?? null,
+  );
   const lastActivity = formatDateTime(
     detail?.lastMessageAt ?? detail?.updatedAt ?? ticket?.lastMessageAt ?? ticket?.updatedAt ?? null,
   );
@@ -2471,6 +2505,9 @@ function SupportTicketPreview({
           <div className="space-y-1 text-[12px] leading-5 text-white/76">
             <p>Cliente: {tenant}</p>
             <p>Categoria: {category}</p>
+            <p>SLA interno: {slaLabel}</p>
+            <p>Política: {slaPolicy}</p>
+            <p>{slaDue}</p>
             <p>Responsável: {assigned}</p>
             <p>Última atividade: {lastActivity}</p>
           </div>
@@ -5590,7 +5627,10 @@ function SupportWorkspaceView({
                         SLA interno
                       </p>
                       <p className="truncate font-semibold leading-4 text-[color:var(--color-ink)]">
-                        {ticketDetail.slaStatusLabel}
+                        {ticketDetail.slaPolicyName ?? ticketDetail.slaStatusLabel}
+                      </p>
+                      <p className="truncate leading-4 text-[color:var(--color-muted)]">
+                        {formatSlaDueLabel(ticketDetail.firstResponseDueAt, ticketDetail.resolutionDueAt)}
                       </p>
                     </div>
                     <div className="min-w-0">
@@ -5865,6 +5905,58 @@ function SupportWorkspaceView({
                   accountContext={customerAccountContext}
                   customer={customer}
                 />
+              </div>
+            </section>
+
+            <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.06)]">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <h4 className="text-[13px] font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
+                    SLA interno
+                  </h4>
+                  <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
+                    Sinal calculado pelo backend para priorização operacional.
+                  </p>
+                </div>
+                <StatusPill tone={toneForSlaStatus(ticketDetail.slaStatus)}>
+                  {ticketDetail.slaStatusLabel}
+                </StatusPill>
+              </div>
+
+              <div className="mt-3 grid gap-2 text-[12px] leading-5">
+                <div className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2">
+                  <p className="font-semibold text-[color:var(--color-ink)]">
+                    {ticketDetail.slaPolicyName ?? 'Sem política definida'}
+                  </p>
+                  <p className="text-[color:var(--color-muted)]">
+                    {humanizeSlaPolicyScope(ticketDetail.slaPolicyScope)}
+                  </p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+                  <div className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
+                      Primeira resposta
+                    </p>
+                    <p className="mt-1 font-semibold text-[color:var(--color-ink)]">
+                      {ticketDetail.firstResponseDueAt
+                        ? formatDateTime(ticketDetail.firstResponseDueAt)
+                        : 'Indisponível'}
+                    </p>
+                  </div>
+                  <div className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
+                      Resolução
+                    </p>
+                    <p className="mt-1 font-semibold text-[color:var(--color-ink)]">
+                      {ticketDetail.resolutionDueAt
+                        ? formatDateTime(ticketDetail.resolutionDueAt)
+                        : 'Indisponível'}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
+                  Calendário: {ticketDetail.slaBusinessCalendarName ?? 'Indisponível'}
+                </p>
               </div>
             </section>
 

@@ -108,6 +108,7 @@ export type {
   TicketKnowledgeLinkType,
   TicketPriority,
   TicketSeverity,
+  TicketSlaPolicyScope,
   TicketSource,
   TicketStatus,
   TicketStatusUpdateTarget,
