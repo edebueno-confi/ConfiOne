@@ -154,11 +154,17 @@ Cobertura adicionada em `supabase/tests/029_customer_portal_secure_evidence_uplo
 
 ## Proximo lote recomendado
 
-`Customer Portal Ticket Collaboration V3`
+`Customer Portal Access And Knowledge Entitlements V3`
 
 Foco:
 
-- estados de leitura/ack mais ricos;
-- resposta do cliente com anexos e timeline consolidada;
-- regras de fechamento/reabertura customer-facing;
-- limites claros entre colaboracao do cliente e operacao interna.
+- direitos finos de acesso customer-facing;
+- Knowledge autenticada autorizada por tenant/contato;
+- bloqueio explicito de draft/internal/restricted/advisory;
+- estados de acesso negado e conteudo indisponivel no portal.
+
+## Atualizacao - Customer Portal Ticket Collaboration V3
+- A colaboracao customer-facing foi fechada apos este lote de evidencias.
+- O portal agora usa `vw_customer_portal_ticket_collaboration_state` para leitura/ack, resposta, resolucao e reabertura.
+- Evidencias enviadas pelo cliente continuam visiveis como metadata sanitizada na timeline e no Support Workspace, sem bucket/path/URL permanente.
+- Arquivamento/remocao pelo cliente continua bloqueado.

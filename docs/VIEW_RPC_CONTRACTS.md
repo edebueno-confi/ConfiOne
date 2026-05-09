@@ -157,6 +157,30 @@ Fase 8.15:
 - `customer_user` ve tickets do proprio contato/criacao; `customer_manager` ve tickets do proprio tenant; ambos continuam bloqueados contra cross-tenant.
 - O frontend em `/portal`, `/portal/tickets` e `/portal/tickets/:ticketId` consome somente esses contratos e nao calcula permissao, SLA, status, analytics ou roteamento.
 
+Fase 8.17:
+- A colaboracao customer-facing do portal foi consolidada sem expor operacao interna.
+- `vw_customer_portal_ticket_timeline` foi endurecida para expor apenas mensagens `customer` e eventos seguros para cliente, sem nota interna, engenharia, audit bruto, advisory, metadata sensivel ou anexo interno.
+- Novo read model:
+  - `vw_customer_portal_ticket_collaboration_state`
+- O read model deriva no backend:
+  - `can_reply`
+  - `can_acknowledge`
+  - `can_confirm_resolution`
+  - `can_request_reopen`
+  - `unread_count`
+  - `has_new_updates`
+  - `last_customer_message_at`
+  - `last_support_response_at`
+- RPCs customer-facing finais do lote:
+  - `rpc_customer_add_ticket_message`
+  - `rpc_customer_acknowledge_ticket_update`
+  - `rpc_customer_confirm_ticket_resolved`
+  - `rpc_customer_request_ticket_reopen`
+- `rpc_customer_add_ticket_message` bloqueia tickets `resolved`, `closed` e `cancelled`, limita body a 4000 caracteres, gera `ticket_event`/`audit_log` e, quando aplicavel, move `waiting_customer` para `waiting_support` no backend.
+- `rpc_customer_acknowledge_ticket_update` permanece idempotente e agora valida que o timeline entry informado pertence a timeline customer-facing autorizada.
+- Confirmacao de resolucao pelo cliente so fecha ticket que ja esta `resolved`; reabertura so existe para `resolved`/`closed` com motivo obrigatorio.
+- Cliente continua sem permissao para prioridade, severidade, categoria, SLA, notas internas, engenharia, audit bruto, advisory, drafts, Knowledge internal/restricted ou qualquer DML direto.
+
 Fase 4:
 - Knowledge Base agora possui núcleo editorial real com views internas contratuais e RPCs administrativas próprias.
 - O frontend administrativo futuro deve consumir a superfície de leitura apenas por:

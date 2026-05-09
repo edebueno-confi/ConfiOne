@@ -175,16 +175,16 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 
 ## Proximo lote tecnico recomendado
 
-### Lote: Customer Portal Ticket Collaboration V3
+### Lote: Customer Portal Access And Knowledge Entitlements V3
 
-Objetivo: consolidar a colaboracao autenticada do cliente B2B dentro do ticket sem expor operacao interna.
+Objetivo: fechar direitos finos de acesso customer-facing para conteudo autenticado, artigos autorizados por tenant/contato e estados de acesso negado sem expor Knowledge interna, advisory, drafts ou operacao interna.
 
 Ordem sugerida:
-1. Endurecer estados de leitura e acknowledgement customer-facing.
-2. Validar resposta do cliente em ticket permitido e status aceitos.
-3. Definir regras seguras de fechamento/reabertura pelo cliente, se Produto aprovar.
-4. Consolidar timeline customer-facing com mensagens, evidencias e Knowledge enviada.
-5. Cobrir cross-tenant, usuario revogado, ticket fechado, audit_log e `ticket_event`.
+1. Auditar `vw_customer_portal_knowledge_articles`, Knowledge publica/restrita e papeis `customer_user`/`customer_manager`.
+2. Definir entitlement por tenant/contato para artigos restritos aprovados, sem misturar com draft/internal/advisory.
+3. Criar read models customer-facing para Knowledge autenticada autorizada.
+4. Conectar `/portal/tickets/:ticketId` e uma superficie simples de artigos autorizados sem dashboard fake.
+5. Cobrir cross-tenant, usuario revogado, artigo draft/internal/restricted, audit_log e estados `Indisponivel`.
 
 ### Lote alternativo: Omni Inbox Thread Foundation V3
 

@@ -2908,3 +2908,44 @@ Cada registro deve informar:
   - `npm run supabase:qa:local-support-fixture`
 - impacto na FAQ futura:
   - nenhum; lote de portal autenticado, sem publicacao de Knowledge
+
+### Fase 8.17 - Customer Portal Ticket Collaboration V3
+- fase: `8.17`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-09`
+- resumo funcional: o portal cliente B2B autenticado passou a ter colaboracao customer-facing consolidada com timeline segura, leitura/ack, resposta do cliente, confirmacao de resolucao e solicitacao de reabertura por contratos reais.
+- docs alterados:
+  - `docs/CUSTOMER_PORTAL_TICKET_COLLABORATION_V3.md`
+  - `docs/CUSTOMER_PORTAL_CONTRACT_FOUNDATION_V3.md`
+  - `docs/CUSTOMER_PORTAL_SECURE_EVIDENCE_UPLOAD_V3.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - `/portal/tickets`
+  - `/portal/tickets/:ticketId`
+  - `/support/tickets/:ticketId` (regressao/reflexo de mensagem e evento customer-facing)
+- views/RPCs afetadas:
+  - `vw_customer_portal_ticket_detail`
+  - `vw_customer_portal_ticket_timeline`
+  - `vw_customer_portal_ticket_collaboration_state`
+  - `rpc_customer_add_ticket_message`
+  - `rpc_customer_acknowledge_ticket_update`
+  - `rpc_customer_confirm_ticket_resolved`
+  - `rpc_customer_request_ticket_reopen`
+- riscos restantes:
+  - regra temporal de reabertura ainda depende de decisao de produto
+  - notificacao externa continua fora de escopo
+  - NPS/satisfacao e chat realtime nao foram implementados
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+- impacto na FAQ futura:
+  - nenhum; lote de portal autenticado, sem publicacao automatica de Knowledge

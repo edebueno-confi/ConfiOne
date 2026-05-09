@@ -389,3 +389,23 @@
 - O Support Workspace enxerga a evidencia enviada pelo cliente como metadata sanitizada.
 - Bucket, path interno e URL permanente continuam fora do frontend.
 - Arquivamento/remocao pelo cliente, notificacao externa, scan/antivirus, IA e Omni Inbox continuam fora do escopo.
+
+## Colaboracao customer-facing da fase 8.17
+- O portal cliente B2B agora possui colaboracao real de ticket com leitura/ack, resposta, confirmacao de resolucao e solicitacao de reabertura.
+- A timeline customer-facing mostra apenas mensagens publicas/customer-facing e eventos seguros.
+- Notas internas, engenharia, audit bruto, advisory, Knowledge draft/internal/restricted e metadata sensivel continuam fora do portal.
+- Resposta do cliente:
+  - usa `rpc_customer_add_ticket_message`;
+  - exige body nao vazio;
+  - limita body a 4000 caracteres;
+  - bloqueia tickets `resolved`, `closed` e `cancelled`;
+  - gera `ticket_event` e `audit_log`;
+  - move `waiting_customer` para `waiting_support` pelo backend quando aplicavel.
+- Leitura/ack:
+  - usa `rpc_customer_acknowledge_ticket_update`;
+  - valida timeline entry customer-facing autorizado;
+  - deriva `unread_count` e `has_new_updates` por `vw_customer_portal_ticket_collaboration_state`.
+- Resolucao/reabertura:
+  - cliente confirma apenas ticket `resolved`;
+  - cliente solicita reabertura apenas de `resolved`/`closed` com motivo obrigatorio;
+  - cliente nao altera prioridade, severidade, categoria ou SLA.

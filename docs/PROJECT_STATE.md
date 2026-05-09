@@ -45,6 +45,8 @@ Documentos prioritários:
 - `TENANT_SUPPORT_POLICY_AND_SLA_AUTOMATION_V3.md`
 - `CUSTOMER_PORTAL_CONTRACT_FOUNDATION_V3.md`
 - `CUSTOMER_PORTAL_AND_OMNI_FOUNDATION_V3.md`
+- `CUSTOMER_PORTAL_SECURE_EVIDENCE_UPLOAD_V3.md`
+- `CUSTOMER_PORTAL_TICKET_COLLABORATION_V3.md`
 - `reports/KNOWLEDGE_LEGACY_CURATION_BACKLOG.md`
 - `reports/LEGACY_CORPUS_EDITORIAL_AUDIT.md`
 - `knowledge/LEGACY_CORPUS_HUMAN_CURATION_SPRINT.md`
@@ -1847,6 +1849,26 @@ Documentos históricos:
     - IA
     - Omni Inbox
   - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
+- Fase 8.17: Customer Portal Ticket Collaboration V3 concluido como bloco de colaboracao customer-facing.
+  - A timeline do portal foi endurecida para expor somente mensagens e eventos seguros para cliente.
+  - O portal agora consome `vw_customer_portal_ticket_collaboration_state` para estados derivados de leitura, resposta, resolucao e reabertura.
+  - `rpc_customer_add_ticket_message` foi endurecida com body obrigatorio, limite de 4000 caracteres, bloqueio para `resolved`/`closed`/`cancelled`, `ticket_event`, `audit_log` e transicao `waiting_customer` -> `waiting_support` quando aplicavel.
+  - `rpc_customer_acknowledge_ticket_update` valida timeline entry customer-facing e permanece idempotente.
+  - Novas RPCs customer-facing:
+    - `rpc_customer_confirm_ticket_resolved`
+    - `rpc_customer_request_ticket_reopen`
+  - Cliente pode confirmar resolucao apenas quando o ticket esta `resolved` e solicitar reabertura apenas de `resolved`/`closed` com motivo.
+  - Continuam bloqueados:
+    - prioridade/severidade/categoria/SLA pelo cliente
+    - nota interna pelo cliente
+    - engenharia interna
+    - audit bruto
+    - Knowledge draft/internal/restricted
+    - notificacao externa
+    - chat realtime
+    - IA
+    - Omni Inbox
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -1868,7 +1890,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Executar o proximo lote tecnico grande `Customer Portal Ticket Collaboration V3`, consolidando colaboracao customer-facing em ticket com estados de leitura, resposta, timeline e regras de fechamento/reabertura sem expor operacao interna.
+Executar o proximo lote tecnico grande `Customer Portal Access And Knowledge Entitlements V3`, fechando direitos finos do portal cliente para conteudo autorizado, artigos restritos por tenant/contato e estados de acesso negado sem expor Knowledge interna ou advisory.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único

@@ -144,13 +144,23 @@ Testes pgTAP cobrem:
 
 ## Limitacoes assumidas
 - Portal agora tem upload customer-facing seguro de evidencia, documentado em `CUSTOMER_PORTAL_SECURE_EVIDENCE_UPLOAD_V3.md`.
+- Portal agora tem colaboracao customer-facing segura de ticket, documentada em `CUSTOMER_PORTAL_TICKET_COLLABORATION_V3.md`.
 - Portal ainda nao tem SLA publico.
 - Portal ainda nao tem Omni Inbox, WhatsApp, email threading externo ou IA.
 - Portal ainda nao tem UI final, onboarding, gestao de usuarios do cliente ou preferencias.
 - Auth segue Supabase existente; nao foi criado provider paralelo.
 
 ## Proximos lotes recomendados
-1. `Customer Portal Ticket Collaboration V3`: estados de leitura, comentarios, anexos do cliente e regras de fechamento pelo cliente.
+1. `Customer Portal Access And Knowledge Entitlements V3`: direitos finos para Knowledge autenticada autorizada por tenant/contato.
 2. `Omni Inbox Thread Foundation V3`: separar canal/thread de ticket sem implementar canal real.
 3. `Customer Portal Access Administration V3`: manager convidar/revogar usuarios do proprio tenant via RPC auditada.
 4. `AI Context Readiness V3`: preparar views de contexto citavel para IA sem habilitar IA.
+
+## Atualizacao - Customer Portal Ticket Collaboration V3
+- `vw_customer_portal_ticket_collaboration_state` deriva estado de leitura, resposta, resolucao e reabertura.
+- `vw_customer_portal_ticket_timeline` foi endurecida para expor apenas mensagens `customer` e eventos seguros.
+- `rpc_customer_acknowledge_ticket_update` valida timeline entry autorizado e continua idempotente.
+- `rpc_customer_add_ticket_message` bloqueia respostas em tickets `resolved`, `closed` e `cancelled`, limita body a 4000 caracteres e gera `ticket_event`/`audit_log`.
+- `rpc_customer_confirm_ticket_resolved` permite confirmar somente ticket `resolved`.
+- `rpc_customer_request_ticket_reopen` permite solicitar reabertura somente de `resolved`/`closed` com motivo.
+- O cliente continua sem acesso a prioridade, severidade, categoria, SLA, notas internas, engenharia, audit bruto, advisory ou Knowledge nao publica/autorizada.
