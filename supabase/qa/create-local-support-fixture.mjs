@@ -226,6 +226,7 @@ const FIXTURE = {
       operationalReasonSlug: 'classificacao-inicial',
       assignee: 'support-agent-a',
       status: 'in_progress',
+      slaScenario: 'at_risk',
       publicMessage:
         'Recebemos o caso e estamos validando a trilha operacional da conciliação.',
       internalNote:
@@ -244,6 +245,7 @@ const FIXTURE = {
       operationalReasonSlug: 'classificacao-inicial',
       assignee: null,
       status: 'waiting_engineering',
+      slaScenario: 'breached',
       publicMessage:
         'Registramos o incidente e escalamos a validação técnica do endpoint informado.',
       internalNote:
@@ -1993,6 +1995,28 @@ async function ensureTicketKnowledgeLink({ actorSession, tenantId, ticketId, lin
   return created?.id ?? queryTicketKnowledgeLink(ticketId, link.linkType, link.articleSlug);
 }
 
+function queryBusinessCalendarIdBySlug(slug) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id
+    from public.business_calendars
+    where slug = '${sqlEscape(slug)}'
+    limit 1;
+  `);
+
+  return result.rows?.[0]?.id ?? null;
+}
+
+function queryTicketSlaPolicyIdBySlug(slug) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id
+    from public.ticket_sla_policies
+    where slug = '${sqlEscape(slug)}'
+    limit 1;
+  `);
+
+  return result.rows?.[0]?.id ?? null;
+}
+
 function createSupportTicket({ actorUserId, tenantId, contactId, ticket }) {
   const existingTicketId = queryExistingSupportTicket(tenantId, ticket.title);
   if (existingTicketId) {
@@ -2070,6 +2094,7 @@ function createSupportTicket({ actorUserId, tenantId, contactId, ticket }) {
           p.resolution_minutes
         from updated_ticket as ut
         left join lateral app_private.resolve_ticket_sla_policy(
+          ut.tenant_id,
           ut.category_id,
           ut.priority,
           ut.severity
@@ -2359,6 +2384,86 @@ function queryTicketOperationalReasonIdBySlug(slug) {
   }
 
   return reasonId;
+}
+
+async function ensureSupportSlaPolicyFixture({ actorSession, tenantMap }) {
+  const tenantId = tenantMap.get('support-qa-a');
+  if (!tenantId) {
+    fail('Tenant support-qa-a ausente para fixture de SLA.');
+  }
+
+  const categoryId = queryTicketCategoryIdBySlug('integracao-tecnica');
+  if (!categoryId) {
+    fail('Categoria integracao-tecnica ausente para fixture de SLA.');
+  }
+
+  const calendarSlug = 'qa-tenant-a-business-hours';
+  const calendar = await callRpcAsUser({
+    apiUrl: actorSession.apiUrl,
+    anonKey: actorSession.anonKey,
+    accessToken: actorSession.accessToken,
+    rpcName: 'rpc_admin_upsert_business_calendar',
+    body: {
+      p_business_calendar_id: queryBusinessCalendarIdBySlug(calendarSlug),
+      p_tenant_id: tenantId,
+      p_slug: calendarSlug,
+      p_name: 'Expediente QA Tenant A',
+      p_timezone: 'America/Sao_Paulo',
+      p_status: 'active',
+    },
+  });
+
+  if (!calendar?.id) {
+    fail('Calendario de SLA do tenant A nao foi criado pela RPC administrativa.');
+  }
+
+  const policySlug = 'qa-tenant-a-integracao-critica';
+  await callRpcAsUser({
+    apiUrl: actorSession.apiUrl,
+    anonKey: actorSession.anonKey,
+    accessToken: actorSession.accessToken,
+    rpcName: 'rpc_admin_upsert_ticket_sla_policy',
+    body: {
+      p_policy_id: queryTicketSlaPolicyIdBySlug(policySlug),
+      p_tenant_id: tenantId,
+      p_slug: policySlug,
+      p_name: 'SLA interno QA Tenant A integração crítica',
+      p_description: 'Política tenant-aware para validar precedência de SLA no cockpit de suporte.',
+      p_category_id: categoryId,
+      p_priority: 'urgent',
+      p_severity: 'critical',
+      p_first_response_minutes: 15,
+      p_resolution_minutes: 30,
+      p_business_calendar_id: calendar.id,
+      p_status: 'active',
+    },
+  });
+}
+
+function applyFixtureTicketSlaScenario({ ticketId, scenario, actorUserId }) {
+  if (!scenario) {
+    return;
+  }
+
+  const resolutionExpression =
+    scenario === 'breached'
+      ? "timezone('utc', now()) - interval '15 minutes'"
+      : scenario === 'at_risk'
+        ? "timezone('utc', now()) + interval '30 minutes'"
+        : null;
+
+  if (!resolutionExpression) {
+    return;
+  }
+
+  runSupabaseDbQuery(`
+    update public.tickets
+    set
+      first_response_due_at = least(first_response_due_at, timezone('utc', now()) + interval '10 minutes'),
+      resolution_due_at = ${resolutionExpression},
+      updated_by_user_id = '${sqlEscape(actorUserId)}'::uuid
+    where id = '${sqlEscape(ticketId)}'::uuid;
+  `);
 }
 
 async function createSupportTicketViaRpc({
@@ -2896,6 +3001,11 @@ async function main() {
     return session;
   };
 
+  await ensureSupportSlaPolicyFixture({
+    actorSession: await getSessionForKey('qa-admin'),
+    tenantMap,
+  });
+
   clearFixtureTickets();
 
   const createdTickets = [];
@@ -2930,6 +3040,12 @@ async function main() {
                 : null,
           },
         });
+
+    applyFixtureTicketSlaScenario({
+      ticketId,
+      scenario: ticket.slaScenario,
+      actorUserId: profile.id,
+    });
 
     createdTickets.push({
       id: ticketId,

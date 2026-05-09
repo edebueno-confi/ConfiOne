@@ -121,6 +121,7 @@ export type {
   TicketReferenceStatus,
   TicketRecord,
   TicketSeverity,
+  TicketSlaPolicyScope,
   TicketSlaStatus,
   TicketSource,
   TicketStatus,

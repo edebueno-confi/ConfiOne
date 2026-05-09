@@ -78,6 +78,8 @@ export type TicketSlaStatus =
   | 'breached'
   | 'complete';
 
+export type TicketSlaPolicyScope = 'none' | 'global_fallback' | 'tenant';
+
 export const TICKET_TIMELINE_ENTRY_TYPES = ['message', 'event'] as const;
 export type TicketTimelineEntryType = (typeof TICKET_TIMELINE_ENTRY_TYPES)[number];
 
@@ -189,6 +191,9 @@ export interface TicketListItem extends TicketViewPermissionFlags {
   currentOperationalReasonName: string | null;
   slaPolicyId: Uuid | null;
   slaPolicyName: string | null;
+  slaPolicyScope: TicketSlaPolicyScope;
+  slaBusinessCalendarName: string | null;
+  slaBusinessCalendarTimezone: string | null;
   firstResponseDueAt: IsoTimestamp | null;
   resolutionDueAt: IsoTimestamp | null;
   slaStatus: TicketSlaStatus;
@@ -230,7 +235,10 @@ export interface TicketDetail extends TicketViewPermissionFlags {
   currentOperationalReasonName: string | null;
   slaPolicyId: Uuid | null;
   slaPolicyName: string | null;
+  slaPolicyScope: TicketSlaPolicyScope;
   slaBusinessCalendarKey: string | null;
+  slaBusinessCalendarName: string | null;
+  slaBusinessCalendarTimezone: string | null;
   firstResponseDueAt: IsoTimestamp | null;
   resolutionDueAt: IsoTimestamp | null;
   slaStatus: TicketSlaStatus;
@@ -310,6 +318,9 @@ export interface SupportTicketQueueItem extends TicketViewPermissionFlags {
   currentOperationalReasonName: string | null;
   slaPolicyId: Uuid | null;
   slaPolicyName: string | null;
+  slaPolicyScope: TicketSlaPolicyScope;
+  slaBusinessCalendarName: string | null;
+  slaBusinessCalendarTimezone: string | null;
   firstResponseDueAt: IsoTimestamp | null;
   resolutionDueAt: IsoTimestamp | null;
   slaStatus: TicketSlaStatus;
@@ -359,7 +370,10 @@ export interface SupportTicketDetail extends TicketViewPermissionFlags {
   currentOperationalReasonName: string | null;
   slaPolicyId: Uuid | null;
   slaPolicyName: string | null;
+  slaPolicyScope: TicketSlaPolicyScope;
   slaBusinessCalendarKey: string | null;
+  slaBusinessCalendarName: string | null;
+  slaBusinessCalendarTimezone: string | null;
   firstResponseDueAt: IsoTimestamp | null;
   resolutionDueAt: IsoTimestamp | null;
   slaStatus: TicketSlaStatus;
