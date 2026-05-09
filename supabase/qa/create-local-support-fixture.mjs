@@ -222,6 +222,8 @@ const FIXTURE = {
       priority: 'high',
       severity: 'medium',
       source: 'portal',
+      categorySlug: 'estorno-reembolso',
+      operationalReasonSlug: 'classificacao-inicial',
       assignee: 'support-agent-a',
       status: 'in_progress',
       publicMessage:
@@ -238,6 +240,8 @@ const FIXTURE = {
       priority: 'urgent',
       severity: 'critical',
       source: 'api',
+      categorySlug: 'integracao-tecnica',
+      operationalReasonSlug: 'classificacao-inicial',
       assignee: null,
       status: 'waiting_engineering',
       publicMessage:
@@ -253,6 +257,8 @@ const FIXTURE = {
       priority: 'high',
       severity: 'medium',
       source: 'email',
+      categorySlug: 'devolucao-troca',
+      operationalReasonSlug: 'classificacao-inicial',
       assignee: 'support-manager-a',
       status: 'triage',
       publicMessage:
@@ -268,6 +274,8 @@ const FIXTURE = {
       priority: 'normal',
       severity: 'low',
       source: 'internal',
+      categorySlug: 'dados-relatorios',
+      operationalReasonSlug: 'classificacao-ajustada',
       assignee: null,
       status: 'waiting_customer',
       publicMessage:
@@ -283,6 +291,8 @@ const FIXTURE = {
       priority: 'normal',
       severity: 'medium',
       source: 'phone',
+      categorySlug: 'devolucao-troca',
+      operationalReasonSlug: 'classificacao-ajustada',
       assignee: 'support-agent-a',
       status: 'waiting_support',
       publicMessage:
@@ -298,6 +308,8 @@ const FIXTURE = {
       priority: 'urgent',
       severity: 'high',
       source: 'portal',
+      categorySlug: 'operacao-plataforma',
+      operationalReasonSlug: 'classificacao-inicial',
       assignee: 'support-manager-a',
       status: 'in_progress',
       publicMessage:
@@ -2024,6 +2036,63 @@ function createSupportTicket({ actorUserId, tenantId, contactId, ticket }) {
     fail(`Nao foi possivel criar o ticket ${ticket.title}.`);
   }
 
+  if (ticket.categorySlug) {
+    runSupabaseDbQuery(`
+      with selected_category as (
+        select id
+        from public.ticket_categories
+        where slug = '${sqlEscape(ticket.categorySlug)}'
+          and status = 'active'
+        limit 1
+      ),
+      selected_reason as (
+        select id
+        from public.ticket_operational_reasons
+        where slug = '${sqlEscape(ticket.operationalReasonSlug ?? 'classificacao-inicial')}'
+          and status = 'active'
+        limit 1
+      ),
+      updated_ticket as (
+        update public.tickets as t
+        set
+          category_id = (select id from selected_category),
+          initial_operational_reason_id = (select id from selected_reason),
+          current_operational_reason_id = (select id from selected_reason),
+          updated_by_user_id = '${sqlEscape(actorUserId)}'::uuid
+        where t.id = '${sqlEscape(ticketId)}'::uuid
+        returning t.*
+      ),
+      resolved_policy as (
+        select
+          ut.id as ticket_id,
+          p.id as policy_id,
+          p.first_response_minutes,
+          p.resolution_minutes
+        from updated_ticket as ut
+        left join lateral app_private.resolve_ticket_sla_policy(
+          ut.category_id,
+          ut.priority,
+          ut.severity
+        ) as p
+          on true
+      )
+      update public.tickets as t
+      set
+        sla_policy_id = rp.policy_id,
+        first_response_due_at = case
+          when rp.policy_id is null then null
+          else t.created_at + make_interval(mins => rp.first_response_minutes)
+        end,
+        resolution_due_at = case
+          when rp.policy_id is null then null
+          else t.created_at + make_interval(mins => rp.resolution_minutes)
+        end,
+        updated_by_user_id = '${sqlEscape(actorUserId)}'::uuid
+      from resolved_policy as rp
+      where t.id = rp.ticket_id;
+    `);
+  }
+
   runSupabaseDbQuery(`
     insert into public.ticket_events (
       tenant_id,
@@ -2039,7 +2108,12 @@ function createSupportTicket({ actorUserId, tenantId, contactId, ticket }) {
       'ticket_created'::public.ticket_event_type,
       'customer'::public.message_visibility,
       '${sqlEscape(actorUserId)}'::uuid,
-      '{}'::jsonb
+      jsonb_build_object(
+        'category_slug',
+        ${ticket.categorySlug ? `'${sqlEscape(ticket.categorySlug)}'` : 'null'},
+        'operational_reason_slug',
+        ${ticket.operationalReasonSlug ? `'${sqlEscape(ticket.operationalReasonSlug)}'` : 'null'}
+      )
     );
   `);
 
@@ -2253,6 +2327,40 @@ function createSupportTicket({ actorUserId, tenantId, contactId, ticket }) {
   return ticketId;
 }
 
+function queryTicketCategoryIdBySlug(slug) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id
+    from public.ticket_categories
+    where slug = '${sqlEscape(slug)}'
+      and status = 'active'
+    limit 1;
+  `);
+
+  const categoryId = result.rows?.[0]?.id;
+  if (!categoryId) {
+    fail(`Categoria operacional de ticket ausente: ${slug}.`);
+  }
+
+  return categoryId;
+}
+
+function queryTicketOperationalReasonIdBySlug(slug) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id
+    from public.ticket_operational_reasons
+    where slug = '${sqlEscape(slug)}'
+      and status = 'active'
+    limit 1;
+  `);
+
+  const reasonId = result.rows?.[0]?.id;
+  if (!reasonId) {
+    fail(`Motivo operacional de ticket ausente: ${slug}.`);
+  }
+
+  return reasonId;
+}
+
 async function createSupportTicketViaRpc({
   actorSession,
   tenantId,
@@ -2277,6 +2385,12 @@ async function createSupportTicketViaRpc({
       p_priority: ticket.priority,
       p_severity: ticket.severity,
       p_requester_contact_id: contactId ?? null,
+      p_category_id: ticket.categorySlug
+        ? queryTicketCategoryIdBySlug(ticket.categorySlug)
+        : null,
+      p_operational_reason_id: ticket.operationalReasonSlug
+        ? queryTicketOperationalReasonIdBySlug(ticket.operationalReasonSlug)
+        : null,
     },
   });
 

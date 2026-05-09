@@ -49,11 +49,13 @@ export const TICKET_EVENT_TYPES = [
   'message_added',
   'internal_note_added',
   'attachment_added',
+  'classification_changed',
   'escalated_to_engineering',
   'linked_to_work_item',
   'engineering_update_added',
   'engineering_status_updated',
   'engineering_returned_to_support',
+  'sla_updated',
   'resolved',
   'closed',
   'reopened',
@@ -61,6 +63,20 @@ export const TICKET_EVENT_TYPES = [
 ] as const;
 export type TicketEventType = (typeof TICKET_EVENT_TYPES)[number];
 export type TicketAttachmentStatus = 'available' | 'archived';
+export type TicketReferenceStatus = 'active' | 'inactive' | 'archived';
+export type TicketOperationalReasonType =
+  | 'classification_update'
+  | 'status_transition'
+  | 'priority_change'
+  | 'resolution'
+  | 'cancellation'
+  | 'reopen';
+export type TicketSlaStatus =
+  | 'unavailable'
+  | 'on_track'
+  | 'at_risk'
+  | 'breached'
+  | 'complete';
 
 export const TICKET_TIMELINE_ENTRY_TYPES = ['message', 'event'] as const;
 export type TicketTimelineEntryType = (typeof TICKET_TIMELINE_ENTRY_TYPES)[number];
@@ -118,6 +134,12 @@ export interface TicketRecord {
   status: TicketStatus;
   priority: TicketPriority;
   severity: TicketSeverity;
+  categoryId: Uuid | null;
+  initialOperationalReasonId: Uuid | null;
+  currentOperationalReasonId: Uuid | null;
+  slaPolicyId: Uuid | null;
+  firstResponseDueAt: IsoTimestamp | null;
+  resolutionDueAt: IsoTimestamp | null;
   closeReason: string | null;
   createdByUserId: Uuid;
   assignedToUserId: Uuid | null;
@@ -159,6 +181,20 @@ export interface TicketListItem extends TicketViewPermissionFlags {
   status: TicketStatus;
   priority: TicketPriority;
   severity: TicketSeverity;
+  categoryId: Uuid | null;
+  categorySlug: string | null;
+  categoryName: string | null;
+  categoryDescription: string | null;
+  currentOperationalReasonId: Uuid | null;
+  currentOperationalReasonName: string | null;
+  slaPolicyId: Uuid | null;
+  slaPolicyName: string | null;
+  firstResponseDueAt: IsoTimestamp | null;
+  resolutionDueAt: IsoTimestamp | null;
+  slaStatus: TicketSlaStatus;
+  slaStatusLabel: string;
+  isSlaAvailable: boolean;
+  slaReference: string;
   createdByUserId: Uuid;
   createdByFullName: string | null;
   assignedToUserId: Uuid | null;
@@ -184,6 +220,24 @@ export interface TicketDetail extends TicketViewPermissionFlags {
   status: TicketStatus;
   priority: TicketPriority;
   severity: TicketSeverity;
+  categoryId: Uuid | null;
+  categorySlug: string | null;
+  categoryName: string | null;
+  categoryDescription: string | null;
+  initialOperationalReasonId: Uuid | null;
+  initialOperationalReasonName: string | null;
+  currentOperationalReasonId: Uuid | null;
+  currentOperationalReasonName: string | null;
+  slaPolicyId: Uuid | null;
+  slaPolicyName: string | null;
+  slaBusinessCalendarKey: string | null;
+  firstResponseDueAt: IsoTimestamp | null;
+  resolutionDueAt: IsoTimestamp | null;
+  slaStatus: TicketSlaStatus;
+  slaStatusLabel: string;
+  isSlaAvailable: boolean;
+  slaReference: string;
+  allowedNextStatuses: TicketStatus[];
   closeReason: string | null;
   createdByUserId: Uuid;
   createdByFullName: string | null;
@@ -248,6 +302,20 @@ export interface SupportTicketQueueItem extends TicketViewPermissionFlags {
   status: TicketStatus;
   priority: TicketPriority;
   severity: TicketSeverity;
+  categoryId: Uuid | null;
+  categorySlug: string | null;
+  categoryName: string | null;
+  categoryDescription: string | null;
+  currentOperationalReasonId: Uuid | null;
+  currentOperationalReasonName: string | null;
+  slaPolicyId: Uuid | null;
+  slaPolicyName: string | null;
+  firstResponseDueAt: IsoTimestamp | null;
+  resolutionDueAt: IsoTimestamp | null;
+  slaStatus: TicketSlaStatus;
+  slaStatusLabel: string;
+  isSlaAvailable: boolean;
+  slaReference: string;
   createdByUserId: Uuid;
   createdByFullName: string | null;
   assignedToUserId: Uuid | null;
@@ -281,6 +349,24 @@ export interface SupportTicketDetail extends TicketViewPermissionFlags {
   status: TicketStatus;
   priority: TicketPriority;
   severity: TicketSeverity;
+  categoryId: Uuid | null;
+  categorySlug: string | null;
+  categoryName: string | null;
+  categoryDescription: string | null;
+  initialOperationalReasonId: Uuid | null;
+  initialOperationalReasonName: string | null;
+  currentOperationalReasonId: Uuid | null;
+  currentOperationalReasonName: string | null;
+  slaPolicyId: Uuid | null;
+  slaPolicyName: string | null;
+  slaBusinessCalendarKey: string | null;
+  firstResponseDueAt: IsoTimestamp | null;
+  resolutionDueAt: IsoTimestamp | null;
+  slaStatus: TicketSlaStatus;
+  slaStatusLabel: string;
+  isSlaAvailable: boolean;
+  slaReference: string;
+  allowedNextStatuses: TicketStatus[];
   closeReason: string | null;
   createdByUserId: Uuid;
   createdByFullName: string | null;
@@ -438,6 +524,18 @@ export interface SupportTicketIntakeContact {
   jobTitle: string | null;
   isPrimary: boolean;
   createdAt: IsoTimestamp;
+}
+
+export interface SupportTicketClassificationOption {
+  optionKind: 'category' | 'operational_reason';
+  optionId: Uuid;
+  slug: string;
+  name: string;
+  description: string | null;
+  reasonType: TicketOperationalReasonType | null;
+  appliesToStatus: TicketStatus | null;
+  status: TicketReferenceStatus;
+  sortOrder: number;
 }
 
 export type CustomerProductLine =
@@ -758,6 +856,8 @@ export interface RpcCreateTicketPayload {
   priority?: TicketPriority;
   severity?: TicketSeverity;
   requesterContactId?: Uuid | null;
+  categoryId?: Uuid | null;
+  operationalReasonId?: Uuid | null;
 }
 export type RpcCreateTicketResponse = TicketRecord;
 
@@ -765,8 +865,26 @@ export interface RpcUpdateTicketStatusPayload {
   ticketId: Uuid;
   status: TicketStatusUpdateTarget;
   note?: string | null;
+  operationalReasonId?: Uuid | null;
 }
 export type RpcUpdateTicketStatusResponse = TicketRecord;
+
+export interface RpcSupportUpdateTicketClassificationPayload {
+  ticketId: Uuid;
+  categoryId: Uuid;
+  operationalReasonId?: Uuid | null;
+  note?: string | null;
+}
+export type RpcSupportUpdateTicketClassificationResponse = TicketRecord;
+
+export interface RpcSupportUpdateTicketPrioritySeverityPayload {
+  ticketId: Uuid;
+  priority: TicketPriority;
+  severity: TicketSeverity;
+  operationalReasonId?: Uuid | null;
+  note?: string | null;
+}
+export type RpcSupportUpdateTicketPrioritySeverityResponse = TicketRecord;
 
 export interface RpcAssignTicketPayload {
   ticketId: Uuid;
