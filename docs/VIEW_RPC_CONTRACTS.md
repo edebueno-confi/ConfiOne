@@ -132,6 +132,31 @@ Fase 8.11:
 - O frontend nao calcula due date, status de SLA, origem de policy, pausa ou breach; esses sinais sao derivados no backend/read model.
 - Pausa por status, notificacao externa e calculo por horario util completo continuam fora do contrato ate decisao explicita.
 
+Fase 8.15:
+- A fundacao customer-facing do Portal Cliente B2B foi materializada sem auth paralela e sem frontend como source of truth.
+- `tenant_role` agora inclui papeis customer-facing:
+  - `customer_user`
+  - `customer_manager`
+- O acesso customer-facing exige membership ativa, tenant explicito e contato ativo vinculado ao usuario autenticado.
+- A leitura do portal cliente passa apenas por:
+  - `vw_customer_portal_auth_context`
+  - `vw_customer_portal_profile_context`
+  - `vw_customer_portal_ticket_list`
+  - `vw_customer_portal_ticket_detail`
+  - `vw_customer_portal_ticket_timeline`
+  - `vw_customer_portal_ticket_attachments`
+  - `vw_customer_portal_knowledge_articles`
+- A escrita customer-facing passa apenas por:
+  - `rpc_customer_create_ticket`
+  - `rpc_customer_add_ticket_message`
+  - `rpc_customer_get_attachment_download_url`
+  - `rpc_customer_acknowledge_ticket_update`
+- As views removem contexto interno de suporte, notas internas, engenharia, SLA interno, audit bruto, advisory, drafts, Knowledge interna/restrita e storage path.
+- Download de evidencia no portal usa grant curto e a edge function `ticket-evidence-download`; o frontend nao recebe `storage_bucket`, `storage_object_path` ou URL permanente.
+- `customer_ticket_update_acknowledgements` registra leitura customer-facing sem permitir DML direto por `authenticated`.
+- `customer_user` ve tickets do proprio contato/criacao; `customer_manager` ve tickets do proprio tenant; ambos continuam bloqueados contra cross-tenant.
+- O frontend em `/portal`, `/portal/tickets` e `/portal/tickets/:ticketId` consome somente esses contratos e nao calcula permissao, SLA, status, analytics ou roteamento.
+
 Fase 4:
 - Knowledge Base agora possui núcleo editorial real com views internas contratuais e RPCs administrativas próprias.
 - O frontend administrativo futuro deve consumir a superfície de leitura apenas por:

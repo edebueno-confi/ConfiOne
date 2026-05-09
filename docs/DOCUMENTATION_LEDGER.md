@@ -18,6 +18,53 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 8.15 - Customer Portal Contract Foundation V3
+- fase: `8.15`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-09`
+- resumo funcional: foi criada a fundacao contratual customer-facing do portal cliente B2B, com roles de cliente, read models seguros, RPCs minimas, rotas de foundation e boundary clara entre publico, cliente autenticado e operacao interna.
+- docs alterados:
+  - `docs/CUSTOMER_PORTAL_CONTRACT_FOUNDATION_V3.md`
+  - `docs/CUSTOMER_PORTAL_AND_OMNI_FOUNDATION_V3.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - `vw_customer_portal_auth_context`
+  - `vw_customer_portal_profile_context`
+  - `vw_customer_portal_ticket_list`
+  - `vw_customer_portal_ticket_detail`
+  - `vw_customer_portal_ticket_timeline`
+  - `vw_customer_portal_ticket_attachments`
+  - `vw_customer_portal_knowledge_articles`
+  - `rpc_customer_create_ticket`
+  - `rpc_customer_add_ticket_message`
+  - `rpc_customer_get_attachment_download_url`
+  - `rpc_customer_acknowledge_ticket_update`
+- telas afetadas:
+  - `/portal`
+  - `/portal/tickets`
+  - `/portal/tickets/:ticketId`
+  - `/login`
+- runtime/UI:
+  - frontend customer-facing minimo consome apenas contratos reais
+  - login permite redirect autenticado para `/portal` sem exigir gate interno admin/support
+  - nao foram criados dashboard fake, SLA publico, chat, IA ou Omni Inbox
+- riscos restantes:
+  - upload de evidencia pelo cliente, administracao customer-facing de usuarios, Omni Inbox real e IA operacional continuam fora do corte
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+- impacto na FAQ futura:
+  - define a fronteira segura entre cliente B2B autenticado, Help Center publico e operacao interna antes de prometer portal ou IA
+
 ### Fase 8.14 - Buildout Status Checkpoint V3
 - fase: `8.14`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

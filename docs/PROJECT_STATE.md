@@ -43,6 +43,8 @@ Documentos prioritários:
 - `TICKET_KNOWLEDGE_LINKING_MIGRATION_DESIGN.md`
 - `TICKET_KNOWLEDGE_PUBLIC_LINK_CONTRACT_REVIEW.md`
 - `TENANT_SUPPORT_POLICY_AND_SLA_AUTOMATION_V3.md`
+- `CUSTOMER_PORTAL_CONTRACT_FOUNDATION_V3.md`
+- `CUSTOMER_PORTAL_AND_OMNI_FOUNDATION_V3.md`
 - `reports/KNOWLEDGE_LEGACY_CURATION_BACKLOG.md`
 - `reports/LEGACY_CORPUS_EDITORIAL_AUDIT.md`
 - `knowledge/LEGACY_CORPUS_HUMAN_CURATION_SPRINT.md`
@@ -82,9 +84,10 @@ Documentos históricos:
 - O lote `Support Operations Usability Completion V3` consolidou copy operacional do suporte após SLA/anexos/handoff, removendo termos técnicos visíveis ao operador sem alterar contratos ou criar nova regra.
 - O blueprint `Customer Portal Readiness Blueprint V3` preparou o desenho futuro do portal cliente B2B sem implementar UI, auth paralela ou contratos fake.
 - O `Buildout Status Checkpoint V3` consolidou o estado atual do buildout e definiu os próximos blocos grandes recomendados sem implementar produto novo.
+- O lote `Customer Portal Contract Foundation V3` criou a fundacao customer-facing real do portal B2B com roles `customer_user`/`customer_manager`, read models `vw_customer_portal_*`, RPCs `rpc_customer_*`, rotas `/portal`, `/portal/tickets` e `/portal/tickets/:ticketId`, fixture QA e testes de isolamento, sem portal fake, SLA publico, IA ou Omni Inbox.
 - Nenhuma ação fake foi habilitada no frontend; ações sem contrato completo seguem bloqueadas para lote futuro.
 - Os 8 candidatos documentais da Knowledge continuam pendentes, nao aprovados, nao publicados e nao injetados automaticamente no Help Center.
-- Próximo bloco recomendado: `Customer Portal Contract Foundation V3`.
+- Próximo bloco recomendado: `Customer Portal Secure Evidence Upload V3` ou `Omni Inbox Thread Foundation V3`, conforme prioridade entre colaboracao do cliente e canais externos.
 
 ## Estado real do repositório em 2026-04-30
 

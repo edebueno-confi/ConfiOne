@@ -38,6 +38,9 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 | `/help/genius` | pronta para leitura publicada | `vw_public_knowledge_space_resolver`, `vw_public_knowledge_navigation`, `vw_public_knowledge_articles_list`, `rpc_public_search_knowledge_articles` | depende de artigos publicados reais; candidatos atuais continuam internos | medio |
 | `/help/genius/articles` | pronta para lista publicada | `vw_public_knowledge_articles_list`, navegacao publica | busca local de lista existe; busca RPC fica na home | baixo |
 | `/help/genius/articles/:slug` | pronta para artigo publicado | `vw_public_knowledge_article_detail` | precisa garantir estados de slug ausente e links relacionados sem vazar conteudo interno | medio |
+| `/portal` | foundation funcional customer-facing | `vw_customer_portal_profile_context`, `vw_customer_portal_ticket_list` | ainda nao e portal completo; sem SLA publico, IA, Omni Inbox ou upload do cliente | medio |
+| `/portal/tickets` | foundation funcional customer-facing | `vw_customer_portal_ticket_list`, `rpc_customer_create_ticket` | criacao minima de ticket sem categoria/SLA manual; upload do cliente fica para lote futuro | medio |
+| `/portal/tickets/:ticketId` | foundation funcional customer-facing | `vw_customer_portal_ticket_detail`, `vw_customer_portal_ticket_timeline`, `vw_customer_portal_ticket_attachments`, `vw_customer_portal_knowledge_articles`, RPCs customer | falta upload customer-facing, colaboracao avancada e preferencias de notificacao | medio |
 
 ## Lacunas por dominio
 
@@ -113,6 +116,7 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 - Status Fase 8.12: a usabilidade operacional do suporte foi consolidada com ajuste conservador de copy tecnica visivel, preservando contratos, thread, composer, anexos, SLA, handoff e customer context.
 - Status Fase 8.13: o blueprint de readiness do portal cliente B2B foi criado sem implementar UI, auth paralela ou contratos fake.
 - Status Fase 8.14: o checkpoint geral de buildout consolidou pronto/parcial/bloqueado e os proximos blocos grandes sem implementar produto novo.
+- Status Fase 8.15: a foundation contratual customer-facing foi criada com `customer_user`/`customer_manager`, views `vw_customer_portal_*`, RPCs `rpc_customer_*`, rotas `/portal`, `/portal/tickets` e `/portal/tickets/:ticketId`, sem expor audit, engenharia, SLA interno, drafts, storage path ou Knowledge interna.
 - Contratos ainda necessarios: calculo por horario util completo; pausa objetiva de SLA; automacao/notificacao de SLA se Produto decidir; arquivamento seguro de evidencia.
 - Riscos: expor nota interna ao cliente, criar transicao invalida de status, enviar artigo sem URL publica segura.
 - Dependencias: RLS de ticketing, auditoria de eventos e regra de permissao por role.
@@ -170,14 +174,27 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 
 ## Proximo lote tecnico recomendado
 
-### Lote: Customer Portal Contract Foundation V3
+### Lote: Customer Portal Secure Evidence Upload V3
 
-Objetivo: criar a fundacao contratual customer-facing do futuro portal cliente B2B, sem portal completo e sem expor dados internos.
+Objetivo: permitir upload customer-facing de evidencias pelo cliente B2B autenticado, reaproveitando storage governado sem expor bucket/path nem criar upload inseguro.
 
 Ordem sugerida:
-1. Definir auth/tenancy customer-facing aderente a `AUTH_CONTEXT_STRATEGY.md`.
-2. Criar read models `customer_portal_*` com security barrier e testes de vazamento.
-3. Criar RPCs minimas para abertura/acompanhamento de ticket somente se regras estiverem documentadas.
+1. Criar intent/RPC customer-facing de upload, separado do fluxo interno de suporte.
+2. Validar tenant, ticket, contato, tipo e tamanho no backend.
+3. Reaproveitar bucket privado `ticket-evidence` e edge function segura sem expor path.
+4. Atualizar `/portal/tickets/:ticketId` apenas com acao real e estados honestos.
+5. Cobrir cross-tenant, usuario revogado, path leak, ticket_event e audit_log.
+
+### Lote alternativo: Omni Inbox Thread Foundation V3
+
+Objetivo: criar a fundacao de threads/canais externos sem implementar WhatsApp, email real ou IA.
+
+Ordem sugerida:
+1. Modelar thread separada de ticket.
+2. Criar vinculo ticket-thread.
+3. Criar ingestao sanitizada por RPC/worker.
+4. Garantir RLS, audit e payload bruto isolado.
+5. Expor apenas read models operacionais seguros.
 4. Reutilizar governanca de evidencias com grant curto e sem path sensivel.
 5. Validar que notas internas, engenharia, audit logs e perfil operacional sensivel nunca aparecem ao cliente.
 
