@@ -15,13 +15,24 @@ import type {
   RpcCustomerAddTicketMessageResponse,
   RpcCustomerCreateTicketPayload,
   RpcCustomerCreateTicketResponse,
+  RpcCustomerCreateTicketAttachmentUploadResponse,
   RpcCustomerGetAttachmentDownloadUrlPayload,
   RpcCustomerGetAttachmentDownloadUrlResponse,
+  RpcCustomerRegisterTicketAttachmentResponse,
   TicketEventType,
   TicketStatus,
   TicketTimelineEntryType,
   Uuid,
 } from '../../contracts/support-contracts';
+
+export const CUSTOMER_PORTAL_ATTACHMENT_MAX_SIZE_BYTES = 10 * 1024 * 1024;
+
+export const CUSTOMER_PORTAL_ATTACHMENT_ALLOWED_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+] as const;
 
 function requireClient() {
   return requireSupabaseBrowserClient();
@@ -54,15 +65,19 @@ async function requireActiveSessionToken() {
   return session.access_token;
 }
 
-async function callSupabaseFunctionJson<T>(relativeUrl: string): Promise<T> {
+async function callSupabaseFunctionJson<T>(
+  relativeUrl: string,
+  init: RequestInit = {},
+): Promise<T> {
   const { supabaseAnonKey, supabaseUrl } = requireSupabaseFunctionBaseUrl();
   const accessToken = await requireActiveSessionToken();
   const response = await fetch(`${supabaseUrl}${relativeUrl}`, {
+    ...init,
     headers: {
       Authorization: `Bearer ${accessToken}`,
       apikey: supabaseAnonKey,
+      ...(init.headers ?? {}),
     },
-    method: 'GET',
   });
   const payload = (await response.json().catch(() => null)) as
     | { error?: string }
@@ -73,6 +88,23 @@ async function callSupabaseFunctionJson<T>(relativeUrl: string): Promise<T> {
   }
 
   return payload as T;
+}
+
+function mapAttachmentUploadContract(
+  row: Record<string, unknown>,
+): RpcCustomerCreateTicketAttachmentUploadResponse {
+  return {
+    attachmentId: String(row.attachment_id),
+    uploadIntentId: String(row.upload_intent_id),
+    ticketId: String(row.ticket_id),
+    tenantId: String(row.tenant_id),
+    displayName: String(row.display_name),
+    contentType: String(row.content_type),
+    sizeBytes: Number(row.size_bytes ?? 0),
+    maxSizeBytes: Number(row.max_size_bytes ?? CUSTOMER_PORTAL_ATTACHMENT_MAX_SIZE_BYTES),
+    expiresAt: String(row.expires_at),
+    uploadUrl: String(row.upload_url),
+  };
 }
 
 function mapAuthContext(row: Record<string, unknown>): CustomerPortalAuthContext {
@@ -366,6 +398,52 @@ export async function downloadCustomerPortalTicketAttachment(attachmentId: Uuid)
     signedUrl: string;
     expiresAt: string;
   }>(downloadContract.downloadUrl);
+}
+
+export async function uploadCustomerPortalTicketAttachment(input: {
+  file: File;
+  tenantId: Uuid;
+  ticketId: Uuid;
+}): Promise<RpcCustomerRegisterTicketAttachmentResponse> {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_customer_create_ticket_attachment_upload',
+    {
+      p_content_type: input.file.type,
+      p_original_filename: input.file.name,
+      p_size_bytes: input.file.size,
+      p_tenant_id: input.tenantId,
+      p_ticket_id: input.ticketId,
+    },
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao preparar o upload seguro da evidência.');
+  }
+
+  const contractRow = Array.isArray(data) ? data[0] : data;
+  if (!contractRow) {
+    throw new Error('O backend não retornou a intenção de upload esperada.');
+  }
+
+  const uploadContract = mapAttachmentUploadContract(
+    contractRow as Record<string, unknown>,
+  );
+  const formData = new FormData();
+  formData.append('file', input.file);
+
+  const payload = await callSupabaseFunctionJson<{
+    attachment?: Record<string, unknown>;
+  }>(uploadContract.uploadUrl, {
+    body: formData,
+    method: 'POST',
+  });
+
+  if (!payload.attachment) {
+    throw new Error('A função segura não devolveu a evidência registrada.');
+  }
+
+  return mapAttachment(payload.attachment) satisfies RpcCustomerRegisterTicketAttachmentResponse;
 }
 
 export async function acknowledgeCustomerPortalTicketUpdate(

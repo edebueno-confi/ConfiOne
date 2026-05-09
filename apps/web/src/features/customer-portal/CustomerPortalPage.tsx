@@ -31,6 +31,8 @@ import {
   acknowledgeCustomerPortalTicketUpdate,
   addCustomerPortalTicketMessage,
   createCustomerPortalTicket,
+  CUSTOMER_PORTAL_ATTACHMENT_ALLOWED_TYPES,
+  CUSTOMER_PORTAL_ATTACHMENT_MAX_SIZE_BYTES,
   downloadCustomerPortalTicketAttachment,
   fetchCustomerPortalContexts,
   fetchCustomerPortalKnowledgeArticles,
@@ -38,6 +40,7 @@ import {
   fetchCustomerPortalTicketDetail,
   fetchCustomerPortalTicketTimeline,
   fetchCustomerPortalTickets,
+  uploadCustomerPortalTicketAttachment,
 } from './customer-portal-api';
 
 function formatDate(value: string | null) {
@@ -57,6 +60,16 @@ function mapError(error: unknown, fallback: string) {
   }
 
   return error instanceof Error ? error.message : fallback;
+}
+
+function describeCustomerAttachmentLimits() {
+  return 'PDF, PNG, JPG ou WebP até 10 MB.';
+}
+
+function isCustomerAttachmentTypeAllowed(file: File) {
+  return CUSTOMER_PORTAL_ATTACHMENT_ALLOWED_TYPES.includes(
+    file.type as (typeof CUSTOMER_PORTAL_ATTACHMENT_ALLOWED_TYPES)[number],
+  );
 }
 
 function PortalShell({ children }: { children: ReactNode }) {
@@ -532,6 +545,7 @@ export function CustomerPortalTicketPage() {
   const [articles, setArticles] = useState<CustomerPortalKnowledgeArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -617,6 +631,59 @@ export function CustomerPortalTicketPage() {
       window.open(download.signedUrl, '_blank', 'noopener,noreferrer');
     } catch (error) {
       setErrorMessage(mapError(error, 'Falha ao abrir download seguro.'));
+    }
+  }
+
+  async function handleAttachmentUpload(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!detail || !ticketId) {
+      return;
+    }
+
+    const fileInput = event.currentTarget.elements.namedItem('evidence') as HTMLInputElement | null;
+    const file = fileInput?.files?.[0] ?? null;
+
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    if (!detail.canAddMessage) {
+      setErrorMessage('Este status não aceita novas evidências pelo portal.');
+      return;
+    }
+
+    if (!file) {
+      setErrorMessage('Selecione uma evidência antes de enviar.');
+      return;
+    }
+
+    if (!isCustomerAttachmentTypeAllowed(file)) {
+      setErrorMessage(`Tipo de arquivo não permitido. Use ${describeCustomerAttachmentLimits()}`);
+      return;
+    }
+
+    if (file.size <= 0 || file.size > CUSTOMER_PORTAL_ATTACHMENT_MAX_SIZE_BYTES) {
+      setErrorMessage(`Tamanho inválido. Use ${describeCustomerAttachmentLimits()}`);
+      return;
+    }
+
+    setUploadingAttachment(true);
+
+    try {
+      await uploadCustomerPortalTicketAttachment({
+        file,
+        tenantId: detail.tenantId,
+        ticketId,
+      });
+      if (fileInput) {
+        fileInput.value = '';
+      }
+      setSuccessMessage('Evidência enviada com segurança.');
+      await load();
+    } catch (error) {
+      setErrorMessage(mapError(error, 'Falha ao enviar evidência pelo portal.'));
+    } finally {
+      setUploadingAttachment(false);
     }
   }
 
@@ -740,9 +807,35 @@ export function CustomerPortalTicketPage() {
       <aside className="min-h-0 space-y-4 overflow-y-auto">
         <Panel
           title="Evidências"
-          description="Downloads usam URL temporária segura. Path interno nunca é exibido."
+          description="Uploads e downloads usam contratos seguros. Endereços internos nunca são exibidos."
           className="p-4"
         >
+          {detail.canAddMessage ? (
+            <form className="mb-4 space-y-3" onSubmit={handleAttachmentUpload}>
+              <Field
+                label="Adicionar evidência"
+                description={describeCustomerAttachmentLimits()}
+              >
+                <input
+                  accept={CUSTOMER_PORTAL_ATTACHMENT_ALLOWED_TYPES.join(',')}
+                  className="block w-full rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-2 text-sm text-[color:var(--color-ink)] file:mr-3 file:rounded-full file:border-0 file:bg-[color:var(--color-brand-blue)]/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[color:var(--color-brand-blue)]"
+                  disabled={uploadingAttachment}
+                  name="evidence"
+                  type="file"
+                />
+              </Field>
+              <AppButton className="w-full" disabled={uploadingAttachment} type="submit">
+                {uploadingAttachment ? 'Enviando evidência...' : 'Enviar evidência'}
+              </AppButton>
+            </form>
+          ) : (
+            <div className="mb-4">
+              <InlineNotice tone="warning">
+                Este status não aceita novas evidências pelo portal.
+              </InlineNotice>
+            </div>
+          )}
+
           {attachments.length === 0 ? (
             <InlineNotice>Não há evidências visíveis para este ticket.</InlineNotice>
           ) : (
