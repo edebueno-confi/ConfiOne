@@ -22,6 +22,7 @@ import type {
   CustomerPortalKnowledgeArticle,
   CustomerPortalProfileContext,
   CustomerPortalTicketAttachment,
+  CustomerPortalTicketCollaborationState,
   CustomerPortalTicketDetail,
   CustomerPortalTicketListItem,
   CustomerPortalTicketTimelineItem,
@@ -30,6 +31,7 @@ import { useAuthContext } from '../auth/auth-context';
 import {
   acknowledgeCustomerPortalTicketUpdate,
   addCustomerPortalTicketMessage,
+  confirmCustomerPortalTicketResolved,
   createCustomerPortalTicket,
   CUSTOMER_PORTAL_ATTACHMENT_ALLOWED_TYPES,
   CUSTOMER_PORTAL_ATTACHMENT_MAX_SIZE_BYTES,
@@ -37,9 +39,11 @@ import {
   fetchCustomerPortalContexts,
   fetchCustomerPortalKnowledgeArticles,
   fetchCustomerPortalTicketAttachments,
+  fetchCustomerPortalTicketCollaborationState,
   fetchCustomerPortalTicketDetail,
   fetchCustomerPortalTicketTimeline,
   fetchCustomerPortalTickets,
+  requestCustomerPortalTicketReopen,
   uploadCustomerPortalTicketAttachment,
 } from './customer-portal-api';
 
@@ -540,6 +544,8 @@ export function CustomerPortalTicketsPage() {
 export function CustomerPortalTicketPage() {
   const { ticketId = '' } = useParams();
   const [detail, setDetail] = useState<CustomerPortalTicketDetail | null>(null);
+  const [collaborationState, setCollaborationState] =
+    useState<CustomerPortalTicketCollaborationState | null>(null);
   const [timeline, setTimeline] = useState<CustomerPortalTicketTimelineItem[]>([]);
   const [attachments, setAttachments] = useState<CustomerPortalTicketAttachment[]>([]);
   const [articles, setArticles] = useState<CustomerPortalKnowledgeArticle[]>([]);
@@ -547,6 +553,7 @@ export function CustomerPortalTicketPage() {
   const [submitting, setSubmitting] = useState(false);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const [message, setMessage] = useState('');
+  const [reopenReason, setReopenReason] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -559,13 +566,21 @@ export function CustomerPortalTicketPage() {
     setErrorMessage(null);
 
     try {
-      const [nextDetail, nextTimeline, nextAttachments, nextArticles] = await Promise.all([
+      const [
+        nextDetail,
+        nextCollaborationState,
+        nextTimeline,
+        nextAttachments,
+        nextArticles,
+      ] = await Promise.all([
         fetchCustomerPortalTicketDetail(ticketId),
+        fetchCustomerPortalTicketCollaborationState(ticketId),
         fetchCustomerPortalTicketTimeline(ticketId),
         fetchCustomerPortalTicketAttachments(ticketId),
         fetchCustomerPortalKnowledgeArticles(ticketId),
       ]);
       setDetail(nextDetail);
+      setCollaborationState(nextCollaborationState);
       setTimeline(nextTimeline);
       setAttachments(nextAttachments);
       setArticles(nextArticles);
@@ -604,7 +619,10 @@ export function CustomerPortalTicketPage() {
   }
 
   async function handleAcknowledge() {
-    const lastEntry = timeline[timeline.length - 1] ?? null;
+    const lastEntryId =
+      collaborationState?.latestTimelineEntryId ??
+      timeline[timeline.length - 1]?.timelineEntryId ??
+      null;
 
     setSubmitting(true);
     setErrorMessage(null);
@@ -612,10 +630,11 @@ export function CustomerPortalTicketPage() {
 
     try {
       await acknowledgeCustomerPortalTicketUpdate({
-        lastTimelineEntryId: lastEntry?.timelineEntryId ?? null,
+        lastTimelineEntryId: lastEntryId,
         ticketId,
       });
       setSuccessMessage('Atualização marcada como lida.');
+      await load();
     } catch (error) {
       setErrorMessage(mapError(error, 'Falha ao marcar atualização como lida.'));
     } finally {
@@ -647,7 +666,7 @@ export function CustomerPortalTicketPage() {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (!detail.canAddMessage) {
+    if (!(collaborationState?.canReply ?? detail.canAddMessage)) {
       setErrorMessage('Este status não aceita novas evidências pelo portal.');
       return;
     }
@@ -687,6 +706,53 @@ export function CustomerPortalTicketPage() {
     }
   }
 
+  async function handleConfirmResolution() {
+    if (!ticketId) {
+      return;
+    }
+
+    setSubmitting(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      await confirmCustomerPortalTicketResolved({ ticketId });
+      setSuccessMessage('Resolução confirmada. O ticket foi encerrado pelo contrato do portal.');
+      await load();
+    } catch (error) {
+      setErrorMessage(mapError(error, 'Falha ao confirmar resolução.'));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleRequestReopen(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!ticketId || !reopenReason.trim()) {
+      setErrorMessage('Informe o motivo para solicitar reabertura.');
+      return;
+    }
+
+    setSubmitting(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      await requestCustomerPortalTicketReopen({
+        reason: reopenReason,
+        ticketId,
+      });
+      setReopenReason('');
+      setSuccessMessage('Reabertura solicitada. A equipe Genius recebeu o retorno.');
+      await load();
+    } catch (error) {
+      setErrorMessage(mapError(error, 'Falha ao solicitar reabertura.'));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
@@ -714,7 +780,18 @@ export function CustomerPortalTicketPage() {
         </Link>
         <header className="mt-4 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <StatusPill tone="accent">{detail.customerStatusLabel}</StatusPill>
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusPill tone="accent">
+                {collaborationState?.customerStatusLabel ?? detail.customerStatusLabel}
+              </StatusPill>
+              {collaborationState?.hasNewUpdates ? (
+                <StatusPill tone="warning">
+                  {collaborationState.unreadCount} atualização(ões) nova(s)
+                </StatusPill>
+              ) : (
+                <StatusPill tone="default">Sem atualização nova</StatusPill>
+              )}
+            </div>
             <h1 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[color:var(--color-ink)]">
               {detail.title}
             </h1>
@@ -722,8 +799,11 @@ export function CustomerPortalTicketPage() {
               {detail.description}
             </p>
           </div>
-          <GhostButton disabled={submitting} onClick={() => void handleAcknowledge()}>
-            Marcar como lido
+          <GhostButton
+            disabled={submitting || !(collaborationState?.canAcknowledge ?? false)}
+            onClick={() => void handleAcknowledge()}
+          >
+            {submitting ? 'Registrando...' : 'Marcar como lido'}
           </GhostButton>
         </header>
 
@@ -731,6 +811,18 @@ export function CustomerPortalTicketPage() {
           <InfoLine label="Cliente" value={detail.tenantDisplayName} />
           <InfoLine label="Solicitante" value={detail.requesterContactFullName} />
           <InfoLine label="Atualizado" value={formatDate(detail.updatedAt)} />
+          <InfoLine
+            label="Última resposta Genius"
+            value={formatDate(collaborationState?.lastSupportResponseAt ?? null)}
+          />
+          <InfoLine
+            label="Sua última resposta"
+            value={formatDate(collaborationState?.lastCustomerMessageAt ?? null)}
+          />
+          <InfoLine
+            label="Última leitura"
+            value={formatDate(collaborationState?.lastAcknowledgedAt ?? null)}
+          />
         </div>
 
         {errorMessage ? (
@@ -781,7 +873,7 @@ export function CustomerPortalTicketPage() {
           )}
         </Panel>
 
-        {detail.canAddMessage ? (
+        {(collaborationState?.canReply ?? detail.canAddMessage) ? (
           <Panel title="Responder" description="Mensagem pública do cliente no ticket." className="mt-5">
             <form className="space-y-4" onSubmit={handleAddMessage}>
               <TextareaInput
@@ -806,11 +898,61 @@ export function CustomerPortalTicketPage() {
 
       <aside className="min-h-0 space-y-4 overflow-y-auto">
         <Panel
+          title="Resolução"
+          description="Ações customer-facing controladas pelo backend."
+          className="p-4"
+        >
+          {collaborationState?.canConfirmResolution ? (
+            <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3">
+              <p className="text-sm font-semibold text-[color:var(--color-ink)]">
+                O suporte marcou este ticket como resolvido.
+              </p>
+              <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
+                Confirme apenas se a operação voltou ao estado esperado.
+              </p>
+              <AppButton
+                className="mt-3 w-full"
+                disabled={submitting}
+                onClick={() => void handleConfirmResolution()}
+              >
+                Confirmar resolução
+              </AppButton>
+            </div>
+          ) : null}
+
+          {collaborationState?.canRequestReopen ? (
+            <form className="mt-3 space-y-3" onSubmit={handleRequestReopen}>
+              <Field
+                label="Solicitar reabertura"
+                description="Informe o motivo operacional para devolver o ticket ao suporte."
+              >
+                <TextareaInput
+                  onChange={(event) => setReopenReason(event.target.value)}
+                  placeholder="Descreva o que voltou a ocorrer."
+                  required
+                  value={reopenReason}
+                />
+              </Field>
+              <GhostButton className="w-full" disabled={submitting} type="submit">
+                Solicitar reabertura
+              </GhostButton>
+            </form>
+          ) : null}
+
+          {!collaborationState?.canConfirmResolution &&
+          !collaborationState?.canRequestReopen ? (
+            <InlineNotice>
+              Confirmação de resolução e reabertura ficam disponíveis apenas quando o status do ticket permitir.
+            </InlineNotice>
+          ) : null}
+        </Panel>
+
+        <Panel
           title="Evidências"
           description="Uploads e downloads usam contratos seguros. Endereços internos nunca são exibidos."
           className="p-4"
         >
-          {detail.canAddMessage ? (
+          {(collaborationState?.canReply ?? detail.canAddMessage) ? (
             <form className="mb-4 space-y-3" onSubmit={handleAttachmentUpload}>
               <Field
                 label="Adicionar evidência"

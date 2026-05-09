@@ -6,6 +6,7 @@ import type {
   CustomerPortalKnowledgeArticle,
   CustomerPortalProfileContext,
   CustomerPortalTicketAttachment,
+  CustomerPortalTicketCollaborationState,
   CustomerPortalTicketDetail,
   CustomerPortalTicketListItem,
   CustomerPortalTicketTimelineItem,
@@ -13,12 +14,16 @@ import type {
   RpcCustomerAcknowledgeTicketUpdateResponse,
   RpcCustomerAddTicketMessagePayload,
   RpcCustomerAddTicketMessageResponse,
+  RpcCustomerConfirmTicketResolvedPayload,
+  RpcCustomerConfirmTicketResolvedResponse,
   RpcCustomerCreateTicketPayload,
   RpcCustomerCreateTicketResponse,
   RpcCustomerCreateTicketAttachmentUploadResponse,
   RpcCustomerGetAttachmentDownloadUrlPayload,
   RpcCustomerGetAttachmentDownloadUrlResponse,
   RpcCustomerRegisterTicketAttachmentResponse,
+  RpcCustomerRequestTicketReopenPayload,
+  RpcCustomerRequestTicketReopenResponse,
   TicketEventType,
   TicketStatus,
   TicketTimelineEntryType,
@@ -178,6 +183,30 @@ function mapTicketDetail(row: Record<string, unknown>): CustomerPortalTicketDeta
   };
 }
 
+function mapCollaborationState(
+  row: Record<string, unknown>,
+): CustomerPortalTicketCollaborationState {
+  return {
+    ticketId: String(row.ticket_id),
+    tenantId: String(row.tenant_id),
+    internalStatus: row.internal_status as TicketStatus,
+    customerStatusLabel: String(row.customer_status_label),
+    canReply: Boolean(row.can_reply),
+    canAcknowledge: Boolean(row.can_acknowledge),
+    canConfirmResolution: Boolean(row.can_confirm_resolution),
+    canRequestReopen: Boolean(row.can_request_reopen),
+    latestTimelineEntryId: (row.latest_timeline_entry_id as string | null) ?? null,
+    latestTimelineEntryAt: (row.latest_timeline_entry_at as string | null) ?? null,
+    lastAcknowledgedAt: (row.last_acknowledged_at as string | null) ?? null,
+    lastAcknowledgedTimelineEntryId:
+      (row.last_acknowledged_timeline_entry_id as string | null) ?? null,
+    unreadCount: Number(row.unread_count ?? 0),
+    hasNewUpdates: Boolean(row.has_new_updates),
+    lastCustomerMessageAt: (row.last_customer_message_at as string | null) ?? null,
+    lastSupportResponseAt: (row.last_support_response_at as string | null) ?? null,
+  };
+}
+
 function mapTimelineItem(row: Record<string, unknown>): CustomerPortalTicketTimelineItem {
   return {
     ticketId: String(row.ticket_id),
@@ -287,6 +316,21 @@ export async function fetchCustomerPortalTicketTimeline(ticketId: Uuid) {
   }
 
   return (data ?? []).map((row) => mapTimelineItem(row as Record<string, unknown>));
+}
+
+export async function fetchCustomerPortalTicketCollaborationState(ticketId: Uuid) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_customer_portal_ticket_collaboration_state')
+    .select('*')
+    .eq('ticket_id', ticketId)
+    .maybeSingle();
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar colaboração do ticket.');
+  }
+
+  return data ? mapCollaborationState(data as Record<string, unknown>) : null;
 }
 
 export async function fetchCustomerPortalTicketAttachments(ticketId: Uuid) {
@@ -468,4 +512,53 @@ export async function acknowledgeCustomerPortalTicketUpdate(
     tenantId: String(row.tenant_id),
     ticketId: String(row.ticket_id),
   } satisfies RpcCustomerAcknowledgeTicketUpdateResponse;
+}
+
+export async function confirmCustomerPortalTicketResolved(
+  payload: RpcCustomerConfirmTicketResolvedPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client
+    .rpc('rpc_customer_confirm_ticket_resolved', {
+      p_ticket_id: payload.ticketId,
+    })
+    .single();
+
+  if (error) {
+    throw toAppError(error, 'Falha ao confirmar resolução do ticket.');
+  }
+
+  const row = data as Record<string, unknown>;
+  return {
+    closedAt: (row.closed_at as string | null) ?? null,
+    customerStatusLabel: String(row.customer_status_label),
+    status: row.status as TicketStatus,
+    tenantId: String(row.tenant_id),
+    ticketId: String(row.ticket_id),
+  } satisfies RpcCustomerConfirmTicketResolvedResponse;
+}
+
+export async function requestCustomerPortalTicketReopen(
+  payload: RpcCustomerRequestTicketReopenPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client
+    .rpc('rpc_customer_request_ticket_reopen', {
+      p_reason: payload.reason,
+      p_ticket_id: payload.ticketId,
+    })
+    .single();
+
+  if (error) {
+    throw toAppError(error, 'Falha ao solicitar reabertura do ticket.');
+  }
+
+  const row = data as Record<string, unknown>;
+  return {
+    customerStatusLabel: String(row.customer_status_label),
+    status: row.status as TicketStatus,
+    tenantId: String(row.tenant_id),
+    ticketId: String(row.ticket_id),
+    updatedAt: String(row.updated_at),
+  } satisfies RpcCustomerRequestTicketReopenResponse;
 }
