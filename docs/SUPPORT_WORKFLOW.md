@@ -3,7 +3,7 @@
 ## Fluxo padrão
 1. Ticket criado.
 2. Classificação inicial por categoria operacional, quando disponível.
-3. Priorização e severidade com SLA interno derivado pelo backend.
+3. Priorização e severidade com SLA interno por tenant derivado pelo backend.
 4. Atribuição.
 5. Investigação.
 6. Resposta técnico-operacional ao cliente B2B ou time interno.
@@ -127,6 +127,15 @@
 - frontend nao calcula prazo, nao cria timer e nao inventa transicao de status
 - toda mudanca relevante de classificacao, prioridade/severidade ou status gera `ticket_event` e audit trail
 
+## Boundary materializado na Fase 8.11
+- politicas de SLA agora podem ser especificas por tenant, com fallback global controlado para preservar continuidade operacional
+- calendario de negocio MVP existe como metadata governada, mas o calculo de prazo ainda usa minutos corridos neste corte
+- `vw_support_ticket_sla_context`, `vw_support_tickets_queue` e `vw_support_ticket_detail` expõem origem da politica, calendario e prazos derivados pelo backend
+- `rpc_admin_upsert_ticket_sla_policy`, `rpc_admin_archive_ticket_sla_policy` e `rpc_admin_upsert_business_calendar` sao a superficie administrativa governada de SLA
+- `rpc_support_recalculate_ticket_sla` permite recalculo autorizado e gera evento quando ha mudanca relevante de SLA
+- frontend continua sem calcular SLA, sem criar timer e sem inferir breach
+- pausa por status, feriados aplicados ao calculo e notificacao externa continuam fora do contrato ate decisao explicita
+
 ## Boundary materializado na Fase 8.2
 - o historico anterior da timeline do ticket agora e carregado por `rpc_support_get_ticket_timeline`
 - a primeira carga continua usando `vw_support_ticket_timeline_recent`, mantendo payload inicial controlado
@@ -135,7 +144,7 @@
 - eventos e audit logs dessas mutacoes foram validados em pgTAP
 - candidatos de link publico seguro de Knowledge agora sao lidos por `vw_support_knowledge_public_link_candidates`
 - a view de link publico seguro nao expõe draft, internal, restricted ou artigo sem rota publica publicada
-- anexos, handoff tecnico estruturado, criacao assistida, classificacao e SLA interno foram fechados em lotes posteriores; notificacoes externas e politica por tenant continuam fora desta fase
+- anexos, handoff tecnico estruturado, criacao assistida, classificacao, SLA interno e politica por tenant foram fechados em lotes posteriores; notificacoes externas, pausa de SLA e calendario util completo continuam fora desta fase
 
 ## Diretrizes de UX da fase 6.2.1
 - a fila continua como ponto de partida e precisa dominar a triagem

@@ -31,8 +31,8 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 | `/admin/knowledge` | visual pronta, funcional parcial | `vw_admin_knowledge_*`, `vw_admin_knowledge_*_v2`, RPCs admin de Knowledge, advisories | falta fluxo operacional de publicacao governada, backlog de revisao e importacao controlada do corpus | alto |
 | `/admin/access` | funcional parcial com hardening operacional | `vw_admin_access_users`, `vw_admin_access_user_detail`, `vw_admin_access_memberships`, RPCs de membership endurecidas | falta convite formal, reset de senha e motivo obrigatorio por mutacao se Produto exigir | medio |
 | `/admin/system` | funcional parcial com observabilidade segura | `vw_admin_system_audit_events`, `vw_admin_system_health_checks`, `vw_admin_system_operational_summary` | falta observabilidade externa real e incident hints de fontes alem do banco local | medio |
-| `/support/queue` | funcional com governanca operacional parcial | `vw_support_tickets_queue`, `vw_support_customer_360`, `vw_support_assignable_agents`, `vw_support_ticket_classification_options`, `rpc_create_ticket` | falta politica por tenant, SLA com calendario completo e automacao de breach | medio |
-| `/support/tickets/:ticketId` | funcional com contratos operacionais reais | `vw_support_ticket_detail`, `vw_support_ticket_timeline_recent`, `rpc_support_get_ticket_timeline`, `vw_support_customer_account_context`, RPCs de status/classificacao/prioridade, anexos, handoff e mensagens | falta automacao de SLA, arquivamento de evidencia e notificacao externa se Produto decidir | medio |
+| `/support/queue` | funcional com governanca operacional parcial | `vw_support_tickets_queue`, `vw_support_customer_360`, `vw_support_assignable_agents`, `vw_support_ticket_classification_options`, `vw_support_ticket_sla_context`, `rpc_create_ticket` | falta usabilidade final da operacao, calculo de SLA por horario util completo e automacao de breach se Produto decidir | medio |
+| `/support/tickets/:ticketId` | funcional com contratos operacionais reais | `vw_support_ticket_detail`, `vw_support_ticket_timeline_recent`, `rpc_support_get_ticket_timeline`, `vw_support_customer_account_context`, RPCs de status/classificacao/prioridade/SLA, anexos, handoff e mensagens | falta arquivamento de evidencia, pausa de SLA e notificacao externa se Produto decidir | medio |
 | `/support/customers` | visual pronta, funcional parcial | `vw_support_customer_360`, `vw_support_customer_account_context` | falta busca/filtros operacionais persistidos e criacao/edicao governada de perfil de conta | medio |
 | `/support/customers/:tenantId` | visual pronta, funcional parcial | `vw_support_customer_360`, `vw_support_customer_account_context`, `vw_support_customer_recent_tickets`, `vw_support_customer_recent_events` | falta historico completo, saude operacional versionada e gestao de contatos/integracoes | alto |
 | `/help/genius` | pronta para leitura publicada | `vw_public_knowledge_space_resolver`, `vw_public_knowledge_navigation`, `vw_public_knowledge_articles_list`, `rpc_public_search_knowledge_articles` | depende de artigos publicados reais; candidatos atuais continuam internos | medio |
@@ -57,7 +57,7 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 | Criacao de ticket pelo suporte | contrato backend existe; falta UI/fluxo de entrada | `rpc_create_ticket` foi validada como contrato real, mas a superficie operacional de criacao ainda precisa lote proprio |
 | Conversa com anexos e eventos completos | parcial; anexos ainda precisam migration/schema/RPC | timeline recente e historico paginado existem; anexos continuam fora deste lote |
 | Notas internas com governanca de visibilidade | implementado no contrato atual; manter testes e copy | RPC e eventos/audit logs foram validados no fluxo operacional |
-| Status/responsavel com SLA e motivo | implementado para MVP interno | status, categoria, motivo e SLA interno passam por read models/RPCs reais; politica por tenant e automacao seguem pendentes |
+| Status/responsavel com SLA e motivo | implementado para MVP interno | status, categoria, motivo e SLA interno passam por read models/RPCs reais; politica por tenant foi materializada, pausa/calendario util completo e automacao seguem pendentes |
 | Central de ajuda dentro do ticket com link publico seguro | contrato de leitura criado; falta acao governada de envio/copia | `vw_support_knowledge_public_link_candidates` retorna apenas artigos publicos publicados com rota segura |
 | Handoff tecnico/engenharia | depende de decisao de produto e schema futuro | nao deve virar campo livre sem regra de ownership |
 
@@ -109,7 +109,8 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 - Status Fase 8.8: `/engineering` e `/engineering/work-items/:workItemId` foram criadas como superficie propria para operar `engineering_work_items`, com fila, detalhe, ownership, status tecnico, updates estruturados e retorno ao suporte por contrato real.
 - Status Fase 8.9: `/support/tickets/:ticketId` passou a enviar evidencias reais com bucket privado `ticket-evidence`, policies por tenant/ticket, intent de upload, metadata sanitizada e download temporario curto sem expor `storage_bucket` nem `storage_object_path` ao frontend.
 - Status Fase 8.10: classificacao operacional, motivos, prioridade/severidade, SLA interno e transicoes de status foram formalizados com `ticket_categories`, `ticket_operational_reasons`, `ticket_sla_policies`, read models e RPCs conectados ao intake/fila/workspace.
-- Contratos ainda necessarios: politicas por tenant; calendario de negocio completo; automacao/notificacao de SLA se Produto decidir; arquivamento seguro de evidencia.
+- Status Fase 8.11: politicas de SLA por tenant, calendario de negocio MVP, fallback global seguro, recalculo backend e sinais internos de SLA foram materializados sem timer fake ou promessa publica.
+- Contratos ainda necessarios: calculo por horario util completo; pausa objetiva de SLA; automacao/notificacao de SLA se Produto decidir; arquivamento seguro de evidencia.
 - Riscos: expor nota interna ao cliente, criar transicao invalida de status, enviar artigo sem URL publica segura.
 - Dependencias: RLS de ticketing, auditoria de eventos e regra de permissao por role.
 - Criterios de aceite: todo comando passa por RPC, toda mutacao gera evento/audit trail, frontend nao monta URL publica por heuristica.
@@ -166,45 +167,34 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 
 ## Proximo lote tecnico recomendado
 
-### Lote: Tenant Support Policy And SLA Automation V3
+### Lote: Support Operations Usability Completion V3
 
-Objetivo: evoluir a governanca de SLA de MVP global para politicas por tenant/segmento, calendario de negocio e sinais de breach sem criar notificacao externa ou automacao falsa.
+Objetivo: consolidar a usabilidade operacional de `/support/queue` e `/support/tickets/:ticketId` depois de intake, classificacao, SLA por tenant, anexos seguros, handoff tecnico, Engineering Workspace e Customer Account Profile.
 
 Ordem sugerida:
-1. Auditar `ticket_sla_policies`, categorias e tenants com perfil operacional.
-2. Definir se politica por tenant e permitida no MVP ou se fica restrita a plataforma.
-3. Criar read model de politica efetiva por ticket/tenant.
-4. Criar RPC administrativa para gerir politica de SLA com audit trail.
-5. Criar derivacao backend de breach/at risk sem timer de frontend.
-6. Conectar apenas estados reais na fila e workspace.
+1. Auditar excesso visual, duplicidade de acoes e copy tecnica.
+2. Consolidar estados vazios/loading/erro/permissao.
+3. Melhorar leitura combinada de SLA, anexos, handoff, classificacao e contexto B2B sem criar regra nova.
+4. Validar navegacao entre fila, ticket e Engineering Workspace.
+5. Rodar regressao visual/scroll e suite web.
 
 Migrations necessarias:
-- sim, se houver politica por tenant, calendario de negocio ou historico de ajustes.
+- nao esperadas; qualquer necessidade de backend deve virar lote tecnico proprio.
 
-Views necessarias:
-- politica efetiva de SLA por ticket
-- resumo operacional de tickets em risco por tenant
-
-RPCs necessarias:
-- criar/atualizar politica de SLA governada
-- recalcular SLA de tickets elegiveis, se Produto aprovar
+Views/RPCs necessarias:
+- reaproveitar contratos atuais; nao criar acao funcional nova sem contrato real.
 
 RLS/policies:
-- escrita limitada a `platform_admin` ou papel aprovado
-- leitura por suporte apenas no escopo do tenant acessivel
+- sem alteracao prevista.
 
 Audit logs:
-- toda criacao/alteracao de politica e recalculo precisa audit trail.
+- sem alteracao prevista.
 
 Fixtures/testes:
-- tenant com politica propria
-- tenant sem politica propria usando default global
-- ticket sem SLA por ausencia de politica
-- cross-tenant bloqueado
+- usar fixture local ja expandida com SLA, evidencia, handoff e perfil de cliente.
 
 Impacto no front:
-- mostrar SLA efetivo e origem da politica sem expor regra tecnica crua
-- manter notificacoes externas e automacao de escalonamento fora ate contrato explicito
+- polish operacional seguro, mantendo cockpits sem scroll global, sem scroll horizontal, sem termos tecnicos crus e com `Indisponivel` para ausencia real de dado.
 
 ## Decisoes que ainda dependem de Produto
 - Se Support e Admin devem convergir em um App Shell unico.

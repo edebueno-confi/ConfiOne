@@ -108,6 +108,30 @@ Fase 8.10:
 - SLA e governanca interna calculada no backend por politica ativa; o frontend nao calcula prazo nem timer.
 - Transicoes invalidas de status falham no backend e mudancas relevantes geram `ticket_event` e `audit.audit_logs`.
 
+Fase 8.11:
+- A governanca de SLA evoluiu para politicas tenant-aware com fallback global controlado.
+- O calendario de negocio MVP foi materializado como metadata governada, sem ainda aplicar calculo completo por horario util/feriado.
+- Estruturas novas ou ampliadas:
+  - `business_calendars`
+  - `business_calendar_weekly_hours`
+  - `business_calendar_holidays`
+  - `ticket_sla_policies.tenant_id`
+  - `ticket_sla_policies.business_calendar_id`
+  - `ticket_sla_policies.archived_at`
+- O frontend continua lendo SLA apenas por:
+  - `vw_support_ticket_sla_context`
+  - `vw_support_tickets_queue`
+  - `vw_support_ticket_detail`
+- Admin/operacao governada de policy passa por:
+  - `vw_admin_ticket_sla_policies`
+  - `rpc_admin_upsert_business_calendar`
+  - `rpc_admin_upsert_ticket_sla_policy`
+  - `rpc_admin_archive_ticket_sla_policy`
+  - `rpc_support_recalculate_ticket_sla`
+- `app_private.resolve_ticket_sla_policy(tenant_id, category_id, priority, severity)` aplica precedencia tenant > global, com teste cobrindo match especifico e fallback.
+- O frontend nao calcula due date, status de SLA, origem de policy, pausa ou breach; esses sinais sao derivados no backend/read model.
+- Pausa por status, notificacao externa e calculo por horario util completo continuam fora do contrato ate decisao explicita.
+
 Fase 4:
 - Knowledge Base agora possui núcleo editorial real com views internas contratuais e RPCs administrativas próprias.
 - O frontend administrativo futuro deve consumir a superfície de leitura apenas por:

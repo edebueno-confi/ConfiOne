@@ -65,6 +65,9 @@ RPCs:
 ## SLA
 O SLA deste lote e governanca operacional interna. Ele nao dispara notificacao externa, nao cria promessa publica e nao usa timer decorativo. Quando nao houver politica aplicavel, a UI deve mostrar `Indisponivel` ou `Sem politica definida`.
 
+## Evolucao posterior
+O lote `Tenant Support Policy And SLA Automation V3` ampliou este contrato com politica tenant-aware, calendario de negocio MVP, fallback global seguro e recalculo backend. O detalhamento vigente fica em `docs/TENANT_SUPPORT_POLICY_AND_SLA_AUTOMATION_V3.md`.
+
 ## Testes
 Cobertura adicionada em `supabase/tests/026_ticket_classification_and_sla_governance.sql`:
 - opcoes de categoria/motivo visiveis por contrato;
@@ -79,7 +82,7 @@ Cobertura adicionada em `supabase/tests/026_ticket_classification_and_sla_govern
 - DML direto bloqueado.
 
 ## Riscos restantes
-- Politicas de categoria/SLA por tenant ainda nao foram implementadas.
-- Calendario de negocio ainda e chave simples de politica, sem agenda/feriados.
+- Calculo de SLA por horario util real ainda nao foi implementado.
+- Pausa de SLA por status ainda precisa regra objetiva.
 - Notificacoes de SLA e escalonamento automatico continuam fora do escopo.
 - Arquivamento seguro de evidencia continua em lote separado.

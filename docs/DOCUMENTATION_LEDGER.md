@@ -18,6 +18,51 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 8.11 - Tenant Support Policy And SLA Automation V3
+- fase: `8.11`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-09`
+- resumo funcional: políticas de SLA por tenant, calendário de negócio MVP, fallback global controlado, recalculo backend e sinais internos de SLA foram materializados sem notificação externa, timer fake ou promessa pública automática.
+- docs alterados:
+  - `docs/TENANT_SUPPORT_POLICY_AND_SLA_AUTOMATION_V3.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/TICKET_CLASSIFICATION_AND_SLA_GOVERNANCE_V3.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - `vw_support_ticket_sla_context`
+  - `vw_support_tickets_queue`
+  - `vw_support_ticket_detail`
+  - `vw_admin_ticket_sla_policies`
+  - `rpc_admin_upsert_business_calendar`
+  - `rpc_admin_upsert_ticket_sla_policy`
+  - `rpc_admin_archive_ticket_sla_policy`
+  - `rpc_support_recalculate_ticket_sla`
+- telas afetadas:
+  - `/support/queue`
+  - `/support/tickets/:ticketId`
+- runtime/UI:
+  - fila e workspace exibem política de SLA aplicada, origem da política, prazo de primeira resposta/resolução e calendário quando houver read model real
+  - tenant sem política própria usa fallback global quando aplicável; ausência real de política aparece como `Sem política definida`
+  - frontend segue sem calcular prazo, timer, pausa ou breach
+- riscos restantes:
+  - cálculo por horário útil real ainda depende de regra de produto/engenharia
+  - pausa de SLA por status ainda precisa decisão objetiva
+  - notificações/automação de breach e UI administrativa complexa continuam fora do corte
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit e fora de qualquer decisão de produto
+- validação final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+- impacto na FAQ futura:
+  - permite explicar SLA como governança interna auditável por tenant, sem converter prazos operacionais em promessa pública automática
+
 ### Fase 8.10 - Ticket Classification And SLA Governance V3
 - fase: `8.10`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

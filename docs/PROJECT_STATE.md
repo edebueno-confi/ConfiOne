@@ -42,6 +42,7 @@ Documentos prioritários:
 - `TICKET_KNOWLEDGE_LINKING_DATA_MODEL_REVIEW.md`
 - `TICKET_KNOWLEDGE_LINKING_MIGRATION_DESIGN.md`
 - `TICKET_KNOWLEDGE_PUBLIC_LINK_CONTRACT_REVIEW.md`
+- `TENANT_SUPPORT_POLICY_AND_SLA_AUTOMATION_V3.md`
 - `reports/KNOWLEDGE_LEGACY_CURATION_BACKLOG.md`
 - `reports/LEGACY_CORPUS_EDITORIAL_AUDIT.md`
 - `knowledge/LEGACY_CORPUS_HUMAN_CURATION_SPRINT.md`
@@ -77,9 +78,10 @@ Documentos históricos:
 - O lote `Engineering Workspace Operational Core V3` criou o workspace operacional de engenharia com fila técnica, detalhe, ownership, status técnico, updates estruturados, retorno ao suporte, auditoria e isolamento por tenant/papel.
 - O lote `Secure Ticket Evidence Storage V3` fechou o storage seguro de evidências com bucket privado `ticket-evidence`, policies por tenant/ticket, upload governado por intent, download temporário por grant curto, metadata sanitizada e UI conectada no Ticket Workspace sem expor path interno.
 - O lote `Ticket Classification And SLA Governance V3` formalizou categorias de ticket, motivos operacionais, SLA interno, matriz de transição de status, read models/RPCs e UI conectada para intake, fila e workspace sem inventar regra no frontend.
+- O lote `Tenant Support Policy And SLA Automation V3` materializou políticas de SLA por tenant, calendário de negócio MVP como metadata governada, fallback global seguro, recalculo backend e sinais internos de SLA na fila/workspace sem timer fake, pausa ou notificação externa.
 - Nenhuma ação fake foi habilitada no frontend; ações sem contrato completo seguem bloqueadas para lote futuro.
 - Os 8 candidatos documentais da Knowledge continuam pendentes, nao aprovados, nao publicados e nao injetados automaticamente no Help Center.
-- Próximo bloco recomendado: `Tenant Support Policy And SLA Automation V3`.
+- Próximo bloco recomendado: `Support Operations Usability Completion V3`.
 
 ## Estado real do repositório em 2026-04-30
 
@@ -116,6 +118,7 @@ Documentos históricos:
 - Migrations oficiais do Engineering Workspace operacional `supabase/migrations/20260508214418_engineering_workspace_operational_core_v3.sql` e `supabase/migrations/20260508214852_engineering_workspace_operational_core_contracts_v3.sql`.
 - Migration oficial do storage seguro de evidências `supabase/migrations/20260508233000_secure_ticket_evidence_storage_v3.sql`.
 - Migrations oficiais da classificação e SLA de tickets `supabase/migrations/20260509001000_ticket_classification_event_types_v3.sql` e `supabase/migrations/20260509001100_ticket_classification_and_sla_governance_v3.sql`.
+- Migration oficial de política de SLA por tenant e calendário MVP `supabase/migrations/20260509042343_tenant_support_policy_and_sla_automation_v3.sql`.
 - Teste local de banco em `supabase/tests/001_phase1_identity_tenancy_rls.sql`.
 - Teste local de hardening em `supabase/tests/002_phase1_1_hardening.sql`.
 - Teste local de control plane administrativo em `supabase/tests/003_phase1_2_admin_control_plane.sql`.
@@ -173,8 +176,10 @@ Documentos históricos:
 - RPC contratual de timeline paginada materializada em `rpc_support_get_ticket_timeline`.
 - RPCs contratuais do Engineering Workspace materializadas em `rpc_engineering_assign_work_item`, `rpc_engineering_unassign_work_item`, `rpc_engineering_update_work_item_status`, `rpc_engineering_add_work_item_update`, `rpc_engineering_return_work_item_to_support` e `rpc_engineering_link_existing_work_item_to_ticket`.
 - RPCs contratuais de evidências seguras materializadas em `rpc_support_create_ticket_attachment_upload`, `rpc_support_register_ticket_attachment` e `rpc_support_get_ticket_attachment_download_url`.
+- RPCs contratuais de governança de SLA por tenant materializadas em `rpc_admin_upsert_business_calendar`, `rpc_admin_upsert_ticket_sla_policy`, `rpc_admin_archive_ticket_sla_policy` e `rpc_support_recalculate_ticket_sla`.
 - O intake operacional de `/support/queue` agora abre tickets somente por `rpc_create_ticket`, sem leitura direta de `tenants` ou `tenant_contacts`.
 - O Ticket Workspace agora registra evidências reais apenas por fluxo governado de intent + edge function + RPC, e lê anexos apenas pela `vw_support_ticket_attachments` sanitizada.
+- A fila e o Ticket Workspace agora exibem contexto de SLA derivado pelo backend, incluindo política aplicada, origem da política e calendário MVP quando existirem.
 - `authenticated` não possui `SELECT`, `INSERT`, `UPDATE` nem `DELETE` direto nas tabelas base de ticketing; o app lê via views e escreve via RPCs.
 - `authenticated` não possui DML direto em `engineering_work_items`, `engineering_ticket_links` nem `engineering_work_item_updates`; o app lê por views e escreve por RPCs auditadas.
 - `authenticated` também não possui DML direto em `ticket_attachments`; upload e download seguro de evidência dependem de RPCs, grants curtos, bucket privado e edge functions controladas.
