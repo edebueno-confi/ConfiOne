@@ -300,7 +300,7 @@ function friendlyAttachmentUploadErrorMessage(message: string) {
   }
 
   if (normalized.includes('ticket not found')) {
-    return 'O ticket não apareceu no contrato operacional para anexos.';
+    return 'A leitura de evidências deste ticket não ficou disponível agora.';
   }
 
   if (normalized.includes('upload intent expired')) {
@@ -2059,7 +2059,7 @@ function SupportTicketAttachmentsPanel({
                 </GhostButton>
               </div>
               <p className="mt-2 text-[12px] leading-5 text-[color:var(--color-muted)]">
-                Registrado por {attachment.uploadedByName ?? 'usuário não resolvido'} em{' '}
+                  Registrado por {attachment.uploadedByName ?? 'Operador não identificado'} em{' '}
                 {formatDateTime(attachment.createdAt)}.
               </p>
             </article>
@@ -2116,7 +2116,7 @@ function SupportEngineeringLinkCard({
       ) : null}
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[12px] text-[color:var(--color-muted)]">
         <span>
-          Criado por {link.createdByFullName ?? 'usuário não resolvido'} em {formatDateTime(link.createdAt)}
+          Criado por {link.createdByFullName ?? 'Operador não identificado'} em {formatDateTime(link.createdAt)}
         </span>
         <span>Responsável: {link.assignedToFullName ?? 'Indisponível'}</span>
       </div>
@@ -2195,7 +2195,7 @@ function SupportMoreActionsPanel({
             <div className="mt-3 space-y-2.5">
               {engineeringPhase === 'contract-unavailable' ? (
                 <InlineNotice tone="warning">
-                  {engineeringMessage ?? 'O contrato de handoff técnico não ficou disponível neste ambiente.'}
+                  {engineeringMessage ?? 'A leitura do handoff técnico não ficou disponível neste ambiente.'}
                 </InlineNotice>
               ) : engineeringPhase === 'error' ? (
                 <InlineNotice tone="warning">
@@ -2283,7 +2283,7 @@ function SupportMoreActionsPanel({
 
               {!canCreateEngineeringHandoff ? (
                 <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-                  O backend não liberou criação de handoff técnico para este ticket no contexto atual.
+                  A criação de handoff técnico não está disponível para este ticket no contexto atual.
                 </p>
               ) : null}
             </form>
@@ -2291,7 +2291,7 @@ function SupportMoreActionsPanel({
 
           <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
             <InlineNotice>
-              Status, classificação e SLA são alterados no rail do ticket para preservar a matriz de transição do backend.
+              Status, classificação e SLA são alterados no rail do ticket para preservar as regras operacionais vigentes.
             </InlineNotice>
           </section>
 
