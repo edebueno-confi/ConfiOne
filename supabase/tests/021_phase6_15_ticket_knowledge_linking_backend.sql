@@ -196,8 +196,8 @@ values
 select ok(
   has_table_privilege('authenticated', 'public.vw_support_ticket_knowledge_links', 'SELECT')
   and has_table_privilege('authenticated', 'public.vw_support_knowledge_article_picker', 'SELECT')
-  and not has_table_privilege('authenticated', 'public.vw_customer_portal_ticket_knowledge_links', 'SELECT'),
-  'authenticated recebe apenas as views internas contratuais do vinculo ticket kb'
+  and has_table_privilege('authenticated', 'public.vw_customer_portal_ticket_knowledge_links', 'SELECT'),
+  'authenticated recebe as views contratuais de knowledge para suporte e portal'
 );
 
 select ok(
@@ -611,8 +611,8 @@ select is(
     from public.vw_customer_portal_ticket_knowledge_links
     where ticket_id = '10000000-0000-4000-8000-000000000001'::uuid
   ),
-  1,
-  'portal future view expone apenas o artigo realmente enviado ao cliente'
+  0,
+  'sem contexto customer-facing autenticado a view do portal nao expone links'
 );
 
 select is(

@@ -491,6 +491,57 @@ const FIXTURE = {
           'Conteúdo restrito da operação. Não compartilhar com o cliente nem replicar em área pública.',
         visibility: 'restricted',
       },
+      {
+        tenantSlug: 'support-qa-a',
+        categorySlug: 'support-restrito-tenant-a',
+        title: 'Expedição: checklist autenticado do tenant A',
+        slug: 'expedicao-checklist-autenticado-tenant-a',
+        summary: 'Guia autenticado liberado para o portal do tenant A.',
+        bodyMd:
+          'Conteúdo autenticado customer-facing para o tenant A, com orientações operacionais aprovadas sem expor playbook interno.',
+        visibility: 'restricted',
+      },
+      {
+        tenantSlug: 'support-qa-a',
+        categorySlug: 'support-restrito-tenant-a',
+        title: 'Expedição: retorno controlado para ticket específico',
+        slug: 'expedicao-retorno-controlado-ticket-especifico',
+        summary: 'Orientação restrita liberada apenas para um ticket autorizado.',
+        bodyMd:
+          'Conteúdo restrito aprovado apenas para o ticket específico, sem advisory editorial nem contexto interno bruto.',
+        visibility: 'restricted',
+      },
+      {
+        tenantSlug: 'support-qa-a',
+        categorySlug: 'support-restrito-tenant-a',
+        title: 'Rascunho restrito que não pode vazar',
+        slug: 'rascunho-restrito-que-nao-pode-vazar',
+        summary: 'Rascunho de fixture para validar bloqueio customer-facing.',
+        bodyMd:
+          'Este rascunho existe apenas para validar que o portal não expõe conteúdo não publicado.',
+        visibility: 'restricted',
+        targetStatus: 'draft',
+      },
+    ],
+    entitlements: [
+      {
+        tenantSlug: 'support-qa-a',
+        actorKey: 'qa-admin',
+        articleSlug: 'expedicao-checklist-autenticado-tenant-a',
+        entitlementScope: 'customer_portal',
+        relationReason:
+          'Liberado para o portal do tenant A como orientação autenticada aprovada.',
+      },
+    ],
+    customerTicketLinks: [
+      {
+        ticketTitle: 'QA Support | Divergência na regra de expedição',
+        ticketTenantSlug: 'support-qa-a',
+        actorKey: 'qa-admin',
+        articleSlug: 'expedicao-retorno-controlado-ticket-especifico',
+        relationReason:
+          'Liberado para este ticket porque o fluxo aprovado depende de orientação contextual restrita.',
+      },
     ],
     links: [
       {
@@ -1854,6 +1905,7 @@ function queryPublicHelpCenterArticleContractBySlug(slug) {
 }
 
 async function ensureKnowledgeArticlePublished(adminSession, tenantId, article, categoryId) {
+  const targetStatus = article.targetStatus ?? 'published';
   let existing = queryKnowledgeArticleBySlug(article.slug, tenantId);
 
   if (!existing?.id) {
@@ -1880,6 +1932,10 @@ async function ensureKnowledgeArticlePublished(adminSession, tenantId, article, 
 
   if (!existing?.id) {
     fail(`Nao foi possivel materializar o artigo ${article.slug}.`);
+  }
+
+  if (targetStatus === 'draft') {
+    return existing.id;
   }
 
   if (existing.status === 'draft') {
@@ -2092,6 +2148,96 @@ async function ensureTicketKnowledgeLink({ actorSession, tenantId, ticketId, lin
   });
 
   return created?.id ?? queryTicketKnowledgeLink(ticketId, link.linkType, link.articleSlug);
+}
+
+function queryKnowledgeArticleEntitlement(tenantId, articleId, entitlementScope) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id
+    from public.knowledge_article_entitlements
+    where tenant_id = '${sqlEscape(tenantId)}'::uuid
+      and article_id = '${sqlEscape(articleId)}'::uuid
+      and entitlement_scope = '${sqlEscape(entitlementScope)}'::public.knowledge_article_entitlement_scope
+      and archived_at is null
+    limit 1;
+  `);
+
+  return result.rows?.[0]?.id ?? null;
+}
+
+async function ensureKnowledgeArticleEntitlement({
+  actorSession,
+  tenantId,
+  articleSlug,
+  entitlementScope,
+  relationReason,
+}) {
+  const article = queryKnowledgeArticleBySlug(articleSlug, tenantId);
+  if (!article?.id) {
+    fail(`Artigo restrito ausente para entitlement customer-facing: ${articleSlug}.`);
+  }
+
+  const existingId = queryKnowledgeArticleEntitlement(tenantId, article.id, entitlementScope);
+  if (existingId) {
+    return existingId;
+  }
+
+  const created = await callRpcAsUser({
+    apiUrl: actorSession.apiUrl,
+    anonKey: actorSession.anonKey,
+    accessToken: actorSession.accessToken,
+    rpcName: 'rpc_admin_grant_knowledge_article_entitlement',
+    body: {
+      p_tenant_id: tenantId,
+      p_article_id: article.id,
+      p_entitlement_scope: entitlementScope,
+      p_relation_reason: relationReason,
+    },
+  });
+
+  return (
+    created?.id ??
+    queryKnowledgeArticleEntitlement(tenantId, article.id, entitlementScope)
+  );
+}
+
+async function ensureCustomerTicketKnowledgeLink({
+  actorSession,
+  tenantId,
+  ticketId,
+  articleSlug,
+  relationReason,
+}) {
+  let article = queryKnowledgeArticleBySlug(articleSlug, tenantId);
+  if (!article?.id) {
+    const publicKnowledgeSpaceId = queryKnowledgeSpaceBySlug('genius');
+    if (publicKnowledgeSpaceId) {
+      article = queryKnowledgeArticleBySlugInSpace(articleSlug, publicKnowledgeSpaceId);
+    }
+  }
+
+  if (!article?.id) {
+    fail(`Artigo ausente para vínculo customer-facing com ticket: ${articleSlug}.`);
+  }
+
+  const existingId = queryTicketKnowledgeLink(ticketId, 'sent_to_customer', articleSlug);
+  if (existingId) {
+    return existingId;
+  }
+
+  const created = await callRpcAsUser({
+    apiUrl: actorSession.apiUrl,
+    anonKey: actorSession.anonKey,
+    accessToken: actorSession.accessToken,
+    rpcName: 'rpc_admin_link_knowledge_article_to_ticket',
+    body: {
+      p_tenant_id: tenantId,
+      p_ticket_id: ticketId,
+      p_article_id: article.id,
+      p_relation_reason: relationReason,
+    },
+  });
+
+  return created?.id ?? queryTicketKnowledgeLink(ticketId, 'sent_to_customer', articleSlug);
 }
 
 function queryBusinessCalendarIdBySlug(slug) {
@@ -3273,6 +3419,7 @@ async function main() {
 
   const knowledgeCategoryMap = new Map();
   const createdKnowledgeArticles = [];
+  const createdKnowledgeEntitlements = [];
   const createdKnowledgeLinks = [];
   const createdEngineeringHandoffs = [];
   const engineeringWorkItemMap = new Map();
@@ -3311,6 +3458,31 @@ async function main() {
       id: articleId,
       tenant_slug: article.tenantSlug,
       visibility: article.visibility,
+      status: article.targetStatus ?? 'published',
+    });
+  }
+
+  for (const entitlement of FIXTURE.knowledgeBase.entitlements ?? []) {
+    const tenantId = tenantMap.get(entitlement.tenantSlug);
+    const actorSession = await getSessionForKey(entitlement.actorKey);
+
+    if (!tenantId) {
+      fail(`Tenant ausente para entitlement de conhecimento: ${entitlement.tenantSlug}.`);
+    }
+
+    const entitlementId = await ensureKnowledgeArticleEntitlement({
+      actorSession,
+      tenantId,
+      articleSlug: entitlement.articleSlug,
+      entitlementScope: entitlement.entitlementScope,
+      relationReason: entitlement.relationReason,
+    });
+
+    createdKnowledgeEntitlements.push({
+      id: entitlementId,
+      tenant_slug: entitlement.tenantSlug,
+      article_slug: entitlement.articleSlug,
+      entitlement_scope: entitlement.entitlementScope,
     });
   }
 
@@ -3340,6 +3512,37 @@ async function main() {
       ticket_tenant_slug: link.ticketTenantSlug,
       link_type: link.linkType,
       article_slug: link.articleSlug ?? null,
+    });
+  }
+
+  for (const link of FIXTURE.knowledgeBase.customerTicketLinks ?? []) {
+    const ticketId = ticketMap.get(`${link.ticketTenantSlug}::${link.ticketTitle}`);
+    const tenantId = tenantMap.get(link.ticketTenantSlug);
+    const actorSession = await getSessionForKey(link.actorKey);
+
+    if (!ticketId) {
+      fail(`Ticket ausente para vínculo customer-facing: ${link.ticketTitle}.`);
+    }
+
+    if (!tenantId) {
+      fail(`Tenant ausente para vínculo customer-facing: ${link.ticketTenantSlug}.`);
+    }
+
+    const linkId = await ensureCustomerTicketKnowledgeLink({
+      actorSession,
+      tenantId,
+      ticketId,
+      articleSlug: link.articleSlug,
+      relationReason: link.relationReason,
+    });
+
+    createdKnowledgeLinks.push({
+      id: linkId,
+      ticket_title: link.ticketTitle,
+      ticket_tenant_slug: link.ticketTenantSlug,
+      link_type: 'sent_to_customer',
+      article_slug: link.articleSlug,
+      relation_reason: link.relationReason,
     });
   }
 
@@ -3482,6 +3685,7 @@ async function main() {
           alerts: tenant.customerAccount?.alerts?.length ?? 0,
         })),
         knowledge_articles: createdKnowledgeArticles,
+        knowledge_entitlements: createdKnowledgeEntitlements,
         knowledge_links: createdKnowledgeLinks,
         engineering_handoffs: createdEngineeringHandoffs,
         engineering_operations: createdEngineeringOperations,

@@ -315,11 +315,11 @@ select is(
 select is(
   (
     select count(*)::integer
-    from public.vw_customer_portal_knowledge_articles
+    from public.vw_customer_portal_ticket_knowledge_links
     where ticket_id = 'aaaaaaaa-1000-4000-8000-000000000001'
   ),
   1,
-  'portal expoe apenas knowledge publica enviada ao cliente'
+  'portal expoe apenas knowledge customer-facing enviada ao cliente'
 );
 
 select lives_ok(
