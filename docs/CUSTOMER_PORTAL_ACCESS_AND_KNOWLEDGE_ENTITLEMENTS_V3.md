@@ -118,6 +118,11 @@ Regras:
 ## Frontend
 - `/portal` agora resume a Central autorizada.
 - `/portal/help` lista apenas artigos autorizados.
+
+## Continuidade administrativa
+- A administracao operacional dos acessos e entitlements do portal foi fechada em seguida no lote `Customer Portal Access Administration V3`.
+- O ponto de entrada administrativo ficou em `/admin/customer-portal`.
+- A governanca passou a ler apenas `vw_admin_customer_portal_*`, `vw_admin_knowledge_entitlements` e `vw_admin_ticket_knowledge_links`, mantendo o Public Help e o portal como consumidores distintos.
 - `/portal/help/:articleSlug` renderiza detalhe autenticado com markdown seguro.
 - `/portal/tickets/:ticketId` mostra apenas artigos relacionados permitidos ao mesmo ator.
 - Não foi criada busca customer-facing sem contrato.

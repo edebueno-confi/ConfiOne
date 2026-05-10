@@ -218,6 +218,45 @@ Fase 8.18:
 - `ticket_linked` para cliente autenticado depende de `ticket_knowledge_links` em `sent_to_customer` e do ticket ainda ser visivel ao ator customer-facing.
 - O frontend do portal em `/portal`, `/portal/help`, `/portal/help/:articleSlug` e `/portal/tickets/:ticketId` continua apenas renderizando read models; o Public Help em `/help/:spaceSlug` segue publico e independente de sessao customer.
 
+Fase 8.19:
+- A administracao operacional do portal cliente passou a ter uma superficie propria no Admin Console, sem criar shell novo e sem delegar seguranca ao frontend.
+- A nova rota `/admin/customer-portal` le apenas:
+  - `vw_admin_customer_portal_access_overview`
+  - `vw_admin_customer_portal_tenant_access`
+  - `vw_admin_customer_portal_users`
+  - `vw_admin_customer_portal_user_detail`
+  - `vw_admin_knowledge_entitlements`
+  - `vw_admin_knowledge_entitlement_detail`
+  - `vw_admin_ticket_knowledge_links`
+  - `vw_admin_customer_portal_article_candidates`
+  - `vw_admin_customer_portal_ticket_candidates`
+- Essas views expõem apenas o necessario para governanca customer-facing:
+  - tenant
+  - usuario
+  - role/status
+  - ultimo acesso quando houver fonte real
+  - contagem de tickets visiveis
+  - contagem de artigos autorizados
+  - relation_reason
+  - ticket vinculado quando aplicavel
+- Essas views bloqueiam:
+  - password/auth secret/token
+  - draft body
+  - article internal
+  - advisory/review interno
+  - raw metadata
+  - audit bruto
+  - storage path
+- A mutacao no Admin Console do portal cliente continua passando apenas por RPC:
+  - `rpc_admin_grant_knowledge_article_entitlement`
+  - `rpc_admin_archive_knowledge_article_entitlement`
+  - `rpc_admin_link_knowledge_article_to_ticket`
+  - `rpc_admin_unlink_knowledge_article_from_ticket`
+  - `rpc_admin_update_tenant_member_role` para `customer_user`/`customer_manager`
+  - `rpc_admin_update_tenant_member_status` para memberships customer-facing existentes
+- Entitlement continua sem publicar, aprovar ou bypassar gate editorial.
+- Como ainda nao existe contrato dedicado de contagem autorizada para os cards resumidos do portal, o frontend remove o numero enganoso e renderiza `Artigos autorizados: Indisponível`.
+
 Fase 4:
 - Knowledge Base agora possui núcleo editorial real com views internas contratuais e RPCs administrativas próprias.
 - O frontend administrativo futuro deve consumir a superfície de leitura apenas por:

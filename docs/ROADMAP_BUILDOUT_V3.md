@@ -226,7 +226,42 @@ Fixtures/testes:
 - ausencia de notas internas/handoff/audit log no portal
 
 Impacto no front:
-- nenhum ate os contratos estarem verdes; UI do portal fica para lote posterior.
+- concluido em `/admin/customer-portal`, sem shell novo e com regressao segura no portal.
+
+Status:
+- concluido em `2026-05-10`
+- rota administrativa criada: `/admin/customer-portal`
+- contratos administrativos:
+  - `vw_admin_customer_portal_access_overview`
+  - `vw_admin_customer_portal_tenant_access`
+  - `vw_admin_customer_portal_users`
+  - `vw_admin_customer_portal_user_detail`
+  - `vw_admin_knowledge_entitlements`
+  - `vw_admin_knowledge_entitlement_detail`
+  - `vw_admin_ticket_knowledge_links`
+  - `vw_admin_customer_portal_article_candidates`
+  - `vw_admin_customer_portal_ticket_candidates`
+- mutacoes reaproveitadas:
+  - `rpc_admin_grant_knowledge_article_entitlement`
+  - `rpc_admin_archive_knowledge_article_entitlement`
+  - `rpc_admin_link_knowledge_article_to_ticket`
+  - `rpc_admin_unlink_knowledge_article_from_ticket`
+  - `rpc_admin_update_tenant_member_role`
+  - `rpc_admin_update_tenant_member_status`
+- o portal deixou de exibir contagem enganosa de artigos nos cards resumidos quando nao existe contrato de count autorizada.
+
+## Proximo lote tecnico recomendado
+
+### Lote: Customer Portal Search And Discoverability V3
+
+Objetivo: criar busca autenticada e descoberta segura no portal cliente para tickets e Knowledge autorizada, sem IA, sem indexacao insegura e sem frontend decidir entitlement.
+
+Ordem sugerida:
+1. Auditar contratos atuais de listagem em `/portal`, `/portal/help` e `/portal/tickets`.
+2. Definir read models ou search contracts backend-only para Knowledge autorizada e tickets do tenant.
+3. Fechar boundary entre busca publica do Help e busca autenticada do portal.
+4. Conectar UX de busca/filter sem expor draft/internal nem depender de heuristica no frontend.
+5. Cobrir regressao de tenant isolation, no-result states e scroll/layout.
 
 ## Decisoes que ainda dependem de Produto
 - Se Support e Admin devem convergir em um App Shell unico.

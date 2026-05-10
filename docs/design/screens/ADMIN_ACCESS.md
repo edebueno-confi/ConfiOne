@@ -116,3 +116,9 @@ Conteúdo:
 - Tela permite entender quem tem acesso a quê.
 - Papéis e memberships ficam evidentes.
 - Ações perigosas são visualmente controladas.
+
+## Nota V3
+
+- O cockpit `/admin/access` continua como control plane geral de memberships.
+- Papéis `customer_user` e `customer_manager` podem aparecer na leitura consolidada e precisam ser rotulados sem cair em `Indisponível`.
+- A governança dedicada do Portal Cliente B2B fica em `/admin/customer-portal`, para evitar misturar controle customer-facing com o fluxo geral de access.

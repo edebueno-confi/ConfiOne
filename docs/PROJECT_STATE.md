@@ -1893,6 +1893,31 @@ Documentos históricos:
     - busca inteligente/IA/recomendacao
     - UI administrativa complexa para entitlements
   - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
+- Fase 8.19: Customer Portal Access Administration V3 concluido como bloco administrativo do portal cliente.
+  - O Admin Console ganhou a rota `/admin/customer-portal` dentro do shell existente, sem dashboard decorativo e sem auth paralela.
+  - Novos contratos administrativos:
+    - `vw_admin_customer_portal_access_overview`
+    - `vw_admin_customer_portal_tenant_access`
+    - `vw_admin_customer_portal_users`
+    - `vw_admin_customer_portal_user_detail`
+    - `vw_admin_knowledge_entitlements`
+    - `vw_admin_knowledge_entitlement_detail`
+    - `vw_admin_ticket_knowledge_links`
+    - `vw_admin_customer_portal_article_candidates`
+    - `vw_admin_customer_portal_ticket_candidates`
+  - A tela permite:
+    - revisar usuarios customer-facing por tenant
+    - revisar risco de tenant sem gestor ativo
+    - trocar role/status de memberships customer-facing existentes por RPC
+    - conceder/arquivar entitlement
+    - vincular/desvincular artigo a ticket
+  - O lote nao abriu:
+    - publish ou approval editorial
+    - draft/internal no portal
+    - busca autenticada dedicada
+    - convite customer-facing dedicado fora dos contratos genericos ja existentes
+  - O portal deixou de mostrar `publicArticleCount` como numero enganoso nos cards resumidos; agora a copy fica honesta quando a contagem autorizada nao tem contrato proprio.
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -1914,7 +1939,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Executar o proximo lote tecnico grande `Customer Portal Access Administration V3`, fechando convite/revogacao customer-facing por tenant, boundary de ownership do `customer_manager` e trilha auditavel de acesso sem criar auth paralela ou bypass administrativo.
+Executar o proximo lote tecnico grande `Customer Portal Search And Discoverability V3`, fechando busca autenticada de Knowledge e tickets no portal sem usar IA, sem indexacao insegura e sem delegar filtro de seguranca ao frontend.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único

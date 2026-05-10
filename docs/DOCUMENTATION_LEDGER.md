@@ -18,6 +18,62 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 8.19 - Customer Portal Access Administration V3
+- fase: `8.19`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-10`
+- resumo funcional: o Admin Console ganhou administracao operacional do portal cliente B2B em `/admin/customer-portal`, com read models reais para usuarios customer-facing, tenant overview, entitlements de Knowledge e ticket links, alem de acoes governadas por RPC para role/status, grant/archive e link/unlink.
+- docs alterados:
+  - `docs/CUSTOMER_PORTAL_ACCESS_ADMINISTRATION_V3.md`
+  - `docs/CUSTOMER_PORTAL_ACCESS_AND_KNOWLEDGE_ENTITLEMENTS_V3.md`
+  - `docs/design/screens/ADMIN_ACCESS.md`
+  - `docs/design/screens/ADMIN_KNOWLEDGE.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - `vw_admin_customer_portal_access_overview`
+  - `vw_admin_customer_portal_tenant_access`
+  - `vw_admin_customer_portal_users`
+  - `vw_admin_customer_portal_user_detail`
+  - `vw_admin_knowledge_entitlements`
+  - `vw_admin_knowledge_entitlement_detail`
+  - `vw_admin_ticket_knowledge_links`
+  - `vw_admin_customer_portal_article_candidates`
+  - `vw_admin_customer_portal_ticket_candidates`
+  - `rpc_admin_grant_knowledge_article_entitlement`
+  - `rpc_admin_archive_knowledge_article_entitlement`
+  - `rpc_admin_link_knowledge_article_to_ticket`
+  - `rpc_admin_unlink_knowledge_article_from_ticket`
+  - `rpc_admin_update_tenant_member_role`
+  - `rpc_admin_update_tenant_member_status`
+- telas afetadas:
+  - `/admin/customer-portal`
+  - `/admin/access` em regressao
+  - `/admin/knowledge` em regressao
+  - `/portal`
+  - `/portal/help`
+  - `/portal/tickets/:ticketId`
+- runtime/UI:
+  - a tela administrativa nova resume risco por tenant, mostra usuario customer-facing em detalhe e governa apenas contratos reais
+  - os cards resumidos do portal deixaram de exibir contagem enganosa de artigos quando o contrato nao existe
+- riscos restantes:
+  - a criacao de novo membership customer-facing dedicado ainda depende de expansao posterior de UX sobre contratos genericos
+  - busca autenticada do portal continua fora do corte
+  - tenant switcher customer-facing continua ausente
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+- impacto na FAQ futura:
+  - deixa auditavel quem pode acessar o portal cliente e qual artigo autenticado foi liberado por tenant ou por ticket, sem confundir governanca interna com Help público.
+
 ### Fase 8.18 - Customer Portal Access And Knowledge Entitlements V3
 - fase: `8.18`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`
