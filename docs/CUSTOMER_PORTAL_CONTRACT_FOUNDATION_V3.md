@@ -97,8 +97,9 @@ Cada RPC valida ator ativo, tenant, membership customer-facing, contato vinculad
 - Download usa `rpc_customer_get_attachment_download_url` + `ticket-evidence-download`.
 
 ### Knowledge
-- Exibe somente artigos publicos publicados vinculados ao ticket por link enviado ao cliente.
-- Draft, internal, restricted, advisory e playbook interno continuam bloqueados.
+- Exibe artigos publicos publicados, artigos autenticados liberados por entitlement e artigos `ticket_linked` quando o ticket relacionado e visivel ao cliente.
+- Draft, internal, advisory, checklist editorial e playbook interno continuam bloqueados.
+- Artigo `restricted` so aparece com entitlement explicito do backend e nunca por filtro local do frontend.
 
 ### Perfil operacional
 - Exibe apenas resumo seguro: cliente, contato, papel, produto/linha, status operacional e plano/tier.
@@ -151,10 +152,10 @@ Testes pgTAP cobrem:
 - Auth segue Supabase existente; nao foi criado provider paralelo.
 
 ## Proximos lotes recomendados
-1. `Customer Portal Access And Knowledge Entitlements V3`: direitos finos para Knowledge autenticada autorizada por tenant/contato.
+1. `Customer Portal Access Administration V3`: manager convidar/revogar usuarios do proprio tenant via RPC auditada.
 2. `Omni Inbox Thread Foundation V3`: separar canal/thread de ticket sem implementar canal real.
-3. `Customer Portal Access Administration V3`: manager convidar/revogar usuarios do proprio tenant via RPC auditada.
-4. `AI Context Readiness V3`: preparar views de contexto citavel para IA sem habilitar IA.
+3. `AI Context Readiness V3`: preparar views de contexto citavel para IA sem habilitar IA.
+4. `Customer Portal Search And Context Navigation V3`: busca segura e tenant switcher customer-facing sem mover regra para o frontend.
 
 ## Atualizacao - Customer Portal Ticket Collaboration V3
 - `vw_customer_portal_ticket_collaboration_state` deriva estado de leitura, resposta, resolucao e reabertura.
@@ -164,3 +165,11 @@ Testes pgTAP cobrem:
 - `rpc_customer_confirm_ticket_resolved` permite confirmar somente ticket `resolved`.
 - `rpc_customer_request_ticket_reopen` permite solicitar reabertura somente de `resolved`/`closed` com motivo.
 - O cliente continua sem acesso a prioridade, severidade, categoria, SLA, notas internas, engenharia, audit bruto, advisory ou Knowledge nao publica/autorizada.
+
+## Atualizacao - Customer Portal Access And Knowledge Entitlements V3
+- `knowledge_article_entitlements` passou a governar acesso autenticado a artigos publicados sem alterar o gate editorial publico.
+- `vw_customer_portal_knowledge_articles` agora lista somente artigos autorizados ao tenant/customer nas origens `public`, `customer_portal` e `ticket_linked`.
+- `vw_customer_portal_knowledge_article_detail` expõe `body_md` apenas quando o artigo ja passou pelo filtro customer-facing no backend.
+- `vw_customer_portal_ticket_knowledge_links` restringe artigos vinculados ao ticket ao mesmo tenant e ao mesmo boundary customer-facing.
+- `/portal` ganhou resumo de Central autorizada e as rotas `/portal/help` e `/portal/help/:articleSlug` passaram a operar leitura autenticada segura.
+- O Public Help continua publico e separado; entitlement nao publica artigo e nao substitui revisão editorial.

@@ -129,3 +129,5 @@ Deve conter:
 - Mantém família visual Genius.
 - Conteúdo fica legível.
 - Busca e categorias são óbvias.
+- Não depende de sessão customer-facing para resolver conteúdo público.
+- Não mistura artigos autenticados/restritos do portal com a camada pública.

@@ -79,6 +79,11 @@ Alteracoes:
 - A aba `Central de ajuda` segue usando apenas a ponte segura de artigos publicos publicados.
 - Nao houve alteracao no fluxo de thread, composer, status, responsavel ou timeline.
 
+## Customer Portal autenticado
+- O portal cliente agora possui camada propria de entitlement para Knowledge autenticada, separada do Help publico e sem alterar o gate editorial do Admin.
+- Essa camada reutiliza apenas artigos `published`, nunca expõe `draft`, `internal` ou advisory editorial interno e não publica conteúdo sozinha.
+- A governança do Admin continua backend-first: concessão/revogação de entitlement e vínculo ticket-artigo exigem RPC auditada, sem UI administrativa complexa neste corte.
+
 ## Acoes habilitadas
 - Criar draft por contrato v2 existente.
 - Atualizar draft por contrato v2 existente.
@@ -95,7 +100,7 @@ Alteracoes:
 - Usar os 8 candidatos documentais como conteudo publico.
 - IA/advisory como decisao automatica de publicacao.
 - Editor rico complexo ou indexacao por IA.
-- Vinculo/envio governado de artigo ao cliente alem da leitura publica segura ja existente.
+- Vinculo/envio governado de artigo ao cliente alem da leitura autenticada/publica segura agora contratada continua sem UI administrativa completa.
 
 ## Estado dos 8 candidatos documentais
 Os 8 candidatos permanecem como documentacao interna e material inicial:

@@ -18,6 +18,54 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 8.18 - Customer Portal Access And Knowledge Entitlements V3
+- fase: `8.18`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-09`
+- resumo funcional: foi criada a camada customer-facing de entitlement para Knowledge autenticada, com artigos publicados autorizados por tenant, artigos vinculados a ticket permitido e rotas próprias `/portal/help` sem alterar o boundary do Help público.
+- docs alterados:
+  - `docs/CUSTOMER_PORTAL_ACCESS_AND_KNOWLEDGE_ENTITLEMENTS_V3.md`
+  - `docs/CUSTOMER_PORTAL_CONTRACT_FOUNDATION_V3.md`
+  - `docs/CUSTOMER_PORTAL_TICKET_COLLABORATION_V3.md`
+  - `docs/KNOWLEDGE_ADMIN_OPERATIONAL_GOVERNANCE_V3.md`
+  - `docs/design/screens/PUBLIC_HELP_CENTER.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - `vw_customer_portal_knowledge_articles`
+  - `vw_customer_portal_knowledge_article_detail`
+  - `vw_customer_portal_ticket_knowledge_links`
+  - `rpc_admin_grant_knowledge_article_entitlement`
+  - `rpc_admin_archive_knowledge_article_entitlement`
+  - `rpc_admin_link_knowledge_article_to_ticket`
+  - `rpc_admin_unlink_knowledge_article_from_ticket`
+- telas afetadas:
+  - `/portal`
+  - `/portal/help`
+  - `/portal/help/:articleSlug`
+  - `/portal/tickets/:ticketId`
+  - `/help/genius` em regressao
+- runtime/UI:
+  - o portal resume artigos autorizados, lista apenas artigos publicados permitidos e abre detalhe autenticado sem expor advisory, checklist editorial, draft body ou metadata interna
+  - o Public Help permanece estritamente público e não depende de sessão customer
+- riscos restantes:
+  - não existe tenant switcher customer-facing; o portal ainda assume o primeiro contexto retornado
+  - administração customer-facing de usuários e UI administrativa de entitlement continuam fora do corte
+  - busca customer-facing e recomendação contextual continuam bloqueadas por falta de contrato
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+- impacto na FAQ futura:
+  - separa com clareza o que é Help Center público do que é conteúdo autenticado do portal cliente, evitando prometer acesso amplo a conteúdo restrito sem entitlement auditável
+
 ### Fase 8.15 - Customer Portal Contract Foundation V3
 - fase: `8.15`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

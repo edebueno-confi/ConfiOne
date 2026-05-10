@@ -38,9 +38,11 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 | `/help/genius` | pronta para leitura publicada | `vw_public_knowledge_space_resolver`, `vw_public_knowledge_navigation`, `vw_public_knowledge_articles_list`, `rpc_public_search_knowledge_articles` | depende de artigos publicados reais; candidatos atuais continuam internos | medio |
 | `/help/genius/articles` | pronta para lista publicada | `vw_public_knowledge_articles_list`, navegacao publica | busca local de lista existe; busca RPC fica na home | baixo |
 | `/help/genius/articles/:slug` | pronta para artigo publicado | `vw_public_knowledge_article_detail` | precisa garantir estados de slug ausente e links relacionados sem vazar conteudo interno | medio |
-| `/portal` | foundation funcional customer-facing | `vw_customer_portal_profile_context`, `vw_customer_portal_ticket_list` | ainda nao e portal completo; sem SLA publico, IA, Omni Inbox ou upload do cliente | medio |
-| `/portal/tickets` | foundation funcional customer-facing | `vw_customer_portal_ticket_list`, `rpc_customer_create_ticket` | criacao minima de ticket sem categoria/SLA manual; upload do cliente fica para lote futuro | medio |
-| `/portal/tickets/:ticketId` | foundation funcional customer-facing | `vw_customer_portal_ticket_detail`, `vw_customer_portal_ticket_timeline`, `vw_customer_portal_ticket_attachments`, `vw_customer_portal_knowledge_articles`, RPCs customer | falta upload customer-facing, colaboracao avancada e preferencias de notificacao | medio |
+| `/portal` | funcional customer-facing com Knowledge autorizada | `vw_customer_portal_profile_context`, `vw_customer_portal_ticket_list`, `vw_customer_portal_knowledge_articles` | ainda nao e portal completo; sem SLA publico, IA, Omni Inbox ou admin customer-facing | medio |
+| `/portal/help` | funcional customer-facing autenticada | `vw_customer_portal_knowledge_articles` | falta busca contratual, switch de tenant e administracao customer-facing de entitlement | medio |
+| `/portal/help/:articleSlug` | funcional customer-facing autenticada | `vw_customer_portal_knowledge_article_detail` | falta navegacao contextual por tenant ativo sem depender do primeiro contexto carregado | medio |
+| `/portal/tickets` | funcional customer-facing | `vw_customer_portal_ticket_list`, `rpc_customer_create_ticket` | criacao minima de ticket sem categoria/SLA manual; administracao customer-facing de usuarios fica para lote futuro | medio |
+| `/portal/tickets/:ticketId` | funcional customer-facing com colaboracao, evidencias e Knowledge autorizada | `vw_customer_portal_ticket_detail`, `vw_customer_portal_ticket_timeline`, `vw_customer_portal_ticket_attachments`, `vw_customer_portal_ticket_collaboration_state`, `vw_customer_portal_ticket_knowledge_links`, RPCs customer | falta preferencia de notificacao e regra temporal objetiva de reabertura | medio |
 
 ## Lacunas por dominio
 
@@ -118,6 +120,8 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 - Status Fase 8.14: o checkpoint geral de buildout consolidou pronto/parcial/bloqueado e os proximos blocos grandes sem implementar produto novo.
 - Status Fase 8.15: a foundation contratual customer-facing foi criada com `customer_user`/`customer_manager`, views `vw_customer_portal_*`, RPCs `rpc_customer_*`, rotas `/portal`, `/portal/tickets` e `/portal/tickets/:ticketId`, sem expor audit, engenharia, SLA interno, drafts, storage path ou Knowledge interna.
 - Status Fase 8.16: o upload customer-facing seguro de evidencias foi fechado no portal, reaproveitando o bucket privado `ticket-evidence` com policies customer, intents/RPCs proprias, edge function com `boundary=customer`, metadata sanitizada e visibilidade no Support Workspace sem path leak.
+- Status Fase 8.17: a colaboracao customer-facing do portal foi consolidada com ack, resposta, confirmacao de resolucao e reabertura governada, sem expor operacao interna.
+- Status Fase 8.18: a camada de entitlement de Knowledge autenticada foi materializada com `knowledge_article_entitlements`, views `vw_customer_portal_knowledge_*`, RPCs administrativas minimas e rotas `/portal/help` + `/portal/help/:articleSlug`, mantendo o Help publico independente de sessao customer.
 - Contratos ainda necessarios: calculo por horario util completo; pausa objetiva de SLA; automacao/notificacao de SLA se Produto decidir; arquivamento seguro de evidencia.
 - Riscos: expor nota interna ao cliente, criar transicao invalida de status, enviar artigo sem URL publica segura.
 - Dependencias: RLS de ticketing, auditoria de eventos e regra de permissao por role.
@@ -175,16 +179,16 @@ A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos cand
 
 ## Proximo lote tecnico recomendado
 
-### Lote: Customer Portal Access And Knowledge Entitlements V3
+### Lote: Customer Portal Access Administration V3
 
-Objetivo: fechar direitos finos de acesso customer-facing para conteudo autenticado, artigos autorizados por tenant/contato e estados de acesso negado sem expor Knowledge interna, advisory, drafts ou operacao interna.
+Objetivo: fechar a administracao customer-facing do proprio tenant, com convite/revogacao governados para `customer_user` e `customer_manager`, sem auth paralela, sem bypass de roles internas e sem frontend decidir ownership.
 
 Ordem sugerida:
-1. Auditar `vw_customer_portal_knowledge_articles`, Knowledge publica/restrita e papeis `customer_user`/`customer_manager`.
-2. Definir entitlement por tenant/contato para artigos restritos aprovados, sem misturar com draft/internal/advisory.
-3. Criar read models customer-facing para Knowledge autenticada autorizada.
-4. Conectar `/portal/tickets/:ticketId` e uma superficie simples de artigos autorizados sem dashboard fake.
-5. Cobrir cross-tenant, usuario revogado, artigo draft/internal/restricted, audit_log e estados `Indisponivel`.
+1. Auditar `tenant_memberships`, `tenant_contacts`, `vw_customer_portal_auth_context` e RPCs administrativas existentes reaproveitaveis.
+2. Definir boundary exata do `customer_manager` para convidar, revogar e acompanhar usuarios do proprio tenant.
+3. Criar read models customer-facing de usuarios/contatos autorizados sem expor dados internos ou cross-tenant.
+4. Criar RPCs customer-facing minimas de convite/revogacao/reativacao com `audit_log`.
+5. Conectar o portal sem UI fake de IAM e cobrir cross-tenant, autopromocao e usuario revogado.
 
 ### Lote alternativo: Omni Inbox Thread Foundation V3
 

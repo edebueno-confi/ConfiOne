@@ -181,6 +181,43 @@ Fase 8.17:
 - Confirmacao de resolucao pelo cliente so fecha ticket que ja esta `resolved`; reabertura so existe para `resolved`/`closed` com motivo obrigatorio.
 - Cliente continua sem permissao para prioridade, severidade, categoria, SLA, notas internas, engenharia, audit bruto, advisory, drafts, Knowledge internal/restricted ou qualquer DML direto.
 
+Fase 8.18:
+- O acesso customer-facing a Knowledge autenticada passou a ter camada propria de entitlement, sem substituir o gate editorial publico e sem delegar filtro de seguranca ao frontend.
+- Estruturas novas:
+  - `knowledge_article_entitlements`
+  - `knowledge_article_entitlement_scope`
+  - `knowledge_article_entitlement_status`
+- O modelo de entitlement aceita somente:
+  - `tenant`
+  - `customer_portal`
+  - `ticket_linked`
+- `public` continua derivado exclusivamente do gate editorial da Knowledge publica e nao pode ser concedido por entitlement administrativo.
+- A leitura customer-facing de Knowledge agora passa apenas por:
+  - `vw_customer_portal_knowledge_articles`
+  - `vw_customer_portal_knowledge_article_detail`
+  - `vw_customer_portal_ticket_knowledge_links`
+- Os read models expõem somente:
+  - `article_id`
+  - `slug`
+  - `title`
+  - `summary`
+  - `category_name`
+  - `published_at`
+  - `updated_at`
+  - `relation_reason`
+  - `source`
+  - `source_label`
+  - `body_md` apenas no detalhe autorizado
+- Os read models continuam removendo `draft body`, notas internas, checklist editorial, advisory, metadata bruta, motivo interno de visibilidade, autor interno nao seguro e qualquer dado de engenharia/auditoria.
+- A administracao minima de entitlement/link passa apenas por:
+  - `rpc_admin_grant_knowledge_article_entitlement`
+  - `rpc_admin_archive_knowledge_article_entitlement`
+  - `rpc_admin_link_knowledge_article_to_ticket`
+  - `rpc_admin_unlink_knowledge_article_from_ticket`
+- Essas RPCs exigem artigo `published`, bloqueiam artigo `draft` e `internal`, exigem `tenant_id` explicito, validam `ticket_id` quando aplicavel e geram `audit.audit_logs`.
+- `ticket_linked` para cliente autenticado depende de `ticket_knowledge_links` em `sent_to_customer` e do ticket ainda ser visivel ao ator customer-facing.
+- O frontend do portal em `/portal`, `/portal/help`, `/portal/help/:articleSlug` e `/portal/tickets/:ticketId` continua apenas renderizando read models; o Public Help em `/help/:spaceSlug` segue publico e independente de sessao customer.
+
 Fase 4:
 - Knowledge Base agora possui núcleo editorial real com views internas contratuais e RPCs administrativas próprias.
 - O frontend administrativo futuro deve consumir a superfície de leitura apenas por:

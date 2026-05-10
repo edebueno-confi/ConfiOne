@@ -68,10 +68,10 @@ Consolidar a colaboracao real do cliente B2B no portal autenticado, cobrindo lei
 - Satisfacao/NPS e chat realtime continuam pendentes por decisao de produto.
 
 ## Proximo lote recomendado
-`Customer Portal Access And Knowledge Entitlements V3`
+`Customer Portal Access Administration V3`
 
 Foco:
-- direitos finos por contato/papel customer-facing;
-- artigos restritos autorizados por tenant/contato;
-- boundary de Knowledge autenticada sem expor draft/internal/advisory;
-- estados de acesso negado e conteudo indisponivel no portal.
+- convite/revogacao governada por tenant;
+- boundary operacional do `customer_manager`;
+- trilha auditavel de acesso customer-facing;
+- sem auth paralela, sem bypass e sem permissao calculada no frontend.

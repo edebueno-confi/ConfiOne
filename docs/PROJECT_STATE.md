@@ -69,7 +69,7 @@ Documentos históricos:
 - Nenhum dado operacional relevante deve ser perdido.
 - Documentação deve ser viva e versionada no repositório.
 
-## Estado atual em 2026-05-08
+## Estado atual em 2026-05-09
 - A curadoria refinada da Knowledge Base está pausada; os candidatos continuam como corpus/documentação inicial.
 - O foco atual é buildout funcional da plataforma interna CX B2B técnica.
 - O lote `Support Ticket Operational Flow V3` fechou o primeiro bloco real de contratos operacionais de ticket.
@@ -87,9 +87,10 @@ Documentos históricos:
 - O blueprint `Customer Portal Readiness Blueprint V3` preparou o desenho futuro do portal cliente B2B sem implementar UI, auth paralela ou contratos fake.
 - O `Buildout Status Checkpoint V3` consolidou o estado atual do buildout e definiu os próximos blocos grandes recomendados sem implementar produto novo.
 - O lote `Customer Portal Contract Foundation V3` criou a fundacao customer-facing real do portal B2B com roles `customer_user`/`customer_manager`, read models `vw_customer_portal_*`, RPCs `rpc_customer_*`, rotas `/portal`, `/portal/tickets` e `/portal/tickets/:ticketId`, fixture QA e testes de isolamento, sem portal fake, SLA publico, IA ou Omni Inbox.
+- O lote `Customer Portal Access And Knowledge Entitlements V3` criou a camada customer-facing de entitlement de Knowledge autenticada, com `knowledge_article_entitlements`, views `vw_customer_portal_knowledge_*`, RPCs administrativas minimas de grant/archive/link/unlink e rotas `/portal/help` e `/portal/help/:articleSlug`, mantendo o Public Help estritamente publico.
 - Nenhuma ação fake foi habilitada no frontend; ações sem contrato completo seguem bloqueadas para lote futuro.
 - Os 8 candidatos documentais da Knowledge continuam pendentes, nao aprovados, nao publicados e nao injetados automaticamente no Help Center.
-- Próximo bloco recomendado: `Customer Portal Secure Evidence Upload V3` ou `Omni Inbox Thread Foundation V3`, conforme prioridade entre colaboracao do cliente e canais externos.
+- Próximo bloco recomendado: `Customer Portal Access Administration V3`, para delegar convite/revogacao customer-facing por tenant sem auth paralela e sem bypass de auditoria.
 
 ## Estado real do repositório em 2026-04-30
 
@@ -1864,10 +1865,33 @@ Documentos históricos:
     - engenharia interna
     - audit bruto
     - Knowledge draft/internal/restricted
-    - notificacao externa
-    - chat realtime
-    - IA
-    - Omni Inbox
+  - notificacao externa
+  - chat realtime
+  - IA
+  - Omni Inbox
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
+- Fase 8.18: Customer Portal Access And Knowledge Entitlements V3 concluido como bloco de acesso autenticado a Knowledge.
+  - O portal ganhou uma camada propria de entitlement por `tenant_id` e artigo, sem reaproveitar o gate publico como permissao autenticada.
+  - Novas estruturas e contratos:
+    - `knowledge_article_entitlements`
+    - `vw_customer_portal_knowledge_articles`
+    - `vw_customer_portal_knowledge_article_detail`
+    - `vw_customer_portal_ticket_knowledge_links`
+    - `rpc_admin_grant_knowledge_article_entitlement`
+    - `rpc_admin_archive_knowledge_article_entitlement`
+    - `rpc_admin_link_knowledge_article_to_ticket`
+    - `rpc_admin_unlink_knowledge_article_from_ticket`
+  - `/portal` agora resume artigos autorizados e `/portal/help` + `/portal/help/:articleSlug` operam somente com subset publico/autenticado liberado pelo backend.
+  - `/portal/tickets/:ticketId` passou a exibir apenas artigos ticket-linked que o cliente realmente pode ver.
+  - O Public Help permaneceu dependente apenas de `vw_public_knowledge_*` e nao passou a depender de sessao customer.
+  - Continuam bloqueados:
+    - drafts
+    - artigos `internal`
+    - `restricted` sem entitlement explicito
+    - advisory/review editorial interno
+    - os 8 candidatos documentais como conteudo publicado
+    - busca inteligente/IA/recomendacao
+    - UI administrativa complexa para entitlements
   - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
 
 ## Ajustes de auditoria concluídos
@@ -1890,7 +1914,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Executar o proximo lote tecnico grande `Customer Portal Access And Knowledge Entitlements V3`, fechando direitos finos do portal cliente para conteudo autorizado, artigos restritos por tenant/contato e estados de acesso negado sem expor Knowledge interna ou advisory.
+Executar o proximo lote tecnico grande `Customer Portal Access Administration V3`, fechando convite/revogacao customer-facing por tenant, boundary de ownership do `customer_manager` e trilha auditavel de acesso sem criar auth paralela ou bypass administrativo.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único
