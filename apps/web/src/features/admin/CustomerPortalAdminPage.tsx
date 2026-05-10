@@ -3,6 +3,7 @@ import {
   useEffect,
   useEffectEvent,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import type { Uuid } from '@genius-support-os/contracts';
@@ -69,6 +70,9 @@ type PagePhase = 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type TenantFilter = 'all' | Uuid;
 type UserAccessFilter = 'all' | CustomerPortalAccessStatus;
 type EntitlementFilter = 'all' | CustomerPortalEntitlementStatus;
+
+const CUSTOMER_PORTAL_ADMIN_BOOTSTRAP_TIMEOUT_MS = 15_000;
+const CUSTOMER_PORTAL_ADMIN_DETAIL_TIMEOUT_MS = 10_000;
 
 interface GrantEntitlementFormState {
   tenantId: string;
@@ -188,6 +192,21 @@ function applyClassifiedFailure(error: ClassifiedAdminError) {
     phase: 'error' as const,
     message: error.message,
   };
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string) {
+  return Promise.race<T>([
+    promise,
+    new Promise<T>((_, reject) => {
+      const timer = window.setTimeout(() => {
+        reject(new Error(message));
+      }, timeoutMs);
+
+      promise.finally(() => {
+        window.clearTimeout(timer);
+      });
+    }),
+  ]);
 }
 
 function InfoLine({
@@ -404,6 +423,7 @@ function TicketKnowledgeLinkRow({
 }
 
 export function CustomerPortalAdminPage() {
+  const didBootstrapRef = useRef(false);
   const [phase, setPhase] = useState<PagePhase>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [overview, setOverview] = useState<AdminCustomerPortalAccessOverviewRow | null>(null);
@@ -450,15 +470,19 @@ export function CustomerPortalAdminPage() {
         nextTicketLinks,
         nextArticleCandidates,
         nextTicketCandidates,
-      ] = await Promise.all([
-        getAdminCustomerPortalAccessOverview(),
-        listAdminCustomerPortalTenantAccess(),
-        listAdminCustomerPortalUsers(),
-        listAdminKnowledgeEntitlements(),
-        listAdminTicketKnowledgeLinks(),
-        listAdminCustomerPortalArticleCandidates(),
-        listAdminCustomerPortalTicketCandidates(),
-      ]);
+      ] = await withTimeout(
+        Promise.all([
+          getAdminCustomerPortalAccessOverview(),
+          listAdminCustomerPortalTenantAccess(),
+          listAdminCustomerPortalUsers(),
+          listAdminKnowledgeEntitlements(),
+          listAdminTicketKnowledgeLinks(),
+          listAdminCustomerPortalArticleCandidates(),
+          listAdminCustomerPortalTicketCandidates(),
+        ]),
+        CUSTOMER_PORTAL_ADMIN_BOOTSTRAP_TIMEOUT_MS,
+        'O painel do portal cliente demorou mais do que o esperado para responder. Tente novamente em instantes.',
+      );
 
       setOverview(nextOverview);
       setTenantAccess(nextTenantAccess);
@@ -518,8 +542,13 @@ export function CustomerPortalAdminPage() {
   });
 
   useEffect(() => {
+    if (didBootstrapRef.current) {
+      return;
+    }
+
+    didBootstrapRef.current = true;
     void loadPage();
-  }, [loadPage]);
+  }, []);
 
   useEffect(() => {
     if (!selectedUserMembershipId) {
@@ -532,7 +561,11 @@ export function CustomerPortalAdminPage() {
 
     async function loadUserDetail() {
       try {
-        const detail = await getAdminCustomerPortalUserDetail(membershipId);
+        const detail = await withTimeout(
+          getAdminCustomerPortalUserDetail(membershipId),
+          CUSTOMER_PORTAL_ADMIN_DETAIL_TIMEOUT_MS,
+          'O detalhe do usuário customer-facing demorou mais do que o esperado para responder.',
+        );
         if (!cancelled) {
           setUserDetail(detail);
           if (detail) {
@@ -568,7 +601,11 @@ export function CustomerPortalAdminPage() {
 
     async function loadEntitlementDetail() {
       try {
-        const detail = await getAdminKnowledgeEntitlementDetail(entitlementId);
+        const detail = await withTimeout(
+          getAdminKnowledgeEntitlementDetail(entitlementId),
+          CUSTOMER_PORTAL_ADMIN_DETAIL_TIMEOUT_MS,
+          'O detalhe do entitlement demorou mais do que o esperado para responder.',
+        );
         if (!cancelled) {
           setEntitlementDetail(detail);
         }
