@@ -14,6 +14,20 @@ export const TENANT_ROLES = [
 ] as const;
 export type TenantRole = (typeof TENANT_ROLES)[number];
 
+export const CUSTOMER_PORTAL_ROLES = [
+  'customer_user',
+  'customer_manager',
+] as const;
+export type CustomerPortalRole = (typeof CUSTOMER_PORTAL_ROLES)[number];
+
+export type CustomerPortalAccessStatus = 'active' | 'pending' | 'blocked';
+export type CustomerPortalEntitlementScope = 'tenant' | 'customer_portal';
+export type CustomerPortalEntitlementStatus = 'active' | 'archived';
+export type CustomerPortalKnowledgeExposureSource =
+  | 'public'
+  | 'customer_portal'
+  | 'ticket_linked';
+
 export const PLATFORM_ROLES = [
   'platform_admin',
   'support_agent',
@@ -243,6 +257,164 @@ export interface AdminSystemOperationalSummaryRow {
   last_event_at: IsoTimestamp | null;
 }
 
+export interface AdminCustomerPortalAccessOverviewRow {
+  tenant_count: number;
+  active_tenant_count: number;
+  portal_user_count: number;
+  active_user_count: number;
+  invited_user_count: number;
+  blocked_user_count: number;
+  manager_count: number;
+  visible_ticket_count: number;
+  authorized_article_count: number;
+  tenant_without_manager_count: number;
+  missing_contact_count: number;
+  inactive_contact_count: number;
+}
+
+export interface AdminCustomerPortalTenantAccessRow {
+  tenant_id: Uuid;
+  tenant_slug: string;
+  tenant_display_name: string;
+  tenant_status: TenantStatus;
+  portal_user_count: number;
+  active_user_count: number;
+  invited_user_count: number;
+  blocked_user_count: number;
+  manager_count: number;
+  visible_ticket_count: number;
+  authorized_article_count: number;
+  active_entitlement_count: number;
+  active_ticket_link_count: number;
+  last_access_at: IsoTimestamp | null;
+  has_active_manager: boolean;
+  missing_contact_count: number;
+  inactive_contact_count: number;
+  risk_summary: string | null;
+}
+
+export interface AdminCustomerPortalUserRow {
+  membership_id: Uuid;
+  tenant_id: Uuid;
+  tenant_slug: string;
+  tenant_display_name: string;
+  tenant_status: TenantStatus;
+  user_id: Uuid;
+  user_full_name: string | null;
+  user_email: string | null;
+  user_is_active: boolean;
+  linked_contact_id: Uuid | null;
+  linked_contact_full_name: string | null;
+  linked_contact_email: string | null;
+  linked_contact_job_title: string | null;
+  linked_contact_is_primary: boolean;
+  linked_contact_is_active: boolean;
+  portal_role: CustomerPortalRole;
+  membership_status: MembershipStatus;
+  access_status: CustomerPortalAccessStatus;
+  can_view_all_tenant_tickets: boolean;
+  visible_ticket_count: number;
+  authorized_article_count: number;
+  last_access_at: IsoTimestamp | null;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+  created_by_full_name: string | null;
+  updated_by_full_name: string | null;
+  risk_summary: string | null;
+  missing_contact: boolean;
+  inactive_contact: boolean;
+}
+
+export interface AdminCustomerPortalUserDetailRow
+  extends AdminCustomerPortalUserRow {
+  tenant_legal_name: string;
+  public_article_count: number;
+  tenant_article_count: number;
+  customer_portal_article_count: number;
+  ticket_linked_article_count: number;
+}
+
+export interface AdminKnowledgeEntitlementRow {
+  entitlement_id: Uuid;
+  tenant_id: Uuid;
+  tenant_slug: string;
+  tenant_display_name: string;
+  article_id: Uuid;
+  article_title: string;
+  article_slug: string;
+  category_name: string | null;
+  article_visibility: KnowledgeVisibility;
+  article_status: KnowledgeArticleStatus;
+  entitlement_scope: CustomerPortalEntitlementScope;
+  entitlement_status: CustomerPortalEntitlementStatus;
+  relation_reason: string | null;
+  exposure_source: Extract<
+    CustomerPortalKnowledgeExposureSource,
+    'public' | 'customer_portal'
+  >;
+  created_by_user_id: Uuid | null;
+  created_by_full_name: string | null;
+  created_at: IsoTimestamp;
+  archived_at: IsoTimestamp | null;
+  archived_by_user_id: Uuid | null;
+  archived_by_full_name: string | null;
+}
+
+export interface AdminKnowledgeEntitlementDetailRow
+  extends AdminKnowledgeEntitlementRow {
+  published_at: IsoTimestamp | null;
+  updated_at: IsoTimestamp | null;
+  active_ticket_link_count: number;
+}
+
+export interface AdminTicketKnowledgeLinkRow {
+  ticket_knowledge_link_id: Uuid;
+  tenant_id: Uuid;
+  tenant_slug: string;
+  tenant_display_name: string;
+  ticket_id: Uuid;
+  ticket_title: string;
+  ticket_status: string;
+  article_id: Uuid;
+  article_title: string;
+  article_slug: string;
+  category_name: string | null;
+  article_visibility: KnowledgeVisibility;
+  article_status: KnowledgeArticleStatus;
+  relation_reason: string | null;
+  link_status: CustomerPortalEntitlementStatus;
+  exposure_source: Extract<CustomerPortalKnowledgeExposureSource, 'ticket_linked'>;
+  created_by_user_id: Uuid | null;
+  created_by_full_name: string | null;
+  created_at: IsoTimestamp;
+  archived_at: IsoTimestamp | null;
+  archived_by_user_id: Uuid | null;
+  archived_by_full_name: string | null;
+}
+
+export interface AdminCustomerPortalArticleCandidateRow {
+  article_id: Uuid;
+  article_title: string;
+  article_slug: string;
+  category_name: string | null;
+  article_visibility: KnowledgeVisibility;
+  article_status: KnowledgeArticleStatus;
+  knowledge_space_slug: string | null;
+  knowledge_space_display_name: string | null;
+  published_at: IsoTimestamp | null;
+}
+
+export interface AdminCustomerPortalTicketCandidateRow {
+  ticket_id: Uuid;
+  tenant_id: Uuid;
+  tenant_slug: string;
+  tenant_display_name: string;
+  ticket_title: string;
+  customer_status_label: string;
+  updated_at: IsoTimestamp;
+  requester_contact_full_name: string | null;
+}
+
 export interface RpcAdminCreateTenantPayload {
   p_slug: string;
   p_legal_name: string;
@@ -281,6 +453,68 @@ export interface RpcAdminUpdateTenantMemberStatusPayload {
 }
 
 export type RpcAdminUpdateTenantMemberStatusResponse = AdminTenantMembershipRecordRow;
+
+export interface AdminKnowledgeEntitlementRecordRow {
+  id: Uuid;
+  tenant_id: Uuid;
+  article_id: Uuid;
+  entitlement_scope: CustomerPortalEntitlementScope;
+  status: 'active';
+  relation_reason: string | null;
+  created_by_user_id: Uuid | null;
+  updated_by_user_id: Uuid | null;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+  archived_at: IsoTimestamp | null;
+  archived_by_user_id: Uuid | null;
+}
+
+export interface AdminTicketKnowledgeLinkRecordRow {
+  id: Uuid;
+  tenant_id: Uuid;
+  ticket_id: Uuid;
+  article_id: Uuid | null;
+  link_type: string;
+  note: string | null;
+  created_by_user_id: Uuid;
+  created_at: IsoTimestamp;
+  archived_at: IsoTimestamp | null;
+  archived_by_user_id: Uuid | null;
+}
+
+export interface RpcAdminGrantKnowledgeArticleEntitlementPayload {
+  p_tenant_id: Uuid;
+  p_article_id: Uuid;
+  p_entitlement_scope: CustomerPortalEntitlementScope;
+  p_relation_reason?: string | null;
+}
+
+export type RpcAdminGrantKnowledgeArticleEntitlementResponse =
+  AdminKnowledgeEntitlementRecordRow;
+
+export interface RpcAdminArchiveKnowledgeArticleEntitlementPayload {
+  p_entitlement_id: Uuid;
+}
+
+export type RpcAdminArchiveKnowledgeArticleEntitlementResponse =
+  AdminKnowledgeEntitlementRecordRow;
+
+export interface RpcAdminLinkKnowledgeArticleToTicketPayload {
+  p_tenant_id: Uuid;
+  p_ticket_id: Uuid;
+  p_article_id: Uuid;
+  p_relation_reason?: string | null;
+}
+
+export type RpcAdminLinkKnowledgeArticleToTicketResponse =
+  AdminTicketKnowledgeLinkRecordRow;
+
+export interface RpcAdminUnlinkKnowledgeArticleFromTicketPayload {
+  p_ticket_knowledge_link_id: Uuid;
+}
+
+export type RpcAdminUnlinkKnowledgeArticleFromTicketResponse =
+  AdminTicketKnowledgeLinkRecordRow;
 
 export interface RpcAdminCreateTenantContactPayload {
   p_tenant_id: Uuid;

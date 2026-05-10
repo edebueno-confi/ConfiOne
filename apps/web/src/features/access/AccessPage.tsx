@@ -103,7 +103,7 @@ function emptyAddMembershipForm(): AddMembershipFormState {
   };
 }
 
-function tenantRoleLabel(role: TenantRole) {
+function tenantRoleLabel(role: TenantRole | 'customer_user' | 'customer_manager') {
   switch (role) {
     case 'tenant_admin':
       return 'Admin';
@@ -113,12 +113,16 @@ function tenantRoleLabel(role: TenantRole) {
       return 'Solicitante';
     case 'tenant_viewer':
       return 'Leitor';
+    case 'customer_manager':
+      return 'Gestão cliente';
+    case 'customer_user':
+      return 'Usuário cliente';
     default:
       return 'Indisponível';
   }
 }
 
-function tenantRoleHelper(role: TenantRole) {
+function tenantRoleHelper(role: TenantRole | 'customer_user' | 'customer_manager') {
   switch (role) {
     case 'tenant_admin':
       return 'Coordena acessos e a operação do cliente.';
@@ -128,6 +132,10 @@ function tenantRoleHelper(role: TenantRole) {
       return 'Abre demandas e acompanha o retorno.';
     case 'tenant_viewer':
       return 'Consulta contexto e histórico sem operar mudanças.';
+    case 'customer_manager':
+      return 'Coordena o acesso customer-facing do tenant no portal autenticado.';
+    case 'customer_user':
+      return 'Opera apenas o escopo customer-facing liberado para o contato.';
     default:
       return 'Indisponível';
   }

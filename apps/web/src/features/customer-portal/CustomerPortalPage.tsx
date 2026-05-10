@@ -459,7 +459,7 @@ function TicketListRow({ ticket }: { ticket: CustomerPortalTicketListItem }) {
       <div className="mt-3 flex flex-wrap gap-2 text-xs text-[color:var(--color-muted)]">
         <span>{ticket.customerMessageCount} mensagens</span>
         <span>{ticket.customerAttachmentCount} evidências</span>
-        <span>{ticket.publicArticleCount} artigos</span>
+        <span>Artigos autorizados: Indisponível</span>
       </div>
     </Link>
   );

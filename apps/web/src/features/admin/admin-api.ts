@@ -4,10 +4,18 @@ import type {
   AdminAuditFeedRow,
   AdminAccessMembershipRow,
   AdminAccessUserRow,
+  AdminCustomerPortalAccessOverviewRow,
+  AdminCustomerPortalArticleCandidateRow,
+  AdminCustomerPortalTicketCandidateRow,
+  AdminCustomerPortalTenantAccessRow,
+  AdminCustomerPortalUserDetailRow,
+  AdminCustomerPortalUserRow,
   AdminKnowledgeArticleDetailV2Row,
   AdminKnowledgeArticleEditorialDraftRow,
   AdminKnowledgeArticleListItemV2Row,
   AdminKnowledgeArticleReviewAdvisoryRow,
+  AdminKnowledgeEntitlementDetailRow,
+  AdminKnowledgeEntitlementRow,
   AdminKnowledgeCategoryRecordRow,
   AdminKnowledgeCategoryV2Row,
   AdminKnowledgeSpaceRow,
@@ -21,7 +29,9 @@ import type {
   AdminSystemAuditEventRow,
   AdminSystemHealthCheckRow,
   AdminSystemOperationalSummaryRow,
+  AdminTicketKnowledgeLinkRow,
   AdminUserLookupRow,
+  CustomerPortalRole,
   KnowledgeAdvisoryClassification,
   KnowledgeArticleStatus,
   KnowledgeArticleReviewStatus,
@@ -40,12 +50,20 @@ import type {
   RpcAdminCreateTenantContactResponse,
   RpcAdminCreateTenantPayload,
   RpcAdminCreateTenantResponse,
+  RpcAdminArchiveKnowledgeArticleEntitlementPayload,
+  RpcAdminArchiveKnowledgeArticleEntitlementResponse,
   RpcAdminDiscardKnowledgeArticleEditorialRevisionV2Response,
+  RpcAdminGrantKnowledgeArticleEntitlementPayload,
+  RpcAdminGrantKnowledgeArticleEntitlementResponse,
+  RpcAdminLinkKnowledgeArticleToTicketPayload,
+  RpcAdminLinkKnowledgeArticleToTicketResponse,
   RpcAdminMarkKnowledgeArticleReviewedPayload,
   RpcAdminMarkKnowledgeArticleReviewedResponse,
   RpcAdminPublishKnowledgeArticleV2Response,
   RpcAdminPublishKnowledgeArticleEditorialRevisionV2Response,
   RpcAdminSubmitKnowledgeArticleForReviewV2Response,
+  RpcAdminUnlinkKnowledgeArticleFromTicketPayload,
+  RpcAdminUnlinkKnowledgeArticleFromTicketResponse,
   RpcAdminUpdateKnowledgeArticleReviewStatusPayload,
   RpcAdminUpdateKnowledgeArticleReviewStatusResponse,
   RpcAdminUpdateKnowledgeArticleDraftV2Payload,
@@ -226,6 +244,136 @@ export async function getAdminSystemOperationalSummary() {
   }
 
   return data as AdminSystemOperationalSummaryRow | null;
+}
+
+export async function getAdminCustomerPortalAccessOverview() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_customer_portal_access_overview')
+    .select('*')
+    .maybeSingle();
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o resumo do portal cliente.');
+  }
+
+  return data as AdminCustomerPortalAccessOverviewRow | null;
+}
+
+export async function listAdminCustomerPortalTenantAccess() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_customer_portal_tenant_access')
+    .select('*')
+    .order('tenant_display_name', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o panorama por tenant do portal cliente.');
+  }
+
+  return (data ?? []) as AdminCustomerPortalTenantAccessRow[];
+}
+
+export async function listAdminCustomerPortalUsers() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_customer_portal_users')
+    .select('*')
+    .order('tenant_display_name', { ascending: true })
+    .order('user_full_name', { ascending: true, nullsFirst: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar os usuários customer-facing.');
+  }
+
+  return (data ?? []) as AdminCustomerPortalUserRow[];
+}
+
+export async function getAdminCustomerPortalUserDetail(membershipId: string) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_customer_portal_user_detail')
+    .select('*')
+    .eq('membership_id', membershipId)
+    .maybeSingle();
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o detalhe do usuário customer-facing.');
+  }
+
+  return data as AdminCustomerPortalUserDetailRow | null;
+}
+
+export async function listAdminKnowledgeEntitlements() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_knowledge_entitlements')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar os entitlements do portal cliente.');
+  }
+
+  return (data ?? []) as AdminKnowledgeEntitlementRow[];
+}
+
+export async function getAdminKnowledgeEntitlementDetail(entitlementId: string) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_knowledge_entitlement_detail')
+    .select('*')
+    .eq('entitlement_id', entitlementId)
+    .maybeSingle();
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o detalhe do entitlement.');
+  }
+
+  return data as AdminKnowledgeEntitlementDetailRow | null;
+}
+
+export async function listAdminTicketKnowledgeLinks() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_ticket_knowledge_links')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar os vínculos de artigo por ticket.');
+  }
+
+  return (data ?? []) as AdminTicketKnowledgeLinkRow[];
+}
+
+export async function listAdminCustomerPortalArticleCandidates() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_customer_portal_article_candidates')
+    .select('*')
+    .order('published_at', { ascending: false, nullsFirst: false })
+    .order('article_title', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar artigos elegíveis para o portal cliente.');
+  }
+
+  return (data ?? []) as AdminCustomerPortalArticleCandidateRow[];
+}
+
+export async function listAdminCustomerPortalTicketCandidates() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_customer_portal_ticket_candidates')
+    .select('*')
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar tickets elegíveis para vínculo com Knowledge.');
+  }
+
+  return (data ?? []) as AdminCustomerPortalTicketCandidateRow[];
 }
 
 export async function listAdminKnowledgeSpaces() {
@@ -411,6 +559,93 @@ export async function updateTenantMemberStatus(
   }
 
   return data as RpcAdminUpdateTenantMemberStatusResponse;
+}
+
+export async function updateCustomerPortalUserRole(payload: {
+  p_membership_id: string;
+  p_role: CustomerPortalRole;
+}) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_admin_update_tenant_member_role',
+    payload,
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao atualizar o papel customer-facing.');
+  }
+
+  return data as RpcAdminUpdateTenantMemberRoleResponse;
+}
+
+export async function updateCustomerPortalUserStatus(
+  payload: RpcAdminUpdateTenantMemberStatusPayload,
+) {
+  return updateTenantMemberStatus(payload);
+}
+
+export async function grantKnowledgeArticleEntitlement(
+  payload: RpcAdminGrantKnowledgeArticleEntitlementPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_admin_grant_knowledge_article_entitlement',
+    payload,
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao conceder entitlement do portal cliente.');
+  }
+
+  return data as RpcAdminGrantKnowledgeArticleEntitlementResponse;
+}
+
+export async function archiveKnowledgeArticleEntitlement(
+  payload: RpcAdminArchiveKnowledgeArticleEntitlementPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_admin_archive_knowledge_article_entitlement',
+    payload,
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao arquivar entitlement do portal cliente.');
+  }
+
+  return data as RpcAdminArchiveKnowledgeArticleEntitlementResponse;
+}
+
+export async function linkKnowledgeArticleToTicket(
+  payload: RpcAdminLinkKnowledgeArticleToTicketPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_admin_link_knowledge_article_to_ticket',
+    payload,
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao vincular artigo autorizado ao ticket.');
+  }
+
+  return data as RpcAdminLinkKnowledgeArticleToTicketResponse;
+}
+
+export async function unlinkKnowledgeArticleFromTicket(
+  payload: RpcAdminUnlinkKnowledgeArticleFromTicketPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_admin_unlink_knowledge_article_from_ticket',
+    payload,
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao remover o vínculo entre ticket e artigo.');
+  }
+
+  return data as RpcAdminUnlinkKnowledgeArticleFromTicketResponse;
 }
 
 export async function createTenantContact(
@@ -656,10 +891,18 @@ export type {
   AdminAccessMembershipRow,
   AdminAccessUserRow,
   AdminAuditFeedRow,
+  AdminCustomerPortalAccessOverviewRow,
+  AdminCustomerPortalArticleCandidateRow,
+  AdminCustomerPortalTicketCandidateRow,
+  AdminCustomerPortalTenantAccessRow,
+  AdminCustomerPortalUserDetailRow,
+  AdminCustomerPortalUserRow,
   AdminKnowledgeArticleDetailV2Row,
   AdminKnowledgeArticleEditorialDraftRow,
   AdminKnowledgeArticleListItemV2Row,
   AdminKnowledgeArticleReviewAdvisoryRow,
+  AdminKnowledgeEntitlementDetailRow,
+  AdminKnowledgeEntitlementRow,
   AdminKnowledgeCategoryRecordRow,
   AdminKnowledgeCategoryV2Row,
   AdminKnowledgeSpaceRow,
@@ -673,7 +916,9 @@ export type {
   AdminSystemAuditEventRow,
   AdminSystemHealthCheckRow,
   AdminSystemOperationalSummaryRow,
+  AdminTicketKnowledgeLinkRow,
   AdminUserLookupRow,
+  CustomerPortalRole,
   KnowledgeAdvisoryClassification,
   KnowledgeArticleStatus,
   KnowledgeArticleReviewStatus,

@@ -5,6 +5,7 @@ import { useAuthContext } from '../auth/auth-context';
 const navigation = [
   { label: 'Clientes', to: '/admin/tenants', icon: 'tenants' },
   { label: 'Knowledge', to: '/admin/knowledge', icon: 'knowledge' },
+  { label: 'Portal cliente', to: '/admin/customer-portal', icon: 'portal' },
   { label: 'Access', to: '/admin/access', icon: 'access' },
   { label: 'System', to: '/admin/system', icon: 'system' },
 ] as const;
@@ -37,7 +38,7 @@ function BrandMark() {
 function SidebarIcon({
   kind,
 }: {
-  kind: 'tenants' | 'knowledge' | 'access' | 'system';
+  kind: 'tenants' | 'knowledge' | 'portal' | 'access' | 'system';
 }) {
   if (kind === 'tenants') {
     return (
@@ -62,6 +63,15 @@ function SidebarIcon({
       <svg aria-hidden="true" className="h-[18px] w-[18px]" fill="none" viewBox="0 0 20 20">
         <path d="M6.5 9V6.75A3.5 3.5 0 0 1 10 3.25a3.5 3.5 0 0 1 3.5 3.5V9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" />
         <rect height="8.5" rx="2" stroke="currentColor" strokeWidth="1.6" width="10" x="5" y="9" />
+      </svg>
+    );
+  }
+
+  if (kind === 'portal') {
+    return (
+      <svg aria-hidden="true" className="h-[18px] w-[18px]" fill="none" viewBox="0 0 20 20">
+        <path d="M4 5.25A2.25 2.25 0 0 1 6.25 3h7.5A2.25 2.25 0 0 1 16 5.25v9.5A2.25 2.25 0 0 1 13.75 17h-7.5A2.25 2.25 0 0 1 4 14.75v-9.5Z" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M7 7.25h6M7 10h6M7 12.75h3.25" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5" />
       </svg>
     );
   }
