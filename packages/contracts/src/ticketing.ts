@@ -1150,6 +1150,11 @@ export interface CustomerPortalKnowledgeArticle {
   sourceLabel: string;
 }
 
+export interface CustomerPortalKnowledgeSearchResult
+  extends CustomerPortalKnowledgeArticle {
+  matchReason: string | null;
+}
+
 export interface CustomerPortalKnowledgeArticleDetail
   extends CustomerPortalKnowledgeArticle {
   bodyMd: string;
@@ -1253,4 +1258,14 @@ export interface RpcCustomerRequestTicketReopenResponse {
   customerStatusLabel: string;
   status: TicketStatus;
   updatedAt: IsoTimestamp;
+}
+
+export interface RpcCustomerSearchKnowledgeArticlesPayload {
+  tenantId: Uuid;
+  searchQuery?: string | null;
+  categoryName?: string | null;
+  source?: CustomerPortalKnowledgeSource | 'all';
+  ticketId?: Uuid | null;
+  limit?: number;
+  offset?: number;
 }
