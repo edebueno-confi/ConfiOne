@@ -151,7 +151,10 @@ Retorno:
 
 ## Riscos restantes
 - o portal ainda usa o contexto customer-facing principal; falta seleção explícita de tenant quando houver múltiplos vínculos
-- o Admin Console abriu no shell durante a regressão rápida, mas a tela `/admin/customer-portal` permaneceu em loading no browser local sem erro de console; isso ficou registrado como observação de regressão rápida fora do escopo funcional deste lote
+- o tenant switching customer-facing segue pendente e depende de `active_tenant_id` governado por backend
+
+## Observação de continuidade
+- a regressao observada em `/admin/customer-portal` durante a regressao rapida deste lote foi tratada depois em `Customer Portal Admin Session Regression Fix And Tenant Context Prep V3`.
 
 ## Próximo lote recomendado
 `Customer Portal Tenant Context And Switching V3`

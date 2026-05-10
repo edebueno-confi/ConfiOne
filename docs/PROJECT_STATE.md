@@ -69,7 +69,7 @@ Documentos históricos:
 - Nenhum dado operacional relevante deve ser perdido.
 - Documentação deve ser viva e versionada no repositório.
 
-## Estado atual em 2026-05-09
+## Estado atual em 2026-05-10
 - A curadoria refinada da Knowledge Base está pausada; os candidatos continuam como corpus/documentação inicial.
 - O foco atual é buildout funcional da plataforma interna CX B2B técnica.
 - O lote `Support Ticket Operational Flow V3` fechou o primeiro bloco real de contratos operacionais de ticket.
@@ -88,9 +88,12 @@ Documentos históricos:
 - O `Buildout Status Checkpoint V3` consolidou o estado atual do buildout e definiu os próximos blocos grandes recomendados sem implementar produto novo.
 - O lote `Customer Portal Contract Foundation V3` criou a fundacao customer-facing real do portal B2B com roles `customer_user`/`customer_manager`, read models `vw_customer_portal_*`, RPCs `rpc_customer_*`, rotas `/portal`, `/portal/tickets` e `/portal/tickets/:ticketId`, fixture QA e testes de isolamento, sem portal fake, SLA publico, IA ou Omni Inbox.
 - O lote `Customer Portal Access And Knowledge Entitlements V3` criou a camada customer-facing de entitlement de Knowledge autenticada, com `knowledge_article_entitlements`, views `vw_customer_portal_knowledge_*`, RPCs administrativas minimas de grant/archive/link/unlink e rotas `/portal/help` e `/portal/help/:articleSlug`, mantendo o Public Help estritamente publico.
+- O lote `Customer Portal Access Administration V3` criou `/admin/customer-portal`, consolidando governanca customer-facing no Admin Console com read models reais, grant/archive de entitlement, link/unlink ticket-artigo e operacao de role/status via RPC.
+- O lote `Customer Portal Search And Discoverability V3` fechou a busca autenticada do portal com `rpc_customer_search_knowledge_articles`, filtros reais por origem/categoria e descoberta contextual por ticket, sem misturar boundary publica e autenticada.
+- O lote `Customer Portal Admin Session Regression Fix And Tenant Context Prep V3` corrigiu o loop infinito de bootstrap em `/admin/customer-portal`, confirmou separacao entre contexto admin e customer-facing no runtime e preparou a especificacao segura do proximo lote de tenant switching sem implementar auth paralela.
 - Nenhuma ação fake foi habilitada no frontend; ações sem contrato completo seguem bloqueadas para lote futuro.
 - Os 8 candidatos documentais da Knowledge continuam pendentes, nao aprovados, nao publicados e nao injetados automaticamente no Help Center.
-- Próximo bloco recomendado: `Customer Portal Access Administration V3`, para delegar convite/revogacao customer-facing por tenant sem auth paralela e sem bypass de auditoria.
+- Próximo bloco recomendado: `Customer Portal Tenant Context And Switching V3`, para suportar multiplos vinculos customer-facing com `active_tenant_id` governado por backend e sem contaminar o contexto administrativo.
 
 ## Estado real do repositório em 2026-04-30
 

@@ -283,6 +283,11 @@ Ordem sugerida:
 4. Atualizar `/portal`, `/portal/tickets` e `/portal/help` para trabalhar com tenant/contexto explicito.
 5. Cobrir cross-tenant, usuario revogado e persistencia segura da ultima escolha.
 
+Preparacao ja concluida:
+- a regressao de loading persistente em `/admin/customer-portal` foi corrigida antes deste lote.
+- a separacao entre contexto admin e contexto customer-facing foi revalidada em browser e em pgTAP.
+- a preparacao arquitetural foi registrada em `docs/CUSTOMER_PORTAL_TENANT_CONTEXT_AND_SWITCHING_PREP_V3.md`.
+
 ## Decisoes que ainda dependem de Produto
 - Se Support e Admin devem convergir em um App Shell unico.
 - Quais roles podem criar ticket manualmente.

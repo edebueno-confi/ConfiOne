@@ -36,6 +36,14 @@ Toda operação deve saber:
 ## Backend
 Permissões devem ser validadas no banco/RPC/policy, nunca apenas no frontend.
 
+## Boundary entre Admin e Portal Cliente
+- O Admin Console e o Portal Cliente reutilizam a mesma sessao Supabase do browser, mas nao compartilham gate, role efetiva nem tenant ativo.
+- O gate administrativo deve continuar derivado exclusivamente de `vw_admin_auth_context`.
+- O contexto customer-facing deve continuar derivado exclusivamente de `vw_customer_portal_auth_context` e dos read models/RPCs do portal.
+- Troca de sessao entre customer-facing e admin nunca pode depender de limpar `localStorage` manualmente como solucao de produto.
+- Futuro tenant switching customer-facing nao pode promover nem contaminar contexto admin; `active_tenant_id` deve ser resolvido por contrato backend e revalidado contra membership real.
+- Nenhuma superficie deve inferir permissao da outra: customer sem role admin vai para `access-denied`; admin sem membership customer-facing nao ganha contexto de portal.
+
 ## Estado da Fase 1.2
 - Bootstrap do primeiro `platform_admin` implementado em `app_private.bootstrap_first_platform_admin(...)`.
 - Verificação de status de bootstrap em `app_private.platform_admin_bootstrap_status()`.

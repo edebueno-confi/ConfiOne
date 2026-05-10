@@ -18,6 +18,47 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 8.21 - Customer Portal Admin Session Regression Fix And Tenant Context Prep V3
+- fase: `8.21`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-10`
+- resumo funcional: a regressao de loading persistente em `/admin/customer-portal` foi corrigida ao remover o loop de bootstrap da tela, endurecer timeout do carregamento inicial/detalhes e registrar a preparacao tecnica do futuro tenant switching customer-facing sem auth paralela.
+- docs alterados:
+  - `docs/CUSTOMER_PORTAL_TENANT_CONTEXT_AND_SWITCHING_PREP_V3.md`
+  - `docs/CUSTOMER_PORTAL_ACCESS_ADMINISTRATION_V3.md`
+  - `docs/CUSTOMER_PORTAL_SEARCH_AND_DISCOVERABILITY_V3.md`
+  - `docs/AUTH_CONTEXT_STRATEGY.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhum contrato novo de producao
+  - regressao backend coberta em `supabase/tests/034_customer_portal_admin_context_regression.sql`
+- telas afetadas:
+  - `/admin/customer-portal`
+  - `/admin/access` em regressao
+  - `/admin/knowledge` em regressao
+  - `/portal`
+  - `/portal/help`
+  - `/portal/tickets/:ticketId`
+- runtime/UI:
+  - o loading de `/admin/customer-portal` agora resolve para `ready`, `contract-unavailable` ou erro real
+  - a tela deixou de redisparar em loop as mesmas queries administrativas apos troca de sessao customer -> admin
+- riscos restantes:
+  - tenant switching customer-facing continua fora deste lote e depende de `active_tenant_id` governado por backend
+  - a criacao/convite inicial de novos usuarios customer-facing continua em lote futuro
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+- impacto na FAQ futura:
+  - nenhum; lote de estabilidade de sessao e preparacao arquitetural, sem expandir superficie customer-facing.
+
 ### Fase 8.19 - Customer Portal Access Administration V3
 - fase: `8.19`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

@@ -120,3 +120,12 @@ Criar a administracao operacional do Portal Cliente B2B no Admin Console, sem sh
 - `npm run web:typecheck`
 - `npm run web:build`
 - `npm run supabase:qa:local-support-fixture`
+
+## Estabilizacao posterior
+- Em `2026-05-10`, a regressao de loading persistente em `/admin/customer-portal` foi corrigida sem criar auth paralela.
+- Causa raiz:
+  - o bootstrap inicial da tela usava `useEffectEvent` como dependencia de `useEffect`, disparando o carregamento em loop e recolocando a pagina em `loading` apos troca de sessao customer -> admin.
+- Correcao:
+  - bootstrap inicial alinhado ao padrao das outras superficies admin, executado uma unica vez por montagem
+  - timeout explicito no carregamento inicial e nos detalhes, para converter travamento silencioso em erro real
+  - regressao backend adicionada para confirmar que customer-facing nao le as views administrativas do portal
