@@ -3053,3 +3053,46 @@ Cada registro deve informar:
   - `npm run supabase:qa:local-support-fixture`
 - impacto na FAQ futura:
   - nenhum; lote de portal autenticado, sem publicacao automatica de Knowledge
+
+### Fase 8.20 - Customer Portal Search And Discoverability V3
+- fase: `8.20`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-10`
+- resumo funcional: o portal cliente B2B passou a ter busca autenticada dedicada e descoberta segura de Knowledge autorizada, sem IA, sem filtro de seguranca no frontend e sem misturar boundary publica com a autenticada.
+- docs alterados:
+  - `docs/CUSTOMER_PORTAL_SEARCH_AND_DISCOVERABILITY_V3.md`
+  - `docs/CUSTOMER_PORTAL_ACCESS_ADMINISTRATION_V3.md`
+  - `docs/CUSTOMER_PORTAL_ACCESS_AND_KNOWLEDGE_ENTITLEMENTS_V3.md`
+  - `docs/CUSTOMER_PORTAL_CONTRACT_FOUNDATION_V3.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/design/screens/PUBLIC_HELP_CENTER.md`
+- telas afetadas:
+  - `/portal`
+  - `/portal/help`
+  - `/portal/help/:articleSlug`
+  - `/portal/tickets/:ticketId`
+  - `/help/genius` (regressao rapida de boundary)
+  - `/help/genius/articles/:slug` (regressao rapida de boundary)
+  - `/admin/customer-portal` (regressao rapida)
+- views/RPCs afetadas:
+  - `vw_customer_portal_knowledge_articles`
+  - `vw_customer_portal_knowledge_article_detail`
+  - `vw_customer_portal_ticket_knowledge_links`
+  - `rpc_customer_search_knowledge_articles`
+- riscos restantes:
+  - o portal ainda nao possui tenant switcher customer-facing
+  - a busca continua sem ranking inteligente ou recomendacao, por escolha de escopo
+  - a regressao rapida de `/admin/customer-portal` no browser local exigiu limpar storage persistente da sessao para validar o login administrativo; a tela permaneceu em loading no browser apos o shell abrir, sem erro de console, fora do escopo funcional deste lote
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+- impacto na FAQ futura:
+  - nenhum; lote de descoberta autenticada, sem publicacao automatica e sem IA

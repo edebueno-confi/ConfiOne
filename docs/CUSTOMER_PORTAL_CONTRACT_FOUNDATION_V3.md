@@ -173,3 +173,10 @@ Testes pgTAP cobrem:
 - `vw_customer_portal_ticket_knowledge_links` restringe artigos vinculados ao ticket ao mesmo tenant e ao mesmo boundary customer-facing.
 - `/portal` ganhou resumo de Central autorizada e as rotas `/portal/help` e `/portal/help/:articleSlug` passaram a operar leitura autenticada segura.
 - O Public Help continua publico e separado; entitlement nao publica artigo e nao substitui revisão editorial.
+
+## Atualizacao - Customer Portal Search And Discoverability V3
+- `rpc_customer_search_knowledge_articles` passou a concentrar a busca autenticada customer-facing com `tenant_id`, filtros reais e `ticket_id` opcional.
+- `/portal/help` deixou de depender apenas da listagem inicial e passou a operar com busca governada pelo backend.
+- `/portal/tickets/:ticketId` ganhou descoberta contextual segura, sem recomendacao IA e sem expor artigo fora do ticket autorizado.
+- Termo vazio retorna apenas a lista segura autorizada; termo curto sem filtro nao vaza a base inteira.
+- A boundary publica foi preservada: `/help/genius` e `rpc_public_search_knowledge_articles` continuam exclusivamente publicos.

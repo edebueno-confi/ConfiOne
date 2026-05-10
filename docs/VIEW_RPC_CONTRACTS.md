@@ -1384,6 +1384,50 @@ Fase 8.2:
 - Upload anonimo e cross-tenant ficam bloqueados por RPC, storage policy e testes.
 - Arquivamento/remocao de evidencia pelo cliente continua bloqueado por falta de RPC segura dedicada.
 
+## Fase 8.20 - Customer Portal Search And Discoverability V3
+
+### Leitura consumida pelo frontend
+- `vw_customer_portal_knowledge_articles`
+- `vw_customer_portal_knowledge_article_detail`
+- `vw_customer_portal_ticket_knowledge_links`
+
+### Busca consumida pelo frontend
+- `rpc_customer_search_knowledge_articles`
+
+### Regras de consumo
+- `/portal/help` passou a usar busca autenticada governada pelo backend, sem array local como source of truth.
+- A RPC aceita:
+  - `tenant_id`
+  - `search_query`
+  - `category_name`
+  - `source` em `all|public|customer_portal|ticket_linked`
+  - `ticket_id` opcional para descoberta contextual
+  - `limit`
+  - `offset`
+- A busca retorna apenas:
+  - `article_id`
+  - `slug`
+  - `title`
+  - `summary`
+  - `category_name`
+  - `source`
+  - `source_label`
+  - `relation_reason`
+  - `published_at`
+  - `updated_at`
+  - `match_reason`
+- O termo vazio retorna apenas a lista segura autorizada ao ator.
+- Termo curto sem filtro nao vaza a base inteira; a UX exige pelo menos 2 caracteres ou filtro real.
+- `/portal/tickets/:ticketId` pode buscar artigos no contexto do proprio ticket via `ticket_id` explicito.
+
+### Boundary mantido
+- `draft` nunca aparece.
+- `internal` nunca aparece.
+- `restricted` so aparece com entitlement legitimo ou vinculo ticket-linked autorizado.
+- Entitlement arquivado deixa de expor artigo na busca.
+- A busca publica continua separada em `rpc_public_search_knowledge_articles` e nao passa a listar artigos autenticados.
+- O frontend nao decide entitlement, nao reordena por heuristica e nao monta recomendacao IA.
+
 ## Fase 6.3 - Support Workspace Agent Directory + Assignment UX
 
 ### Leitura consumida pelo frontend

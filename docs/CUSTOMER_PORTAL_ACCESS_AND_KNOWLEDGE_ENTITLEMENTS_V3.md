@@ -163,10 +163,15 @@ Regras:
 - Search/navigation mais rica do portal continua dependente de contrato dedicado.
 - Os 8 candidatos documentais seguem fora da superfície publicada/autenticada.
 
+## Continuidade fechada
+- `Customer Portal Access Administration V3` fechou a governanca administrativa em `/admin/customer-portal`.
+- `Customer Portal Search And Discoverability V3` fechou a busca autenticada customer-facing em `/portal/help` e a descoberta contextual em `/portal/tickets/:ticketId`.
+- O entitlement continua sendo resolvido apenas no backend; a busca nao ganhou heuristica local nem recomendacao IA.
+
 ## Próximo lote recomendado
-`Customer Portal Access Administration V3`
+`Customer Portal Tenant Context And Switching V3`
 
 Foco:
-- convite/revogação customer-facing por tenant;
-- boundary auditável de `customer_manager`;
-- gestão segura de contatos/usuários do portal sem auth paralela.
+- escolha explicita de tenant quando houver mais de um vinculo customer-facing;
+- persistencia segura do contexto ativo;
+- navegacao consistente entre tickets e Knowledge autenticada.

@@ -263,6 +263,26 @@ Ordem sugerida:
 4. Conectar UX de busca/filter sem expor draft/internal nem depender de heuristica no frontend.
 5. Cobrir regressao de tenant isolation, no-result states e scroll/layout.
 
+Status:
+- concluido em `2026-05-10`
+- contrato fechado em `rpc_customer_search_knowledge_articles`
+- `/portal/help` agora opera com busca autenticada real
+- `/portal/tickets/:ticketId` agora oferece descoberta contextual segura
+- o Help publico permaneceu fora da boundary autenticada
+
+## Proximo lote tecnico recomendado
+
+### Lote: Customer Portal Tenant Context And Switching V3
+
+Objetivo: permitir que um mesmo ator customer-facing escolha explicitamente o tenant/contexto ativo quando possuir mais de um vinculo valido, sem auth paralela, sem tenant switcher fake e sem quebrar entitlement, tickets ou Knowledge autenticada.
+
+Ordem sugerida:
+1. Auditar `vw_customer_portal_auth_context`, memberships customer-facing e contatos vinculados.
+2. Definir read model de contexts disponiveis por usuario customer-facing.
+3. Criar contrato backend para escolha/troca de contexto ativo sem mover seguranca para o frontend.
+4. Atualizar `/portal`, `/portal/tickets` e `/portal/help` para trabalhar com tenant/contexto explicito.
+5. Cobrir cross-tenant, usuario revogado e persistencia segura da ultima escolha.
+
 ## Decisoes que ainda dependem de Produto
 - Se Support e Admin devem convergir em um App Shell unico.
 - Quais roles podem criar ticket manualmente.

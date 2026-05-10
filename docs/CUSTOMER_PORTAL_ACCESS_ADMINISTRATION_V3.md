@@ -106,6 +106,12 @@ Criar a administracao operacional do Portal Cliente B2B no Admin Console, sem sh
 - o portal ainda nao possui busca autenticada dedicada
 - o portal continua sem tenant switcher customer-facing
 
+## Continuidade fechada em seguida
+- A busca autenticada customer-facing foi fechada em `Customer Portal Search And Discoverability V3`.
+- `/portal/help` passou a operar com `rpc_customer_search_knowledge_articles`.
+- `/portal/tickets/:ticketId` passou a usar descoberta contextual segura por `ticket_id`.
+- O Help publico permaneceu separado e nao passou a exibir artigos autenticados.
+
 ## Validacao
 - `npm run supabase:db:reset`
 - `npm run supabase:test:db`

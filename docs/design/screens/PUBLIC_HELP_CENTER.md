@@ -131,3 +131,10 @@ Deve conter:
 - Busca e categorias são óbvias.
 - Não depende de sessão customer-facing para resolver conteúdo público.
 - Não mistura artigos autenticados/restritos do portal com a camada pública.
+
+## Boundary confirmado após Customer Portal Search And Discoverability V3
+
+- `/help/genius` e `/help/genius/articles/:slug` continuam públicos.
+- A busca pública continua separada da busca autenticada customer-facing.
+- `rpc_public_search_knowledge_articles` não deve retornar artigos `customer_portal` ou `ticket_linked`.
+- O portal autenticado passou a usar contrato próprio em `/portal/help`, sem reaproveitar a camada pública como entitlement.

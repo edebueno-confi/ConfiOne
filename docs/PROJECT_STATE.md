@@ -1918,6 +1918,22 @@ Documentos históricos:
     - convite customer-facing dedicado fora dos contratos genericos ja existentes
   - O portal deixou de mostrar `publicArticleCount` como numero enganoso nos cards resumidos; agora a copy fica honesta quando a contagem autorizada nao tem contrato proprio.
   - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
+- Fase 8.20: Customer Portal Search And Discoverability V3 concluido como bloco de busca autenticada e descoberta segura.
+  - O portal ganhou `rpc_customer_search_knowledge_articles` para busca customer-facing com `tenant_id`, `source`, `category_name`, `ticket_id`, `limit` e `offset`.
+  - `/portal/help` agora usa busca real do backend, com filtros seguros por categoria e origem:
+    - `public`
+    - `customer_portal`
+    - `ticket_linked`
+  - `/portal` passou a reforcar a descoberta da Central autorizada com entrada clara e cards reais ordenados pelo contrato ja autorizado.
+  - `/portal/tickets/:ticketId` ganhou busca contextual por `ticket_id`, sem IA e sem expor artigo fora do ticket/tenant permitido.
+  - O termo vazio retorna apenas a lista segura autorizada; termo curto sem filtro nao vaza toda a base.
+  - Entitlement arquivado deixa de retornar artigo na busca.
+  - `ticket_id` cross-tenant falha no backend.
+  - O Help publico permaneceu separado:
+    - `/help/genius` continua publico
+    - `/help/genius/articles/:slug` continua publico
+    - `rpc_public_search_knowledge_articles` nao retorna artigos autenticados do portal
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -1939,7 +1955,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Executar o proximo lote tecnico grande `Customer Portal Search And Discoverability V3`, fechando busca autenticada de Knowledge e tickets no portal sem usar IA, sem indexacao insegura e sem delegar filtro de seguranca ao frontend.
+Executar o proximo lote tecnico grande `Customer Portal Tenant Context And Switching V3`, fechando selecao explicita do tenant/contexto customer-facing quando o ator possuir mais de um vinculo, sem auth paralela, sem heuristica local e sem quebrar entitlement, tickets ou Knowledge autenticada.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único
