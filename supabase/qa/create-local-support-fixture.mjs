@@ -469,6 +469,13 @@ const FIXTURE = {
         description: 'Referencias restritas do tenant A.',
         visibility: 'restricted',
       },
+      {
+        tenantSlug: 'support-qa-b',
+        name: 'Suporte restrito tenant B',
+        slug: 'support-restrito-tenant-b',
+        description: 'Referências restritas do tenant B.',
+        visibility: 'restricted',
+      },
     ],
     articles: [
       {
@@ -512,6 +519,16 @@ const FIXTURE = {
         visibility: 'restricted',
       },
       {
+        tenantSlug: 'support-qa-b',
+        categorySlug: 'support-restrito-tenant-b',
+        title: 'Operação da plataforma: artigo restrito do tenant B',
+        slug: 'operacao-plataforma-artigo-restrito-b',
+        summary: 'Guia restrito do tenant B para validar arquivamento de entitlement.',
+        bodyMd:
+          'Conteúdo restrito customer-facing do tenant B, usado para validar a retirada governada de acesso no portal.',
+        visibility: 'restricted',
+      },
+      {
         tenantSlug: 'support-qa-a',
         categorySlug: 'support-restrito-tenant-a',
         title: 'Rascunho restrito que não pode vazar',
@@ -531,6 +548,15 @@ const FIXTURE = {
         entitlementScope: 'customer_portal',
         relationReason:
           'Liberado para o portal do tenant A como orientação autenticada aprovada.',
+      },
+      {
+        tenantSlug: 'support-qa-b',
+        actorKey: 'qa-admin',
+        articleSlug: 'operacao-plataforma-artigo-restrito-b',
+        entitlementScope: 'tenant',
+        relationReason:
+          'Entitlement arquivado para validar governança de retirada de acesso no portal.',
+        archiveAfterGrant: true,
       },
     ],
     customerTicketLinks: [
@@ -2152,16 +2178,17 @@ async function ensureTicketKnowledgeLink({ actorSession, tenantId, ticketId, lin
 
 function queryKnowledgeArticleEntitlement(tenantId, articleId, entitlementScope) {
   const result = runSupabaseDbQuery(`
-    select id::text as id
+    select
+      id::text as id,
+      archived_at
     from public.knowledge_article_entitlements
     where tenant_id = '${sqlEscape(tenantId)}'::uuid
       and article_id = '${sqlEscape(articleId)}'::uuid
       and entitlement_scope = '${sqlEscape(entitlementScope)}'::public.knowledge_article_entitlement_scope
-      and archived_at is null
     limit 1;
   `);
 
-  return result.rows?.[0]?.id ?? null;
+  return result.rows?.[0] ?? null;
 }
 
 async function ensureKnowledgeArticleEntitlement({
@@ -2170,34 +2197,55 @@ async function ensureKnowledgeArticleEntitlement({
   articleSlug,
   entitlementScope,
   relationReason,
+  archiveAfterGrant = false,
 }) {
   const article = queryKnowledgeArticleBySlug(articleSlug, tenantId);
   if (!article?.id) {
     fail(`Artigo restrito ausente para entitlement customer-facing: ${articleSlug}.`);
   }
 
-  const existingId = queryKnowledgeArticleEntitlement(tenantId, article.id, entitlementScope);
-  if (existingId) {
-    return existingId;
+  let entitlementRecord = queryKnowledgeArticleEntitlement(tenantId, article.id, entitlementScope);
+
+  if (!entitlementRecord?.id) {
+    const created = await callRpcAsUser({
+      apiUrl: actorSession.apiUrl,
+      anonKey: actorSession.anonKey,
+      accessToken: actorSession.accessToken,
+      rpcName: 'rpc_admin_grant_knowledge_article_entitlement',
+      body: {
+        p_tenant_id: tenantId,
+        p_article_id: article.id,
+        p_entitlement_scope: entitlementScope,
+        p_relation_reason: relationReason,
+      },
+    });
+
+    entitlementRecord = {
+      id:
+        created?.id ??
+        queryKnowledgeArticleEntitlement(tenantId, article.id, entitlementScope)?.id ??
+        null,
+      archived_at: null,
+    };
   }
 
-  const created = await callRpcAsUser({
-    apiUrl: actorSession.apiUrl,
-    anonKey: actorSession.anonKey,
-    accessToken: actorSession.accessToken,
-    rpcName: 'rpc_admin_grant_knowledge_article_entitlement',
-    body: {
-      p_tenant_id: tenantId,
-      p_article_id: article.id,
-      p_entitlement_scope: entitlementScope,
-      p_relation_reason: relationReason,
-    },
-  });
+  if (!entitlementRecord?.id) {
+    fail(`Entitlement customer-facing não foi materializado para ${articleSlug}.`);
+  }
 
-  return (
-    created?.id ??
-    queryKnowledgeArticleEntitlement(tenantId, article.id, entitlementScope)
-  );
+  if (archiveAfterGrant && entitlementRecord.archived_at === null) {
+    await callRpcAsUser({
+      apiUrl: actorSession.apiUrl,
+      anonKey: actorSession.anonKey,
+      accessToken: actorSession.accessToken,
+      rpcName: 'rpc_admin_archive_knowledge_article_entitlement',
+      body: {
+        p_entitlement_id: entitlementRecord.id,
+      },
+    });
+  }
+
+  return entitlementRecord.id;
 }
 
 async function ensureCustomerTicketKnowledgeLink({
@@ -3483,6 +3531,7 @@ async function main() {
       tenant_slug: entitlement.tenantSlug,
       article_slug: entitlement.articleSlug,
       entitlement_scope: entitlement.entitlementScope,
+      archived: Boolean(entitlement.archiveAfterGrant),
     });
   }
 
