@@ -1,5 +1,21 @@
-import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
-import { Link, NavLink, Navigate, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
+import {
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useState,
+} from 'react';
+import {
+  Link,
+  NavLink,
+  Navigate,
+  Outlet,
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 import {
   ContractUnavailableState,
   ErrorState,
@@ -21,6 +37,7 @@ import { AppError } from '../../app/errors';
 import type {
   CustomerPortalKnowledgeArticle,
   CustomerPortalKnowledgeArticleDetail,
+  CustomerPortalKnowledgeSearchResult,
   CustomerPortalProfileContext,
   CustomerPortalTicketAttachment,
   CustomerPortalTicketCollaborationState,
@@ -41,6 +58,7 @@ import {
   fetchCustomerPortalContexts,
   fetchCustomerPortalKnowledgeArticleDetail,
   fetchCustomerPortalKnowledgeArticles,
+  searchCustomerPortalKnowledgeArticles,
   fetchCustomerPortalTicketKnowledgeLinks,
   fetchCustomerPortalTicketAttachments,
   fetchCustomerPortalTicketCollaborationState,
@@ -85,6 +103,32 @@ function buildPortalKnowledgePath(slug: string) {
   return `/portal/help/${slug}`;
 }
 
+function buildPortalHelpSearchPath(params: {
+  query?: string;
+  category?: string;
+  source?: string;
+}) {
+  const nextParams = new URLSearchParams();
+  const query = params.query?.trim() ?? '';
+  const category = params.category?.trim() ?? '';
+  const source = params.source?.trim() ?? '';
+
+  if (query) {
+    nextParams.set('q', query);
+  }
+
+  if (category) {
+    nextParams.set('category', category);
+  }
+
+  if (source && source !== 'all') {
+    nextParams.set('source', source);
+  }
+
+  const serialized = nextParams.toString();
+  return serialized ? `/portal/help?${serialized}` : '/portal/help';
+}
+
 function humanizeKnowledgeSourceLabel(source: CustomerPortalKnowledgeArticle['source']) {
   if (source === 'public') {
     return 'Público';
@@ -107,6 +151,18 @@ function toneForKnowledgeSource(source: CustomerPortalKnowledgeArticle['source']
   }
 
   return 'default' as const;
+}
+
+function normalizePortalSearchQuery(value: string | null) {
+  return (value ?? '').trim();
+}
+
+function normalizePortalSearchSource(value: string | null) {
+  if (value === 'public' || value === 'customer_portal' || value === 'ticket_linked') {
+    return value;
+  }
+
+  return 'all';
 }
 
 function PortalShell({ children }: { children: ReactNode }) {
@@ -293,11 +349,22 @@ function InfoLine({ label, value }: { label: string; value: string | null }) {
 }
 
 export function CustomerPortalHomePage() {
+  const navigate = useNavigate();
   const [contexts, setContexts] = useState<CustomerPortalProfileContext[]>([]);
   const [tickets, setTickets] = useState<CustomerPortalTicketListItem[]>([]);
   const [articles, setArticles] = useState<CustomerPortalKnowledgeArticle[]>([]);
+  const [knowledgeSearchInput, setKnowledgeSearchInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  function handleKnowledgeDiscoverSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    navigate(
+      buildPortalHelpSearchPath({
+        query: knowledgeSearchInput,
+      }),
+    );
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -413,6 +480,24 @@ export function CustomerPortalHomePage() {
           description="Conteúdo público ou autenticado já liberado pelo backend para este tenant."
           className="mt-5"
         >
+          <form className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]" onSubmit={handleKnowledgeDiscoverSubmit}>
+            <Field
+              label="Buscar na central autorizada"
+              description="Use termos do problema, integração ou operação. A busca real acontece na camada autenticada."
+            >
+              <TextInput
+                onChange={(event) => setKnowledgeSearchInput(event.target.value)}
+                placeholder="Ex.: webhook, expedição, evidência"
+                type="search"
+                value={knowledgeSearchInput}
+              />
+            </Field>
+            <div className="flex items-end">
+              <AppButton className="w-full lg:w-auto" type="submit">
+                Buscar artigo
+              </AppButton>
+            </div>
+          </form>
           {articles.length === 0 ? (
             <InlineNotice>
               Nenhum artigo autenticado está liberado para esta sessão no momento.
@@ -469,7 +554,7 @@ function KnowledgeArticleCard({
   article,
   compact = false,
 }: {
-  article: CustomerPortalKnowledgeArticle;
+  article: CustomerPortalKnowledgeArticle & { matchReason?: string | null };
   compact?: boolean;
 }) {
   return (
@@ -496,6 +581,11 @@ function KnowledgeArticleCard({
       {!compact && article.relationReason ? (
         <p className="mt-3 rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-2 text-xs leading-5 text-[color:var(--color-muted)]">
           {article.relationReason}
+        </p>
+      ) : null}
+      {article.matchReason ? (
+        <p className="mt-3 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-brand-blue)]">
+          Encontrado por: {article.matchReason}
         </p>
       ) : null}
     </Link>
@@ -529,10 +619,103 @@ function PortalKnowledgeHeader({
 }
 
 export function CustomerPortalHelpPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [contexts, setContexts] = useState<CustomerPortalProfileContext[]>([]);
-  const [articles, setArticles] = useState<CustomerPortalKnowledgeArticle[]>([]);
+  const [browseArticles, setBrowseArticles] = useState<CustomerPortalKnowledgeArticle[]>([]);
+  const [searchResults, setSearchResults] = useState<CustomerPortalKnowledgeSearchResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [searchMessage, setSearchMessage] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState('');
+
+  const activeQuery = normalizePortalSearchQuery(searchParams.get('q'));
+  const selectedCategory = normalizePortalSearchQuery(searchParams.get('category'));
+  const selectedSource = normalizePortalSearchSource(searchParams.get('source'));
+  const primaryTenantId = contexts[0]?.tenantId ?? null;
+
+  const categoryOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          browseArticles
+            .map((article) => article.categoryName?.trim() ?? '')
+            .filter(Boolean),
+        ),
+      ).sort((left, right) => left.localeCompare(right, 'pt-BR')),
+    [browseArticles],
+  );
+
+  const visibleArticles = searchResults;
+  const publicArticleCount = browseArticles.filter((article) => article.source === 'public').length;
+  const authorizedArticleCount = browseArticles.filter((article) => article.source !== 'public').length;
+  const isShortQueryWithoutFilters =
+    !selectedCategory &&
+    selectedSource === 'all' &&
+    activeQuery.length > 0 &&
+    activeQuery.length < 2;
+
+  const searchState = useMemo(() => {
+    if (searchLoading) {
+      return 'loading' as const;
+    }
+
+    if (searchMessage?.includes('não está disponível')) {
+      return 'contract-unavailable' as const;
+    }
+
+    if (searchMessage) {
+      return 'error' as const;
+    }
+
+    if (isShortQueryWithoutFilters) {
+      return 'empty' as const;
+    }
+
+    if (visibleArticles.length === 0) {
+      return 'empty' as const;
+    }
+
+    return 'ready' as const;
+  }, [isShortQueryWithoutFilters, searchLoading, searchMessage, visibleArticles.length]);
+
+  const loadSearch = useEffectEvent(async (tenantId: string) => {
+    if (!tenantId) {
+      setSearchResults([]);
+      setSearchMessage(null);
+      return;
+    }
+
+    const trimmedQuery = activeQuery.trim();
+
+    if (!selectedCategory && selectedSource === 'all' && trimmedQuery && trimmedQuery.length < 2) {
+      setSearchResults([]);
+      setSearchMessage(null);
+      return;
+    }
+
+    setSearchLoading(true);
+    setSearchMessage(null);
+
+    try {
+      const nextResults = await searchCustomerPortalKnowledgeArticles({
+        tenantId,
+        searchQuery: trimmedQuery || null,
+        categoryName: selectedCategory || null,
+        source: selectedSource,
+        limit: 24,
+        offset: 0,
+      });
+      setSearchResults(nextResults);
+    } catch (error) {
+      setSearchMessage(
+        mapError(error, 'Falha ao buscar artigos autorizados no portal.'),
+      );
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  });
 
   async function load() {
     setLoading(true);
@@ -540,12 +723,12 @@ export function CustomerPortalHelpPage() {
 
     try {
       const nextContexts = await fetchCustomerPortalContexts();
-      const primaryTenantId = nextContexts[0]?.tenantId ?? null;
-      const nextArticles = primaryTenantId
-        ? await fetchCustomerPortalKnowledgeArticles(primaryTenantId)
+      const nextPrimaryTenantId = nextContexts[0]?.tenantId ?? null;
+      const nextArticles = nextPrimaryTenantId
+        ? await fetchCustomerPortalKnowledgeArticles(nextPrimaryTenantId)
         : [];
       setContexts(nextContexts);
-      setArticles(nextArticles);
+      setBrowseArticles(nextArticles);
     } catch (error) {
       setErrorMessage(mapError(error, 'Falha ao carregar a central autorizada do portal.'));
     } finally {
@@ -556,6 +739,57 @@ export function CustomerPortalHelpPage() {
   useEffect(() => {
     void load();
   }, []);
+
+  useEffect(() => {
+    setSearchInput(activeQuery);
+  }, [activeQuery]);
+
+  useEffect(() => {
+    if (!loading && primaryTenantId) {
+      void loadSearch(primaryTenantId);
+    }
+  }, [loading, primaryTenantId, activeQuery, selectedCategory, selectedSource, loadSearch]);
+
+  function updateSearchParams(next: {
+    q?: string;
+    category?: string;
+    source?: string;
+  }) {
+    const params = new URLSearchParams(searchParams);
+    const query = next.q ?? activeQuery;
+    const category = next.category ?? selectedCategory;
+    const source = next.source ?? selectedSource;
+
+    if (query.trim()) {
+      params.set('q', query.trim());
+    } else {
+      params.delete('q');
+    }
+
+    if (category.trim()) {
+      params.set('category', category.trim());
+    } else {
+      params.delete('category');
+    }
+
+    if (source.trim() && source !== 'all') {
+      params.set('source', source.trim());
+    } else {
+      params.delete('source');
+    }
+
+    setSearchParams(params, { replace: true });
+  }
+
+  function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    updateSearchParams({ q: searchInput });
+  }
+
+  function clearSearch() {
+    setSearchInput('');
+    updateSearchParams({ q: '', category: '', source: 'all' });
+  }
 
   if (loading) {
     return (
@@ -586,37 +820,136 @@ export function CustomerPortalHelpPage() {
         <PortalKnowledgeHeader
           eyebrow="Central autorizada"
           title="Knowledge liberada para o seu tenant"
-          description="Aqui aparecem apenas artigos públicos publicados e conteúdos autenticados liberados pelo backend para esta sessão customer-facing."
+          description="A busca e a descoberta desta área respeitam entitlement, status editorial publicado e vínculos reais com tickets permitidos."
         />
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <InfoLine label="Artigos visíveis" value={String(articles.length)} />
+          <InfoLine label="Artigos visíveis" value={String(browseArticles.length)} />
           <InfoLine
             label="Públicos"
-            value={String(articles.filter((article) => article.source === 'public').length)}
+            value={String(publicArticleCount)}
           />
           <InfoLine
             label="Autorizados"
-            value={String(articles.filter((article) => article.source !== 'public').length)}
+            value={String(authorizedArticleCount)}
           />
         </div>
 
         <Panel
-          title="Artigos disponíveis"
-          description="Leitura segura do que foi publicado e explicitamente autorizado para o portal."
+          title="Buscar e navegar"
+          description="Os filtros abaixo usam apenas dados reais do backend. A busca nunca expõe draft, internal ou restricted sem entitlement."
           className="mt-5"
         >
-          {articles.length === 0 ? (
+          <form className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_220px_auto]" onSubmit={handleSearchSubmit}>
+            <Field
+              label="Buscar artigo"
+              description="Procure por integração, operação, ticket ou conteúdo já aprovado."
+            >
+              <TextInput
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Ex.: webhook, expedição, evidência"
+                type="search"
+                value={searchInput}
+              />
+            </Field>
+            <Field label="Categoria">
+              <select
+                className="h-11 rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 text-sm text-[color:var(--color-ink)]"
+                onChange={(event) => updateSearchParams({ category: event.target.value })}
+                value={selectedCategory}
+              >
+                <option value="">Todas</option>
+                {categoryOptions.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Origem">
+              <select
+                className="h-11 rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 text-sm text-[color:var(--color-ink)]"
+                onChange={(event) => updateSearchParams({ source: event.target.value })}
+                value={selectedSource}
+              >
+                <option value="all">Todas</option>
+                <option value="public">Público</option>
+                <option value="customer_portal">Autorizado no portal</option>
+                <option value="ticket_linked">Relacionado ao ticket</option>
+              </select>
+            </Field>
+            <div className="flex items-end gap-2">
+              <AppButton className="w-full lg:w-auto" type="submit">
+                Buscar
+              </AppButton>
+              {(activeQuery || selectedCategory || selectedSource !== 'all') ? (
+                <GhostButton onClick={clearSearch} type="button">
+                  Limpar
+                </GhostButton>
+              ) : null}
+            </div>
+          </form>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <StatusPill tone="default">
+              {visibleArticles.length} resultado{visibleArticles.length === 1 ? '' : 's'}
+            </StatusPill>
+            {activeQuery ? <StatusPill tone="accent">busca: {activeQuery}</StatusPill> : null}
+            {selectedCategory ? (
+              <StatusPill tone="default">categoria: {selectedCategory}</StatusPill>
+            ) : null}
+            {selectedSource !== 'all' ? (
+              <StatusPill tone="default">
+                origem: {selectedSource === 'public'
+                  ? 'Público'
+                  : selectedSource === 'customer_portal'
+                    ? 'Autorizado no portal'
+                    : 'Relacionado ao ticket'}
+              </StatusPill>
+            ) : null}
+          </div>
+        </Panel>
+
+        <Panel
+          title="Resultados autorizados"
+          description="Ordenação segura do backend, sem recomendação inteligente e sem filtros de segurança no cliente."
+          className="mt-5"
+        >
+          {searchState === 'loading' ? (
+            <LoadingState
+              title="Buscando artigos autorizados"
+              description="Consultando a camada autenticada da Knowledge."
+            />
+          ) : null}
+
+          {searchState === 'contract-unavailable' ? (
+            <ContractUnavailableState contractName="busca autenticada do portal" />
+          ) : null}
+
+          {searchState === 'error' ? (
+            <ErrorState
+              title="Busca indisponível"
+              description={searchMessage ?? 'Falha ao buscar artigos autorizados.'}
+            />
+          ) : null}
+
+          {searchState === 'empty' ? (
             <InlineNotice>
-              Nenhum artigo autenticado ou relacionado a ticket foi liberado para esta sessão.
+              {isShortQueryWithoutFilters
+                ? 'Digite pelo menos 2 caracteres para buscar ou use um filtro real da central autorizada.'
+                : activeQuery || selectedCategory || selectedSource !== 'all'
+                  ? 'Nenhum artigo autorizado corresponde aos filtros atuais.'
+                : 'Nenhum artigo autenticado ou relacionado a ticket foi liberado para esta sessão.'}
             </InlineNotice>
-          ) : (
+          ) : null}
+
+          {searchState === 'ready' ? (
             <div className="grid gap-3">
-              {articles.map((article) => (
+              {visibleArticles.map((article) => (
                 <KnowledgeArticleCard key={article.articleId} article={article} />
               ))}
             </div>
-          )}
+          ) : null}
         </Panel>
       </section>
 
@@ -935,6 +1268,12 @@ export function CustomerPortalTicketPage() {
   const [timeline, setTimeline] = useState<CustomerPortalTicketTimelineItem[]>([]);
   const [attachments, setAttachments] = useState<CustomerPortalTicketAttachment[]>([]);
   const [articles, setArticles] = useState<CustomerPortalTicketKnowledgeLink[]>([]);
+  const [knowledgeSearchQuery, setKnowledgeSearchQuery] = useState('');
+  const [knowledgeSearchResults, setKnowledgeSearchResults] = useState<
+    CustomerPortalKnowledgeSearchResult[]
+  >([]);
+  const [knowledgeSearchLoading, setKnowledgeSearchLoading] = useState(false);
+  const [knowledgeSearchMessage, setKnowledgeSearchMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
@@ -980,6 +1319,61 @@ export function CustomerPortalTicketPage() {
   useEffect(() => {
     void load();
   }, [ticketId]);
+
+  useEffect(() => {
+    if (!detail || !ticketId) {
+      setKnowledgeSearchResults([]);
+      setKnowledgeSearchMessage(null);
+      return;
+    }
+
+    let cancelled = false;
+    const tenantId = detail.tenantId;
+
+    async function loadKnowledgeDiscoverability() {
+      setKnowledgeSearchLoading(true);
+      setKnowledgeSearchMessage(null);
+
+      try {
+        const nextResults = await searchCustomerPortalKnowledgeArticles({
+          tenantId,
+          ticketId,
+          searchQuery: knowledgeSearchQuery.trim() || null,
+          limit: 6,
+          offset: 0,
+        });
+
+        if (!cancelled) {
+          setKnowledgeSearchResults(nextResults);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setKnowledgeSearchMessage(
+            mapError(error, 'Falha ao buscar artigos autorizados no contexto do ticket.'),
+          );
+          setKnowledgeSearchResults([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setKnowledgeSearchLoading(false);
+        }
+      }
+    }
+
+    void loadKnowledgeDiscoverability();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [detail, knowledgeSearchQuery, ticketId]);
+
+  const contextualArticles = useMemo(
+    () =>
+      knowledgeSearchResults.filter(
+        (candidate) => !articles.some((linkedArticle) => linkedArticle.articleId === candidate.articleId),
+      ),
+    [articles, knowledgeSearchResults],
+  );
 
   async function handleAddMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1406,6 +1800,55 @@ export function CustomerPortalTicketPage() {
               ))}
             </div>
           )}
+        </Panel>
+
+        <Panel
+          title="Buscar na central autorizada"
+          description="Descoberta contextual no backend, sem recomendação IA e sem expor conteúdo fora do seu ticket/tenant."
+          className="p-4"
+        >
+          <Field
+            label="Buscar artigo autorizado"
+            description="Procure por integração, operação ou orientação aprovada relacionada ao contexto deste ticket."
+          >
+            <TextInput
+              onChange={(event) => setKnowledgeSearchQuery(event.target.value)}
+              placeholder="Ex.: webhook, expedição, evidência"
+              type="search"
+              value={knowledgeSearchQuery}
+            />
+          </Field>
+
+          {knowledgeSearchMessage ? (
+            <div className="mt-3">
+              <InlineNotice tone="critical">{knowledgeSearchMessage}</InlineNotice>
+            </div>
+          ) : null}
+
+          {knowledgeSearchLoading ? (
+            <div className="mt-3">
+              <LoadingState
+                title="Buscando artigos autorizados"
+                description="Consultando a Knowledge liberada para este ticket."
+              />
+            </div>
+          ) : null}
+
+          {!knowledgeSearchLoading && !knowledgeSearchMessage ? (
+            <div className="mt-3 grid gap-3">
+              {contextualArticles.length === 0 ? (
+                <InlineNotice>
+                  {knowledgeSearchQuery.trim()
+                    ? 'Nenhum outro artigo autorizado corresponde a esta busca.'
+                    : 'Nenhum outro artigo autorizado foi encontrado além dos vínculos já existentes.'}
+                </InlineNotice>
+              ) : (
+                contextualArticles.map((article) => (
+                  <KnowledgeArticleCard key={article.articleId} article={article} compact />
+                ))
+              )}
+            </div>
+          ) : null}
         </Panel>
       </aside>
     </div>

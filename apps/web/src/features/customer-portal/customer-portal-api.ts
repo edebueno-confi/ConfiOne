@@ -5,6 +5,7 @@ import type {
   CustomerPortalAuthContext,
   CustomerPortalKnowledgeArticle,
   CustomerPortalKnowledgeArticleDetail,
+  CustomerPortalKnowledgeSearchResult,
   CustomerPortalProfileContext,
   CustomerPortalTicketAttachment,
   CustomerPortalTicketCollaborationState,
@@ -26,6 +27,7 @@ import type {
   RpcCustomerRegisterTicketAttachmentResponse,
   RpcCustomerRequestTicketReopenPayload,
   RpcCustomerRequestTicketReopenResponse,
+  RpcCustomerSearchKnowledgeArticlesPayload,
   TicketEventType,
   TicketStatus,
   TicketTimelineEntryType,
@@ -255,6 +257,15 @@ function mapKnowledgeArticle(row: Record<string, unknown>): CustomerPortalKnowle
   };
 }
 
+function mapKnowledgeSearchResult(
+  row: Record<string, unknown>,
+): CustomerPortalKnowledgeSearchResult {
+  return {
+    ...mapKnowledgeArticle(row),
+    matchReason: (row.match_reason as string | null) ?? null,
+  };
+}
+
 function mapKnowledgeArticleDetail(
   row: Record<string, unknown>,
 ): CustomerPortalKnowledgeArticleDetail {
@@ -420,6 +431,32 @@ export async function fetchCustomerPortalTicketKnowledgeLinks(ticketId: Uuid) {
   }
 
   return (data ?? []).map((row) => mapTicketKnowledgeLink(row as Record<string, unknown>));
+}
+
+export async function searchCustomerPortalKnowledgeArticles(
+  payload: RpcCustomerSearchKnowledgeArticlesPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_customer_search_knowledge_articles',
+    {
+      p_tenant_id: payload.tenantId,
+      p_search_query: payload.searchQuery ?? null,
+      p_category_name: payload.categoryName ?? null,
+      p_source: payload.source ?? 'all',
+      p_ticket_id: payload.ticketId ?? null,
+      p_limit: payload.limit ?? 12,
+      p_offset: payload.offset ?? 0,
+    },
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao buscar artigos autorizados do portal.');
+  }
+
+  return (data ?? []).map((row: unknown) =>
+    mapKnowledgeSearchResult(row as Record<string, unknown>),
+  );
 }
 
 export async function createCustomerPortalTicket(payload: RpcCustomerCreateTicketPayload) {
