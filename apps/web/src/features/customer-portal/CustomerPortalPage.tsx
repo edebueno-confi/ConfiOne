@@ -20,10 +20,12 @@ import {
 import { AppError } from '../../app/errors';
 import type {
   CustomerPortalKnowledgeArticle,
+  CustomerPortalKnowledgeArticleDetail,
   CustomerPortalProfileContext,
   CustomerPortalTicketAttachment,
   CustomerPortalTicketCollaborationState,
   CustomerPortalTicketDetail,
+  CustomerPortalTicketKnowledgeLink,
   CustomerPortalTicketListItem,
   CustomerPortalTicketTimelineItem,
 } from '../../contracts/support-contracts';
@@ -37,7 +39,9 @@ import {
   CUSTOMER_PORTAL_ATTACHMENT_MAX_SIZE_BYTES,
   downloadCustomerPortalTicketAttachment,
   fetchCustomerPortalContexts,
+  fetchCustomerPortalKnowledgeArticleDetail,
   fetchCustomerPortalKnowledgeArticles,
+  fetchCustomerPortalTicketKnowledgeLinks,
   fetchCustomerPortalTicketAttachments,
   fetchCustomerPortalTicketCollaborationState,
   fetchCustomerPortalTicketDetail,
@@ -46,6 +50,7 @@ import {
   requestCustomerPortalTicketReopen,
   uploadCustomerPortalTicketAttachment,
 } from './customer-portal-api';
+import { MarkdownDocument } from '../help-center/markdown';
 
 function formatDate(value: string | null) {
   if (!value) {
@@ -76,6 +81,34 @@ function isCustomerAttachmentTypeAllowed(file: File) {
   );
 }
 
+function buildPortalKnowledgePath(slug: string) {
+  return `/portal/help/${slug}`;
+}
+
+function humanizeKnowledgeSourceLabel(source: CustomerPortalKnowledgeArticle['source']) {
+  if (source === 'public') {
+    return 'Público';
+  }
+
+  if (source === 'ticket_linked') {
+    return 'Relacionada ao ticket';
+  }
+
+  return 'Autorizado no portal';
+}
+
+function toneForKnowledgeSource(source: CustomerPortalKnowledgeArticle['source']) {
+  if (source === 'ticket_linked') {
+    return 'accent' as const;
+  }
+
+  if (source === 'customer_portal') {
+    return 'positive' as const;
+  }
+
+  return 'default' as const;
+}
+
 function PortalShell({ children }: { children: ReactNode }) {
   const { signOut, user } = useAuthContext();
 
@@ -99,6 +132,7 @@ function PortalShell({ children }: { children: ReactNode }) {
             {[
               { label: 'Visão operacional', to: '/portal' },
               { label: 'Tickets', to: '/portal/tickets' },
+              { label: 'Central autorizada', to: '/portal/help' },
             ].map((item) => (
               <NavLink
                 className={({ isActive }) =>
@@ -261,6 +295,7 @@ function InfoLine({ label, value }: { label: string; value: string | null }) {
 export function CustomerPortalHomePage() {
   const [contexts, setContexts] = useState<CustomerPortalProfileContext[]>([]);
   const [tickets, setTickets] = useState<CustomerPortalTicketListItem[]>([]);
+  const [articles, setArticles] = useState<CustomerPortalKnowledgeArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -276,10 +311,15 @@ export function CustomerPortalHomePage() {
           fetchCustomerPortalContexts(),
           fetchCustomerPortalTickets(),
         ]);
+        const primaryTenantId = nextContexts[0]?.tenantId ?? null;
+        const nextArticles = primaryTenantId
+          ? await fetchCustomerPortalKnowledgeArticles(primaryTenantId)
+          : [];
 
         if (!cancelled) {
           setContexts(nextContexts);
           setTickets(nextTickets);
+          setArticles(nextArticles);
         }
       } catch (error) {
         if (!cancelled) {
@@ -347,8 +387,8 @@ export function CustomerPortalHomePage() {
             value={String(tickets.filter((ticket) => ticket.customerAttachmentCount > 0).length)}
           />
           <InfoLine
-            label="Artigos enviados"
-            value={String(tickets.reduce((total, ticket) => total + ticket.publicArticleCount, 0))}
+            label="Artigos autorizados"
+            value={String(articles.length)}
           />
         </div>
 
@@ -364,6 +404,29 @@ export function CustomerPortalHomePage() {
               {tickets.slice(0, 5).map((ticket) => (
                 <TicketListRow key={ticket.ticketId} ticket={ticket} />
               ))}
+            </div>
+          )}
+        </Panel>
+
+        <Panel
+          title="Central de ajuda autorizada"
+          description="Conteúdo público ou autenticado já liberado pelo backend para este tenant."
+          className="mt-5"
+        >
+          {articles.length === 0 ? (
+            <InlineNotice>
+              Nenhum artigo autenticado está liberado para esta sessão no momento.
+            </InlineNotice>
+          ) : (
+            <div className="grid gap-3">
+              {articles.slice(0, 4).map((article) => (
+                <KnowledgeArticleCard key={article.articleId} article={article} />
+              ))}
+              <div className="pt-1">
+                <Link to="/portal/help">
+                  <GhostButton>Ver central autorizada</GhostButton>
+                </Link>
+              </div>
             </div>
           )}
         </Panel>
@@ -399,6 +462,329 @@ function TicketListRow({ ticket }: { ticket: CustomerPortalTicketListItem }) {
         <span>{ticket.publicArticleCount} artigos</span>
       </div>
     </Link>
+  );
+}
+
+function KnowledgeArticleCard({
+  article,
+  compact = false,
+}: {
+  article: CustomerPortalKnowledgeArticle;
+  compact?: boolean;
+}) {
+  return (
+    <Link
+      className="block rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 transition hover:border-[color:var(--color-brand-blue)]/35 hover:bg-white"
+      to={buildPortalKnowledgePath(article.slug)}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-base font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+            {article.title}
+          </p>
+          <p className="mt-1 text-sm text-[color:var(--color-muted)]">
+            {article.categoryName ?? 'Categoria indisponível'}
+          </p>
+        </div>
+        <StatusPill tone={toneForKnowledgeSource(article.source)}>
+          {article.sourceLabel || humanizeKnowledgeSourceLabel(article.source)}
+        </StatusPill>
+      </div>
+      <p className="mt-3 text-sm leading-6 text-[color:var(--color-muted)]">
+        {article.summary ?? 'Resumo indisponível.'}
+      </p>
+      {!compact && article.relationReason ? (
+        <p className="mt-3 rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-2 text-xs leading-5 text-[color:var(--color-muted)]">
+          {article.relationReason}
+        </p>
+      ) : null}
+    </Link>
+  );
+}
+
+function PortalKnowledgeHeader({
+  eyebrow,
+  title,
+  description,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <header className="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.26em] text-[color:var(--color-muted)]">
+          {eyebrow}
+        </p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-[color:var(--color-ink)]">
+          {title}
+        </h1>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-[color:var(--color-muted)]">
+          {description}
+        </p>
+      </div>
+    </header>
+  );
+}
+
+export function CustomerPortalHelpPage() {
+  const [contexts, setContexts] = useState<CustomerPortalProfileContext[]>([]);
+  const [articles, setArticles] = useState<CustomerPortalKnowledgeArticle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const nextContexts = await fetchCustomerPortalContexts();
+      const primaryTenantId = nextContexts[0]?.tenantId ?? null;
+      const nextArticles = primaryTenantId
+        ? await fetchCustomerPortalKnowledgeArticles(primaryTenantId)
+        : [];
+      setContexts(nextContexts);
+      setArticles(nextArticles);
+    } catch (error) {
+      setErrorMessage(mapError(error, 'Falha ao carregar a central autorizada do portal.'));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+        <LoadingState
+          title="Carregando central autorizada"
+          description="Buscando artigos públicos e autenticados liberados para esta sessão."
+        />
+      </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+        {errorMessage.includes('não está disponível') ? (
+          <ContractUnavailableState contractName="central autorizada do portal" />
+        ) : (
+          <ErrorState title="Central indisponível" description={errorMessage} />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid h-full min-h-0 gap-4 overflow-hidden xl:grid-cols-[minmax(0,1fr)_320px]">
+      <section className="min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-5 shadow-[var(--shadow-panel)]">
+        <PortalKnowledgeHeader
+          eyebrow="Central autorizada"
+          title="Knowledge liberada para o seu tenant"
+          description="Aqui aparecem apenas artigos públicos publicados e conteúdos autenticados liberados pelo backend para esta sessão customer-facing."
+        />
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <InfoLine label="Artigos visíveis" value={String(articles.length)} />
+          <InfoLine
+            label="Públicos"
+            value={String(articles.filter((article) => article.source === 'public').length)}
+          />
+          <InfoLine
+            label="Autorizados"
+            value={String(articles.filter((article) => article.source !== 'public').length)}
+          />
+        </div>
+
+        <Panel
+          title="Artigos disponíveis"
+          description="Leitura segura do que foi publicado e explicitamente autorizado para o portal."
+          className="mt-5"
+        >
+          {articles.length === 0 ? (
+            <InlineNotice>
+              Nenhum artigo autenticado ou relacionado a ticket foi liberado para esta sessão.
+            </InlineNotice>
+          ) : (
+            <div className="grid gap-3">
+              {articles.map((article) => (
+                <KnowledgeArticleCard key={article.articleId} article={article} />
+              ))}
+            </div>
+          )}
+        </Panel>
+      </section>
+
+      <div className="min-h-0 overflow-y-auto">
+        <ContextRail contexts={contexts} />
+      </div>
+    </div>
+  );
+}
+
+function PortalKnowledgeInfoLine({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | null;
+}) {
+  return (
+    <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2">
+      <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+        {label}
+      </p>
+      <p className="mt-1 text-sm font-medium text-[color:var(--color-ink)]">
+        {value ?? 'Indisponível'}
+      </p>
+    </div>
+  );
+}
+
+export function CustomerPortalHelpArticlePage() {
+  const { articleSlug = '' } = useParams();
+  const [contexts, setContexts] = useState<CustomerPortalProfileContext[]>([]);
+  const [article, setArticle] = useState<CustomerPortalKnowledgeArticleDetail | null>(null);
+  const [articles, setArticles] = useState<CustomerPortalKnowledgeArticle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const nextContexts = await fetchCustomerPortalContexts();
+      const primaryTenantId = nextContexts[0]?.tenantId ?? null;
+      const [nextArticles, nextArticle] = primaryTenantId
+        ? await Promise.all([
+            fetchCustomerPortalKnowledgeArticles(primaryTenantId),
+            fetchCustomerPortalKnowledgeArticleDetail(primaryTenantId, articleSlug),
+          ])
+        : [[], null];
+      setContexts(nextContexts);
+      setArticles(nextArticles);
+      setArticle(nextArticle);
+    } catch (error) {
+      setErrorMessage(mapError(error, 'Falha ao carregar o artigo autorizado.'));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void load();
+  }, [articleSlug]);
+
+  if (loading) {
+    return (
+      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+        <LoadingState
+          title="Carregando artigo"
+          description="Buscando o detalhe autorizado deste conteúdo."
+        />
+      </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+        {errorMessage.includes('não está disponível') ? (
+          <ContractUnavailableState contractName="artigo autorizado do portal" />
+        ) : (
+          <ErrorState title="Artigo indisponível" description={errorMessage} />
+        )}
+      </div>
+    );
+  }
+
+  if (!article) {
+    return (
+      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+        <ErrorState
+          title="Artigo indisponível"
+          description="Este conteúdo não está autorizado para a sua sessão customer-facing."
+        />
+      </div>
+    );
+  }
+
+  const relatedArticles = articles
+    .filter((candidate) => candidate.articleId !== article.articleId)
+    .slice(0, 4);
+
+  return (
+    <div className="grid h-full min-h-0 gap-4 overflow-hidden xl:grid-cols-[minmax(0,1fr)_320px]">
+      <section className="min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-5 shadow-[var(--shadow-panel)]">
+        <Link className="text-sm font-medium text-[color:var(--color-brand-blue)]" to="/portal/help">
+          Voltar para a central autorizada
+        </Link>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <StatusPill tone={toneForKnowledgeSource(article.source)}>
+            {article.sourceLabel || humanizeKnowledgeSourceLabel(article.source)}
+          </StatusPill>
+          <StatusPill tone="default">
+            {article.categoryName ?? 'Categoria indisponível'}
+          </StatusPill>
+        </div>
+        <h1 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-[color:var(--color-ink)]">
+          {article.title}
+        </h1>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-[color:var(--color-muted)]">
+          {article.summary ?? 'Resumo indisponível.'}
+        </p>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <PortalKnowledgeInfoLine label="Publicação" value={formatDate(article.publishedAt)} />
+          <PortalKnowledgeInfoLine label="Atualização" value={formatDate(article.updatedAt)} />
+          <PortalKnowledgeInfoLine
+            label="Origem do acesso"
+            value={article.sourceLabel || humanizeKnowledgeSourceLabel(article.source)}
+          />
+        </div>
+
+        {article.relationReason ? (
+          <div className="mt-5 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[color:var(--color-muted)]">
+              Motivo da liberação
+            </p>
+            <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
+              {article.relationReason}
+            </p>
+          </div>
+        ) : null}
+
+        <div className="mt-6 rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-5 py-5">
+          <MarkdownDocument source={article.bodyMd} />
+        </div>
+      </section>
+
+      <aside className="min-h-0 space-y-4 overflow-y-auto">
+        <ContextRail contexts={contexts} />
+
+        <Panel
+          title="Outros artigos autorizados"
+          description="Somente conteúdos já liberados para esta sessão customer-facing."
+          className="p-4"
+        >
+          {relatedArticles.length === 0 ? (
+            <InlineNotice>Nenhum outro artigo autorizado está disponível agora.</InlineNotice>
+          ) : (
+            <div className="grid gap-3">
+              {relatedArticles.map((candidate) => (
+                <KnowledgeArticleCard key={candidate.articleId} article={candidate} compact />
+              ))}
+            </div>
+          )}
+        </Panel>
+      </aside>
+    </div>
   );
 }
 
@@ -548,7 +934,7 @@ export function CustomerPortalTicketPage() {
     useState<CustomerPortalTicketCollaborationState | null>(null);
   const [timeline, setTimeline] = useState<CustomerPortalTicketTimelineItem[]>([]);
   const [attachments, setAttachments] = useState<CustomerPortalTicketAttachment[]>([]);
-  const [articles, setArticles] = useState<CustomerPortalKnowledgeArticle[]>([]);
+  const [articles, setArticles] = useState<CustomerPortalTicketKnowledgeLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
@@ -577,7 +963,7 @@ export function CustomerPortalTicketPage() {
         fetchCustomerPortalTicketCollaborationState(ticketId),
         fetchCustomerPortalTicketTimeline(ticketId),
         fetchCustomerPortalTicketAttachments(ticketId),
-        fetchCustomerPortalKnowledgeArticles(ticketId),
+        fetchCustomerPortalTicketKnowledgeLinks(ticketId),
       ]);
       setDetail(nextDetail);
       setCollaborationState(nextCollaborationState);
@@ -1008,26 +1394,15 @@ export function CustomerPortalTicketPage() {
 
         <Panel
           title="Artigos relacionados"
-          description="Apenas conteúdo público publicado e enviado ao cliente."
+          description="Somente artigos autorizados para este ticket. Conteúdo interno e editorial não aparecem aqui."
           className="p-4"
         >
           {articles.length === 0 ? (
-            <InlineNotice>Nenhum artigo público foi vinculado a este ticket.</InlineNotice>
+            <InlineNotice>Nenhum artigo autorizado foi vinculado a este ticket.</InlineNotice>
           ) : (
             <div className="grid gap-3">
               {articles.map((article) => (
-                <Link
-                  className="block rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3 transition hover:border-[color:var(--color-brand-blue)]/35 hover:bg-white"
-                  key={article.articleId}
-                  to={article.publicArticlePath}
-                >
-                  <p className="text-sm font-semibold text-[color:var(--color-ink)]">
-                    {article.articleTitle}
-                  </p>
-                  <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
-                    {article.articleSummary ?? 'Sem resumo disponível.'}
-                  </p>
-                </Link>
+                <KnowledgeArticleCard key={article.articleId} article={article} compact />
               ))}
             </div>
           )}

@@ -4,10 +4,12 @@ import { requireSupabaseBrowserClient } from '../../app/supabase-browser';
 import type {
   CustomerPortalAuthContext,
   CustomerPortalKnowledgeArticle,
+  CustomerPortalKnowledgeArticleDetail,
   CustomerPortalProfileContext,
   CustomerPortalTicketAttachment,
   CustomerPortalTicketCollaborationState,
   CustomerPortalTicketDetail,
+  CustomerPortalTicketKnowledgeLink,
   CustomerPortalTicketListItem,
   CustomerPortalTicketTimelineItem,
   RpcCustomerAcknowledgeTicketUpdatePayload,
@@ -239,15 +241,35 @@ function mapAttachment(row: Record<string, unknown>): CustomerPortalTicketAttach
 
 function mapKnowledgeArticle(row: Record<string, unknown>): CustomerPortalKnowledgeArticle {
   return {
-    ticketId: String(row.ticket_id),
     tenantId: String(row.tenant_id),
     articleId: String(row.article_id),
-    articleTitle: String(row.article_title),
-    articleSlug: String(row.article_slug),
-    articleSummary: (row.article_summary as string | null) ?? null,
+    slug: String(row.slug),
+    title: String(row.title),
+    summary: (row.summary as string | null) ?? null,
     categoryName: (row.category_name as string | null) ?? null,
-    publicArticlePath: String(row.public_article_path),
-    sentAt: String(row.sent_at),
+    publishedAt: (row.published_at as string | null) ?? null,
+    updatedAt: (row.updated_at as string | null) ?? null,
+    relationReason: (row.relation_reason as string | null) ?? null,
+    source: row.source as CustomerPortalKnowledgeArticle['source'],
+    sourceLabel: String(row.source_label ?? 'Autorizado'),
+  };
+}
+
+function mapKnowledgeArticleDetail(
+  row: Record<string, unknown>,
+): CustomerPortalKnowledgeArticleDetail {
+  return {
+    ...mapKnowledgeArticle(row),
+    bodyMd: String(row.body_md ?? ''),
+  };
+}
+
+function mapTicketKnowledgeLink(
+  row: Record<string, unknown>,
+): CustomerPortalTicketKnowledgeLink {
+  return {
+    ...mapKnowledgeArticle(row),
+    ticketId: String(row.ticket_id),
   };
 }
 
@@ -348,19 +370,56 @@ export async function fetchCustomerPortalTicketAttachments(ticketId: Uuid) {
   return (data ?? []).map((row) => mapAttachment(row as Record<string, unknown>));
 }
 
-export async function fetchCustomerPortalKnowledgeArticles(ticketId: Uuid) {
+export async function fetchCustomerPortalKnowledgeArticles(tenantId: Uuid) {
   const client = requireClient();
   const { data, error } = await client
     .from('vw_customer_portal_knowledge_articles')
     .select('*')
-    .eq('ticket_id', ticketId)
-    .order('sent_at', { ascending: false });
+    .eq('tenant_id', tenantId)
+    .order('source', { ascending: true })
+    .order('updated_at', { ascending: false, nullsFirst: false })
+    .order('published_at', { ascending: false, nullsFirst: false });
 
   if (error) {
-    throw toAppError(error, 'Falha ao carregar artigos vinculados ao ticket.');
+    throw toAppError(error, 'Falha ao carregar a central de ajuda autorizada.');
   }
 
   return (data ?? []).map((row) => mapKnowledgeArticle(row as Record<string, unknown>));
+}
+
+export async function fetchCustomerPortalKnowledgeArticleDetail(
+  tenantId: Uuid,
+  articleSlug: string,
+) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_customer_portal_knowledge_article_detail')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .eq('slug', articleSlug)
+    .maybeSingle();
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o artigo autorizado do portal.');
+  }
+
+  return data ? mapKnowledgeArticleDetail(data as Record<string, unknown>) : null;
+}
+
+export async function fetchCustomerPortalTicketKnowledgeLinks(ticketId: Uuid) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_customer_portal_ticket_knowledge_links')
+    .select('*')
+    .eq('ticket_id', ticketId)
+    .order('updated_at', { ascending: false, nullsFirst: false })
+    .order('published_at', { ascending: false, nullsFirst: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar artigos relacionados ao ticket.');
+  }
+
+  return (data ?? []).map((row) => mapTicketKnowledgeLink(row as Record<string, unknown>));
 }
 
 export async function createCustomerPortalTicket(payload: RpcCustomerCreateTicketPayload) {

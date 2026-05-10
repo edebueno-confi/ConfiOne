@@ -44,6 +44,16 @@ const CustomerPortalTicketPage = lazy(async () => {
   return { default: module.CustomerPortalTicketPage };
 });
 
+const CustomerPortalHelpPage = lazy(async () => {
+  const module = await import('../features/customer-portal/CustomerPortalPage');
+  return { default: module.CustomerPortalHelpPage };
+});
+
+const CustomerPortalHelpArticlePage = lazy(async () => {
+  const module = await import('../features/customer-portal/CustomerPortalPage');
+  return { default: module.CustomerPortalHelpArticlePage };
+});
+
 const TenantsPage = lazy(async () => {
   const module = await import('../features/tenants/TenantsPage');
   return { default: module.TenantsPage };
@@ -201,6 +211,14 @@ export const router = createBrowserRouter([
           {
             path: 'tickets/:ticketId',
             element: withSuspense(<CustomerPortalTicketPage />),
+          },
+          {
+            path: 'help',
+            element: withSuspense(<CustomerPortalHelpPage />),
+          },
+          {
+            path: 'help/:articleSlug',
+            element: withSuspense(<CustomerPortalHelpArticlePage />),
           },
         ],
       },

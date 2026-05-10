@@ -1131,16 +1131,33 @@ export interface CustomerPortalTicketAttachment {
   canDownload: boolean;
 }
 
+export type CustomerPortalKnowledgeSource =
+  | 'public'
+  | 'customer_portal'
+  | 'ticket_linked';
+
 export interface CustomerPortalKnowledgeArticle {
-  ticketId: Uuid;
   tenantId: Uuid;
   articleId: Uuid;
-  articleTitle: string;
-  articleSlug: string;
-  articleSummary: string | null;
+  slug: string;
+  title: string;
+  summary: string | null;
   categoryName: string | null;
-  publicArticlePath: string;
-  sentAt: IsoTimestamp;
+  publishedAt: IsoTimestamp | null;
+  updatedAt: IsoTimestamp | null;
+  relationReason: string | null;
+  source: CustomerPortalKnowledgeSource;
+  sourceLabel: string;
+}
+
+export interface CustomerPortalKnowledgeArticleDetail
+  extends CustomerPortalKnowledgeArticle {
+  bodyMd: string;
+}
+
+export interface CustomerPortalTicketKnowledgeLink
+  extends CustomerPortalKnowledgeArticle {
+  ticketId: Uuid;
 }
 
 export interface RpcCustomerCreateTicketPayload {
