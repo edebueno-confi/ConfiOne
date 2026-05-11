@@ -1069,6 +1069,31 @@ export interface CustomerPortalActiveTenantContext
   contextVersion: IsoTimestamp;
 }
 
+export type CustomerPortalSessionState =
+  | 'ready'
+  | 'access_revoked'
+  | 'tenant_unavailable';
+
+export type CustomerPortalSessionReasonCode =
+  | 'profile_missing'
+  | 'profile_inactive'
+  | 'membership_revoked'
+  | 'tenant_unavailable'
+  | 'returns_portal_disabled'
+  | 'tenant_inactive'
+  | 'contact_inactive'
+  | 'no_active_tenant';
+
+export interface CustomerPortalSessionStatus {
+  sessionState: CustomerPortalSessionState;
+  reasonCode: CustomerPortalSessionReasonCode | null;
+  reasonMessage: string | null;
+  activeTenantId: Uuid | null;
+  activeTenantName: string | null;
+  availableTenantCount: number;
+  contextVersion: IsoTimestamp | null;
+}
+
 export interface CustomerPortalTicketListItem {
   ticketId: Uuid;
   tenantId: Uuid;
@@ -1296,3 +1321,5 @@ export interface RpcCustomerSetActiveTenantPayload {
 }
 
 export type RpcCustomerSetActiveTenantResponse = CustomerPortalActiveTenantContext;
+
+export type RpcCustomerGetPortalSessionStatusResponse = CustomerPortalSessionStatus;
