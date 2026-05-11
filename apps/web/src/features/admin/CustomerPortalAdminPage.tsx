@@ -67,7 +67,7 @@ type EntitlementFilter = 'all' | CustomerPortalEntitlementStatus;
 
 const CUSTOMER_PORTAL_ADMIN_BOOTSTRAP_TIMEOUT_MS = 15_000;
 const CUSTOMER_PORTAL_ADMIN_DETAIL_TIMEOUT_MS = 10_000;
-const LEFT_COLUMN_VISIBLE_TENANTS = 6;
+const LEFT_COLUMN_VISIBLE_TENANTS = 3;
 
 interface GrantEntitlementFormState {
   tenantId: string;
@@ -267,13 +267,13 @@ function DetailLine({
   tone?: 'default' | 'positive' | 'warning' | 'critical';
 }) {
   return (
-    <div className="grid gap-1 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3">
-      <span className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+    <div className="grid min-w-0 grid-cols-[112px_minmax(0,1fr)] items-center gap-3 border-b border-[color:var(--color-border)] py-2 last:border-b-0">
+      <span className="text-[0.68rem] font-semibold text-[color:var(--color-muted)]">
         {label}
       </span>
       <span
         className={cx(
-          'text-sm font-medium leading-5',
+          'min-w-0 truncate text-sm font-semibold leading-5',
           tone === 'positive' && 'text-[color:var(--color-success-ink)]',
           tone === 'warning' && 'text-[color:var(--color-warning-ink)]',
           tone === 'critical' && 'text-[color:var(--color-danger-ink)]',
@@ -286,6 +286,32 @@ function DetailLine({
   );
 }
 
+function TinyBadge({
+  children,
+  tone = 'default',
+}: {
+  children: React.ReactNode;
+  tone?: 'default' | 'positive' | 'warning' | 'critical';
+}) {
+  return (
+    <span
+      className={cx(
+        'inline-flex max-w-full truncate rounded-full border px-2 py-1 text-[0.66rem] font-semibold leading-none',
+        tone === 'positive' &&
+          'border-[color:var(--color-success-border)] bg-[color:var(--color-success-surface)] text-[color:var(--color-success-ink)]',
+        tone === 'warning' &&
+          'border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-surface)] text-[color:var(--color-warning-ink)]',
+        tone === 'critical' &&
+          'border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] text-[color:var(--color-danger-ink)]',
+        tone === 'default' &&
+          'border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-ink)]',
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
 function CompactKpi({
   label,
   value,
@@ -294,11 +320,11 @@ function CompactKpi({
   value: string;
 }) {
   return (
-    <div className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3">
+    <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3">
       <p className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
         {label}
       </p>
-      <p className="mt-2 text-[1.55rem] font-semibold tracking-[-0.05em] text-[color:var(--color-ink)]">
+      <p className="mt-1.5 text-[1.5rem] font-semibold text-[color:var(--color-ink)]">
         {value}
       </p>
     </div>
@@ -316,8 +342,9 @@ function TenantFilterCard({
 }) {
   return (
     <button
+      data-tenant-card
       className={cx(
-        'w-full rounded-[18px] border px-3 py-3 text-left transition',
+        'w-full min-w-0 overflow-hidden rounded-[16px] border px-2.5 py-2.5 text-left transition',
         selected
           ? 'border-[color:var(--color-brand-blue)]/35 bg-[rgba(68,110,255,0.08)] shadow-[0_12px_24px_rgba(44,79,182,0.08)]'
           : 'border-[color:var(--color-border)] bg-white hover:border-[color:var(--color-brand-blue)]/22',
@@ -325,23 +352,45 @@ function TenantFilterCard({
       onClick={() => onSelect(tenant.tenant_id)}
       type="button"
     >
-      <div className="flex items-start justify-between gap-2">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
+          {tenant.tenant_display_name}
+        </p>
+        <p className="mt-1 truncate text-[0.76rem] text-[color:var(--color-muted)]">
+          {tenant.portal_user_count} usuários customer-facing
+        </p>
+      </div>
+
+      <div className="mt-1.5 flex min-w-0">
+        <span
+          className={cx(
+            'inline-flex max-w-full truncate rounded-full border px-2.5 py-1 text-[0.66rem] font-semibold',
+            tenant.has_active_manager
+              ? 'border-[color:var(--color-success-border)] bg-[color:var(--color-success-surface)] text-[color:var(--color-success-ink)]'
+              : 'border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-surface)] text-[color:var(--color-warning-ink)]',
+          )}
+        >
+          {tenant.has_active_manager ? 'Com gestão' : 'Sem gestão'}
+        </span>
+      </div>
+
+      <div className="mt-2 grid min-w-0 grid-cols-2 gap-2 border-t border-[color:var(--color-border)] pt-2">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
-            {tenant.tenant_display_name}
+          <p className="truncate text-[0.66rem] font-semibold text-[color:var(--color-muted)]">
+            Tickets visíveis
           </p>
-          <p className="mt-1 truncate text-[0.76rem] text-[color:var(--color-muted)]">
-            {tenant.portal_user_count} acessos customer-facing
+          <p className="mt-0.5 text-sm font-semibold text-[color:var(--color-ink)]">
+            {tenant.visible_ticket_count}
           </p>
         </div>
-        <StatusPill tone={tenantStatusTone(tenant.tenant_status)}>
-          {tenantStatusLabel(tenant.tenant_status)}
-        </StatusPill>
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2 text-[0.72rem] text-[color:var(--color-muted)]">
-        <span>{tenant.visible_ticket_count} tickets</span>
-        <span>{tenant.authorized_article_count} artigos</span>
-        <span>{tenant.active_entitlement_count} entitlements</span>
+        <div className="min-w-0">
+          <p className="truncate text-[0.66rem] font-semibold text-[color:var(--color-muted)]">
+            Artigos autorizados
+          </p>
+          <p className="mt-0.5 text-sm font-semibold text-[color:var(--color-ink)]">
+            {tenant.authorized_article_count}
+          </p>
+        </div>
       </div>
       {tenant.risk_summary ? (
         <p className="mt-2 line-clamp-2 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
@@ -364,10 +413,10 @@ function UserTableRow({
   return (
     <button
       className={cx(
-        'grid w-full grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_132px_132px_minmax(0,1.4fr)] gap-3 rounded-[18px] border px-4 py-3 text-left transition',
+        'grid w-full grid-cols-[minmax(0,1.35fr)_minmax(0,0.95fr)_86px_74px_minmax(0,1.2fr)] gap-2 border-b border-[color:var(--color-border)] px-3 py-3 text-left transition last:border-b-0',
         selected
-          ? 'border-[color:var(--color-brand-blue)]/36 bg-[rgba(68,110,255,0.08)] shadow-[0_14px_28px_rgba(40,75,174,0.08)]'
-          : 'border-transparent bg-white hover:border-[color:var(--color-brand-blue)]/20 hover:bg-[color:var(--color-surface)]',
+          ? 'rounded-[14px] border border-[color:var(--color-brand-blue)]/36 bg-[rgba(68,110,255,0.08)] shadow-[0_12px_24px_rgba(40,75,174,0.08)]'
+          : 'bg-white hover:bg-[color:var(--color-surface)]',
       )}
       onClick={() => onSelect(user.membership_id)}
       type="button"
@@ -389,12 +438,10 @@ function UserTableRow({
         </p>
       </div>
       <div className="min-w-0">
-        <StatusPill tone="default">{roleLabel(user.portal_role)}</StatusPill>
+        <TinyBadge>{roleLabel(user.portal_role)}</TinyBadge>
       </div>
       <div className="min-w-0">
-        <StatusPill tone={accessTone(user.access_status)}>
-          {accessLabel(user.access_status)}
-        </StatusPill>
+        <TinyBadge tone={accessTone(user.access_status)}>{accessLabel(user.access_status)}</TinyBadge>
       </div>
       <div className="min-w-0">
         <p className="truncate text-sm text-[color:var(--color-ink)]">
@@ -411,22 +458,52 @@ function UserTableRow({
 function ActionBlock({
   title,
   description,
+  disabled = false,
   children,
 }: {
   title: string;
   description?: string;
+  disabled?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3">
-      <header className="mb-3">
-        <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">{title}</h3>
-        {description ? (
-          <p className="mt-1 text-[0.76rem] leading-5 text-[color:var(--color-muted)]">
-            {description}
-          </p>
-        ) : null}
+    <section
+      className={cx(
+        'rounded-[12px] border border-[color:var(--color-border)] bg-white px-3 py-2.5',
+        disabled && 'opacity-65',
+      )}
+    >
+      <header className="mb-2 flex min-w-0 items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="truncate text-sm font-semibold text-[color:var(--color-ink)]">{title}</h3>
+          {description ? (
+            <p className="mt-0.5 truncate text-[0.72rem] text-[color:var(--color-muted)]">
+              {description}
+            </p>
+          ) : null}
+        </div>
+        <span className="h-2 w-2 shrink-0 rounded-full bg-[color:var(--color-brand-blue)]" />
       </header>
+      {children}
+    </section>
+  );
+}
+
+function RailSection({
+  title,
+  children,
+  sectionKey,
+}: {
+  title: string;
+  children: React.ReactNode;
+  sectionKey: 'tenant' | 'user' | 'actions';
+}) {
+  return (
+    <section
+      className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-3.5 py-3.5"
+      data-rail-section={sectionKey}
+    >
+      <h3 className="mb-2 text-sm font-semibold text-[color:var(--color-ink)]">{title}</h3>
       {children}
     </section>
   );
@@ -674,10 +751,6 @@ export function CustomerPortalAdminPage() {
 
   const visibleUsers = useMemo(() => {
     return users.filter((user) => {
-      if (selectedTenantId && user.tenant_id !== selectedTenantId) {
-        return false;
-      }
-
       if (userAccessFilter !== 'all' && user.access_status !== userAccessFilter) {
         return false;
       }
@@ -700,7 +773,7 @@ export function CustomerPortalAdminPage() {
 
       return true;
     });
-  }, [lookup, selectedTenantId, userAccessFilter, users]);
+  }, [lookup, userAccessFilter, users]);
 
   useEffect(() => {
     if (selectedUserMembershipId && visibleUsers.some((user) => user.membership_id === selectedUserMembershipId)) {
@@ -1016,17 +1089,17 @@ export function CustomerPortalAdminPage() {
   }
 
   return (
-    <div className="grid h-full min-h-0 gap-4 overflow-hidden xl:grid-cols-[280px_minmax(0,1fr)_408px]">
-      <aside className="min-h-0 overflow-hidden">
+    <div className="grid h-full min-h-0 gap-4 overflow-hidden xl:grid-cols-[280px_minmax(0,1fr)_340px]">
+      <aside className="min-h-0 overflow-hidden" data-portal-admin-left>
         <SurfaceCard
-          className="h-full"
+          className="h-full !px-3 !py-3"
           description="Filtros e tenants governados para o portal cliente."
           title="Governança"
         >
           <div className="space-y-3">
             <Field label="Status do portal">
               <SelectInput
-                className="h-10 rounded-[16px] text-sm"
+                className="h-9 rounded-[14px] text-sm"
                 onChange={(event) => setUserAccessFilter(event.target.value as UserAccessFilter)}
                 value={userAccessFilter}
               >
@@ -1039,7 +1112,7 @@ export function CustomerPortalAdminPage() {
 
             <Field label="Entitlements">
               <SelectInput
-                className="h-10 rounded-[16px] text-sm"
+                className="h-9 rounded-[14px] text-sm"
                 onChange={(event) => setEntitlementFilter(event.target.value as EntitlementFilter)}
                 value={entitlementFilter}
               >
@@ -1051,7 +1124,7 @@ export function CustomerPortalAdminPage() {
 
             <Field label="Buscar cliente...">
               <TextInput
-                className="h-10 rounded-[16px] text-sm"
+                className="h-9 rounded-[14px] text-sm"
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Nome, email ou tenant"
                 value={searchTerm}
@@ -1059,7 +1132,7 @@ export function CustomerPortalAdminPage() {
             </Field>
           </div>
 
-          <div className="mt-4 border-t border-[color:var(--color-border)] pt-4">
+          <div className="mt-3 border-t border-[color:var(--color-border)] pt-3">
             <div className="mb-3 flex items-center justify-between gap-2">
               <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">
                 Tenants governados
@@ -1088,15 +1161,18 @@ export function CustomerPortalAdminPage() {
             )}
 
             {hiddenTenantCount > 0 ? (
-              <InlineNotice tone="default">
-                {hiddenTenantCount} tenant(s) ocultados para manter a leitura operacional compacta.
-              </InlineNotice>
+              <p className="mt-3 truncate text-[0.76rem] text-[color:var(--color-muted)]">
+                +{hiddenTenantCount} tenant(s) fora do recorte visual.
+              </p>
             ) : null}
           </div>
         </SurfaceCard>
       </aside>
 
-      <section className="min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-white/94 p-5 shadow-[0_18px_40px_rgba(18,31,72,0.08)]">
+      <section
+        className="min-h-0 overflow-x-hidden overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-white/94 p-5 shadow-[0_18px_40px_rgba(18,31,72,0.08)]"
+        data-portal-admin-center
+      >
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 space-y-2">
             <p className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-[color:var(--color-muted)]">
@@ -1151,9 +1227,14 @@ export function CustomerPortalAdminPage() {
         </div>
 
         <SurfaceCard
-          className="mt-4"
+          className="mt-4 min-h-[430px]"
           description="Leitura real dos usuários customer-facing por tenant, com densidade operacional."
           title="Usuários customer-facing"
+          actions={
+            <span className="text-[0.76rem] font-medium text-[color:var(--color-muted)]">
+              {visibleUsers.length} usuários
+            </span>
+          }
         >
           {visibleUsers.length === 0 ? (
             <EmptyState
@@ -1161,16 +1242,16 @@ export function CustomerPortalAdminPage() {
               description="Ajuste os filtros ou revise o tenant selecionado."
             />
           ) : (
-            <div className="space-y-2">
-              <div className="grid grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_132px_132px_minmax(0,1.4fr)] gap-3 border-b border-[color:var(--color-border)] px-4 pb-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                <span>Usuário</span>
-                <span>Tenant</span>
-                <span>Papel</span>
-                <span>Status</span>
-                <span>Resumo de acesso</span>
+            <div className="overflow-hidden rounded-[16px] border border-[color:var(--color-border)] bg-white">
+              <div className="grid grid-cols-[minmax(0,1.35fr)_minmax(0,0.95fr)_86px_74px_minmax(0,1.2fr)] gap-2 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                <span className="min-w-0 truncate">Usuário</span>
+                <span className="min-w-0 truncate">Tenant</span>
+                <span className="min-w-0 truncate">Papel</span>
+                <span className="min-w-0 truncate">Status</span>
+                <span className="min-w-0 truncate">Resumo</span>
               </div>
 
-              <div className="grid gap-2">
+              <div className="grid">
                 {visibleUsers.map((user) => (
                   <UserTableRow
                     key={user.membership_id}
@@ -1180,375 +1261,292 @@ export function CustomerPortalAdminPage() {
                   />
                 ))}
               </div>
+              <div className="flex items-center justify-between border-t border-[color:var(--color-border)] bg-white px-4 py-3 text-[0.78rem] text-[color:var(--color-muted)]">
+                <span>Exibindo {visibleUsers.length} usuário(s)</span>
+                <span>Leitura governada</span>
+              </div>
             </div>
           )}
         </SurfaceCard>
       </section>
 
-      <aside className="min-h-0 overflow-y-auto" ref={actionsRailRef}>
-        <div className="space-y-4">
-          <SurfaceCard
-            description="Resumo operacional do tenant atualmente selecionado."
-            title="Contexto selecionado"
-          >
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">Tenant em foco</h3>
-                {selectedTenant ? (
-                  <div className="grid gap-2">
-                    <DetailLine label="Tenant" value={selectedTenant.tenant_display_name} />
-                    <DetailLine
-                      label="Status do portal"
-                      tone={tenantStatusTone(selectedTenant.tenant_status)}
-                      value={tenantStatusLabel(selectedTenant.tenant_status)}
-                    />
-                    <DetailLine
-                      label="Último acesso real"
-                      value={formatOptionalDate(selectedTenant.last_access_at)}
-                    />
-                    <DetailLine
-                      label="Artigos autorizados"
-                      value={String(selectedTenant.authorized_article_count)}
-                    />
-                    <DetailLine
-                      label="Tickets visíveis"
-                      value={String(selectedTenant.visible_ticket_count)}
-                    />
-                    <DetailLine
-                      label="Pendências"
-                      tone={selectedTenant.risk_summary ? 'warning' : 'positive'}
-                      value={
-                        selectedTenant.risk_summary
-                          ? selectedTenant.risk_summary
-                          : 'Nenhuma pendência operacional.'
-                      }
-                    />
-                  </div>
-                ) : (
-                  <InlineNotice>Nenhum tenant selecionado.</InlineNotice>
-                )}
-              </div>
+      <aside className="min-h-0 overflow-y-auto" data-portal-admin-rail ref={actionsRailRef}>
+        <SurfaceCard
+          className="min-h-full"
+          description="Resumo operacional do tenant atualmente selecionado."
+          title="Contexto selecionado"
+        >
+          <div className="space-y-3">
+            <RailSection sectionKey="tenant" title="Tenant em foco">
+              {selectedTenant ? (
+                <div>
+                  <DetailLine label="Tenant" value={selectedTenant.tenant_display_name} />
+                  <DetailLine
+                    label="Status do portal"
+                    tone={tenantStatusTone(selectedTenant.tenant_status)}
+                    value={tenantStatusLabel(selectedTenant.tenant_status)}
+                  />
+                  <DetailLine
+                    label="Último acesso real"
+                    value={formatOptionalDate(selectedTenant.last_access_at)}
+                  />
+                  <DetailLine
+                    label="Artigos autorizados"
+                    value={String(selectedTenant.authorized_article_count)}
+                  />
+                  <DetailLine label="Tickets visíveis" value={String(selectedTenant.visible_ticket_count)} />
+                  <DetailLine
+                    label="Pendências"
+                    tone={selectedTenant.risk_summary ? 'warning' : 'positive'}
+                    value={selectedTenant.risk_summary ?? 'Nenhuma pendência operacional.'}
+                  />
+                </div>
+              ) : (
+                <InlineNotice>Nenhum tenant selecionado.</InlineNotice>
+              )}
+            </RailSection>
 
-              <div className="space-y-3 border-t border-[color:var(--color-border)] pt-4">
-                <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">Usuário em foco</h3>
-                {userDetail ? (
-                  <div className="grid gap-2">
-                    <DetailLine label="Nome" value={userDetail.user_full_name ?? 'Indisponível'} />
-                    <DetailLine label="E-mail" value={userDetail.user_email ?? 'Indisponível'} />
-                    <DetailLine label="Papel" value={roleLabel(userDetail.portal_role)} />
-                    <DetailLine
-                      label="Status"
-                      tone={accessTone(userDetail.access_status)}
-                      value={`${accessLabel(userDetail.access_status)} · ${membershipStatusLabel(userDetail.membership_status)}`}
-                    />
-                    <DetailLine
-                      label="Tenant ativo"
-                      value={userDetail.tenant_display_name ?? 'Indisponível'}
-                    />
-                    <DetailLine
-                      label="Último acesso"
-                      value={formatOptionalDate(userDetail.last_access_at)}
-                    />
-                  </div>
-                ) : (
-                  <InlineNotice>Selecione um usuário customer-facing para abrir o contexto.</InlineNotice>
-                )}
-              </div>
-            </div>
-          </SurfaceCard>
+            <RailSection sectionKey="user" title="Usuário em foco">
+              {userDetail ? (
+                <div>
+                  <DetailLine label="Nome" value={userDetail.user_full_name ?? 'Indisponível'} />
+                  <DetailLine label="E-mail" value={userDetail.user_email ?? 'Indisponível'} />
+                  <DetailLine label="Papel" value={roleLabel(userDetail.portal_role)} />
+                  <DetailLine
+                    label="Status"
+                    tone={accessTone(userDetail.access_status)}
+                    value={`${accessLabel(userDetail.access_status)} · ${membershipStatusLabel(userDetail.membership_status)}`}
+                  />
+                  <DetailLine label="Tenant ativo" value={userDetail.tenant_display_name ?? 'Indisponível'} />
+                  <DetailLine label="Último acesso" value={formatOptionalDate(userDetail.last_access_at)} />
+                </div>
+              ) : (
+                <InlineNotice>Selecione um usuário customer-facing.</InlineNotice>
+              )}
+            </RailSection>
 
-          <SurfaceCard
-            description="Ações operacionais habilitadas pelos contratos reais da tela."
-            title="Ações governadas"
-          >
-            <div className="space-y-3">
-              <ActionBlock
-                description={selectedUser ? roleHelper(roleDraft) : 'Selecione um usuário customer-facing para continuar.'}
-                title="Gerenciar papel"
-              >
-                {selectedUser ? (
-                  <form className="space-y-3" onSubmit={handleUpdateUserRole}>
-                    <SelectInput
-                      className="h-10 rounded-[16px] text-sm"
-                      onChange={(event) => setRoleDraft(event.target.value as CustomerPortalRole)}
-                      value={roleDraft}
-                    >
-                      <option value="customer_user">Usuário cliente</option>
-                      <option value="customer_manager">Gestão cliente</option>
-                    </SelectInput>
-                    <AppButton
-                      className="h-10 w-full rounded-full text-sm"
-                      disabled={submittingKey === 'update-role'}
-                      type="submit"
-                    >
-                      {submittingKey === 'update-role' ? 'Atualizando...' : 'Gerenciar papel'}
-                    </AppButton>
-                  </form>
-                ) : (
-                  <InlineNotice>Indisponível sem usuário selecionado.</InlineNotice>
-                )}
-              </ActionBlock>
+            <RailSection sectionKey="actions" title="Ações governadas">
+              <div className="space-y-2">
+                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2">
+                  <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-brand-blue)]">
+                    Gerenciar papel
+                  </summary>
+                  {selectedUser ? (
+                    <form className="mt-3 space-y-2" onSubmit={handleUpdateUserRole}>
+                      <SelectInput
+                        className="h-9 rounded-[14px] text-sm"
+                        onChange={(event) => setRoleDraft(event.target.value as CustomerPortalRole)}
+                        value={roleDraft}
+                      >
+                        <option value="customer_user">Usuário cliente</option>
+                        <option value="customer_manager">Gestão cliente</option>
+                      </SelectInput>
+                      <AppButton
+                        className="h-9 w-full rounded-full text-sm"
+                        disabled={submittingKey === 'update-role'}
+                        type="submit"
+                      >
+                        {submittingKey === 'update-role' ? 'Atualizando...' : 'Salvar papel'}
+                      </AppButton>
+                    </form>
+                  ) : (
+                    <p className="mt-2 text-[0.76rem] text-[color:var(--color-muted)]">Indisponível.</p>
+                  )}
+                </details>
 
-              <ActionBlock
-                description="Ajuste do estado do vínculo customer-facing com governança já auditada."
-                title="Alterar status"
-              >
-                {selectedUser ? (
-                  <form className="space-y-3" onSubmit={handleUpdateUserStatus}>
-                    <SelectInput
-                      className="h-10 rounded-[16px] text-sm"
-                      onChange={(event) => setStatusDraft(event.target.value as MembershipStatus)}
-                      value={statusDraft}
-                    >
-                      <option value="active">Ativo</option>
-                      <option value="invited">Convite pendente</option>
-                      <option value="revoked">Revogado</option>
-                    </SelectInput>
-                    <GhostButton
-                      className="h-10 w-full rounded-full text-sm"
-                      disabled={submittingKey === 'update-status'}
-                      type="submit"
-                    >
-                      {submittingKey === 'update-status' ? 'Atualizando...' : 'Alterar status'}
-                    </GhostButton>
-                  </form>
-                ) : (
-                  <InlineNotice>Indisponível sem usuário selecionado.</InlineNotice>
-                )}
-              </ActionBlock>
+                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2">
+                  <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-brand-blue)]">
+                    Alterar status
+                  </summary>
+                  {selectedUser ? (
+                    <form className="mt-3 space-y-2" onSubmit={handleUpdateUserStatus}>
+                      <SelectInput
+                        className="h-9 rounded-[14px] text-sm"
+                        onChange={(event) => setStatusDraft(event.target.value as MembershipStatus)}
+                        value={statusDraft}
+                      >
+                        <option value="active">Ativo</option>
+                        <option value="invited">Convite pendente</option>
+                        <option value="revoked">Revogado</option>
+                      </SelectInput>
+                      <GhostButton
+                        className="h-9 w-full rounded-full text-sm"
+                        disabled={submittingKey === 'update-status'}
+                        type="submit"
+                      >
+                        {submittingKey === 'update-status' ? 'Atualizando...' : 'Salvar status'}
+                      </GhostButton>
+                    </form>
+                  ) : (
+                    <p className="mt-2 text-[0.76rem] text-[color:var(--color-muted)]">Indisponível.</p>
+                  )}
+                </details>
 
-              <ActionBlock
-                description="Liberação real sem publicar nem aprovar artigo automaticamente."
-                title="Conceder artigo"
-              >
-                {selectedTenant ? (
-                  <form className="space-y-3" onSubmit={handleGrantEntitlement}>
-                    <SelectInput
-                      className="h-10 rounded-[16px] text-sm"
-                      onChange={(event) =>
-                        setGrantForm((current) => ({ ...current, tenantId: event.target.value }))
-                      }
-                      value={grantForm.tenantId}
-                    >
-                      <option value="">Selecione o tenant</option>
-                      {tenantAccess.map((tenant) => (
-                        <option key={tenant.tenant_id} value={tenant.tenant_id}>
-                          {tenant.tenant_display_name}
-                        </option>
-                      ))}
-                    </SelectInput>
-                    <SelectInput
-                      className="h-10 rounded-[16px] text-sm"
-                      onChange={(event) =>
-                        setGrantForm((current) => ({ ...current, articleId: event.target.value }))
-                      }
-                      value={grantForm.articleId}
-                    >
-                      <option value="">Selecione o artigo</option>
-                      {articleCandidates.map((article) => (
-                        <option key={article.article_id} value={article.article_id}>
-                          {article.article_title}
-                        </option>
-                      ))}
-                    </SelectInput>
-                    <SelectInput
-                      className="h-10 rounded-[16px] text-sm"
-                      onChange={(event) =>
-                        setGrantForm((current) => ({
-                          ...current,
-                          scope: event.target.value as CustomerPortalEntitlementScope,
-                        }))
-                      }
-                      value={grantForm.scope}
-                    >
-                      <option value="customer_portal">Portal autenticado</option>
-                      <option value="tenant">Tenant inteiro</option>
-                    </SelectInput>
-                    <TextareaInput
-                      className="min-h-[88px] rounded-[18px] px-3 py-3 text-sm"
-                      onChange={(event) =>
-                        setGrantForm((current) => ({
-                          ...current,
-                          relationReason: event.target.value,
-                        }))
-                      }
-                      placeholder="Motivo operacional"
-                      value={grantForm.relationReason}
-                    />
-                    <AppButton
-                      className="h-10 w-full rounded-full text-sm"
-                      disabled={submittingKey === 'grant-entitlement'}
-                      type="submit"
-                    >
-                      {submittingKey === 'grant-entitlement' ? 'Concedendo...' : 'Conceder artigo'}
-                    </AppButton>
-                  </form>
-                ) : (
-                  <InlineNotice>Indisponível sem tenant em foco.</InlineNotice>
-                )}
-              </ActionBlock>
-
-              <ActionBlock
-                description="Retirada controlada da exposição customer-facing já liberada."
-                title="Arquivar entitlement"
-              >
-                {visibleEntitlements.length > 0 ? (
-                  <div className="space-y-3">
-                    <SelectInput
-                      className="h-10 rounded-[16px] text-sm"
-                      onChange={(event) => setSelectedEntitlementId(event.target.value as Uuid)}
-                      value={selectedEntitlementId ?? ''}
-                    >
-                      <option value="">Selecione o entitlement</option>
-                      {visibleEntitlements.map((entitlement) => (
-                        <option key={entitlement.entitlement_id} value={entitlement.entitlement_id}>
-                          {entitlement.article_title} · {entitlementStatusLabel(entitlement.entitlement_status)}
-                        </option>
-                      ))}
-                    </SelectInput>
-
-                    {entitlementDetail ? (
-                      <div className="grid gap-2">
-                        <DetailLine label="Artigo" value={entitlementDetail.article_title} />
-                        <DetailLine label="Escopo" value={scopeLabel(entitlementDetail.entitlement_scope)} />
-                        <DetailLine
-                          label="Status"
-                          tone={entitlementDetail.entitlement_status === 'active' ? 'positive' : 'critical'}
-                          value={entitlementStatusLabel(entitlementDetail.entitlement_status)}
-                        />
-                      </div>
-                    ) : null}
-
-                    <GhostButton
-                      className="h-10 w-full rounded-full text-sm"
-                      disabled={
-                        submittingKey === 'archive-entitlement' ||
-                        !entitlementDetail ||
-                        entitlementDetail.entitlement_status !== 'active'
-                      }
-                      onClick={() => void handleArchiveEntitlement()}
-                    >
-                      {submittingKey === 'archive-entitlement'
-                        ? 'Arquivando...'
-                        : 'Arquivar entitlement'}
-                    </GhostButton>
-                  </div>
-                ) : (
-                  <InlineNotice>Nenhum entitlement disponível para o tenant filtrado.</InlineNotice>
-                )}
-              </ActionBlock>
-
-              <ActionBlock
-                description="Associação governada entre ticket permitido e artigo publicado."
-                title="Vincular artigo a ticket"
-              >
-                {selectedTenant ? (
-                  <form className="space-y-3" onSubmit={handleLinkArticleToTicket}>
-                    <SelectInput
-                      className="h-10 rounded-[16px] text-sm"
-                      onChange={(event) =>
-                        setLinkForm((current) => {
-                          const nextTenantId = event.target.value;
-                          const nextTicketId =
-                            ticketCandidates.find((ticket) => ticket.tenant_id === nextTenantId)?.ticket_id ??
-                            '';
-
-                          return {
+                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2">
+                  <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-brand-blue)]">
+                    Conceder artigo
+                  </summary>
+                  {selectedTenant ? (
+                    <form className="mt-3 space-y-2" onSubmit={handleGrantEntitlement}>
+                      <SelectInput
+                        className="h-9 rounded-[14px] text-sm"
+                        onChange={(event) =>
+                          setGrantForm((current) => ({ ...current, articleId: event.target.value }))
+                        }
+                        value={grantForm.articleId}
+                      >
+                        <option value="">Selecione o artigo</option>
+                        {articleCandidates.map((article) => (
+                          <option key={article.article_id} value={article.article_id}>
+                            {article.article_title}
+                          </option>
+                        ))}
+                      </SelectInput>
+                      <SelectInput
+                        className="h-9 rounded-[14px] text-sm"
+                        onChange={(event) =>
+                          setGrantForm((current) => ({
                             ...current,
-                            tenantId: nextTenantId,
-                            ticketId: nextTicketId,
-                          };
-                        })
-                      }
-                      value={linkForm.tenantId}
-                    >
-                      <option value="">Selecione o tenant</option>
-                      {tenantAccess.map((tenant) => (
-                        <option key={tenant.tenant_id} value={tenant.tenant_id}>
-                          {tenant.tenant_display_name}
-                        </option>
-                      ))}
-                    </SelectInput>
-                    <SelectInput
-                      className="h-10 rounded-[16px] text-sm"
-                      onChange={(event) =>
-                        setLinkForm((current) => ({ ...current, ticketId: event.target.value }))
-                      }
-                      value={linkForm.ticketId}
-                    >
-                      <option value="">Selecione o ticket</option>
-                      {tenantScopedTickets.map((ticket) => (
-                        <option key={ticket.ticket_id} value={ticket.ticket_id}>
-                          {ticket.ticket_title}
-                        </option>
-                      ))}
-                    </SelectInput>
-                    <SelectInput
-                      className="h-10 rounded-[16px] text-sm"
-                      onChange={(event) =>
-                        setLinkForm((current) => ({ ...current, articleId: event.target.value }))
-                      }
-                      value={linkForm.articleId}
-                    >
-                      <option value="">Selecione o artigo</option>
-                      {articleCandidates.map((article) => (
-                        <option key={article.article_id} value={article.article_id}>
-                          {article.article_title}
-                        </option>
-                      ))}
-                    </SelectInput>
-                    <TextareaInput
-                      className="min-h-[88px] rounded-[18px] px-3 py-3 text-sm"
-                      onChange={(event) =>
-                        setLinkForm((current) => ({
-                          ...current,
-                          relationReason: event.target.value,
-                        }))
-                      }
-                      placeholder="Motivo do vínculo"
-                      value={linkForm.relationReason}
-                    />
-                    <AppButton
-                      className="h-10 w-full rounded-full text-sm"
-                      disabled={submittingKey === 'link-ticket-article'}
-                      type="submit"
-                    >
-                      {submittingKey === 'link-ticket-article' ? 'Vinculando...' : 'Vincular artigo a ticket'}
-                    </AppButton>
-                  </form>
-                ) : (
-                  <InlineNotice>Indisponível sem tenant em foco.</InlineNotice>
-                )}
+                            scope: event.target.value as CustomerPortalEntitlementScope,
+                          }))
+                        }
+                        value={grantForm.scope}
+                      >
+                        <option value="customer_portal">Portal autenticado</option>
+                        <option value="tenant">Tenant inteiro</option>
+                      </SelectInput>
+                      <TextareaInput
+                        className="min-h-[70px] rounded-[14px] px-3 py-2 text-sm"
+                        onChange={(event) =>
+                          setGrantForm((current) => ({
+                            ...current,
+                            relationReason: event.target.value,
+                          }))
+                        }
+                        placeholder="Motivo operacional"
+                        value={grantForm.relationReason}
+                      />
+                      <AppButton
+                        className="h-9 w-full rounded-full text-sm"
+                        disabled={submittingKey === 'grant-entitlement'}
+                        type="submit"
+                      >
+                        {submittingKey === 'grant-entitlement' ? 'Concedendo...' : 'Conceder'}
+                      </AppButton>
+                    </form>
+                  ) : (
+                    <p className="mt-2 text-[0.76rem] text-[color:var(--color-muted)]">Indisponível.</p>
+                  )}
+                </details>
 
-                {selectedTicketLink ? (
-                  <div className="mt-3 border-t border-[color:var(--color-border)] pt-3">
-                    <SelectInput
-                      className="h-10 rounded-[16px] text-sm"
-                      onChange={(event) => setSelectedTicketLinkId(event.target.value as Uuid)}
-                      value={selectedTicketLinkId ?? ''}
-                    >
-                      <option value="">Selecione um vínculo ativo</option>
-                      {visibleTicketLinks.map((link) => (
-                        <option key={link.ticket_knowledge_link_id} value={link.ticket_knowledge_link_id}>
-                          {link.ticket_title} · {link.article_title}
-                        </option>
-                      ))}
-                    </SelectInput>
-                    <GhostButton
-                      className="mt-3 h-10 w-full rounded-full text-sm"
-                      disabled={
-                        submittingKey === 'unlink-ticket-article' || selectedTicketLink.link_status !== 'active'
-                      }
-                      onClick={() => void handleUnlinkTicketKnowledgeLink()}
-                    >
-                      {submittingKey === 'unlink-ticket-article' ? 'Removendo...' : 'Desvincular artigo'}
-                    </GhostButton>
-                  </div>
-                ) : null}
-              </ActionBlock>
-            </div>
-          </SurfaceCard>
-        </div>
+                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2">
+                  <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-brand-blue)]">
+                    Arquivar entitlement
+                  </summary>
+                  {visibleEntitlements.length > 0 ? (
+                    <div className="mt-3 space-y-2">
+                      <SelectInput
+                        className="h-9 rounded-[14px] text-sm"
+                        onChange={(event) => setSelectedEntitlementId(event.target.value as Uuid)}
+                        value={selectedEntitlementId ?? ''}
+                      >
+                        <option value="">Selecione</option>
+                        {visibleEntitlements.map((entitlement) => (
+                          <option key={entitlement.entitlement_id} value={entitlement.entitlement_id}>
+                            {entitlement.article_title}
+                          </option>
+                        ))}
+                      </SelectInput>
+                      <GhostButton
+                        className="h-9 w-full rounded-full text-sm"
+                        disabled={
+                          submittingKey === 'archive-entitlement' ||
+                          !entitlementDetail ||
+                          entitlementDetail.entitlement_status !== 'active'
+                        }
+                        onClick={() => void handleArchiveEntitlement()}
+                      >
+                        {submittingKey === 'archive-entitlement' ? 'Arquivando...' : 'Arquivar'}
+                      </GhostButton>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-[0.76rem] text-[color:var(--color-muted)]">Indisponível.</p>
+                  )}
+                </details>
+
+                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2">
+                  <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-brand-blue)]">
+                    Vincular artigo a ticket
+                  </summary>
+                  {selectedTenant ? (
+                    <form className="mt-3 space-y-2" onSubmit={handleLinkArticleToTicket}>
+                      <SelectInput
+                        className="h-9 rounded-[14px] text-sm"
+                        onChange={(event) =>
+                          setLinkForm((current) => ({ ...current, ticketId: event.target.value }))
+                        }
+                        value={linkForm.ticketId}
+                      >
+                        <option value="">Selecione o ticket</option>
+                        {tenantScopedTickets.map((ticket) => (
+                          <option key={ticket.ticket_id} value={ticket.ticket_id}>
+                            {ticket.ticket_title}
+                          </option>
+                        ))}
+                      </SelectInput>
+                      <SelectInput
+                        className="h-9 rounded-[14px] text-sm"
+                        onChange={(event) =>
+                          setLinkForm((current) => ({ ...current, articleId: event.target.value }))
+                        }
+                        value={linkForm.articleId}
+                      >
+                        <option value="">Selecione o artigo</option>
+                        {articleCandidates.map((article) => (
+                          <option key={article.article_id} value={article.article_id}>
+                            {article.article_title}
+                          </option>
+                        ))}
+                      </SelectInput>
+                      <TextareaInput
+                        className="min-h-[70px] rounded-[14px] px-3 py-2 text-sm"
+                        onChange={(event) =>
+                          setLinkForm((current) => ({
+                            ...current,
+                            relationReason: event.target.value,
+                          }))
+                        }
+                        placeholder="Motivo do vínculo"
+                        value={linkForm.relationReason}
+                      />
+                      <AppButton
+                        className="h-9 w-full rounded-full text-sm"
+                        disabled={submittingKey === 'link-ticket-article'}
+                        type="submit"
+                      >
+                        {submittingKey === 'link-ticket-article' ? 'Vinculando...' : 'Vincular'}
+                      </AppButton>
+                      {selectedTicketLink ? (
+                        <GhostButton
+                          className="h-9 w-full rounded-full text-sm"
+                          disabled={
+                            submittingKey === 'unlink-ticket-article' ||
+                            selectedTicketLink.link_status !== 'active'
+                          }
+                          onClick={() => void handleUnlinkTicketKnowledgeLink()}
+                        >
+                          {submittingKey === 'unlink-ticket-article' ? 'Removendo...' : 'Desvincular'}
+                        </GhostButton>
+                      ) : null}
+                    </form>
+                  ) : (
+                    <p className="mt-2 text-[0.76rem] text-[color:var(--color-muted)]">Indisponível.</p>
+                  )}
+                </details>
+              </div>
+            </RailSection>
+          </div>
+        </SurfaceCard>
       </aside>
     </div>
   );
