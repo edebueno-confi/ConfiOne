@@ -41,6 +41,10 @@ import type {
 } from '../../contracts/support-contracts';
 
 export const CUSTOMER_PORTAL_ATTACHMENT_MAX_SIZE_BYTES = 10 * 1024 * 1024;
+const CUSTOMER_PORTAL_SESSION_TIMEOUT_MS = 8_000;
+const CUSTOMER_PORTAL_READ_TIMEOUT_MS = 12_000;
+const CUSTOMER_PORTAL_MUTATION_TIMEOUT_MS = 15_000;
+const CUSTOMER_PORTAL_UPLOAD_TIMEOUT_MS = 20_000;
 
 export const CUSTOMER_PORTAL_ATTACHMENT_ALLOWED_TYPES = [
   'application/pdf',
@@ -66,12 +70,71 @@ function requireSupabaseFunctionBaseUrl() {
   };
 }
 
+function createPortalTimeoutError(message: string) {
+  return new AppError('network-retryable', message);
+}
+
+async function withPromiseTimeout<T>(
+  promise: PromiseLike<T>,
+  timeoutMs: number,
+  timeoutMessage: string,
+) {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  try {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(createPortalTimeoutError(timeoutMessage));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
+
+async function withFetchTimeout<T>(
+  run: (signal: AbortSignal) => Promise<T>,
+  timeoutMs: number,
+  timeoutMessage: string,
+) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort('portal-timeout'), timeoutMs);
+
+  try {
+    return await run(controller.signal);
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw createPortalTimeoutError(timeoutMessage);
+    }
+
+    throw toAppError(
+      error instanceof Error ? error : new Error(timeoutMessage),
+      timeoutMessage,
+    );
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function requireActiveSessionToken() {
   const client = requireClient();
   const {
     data: { session },
     error,
-  } = await client.auth.getSession();
+  } = await withPromiseTimeout(
+    client.auth.getSession(),
+    CUSTOMER_PORTAL_SESSION_TIMEOUT_MS,
+    'A validação da sua sessão demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error || !session?.access_token) {
     throw new AppError(
@@ -90,21 +153,32 @@ async function callSupabaseFunctionJson<T>(
   const { supabaseAnonKey, supabaseUrl } = requireSupabaseFunctionBaseUrl();
   const accessToken = await requireActiveSessionToken();
   let response: Response;
+  const timeoutMs =
+    String(init.method ?? 'GET').toUpperCase() === 'POST'
+      ? CUSTOMER_PORTAL_UPLOAD_TIMEOUT_MS
+      : CUSTOMER_PORTAL_MUTATION_TIMEOUT_MS;
 
   try {
-    response = await fetch(`${supabaseUrl}${relativeUrl}`, {
-      ...init,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        apikey: supabaseAnonKey,
-        ...(init.headers ?? {}),
-      },
-    });
-  } catch (error) {
-    throw toAppError(
-      error instanceof Error ? error : new Error('Falha ao chamar função segura.'),
-      'Falha ao chamar a função segura do portal.',
+    response = await withFetchTimeout(
+      (signal) =>
+        fetch(`${supabaseUrl}${relativeUrl}`, {
+          ...init,
+          signal,
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            apikey: supabaseAnonKey,
+            ...(init.headers ?? {}),
+          },
+        }),
+      timeoutMs,
+      'A comunicação segura com o portal demorou mais do que o esperado. Tente novamente.',
     );
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    throw toAppError(error instanceof Error ? error : new Error('Falha ao chamar função segura.'), 'Falha ao chamar a função segura do portal.');
   }
 
   const payload = (await response.json().catch(() => null)) as
@@ -370,7 +444,11 @@ async function fetchMany<T>(
   fallbackMessage: string,
 ) {
   const client = requireClient();
-  const { data, error } = await client.from(viewName).select('*');
+  const { data, error } = await withPromiseTimeout(
+    client.from(viewName).select('*'),
+    CUSTOMER_PORTAL_READ_TIMEOUT_MS,
+    'A leitura do portal demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, fallbackMessage);
@@ -389,11 +467,15 @@ export async function fetchCustomerPortalContexts() {
 
 export async function fetchCustomerPortalAvailableTenants() {
   const client = requireClient();
-  const { data, error } = await client
-    .from('vw_customer_portal_available_tenants')
-    .select('*')
-    .order('is_active_context', { ascending: false })
-    .order('tenant_display_name', { ascending: true });
+  const { data, error } = await withPromiseTimeout(
+    client
+      .from('vw_customer_portal_available_tenants')
+      .select('*')
+      .order('is_active_context', { ascending: false })
+      .order('tenant_display_name', { ascending: true }),
+    CUSTOMER_PORTAL_READ_TIMEOUT_MS,
+    'A leitura dos tenants disponíveis demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, 'Falha ao carregar tenants disponíveis no portal cliente.');
@@ -404,10 +486,11 @@ export async function fetchCustomerPortalAvailableTenants() {
 
 export async function fetchCustomerPortalActiveTenantContext() {
   const client = requireClient();
-  const { data, error } = await client
-    .from('vw_customer_portal_active_tenant_context')
-    .select('*')
-    .maybeSingle();
+  const { data, error } = await withPromiseTimeout(
+    client.from('vw_customer_portal_active_tenant_context').select('*').maybeSingle(),
+    CUSTOMER_PORTAL_READ_TIMEOUT_MS,
+    'A leitura do tenant ativo demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, 'Falha ao carregar o tenant ativo do portal cliente.');
@@ -418,9 +501,11 @@ export async function fetchCustomerPortalActiveTenantContext() {
 
 export async function fetchCustomerPortalSessionStatus() {
   const client = requireClient();
-  const { data, error } = await client
-    .rpc('rpc_customer_get_portal_session_status')
-    .single();
+  const { data, error } = await withPromiseTimeout(
+    client.rpc('rpc_customer_get_portal_session_status').single(),
+    CUSTOMER_PORTAL_READ_TIMEOUT_MS,
+    'A revalidação da sessão customer-facing demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, 'Falha ao revalidar a sessão customer-facing do portal.');
@@ -435,11 +520,15 @@ export async function setCustomerPortalActiveTenant(
   payload: RpcCustomerSetActiveTenantPayload,
 ) {
   const client = requireClient();
-  const { data, error } = await client
-    .rpc('rpc_customer_set_active_tenant', {
-      p_tenant_id: payload.tenantId,
-    })
-    .single();
+  const { data, error } = await withPromiseTimeout(
+    client
+      .rpc('rpc_customer_set_active_tenant', {
+        p_tenant_id: payload.tenantId,
+      })
+      .single(),
+    CUSTOMER_PORTAL_MUTATION_TIMEOUT_MS,
+    'A troca de tenant demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, 'Falha ao trocar o tenant ativo do portal cliente.');
@@ -452,10 +541,14 @@ export async function setCustomerPortalActiveTenant(
 
 export async function fetchCustomerPortalTickets() {
   const client = requireClient();
-  const { data, error } = await client
-    .from('vw_customer_portal_ticket_list')
-    .select('*')
-    .order('updated_at', { ascending: false });
+  const { data, error } = await withPromiseTimeout(
+    client
+      .from('vw_customer_portal_ticket_list')
+      .select('*')
+      .order('updated_at', { ascending: false }),
+    CUSTOMER_PORTAL_READ_TIMEOUT_MS,
+    'A leitura dos tickets demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, 'Falha ao carregar tickets do portal cliente.');
@@ -466,11 +559,15 @@ export async function fetchCustomerPortalTickets() {
 
 export async function fetchCustomerPortalTicketDetail(ticketId: Uuid) {
   const client = requireClient();
-  const { data, error } = await client
-    .from('vw_customer_portal_ticket_detail')
-    .select('*')
-    .eq('ticket_id', ticketId)
-    .maybeSingle();
+  const { data, error } = await withPromiseTimeout(
+    client
+      .from('vw_customer_portal_ticket_detail')
+      .select('*')
+      .eq('ticket_id', ticketId)
+      .maybeSingle(),
+    CUSTOMER_PORTAL_READ_TIMEOUT_MS,
+    'A leitura do ticket demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, 'Falha ao carregar o ticket do portal cliente.');
@@ -481,11 +578,15 @@ export async function fetchCustomerPortalTicketDetail(ticketId: Uuid) {
 
 export async function fetchCustomerPortalTicketTimeline(ticketId: Uuid) {
   const client = requireClient();
-  const { data, error } = await client
-    .from('vw_customer_portal_ticket_timeline')
-    .select('*')
-    .eq('ticket_id', ticketId)
-    .order('occurred_at', { ascending: true });
+  const { data, error } = await withPromiseTimeout(
+    client
+      .from('vw_customer_portal_ticket_timeline')
+      .select('*')
+      .eq('ticket_id', ticketId)
+      .order('occurred_at', { ascending: true }),
+    CUSTOMER_PORTAL_READ_TIMEOUT_MS,
+    'A leitura da timeline demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, 'Falha ao carregar a timeline do portal cliente.');
@@ -496,11 +597,15 @@ export async function fetchCustomerPortalTicketTimeline(ticketId: Uuid) {
 
 export async function fetchCustomerPortalTicketCollaborationState(ticketId: Uuid) {
   const client = requireClient();
-  const { data, error } = await client
-    .from('vw_customer_portal_ticket_collaboration_state')
-    .select('*')
-    .eq('ticket_id', ticketId)
-    .maybeSingle();
+  const { data, error } = await withPromiseTimeout(
+    client
+      .from('vw_customer_portal_ticket_collaboration_state')
+      .select('*')
+      .eq('ticket_id', ticketId)
+      .maybeSingle(),
+    CUSTOMER_PORTAL_READ_TIMEOUT_MS,
+    'A leitura da colaboração do ticket demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, 'Falha ao carregar colaboração do ticket.');
@@ -511,11 +616,15 @@ export async function fetchCustomerPortalTicketCollaborationState(ticketId: Uuid
 
 export async function fetchCustomerPortalTicketAttachments(ticketId: Uuid) {
   const client = requireClient();
-  const { data, error } = await client
-    .from('vw_customer_portal_ticket_attachments')
-    .select('*')
-    .eq('ticket_id', ticketId)
-    .order('created_at', { ascending: false });
+  const { data, error } = await withPromiseTimeout(
+    client
+      .from('vw_customer_portal_ticket_attachments')
+      .select('*')
+      .eq('ticket_id', ticketId)
+      .order('created_at', { ascending: false }),
+    CUSTOMER_PORTAL_READ_TIMEOUT_MS,
+    'A leitura das evidências demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, 'Falha ao carregar evidências do portal cliente.');
@@ -526,13 +635,17 @@ export async function fetchCustomerPortalTicketAttachments(ticketId: Uuid) {
 
 export async function fetchCustomerPortalKnowledgeArticles(tenantId: Uuid) {
   const client = requireClient();
-  const { data, error } = await client
-    .from('vw_customer_portal_knowledge_articles')
-    .select('*')
-    .eq('tenant_id', tenantId)
-    .order('source', { ascending: true })
-    .order('updated_at', { ascending: false, nullsFirst: false })
-    .order('published_at', { ascending: false, nullsFirst: false });
+  const { data, error } = await withPromiseTimeout(
+    client
+      .from('vw_customer_portal_knowledge_articles')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .order('source', { ascending: true })
+      .order('updated_at', { ascending: false, nullsFirst: false })
+      .order('published_at', { ascending: false, nullsFirst: false }),
+    CUSTOMER_PORTAL_READ_TIMEOUT_MS,
+    'A leitura da central autorizada demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, 'Falha ao carregar a central de ajuda autorizada.');
@@ -546,12 +659,16 @@ export async function fetchCustomerPortalKnowledgeArticleDetail(
   articleSlug: string,
 ) {
   const client = requireClient();
-  const { data, error } = await client
-    .from('vw_customer_portal_knowledge_article_detail')
-    .select('*')
-    .eq('tenant_id', tenantId)
-    .eq('slug', articleSlug)
-    .maybeSingle();
+  const { data, error } = await withPromiseTimeout(
+    client
+      .from('vw_customer_portal_knowledge_article_detail')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('slug', articleSlug)
+      .maybeSingle(),
+    CUSTOMER_PORTAL_READ_TIMEOUT_MS,
+    'A leitura do artigo autorizado demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, 'Falha ao carregar o artigo autorizado do portal.');
@@ -562,12 +679,16 @@ export async function fetchCustomerPortalKnowledgeArticleDetail(
 
 export async function fetchCustomerPortalTicketKnowledgeLinks(ticketId: Uuid) {
   const client = requireClient();
-  const { data, error } = await client
-    .from('vw_customer_portal_ticket_knowledge_links')
-    .select('*')
-    .eq('ticket_id', ticketId)
-    .order('updated_at', { ascending: false, nullsFirst: false })
-    .order('published_at', { ascending: false, nullsFirst: false });
+  const { data, error } = await withPromiseTimeout(
+    client
+      .from('vw_customer_portal_ticket_knowledge_links')
+      .select('*')
+      .eq('ticket_id', ticketId)
+      .order('updated_at', { ascending: false, nullsFirst: false })
+      .order('published_at', { ascending: false, nullsFirst: false }),
+    CUSTOMER_PORTAL_READ_TIMEOUT_MS,
+    'A leitura dos artigos relacionados demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, 'Falha ao carregar artigos relacionados ao ticket.');
@@ -580,9 +701,8 @@ export async function searchCustomerPortalKnowledgeArticles(
   payload: RpcCustomerSearchKnowledgeArticlesPayload,
 ) {
   const client = requireClient();
-  const { data, error } = await client.rpc(
-    'rpc_customer_search_knowledge_articles',
-    {
+  const { data, error } = await withPromiseTimeout(
+    client.rpc('rpc_customer_search_knowledge_articles', {
       p_tenant_id: payload.tenantId,
       p_search_query: payload.searchQuery ?? null,
       p_category_name: payload.categoryName ?? null,
@@ -590,7 +710,9 @@ export async function searchCustomerPortalKnowledgeArticles(
       p_ticket_id: payload.ticketId ?? null,
       p_limit: payload.limit ?? 12,
       p_offset: payload.offset ?? 0,
-    },
+    }),
+    CUSTOMER_PORTAL_READ_TIMEOUT_MS,
+    'A busca de artigos autorizados demorou mais do que o esperado. Tente novamente.',
   );
 
   if (error) {
@@ -604,13 +726,17 @@ export async function searchCustomerPortalKnowledgeArticles(
 
 export async function createCustomerPortalTicket(payload: RpcCustomerCreateTicketPayload) {
   const client = requireClient();
-  const { data, error } = await client
-    .rpc('rpc_customer_create_ticket', {
-      p_description: payload.description,
-      p_tenant_id: payload.tenantId,
-      p_title: payload.title,
-    })
-    .single();
+  const { data, error } = await withPromiseTimeout(
+    client
+      .rpc('rpc_customer_create_ticket', {
+        p_description: payload.description,
+        p_tenant_id: payload.tenantId,
+        p_title: payload.title,
+      })
+      .single(),
+    CUSTOMER_PORTAL_MUTATION_TIMEOUT_MS,
+    'A criação do ticket demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, 'Falha ao criar ticket pelo portal cliente.');
@@ -630,12 +756,16 @@ export async function addCustomerPortalTicketMessage(
   payload: RpcCustomerAddTicketMessagePayload,
 ) {
   const client = requireClient();
-  const { data, error } = await client
-    .rpc('rpc_customer_add_ticket_message', {
-      p_body: payload.body,
-      p_ticket_id: payload.ticketId,
-    })
-    .single();
+  const { data, error } = await withPromiseTimeout(
+    client
+      .rpc('rpc_customer_add_ticket_message', {
+        p_body: payload.body,
+        p_ticket_id: payload.ticketId,
+      })
+      .single(),
+    CUSTOMER_PORTAL_MUTATION_TIMEOUT_MS,
+    'O envio da mensagem demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, 'Falha ao registrar a mensagem do cliente.');
@@ -655,11 +785,15 @@ export async function getCustomerPortalAttachmentDownloadUrl(
   payload: RpcCustomerGetAttachmentDownloadUrlPayload,
 ) {
   const client = requireClient();
-  const { data, error } = await client
-    .rpc('rpc_customer_get_attachment_download_url', {
-      p_attachment_id: payload.attachmentId,
-    })
-    .single();
+  const { data, error } = await withPromiseTimeout(
+    client
+      .rpc('rpc_customer_get_attachment_download_url', {
+        p_attachment_id: payload.attachmentId,
+      })
+      .single(),
+    CUSTOMER_PORTAL_MUTATION_TIMEOUT_MS,
+    'A preparação do download demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, 'Falha ao preparar o download seguro da evidência.');
@@ -689,15 +823,16 @@ export async function uploadCustomerPortalTicketAttachment(input: {
   ticketId: Uuid;
 }): Promise<RpcCustomerRegisterTicketAttachmentResponse> {
   const client = requireClient();
-  const { data, error } = await client.rpc(
-    'rpc_customer_create_ticket_attachment_upload',
-    {
+  const { data, error } = await withPromiseTimeout(
+    client.rpc('rpc_customer_create_ticket_attachment_upload', {
       p_content_type: input.file.type,
       p_original_filename: input.file.name,
       p_size_bytes: input.file.size,
       p_tenant_id: input.tenantId,
       p_ticket_id: input.ticketId,
-    },
+    }),
+    CUSTOMER_PORTAL_MUTATION_TIMEOUT_MS,
+    'A preparação do upload demorou mais do que o esperado. Tente novamente.',
   );
 
   if (error) {
@@ -733,12 +868,16 @@ export async function acknowledgeCustomerPortalTicketUpdate(
   payload: RpcCustomerAcknowledgeTicketUpdatePayload,
 ) {
   const client = requireClient();
-  const { data, error } = await client
-    .rpc('rpc_customer_acknowledge_ticket_update', {
-      p_last_timeline_entry_id: payload.lastTimelineEntryId ?? null,
-      p_ticket_id: payload.ticketId,
-    })
-    .single();
+  const { data, error } = await withPromiseTimeout(
+    client
+      .rpc('rpc_customer_acknowledge_ticket_update', {
+        p_last_timeline_entry_id: payload.lastTimelineEntryId ?? null,
+        p_ticket_id: payload.ticketId,
+      })
+      .single(),
+    CUSTOMER_PORTAL_MUTATION_TIMEOUT_MS,
+    'O registro de leitura demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, 'Falha ao marcar atualização como lida.');
@@ -757,11 +896,15 @@ export async function confirmCustomerPortalTicketResolved(
   payload: RpcCustomerConfirmTicketResolvedPayload,
 ) {
   const client = requireClient();
-  const { data, error } = await client
-    .rpc('rpc_customer_confirm_ticket_resolved', {
-      p_ticket_id: payload.ticketId,
-    })
-    .single();
+  const { data, error } = await withPromiseTimeout(
+    client
+      .rpc('rpc_customer_confirm_ticket_resolved', {
+        p_ticket_id: payload.ticketId,
+      })
+      .single(),
+    CUSTOMER_PORTAL_MUTATION_TIMEOUT_MS,
+    'A confirmação da resolução demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, 'Falha ao confirmar resolução do ticket.');
@@ -781,12 +924,16 @@ export async function requestCustomerPortalTicketReopen(
   payload: RpcCustomerRequestTicketReopenPayload,
 ) {
   const client = requireClient();
-  const { data, error } = await client
-    .rpc('rpc_customer_request_ticket_reopen', {
-      p_reason: payload.reason,
-      p_ticket_id: payload.ticketId,
-    })
-    .single();
+  const { data, error } = await withPromiseTimeout(
+    client
+      .rpc('rpc_customer_request_ticket_reopen', {
+        p_reason: payload.reason,
+        p_ticket_id: payload.ticketId,
+      })
+      .single(),
+    CUSTOMER_PORTAL_MUTATION_TIMEOUT_MS,
+    'A solicitação de reabertura demorou mais do que o esperado. Tente novamente.',
+  );
 
   if (error) {
     throw toAppError(error, 'Falha ao solicitar reabertura do ticket.');

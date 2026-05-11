@@ -95,6 +95,22 @@ function mapError(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function isNetworkRetryableAppError(error: unknown) {
+  return error instanceof AppError && error.code === 'network-retryable';
+}
+
+function isContractUnavailableMessage(message: string | null) {
+  return message?.includes('não está disponível') ?? false;
+}
+
+function isNetworkRetryableMessage(message: string | null) {
+  return (
+    /não foi possível falar com o portal agora|demorou mais do que o esperado|tente novamente|reconectar|conexão/i.test(
+      message ?? '',
+    )
+  );
+}
+
 function describeCustomerAttachmentLimits() {
   return 'PDF, PNG, JPG ou WebP até 10 MB.';
 }
@@ -654,7 +670,8 @@ function InfoLine({ label, value }: { label: string; value: string | null }) {
 
 export function CustomerPortalHomePage() {
   const navigate = useNavigate();
-  const { activeContext } = useCustomerPortalTenantContext();
+  const { activeContext, refresh, reportOperationalNetworkIssue } =
+    useCustomerPortalTenantContext();
   const [tickets, setTickets] = useState<CustomerPortalTicketListItem[]>([]);
   const [articles, setArticles] = useState<CustomerPortalKnowledgeArticle[]>([]);
   const [knowledgeSearchInput, setKnowledgeSearchInput] = useState('');
@@ -696,7 +713,13 @@ export function CustomerPortalHomePage() {
         }
       } catch (error) {
         if (!cancelled) {
-          setErrorMessage(mapError(error, 'Falha ao abrir o portal cliente.'));
+          const nextMessage = mapError(error, 'Falha ao abrir o portal cliente.');
+          setTickets([]);
+          setArticles([]);
+          setErrorMessage(nextMessage);
+          if (isNetworkRetryableAppError(error)) {
+            reportOperationalNetworkIssue(nextMessage);
+          }
         }
       } finally {
         if (!cancelled) {
@@ -723,10 +746,24 @@ export function CustomerPortalHomePage() {
   if (errorMessage) {
     return (
       <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
-        {errorMessage.includes('não está disponível') ? (
+        {isContractUnavailableMessage(errorMessage) ? (
           <ContractUnavailableState contractName="portal cliente" />
         ) : (
-          <ErrorState title="Portal indisponível" description={errorMessage} />
+          <ErrorState
+            title={
+              isNetworkRetryableMessage(errorMessage)
+                ? 'Conexão indisponível'
+                : 'Portal indisponível'
+            }
+            description={errorMessage}
+            action={
+              isNetworkRetryableMessage(errorMessage) ? (
+                <AppButton disabled={loading} onClick={() => void refresh()}>
+                  Tentar novamente
+                </AppButton>
+              ) : undefined
+            }
+          />
         )}
       </div>
     );
@@ -926,7 +963,8 @@ function PortalKnowledgeHeader({
 
 export function CustomerPortalHelpPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { activeContext } = useCustomerPortalTenantContext();
+  const { activeContext, refresh, reportOperationalNetworkIssue } =
+    useCustomerPortalTenantContext();
   const [browseArticles, setBrowseArticles] = useState<CustomerPortalKnowledgeArticle[]>([]);
   const [searchResults, setSearchResults] = useState<CustomerPortalKnowledgeSearchResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -999,7 +1037,12 @@ export function CustomerPortalHelpPage() {
       const nextArticles = await fetchCustomerPortalKnowledgeArticles(activeTenantId);
       setBrowseArticles(nextArticles);
     } catch (error) {
-      setErrorMessage(mapError(error, 'Falha ao carregar a central autorizada do portal.'));
+      const nextMessage = mapError(error, 'Falha ao carregar a central autorizada do portal.');
+      setBrowseArticles([]);
+      setErrorMessage(nextMessage);
+      if (isNetworkRetryableAppError(error)) {
+        reportOperationalNetworkIssue(nextMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -1014,7 +1057,7 @@ export function CustomerPortalHelpPage() {
   }, [activeQuery]);
 
   useEffect(() => {
-    if (loading) {
+    if (loading || errorMessage) {
       return;
     }
 
@@ -1056,9 +1099,14 @@ export function CustomerPortalHelpPage() {
         }
       } catch (error) {
         if (!cancelled) {
-          setSearchMessage(
-            mapError(error, 'Falha ao buscar artigos autorizados no portal.'),
+          const nextMessage = mapError(
+            error,
+            'Falha ao buscar artigos autorizados no portal.',
           );
+          setSearchMessage(nextMessage);
+          if (isNetworkRetryableAppError(error)) {
+            reportOperationalNetworkIssue(nextMessage);
+          }
           setSearchResults([]);
         }
       } finally {
@@ -1073,7 +1121,7 @@ export function CustomerPortalHelpPage() {
     return () => {
       cancelled = true;
     };
-  }, [loading, activeTenantId, activeQuery, selectedCategory, selectedSource]);
+  }, [loading, errorMessage, activeTenantId, activeQuery, selectedCategory, selectedSource]);
 
   function updateSearchParams(next: {
     q?: string;
@@ -1130,10 +1178,24 @@ export function CustomerPortalHelpPage() {
   if (errorMessage) {
     return (
       <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
-        {errorMessage.includes('não está disponível') ? (
+        {isContractUnavailableMessage(errorMessage) ? (
           <ContractUnavailableState contractName="central autorizada do portal" />
         ) : (
-          <ErrorState title="Central indisponível" description={errorMessage} />
+          <ErrorState
+            title={
+              isNetworkRetryableMessage(errorMessage)
+                ? 'Conexão indisponível'
+                : 'Central indisponível'
+            }
+            description={errorMessage}
+            action={
+              isNetworkRetryableMessage(errorMessage) ? (
+                <AppButton disabled={loading} onClick={() => void refresh()}>
+                  Tentar novamente
+                </AppButton>
+              ) : undefined
+            }
+          />
         )}
       </div>
     );
@@ -1306,7 +1368,8 @@ function PortalKnowledgeInfoLine({
 
 export function CustomerPortalHelpArticlePage() {
   const { articleSlug = '' } = useParams();
-  const { activeContext } = useCustomerPortalTenantContext();
+  const { activeContext, refresh, reportOperationalNetworkIssue } =
+    useCustomerPortalTenantContext();
   const [article, setArticle] = useState<CustomerPortalKnowledgeArticleDetail | null>(null);
   const [articles, setArticles] = useState<CustomerPortalKnowledgeArticle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1331,7 +1394,13 @@ export function CustomerPortalHelpArticlePage() {
       setArticles(nextArticles);
       setArticle(nextArticle);
     } catch (error) {
-      setErrorMessage(mapError(error, 'Falha ao carregar o artigo autorizado.'));
+      const nextMessage = mapError(error, 'Falha ao carregar o artigo autorizado.');
+      setArticles([]);
+      setArticle(null);
+      setErrorMessage(nextMessage);
+      if (isNetworkRetryableAppError(error)) {
+        reportOperationalNetworkIssue(nextMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -1355,10 +1424,24 @@ export function CustomerPortalHelpArticlePage() {
   if (errorMessage) {
     return (
       <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
-        {errorMessage.includes('não está disponível') ? (
+        {isContractUnavailableMessage(errorMessage) ? (
           <ContractUnavailableState contractName="artigo autorizado do portal" />
         ) : (
-          <ErrorState title="Artigo indisponível" description={errorMessage} />
+          <ErrorState
+            title={
+              isNetworkRetryableMessage(errorMessage)
+                ? 'Conexão indisponível'
+                : 'Artigo indisponível'
+            }
+            description={errorMessage}
+            action={
+              isNetworkRetryableMessage(errorMessage) ? (
+                <AppButton disabled={loading} onClick={() => void refresh()}>
+                  Tentar novamente
+                </AppButton>
+              ) : undefined
+            }
+          />
         )}
       </div>
     );
@@ -1450,7 +1533,8 @@ export function CustomerPortalHelpArticlePage() {
 
 export function CustomerPortalTicketsPage() {
   const navigate = useNavigate();
-  const { activeContext, ensureFreshContext } = useCustomerPortalTenantContext();
+  const { activeContext, ensureFreshContext, refresh, reportOperationalNetworkIssue } =
+    useCustomerPortalTenantContext();
   const [tickets, setTickets] = useState<CustomerPortalTicketListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -1472,7 +1556,12 @@ export function CustomerPortalTicketsPage() {
       const nextTickets = await fetchCustomerPortalTickets();
       setTickets(nextTickets);
     } catch (error) {
-      setErrorMessage(mapError(error, 'Falha ao carregar tickets do portal cliente.'));
+      const nextMessage = mapError(error, 'Falha ao carregar tickets do portal cliente.');
+      setTickets([]);
+      setErrorMessage(nextMessage);
+      if (isNetworkRetryableAppError(error)) {
+        reportOperationalNetworkIssue(nextMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -1509,7 +1598,11 @@ export function CustomerPortalTicketsPage() {
       setDescription('');
       navigate(`/portal/tickets/${ticket.ticketId}`);
     } catch (error) {
-      setErrorMessage(mapError(error, 'Falha ao criar ticket pelo portal cliente.'));
+      const nextMessage = mapError(error, 'Falha ao criar ticket pelo portal cliente.');
+      setErrorMessage(nextMessage);
+      if (isNetworkRetryableAppError(error)) {
+        reportOperationalNetworkIssue(nextMessage);
+      }
     } finally {
       setCreating(false);
     }
@@ -1595,7 +1688,8 @@ export function CustomerPortalTicketsPage() {
 }
 
 export function CustomerPortalTicketPage() {
-  const { ensureFreshContext } = useCustomerPortalTenantContext();
+  const { ensureFreshContext, refresh, reportOperationalNetworkIssue } =
+    useCustomerPortalTenantContext();
   const { ticketId = '' } = useParams();
   const [detail, setDetail] = useState<CustomerPortalTicketDetail | null>(null);
   const [collaborationState, setCollaborationState] =
@@ -1645,7 +1739,17 @@ export function CustomerPortalTicketPage() {
       setAttachments(nextAttachments);
       setArticles(nextArticles);
     } catch (error) {
-      setErrorMessage(mapError(error, 'Falha ao carregar o ticket.'));
+      const nextMessage = mapError(error, 'Falha ao carregar o ticket.');
+      setDetail(null);
+      setCollaborationState(null);
+      setTimeline([]);
+      setAttachments([]);
+      setArticles([]);
+      setKnowledgeSearchResults([]);
+      setErrorMessage(nextMessage);
+      if (isNetworkRetryableAppError(error)) {
+        reportOperationalNetworkIssue(nextMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -1683,9 +1787,14 @@ export function CustomerPortalTicketPage() {
         }
       } catch (error) {
         if (!cancelled) {
-          setKnowledgeSearchMessage(
-            mapError(error, 'Falha ao buscar artigos autorizados no contexto do ticket.'),
+          const nextMessage = mapError(
+            error,
+            'Falha ao buscar artigos autorizados no contexto do ticket.',
           );
+          setKnowledgeSearchMessage(nextMessage);
+          if (isNetworkRetryableAppError(error)) {
+            reportOperationalNetworkIssue(nextMessage);
+          }
           setKnowledgeSearchResults([]);
         }
       } finally {
@@ -1733,7 +1842,11 @@ export function CustomerPortalTicketPage() {
       setSuccessMessage('Mensagem registrada no ticket.');
       await load();
     } catch (error) {
-      setErrorMessage(mapError(error, 'Falha ao registrar mensagem.'));
+      const nextMessage = mapError(error, 'Falha ao registrar mensagem.');
+      setErrorMessage(nextMessage);
+      if (isNetworkRetryableAppError(error)) {
+        reportOperationalNetworkIssue(nextMessage);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -1763,7 +1876,11 @@ export function CustomerPortalTicketPage() {
       setSuccessMessage('Atualização marcada como lida.');
       await load();
     } catch (error) {
-      setErrorMessage(mapError(error, 'Falha ao marcar atualização como lida.'));
+      const nextMessage = mapError(error, 'Falha ao marcar atualização como lida.');
+      setErrorMessage(nextMessage);
+      if (isNetworkRetryableAppError(error)) {
+        reportOperationalNetworkIssue(nextMessage);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -1782,7 +1899,11 @@ export function CustomerPortalTicketPage() {
       const download = await downloadCustomerPortalTicketAttachment(attachment.attachmentId);
       window.open(download.signedUrl, '_blank', 'noopener,noreferrer');
     } catch (error) {
-      setErrorMessage(mapError(error, 'Falha ao abrir download seguro.'));
+      const nextMessage = mapError(error, 'Falha ao abrir download seguro.');
+      setErrorMessage(nextMessage);
+      if (isNetworkRetryableAppError(error)) {
+        reportOperationalNetworkIssue(nextMessage);
+      }
     }
   }
 
@@ -1839,7 +1960,11 @@ export function CustomerPortalTicketPage() {
       setSuccessMessage('Evidência enviada com segurança.');
       await load();
     } catch (error) {
-      setErrorMessage(mapError(error, 'Falha ao enviar evidência pelo portal.'));
+      const nextMessage = mapError(error, 'Falha ao enviar evidência pelo portal.');
+      setErrorMessage(nextMessage);
+      if (isNetworkRetryableAppError(error)) {
+        reportOperationalNetworkIssue(nextMessage);
+      }
     } finally {
       setUploadingAttachment(false);
     }
@@ -1865,7 +1990,11 @@ export function CustomerPortalTicketPage() {
       setSuccessMessage('Resolução confirmada. O ticket foi encerrado pelo contrato do portal.');
       await load();
     } catch (error) {
-      setErrorMessage(mapError(error, 'Falha ao confirmar resolução.'));
+      const nextMessage = mapError(error, 'Falha ao confirmar resolução.');
+      setErrorMessage(nextMessage);
+      if (isNetworkRetryableAppError(error)) {
+        reportOperationalNetworkIssue(nextMessage);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -1898,7 +2027,11 @@ export function CustomerPortalTicketPage() {
       setSuccessMessage('Reabertura solicitada. A equipe Genius recebeu o retorno.');
       await load();
     } catch (error) {
-      setErrorMessage(mapError(error, 'Falha ao solicitar reabertura.'));
+      const nextMessage = mapError(error, 'Falha ao solicitar reabertura.');
+      setErrorMessage(nextMessage);
+      if (isNetworkRetryableAppError(error)) {
+        reportOperationalNetworkIssue(nextMessage);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -1916,8 +2049,19 @@ export function CustomerPortalTicketPage() {
     return (
       <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
         <ErrorState
-          title="Ticket indisponível"
+          title={
+            isNetworkRetryableMessage(errorMessage)
+              ? 'Conexão indisponível'
+              : 'Ticket indisponível'
+          }
           description={errorMessage ?? 'Este ticket não está disponível para sua sessão customer-facing.'}
+          action={
+              errorMessage && isNetworkRetryableMessage(errorMessage) ? (
+                <AppButton disabled={loading} onClick={() => void refresh()}>
+                  Tentar novamente
+                </AppButton>
+              ) : undefined
+          }
         />
       </div>
     );

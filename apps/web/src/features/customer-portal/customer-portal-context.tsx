@@ -48,6 +48,7 @@ interface CustomerPortalTenantContextValue {
   staleMessage: string | null;
   switchingTenantId: Uuid | null;
   ensureFreshContext: () => Promise<boolean>;
+  reportOperationalNetworkIssue: (message: string) => void;
   refresh: () => Promise<void>;
   switchTenant: (tenantId: Uuid) => Promise<void>;
 }
@@ -167,6 +168,7 @@ export function CustomerPortalTenantContextProvider({
 
   const acceptedSignatureRef = useRef<string | null>(null);
   const isRevalidatingRef = useRef(false);
+  const isRefreshingRef = useRef(false);
 
   function resetRuntimeState(nextPhase: CustomerPortalRuntimePhase, nextMessage: string | null) {
     setPhase(nextPhase);
@@ -216,6 +218,13 @@ export function CustomerPortalTenantContextProvider({
 
     resetRuntimeState('fatal_error', mapPortalContextErrorMessage(error, fallbackMessage));
     return false;
+  }
+
+  function reportOperationalNetworkIssue(message: string) {
+    setPhase('network_retryable');
+    setPhaseMessage(message);
+    setPendingContext(null);
+    setStaleMessage(null);
   }
 
   async function loadTenantContext(options?: {
@@ -286,7 +295,22 @@ export function CustomerPortalTenantContextProvider({
   }
 
   async function refresh() {
-    await loadTenantContext({ mode: 'refresh' });
+    if (
+      isLoading ||
+      isRefreshingRef.current ||
+      isRevalidatingRef.current ||
+      switchingTenantId !== null
+    ) {
+      return;
+    }
+
+    isRefreshingRef.current = true;
+
+    try {
+      await loadTenantContext({ mode: 'refresh' });
+    } finally {
+      isRefreshingRef.current = false;
+    }
   }
 
   async function ensureFreshContext() {
@@ -334,6 +358,10 @@ export function CustomerPortalTenantContextProvider({
   }, [user?.id, phase, isLoading, switchingTenantId]);
 
   async function switchTenant(tenantId: Uuid) {
+    if (switchingTenantId !== null || isLoading || isRefreshingRef.current) {
+      return;
+    }
+
     setSwitchingTenantId(tenantId);
     setPhaseMessage(null);
     setActiveContext(null);
@@ -384,6 +412,7 @@ export function CustomerPortalTenantContextProvider({
       staleMessage,
       switchingTenantId,
       ensureFreshContext,
+      reportOperationalNetworkIssue,
       refresh,
       switchTenant,
     }),
