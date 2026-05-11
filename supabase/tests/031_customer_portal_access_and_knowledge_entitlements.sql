@@ -78,6 +78,23 @@ values
   ('aaaaaaaa-0002-4000-8000-111111111111', 'aaaaaaaa-aaaa-4aaa-8aaa-111111111111', '30333333-3333-4333-8333-333333333333', 'Gestão Knowledge A', 'manager-a@portal-knowledge.local', false, '10111111-1111-4111-8111-111111111111', '10111111-1111-4111-8111-111111111111'),
   ('bbbbbbbb-0001-4000-8000-111111111111', 'bbbbbbbb-bbbb-4bbb-8bbb-111111111111', '40444444-4444-4444-8444-444444444444', 'Cliente Knowledge B', 'customer-b@portal-knowledge.local', true, '10111111-1111-4111-8111-111111111111', '10111111-1111-4111-8111-111111111111');
 
+insert into public.customer_account_features (
+  tenant_id,
+  feature_key,
+  enabled,
+  source,
+  created_by_user_id,
+  updated_by_user_id
+)
+values
+  ('aaaaaaaa-aaaa-4aaa-8aaa-111111111111', 'returns_portal', true, 'contract', '10111111-1111-4111-8111-111111111111', '10111111-1111-4111-8111-111111111111'),
+  ('bbbbbbbb-bbbb-4bbb-8bbb-111111111111', 'returns_portal', true, 'contract', '10111111-1111-4111-8111-111111111111', '10111111-1111-4111-8111-111111111111')
+on conflict (tenant_id, lower(feature_key)) do update
+set
+  enabled = excluded.enabled,
+  source = excluded.source,
+  updated_by_user_id = excluded.updated_by_user_id;
+
 insert into public.tickets (
   id,
   tenant_id,

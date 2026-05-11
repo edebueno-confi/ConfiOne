@@ -116,6 +116,37 @@ values
   ('90000000-0000-4000-8000-300000000002', '90000000-0000-4000-8000-100000000002', '90000000-0000-4000-8000-000000000003', 'Cliente Busca B', 'portal-search-customer-b@local', true, true, '90000000-0000-4000-8000-000000000001', '90000000-0000-4000-8000-000000000001')
 on conflict (id) do nothing;
 
+insert into public.customer_account_features (
+  tenant_id,
+  feature_key,
+  enabled,
+  source,
+  created_by_user_id,
+  updated_by_user_id
+)
+values
+  (
+    '90000000-0000-4000-8000-100000000001',
+    'returns_portal',
+    true,
+    'contract',
+    '90000000-0000-4000-8000-000000000001',
+    '90000000-0000-4000-8000-000000000001'
+  ),
+  (
+    '90000000-0000-4000-8000-100000000002',
+    'returns_portal',
+    true,
+    'contract',
+    '90000000-0000-4000-8000-000000000001',
+    '90000000-0000-4000-8000-000000000001'
+  )
+on conflict (tenant_id, lower(feature_key)) do update
+set
+  enabled = excluded.enabled,
+  source = excluded.source,
+  updated_by_user_id = excluded.updated_by_user_id;
+
 update public.knowledge_spaces
 set status = 'active'
 where slug = 'genius';

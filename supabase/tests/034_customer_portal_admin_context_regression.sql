@@ -121,6 +121,28 @@ values (
   'aaaaaaaa-aaaa-4aaa-8aaa-111111111111'
 );
 
+insert into public.customer_account_features (
+  tenant_id,
+  feature_key,
+  enabled,
+  source,
+  created_by_user_id,
+  updated_by_user_id
+)
+values (
+  'aaaaaaaa-aaaa-4aaa-8aaa-222222222222',
+  'returns_portal',
+  true,
+  'contract',
+  'aaaaaaaa-aaaa-4aaa-8aaa-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-111111111111'
+)
+on conflict (tenant_id, lower(feature_key)) do update
+set
+  enabled = excluded.enabled,
+  source = excluded.source,
+  updated_by_user_id = excluded.updated_by_user_id;
+
 set local role authenticated;
 set local request.jwt.claim.role = 'authenticated';
 set local request.jwt.claim.sub = 'aaaaaaaa-aaaa-4aaa-8aaa-111111111111';

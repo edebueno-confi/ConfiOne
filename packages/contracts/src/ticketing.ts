@@ -1024,6 +1024,20 @@ export type RpcEngineeringLinkExistingWorkItemToTicketResponse =
 
 export type CustomerPortalRole = 'customer_user' | 'customer_manager';
 
+export interface CustomerPortalAvailableTenant {
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantDisplayName: string;
+  portalRole: CustomerPortalRole;
+  accessStatus: string;
+  canViewTickets: boolean;
+  canCreateTicket: boolean;
+  canViewAllTenantTickets: boolean;
+  isActiveContext: boolean;
+  availableTenantCount: number;
+  hasMultipleTenants: boolean;
+}
+
 export interface CustomerPortalAuthContext {
   userId: Uuid;
   userFullName: string | null;
@@ -1046,6 +1060,12 @@ export interface CustomerPortalProfileContext extends CustomerPortalAuthContext 
   productLine: string;
   operationalStatus: string;
   accountTier: string;
+}
+
+export interface CustomerPortalActiveTenantContext
+  extends CustomerPortalProfileContext {
+  availableTenantCount: number;
+  hasMultipleTenants: boolean;
 }
 
 export interface CustomerPortalTicketListItem {
@@ -1269,3 +1289,9 @@ export interface RpcCustomerSearchKnowledgeArticlesPayload {
   limit?: number;
   offset?: number;
 }
+
+export interface RpcCustomerSetActiveTenantPayload {
+  tenantId: Uuid;
+}
+
+export type RpcCustomerSetActiveTenantResponse = CustomerPortalActiveTenantContext;

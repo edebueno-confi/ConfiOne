@@ -95,6 +95,32 @@ values (
   '11111111-1111-4111-8111-111111111111'
 );
 
+insert into public.customer_account_features (
+  tenant_id,
+  feature_key,
+  enabled,
+  source,
+  created_by_user_id,
+  updated_by_user_id
+)
+values
+  (
+    'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    'returns_portal',
+    true,
+    'contract',
+    '11111111-1111-4111-8111-111111111111',
+    '11111111-1111-4111-8111-111111111111'
+  ),
+  (
+    'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    'returns_portal',
+    true,
+    'contract',
+    '11111111-1111-4111-8111-111111111111',
+    '11111111-1111-4111-8111-111111111111'
+  );
+
 insert into public.tickets (
   id,
   tenant_id,

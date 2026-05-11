@@ -76,6 +76,23 @@ values
   ('aaaaaaaa-bbbb-4000-8000-000000000002', 'aaaaaaaa-bbbb-4aaa-8aaa-aaaaaaaaaaaa', '33333333-aaaa-4333-8333-333333333333', 'Manager Collab A', 'manager-a@collab.local', false, '11111111-aaaa-4111-8111-111111111111', '11111111-aaaa-4111-8111-111111111111'),
   ('bbbbbbbb-cccc-4000-8000-000000000001', 'bbbbbbbb-cccc-4bbb-8bbb-bbbbbbbbbbbb', '44444444-aaaa-4444-8444-444444444444', 'Cliente Collab B', 'customer-b@collab.local', true, '11111111-aaaa-4111-8111-111111111111', '11111111-aaaa-4111-8111-111111111111');
 
+insert into public.customer_account_features (
+  tenant_id,
+  feature_key,
+  enabled,
+  source,
+  created_by_user_id,
+  updated_by_user_id
+)
+values
+  ('aaaaaaaa-bbbb-4aaa-8aaa-aaaaaaaaaaaa', 'returns_portal', true, 'contract', '11111111-aaaa-4111-8111-111111111111', '11111111-aaaa-4111-8111-111111111111'),
+  ('bbbbbbbb-cccc-4bbb-8bbb-bbbbbbbbbbbb', 'returns_portal', true, 'contract', '11111111-aaaa-4111-8111-111111111111', '11111111-aaaa-4111-8111-111111111111')
+on conflict (tenant_id, lower(feature_key)) do update
+set
+  enabled = excluded.enabled,
+  source = excluded.source,
+  updated_by_user_id = excluded.updated_by_user_id;
+
 insert into public.tickets (
   id,
   tenant_id,
