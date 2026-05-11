@@ -62,12 +62,12 @@ import { classifyAdminError, type ClassifiedAdminError } from './admin-errors';
 
 type PagePhase = 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type TenantFilter = Uuid | null;
-type UserAccessFilter = 'all' | CustomerPortalAccessStatus;
+type PortalStatusFilter = 'all' | AdminCustomerPortalTenantAccessRow['tenant_status'];
 type EntitlementFilter = 'all' | CustomerPortalEntitlementStatus;
+type PendingFilter = 'all' | 'with_pending' | 'without_pending';
 
 const CUSTOMER_PORTAL_ADMIN_BOOTSTRAP_TIMEOUT_MS = 15_000;
 const CUSTOMER_PORTAL_ADMIN_DETAIL_TIMEOUT_MS = 10_000;
-const LEFT_COLUMN_VISIBLE_TENANTS = 3;
 
 interface GrantEntitlementFormState {
   tenantId: string;
@@ -187,6 +187,18 @@ function emptyLinkForm(): LinkTicketArticleFormState {
   };
 }
 
+function initialsFromName(value: string | null | undefined) {
+  const words = (value ?? 'Cliente')
+    .split(/\s+/)
+    .map((word) => word.trim())
+    .filter(Boolean);
+
+  return words
+    .slice(0, 2)
+    .map((word) => word[0]?.toLocaleUpperCase('pt-BR') ?? '')
+    .join('');
+}
+
 function applyClassifiedFailure(error: ClassifiedAdminError) {
   if (error.kind === 'contract-unavailable') {
     return {
@@ -267,13 +279,13 @@ function DetailLine({
   tone?: 'default' | 'positive' | 'warning' | 'critical';
 }) {
   return (
-    <div className="grid min-w-0 grid-cols-[112px_minmax(0,1fr)] items-center gap-3 border-b border-[color:var(--color-border)] py-2 last:border-b-0">
-      <span className="text-[0.68rem] font-semibold text-[color:var(--color-muted)]">
+    <div className="grid min-w-0 grid-cols-[118px_minmax(0,1fr)] items-start gap-3 py-1.5">
+      <span className="text-[0.68rem] font-semibold leading-5 text-[color:var(--color-muted)]">
         {label}
       </span>
       <span
         className={cx(
-          'min-w-0 truncate text-sm font-semibold leading-5',
+          'min-w-0 text-right text-sm font-semibold leading-5',
           tone === 'positive' && 'text-[color:var(--color-success-ink)]',
           tone === 'warning' && 'text-[color:var(--color-warning-ink)]',
           tone === 'critical' && 'text-[color:var(--color-danger-ink)]',
@@ -344,7 +356,7 @@ function TenantFilterCard({
     <button
       data-tenant-card
       className={cx(
-        'w-full min-w-0 overflow-hidden rounded-[16px] border px-2.5 py-2.5 text-left transition',
+        'w-full min-w-0 overflow-hidden rounded-[18px] border px-3.5 py-3.5 text-left transition',
         selected
           ? 'border-[color:var(--color-brand-blue)]/35 bg-[rgba(68,110,255,0.08)] shadow-[0_12px_24px_rgba(44,79,182,0.08)]'
           : 'border-[color:var(--color-border)] bg-white hover:border-[color:var(--color-brand-blue)]/22',
@@ -356,15 +368,15 @@ function TenantFilterCard({
         <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
           {tenant.tenant_display_name}
         </p>
-        <p className="mt-1 truncate text-[0.76rem] text-[color:var(--color-muted)]">
+        <p className="mt-1.5 truncate text-[0.76rem] text-[color:var(--color-muted)]">
           {tenant.portal_user_count} usuários customer-facing
         </p>
       </div>
 
-      <div className="mt-1.5 flex min-w-0">
+      <div className="mt-2 flex min-w-0">
         <span
           className={cx(
-            'inline-flex max-w-full truncate rounded-full border px-2.5 py-1 text-[0.66rem] font-semibold',
+            'inline-flex max-w-full truncate rounded-full border px-2 py-0.5 text-[0.64rem] font-semibold',
             tenant.has_active_manager
               ? 'border-[color:var(--color-success-border)] bg-[color:var(--color-success-surface)] text-[color:var(--color-success-ink)]'
               : 'border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-surface)] text-[color:var(--color-warning-ink)]',
@@ -374,12 +386,12 @@ function TenantFilterCard({
         </span>
       </div>
 
-      <div className="mt-2 grid min-w-0 grid-cols-2 gap-2 border-t border-[color:var(--color-border)] pt-2">
+      <div className="mt-3 grid min-w-0 grid-cols-2 gap-4 border-t border-[color:var(--color-border)] pt-3">
         <div className="min-w-0">
           <p className="truncate text-[0.66rem] font-semibold text-[color:var(--color-muted)]">
             Tickets visíveis
           </p>
-          <p className="mt-0.5 text-sm font-semibold text-[color:var(--color-ink)]">
+          <p className="mt-1 text-base font-semibold text-[color:var(--color-ink)]">
             {tenant.visible_ticket_count}
           </p>
         </div>
@@ -387,7 +399,7 @@ function TenantFilterCard({
           <p className="truncate text-[0.66rem] font-semibold text-[color:var(--color-muted)]">
             Artigos autorizados
           </p>
-          <p className="mt-0.5 text-sm font-semibold text-[color:var(--color-ink)]">
+          <p className="mt-1 text-base font-semibold text-[color:var(--color-ink)]">
             {tenant.authorized_article_count}
           </p>
         </div>
@@ -413,21 +425,26 @@ function UserTableRow({
   return (
     <button
       className={cx(
-        'grid w-full grid-cols-[minmax(0,1.35fr)_minmax(0,0.95fr)_86px_74px_minmax(0,1.2fr)] gap-2 border-b border-[color:var(--color-border)] px-3 py-3 text-left transition last:border-b-0',
+        'grid w-full grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)_104px_92px_minmax(0,1.25fr)] gap-3 border-b border-[color:var(--color-border)] px-4 py-3.5 text-left transition last:border-b-0',
         selected
-          ? 'rounded-[14px] border border-[color:var(--color-brand-blue)]/36 bg-[rgba(68,110,255,0.08)] shadow-[0_12px_24px_rgba(40,75,174,0.08)]'
+          ? 'rounded-[16px] border border-[color:var(--color-brand-blue)]/36 bg-[rgba(68,110,255,0.08)] shadow-[0_14px_28px_rgba(40,75,174,0.08)]'
           : 'bg-white hover:bg-[color:var(--color-surface)]',
       )}
       onClick={() => onSelect(user.membership_id)}
       type="button"
     >
-      <div className="min-w-0">
-        <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
-          {user.user_full_name ?? 'Indisponível'}
-        </p>
-        <p className="mt-1 truncate text-[0.78rem] text-[color:var(--color-muted)]">
-          {user.user_email ?? 'Indisponível'}
-        </p>
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[0.72rem] font-semibold text-[color:var(--color-brand-blue)]">
+          {initialsFromName(user.user_full_name)}
+        </span>
+        <span className="min-w-0">
+          <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
+            {user.user_full_name ?? 'Indisponível'}
+          </p>
+          <p className="mt-1 truncate text-[0.78rem] text-[color:var(--color-muted)]">
+            {user.user_email ?? 'Indisponível'}
+          </p>
+        </span>
       </div>
       <div className="min-w-0">
         <p className="truncate text-sm font-medium text-[color:var(--color-ink)]">
@@ -452,6 +469,91 @@ function UserTableRow({
         </p>
       </div>
     </button>
+  );
+}
+
+function TenantTableRow({
+  tenant,
+  selected,
+  onSelect,
+}: {
+  tenant: AdminCustomerPortalTenantAccessRow;
+  selected: boolean;
+  onSelect: (tenantId: Uuid) => void;
+}) {
+  const hasPending = Boolean(tenant.risk_summary) || !tenant.has_active_manager;
+
+  return (
+    <button
+      className={cx(
+        'grid w-full grid-cols-[minmax(0,1.85fr)_minmax(0,0.95fr)_0.58fr_0.58fr_0.68fr_0.5fr_0.82fr_22px] items-center gap-3 border-b border-[color:var(--color-border)] px-4 py-4 text-left transition last:border-b-0',
+        selected
+          ? 'rounded-[16px] border border-[color:var(--color-brand-blue)]/38 bg-[rgba(68,110,255,0.08)] shadow-[0_14px_28px_rgba(40,75,174,0.08)]'
+          : 'bg-white hover:bg-[color:var(--color-surface)]',
+      )}
+      onClick={() => onSelect(tenant.tenant_id)}
+      type="button"
+    >
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-surface)] text-[0.75rem] font-semibold text-[color:var(--color-brand-blue)]">
+          {initialsFromName(tenant.tenant_display_name)}
+        </span>
+        <span className="min-w-0">
+          <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
+            {tenant.tenant_display_name}
+          </p>
+          <p className="mt-1 truncate text-[0.76rem] text-[color:var(--color-muted)]">
+            {tenant.tenant_slug || 'Indisponível'}
+          </p>
+        </span>
+      </div>
+
+      <div className="min-w-0">
+        <TinyBadge tone={tenant.has_active_manager ? 'positive' : 'warning'}>
+          {tenant.has_active_manager ? 'Com gestão' : 'Sem gestão'}
+        </TinyBadge>
+        <p className="mt-1 truncate text-[0.76rem] text-[color:var(--color-muted)]">
+          {tenantStatusLabel(tenant.tenant_status)}
+        </p>
+      </div>
+
+      <TenantMetric helper="+0" value={tenant.portal_user_count} />
+      <TenantMetric helper="+0" value={tenant.visible_ticket_count} />
+      <TenantMetric helper="+0" value={tenant.authorized_article_count} />
+      <TenantMetric tone={hasPending ? 'warning' : 'default'} value={hasPending ? 1 : 0} />
+      <p className="min-w-0 text-sm font-semibold leading-5 text-[color:var(--color-ink)]">
+        {formatOptionalDate(tenant.last_access_at)}
+      </p>
+      <span className="text-lg text-[color:var(--color-brand-blue)]">›</span>
+    </button>
+  );
+}
+
+function TenantMetric({
+  value,
+  helper,
+  tone = 'default',
+}: {
+  value: number;
+  helper?: string;
+  tone?: 'default' | 'warning';
+}) {
+  return (
+    <span className="min-w-0">
+      <span
+        className={cx(
+          'block text-sm font-semibold text-[color:var(--color-ink)]',
+          tone === 'warning' && value > 0 && 'text-[color:var(--color-warning-ink)]',
+        )}
+      >
+        {value}
+      </span>
+      {helper ? (
+        <span className="mt-1 block text-[0.72rem] font-semibold text-[color:var(--color-success-ink)]">
+          {helper}
+        </span>
+      ) : null}
+    </span>
   );
 }
 
@@ -500,10 +602,13 @@ function RailSection({
 }) {
   return (
     <section
-      className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-3.5 py-3.5"
+      className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-3.5 py-3"
       data-rail-section={sectionKey}
     >
-      <h3 className="mb-2 text-sm font-semibold text-[color:var(--color-ink)]">{title}</h3>
+      <div className="mb-2 flex items-center gap-2">
+        <span className="h-6 w-6 rounded-[9px] bg-[rgba(37,99,235,0.1)]" />
+        <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">{title}</h3>
+      </div>
       {children}
     </section>
   );
@@ -533,8 +638,9 @@ export function CustomerPortalAdminPage() {
   const [selectedUserMembershipId, setSelectedUserMembershipId] = useState<Uuid | null>(null);
   const [selectedEntitlementId, setSelectedEntitlementId] = useState<Uuid | null>(null);
   const [selectedTicketLinkId, setSelectedTicketLinkId] = useState<Uuid | null>(null);
-  const [userAccessFilter, setUserAccessFilter] = useState<UserAccessFilter>('all');
+  const [portalStatusFilter, setPortalStatusFilter] = useState<PortalStatusFilter>('all');
   const [entitlementFilter, setEntitlementFilter] = useState<EntitlementFilter>('all');
+  const [pendingFilter, setPendingFilter] = useState<PendingFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [roleDraft, setRoleDraft] = useState<CustomerPortalRole>('customer_user');
   const [statusDraft, setStatusDraft] = useState<MembershipStatus>('active');
@@ -725,16 +831,44 @@ export function CustomerPortalAdminPage() {
   const lookup = useMemo(() => normalizeLookup(searchTerm), [searchTerm]);
 
   const filteredTenantAccess = useMemo(() => {
-    if (!lookup) {
-      return tenantAccess;
-    }
+    return tenantAccess.filter((tenant) => {
+      if (portalStatusFilter !== 'all' && tenant.tenant_status !== portalStatusFilter) {
+        return false;
+      }
 
-    return tenantAccess.filter((tenant) =>
-      [tenant.tenant_display_name, tenant.tenant_slug].some((value) =>
+      if (entitlementFilter === 'active' && tenant.active_entitlement_count <= 0) {
+        return false;
+      }
+
+      if (
+        entitlementFilter === 'archived' &&
+        !entitlements.some(
+          (entitlement) =>
+            entitlement.tenant_id === tenant.tenant_id &&
+            entitlement.entitlement_status === 'archived',
+        )
+      ) {
+        return false;
+      }
+
+      const hasPending = Boolean(tenant.risk_summary) || !tenant.has_active_manager;
+      if (pendingFilter === 'with_pending' && !hasPending) {
+        return false;
+      }
+
+      if (pendingFilter === 'without_pending' && hasPending) {
+        return false;
+      }
+
+      if (!lookup) {
+        return true;
+      }
+
+      return [tenant.tenant_display_name, tenant.tenant_slug].some((value) =>
         value.toLocaleLowerCase('pt-BR').includes(lookup),
-      ),
-    );
-  }, [lookup, tenantAccess]);
+      );
+    });
+  }, [entitlementFilter, entitlements, lookup, pendingFilter, portalStatusFilter, tenantAccess]);
 
   useEffect(() => {
     if (selectedTenantId && filteredTenantAccess.some((tenant) => tenant.tenant_id === selectedTenantId)) {
@@ -751,10 +885,6 @@ export function CustomerPortalAdminPage() {
 
   const visibleUsers = useMemo(() => {
     return users.filter((user) => {
-      if (userAccessFilter !== 'all' && user.access_status !== userAccessFilter) {
-        return false;
-      }
-
       if (lookup) {
         const haystack = [
           user.user_full_name,
@@ -773,15 +903,26 @@ export function CustomerPortalAdminPage() {
 
       return true;
     });
-  }, [lookup, userAccessFilter, users]);
+  }, [lookup, users]);
+
+  const selectedTenantUsers = useMemo(() => {
+    if (!selectedTenantId) {
+      return [] as AdminCustomerPortalUserRow[];
+    }
+
+    return users.filter((user) => user.tenant_id === selectedTenantId);
+  }, [selectedTenantId, users]);
 
   useEffect(() => {
-    if (selectedUserMembershipId && visibleUsers.some((user) => user.membership_id === selectedUserMembershipId)) {
+    if (
+      selectedUserMembershipId &&
+      selectedTenantUsers.some((user) => user.membership_id === selectedUserMembershipId)
+    ) {
       return;
     }
 
-    setSelectedUserMembershipId(visibleUsers[0]?.membership_id ?? null);
-  }, [selectedUserMembershipId, visibleUsers]);
+    setSelectedUserMembershipId(selectedTenantUsers[0]?.membership_id ?? null);
+  }, [selectedTenantUsers, selectedUserMembershipId]);
 
   const visibleEntitlements = useMemo(() => {
     return entitlements.filter((entitlement) => {
@@ -895,8 +1036,8 @@ export function CustomerPortalAdminPage() {
   }, [linkForm.tenantId, ticketCandidates]);
 
   const selectedUser = useMemo(
-    () => visibleUsers.find((user) => user.membership_id === selectedUserMembershipId) ?? null,
-    [selectedUserMembershipId, visibleUsers],
+    () => selectedTenantUsers.find((user) => user.membership_id === selectedUserMembershipId) ?? null,
+    [selectedTenantUsers, selectedUserMembershipId],
   );
 
   const pendingCount = useMemo(() => {
@@ -926,9 +1067,6 @@ export function CustomerPortalAdminPage() {
 
     return nextTenants;
   }, [filteredTenantAccess, selectedTenantId]);
-
-  const visibleTenantCards = orderedVisibleTenants.slice(0, LEFT_COLUMN_VISIBLE_TENANTS);
-  const hiddenTenantCount = Math.max(orderedVisibleTenants.length - visibleTenantCards.length, 0);
 
   async function withAction<T>(key: string, action: () => Promise<T>, successMessage: string) {
     setSubmittingKey(key);
@@ -1089,24 +1227,24 @@ export function CustomerPortalAdminPage() {
   }
 
   return (
-    <div className="grid h-full min-h-0 gap-4 overflow-hidden xl:grid-cols-[280px_minmax(0,1fr)_340px]">
+    <div className="grid h-full min-h-0 gap-4 overflow-hidden xl:grid-cols-[260px_minmax(0,1fr)_320px] 2xl:grid-cols-[260px_minmax(0,1fr)_320px]">
       <aside className="min-h-0 overflow-hidden" data-portal-admin-left>
         <SurfaceCard
-          className="h-full !px-3 !py-3"
-          description="Filtros e tenants governados para o portal cliente."
-          title="Governança"
+          className="h-full !px-3.5 !py-4"
+          description="Refine a lista de clientes e o status do portal."
+          title="Filtros"
         >
-          <div className="space-y-3">
+          <div className="space-y-3.5">
             <Field label="Status do portal">
               <SelectInput
                 className="h-9 rounded-[14px] text-sm"
-                onChange={(event) => setUserAccessFilter(event.target.value as UserAccessFilter)}
-                value={userAccessFilter}
+                onChange={(event) => setPortalStatusFilter(event.target.value as PortalStatusFilter)}
+                value={portalStatusFilter}
               >
-                <option value="all">Todos</option>
-                <option value="active">Ativo</option>
-                <option value="pending">Pendente</option>
-                <option value="blocked">Bloqueado</option>
+                <option value="all">Todos os status</option>
+                <option value="active">Operacional</option>
+                <option value="suspended">Suspenso</option>
+                <option value="archived">Arquivado</option>
               </SelectInput>
             </Field>
 
@@ -1122,6 +1260,18 @@ export function CustomerPortalAdminPage() {
               </SelectInput>
             </Field>
 
+            <Field label="Pendências">
+              <SelectInput
+                className="h-9 rounded-[14px] text-sm"
+                onChange={(event) => setPendingFilter(event.target.value as PendingFilter)}
+                value={pendingFilter}
+              >
+                <option value="all">Todos</option>
+                <option value="with_pending">Com pendência</option>
+                <option value="without_pending">Sem pendência</option>
+              </SelectInput>
+            </Field>
+
             <Field label="Buscar cliente...">
               <TextInput
                 className="h-9 rounded-[14px] text-sm"
@@ -1131,41 +1281,6 @@ export function CustomerPortalAdminPage() {
               />
             </Field>
           </div>
-
-          <div className="mt-3 border-t border-[color:var(--color-border)] pt-3">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">
-                Tenants governados
-              </h3>
-              <span className="text-[0.76rem] text-[color:var(--color-muted)]">
-                {filteredTenantAccess.length}
-              </span>
-            </div>
-
-            {visibleTenantCards.length === 0 ? (
-              <EmptyState
-                title="Nenhum tenant encontrado"
-                description="Ajuste os filtros para localizar o tenant customer-facing."
-              />
-            ) : (
-              <div className="grid gap-2.5">
-                {visibleTenantCards.map((tenant) => (
-                  <TenantFilterCard
-                    key={tenant.tenant_id}
-                    onSelect={setSelectedTenantId}
-                    selected={tenant.tenant_id === selectedTenantId}
-                    tenant={tenant}
-                  />
-                ))}
-              </div>
-            )}
-
-            {hiddenTenantCount > 0 ? (
-              <p className="mt-3 truncate text-[0.76rem] text-[color:var(--color-muted)]">
-                +{hiddenTenantCount} tenant(s) fora do recorte visual.
-              </p>
-            ) : null}
-          </div>
         </SurfaceCard>
       </aside>
 
@@ -1173,7 +1288,7 @@ export function CustomerPortalAdminPage() {
         className="min-h-0 overflow-x-hidden overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-white/94 p-5 shadow-[0_18px_40px_rgba(18,31,72,0.08)]"
         data-portal-admin-center
       >
-        <header className="flex flex-wrap items-start justify-between gap-4">
+        <header className="relative">
           <div className="min-w-0 space-y-2">
             <p className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-[color:var(--color-muted)]">
               ADMIN CONSOLE
@@ -1182,18 +1297,18 @@ export function CustomerPortalAdminPage() {
               <h1 className="text-[2rem] font-semibold tracking-[-0.05em] text-[color:var(--color-ink)]">
                 Portal cliente
               </h1>
-              <p className="max-w-3xl text-sm leading-6 text-[color:var(--color-muted)]">
+              <p className="max-w-[680px] text-[0.84rem] leading-6 text-[color:var(--color-muted)]">
                 Governança dos acessos customer-facing, artigos autorizados e vínculos com tickets.
               </p>
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="absolute right-0 top-0 flex shrink-0 items-center gap-2">
             <AppButton
               className="h-10 rounded-full px-4 text-sm shadow-[0_12px_28px_rgba(20,31,71,0.16)]"
               onClick={() => {
-                if (visibleUsers[0]) {
-                  setSelectedUserMembershipId(visibleUsers[0].membership_id);
+                if (selectedTenantUsers[0]) {
+                  setSelectedUserMembershipId(selectedTenantUsers[0].membership_id);
                 }
                 actionsRailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
@@ -1216,8 +1331,8 @@ export function CustomerPortalAdminPage() {
         ) : null}
 
         <div className="mt-4 grid gap-3 xl:grid-cols-5">
-          <CompactKpi label="Tenants com portal" value={String(overview?.active_tenant_count ?? 0)} />
-          <CompactKpi label="Acessos ativos" value={String(overview?.active_user_count ?? 0)} />
+          <CompactKpi label="Clientes com portal" value={String(overview?.active_tenant_count ?? 0)} />
+          <CompactKpi label="Usuários com acesso" value={String(overview?.active_user_count ?? 0)} />
           <CompactKpi label="Tickets visíveis" value={String(overview?.visible_ticket_count ?? 0)} />
           <CompactKpi
             label="Artigos autorizados"
@@ -1228,42 +1343,45 @@ export function CustomerPortalAdminPage() {
 
         <SurfaceCard
           className="mt-4 min-h-[430px]"
-          description="Leitura real dos usuários customer-facing por tenant, com densidade operacional."
-          title="Usuários customer-facing"
+          description="Clientes B2B com Portal Cliente governado por acesso, Knowledge e tickets visíveis."
+          title="Clientes com portal"
           actions={
             <span className="text-[0.76rem] font-medium text-[color:var(--color-muted)]">
-              {visibleUsers.length} usuários
+              {orderedVisibleTenants.length} clientes
             </span>
           }
         >
-          {visibleUsers.length === 0 ? (
+          {orderedVisibleTenants.length === 0 ? (
             <EmptyState
-              title="Nenhum usuário customer-facing encontrado"
-              description="Ajuste os filtros ou revise o tenant selecionado."
+              title="Nenhum cliente encontrado"
+              description="Ajuste os filtros para localizar clientes com portal."
             />
           ) : (
-            <div className="overflow-hidden rounded-[16px] border border-[color:var(--color-border)] bg-white">
-              <div className="grid grid-cols-[minmax(0,1.35fr)_minmax(0,0.95fr)_86px_74px_minmax(0,1.2fr)] gap-2 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                <span className="min-w-0 truncate">Usuário</span>
-                <span className="min-w-0 truncate">Tenant</span>
-                <span className="min-w-0 truncate">Papel</span>
-                <span className="min-w-0 truncate">Status</span>
-                <span className="min-w-0 truncate">Resumo</span>
+            <div className="overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white">
+              <div className="grid grid-cols-[minmax(0,1.85fr)_minmax(0,0.95fr)_0.58fr_0.58fr_0.68fr_0.5fr_0.82fr_22px] gap-3 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-muted)]">
+                <span className="min-w-0 truncate">Cliente / Tenant</span>
+                <span className="min-w-0 truncate">Status do portal</span>
+                <span className="min-w-0 truncate">Usuários com acesso</span>
+                <span className="min-w-0 truncate">Tickets visíveis</span>
+                <span className="min-w-0 truncate">Artigos autorizados</span>
+                <span className="min-w-0 truncate">Pendências</span>
+                <span className="min-w-0 truncate">Último acesso</span>
+                <span aria-hidden="true" />
               </div>
 
               <div className="grid">
-                {visibleUsers.map((user) => (
-                  <UserTableRow
-                    key={user.membership_id}
-                    onSelect={setSelectedUserMembershipId}
-                    selected={user.membership_id === selectedUserMembershipId}
-                    user={user}
+                {orderedVisibleTenants.map((tenant) => (
+                  <TenantTableRow
+                    key={tenant.tenant_id}
+                    onSelect={setSelectedTenantId}
+                    selected={tenant.tenant_id === selectedTenantId}
+                    tenant={tenant}
                   />
                 ))}
               </div>
               <div className="flex items-center justify-between border-t border-[color:var(--color-border)] bg-white px-4 py-3 text-[0.78rem] text-[color:var(--color-muted)]">
-                <span>Exibindo {visibleUsers.length} usuário(s)</span>
-                <span>Leitura governada</span>
+                <span>Exibindo {orderedVisibleTenants.length} cliente(s)</span>
+                <span>Governança do portal</span>
               </div>
             </div>
           )}
@@ -1273,28 +1391,44 @@ export function CustomerPortalAdminPage() {
       <aside className="min-h-0 overflow-y-auto" data-portal-admin-rail ref={actionsRailRef}>
         <SurfaceCard
           className="min-h-full"
-          description="Resumo operacional do tenant atualmente selecionado."
+          description="Detalhes do cliente e ações de governança."
           title="Contexto selecionado"
         >
           <div className="space-y-3">
             <RailSection sectionKey="tenant" title="Tenant em foco">
               {selectedTenant ? (
-                <div>
-                  <DetailLine label="Tenant" value={selectedTenant.tenant_display_name} />
+                <div className="space-y-2">
+                  <div className="mb-1.5 flex min-w-0 items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(68,110,255,0.1)] text-sm font-semibold text-[color:var(--color-brand-blue)]">
+                      {initialsFromName(selectedTenant.tenant_display_name)}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
+                        {selectedTenant.tenant_display_name}
+                      </p>
+                      <p className="mt-1 truncate text-[0.76rem] text-[color:var(--color-muted)]">
+                        {selectedTenant.tenant_slug || 'Indisponível'}
+                      </p>
+                    </div>
+                  </div>
                   <DetailLine
                     label="Status do portal"
-                    tone={tenantStatusTone(selectedTenant.tenant_status)}
-                    value={tenantStatusLabel(selectedTenant.tenant_status)}
+                    tone={selectedTenant.has_active_manager ? 'positive' : 'warning'}
+                    value={selectedTenant.has_active_manager ? 'Com gestão' : 'Sem gestão'}
                   />
                   <DetailLine
                     label="Último acesso real"
                     value={formatOptionalDate(selectedTenant.last_access_at)}
                   />
                   <DetailLine
+                    label="Usuários com acesso"
+                    value={String(selectedTenant.portal_user_count)}
+                  />
+                  <DetailLine label="Tickets visíveis" value={String(selectedTenant.visible_ticket_count)} />
+                  <DetailLine
                     label="Artigos autorizados"
                     value={String(selectedTenant.authorized_article_count)}
                   />
-                  <DetailLine label="Tickets visíveis" value={String(selectedTenant.visible_ticket_count)} />
                   <DetailLine
                     label="Pendências"
                     tone={selectedTenant.risk_summary ? 'warning' : 'positive'}
@@ -1306,30 +1440,56 @@ export function CustomerPortalAdminPage() {
               )}
             </RailSection>
 
-            <RailSection sectionKey="user" title="Usuário em foco">
-              {userDetail ? (
-                <div>
-                  <DetailLine label="Nome" value={userDetail.user_full_name ?? 'Indisponível'} />
-                  <DetailLine label="E-mail" value={userDetail.user_email ?? 'Indisponível'} />
-                  <DetailLine label="Papel" value={roleLabel(userDetail.portal_role)} />
-                  <DetailLine
-                    label="Status"
-                    tone={accessTone(userDetail.access_status)}
-                    value={`${accessLabel(userDetail.access_status)} · ${membershipStatusLabel(userDetail.membership_status)}`}
-                  />
-                  <DetailLine label="Tenant ativo" value={userDetail.tenant_display_name ?? 'Indisponível'} />
-                  <DetailLine label="Último acesso" value={formatOptionalDate(userDetail.last_access_at)} />
+            <RailSection sectionKey="user" title={`Usuários com acesso (${selectedTenantUsers.length})`}>
+              {selectedTenantUsers.length > 0 ? (
+                <div className="space-y-3">
+                  {selectedTenantUsers.slice(0, 3).map((user) => (
+                    <button
+                      className="flex w-full min-w-0 items-center gap-3 rounded-[14px] px-2 py-1 text-left hover:bg-[color:var(--color-surface)]"
+                      key={user.membership_id}
+                      onClick={() => setSelectedUserMembershipId(user.membership_id)}
+                      type="button"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-surface)] text-[0.72rem] font-semibold text-[color:var(--color-brand-blue)]">
+                        {initialsFromName(user.user_full_name)}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
+                          {user.user_full_name ?? 'Indisponível'}
+                        </p>
+                        <p className="truncate text-[0.74rem] text-[color:var(--color-muted)]">
+                          {user.user_email ?? 'Indisponível'}
+                        </p>
+                        <span className="mt-1 inline-flex">
+                          <TinyBadge>{roleLabel(user.portal_role)}</TinyBadge>
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                  {selectedTenantUsers.length > 3 ? (
+                    <button
+                      className="text-[0.78rem] font-semibold text-[color:var(--color-brand-blue)]"
+                      onClick={() => {
+                        if (selectedTenantUsers[3]) {
+                          setSelectedUserMembershipId(selectedTenantUsers[3].membership_id);
+                        }
+                      }}
+                      type="button"
+                    >
+                      Ver todos
+                    </button>
+                  ) : null}
                 </div>
               ) : (
-                <InlineNotice>Selecione um usuário customer-facing.</InlineNotice>
+                <InlineNotice>Nenhum usuário com acesso neste cliente.</InlineNotice>
               )}
             </RailSection>
 
             <RailSection sectionKey="actions" title="Ações governadas">
-              <div className="space-y-2">
-                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2">
-                  <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-brand-blue)]">
-                    Gerenciar papel
+              <div className="grid grid-cols-2 gap-2">
+                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 [&>summary::-webkit-details-marker]:hidden">
+                  <summary className="cursor-pointer text-[0.78rem] font-semibold text-[color:var(--color-brand-blue)]">
+                    Gerenciar acesso
                   </summary>
                   {selectedUser ? (
                     <form className="mt-3 space-y-2" onSubmit={handleUpdateUserRole}>
@@ -1354,8 +1514,8 @@ export function CustomerPortalAdminPage() {
                   )}
                 </details>
 
-                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2">
-                  <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-brand-blue)]">
+                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 [&>summary::-webkit-details-marker]:hidden">
+                  <summary className="cursor-pointer text-[0.78rem] font-semibold text-[color:var(--color-brand-blue)]">
                     Alterar status
                   </summary>
                   {selectedUser ? (
@@ -1382,8 +1542,8 @@ export function CustomerPortalAdminPage() {
                   )}
                 </details>
 
-                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2">
-                  <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-brand-blue)]">
+                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 [&>summary::-webkit-details-marker]:hidden">
+                  <summary className="cursor-pointer text-[0.78rem] font-semibold text-[color:var(--color-brand-blue)]">
                     Conceder artigo
                   </summary>
                   {selectedTenant ? (
@@ -1439,8 +1599,8 @@ export function CustomerPortalAdminPage() {
                   )}
                 </details>
 
-                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2">
-                  <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-brand-blue)]">
+                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 [&>summary::-webkit-details-marker]:hidden">
+                  <summary className="cursor-pointer text-[0.78rem] font-semibold text-[color:var(--color-danger-ink)]">
                     Arquivar entitlement
                   </summary>
                   {visibleEntitlements.length > 0 ? (
@@ -1474,9 +1634,9 @@ export function CustomerPortalAdminPage() {
                   )}
                 </details>
 
-                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2">
-                  <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-brand-blue)]">
-                    Vincular artigo a ticket
+                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 [&>summary::-webkit-details-marker]:hidden">
+                  <summary className="cursor-pointer text-[0.78rem] font-semibold text-[color:var(--color-brand-blue)]">
+                    Vincular a ticket
                   </summary>
                   {selectedTenant ? (
                     <form className="mt-3 space-y-2" onSubmit={handleLinkArticleToTicket}>
@@ -1543,6 +1703,15 @@ export function CustomerPortalAdminPage() {
                     <p className="mt-2 text-[0.76rem] text-[color:var(--color-muted)]">Indisponível.</p>
                   )}
                 </details>
+
+                <button
+                  className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-left text-[0.78rem] font-semibold text-[color:var(--color-muted)]"
+                  disabled
+                  title="Acesso direto aos tickets do portal ainda indisponível nesta tela."
+                  type="button"
+                >
+                  Ver tickets
+                </button>
               </div>
             </RailSection>
           </div>
