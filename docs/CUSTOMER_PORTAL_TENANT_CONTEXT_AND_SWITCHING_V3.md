@@ -110,3 +110,11 @@ Implementar contexto ativo de tenant no Portal Cliente B2B para usuarios custome
   - lista/ticket/help saem do estado operacional anterior
   - mutacoes ficam bloqueadas ate o refresh do contexto
 - O backend continuou como camada de enforcement real para ticket, Knowledge e evidencia.
+
+## Atualizacao posterior - expiracao e recuperacao de sessao
+- A fase `Customer Portal Session Expiry And Recovery Semantics V3` manteve o modelo de `active_tenant_id` intacto e endureceu apenas o boundary de sessao e recuperacao.
+- O provider passou a limpar o contexto renderizado quando:
+  - a sessao expira
+  - o vinculo customer-facing e revogado
+  - o tenant ativo deixa de ser elegivel para o portal
+- O tenant switching continua backend-governed, mas agora nao reaproveita visualmente dados antigos quando a sessao ou o acesso deixam de ser validos.

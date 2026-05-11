@@ -3261,3 +3261,55 @@ Cada registro deve informar:
 - riscos restantes:
   - sessao expirada/offline prolongado continuam para lote proprio
   - nao existe sincronizacao visual em tempo real sem foco, por decisao de simplicidade e escopo
+
+### Fase 8.25 - Customer Portal Session Expiry And Recovery Semantics V3
+- fase: `8.25`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-11`
+- resumo funcional: o portal cliente ganhou semantica oficial para expiracao, recuperacao e revogacao de contexto customer-facing, sem manter dados antigos como validos depois de logout, perda de tenant ou falha temporaria de rede.
+- docs alterados:
+  - `docs/CUSTOMER_PORTAL_SESSION_EXPIRY_AND_RECOVERY_SEMANTICS_V3.md`
+  - `docs/AUTH_CONTEXT_STRATEGY.md`
+  - `docs/CUSTOMER_PORTAL_MULTI_TAB_SESSION_SEMANTICS_V3.md`
+  - `docs/CUSTOMER_PORTAL_TENANT_CONTEXT_AND_SWITCHING_V3.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+- arquivos de código e teste alterados:
+  - `supabase/migrations/20260511113000_customer_portal_session_expiry_and_recovery_semantics_v3.sql`
+  - `apps/web/src/app/errors.ts`
+  - `apps/web/src/contracts/support-contracts.ts`
+  - `apps/web/src/features/customer-portal/customer-portal-api.ts`
+  - `apps/web/src/features/customer-portal/customer-portal-context.tsx`
+  - `apps/web/src/features/customer-portal/CustomerPortalPage.tsx`
+  - `packages/contracts/src/index.ts`
+  - `packages/contracts/src/ticketing.ts`
+  - `supabase/tests/004_phase1_2_function_audit.sql`
+  - `supabase/tests/036_customer_portal_session_expiry_and_recovery_semantics.sql`
+- contratos/read models afetados:
+  - `rpc_customer_get_portal_session_status`
+  - `vw_customer_portal_auth_context`
+  - `vw_customer_portal_available_tenants`
+  - `vw_customer_portal_active_tenant_context`
+- estados oficiais:
+  - `initializing`
+  - `ready`
+  - `stale_context`
+  - `session_expired`
+  - `access_revoked`
+  - `tenant_unavailable`
+  - `network_retryable`
+  - `fatal_error`
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+  - browser real com customer valido, logout/relogin, customer sem tenant valido e regressao admin
+- riscos restantes:
+  - refresh token expirado/passive expiry continua dependente do evento real de Supabase Auth no browser
+  - nao existe modo offline nem sincronizacao realtime entre abas

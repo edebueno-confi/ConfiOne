@@ -65,3 +65,18 @@ Regra:
 ## Riscos restantes
 - nao existe sincronizacao visual imediata entre abas sem foco, por decisao de simplicidade e escopo
 - a semantica de multiplas abas com sessao expirada ou offline prolongado continua para lote proprio
+
+## Atualizacao posterior - expiracao e recuperacao de sessao
+- A fase `Customer Portal Session Expiry And Recovery Semantics V3` separou formalmente:
+  - `stale_context`
+  - `session_expired`
+  - `access_revoked`
+  - `tenant_unavailable`
+  - `network_retryable`
+  - `fatal_error`
+- A diferenca pratica:
+  - `stale_context` continua ligada a outra aba alterando o tenant ativo;
+  - `session_expired` limpa o contexto operacional e exige novo login;
+  - `access_revoked` representa perda real do vinculo customer-facing;
+  - `tenant_unavailable` representa perda do tenant habilitado, inclusive sem `returns_portal`;
+  - `network_retryable` oferece retry explicito sem mascarar a falha.

@@ -1995,3 +1995,33 @@ Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único
 - segmentar navegação por permissões e contexto do usuário
 - auditar auth, roles, rotas, RLS, navegação e estados de acesso antes de qualquer implementação
+
+- Fase 8.25: Customer Portal Session Expiry And Recovery Semantics V3 concluido como bloco de expiracao, recuperacao e sessao stale/offline prolongada do portal cliente.
+  - Novo contrato backend:
+    - `rpc_customer_get_portal_session_status`
+  - O provider customer-facing passou a operar com estados oficiais:
+    - `initializing`
+    - `ready`
+    - `stale_context`
+    - `session_expired`
+    - `access_revoked`
+    - `tenant_unavailable`
+    - `network_retryable`
+    - `fatal_error`
+  - `CustomerPortalPage.tsx` passou a renderizar estados honestos para sessao expirada, acesso revogado, tenant indisponivel, erro de rede recuperavel e erro fatal, sem fallback visual falso.
+  - A aba antiga depois de logout volta para login; o portal nao preserva tickets, artigos ou mutacoes como validos depois da perda de sessao.
+  - Browser real confirmou:
+    - portal normal com customer valido
+    - reload sem loading infinito
+    - logout e retorno da aba antiga ao boundary de login
+    - customer sem tenant valido em estado seguro
+    - `/admin/customer-portal` e `/admin/access` estaveis
+  - A bateria obrigatoria fechou verde apos reidratar o stack Supabase local no Windows:
+    - `npm run supabase:db:reset`
+    - `npm run supabase:test:db`
+    - `npm run supabase:lint:db`
+    - `npm run contracts:typecheck`
+    - `npm run web:typecheck`
+    - `npm run web:build`
+    - `npm run supabase:qa:local-support-fixture`
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.

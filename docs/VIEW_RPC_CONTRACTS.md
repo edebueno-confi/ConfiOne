@@ -1487,6 +1487,44 @@ Fase 8.2:
 - o enforcement real continua no backend via `customer_portal_has_active_tenant(...)` e `can_access_customer_ticket(...)`
 - o contexto administrativo continua isolado de `active_tenant_id`
 
+## Fase 8.25 - Customer Portal Session Expiry And Recovery Semantics V3
+
+### Leitura consumida pelo frontend
+- `vw_customer_portal_auth_context`
+- `vw_customer_portal_available_tenants`
+- `vw_customer_portal_active_tenant_context`
+- `rpc_customer_get_portal_session_status`
+
+### Escrita consumida pelo frontend
+- `rpc_customer_set_active_tenant`
+
+### Regras de consumo
+- `rpc_customer_get_portal_session_status` virou o contrato leve de revalidacao operacional do portal.
+- O retorno classifica apenas estados seguros:
+  - `ready`
+  - `access_revoked`
+  - `tenant_unavailable`
+- `session_expired`, `network_retryable` e `fatal_error` continuam resolvidos no boundary do app a partir do erro real de sessao/rede/contrato.
+- `context_version` continua vindo de `vw_customer_portal_active_tenant_context`.
+- O frontend nao trata tenant anterior, cache ou storage local como source of truth depois de sessao expirada, erro de rede ou perda de acesso.
+
+### Acoes protegidas
+- `rpc_customer_create_ticket`
+- `rpc_customer_add_ticket_message`
+- `rpc_customer_create_ticket_attachment_upload`
+- `rpc_customer_register_ticket_attachment`
+- `rpc_customer_get_attachment_download_url`
+- `rpc_customer_acknowledge_ticket_update`
+- `rpc_customer_confirm_ticket_resolved`
+- `rpc_customer_request_ticket_reopen`
+- `rpc_customer_search_knowledge_articles`
+
+### Boundary mantido
+- `active_tenant_id` continua backend-governed.
+- `session_expired` nao vira fallback silencioso para `tenant_unavailable`.
+- `access_revoked` nao reutiliza contexto antigo nem dispara refresh infinito.
+- `/admin/customer-portal` e `/admin/access` continuam fora do contexto customer-facing.
+
 ## Fase 6.3 - Support Workspace Agent Directory + Assignment UX
 
 ### Leitura consumida pelo frontend

@@ -313,14 +313,30 @@ Status:
 
 ## Proximo lote tecnico recomendado
 
-### Lote: Customer Portal Session Recovery And Reauthentication V3
+### Lote: Customer Portal Session Expiry And Recovery Semantics V3
 
-Objetivo: fechar o comportamento do portal quando a sessao customer-facing expira, volta de offline ou encontra credenciais stale, mantendo o boundary admin/customer e sem estados enganosos no shell.
+Status: concluido em `2026-05-11`
 
-Ordem sugerida:
-1. Auditar `sessionExpired`, refresh de sessao e comportamento apos retorno de rede.
-2. Formalizar estados de reautenticacao no portal sem depender de limpeza manual de storage.
-3. Cobrir browser real com sessao expirada, refresh token invalido e retomada apos login.
+Fechado:
+1. `rpc_customer_get_portal_session_status` como revalidacao leve do contexto operacional.
+2. Estados oficiais do portal:
+   - `initializing`
+   - `ready`
+   - `stale_context`
+   - `session_expired`
+   - `access_revoked`
+   - `tenant_unavailable`
+   - `network_retryable`
+   - `fatal_error`
+3. UI honesta para sessao expirada, acesso revogado, tenant indisponivel e erro temporario.
+4. Mutacoes customer-facing bloqueadas fora de `ready`.
+5. Browser real validado com logout, retorno ao login, relogin e regressao admin.
+
+### Proximo lote recomendado
+
+Lote: Customer Portal Offline And Network Recovery Hardening V3
+
+Objetivo: aprofundar a recuperacao em falhas temporarias de rede e host local indisponivel, sem criar modo offline nem fonte paralela de sessao.
 
 ## Decisoes que ainda dependem de Produto
 - Se Support e Admin devem convergir em um App Shell unico.

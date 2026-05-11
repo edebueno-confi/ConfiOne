@@ -45,6 +45,11 @@ Permissões devem ser validadas no banco/RPC/policy, nunca apenas no frontend.
 - A fase 8.24 formalizou a semantica multiaba do portal: `active_tenant_id` continua global por usuario customer-facing, `context_version` vem de `customer_portal_user_preferences.updated_at` e qualquer aba stale precisa revalidar antes de mutacao sensivel.
 - Nenhuma superficie deve inferir permissao da outra: customer sem role admin vai para `access-denied`; admin sem membership customer-facing nao ganha contexto de portal.
 - O gate de portal habilitado customer-facing e feito por `customer_account_features.feature_key = 'returns_portal'`; membership ativa sem esse gate nao basta para selecionar tenant no portal.
+- A fase 8.25 formalizou a recuperacao de sessao customer-facing:
+  - `rpc_customer_get_portal_session_status()` revalida o contexto operacional.
+  - O provider do portal distingue `stale_context`, `session_expired`, `access_revoked`, `tenant_unavailable`, `network_retryable` e `fatal_error`.
+  - Logout/expiracao limpam o contexto renderizado antes de qualquer nova mutacao.
+  - Revogacao de membership ou desabilitacao de `returns_portal` nao cai em loop de refetch nem reaproveita dados antigos.
 
 ## Estado da Fase 1.2
 - Bootstrap do primeiro `platform_admin` implementado em `app_private.bootstrap_first_platform_admin(...)`.
