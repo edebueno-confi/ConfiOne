@@ -1066,6 +1066,7 @@ export interface CustomerPortalActiveTenantContext
   extends CustomerPortalProfileContext {
   availableTenantCount: number;
   hasMultipleTenants: boolean;
+  contextVersion: IsoTimestamp;
 }
 
 export interface CustomerPortalTicketListItem {

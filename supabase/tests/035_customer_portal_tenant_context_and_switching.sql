@@ -2,7 +2,7 @@ create extension if not exists pgtap with schema extensions;
 
 begin;
 
-select plan(19);
+select plan(28);
 
 insert into auth.users (
   instance_id,
@@ -319,7 +319,35 @@ values
     'portal',
     '71000000-0000-4000-8000-000000000002',
     '71000000-0000-4000-8000-000000000002'
-  )
+)
+on conflict (id) do nothing;
+
+insert into public.ticket_attachments (
+  id,
+  tenant_id,
+  ticket_id,
+  visibility,
+  storage_bucket,
+  storage_object_path,
+  file_name,
+  content_type,
+  byte_size,
+  uploaded_by_user_id,
+  status
+)
+values (
+  '71000000-0000-4000-8000-450000000001',
+  '71000000-0000-4000-8000-100000000001',
+  '71000000-0000-4000-8000-400000000001',
+  'customer',
+  'ticket-evidence',
+  'customer/tenant-a/evidencia-a.pdf',
+  'evidencia-a.pdf',
+  'application/pdf',
+  2048,
+  '71000000-0000-4000-8000-000000000002',
+  'available'
+)
 on conflict (id) do nothing;
 
 update public.knowledge_spaces
@@ -480,6 +508,15 @@ select is(
   'fallback inicial escolhe o tenant alfabeticamente mais estavel quando nao ha preferencia'
 );
 
+select is(
+  (
+    select context_version
+    from public.vw_customer_portal_active_tenant_context
+  ),
+  '1970-01-01 00:00:00+00'::timestamptz,
+  'context_version usa fallback estavel enquanto nao existe preferencia persistida'
+);
+
 select lives_ok(
   $$
     select public.rpc_customer_set_active_tenant('71000000-0000-4000-8000-100000000002')
@@ -494,6 +531,15 @@ select is(
   ),
   '71000000-0000-4000-8000-100000000002'::uuid,
   'tenant ativo muda para o tenant selecionado'
+);
+
+select isnt(
+  (
+    select context_version
+    from public.vw_customer_portal_active_tenant_context
+  ),
+  '1970-01-01 00:00:00+00'::timestamptz,
+  'context_version muda depois do primeiro switch persistido'
 );
 
 select throws_ok(
@@ -603,6 +649,92 @@ select throws_ok(
   'P0001',
   'rpc_customer_search_knowledge_articles denied',
   'busca nega tenant nao habilitado no portal'
+);
+
+select throws_ok(
+  $$
+    select public.rpc_customer_create_ticket(
+      '71000000-0000-4000-8000-100000000001',
+      'Ticket stale tenant A',
+      'Nao deve criar apos trocar para o tenant B.'
+    )
+  $$,
+  'P0001',
+  'rpc_customer_create_ticket denied',
+  'criacao de ticket com tenant anterior e bloqueada apos o switch'
+);
+
+select throws_ok(
+  $$
+    select public.rpc_customer_add_ticket_message(
+      '71000000-0000-4000-8000-400000000001',
+      'Tentativa stale de resposta'
+    )
+  $$,
+  'P0001',
+  'rpc_customer_add_ticket_message denied',
+  'mensagem em ticket do tenant anterior e bloqueada apos o switch'
+);
+
+select throws_ok(
+  $$
+    select public.rpc_customer_create_ticket_attachment_upload(
+      '71000000-0000-4000-8000-400000000001',
+      '71000000-0000-4000-8000-100000000001',
+      'evidencia-stale.pdf',
+      'application/pdf',
+      1024
+    )
+  $$,
+  'P0001',
+  'rpc_customer_create_ticket_attachment_upload denied',
+  'upload de evidencia no tenant anterior e bloqueado apos o switch'
+);
+
+select throws_ok(
+  $$
+    select public.rpc_customer_get_attachment_download_url(
+      '71000000-0000-4000-8000-450000000001'
+    )
+  $$,
+  'P0001',
+  'rpc_customer_get_attachment_download_url denied',
+  'download de evidencia do tenant anterior e bloqueado apos o switch'
+);
+
+select throws_ok(
+  $$
+    select public.rpc_customer_acknowledge_ticket_update(
+      '71000000-0000-4000-8000-400000000001',
+      null
+    )
+  $$,
+  'P0001',
+  'rpc_customer_acknowledge_ticket_update denied',
+  'ack em ticket do tenant anterior e bloqueado apos o switch'
+);
+
+select throws_ok(
+  $$
+    select public.rpc_customer_confirm_ticket_resolved(
+      '71000000-0000-4000-8000-400000000001'
+    )
+  $$,
+  'P0001',
+  'rpc_customer_confirm_ticket_resolved denied',
+  'confirmacao de resolucao no tenant anterior e bloqueada apos o switch'
+);
+
+select throws_ok(
+  $$
+    select public.rpc_customer_request_ticket_reopen(
+      '71000000-0000-4000-8000-400000000001',
+      'Tentativa stale de reabertura'
+    )
+  $$,
+  'P0001',
+  'rpc_customer_request_ticket_reopen denied',
+  'reabertura no tenant anterior e bloqueada apos o switch'
 );
 
 select throws_ok(
