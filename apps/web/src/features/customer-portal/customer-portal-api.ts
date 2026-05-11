@@ -1,4 +1,4 @@
-import { toAppError } from '../../app/errors';
+import { AppError, toAppError } from '../../app/errors';
 import { readRuntimeConfig } from '../../app/runtime-config';
 import { requireSupabaseBrowserClient } from '../../app/supabase-browser';
 import type {
@@ -9,6 +9,7 @@ import type {
   CustomerPortalKnowledgeArticleDetail,
   CustomerPortalKnowledgeSearchResult,
   CustomerPortalProfileContext,
+  CustomerPortalSessionStatus,
   CustomerPortalTicketAttachment,
   CustomerPortalTicketCollaborationState,
   CustomerPortalTicketDetail,
@@ -26,6 +27,7 @@ import type {
   RpcCustomerCreateTicketAttachmentUploadResponse,
   RpcCustomerGetAttachmentDownloadUrlPayload,
   RpcCustomerGetAttachmentDownloadUrlResponse,
+  RpcCustomerGetPortalSessionStatusResponse,
   RpcCustomerRegisterTicketAttachmentResponse,
   RpcCustomerRequestTicketReopenPayload,
   RpcCustomerRequestTicketReopenResponse,
@@ -72,7 +74,10 @@ async function requireActiveSessionToken() {
   } = await client.auth.getSession();
 
   if (error || !session?.access_token) {
-    throw new Error('A sessão ativa expirou antes da chamada segura.');
+    throw new AppError(
+      'session-expired',
+      'Sua sessão não está mais válida para esta operação.',
+    );
   }
 
   return session.access_token;
@@ -84,20 +89,47 @@ async function callSupabaseFunctionJson<T>(
 ): Promise<T> {
   const { supabaseAnonKey, supabaseUrl } = requireSupabaseFunctionBaseUrl();
   const accessToken = await requireActiveSessionToken();
-  const response = await fetch(`${supabaseUrl}${relativeUrl}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      apikey: supabaseAnonKey,
-      ...(init.headers ?? {}),
-    },
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${supabaseUrl}${relativeUrl}`, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        apikey: supabaseAnonKey,
+        ...(init.headers ?? {}),
+      },
+    });
+  } catch (error) {
+    throw toAppError(
+      error instanceof Error ? error : new Error('Falha ao chamar função segura.'),
+      'Falha ao chamar a função segura do portal.',
+    );
+  }
+
   const payload = (await response.json().catch(() => null)) as
     | { error?: string }
     | null;
 
   if (!response.ok) {
-    throw new Error(payload?.error ?? 'Falha ao chamar a função segura do portal.');
+    if (response.status === 401) {
+      throw new AppError(
+        'session-expired',
+        'Sua sessão não está mais válida para esta operação.',
+      );
+    }
+
+    if (response.status === 403) {
+      throw new AppError(
+        'permission-denied',
+        payload?.error ?? 'Seu acesso atual não permite concluir esta operação.',
+      );
+    }
+
+    throw new AppError(
+      'fatal-error',
+      payload?.error ?? 'Falha ao chamar a função segura do portal.',
+    );
   }
 
   return payload as T;
@@ -155,6 +187,21 @@ function mapAvailableTenant(
     isActiveContext: Boolean(row.is_active_context),
     availableTenantCount: Number(row.available_tenant_count ?? 0),
     hasMultipleTenants: Boolean(row.has_multiple_tenants),
+  };
+}
+
+function mapSessionStatus(
+  row: Record<string, unknown>,
+): CustomerPortalSessionStatus {
+  return {
+    sessionState: row.session_state as CustomerPortalSessionStatus['sessionState'],
+    reasonCode:
+      (row.reason_code as CustomerPortalSessionStatus['reasonCode']) ?? null,
+    reasonMessage: (row.reason_message as string | null) ?? null,
+    activeTenantId: (row.active_tenant_id as string | null) ?? null,
+    activeTenantName: (row.active_tenant_name as string | null) ?? null,
+    availableTenantCount: Number(row.available_tenant_count ?? 0),
+    contextVersion: (row.context_version as string | null) ?? null,
   };
 }
 
@@ -367,6 +414,21 @@ export async function fetchCustomerPortalActiveTenantContext() {
   }
 
   return data ? mapActiveTenantContext(data as Record<string, unknown>) : null;
+}
+
+export async function fetchCustomerPortalSessionStatus() {
+  const client = requireClient();
+  const { data, error } = await client
+    .rpc('rpc_customer_get_portal_session_status')
+    .single();
+
+  if (error) {
+    throw toAppError(error, 'Falha ao revalidar a sessão customer-facing do portal.');
+  }
+
+  return mapSessionStatus(
+    data as Record<string, unknown>,
+  ) satisfies RpcCustomerGetPortalSessionStatusResponse;
 }
 
 export async function setCustomerPortalActiveTenant(

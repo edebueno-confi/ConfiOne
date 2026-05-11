@@ -3,8 +3,12 @@ import type { AuthError, PostgrestError } from '@supabase/supabase-js';
 export type AppErrorCode =
   | 'contract-unavailable'
   | 'session-expired'
+  | 'network-retryable'
+  | 'access-revoked'
+  | 'tenant-unavailable'
   | 'permission-denied'
   | 'runtime-config'
+  | 'fatal-error'
   | 'unknown';
 
 export class AppError extends Error {
@@ -20,6 +24,13 @@ export function toAppError(
   error: PostgrestError | AuthError | Error,
   fallbackMessage: string,
 ) {
+  if (error instanceof TypeError && /Failed to fetch/i.test(error.message)) {
+    return new AppError(
+      'network-retryable',
+      'Não foi possível falar com o portal agora. Verifique a conexão e tente novamente.',
+    );
+  }
+
   const codeValue = 'code' in error ? String(error.code ?? '') : '';
   const statusValue =
     'status' in error && typeof error.status === 'number' ? error.status : null;

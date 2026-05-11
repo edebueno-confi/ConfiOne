@@ -20,6 +20,7 @@ import {
   ContractUnavailableState,
   ErrorState,
   LoadingState,
+  SessionExpiredState,
   StateFrame,
 } from '../../components/states';
 import {
@@ -70,6 +71,7 @@ import {
 } from './customer-portal-api';
 import {
   CustomerPortalTenantContextProvider,
+  getCustomerPortalBlockedActionMessage,
   useCustomerPortalTenantContext,
 } from './customer-portal-context';
 import { MarkdownDocument } from '../help-center/markdown';
@@ -178,18 +180,27 @@ function PortalShell({ children }: { children: ReactNode }) {
   const {
     activeContext,
     availableTenants,
+    canRunSensitiveActions,
     errorMessage,
     isContextStale,
     isLoading,
     isRefreshing,
     isSwitching,
     pendingContext,
+    phase,
+    phaseMessage,
     refresh,
     staleMessage,
     switchingTenantId,
     switchTenant,
   } = useCustomerPortalTenantContext();
   const displayContext = activeContext ?? pendingContext;
+  const sidebarNotice =
+    phase === 'stale_context'
+      ? staleMessage
+      : phase !== 'ready' && phase !== 'initializing'
+        ? getCustomerPortalBlockedActionMessage(phase, phaseMessage)
+        : errorMessage;
 
   function handleTenantChange(event: ChangeEvent<HTMLSelectElement>) {
     const nextTenantId = event.target.value.trim();
@@ -289,12 +300,45 @@ function PortalShell({ children }: { children: ReactNode }) {
                 </GhostButton>
               </div>
             ) : null}
+            {!isContextStale && phase === 'network_retryable' && sidebarNotice ? (
+              <div className="mt-3 rounded-[16px] border border-[#92b6ff]/35 bg-[#92b6ff]/12 px-3 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#d9e7ff]">
+                  Reconexão necessária
+                </p>
+                <p className="mt-2 text-xs leading-5 text-white/78">{sidebarNotice}</p>
+                <GhostButton
+                  className="mt-3 border-white/12 bg-white/10 text-white hover:bg-white/16"
+                  disabled={isRefreshing || isSwitching}
+                  onClick={() => void refresh()}
+                >
+                  {isRefreshing ? 'Tentando novamente...' : 'Tentar novamente'}
+                </GhostButton>
+              </div>
+            ) : null}
+            {!isContextStale &&
+            (phase === 'access_revoked' ||
+              phase === 'tenant_unavailable' ||
+              phase === 'session_expired' ||
+              phase === 'fatal_error') &&
+            sidebarNotice ? (
+              <div className="mt-3 rounded-[16px] border border-[#ffb2b2]/35 bg-[#ffb2b2]/12 px-3 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#ffe1e1]">
+                  Contexto indisponível
+                </p>
+                <p className="mt-2 text-xs leading-5 text-white/78">{sidebarNotice}</p>
+              </div>
+            ) : null}
             {isSwitching && switchingTenantId ? (
               <p className="mt-3 text-xs leading-5 text-white/58">
                 Atualizando o contexto do portal...
               </p>
             ) : null}
-            {errorMessage ? (
+            {phase === 'ready' && !canRunSensitiveActions ? (
+              <p className="mt-3 text-xs leading-5 text-white/58">
+                O portal está revalidando seu contexto antes de liberar novas ações.
+              </p>
+            ) : null}
+            {phase === 'ready' && errorMessage ? (
               <p className="mt-3 text-xs leading-5 text-[#ffd8d8]">
                 {errorMessage}
               </p>
@@ -393,16 +437,17 @@ export function CustomerPortalGate({ children }: { children: ReactNode }) {
 export function CustomerPortalLayout() {
   const {
     activeContext,
-    errorMessage,
-    hasNoTenantAccess,
     isContextStale,
     isLoading,
     isRefreshing,
     isSwitching,
     pendingContext,
+    phase,
+    phaseMessage,
     refresh,
     staleMessage,
   } = useCustomerPortalTenantContext();
+  const { clearSessionExpired, signOut } = useAuthContext();
 
   if (isLoading || isSwitching) {
     return (
@@ -442,25 +487,106 @@ export function CustomerPortalLayout() {
     );
   }
 
-  if (errorMessage) {
+  if (phase === 'session_expired') {
     return (
       <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
-        <ErrorState
-          title="Contexto do portal indisponível"
-          description={errorMessage}
+        <SessionExpiredState
+          action={
+            <AppButton
+              onClick={() => {
+                clearSessionExpired();
+                void signOut();
+              }}
+            >
+              Entrar novamente
+            </AppButton>
+          }
         />
       </div>
     );
   }
 
-  if (hasNoTenantAccess || !activeContext) {
+  if (phase === 'access_revoked') {
     return (
       <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
         <StateFrame
-          title="Nenhum tenant disponível"
-          description="Sua sessão customer-facing não possui vínculo ativo com um tenant habilitado no portal."
+          title="Acesso revogado"
+          description={
+            phaseMessage ??
+            'Seu acesso customer-facing foi revogado ou deixou de atender os requisitos do portal.'
+          }
+          eyebrow="portal"
+          tone="critical"
+        />
+      </div>
+    );
+  }
+
+  if (phase === 'tenant_unavailable') {
+    return (
+      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+        <StateFrame
+          title="Tenant indisponível"
+          description={
+            phaseMessage ??
+            'Nenhum tenant habilitado no portal está disponível para esta sessão agora.'
+          }
           eyebrow="portal"
           tone="default"
+          actions={
+            <AppButton disabled={isRefreshing} onClick={() => void refresh()}>
+              {isRefreshing ? 'Atualizando...' : 'Tentar novamente'}
+            </AppButton>
+          }
+        />
+      </div>
+    );
+  }
+
+  if (phase === 'network_retryable') {
+    return (
+      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+        <ErrorState
+          title="Conexão temporariamente indisponível"
+          description={
+            phaseMessage ??
+            'O portal não conseguiu validar sua sessão agora. Tente novamente em instantes.'
+          }
+          action={
+            <AppButton disabled={isRefreshing} onClick={() => void refresh()}>
+              {isRefreshing ? 'Tentando novamente...' : 'Tentar novamente'}
+            </AppButton>
+          }
+        />
+      </div>
+    );
+  }
+
+  if (phase === 'fatal_error') {
+    return (
+      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+        <ErrorState
+          title="Contexto do portal indisponível"
+          description={
+            phaseMessage ??
+            'O portal não conseguiu validar sua sessão customer-facing agora.'
+          }
+          action={
+            <AppButton disabled={isRefreshing} onClick={() => void refresh()}>
+              {isRefreshing ? 'Tentando novamente...' : 'Tentar novamente'}
+            </AppButton>
+          }
+        />
+      </div>
+    );
+  }
+
+  if (!activeContext) {
+    return (
+      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+        <LoadingState
+          title="Revalidando contexto do portal"
+          description="Estamos confirmando o tenant ativo e a sessão customer-facing."
         />
       </div>
     );
