@@ -3,7 +3,6 @@ import {
   type FormEvent,
   type ReactNode,
   useEffect,
-  useEffectEvent,
   useMemo,
   useState,
 } from 'react';
@@ -804,44 +803,6 @@ export function CustomerPortalHelpPage() {
     return 'ready' as const;
   }, [isShortQueryWithoutFilters, searchLoading, searchMessage, visibleArticles.length]);
 
-  const loadSearch = useEffectEvent(async (tenantId: string) => {
-    if (!tenantId) {
-      setSearchResults([]);
-      setSearchMessage(null);
-      return;
-    }
-
-    const trimmedQuery = activeQuery.trim();
-
-    if (!selectedCategory && selectedSource === 'all' && trimmedQuery && trimmedQuery.length < 2) {
-      setSearchResults([]);
-      setSearchMessage(null);
-      return;
-    }
-
-    setSearchLoading(true);
-    setSearchMessage(null);
-
-    try {
-      const nextResults = await searchCustomerPortalKnowledgeArticles({
-        tenantId,
-        searchQuery: trimmedQuery || null,
-        categoryName: selectedCategory || null,
-        source: selectedSource,
-        limit: 24,
-        offset: 0,
-      });
-      setSearchResults(nextResults);
-    } catch (error) {
-      setSearchMessage(
-        mapError(error, 'Falha ao buscar artigos autorizados no portal.'),
-      );
-      setSearchResults([]);
-    } finally {
-      setSearchLoading(false);
-    }
-  });
-
   async function load() {
     if (!activeTenantId) {
       setBrowseArticles([]);
@@ -871,10 +832,66 @@ export function CustomerPortalHelpPage() {
   }, [activeQuery]);
 
   useEffect(() => {
-    if (!loading && activeTenantId) {
-      void loadSearch(activeTenantId);
+    if (loading) {
+      return;
     }
-  }, [loading, activeTenantId, activeQuery, selectedCategory, selectedSource, loadSearch]);
+
+    if (!activeTenantId) {
+      setSearchResults([]);
+      setSearchMessage(null);
+      return;
+    }
+
+    let cancelled = false;
+    const tenantId = activeTenantId;
+    const trimmedQuery = activeQuery.trim();
+
+    if (!selectedCategory && selectedSource === 'all' && trimmedQuery && trimmedQuery.length < 2) {
+      setSearchResults([]);
+      setSearchMessage(null);
+      setSearchLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    async function loadKnowledgeSearch() {
+      setSearchLoading(true);
+      setSearchMessage(null);
+
+      try {
+        const nextResults = await searchCustomerPortalKnowledgeArticles({
+          tenantId,
+          searchQuery: trimmedQuery || null,
+          categoryName: selectedCategory || null,
+          source: selectedSource,
+          limit: 24,
+          offset: 0,
+        });
+
+        if (!cancelled) {
+          setSearchResults(nextResults);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setSearchMessage(
+            mapError(error, 'Falha ao buscar artigos autorizados no portal.'),
+          );
+          setSearchResults([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setSearchLoading(false);
+        }
+      }
+    }
+
+    void loadKnowledgeSearch();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, activeTenantId, activeQuery, selectedCategory, selectedSource]);
 
   function updateSearchParams(next: {
     q?: string;
