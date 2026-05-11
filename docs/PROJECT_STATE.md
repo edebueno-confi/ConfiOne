@@ -1949,6 +1949,20 @@ Documentos históricos:
   - O portal mostra seletor apenas quando ha multiplos tenants validos, limpa o dado do tenant anterior durante a troca e entra em estado honesto quando nao ha tenant valido.
   - `/admin/customer-portal` permaneceu estavel, sem loading persistente e sem contaminacao do contexto customer-facing.
   - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
+- Fase 8.24: Customer Portal Multi-Tab Session Semantics V3 concluido como bloco de semantica oficial de sessao multiaba do portal.
+  - `vw_customer_portal_active_tenant_context` passou a expor `context_version`, derivado de `customer_portal_user_preferences.updated_at`.
+  - trocar tenant em uma aba invalida operacionalmente as demais; a aba stale deixa de tratar o tenant anterior como valido.
+  - o provider customer-facing passou a revalidar foco/visibilidade e antes de mutacoes sensiveis, sem `localStorage` nem `BroadcastChannel` como source of truth.
+  - quando detecta divergencia, a UI limpa o contexto anterior e mostra o estado honesto:
+    - `O contexto do portal mudou em outra aba. Atualize para continuar.`
+  - o backend permaneceu como enforcement real e os testes de regressao passaram a cobrir:
+    - criacao de ticket stale
+    - resposta stale
+    - ack stale
+    - upload/download stale
+    - resolucao/reabertura stale
+  - `/admin/customer-portal` e `/admin/access` continuaram fora do escopo do tenant ativo customer-facing.
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -1970,7 +1984,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Executar o proximo lote tecnico grande `Customer Portal Multi-Tab Session Semantics V3`, definindo como o tenant ativo customer-facing se comporta em multiplas abas e sessoes concorrentes sem reintroduzir vazamento cross-tenant nem contaminar o contexto administrativo.
+Executar o proximo lote tecnico grande `Customer Portal Session Recovery And Reauthentication V3`, cobrindo sessao stale/expirada, retomada segura apos offline e comportamento previsivel quando o portal volta com credenciais invalidadas sem confundir boundary admin/customer.
 
 Atualização posterior antes de multi-aba:
 - `Customer Portal Entitlement Visibility Regression Fix V3` foi fechado para eliminar a inconsistência observada no tenant B.

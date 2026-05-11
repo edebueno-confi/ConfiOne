@@ -1456,6 +1456,37 @@ Fase 8.2:
 - `/admin/customer-portal` continua exigindo role admin real
 - tenant sem portal habilitado nao pode ser selecionado mesmo com membership ativa
 
+## Fase 8.24 - Customer Portal Multi-Tab Session Semantics V3
+
+### Leitura consumida pelo frontend
+- `vw_customer_portal_active_tenant_context`
+
+### Escrita consumida pelo frontend
+- `rpc_customer_set_active_tenant`
+
+### Regras de consumo
+- `vw_customer_portal_active_tenant_context` passa a expor `context_version`
+- `context_version` vem de `customer_portal_user_preferences.updated_at` quando existe preferencia valida
+- o fallback sem preferencia persistida usa timestamp estavel (`1970-01-01T00:00:00Z`) apenas para deteccao segura de primeira troca
+- a aba revalida o contexto no foco/visibilitychange e antes de mutacoes sensiveis
+- se `tenant_id` ou `context_version` divergirem do ultimo contexto aceito, a UI entra em estado stale e exige refresh
+
+### Acoes protegidas por revalidacao + backend
+- `rpc_customer_create_ticket`
+- `rpc_customer_add_ticket_message`
+- `rpc_customer_create_ticket_attachment_upload`
+- `rpc_customer_get_attachment_download_url`
+- `rpc_customer_acknowledge_ticket_update`
+- `rpc_customer_confirm_ticket_resolved`
+- `rpc_customer_request_ticket_reopen`
+- `rpc_customer_search_knowledge_articles`
+
+### Boundary mantido
+- nenhuma surface customer-facing volta para `todos os tenants do usuario`
+- `localStorage` e cache local nao viram source of truth de tenant
+- o enforcement real continua no backend via `customer_portal_has_active_tenant(...)` e `can_access_customer_ticket(...)`
+- o contexto administrativo continua isolado de `active_tenant_id`
+
 ## Fase 6.3 - Support Workspace Agent Directory + Assignment UX
 
 ### Leitura consumida pelo frontend

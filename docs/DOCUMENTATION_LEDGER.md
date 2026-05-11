@@ -3220,3 +3220,44 @@ Cada registro deve informar:
 - riscos restantes:
   - semântica multi-aba do tenant ativo continua pendente para lote próprio
   - novas superfícies customer-facing futuras continuam obrigadas a respeitar `active_tenant_id` backend-governed
+
+### Fase 8.24 - Customer Portal Multi-Tab Session Semantics V3
+- fase: `8.24`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-11`
+- resumo funcional: o portal cliente formalizou a semantica de sessao multiaba sobre `active_tenant_id` backend-governed, com `context_version`, revalidacao por foco/visibilitychange e bloqueio honesto de abas stale antes de mutacoes sensiveis.
+- docs alterados:
+  - `docs/CUSTOMER_PORTAL_MULTI_TAB_SESSION_SEMANTICS_V3.md`
+  - `docs/AUTH_CONTEXT_STRATEGY.md`
+  - `docs/CUSTOMER_PORTAL_TENANT_CONTEXT_AND_SWITCHING_V3.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+- arquivos de código e teste alterados:
+  - `supabase/migrations/20260511094500_customer_portal_multi_tab_session_semantics_v3.sql`
+  - `packages/contracts/src/ticketing.ts`
+  - `apps/web/src/features/customer-portal/customer-portal-api.ts`
+  - `apps/web/src/features/customer-portal/customer-portal-context.tsx`
+  - `apps/web/src/features/customer-portal/CustomerPortalPage.tsx`
+  - `supabase/tests/035_customer_portal_tenant_context_and_switching.sql`
+- contratos/read models afetados:
+  - `vw_customer_portal_active_tenant_context`
+  - `rpc_customer_set_active_tenant`
+- semantica oficial:
+  - trocar tenant em uma aba invalida operacionalmente as demais
+  - aba stale limpa o contexto anterior e exige refresh explicito
+  - mutacoes customer-facing revalidam contexto antes de operar
+  - backend continua como enforcement real
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+  - browser real com duas abas do portal + regressao administrativa
+- riscos restantes:
+  - sessao expirada/offline prolongado continuam para lote proprio
+  - nao existe sincronizacao visual em tempo real sem foco, por decisao de simplicidade e escopo

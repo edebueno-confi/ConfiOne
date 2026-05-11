@@ -101,3 +101,12 @@ Implementar contexto ativo de tenant no Portal Cliente B2B para usuarios custome
   - trocar tenant continua limpando o dado anterior
   - tenant ativo divergente continua negado no backend
   - artigo `restricted` com entitlement arquivado deixa de aparecer imediatamente no tenant correspondente
+
+## Atualização posterior - semântica multiaba
+- A fase `Customer Portal Multi-Tab Session Semantics V3` formalizou o comportamento de multiplas abas sem alterar o modelo de `active_tenant_id`.
+- O contrato `vw_customer_portal_active_tenant_context` passou a expor `context_version`.
+- O provider customer-facing agora revalida foco/visibilidade e entra em estado stale quando outra aba muda o tenant ativo no backend.
+- O frontend deixou de considerar valido o tenant anterior depois da divergencia:
+  - lista/ticket/help saem do estado operacional anterior
+  - mutacoes ficam bloqueadas ate o refresh do contexto
+- O backend continuou como camada de enforcement real para ticket, Knowledge e evidencia.

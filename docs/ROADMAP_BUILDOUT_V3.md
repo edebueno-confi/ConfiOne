@@ -305,6 +305,23 @@ Ordem sugerida:
 2. Definir invalidacao segura de dados customer-facing durante troca em outra aba.
 3. Cobrir regressao browser com multi-aba real.
 
+Status:
+- concluido em `2026-05-11`
+- `vw_customer_portal_active_tenant_context` passou a expor `context_version`
+- abas stale agora entram em estado honesto e exigem refresh explicito
+- mutacoes customer-facing revalidam contexto antes de operar
+
+## Proximo lote tecnico recomendado
+
+### Lote: Customer Portal Session Recovery And Reauthentication V3
+
+Objetivo: fechar o comportamento do portal quando a sessao customer-facing expira, volta de offline ou encontra credenciais stale, mantendo o boundary admin/customer e sem estados enganosos no shell.
+
+Ordem sugerida:
+1. Auditar `sessionExpired`, refresh de sessao e comportamento apos retorno de rede.
+2. Formalizar estados de reautenticacao no portal sem depender de limpeza manual de storage.
+3. Cobrir browser real com sessao expirada, refresh token invalido e retomada apos login.
+
 ## Decisoes que ainda dependem de Produto
 - Se Support e Admin devem convergir em um App Shell unico.
 - Quais roles podem criar ticket manualmente.

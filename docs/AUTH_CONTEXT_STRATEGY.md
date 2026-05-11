@@ -42,6 +42,7 @@ Permissões devem ser validadas no banco/RPC/policy, nunca apenas no frontend.
 - O contexto customer-facing deve continuar derivado exclusivamente de `vw_customer_portal_auth_context` e dos read models/RPCs do portal.
 - Troca de sessao entre customer-facing e admin nunca pode depender de limpar `localStorage` manualmente como solucao de produto.
 - O tenant switching customer-facing implementado na fase 8.22 nao promove nem contamina contexto admin; `active_tenant_id` e resolvido por contrato backend em `customer_portal_user_preferences`, via `rpc_customer_set_active_tenant`, e revalidado contra membership real.
+- A fase 8.24 formalizou a semantica multiaba do portal: `active_tenant_id` continua global por usuario customer-facing, `context_version` vem de `customer_portal_user_preferences.updated_at` e qualquer aba stale precisa revalidar antes de mutacao sensivel.
 - Nenhuma superficie deve inferir permissao da outra: customer sem role admin vai para `access-denied`; admin sem membership customer-facing nao ganha contexto de portal.
 - O gate de portal habilitado customer-facing e feito por `customer_account_features.feature_key = 'returns_portal'`; membership ativa sem esse gate nao basta para selecionar tenant no portal.
 
