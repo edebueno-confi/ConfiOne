@@ -158,3 +158,6 @@ Retorno:
 
 ## Próximo lote recomendado
 `Customer Portal Tenant Context And Switching V3`
+
+## Atualização posterior
+- A fase `Customer Portal Tenant Context And Switching V3` fechou a seleção explícita de tenant com `active_tenant_id` backend-governed, preservando esta busca sempre filtrada pelo tenant ativo efetivo.

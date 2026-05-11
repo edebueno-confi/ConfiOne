@@ -18,6 +18,57 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase 8.22 - Customer Portal Tenant Context And Switching V3
+- fase: `8.22`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-10`
+- resumo funcional: o Portal Cliente B2B passou a operar com `active_tenant_id` backend-governed, permitindo troca segura entre tenants customer-facing validos sem `contexts[0]`, sem `localStorage` como source of truth e sem contaminacao do contexto admin.
+- docs alterados:
+  - `docs/CUSTOMER_PORTAL_TENANT_CONTEXT_AND_SWITCHING_V3.md`
+  - `docs/CUSTOMER_PORTAL_TENANT_CONTEXT_AND_SWITCHING_PREP_V3.md`
+  - `docs/CUSTOMER_PORTAL_CONTRACT_FOUNDATION_V3.md`
+  - `docs/CUSTOMER_PORTAL_SEARCH_AND_DISCOVERABILITY_V3.md`
+  - `docs/CUSTOMER_PORTAL_ACCESS_ADMINISTRATION_V3.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/AUTH_CONTEXT_STRATEGY.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - `vw_customer_portal_available_tenants`
+  - `vw_customer_portal_active_tenant_context`
+  - `vw_customer_portal_auth_context`
+  - `vw_customer_portal_profile_context`
+  - `rpc_customer_set_active_tenant`
+  - `rpc_customer_create_ticket`
+  - `rpc_customer_search_knowledge_articles`
+- telas afetadas:
+  - `/portal`
+  - `/portal/tickets`
+  - `/portal/tickets/:ticketId`
+  - `/portal/help`
+  - `/portal/help/:slug`
+  - `/admin/customer-portal` em regressao
+  - `/admin/access` em regressao
+- runtime/UI:
+  - novo provider customer-facing governa tenant ativo, lista tenants disponiveis e executa switch com refetch seguro
+  - o seletor de tenant aparece apenas quando ha multiplos tenants validos
+  - o layout limpa o tenant anterior durante a troca via remount por `tenantId`
+- riscos restantes:
+  - o comportamento de multi-aba/sessoes concorrentes do tenant ativo ainda nao tem contrato proprio
+  - futuras RPCs customer-facing novas precisam continuar aderindo ao gate de tenant ativo
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit e fora de qualquer decisao de produto
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+- impacto na FAQ futura:
+  - passa a explicar como um mesmo usuario customer-facing troca de tenant sem vazar tickets, Knowledge ou busca autenticada entre contas.
+
 ### Fase 8.21 - Customer Portal Admin Session Regression Fix And Tenant Context Prep V3
 - fase: `8.21`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

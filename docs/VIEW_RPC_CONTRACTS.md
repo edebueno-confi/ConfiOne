@@ -1428,6 +1428,34 @@ Fase 8.2:
 - A busca publica continua separada em `rpc_public_search_knowledge_articles` e nao passa a listar artigos autenticados.
 - O frontend nao decide entitlement, nao reordena por heuristica e nao monta recomendacao IA.
 
+## Fase 8.22 - Customer Portal Tenant Context And Switching V3
+
+### Leitura consumida pelo frontend
+- `vw_customer_portal_available_tenants`
+- `vw_customer_portal_active_tenant_context`
+- `vw_customer_portal_auth_context`
+- `vw_customer_portal_profile_context`
+
+### Escrita consumida pelo frontend
+- `rpc_customer_set_active_tenant`
+
+### Regras de consumo
+- o tenant ativo passou a ser backend-governed por `customer_portal_user_preferences`
+- o frontend nao escolhe tenant por `contexts[0]`, `localStorage` ou cache como fonte de verdade
+- a selecao valida:
+  - membership ativa em `customer_user|customer_manager`
+  - tenant `active`
+  - portal habilitado por `customer_account_features.feature_key = 'returns_portal'`
+- se houver apenas um tenant valido, o backend aplica fallback seguro
+- se nao houver tenant valido, os read models retornam estado vazio/seguro
+- tickets, Knowledge, busca autenticada, profile context e criacao de ticket passam a respeitar o tenant ativo efetivo
+- `rpc_customer_search_knowledge_articles` nega explicitamente tenant diferente do ativo, em vez de devolver falso vazio cross-tenant
+
+### Boundary mantido
+- `active_tenant_id` customer-facing nao interfere em `vw_admin_auth_context`
+- `/admin/customer-portal` continua exigindo role admin real
+- tenant sem portal habilitado nao pode ser selecionado mesmo com membership ativa
+
 ## Fase 6.3 - Support Workspace Agent Directory + Assignment UX
 
 ### Leitura consumida pelo frontend

@@ -1937,6 +1937,18 @@ Documentos históricos:
     - `/help/genius/articles/:slug` continua publico
     - `rpc_public_search_knowledge_articles` nao retorna artigos autenticados do portal
   - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
+- Fase 8.22: Customer Portal Tenant Context And Switching V3 concluido como bloco de contexto ativo customer-facing.
+  - `active_tenant_id` passou a ser backend-governed por `customer_portal_user_preferences`, sem `localStorage` ou cache local como source of truth.
+  - Novos contratos:
+    - `vw_customer_portal_available_tenants`
+    - `vw_customer_portal_active_tenant_context`
+    - `rpc_customer_set_active_tenant`
+  - `vw_customer_portal_auth_context` e `vw_customer_portal_profile_context` passaram a resolver apenas o tenant ativo efetivo.
+  - O gate de portal habilitado foi materializado por `customer_account_features.feature_key = 'returns_portal'`.
+  - Tickets, Knowledge, busca autenticada e criacao de ticket passaram a negar explicitamente tenant diferente do contexto ativo.
+  - O portal mostra seletor apenas quando ha multiplos tenants validos, limpa o dado do tenant anterior durante a troca e entra em estado honesto quando nao ha tenant valido.
+  - `/admin/customer-portal` permaneceu estavel, sem loading persistente e sem contaminacao do contexto customer-facing.
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -1958,7 +1970,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Executar o proximo lote tecnico grande `Customer Portal Tenant Context And Switching V3`, fechando selecao explicita do tenant/contexto customer-facing quando o ator possuir mais de um vinculo, sem auth paralela, sem heuristica local e sem quebrar entitlement, tickets ou Knowledge autenticada.
+Executar o proximo lote tecnico grande `Customer Portal Multi-Tab Session Semantics V3`, definindo como o tenant ativo customer-facing se comporta em multiplas abas e sessoes concorrentes sem reintroduzir vazamento cross-tenant nem contaminar o contexto administrativo.
 
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único

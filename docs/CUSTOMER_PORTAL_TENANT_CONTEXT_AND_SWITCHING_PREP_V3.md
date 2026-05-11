@@ -1,5 +1,8 @@
 # Customer Portal Tenant Context And Switching Prep V3
 
+## Status
+Este documento de preparacao foi consumido pela implementacao do lote `Customer Portal Tenant Context And Switching V3`. O estado final do contrato ativo esta registrado em `docs/CUSTOMER_PORTAL_TENANT_CONTEXT_AND_SWITCHING_V3.md`.
+
 ## Objetivo
 Preparar com seguranca o proximo lote de tenant context e switching do Portal Cliente B2B, sem implementar switcher fake no frontend e sem contaminar o contexto administrativo.
 

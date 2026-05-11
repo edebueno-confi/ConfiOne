@@ -129,3 +129,6 @@ Criar a administracao operacional do Portal Cliente B2B no Admin Console, sem sh
   - bootstrap inicial alinhado ao padrao das outras superficies admin, executado uma unica vez por montagem
   - timeout explicito no carregamento inicial e nos detalhes, para converter travamento silencioso em erro real
   - regressao backend adicionada para confirmar que customer-facing nao le as views administrativas do portal
+
+## Atualizacao posterior
+- A fase `Customer Portal Tenant Context And Switching V3` implementou `active_tenant_id` backend-governed no portal sem contaminar as superficies administrativas governadas por esta fase.

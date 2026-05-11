@@ -180,3 +180,10 @@ Testes pgTAP cobrem:
 - `/portal/tickets/:ticketId` ganhou descoberta contextual segura, sem recomendacao IA e sem expor artigo fora do ticket autorizado.
 - Termo vazio retorna apenas a lista segura autorizada; termo curto sem filtro nao vaza a base inteira.
 - A boundary publica foi preservada: `/help/genius` e `rpc_public_search_knowledge_articles` continuam exclusivamente publicos.
+
+## Atualizacao - Customer Portal Tenant Context And Switching V3
+- O portal deixou de assumir `contexts[0]` como heuristica de contexto e passou a usar `active_tenant_id` backend-governed.
+- `customer_portal_user_preferences` virou a preferencia auditavel do tenant ativo.
+- `vw_customer_portal_available_tenants` e `vw_customer_portal_active_tenant_context` passaram a governar selecao, fallback de tenant unico e estado vazio seguro.
+- `rpc_customer_set_active_tenant` valida membership ativa, tenant ativo e gate `customer_account_features.feature_key = 'returns_portal'`.
+- O boundary entre contexto admin e customer-facing permaneceu isolado, sem auth paralela e sem contaminacao de shell.

@@ -288,6 +288,23 @@ Preparacao ja concluida:
 - a separacao entre contexto admin e contexto customer-facing foi revalidada em browser e em pgTAP.
 - a preparacao arquitetural foi registrada em `docs/CUSTOMER_PORTAL_TENANT_CONTEXT_AND_SWITCHING_PREP_V3.md`.
 
+Status:
+- concluido em `2026-05-10`
+- `active_tenant_id` implementado como contrato backend-governed
+- gate de portal habilitado consolidado via `customer_account_features.feature_key = 'returns_portal'`
+- portal multi-tenant passou a trocar contexto sem reaproveitar `contexts[0]`
+
+## Proximo lote tecnico recomendado
+
+### Lote: Customer Portal Multi-Tab Session Semantics V3
+
+Objetivo: definir o comportamento do tenant ativo customer-facing em multiplas abas e sessoes concorrentes, sem transformar cache local em fonte de verdade, sem vazamento cross-tenant e sem contaminar o contexto admin.
+
+Ordem sugerida:
+1. Formalizar semantica de refresh e concorrencia do `active_tenant_id`.
+2. Definir invalidacao segura de dados customer-facing durante troca em outra aba.
+3. Cobrir regressao browser com multi-aba real.
+
 ## Decisoes que ainda dependem de Produto
 - Se Support e Admin devem convergir em um App Shell unico.
 - Quais roles podem criar ticket manualmente.
