@@ -2,7 +2,7 @@ create extension if not exists pgtap with schema extensions;
 
 begin;
 
-select plan(20);
+select plan(23);
 
 insert into auth.users (
   instance_id,
@@ -194,12 +194,15 @@ select lives_ok(
 
 select lives_ok(
   $$
-    select public.rpc_admin_link_knowledge_article_to_ticket(
-      'aaaaaaaa-aaaa-4aaa-8aaa-111111111111',
-      'aaaaaaaa-bbbb-4000-8000-111111111111',
-      'aaaaaaaa-5000-4000-8000-333333333333',
-      'Guia enviado no contexto deste ticket.'
-    )
+    create temporary table customer_portal_ticket_link_capture as
+    select (
+      public.rpc_admin_link_knowledge_article_to_ticket(
+        'aaaaaaaa-aaaa-4aaa-8aaa-111111111111',
+        'aaaaaaaa-bbbb-4000-8000-111111111111',
+        'aaaaaaaa-5000-4000-8000-333333333333',
+        'Guia enviado no contexto deste ticket.'
+      )
+    ).id as ticket_link_id
   $$,
   'platform_admin vincula artigo restrito a ticket permitido'
 );
@@ -418,6 +421,50 @@ select is(
   ),
   0,
   'entitlement arquivado deixa de expor artigo ao customer'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.vw_customer_portal_knowledge_article_detail
+    where tenant_id = 'aaaaaaaa-aaaa-4aaa-8aaa-111111111111'
+      and slug = 'artigo-restrito-tenant-v3'
+  ),
+  0,
+  'detalhe por slug não retorna artigo restricted com entitlement arquivado'
+);
+
+reset role;
+
+set local role authenticated;
+set local request.jwt.claim.role = 'authenticated';
+set local request.jwt.claim.sub = '10111111-1111-4111-8111-111111111111';
+
+select lives_ok(
+  $$
+    select public.rpc_admin_unlink_knowledge_article_from_ticket(
+      'aaaaaaaa-aaaa-4aaa-8aaa-111111111111',
+      (select ticket_link_id from customer_portal_ticket_link_capture limit 1)
+    )
+  $$,
+  'platform_admin arquiva vínculo customer-facing de artigo com ticket'
+);
+
+reset role;
+
+set local role authenticated;
+set local request.jwt.claim.role = 'authenticated';
+set local request.jwt.claim.sub = '20222222-2222-4222-8222-222222222222';
+
+select is(
+  (
+    select count(*)::integer
+    from public.vw_customer_portal_ticket_knowledge_links
+    where ticket_id = 'aaaaaaaa-bbbb-4000-8000-111111111111'
+      and slug = 'artigo-restrito-ticket-v3'
+  ),
+  0,
+  'ticket_linked arquivado deixa de aparecer no ticket permitido'
 );
 
 reset role;

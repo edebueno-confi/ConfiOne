@@ -36,7 +36,7 @@ exception
 end;
 $$;
 
-select plan(16);
+select plan(18);
 
 insert into auth.users (
   instance_id,
@@ -469,6 +469,43 @@ select is(
   ),
   'Busca Restrita Portal',
   'filtro por categoria usa dado real retornado pelo backend'
+);
+
+reset role;
+set local role authenticated;
+set local request.jwt.claim.role = 'authenticated';
+set local request.jwt.claim.sub = '90000000-0000-4000-8000-000000000001';
+
+select lives_ok(
+  $$
+    select public.rpc_admin_unlink_knowledge_article_from_ticket(
+      '90000000-0000-4000-8000-100000000001',
+      '90000000-0000-4000-8000-700000000001'
+    )
+  $$,
+  'admin arquiva vínculo ticket-linked usado na busca contextual'
+);
+
+reset role;
+set local role authenticated;
+set local request.jwt.claim.role = 'authenticated';
+set local request.jwt.claim.sub = '90000000-0000-4000-8000-000000000002';
+
+select is(
+  pg_temp.safe_bigint(
+    $$select count(*)
+      from public.rpc_customer_search_knowledge_articles(
+        '90000000-0000-4000-8000-100000000001',
+        'webhook',
+        null,
+        'ticket_linked',
+        '90000000-0000-4000-8000-600000000001',
+        12,
+        0
+      )$$
+  ),
+  0::bigint,
+  'ticket_linked arquivado deixa de aparecer na busca contextual'
 );
 
 reset role;

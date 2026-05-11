@@ -619,6 +619,15 @@ const FIXTURE = {
         relationReason:
           'Liberado para este ticket porque o fluxo aprovado depende de orientação contextual restrita.',
       },
+      {
+        ticketTitle: 'QA Support | Regra de motivo precisa de ajuste',
+        ticketTenantSlug: 'support-qa-b',
+        actorKey: 'qa-admin',
+        articleSlug: 'operacao-plataforma-artigo-restrito-b',
+        relationReason:
+          'Vínculo temporário arquivado para validar a retirada governada de artigos ticket-linked no portal.',
+        archiveAfterLink: true,
+      },
     ],
     links: [
       {
@@ -2291,6 +2300,7 @@ async function ensureKnowledgeArticleEntitlement({
       accessToken: actorSession.accessToken,
       rpcName: 'rpc_admin_archive_knowledge_article_entitlement',
       body: {
+        p_tenant_id: tenantId,
         p_entitlement_id: entitlementRecord.id,
       },
     });
@@ -2305,6 +2315,7 @@ async function ensureCustomerTicketKnowledgeLink({
   ticketId,
   articleSlug,
   relationReason,
+  archiveAfterLink = false,
 }) {
   let article = queryKnowledgeArticleBySlug(articleSlug, tenantId);
   if (!article?.id) {
@@ -2318,25 +2329,39 @@ async function ensureCustomerTicketKnowledgeLink({
     fail(`Artigo ausente para vínculo customer-facing com ticket: ${articleSlug}.`);
   }
 
-  const existingId = queryTicketKnowledgeLink(ticketId, 'sent_to_customer', articleSlug);
-  if (existingId) {
-    return existingId;
+  let linkId = queryTicketKnowledgeLink(ticketId, 'sent_to_customer', articleSlug);
+
+  if (!linkId) {
+    const created = await callRpcAsUser({
+      apiUrl: actorSession.apiUrl,
+      anonKey: actorSession.anonKey,
+      accessToken: actorSession.accessToken,
+      rpcName: 'rpc_admin_link_knowledge_article_to_ticket',
+      body: {
+        p_tenant_id: tenantId,
+        p_ticket_id: ticketId,
+        p_article_id: article.id,
+        p_relation_reason: relationReason,
+      },
+    });
+
+    linkId = created?.id ?? queryTicketKnowledgeLink(ticketId, 'sent_to_customer', articleSlug);
   }
 
-  const created = await callRpcAsUser({
-    apiUrl: actorSession.apiUrl,
-    anonKey: actorSession.anonKey,
-    accessToken: actorSession.accessToken,
-    rpcName: 'rpc_admin_link_knowledge_article_to_ticket',
-    body: {
-      p_tenant_id: tenantId,
-      p_ticket_id: ticketId,
-      p_article_id: article.id,
-      p_relation_reason: relationReason,
-    },
-  });
+  if (archiveAfterLink && linkId) {
+    await callRpcAsUser({
+      apiUrl: actorSession.apiUrl,
+      anonKey: actorSession.anonKey,
+      accessToken: actorSession.accessToken,
+      rpcName: 'rpc_admin_unlink_knowledge_article_from_ticket',
+      body: {
+        p_tenant_id: tenantId,
+        p_ticket_knowledge_link_id: linkId,
+      },
+    });
+  }
 
-  return created?.id ?? queryTicketKnowledgeLink(ticketId, 'sent_to_customer', articleSlug);
+  return linkId;
 }
 
 function queryBusinessCalendarIdBySlug(slug) {
@@ -3575,6 +3600,7 @@ async function main() {
       articleSlug: entitlement.articleSlug,
       entitlementScope: entitlement.entitlementScope,
       relationReason: entitlement.relationReason,
+      archiveAfterGrant: Boolean(entitlement.archiveAfterGrant),
     });
 
     createdKnowledgeEntitlements.push({
@@ -3634,6 +3660,7 @@ async function main() {
       ticketId,
       articleSlug: link.articleSlug,
       relationReason: link.relationReason,
+      archiveAfterLink: Boolean(link.archiveAfterLink),
     });
 
     createdKnowledgeLinks.push({
@@ -3643,6 +3670,7 @@ async function main() {
       link_type: 'sent_to_customer',
       article_slug: link.articleSlug,
       relation_reason: link.relationReason,
+      archived: Boolean(link.archiveAfterLink),
     });
   }
 
