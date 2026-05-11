@@ -179,15 +179,21 @@ function PortalShell({ children }: { children: ReactNode }) {
     activeContext,
     availableTenants,
     errorMessage,
+    isContextStale,
     isLoading,
+    isRefreshing,
     isSwitching,
+    pendingContext,
+    refresh,
+    staleMessage,
     switchingTenantId,
     switchTenant,
   } = useCustomerPortalTenantContext();
+  const displayContext = activeContext ?? pendingContext;
 
   function handleTenantChange(event: ChangeEvent<HTMLSelectElement>) {
     const nextTenantId = event.target.value.trim();
-    if (!nextTenantId || nextTenantId === activeContext?.tenantId) {
+    if (!nextTenantId || nextTenantId === displayContext?.tenantId) {
       return;
     }
 
@@ -239,10 +245,12 @@ function PortalShell({ children }: { children: ReactNode }) {
               Tenant ativo
             </p>
             <p className="mt-2 truncate text-sm font-semibold text-white">
-              {activeContext?.tenantDisplayName ?? 'Indisponível'}
+              {displayContext?.tenantDisplayName ?? 'Indisponível'}
             </p>
             <p className="mt-1 text-xs text-white/58">
-              {activeContext ? portalRoleLabel(activeContext.portalRole) : 'Sem contexto customer-facing ativo'}
+              {displayContext
+                ? portalRoleLabel(displayContext.portalRole)
+                : 'Sem contexto customer-facing ativo'}
             </p>
             {availableTenants.length > 1 ? (
               <div className="mt-3">
@@ -251,9 +259,9 @@ function PortalShell({ children }: { children: ReactNode }) {
                 </label>
                 <select
                   className="h-11 w-full rounded-[16px] border border-white/12 bg-white/10 px-3 text-sm text-white outline-none transition focus:border-white/28"
-                  disabled={isLoading || isSwitching}
+                  disabled={isLoading || isSwitching || isRefreshing}
                   onChange={handleTenantChange}
-                  value={activeContext?.tenantId ?? ''}
+                  value={displayContext?.tenantId ?? ''}
                 >
                   {availableTenants.map((tenant) => (
                     <option className="text-[color:var(--color-ink)]" key={tenant.tenantId} value={tenant.tenantId}>
@@ -264,6 +272,21 @@ function PortalShell({ children }: { children: ReactNode }) {
                 <p className="mt-2 text-xs leading-5 text-white/58">
                   O contexto do portal muda com validação no backend. Dados do tenant anterior são descartados durante a troca.
                 </p>
+              </div>
+            ) : null}
+            {isContextStale && staleMessage ? (
+              <div className="mt-3 rounded-[16px] border border-[#ffd873]/35 bg-[#ffd873]/12 px-3 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#ffe7ad]">
+                  Contexto alterado
+                </p>
+                <p className="mt-2 text-xs leading-5 text-white/78">{staleMessage}</p>
+                <GhostButton
+                  className="mt-3 border-white/12 bg-white/10 text-white hover:bg-white/16"
+                  disabled={isRefreshing || isSwitching}
+                  onClick={() => void refresh()}
+                >
+                  {isRefreshing ? 'Atualizando...' : 'Atualizar contexto'}
+                </GhostButton>
               </div>
             ) : null}
             {isSwitching && switchingTenantId ? (
@@ -368,8 +391,18 @@ export function CustomerPortalGate({ children }: { children: ReactNode }) {
 }
 
 export function CustomerPortalLayout() {
-  const { activeContext, errorMessage, hasNoTenantAccess, isLoading, isSwitching } =
-    useCustomerPortalTenantContext();
+  const {
+    activeContext,
+    errorMessage,
+    hasNoTenantAccess,
+    isContextStale,
+    isLoading,
+    isRefreshing,
+    isSwitching,
+    pendingContext,
+    refresh,
+    staleMessage,
+  } = useCustomerPortalTenantContext();
 
   if (isLoading || isSwitching) {
     return (
@@ -380,6 +413,29 @@ export function CustomerPortalLayout() {
             isSwitching
               ? 'Limpando o contexto anterior e validando o próximo tenant ativo.'
               : 'Validando os tenants customer-facing disponíveis para esta sessão.'
+          }
+        />
+      </div>
+    );
+  }
+
+  if (isContextStale) {
+    return (
+      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+        <StateFrame
+          title="Contexto alterado em outra aba"
+          description={
+            pendingContext
+              ? `${staleMessage ?? 'O contexto do portal mudou em outra aba. Atualize para continuar.'} O tenant ativo no backend agora é ${pendingContext.tenantDisplayName}.`
+              : staleMessage ??
+                'O contexto do portal mudou e o tenant anterior não está mais disponível para esta sessão.'
+          }
+          eyebrow="portal"
+          tone="default"
+          actions={
+            <AppButton disabled={isRefreshing} onClick={() => void refresh()}>
+              {isRefreshing ? 'Atualizando contexto...' : 'Atualizar contexto'}
+            </AppButton>
           }
         />
       </div>
@@ -1268,7 +1324,7 @@ export function CustomerPortalHelpArticlePage() {
 
 export function CustomerPortalTicketsPage() {
   const navigate = useNavigate();
-  const { activeContext } = useCustomerPortalTenantContext();
+  const { activeContext, ensureFreshContext } = useCustomerPortalTenantContext();
   const [tickets, setTickets] = useState<CustomerPortalTicketListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -1312,6 +1368,12 @@ export function CustomerPortalTicketsPage() {
     setErrorMessage(null);
 
     try {
+      const isFreshContext = await ensureFreshContext();
+      if (!isFreshContext) {
+        setErrorMessage('O contexto do portal mudou em outra aba. Atualize para criar o ticket no tenant correto.');
+        return;
+      }
+
       const ticket = await createCustomerPortalTicket({
         description,
         tenantId: activeContext.tenantId,
@@ -1407,6 +1469,7 @@ export function CustomerPortalTicketsPage() {
 }
 
 export function CustomerPortalTicketPage() {
+  const { ensureFreshContext } = useCustomerPortalTenantContext();
   const { ticketId = '' } = useParams();
   const [detail, setDetail] = useState<CustomerPortalTicketDetail | null>(null);
   const [collaborationState, setCollaborationState] =
@@ -1533,6 +1596,12 @@ export function CustomerPortalTicketPage() {
     setSuccessMessage(null);
 
     try {
+      const isFreshContext = await ensureFreshContext();
+      if (!isFreshContext) {
+        setErrorMessage('O contexto do portal mudou em outra aba. Atualize antes de responder este ticket.');
+        return;
+      }
+
       await addCustomerPortalTicketMessage({ body: message, ticketId });
       setMessage('');
       setSuccessMessage('Mensagem registrada no ticket.');
@@ -1555,6 +1624,12 @@ export function CustomerPortalTicketPage() {
     setSuccessMessage(null);
 
     try {
+      const isFreshContext = await ensureFreshContext();
+      if (!isFreshContext) {
+        setErrorMessage('O contexto do portal mudou em outra aba. Atualize antes de registrar a leitura.');
+        return;
+      }
+
       await acknowledgeCustomerPortalTicketUpdate({
         lastTimelineEntryId: lastEntryId,
         ticketId,
@@ -1572,6 +1647,12 @@ export function CustomerPortalTicketPage() {
     setErrorMessage(null);
 
     try {
+      const isFreshContext = await ensureFreshContext();
+      if (!isFreshContext) {
+        setErrorMessage('O contexto do portal mudou em outra aba. Atualize antes de baixar esta evidência.');
+        return;
+      }
+
       const download = await downloadCustomerPortalTicketAttachment(attachment.attachmentId);
       window.open(download.signedUrl, '_blank', 'noopener,noreferrer');
     } catch (error) {
@@ -1615,6 +1696,12 @@ export function CustomerPortalTicketPage() {
     setUploadingAttachment(true);
 
     try {
+      const isFreshContext = await ensureFreshContext();
+      if (!isFreshContext) {
+        setErrorMessage('O contexto do portal mudou em outra aba. Atualize antes de enviar a evidência.');
+        return;
+      }
+
       await uploadCustomerPortalTicketAttachment({
         file,
         tenantId: detail.tenantId,
@@ -1642,6 +1729,12 @@ export function CustomerPortalTicketPage() {
     setSuccessMessage(null);
 
     try {
+      const isFreshContext = await ensureFreshContext();
+      if (!isFreshContext) {
+        setErrorMessage('O contexto do portal mudou em outra aba. Atualize antes de confirmar a resolução.');
+        return;
+      }
+
       await confirmCustomerPortalTicketResolved({ ticketId });
       setSuccessMessage('Resolução confirmada. O ticket foi encerrado pelo contrato do portal.');
       await load();
@@ -1665,6 +1758,12 @@ export function CustomerPortalTicketPage() {
     setSuccessMessage(null);
 
     try {
+      const isFreshContext = await ensureFreshContext();
+      if (!isFreshContext) {
+        setErrorMessage('O contexto do portal mudou em outra aba. Atualize antes de solicitar a reabertura.');
+        return;
+      }
+
       await requestCustomerPortalTicketReopen({
         reason: reopenReason,
         ticketId,

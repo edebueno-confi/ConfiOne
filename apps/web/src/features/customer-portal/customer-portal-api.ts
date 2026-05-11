@@ -174,6 +174,7 @@ function mapActiveTenantContext(
     ...mapProfileContext(row),
     availableTenantCount: Number(row.available_tenant_count ?? 0),
     hasMultipleTenants: Boolean(row.has_multiple_tenants),
+    contextVersion: String(row.context_version ?? '1970-01-01T00:00:00+00:00'),
   };
 }
 
