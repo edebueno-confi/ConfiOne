@@ -161,3 +161,10 @@ Retorno:
 
 ## Atualização posterior
 - A fase `Customer Portal Tenant Context And Switching V3` fechou a seleção explícita de tenant com `active_tenant_id` backend-governed, preservando esta busca sempre filtrada pelo tenant ativo efetivo.
+- A regressao posterior de visibilidade em tenant B nao veio da RPC de busca nem do read model.
+- A causa raiz ficou no seed local, que mantinha ativo um entitlement declarado como arquivado.
+- Regra reafirmada pela regressao:
+  - entitlement arquivado nao retorna artigo em `rpc_customer_search_knowledge_articles`
+  - `vw_customer_portal_knowledge_articles` nao lista artigo `restricted` sem entitlement ativo
+  - `vw_customer_portal_knowledge_article_detail` retorna estado seguro para slug arquivado
+  - `ticket_linked` arquivado/desvinculado nao aparece mais na busca contextual por `ticket_id`

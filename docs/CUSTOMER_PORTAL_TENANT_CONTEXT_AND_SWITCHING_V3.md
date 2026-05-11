@@ -93,3 +93,11 @@ Implementar contexto ativo de tenant no Portal Cliente B2B para usuarios custome
 - ainda nao existe tenant switcher para superfícies externas alem do portal
 - o portal continua sem estrategia de sessao multi-aba dedicada; o contrato atual cobre o tenant ativo por usuario autenticado
 - futuras RPCs customer-facing novas precisam continuar aderindo a `app_private.customer_portal_has_active_tenant(...)`
+
+## Atualização posterior - regressão de entitlement
+- A inconsistência visual observada no tenant B depois do fechamento deste lote nao foi causada pelo tenant switching.
+- O `active_tenant_id` continuou correto; o problema era uma fixture que deixava um entitlement `restricted` ativo embora marcado para arquivamento.
+- Depois da correção do seed e das regressões adicionais:
+  - trocar tenant continua limpando o dado anterior
+  - tenant ativo divergente continua negado no backend
+  - artigo `restricted` com entitlement arquivado deixa de aparecer imediatamente no tenant correspondente

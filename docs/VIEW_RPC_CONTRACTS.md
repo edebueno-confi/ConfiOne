@@ -1481,6 +1481,15 @@ Fase 8.2:
 - o `user_id` tecnico permanece apenas como fallback recolhido para excecao operacional
 
 ## Próximos contratos planejados
+- Atualização posterior - entitlement arquivado no portal cliente:
+  - `knowledge_article_entitlements.archived_at is not null` remove a exposição do artigo em:
+    - `vw_customer_portal_knowledge_articles`
+    - `vw_customer_portal_knowledge_article_detail`
+    - `rpc_customer_search_knowledge_articles`
+  - `ticket_knowledge_links.archived_at is not null` remove a exposição do artigo em:
+    - `vw_customer_portal_ticket_knowledge_links`
+    - busca contextual `ticket_linked` em `rpc_customer_search_knowledge_articles`
+  - a regressão observada em tenant B não veio do contrato backend; a causa raiz ficou no seed QA, que mantinha ativo um entitlement marcado para arquivamento.
 - Ticket -> Knowledge Base assistive linking:
   - backend minimo ja materializado em:
     - `vw_support_ticket_knowledge_links`

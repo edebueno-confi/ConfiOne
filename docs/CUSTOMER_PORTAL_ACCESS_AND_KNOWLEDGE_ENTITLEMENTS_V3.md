@@ -175,3 +175,17 @@ Foco:
 - escolha explicita de tenant quando houver mais de um vinculo customer-facing;
 - persistencia segura do contexto ativo;
 - navegacao consistente entre tickets e Knowledge autenticada.
+
+## Atualização posterior - entitlement arquivado
+- A regressao observada depois em tenant B nao veio das views customer-facing nem do frontend.
+- A causa raiz ficou na fixture local: o lote declarava `archiveAfterGrant: true`, mas o seed nao repassava a flag para `ensureKnowledgeArticleEntitlement(...)`.
+- Com isso, o entitlement permanecia `active`, `archived_at` seguia `null` e o portal apenas refletia corretamente o backend, inclusive a `relation_reason` de governanca.
+- A regra final reafirmada:
+  - `restricted` com entitlement ativo continua visivel apenas no tenant autorizado
+  - `restricted` com entitlement arquivado deixa de aparecer em lista, detalhe e busca
+  - `ticket_linked` arquivado/desvinculado deixa de aparecer no ticket permitido e na busca contextual
+- A fixture QA passou a cobrir explicitamente:
+  - entitlement ativo
+  - entitlement arquivado
+  - ticket-linked ativo
+  - ticket-linked arquivado

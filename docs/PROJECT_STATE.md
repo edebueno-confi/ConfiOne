@@ -1972,6 +1972,11 @@ Documentos históricos:
 ## Próxima prioridade
 Executar o proximo lote tecnico grande `Customer Portal Multi-Tab Session Semantics V3`, definindo como o tenant ativo customer-facing se comporta em multiplas abas e sessoes concorrentes sem reintroduzir vazamento cross-tenant nem contaminar o contexto administrativo.
 
+Atualização posterior antes de multi-aba:
+- `Customer Portal Entitlement Visibility Regression Fix V3` foi fechado para eliminar a inconsistência observada no tenant B.
+- A causa raiz ficou na fixture local, que declarava `archiveAfterGrant: true` mas não repassava essa flag ao seed do entitlement.
+- As views e RPCs customer-facing foram reafirmadas; a correção efetiva ficou no seed QA e nas regressões de entitlement arquivado/ticket-linked arquivado.
+
 Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único
 - segmentar navegação por permissões e contexto do usuário

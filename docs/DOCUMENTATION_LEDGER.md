@@ -3188,3 +3188,35 @@ Cada registro deve informar:
   - `npm run supabase:qa:local-support-fixture`
 - impacto na FAQ futura:
   - nenhum; lote de descoberta autenticada, sem publicacao automatica e sem IA
+
+### Fase 8.23 - Customer Portal Entitlement Visibility Regression Fix V3
+- fase: `8.23`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-10`
+- resumo funcional: a inconsistencia de visibilidade de artigo `restricted` no tenant B foi corrigida antes do lote multi-aba; entitlement arquivado e ticket-linked arquivado deixaram de expor artigo no portal autenticado.
+- docs alterados:
+  - `docs/CUSTOMER_PORTAL_ACCESS_AND_KNOWLEDGE_ENTITLEMENTS_V3.md`
+  - `docs/CUSTOMER_PORTAL_SEARCH_AND_DISCOVERABILITY_V3.md`
+  - `docs/CUSTOMER_PORTAL_TENANT_CONTEXT_AND_SWITCHING_V3.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- arquivos de código e teste alterados:
+  - `supabase/qa/create-local-support-fixture.mjs`
+  - `supabase/tests/031_customer_portal_access_and_knowledge_entitlements.sql`
+  - `supabase/tests/033_customer_portal_search_and_discoverability.sql`
+- causa raiz:
+  - a fixture local declarava `archiveAfterGrant: true`, mas o loop de seed não repassava a flag para `ensureKnowledgeArticleEntitlement(...)`
+  - o entitlement permanecia `active`, então as views/RPCs expunham corretamente um artigo que nunca tinha sido arquivado de fato
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+  - validacao browser real em `/portal/help`, `/portal/help/:slug`, `/portal/tickets/:ticketId` e troca de tenant
+- riscos restantes:
+  - semântica multi-aba do tenant ativo continua pendente para lote próprio
+  - novas superfícies customer-facing futuras continuam obrigadas a respeitar `active_tenant_id` backend-governed
