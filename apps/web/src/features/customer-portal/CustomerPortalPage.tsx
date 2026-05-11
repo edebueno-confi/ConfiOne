@@ -1,4 +1,5 @@
 import {
+  type ChangeEvent,
   type FormEvent,
   type ReactNode,
   useEffect,
@@ -35,10 +36,11 @@ import {
 } from '../../components/ui';
 import { AppError } from '../../app/errors';
 import type {
+  CustomerPortalActiveTenantContext,
+  CustomerPortalAvailableTenant,
   CustomerPortalKnowledgeArticle,
   CustomerPortalKnowledgeArticleDetail,
   CustomerPortalKnowledgeSearchResult,
-  CustomerPortalProfileContext,
   CustomerPortalTicketAttachment,
   CustomerPortalTicketCollaborationState,
   CustomerPortalTicketDetail,
@@ -55,7 +57,6 @@ import {
   CUSTOMER_PORTAL_ATTACHMENT_ALLOWED_TYPES,
   CUSTOMER_PORTAL_ATTACHMENT_MAX_SIZE_BYTES,
   downloadCustomerPortalTicketAttachment,
-  fetchCustomerPortalContexts,
   fetchCustomerPortalKnowledgeArticleDetail,
   fetchCustomerPortalKnowledgeArticles,
   searchCustomerPortalKnowledgeArticles,
@@ -68,6 +69,10 @@ import {
   requestCustomerPortalTicketReopen,
   uploadCustomerPortalTicketAttachment,
 } from './customer-portal-api';
+import {
+  CustomerPortalTenantContextProvider,
+  useCustomerPortalTenantContext,
+} from './customer-portal-context';
 import { MarkdownDocument } from '../help-center/markdown';
 
 function formatDate(value: string | null) {
@@ -165,8 +170,30 @@ function normalizePortalSearchSource(value: string | null) {
   return 'all';
 }
 
+function portalRoleLabel(role: CustomerPortalAvailableTenant['portalRole']) {
+  return role === 'customer_manager' ? 'Gestão cliente' : 'Usuário cliente';
+}
+
 function PortalShell({ children }: { children: ReactNode }) {
   const { signOut, user } = useAuthContext();
+  const {
+    activeContext,
+    availableTenants,
+    errorMessage,
+    isLoading,
+    isSwitching,
+    switchingTenantId,
+    switchTenant,
+  } = useCustomerPortalTenantContext();
+
+  function handleTenantChange(event: ChangeEvent<HTMLSelectElement>) {
+    const nextTenantId = event.target.value.trim();
+    if (!nextTenantId || nextTenantId === activeContext?.tenantId) {
+      return;
+    }
+
+    void switchTenant(nextTenantId);
+  }
 
   return (
     <div className="h-screen overflow-hidden bg-[linear-gradient(180deg,#eef4ff_0%,#f7faff_46%,#f2f5fb_100%)] text-[color:var(--color-ink)]">
@@ -207,6 +234,50 @@ function PortalShell({ children }: { children: ReactNode }) {
               </NavLink>
             ))}
           </nav>
+
+          <div className="mt-6 rounded-[20px] border border-white/10 bg-white/7 p-3">
+            <p className="text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-white/48">
+              Tenant ativo
+            </p>
+            <p className="mt-2 truncate text-sm font-semibold text-white">
+              {activeContext?.tenantDisplayName ?? 'Indisponível'}
+            </p>
+            <p className="mt-1 text-xs text-white/58">
+              {activeContext ? portalRoleLabel(activeContext.portalRole) : 'Sem contexto customer-facing ativo'}
+            </p>
+            {availableTenants.length > 1 ? (
+              <div className="mt-3">
+                <label className="mb-1 block text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-white/48">
+                  Trocar tenant
+                </label>
+                <select
+                  className="h-11 w-full rounded-[16px] border border-white/12 bg-white/10 px-3 text-sm text-white outline-none transition focus:border-white/28"
+                  disabled={isLoading || isSwitching}
+                  onChange={handleTenantChange}
+                  value={activeContext?.tenantId ?? ''}
+                >
+                  {availableTenants.map((tenant) => (
+                    <option className="text-[color:var(--color-ink)]" key={tenant.tenantId} value={tenant.tenantId}>
+                      {tenant.tenantDisplayName}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-xs leading-5 text-white/58">
+                  O contexto do portal muda com validação no backend. Dados do tenant anterior são descartados durante a troca.
+                </p>
+              </div>
+            ) : null}
+            {isSwitching && switchingTenantId ? (
+              <p className="mt-3 text-xs leading-5 text-white/58">
+                Atualizando o contexto do portal...
+              </p>
+            ) : null}
+            {errorMessage ? (
+              <p className="mt-3 text-xs leading-5 text-[#ffd8d8]">
+                {errorMessage}
+              </p>
+            ) : null}
+          </div>
 
           <div className="mt-auto rounded-[20px] border border-white/10 bg-white/7 p-3">
             <p className="truncate text-sm font-semibold text-white">
@@ -290,16 +361,68 @@ export function CustomerPortalGate({ children }: { children: ReactNode }) {
     return <Navigate replace to={`/login?redirectTo=${encodeURIComponent(redirectTo)}`} />;
   }
 
-  return <PortalShell>{children}</PortalShell>;
+  return (
+    <CustomerPortalTenantContextProvider>
+      <PortalShell>{children}</PortalShell>
+    </CustomerPortalTenantContextProvider>
+  );
 }
 
 export function CustomerPortalLayout() {
-  return <Outlet />;
+  const { activeContext, errorMessage, hasNoTenantAccess, isLoading, isSwitching } =
+    useCustomerPortalTenantContext();
+
+  if (isLoading || isSwitching) {
+    return (
+      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+        <LoadingState
+          title={isSwitching ? 'Trocando tenant' : 'Carregando contexto do portal'}
+          description={
+            isSwitching
+              ? 'Limpando o contexto anterior e validando o próximo tenant ativo.'
+              : 'Validando os tenants customer-facing disponíveis para esta sessão.'
+          }
+        />
+      </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+        <ErrorState
+          title="Contexto do portal indisponível"
+          description={errorMessage}
+        />
+      </div>
+    );
+  }
+
+  if (hasNoTenantAccess || !activeContext) {
+    return (
+      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+        <StateFrame
+          title="Nenhum tenant disponível"
+          description="Sua sessão customer-facing não possui vínculo ativo com um tenant habilitado no portal."
+          eyebrow="portal"
+          tone="default"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full overflow-hidden" key={activeContext.tenantId}>
+      <Outlet />
+    </div>
+  );
 }
 
-function ContextRail({ contexts }: { contexts: CustomerPortalProfileContext[] }) {
-  const primary = contexts[0] ?? null;
-
+function ContextRail({
+  activeContext,
+}: {
+  activeContext: CustomerPortalActiveTenantContext | null;
+}) {
   return (
     <aside className="grid gap-3">
       <Panel
@@ -307,22 +430,22 @@ function ContextRail({ contexts }: { contexts: CustomerPortalProfileContext[] })
         description="Dados seguros do vínculo autenticado com o cliente B2B."
         className="p-4"
       >
-        {primary ? (
+        {activeContext ? (
           <div className="space-y-3 text-sm">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
                 Cliente
               </p>
               <p className="mt-1 font-semibold text-[color:var(--color-ink)]">
-                {primary.tenantDisplayName}
+                {activeContext.tenantDisplayName}
               </p>
             </div>
             <div className="grid gap-2">
-              <InfoLine label="Contato" value={primary.contactFullName} />
-              <InfoLine label="Papel" value={primary.portalRole === 'customer_manager' ? 'Gestão cliente' : 'Usuário cliente'} />
-              <InfoLine label="Produto" value={primary.productLine} />
-              <InfoLine label="Status operacional" value={primary.operationalStatus} />
-              <InfoLine label="Plano" value={primary.accountTier} />
+              <InfoLine label="Contato" value={activeContext.contactFullName} />
+              <InfoLine label="Papel" value={portalRoleLabel(activeContext.portalRole)} />
+              <InfoLine label="Produto" value={activeContext.productLine} />
+              <InfoLine label="Status operacional" value={activeContext.operationalStatus} />
+              <InfoLine label="Plano" value={activeContext.accountTier} />
             </div>
           </div>
         ) : (
@@ -350,7 +473,7 @@ function InfoLine({ label, value }: { label: string; value: string | null }) {
 
 export function CustomerPortalHomePage() {
   const navigate = useNavigate();
-  const [contexts, setContexts] = useState<CustomerPortalProfileContext[]>([]);
+  const { activeContext } = useCustomerPortalTenantContext();
   const [tickets, setTickets] = useState<CustomerPortalTicketListItem[]>([]);
   const [articles, setArticles] = useState<CustomerPortalKnowledgeArticle[]>([]);
   const [knowledgeSearchInput, setKnowledgeSearchInput] = useState('');
@@ -370,21 +493,23 @@ export function CustomerPortalHomePage() {
     let cancelled = false;
 
     async function load() {
+      if (!activeContext?.tenantId) {
+        setTickets([]);
+        setArticles([]);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setErrorMessage(null);
 
       try {
-        const [nextContexts, nextTickets] = await Promise.all([
-          fetchCustomerPortalContexts(),
+        const [nextTickets, nextArticles] = await Promise.all([
           fetchCustomerPortalTickets(),
+          fetchCustomerPortalKnowledgeArticles(activeContext.tenantId),
         ]);
-        const primaryTenantId = nextContexts[0]?.tenantId ?? null;
-        const nextArticles = primaryTenantId
-          ? await fetchCustomerPortalKnowledgeArticles(primaryTenantId)
-          : [];
 
         if (!cancelled) {
-          setContexts(nextContexts);
           setTickets(nextTickets);
           setArticles(nextArticles);
         }
@@ -404,7 +529,7 @@ export function CustomerPortalHomePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [activeContext?.tenantId]);
 
   if (loading) {
     return (
@@ -518,7 +643,7 @@ export function CustomerPortalHomePage() {
       </section>
 
       <div className="min-h-0 overflow-y-auto">
-        <ContextRail contexts={contexts} />
+        <ContextRail activeContext={activeContext} />
       </div>
     </div>
   );
@@ -620,7 +745,7 @@ function PortalKnowledgeHeader({
 
 export function CustomerPortalHelpPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [contexts, setContexts] = useState<CustomerPortalProfileContext[]>([]);
+  const { activeContext } = useCustomerPortalTenantContext();
   const [browseArticles, setBrowseArticles] = useState<CustomerPortalKnowledgeArticle[]>([]);
   const [searchResults, setSearchResults] = useState<CustomerPortalKnowledgeSearchResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -632,7 +757,7 @@ export function CustomerPortalHelpPage() {
   const activeQuery = normalizePortalSearchQuery(searchParams.get('q'));
   const selectedCategory = normalizePortalSearchQuery(searchParams.get('category'));
   const selectedSource = normalizePortalSearchSource(searchParams.get('source'));
-  const primaryTenantId = contexts[0]?.tenantId ?? null;
+  const activeTenantId = activeContext?.tenantId ?? null;
 
   const categoryOptions = useMemo(
     () =>
@@ -718,16 +843,17 @@ export function CustomerPortalHelpPage() {
   });
 
   async function load() {
+    if (!activeTenantId) {
+      setBrowseArticles([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setErrorMessage(null);
 
     try {
-      const nextContexts = await fetchCustomerPortalContexts();
-      const nextPrimaryTenantId = nextContexts[0]?.tenantId ?? null;
-      const nextArticles = nextPrimaryTenantId
-        ? await fetchCustomerPortalKnowledgeArticles(nextPrimaryTenantId)
-        : [];
-      setContexts(nextContexts);
+      const nextArticles = await fetchCustomerPortalKnowledgeArticles(activeTenantId);
       setBrowseArticles(nextArticles);
     } catch (error) {
       setErrorMessage(mapError(error, 'Falha ao carregar a central autorizada do portal.'));
@@ -738,17 +864,17 @@ export function CustomerPortalHelpPage() {
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [activeTenantId]);
 
   useEffect(() => {
     setSearchInput(activeQuery);
   }, [activeQuery]);
 
   useEffect(() => {
-    if (!loading && primaryTenantId) {
-      void loadSearch(primaryTenantId);
+    if (!loading && activeTenantId) {
+      void loadSearch(activeTenantId);
     }
-  }, [loading, primaryTenantId, activeQuery, selectedCategory, selectedSource, loadSearch]);
+  }, [loading, activeTenantId, activeQuery, selectedCategory, selectedSource, loadSearch]);
 
   function updateSearchParams(next: {
     q?: string;
@@ -954,7 +1080,7 @@ export function CustomerPortalHelpPage() {
       </section>
 
       <div className="min-h-0 overflow-y-auto">
-        <ContextRail contexts={contexts} />
+        <ContextRail activeContext={activeContext} />
       </div>
     </div>
   );
@@ -981,26 +1107,28 @@ function PortalKnowledgeInfoLine({
 
 export function CustomerPortalHelpArticlePage() {
   const { articleSlug = '' } = useParams();
-  const [contexts, setContexts] = useState<CustomerPortalProfileContext[]>([]);
+  const { activeContext } = useCustomerPortalTenantContext();
   const [article, setArticle] = useState<CustomerPortalKnowledgeArticleDetail | null>(null);
   const [articles, setArticles] = useState<CustomerPortalKnowledgeArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function load() {
+    if (!activeContext?.tenantId) {
+      setArticles([]);
+      setArticle(null);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setErrorMessage(null);
 
     try {
-      const nextContexts = await fetchCustomerPortalContexts();
-      const primaryTenantId = nextContexts[0]?.tenantId ?? null;
-      const [nextArticles, nextArticle] = primaryTenantId
-        ? await Promise.all([
-            fetchCustomerPortalKnowledgeArticles(primaryTenantId),
-            fetchCustomerPortalKnowledgeArticleDetail(primaryTenantId, articleSlug),
-          ])
-        : [[], null];
-      setContexts(nextContexts);
+      const [nextArticles, nextArticle] = await Promise.all([
+        fetchCustomerPortalKnowledgeArticles(activeContext.tenantId),
+        fetchCustomerPortalKnowledgeArticleDetail(activeContext.tenantId, articleSlug),
+      ]);
       setArticles(nextArticles);
       setArticle(nextArticle);
     } catch (error) {
@@ -1012,7 +1140,7 @@ export function CustomerPortalHelpArticlePage() {
 
   useEffect(() => {
     void load();
-  }, [articleSlug]);
+  }, [activeContext?.tenantId, articleSlug]);
 
   if (loading) {
     return (
@@ -1099,7 +1227,7 @@ export function CustomerPortalHelpArticlePage() {
       </section>
 
       <aside className="min-h-0 space-y-4 overflow-y-auto">
-        <ContextRail contexts={contexts} />
+        <ContextRail activeContext={activeContext} />
 
         <Panel
           title="Outros artigos autorizados"
@@ -1123,7 +1251,7 @@ export function CustomerPortalHelpArticlePage() {
 
 export function CustomerPortalTicketsPage() {
   const navigate = useNavigate();
-  const [contexts, setContexts] = useState<CustomerPortalProfileContext[]>([]);
+  const { activeContext } = useCustomerPortalTenantContext();
   const [tickets, setTickets] = useState<CustomerPortalTicketListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -1132,15 +1260,17 @@ export function CustomerPortalTicketsPage() {
   const [description, setDescription] = useState('');
 
   async function load() {
+    if (!activeContext?.tenantId) {
+      setTickets([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setErrorMessage(null);
 
     try {
-      const [nextContexts, nextTickets] = await Promise.all([
-        fetchCustomerPortalContexts(),
-        fetchCustomerPortalTickets(),
-      ]);
-      setContexts(nextContexts);
+      const nextTickets = await fetchCustomerPortalTickets();
       setTickets(nextTickets);
     } catch (error) {
       setErrorMessage(mapError(error, 'Falha ao carregar tickets do portal cliente.'));
@@ -1151,13 +1281,12 @@ export function CustomerPortalTicketsPage() {
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [activeContext?.tenantId]);
 
   async function handleCreateTicket(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const primaryContext = contexts[0] ?? null;
 
-    if (!primaryContext) {
+    if (!activeContext) {
       setErrorMessage('Nenhum tenant customer-facing disponível para criar ticket.');
       return;
     }
@@ -1168,7 +1297,7 @@ export function CustomerPortalTicketsPage() {
     try {
       const ticket = await createCustomerPortalTicket({
         description,
-        tenantId: primaryContext.tenantId,
+        tenantId: activeContext.tenantId,
         title,
       });
       setTitle('');
@@ -1246,10 +1375,10 @@ export function CustomerPortalTicketsPage() {
               value={description}
             />
           </Field>
-          <AppButton disabled={creating || contexts.length === 0} type="submit">
+          <AppButton disabled={creating || !activeContext} type="submit">
             {creating ? 'Criando ticket...' : 'Criar ticket'}
           </AppButton>
-          {contexts.length === 0 ? (
+          {!activeContext ? (
             <InlineNotice tone="warning">
               Nenhum contexto de cliente ativo foi encontrado para habilitar criação.
             </InlineNotice>

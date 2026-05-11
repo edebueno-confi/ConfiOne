@@ -2,6 +2,8 @@ import { toAppError } from '../../app/errors';
 import { readRuntimeConfig } from '../../app/runtime-config';
 import { requireSupabaseBrowserClient } from '../../app/supabase-browser';
 import type {
+  CustomerPortalActiveTenantContext,
+  CustomerPortalAvailableTenant,
   CustomerPortalAuthContext,
   CustomerPortalKnowledgeArticle,
   CustomerPortalKnowledgeArticleDetail,
@@ -28,6 +30,8 @@ import type {
   RpcCustomerRequestTicketReopenPayload,
   RpcCustomerRequestTicketReopenResponse,
   RpcCustomerSearchKnowledgeArticlesPayload,
+  RpcCustomerSetActiveTenantPayload,
+  RpcCustomerSetActiveTenantResponse,
   TicketEventType,
   TicketStatus,
   TicketTimelineEntryType,
@@ -136,12 +140,40 @@ function mapAuthContext(row: Record<string, unknown>): CustomerPortalAuthContext
   };
 }
 
+function mapAvailableTenant(
+  row: Record<string, unknown>,
+): CustomerPortalAvailableTenant {
+  return {
+    tenantId: String(row.tenant_id),
+    tenantSlug: String(row.tenant_slug),
+    tenantDisplayName: String(row.tenant_display_name),
+    portalRole: row.portal_role as CustomerPortalAvailableTenant['portalRole'],
+    accessStatus: String(row.access_status ?? 'Indisponivel'),
+    canViewTickets: Boolean(row.can_view_tickets),
+    canCreateTicket: Boolean(row.can_create_ticket),
+    canViewAllTenantTickets: Boolean(row.can_view_all_tenant_tickets),
+    isActiveContext: Boolean(row.is_active_context),
+    availableTenantCount: Number(row.available_tenant_count ?? 0),
+    hasMultipleTenants: Boolean(row.has_multiple_tenants),
+  };
+}
+
 function mapProfileContext(row: Record<string, unknown>): CustomerPortalProfileContext {
   return {
     ...mapAuthContext(row),
     productLine: String(row.product_line ?? 'Indisponivel'),
     operationalStatus: String(row.operational_status ?? 'Indisponivel'),
     accountTier: String(row.account_tier ?? 'Indisponivel'),
+  };
+}
+
+function mapActiveTenantContext(
+  row: Record<string, unknown>,
+): CustomerPortalActiveTenantContext {
+  return {
+    ...mapProfileContext(row),
+    availableTenantCount: Number(row.available_tenant_count ?? 0),
+    hasMultipleTenants: Boolean(row.has_multiple_tenants),
   };
 }
 
@@ -305,6 +337,54 @@ export async function fetchCustomerPortalContexts() {
     mapProfileContext,
     'Falha ao carregar o contexto do portal cliente.',
   );
+}
+
+export async function fetchCustomerPortalAvailableTenants() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_customer_portal_available_tenants')
+    .select('*')
+    .order('is_active_context', { ascending: false })
+    .order('tenant_display_name', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar tenants disponíveis no portal cliente.');
+  }
+
+  return (data ?? []).map((row) => mapAvailableTenant(row as Record<string, unknown>));
+}
+
+export async function fetchCustomerPortalActiveTenantContext() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_customer_portal_active_tenant_context')
+    .select('*')
+    .maybeSingle();
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o tenant ativo do portal cliente.');
+  }
+
+  return data ? mapActiveTenantContext(data as Record<string, unknown>) : null;
+}
+
+export async function setCustomerPortalActiveTenant(
+  payload: RpcCustomerSetActiveTenantPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client
+    .rpc('rpc_customer_set_active_tenant', {
+      p_tenant_id: payload.tenantId,
+    })
+    .single();
+
+  if (error) {
+    throw toAppError(error, 'Falha ao trocar o tenant ativo do portal cliente.');
+  }
+
+  return mapActiveTenantContext(
+    data as Record<string, unknown>,
+  ) satisfies RpcCustomerSetActiveTenantResponse;
 }
 
 export async function fetchCustomerPortalTickets() {
