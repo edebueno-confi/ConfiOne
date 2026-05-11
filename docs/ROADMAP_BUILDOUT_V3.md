@@ -338,6 +338,20 @@ Lote: Customer Portal Offline And Network Recovery Hardening V3
 
 Objetivo: aprofundar a recuperacao em falhas temporarias de rede e host local indisponivel, sem criar modo offline nem fonte paralela de sessao.
 
+Status:
+- concluido em `2026-05-11`
+- timeout, `AbortError` e `Failed to fetch` agora entram em `network_retryable`
+- retry ficou manual e explicito, sem loop automatico
+- a superficie ativa sobe para o estado global `network_retryable` quando a leitura operacional falha
+- o portal limpa a superficie local quando a leitura falha por rede
+- o lote nao abriu modo offline, fila local nem fallback visual falso
+
+## Proximo lote tecnico recomendado
+
+### Lote: Customer Portal Host Outage Runbook And Observability V3
+
+Objetivo: documentar e endurecer diagnostico operacional de indisponibilidade do host local/Supabase para o portal cliente, com runbook claro de recuperacao, sinais minimos de observabilidade e validacao de retomada, sem criar infraestrutura realtime nem alterar boundary de auth.
+
 ## Decisoes que ainda dependem de Produto
 - Se Support e Admin devem convergir em um App Shell unico.
 - Quais roles podem criar ticket manualmente.

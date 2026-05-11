@@ -43,6 +43,7 @@ Formalizar a expiração, recuperação e retomada segura de sessão no Portal C
 - sessão expirada não mantém tickets, artigos ou contexto antigo como válidos;
 - `access_revoked` e `tenant_unavailable` não entram em refetch infinito;
 - `network_retryable` permite nova tentativa explícita;
+- quando uma leitura operacional entra em falha temporaria de rede, o portal sobe para o estado global `network_retryable` em vez de continuar tentando operar a partir da tela ativa;
 - `fatal_error` mantém estado honesto e não inventa fallback;
 - mutações customer-facing não executam fora de `ready`.
 
@@ -79,3 +80,9 @@ Formalizar a expiração, recuperação e retomada segura de sessão no Portal C
 - a distinção visual entre logout explícito e expiração passiva do refresh token depende do evento real retornado por Supabase Auth no browser;
 - não há modo offline nem sync em tempo real entre abas;
 - a semântica de sessão expirada/offline prolongado em múltiplas abas continua dependente do mesmo boundary backend-governed, sem canal separado de sincronização.
+
+## Hardening posterior de rede
+- A fase 8.26 aprofundou apenas a camada de runtime de rede, sem trocar a semantica de sessao.
+- `network_retryable` passou a cobrir explicitamente timeout controlado, `AbortError` e `Failed to fetch`.
+- O portal nao preserva listas, detalhes, anexos ou artigos como se ainda fossem validos quando a leitura falha por rede.
+- O retry continua manual e explicito, sem modo offline, sem fila e sem loop de refetch.

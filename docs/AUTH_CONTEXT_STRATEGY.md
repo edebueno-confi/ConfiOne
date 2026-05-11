@@ -50,6 +50,11 @@ Permissões devem ser validadas no banco/RPC/policy, nunca apenas no frontend.
   - O provider do portal distingue `stale_context`, `session_expired`, `access_revoked`, `tenant_unavailable`, `network_retryable` e `fatal_error`.
   - Logout/expiracao limpam o contexto renderizado antes de qualquer nova mutacao.
   - Revogacao de membership ou desabilitacao de `returns_portal` nao cai em loop de refetch nem reaproveita dados antigos.
+- A fase 8.26 endureceu a recuperacao de rede sem criar auth paralela:
+  - timeout, `AbortError` e `Failed to fetch` entram em `network_retryable`.
+  - `network_retryable` continua separado de `session_expired`, `access_revoked` e `tenant_unavailable`.
+  - o portal bloqueia mutacoes e limpa a superficie operacional local quando a leitura falha por rede.
+  - retry de contexto e sempre manual; nao existe loop automatico nem modo offline.
 
 ## Estado da Fase 1.2
 - Bootstrap do primeiro `platform_admin` implementado em `app_private.bootstrap_first_platform_admin(...)`.

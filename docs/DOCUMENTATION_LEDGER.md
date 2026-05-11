@@ -3313,3 +3313,46 @@ Cada registro deve informar:
 - riscos restantes:
   - refresh token expirado/passive expiry continua dependente do evento real de Supabase Auth no browser
   - nao existe modo offline nem sincronizacao realtime entre abas
+
+### Fase 8.26 - Customer Portal Offline And Network Recovery Hardening V3
+- fase: `8.26`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-11`
+- resumo funcional: o portal cliente endureceu a recuperacao em falha temporaria de rede, timeout e host indisponivel sem criar modo offline, sem loop de refetch e sem manter dado antigo como se ainda fosse valido.
+- docs alterados:
+  - `docs/CUSTOMER_PORTAL_OFFLINE_AND_NETWORK_RECOVERY_HARDENING_V3.md`
+  - `docs/AUTH_CONTEXT_STRATEGY.md`
+  - `docs/CUSTOMER_PORTAL_SESSION_EXPIRY_AND_RECOVERY_SEMANTICS_V3.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+- arquivos de código alterados:
+  - `apps/web/src/app/errors.ts`
+  - `apps/web/src/features/customer-portal/customer-portal-api.ts`
+  - `apps/web/src/features/customer-portal/customer-portal-context.tsx`
+  - `apps/web/src/features/customer-portal/CustomerPortalPage.tsx`
+- contratos/read models afetados:
+  - nenhum contrato novo
+  - reaproveito de `rpc_customer_get_portal_session_status`
+  - reaproveito de `vw_customer_portal_auth_context`
+  - reaproveito de `vw_customer_portal_available_tenants`
+  - reaproveito de `vw_customer_portal_active_tenant_context`
+- hardening principal:
+  - timeout controlado em bootstrap, leitura, mutacao e upload
+  - classificacao centralizada de timeout e `Failed to fetch` como `network_retryable`
+  - promocao da falha operacional de leitura para o estado global `network_retryable`
+  - retry manual sem concorrencia e sem loop
+  - limpeza da superficie local quando a leitura falha por rede
+- validacao final:
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-support-fixture`
+  - browser real com customer valido, falha temporaria de backend/rede, retry manual e regressao admin
+- riscos restantes:
+  - nao existe modo offline
+  - host indisponivel por periodo prolongado continua dependendo de retry manual apos retorno do backend
+  - observabilidade especifica de outage customer-facing continua para lote proprio

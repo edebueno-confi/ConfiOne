@@ -2025,3 +2025,18 @@ Pendência arquitetural futura já mapeada, mas fora do escopo atual:
     - `npm run web:build`
     - `npm run supabase:qa:local-support-fixture`
   - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
+- Fase 8.26: Customer Portal Offline And Network Recovery Hardening V3 concluido como bloco de endurecimento da recuperacao em falha temporaria de rede e host indisponivel.
+  - Nenhum contrato backend novo foi necessario; o lote reaproveitou `rpc_customer_get_portal_session_status` e os contratos customer-facing existentes.
+  - `customer-portal-api.ts` passou a aplicar timeout controlado em bootstrap, leitura, mutacao e upload, classificando timeout e `Failed to fetch` como `network_retryable`.
+  - `customer-portal-context.tsx` passou a impedir retries concorrentes, promover falha temporaria de leitura para o estado global `network_retryable` e preservar um fluxo manual de recuperacao sem loop de refetch.
+  - `CustomerPortalPage.tsx` passou a limpar tickets, artigos, detalhes, anexos e resultados de busca quando a leitura falha por rede, exibindo `Conexao indisponivel` com `Tentar novamente`.
+  - O portal permaneceu sem modo offline, sem fila local e sem dado antigo tratado como valido.
+  - A bateria obrigatoria fechou verde apos reidratar o stack Supabase local:
+    - `npm run supabase:db:reset`
+    - `npm run supabase:test:db`
+    - `npm run supabase:lint:db`
+    - `npm run contracts:typecheck`
+    - `npm run web:typecheck`
+    - `npm run web:build`
+    - `npm run supabase:qa:local-support-fixture`
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
