@@ -65,6 +65,7 @@ type TenantFilter = Uuid | null;
 type PortalStatusFilter = 'all' | AdminCustomerPortalTenantAccessRow['tenant_status'];
 type EntitlementFilter = 'all' | CustomerPortalEntitlementStatus;
 type PendingFilter = 'all' | 'with_pending' | 'without_pending';
+type GovernedDrawer = 'access' | 'grant-article' | 'link-ticket' | null;
 
 const CUSTOMER_PORTAL_ADMIN_BOOTSTRAP_TIMEOUT_MS = 15_000;
 const CUSTOMER_PORTAL_ADMIN_DETAIL_TIMEOUT_MS = 10_000;
@@ -279,13 +280,13 @@ function DetailLine({
   tone?: 'default' | 'positive' | 'warning' | 'critical';
 }) {
   return (
-    <div className="grid min-w-0 grid-cols-[118px_minmax(0,1fr)] items-start gap-3 py-1.5">
-      <span className="text-[0.68rem] font-semibold leading-5 text-[color:var(--color-muted)]">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-2 py-1">
+      <span className="truncate text-[0.66rem] font-semibold leading-5 text-[color:var(--color-muted)]">
         {label}
       </span>
       <span
         className={cx(
-          'min-w-0 text-right text-sm font-semibold leading-5',
+          'min-w-0 text-right text-[0.8rem] font-semibold leading-5',
           tone === 'positive' && 'text-[color:var(--color-success-ink)]',
           tone === 'warning' && 'text-[color:var(--color-warning-ink)]',
           tone === 'critical' && 'text-[color:var(--color-danger-ink)]',
@@ -602,12 +603,111 @@ function RailSection({
 }) {
   return (
     <section
-      className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-3.5 py-3"
+      className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-3 py-2.5"
       data-rail-section={sectionKey}
     >
       <div className="mb-2 flex items-center gap-2">
-        <span className="h-6 w-6 rounded-[9px] bg-[rgba(37,99,235,0.1)]" />
+        <span className="h-5 w-5 rounded-[8px] bg-[rgba(37,99,235,0.1)]" />
         <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">{title}</h3>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function GovernedActionDrawer({
+  title,
+  description,
+  children,
+  footer,
+  onClose,
+  width = 'standard',
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+  footer: React.ReactNode;
+  onClose: () => void;
+  width?: 'wide' | 'standard' | 'narrow';
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-[rgba(11,22,48,0.18)] backdrop-blur-[2px]">
+      <button
+        aria-label="Fechar painel de ação"
+        className="absolute inset-0 cursor-default"
+        onClick={onClose}
+        type="button"
+      />
+      <aside
+        aria-modal="true"
+        className={cx(
+          'relative z-10 flex h-full flex-col overflow-hidden rounded-l-[26px] border-l border-[color:var(--color-border)] bg-white shadow-[0_28px_72px_rgba(15,23,42,0.22)]',
+          width === 'wide'
+            ? 'w-[min(720px,calc(100vw-32px))]'
+            : width === 'narrow'
+              ? 'w-[min(470px,calc(100vw-32px))]'
+              : 'w-[min(560px,calc(100vw-32px))]',
+        )}
+        role="dialog"
+      >
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[color:var(--color-border)] px-7 py-6">
+          <div className="min-w-0">
+            <h2 className="text-[1.6rem] font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
+              {title}
+            </h2>
+            <p className="mt-1 max-w-xl text-sm leading-6 text-[color:var(--color-muted)]">
+              {description}
+            </p>
+          </div>
+          <button
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[color:var(--color-border)] text-xl text-[color:var(--color-ink)] transition hover:bg-[color:var(--color-surface)]"
+            onClick={onClose}
+            type="button"
+          >
+            ×
+          </button>
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-7 py-5" data-governed-drawer-body>
+          {children}
+        </div>
+        <footer className="shrink-0 border-t border-[color:var(--color-border)] bg-white px-7 py-5">
+          <div className="flex items-center justify-end gap-3">{footer}</div>
+        </footer>
+      </aside>
+    </div>
+  );
+}
+
+function DrawerSection({
+  index,
+  title,
+  description,
+  children,
+  action,
+}: {
+  index: number;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 gap-3">
+          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[8px] bg-[color:var(--color-surface)] text-[0.72rem] font-semibold text-[color:var(--color-muted)]">
+            {index}
+          </span>
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">{title}</h3>
+            {description ? (
+              <p className="mt-1 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
+                {description}
+              </p>
+            ) : null}
+          </div>
+        </div>
+        {action}
       </div>
       {children}
     </section>
@@ -642,6 +742,10 @@ export function CustomerPortalAdminPage() {
   const [entitlementFilter, setEntitlementFilter] = useState<EntitlementFilter>('all');
   const [pendingFilter, setPendingFilter] = useState<PendingFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeDrawer, setActiveDrawer] = useState<GovernedDrawer>(null);
+  const [grantArticleSearch, setGrantArticleSearch] = useState('');
+  const [grantCategoryFilter, setGrantCategoryFilter] = useState('all');
+  const [linkArticleSearch, setLinkArticleSearch] = useState('');
   const [roleDraft, setRoleDraft] = useState<CustomerPortalRole>('customer_user');
   const [statusDraft, setStatusDraft] = useState<MembershipStatus>('active');
   const [grantForm, setGrantForm] = useState<GrantEntitlementFormState>(emptyGrantForm);
@@ -1035,6 +1139,64 @@ export function CustomerPortalAdminPage() {
     return ticketCandidates.filter((ticket) => ticket.tenant_id === linkForm.tenantId);
   }, [linkForm.tenantId, ticketCandidates]);
 
+  const articleCategories = useMemo(() => {
+    const categories = new Set<string>();
+
+    articleCandidates.forEach((article) => {
+      if (article.category_name) {
+        categories.add(article.category_name);
+      }
+    });
+
+    return Array.from(categories).sort((left, right) => left.localeCompare(right, 'pt-BR'));
+  }, [articleCandidates]);
+
+  const grantArticleLookup = useMemo(() => normalizeLookup(grantArticleSearch), [grantArticleSearch]);
+
+  const filteredArticleCandidates = useMemo(() => {
+    return articleCandidates.filter((article) => {
+      if (grantCategoryFilter !== 'all' && article.category_name !== grantCategoryFilter) {
+        return false;
+      }
+
+      if (!grantArticleLookup) {
+        return true;
+      }
+
+      return [article.article_title, article.article_slug, article.category_name]
+        .filter(Boolean)
+        .join(' ')
+        .toLocaleLowerCase('pt-BR')
+        .includes(grantArticleLookup);
+    });
+  }, [articleCandidates, grantArticleLookup, grantCategoryFilter]);
+
+  const linkArticleLookup = useMemo(() => normalizeLookup(linkArticleSearch), [linkArticleSearch]);
+
+  const filteredLinkArticleCandidates = useMemo(() => {
+    if (!linkArticleLookup) {
+      return articleCandidates;
+    }
+
+    return articleCandidates.filter((article) =>
+      [article.article_title, article.article_slug, article.category_name]
+        .filter(Boolean)
+        .join(' ')
+        .toLocaleLowerCase('pt-BR')
+        .includes(linkArticleLookup),
+    );
+  }, [articleCandidates, linkArticleLookup]);
+
+  const selectedTicketCandidate = useMemo(
+    () => tenantScopedTickets.find((ticket) => ticket.ticket_id === linkForm.ticketId) ?? null,
+    [linkForm.ticketId, tenantScopedTickets],
+  );
+
+  const selectedGrantArticle = useMemo(
+    () => articleCandidates.find((article) => article.article_id === grantForm.articleId) ?? null,
+    [articleCandidates, grantForm.articleId],
+  );
+
   const selectedUser = useMemo(
     () => selectedTenantUsers.find((user) => user.membership_id === selectedUserMembershipId) ?? null,
     [selectedTenantUsers, selectedUserMembershipId],
@@ -1122,6 +1284,29 @@ export function CustomerPortalAdminPage() {
     );
   }
 
+  async function handleSaveAccessDrawer() {
+    if (!selectedUserMembershipId) {
+      setActionTone('warning');
+      setActionMessage('Selecione um usuário com acesso antes de salvar alterações.');
+      return;
+    }
+
+    await withAction(
+      'save-access-drawer',
+      async () => {
+        await updateCustomerPortalUserRole({
+          p_membership_id: selectedUserMembershipId,
+          p_role: roleDraft,
+        });
+        await updateCustomerPortalUserStatus({
+          p_membership_id: selectedUserMembershipId,
+          p_status: statusDraft,
+        });
+      },
+      'Acesso do tenant atualizado.',
+    );
+  }
+
   async function handleGrantEntitlement(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -1196,6 +1381,24 @@ export function CustomerPortalAdminPage() {
     );
   }
 
+  useEffect(() => {
+    if (!activeDrawer) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setActiveDrawer(null);
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [activeDrawer]);
+
   if (phase === 'loading') {
     return (
       <div className="flex h-full min-h-0 items-center justify-center rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
@@ -1227,7 +1430,8 @@ export function CustomerPortalAdminPage() {
   }
 
   return (
-    <div className="grid h-full min-h-0 gap-4 overflow-hidden xl:grid-cols-[260px_minmax(0,1fr)_320px] 2xl:grid-cols-[260px_minmax(0,1fr)_320px]">
+    <>
+      <div className="grid h-full min-h-0 gap-4 overflow-hidden xl:grid-cols-[210px_minmax(0,1fr)_310px] 2xl:grid-cols-[210px_minmax(0,1fr)_310px]">
       <aside className="min-h-0 overflow-hidden" data-portal-admin-left>
         <SurfaceCard
           className="h-full !px-3.5 !py-4"
@@ -1310,7 +1514,7 @@ export function CustomerPortalAdminPage() {
                 if (selectedTenantUsers[0]) {
                   setSelectedUserMembershipId(selectedTenantUsers[0].membership_id);
                 }
-                actionsRailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setActiveDrawer('access');
               }}
             >
               Gerenciar acesso
@@ -1390,7 +1594,7 @@ export function CustomerPortalAdminPage() {
 
       <aside className="min-h-0 overflow-y-auto" data-portal-admin-rail ref={actionsRailRef}>
         <SurfaceCard
-          className="min-h-full"
+          className="min-h-full !px-3.5 !py-4"
           description="Detalhes do cliente e ações de governança."
           title="Contexto selecionado"
         >
@@ -1442,22 +1646,22 @@ export function CustomerPortalAdminPage() {
 
             <RailSection sectionKey="user" title={`Usuários com acesso (${selectedTenantUsers.length})`}>
               {selectedTenantUsers.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {selectedTenantUsers.slice(0, 3).map((user) => (
                     <button
-                      className="flex w-full min-w-0 items-center gap-3 rounded-[14px] px-2 py-1 text-left hover:bg-[color:var(--color-surface)]"
+                      className="flex w-full min-w-0 items-center gap-2 rounded-[14px] px-1.5 py-0.5 text-left hover:bg-[color:var(--color-surface)]"
                       key={user.membership_id}
                       onClick={() => setSelectedUserMembershipId(user.membership_id)}
                       type="button"
                     >
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-surface)] text-[0.72rem] font-semibold text-[color:var(--color-brand-blue)]">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-surface)] text-[0.68rem] font-semibold text-[color:var(--color-brand-blue)]">
                         {initialsFromName(user.user_full_name)}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
+                        <p className="truncate text-[0.8rem] font-semibold text-[color:var(--color-ink)]">
                           {user.user_full_name ?? 'Indisponível'}
                         </p>
-                        <p className="truncate text-[0.74rem] text-[color:var(--color-muted)]">
+                        <p className="truncate text-[0.68rem] text-[color:var(--color-muted)]">
                           {user.user_email ?? 'Indisponível'}
                         </p>
                         <span className="mt-1 inline-flex">
@@ -1487,225 +1691,30 @@ export function CustomerPortalAdminPage() {
 
             <RailSection sectionKey="actions" title="Ações governadas">
               <div className="grid grid-cols-2 gap-2">
-                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 [&>summary::-webkit-details-marker]:hidden">
-                  <summary className="cursor-pointer text-[0.78rem] font-semibold text-[color:var(--color-brand-blue)]">
-                    Gerenciar acesso
-                  </summary>
-                  {selectedUser ? (
-                    <form className="mt-3 space-y-2" onSubmit={handleUpdateUserRole}>
-                      <SelectInput
-                        className="h-9 rounded-[14px] text-sm"
-                        onChange={(event) => setRoleDraft(event.target.value as CustomerPortalRole)}
-                        value={roleDraft}
-                      >
-                        <option value="customer_user">Usuário cliente</option>
-                        <option value="customer_manager">Gestão cliente</option>
-                      </SelectInput>
-                      <AppButton
-                        className="h-9 w-full rounded-full text-sm"
-                        disabled={submittingKey === 'update-role'}
-                        type="submit"
-                      >
-                        {submittingKey === 'update-role' ? 'Atualizando...' : 'Salvar papel'}
-                      </AppButton>
-                    </form>
-                  ) : (
-                    <p className="mt-2 text-[0.76rem] text-[color:var(--color-muted)]">Indisponível.</p>
-                  )}
-                </details>
-
-                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 [&>summary::-webkit-details-marker]:hidden">
-                  <summary className="cursor-pointer text-[0.78rem] font-semibold text-[color:var(--color-brand-blue)]">
-                    Alterar status
-                  </summary>
-                  {selectedUser ? (
-                    <form className="mt-3 space-y-2" onSubmit={handleUpdateUserStatus}>
-                      <SelectInput
-                        className="h-9 rounded-[14px] text-sm"
-                        onChange={(event) => setStatusDraft(event.target.value as MembershipStatus)}
-                        value={statusDraft}
-                      >
-                        <option value="active">Ativo</option>
-                        <option value="invited">Convite pendente</option>
-                        <option value="revoked">Revogado</option>
-                      </SelectInput>
-                      <GhostButton
-                        className="h-9 w-full rounded-full text-sm"
-                        disabled={submittingKey === 'update-status'}
-                        type="submit"
-                      >
-                        {submittingKey === 'update-status' ? 'Atualizando...' : 'Salvar status'}
-                      </GhostButton>
-                    </form>
-                  ) : (
-                    <p className="mt-2 text-[0.76rem] text-[color:var(--color-muted)]">Indisponível.</p>
-                  )}
-                </details>
-
-                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 [&>summary::-webkit-details-marker]:hidden">
-                  <summary className="cursor-pointer text-[0.78rem] font-semibold text-[color:var(--color-brand-blue)]">
-                    Conceder artigo
-                  </summary>
-                  {selectedTenant ? (
-                    <form className="mt-3 space-y-2" onSubmit={handleGrantEntitlement}>
-                      <SelectInput
-                        className="h-9 rounded-[14px] text-sm"
-                        onChange={(event) =>
-                          setGrantForm((current) => ({ ...current, articleId: event.target.value }))
-                        }
-                        value={grantForm.articleId}
-                      >
-                        <option value="">Selecione o artigo</option>
-                        {articleCandidates.map((article) => (
-                          <option key={article.article_id} value={article.article_id}>
-                            {article.article_title}
-                          </option>
-                        ))}
-                      </SelectInput>
-                      <SelectInput
-                        className="h-9 rounded-[14px] text-sm"
-                        onChange={(event) =>
-                          setGrantForm((current) => ({
-                            ...current,
-                            scope: event.target.value as CustomerPortalEntitlementScope,
-                          }))
-                        }
-                        value={grantForm.scope}
-                      >
-                        <option value="customer_portal">Portal autenticado</option>
-                        <option value="tenant">Tenant inteiro</option>
-                      </SelectInput>
-                      <TextareaInput
-                        className="min-h-[70px] rounded-[14px] px-3 py-2 text-sm"
-                        onChange={(event) =>
-                          setGrantForm((current) => ({
-                            ...current,
-                            relationReason: event.target.value,
-                          }))
-                        }
-                        placeholder="Motivo operacional"
-                        value={grantForm.relationReason}
-                      />
-                      <AppButton
-                        className="h-9 w-full rounded-full text-sm"
-                        disabled={submittingKey === 'grant-entitlement'}
-                        type="submit"
-                      >
-                        {submittingKey === 'grant-entitlement' ? 'Concedendo...' : 'Conceder'}
-                      </AppButton>
-                    </form>
-                  ) : (
-                    <p className="mt-2 text-[0.76rem] text-[color:var(--color-muted)]">Indisponível.</p>
-                  )}
-                </details>
-
-                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 [&>summary::-webkit-details-marker]:hidden">
-                  <summary className="cursor-pointer text-[0.78rem] font-semibold text-[color:var(--color-danger-ink)]">
-                    Arquivar entitlement
-                  </summary>
-                  {visibleEntitlements.length > 0 ? (
-                    <div className="mt-3 space-y-2">
-                      <SelectInput
-                        className="h-9 rounded-[14px] text-sm"
-                        onChange={(event) => setSelectedEntitlementId(event.target.value as Uuid)}
-                        value={selectedEntitlementId ?? ''}
-                      >
-                        <option value="">Selecione</option>
-                        {visibleEntitlements.map((entitlement) => (
-                          <option key={entitlement.entitlement_id} value={entitlement.entitlement_id}>
-                            {entitlement.article_title}
-                          </option>
-                        ))}
-                      </SelectInput>
-                      <GhostButton
-                        className="h-9 w-full rounded-full text-sm"
-                        disabled={
-                          submittingKey === 'archive-entitlement' ||
-                          !entitlementDetail ||
-                          entitlementDetail.entitlement_status !== 'active'
-                        }
-                        onClick={() => void handleArchiveEntitlement()}
-                      >
-                        {submittingKey === 'archive-entitlement' ? 'Arquivando...' : 'Arquivar'}
-                      </GhostButton>
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-[0.76rem] text-[color:var(--color-muted)]">Indisponível.</p>
-                  )}
-                </details>
-
-                <details className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 [&>summary::-webkit-details-marker]:hidden">
-                  <summary className="cursor-pointer text-[0.78rem] font-semibold text-[color:var(--color-brand-blue)]">
-                    Vincular a ticket
-                  </summary>
-                  {selectedTenant ? (
-                    <form className="mt-3 space-y-2" onSubmit={handleLinkArticleToTicket}>
-                      <SelectInput
-                        className="h-9 rounded-[14px] text-sm"
-                        onChange={(event) =>
-                          setLinkForm((current) => ({ ...current, ticketId: event.target.value }))
-                        }
-                        value={linkForm.ticketId}
-                      >
-                        <option value="">Selecione o ticket</option>
-                        {tenantScopedTickets.map((ticket) => (
-                          <option key={ticket.ticket_id} value={ticket.ticket_id}>
-                            {ticket.ticket_title}
-                          </option>
-                        ))}
-                      </SelectInput>
-                      <SelectInput
-                        className="h-9 rounded-[14px] text-sm"
-                        onChange={(event) =>
-                          setLinkForm((current) => ({ ...current, articleId: event.target.value }))
-                        }
-                        value={linkForm.articleId}
-                      >
-                        <option value="">Selecione o artigo</option>
-                        {articleCandidates.map((article) => (
-                          <option key={article.article_id} value={article.article_id}>
-                            {article.article_title}
-                          </option>
-                        ))}
-                      </SelectInput>
-                      <TextareaInput
-                        className="min-h-[70px] rounded-[14px] px-3 py-2 text-sm"
-                        onChange={(event) =>
-                          setLinkForm((current) => ({
-                            ...current,
-                            relationReason: event.target.value,
-                          }))
-                        }
-                        placeholder="Motivo do vínculo"
-                        value={linkForm.relationReason}
-                      />
-                      <AppButton
-                        className="h-9 w-full rounded-full text-sm"
-                        disabled={submittingKey === 'link-ticket-article'}
-                        type="submit"
-                      >
-                        {submittingKey === 'link-ticket-article' ? 'Vinculando...' : 'Vincular'}
-                      </AppButton>
-                      {selectedTicketLink ? (
-                        <GhostButton
-                          className="h-9 w-full rounded-full text-sm"
-                          disabled={
-                            submittingKey === 'unlink-ticket-article' ||
-                            selectedTicketLink.link_status !== 'active'
-                          }
-                          onClick={() => void handleUnlinkTicketKnowledgeLink()}
-                        >
-                          {submittingKey === 'unlink-ticket-article' ? 'Removendo...' : 'Desvincular'}
-                        </GhostButton>
-                      ) : null}
-                    </form>
-                  ) : (
-                    <p className="mt-2 text-[0.76rem] text-[color:var(--color-muted)]">Indisponível.</p>
-                  )}
-                </details>
+                <button
+                  className="min-w-0 rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2 py-1.5 text-left text-[0.68rem] font-semibold leading-4 text-[color:var(--color-brand-blue)]"
+                  onClick={() => setActiveDrawer('access')}
+                  type="button"
+                >
+                  Gerenciar acesso
+                </button>
+                <button
+                  className="min-w-0 rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2 py-1.5 text-left text-[0.68rem] font-semibold leading-4 text-[color:var(--color-brand-blue)]"
+                  onClick={() => setActiveDrawer('grant-article')}
+                  type="button"
+                >
+                  Conceder artigo
+                </button>
+                <button
+                  className="min-w-0 rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2 py-1.5 text-left text-[0.68rem] font-semibold leading-4 text-[color:var(--color-brand-blue)]"
+                  onClick={() => setActiveDrawer('link-ticket')}
+                  type="button"
+                >
+                  Vincular a ticket
+                </button>
 
                 <button
-                  className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-left text-[0.78rem] font-semibold text-[color:var(--color-muted)]"
+                  className="min-w-0 rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2 py-1.5 text-left text-[0.68rem] font-semibold leading-4 text-[color:var(--color-muted)]"
                   disabled
                   title="Acesso direto aos tickets do portal ainda indisponível nesta tela."
                   type="button"
@@ -1718,5 +1727,446 @@ export function CustomerPortalAdminPage() {
         </SurfaceCard>
       </aside>
     </div>
+      {activeDrawer === 'access' ? (
+        <GovernedActionDrawer
+          description="Governança dos usuários customer-facing do cliente selecionado."
+          footer={
+            <>
+              <GhostButton className="h-10 rounded-full px-6 text-sm" onClick={() => setActiveDrawer(null)}>
+                Cancelar
+              </GhostButton>
+              <AppButton
+                className="h-10 rounded-full px-6 text-sm"
+                disabled={!selectedUser || submittingKey === 'save-access-drawer'}
+                onClick={() => void handleSaveAccessDrawer()}
+              >
+                {submittingKey === 'save-access-drawer' ? 'Salvando...' : 'Salvar alterações'}
+              </AppButton>
+            </>
+          }
+          onClose={() => setActiveDrawer(null)}
+          title="Gerenciar acesso do tenant"
+          width="wide"
+        >
+          <div className="space-y-6">
+            <div className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5">
+              <div className="grid grid-cols-[auto_minmax(0,1fr)_260px] items-center gap-5">
+                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] bg-[rgba(68,110,255,0.1)] text-base font-semibold text-[color:var(--color-brand-blue)]">
+                  {initialsFromName(selectedTenant?.tenant_display_name)}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-base font-semibold leading-6 text-[color:var(--color-ink)]">
+                    {selectedTenant?.tenant_display_name ?? 'Indisponível'}
+                  </p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <TinyBadge tone={selectedTenant?.has_active_manager ? 'positive' : 'warning'}>
+                      {selectedTenant?.has_active_manager ? 'Com gestão' : 'Sem gestão'}
+                    </TinyBadge>
+                    <span className="text-[0.78rem] text-[color:var(--color-muted)]">
+                      {selectedTenant ? tenantStatusLabel(selectedTenant.tenant_status) : 'Indisponível'}
+                    </span>
+                  </div>
+                </div>
+                <div className="grid min-w-0 grid-cols-3 gap-4 border-l border-[color:var(--color-border)] pl-5 text-center text-sm">
+                  <div>
+                    <p className="text-base font-semibold text-[color:var(--color-ink)]">
+                      {selectedTenant?.portal_user_count ?? 0}
+                    </p>
+                    <p className="text-[0.68rem] text-[color:var(--color-muted)]">Usuários</p>
+                  </div>
+                  <div>
+                    <p className="text-base font-semibold text-[color:var(--color-ink)]">
+                      {selectedTenant?.visible_ticket_count ?? 0}
+                    </p>
+                    <p className="text-[0.68rem] text-[color:var(--color-muted)]">Tickets visíveis</p>
+                  </div>
+                  <div>
+                    <p className="text-base font-semibold text-[color:var(--color-ink)]">
+                      {selectedTenant?.authorized_article_count ?? 0}
+                    </p>
+                    <p className="text-[0.68rem] text-[color:var(--color-muted)]">Artigos autorizados</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <DrawerSection
+              action={<span className="text-[0.78rem] text-[color:var(--color-muted)]">{selectedTenantUsers.length} usuários</span>}
+              index={1}
+              title="Usuários com acesso"
+            >
+              <div className="overflow-hidden rounded-[16px] border border-[color:var(--color-border)]">
+                <div className="grid grid-cols-[minmax(0,1.8fr)_144px_116px_32px] gap-4 bg-[color:var(--color-surface)] px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
+                  <span>Usuário</span>
+                  <span>Papel</span>
+                  <span>Status</span>
+                  <span />
+                </div>
+                {selectedTenantUsers.map((user) => (
+                  <button
+                    className={cx(
+                      'grid w-full grid-cols-[minmax(0,1.8fr)_144px_116px_32px] items-center gap-4 border-t border-[color:var(--color-border)] px-4 py-3 text-left',
+                      user.membership_id === selectedUserMembershipId && 'bg-[rgba(68,110,255,0.08)]',
+                    )}
+                    key={user.membership_id}
+                    onClick={() => {
+                      setSelectedUserMembershipId(user.membership_id);
+                      setRoleDraft(user.portal_role);
+                      setStatusDraft(user.membership_status);
+                    }}
+                    type="button"
+                  >
+                    <span className="flex min-w-0 items-center gap-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-surface)] text-[0.72rem] font-semibold text-[color:var(--color-brand-blue)]">
+                        {initialsFromName(user.user_full_name)}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold text-[color:var(--color-ink)]">
+                          {user.user_full_name ?? 'Indisponível'}
+                        </span>
+                        <span className="block truncate text-[0.74rem] text-[color:var(--color-muted)]">
+                          {user.user_email ?? 'Indisponível'}
+                        </span>
+                      </span>
+                    </span>
+                    <TinyBadge>{roleLabel(user.portal_role)}</TinyBadge>
+                    <TinyBadge tone={accessTone(user.access_status)}>{accessLabel(user.access_status)}</TinyBadge>
+                    <span className="text-lg text-[color:var(--color-muted)]">⋮</span>
+                  </button>
+                ))}
+              </div>
+            </DrawerSection>
+
+            <DrawerSection
+              description="A inclusão inicial segue indisponível, mas a estrutura de governança permanece preparada."
+              index={2}
+              title="Adicionar usuário"
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Nome completo">
+                  <TextInput className="h-11 rounded-[14px] text-sm" disabled placeholder="Nome completo" />
+                </Field>
+                <Field label="E-mail">
+                  <TextInput className="h-11 rounded-[14px] text-sm" disabled placeholder="usuario@empresa.com" />
+                </Field>
+                <Field label="Papel">
+                  <SelectInput className="h-11 rounded-[14px] text-sm" disabled>
+                    <option>Selecione o papel</option>
+                  </SelectInput>
+                </Field>
+                <Field label="Status">
+                  <SelectInput className="h-11 rounded-[14px] text-sm" disabled>
+                    <option>Selecione o status</option>
+                  </SelectInput>
+                </Field>
+              </div>
+              <div className="mt-4 flex justify-end gap-2">
+                <GhostButton className="h-10 rounded-full px-6 text-sm" disabled>
+                  Limpar
+                </GhostButton>
+                <AppButton className="h-10 rounded-full px-6 text-sm" disabled>
+                  Adicionar usuário
+                </AppButton>
+              </div>
+            </DrawerSection>
+
+            <DrawerSection
+              description="Permissões exibidas como estado operacional."
+              index={3}
+              title="Permissões e visibilidade"
+            >
+              <div className="overflow-hidden rounded-[16px] border border-[color:var(--color-border)]">
+                {['Acesso ao portal', 'Pode responder tickets', 'Pode visualizar artigos autenticados'].map((item) => (
+                  <div
+                    className="flex items-center justify-between border-b border-[color:var(--color-border)] px-4 py-3 last:border-b-0"
+                    key={item}
+                  >
+                    <span>
+                      <span className="block text-sm font-semibold text-[color:var(--color-ink)]">{item}</span>
+                      <span className="text-[0.76rem] text-[color:var(--color-muted)]">Governado pelo acesso customer-facing.</span>
+                    </span>
+                    <span className="h-6 w-11 rounded-full bg-[color:var(--color-brand-blue)] p-1">
+                      <span className="block h-4 w-4 translate-x-5 rounded-full bg-white" />
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </DrawerSection>
+          </div>
+        </GovernedActionDrawer>
+      ) : null}
+
+      {activeDrawer === 'grant-article' ? (
+        <GovernedActionDrawer
+          description="Autorize conteúdo autenticado para o cliente selecionado."
+          footer={
+            <>
+              <GhostButton className="h-10 rounded-full px-6 text-sm" onClick={() => setActiveDrawer(null)}>
+                Cancelar
+              </GhostButton>
+              <AppButton
+                className="h-10 rounded-full px-6 text-sm"
+                disabled={!selectedTenant || !grantForm.articleId || submittingKey === 'grant-entitlement'}
+                form="grant-article-form"
+                type="submit"
+              >
+                {submittingKey === 'grant-entitlement' ? 'Concedendo...' : 'Conceder acesso'}
+              </AppButton>
+            </>
+          }
+          onClose={() => setActiveDrawer(null)}
+          title="Conceder artigo"
+          width="narrow"
+        >
+          <form className="space-y-6" id="grant-article-form" onSubmit={handleGrantEntitlement}>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-[16px] border border-[color:var(--color-border)] p-4">
+                <p className="text-[0.72rem] text-[color:var(--color-muted)]">Tenant</p>
+                <p className="mt-1 truncate text-sm font-semibold text-[color:var(--color-ink)]">
+                  {selectedTenant?.tenant_display_name ?? 'Indisponível'}
+                </p>
+              </div>
+              <div className="rounded-[16px] border border-[color:var(--color-border)] p-4">
+                <p className="text-[0.72rem] text-[color:var(--color-muted)]">Artigos autorizados</p>
+                <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
+                  {selectedTenant?.authorized_article_count ?? 0}
+                </p>
+              </div>
+            </div>
+
+            <DrawerSection index={1} title="Buscar e filtrar artigos">
+              <TextInput
+                className="h-10 rounded-[14px] text-sm"
+                onChange={(event) => setGrantArticleSearch(event.target.value)}
+                placeholder="Buscar artigo"
+                value={grantArticleSearch}
+              />
+              <div className="flex flex-wrap gap-2">
+                <button
+                  className={cx(
+                    'rounded-full border px-4 py-2 text-[0.78rem] font-semibold',
+                    grantCategoryFilter === 'all'
+                      ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
+                      : 'border-[color:var(--color-border)] text-[color:var(--color-muted)]',
+                  )}
+                  onClick={() => setGrantCategoryFilter('all')}
+                  type="button"
+                >
+                  Todos
+                </button>
+                {articleCategories.slice(0, 4).map((category) => (
+                  <button
+                    className={cx(
+                      'rounded-full border px-4 py-2 text-[0.78rem] font-semibold',
+                      grantCategoryFilter === category
+                        ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
+                        : 'border-[color:var(--color-border)] text-[color:var(--color-muted)]',
+                    )}
+                    key={category}
+                    onClick={() => setGrantCategoryFilter(category)}
+                    type="button"
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </DrawerSection>
+
+            <DrawerSection
+              action={<span className="text-[0.78rem] text-[color:var(--color-muted)]">{filteredArticleCandidates.length} artigos</span>}
+              index={2}
+              title="Artigos disponíveis"
+            >
+              <div className="overflow-hidden rounded-[16px] border border-[color:var(--color-border)]">
+                {filteredArticleCandidates.slice(0, 6).map((article) => (
+                  <button
+                    className={cx(
+                      'grid w-full grid-cols-[minmax(0,1fr)_110px_32px] items-center gap-3 border-b border-[color:var(--color-border)] px-4 py-3 text-left last:border-b-0',
+                      grantForm.articleId === article.article_id && 'bg-[rgba(68,110,255,0.08)]',
+                    )}
+                    key={article.article_id}
+                    onClick={() => setGrantForm((current) => ({ ...current, articleId: article.article_id }))}
+                    type="button"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-[color:var(--color-ink)]">
+                        {article.article_title}
+                      </span>
+                      <span className="text-[0.76rem] text-[color:var(--color-muted)]">
+                        {article.category_name ?? 'Sem categoria'}
+                      </span>
+                    </span>
+                    <TinyBadge>{article.article_visibility === 'public' ? 'Público' : 'Autenticado'}</TinyBadge>
+                    <span className="h-5 w-5 rounded-[6px] border border-[color:var(--color-border)] bg-white">
+                      {grantForm.articleId === article.article_id ? '✓' : ''}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </DrawerSection>
+
+            <DrawerSection
+              action={<span className="text-[0.78rem] text-[color:var(--color-muted)]">{selectedGrantArticle ? '1 artigo selecionado' : '0 artigos selecionados'}</span>}
+              index={3}
+              title="Resumo da concessão"
+            >
+              <TextareaInput
+                className="min-h-[92px] rounded-[14px] px-3 py-3 text-sm"
+                onChange={(event) =>
+                  setGrantForm((current) => ({ ...current, relationReason: event.target.value }))
+                }
+                placeholder="Descreva o motivo da concessão (opcional)"
+                value={grantForm.relationReason}
+              />
+            </DrawerSection>
+          </form>
+        </GovernedActionDrawer>
+      ) : null}
+
+      {activeDrawer === 'link-ticket' ? (
+        <GovernedActionDrawer
+          description="Associe conhecimento útil ao contexto operacional do cliente."
+          footer={
+            <>
+              <GhostButton className="h-10 rounded-full px-6 text-sm" onClick={() => setActiveDrawer(null)}>
+                Cancelar
+              </GhostButton>
+              <AppButton
+                className="h-10 rounded-full px-6 text-sm"
+                disabled={!linkForm.ticketId || !linkForm.articleId || submittingKey === 'link-ticket-article'}
+                form="link-ticket-article-form"
+                type="submit"
+              >
+                {submittingKey === 'link-ticket-article' ? 'Salvando...' : 'Salvar vínculo'}
+              </AppButton>
+            </>
+          }
+          onClose={() => setActiveDrawer(null)}
+          title="Vincular artigo a ticket"
+        >
+          <form className="space-y-6" id="link-ticket-article-form" onSubmit={handleLinkArticleToTicket}>
+            <div className="rounded-[16px] border border-[color:var(--color-border)] p-4">
+              <p className="text-sm font-semibold text-[color:var(--color-ink)]">
+                {selectedTenant?.tenant_display_name ?? 'Indisponível'}
+              </p>
+              <p className="mt-1 text-[0.78rem] text-[color:var(--color-muted)]">
+                O vínculo será visível no portal de acordo com as permissões do cliente.
+              </p>
+            </div>
+
+            <DrawerSection
+              description="Selecione o ticket que receberá o vínculo com o artigo."
+              index={1}
+              title="Ticket em foco"
+            >
+              <SelectInput
+                className="h-10 rounded-[14px] text-sm"
+                onChange={(event) => setLinkForm((current) => ({ ...current, ticketId: event.target.value }))}
+                value={linkForm.ticketId}
+              >
+                <option value="">Selecione o ticket</option>
+                {tenantScopedTickets.map((ticket) => (
+                  <option key={ticket.ticket_id} value={ticket.ticket_id}>
+                    {ticket.ticket_title}
+                  </option>
+                ))}
+              </SelectInput>
+              <div className="grid grid-cols-[0.55fr_minmax(0,1.5fr)_0.7fr_0.75fr] gap-4 rounded-[16px] border border-[color:var(--color-border)] p-4 text-sm">
+                {[
+                  {
+                    label: 'ID do ticket',
+                    value: selectedTicketCandidate ? `#${selectedTicketCandidate.ticket_id.slice(0, 8)}` : 'Indisponível',
+                  },
+                  {
+                    label: 'Assunto',
+                    value: selectedTicketCandidate?.ticket_title ?? 'Indisponível',
+                  },
+                  {
+                    label: 'Status',
+                    value: selectedTicketCandidate?.customer_status_label ?? 'Indisponível',
+                  },
+                  {
+                    label: 'Categoria',
+                    value: 'Indisponível',
+                  },
+                ].map((item) => (
+                  <div className="min-w-0" key={item.label}>
+                    <p className="truncate text-[0.68rem] font-semibold text-[color:var(--color-muted)]">
+                      {item.label}
+                    </p>
+                    <p className="mt-2 line-clamp-2 text-[0.8rem] font-semibold leading-5 text-[color:var(--color-ink)]">
+                      {item.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </DrawerSection>
+
+            <DrawerSection
+              description="Escolha um artigo elegível para vincular a este ticket."
+              index={2}
+              title="Selecionar artigo"
+            >
+              <TextInput
+                className="h-10 rounded-[14px] text-sm"
+                onChange={(event) => setLinkArticleSearch(event.target.value)}
+                placeholder="Buscar artigo por título ou palavra-chave"
+                value={linkArticleSearch}
+              />
+              <div className="overflow-hidden rounded-[16px] border border-[color:var(--color-border)]">
+                {filteredLinkArticleCandidates.slice(0, 5).map((article) => (
+                  <button
+                    className={cx(
+                      'grid w-full grid-cols-[24px_minmax(0,1fr)_110px] items-center gap-3 border-b border-[color:var(--color-border)] px-4 py-3 text-left last:border-b-0',
+                      linkForm.articleId === article.article_id && 'bg-[rgba(68,110,255,0.08)]',
+                    )}
+                    key={article.article_id}
+                    onClick={() => setLinkForm((current) => ({ ...current, articleId: article.article_id }))}
+                    type="button"
+                  >
+                    <span className="h-4 w-4 rounded-full border border-[color:var(--color-border)] text-center text-[0.6rem]">
+                      {linkForm.articleId === article.article_id ? '●' : ''}
+                    </span>
+                    <span className="min-w-0 truncate text-sm font-semibold text-[color:var(--color-ink)]">
+                      {article.article_title}
+                    </span>
+                    <span className="truncate text-right text-[0.78rem] text-[color:var(--color-muted)]">
+                      {article.category_name ?? 'Sem categoria'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </DrawerSection>
+
+            <DrawerSection
+              description="Adicione uma mensagem opcional para contextualizar o vínculo."
+              index={3}
+              title="Mensagem de contexto"
+            >
+              <TextareaInput
+                className="min-h-[86px] rounded-[14px] px-3 py-3 text-sm"
+                onChange={(event) =>
+                  setLinkForm((current) => ({ ...current, relationReason: event.target.value }))
+                }
+                placeholder="Este artigo pode ajudar na tratativa deste ticket."
+                value={linkForm.relationReason}
+              />
+            </DrawerSection>
+
+            <DrawerSection
+              description="Informações sobre o vínculo e sua governança."
+              index={4}
+              title="Vínculo governado"
+            >
+              <div className="grid grid-cols-3 gap-3 rounded-[16px] border border-[color:var(--color-border)] p-4 text-sm">
+                <DetailLine label="Visível no portal" value="Sim, conforme permissões" />
+                <DetailLine label="Origem" value="Admin Console" />
+                <DetailLine label="Última revisão" value="Indisponível" />
+              </div>
+            </DrawerSection>
+          </form>
+        </GovernedActionDrawer>
+      ) : null}
+    </>
   );
 }
