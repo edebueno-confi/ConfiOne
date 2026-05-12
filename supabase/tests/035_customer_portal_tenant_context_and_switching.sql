@@ -2,7 +2,7 @@ create extension if not exists pgtap with schema extensions;
 
 begin;
 
-select plan(28);
+select plan(32);
 
 insert into auth.users (
   instance_id,
@@ -456,8 +456,28 @@ values
     'Liberado para o tenant B.',
     '71000000-0000-4000-8000-000000000001',
     '71000000-0000-4000-8000-000000000001'
-  )
+)
 on conflict (tenant_id, article_id, entitlement_scope) where archived_at is null do nothing;
+
+insert into public.ticket_knowledge_links (
+  id,
+  tenant_id,
+  ticket_id,
+  article_id,
+  link_type,
+  note,
+  created_by_user_id
+)
+values (
+  '71000000-0000-4000-8000-710000000001',
+  '71000000-0000-4000-8000-100000000001',
+  '71000000-0000-4000-8000-400000000001',
+  '71000000-0000-4000-8000-600000000002',
+  'sent_to_customer',
+  'Link cruzado indevido entre tenants.',
+  '71000000-0000-4000-8000-000000000001'
+)
+on conflict (id) do nothing;
 
 set local role authenticated;
 set local request.jwt.claim.role = 'authenticated';
@@ -515,6 +535,28 @@ select is(
   ),
   '1970-01-01 00:00:00+00'::timestamptz,
   'context_version usa fallback estavel enquanto nao existe preferencia persistida'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.vw_customer_portal_ticket_knowledge_links
+    where ticket_id = '71000000-0000-4000-8000-400000000001'
+      and article_id = '71000000-0000-4000-8000-600000000002'
+  ),
+  0,
+  'ticket do tenant A nao expõe artigo restrito do tenant B mesmo com vinculo explicito indevido'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.vw_customer_portal_knowledge_article_detail
+    where tenant_id = '71000000-0000-4000-8000-100000000001'
+      and article_id = '71000000-0000-4000-8000-600000000002'
+  ),
+  0,
+  'detail do portal bloqueia artigo restrito do tenant B para o tenant A ativo'
 );
 
 select lives_ok(
@@ -615,6 +657,28 @@ select is(
   ),
   1,
   'busca autenticada respeita o tenant ativo selecionado'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.vw_customer_portal_ticket_knowledge_links
+    where ticket_id = '71000000-0000-4000-8000-400000000002'
+      and article_id = '71000000-0000-4000-8000-600000000001'
+  ),
+  0,
+  'ticket ativo nao herda artigo restrito de outro tenant apenas por vínculo explícito'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.vw_customer_portal_knowledge_article_detail
+    where tenant_id = '71000000-0000-4000-8000-100000000002'
+      and article_id = '71000000-0000-4000-8000-600000000001'
+  ),
+  0,
+  'detail do portal bloqueia artigo restrito de tenant diferente'
 );
 
 select throws_ok(

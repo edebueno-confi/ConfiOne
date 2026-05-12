@@ -335,8 +335,8 @@ select is(
     where tenant_id = 'aaaaaaaa-aaaa-4aaa-8aaa-222222222222'
       and slug = 'artigo-restrito-admin'
   ),
-  1,
-  'customer mantém somente o acesso ticket-linked após arquivamento do entitlement'
+  0,
+  'customer perde o acesso ao artigo restrito quando o entitlement é arquivado'
 );
 
 select is(

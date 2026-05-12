@@ -61,7 +61,7 @@ function requireSupabaseFunctionBaseUrl() {
   const config = readRuntimeConfig();
 
   if (!config.ok) {
-    throw new Error('As funções seguras do Supabase não estão disponíveis neste ambiente.');
+    throw new Error('As operações seguras deste ambiente não estão disponíveis agora.');
   }
 
   return {
@@ -72,6 +72,28 @@ function requireSupabaseFunctionBaseUrl() {
 
 function createPortalTimeoutError(message: string) {
   return new AppError('network-retryable', message);
+}
+
+function humanizePortalContextValue(value: unknown) {
+  const normalized = String(value ?? '').trim().toLowerCase();
+
+  if (!normalized) {
+    return 'Indisponível';
+  }
+
+  if (normalized === 'genius_returns') {
+    return 'Genius Returns';
+  }
+
+  if (normalized === 'active') {
+    return 'Ativo';
+  }
+
+  if (normalized === 'enterprise') {
+    return 'Plano Enterprise';
+  }
+
+  return String(value);
 }
 
 async function withPromiseTimeout<T>(
@@ -254,7 +276,7 @@ function mapAvailableTenant(
     tenantSlug: String(row.tenant_slug),
     tenantDisplayName: String(row.tenant_display_name),
     portalRole: row.portal_role as CustomerPortalAvailableTenant['portalRole'],
-    accessStatus: String(row.access_status ?? 'Indisponivel'),
+    accessStatus: humanizePortalContextValue(row.access_status ?? 'Indisponível'),
     canViewTickets: Boolean(row.can_view_tickets),
     canCreateTicket: Boolean(row.can_create_ticket),
     canViewAllTenantTickets: Boolean(row.can_view_all_tenant_tickets),
@@ -282,9 +304,9 @@ function mapSessionStatus(
 function mapProfileContext(row: Record<string, unknown>): CustomerPortalProfileContext {
   return {
     ...mapAuthContext(row),
-    productLine: String(row.product_line ?? 'Indisponivel'),
-    operationalStatus: String(row.operational_status ?? 'Indisponivel'),
-    accountTier: String(row.account_tier ?? 'Indisponivel'),
+    productLine: humanizePortalContextValue(row.product_line ?? 'Indisponível'),
+    operationalStatus: humanizePortalContextValue(row.operational_status ?? 'Indisponível'),
+    accountTier: humanizePortalContextValue(row.account_tier ?? 'Indisponível'),
   };
 }
 
@@ -504,11 +526,11 @@ export async function fetchCustomerPortalSessionStatus() {
   const { data, error } = await withPromiseTimeout(
     client.rpc('rpc_customer_get_portal_session_status').single(),
     CUSTOMER_PORTAL_READ_TIMEOUT_MS,
-    'A revalidação da sessão customer-facing demorou mais do que o esperado. Tente novamente.',
+    'A revalidação da sessão do portal demorou mais do que o esperado. Tente novamente.',
   );
 
   if (error) {
-    throw toAppError(error, 'Falha ao revalidar a sessão customer-facing do portal.');
+    throw toAppError(error, 'Falha ao revalidar a sessão do portal.');
   }
 
   return mapSessionStatus(
@@ -841,7 +863,7 @@ export async function uploadCustomerPortalTicketAttachment(input: {
 
   const contractRow = Array.isArray(data) ? data[0] : data;
   if (!contractRow) {
-    throw new Error('O backend não retornou a intenção de upload esperada.');
+    throw new Error('A plataforma não retornou a preparação esperada para o envio.');
   }
 
   const uploadContract = mapAttachmentUploadContract(

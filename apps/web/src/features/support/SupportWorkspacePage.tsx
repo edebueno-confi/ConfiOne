@@ -722,14 +722,30 @@ function toneForCustomizationRisk(
 
 function humanizeSupportRole(role: SupportAssignableAgent['role']) {
   if (role === 'platform_admin') {
-    return 'Platform admin';
+    return 'Administrador da plataforma';
   }
 
   if (role === 'support_manager') {
-    return 'Support manager';
+    return 'Gestor de suporte';
   }
 
-  return 'Support agent';
+  return 'Agente de suporte';
+}
+
+function buildSupportCustomerRecentEventKey(
+  event: SupportCustomer360RecentEvent,
+  index: number,
+) {
+  const actorKey = event.actorUserId ?? 'no-actor';
+  return [
+    'customer-event',
+    event.ticketId,
+    event.eventType,
+    event.visibility,
+    event.occurredAt,
+    actorKey,
+    index,
+  ].join(':');
 }
 
 function humanizeEngineeringWorkItemType(workItemType: EngineeringWorkItemType) {
@@ -2786,10 +2802,10 @@ function SupportCustomerRail({
                     Nenhum evento recente apareceu por aqui.
                   </p>
               ) : (
-                recentEvents.map((event) => (
+                recentEvents.map((event, index) => (
                   <SupportRecentEventCard
                     event={event}
-                    key={`${event.ticketId}-${event.occurredAt}-${event.eventType}`}
+                    key={buildSupportCustomerRecentEventKey(event, index)}
                   />
                 ))
               )}
@@ -2870,8 +2886,11 @@ function SupportCustomerRail({
                 Nenhum evento recente apareceu por aqui.
               </p>
             ) : (
-              recentEvents.map((event) => (
-                <SupportRecentEventCard key={`${event.ticketId}-${event.occurredAt}-${event.eventType}`} event={event} />
+              recentEvents.map((event, index) => (
+                <SupportRecentEventCard
+                  key={buildSupportCustomerRecentEventKey(event, index)}
+                  event={event}
+                />
               ))
             )}
           </div>
@@ -4650,7 +4669,7 @@ function SupportWorkspaceView({
         note: classificationDraft.note.trim() || null,
       });
       await refreshDetail(ticketDetail.id);
-      applySuccess('Classificação atualizada com governança do backend.');
+      applySuccess('Classificação atualizada com a governança operacional da plataforma.');
     } catch (error) {
       const classified = classifyAdminError(error, 'Falha ao atualizar a classificação do ticket.');
       if (classified.kind === 'session-expired') {
@@ -4682,7 +4701,7 @@ function SupportWorkspaceView({
         note: prioritySeverityDraft.note.trim() || null,
       });
       await refreshDetail(ticketDetail.id);
-      applySuccess('Prioridade, severidade e SLA recalculados pelo backend.');
+      applySuccess('Prioridade, severidade e SLA recalculados pela governança operacional da plataforma.');
     } catch (error) {
       const classified = classifyAdminError(error, 'Falha ao atualizar prioridade e severidade.');
       if (classified.kind === 'session-expired') {
@@ -5258,7 +5277,7 @@ function SupportWorkspaceView({
               ) : intakeTenants.length === 0 ? (
                 <EmptyState
                   title="Nenhum cliente elegível para intake"
-                  description="O backend não liberou tenants acessíveis para abrir ticket nesta sessão."
+                  description="Nenhum cliente com acesso disponível foi liberado para abrir ticket nesta sessão."
                 />
               ) : (
                 <div className="space-y-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
@@ -5267,12 +5286,12 @@ function SupportWorkspaceView({
                       Regras do intake
                     </p>
                     <div className="mt-2 space-y-1 text-[12px] leading-5 text-[color:var(--color-muted)]">
-                      <p>Status inicial: o backend registra o ticket como Novo.</p>
+                      <p>Status inicial: a plataforma registra o ticket como Novo.</p>
                       <p>
                         Categoria e motivo inicial são opcionais e validados por contrato real.
                       </p>
                       <p>
-                        SLA é governança interna calculada pelo backend; o operador não configura prazo manualmente.
+                        SLA é governança interna calculada pela plataforma; o operador não configura prazo manualmente.
                       </p>
                     </div>
                   </div>
@@ -5352,7 +5371,7 @@ function SupportWorkspaceView({
                     intakeContacts.length === 0 ? (
                       <InlineNotice>
                         Nenhum contato ativo apareceu para este cliente. O ticket pode ser aberto
-                        sem solicitante vinculado se o backend aceitar esse contexto.
+                        sem solicitante vinculado se a plataforma aceitar esse contexto.
                       </InlineNotice>
                     ) : null}
 
@@ -5915,7 +5934,7 @@ function SupportWorkspaceView({
                     SLA interno
                   </h4>
                   <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-                    Sinal calculado pelo backend para priorização operacional.
+                    Sinal calculado pela plataforma para priorização operacional.
                   </p>
                 </div>
                 <StatusPill tone={toneForSlaStatus(ticketDetail.slaStatus)}>
@@ -6229,7 +6248,7 @@ function SupportWorkspaceView({
                   />
                   {requiresOperationalReasonForStatus(statusDraft) && !statusReasonId ? (
                     <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                      Esta transição exige motivo operacional registrado pelo backend.
+                      Esta transição exige motivo operacional registrado pela plataforma.
                     </p>
                   ) : null}
                   <AppButton
@@ -7070,15 +7089,6 @@ export function SupportCustomerPage() {
   });
 
   useEffect(() => {
-    if (didBootstrapRef.current) {
-      return;
-    }
-
-    didBootstrapRef.current = true;
-    void loadCustomer();
-  }, []);
-
-  useEffect(() => {
     void loadCustomer();
   }, [tenantId]);
 
@@ -7473,7 +7483,10 @@ export function SupportCustomerPage() {
             ) : (
               <div className="space-y-4" id="atividade">
                 {recentEventsWindow.events.map((event, index) => (
-                  <div className="grid gap-3 md:grid-cols-[28px_minmax(0,1fr)_164px]" key={`${event.ticketId}-${event.occurredAt}-${event.eventType}`}>
+                  <div
+                    className="grid gap-3 md:grid-cols-[28px_minmax(0,1fr)_164px]"
+                    key={buildSupportCustomerRecentEventKey(event, index)}
+                  >
                     <div className="relative flex justify-center">
                       <span className="mt-2 inline-flex h-3.5 w-3.5 rounded-full bg-[color:var(--color-brand-blue)]" />
                       {index < recentEventsWindow.events.length - 1 ? (

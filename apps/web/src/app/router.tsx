@@ -198,6 +198,10 @@ export const router = createBrowserRouter([
         element: withSuspense(<AccessDeniedPage />),
       },
       {
+        path: '/customer-portal',
+        element: <Navigate replace to="/portal" />,
+      },
+      {
         path: '/portal',
         element: withSuspense(
           <CustomerPortalGate>

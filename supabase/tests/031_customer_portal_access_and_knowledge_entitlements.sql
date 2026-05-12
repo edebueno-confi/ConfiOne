@@ -2,7 +2,7 @@ create extension if not exists pgtap with schema extensions;
 
 begin;
 
-select plan(23);
+select plan(24);
 
 insert into auth.users (
   instance_id,
@@ -194,6 +194,18 @@ select lives_ok(
 
 select lives_ok(
   $$
+    select public.rpc_admin_grant_knowledge_article_entitlement(
+      'aaaaaaaa-aaaa-4aaa-8aaa-111111111111',
+      'aaaaaaaa-5000-4000-8000-333333333333',
+      'customer_portal'::public.knowledge_article_entitlement_scope,
+      'Artigo relacionado liberado para o tenant A.'
+    )
+  $$,
+  'platform_admin concede entitlement adicional para artigo restrito relacionado ao ticket'
+);
+
+select lives_ok(
+  $$
     create temporary table customer_portal_ticket_link_capture as
     select (
       public.rpc_admin_link_knowledge_article_to_ticket(
@@ -244,8 +256,8 @@ select is(
     where entity_table = 'knowledge_article_entitlements'
       and actor_user_id = '10111111-1111-4111-8111-111111111111'
   ),
-  1,
-  'grant de entitlement gera audit_log'
+  2,
+  'grants de entitlement geram audit_log'
 );
 
 select ok(

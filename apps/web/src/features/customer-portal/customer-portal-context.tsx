@@ -116,7 +116,7 @@ export function getCustomerPortalBlockedActionMessage(
   if (phase === 'access_revoked') {
     return (
       phaseMessage ??
-      'Seu acesso customer-facing não está mais disponível para esta sessão.'
+      'Seu acesso ao portal não está mais disponível para esta sessão.'
     );
   }
 
@@ -137,7 +137,7 @@ export function getCustomerPortalBlockedActionMessage(
   if (phase === 'fatal_error') {
     return (
       phaseMessage ??
-      'O portal não conseguiu validar sua sessão customer-facing agora.'
+      'O portal não conseguiu validar sua sessão agora.'
     );
   }
 

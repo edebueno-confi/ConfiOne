@@ -449,7 +449,7 @@ const FIXTURE = {
     },
     {
       tenantSlug: 'support-qa-c',
-      title: 'QA Support | Intake criado via RPC sem solicitante',
+    title: 'QA Support | Intake criado sem solicitante identificado',
       description:
         'Ticket aberto pelo fluxo real de intake para validar tenant sem contato ativo vinculado.',
       priority: 'normal',
@@ -1939,7 +1939,7 @@ function ensurePublicKnowledgeArticleReviewEvidence(articleId, reviewerEmail) {
         'ready_for_publish', true
       ),
       'reviewed',
-      'Fixture QA registra evidência explícita antes de publicar artigo público.',
+      'Validação operacional registra evidência explícita antes de publicar artigo público.',
       '${sqlEscape(reviewer.id)}'::uuid,
       timezone('utc', now()),
       '${sqlEscape(reviewer.id)}'::uuid,

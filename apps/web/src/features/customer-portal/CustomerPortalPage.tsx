@@ -277,7 +277,7 @@ function PortalShell({ children }: { children: ReactNode }) {
             <p className="mt-1 text-xs text-white/58">
               {displayContext
                 ? portalRoleLabel(displayContext.portalRole)
-                : 'Sem contexto customer-facing ativo'}
+                : 'Sem contexto ativo no portal'}
             </p>
             {availableTenants.length > 1 ? (
               <div className="mt-3">
@@ -297,7 +297,7 @@ function PortalShell({ children }: { children: ReactNode }) {
                   ))}
                 </select>
                 <p className="mt-2 text-xs leading-5 text-white/58">
-                  O contexto do portal muda com validação no backend. Dados do tenant anterior são descartados durante a troca.
+                  O contexto do portal é validado a cada troca. Dados do tenant anterior são descartados com segurança.
                 </p>
               </div>
             ) : null}
@@ -432,7 +432,7 @@ export function CustomerPortalGate({ children }: { children: ReactNode }) {
       <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-6 py-12">
         <LoadingState
           title="Carregando portal"
-          description="Estamos validando sua sessão customer-facing."
+          description="Estamos validando sua sessão no portal."
         />
       </div>
     );
@@ -473,7 +473,7 @@ export function CustomerPortalLayout() {
           description={
             isSwitching
               ? 'Limpando o contexto anterior e validando o próximo tenant ativo.'
-              : 'Validando os tenants customer-facing disponíveis para esta sessão.'
+              : 'Validando os clientes disponíveis para esta sessão no portal.'
           }
         />
       </div>
@@ -487,7 +487,7 @@ export function CustomerPortalLayout() {
           title="Contexto alterado em outra aba"
           description={
             pendingContext
-              ? `${staleMessage ?? 'O contexto do portal mudou em outra aba. Atualize para continuar.'} O tenant ativo no backend agora é ${pendingContext.tenantDisplayName}.`
+              ? `${staleMessage ?? 'O contexto do portal mudou em outra aba. Atualize para continuar.'} O tenant ativo agora é ${pendingContext.tenantDisplayName}.`
               : staleMessage ??
                 'O contexto do portal mudou e o tenant anterior não está mais disponível para esta sessão.'
           }
@@ -529,7 +529,7 @@ export function CustomerPortalLayout() {
           title="Acesso revogado"
           description={
             phaseMessage ??
-            'Seu acesso customer-facing foi revogado ou deixou de atender os requisitos do portal.'
+            'Seu acesso ao portal foi revogado ou deixou de atender os requisitos desta conta.'
           }
           eyebrow="portal"
           tone="critical"
@@ -585,7 +585,7 @@ export function CustomerPortalLayout() {
           title="Contexto do portal indisponível"
           description={
             phaseMessage ??
-            'O portal não conseguiu validar sua sessão customer-facing agora.'
+            'O portal não conseguiu validar sua sessão agora.'
           }
           action={
             <AppButton disabled={isRefreshing} onClick={() => void refresh()}>
@@ -602,7 +602,7 @@ export function CustomerPortalLayout() {
       <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
         <LoadingState
           title="Revalidando contexto do portal"
-          description="Estamos confirmando o tenant ativo e a sessão customer-facing."
+          description="Estamos confirmando o cliente ativo e a sessão do portal."
         />
       </div>
     );
@@ -647,7 +647,7 @@ function ContextRail({
           </div>
         ) : (
           <InlineNotice tone="warning">
-            Nenhum contexto customer-facing foi encontrado para esta sessão.
+            Nenhum contexto do portal foi encontrado para esta sessão.
           </InlineNotice>
         )}
       </Panel>
@@ -804,7 +804,7 @@ export function CustomerPortalHomePage() {
 
         <Panel
           title="Últimos tickets"
-          description="Lista derivada do backend, já sanitizada para o portal cliente."
+          description="Lista oficial já preparada para o portal cliente."
           className="mt-5"
         >
           {tickets.length === 0 ? (
@@ -820,7 +820,7 @@ export function CustomerPortalHomePage() {
 
         <Panel
           title="Central de ajuda autorizada"
-          description="Conteúdo público ou autenticado já liberado pelo backend para este tenant."
+          description="Conteúdo público ou autenticado já liberado para este tenant."
           className="mt-5"
         >
           <form className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]" onSubmit={handleKnowledgeDiscoverSubmit}>
@@ -1207,7 +1207,7 @@ export function CustomerPortalHelpPage() {
         <PortalKnowledgeHeader
           eyebrow="Central autorizada"
           title="Knowledge liberada para o seu tenant"
-          description="A busca e a descoberta desta área respeitam entitlement, status editorial publicado e vínculos reais com tickets permitidos."
+          description="A busca e a descoberta desta área respeitam liberações aprovadas, publicação concluída e vínculos reais com tickets permitidos."
         />
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -1224,7 +1224,7 @@ export function CustomerPortalHelpPage() {
 
         <Panel
           title="Buscar e navegar"
-          description="Os filtros abaixo usam apenas dados reais do backend. A busca nunca expõe draft, internal ou restricted sem entitlement."
+          description="Os filtros abaixo usam apenas dados reais desta conta. A busca nunca expõe conteúdo não liberado para o seu tenant."
           className="mt-5"
         >
           <form className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_220px_auto]" onSubmit={handleSearchSubmit}>
@@ -1299,7 +1299,7 @@ export function CustomerPortalHelpPage() {
 
         <Panel
           title="Resultados autorizados"
-          description="Ordenação segura do backend, sem recomendação inteligente e sem filtros de segurança no cliente."
+          description="Ordenação segura da plataforma, sem recomendações artificiais e sem depender de filtros locais."
           className="mt-5"
         >
           {searchState === 'loading' ? (
@@ -1452,7 +1452,7 @@ export function CustomerPortalHelpArticlePage() {
       <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
         <ErrorState
           title="Artigo indisponível"
-          description="Este conteúdo não está autorizado para a sua sessão customer-facing."
+          description="Este conteúdo não está autorizado para a sua sessão no portal."
         />
       </div>
     );
@@ -1513,7 +1513,7 @@ export function CustomerPortalHelpArticlePage() {
 
         <Panel
           title="Outros artigos autorizados"
-          description="Somente conteúdos já liberados para esta sessão customer-facing."
+          description="Somente conteúdos já liberados para esta sessão no portal."
           className="p-4"
         >
           {relatedArticles.length === 0 ? (
@@ -1575,7 +1575,7 @@ export function CustomerPortalTicketsPage() {
     event.preventDefault();
 
     if (!activeContext) {
-      setErrorMessage('Nenhum tenant customer-facing disponível para criar ticket.');
+      setErrorMessage('Nenhum cliente disponível no portal pode abrir ticket agora.');
       return;
     }
 
@@ -1628,7 +1628,7 @@ export function CustomerPortalTicketsPage() {
               Seus tickets
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--color-muted)]">
-              A lista vem do backend já limitada ao seu tenant e ao seu papel customer-facing.
+              A lista já chega limitada ao seu tenant e ao seu papel no portal.
             </p>
           </div>
           <GhostButton onClick={() => void load()}>Atualizar</GhostButton>
@@ -1654,7 +1654,7 @@ export function CustomerPortalTicketsPage() {
           Abrir ticket
         </h2>
         <p className="mt-1 text-sm leading-6 text-[color:var(--color-muted)]">
-          Criação real via RPC customer-facing. Categoria, SLA e roteamento continuam governados pelo backend.
+          A abertura segue as regras operacionais da plataforma. Categoria, SLA e roteamento continuam governados automaticamente.
         </p>
         <form className="mt-5 space-y-4" onSubmit={handleCreateTicket}>
           <Field label="Título">
@@ -2054,7 +2054,7 @@ export function CustomerPortalTicketPage() {
               ? 'Conexão indisponível'
               : 'Ticket indisponível'
           }
-          description={errorMessage ?? 'Este ticket não está disponível para sua sessão customer-facing.'}
+          description={errorMessage ?? 'Este ticket não está disponível para a sua sessão no portal.'}
           action={
               errorMessage && isNetworkRetryableMessage(errorMessage) ? (
                 <AppButton disabled={loading} onClick={() => void refresh()}>
@@ -2133,7 +2133,7 @@ export function CustomerPortalTicketPage() {
 
         <Panel
           title="Timeline"
-          description="Somente mensagens e eventos customer-facing. Eventos internos e engenharia não são expostos aqui."
+          description="Somente mensagens e eventos visíveis para o cliente. Eventos internos e engenharia não são expostos aqui."
           className="mt-5"
         >
           {timeline.length === 0 ? (
@@ -2194,7 +2194,7 @@ export function CustomerPortalTicketPage() {
       <aside className="min-h-0 space-y-4 overflow-y-auto">
         <Panel
           title="Resolução"
-          description="Ações customer-facing controladas pelo backend."
+          description="Ações disponíveis conforme as regras operacionais desta conta."
           className="p-4"
         >
           {collaborationState?.canConfirmResolution ? (
@@ -2303,7 +2303,7 @@ export function CustomerPortalTicketPage() {
 
         <Panel
           title="Artigos relacionados"
-          description="Somente artigos autorizados para este ticket. Conteúdo interno e editorial não aparecem aqui."
+          description="Somente artigos autorizados para este ticket. Conteúdo interno e materiais ainda não publicados não aparecem aqui."
           className="p-4"
         >
           {articles.length === 0 ? (
@@ -2319,7 +2319,7 @@ export function CustomerPortalTicketPage() {
 
         <Panel
           title="Buscar na central autorizada"
-          description="Descoberta contextual no backend, sem recomendação IA e sem expor conteúdo fora do seu ticket/tenant."
+          description="Descoberta contextual segura, sem expor conteúdo fora do seu ticket ou do seu tenant."
           className="p-4"
         >
           <Field

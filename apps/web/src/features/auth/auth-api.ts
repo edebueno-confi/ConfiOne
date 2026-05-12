@@ -21,6 +21,10 @@ export async function signInWithPassword(email: string, password: string) {
   });
 
   if (error) {
+    if (/invalid login credentials/i.test(error.message)) {
+      throw new Error('Credenciais inválidas. Verifique e tente novamente.');
+    }
+
     throw toAppError(error, 'Falha ao autenticar.');
   }
 }

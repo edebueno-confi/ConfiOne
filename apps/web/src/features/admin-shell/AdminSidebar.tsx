@@ -158,8 +158,12 @@ export function AdminSidebar({
           </span>
           {!collapsed ? (
             <div className="min-w-0">
-              <p className="truncate text-[0.82rem] font-medium text-white">Platform Admin</p>
-              <p className="truncate text-[0.68rem] text-white/62">platform_admin</p>
+              <p className="truncate text-[0.82rem] font-medium text-white">
+                Administrador da plataforma
+              </p>
+              <p className="truncate text-[0.68rem] text-white/62">
+                Acesso administrativo completo
+              </p>
             </div>
           ) : null}
         </div>
