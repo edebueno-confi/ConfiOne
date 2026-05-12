@@ -621,14 +621,12 @@ function GovernedActionDrawer({
   children,
   footer,
   onClose,
-  width = 'standard',
 }: {
   title: string;
   description: string;
   children: React.ReactNode;
   footer: React.ReactNode;
   onClose: () => void;
-  width?: 'wide' | 'standard' | 'narrow';
 }) {
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-[rgba(11,22,48,0.18)] backdrop-blur-[2px]">
@@ -640,14 +638,7 @@ function GovernedActionDrawer({
       />
       <aside
         aria-modal="true"
-        className={cx(
-          'relative z-10 flex h-full flex-col overflow-hidden rounded-l-[26px] border-l border-[color:var(--color-border)] bg-white shadow-[0_28px_72px_rgba(15,23,42,0.22)]',
-          width === 'wide'
-            ? 'w-[min(720px,calc(100vw-32px))]'
-            : width === 'narrow'
-              ? 'w-[min(470px,calc(100vw-32px))]'
-              : 'w-[min(560px,calc(100vw-32px))]',
-        )}
+        className="relative z-10 flex h-full w-[clamp(720px,50vw,860px)] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-l-[26px] border-l border-[color:var(--color-border)] bg-white shadow-[0_28px_72px_rgba(15,23,42,0.22)]"
         role="dialog"
       >
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[color:var(--color-border)] px-7 py-6">
@@ -1746,7 +1737,6 @@ export function CustomerPortalAdminPage() {
           }
           onClose={() => setActiveDrawer(null)}
           title="Gerenciar acesso do tenant"
-          width="wide"
         >
           <div className="space-y-6">
             <div className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5">
@@ -1916,16 +1906,15 @@ export function CustomerPortalAdminPage() {
           }
           onClose={() => setActiveDrawer(null)}
           title="Conceder artigo"
-          width="narrow"
         >
           <form className="space-y-6" id="grant-article-form" onSubmit={handleGrantEntitlement}>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-[16px] border border-[color:var(--color-border)] p-4">
-                <p className="text-[0.72rem] text-[color:var(--color-muted)]">Tenant</p>
-                <p className="mt-1 truncate text-sm font-semibold text-[color:var(--color-ink)]">
-                  {selectedTenant?.tenant_display_name ?? 'Indisponível'}
-                </p>
-              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-[16px] border border-[color:var(--color-border)] p-4">
+                  <p className="text-[0.72rem] text-[color:var(--color-muted)]">Tenant</p>
+                  <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
+                    {selectedTenant?.tenant_display_name ?? 'Indisponível'}
+                  </p>
+                </div>
               <div className="rounded-[16px] border border-[color:var(--color-border)] p-4">
                 <p className="text-[0.72rem] text-[color:var(--color-muted)]">Artigos autorizados</p>
                 <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
@@ -1936,12 +1925,12 @@ export function CustomerPortalAdminPage() {
 
             <DrawerSection index={1} title="Buscar e filtrar artigos">
               <TextInput
-                className="h-10 rounded-[14px] text-sm"
+                className="h-11 w-full rounded-[14px] text-sm"
                 onChange={(event) => setGrantArticleSearch(event.target.value)}
                 placeholder="Buscar artigo"
                 value={grantArticleSearch}
               />
-              <div className="flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   className={cx(
                     'rounded-full border px-4 py-2 text-[0.78rem] font-semibold',
@@ -1981,7 +1970,7 @@ export function CustomerPortalAdminPage() {
                 {filteredArticleCandidates.slice(0, 6).map((article) => (
                   <button
                     className={cx(
-                      'grid w-full grid-cols-[minmax(0,1fr)_110px_32px] items-center gap-3 border-b border-[color:var(--color-border)] px-4 py-3 text-left last:border-b-0',
+                      'grid w-full grid-cols-[minmax(0,1fr)_132px_40px] items-center gap-4 border-b border-[color:var(--color-border)] px-5 py-3.5 text-left last:border-b-0',
                       grantForm.articleId === article.article_id && 'bg-[rgba(68,110,255,0.08)]',
                     )}
                     key={article.article_id}
@@ -1997,9 +1986,9 @@ export function CustomerPortalAdminPage() {
                       </span>
                     </span>
                     <TinyBadge>{article.article_visibility === 'public' ? 'Público' : 'Autenticado'}</TinyBadge>
-                    <span className="h-5 w-5 rounded-[6px] border border-[color:var(--color-border)] bg-white">
-                      {grantForm.articleId === article.article_id ? '✓' : ''}
-                    </span>
+                      <span className="flex h-5 w-5 items-center justify-center justify-self-end rounded-[6px] border border-[color:var(--color-border)] bg-white text-[0.72rem] font-semibold text-[color:var(--color-brand-blue)]">
+                        {grantForm.articleId === article.article_id ? '✓' : ''}
+                      </span>
                   </button>
                 ))}
               </div>
@@ -2011,7 +2000,7 @@ export function CustomerPortalAdminPage() {
               title="Resumo da concessão"
             >
               <TextareaInput
-                className="min-h-[92px] rounded-[14px] px-3 py-3 text-sm"
+                className="min-h-[124px] w-full rounded-[14px] px-3 py-3 text-sm"
                 onChange={(event) =>
                   setGrantForm((current) => ({ ...current, relationReason: event.target.value }))
                 }
@@ -2060,7 +2049,7 @@ export function CustomerPortalAdminPage() {
               title="Ticket em foco"
             >
               <SelectInput
-                className="h-10 rounded-[14px] text-sm"
+                className="h-11 w-full rounded-[14px] text-sm"
                 onChange={(event) => setLinkForm((current) => ({ ...current, ticketId: event.target.value }))}
                 value={linkForm.ticketId}
               >
@@ -2108,16 +2097,16 @@ export function CustomerPortalAdminPage() {
               title="Selecionar artigo"
             >
               <TextInput
-                className="h-10 rounded-[14px] text-sm"
+                className="h-11 w-full rounded-[14px] text-sm"
                 onChange={(event) => setLinkArticleSearch(event.target.value)}
                 placeholder="Buscar artigo por título ou palavra-chave"
                 value={linkArticleSearch}
               />
-              <div className="overflow-hidden rounded-[16px] border border-[color:var(--color-border)]">
+              <div className="mt-3 overflow-hidden rounded-[16px] border border-[color:var(--color-border)]">
                 {filteredLinkArticleCandidates.slice(0, 5).map((article) => (
                   <button
                     className={cx(
-                      'grid w-full grid-cols-[24px_minmax(0,1fr)_110px] items-center gap-3 border-b border-[color:var(--color-border)] px-4 py-3 text-left last:border-b-0',
+                      'grid w-full grid-cols-[28px_minmax(0,1fr)_132px] items-center gap-4 border-b border-[color:var(--color-border)] px-5 py-3.5 text-left last:border-b-0',
                       linkForm.articleId === article.article_id && 'bg-[rgba(68,110,255,0.08)]',
                     )}
                     key={article.article_id}
@@ -2127,12 +2116,15 @@ export function CustomerPortalAdminPage() {
                     <span className="h-4 w-4 rounded-full border border-[color:var(--color-border)] text-center text-[0.6rem]">
                       {linkForm.articleId === article.article_id ? '●' : ''}
                     </span>
-                    <span className="min-w-0 truncate text-sm font-semibold text-[color:var(--color-ink)]">
-                      {article.article_title}
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-[color:var(--color-ink)]">
+                        {article.article_title}
+                      </span>
+                      <span className="block truncate text-[0.76rem] text-[color:var(--color-muted)]">
+                        {article.category_name ?? 'Sem categoria'}
+                      </span>
                     </span>
-                    <span className="truncate text-right text-[0.78rem] text-[color:var(--color-muted)]">
-                      {article.category_name ?? 'Sem categoria'}
-                    </span>
+                    <TinyBadge>{article.article_visibility === 'public' ? 'Público' : 'Autenticado'}</TinyBadge>
                   </button>
                 ))}
               </div>
@@ -2144,7 +2136,7 @@ export function CustomerPortalAdminPage() {
               title="Mensagem de contexto"
             >
               <TextareaInput
-                className="min-h-[86px] rounded-[14px] px-3 py-3 text-sm"
+                className="min-h-[124px] w-full rounded-[14px] px-3 py-3 text-sm"
                 onChange={(event) =>
                   setLinkForm((current) => ({ ...current, relationReason: event.target.value }))
                 }
@@ -2158,7 +2150,7 @@ export function CustomerPortalAdminPage() {
               index={4}
               title="Vínculo governado"
             >
-              <div className="grid grid-cols-3 gap-3 rounded-[16px] border border-[color:var(--color-border)] p-4 text-sm">
+              <div className="grid grid-cols-3 gap-4 rounded-[16px] border border-[color:var(--color-border)] p-4 text-sm">
                 <DetailLine label="Visível no portal" value="Sim, conforme permissões" />
                 <DetailLine label="Origem" value="Admin Console" />
                 <DetailLine label="Última revisão" value="Indisponível" />
