@@ -16,11 +16,7 @@ function getUserInitials(fullName: string | null | undefined, email: string | nu
   return base.map((chunk) => chunk[0]?.toUpperCase() ?? '').join('');
 }
 
-export function AdminSidebar({
-  collapsed,
-}: {
-  collapsed: boolean;
-}) {
+export function AdminSidebar() {
   const location = useLocation();
   const { gate, signOut, user } = useAuthContext();
   const fullName = String(user?.user_metadata?.full_name ?? '').trim() || null;
@@ -28,9 +24,7 @@ export function AdminSidebar({
 
   return (
     <UnifiedEnvironmentSidebar
-      className={collapsed ? 'w-[88px]' : 'w-[242px]'}
-      collapsed={collapsed}
-      environmentDescription="Governança da plataforma e configuração operacional."
+      environmentSubtitle="Administração"
       environmentItems={[
         {
           label: 'Suporte',
@@ -48,7 +42,7 @@ export function AdminSidebar({
           matches: (pathname) => pathname.startsWith('/admin/'),
         },
       ]}
-      environmentLabel="Administração"
+      moduleSectionLabel="Governança"
       moduleItems={[
         {
           label: 'Clientes B2B',

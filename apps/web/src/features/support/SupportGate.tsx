@@ -8,6 +8,7 @@ import {
 } from '../../components/states';
 import { AppButton, GhostButton, StatusPill, cx } from '../../components/ui';
 import { useAuthContext } from '../auth/auth-context';
+import { UNIFIED_INTERNAL_SIDEBAR_WIDTH_CLASS } from '../navigation/UnifiedEnvironmentNavigation';
 
 function SupportGateBootShell() {
   const navItems = ['Fila', 'Tickets', 'Clientes', 'Engenharia'];
@@ -15,21 +16,16 @@ function SupportGateBootShell() {
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#eef4ff_0%,#f7faff_42%,#f3f6fb_100%)] text-[color:var(--color-ink)]">
       <div className="mx-auto flex max-w-[1800px] gap-4 px-3 py-3 sm:px-4 lg:px-5">
-        <aside className="hidden w-[250px] shrink-0 rounded-[28px] bg-[linear-gradient(180deg,#06173f_0%,#0a1e53_52%,#10265f_100%)] px-3 py-4 text-white shadow-[0_26px_58px_rgba(9,20,56,0.24)] lg:flex lg:flex-col">
-          <div className="flex items-start gap-3 px-2">
-            <div className="flex min-w-0 items-center gap-3">
-              <img alt="Mascote Genius" className="w-11 shrink-0" src={mascotUrl} />
-              <div className="min-w-0 pt-1">
-                <p className="text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-white/48">
-                  Genius Support OS
-                </p>
-                <h1 className="text-[0.96rem] font-semibold tracking-[-0.04em] leading-tight">
-                  Suporte
-                </h1>
-              </div>
-            </div>
-            <div className="ml-auto mt-0.5 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/8 text-white">
-              {'<'}
+        <aside className={`hidden shrink-0 rounded-[24px] bg-[linear-gradient(180deg,#06173f_0%,#0a1e53_52%,#10265f_100%)] px-3 py-4 text-white shadow-[0_26px_58px_rgba(9,20,56,0.24)] lg:flex lg:flex-col ${UNIFIED_INTERNAL_SIDEBAR_WIDTH_CLASS}`}>
+          <div className="flex items-center gap-3 px-1">
+            <img alt="Mascote Genius" className="w-9 shrink-0" src={mascotUrl} />
+            <div className="min-w-0">
+              <h1 className="truncate text-[0.92rem] font-semibold leading-tight tracking-[-0.03em] text-white">
+                Genius Support OS
+              </h1>
+              <p className="mt-1 truncate text-[0.68rem] leading-4 text-white/62">
+                Suporte operacional
+              </p>
             </div>
           </div>
 
@@ -37,7 +33,7 @@ function SupportGateBootShell() {
             {navItems.map((item, index) => (
               <div
                 className={cx(
-                  'flex min-h-[56px] items-center gap-3 rounded-[16px] px-3 py-2.5 text-[0.96rem] font-medium',
+                  'flex min-h-[46px] items-center gap-2 rounded-[14px] px-2.5 py-1.5 text-[0.84rem] font-medium',
                   index === 0
                     ? 'bg-[linear-gradient(135deg,#1f67ff,#2f7eff)] text-white shadow-[0_16px_30px_rgba(18,81,213,0.35)]'
                     : 'text-white/78',
@@ -46,7 +42,7 @@ function SupportGateBootShell() {
               >
                 <span
                   className={cx(
-                    'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border text-[0.72rem] font-semibold uppercase tracking-[0.14em]',
+                    'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[12px] border text-[0.68rem] font-semibold uppercase tracking-[0.14em]',
                     index === 0
                       ? 'border-white/14 bg-white/12 text-white'
                       : 'border-white/12 bg-white/6 text-white/88',
@@ -69,13 +65,13 @@ function SupportGateBootShell() {
           </nav>
 
           <div className="mt-auto px-1">
-            <div className="flex items-center gap-3 rounded-[18px] border border-white/10 bg-white/7 px-3 py-3">
-              <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#f4b1c8,#ffffff)] text-sm font-semibold text-[color:var(--color-brand-navy)]">
+            <div className="flex items-center gap-2 rounded-[16px] border border-white/10 bg-white/7 px-2 py-2">
+              <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#f4b1c8,#ffffff)] text-[11px] font-semibold text-[color:var(--color-brand-navy)]">
                 QA
               </div>
               <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white">Sessão local</p>
-                <p className="truncate text-[0.72rem] text-white/62">Aguardando validação</p>
+                <p className="truncate text-[0.76rem] font-semibold text-white">Sessão local</p>
+                <p className="truncate text-[0.64rem] text-white/62">Aguardando validação</p>
               </div>
             </div>
           </div>

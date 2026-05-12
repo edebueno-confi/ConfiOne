@@ -1,38 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { cx } from '../../components/ui';
 import { useAuthContext } from '../auth/auth-context';
 import {
+  UNIFIED_INTERNAL_SIDEBAR_WIDTH_CLASS,
   UnifiedEnvironmentSidebar,
   UnifiedQuickNavigation,
   type UnifiedEnvironmentItem,
   type UnifiedModuleItem,
 } from '../navigation/UnifiedEnvironmentNavigation';
-
-const SIDEBAR_STORAGE_KEY = 'support-workspace-shell-collapsed';
-
-function usePersistedSidebarState() {
-  const [collapsed, setCollapsed] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const stored = window.localStorage.getItem(SIDEBAR_STORAGE_KEY);
-    setCollapsed(stored === 'true');
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(collapsed));
-  }, [collapsed]);
-
-  return [collapsed, setCollapsed] as const;
-}
 
 function buildInitials(fullName: string | null | undefined, email: string | null | undefined) {
   const parts = String(fullName ?? email ?? 'QA')
@@ -48,9 +24,18 @@ function buildInitials(fullName: string | null | undefined, email: string | null
   return parts.map((chunk) => chunk[0]?.toUpperCase() ?? '').join('');
 }
 
-function useSupportNavigation() {
+function resolveInternalEnvironment(pathname: string) {
+  if (pathname.startsWith('/engineering')) {
+    return 'engineering';
+  }
+
+  return 'support';
+}
+
+function useSupportNavigation(pathname: string) {
   const { gate } = useAuthContext();
   const isPlatformAdmin = gate.actor?.is_platform_admin === true;
+  const currentEnvironment = resolveInternalEnvironment(pathname);
 
   const environmentItems = useMemo(
     () =>
@@ -66,22 +51,43 @@ function useSupportNavigation() {
           to: '/engineering',
           matches: (pathname: string) => pathname.startsWith('/engineering'),
         },
-        ...(isPlatformAdmin
-          ? [
-              {
-                label: 'Administração',
-                to: '/admin/tenants',
-                matches: (pathname: string) => pathname.startsWith('/admin/'),
-              },
-            ]
-          : []),
+        {
+          label: 'Administração',
+          to: isPlatformAdmin ? '/admin/tenants' : undefined,
+          disabled: !isPlatformAdmin,
+          disabledReason: 'Acesso administrativo indisponível para este usuário.',
+          matches: (pathname: string) => pathname.startsWith('/admin/'),
+        },
       ] satisfies UnifiedEnvironmentItem[],
     [isPlatformAdmin],
   );
 
   const moduleItems = useMemo(
-    () =>
-      [
+    () => {
+      if (currentEnvironment === 'engineering') {
+        return [
+          {
+            label: 'Fila técnica',
+            icon: 'engineering' as const,
+            to: '/engineering',
+            matches: (pathname: string) => pathname === '/engineering',
+          },
+          {
+            label: 'Itens técnicos',
+            icon: 'tickets' as const,
+            to: '/engineering',
+            matches: (pathname: string) => pathname.startsWith('/engineering/work-items/'),
+          },
+          {
+            label: 'Retornos ao suporte',
+            icon: 'return' as const,
+            to: '/support/queue',
+            matches: (pathname: string) => pathname === '/support' || pathname === '/support/queue',
+          },
+        ] satisfies UnifiedModuleItem[];
+      }
+
+      return [
         {
           label: 'Fila',
           icon: 'queue' as const,
@@ -111,43 +117,44 @@ function useSupportNavigation() {
               },
             ]
           : []),
-      ] satisfies UnifiedModuleItem[],
-    [isPlatformAdmin],
+      ] satisfies UnifiedModuleItem[];
+    },
+    [currentEnvironment, isPlatformAdmin],
   );
 
   return {
+    currentEnvironment,
     environmentItems,
     moduleItems,
     isPlatformAdmin,
   };
 }
 
-function SupportSidebar({
-  collapsed,
-  onToggle,
-}: {
-  collapsed: boolean;
-  onToggle: () => void;
-}) {
+function SupportSidebar() {
   const location = useLocation();
   const { signOut, user } = useAuthContext();
-  const { environmentItems, moduleItems, isPlatformAdmin } = useSupportNavigation();
+  const { currentEnvironment, environmentItems, moduleItems, isPlatformAdmin } =
+    useSupportNavigation(location.pathname);
   const fullName = String(user?.user_metadata?.full_name ?? '').trim() || null;
   const email = user?.email ?? null;
+  const isEngineering = currentEnvironment === 'engineering';
 
   return (
     <UnifiedEnvironmentSidebar
-      className={collapsed ? 'w-[76px]' : 'w-[206px]'}
-      collapsed={collapsed}
-      environmentDescription="Fila, clientes e continuidade do atendimento."
+      environmentSubtitle={isEngineering ? 'Engenharia' : 'Suporte operacional'}
       environmentItems={environmentItems}
-      environmentLabel="Suporte"
+      moduleSectionLabel={isEngineering ? 'Tecnologia' : 'Operação'}
       moduleItems={moduleItems}
       onSignOut={() => void signOut()}
-      onToggle={onToggle}
       pathname={location.pathname}
       userInitials={buildInitials(fullName, email)}
-      userSubtitle={isPlatformAdmin ? 'Administrador da plataforma' : 'Operação de suporte'}
+      userSubtitle={
+        isPlatformAdmin
+          ? 'Administrador da plataforma'
+          : isEngineering
+            ? 'Engenharia'
+            : 'Operação de suporte'
+      }
       userTitle={fullName ?? email ?? 'Operador interno'}
     />
   );
@@ -159,13 +166,24 @@ function SupportTopbar({
   compact?: boolean;
 }) {
   const location = useLocation();
-  const { environmentItems, moduleItems } = useSupportNavigation();
+  const { environmentItems, moduleItems } = useSupportNavigation(location.pathname);
 
   return (
     <header className={cx(compact ? 'py-0' : 'py-0')}>
       <div className={cx('space-y-2 lg:hidden', compact ? 'lg:hidden' : 'lg:hidden')}>
         <UnifiedQuickNavigation
-          items={environmentItems}
+          items={environmentItems
+            .flatMap((item) =>
+              item.to && !item.disabled
+                ? [
+                    {
+                      label: item.label,
+                      to: item.to,
+                      matches: item.matches,
+                    },
+                  ]
+                : [],
+            )}
           pathname={location.pathname}
           title="Ambientes"
         />
@@ -184,7 +202,6 @@ function SupportTopbar({
 }
 
 export function SupportWorkspaceShell() {
-  const [sidebarCollapsed, setSidebarCollapsed] = usePersistedSidebarState();
   const location = useLocation();
   const isOperationalSupportRoute = /^\/(support|engineering)(\/|$)/.test(location.pathname);
 
@@ -208,16 +225,14 @@ export function SupportWorkspaceShell() {
         <div className="hidden shrink-0 lg:block">
           <div
             className={cx(
-              'sticky transition-[width] duration-200',
+              'sticky',
+              UNIFIED_INTERNAL_SIDEBAR_WIDTH_CLASS,
               isOperationalSupportRoute
                 ? 'top-2 h-[calc(var(--app-viewport-height)-1rem)] max-h-[calc(var(--app-viewport-height)-1rem)]'
                 : 'top-3 h-[calc(var(--app-viewport-height)-1.5rem)]',
             )}
           >
-            <SupportSidebar
-              collapsed={sidebarCollapsed}
-              onToggle={() => setSidebarCollapsed((current) => !current)}
-            />
+            <SupportSidebar />
           </div>
         </div>
 
