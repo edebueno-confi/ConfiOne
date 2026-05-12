@@ -85,7 +85,7 @@ export function PageHeader({
   title,
   description,
   action,
-  eyebrow = 'Admin Console',
+  eyebrow = 'Genius Support OS',
 }: {
   title: string;
   description: string;

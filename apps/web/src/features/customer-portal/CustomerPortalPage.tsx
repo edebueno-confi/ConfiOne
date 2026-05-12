@@ -232,12 +232,12 @@ function PortalShell({ children }: { children: ReactNode }) {
       <div className="mx-auto flex h-full max-w-[1600px] gap-4 px-4 py-4">
         <aside className="hidden h-full w-[230px] shrink-0 flex-col rounded-[28px] bg-[linear-gradient(180deg,#06173f_0%,#082058_54%,#0b2a68_100%)] p-3 text-white shadow-[0_24px_50px_rgba(9,20,56,0.22)] lg:flex">
           <div className="px-2 pt-2">
-            <p className="text-[0.62rem] font-semibold uppercase tracking-[0.24em] text-white/48">
-              Genius
-            </p>
-            <h1 className="mt-1 text-lg font-semibold tracking-[-0.05em]">
-              Portal cliente
-            </h1>
+              <p className="text-[0.62rem] font-semibold uppercase tracking-[0.24em] text-white/48">
+                Genius Support OS
+              </p>
+              <h1 className="mt-1 text-lg font-semibold tracking-[-0.05em]">
+                Portal do cliente
+              </h1>
             <p className="mt-2 text-xs leading-5 text-white/58">
               Acesso autenticado ao próprio contexto B2B.
             </p>
@@ -365,7 +365,7 @@ function PortalShell({ children }: { children: ReactNode }) {
             <p className="truncate text-sm font-semibold text-white">
               {user?.email ?? 'Sessão autenticada'}
             </p>
-            <p className="mt-1 text-xs text-white/58">Cliente B2B</p>
+              <p className="mt-1 text-xs text-white/58">Ambiente do cliente</p>
             <GhostButton
               className="mt-3 w-full border-white/12 bg-white/10 text-white hover:bg-white/16"
               onClick={() => void signOut()}
@@ -775,7 +775,7 @@ export function CustomerPortalHomePage() {
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.26em] text-[color:var(--color-muted)]">
-              Portal cliente B2B
+                Portal do cliente
             </p>
             <h1 className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-[color:var(--color-ink)]">
               Acompanhe seus tickets autorizados

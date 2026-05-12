@@ -440,7 +440,7 @@ export function SystemPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-[1.76rem] font-semibold tracking-[-0.055em] text-[color:var(--color-ink)]">
-              System
+              Sistema
             </h1>
             <p className="text-[0.84rem] leading-5 text-[color:var(--color-muted)]">
               Auditoria, saúde do sistema e eventos operacionais.

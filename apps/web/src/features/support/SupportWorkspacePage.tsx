@@ -169,6 +169,13 @@ interface EngineeringHandoffDraft {
   handoffNote: string;
 }
 
+interface SupportCustomerPreviewSnapshot {
+  customer: SupportCustomer360;
+  accountContext: SupportCustomerAccountContext | null;
+  recentTicketsWindow: SupportCustomerRecentTicketsWindow;
+  recentEventsWindow: SupportCustomerRecentEventsWindow;
+}
+
 function toneForTicketStatus(status: TicketStatus) {
   if (status === 'resolved' || status === 'closed') {
     return 'positive' as const;
@@ -3045,7 +3052,9 @@ function SupportAccountContextCompact({
             {humanizeCustomerValue(accountContext.operationalStatus)}
           </StatusPill>
         ) : null}
-        {accountContext.accountTier ? <StatusPill>{accountContext.accountTier}</StatusPill> : null}
+        {accountContext.accountTier ? (
+          <StatusPill>{humanizeCustomerValue(accountContext.accountTier)}</StatusPill>
+        ) : null}
       </div>
 
       <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
@@ -3234,7 +3243,9 @@ function SupportTicketCustomerSnapshot({
                 {humanizeCustomerValue(accountContext.operationalStatus)}
               </StatusPill>
             ) : null}
-            {accountContext.accountTier ? <StatusPill>{accountContext.accountTier}</StatusPill> : null}
+              {accountContext.accountTier ? (
+                <StatusPill>{humanizeCustomerValue(accountContext.accountTier)}</StatusPill>
+              ) : null}
           </div>
         </div>
         <Link
@@ -3262,7 +3273,9 @@ function SupportTicketCustomerSnapshot({
           <div className="flex items-start justify-between gap-3 border-t border-[color:var(--color-border)] pt-0.5">
             <dt className="font-medium text-[color:var(--color-ink)]">Porte / tier</dt>
             <dd className="text-right">
-                {accountContext.accountTier ?? 'Indisponível'}
+                {accountContext.accountTier
+                  ? humanizeCustomerValue(accountContext.accountTier)
+                  : 'Indisponível'}
             </dd>
           </div>
           <div className="flex items-start justify-between gap-3 border-t border-[color:var(--color-border)] pt-0.5">
@@ -3311,7 +3324,9 @@ function SupportAccountContextOverview({
             {humanizeCustomerValue(accountContext.operationalStatus)}
           </StatusPill>
         ) : null}
-        {accountContext.accountTier ? <StatusPill>{accountContext.accountTier}</StatusPill> : null}
+        {accountContext.accountTier ? (
+          <StatusPill>{humanizeCustomerValue(accountContext.accountTier)}</StatusPill>
+        ) : null}
       </div>
 
       {accountContext.activeAlerts.length > 0 ? (
@@ -6545,6 +6560,8 @@ function SupportCustomerMetricTile({
 export function SupportCustomersPage() {
   const { markSessionExpired } = useAuthContext();
   const didBootstrapRef = useRef(false);
+  const previewCacheRef = useRef(new Map<Uuid, SupportCustomerPreviewSnapshot>());
+  const selectedPreviewRequestRef = useRef(0);
   const [backendDenied, setBackendDenied] = useState(false);
   const [phase, setPhase] = useState<PagePhase>('loading');
   const [message, setMessage] = useState<string | null>(null);
@@ -6560,6 +6577,13 @@ export function SupportCustomersPage() {
   const [selectedPhase, setSelectedPhase] = useState<DetailPhase>('idle');
   const [selectedMessage, setSelectedMessage] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+
+  function applySelectedPreviewSnapshot(snapshot: SupportCustomerPreviewSnapshot) {
+    setSelectedCustomer(snapshot.customer);
+    setSelectedAccountContext(snapshot.accountContext);
+    setSelectedRecentTicketsWindow(snapshot.recentTicketsWindow);
+    setSelectedRecentEventsWindow(snapshot.recentEventsWindow);
+  }
 
   const loadCustomers = useEffectEvent(async (preferredTenantId?: Uuid | null) => {
     try {
@@ -6594,6 +6618,7 @@ export function SupportCustomersPage() {
         return;
       }
 
+      previewCacheRef.current.clear();
       setCustomers([]);
       setSelectedTenantId(null);
       setSelectedCustomer(null);
@@ -6605,7 +6630,28 @@ export function SupportCustomersPage() {
   });
 
   const loadSelectedCustomer = useEffectEvent(async (tenantId: Uuid) => {
-    setSelectedPhase('loading');
+    const requestId = selectedPreviewRequestRef.current + 1;
+    selectedPreviewRequestRef.current = requestId;
+    const cachedPreview = previewCacheRef.current.get(tenantId);
+
+    if (cachedPreview) {
+      applySelectedPreviewSnapshot(cachedPreview);
+      setSelectedMessage(null);
+      setSelectedPhase('ready');
+    } else if (!selectedCustomer || selectedCustomer.tenantId !== tenantId) {
+      const customerSummary =
+        customers.find((customer) => customer.tenantId === tenantId) ?? null;
+
+      if (customerSummary) {
+        setSelectedCustomer(customerSummary);
+      }
+
+      setSelectedAccountContext(null);
+      setSelectedRecentTicketsWindow(emptyCustomerRecentTicketsWindow());
+      setSelectedRecentEventsWindow(emptyCustomerRecentEventsWindow());
+      setSelectedMessage(null);
+      setSelectedPhase(customerSummary ? 'ready' : 'loading');
+    }
 
     try {
       const [detail, context, recentTickets, recentEvents] = await Promise.all([
@@ -6615,10 +6661,23 @@ export function SupportCustomersPage() {
         getSupportCustomerRecentEvents(tenantId),
       ]);
 
-      setSelectedCustomer(detail);
-      setSelectedAccountContext(context);
-      setSelectedRecentTicketsWindow(recentTickets);
-      setSelectedRecentEventsWindow(recentEvents);
+      if (selectedPreviewRequestRef.current !== requestId) {
+        return;
+      }
+
+      if (!detail) {
+        throw new Error('O cliente selecionado não ficou disponível para o preview.');
+      }
+
+      const snapshot = {
+        customer: detail,
+        accountContext: context,
+        recentTicketsWindow: recentTickets,
+        recentEventsWindow: recentEvents,
+      } satisfies SupportCustomerPreviewSnapshot;
+
+      previewCacheRef.current.set(tenantId, snapshot);
+      applySelectedPreviewSnapshot(snapshot);
       setSelectedMessage(null);
       setSelectedPhase('ready');
     } catch (error) {
@@ -6629,6 +6688,10 @@ export function SupportCustomersPage() {
 
       if (classified.kind === 'session-expired') {
         markSessionExpired();
+        return;
+      }
+
+      if (selectedPreviewRequestRef.current !== requestId) {
         return;
       }
 
@@ -6683,13 +6746,17 @@ export function SupportCustomersPage() {
   }, [filteredCustomers, selectedTenantId]);
 
   useEffect(() => {
-    if (!selectedTenantId || phase !== 'ready') {
-      setSelectedPhase(selectedTenantId ? 'loading' : 'idle');
+    if (!selectedTenantId) {
+      setSelectedPhase('idle');
+      return;
+    }
+
+    if (phase !== 'ready') {
       return;
     }
 
     void loadSelectedCustomer(selectedTenantId);
-  }, [loadSelectedCustomer, phase, selectedTenantId]);
+  }, [phase, selectedTenantId]);
 
   if (backendDenied) {
     return <Navigate replace state={{ reason: 'backend-permission' }} to="/access-denied" />;
@@ -6999,7 +7066,13 @@ export function SupportCustomersPage() {
                   <StatusPill tone={selectedCustomer.tenantStatus === 'active' ? 'positive' : 'warning'}>
                     {humanizeTenantStatus(selectedCustomer.tenantStatus)}
                   </StatusPill>
-                  <StatusPill>{displayCustomerValue(selectedAccountContext?.accountTier)}</StatusPill>
+                  <StatusPill>
+                    {displayCustomerValue(
+                      selectedAccountContext?.accountTier
+                        ? humanizeCustomerValue(selectedAccountContext.accountTier)
+                        : null,
+                    )}
+                  </StatusPill>
                   <StatusPill>
                     {displayCustomerValue(
                       primaryPlatformFromContext(selectedAccountContext)?.provider ?? null,
@@ -7242,7 +7315,11 @@ export function SupportCustomerPage() {
               },
               {
                 label: 'Plano',
-                value: displayCustomerValue(accountContext?.accountTier),
+                  value: displayCustomerValue(
+                    accountContext?.accountTier
+                      ? humanizeCustomerValue(accountContext.accountTier)
+                      : null,
+                  ),
               },
               {
                 label: 'Responsavel',

@@ -1413,7 +1413,7 @@ export function CustomerPortalAdminPage() {
     return (
       <div className="rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
         <ErrorState
-          title="Portal cliente indisponível no Admin Console"
+          title="Portal do cliente indisponível na administração"
           description={errorMessage ?? 'Falha ao carregar a administração do portal cliente.'}
         />
       </div>
@@ -1486,11 +1486,11 @@ export function CustomerPortalAdminPage() {
         <header className="relative">
           <div className="min-w-0 space-y-2">
             <p className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-[color:var(--color-muted)]">
-              ADMIN CONSOLE
+              GENIUS SUPPORT OS
             </p>
             <div className="space-y-1">
               <h1 className="text-[2rem] font-semibold tracking-[-0.05em] text-[color:var(--color-ink)]">
-                Portal cliente
+                Portal do cliente
               </h1>
               <p className="max-w-[680px] text-[0.84rem] leading-6 text-[color:var(--color-muted)]">
                 Governança dos acessos customer-facing, artigos autorizados e vínculos com tickets.
@@ -2152,7 +2152,7 @@ export function CustomerPortalAdminPage() {
             >
               <div className="grid grid-cols-3 gap-4 rounded-[16px] border border-[color:var(--color-border)] p-4 text-sm">
                 <DetailLine label="Visível no portal" value="Sim, conforme permissões" />
-                <DetailLine label="Origem" value="Admin Console" />
+                <DetailLine label="Origem" value="Administração" />
                 <DetailLine label="Última revisão" value="Indisponível" />
               </div>
             </DrawerSection>

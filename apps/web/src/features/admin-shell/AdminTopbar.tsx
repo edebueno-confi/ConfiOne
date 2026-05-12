@@ -1,42 +1,63 @@
-import { NavLink } from 'react-router-dom';
-import { cx } from '../../components/ui';
-
-function AdminQuickNav() {
-  const items = [
-    { label: 'Clientes', to: '/admin/tenants' },
-    { label: 'Knowledge', to: '/admin/knowledge' },
-    { label: 'Access', to: '/admin/access' },
-    { label: 'System', to: '/admin/system' },
-  ];
-
-  return (
-    <nav className="flex gap-2 overflow-x-auto pb-1 xl:hidden">
-      {items.map((item) => (
-        <NavLink
-          className={({ isActive }) =>
-            cx(
-              'inline-flex min-h-10 shrink-0 items-center justify-center rounded-full border px-4 py-2 text-sm font-medium transition',
-              isActive
-                ? 'border-[rgba(22,101,239,0.26)] bg-[rgba(22,101,239,0.1)] text-[color:var(--color-brand-blue)]'
-                : 'border-[color:var(--color-border)] bg-white text-[color:var(--color-ink)]',
-            )
-          }
-          key={item.to}
-          to={item.to}
-        >
-          {item.label}
-        </NavLink>
-      ))}
-    </nav>
-  );
-}
+import { useLocation } from 'react-router-dom';
+import { UnifiedQuickNavigation } from '../navigation/UnifiedEnvironmentNavigation';
 
 export function AdminTopbar() {
+  const location = useLocation();
+
   return (
-    <header className="xl:hidden">
-      <div>
-        <AdminQuickNav />
-      </div>
+    <header className="space-y-2 xl:hidden">
+      <UnifiedQuickNavigation
+        items={[
+          {
+            label: 'Suporte',
+            to: '/support/queue',
+            matches: (pathname) => pathname === '/support' || pathname.startsWith('/support/'),
+          },
+          {
+            label: 'Engenharia',
+            to: '/engineering',
+            matches: (pathname) => pathname.startsWith('/engineering'),
+          },
+          {
+            label: 'Administração',
+            to: '/admin/tenants',
+            matches: (pathname) => pathname.startsWith('/admin/'),
+          },
+        ]}
+        pathname={location.pathname}
+        title="Ambientes"
+      />
+      <UnifiedQuickNavigation
+        items={[
+          {
+            label: 'Clientes B2B',
+            to: '/admin/tenants',
+            matches: (pathname) => pathname === '/admin' || pathname.startsWith('/admin/tenants'),
+          },
+          {
+            label: 'Conhecimento',
+            to: '/admin/knowledge',
+            matches: (pathname) => pathname.startsWith('/admin/knowledge'),
+          },
+          {
+            label: 'Portal do cliente',
+            to: '/admin/customer-portal',
+            matches: (pathname) => pathname.startsWith('/admin/customer-portal'),
+          },
+          {
+            label: 'Acessos',
+            to: '/admin/access',
+            matches: (pathname) => pathname.startsWith('/admin/access'),
+          },
+          {
+            label: 'Sistema',
+            to: '/admin/system',
+            matches: (pathname) => pathname.startsWith('/admin/system'),
+          },
+        ]}
+        pathname={location.pathname}
+        title="Seções"
+      />
     </header>
   );
 }

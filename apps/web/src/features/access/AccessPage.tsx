@@ -697,7 +697,7 @@ export function AccessPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-[1.76rem] font-semibold tracking-[-0.055em] text-[color:var(--color-ink)]">
-              Access
+              Acessos
             </h1>
             <p className="text-[0.84rem] leading-5 text-[color:var(--color-muted)]">
               Gerencie usuários, papéis, permissões e convites da plataforma.

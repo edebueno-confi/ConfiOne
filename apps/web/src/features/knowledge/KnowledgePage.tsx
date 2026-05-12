@@ -2142,7 +2142,7 @@ export function KnowledgePage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-[1.72rem] font-semibold tracking-[-0.05em] text-[color:var(--color-ink)]">
-              Knowledge
+              Conhecimento
             </h1>
             <p className="text-[0.84rem] leading-5 text-[color:var(--color-muted)]">
               Origem editorial governada da central de ajuda pública, com separação clara entre rascunho, revisão, publicado e visibilidade.

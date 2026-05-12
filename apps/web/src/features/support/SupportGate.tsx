@@ -10,7 +10,7 @@ import { AppButton, GhostButton, StatusPill, cx } from '../../components/ui';
 import { useAuthContext } from '../auth/auth-context';
 
 function SupportGateBootShell() {
-  const navItems = ['Fila', 'Tickets', 'Clientes', 'Conhecimento', 'Admin'];
+  const navItems = ['Fila', 'Tickets', 'Clientes', 'Engenharia'];
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#eef4ff_0%,#f7faff_42%,#f3f6fb_100%)] text-[color:var(--color-ink)]">
@@ -21,7 +21,7 @@ function SupportGateBootShell() {
               <img alt="Mascote Genius" className="w-11 shrink-0" src={mascotUrl} />
               <div className="min-w-0 pt-1">
                 <p className="text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-white/48">
-                  Genius
+                  Genius Support OS
                 </p>
                 <h1 className="text-[0.96rem] font-semibold tracking-[-0.04em] leading-tight">
                   Suporte
