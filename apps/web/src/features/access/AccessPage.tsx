@@ -19,6 +19,7 @@ import {
   cx,
   Field,
   GhostButton,
+  GovernedActionDrawer,
   InlineNotice,
   SelectInput,
   StatusPill,
@@ -48,7 +49,7 @@ type PagePhase = 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type LookupPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type AccessTab = 'users' | 'roles' | 'invites' | 'permissions';
 type UserSituation = 'active' | 'inactive' | 'blocked';
-type RailMode = 'detail' | 'invite';
+type AccessDrawer = 'invite' | 'membership' | null;
 
 interface AddMembershipFormState {
   tenantId: string;
@@ -312,7 +313,7 @@ export function AccessPage() {
   const [memberships, setMemberships] = useState<AdminTenantMembershipRow[]>([]);
   const [tenants, setTenants] = useState<AdminTenantsListItemRow[]>([]);
   const [activeTab, setActiveTab] = useState<AccessTab>('users');
-  const [railMode, setRailMode] = useState<RailMode>('detail');
+  const [activeDrawer, setActiveDrawer] = useState<AccessDrawer>(null);
   const [selectedTenantFilter, setSelectedTenantFilter] = useState<string>('all');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>('all');
   const [selectedSituations, setSelectedSituations] = useState<UserSituation[]>([
@@ -587,7 +588,7 @@ export function AccessPage() {
       await loadSurface();
       setSelectedMembershipId(created.id);
       setActiveTab('users');
-      setRailMode('detail');
+      setActiveDrawer(null);
       setAddMessage('Convite registrado com sucesso.');
     } catch (error) {
       const classified = classifyAdminError(error, 'Falha ao registrar o convite.');
@@ -690,6 +691,7 @@ export function AccessPage() {
   }
 
   return (
+    <>
     <div className="space-y-3 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
       <header className="rounded-[22px] border border-[color:var(--color-border)] bg-white/96 px-5 py-3.5 shadow-[0_18px_40px_rgba(16,30,74,0.08)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -702,7 +704,7 @@ export function AccessPage() {
             </p>
           </div>
 
-          <AppButton className="min-h-10 gap-2 rounded-full px-5 text-[13px]" onClick={() => setRailMode('invite')}>
+          <AppButton className="min-h-10 gap-2 rounded-full px-5 text-[13px]" onClick={() => setActiveDrawer('invite')}>
             + Convidar usuário
           </AppButton>
         </div>
@@ -721,7 +723,6 @@ export function AccessPage() {
               )}
               onClick={() => {
                 setActiveTab(tab.key);
-                setRailMode('detail');
               }}
               type="button"
             >
@@ -949,7 +950,6 @@ export function AccessPage() {
                               key={membership.id}
                               onClick={() => {
                                 setSelectedMembershipId(membership.id);
-                                setRailMode('detail');
                               }}
                             >
                               <td className="px-4 py-3">
@@ -1026,7 +1026,6 @@ export function AccessPage() {
                                   key={membership.id}
                                   onClick={() => {
                                     setSelectedMembershipId(membership.id);
-                                    setRailMode('detail');
                                   }}
                                 >
                               <td className="px-4 py-3">
@@ -1142,186 +1141,7 @@ export function AccessPage() {
         </section>
 
         <aside className="rounded-[22px] border border-[color:var(--color-border)] bg-white/96 p-4 shadow-[0_16px_34px_rgba(16,30,74,0.08)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
-          {railMode === 'invite' ? (
-            <div className="space-y-4 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
-              <div className="flex items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
-                    Convidar usuário
-                  </p>
-                  <h2 className="text-lg font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                    Novo acesso
-                  </h2>
-                </div>
-                <GhostButton className="min-h-10 px-3" onClick={() => setRailMode('detail')}>
-                  Fechar
-                </GhostButton>
-              </div>
-
-              <form className="space-y-4" onSubmit={handleAddMembership}>
-                <Field
-                  label="Buscar usuário existente"
-                  description="Consulte por nome ou e-mail para preencher o convite com segurança."
-                >
-                  <TextInput
-                    onChange={(event) => {
-                      setLookupQuery(event.target.value);
-                      if (lookupPhase !== 'idle') {
-                        setLookupPhase('idle');
-                      }
-                      if (lookupMessage) {
-                        setLookupMessage(null);
-                      }
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault();
-                        void handleLookupUsers();
-                      }
-                    }}
-                    placeholder="Buscar por nome ou email"
-                    value={lookupQuery}
-                  />
-                </Field>
-
-                <GhostButton className="min-h-11 w-full" onClick={() => void handleLookupUsers()}>
-                  {lookupPhase === 'loading' ? 'Buscando...' : 'Buscar usuário'}
-                </GhostButton>
-
-                {lookupMessage ? (
-                  <InlineNotice
-                    tone={
-                      lookupPhase === 'error'
-                        ? 'critical'
-                        : lookupPhase === 'contract-unavailable'
-                          ? 'warning'
-                          : 'default'
-                    }
-                  >
-                    {lookupMessage}
-                  </InlineNotice>
-                ) : null}
-
-                {lookupResults.length > 0 ? (
-                  <div className="space-y-2">
-                    {lookupResults.map((user) => {
-                      const isSelected = addForm.userId === user.user_id;
-
-                      return (
-                        <button
-                          key={user.user_id}
-                          className={cx(
-                            'w-full rounded-[18px] border px-4 py-3 text-left transition',
-                            isSelected
-                              ? 'border-[color:var(--color-brand-blue)] bg-[rgba(48,127,226,0.08)]'
-                              : 'border-[color:var(--color-border)] bg-white hover:border-[rgba(48,127,226,0.35)]',
-                          )}
-                          onClick={() => applyLookupSelection(user)}
-                          type="button"
-                        >
-                          <p className="font-medium text-[color:var(--color-ink)]">
-                            {user.full_name ?? 'Indisponível'}
-                          </p>
-                          <p className="text-sm text-[color:var(--color-muted)]">
-                            {user.email ?? 'Indisponível'}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : null}
-
-                <Field label="Tenant">
-                  <SelectInput
-                    onChange={(event) =>
-                      setAddForm((current) => ({
-                        ...current,
-                        tenantId: event.target.value,
-                      }))
-                    }
-                    required
-                    value={addForm.tenantId}
-                  >
-                    <option value="">Selecione um tenant</option>
-                    {tenants.map((tenant) => (
-                      <option key={tenant.id} value={tenant.id}>
-                        {tenant.display_name}
-                      </option>
-                    ))}
-                  </SelectInput>
-                </Field>
-
-                <Field label="Papel">
-                  <SelectInput
-                    onChange={(event) =>
-                      setAddForm((current) => ({
-                        ...current,
-                        role: event.target.value as TenantRole,
-                      }))
-                    }
-                    value={addForm.role}
-                  >
-                    {TENANT_ROLES.map((role) => (
-                      <option key={role} value={role}>
-                        {tenantRoleLabel(role)}
-                      </option>
-                    ))}
-                  </SelectInput>
-                </Field>
-
-                <details className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
-                  <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-ink)]">
-                    Opcoes avancadas
-                  </summary>
-                  <div className="mt-3 space-y-4">
-                    <Field label="Situação inicial">
-                      <SelectInput
-                        onChange={(event) =>
-                          setAddForm((current) => ({
-                            ...current,
-                            status: event.target.value as MembershipStatus,
-                          }))
-                        }
-                        value={addForm.status}
-                      >
-                        {MEMBERSHIP_STATUSES.map((status) => (
-                          <option key={status} value={status}>
-                            {membershipStatusLabel(status)}
-                          </option>
-                        ))}
-                      </SelectInput>
-                    </Field>
-                    <Field
-                      label="Identificador manual"
-                      description="Use apenas quando a pessoa não aparecer na busca."
-                    >
-                      <TextInput
-                        onChange={(event) =>
-                          setAddForm((current) => ({
-                            ...current,
-                            userId: event.target.value,
-                          }))
-                        }
-                        placeholder="Cole o identificador interno se precisar"
-                        required
-                        value={addForm.userId}
-                      />
-                    </Field>
-                  </div>
-                </details>
-
-                {addMessage ? (
-                  <InlineNotice tone={addMessage.includes('sucesso') ? 'default' : 'critical'}>
-                    {addMessage}
-                  </InlineNotice>
-                ) : null}
-
-                <AppButton className="min-h-11 w-full" disabled={addSubmitting} type="submit">
-                  {addSubmitting ? 'Enviando...' : 'Enviar convite'}
-                </AppButton>
-              </form>
-            </div>
-          ) : activeTab === 'roles' ? (
+          {activeTab === 'roles' ? (
             <div className="space-y-4 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
                 Detalhes do papel
@@ -1497,63 +1317,304 @@ export function AccessPage() {
                 </div>
               </dl>
 
-              <form className="space-y-4 border-t border-[color:var(--color-border)] pt-4" onSubmit={handleUpdateMembership}>
-                <p className="text-sm font-semibold text-[color:var(--color-ink)]">Ações</p>
-                <Field label="Papel">
-                  <SelectInput
-                    disabled={!selectedMembership.can_update_role}
-                    onChange={(event) => setRoleDraft(event.target.value as TenantRole)}
-                    value={roleDraft}
-                  >
-                    {TENANT_ROLES.map((role) => (
-                      <option key={role} value={role}>
-                        {tenantRoleLabel(role)}
-                      </option>
-                    ))}
-                  </SelectInput>
-                </Field>
-                <Field label="Situação">
-                  <SelectInput
-                    disabled={!selectedMembership.can_update_status}
-                    onChange={(event) => setStatusDraft(event.target.value as MembershipStatus)}
-                    value={statusDraft}
-                  >
-                    {MEMBERSHIP_STATUSES.map((status) => (
-                      <option key={status} value={status}>
-                        {membershipStatusLabel(status)}
-                      </option>
-                    ))}
-                  </SelectInput>
-                </Field>
-
-                {updateMessage ? (
-                  <InlineNotice tone={updateMessage.includes('sucesso') ? 'default' : 'critical'}>
-                    {updateMessage}
-                  </InlineNotice>
-                ) : null}
-
-                {!selectedMembership.can_update_role || !selectedMembership.can_update_status ? (
-                  <InlineNotice>
-                    Alteração desabilitada pelo backend para evitar autogestão ou transição sem permissão.
-                  </InlineNotice>
-                ) : null}
-
-                <AppButton
-                  className="min-h-11 w-full"
-                  disabled={
-                    updateSubmitting ||
-                    !selectedMembership.can_update_role ||
-                    !selectedMembership.can_update_status
-                  }
-                  type="submit"
+              <div className="space-y-3 border-t border-[color:var(--color-border)] pt-4">
+                <p className="text-sm font-semibold text-[color:var(--color-ink)]">Ações governadas</p>
+                <GhostButton
+                  className="min-h-11 w-full justify-center"
+                  onClick={() => setActiveDrawer('membership')}
+                  type="button"
                 >
-                  {updateSubmitting ? 'Salvando...' : 'Salvar alterações'}
-                </AppButton>
-              </form>
+                  Alterar papel ou situação
+                </GhostButton>
+                <p className="text-xs leading-5 text-[color:var(--color-muted)]">
+                  Alterações de acesso usam painel dedicado para preservar contexto e permissões.
+                </p>
+              </div>
             </div>
           )}
         </aside>
       </div>
     </div>
+    {activeDrawer === 'invite' ? (
+      <GovernedActionDrawer
+        description="Registre um novo vínculo de acesso usando contratos administrativos reais."
+        footer={
+          <>
+            <GhostButton onClick={() => setActiveDrawer(null)} type="button">
+              Cancelar
+            </GhostButton>
+            <AppButton
+              disabled={addSubmitting}
+              form="admin-access-invite-form"
+              type="submit"
+            >
+              {addSubmitting ? 'Enviando...' : 'Enviar convite'}
+            </AppButton>
+          </>
+        }
+        onClose={() => setActiveDrawer(null)}
+        title="Convidar usuário"
+      >
+        <form className="space-y-6" id="admin-access-invite-form" onSubmit={handleAddMembership}>
+          <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5">
+            <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+              <Field
+                label="Buscar usuário existente"
+                description="Consulte por nome ou e-mail para preencher o vínculo com segurança."
+              >
+                <TextInput
+                  onChange={(event) => {
+                    setLookupQuery(event.target.value);
+                    if (lookupPhase !== 'idle') {
+                      setLookupPhase('idle');
+                    }
+                    if (lookupMessage) {
+                      setLookupMessage(null);
+                    }
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      void handleLookupUsers();
+                    }
+                  }}
+                  placeholder="Buscar por nome ou email"
+                  value={lookupQuery}
+                />
+              </Field>
+
+              <GhostButton className="min-h-11 px-5" onClick={() => void handleLookupUsers()}>
+                {lookupPhase === 'loading' ? 'Buscando...' : 'Buscar usuário'}
+              </GhostButton>
+            </div>
+
+            {lookupMessage ? (
+              <div className="mt-4">
+                <InlineNotice
+                  tone={
+                    lookupPhase === 'error'
+                      ? 'critical'
+                      : lookupPhase === 'contract-unavailable'
+                        ? 'warning'
+                        : 'default'
+                  }
+                >
+                  {lookupMessage}
+                </InlineNotice>
+              </div>
+            ) : null}
+
+            {lookupResults.length > 0 ? (
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {lookupResults.map((user) => {
+                  const isSelected = addForm.userId === user.user_id;
+
+                  return (
+                    <button
+                      key={user.user_id}
+                      className={cx(
+                        'min-w-0 rounded-[18px] border px-4 py-3 text-left transition',
+                        isSelected
+                          ? 'border-[color:var(--color-brand-blue)] bg-[rgba(48,127,226,0.08)]'
+                          : 'border-[color:var(--color-border)] bg-white hover:border-[rgba(48,127,226,0.35)]',
+                      )}
+                      onClick={() => applyLookupSelection(user)}
+                      type="button"
+                    >
+                      <p className="truncate font-medium text-[color:var(--color-ink)]">
+                        {user.full_name ?? 'Indisponível'}
+                      </p>
+                      <p className="truncate text-sm text-[color:var(--color-muted)]">
+                        {user.email ?? 'Indisponível'}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+          </section>
+
+          <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white p-5">
+            <h3 className="text-base font-semibold text-[color:var(--color-ink)]">
+              Dados do acesso
+            </h3>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <Field label="Tenant">
+                <SelectInput
+                  onChange={(event) =>
+                    setAddForm((current) => ({
+                      ...current,
+                      tenantId: event.target.value,
+                    }))
+                  }
+                  required
+                  value={addForm.tenantId}
+                >
+                  <option value="">Selecione um tenant</option>
+                  {tenants.map((tenant) => (
+                    <option key={tenant.id} value={tenant.id}>
+                      {tenant.display_name}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Field>
+
+              <Field label="Papel">
+                <SelectInput
+                  onChange={(event) =>
+                    setAddForm((current) => ({
+                      ...current,
+                      role: event.target.value as TenantRole,
+                    }))
+                  }
+                  value={addForm.role}
+                >
+                  {TENANT_ROLES.map((role) => (
+                    <option key={role} value={role}>
+                      {tenantRoleLabel(role)}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Field>
+
+              <Field label="Situação inicial">
+                <SelectInput
+                  onChange={(event) =>
+                    setAddForm((current) => ({
+                      ...current,
+                      status: event.target.value as MembershipStatus,
+                    }))
+                  }
+                  value={addForm.status}
+                >
+                  {MEMBERSHIP_STATUSES.map((status) => (
+                    <option key={status} value={status}>
+                      {membershipStatusLabel(status)}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Field>
+
+              <Field
+                label="Identificador manual"
+                description="Use apenas quando a pessoa não aparecer na busca."
+              >
+                <TextInput
+                  onChange={(event) =>
+                    setAddForm((current) => ({
+                      ...current,
+                      userId: event.target.value,
+                    }))
+                  }
+                  placeholder="Cole o identificador se precisar"
+                  required
+                  value={addForm.userId}
+                />
+              </Field>
+            </div>
+          </section>
+
+          {addMessage ? (
+            <InlineNotice tone={addMessage.includes('sucesso') ? 'default' : 'critical'}>
+              {addMessage}
+            </InlineNotice>
+          ) : null}
+        </form>
+      </GovernedActionDrawer>
+    ) : null}
+
+    {activeDrawer === 'membership' && selectedMembership ? (
+      <GovernedActionDrawer
+        description="Atualize papel e situação do acesso selecionado sem comprimir o contexto no rail."
+        footer={
+          <>
+            <GhostButton onClick={() => setActiveDrawer(null)} type="button">
+              Cancelar
+            </GhostButton>
+            <AppButton
+              disabled={
+                updateSubmitting ||
+                !selectedMembership.can_update_role ||
+                !selectedMembership.can_update_status
+              }
+              form="admin-access-membership-form"
+              type="submit"
+            >
+              {updateSubmitting ? 'Salvando...' : 'Salvar alterações'}
+            </AppButton>
+          </>
+        }
+        onClose={() => setActiveDrawer(null)}
+        title="Gerenciar acesso"
+      >
+        <form className="space-y-6" id="admin-access-membership-form" onSubmit={handleUpdateMembership}>
+          <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5">
+            <div className="flex min-w-0 items-center gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--color-brand-blue),var(--color-brand-navy))] text-base font-semibold text-white">
+                {getInitials(selectedMembership.user_full_name, selectedMembership.user_email)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="truncate text-lg font-semibold tracking-[-0.035em] text-[color:var(--color-ink)]">
+                  {getDisplayName(selectedMembership)}
+                </h3>
+                <p className="truncate text-sm text-[color:var(--color-muted)]">
+                  {getDisplayEmail(selectedMembership)}
+                </p>
+              </div>
+              <StatusPill tone={membershipStateTone(selectedMembership)}>
+                {membershipStateLabel(selectedMembership)}
+              </StatusPill>
+            </div>
+          </section>
+
+          <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white p-5">
+            <h3 className="text-base font-semibold text-[color:var(--color-ink)]">
+              Permissões do vínculo
+            </h3>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <Field label="Papel">
+                <SelectInput
+                  disabled={!selectedMembership.can_update_role}
+                  onChange={(event) => setRoleDraft(event.target.value as TenantRole)}
+                  value={roleDraft}
+                >
+                  {TENANT_ROLES.map((role) => (
+                    <option key={role} value={role}>
+                      {tenantRoleLabel(role)}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Field>
+              <Field label="Situação">
+                <SelectInput
+                  disabled={!selectedMembership.can_update_status}
+                  onChange={(event) => setStatusDraft(event.target.value as MembershipStatus)}
+                  value={statusDraft}
+                >
+                  {MEMBERSHIP_STATUSES.map((status) => (
+                    <option key={status} value={status}>
+                      {membershipStatusLabel(status)}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Field>
+            </div>
+          </section>
+
+          {updateMessage ? (
+            <InlineNotice tone={updateMessage.includes('sucesso') ? 'default' : 'critical'}>
+              {updateMessage}
+            </InlineNotice>
+          ) : null}
+
+          {!selectedMembership.can_update_role || !selectedMembership.can_update_status ? (
+            <InlineNotice>
+              Alteração desabilitada para evitar autogestão ou transição sem permissão.
+            </InlineNotice>
+          ) : null}
+        </form>
+      </GovernedActionDrawer>
+    ) : null}
+    </>
   );
 }

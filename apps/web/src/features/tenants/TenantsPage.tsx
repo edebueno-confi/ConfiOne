@@ -20,6 +20,7 @@ import {
   AppButton,
   Field,
   GhostButton,
+  GovernedActionDrawer,
   InlineNotice,
   SelectInput,
   StatusPill,
@@ -298,22 +299,9 @@ function TenantModal({
   children: ReactNode;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(7,15,35,0.34)] px-4 py-6 backdrop-blur-[2px]">
-      <div className="w-full max-w-[860px] rounded-[28px] border border-[color:var(--color-border)] bg-white p-5 shadow-[0_28px_70px_rgba(14,29,72,0.24)] sm:p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h2 className="text-[1.35rem] font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
-              {title}
-            </h2>
-            <p className="text-sm leading-6 text-[color:var(--color-muted)]">{description}</p>
-          </div>
-          <GhostButton className="min-h-10 px-4" onClick={onClose} type="button">
-            Fechar
-          </GhostButton>
-        </div>
-        <div className="mt-5">{children}</div>
-      </div>
-    </div>
+    <GovernedActionDrawer description={description} onClose={onClose} title={title}>
+      {children}
+    </GovernedActionDrawer>
   );
 }
 
@@ -339,6 +327,7 @@ export function TenantsPage() {
   const [sortOrder, setSortOrder] = useState<TenantSort>('updated');
   const [showCreateTenant, setShowCreateTenant] = useState(false);
   const [showContactManager, setShowContactManager] = useState(false);
+  const [showStatusManager, setShowStatusManager] = useState(false);
   const [tenantForm, setTenantForm] = useState<TenantFormState>(emptyTenantForm);
   const [tenantFormMessage, setTenantFormMessage] = useState<string | null>(null);
   const [tenantFormSubmitting, setTenantFormSubmitting] = useState(false);
@@ -621,6 +610,7 @@ export function TenantsPage() {
       });
       await loadSurface(selectedTenantId);
       await loadTenantDetail(selectedTenantId);
+      setShowStatusManager(false);
       setStatusMessage('Status operacional atualizado com sucesso.');
     } catch (error) {
       const classified = classifyAdminError(
@@ -1263,35 +1253,26 @@ export function TenantsPage() {
                           <p className="mb-3 text-sm font-semibold text-[color:var(--color-ink)]">
                             Ajustar status operacional
                           </p>
+                          <p className="text-sm leading-6 text-[color:var(--color-muted)]">
+                            Alterações de status usam painel dedicado para evitar compressão no rail.
+                          </p>
+                          <GhostButton
+                            className="mt-3 min-h-10 w-full justify-center"
+                            onClick={() => setShowStatusManager(true)}
+                            type="button"
+                          >
+                            Alterar status
+                          </GhostButton>
 
-                          <form className="space-y-3" onSubmit={handleUpdateStatus}>
-                            <Field label="Status atual">
-                              <SelectInput
-                                onChange={(event) =>
-                                  setStatusDraft(event.target.value as TenantStatus)
-                                }
-                                value={statusDraft}
-                              >
-                                {TENANT_STATUSES.map((status) => (
-                                  <option key={status} value={status}>
-                                    {labelForTenantStatus(status)}
-                                  </option>
-                                ))}
-                              </SelectInput>
-                            </Field>
-
-                            {statusMessage ? (
+                          {statusMessage ? (
+                            <div className="mt-3">
                               <InlineNotice
                                 tone={statusMessage.includes('sucesso') ? 'positive' : 'critical'}
                               >
                                 {statusMessage}
                               </InlineNotice>
-                            ) : null}
-
-                            <AppButton className="min-h-10" disabled={statusSubmitting} type="submit">
-                              {statusSubmitting ? 'Salvando...' : 'Salvar status'}
-                            </AppButton>
-                          </form>
+                            </div>
+                          ) : null}
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
@@ -1350,12 +1331,33 @@ export function TenantsPage() {
       </div>
 
       {showCreateTenant ? (
-        <TenantModal
+        <GovernedActionDrawer
           description="Abra uma nova conta operacional com identificação, razão social e região de dados."
+          footer={
+            <>
+              <GhostButton
+                disabled={tenantFormSubmitting}
+                onClick={() => {
+                  setTenantForm(emptyTenantForm());
+                  setTenantFormMessage(null);
+                }}
+                type="button"
+              >
+                Limpar
+              </GhostButton>
+              <AppButton
+                disabled={tenantFormSubmitting}
+                form="admin-tenant-create-form"
+                type="submit"
+              >
+                {tenantFormSubmitting ? 'Criando...' : 'Criar cliente'}
+              </AppButton>
+            </>
+          }
           onClose={() => setShowCreateTenant(false)}
           title="Novo cliente"
         >
-          <form className="grid gap-4 md:grid-cols-2" onSubmit={handleCreateTenant}>
+          <form className="grid gap-4 md:grid-cols-2" id="admin-tenant-create-form" onSubmit={handleCreateTenant}>
             <Field label="Slug">
               <TextInput
                 onChange={(event) =>
@@ -1418,23 +1420,8 @@ export function TenantsPage() {
               ) : null}
             </div>
 
-            <div className="flex flex-wrap gap-3 md:col-span-2">
-              <AppButton disabled={tenantFormSubmitting} type="submit">
-                {tenantFormSubmitting ? 'Criando...' : 'Criar cliente'}
-              </AppButton>
-              <GhostButton
-                disabled={tenantFormSubmitting}
-                onClick={() => {
-                  setTenantForm(emptyTenantForm());
-                  setTenantFormMessage(null);
-                }}
-                type="button"
-              >
-                Limpar
-              </GhostButton>
-            </div>
           </form>
-        </TenantModal>
+        </GovernedActionDrawer>
       ) : null}
 
       {showContactManager && tenantDetail ? (
@@ -1620,6 +1607,79 @@ export function TenantsPage() {
             </form>
           </div>
         </TenantModal>
+      ) : null}
+
+      {showStatusManager && tenantDetail ? (
+        <GovernedActionDrawer
+          description="Atualize a situação operacional do cliente selecionado com validação administrativa."
+          footer={
+            <>
+              <GhostButton onClick={() => setShowStatusManager(false)} type="button">
+                Cancelar
+              </GhostButton>
+              <AppButton
+                disabled={statusSubmitting}
+                form="admin-tenant-status-form"
+                type="submit"
+              >
+                {statusSubmitting ? 'Salvando...' : 'Salvar status'}
+              </AppButton>
+            </>
+          }
+          onClose={() => setShowStatusManager(false)}
+          title="Alterar status do cliente"
+        >
+          <form className="space-y-6" id="admin-tenant-status-form" onSubmit={handleUpdateStatus}>
+            <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5">
+              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_180px_180px] md:items-center">
+                <div className="min-w-0">
+                  <p className="truncate text-lg font-semibold tracking-[-0.035em] text-[color:var(--color-ink)]">
+                    {tenantDetail.display_name}
+                  </p>
+                  <p className="truncate text-sm text-[color:var(--color-muted)]">
+                    {tenantDetail.slug}
+                  </p>
+                </div>
+                <TenantMetricTile
+                  helper="com vínculo ativo"
+                  label="Membros"
+                  value={String(tenantDetail.active_membership_count)}
+                />
+                <TenantMetricTile
+                  helper="contatos ativos"
+                  label="Contatos"
+                  value={String(tenantDetail.active_contact_count)}
+                />
+              </div>
+            </section>
+
+            <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white p-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Status atual">
+                  <SelectInput
+                    onChange={(event) => setStatusDraft(event.target.value as TenantStatus)}
+                    value={statusDraft}
+                  >
+                    {TENANT_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {labelForTenantStatus(status)}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </Field>
+                <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 text-sm leading-6 text-[color:var(--color-muted)]">
+                  A mudança afeta apenas o status operacional permitido pelo contrato administrativo.
+                </div>
+              </div>
+            </section>
+
+            {statusMessage ? (
+              <InlineNotice tone={statusMessage.includes('sucesso') ? 'positive' : 'critical'}>
+                {statusMessage}
+              </InlineNotice>
+            ) : null}
+          </form>
+        </GovernedActionDrawer>
       ) : null}
     </div>
   );

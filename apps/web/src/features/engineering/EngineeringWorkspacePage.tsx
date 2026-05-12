@@ -12,6 +12,7 @@ import {
   AppButton,
   Field,
   GhostButton,
+  GovernedActionDrawer,
   InlineNotice,
   SelectInput,
   StatusPill,
@@ -45,6 +46,7 @@ import {
 } from './engineering-api';
 
 type Phase = 'loading' | 'ready' | 'contract-unavailable' | 'error';
+type EngineeringActionDrawer = 'status' | 'update' | 'return' | null;
 
 interface WorkItemDetail extends EngineeringWorkspaceWorkItem {
   linkedTickets?: unknown[];
@@ -241,6 +243,7 @@ export function EngineeringWorkspacePage() {
   const [statusDraft, setStatusDraft] = useState<StatusDraft>(emptyStatusDraft());
   const [updateDraft, setUpdateDraft] = useState<UpdateDraft>(emptyUpdateDraft());
   const [returnDraft, setReturnDraft] = useState<UpdateDraft>(emptyUpdateDraft());
+  const [activeActionDrawer, setActiveActionDrawer] = useState<EngineeringActionDrawer>(null);
 
   const selectedId = workItemId ?? items[0]?.engineeringWorkItemId ?? null;
 
@@ -430,6 +433,7 @@ export function EngineeringWorkspacePage() {
   }
 
   return (
+    <>
     <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden">
       <header className="rounded-[22px] border border-[color:var(--color-border)] bg-white/92 px-4 py-3 shadow-[0_14px_28px_rgba(19,33,79,0.08)]">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -636,118 +640,51 @@ export function EngineeringWorkspacePage() {
                 </DetailSection>
 
                 <DetailSection title="Alterar status">
-                  <form className="space-y-3" onSubmit={handleStatusSubmit}>
-                    <Field label="Novo status">
-                      <SelectInput
-                        value={statusDraft.status}
-                        onChange={(event) =>
-                          setStatusDraft((current) => ({
-                            ...current,
-                            status: event.target.value as EngineeringWorkItemStatus,
-                          }))
-                        }
-                      >
-                        {ENGINEERING_WORK_ITEM_STATUSES.map((status) => (
-                          <option key={status} value={status}>
-                            {humanizeEngineeringStatus(status)}
-                          </option>
-                        ))}
-                      </SelectInput>
-                    </Field>
-                    <Field label="Resumo">
-                      <TextareaInput
-                        minLength={8}
-                        onChange={(event) =>
-                          setStatusDraft((current) => ({
-                            ...current,
-                            summary: event.target.value,
-                          }))
-                        }
-                        required
-                        value={statusDraft.summary}
-                      />
-                    </Field>
-                    <Field label="Próximo passo">
-                      <TextInput
-                        onChange={(event) =>
-                          setStatusDraft((current) => ({
-                            ...current,
-                            nextStep: event.target.value,
-                          }))
-                        }
-                        value={statusDraft.nextStep}
-                      />
-                    </Field>
-                    <AppButton disabled={submitting} type="submit">
+                  <div className="space-y-3">
+                    <p className="text-sm leading-6 text-[color:var(--color-muted)]">
+                      Status, resumo e próximo passo usam painel dedicado para manter a demanda legível.
+                    </p>
+                    <AppButton
+                      className="min-h-10 w-full"
+                      disabled={submitting}
+                      onClick={() => setActiveActionDrawer('status')}
+                      type="button"
+                    >
                       Atualizar status
                     </AppButton>
-                  </form>
+                  </div>
                 </DetailSection>
 
                 <DetailSection title="Registrar atualização">
-                  <form className="space-y-3" onSubmit={handleUpdateSubmit}>
-                    <Field label="Resumo técnico">
-                      <TextareaInput
-                        minLength={8}
-                        onChange={(event) =>
-                          setUpdateDraft((current) => ({
-                            ...current,
-                            summary: event.target.value,
-                          }))
-                        }
-                        required
-                        value={updateDraft.summary}
-                      />
-                    </Field>
-                    <Field label="Próximo passo">
-                      <TextInput
-                        onChange={(event) =>
-                          setUpdateDraft((current) => ({
-                            ...current,
-                            nextStep: event.target.value,
-                          }))
-                        }
-                        value={updateDraft.nextStep}
-                      />
-                    </Field>
-                    <GhostButton disabled={submitting} type="submit">
+                  <div className="space-y-3">
+                    <p className="text-sm leading-6 text-[color:var(--color-muted)]">
+                      Registre update técnico com área ampla para texto e próximos passos.
+                    </p>
+                    <GhostButton
+                      className="min-h-10 w-full"
+                      disabled={submitting}
+                      onClick={() => setActiveActionDrawer('update')}
+                      type="button"
+                    >
                       Registrar update
                     </GhostButton>
-                  </form>
+                  </div>
                 </DetailSection>
 
                 <DetailSection title="Devolver ao suporte">
-                  <form className="space-y-3" onSubmit={handleReturnSubmit}>
-                    <Field label="Resumo para suporte">
-                      <TextareaInput
-                        minLength={8}
-                        onChange={(event) =>
-                          setReturnDraft((current) => ({
-                            ...current,
-                            summary: event.target.value,
-                          }))
-                        }
-                        required
-                        value={returnDraft.summary}
-                      />
-                    </Field>
-                    <Field label="Próximo passo para suporte">
-                      <TextInput
-                        minLength={4}
-                        onChange={(event) =>
-                          setReturnDraft((current) => ({
-                            ...current,
-                            nextStep: event.target.value,
-                          }))
-                        }
-                        required
-                        value={returnDraft.nextStep}
-                      />
-                    </Field>
-                    <AppButton disabled={submitting} type="submit">
+                  <div className="space-y-3">
+                    <p className="text-sm leading-6 text-[color:var(--color-muted)]">
+                      A devolução exige resumo e próximo passo em superfície operacional própria.
+                    </p>
+                    <AppButton
+                      className="min-h-10 w-full"
+                      disabled={submitting}
+                      onClick={() => setActiveActionDrawer('return')}
+                      type="button"
+                    >
                       Devolver ao suporte
                     </AppButton>
-                  </form>
+                  </div>
                 </DetailSection>
               </aside>
             </div>
@@ -755,5 +692,172 @@ export function EngineeringWorkspacePage() {
         </main>
       </div>
     </div>
+    {activeActionDrawer === 'status' && selected ? (
+      <GovernedActionDrawer
+        description="Atualize o andamento técnico com resumo e próximo passo."
+        footer={
+          <>
+            <GhostButton onClick={() => setActiveActionDrawer(null)} type="button">
+              Cancelar
+            </GhostButton>
+            <AppButton disabled={submitting} form="engineering-status-form" type="submit">
+              Atualizar status
+            </AppButton>
+          </>
+        }
+        onClose={() => setActiveActionDrawer(null)}
+        title="Alterar status técnico"
+      >
+        <form className="space-y-5" id="engineering-status-form" onSubmit={handleStatusSubmit}>
+          <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5">
+            <p className="text-lg font-semibold tracking-[-0.035em] text-[color:var(--color-ink)]">
+              {selected.title}
+            </p>
+            <p className="mt-1 text-sm text-[color:var(--color-muted)]">
+              {selected.tenantName ?? 'Cliente indisponível'}
+            </p>
+          </section>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Novo status">
+              <SelectInput
+                value={statusDraft.status}
+                onChange={(event) =>
+                  setStatusDraft((current) => ({
+                    ...current,
+                    status: event.target.value as EngineeringWorkItemStatus,
+                  }))
+                }
+              >
+                {ENGINEERING_WORK_ITEM_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {humanizeEngineeringStatus(status)}
+                  </option>
+                ))}
+              </SelectInput>
+            </Field>
+            <Field label="Próximo passo">
+              <TextInput
+                onChange={(event) =>
+                  setStatusDraft((current) => ({
+                    ...current,
+                    nextStep: event.target.value,
+                  }))
+                }
+                value={statusDraft.nextStep}
+              />
+            </Field>
+          </div>
+          <Field label="Resumo">
+            <TextareaInput
+              className="min-h-[180px]"
+              minLength={8}
+              onChange={(event) =>
+                setStatusDraft((current) => ({
+                  ...current,
+                  summary: event.target.value,
+                }))
+              }
+              required
+              value={statusDraft.summary}
+            />
+          </Field>
+        </form>
+      </GovernedActionDrawer>
+    ) : null}
+
+    {activeActionDrawer === 'update' && selected ? (
+      <GovernedActionDrawer
+        description="Registre uma atualização técnica ampla e objetiva."
+        footer={
+          <>
+            <GhostButton onClick={() => setActiveActionDrawer(null)} type="button">
+              Cancelar
+            </GhostButton>
+            <AppButton disabled={submitting} form="engineering-update-form" type="submit">
+              Registrar update
+            </AppButton>
+          </>
+        }
+        onClose={() => setActiveActionDrawer(null)}
+        title="Registrar atualização"
+      >
+        <form className="space-y-5" id="engineering-update-form" onSubmit={handleUpdateSubmit}>
+          <Field label="Resumo técnico">
+            <TextareaInput
+              className="min-h-[220px]"
+              minLength={8}
+              onChange={(event) =>
+                setUpdateDraft((current) => ({
+                  ...current,
+                  summary: event.target.value,
+                }))
+              }
+              required
+              value={updateDraft.summary}
+            />
+          </Field>
+          <Field label="Próximo passo">
+            <TextInput
+              onChange={(event) =>
+                setUpdateDraft((current) => ({
+                  ...current,
+                  nextStep: event.target.value,
+                }))
+              }
+              value={updateDraft.nextStep}
+            />
+          </Field>
+        </form>
+      </GovernedActionDrawer>
+    ) : null}
+
+    {activeActionDrawer === 'return' && selected ? (
+      <GovernedActionDrawer
+        description="Devolva a demanda ao suporte com contexto suficiente para continuidade."
+        footer={
+          <>
+            <GhostButton onClick={() => setActiveActionDrawer(null)} type="button">
+              Cancelar
+            </GhostButton>
+            <AppButton disabled={submitting} form="engineering-return-form" type="submit">
+              Devolver ao suporte
+            </AppButton>
+          </>
+        }
+        onClose={() => setActiveActionDrawer(null)}
+        title="Devolver ao suporte"
+      >
+        <form className="space-y-5" id="engineering-return-form" onSubmit={handleReturnSubmit}>
+          <Field label="Resumo para suporte">
+            <TextareaInput
+              className="min-h-[220px]"
+              minLength={8}
+              onChange={(event) =>
+                setReturnDraft((current) => ({
+                  ...current,
+                  summary: event.target.value,
+                }))
+              }
+              required
+              value={returnDraft.summary}
+            />
+          </Field>
+          <Field label="Próximo passo para suporte">
+            <TextInput
+              minLength={4}
+              onChange={(event) =>
+                setReturnDraft((current) => ({
+                  ...current,
+                  nextStep: event.target.value,
+                }))
+              }
+              required
+              value={returnDraft.nextStep}
+            />
+          </Field>
+        </form>
+      </GovernedActionDrawer>
+    ) : null}
+    </>
   );
 }

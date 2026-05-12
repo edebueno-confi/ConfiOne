@@ -342,6 +342,58 @@ export function ContextSubsidebarSection({
   );
 }
 
+export function GovernedActionDrawer({
+  title,
+  description,
+  onClose,
+  children,
+  footer,
+  className,
+}: {
+  title: string;
+  description: string;
+  onClose: () => void;
+  children: ReactNode;
+  footer?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end overflow-hidden bg-[rgba(7,15,35,0.42)] backdrop-blur-[3px]">
+      <section
+        aria-modal="true"
+        className={cx(
+          'flex h-dvh w-[clamp(720px,50vw,860px)] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-l-[30px] border-l border-[color:var(--color-border)] bg-white shadow-[0_32px_90px_rgba(10,22,50,0.28)]',
+          className,
+        )}
+        role="dialog"
+      >
+        <header className="flex shrink-0 items-start justify-between gap-5 border-b border-[color:var(--color-border)] px-8 py-6">
+          <div className="min-w-0 space-y-1">
+            <h2 className="text-[1.45rem] font-semibold tracking-[-0.045em] text-[color:var(--color-ink)]">
+              {title}
+            </h2>
+            <p className="text-sm leading-6 text-[color:var(--color-muted)]">{description}</p>
+          </div>
+          <button
+            aria-label="Fechar painel"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white text-xl leading-none text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/40 hover:bg-[color:var(--color-surface)]"
+            onClick={onClose}
+            type="button"
+          >
+            ×
+          </button>
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-8 py-6">{children}</div>
+        {footer ? (
+          <footer className="flex shrink-0 justify-end gap-3 border-t border-[color:var(--color-border)] bg-white px-8 py-5">
+            {footer}
+          </footer>
+        ) : null}
+      </section>
+    </div>
+  );
+}
+
 export function Field({
   label,
   description,
