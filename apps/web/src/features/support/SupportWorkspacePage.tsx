@@ -2442,16 +2442,16 @@ function SupportSummaryStrip({
 }) {
   const items = [
     { label: 'Abertos', value: totalOpen },
-    { label: 'Urgentes', value: highAttention },
-    { label: 'Não atribuídos', value: unassigned },
-    { label: 'Aguardando cliente', value: waitingCustomer },
+    { label: 'Alta atenção', value: highAttention },
+    { label: 'Sem dono', value: unassigned },
+    { label: 'Retorno externo', value: waitingCustomer },
   ];
 
   return (
-    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid shrink-0 gap-2 sm:grid-cols-2 xl:grid-cols-4">
       {items.map((item) => (
         <div
-          className="flex items-center justify-between rounded-[16px] border border-[color:var(--color-border)] bg-white/94 px-3.5 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.04)]"
+          className="flex min-h-[76px] items-center justify-between rounded-[16px] border border-[color:var(--color-border)] bg-white/94 px-3.5 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.04)]"
           key={item.label}
         >
           <div className="space-y-0.5">
@@ -4905,11 +4905,15 @@ function SupportWorkspaceView({
     !intakeDraft.tenantId ||
     intakeDraft.title.trim().length === 0 ||
     intakeDraft.description.trim().length === 0;
+  const mineCount = currentUserAssignableAgent?.userId
+    ? tickets.filter((ticket) => ticket.assignedToUserId === currentUserAssignableAgent.userId).length
+    : null;
   const queueShortcuts = [
     {
       key: 'mine',
       label: 'Meus tickets',
       helper: 'fila pessoal',
+      value: mineCount,
       active:
         filters.assignedToUserId !== 'all' &&
         currentUserAssignableAgent?.userId != null &&
@@ -4925,6 +4929,7 @@ function SupportWorkspaceView({
       key: 'unassigned',
       label: 'Não atribuídos',
       helper: 'pedem dono',
+      value: unassigned,
       active: filters.assignedToUserId === 'unassigned',
       apply: () => setFilters({ ...filters, assignedToUserId: 'unassigned' }),
       disabled: false,
@@ -4933,6 +4938,7 @@ function SupportWorkspaceView({
       key: 'urgent',
       label: 'Urgentes',
       helper: 'alta prioridade',
+      value: highAttention,
       active: filters.priority === 'urgent' || filters.severity === 'critical',
       apply: () =>
         setFilters({ ...filters, priority: 'urgent', severity: 'all' }),
@@ -4942,6 +4948,7 @@ function SupportWorkspaceView({
       key: 'waiting-customer',
       label: 'Aguardando cliente',
       helper: 'retorno externo',
+      value: waitingCustomer,
       active: filters.status === 'waiting_customer',
       apply: () => setFilters({ ...filters, status: 'waiting_customer' }),
       disabled: false,
@@ -4977,25 +4984,19 @@ function SupportWorkspaceView({
       className={cx(
         variant === 'tickets'
           ? 'flex h-full min-h-0 flex-col gap-2.5 overflow-hidden'
-          : 'space-y-5 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden',
+          : 'flex h-full min-h-0 flex-col gap-2.5 overflow-hidden',
       )}
     >
       {variant === 'queue' ? (
-        <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white/96 px-4 py-4 shadow-[0_14px_26px_rgba(19,33,79,0.08)]">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="min-w-0 space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusPill tone="accent">Fila</StatusPill>
-                <StatusPill>Triagem operacional</StatusPill>
-              </div>
-              <div className="space-y-1">
-                <h1 className="text-[1.7rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
-                  Fila operacional
-                </h1>
-                <p className="text-[13px] leading-5 text-[color:var(--color-muted)]">
-                  Bancada de triagem para priorizar, assumir e abrir o próximo atendimento.
-                </p>
-              </div>
+        <section className="shrink-0 rounded-[20px] border border-[color:var(--color-border)] bg-white/96 px-4 py-3 shadow-[0_12px_22px_rgba(19,33,79,0.07)]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0 space-y-1">
+              <h1 className="text-[1.65rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
+                Fila operacional
+              </h1>
+              <p className="text-[13px] leading-5 text-[color:var(--color-muted)]">
+                Bancada de triagem para priorizar, assumir e abrir o próximo atendimento.
+              </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -5014,31 +5015,29 @@ function SupportWorkspaceView({
               >
                 {showCreateTicket ? 'Fechar intake' : intakeActionLabel}
               </AppButton>
-              {queueShortcuts.map((shortcut) => (
-                <button
-                  className={cx(
-                    'inline-flex min-h-9 items-center rounded-full border px-3.5 text-[12px] font-semibold transition',
-                    shortcut.active
-                      ? 'border-[rgba(48,127,226,0.28)] bg-[rgba(48,127,226,0.1)] text-[color:var(--color-brand-blue)]'
-                      : 'border-[color:var(--color-border)] bg-white text-[color:var(--color-muted)] hover:border-[rgba(48,127,226,0.22)] hover:text-[color:var(--color-ink)]',
-                    shortcut.disabled && 'cursor-not-allowed opacity-50',
-                  )}
-                  disabled={shortcut.disabled}
-                  key={`queue-tab:${shortcut.key}`}
-                  onClick={shortcut.apply}
-                  type="button"
-                >
-                  {shortcut.label}
-                </button>
-              ))}
+              <GhostButton
+                className="min-h-9 rounded-full px-4 text-[12px]"
+                onClick={() => void loadQueue(focusTicketId ?? null)}
+              >
+                Recarregar
+              </GhostButton>
             </div>
           </div>
         </section>
       ) : null}
 
       {variant === 'queue' ? (
-        <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[284px_minmax(0,1fr)_362px]">
-          <aside className="space-y-2.5 rounded-[20px] border border-[color:var(--color-border)] bg-white/96 px-3 py-3 shadow-[0_12px_22px_rgba(19,33,79,0.07)]">
+        <SupportSummaryStrip
+          highAttention={highAttention}
+          totalOpen={totalOpen}
+          unassigned={unassigned}
+          waitingCustomer={waitingCustomer}
+        />
+      ) : null}
+
+      {variant === 'queue' ? (
+        <div className="grid gap-3 xl:min-h-0 xl:flex-1 xl:grid-cols-[280px_minmax(0,1fr)_356px]">
+          <aside className="space-y-2.5 rounded-[20px] border border-[color:var(--color-border)] bg-white/96 px-3 py-3 shadow-[0_12px_22px_rgba(19,33,79,0.07)] xl:min-h-0 xl:overflow-y-auto">
             <div className="space-y-0.5">
               <h2 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
                 Triagem da fila
@@ -5066,12 +5065,15 @@ function SupportWorkspaceView({
                     key={`queue-shortcut:${shortcut.key}`}
                     onClick={shortcut.apply}
                     type="button"
-                  >
-                    <span className="min-w-0">
-                      <span className="block text-[12px] font-semibold leading-5">{shortcut.label}</span>
-                    </span>
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.18em]">
-                      foco
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-[12px] font-semibold leading-5">{shortcut.label}</span>
+                        <span className="block text-[10px] leading-4 text-[color:var(--color-muted)]">
+                          {shortcut.helper}
+                        </span>
+                      </span>
+                    <span className="text-[12px] font-semibold tabular-nums tracking-[-0.02em]">
+                      {shortcut.value ?? 'Indisponível'}
                     </span>
                   </button>
                 ))}
@@ -5088,12 +5090,6 @@ function SupportWorkspaceView({
                     Recorte real da fila.
                   </p>
                 </div>
-                <GhostButton
-                  className="min-h-8 rounded-[12px] px-2.5 text-[11px]"
-                  onClick={() => void loadQueue(focusTicketId ?? null)}
-                >
-                  Recarregar
-                </GhostButton>
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-2">
@@ -5222,14 +5218,7 @@ function SupportWorkspaceView({
             </div>
           </aside>
 
-          <div className="space-y-3 xl:min-h-0 xl:flex xl:flex-col xl:overflow-hidden">
-            <SupportSummaryStrip
-              highAttention={highAttention}
-              totalOpen={totalOpen}
-              unassigned={unassigned}
-              waitingCustomer={waitingCustomer}
-            />
-
+          <div className="xl:min-h-0 xl:flex xl:flex-col xl:overflow-hidden">
             <section className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-1 xl:flex-col xl:overflow-hidden">
               <div className="mb-3 space-y-1">
                 <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
@@ -5259,7 +5248,7 @@ function SupportWorkspaceView({
             </section>
           </div>
 
-            <section className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+            <section className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-3.5 py-3.5 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
               <div className="mb-3 space-y-1">
                 <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
                   {showCreateTicket ? 'Intake operacional' : 'Preview do ticket'}
