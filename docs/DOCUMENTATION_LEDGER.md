@@ -18,6 +18,42 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase - Build Journal Structural Cleanup V1
+- fase: `runtime-ui`
+- nome: `Build Journal Structural Cleanup V1`
+- branch: `workspace-atual`
+- data: `2026-05-17`
+- resumo funcional: saneado o módulo frontend `/admin/build-journal` após rodadas de recriação visual, sem alterar sidebar, shell administrativo, backend ou Product Docs. A rota permanece única e usa abas internas locais; `Visão geral`, `Linha do tempo`, `Arquitetura` e `IA na Construção` estão implementadas, enquanto `Documentos oficiais` e `Próximos passos` continuam placeholders estáticos honestos.
+- docs alterados:
+  - `docs/BUILD_JOURNAL_SCREEN_SPEC.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/INTERNAL_DOCUMENTATION_AREAS_CHECKPOINT_V1.md`
+- arquivos de código alterados:
+  - `apps/web/src/features/build-journal/BuildJournalPage.tsx`
+  - `apps/web/src/features/build-journal/BuildJournalArchitecture.tsx`
+  - `apps/web/src/features/build-journal/BuildJournalAI.tsx`
+  - `apps/web/src/features/build-journal/BuildJournalQuoteFooter.tsx`
+  - `apps/web/src/features/build-journal/buildJournalContent.ts`
+  - `apps/web/src/assets/build-journal/build-journal-hero-mountain-path.png`
+- telas afetadas:
+  - `/admin/build-journal`
+- views/RPCs afetadas:
+  - nenhum contrato novo
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- runtime/UI:
+  - `TimelineTabs` foi renomeado para `BuildJournalSectionTabs`, mantendo visual e comportamento
+  - `SimpleDocumentPanel` passou a conter apenas placeholders reais de `Documentos oficiais` e `Próximos passos`
+  - `buildJournalContent.ts` foi reativado como fonte central enxuta para conteúdo estático usado pela implementação atual
+  - ações indisponíveis receberam semântica `disabled`/`aria-disabled`, e `Ver mapa da construção` passou a trocar para a aba `Visão geral`
+  - `BuildJournalQuoteFooter` permanece como rodapé/citação compartilhado
+- riscos restantes:
+  - `Documentos oficiais` e `Próximos passos` ainda precisam de telas próprias aprovadas por blueprint antes de deixarem de ser placeholders
+  - a rota continua estática no frontend e depende de disciplina editorial para manter alinhamento com os documentos oficiais
+- impacto na FAQ futura:
+  - reforça a separação entre narrativa do Diário e Product Docs como fonte oficial controlada
+  - reduz drift estrutural antes de novas telas documentais
 ### Fase 8.22 - Customer Portal Tenant Context And Switching V3
 - fase: `8.22`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`

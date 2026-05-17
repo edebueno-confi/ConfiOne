@@ -69,6 +69,11 @@ const CustomerPortalAdminPage = lazy(async () => {
   return { default: module.CustomerPortalAdminPage };
 });
 
+const BuildJournalPage = lazy(async () => {
+  const module = await import('../features/build-journal/BuildJournalPage');
+  return { default: module.BuildJournalPage };
+});
+
 const HelpCenterPage = lazy(async () => {
   const module = await import('../features/help-center/HelpCenterPage');
   return { default: module.HelpCenterPage };
@@ -252,6 +257,10 @@ export const router = createBrowserRouter([
           {
             path: 'customer-portal',
             element: withSuspense(<CustomerPortalAdminPage />),
+          },
+          {
+            path: 'build-journal',
+            element: withSuspense(<BuildJournalPage />),
           },
           {
             path: 'access',

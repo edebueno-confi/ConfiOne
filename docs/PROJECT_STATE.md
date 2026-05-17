@@ -94,6 +94,9 @@ Documentos históricos:
 - Nenhuma ação fake foi habilitada no frontend; ações sem contrato completo seguem bloqueadas para lote futuro.
 - Os 8 candidatos documentais da Knowledge continuam pendentes, nao aprovados, nao publicados e nao injetados automaticamente no Help Center.
 - Próximo bloco recomendado: `Customer Portal Tenant Context And Switching V3`, para suportar multiplos vinculos customer-facing com `active_tenant_id` governado por backend e sem contaminar o contexto administrativo.
+- A fase `Build Journal Structural Cleanup V1` saneou o frontend atual de `/admin/build-journal` após as recriações visuais: a rota segue única, com abas internas locais; `Visão geral`, `Linha do tempo`, `Arquitetura` e `IA na Construção` estão implementadas em blueprint light; `Documentos oficiais` e `Próximos passos` seguem placeholders estáticos honestos.
+- A mesma fase consolidou `apps/web/src/features/build-journal/buildJournalContent.ts` como fonte central enxuta para tabs, timeline, entregas recentes, placeholders e copy compartilhada, removendo datasets legados órfãos e entradas mortas de arquitetura/IA no painel simples.
+- O lote `Build Journal Structural Cleanup V1` não criou backend novo, migration, RPC, view, tabela, RLS nova, policy nova, Supabase contract, parser dinâmico, busca backend, file explorer, IA interativa ou permissão granular nova.
 
 ## Estado real do repositório em 2026-04-30
 

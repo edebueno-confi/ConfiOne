@@ -14,6 +14,7 @@ export type UnifiedNavigationIcon =
   | 'portal'
   | 'access'
   | 'system'
+  | 'journal'
   | 'return';
 
 export interface UnifiedEnvironmentItem {
@@ -98,6 +99,13 @@ function UnifiedNavigationIconGlyph({
         <svg aria-hidden="true" className={iconClassName} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
           <path d="M12 4.5 13.5 7l3 .6-1 2.8 1.7 2.4-2.4 1.6.6 3-2.8-1-2.4 1.7-1.6-2.4-3 .6 1-2.8-1.7-2.4 2.4-1.6-.6-3 2.8 1L12 4.5Z" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z" />
+        </svg>
+      );
+    case 'journal':
+      return (
+        <svg aria-hidden="true" className={iconClassName} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+          <path d="M7 5.5h7.5A2.5 2.5 0 0 1 17 8v10.5H8.5A2.5 2.5 0 0 0 6 21V7.5a2 2 0 0 1 2-2Z" />
+          <path d="M10 9h4M10 12h4M10 15h2.5" strokeLinecap="round" />
         </svg>
       );
     case 'return':
