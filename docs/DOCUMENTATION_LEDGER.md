@@ -18,6 +18,51 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase - Internal Documents Foundation V3/V4
+- fase: `backend-contracts-tooling`
+- nome: `Internal Documents Foundation V3/V4`
+- branch: `workspace-atual`
+- data: `2026-05-18`
+- resumo funcional: materializada a base backend-first para documentos internos oficiais. O lote criou tabelas versionadas, constraints, RLS, grants, views contratuais e script de sync dry-run/apply controlado para promover markdowns reais whitelisted ao banco sem leitura runtime de filesystem.
+- docs alterados:
+  - `docs/INTERNAL_DOCUMENTS_ARCHITECTURE.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+- arquivos de backend/tooling alterados:
+  - `supabase/migrations/20260518152615_internal_documents_foundation_v3.sql`
+  - `supabase/tests/038_internal_documents_foundation.sql`
+  - `scripts/documentation/validate-internal-documents.mjs`
+  - `scripts/documentation/sync-internal-documents.mjs`
+  - `package.json`
+- arquivos de código frontend alterados:
+  - nenhum
+- telas afetadas:
+  - nenhuma tela runtime alterada
+  - `/admin/product-docs` e `/admin/build-journal` ainda não consomem o contrato real neste lote
+- views/RPCs afetadas:
+  - nova view `vw_internal_documents_catalog`
+  - nova view `vw_internal_document_detail`
+  - nenhuma RPC criada
+- runtime/UI:
+  - sem alteração frontend
+  - sem leitor concorrente novo
+  - sem leitura de filesystem em runtime
+- validação esperada:
+  - `npm run documentation:validate:internal-docs`
+  - `npm run documentation:sync:internal-docs`
+  - `npm run supabase:db:reset`
+  - `npm run supabase:test:db`
+  - `npm run supabase:lint:db`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+- riscos restantes:
+  - apply do sync depende de ambiente server-side com `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` e `INTERNAL_DOCS_SYNC_APPLY=1`
+  - Product Docs e Build Journal ainda usam conteúdo frontend estático até V5
+  - sanitização ainda é não destrutiva e heurística; omissões formais devem evoluir antes de exposição mais ampla
+- impacto na FAQ futura:
+  - cria base contratual para que a FAQ e superfícies documentais consumam documentação interna oficial versionada, sanitizada e auditável
+
 ### Fase - Internal Documents Whitelist + Dry Run V2
 - fase: `tooling-documental`
 - nome: `Internal Documents Whitelist + Dry Run V2`

@@ -2,14 +2,16 @@ import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
 import { extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 
-const repoRoot = process.cwd();
-const whitelistPath = resolve(repoRoot, 'docs/internal-documents.whitelist.json');
-const allowedStatuses = new Set(['draft', 'published', 'archived', 'blocked']);
-const allowedSensitivities = new Set(['internal', 'restricted', 'public_internal', 'blocked']);
-const allowedSurfaces = new Set(['product-docs', 'build-journal']);
+export const repoRoot = process.cwd();
+export const whitelistPath = resolve(repoRoot, 'docs/internal-documents.whitelist.json');
 
-const sensitivePatterns = [
+export const allowedStatuses = new Set(['draft', 'published', 'archived', 'blocked']);
+export const allowedSensitivities = new Set(['internal', 'restricted', 'public_internal']);
+export const allowedSurfaces = new Set(['product-docs', 'build-journal']);
+
+export const sensitivePatterns = [
   {
     id: 'jwt',
     severity: 'blocked',
@@ -67,12 +69,12 @@ const sensitivePatterns = [
   },
 ];
 
-function fail(message) {
+export function fail(message) {
   console.error(`\n[internal-docs] ${message}`);
   process.exit(1);
 }
 
-function parseWhitelist() {
+export function parseWhitelist() {
   if (!existsSync(whitelistPath)) {
     fail(`Whitelist não encontrada: ${relative(repoRoot, whitelistPath)}`);
   }
@@ -89,12 +91,12 @@ function parseWhitelist() {
   }
 }
 
-function isInsideRepo(path) {
+export function isInsideRepo(path) {
   const relativePath = relative(repoRoot, path);
   return Boolean(relativePath) && !relativePath.startsWith('..') && !isAbsolute(relativePath);
 }
 
-function validateEntryShape(entry, index) {
+export function validateEntryShape(entry, index) {
   const errors = [];
   const required = [
     'slug',
@@ -154,7 +156,7 @@ function validateEntryShape(entry, index) {
   return errors.map((error) => `entrada #${index + 1}: ${error}`);
 }
 
-function findSensitiveMatches(content) {
+export function findSensitiveMatches(content) {
   const findings = [];
 
   for (const check of sensitivePatterns) {
@@ -173,7 +175,16 @@ function findSensitiveMatches(content) {
   return findings;
 }
 
-function validateDocument(entry) {
+export function sanitizeMarkdown(content) {
+  return content
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/[ \t]+$/gm, '')
+    .trim()
+    .concat('\n');
+}
+
+export function validateDocument(entry) {
   const sourcePath = entry.source_path;
   const absolutePath = resolve(repoRoot, sourcePath);
   const errors = [];
@@ -181,24 +192,24 @@ function validateDocument(entry) {
 
   if (!isInsideRepo(absolutePath)) {
     errors.push('source_path resolve fora do repositório');
-    return { ...entry, errors, warnings, hash: null, bytes: null };
+    return { ...entry, errors, warnings, hash: null, bytes: null, body: null, body_md_sanitized: null, sanitized_bytes: null };
   }
 
   if (!existsSync(absolutePath)) {
     errors.push('arquivo não encontrado');
-    return { ...entry, errors, warnings, hash: null, bytes: null };
+    return { ...entry, errors, warnings, hash: null, bytes: null, body: null, body_md_sanitized: null, sanitized_bytes: null };
   }
 
   const stats = lstatSync(absolutePath);
   if (stats.isSymbolicLink()) {
     errors.push('source_path não pode ser symlink');
-    return { ...entry, errors, warnings, hash: null, bytes: null };
+    return { ...entry, errors, warnings, hash: null, bytes: null, body: null, body_md_sanitized: null, sanitized_bytes: null };
   }
 
   const realPath = realpathSync(absolutePath);
   if (!isInsideRepo(realPath)) {
     errors.push('realpath resolve fora do repositório');
-    return { ...entry, errors, warnings, hash: null, bytes: null };
+    return { ...entry, errors, warnings, hash: null, bytes: null, body: null, body_md_sanitized: null, sanitized_bytes: null };
   }
 
   if (extname(sourcePath).toLowerCase() !== '.md') {
@@ -206,8 +217,10 @@ function validateDocument(entry) {
   }
 
   const content = readFileSync(absolutePath, 'utf8');
+  const sanitized = sanitizeMarkdown(content);
   const hash = createHash('sha256').update(content).digest('hex');
   const bytes = Buffer.byteLength(content, 'utf8');
+  const sanitizedBytes = Buffer.byteLength(sanitized, 'utf8');
   const findings = findSensitiveMatches(content);
 
   for (const finding of findings) {
@@ -219,10 +232,74 @@ function validateDocument(entry) {
     }
   }
 
-  return { ...entry, errors, warnings, hash, bytes };
+  return {
+    ...entry,
+    errors,
+    warnings,
+    hash,
+    bytes,
+    body: content,
+    body_md_sanitized: sanitized,
+    sanitized_bytes: sanitizedBytes,
+  };
 }
 
-function formatBytes(bytes) {
+export function validateWhitelistEntries(whitelist) {
+  const shapeErrors = [];
+  const slugs = new Map();
+  const sourcePaths = new Map();
+
+  whitelist.forEach((entry, index) => {
+    shapeErrors.push(...validateEntryShape(entry, index));
+
+    if (typeof entry.slug === 'string') {
+      const previous = slugs.get(entry.slug);
+      if (previous !== undefined) {
+        shapeErrors.push(`slug duplicado: ${entry.slug} nas entradas #${previous + 1} e #${index + 1}`);
+      }
+      slugs.set(entry.slug, index);
+    }
+
+    if (typeof entry.source_path === 'string') {
+      const normalizedSourcePath = entry.source_path.split(sep).join('/');
+      const previous = sourcePaths.get(normalizedSourcePath);
+      if (previous !== undefined) {
+        shapeErrors.push(`source_path duplicado: ${entry.source_path} nas entradas #${previous + 1} e #${index + 1}`);
+      }
+      sourcePaths.set(normalizedSourcePath, index);
+    }
+  });
+
+  return shapeErrors;
+}
+
+export function validateInternalDocuments() {
+  const whitelist = parseWhitelist();
+  const shapeErrors = validateWhitelistEntries(whitelist);
+
+  if (shapeErrors.length > 0) {
+    console.error('\n[internal-docs] Whitelist inválida:');
+    for (const error of shapeErrors) {
+      console.error(`- ${error}`);
+    }
+    process.exit(1);
+  }
+
+  const results = whitelist.map(validateDocument);
+  const valid = results.filter((result) => result.errors.length === 0 && result.warnings.length === 0);
+  const alerted = results.filter((result) => result.errors.length === 0 && result.warnings.length > 0);
+  const blocked = results.filter((result) => result.errors.length > 0);
+
+  return {
+    whitelist,
+    results,
+    valid,
+    alerted,
+    blocked,
+  };
+}
+
+export function formatBytes(bytes) {
   if (bytes === null || bytes === undefined) {
     return '-';
   }
@@ -234,7 +311,7 @@ function formatBytes(bytes) {
   return `${(bytes / 1024).toFixed(1)} KB`;
 }
 
-function printDocument(result) {
+export function printDocument(result) {
   const state = result.errors.length > 0 ? 'BLOQUEADO' : result.warnings.length > 0 ? 'ALERTA' : 'VALIDO';
   console.log(`\n[${state}] ${result.slug}`);
   console.log(`  source: ${result.source_path}`);
@@ -254,66 +331,40 @@ function printDocument(result) {
   }
 }
 
-const whitelist = parseWhitelist();
-const shapeErrors = [];
-const slugs = new Map();
-const sourcePaths = new Map();
+export function printValidationReport(summary) {
+  const { results, valid, alerted, blocked } = summary;
 
-whitelist.forEach((entry, index) => {
-  shapeErrors.push(...validateEntryShape(entry, index));
+  console.log('Internal Documents Whitelist Dry Run');
+  console.log('====================================');
+  console.log(`Whitelist: ${relative(repoRoot, whitelistPath)}`);
+  console.log(`Documentos: ${results.length}`);
+  console.log(`Válidos: ${valid.length}`);
+  console.log(`Com alerta: ${alerted.length}`);
+  console.log(`Bloqueados: ${blocked.length}`);
 
-  if (typeof entry.slug === 'string') {
-    const previous = slugs.get(entry.slug);
-    if (previous !== undefined) {
-      shapeErrors.push(`slug duplicado: ${entry.slug} nas entradas #${previous + 1} e #${index + 1}`);
-    }
-    slugs.set(entry.slug, index);
+  for (const result of results) {
+    printDocument(result);
   }
 
-  if (typeof entry.source_path === 'string') {
-    const normalizedSourcePath = entry.source_path.split(sep).join('/');
-    const previous = sourcePaths.get(normalizedSourcePath);
-    if (previous !== undefined) {
-      shapeErrors.push(`source_path duplicado: ${entry.source_path} nas entradas #${previous + 1} e #${index + 1}`);
-    }
-    sourcePaths.set(normalizedSourcePath, index);
+  console.log('\nResumo');
+  console.log('------');
+  console.log(`Documentos válidos: ${valid.map((result) => result.slug).join(', ') || '-'}`);
+  console.log(`Documentos com alerta: ${alerted.map((result) => result.slug).join(', ') || '-'}`);
+  console.log(`Documentos bloqueados: ${blocked.map((result) => result.slug).join(', ') || '-'}`);
+}
+
+function isCliEntryPoint() {
+  return process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+}
+
+if (isCliEntryPoint()) {
+  const summary = validateInternalDocuments();
+  printValidationReport(summary);
+
+  if (summary.blocked.length > 0) {
+    console.error('\nDry-run falhou: existem documentos bloqueados. Nenhum arquivo foi alterado.');
+    process.exit(1);
   }
-});
 
-if (shapeErrors.length > 0) {
-  console.error('\n[internal-docs] Whitelist inválida:');
-  for (const error of shapeErrors) {
-    console.error(`- ${error}`);
-  }
-  process.exit(1);
+  console.log('\nDry-run concluído: nenhum arquivo foi alterado e nada foi gravado no banco.');
 }
-
-const results = whitelist.map(validateDocument);
-const valid = results.filter((result) => result.errors.length === 0 && result.warnings.length === 0);
-const alerted = results.filter((result) => result.errors.length === 0 && result.warnings.length > 0);
-const blocked = results.filter((result) => result.errors.length > 0);
-
-console.log('Internal Documents Whitelist Dry Run');
-console.log('====================================');
-console.log(`Whitelist: ${relative(repoRoot, whitelistPath)}`);
-console.log(`Documentos: ${results.length}`);
-console.log(`Válidos: ${valid.length}`);
-console.log(`Com alerta: ${alerted.length}`);
-console.log(`Bloqueados: ${blocked.length}`);
-
-for (const result of results) {
-  printDocument(result);
-}
-
-console.log('\nResumo');
-console.log('------');
-console.log(`Documentos válidos: ${valid.map((result) => result.slug).join(', ') || '-'}`);
-console.log(`Documentos com alerta: ${alerted.map((result) => result.slug).join(', ') || '-'}`);
-console.log(`Documentos bloqueados: ${blocked.map((result) => result.slug).join(', ') || '-'}`);
-
-if (blocked.length > 0) {
-  console.error('\nDry-run falhou: existem documentos bloqueados. Nenhum arquivo foi alterado.');
-  process.exit(1);
-}
-
-console.log('\nDry-run concluído: nenhum arquivo foi alterado e nada foi gravado no banco.');

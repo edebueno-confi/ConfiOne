@@ -218,6 +218,19 @@ Fase 8.18:
 - `ticket_linked` para cliente autenticado depende de `ticket_knowledge_links` em `sent_to_customer` e do ticket ainda ser visivel ao ator customer-facing.
 - O frontend do portal em `/portal`, `/portal/help`, `/portal/help/:articleSlug` e `/portal/tickets/:ticketId` continua apenas renderizando read models; o Public Help em `/help/:spaceSlug` segue publico e independente de sessao customer.
 
+Fase Internal Documents Foundation V3/V4:
+- Documentos internos oficiais passam a ter fundação backend-first própria, separada da Knowledge Base:
+  - `internal_documents`
+  - `internal_document_versions`
+- A leitura contratual futura para Product Docs e Build Journal deve passar apenas por:
+  - `vw_internal_documents_catalog`
+  - `vw_internal_document_detail`
+- As views filtram documentos `archived` e `blocked`, expõem apenas a versão atual válida/warning e aplicam autorização no backend por `platform_admin` neste corte.
+- `anon`, customer-facing e `authenticated` sem papel administrativo não recebem dados pelas views.
+- `authenticated` não possui `SELECT`, `INSERT`, `UPDATE` ou `DELETE` direto nas tabelas base.
+- Não foi criada RPC de sync/publicação neste lote; a escrita inicial é feita por script server-side controlado, usando whitelist versionada e sem aceitar path arbitrário por CLI.
+- Product Docs e Build Journal ainda não consomem essas views neste lote; a migração de frontend fica para V5.
+
 Fase 8.19:
 - A administracao operacional do portal cliente passou a ter uma superficie propria no Admin Console, sem criar shell novo e sem delegar seguranca ao frontend.
 - A nova rota `/admin/customer-portal` le apenas:

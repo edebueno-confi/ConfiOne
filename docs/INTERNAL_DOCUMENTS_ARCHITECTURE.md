@@ -101,7 +101,8 @@ Sensibilidades sugeridas:
 - `internal`: uso interno padrão;
 - `restricted`: conteúdo interno com trechos omitidos ou acesso mais restrito;
 - `public_internal`: conteúdo interno de baixa sensibilidade, mas ainda não público;
-- `blocked`: não deve ser exposto.
+
+Bloqueio é estado de publicação (`status = blocked`), não classificação de sensibilidade.
 
 ## Pipeline
 O pipeline deve ser explícito, idempotente e auditável.
@@ -412,6 +413,20 @@ Entregáveis:
 - criar testes pgTAP;
 - não conectar frontend ainda.
 
+Status em 2026-05-18:
+
+- migration criada em `supabase/migrations/20260518152615_internal_documents_foundation_v3.sql`;
+- domínio separado de Knowledge Base, com `internal_documents` e `internal_document_versions`;
+- `status`, `sensitivity` e `validation_status` protegidos por constraints;
+- `current_version_id` é validado por constraint trigger para apontar para versão do próprio documento;
+- views contratuais criadas:
+  - `vw_internal_documents_catalog`;
+  - `vw_internal_document_detail`;
+- leitura das views restrita a `platform_admin` neste corte;
+- `anon`, customer-facing e `authenticated` sem papel administrativo não recebem dados;
+- `authenticated` não possui DML direto nas tabelas base;
+- não foi criada RPC de sync para browser.
+
 ### V4 - Sync Script
 Entregáveis:
 
@@ -421,6 +436,16 @@ Entregáveis:
 - suportar dry-run/apply;
 - registrar relatório de publicação;
 - validar bloqueios de segurança.
+
+Status em 2026-05-18:
+
+- script criado em `scripts/documentation/sync-internal-documents.mjs`;
+- `npm run documentation:sync:internal-docs` executa dry-run por padrão;
+- `npm run documentation:sync:internal-docs:apply` exige `INTERNAL_DOCS_SYNC_APPLY=1`, `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`;
+- o script reutiliza a validação da whitelist, calcula hash SHA-256, gera `body_md_sanitized` não destrutivo e cria nova versão apenas quando `source_hash` muda;
+- documentos `blocked` não são publicados;
+- nenhum markdown original é alterado;
+- Product Docs e Build Journal ainda não consomem as views neste lote.
 
 ### V5 - Frontend Consumindo Contrato Real
 Entregáveis:

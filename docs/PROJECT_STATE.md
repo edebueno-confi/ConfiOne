@@ -103,6 +103,10 @@ Documentos históricos:
 - A fase `Internal Documents Whitelist + Dry Run V2` criou a whitelist versionada `docs/internal-documents.whitelist.json` com os 12 documentos já aceitos na V1 de Product Docs e adicionou o dry-run `scripts/documentation/validate-internal-documents.mjs`.
 - O comando `npm run documentation:validate:internal-docs` valida somente documentos whitelisted, sem alterar markdowns, sem gerar saída persistente e sem gravar no banco. A primeira execução validou 12 documentos: 5 válidos, 7 com alertas informativos de termos sensíveis e 0 bloqueados.
 - A fase V2 não criou backend, migration, tabela, RPC, view, RLS, seed, Supabase, contrato runtime ou alteração frontend.
+- O lote `Internal Documents Foundation V3/V4` materializou a base backend-first de documentos internos oficiais com as tabelas `internal_documents` e `internal_document_versions`, RLS, grants, constraints, audit row change e views contratuais `vw_internal_documents_catalog` e `vw_internal_document_detail`.
+- A leitura contratual de documentos internos oficiais está restrita a `platform_admin` neste corte; `anon`, customer-facing e `authenticated` sem papel administrativo não recebem dados, e DML direto por `authenticated` permanece bloqueado.
+- O script `scripts/documentation/sync-internal-documents.mjs` adiciona dry-run/apply controlado para sincronizar apenas markdowns whitelisted, calcular hash, gerar `body_md_sanitized` e criar nova versão apenas quando o `source_hash` muda.
+- Product Docs e Build Journal ainda continuam usando a fonte frontend estática neste lote; a migração dessas superfícies para `vw_internal_documents_catalog` e `vw_internal_document_detail` fica para V5.
 
 ## Estado real do repositório em 2026-04-30
 
