@@ -18,6 +18,77 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase - Internal Documents Whitelist + Dry Run V2
+- fase: `tooling-documental`
+- nome: `Internal Documents Whitelist + Dry Run V2`
+- branch: `workspace-atual`
+- data: `2026-05-18`
+- resumo funcional: criada a whitelist versionada inicial dos documentos internos oficiais e o script dry-run para validar markdowns reais antes de qualquer banco, migration ou frontend. A whitelist inclui apenas os 12 documentos já aceitos na V1 atual de Product Docs.
+- docs alterados:
+  - `docs/internal-documents.whitelist.json`
+  - `docs/INTERNAL_DOCUMENTS_ARCHITECTURE.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- arquivos de tooling alterados:
+  - `scripts/documentation/validate-internal-documents.mjs`
+  - `package.json`
+- arquivos de código frontend alterados:
+  - nenhum
+- telas afetadas:
+  - nenhuma tela runtime alterada
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+  - nenhum contrato Supabase criado
+- runtime/UI:
+  - sem alteração frontend
+  - sem leitura runtime de filesystem
+- validação:
+  - `node scripts/documentation/validate-internal-documents.mjs`
+  - `npm run documentation:validate:internal-docs`
+- resultado do dry-run:
+  - 12 documentos whitelisted lidos
+  - 5 válidos
+  - 7 com alertas informativos de termos sensíveis
+  - 0 bloqueados
+  - nenhum arquivo alterado e nada gravado no banco
+- riscos restantes:
+  - alertas ainda são heurísticos e devem evoluir para sanitização formal na V4
+  - não existe banco versionado nem RLS para documentos internos oficiais
+  - `productDocsContent.ts` ainda contém corpos documentais hardcoded até a fase de contrato/frontend real
+- impacto na FAQ futura:
+  - cria a primeira base auditável para promover markdowns reais do repositório para fonte controlada de runtime sem expor arquivos fora da whitelist
+
+### Fase - Internal Documents Architecture V1
+- fase: `documental`
+- nome: `Internal Documents Architecture V1`
+- branch: `workspace-atual`
+- data: `2026-05-17`
+- resumo funcional: criada a especificação da arquitetura futura para documentos internos oficiais do Genius Support OS. A fase consolidou o diagnóstico de que `/admin/product-docs` ainda usa corpos documentais hardcoded em `productDocsContent.ts` e definiu a direção correta: markdown real whitelisted, dry-run, sanitização, hash, banco versionado, views/RPCs e consumo compartilhado por Product Docs e Build Journal.
+- docs alterados:
+  - `docs/INTERNAL_DOCUMENTS_ARCHITECTURE.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- arquivos de código alterados:
+  - nenhum
+- telas afetadas:
+  - nenhuma tela runtime alterada
+  - superfícies futuras planejadas: `/admin/product-docs` e `/admin/build-journal`
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+  - nenhum contrato Supabase criado
+- runtime/UI:
+  - sem alteração frontend
+  - reader inline do Build Journal permanece apenas como protótipo UX transitório, não como solução final de fonte documental
+- riscos restantes:
+  - `productDocsContent.ts` ainda contém cópias manuais/sanitizadas dos corpos dos documentos
+  - não existe whitelist JSON versionada nem script dry-run/sync
+  - não existe banco versionado para documentos internos oficiais
+  - migrations, RLS, views/RPCs e frontend por contrato real ainda dependem de fases futuras
+- impacto na FAQ futura:
+  - cria base de governança para expor documentação oficial interna sem duplicação de corpo documental no frontend e sem leitura runtime de filesystem
+
 ### Fase - Build Journal Structural Cleanup V1
 - fase: `runtime-ui`
 - nome: `Build Journal Structural Cleanup V1`

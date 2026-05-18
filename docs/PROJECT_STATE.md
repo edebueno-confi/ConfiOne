@@ -97,6 +97,12 @@ Documentos históricos:
 - A fase `Build Journal Structural Cleanup V1` saneou o frontend atual de `/admin/build-journal` após as recriações visuais: a rota segue única, com abas internas locais; `Visão geral`, `Linha do tempo`, `Arquitetura` e `IA na Construção` estão implementadas em blueprint light; `Documentos oficiais` e `Próximos passos` seguem placeholders estáticos honestos.
 - A mesma fase consolidou `apps/web/src/features/build-journal/buildJournalContent.ts` como fonte central enxuta para tabs, timeline, entregas recentes, placeholders e copy compartilhada, removendo datasets legados órfãos e entradas mortas de arquitetura/IA no painel simples.
 - O lote `Build Journal Structural Cleanup V1` não criou backend novo, migration, RPC, view, tabela, RLS nova, policy nova, Supabase contract, parser dinâmico, busca backend, file explorer, IA interativa ou permissão granular nova.
+- A fase documental `Internal Documents Architecture V1` especificou a arquitetura final desejada para documentos internos oficiais: `.md` real whitelisted -> dry-run/sanitização -> banco versionado -> views/RPCs -> Product Docs e Build Journal.
+- A spec `docs/INTERNAL_DOCUMENTS_ARCHITECTURE.md` registra que o estado atual de `productDocsContent.ts` com corpos hardcoded deve ser tratado como transitório. A evolução correta exige whitelist versionada, sync idempotente, sanitização, hash, versionamento, catálogo/detalhe por contrato real e remoção futura da duplicação de corpo documental no frontend.
+- Esta fase permaneceu estritamente documental: sem frontend novo, backend novo, migration, tabela, RPC, view, RLS, seed, Supabase, script de sync ou commit do reader inline como solução final.
+- A fase `Internal Documents Whitelist + Dry Run V2` criou a whitelist versionada `docs/internal-documents.whitelist.json` com os 12 documentos já aceitos na V1 de Product Docs e adicionou o dry-run `scripts/documentation/validate-internal-documents.mjs`.
+- O comando `npm run documentation:validate:internal-docs` valida somente documentos whitelisted, sem alterar markdowns, sem gerar saída persistente e sem gravar no banco. A primeira execução validou 12 documentos: 5 válidos, 7 com alertas informativos de termos sensíveis e 0 bloqueados.
+- A fase V2 não criou backend, migration, tabela, RPC, view, RLS, seed, Supabase, contrato runtime ou alteração frontend.
 
 ## Estado real do repositório em 2026-04-30
 

@@ -25,6 +25,7 @@
     "knowledge:import:octadesk:local": "node scripts/knowledge/import-octadesk-drafts.mjs --local",
     "knowledge:review:advisories:local": "node scripts/knowledge/sync-review-advisories.mjs --local",
     "knowledge:verify:octadesk:space-aware": "node scripts/ci/verify-octadesk-import-space-aware.mjs",
+    "documentation:validate:internal-docs": "node scripts/documentation/validate-internal-documents.mjs",
     "web:dev": "node scripts/dev/run-web-dev.mjs",
     "web:typecheck": "npm run typecheck --workspace @genius-support-os/web",
     "web:build": "npm run build --workspace @genius-support-os/web"
