@@ -18,6 +18,53 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase - Internal Documents Reader V5
+- fase: `runtime-ui`
+- nome: `Internal Documents Reader V5`
+- branch: `workspace-atual`
+- data: `2026-05-18`
+- resumo funcional: migrados `/admin/product-docs` e a aba `Documentos oficiais` de `/admin/build-journal` para consumir a fonte real governada de documentos internos oficiais. Product Docs lê catálogo e detalhe pelas views contratuais, preserva busca local e deep link `?doc=<slug>`. Build Journal mantém camada narrativa, abre leitura inline pelo mesmo reader e oferece CTA secundário para Product Docs.
+- docs alterados:
+  - `docs/INTERNAL_DOCUMENTS_ARCHITECTURE.md`
+  - `docs/BUILD_JOURNAL_SCREEN_SPEC.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/INTERNAL_DOCUMENTATION_AREAS_CHECKPOINT_V1.md`
+- arquivos de código frontend alterados:
+  - `apps/web/src/contracts/admin-contracts.ts`
+  - `apps/web/src/features/product-docs/ProductDocsPage.tsx`
+  - `apps/web/src/features/product-docs/product-docs-api.ts`
+  - `apps/web/src/features/product-docs/ProductDocReaderPanel.tsx`
+  - `apps/web/src/features/product-docs/ProductDocMarkdownPreview.tsx`
+  - `apps/web/src/features/product-docs/productDocsContent.ts`
+  - `apps/web/src/features/build-journal/BuildJournalDocuments.tsx`
+  - `apps/web/src/features/build-journal/BuildJournalPage.tsx`
+  - `apps/web/src/features/build-journal/buildJournalContent.ts`
+- telas afetadas:
+  - `/admin/product-docs`
+  - `/admin/build-journal`, aba `Documentos oficiais`
+- views/RPCs afetadas:
+  - consome `vw_internal_documents_catalog`
+  - consome `vw_internal_document_detail`
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- runtime/UI:
+  - `ProductDocReaderPanel` renderiza apenas `body_md_sanitized` vindo do backend
+  - `productDocsContent.ts` deixou de conter corpos markdown hardcoded e ficou restrito a metadados/trilhas
+  - frontend não lê filesystem e não aceita path arbitrário
+  - documentos narrativos fora da whitelist ficam pendentes/indisponíveis sem ação fake
+- validação:
+  - `npm run documentation:validate:internal-docs`
+  - `npm run documentation:sync:internal-docs`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+- riscos restantes:
+  - QA de permissão negativa real ainda depende de fixture/papel sem acesso dedicado
+  - estado de catálogo vazio não foi simulado sem alterar dados locais
+  - novos documentos continuam exigindo whitelist + sync antes de aparecer no runtime
+- impacto na FAQ futura:
+  - consolida Product Docs e Build Journal sobre uma única fonte documental oficial, versionada e sanitizada, reduzindo drift entre markdown real, banco e UI
 ### Fase - Internal Documents Foundation V3/V4
 - fase: `backend-contracts-tooling`
 - nome: `Internal Documents Foundation V3/V4`

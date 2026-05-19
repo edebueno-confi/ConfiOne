@@ -356,6 +356,14 @@ Responsabilidades futuras:
 - mostrar status, sensibilidade, origem e versão;
 - não conter corpos documentais hardcoded.
 
+Estado V5 em 2026-05-18:
+
+- `/admin/product-docs` consome `vw_internal_documents_catalog` e `vw_internal_document_detail`;
+- `/admin/build-journal`, aba `Documentos oficiais`, usa a mesma API frontend e as mesmas views;
+- o reader compartilhado renderiza somente `body_md_sanitized` retornado pelo backend;
+- `productDocsContent.ts` mantém apenas metadados/trilhas de leitura, sem corpos markdown hardcoded;
+- nenhuma superfície frontend lê filesystem ou aceita path arbitrário.
+
 `/admin/build-journal`, aba `Documentos oficiais`, continua sendo camada narrativa.
 
 Responsabilidades futuras:
@@ -372,9 +380,8 @@ Responsabilidades futuras:
 
 Caminhos possíveis:
 
-- virar apenas fallback temporário de desenvolvimento;
 - virar mapeamento mínimo de UI enquanto o contrato não estiver pronto;
-- ser removido quando o frontend consumir contrato real com segurança.
+- ser removido quando deixar de ser necessário para trilhas de leitura e categorias.
 
 ## Fases Futuras
 ### V1 - Spec Documental
@@ -456,13 +463,27 @@ Entregáveis:
 - estado pendente permanece honesto;
 - sem duplicação de corpo documental.
 
+Status em 2026-05-18:
+
+- `/admin/product-docs` foi migrado para as views contratuais;
+- `/admin/build-journal`, aba `Documentos oficiais`, foi migrado para a mesma fonte real;
+- o CTA secundário do Diário continua apontando para `/admin/product-docs?doc=<slug>`;
+- documentos narrativos sem slug whitelisted continuam pendentes, sem ação fake;
+- não houve backend novo, migration, RPC, view ou RLS neste lote.
+
 ### V6 - Remoção/Fallback Do Hardcoded Frontend
 Entregáveis:
 
-- remover corpos documentais de `productDocsContent.ts`;
-- manter fallback apenas se aprovado e explicitamente marcado;
+- manter `productDocsContent.ts` apenas como metadados/trilhas ou removê-lo se deixar de ser útil;
+- impedir reintrodução de fallback automático com corpo markdown;
 - atualizar docs de operação;
 - validar que nenhum documento fora do contrato aparece.
+
+Status em 2026-05-18:
+
+- corpos markdown hardcoded foram removidos do fluxo ativo;
+- `ProductDocReaderPanel` não possui fallback automático para conteúdo frontend;
+- Product Docs e Build Journal Documentos oficiais dependem do contrato backend e da whitelist sincronizada.
 
 ## Critérios De Aceite
 A arquitetura só deve ser considerada pronta quando:

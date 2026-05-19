@@ -257,6 +257,44 @@ export interface AdminSystemOperationalSummaryRow {
   last_event_at: IsoTimestamp | null;
 }
 
+export type InternalDocumentStatus = 'draft' | 'published' | 'archived' | 'blocked';
+export type InternalDocumentSensitivity = 'internal' | 'restricted' | 'public_internal';
+export type InternalDocumentValidationStatus = 'valid' | 'warning' | 'blocked';
+export type InternalDocumentSurface = 'product-docs' | 'build-journal';
+
+export interface AdminInternalDocumentCatalogRow {
+  document_id: Uuid;
+  slug: string;
+  source_path: string;
+  title: string;
+  category: string;
+  status: InternalDocumentStatus;
+  sensitivity: InternalDocumentSensitivity;
+  owner: string;
+  surfaces: InternalDocumentSurface[];
+  allow_inline_reader: boolean;
+  description: string | null;
+  current_source_hash: string;
+  current_version_number: number;
+  current_validation_status: InternalDocumentValidationStatus;
+  updated_at: IsoTimestamp;
+  published_at: IsoTimestamp | null;
+}
+
+export interface AdminInternalDocumentValidationWarning {
+  id: string;
+  count: number;
+  severity: string;
+}
+
+export interface AdminInternalDocumentDetailRow
+  extends AdminInternalDocumentCatalogRow {
+  body_md_sanitized: string;
+  validation_warnings: JsonValue;
+  sanitized_size_bytes: number;
+  original_size_bytes: number;
+}
+
 export interface AdminCustomerPortalAccessOverviewRow {
   tenant_count: number;
   active_tenant_count: number;

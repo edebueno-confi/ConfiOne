@@ -18,6 +18,7 @@ Atualização de 2026-05-17: `/admin/build-journal` recebeu também a aba intern
 
 Atualização de 2026-05-17: o lote `Build Journal Structural Cleanup V1` removeu dívida estrutural do frontend do Diário de Construção. A navegação interna foi padronizada em `BuildJournalSectionTabs`, o rodapé/citação em `BuildJournalQuoteFooter`, as abas `Arquitetura` e `IA na Construção` deixaram de ter placeholders mortos no painel simples, e `buildJournalContent.ts` voltou a ser a fonte central enxuta para tabs, timeline, entregas recentes, placeholders e copy compartilhada. `Documentos oficiais` e `Próximos passos` continuam placeholders estáticos até existirem telas próprias aprovadas. Nenhum backend, migration, RPC, view, RLS, tabela, Supabase contract ou permissão nova foi criado.
 
+Atualização de 2026-05-18: `/admin/product-docs` e a aba `Documentos oficiais` de `/admin/build-journal` passaram a consumir a fonte real governada de documentos internos oficiais, via `vw_internal_documents_catalog` e `vw_internal_document_detail`. O corpo exibido vem de `body_md_sanitized` versionado no banco; `productDocsContent.ts` deixou de conter corpos markdown hardcoded e permanece apenas como metadados/trilhas de leitura. O Diário mantém camada narrativa e CTA para Product Docs, sem leitura runtime de filesystem, sem segunda whitelist, sem parser concorrente e sem backend novo neste lote.
 ## Diferença entre as duas áreas
 
 ### Diário de Construção
@@ -51,7 +52,9 @@ Atualização de 2026-05-17: o lote `Build Journal Structural Cleanup V1` remove
 
 Ambas ficam dentro do bloco `/admin` e usam o gate administrativo existente do Admin Console.
 
-Dentro de `/admin/build-journal`, a navegação por abas é local à tela. `Visão geral`, `Linha do tempo`, `Arquitetura` e `IA na Construção` são superfícies estáticas implementadas do Diário de Construção. `Documentos oficiais` e `Próximos passos` permanecem placeholders frontend honestos, sem ação fake e sem contrato backend próprio, até haver evolução aprovada.
+Dentro de `/admin/build-journal`, a navegação por abas é local à tela. `Visão geral`, `Linha do tempo`, `Arquitetura`, `IA na Construção` e `Documentos oficiais` são superfícies estáticas implementadas do Diário de Construção. `Próximos passos` permanece placeholder frontend honesto, sem ação fake e sem contrato backend próprio, até haver evolução aprovada.
+
+A aba `Documentos oficiais` pode abrir documentos whitelisted inline para preservar continuidade de leitura. Essa leitura inline reutiliza o mesmo reader e a mesma fonte real de `/admin/product-docs`, não amplia a whitelist e mantém CTA secundário para o leitor oficial.
 
 ## Modelo de acesso atual
 - acesso protegido pelo `AdminGate` existente;

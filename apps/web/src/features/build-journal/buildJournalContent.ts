@@ -2,6 +2,7 @@ export type TimelineStatus = 'done' | 'progress' | 'planned';
 export type TimelineArea = 'Produto' | 'Segurança' | 'Suporte' | 'Knowledge' | 'Portal' | 'Engenharia' | 'Docs';
 export type TimelineAccent = 'blue' | 'cyan' | 'orange' | 'pink' | 'rose' | 'teal' | 'violet';
 export type BuildJournalTab = 'overview' | 'timeline' | 'architecture' | 'ai' | 'docs' | 'next';
+export type BuildJournalDocumentTone = 'blue' | 'green' | 'pink' | 'violet' | 'orange' | 'teal';
 
 export interface BuildJournalTabItem {
   key: BuildJournalTab;
@@ -27,6 +28,23 @@ export interface BuildJournalPlaceholderPanel {
   description: string;
   items: string[];
   action: string;
+}
+
+export interface BuildJournalDocumentReference {
+  title: string;
+  purpose: string;
+  productDocId?: string;
+  pendingReason?: string;
+}
+
+export interface BuildJournalDocumentCategory {
+  title: string;
+  eyebrow: string;
+  description: string;
+  role: string;
+  tone: BuildJournalDocumentTone;
+  icon: string;
+  documents: BuildJournalDocumentReference[];
 }
 
 export const buildJournalTabs: BuildJournalTabItem[] = [
@@ -160,14 +178,199 @@ export const buildJournalRecentDeliveries = [
   ['Workspace de Engenharia', '07/05/2026'],
 ] as const;
 
-export const buildJournalPlaceholderPanels: Record<'docs' | 'next', BuildJournalPlaceholderPanel> = {
-  docs: {
-    title: 'Documentos oficiais',
+export const buildJournalDocumentCategories: BuildJournalDocumentCategory[] = [
+  {
+    title: 'Visão e produto',
+    eyebrow: 'Origem e norte',
     description:
-      'Ponte para a área governada de leitura documental. O diário organiza a história; Product Docs mantém a fonte oficial.',
-    items: ['Produto e visão.', 'Arquitetura e contratos.', 'Segurança, Knowledge, Portal e Operação.'],
-    action: 'Ver linha do tempo documental',
+      'Define por que o Genius Support OS existe, qual dor operacional resolve e como a construção evolui sem virar CRM genérico.',
+    role: 'Serve como bússola para priorização, narrativa de produto e leitura executiva do buildout.',
+    tone: 'pink',
+    icon: 'target',
+    documents: [
+      {
+        title: 'Produto',
+        purpose: 'Tese principal do cockpit, usuários, limites e princípios estruturais.',
+        productDocId: 'product',
+      },
+      {
+        title: 'Visão do Produto',
+        purpose: 'Problema operacional, objetivos e direção de plataforma CX B2B técnica.',
+        productDocId: 'product-vision',
+      },
+      {
+        title: 'Roadmap Buildout V3',
+        purpose: 'Sequência de evolução e blocos planejados da construção.',
+        productDocId: 'roadmap-buildout-v3',
+      },
+    ],
   },
+  {
+    title: 'Arquitetura e contratos',
+    eyebrow: 'Como o sistema se sustenta',
+    description:
+      'Explica camadas, boundaries e a separação entre frontend, leitura controlada, escrita transacional e backend como fonte da verdade.',
+    role: 'Evita decisões soltas na UI e preserva contratos reais como base de evolução.',
+    tone: 'blue',
+    icon: 'layers',
+    documents: [
+      {
+        title: 'Regras de Arquitetura',
+        purpose: 'Princípios técnicos, responsabilidades por camada e limites de acoplamento.',
+        productDocId: 'architecture-rules',
+      },
+      {
+        title: 'Contratos de Views e RPCs',
+        purpose: 'Inventário operacional de leitura e escrita por contrato.',
+        pendingReason: 'Ainda não está exposto na whitelist atual do Product Docs.',
+      },
+    ],
+  },
+  {
+    title: 'Segurança e permissões',
+    eyebrow: 'Boundary antes de feature',
+    description:
+      'Documenta autorização, tenancy, contexto de sessão e o motivo de segurança vir antes de qualquer automação.',
+    role: 'Garante que a memória do produto preserve os limites de acesso e auditoria.',
+    tone: 'green',
+    icon: 'shield',
+    documents: [
+      {
+        title: 'Estratégia de Auth e Contexto',
+        purpose: 'Base de autenticação, contexto administrativo e fronteiras de acesso.',
+        productDocId: 'auth-context-strategy',
+      },
+      {
+        title: 'Estado do Projeto',
+        purpose: 'Registro vivo das capacidades já existentes e limites ainda pendentes.',
+        productDocId: 'project-state',
+      },
+    ],
+  },
+  {
+    title: 'Suporte e operação',
+    eyebrow: 'Da fila ao atendimento',
+    description:
+      'Organiza a evolução do suporte técnico B2B: tickets, contexto do cliente, timeline, handoff e governança operacional.',
+    role: 'Conecta decisões arquiteturais ao fluxo real de atendimento.',
+    tone: 'orange',
+    icon: 'headset',
+    documents: [
+      {
+        title: 'Workflow de Suporte',
+        purpose: 'Fluxo operacional, papéis, atendimento e continuidade entre suporte e contexto técnico.',
+        productDocId: 'support-workflow',
+      },
+    ],
+  },
+  {
+    title: 'Knowledge e conteúdo',
+    eyebrow: 'Conhecimento governado',
+    description:
+      'Explica por que conteúdo precisa de curadoria, versionamento e fronteiras entre público, interno e restrito.',
+    role: 'Impede que a Knowledge vire repositório solto ou fonte não governada para IA.',
+    tone: 'teal',
+    icon: 'book',
+    documents: [
+      {
+        title: 'Knowledge Base Strategy',
+        purpose: 'Modelo editorial, espaços, curadoria e governança de publicação.',
+        pendingReason: 'Documento citado no buildout, mas ainda não está exposto na whitelist atual do Product Docs.',
+      },
+      {
+        title: 'Ledger de Documentação',
+        purpose: 'Trilha versionada de decisões e entregas que afetam a documentação viva.',
+        productDocId: 'documentation-ledger',
+      },
+    ],
+  },
+  {
+    title: 'Portal do cliente',
+    eyebrow: 'Boundary customer-facing',
+    description:
+      'Reúne a direção do acesso B2B seguro do cliente, sem misturar operação interna com superfície pública ou autenticada.',
+    role: 'Ajuda a entender o que pode aparecer para cliente e o que deve permanecer interno.',
+    tone: 'blue',
+    icon: 'portal',
+    documents: [
+      {
+        title: 'Roadmap Buildout V3',
+        purpose: 'Direção de evolução para portal, colaboração e próximos blocos customer-facing.',
+        productDocId: 'roadmap-buildout-v3',
+      },
+      {
+        title: 'Customer Portal Specs',
+        purpose: 'Contratos e decisões específicas do portal cliente B2B.',
+        pendingReason: 'Specs existem no projeto, mas não estão expostas nesta whitelist do Product Docs.',
+      },
+    ],
+  },
+  {
+    title: 'Engenharia',
+    eyebrow: 'Ponte técnica',
+    description:
+      'Mostra como demandas técnicas entram no fluxo sem substituir suporte nem fechar ticket por fora do processo.',
+    role: 'Preserva a separação entre atendimento, engenharia e retorno estruturado.',
+    tone: 'violet',
+    icon: 'code',
+    documents: [
+      {
+        title: 'Workflow de Engenharia',
+        purpose: 'Modelo de work items, devolutivas técnicas e conexão com suporte.',
+        productDocId: 'engineering-workflow',
+      },
+    ],
+  },
+  {
+    title: 'Design e experiência',
+    eyebrow: 'Contrato visual',
+    description:
+      'Registra a linguagem visual, os princípios de cockpit interno e os limites contra dashboard genérico.',
+    role: 'Mantém consistência entre blueprint aprovado, UI implementada e leitura operacional.',
+    tone: 'pink',
+    icon: 'spark',
+    documents: [
+      {
+        title: 'Design',
+        purpose: 'Contexto visual, regras de experiência e princípios de interface do cockpit.',
+        productDocId: 'design',
+      },
+      {
+        title: 'Spec da Tela Diário de Construção',
+        purpose: 'Contrato específico da tela e evolução do próprio Diário.',
+        productDocId: 'build-journal-screen-spec',
+      },
+    ],
+  },
+  {
+    title: 'Governança documental',
+    eyebrow: 'Memória controlada',
+    description:
+      'Define como a documentação permanece viva, versionada e segura sem abrir o repositório como file explorer.',
+    role: 'Dá continuidade ao produto e evita drift entre tela, documentação e contratos reais.',
+    tone: 'green',
+    icon: 'clipboard',
+    documents: [
+      {
+        title: 'Estado do Projeto',
+        purpose: 'Checkpoint vivo do que existe, do que está pendente e do que não deve ser prometido.',
+        productDocId: 'project-state',
+      },
+      {
+        title: 'Ledger de Documentação',
+        purpose: 'Registro por fase para auditoria interna e continuidade de execução.',
+        productDocId: 'documentation-ledger',
+      },
+      {
+        title: 'Estratégia do Diário de Construção',
+        purpose: 'Finalidade narrativa e governança do próprio diário.',
+        productDocId: 'build-journal-strategy',
+      },
+    ],
+  },
+];
+
+export const buildJournalPlaceholderPanels: Record<'next', BuildJournalPlaceholderPanel> = {
   next: {
     title: 'Próximos passos',
     description:

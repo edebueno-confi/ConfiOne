@@ -4,6 +4,7 @@ import heroMountainUrl from '../../assets/build-journal/build-journal-hero-mount
 import { cx } from '../../components/ui';
 import { BuildJournalArchitecture } from './BuildJournalArchitecture';
 import { BuildJournalAI } from './BuildJournalAI';
+import { BuildJournalDocuments } from './BuildJournalDocuments';
 import {
   buildJournalDefaultQuote,
   buildJournalPlaceholderPanels,
@@ -745,7 +746,7 @@ function SimpleDocumentPanel({
   activeTab,
   onShowTimeline,
 }: {
-  activeTab: 'docs' | 'next';
+  activeTab: 'next';
   onShowTimeline: () => void;
 }) {
   const content = buildJournalPlaceholderPanels[activeTab];
@@ -789,6 +790,7 @@ export function BuildJournalPage() {
   const isTimelineTab = activeTab === 'timeline';
   const isArchitectureTab = activeTab === 'architecture';
   const isAITab = activeTab === 'ai';
+  const isDocsTab = activeTab === 'docs';
   const activeTabLabel = buildJournalTabs.find((tab) => tab.key === activeTab)?.label ?? 'Visão geral';
   const showTimelineHeader = activeTab !== 'overview';
 
@@ -846,7 +848,9 @@ export function BuildJournalPage() {
                       ? 'Arquitetura do Genius Support OS'
                       : isAITab
                         ? 'IA na Construção'
-                        : activeTabLabel}
+                        : isDocsTab
+                          ? 'Documentos oficiais'
+                          : activeTabLabel}
                 </h1>
                 <p className="mt-2 text-base font-semibold text-[#31476C]">
                   {isTimelineTab
@@ -855,7 +859,9 @@ export function BuildJournalPage() {
                       ? 'Como o sistema funciona por camadas, contratos e boundaries'
                       : isAITab
                         ? 'Usamos IA para acelerar raciocínio, execução e documentação sem abrir mão de governança, contratos reais e decisão humana.'
-                        : 'Conteúdo documental interno conectado à evolução do produto'}
+                        : isDocsTab
+                          ? 'Fontes versionadas, sanitizadas e controladas que sustentam a construção do Genius Support OS.'
+                          : 'Conteúdo documental interno conectado à evolução do produto'}
                 </p>
               </div>
               <div className="rounded-[14px] border border-[#D9E6F7] bg-white p-1 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
@@ -902,6 +908,8 @@ export function BuildJournalPage() {
           <BuildJournalArchitecture />
         ) : activeTab === 'ai' ? (
           <BuildJournalAI />
+        ) : activeTab === 'docs' ? (
+          <BuildJournalDocuments />
         ) : (
           <SimpleDocumentPanel activeTab={activeTab} onShowTimeline={() => setActiveTab('timeline')} />
         )}
