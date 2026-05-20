@@ -18,6 +18,40 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase - Octadesk Import Runtime Status
+- fase: `knowledge-curation`
+- nome: `Octadesk Import Runtime Status`
+- branch: `workspace-atual`
+- data: `2026-05-20`
+- resumo funcional: registrado o estado runtime local apos a execucao segura do corpus Octadesk: `58` artigos avaliados, `54` materializados no Admin Knowledge, `54` advisories `pending`, `4 review/internal`, `24 draft/internal`, `26 draft/restricted`, `0 published`, `0 public` e `0` exposicao nas views publicas.
+- docs alterados:
+  - `docs/reports/OCTADESK_IMPORT_RUNTIME_STATUS.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - `/admin/knowledge` contem o backlog Octadesk governado sem exposicao publica
+  - `/help/genius` permanece exibindo somente os artigos publicos seed/manuais
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- validacao:
+  - queries SQL de distribuicao status/visibility e exposicao publica zero
+  - QA Admin Knowledge
+  - QA Public Help
+  - `npm run knowledge:curation:backlog`
+  - `npm run knowledge:verify:octadesk:space-aware`
+  - import dry-run com allowlist geral
+  - advisory dry-run com allowlist geral
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:test:db`
+- riscos restantes:
+  - assets continuam pendentes de revisao humana
+  - advisories continuam `pending`
+  - Wave 1 segue vazia ate checklist humano real
+- impacto na FAQ futura:
+  - preserva rastreabilidade do runtime importado e impede que corpus Octadesk seja confundido com conteudo publico aprovado
+
 ### Fase - Octadesk Public Help Pilot Internal Review
 - fase: `knowledge-curation`
 - nome: `Octadesk Public Help Pilot Internal Review`
