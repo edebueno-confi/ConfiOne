@@ -75,6 +75,13 @@ Criar a base editorial do Genius Support OS com versionamento, trilha de origem 
 Origem oficial preservada:
 - `raw_knowledge/octadesk_export/latest/articles/`
 
+Estado operacional em 2026-05-20:
+- A esteira completa do corpus Octadesk foi organizada em allowlists por onda e registrada em `docs/reports/OCTADESK_FULL_PUBLIC_HELP_EXECUTION_PLAN.md`.
+- `54` artigos foram importados/processados localmente no Admin Knowledge sem exposicao publica.
+- Distribuicao do corpus importado: `4 review/internal`, `24 draft/internal`, `26 draft/restricted`.
+- `20` artigos permanecem bloqueados para publicacao publica por restricao, obsolescencia ou duplicidade.
+- `0` artigos Octadesk foram publicados automaticamente; Wave 1 permanece vazia ate checklist humano, advisory revisado e revisao de assets.
+
 Resultado do inventário atual:
 - `58` artigos detectados por `article.json`
 - `3` categorias-raiz:

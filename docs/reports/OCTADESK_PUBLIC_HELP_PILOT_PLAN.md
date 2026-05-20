@@ -39,6 +39,29 @@ Estado apos submissao:
 
 Esta etapa nao publica conteudo, nao muda visibilidade para `public`, nao marca advisory como `reviewed` e nao preenche checklist humano automaticamente. A publicacao continua bloqueada ate revisao humana completa, revisao de assets e decisao explicita sobre cada artigo.
 
+## Atualizacao da esteira completa em 2026-05-20
+
+A esteira do corpus completo foi preparada e executada localmente sem publicacao publica:
+
+- `54` artigos Octadesk foram importados/processados no Admin Knowledge por allowlist.
+- `54` advisories foram sincronizados para artigos do corpus importado.
+- `4` artigos permanecem em `review/internal`.
+- `24` artigos ficaram em `draft/internal`.
+- `26` artigos ficaram em `draft/restricted`.
+- `0` artigos Octadesk foram publicados.
+- `0` artigos Octadesk ficaram `public`.
+
+Os novos artefatos operacionais sao:
+
+- `docs/reports/OCTADESK_FULL_PUBLIC_HELP_EXECUTION_PLAN.md`
+- `docs/reports/OCTADESK_IMPORT_ALL_DRAFTS_ALLOWLIST.json`
+- `docs/reports/OCTADESK_PUBLICATION_WAVE_1_ALLOWLIST.json`
+- `docs/reports/OCTADESK_REVIEW_REQUIRED_ALLOWLIST.json`
+- `docs/reports/OCTADESK_BLOCKED_ALLOWLIST.json`
+- `docs/reports/OCTADESK_EDITORIAL_REWRITE_BACKLOG.md`
+
+Wave 1 ficou vazia porque nenhum artigo possui checklist humano completo, advisory revisado e revisao de assets.
+
 ## Fontes usadas
 
 - Corpus real: `raw_knowledge/octadesk_export/latest`

@@ -62,6 +62,27 @@ Regras do import:
 - preservar `source_path` e `source_hash`
 - nunca publicar durante o import
 
+## Como operar por ondas com allowlist
+1. Gerar o plano completo do corpus em `docs/reports/OCTADESK_FULL_PUBLIC_HELP_EXECUTION_PLAN.md`.
+2. Usar `docs/reports/OCTADESK_IMPORT_ALL_DRAFTS_ALLOWLIST.json` para import local controlado.
+3. Usar `docs/reports/OCTADESK_REVIEW_REQUIRED_ALLOWLIST.json` para orientar revisao humana.
+4. Manter `docs/reports/OCTADESK_BLOCKED_ALLOWLIST.json` fora de publicacao publica.
+5. Manter `docs/reports/OCTADESK_PUBLICATION_WAVE_1_ALLOWLIST.json` vazia ate haver checklist humano real.
+
+Comandos oficiais da onda atual:
+```bash
+npm run knowledge:import:octadesk:local -- --space-slug genius --allowlist docs/reports/OCTADESK_IMPORT_ALL_DRAFTS_ALLOWLIST.json
+npm run knowledge:import:octadesk:local -- --space-slug genius --allowlist docs/reports/OCTADESK_IMPORT_ALL_DRAFTS_ALLOWLIST.json --apply --actor-user-id <uuid>
+npm run knowledge:review:advisories:local -- --space-slug genius --allowlist docs/reports/OCTADESK_IMPORT_ALL_DRAFTS_ALLOWLIST.json
+npm run knowledge:review:advisories:local -- --space-slug genius --allowlist docs/reports/OCTADESK_IMPORT_ALL_DRAFTS_ALLOWLIST.json --apply --actor-user-id <uuid>
+```
+
+Resultado esperado antes de qualquer publicacao:
+- artigos Octadesk importados apenas como `draft` ou `review`;
+- visibilidade nunca `public` por automacao;
+- advisories em `pending`;
+- views publicas retornando `0` para o corpus Octadesk nao aprovado.
+
 ## Como sincronizar advisories
 1. Rodar primeiro o backlog versionado.
 2. Sincronizar os advisories no mesmo `knowledge_space`.

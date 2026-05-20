@@ -525,7 +525,7 @@ function writeSqlAndExecute(rows, actorUserId, args) {
       '${sqlEscape(row.sourcePath)}',
       '${sqlEscape(row.sourceHash)}'
     );
-  elsif v_existing.status in ('draft'::public.knowledge_article_status, 'review'::public.knowledge_article_status) then
+  elsif v_existing.status = 'draft'::public.knowledge_article_status then
     if v_existing.title is distinct from '${sqlEscape(row.article.title)}'
        or v_existing.summary is distinct from ${row.summary ? `'${sqlEscape(row.summary)}'` : 'null'}
        or v_existing.body_md is distinct from '${sqlEscape(row.body)}'
