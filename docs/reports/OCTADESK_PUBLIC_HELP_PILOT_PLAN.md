@@ -16,6 +16,16 @@ O pacote operacional para revisao humana foi criado em:
 
 Esse pacote nao aprova publicacao. Ele organiza identificacao, riscos editoriais, sugestao de versao publica e checklist humano por artigo.
 
+## Atualizacao editorial em 2026-05-20
+
+As versoes editoriais sugeridas para os 4 drafts piloto foram preparadas em:
+
+- `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_EDITORIAL_DRAFTS.md`
+
+As versoes sugeridas removem linguagem herdada do corpus legado, contatos operacionais e dependencia obrigatoria de prints. Elas continuam bloqueadas para publicacao automatica: a revisao humana ainda precisa validar titulo, resumo, corpo, categoria, assets, links e ausencia de conteudo sensivel antes de qualquer mudanca para review ou publish.
+
+Aplicacao local controlada: os 4 drafts foram atualizados no Admin Knowledge pela RPC existente `rpc_admin_update_knowledge_article_draft_v2`, preservando `draft/internal`, `source_path`, `source_hash` e advisories `pending`. Nenhum artigo foi publicado ou exposto em `/help/genius`.
+
 ## Fontes usadas
 
 - Corpus real: `raw_knowledge/octadesk_export/latest`

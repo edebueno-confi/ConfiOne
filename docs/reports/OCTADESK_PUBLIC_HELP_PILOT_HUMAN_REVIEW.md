@@ -15,6 +15,16 @@ Este documento nao autoriza publicacao. Ele organiza o que Produto, Suporte/CS e
 - Public Help: os 4 drafts nao aparecem em `/help/genius`.
 - Decisao: `bloqueado_para_publicacao_automatica`.
 
+## Atualizacao editorial em 2026-05-20
+
+O pacote de versoes editoriais sugeridas foi criado em:
+
+- `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_EDITORIAL_DRAFTS.md`
+
+Esse pacote prepara textos revisaveis para o Admin Knowledge, mas nao preenche checklist humano, nao revisa assets e nao autoriza publicacao. A decisao dos 4 artigos permanece `aguardando_revisao_humana`.
+
+Aplicacao local controlada: os 4 drafts foram atualizados via RPC existente `rpc_admin_update_knowledge_article_draft_v2`, mantendo `status = draft`, `visibility = internal`, `source_path`, `source_hash` e advisories `pending`. Nenhum artigo foi publicado ou liberado como `public`.
+
 ## Checklist humano comum
 
 Cada artigo precisa ter todos os itens abaixo preenchidos por revisao humana antes de qualquer publicacao:

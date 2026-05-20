@@ -18,6 +18,30 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase - Octadesk Public Help Pilot Editorial Drafts
+- fase: `knowledge-curation`
+- nome: `Octadesk Public Help Pilot Editorial Drafts`
+- branch: `workspace-atual`
+- data: `2026-05-20`
+- resumo funcional: preparadas versoes editoriais sugeridas para os 4 drafts piloto Octadesk, com linguagem B2B, remocao de contatos operacionais e bloqueio explicito de publicacao automatica. As versoes foram aplicadas localmente via `rpc_admin_update_knowledge_article_draft_v2`; os drafts permanecem `draft/internal`, advisories continuam `pending` e a revisao humana segue obrigatoria.
+- docs alterados:
+  - `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_EDITORIAL_DRAFTS.md`
+  - `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_HUMAN_REVIEW.md`
+  - `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_PLAN.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - `/admin/knowledge` segue como fila de curadoria dos 4 drafts
+  - `/help/genius` deve permanecer sem exposicao dos drafts
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+  - uso permitido da RPC existente `rpc_admin_update_knowledge_article_draft_v2`, se aplicada no banco local para atualizar texto de draft mantendo `draft/internal`
+- riscos restantes:
+  - revisao humana de titulo, resumo, corpo, categoria, links e assets ainda e obrigatoria
+  - artigo `Regra por motivo` precisa decisao explicita se sera publico ou permanecera interno
+- impacto na FAQ futura:
+  - transforma o lote piloto em base editorial revisavel, sem liberar conteudo publico antes do gate humano
 ### Fase - Octadesk Public Help Pilot Human Review Prep
 - fase: `knowledge-curation`
 - nome: `Octadesk Public Help Pilot Human Review Prep`
