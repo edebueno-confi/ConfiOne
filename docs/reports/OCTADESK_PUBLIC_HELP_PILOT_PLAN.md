@@ -216,6 +216,36 @@ Verificacao adicional apos os comandos:
 - Sincronizar advisories somente depois dos drafts existirem.
 - Fazer QA publico apenas apos review/publicacao controlada.
 
+## Execucao controlada em 2026-05-20
+
+Resultado do lote tecnico piloto:
+
+- allowlist versionada criada em `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_ALLOWLIST.json`;
+- importador Octadesk passou a aceitar `--allowlist`;
+- sync de advisories passou a aceitar `--allowlist`;
+- pacote editorial criado em `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_REVIEW_PACK.md`;
+- import local executado apenas para os 4 artigos da allowlist;
+- os 4 artigos foram criados como `draft` e `internal`;
+- `source_path` e `source_hash` foram preservados;
+- advisories foram sincronizados apenas para os 4 artigos;
+- `review_status` ficou `pending`;
+- nenhum artigo foi publicado;
+- `/help/genius` nao exibe os 4 drafts.
+
+Artigos criados como draft:
+
+- `Como alterar ou aprovar os produtos de uma solicitacao?`
+- `Posso enviar uma notificacao de analise ao cliente?`
+- `Reenviar um e-mail ao consumidor`
+- `Regra por motivo`
+
+Estado aprovado para a proxima fase:
+
+- revisao humana artigo por artigo;
+- revisao visual dos assets;
+- reescrita editorial para padrao Genius B2B;
+- decisao explicita antes de mover qualquer artigo para `published/public`.
+
 ## Comandos permitidos na proxima fase
 
 Somente depois de aprovada a allowlist:

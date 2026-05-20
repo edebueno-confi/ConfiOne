@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join, dirname, relative, basename } from 'node:path';
+import { join, dirname, relative, basename, resolve } from 'node:path';
 
 const ZERO_UUID = '00000000-0000-0000-0000-000000000000';
 
@@ -18,6 +18,7 @@ function parseArgs(argv) {
     actorUserId: null,
     spaceSlug: null,
     knowledgeSpaceId: null,
+    allowlist: null,
     root: join(
       process.cwd(),
       'raw_knowledge',
@@ -58,6 +59,12 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (value === '--allowlist') {
+      args.allowlist = argv[index + 1] ?? null;
+      index += 1;
+      continue;
+    }
+
     if (value === '--limit') {
       const raw = argv[index + 1] ?? '';
       args.limit = Number.parseInt(raw, 10);
@@ -92,6 +99,10 @@ function parseArgs(argv) {
 
   if (args.apply && !args.actorUserId) {
     fail('Importação com --apply exige --actor-user-id.');
+  }
+
+  if (args.allowlist && !existsSync(resolve(process.cwd(), args.allowlist))) {
+    fail(`Allowlist nao encontrada em ${args.allowlist}.`);
   }
 
   return args;
@@ -210,6 +221,53 @@ function normalizeKey(value) {
     .toLowerCase();
 }
 
+function normalizeWorkspacePath(value) {
+  return String(value ?? '')
+    .replace(/\\/g, '/')
+    .replace(/^\.\//, '')
+    .replace(/^articles\//, 'raw_knowledge/octadesk_export/latest/articles/')
+    .replace(/\/$/, '');
+}
+
+function readAllowlist(allowlistPath) {
+  if (!allowlistPath) {
+    return null;
+  }
+
+  const absolutePath = resolve(process.cwd(), allowlistPath);
+  const parsed = JSON.parse(readFileSync(absolutePath, 'utf8'));
+  const entries = Array.isArray(parsed) ? parsed : parsed.articles;
+
+  if (!Array.isArray(entries) || entries.length === 0) {
+    fail('Allowlist invalida: informe um array ou a propriedade articles com pelo menos um item.');
+  }
+
+  const seen = new Set();
+  return entries.map((entry, index) => {
+    const sourcePath = normalizeWorkspacePath(
+      entry.source_path ?? entry.sourcePath ?? entry.articleDirRelative,
+    );
+    const sourceHash = String(entry.source_hash ?? entry.sourceHash ?? '').trim();
+
+    if (!sourcePath || !sourceHash) {
+      fail(`Allowlist invalida no item ${index + 1}: source_path/source_hash sao obrigatorios.`);
+    }
+
+    const key = `${sourcePath}::${sourceHash}`;
+    if (seen.has(key)) {
+      fail(`Allowlist invalida: item duplicado ${sourcePath}.`);
+    }
+    seen.add(key);
+
+    return {
+      ...entry,
+      sourcePath,
+      sourceHash,
+      key,
+    };
+  });
+}
+
 function summarizeBody(body) {
   const firstParagraph = body
     .split(/\n{2,}/)
@@ -278,7 +336,34 @@ function discoverArticles(root) {
   return articleDirs;
 }
 
-function buildInventory(root, limit = null) {
+function applyAllowlist(rows, allowlistEntries) {
+  if (!allowlistEntries) {
+    return rows;
+  }
+
+  const byKey = new Map(rows.map((row) => [`${row.sourcePath}::${row.sourceHash}`, row]));
+  const selected = [];
+
+  for (const entry of allowlistEntries) {
+    const row = byKey.get(entry.key);
+    if (!row) {
+      const samePath = rows.find((candidate) => candidate.sourcePath === entry.sourcePath);
+      if (samePath) {
+        fail(
+          `Allowlist bloqueada: source_hash divergente para ${entry.sourcePath}. Esperado ${samePath.sourceHash}, recebido ${entry.sourceHash}.`,
+        );
+      }
+
+      fail(`Allowlist bloqueada: artigo nao encontrado no corpus: ${entry.sourcePath}.`);
+    }
+
+    selected.push(row);
+  }
+
+  return selected;
+}
+
+function buildInventory(root, limit = null, allowlistEntries = null) {
   const dirs = discoverArticles(root);
   const draftRows = [];
 
@@ -325,9 +410,11 @@ function buildInventory(root, limit = null) {
     initialVisibility: classifySensitivity(row.article, row.body, duplicateMap.get(row.sourceHash) ?? 1),
   }));
 
+  const filtered = applyAllowlist(enriched, allowlistEntries);
+
   return typeof limit === 'number' && Number.isFinite(limit) && limit > 0
-    ? enriched.slice(0, limit)
-    : enriched;
+    ? filtered.slice(0, limit)
+    : filtered;
 }
 
 function buildSummary(rows) {
@@ -416,7 +503,14 @@ function writeSqlAndExecute(rows, actorUserId, args) {
   into v_existing
   from public.vw_admin_knowledge_article_detail_v2 as ka
   where ka.knowledge_space_id = v_target_space_id
-    and ka.slug = '${sqlEscape(row.articleSlug)}';
+    and (
+      ka.slug = '${sqlEscape(row.articleSlug)}'
+      or ka.source_hash = '${sqlEscape(row.sourceHash)}'
+    )
+  order by
+    case when ka.slug = '${sqlEscape(row.articleSlug)}' then 0 else 1 end,
+    ka.created_at asc
+  limit 1;
 
   if v_existing.id is null then
     perform public.rpc_admin_create_knowledge_article_draft_v2(
@@ -479,7 +573,8 @@ function main() {
   const args = parseArgs(process.argv.slice(2));
   readStatusEnv();
 
-  const rows = buildInventory(args.root, args.limit);
+  const allowlistEntries = readAllowlist(args.allowlist);
+  const rows = buildInventory(args.root, args.limit, allowlistEntries);
   const summary = buildSummary(rows);
 
   if (!args.apply) {
@@ -489,7 +584,14 @@ function main() {
           mode: 'dry-run',
           knowledge_space_slug: args.spaceSlug,
           knowledge_space_id: args.knowledgeSpaceId,
+          allowlist: args.allowlist,
           root: relative(process.cwd(), args.root).replace(/\\/g, '/'),
+          selectedArticles: rows.map((row) => ({
+            title: row.article.title,
+            sourcePath: row.sourcePath,
+            sourceHash: row.sourceHash,
+            visibility: row.initialVisibility,
+          })),
           ...summary,
         },
         null,
@@ -509,6 +611,7 @@ function main() {
         actor_user_id: args.actorUserId,
         knowledge_space_slug: args.spaceSlug,
         knowledge_space_id: args.knowledgeSpaceId,
+        allowlist: args.allowlist,
         imported_articles: rows.length,
         root: relative(process.cwd(), args.root).replace(/\\/g, '/'),
         restricted_articles: rows.filter((row) => row.initialVisibility === 'restricted').length,

@@ -18,6 +18,43 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase - Octadesk Public Help Pilot Draft Import
+- fase: `knowledge-curation`
+- nome: `Octadesk Public Help Pilot Draft Import`
+- branch: `workspace-atual`
+- data: `2026-05-20`
+- resumo funcional: preparado e executado o lote piloto da Central de Ajuda Genius a partir do corpus Octadesk. A allowlist versionada limita o import a 4 artigos, o importador e o sync de advisories suportam `--allowlist`, os artigos foram criados localmente como `draft/internal` e nenhum conteudo foi publicado em `/help/genius`.
+- docs alterados:
+  - `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_PLAN.md`
+  - `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_ALLOWLIST.json`
+  - `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_REVIEW_PACK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- arquivos de tooling alterados:
+  - `scripts/knowledge/import-octadesk-drafts.mjs`
+  - `scripts/knowledge/sync-review-advisories.mjs`
+  - `package.json`
+- telas afetadas:
+  - `/admin/knowledge` passou a exibir os 4 drafts importados no ambiente local
+  - `/help/genius` permanece sem exibir os drafts
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- validacao:
+  - dry-run de backlog
+  - dry-run de import com allowlist
+  - dry-run de advisory com allowlist
+  - apply local apenas dos 4 drafts da allowlist
+  - apply local de advisories apenas dos 4 drafts
+  - QA Admin Knowledge
+  - QA Public Help
+- riscos restantes:
+  - os 4 artigos ainda precisam revisao humana, reescrita e revisao dos assets
+  - os advisories ficaram pendentes e nao autorizam publicacao
+  - nenhum artigo deve ir para `published/public` sem checklist editorial completo
+- impacto na FAQ futura:
+  - cria um caminho controlado para transformar corpus Octadesk em conteudo governado, por lote pequeno, preservando source tracking e bloqueando publicacao automatica
+
 ### Fase - Internal Documents Reader V5
 - fase: `runtime-ui`
 - nome: `Internal Documents Reader V5`

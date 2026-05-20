@@ -1,0 +1,67 @@
+{
+  "generated_at": "2026-05-20",
+  "purpose": "Lote piloto controlado para importar apenas 4 artigos Octadesk como draft na Central de Ajuda Genius.",
+  "publish_allowed": false,
+  "articles": [
+    {
+      "articleDirRelative": "articles/configuracoes/configurando-parametrizacao-geral/000-como-alterar-ou-aprovar-os-produtos-de-uma-solicitacao",
+      "title": "Como alterar ou aprovar os produtos de uma solicitacao?",
+      "source_path": "raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-como-alterar-ou-aprovar-os-produtos-de-uma-solicitacao",
+      "source_hash": "59b0619bf620261477c2491feaf6d274f68f95ea0ac7a1faf686704fba1a364a",
+      "categoryTitle": "Configuracoes",
+      "sectionTitle": "Configuracao de ambiente",
+      "assetCount": 1,
+      "decision": "pilot_draft_candidate",
+      "requires_human_review": true,
+      "requires_asset_review": true,
+      "requires_rewrite": true,
+      "publish_allowed": false,
+      "notes": "Candidato de baixo risco no backlog, mas depende de revisao do asset e reescrita para linguagem B2B Genius."
+    },
+    {
+      "articleDirRelative": "articles/configuracoes/configurando-parametrizacao-geral/000-posso-enviar-uma-notificacao-de-analise-ao-cliente",
+      "title": "Posso enviar uma notificacao de analise ao cliente?",
+      "source_path": "raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-posso-enviar-uma-notificacao-de-analise-ao-cliente",
+      "source_hash": "7161e4ec3c080f510fbf31b30d0425ac69d5544b19bf5fdb6d0eb89a89dc9619",
+      "categoryTitle": "Configuracoes",
+      "sectionTitle": "Configuracao de ambiente",
+      "assetCount": 2,
+      "decision": "pilot_draft_candidate",
+      "requires_human_review": true,
+      "requires_asset_review": true,
+      "requires_rewrite": true,
+      "publish_allowed": false,
+      "notes": "Candidato de comunicacao com cliente, sem flags sensiveis no backlog, mas com assets que precisam revisao."
+    },
+    {
+      "articleDirRelative": "articles/configuracoes/configurando-parametrizacao-geral/000-reenviar-um-e-mail-ao-consumidor",
+      "title": "Reenviar um e-mail ao consumidor",
+      "source_path": "raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-reenviar-um-e-mail-ao-consumidor",
+      "source_hash": "b2d6f54bf368cbf3e823a55e461d463ba61fb8b5482fd22d5756a5406ee13d43",
+      "categoryTitle": "Configuracoes",
+      "sectionTitle": "Configuracao de ambiente",
+      "assetCount": 1,
+      "decision": "pilot_draft_candidate",
+      "requires_human_review": true,
+      "requires_asset_review": true,
+      "requires_rewrite": true,
+      "publish_allowed": false,
+      "notes": "Candidato operacional simples, mas precisa adequar linguagem de consumidor para Central Genius B2B."
+    },
+    {
+      "articleDirRelative": "articles/configuracoes/configurando-parametrizacao-geral/000-regra-por-motivo",
+      "title": "Regra por motivo",
+      "source_path": "raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-regra-por-motivo",
+      "source_hash": "fb3075312afaaa4cbb9ed019a683681c0c0902026f08a46283cb74906cc17aeb",
+      "categoryTitle": "Configuracoes",
+      "sectionTitle": "Configuracao de ambiente",
+      "assetCount": 1,
+      "decision": "pilot_draft_candidate",
+      "requires_human_review": true,
+      "requires_asset_review": true,
+      "requires_rewrite": true,
+      "publish_allowed": false,
+      "notes": "Candidato para explicar regra operacional, mas deve ser revisado para nao expor configuracao interna indevida."
+    }
+  ]
+}

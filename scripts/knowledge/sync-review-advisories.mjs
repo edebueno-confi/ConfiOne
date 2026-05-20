@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
 function fail(message) {
   console.error(message);
@@ -14,6 +14,7 @@ function parseArgs(argv) {
     actorUserId: null,
     spaceSlug: null,
     knowledgeSpaceId: null,
+    allowlist: null,
     input: join(
       process.cwd(),
       'docs',
@@ -56,6 +57,12 @@ function parseArgs(argv) {
     if (value === '--input') {
       args.input = argv[index + 1] ?? args.input;
       index += 1;
+      continue;
+    }
+
+    if (value === '--allowlist') {
+      args.allowlist = argv[index + 1] ?? null;
+      index += 1;
     }
   }
 
@@ -83,6 +90,10 @@ function parseArgs(argv) {
     fail(
       `Backlog JSON nao encontrado em ${args.input}. Rode npm run knowledge:curation:backlog antes do sync.`,
     );
+  }
+
+  if (args.allowlist && !existsSync(resolve(process.cwd(), args.allowlist))) {
+    fail(`Allowlist nao encontrada em ${args.allowlist}.`);
   }
 
   return args;
@@ -185,6 +196,80 @@ function readBacklogRows(inputPath) {
   }
 
   return parsed.rows;
+}
+
+function normalizeWorkspacePath(value) {
+  return String(value ?? '')
+    .replace(/\\/g, '/')
+    .replace(/^\.\//, '')
+    .replace(/^articles\//, 'raw_knowledge/octadesk_export/latest/articles/')
+    .replace(/\/$/, '');
+}
+
+function readAllowlist(allowlistPath) {
+  if (!allowlistPath) {
+    return null;
+  }
+
+  const parsed = JSON.parse(readFileSync(resolve(process.cwd(), allowlistPath), 'utf8'));
+  const entries = Array.isArray(parsed) ? parsed : parsed.articles;
+
+  if (!Array.isArray(entries) || entries.length === 0) {
+    fail('Allowlist invalida: informe um array ou a propriedade articles com pelo menos um item.');
+  }
+
+  const seen = new Set();
+  return entries.map((entry, index) => {
+    const sourcePath = normalizeWorkspacePath(
+      entry.source_path ?? entry.sourcePath ?? entry.articleDirRelative,
+    );
+    const sourceHash = String(entry.source_hash ?? entry.sourceHash ?? '').trim();
+
+    if (!sourcePath || !sourceHash) {
+      fail(`Allowlist invalida no item ${index + 1}: source_path/source_hash sao obrigatorios.`);
+    }
+
+    const key = `${sourcePath}::${sourceHash}`;
+    if (seen.has(key)) {
+      fail(`Allowlist invalida: item duplicado ${sourcePath}.`);
+    }
+    seen.add(key);
+
+    return {
+      sourcePath,
+      sourceHash,
+      key,
+    };
+  });
+}
+
+function applyAllowlist(backlogRows, allowlistEntries) {
+  if (!allowlistEntries) {
+    return backlogRows;
+  }
+
+  const byKey = new Map(backlogRows.map((row) => [buildArticleKey(row), row]));
+  const selected = [];
+
+  for (const entry of allowlistEntries) {
+    const row = byKey.get(entry.key);
+    if (!row) {
+      const samePath = backlogRows.find(
+        (candidate) => normalizeWorkspacePath(candidate.sourcePath) === entry.sourcePath,
+      );
+      if (samePath) {
+        fail(
+          `Allowlist bloqueada: source_hash divergente para ${entry.sourcePath}. Esperado ${samePath.sourceHash}, recebido ${entry.sourceHash}.`,
+        );
+      }
+
+      fail(`Allowlist bloqueada: artigo nao encontrado no backlog: ${entry.sourcePath}.`);
+    }
+
+    selected.push(row);
+  }
+
+  return selected;
 }
 
 function buildSpaceSqlExpression(args) {
@@ -353,7 +438,8 @@ function applySync(plan, args) {
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
-  const backlogRows = readBacklogRows(args.input);
+  const allowlistEntries = readAllowlist(args.allowlist);
+  const backlogRows = applyAllowlist(readBacklogRows(args.input), allowlistEntries);
   const articles = fetchSpaceArticles(args);
   const plan = buildSyncPlan(backlogRows, articles);
 
@@ -365,6 +451,7 @@ function main() {
           knowledge_space_slug: args.spaceSlug,
           knowledge_space_id: args.knowledgeSpaceId,
           input: args.input,
+          allowlist: args.allowlist,
           backlog_rows: backlogRows.length,
           matched_articles: plan.matched.length,
           missing_articles: plan.missing.length,
@@ -389,6 +476,7 @@ function main() {
         knowledge_space_slug: args.spaceSlug,
         knowledge_space_id: args.knowledgeSpaceId,
         input: args.input,
+        allowlist: args.allowlist,
         backlog_rows: backlogRows.length,
         matched_articles: plan.matched.length,
         preserved_human_reviews: plan.preserved.length,
