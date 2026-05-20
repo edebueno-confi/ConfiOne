@@ -18,6 +18,35 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase - Octadesk Public Help Pilot Human Review Prep
+- fase: `knowledge-curation`
+- nome: `Octadesk Public Help Pilot Human Review Prep`
+- branch: `workspace-atual`
+- data: `2026-05-20`
+- resumo funcional: preparada a fila de curadoria humana dos 4 drafts piloto Octadesk ja importados como `draft/internal`, sem publicar conteudo e sem alterar status editorial. O pacote novo consolida identificacao, `source_path`, `source_hash`, advisory pendente, diagnostico editorial, sugestao de versao publica e checklist humano por artigo.
+- docs alterados:
+  - `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_HUMAN_REVIEW.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - `/admin/knowledge` auditado como fila de curadoria dos 4 drafts
+  - `/help/genius` confirmado como sem exposicao dos drafts
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- validacao:
+  - auditoria local dos 4 drafts e advisories
+  - QA Admin Knowledge
+  - QA Public Help
+  - `npm run knowledge:curation:backlog`
+  - `npm run knowledge:verify:octadesk:space-aware`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+- riscos restantes:
+  - revisao humana de texto, categoria, links e assets ainda e obrigatoria
+  - nenhum artigo deve ir para `review`, `published` ou `public` sem checklist humano completo
+- impacto na FAQ futura:
+  - transforma o lote piloto importado em fila revisavel, mantendo bloqueio de publicacao automatica e preservando rastreabilidade de origem
 ### Fase - Octadesk Public Help Pilot Draft Import
 - fase: `knowledge-curation`
 - nome: `Octadesk Public Help Pilot Draft Import`

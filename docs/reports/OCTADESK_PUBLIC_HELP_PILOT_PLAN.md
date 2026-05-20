@@ -6,6 +6,16 @@ Planejar um lote piloto publico para a Central de Ajuda Genius a partir do corpu
 
 Este documento e apenas planejamento editorial/operacional. Ele nao altera banco, frontend, status de artigos ou contratos.
 
+## Atualizacao de curadoria humana em 2026-05-20
+
+Depois do import local controlado, os 4 artigos do lote piloto permanecem `draft/internal`, com advisories `pending` e sem exposicao em `/help/genius`.
+
+O pacote operacional para revisao humana foi criado em:
+
+- `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_HUMAN_REVIEW.md`
+
+Esse pacote nao aprova publicacao. Ele organiza identificacao, riscos editoriais, sugestao de versao publica e checklist humano por artigo.
+
 ## Fontes usadas
 
 - Corpus real: `raw_knowledge/octadesk_export/latest`

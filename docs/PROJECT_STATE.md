@@ -70,6 +70,7 @@ Documentos históricos:
 - Documentação deve ser viva e versionada no repositório.
 
 ## Estado atual em 2026-05-10
+- Em 2026-05-20, a curadoria humana dos 4 drafts piloto Octadesk foi preparada sem publicacao: `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_HUMAN_REVIEW.md` consolida identificacao, riscos editoriais, sugestoes de versao publica e checklist humano por artigo. Os 4 artigos continuam `draft/internal`, com advisories `pending`, `source_path` e `source_hash` preservados, sem aparecer em `/help/genius`.
 - Em 2026-05-20, o lote piloto Octadesk da Central de Ajuda foi preparado e executado apenas como draft local controlado. Foram criados `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_ALLOWLIST.json` e `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_REVIEW_PACK.md`, o importador e o sync de advisories passaram a suportar `--allowlist`, e 4 artigos foram importados para o espaco `genius` como `draft/internal` com `source_path` e `source_hash` preservados. Nenhum artigo foi publicado; `/help/genius` continua sem expor os drafts. A proxima etapa e revisao humana artigo por artigo, reescrita e revisao de assets antes de qualquer publicacao.
 - A curadoria refinada da Knowledge Base está pausada; os candidatos continuam como corpus/documentação inicial.
 - O foco atual é buildout funcional da plataforma interna CX B2B técnica.
