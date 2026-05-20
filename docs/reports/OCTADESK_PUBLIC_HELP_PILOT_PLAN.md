@@ -26,6 +26,19 @@ As versoes sugeridas removem linguagem herdada do corpus legado, contatos operac
 
 Aplicacao local controlada: os 4 drafts foram atualizados no Admin Knowledge pela RPC existente `rpc_admin_update_knowledge_article_draft_v2`, preservando `draft/internal`, `source_path`, `source_hash` e advisories `pending`. Nenhum artigo foi publicado ou exposto em `/help/genius`.
 
+## Atualizacao de review interno em 2026-05-20
+
+Os 4 artigos do lote piloto foram submetidos para revisao formal interna via RPC existente `rpc_admin_submit_knowledge_article_for_review_v2`.
+
+Estado apos submissao:
+
+- Status: `review`
+- Visibility: `internal`
+- Advisories: `pending`
+- Exposicao publica: `0` registros nas views publicas e nenhum resultado em `/help/genius`
+
+Esta etapa nao publica conteudo, nao muda visibilidade para `public`, nao marca advisory como `reviewed` e nao preenche checklist humano automaticamente. A publicacao continua bloqueada ate revisao humana completa, revisao de assets e decisao explicita sobre cada artigo.
+
 ## Fontes usadas
 
 - Corpus real: `raw_knowledge/octadesk_export/latest`

@@ -12,6 +12,7 @@ Este documento nao autoriza publicacao. As versoes abaixo sao propostas de curad
 - Fonte usada para diagnostico: `article.json`, `content.txt`, assets vinculados e registros locais em Knowledge.
 - Fonte final sugerida: markdown editorial novo, sem HTML legado.
 - Aplicacao local: os 4 drafts foram atualizados no Admin Knowledge via RPC existente `rpc_admin_update_knowledge_article_draft_v2`, mantendo `status = draft`, `visibility = internal` e advisories `pending`.
+- Review interno: os 4 artigos foram submetidos para `review/internal` via RPC existente `rpc_admin_submit_knowledge_article_for_review_v2`, mantendo advisories `pending` e exposicao publica bloqueada.
 - Assets: mantidos como pendencia de revisao visual humana; nenhum asset foi aprovado para publicacao por este documento.
 - Decisao comum: `aguardando_revisao_humana`.
 

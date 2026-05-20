@@ -18,6 +18,31 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase - Octadesk Public Help Pilot Internal Review
+- fase: `knowledge-curation`
+- nome: `Octadesk Public Help Pilot Internal Review`
+- branch: `workspace-atual`
+- data: `2026-05-20`
+- resumo funcional: os 4 artigos piloto Octadesk foram submetidos para `review/internal` pela RPC existente `rpc_admin_submit_knowledge_article_for_review_v2`, sem publicacao e sem mudanca de visibilidade publica. Advisories permanecem `pending` e a revisao humana continua obrigatoria antes de qualquer publish.
+- docs alterados:
+  - `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_HUMAN_REVIEW.md`
+  - `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_EDITORIAL_DRAFTS.md`
+  - `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_PLAN.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - `/admin/knowledge` passa a listar os 4 como `Em revisão Interno Pendente`
+  - `/help/genius` permanece sem expor os 4 artigos
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+  - RPC existente usada: `rpc_admin_submit_knowledge_article_for_review_v2`
+- riscos restantes:
+  - checklist humano ainda vazio e obrigatorio
+  - assets ainda precisam revisao visual humana
+  - `Regra por motivo` ainda exige decisao explicita sobre permanecer interno ou virar candidato publico
+- impacto na FAQ futura:
+  - move o lote piloto para revisao formal interna sem abrir exposicao publica
 ### Fase - Octadesk Public Help Pilot Editorial Drafts
 - fase: `knowledge-curation`
 - nome: `Octadesk Public Help Pilot Editorial Drafts`

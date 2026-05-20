@@ -25,6 +25,19 @@ Esse pacote prepara textos revisaveis para o Admin Knowledge, mas nao preenche c
 
 Aplicacao local controlada: os 4 drafts foram atualizados via RPC existente `rpc_admin_update_knowledge_article_draft_v2`, mantendo `status = draft`, `visibility = internal`, `source_path`, `source_hash` e advisories `pending`. Nenhum artigo foi publicado ou liberado como `public`.
 
+## Submissao para review interno em 2026-05-20
+
+Os 4 artigos foram submetidos para `review/internal` via RPC existente `rpc_admin_submit_knowledge_article_for_review_v2`.
+
+Resultado validado:
+
+- `Alterar ou aprovar produtos em uma solicitacao`: `review/internal`, advisory `pending`.
+- `Enviar uma notificacao de analise ao cliente`: `review/internal`, advisory `pending`.
+- `Reenviar uma comunicacao ao cliente`: `review/internal`, advisory `pending`.
+- `Entender regras por motivo na operacao`: `review/internal`, advisory `pending`.
+
+Nenhum artigo foi publicado, nenhum artigo ficou `public` e nenhum dos 4 aparece nas views publicas ou em `/help/genius`. O checklist humano permanece vazio e obrigatorio antes de qualquer publicacao.
+
 ## Checklist humano comum
 
 Cada artigo precisa ter todos os itens abaixo preenchidos por revisao humana antes de qualquer publicacao:
