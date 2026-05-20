@@ -83,6 +83,13 @@ Resultado esperado antes de qualquer publicacao:
 - advisories em `pending`;
 - views publicas retornando `0` para o corpus Octadesk nao aprovado.
 
+Status da triagem final em 2026-05-20:
+- `0` artigos Octadesk foram considerados publicaveis automaticamente.
+- `38` artigos exigem decisao humana antes de qualquer mudanca de visibilidade.
+- `16` artigos permanecem `restricted_blocked`.
+- `4` artigos permanecem fora de publicacao por obsolescencia ou duplicidade.
+- a Central Publica continua com os `6` artigos seed/manuais ate a primeira onda aprovada.
+
 ## Como sincronizar advisories
 1. Rodar primeiro o backlog versionado.
 2. Sincronizar os advisories no mesmo `knowledge_space`.

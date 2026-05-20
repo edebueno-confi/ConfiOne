@@ -18,6 +18,42 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase - Octadesk Publication Final Triage
+- fase: `knowledge-curation`
+- nome: `Octadesk Publication Final Triage`
+- branch: `workspace-atual`
+- data: `2026-05-20`
+- resumo funcional: executada a triagem final de publicacao do corpus Octadesk ja importado no Admin Knowledge. Nenhum artigo foi publicado automaticamente; a classificacao final ficou em `0 publish_now_candidate`, `38 needs_human_decision`, `16 restricted_blocked` e `4 obsolete_or_duplicate`.
+- docs alterados:
+  - `docs/reports/OCTADESK_PUBLICATION_FINAL_TRIAGE.md`
+  - `docs/reports/OCTADESK_PUBLIC_HELP_RELEASE_STATUS.md`
+  - `docs/reports/OCTADESK_INTERNAL_KNOWLEDGE_BACKLOG.md`
+  - `docs/KNOWLEDGE_BASE_STRATEGY.md`
+  - `docs/PUBLIC_HELP_CENTER_PUBLISH_RUNBOOK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - `/admin/knowledge` continua como superficie de curadoria e uso interno
+  - `/help/genius` permanece sem expor o corpus Octadesk
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+  - nenhuma publicacao executada
+- validacao:
+  - queries SQL de status/visibility e exposicao publica zero
+  - QA Admin Knowledge
+  - QA Public Help
+  - `npm run knowledge:curation:backlog`
+  - `npm run knowledge:verify:octadesk:space-aware`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:test:db`
+- riscos restantes:
+  - publicacao depende de revisao humana real, assets revisados, advisory `reviewed` e checklist completo
+  - artigos com flags de integracao, permissao, Correios, PIX, estorno, erro interno ou endpoint continuam bloqueados para publico
+- impacto na FAQ futura:
+  - define a fronteira entre conteudo publico seguro, backlog interno e material restrito antes de qualquer onda de publicacao
+
 ### Fase - Octadesk Import Runtime Status
 - fase: `knowledge-curation`
 - nome: `Octadesk Import Runtime Status`

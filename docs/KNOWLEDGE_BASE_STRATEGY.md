@@ -81,6 +81,7 @@ Estado operacional em 2026-05-20:
 - Distribuicao do corpus importado: `4 review/internal`, `24 draft/internal`, `26 draft/restricted`.
 - `20` artigos permanecem bloqueados para publicacao publica por restricao, obsolescencia ou duplicidade.
 - `0` artigos Octadesk foram publicados automaticamente; Wave 1 permanece vazia ate checklist humano, advisory revisado e revisao de assets.
+- A triagem final de publicacao ficou registrada em `docs/reports/OCTADESK_PUBLICATION_FINAL_TRIAGE.md`, com `0 publish_now_candidate`, `38 needs_human_decision`, `16 restricted_blocked` e `4 obsolete_or_duplicate`.
 
 Resultado do inventário atual:
 - `58` artigos detectados por `article.json`
