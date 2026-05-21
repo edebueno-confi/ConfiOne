@@ -742,6 +742,7 @@ export function KnowledgePage() {
   const [selectedDateWindow, setSelectedDateWindow] =
     useState<KnowledgeDateFilter>('90');
   const [listSort, setListSort] = useState<KnowledgeListSort>('recent');
+  const [currentPage, setCurrentPage] = useState(1);
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [detailPhase, setDetailPhase] = useState<DetailPhase>('idle');
   const [detailMessage, setDetailMessage] = useState<string | null>(null);
@@ -990,8 +991,11 @@ export function KnowledgePage() {
 
     const haystack = [
       article.title,
+      article.slug,
       article.summary ?? '',
       article.category_name ?? '',
+      article.source_path ?? '',
+      article.source_hash ?? '',
       articleContributorName(article),
     ]
       .join(' ')
@@ -1013,6 +1017,103 @@ export function KnowledgePage() {
 
     return rightTime - leftTime;
   });
+  const articlesPerPage = 10;
+  const totalPages = Math.max(1, Math.ceil(displayArticles.length / articlesPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const pageStartIndex = (safeCurrentPage - 1) * articlesPerPage;
+  const pageEndIndex = Math.min(pageStartIndex + articlesPerPage, displayArticles.length);
+  const paginatedArticles = displayArticles.slice(pageStartIndex, pageEndIndex);
+  const publishedArticlesCount = articles.filter(
+    (article) => article.status === 'published',
+  ).length;
+  const pendingReviewCount = advisories.filter(
+    (advisory) => advisory.review_status === 'pending',
+  ).length;
+  const needsUpdateCount = advisories.filter(
+    (advisory) =>
+      advisory.review_status === 'needs_changes' ||
+      advisory.suggested_classification === 'internal' ||
+      advisory.suggested_classification === 'restricted',
+  ).length;
+  const archiveSuggestedCount = advisories.filter(
+    (advisory) =>
+      advisory.suggested_classification === 'obsolete' ||
+      advisory.suggested_classification === 'duplicate',
+  ).length;
+  const restrictedArticlesCount = articles.filter(
+    (article) => article.visibility === 'restricted',
+  ).length;
+  const internalArticlesCount = articles.filter(
+    (article) => article.visibility === 'internal',
+  ).length;
+  const publicArticlesCount = articles.filter(
+    (article) => article.visibility === 'public',
+  ).length;
+  const publicCoverageLabel =
+    articles.length > 0
+      ? `${Math.round((publishedArticlesCount / articles.length) * 100)}% do total`
+      : 'Sem artigos';
+  const needsUpdateCoverageLabel =
+    articles.length > 0
+      ? `${Math.round((needsUpdateCount / articles.length) * 100)}% do total`
+      : 'Sem artigos';
+  const archiveCoverageLabel =
+    articles.length > 0
+      ? `${Math.round((archiveSuggestedCount / articles.length) * 100)}% do total`
+      : 'Sem artigos';
+  const categoryRailItems = sortedCategories.slice(0, 8);
+  const operationsSummaryItems = [
+    {
+      label: 'Revisões pendentes',
+      value: pendingReviewCount,
+      tone: 'accent' as const,
+    },
+    {
+      label: 'Artigos internos',
+      value: internalArticlesCount,
+      tone: 'default' as const,
+    },
+    {
+      label: 'Artigos restritos',
+      value: restrictedArticlesCount,
+      tone: 'critical' as const,
+    },
+    {
+      label: 'Possíveis duplicados',
+      value: duplicateArticlesCount,
+      tone: 'warning' as const,
+    },
+  ];
+  const editorialAlertItems = [
+    advisoryMessage
+      ? {
+          label: 'Sinais editoriais indisponíveis',
+          description: advisoryMessage,
+          tone: 'warning' as const,
+        }
+      : null,
+    withoutAdvisoryCount > 0
+      ? {
+          label: 'Sem advisory persistido',
+          description: `${withoutAdvisoryCount} artigo(s) ainda não possuem sinal editorial persistido.`,
+          tone: 'accent' as const,
+        }
+      : null,
+    restrictedArticlesCount > 0
+      ? {
+          label: 'Conteúdo restrito bloqueado',
+          description: `${restrictedArticlesCount} artigo(s) permanecem fora da Central Pública por visibilidade restrita.`,
+          tone: 'critical' as const,
+        }
+      : null,
+    archiveSuggestedCount > 0
+      ? {
+          label: 'Arquivamento sugerido',
+          description: `${archiveSuggestedCount} artigo(s) foram classificados como duplicados ou obsoletos.`,
+          tone: 'warning' as const,
+        }
+      : null,
+  ].filter((item): item is NonNullable<typeof item> => Boolean(item));
 
   const loadKnowledgeSpaces = useEffectEvent(
     async (preferredSpaceId?: string | null) => {
@@ -1235,6 +1336,21 @@ export function KnowledgePage() {
   }, [selectedSpaceId, statusFilter, visibilityFilter]);
 
   useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    searchQuery,
+    listStatusFilter,
+    selectedCategoryId,
+    selectedAuthor,
+    selectedDateWindow,
+    listSort,
+    visibilityFilter,
+    originFilter,
+    duplicateFilter,
+    classificationFilter,
+  ]);
+
+  useEffect(() => {
     if (!selectedArticleId) {
       setArticleDetail(null);
       setArticleAssets([]);
@@ -1344,6 +1460,83 @@ export function KnowledgePage() {
     );
     setArticleFormMessage(null);
     setArticleActionFeedback(null);
+  }
+
+  async function openArticleEditorFromCockpit(articleId: string) {
+    if (!selectedSpaceId) {
+      return;
+    }
+
+    setSelectedArticleId(articleId);
+    setArticleActionSubmitting(true);
+    setArticleActionFeedback(null);
+
+    try {
+      let detailForEditing = await getAdminKnowledgeArticleDetailV2(articleId);
+      const assets = await listAdminKnowledgeArticleAssets(articleId);
+
+      if (!detailForEditing) {
+        setDetailPhase('error');
+        setDetailMessage('O detalhe do artigo selecionado não ficou disponível.');
+        return;
+      }
+
+      setArticleDetail(detailForEditing);
+      setArticleAssets(assets);
+      setDetailPhase('ready');
+      setBackendDenied(false);
+
+      if (detailForEditing.status === 'published') {
+        if (!detailForEditing.editorial_draft) {
+          await beginKnowledgeArticleEditorialRevisionV2({
+            p_article_id: detailForEditing.id,
+            p_knowledge_space_id: selectedSpaceId,
+          });
+          await refreshSelectedSpace(detailForEditing.id);
+        }
+
+        const refreshedDetail = await getAdminKnowledgeArticleDetailV2(articleId);
+        if (refreshedDetail) {
+          detailForEditing = refreshedDetail;
+          setArticleDetail(refreshedDetail);
+        }
+      }
+
+      const nextDraft =
+        detailForEditing.status === 'published'
+          ? detailForEditing.editorial_draft
+          : null;
+
+      setPanelMode('edit-article');
+      setArticleForm(
+        nextDraft
+          ? buildArticleFormFromEditorialDraft(nextDraft)
+          : buildArticleForm(detailForEditing),
+      );
+      setArticleFormMessage(null);
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao abrir o artigo para edição.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      if (classified.kind === 'permission-denied') {
+        setBackendDenied(true);
+        return;
+      }
+
+      setArticleActionFeedback({
+        articleId,
+        message: classified.message,
+      });
+    } finally {
+      setArticleActionSubmitting(false);
+    }
   }
 
   async function refreshSelectedSpace(preferredArticleId?: string | null) {
@@ -2201,330 +2394,96 @@ export function KnowledgePage() {
   }
 
   return (
-    <div className="space-y-3 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
-      <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white/95 px-5 py-3.5 shadow-[var(--shadow-panel)]">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--color-surface)]">
+      <section className="shrink-0 border-b border-[color:var(--color-border)] bg-white/96 px-6 py-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-[1.72rem] font-semibold tracking-[-0.05em] text-[color:var(--color-ink)]">
-              Conhecimento
+            <h1 className="text-[2rem] font-semibold tracking-[-0.055em] text-[color:var(--color-ink)]">
+              Governança de conhecimento
             </h1>
-            <p className="text-[0.84rem] leading-5 text-[color:var(--color-muted)]">
-              Origem editorial governada da central de ajuda pública, com separação clara entre rascunho, revisão, publicado e visibilidade.
+            <p className="max-w-3xl text-[0.9rem] leading-6 text-[color:var(--color-muted)]">
+              Cockpit operacional para gestão, manutenção e qualidade dos conteúdos do Help Center.
             </p>
           </div>
-          <AppButton
-            className="min-h-10 gap-2 px-5 text-[13px] font-semibold"
-            disabled={!selectedSpace}
-            onClick={openCreateArticle}
-          >
-            + Novo artigo
-          </AppButton>
+          <div className="flex flex-wrap items-center gap-3">
+            <GhostButton
+              className="min-h-11 gap-2 rounded-[14px] px-4 text-[0.84rem] font-semibold"
+              disabled
+              title="O import legado permanece disponível por script governado, sem fluxo visual nesta tela."
+            >
+              <span aria-hidden="true">⇧</span>
+              Importar legado
+            </GhostButton>
+            <AppButton
+              className="min-h-11 gap-2 rounded-[14px] px-5 text-[0.84rem] font-semibold shadow-[0_12px_24px_rgba(47,107,255,0.24)]"
+              disabled={!selectedSpace}
+              onClick={openCreateArticle}
+            >
+              <span aria-hidden="true">+</span>
+              Novo artigo
+            </AppButton>
+            <GhostButton
+              className="h-11 w-11 rounded-full px-0 text-[0.9rem] font-semibold"
+              title="Ações de publicação continuam bloqueadas por gates editoriais do backend."
+            >
+              ?
+            </GhostButton>
+          </div>
         </div>
       </section>
 
-      <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[252px_minmax(0,1fr)_384px] xl:overflow-hidden 2xl:grid-cols-[260px_minmax(0,1fr)_396px]">
-        <aside className="rounded-[20px] border border-[color:var(--color-border)] bg-white/94 px-3.5 py-3.5 shadow-[var(--shadow-panel)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <p className="text-[0.74rem] font-semibold uppercase tracking-[0.24em] text-[color:var(--color-muted)]">
-                Filtros
-              </p>
-              <TextInput
-                className="h-9 rounded-[14px] px-3.5 text-[13px]"
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Buscar artigos..."
-                value={searchQuery}
-              />
-            </div>
-
-            {spaces.length > 1 ? (
-              <Field label="Central">
-                <SelectInput
-                  className="h-9 rounded-[14px] px-3.5 text-[13px]"
-                  onChange={(event) => setSelectedSpaceId(event.target.value || null)}
-                  value={selectedSpaceId ?? ''}
-                >
-                  {spaces.map((space) => (
-                    <option key={space.id} value={space.id}>
-                      {space.display_name}
-                    </option>
-                  ))}
-                </SelectInput>
+      <div className="min-h-0 flex-1 overflow-hidden px-6 py-4">
+        <div className="grid h-full min-h-0 gap-4 xl:grid-cols-[minmax(0,1fr)_292px] 2xl:grid-cols-[minmax(0,1fr)_320px]">
+          <main className="flex min-h-0 flex-col gap-4 overflow-hidden">
+            <section className="grid shrink-0 gap-4 rounded-[18px] border border-[color:var(--color-border)] bg-white/95 px-4 py-4 shadow-[0_18px_48px_rgba(19,33,79,0.06)] xl:grid-cols-[minmax(360px,1fr)_170px_170px_170px] 2xl:grid-cols-[minmax(520px,1fr)_184px_184px_184px]">
+              <Field label="Busca global de conhecimento">
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--color-brand-blue)]">
+                    ⌕
+                  </span>
+                  <TextInput
+                    className="h-11 rounded-[14px] border-[rgba(47,107,255,0.22)] bg-[rgba(234,242,255,0.54)] pl-10 pr-4 text-[0.9rem] shadow-[0_0_0_1px_rgba(47,107,255,0.04)]"
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder="Buscar por artigo, dúvida, processo, categoria ou palavra-chave..."
+                    value={searchQuery}
+                  />
+                </div>
               </Field>
-            ) : null}
 
-            <div className="space-y-2">
-              <p className="text-[0.74rem] font-semibold uppercase tracking-[0.24em] text-[color:var(--color-muted)]">
-                Status
-              </p>
-              <div className="space-y-1">
-                {[
-                  ['all', 'Todos', statusCounts.all],
-                  ['published', 'Publicado', statusCounts.published],
-                  ['draft', 'Rascunho', statusCounts.draft],
-                  ['review', 'Em revisão', statusCounts.review],
-                  ['archived', 'Arquivado', statusCounts.archived],
-                ].map(([value, label, count]) => (
-                  <button
-                    className={cx(
-                      'flex w-full items-center justify-between rounded-[12px] px-3 py-1.25 text-left text-[0.82rem] transition',
-                      listStatusFilter === value
-                        ? 'bg-[rgba(48,127,226,0.1)] font-medium text-[color:var(--color-brand-blue)]'
-                        : 'text-[color:var(--color-ink)] hover:bg-[color:var(--color-surface)]',
-                    )}
-                    key={value}
-                    onClick={() => setListStatusFilter(value as ArticleStatusFilter)}
-                    type="button"
-                  >
-                    <span>{label}</span>
-                    <span className="text-[color:var(--color-muted)]">{count}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-[0.74rem] font-semibold uppercase tracking-[0.24em] text-[color:var(--color-muted)]">
-                Categorias
-              </p>
-              <div className="space-y-1">
-                <button
-                  className={cx(
-                    'flex w-full items-center justify-between rounded-[12px] px-3 py-1.25 text-left text-[0.82rem] transition',
-                    selectedCategoryId === 'all'
-                      ? 'bg-[rgba(48,127,226,0.1)] font-medium text-[color:var(--color-brand-blue)]'
-                      : 'text-[color:var(--color-ink)] hover:bg-[color:var(--color-surface)]',
-                  )}
-                  onClick={() => setSelectedCategoryId('all')}
-                  type="button"
-                >
-                  <span>Todos</span>
-                  <span className="text-[color:var(--color-muted)]">{filteredArticles.length}</span>
-                </button>
-                {visibleCategories.map((category) => (
-                  <button
-                    className={cx(
-                      'flex w-full items-center justify-between rounded-[12px] px-3 py-1.25 text-left text-[0.82rem] transition',
-                      selectedCategoryId === category.id
-                        ? 'bg-[rgba(48,127,226,0.1)] font-medium text-[color:var(--color-brand-blue)]'
-                        : 'text-[color:var(--color-ink)] hover:bg-[color:var(--color-surface)]',
-                    )}
-                    key={category.id}
-                    onClick={() => setSelectedCategoryId(category.id)}
-                    type="button"
-                  >
-                    <span className="min-w-0 flex-1 leading-5">
-                      {displayFilterCategoryLabel(category.name)}
-                    </span>
-                    <span className="pl-3 text-[color:var(--color-muted)]">{category.article_count}</span>
-                  </button>
-                ))}
-                {sortedCategories.length > 5 ? (
-                  <button
-                    className="rounded-[12px] px-3 py-1 text-left text-[0.8rem] font-medium text-[color:var(--color-brand-blue)]"
-                    onClick={() => setShowAllCategories((current) => !current)}
-                    type="button"
-                  >
-                    {showAllCategories ? '− Ver menos' : '+ Ver todas'}
-                  </button>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-[0.74rem] font-semibold uppercase tracking-[0.24em] text-[color:var(--color-muted)]">
-                Curadoria pública
-              </p>
-              <div className="grid gap-2">
-                <div className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-[0.82rem] font-medium text-[color:var(--color-ink)]">Rascunho</span>
-                    <span className="text-[0.76rem] text-[color:var(--color-muted)]">{statusCounts.draft}</span>
-                  </div>
-                  <p className="mt-1 text-[0.74rem] leading-5 text-[color:var(--color-muted)]">
-                    Texto ainda em preparação editorial.
-                  </p>
-                </div>
-                <div className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-[0.82rem] font-medium text-[color:var(--color-ink)]">Em revisão</span>
-                    <span className="text-[0.76rem] text-[color:var(--color-muted)]">{statusCounts.review}</span>
-                  </div>
-                  <p className="mt-1 text-[0.74rem] leading-5 text-[color:var(--color-muted)]">
-                    Conteúdo aguardando revisão humana antes da publicação.
-                  </p>
-                </div>
-                <div className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-[0.82rem] font-medium text-[color:var(--color-ink)]">Publicado</span>
-                    <span className="text-[0.76rem] text-[color:var(--color-muted)]">{statusCounts.published}</span>
-                  </div>
-                  <p className="mt-1 text-[0.74rem] leading-5 text-[color:var(--color-muted)]">
-                    Versão editorial disponível. A visibilidade define se ela já pode aparecer na central pública.
-                  </p>
-                </div>
-                <div className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5">
-                  <p className="text-[0.74rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                    Visibilidade
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <StatusPill tone="positive">Público {visibilityCounts.public}</StatusPill>
-                    <StatusPill tone="accent">Interno {visibilityCounts.internal}</StatusPill>
-                    <StatusPill tone="critical">Restrito {visibilityCounts.restricted}</StatusPill>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-[0.74rem] font-semibold uppercase tracking-[0.24em] text-[color:var(--color-muted)]">
-                Origem e triagem
-              </p>
-              <div className="grid gap-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    className={cx(
-                      'rounded-[14px] border px-3 py-2 text-left transition',
-                      originFilter === 'legacy'
-                        ? 'border-[rgba(48,127,226,0.24)] bg-[rgba(48,127,226,0.08)]'
-                        : 'border-[color:var(--color-border)] bg-white hover:bg-[color:var(--color-surface)]',
-                    )}
-                    onClick={() => setOriginFilter((current) => (current === 'legacy' ? 'all' : 'legacy'))}
-                    type="button"
-                  >
-                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                      Legado
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
-                      {legacyArticlesCount}
-                    </p>
-                    <p className="mt-1 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
-                      Material bruto ou candidato à curadoria.
-                    </p>
-                  </button>
-                  <button
-                    className={cx(
-                      'rounded-[14px] border px-3 py-2 text-left transition',
-                      originFilter === 'manual'
-                        ? 'border-[rgba(48,127,226,0.24)] bg-[rgba(48,127,226,0.08)]'
-                        : 'border-[color:var(--color-border)] bg-white hover:bg-[color:var(--color-surface)]',
-                    )}
-                    onClick={() => setOriginFilter((current) => (current === 'manual' ? 'all' : 'manual'))}
-                    type="button"
-                  >
-                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                      Manual
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
-                      {manualArticlesCount}
-                    </p>
-                    <p className="mt-1 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
-                      Texto já escrito no fluxo editorial atual.
-                    </p>
-                  </button>
-                </div>
-                <button
-                  className={cx(
-                    'rounded-[14px] border px-3 py-2 text-left transition',
-                    duplicateFilter === 'duplicates'
-                      ? 'border-[rgba(237,173,64,0.3)] bg-[rgba(255,239,204,0.82)]'
-                      : 'border-[color:var(--color-border)] bg-white hover:bg-[color:var(--color-surface)]',
-                  )}
-                  onClick={() =>
-                    setDuplicateFilter((current) =>
-                      current === 'duplicates' ? 'all' : 'duplicates',
-                    )
-                  }
-                  type="button"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                      Possível duplicidade
-                    </p>
-                    <span className="text-[0.76rem] font-semibold text-[color:var(--color-warning-ink)]">
-                      {duplicateArticlesCount}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
-                    Duplicidades devem ser revisadas durante a curadoria antes da publicação pública.
-                  </p>
-                </button>
-                <button
-                  className={cx(
-                    'rounded-[14px] border px-3 py-2 text-left transition',
-                    classificationFilter === 'without-advisory'
-                      ? 'border-[rgba(225,0,152,0.18)] bg-[rgba(225,0,152,0.06)]'
-                      : 'border-[color:var(--color-border)] bg-white hover:bg-[color:var(--color-surface)]',
-                  )}
-                  onClick={() =>
-                    setClassificationFilter((current) =>
-                      current === 'without-advisory' ? 'all' : 'without-advisory',
-                    )
-                  }
-                  type="button"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                      Sem curadoria persistida
-                    </p>
-                    <span className="text-[0.76rem] font-semibold text-[color:var(--color-brand-magenta)]">
-                      {withoutAdvisoryCount}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
-                    Itens que ainda dependem de leitura humana registrada antes de virar referência pública.
-                  </p>
-                </button>
-                <div className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                      Revisados
-                    </p>
-                    <span className="text-[0.76rem] font-semibold text-[color:var(--color-brand-blue)]">
-                      {reviewedArticlesCount}
-                    </span>
-                  </div>
-                    <p className="mt-1 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
-                      Curadoria humana já registrada para leitura editorial.
-                    </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              <Field label="Autor">
+              <Field label="Status de governança">
                 <SelectInput
-                  className="h-9 rounded-[14px] px-3.5 text-[13px]"
-                  onChange={(event) => setSelectedAuthor(event.target.value)}
-                  value={selectedAuthor}
+                  className="h-11 rounded-[14px] px-3.5 text-[0.86rem]"
+                  onChange={(event) =>
+                    setListStatusFilter(event.target.value as ArticleStatusFilter)
+                  }
+                  value={listStatusFilter}
                 >
                   <option value="all">Todos</option>
-                  {availableAuthors.map((author) => (
-                    <option key={author} value={author}>
-                      {author}
-                    </option>
-                  ))}
+                  <option value="published">Publicado</option>
+                  <option value="review">Em revisão</option>
+                  <option value="draft">Rascunho</option>
+                  <option value="archived">Arquivado</option>
                 </SelectInput>
               </Field>
 
-              <Field label="Data">
+              <Field label="Categoria">
                 <SelectInput
-                  className="h-9 rounded-[14px] px-3.5 text-[13px]"
-                  onChange={(event) =>
-                    setSelectedDateWindow(event.target.value as KnowledgeDateFilter)
-                  }
-                  value={selectedDateWindow}
+                  className="h-11 rounded-[14px] px-3.5 text-[0.86rem]"
+                  onChange={(event) => setSelectedCategoryId(event.target.value)}
+                  value={selectedCategoryId}
                 >
-                  <option value="90">Últimos 90 dias</option>
-                  <option value="30">Últimos 30 dias</option>
-                  <option value="7">Últimos 7 dias</option>
-                  <option value="all">Todos os períodos</option>
+                  <option value="all">Todas</option>
+                  {sortedCategories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {categoryDisplayName(category)}
+                    </option>
+                  ))}
                 </SelectInput>
               </Field>
 
               <Field label="Visibilidade">
                 <SelectInput
-                  className="h-9 rounded-[14px] px-3.5 text-[13px]"
+                  className="h-11 rounded-[14px] px-3.5 text-[0.86rem]"
                   onChange={(event) =>
                     setVisibilityFilter(event.target.value as ArticleVisibilityFilter)
                   }
@@ -2536,1077 +2495,455 @@ export function KnowledgePage() {
                   <option value="restricted">Restrito</option>
                 </SelectInput>
               </Field>
+            </section>
 
-              <Field label="Curadoria">
-                <SelectInput
-                  className="h-9 rounded-[14px] px-3.5 text-[13px]"
-                  onChange={(event) =>
-                    setClassificationFilter(
-                      event.target.value as ArticleClassificationFilter,
-                    )
-                  }
-                  value={classificationFilter}
-                >
-                  <option value="all">Todas</option>
-                  <option value="without-advisory">Sem leitura persistida</option>
-                  <option value="public">Público</option>
-                  <option value="internal">Interno</option>
-                  <option value="restricted">Restrito</option>
-                  <option value="duplicate">Duplicado</option>
-                  <option value="obsolete">Obsoleto</option>
-                </SelectInput>
-              </Field>
-            </div>
-          </div>
-        </aside>
-
-        <section className="overflow-hidden rounded-[20px] border border-[color:var(--color-border)] bg-white/95 shadow-[var(--shadow-panel)] xl:flex xl:min-h-0 xl:flex-col">
-          <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-5 py-4">
-            <div>
-              <h2 className="text-[1.28rem] font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
-                Artigos ({displayArticles.length})
-              </h2>
-              <p className="mt-1 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
-                A lista central prioriza triagem editorial, revisão humana e coerência entre publicação e visibilidade pública.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <SelectInput
-                className="h-10 min-w-[156px] rounded-[14px] px-3.5"
-                onChange={(event) => setListSort(event.target.value as KnowledgeListSort)}
-                value={listSort}
-              >
-                <option value="recent">Mais recentes</option>
-                <option value="oldest">Mais antigos</option>
-                <option value="title">Título A-Z</option>
-              </SelectInput>
-            </div>
-          </header>
-
-          <div className="grid gap-2 border-b border-[color:var(--color-border)] px-5 py-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5">
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                Curadoria concluída
-              </p>
-              <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
-                {reviewedArticlesCount} artigo(s)
-              </p>
-            </div>
-            <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5">
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                Backlog legado
-              </p>
-              <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
-                {legacyArticlesCount} candidato(s)
-              </p>
-            </div>
-            <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5">
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                Possíveis duplicados
-              </p>
-              <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
-                {duplicateArticlesCount} em revisão
-              </p>
-            </div>
-            <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5">
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                Sem advisory
-              </p>
-              <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
-                {withoutAdvisoryCount} pendente(s)
-              </p>
-            </div>
-          </div>
-
-          {contentPhase === 'idle' ? (
-            <div className="px-5 py-8">
-              <EmptyState
-                title="Selecione uma central"
-                description="Escolha a central no painel lateral para abrir a lista de artigos."
-              />
-            </div>
-          ) : contentPhase === 'loading' ? (
-            <div className="px-5 py-8">
-              <LoadingState
-                title="Carregando artigos"
-                description="Estamos preparando a lista e a pré-visualização desta central."
-              />
-            </div>
-          ) : contentPhase === 'contract-unavailable' ? (
-            <div className="px-5 py-8">
-              <ContractUnavailableState contractName="lista editorial de artigos e categorias" />
-            </div>
-          ) : contentPhase === 'error' ? (
-            <div className="px-5 py-8">
-              <ErrorState
-                description={
-                  contentMessage ?? 'Não foi possível carregar os artigos desta central.'
-                }
-                action={
-                  <AppButton onClick={() => selectedSpaceId && void refreshSelectedSpace()}>
-                    Tentar novamente
-                  </AppButton>
-                }
-              />
-            </div>
-          ) : displayArticles.length === 0 ? (
-            <div className="px-5 py-8">
-              <EmptyState
-                title="Nenhum artigo encontrado"
-                description="Ajuste os filtros ou crie um novo artigo para continuar."
-                action={<AppButton onClick={openCreateArticle}>Criar artigo</AppButton>}
-              />
-            </div>
-          ) : (
-            <>
-              <div className="overflow-hidden xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
-                <table className="w-full table-fixed">
-                  <thead>
-                    <tr className="border-b border-[color:var(--color-border)] text-left text-[0.64rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                      <th className="px-5 py-3.5">Título</th>
-                      <th className="w-[126px] px-3 py-3.5">Categoria</th>
-                      <th className="w-[114px] px-3 py-3.5">Autor</th>
-                      <th className="w-[116px] px-3 py-3.5">Data</th>
-                      <th className="w-[148px] px-5 py-3.5">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {displayArticles.map((article) => {
-                      const isSelected = article.id === selectedArticleId;
-                      const articleAdvisory = advisoryMap.get(article.id);
-                      const duplicateCount =
-                        articleAdvisory?.duplicate_group_article_count ??
-                        (article.source_hash
-                          ? sourceHashCounts.get(article.source_hash) ?? 0
-                          : 0);
-
-                      return (
-                        <tr
-                          className={cx(
-                            'cursor-pointer border-b border-[color:var(--color-border)] transition last:border-b-0',
-                            isSelected
-                              ? 'bg-[rgba(48,127,226,0.08)]'
-                              : 'hover:bg-[color:var(--color-surface)]',
-                          )}
-                          key={article.id}
-                          onClick={() => {
-                            setSelectedArticleId(article.id);
-                            setPanelMode('detail');
-                            setArticleFormMessage(null);
-                            setCategoryFormMessage(null);
-                            setArticleActionFeedback(null);
-                          }}
-                        >
-                          <td className="px-5 py-3.5 align-top">
-                            <div className="space-y-0.5">
-                              <p className="line-clamp-2 text-[0.94rem] font-medium leading-6 text-[color:var(--color-ink)]">
-                                {article.title || 'Indisponível'}
-                              </p>
-                              <p className="line-clamp-1 text-[0.82rem] leading-5 text-[color:var(--color-muted)]">
-                                {article.summary?.trim() || 'Indisponível'}
-                              </p>
-                            </div>
-                          </td>
-                          <td className="px-3 py-3.5 align-top">
-                            <span
-                              className={cx(
-                                'inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-[0.66rem] font-semibold',
-                                categoryBadgeClass(article.category_name),
-                              )}
-                            >
-                              <span className="max-w-full truncate leading-4">
-                                {compactCategoryLabel(article.category_name)}
-                              </span>
-                            </span>
-                          </td>
-                          <td className="px-3 py-3.5 align-top text-[0.84rem] text-[color:var(--color-ink)]">
-                            <span className="block leading-5">
-                              {articleContributorName(article)}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3.5 align-top text-[0.8rem] text-[color:var(--color-ink)]">
-                            {formatDateTime(article.updated_at)}
-                          </td>
-                          <td className="px-5 py-3.5 align-top">
-                            <div className="space-y-1">
-                              <span
-                                className={cx(
-                                  'inline-flex items-center whitespace-nowrap rounded-full border px-2 py-[0.32rem] text-[0.64rem] font-semibold uppercase tracking-[0.08em]',
-                                  compactStatusBadgeClass(toneForArticleStatus(article.status)),
-                                )}
-                              >
-                                <span className="leading-4">
-                                  {compactStatusBadgeLabel(article.status)}
-                                </span>
-                              </span>
-                              <p className="text-[0.72rem] leading-4 text-[color:var(--color-muted)]">
-                                {shortVisibilityLabel(article.visibility)}
-                              </p>
-                              {articleAdvisory ? (
-                                <p className="text-[0.72rem] leading-4 text-[color:var(--color-muted)]">
-                                  {displayReviewStatus(articleAdvisory.review_status)}
-                                </p>
-                              ) : (
-                                <p className="text-[0.72rem] leading-4 text-[color:var(--color-muted)]">
-                                  Sem curadoria persistida
-                                </p>
-                              )}
-                              {duplicateCount > 1 ? (
-                                <p className="text-[0.72rem] leading-4 text-[color:var(--color-warning-ink)]">
-                                  Possível duplicidade
-                                </p>
-                              ) : null}
-                              {article.has_editorial_draft ? (
-                                <p className="text-[0.74rem] leading-4 text-[color:var(--color-muted)]">
-                                  Revisão ativa
-                                </p>
-                              ) : null}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              <footer className="flex flex-wrap items-center gap-3 border-t border-[color:var(--color-border)] px-5 py-4 text-sm text-[color:var(--color-muted)]">
-                <p>
-                  Mostrando 1-{displayArticles.length} de {filteredArticles.length} artigos
-                </p>
-              </footer>
-            </>
-          )}
-        </section>
-
-        <section className="rounded-[20px] border border-[color:var(--color-border)] bg-white/95 px-4 py-4 shadow-[var(--shadow-panel)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
-          <div className="space-y-4 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
-            <div className="space-y-1">
-              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
-                Pré-visualização
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {panelMode === 'create-category' ? (
-                <form className="space-y-4" onSubmit={handleCreateCategory}>
-                  <Field label="Nome da categoria">
-                    <TextInput
-                      onChange={(event) =>
-                        setCategoryForm((current) => ({
-                          ...current,
-                          name: event.target.value,
-                          slug:
-                            current.slug === '' ||
-                            current.slug === slugify(current.name)
-                              ? slugify(event.target.value)
-                              : current.slug,
-                        }))
-                      }
-                      placeholder="Politicas de devolucao"
-                      required
-                      value={categoryForm.name}
-                    />
-                  </Field>
-
-                  <Field label="Slug">
-                    <TextInput
-                      onChange={(event) =>
-                        setCategoryForm((current) => ({
-                          ...current,
-                          slug: slugify(event.target.value),
-                        }))
-                      }
-                      placeholder="politicas-de-devolucao"
-                      required
-                      value={categoryForm.slug}
-                    />
-                  </Field>
-
-                  <Field label="Categoria pai">
-                    <SelectInput
-                      onChange={(event) =>
-                        setCategoryForm((current) => ({
-                          ...current,
-                          parentCategoryId: event.target.value,
-                        }))
-                      }
-                      value={categoryForm.parentCategoryId}
-                    >
-                      <option value="">Sem categoria pai</option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {categoryDisplayName(category)}
-                        </option>
-                      ))}
-                    </SelectInput>
-                  </Field>
-
-                  <Field label="Visibilidade">
-                    <SelectInput
-                      onChange={(event) =>
-                        setCategoryForm((current) => ({
-                          ...current,
-                          visibility: event.target.value as KnowledgeVisibility,
-                        }))
-                      }
-                      value={categoryForm.visibility}
-                    >
-                      {KNOWLEDGE_VISIBILITIES.map((visibility) => (
-                        <option key={visibility} value={visibility}>
-                          {visibility}
-                        </option>
-                      ))}
-                    </SelectInput>
-                  </Field>
-
-                  <Field label="Descricao">
-                    <TextareaInput
-                      onChange={(event) =>
-                        setCategoryForm((current) => ({
-                          ...current,
-                          description: event.target.value,
-                        }))
-                      }
-                      placeholder="Orienta a curadoria editorial deste grupo."
-                      value={categoryForm.description}
-                    />
-                  </Field>
-
-                  {categoryFormMessage ? (
-                    <InlineNotice tone={noticeTone(categoryFormMessage)}>
-                      {categoryFormMessage}
-                    </InlineNotice>
-                  ) : null}
-
-                  <div className="flex flex-wrap gap-3">
-                    <AppButton disabled={categoryFormSubmitting} type="submit">
-                      {categoryFormSubmitting ? 'Salvando...' : 'Criar categoria'}
-                    </AppButton>
-                    <GhostButton
-                      disabled={categoryFormSubmitting}
-                      onClick={() => {
-                        setPanelMode('detail');
-                        setCategoryForm(emptyCategoryForm());
-                        setCategoryFormMessage(null);
-                      }}
-                    >
-                      Fechar
-                    </GhostButton>
+            <section className="grid shrink-0 gap-4 lg:grid-cols-2 2xl:grid-cols-4">
+              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-5 py-4 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[0.76rem] font-semibold text-[color:var(--color-ink)]">
+                      Publicados
+                    </p>
+                    <p className="mt-3 text-[2rem] font-semibold leading-none tracking-[-0.05em] text-[color:var(--color-ink)]">
+                      {publishedArticlesCount}
+                    </p>
+                    <p className="mt-2 text-[0.8rem] text-[color:var(--color-muted)]">
+                      {publicCoverageLabel}
+                    </p>
                   </div>
-                </form>
-              ) : detailPhase === 'idle' ? (
-                <EmptyState
-                  title="Selecione um artigo"
-                  description="Escolha um item da lista para abrir a pré-visualização."
-                  action={<AppButton onClick={openCreateArticle}>Novo artigo</AppButton>}
-                />
-              ) : detailPhase === 'loading' ? (
-                <LoadingState
-                  title="Carregando pré-visualização"
-                  description="Estamos preparando os dados do artigo selecionado."
-                />
-              ) : detailPhase === 'contract-unavailable' ? (
-                <ContractUnavailableState contractName="detalhe editorial do artigo" />
-              ) : detailPhase === 'error' || !articleDetail || !selectedArticleSummary ? (
-                <ErrorState
-                  description={
-                    detailMessage ?? 'Não foi possível abrir o artigo selecionado.'
-                  }
-                  action={
-                    <AppButton
-                      onClick={() =>
-                        selectedArticleId && void refreshArticleDetail(selectedArticleId)
-                      }
-                    >
-                      Tentar novamente
-                    </AppButton>
-                  }
-                />
+                  <span className="grid h-11 w-11 place-items-center rounded-[14px] bg-[rgba(47,107,255,0.1)] text-[1.35rem] text-[color:var(--color-brand-blue)]">
+                    ▥
+                  </span>
+                </div>
+                <div className="mt-4 h-1 rounded-full bg-[rgba(47,107,255,0.16)]">
+                  <div
+                    className="h-full rounded-full bg-[color:var(--color-brand-blue)]"
+                    style={{
+                      width: `${articles.length > 0 ? Math.min(100, (publishedArticlesCount / articles.length) * 100) : 0}%`,
+                    }}
+                  />
+                </div>
+              </article>
+
+              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-5 py-4 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[0.76rem] font-semibold text-[color:var(--color-ink)]">
+                      Precisam atualização
+                    </p>
+                    <p className="mt-3 text-[2rem] font-semibold leading-none tracking-[-0.05em] text-[color:var(--color-ink)]">
+                      {needsUpdateCount}
+                    </p>
+                    <p className="mt-2 text-[0.8rem] text-[color:var(--color-muted)]">
+                      {needsUpdateCoverageLabel}
+                    </p>
+                  </div>
+                  <span className="grid h-11 w-11 place-items-center rounded-[14px] bg-[rgba(255,122,32,0.12)] text-[1.35rem] text-[color:var(--color-warning-ink)]">
+                    △
+                  </span>
+                </div>
+                <div className="mt-4 h-1 rounded-full bg-[rgba(255,122,32,0.14)]">
+                  <div
+                    className="h-full rounded-full bg-[color:var(--color-warning-ink)]"
+                    style={{
+                      width: `${articles.length > 0 ? Math.min(100, (needsUpdateCount / articles.length) * 100) : 0}%`,
+                    }}
+                  />
+                </div>
+              </article>
+
+              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-5 py-4 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[0.76rem] font-semibold text-[color:var(--color-ink)]">
+                      Arquivamento sugerido
+                    </p>
+                    <p className="mt-3 text-[2rem] font-semibold leading-none tracking-[-0.05em] text-[color:var(--color-ink)]">
+                      {archiveSuggestedCount}
+                    </p>
+                    <p className="mt-2 text-[0.8rem] text-[color:var(--color-muted)]">
+                      {archiveCoverageLabel}
+                    </p>
+                  </div>
+                  <span className="grid h-11 w-11 place-items-center rounded-[14px] bg-[rgba(129,83,255,0.12)] text-[1.35rem] text-[color:var(--color-brand-blue)]">
+                    ▣
+                  </span>
+                </div>
+                <div className="mt-4 h-1 rounded-full bg-[rgba(129,83,255,0.14)]">
+                  <div
+                    className="h-full rounded-full bg-[color:var(--color-brand-blue)]"
+                    style={{
+                      width: `${articles.length > 0 ? Math.min(100, (archiveSuggestedCount / articles.length) * 100) : 0}%`,
+                    }}
+                  />
+                </div>
+              </article>
+
+              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-5 py-4 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[0.76rem] font-semibold text-[color:var(--color-ink)]">
+                      Visualizações (30 dias)
+                    </p>
+                    <p className="mt-3 text-[1.45rem] font-semibold leading-none tracking-[-0.04em] text-[color:var(--color-ink)]">
+                      Indisponível
+                    </p>
+                    <p className="mt-2 text-[0.8rem] text-[color:var(--color-muted)]">
+                      Sem contrato real de consumo
+                    </p>
+                  </div>
+                  <span className="grid h-11 w-11 place-items-center rounded-[14px] bg-[rgba(16,185,129,0.12)] text-[1.25rem] text-[color:var(--color-success-ink)]">
+                    ↗
+                  </span>
+                </div>
+                <div className="mt-4 h-1 rounded-full bg-[rgba(16,185,129,0.12)]" />
+              </article>
+            </section>
+
+            <section className="min-h-0 flex-1 overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/97 shadow-[0_18px_48px_rgba(19,33,79,0.07)]">
+              <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-5 py-4">
+                <div>
+                  <h2 className="text-[1.12rem] font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
+                    Artigos ({displayArticles.length})
+                  </h2>
+                  <p className="mt-1 text-[0.78rem] text-[color:var(--color-muted)]">
+                    Tabela operacional para triagem, busca, edição e revisão governada.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <SelectInput
+                    className="h-10 min-w-[162px] rounded-[14px] px-3.5 text-[0.84rem]"
+                    onChange={(event) => setListSort(event.target.value as KnowledgeListSort)}
+                    value={listSort}
+                  >
+                    <option value="recent">Mais recentes</option>
+                    <option value="oldest">Mais antigos</option>
+                    <option value="title">Título A-Z</option>
+                  </SelectInput>
+                  <GhostButton
+                    className="h-10 rounded-[14px] px-3.5 text-[0.82rem] font-semibold"
+                    disabled
+                    title="Exportação não possui contrato visual nesta fase."
+                  >
+                    Exportar
+                  </GhostButton>
+                </div>
+              </header>
+
+              {contentPhase === 'idle' ? (
+                <div className="px-5 py-8">
+                  <EmptyState
+                    title="Selecione uma central"
+                    description="Escolha a central para abrir a lista de artigos."
+                  />
+                </div>
+              ) : contentPhase === 'loading' ? (
+                <div className="px-5 py-8">
+                  <LoadingState
+                    title="Carregando artigos"
+                    description="Estamos preparando a lista operacional desta central."
+                  />
+                </div>
+              ) : contentPhase === 'contract-unavailable' ? (
+                <div className="px-5 py-8">
+                  <ContractUnavailableState contractName="lista editorial de artigos e categorias" />
+                </div>
+              ) : contentPhase === 'error' ? (
+                <div className="px-5 py-8">
+                  <ErrorState
+                    description={
+                      contentMessage ?? 'Não foi possível carregar os artigos desta central.'
+                    }
+                    action={
+                      <AppButton onClick={() => selectedSpaceId && void refreshSelectedSpace()}>
+                        Tentar novamente
+                      </AppButton>
+                    }
+                  />
+                </div>
+              ) : displayArticles.length === 0 ? (
+                <div className="px-5 py-8">
+                  <EmptyState
+                    title="Nenhum artigo encontrado"
+                    description="Ajuste a busca global ou os filtros operacionais."
+                    action={<AppButton onClick={openCreateArticle}>Criar artigo</AppButton>}
+                  />
+                </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="space-y-4 rounded-[22px] border border-[color:var(--color-border)] bg-white px-4 py-4 shadow-[0_16px_36px_rgba(19,33,79,0.08)]">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap gap-2">
-                          <StatusPill tone={toneForArticleStatus(articleDetail.status)}>
-                            {displayArticleStatus(articleDetail.status)}
-                          </StatusPill>
-                          <StatusPill tone={toneForVisibility(articleDetail.visibility)}>
-                            {shortVisibilityLabel(articleDetail.visibility)}
-                          </StatusPill>
-                          {publishedEditorialDraft ? (
-                            <StatusPill tone="accent">Revisão em andamento</StatusPill>
-                          ) : null}
-                        </div>
-                        <h2 className="text-[1.55rem] font-semibold leading-8 tracking-[-0.05em] text-[color:var(--color-ink)]">
-                          {articleDetail.title || 'Indisponível'}
-                        </h2>
-                      </div>
-                      {articleDetail.category_name ? (
-                        <span
-                          className={cx(
-                            'inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.14em]',
-                            categoryBadgeClass(articleDetail.category_name),
-                          )}
-                        >
-                          <span className="truncate">{displayFilterCategoryLabel(articleDetail.category_name)}</span>
-                        </span>
-                      ) : null}
-                    </div>
+                <div className="flex h-[calc(100%-76px)] min-h-0 flex-col">
+                  <div className="min-h-0 flex-1 overflow-auto">
+                    <table className="min-w-[980px] w-full border-separate border-spacing-0">
+                      <thead className="sticky top-0 z-10 bg-[color:var(--color-surface)]">
+                        <tr className="text-left text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                          <th className="border-b border-[color:var(--color-border)] px-5 py-3.5">Título</th>
+                          <th className="border-b border-[color:var(--color-border)] px-3 py-3.5">Código</th>
+                          <th className="border-b border-[color:var(--color-border)] px-3 py-3.5">Categoria</th>
+                          <th className="border-b border-[color:var(--color-border)] px-3 py-3.5">Status de governança</th>
+                          <th className="border-b border-[color:var(--color-border)] px-3 py-3.5">Visibilidade</th>
+                          <th className="border-b border-[color:var(--color-border)] px-3 py-3.5">Última atualização</th>
+                          <th className="border-b border-[color:var(--color-border)] px-3 py-3.5">Consumo</th>
+                          <th className="border-b border-[color:var(--color-border)] px-5 py-3.5 text-right">Ação</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedArticles.map((article) => {
+                          const articleAdvisory = advisoryMap.get(article.id);
+                          const duplicateCount =
+                            articleAdvisory?.duplicate_group_article_count ??
+                            (article.source_hash
+                              ? sourceHashCounts.get(article.source_hash) ?? 0
+                              : 0);
 
-                    <dl className="grid gap-x-4 gap-y-3 border-t border-[color:var(--color-border)] pt-4 sm:grid-cols-2">
-                      <div className="space-y-1">
-                        <dt className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                          Autor
-                        </dt>
-                        <dd className="text-sm text-[color:var(--color-ink)]">
-                          {articleContributorNameFromDetail(articleDetail)}
-                        </dd>
-                      </div>
-                      <div className="space-y-1">
-                        <dt className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                          Atualizado em
-                        </dt>
-                        <dd className="text-sm text-[color:var(--color-ink)]">
-                          {formatOptionalDate(articleDetail.updated_at)}
-                        </dd>
-                      </div>
-                      <div className="space-y-1">
-                        <dt className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                          Leitura estimada
-                        </dt>
-                        <dd className="text-sm text-[color:var(--color-ink)]">
-                          {estimateReadingTime(articleDetail.body_md)}
-                        </dd>
-                      </div>
-                      <div className="space-y-1">
-                        <dt className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                          Visibilidade
-                        </dt>
-                        <dd className="text-sm text-[color:var(--color-ink)]">
-                          {displayVisibility(articleDetail.visibility)}
-                        </dd>
-                      </div>
-                      <div className="space-y-1">
-                        <dt className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                          Última publicação
-                        </dt>
-                        <dd className="text-sm text-[color:var(--color-ink)]">
-                          {formatOptionalDate(articleDetail.published_at)}
-                        </dd>
-                      </div>
-                      <div className="space-y-1">
-                        <dt className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                          Versão
-                        </dt>
-                        <dd className="text-sm text-[color:var(--color-ink)]">
-                          {articleDetail.current_revision_number ?? 'Indisponível'}
-                        </dd>
-                      </div>
-                    </dl>
-
-                    <div className="space-y-2 border-t border-[color:var(--color-border)] pt-4">
-                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                        Origem editorial
-                      </p>
-                      <p className="text-sm leading-6 text-[color:var(--color-ink)]">
-                        Este cockpit governa o ciclo editorial que abastece a central pública. Publicado não significa automaticamente público: a visibilidade continua separada do estágio editorial.
-                      </p>
-                    </div>
-
-                    <div className="space-y-2 border-t border-[color:var(--color-border)] pt-4">
-                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                        Resumo editorial
-                      </p>
-                      <p className="line-clamp-4 text-sm leading-6 text-[color:var(--color-ink)]">
-                        {articleDetail.summary?.trim() || 'Indisponível'}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2 border-t border-[color:var(--color-border)] pt-4">
-                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                        Link público
-                      </p>
-                      {publicPreviewHref ? (
-                        <a
-                          className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white px-4 py-2 text-sm font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/40 hover:bg-[color:var(--color-surface)]"
-                          href={publicPreviewHref}
-                          rel="noreferrer"
-                          target="_blank"
-                        >
-                          Abrir artigo público
-                        </a>
-                      ) : (
-                        <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-                          {publicPreviewMessage}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-3 border-t border-[color:var(--color-border)] pt-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                          Ações
-                        </p>
-                        {publishedEditorialDraft ? (
-                          <StatusPill tone="accent">Revisão ativa</StatusPill>
-                        ) : null}
-                      </div>
-                      <div className="grid gap-2.5">
-                        {articleDetail.status === 'draft' ? (
-                          <>
-                            <AppButton className="min-h-11" disabled={articleActionSubmitting || !canSubmitForReview} onClick={() => void handleSubmitForReview()}>
-                              {articleActionSubmitting ? 'Enviando...' : 'Enviar para revisão'}
-                            </AppButton>
-                            <GhostButton className="min-h-11 justify-center" disabled={articleActionSubmitting} onClick={() => void openEditArticle()}>
-                              Editar
-                            </GhostButton>
-                          </>
-                        ) : null}
-                        {articleDetail.status === 'review' ? (
-                          <>
-                            <AppButton className="min-h-11" disabled={articleActionSubmitting || !canPublishArticle} onClick={() => void handlePublish()}>
-                              {articleActionSubmitting ? 'Publicando...' : 'Publicar'}
-                            </AppButton>
-                            <GhostButton className="min-h-11 justify-center" disabled={articleActionSubmitting} onClick={() => void openEditArticle()}>
-                              Editar
-                            </GhostButton>
-                          </>
-                        ) : null}
-                        {articleDetail.status === 'published' && !publishedEditorialDraft ? (
-                          <GhostButton
-                            className="min-h-11 justify-center"
-                            disabled={articleActionSubmitting}
-                            onClick={() => void openEditArticle()}
-                          >
-                            Editar
-                          </GhostButton>
-                        ) : null}
-                        {articleDetail.status === 'published' && publishedEditorialDraft ? (
-                          <>
-                            <AppButton
-                              className="min-h-11"
-                              disabled={articleActionSubmitting || !canPublishEditorialRevision}
-                              onClick={() => void handlePublishEditorialRevision()}
+                          return (
+                            <tr
+                              className="group border-b border-[color:var(--color-border)] transition hover:bg-[rgba(234,242,255,0.52)]"
+                              key={article.id}
                             >
-                              {articleActionSubmitting ? 'Publicando...' : 'Publicar atualização'}
-                            </AppButton>
-                            <GhostButton
-                              className="min-h-11 justify-center"
-                              disabled={articleActionSubmitting}
-                              onClick={() => void openEditArticle()}
-                            >
-                              Editar revisão
-                            </GhostButton>
-                            <GhostButton
-                              className="min-h-11 justify-center"
-                              disabled={articleActionSubmitting}
-                              onClick={() => void handleDiscardEditorialRevision()}
-                            >
-                              {articleActionSubmitting ? 'Descartando...' : 'Descartar revisão'}
-                            </GhostButton>
-                          </>
-                        ) : null}
-                        {articleDetail.status !== 'archived' ? (
-                          <GhostButton className="min-h-11 justify-center border-[color:var(--color-danger-border)] text-[color:var(--color-danger-ink)]" disabled={articleActionSubmitting} onClick={() => void handleArchive()}>
-                            {articleActionSubmitting ? 'Arquivando...' : 'Arquivar'}
-                          </GhostButton>
-                        ) : null}
-                      </div>
-                      {articleDetail.status === 'draft' && !canSubmitForReview ? (
-                        <p className="text-xs leading-5 text-[color:var(--color-muted)]">
-                          Complete título, resumo, categoria e conteúdo principal antes de enviar para revisão.
-                        </p>
-                      ) : null}
-                      {articleDetail.status === 'review' && !canPublishArticle ? (
-                        <p className="text-xs leading-5 text-[color:var(--color-muted)]">
-                          {advisoryMessage
-                            ? 'Recarregue os sinais de revisão editorial antes de publicar este artigo.'
-                            : articleDetail.visibility === 'public'
-                              ? 'Artigo público só pode ser publicado após advisory público revisado e todas as confirmações humanas persistidas.'
-                              : 'Conclua a revisão editorial persistida antes de publicar este artigo.'}
-                        </p>
-                      ) : null}
-                      {articleDetail.status === 'published' && publishedEditorialDraft && !canPublishEditorialRevision ? (
-                        <p className="text-xs leading-5 text-[color:var(--color-muted)]">
-                          {publishedEditorialDraft.visibility === 'public'
-                            ? 'Atualização pública só pode ser publicada após advisory público revisado e todas as confirmações humanas persistidas.'
-                            : 'Conclua título, categoria e conteúdo principal da revisão antes de publicar a atualização.'}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  {articleActionMessage ? (
-                    <InlineNotice tone={noticeTone(articleActionMessage)}>
-                      {articleActionMessage}
-                    </InlineNotice>
-                  ) : null}
-
-                  {reviewAdvisoryMessage ? (
-                    <InlineNotice tone={noticeTone(reviewAdvisoryMessage)}>
-                      {reviewAdvisoryMessage}
-                    </InlineNotice>
-                  ) : null}
-
-                  {advisoryMessage ? (
-                    <InlineNotice tone="warning">{advisoryMessage}</InlineNotice>
-                  ) : null}
-
-                  {articleHasPublicCategoryMismatch ? (
-                    <InlineNotice tone="warning">
-                      Este artigo está marcado como público, mas a categoria atual não está pública. Enquanto essa coerência não for ajustada, o artigo não aparece na central de ajuda.
-                    </InlineNotice>
-                  ) : null}
-
-                  {publishedEditorialDraft ? (
-                    <InlineNotice tone="warning">
-                      Existe uma revisão editorial em andamento. A versão pública continua estável até você publicar a atualização.
-                    </InlineNotice>
-                  ) : null}
-
-                  {editorialDraftHasPublicCategoryMismatch ? (
-                    <InlineNotice tone="warning">
-                      A revisão em andamento está marcada como pública, mas a categoria escolhida ainda não está pública. Ajuste essa coerência antes de publicar a atualização.
-                    </InlineNotice>
-                  ) : null}
-
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
-                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                        Curadoria humana
-                      </p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <StatusPill tone={selectedAdvisory ? toneForReviewStatus(selectedAdvisory.review_status) : 'warning'}>
-                          {selectedAdvisory ? displayReviewStatus(selectedAdvisory.review_status) : 'Sem leitura persistida'}
-                        </StatusPill>
-                        <StatusPill tone={selectedArticleDuplicateCount > 1 ? 'warning' : 'positive'}>
-                          {selectedArticleDuplicateCount > 1
-                            ? `${selectedArticleDuplicateCount} com mesma origem`
-                            : 'Sem duplicidade evidente'}
-                        </StatusPill>
-                      </div>
-                      <p className="mt-3 text-sm leading-6 text-[color:var(--color-ink)]">
-                        {selectedAdvisory?.review_notes?.trim()
-                          ? selectedAdvisory.review_notes
-                          : 'A publicação pública continua dependente de leitura humana registrada e decisão editorial explícita.'}
-                      </p>
-                      <p className="mt-2 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
-                        {selectedHumanConfirmationsCount} de {HUMAN_CONFIRMATION_FIELDS.length} confirmações humanas persistidas.
-                      </p>
-                    </div>
-
-                    <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
-                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                        Visibilidade governada
-                      </p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <StatusPill tone={toneForVisibility(articleDetail.visibility)}>
-                          {shortVisibilityLabel(articleDetail.visibility)}
-                        </StatusPill>
-                        {selectedAdvisory ? (
-                          <StatusPill tone={toneForAdvisoryClassification(selectedAdvisory.suggested_classification)}>
-                            {displayAdvisoryClassification(selectedAdvisory.suggested_classification)}
-                          </StatusPill>
-                        ) : null}
-                      </div>
-                      <p className="mt-3 text-sm leading-6 text-[color:var(--color-ink)]">
-                        {articleDetail.visibility === 'public'
-                          ? 'Este artigo só entra na Central Pública quando status, visibilidade e categoria pública estiverem coerentes.'
-                          : articleDetail.visibility === 'restricted'
-                            ? 'Conteúdo restrito permanece fora da Central Pública e exige revisão cuidadosa antes de qualquer reutilização.'
-                            : 'Conteúdo interno não aparece no Help Center público até existir decisão humana explícita de visibilidade.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                        Backlog legado e consolidação
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <StatusPill tone={articleDetail.source_path || articleDetail.source_hash ? 'warning' : 'accent'}>
-                          {articleDetail.source_path || articleDetail.source_hash ? 'Legado rastreado' : 'Origem manual'}
-                        </StatusPill>
-                        {selectedArticleDuplicateCount > 1 ? (
-                          <StatusPill tone="warning">Revisar duplicidade</StatusPill>
-                        ) : null}
-                      </div>
-                    </div>
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3">
-                        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                          Origem
-                        </p>
-                        <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink)]">
-                          {articleDetail.source_path || 'Indisponível'}
-                        </p>
-                        <p className="mt-2 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
-                          Material legado deve ser tratado como candidato bruto até concluir curadoria humana.
-                        </p>
-                      </div>
-                      <div className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3">
-                        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                          Hash de origem
-                        </p>
-                        <p className="mt-2 break-all text-sm leading-6 text-[color:var(--color-ink)]">
-                          {articleDetail.source_hash || 'Indisponível'}
-                        </p>
-                        <p className="mt-2 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
-                          {selectedArticleDuplicateCount > 1
-                            ? 'Há mais de um artigo com a mesma origem rastreada nesta central. Consolidar antes de promover.'
-                            : 'Sem sinal evidente de duplicidade por origem rastreada no conjunto atual.'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                          Assets do artigo
-                        </p>
-                        <p className="mt-1 text-sm leading-6 text-[color:var(--color-muted)]">
-                          Imagens legadas ficam pendentes até revisão; somente assets aprovados de artigo publicado podem aparecer no Help Center.
-                        </p>
-                      </div>
-                      <StatusPill tone={articleAssets.length > 0 ? 'warning' : 'default'}>
-                        {articleAssets.length > 0
-                          ? `${articleAssets.length} assets vinculados`
-                          : 'Sem asset vinculado'}
-                      </StatusPill>
-                    </div>
-
-                    {articleAssets.length > 0 ? (
-                      <div className="mt-4 grid gap-3 md:grid-cols-2">
-                        {articleAssets.map((asset) => (
-                          <div
-                            className="overflow-hidden rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)]"
-                            key={asset.id}
-                          >
-                            {asset.signed_url ? (
-                              <img
-                                alt={asset.alt_text ?? asset.source_path ?? 'Asset do artigo'}
-                                className="h-40 w-full bg-white object-contain"
-                                loading="lazy"
-                                src={asset.signed_url}
-                              />
-                            ) : (
-                              <div className="flex h-40 items-center justify-center bg-white px-4 text-center text-sm text-[color:var(--color-muted)]">
-                                Preview indisponível para este asset.
-                              </div>
-                            )}
-                            <div className="space-y-3 px-3 py-3">
-                              <div className="flex flex-wrap gap-2">
-                                <StatusPill tone={asset.review_status === 'approved' ? 'positive' : asset.review_status === 'blocked' ? 'critical' : 'warning'}>
-                                  {asset.review_status}
-                                </StatusPill>
-                                <StatusPill tone={toneForVisibility(asset.visibility)}>
-                                  {shortVisibilityLabel(asset.visibility)}
-                                </StatusPill>
-                                {asset.is_blocked ? (
-                                  <StatusPill tone="critical">Bloqueado</StatusPill>
-                                ) : null}
-                              </div>
-                              <p className="break-all text-xs leading-5 text-[color:var(--color-muted)]">
-                                {asset.source_path ?? asset.storage_object_path}
-                              </p>
-                              <div className="flex flex-wrap gap-2">
-                                <GhostButton
-                                  disabled={assetActionSubmitting === asset.id}
-                                  onClick={() => void handleUpdateAssetReview(asset, 'approve')}
-                                >
-                                  Aprovar asset
-                                </GhostButton>
-                                <GhostButton
-                                  disabled={assetActionSubmitting === asset.id}
-                                  onClick={() => void handleUpdateAssetReview(asset, 'block')}
-                                >
-                                  Bloquear
-                                </GhostButton>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {selectedAdvisory ? (
-                    <div className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-4">
-                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                        Sinais editoriais persistidos
-                      </p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <StatusPill tone={toneForAdvisoryClassification(selectedAdvisory.suggested_classification)}>
-                          {displayAdvisoryClassification(selectedAdvisory.suggested_classification)}
-                        </StatusPill>
-                        <StatusPill tone={toneForVisibility(selectedAdvisory.suggested_visibility)}>
-                          {shortVisibilityLabel(selectedAdvisory.suggested_visibility)}
-                        </StatusPill>
-                        <StatusPill tone={toneForReviewStatus(selectedAdvisory.review_status)}>
-                          {displayReviewStatus(selectedAdvisory.review_status)}
-                        </StatusPill>
-                      </div>
-                      <p className="mt-3 text-sm leading-6 text-[color:var(--color-ink)]">
-                        {selectedAdvisory.classification_reason || 'Indisponível'}
-                      </p>
-                      {advisoryRiskFlags.length > 0 ? (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {advisoryRiskFlags.map((flag) => (
-                            <StatusPill key={flag} tone="critical">
-                              {humanizeRiskFlag(flag)}
-                            </StatusPill>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="mt-3 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
-                          Nenhum risco persistido nesta leitura editorial.
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="rounded-[18px] border border-dashed border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
-                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                        Curadoria pendente
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink)]">
-                        Este artigo ainda não tem leitura editorial persistida. Antes de tratar o conteúdo como elegível para o Help Center, registre revisão humana, visibilidade e contexto de publicação.
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="hidden rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
-                    <div className="grid grid-cols-3 gap-2 border-b border-[color:var(--color-border)] pb-3">
-                      {[
-                        ['preview', 'Prévia'],
-                        ['review', 'Revisão'],
-                        ['classification', 'Classificação'],
-                        ['checklist', 'Checklist'],
-                        ['advanced', 'Avançado'],
-                      ].map(([value, label]) => (
-                        <button
-                          key={value}
-                          className={cx(
-                            'inline-flex min-h-10 items-center justify-center rounded-full border px-3.5 text-[0.78rem] font-semibold transition',
-                            detailTab === value
-                              ? 'border-[rgba(22,101,239,0.26)] bg-[rgba(22,101,239,0.1)] text-[color:var(--color-brand-blue)]'
-                              : 'border-[color:var(--color-border)] bg-white text-[color:var(--color-ink)] hover:bg-[color:var(--color-surface)]',
-                          )}
-                          onClick={() => setDetailTab(value as DetailTab)}
-                          type="button"
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="mt-4">
-                      {detailTab === 'preview' ? (
-                        <div className="space-y-3">
-                          <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                            {editorialPreviewTitle}
-                          </p>
-                          <div className="max-h-72 overflow-y-auto rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-4">
-                            <div className="whitespace-pre-wrap text-sm leading-6 text-[color:var(--color-ink)]">
-                              {editorialPreviewBody.trim() || 'Indisponível'}
-                            </div>
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {detailTab === 'review' ? (
-                        selectedAdvisory ? (
-                          <div className="space-y-4">
-                            <Field label="Status da revisão">
-                              <SelectInput
-                                onChange={(event) =>
-                                  setReviewStatusDraft(
-                                    event.target.value as KnowledgeArticleReviewStatus,
-                                  )
-                                }
-                                value={reviewStatusDraft}
-                              >
-                                {KNOWLEDGE_ARTICLE_REVIEW_STATUSES.map((status) => (
-                                  <option key={status} value={status}>
-                                    {status}
-                                  </option>
-                                ))}
-                              </SelectInput>
-                            </Field>
-
-                            <Field label="Notas da revisão">
-                              <TextareaInput
-                                className="min-h-24"
-                                onChange={(event) => setReviewNotesDraft(event.target.value)}
-                                placeholder="Registre orientações objetivas para a etapa editorial."
-                                value={reviewNotesDraft}
-                              />
-                            </Field>
-
-                            <div className="space-y-2">
-                              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                                Confirmações humanas
-                              </p>
-                              <div className="space-y-2">
-                                {HUMAN_CONFIRMATION_FIELDS.map((field) => (
-                                  <label
-                                    className="flex items-start gap-3 rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-3"
-                                    key={field.key}
-                                  >
-                                    <input
-                                      checked={humanConfirmationsDraft[field.key] === true}
-                                      className="mt-1 h-4 w-4 rounded border-[color:var(--color-border)] text-[color:var(--color-brand-blue)]"
-                                      onChange={(event) =>
-                                        updateHumanConfirmation(field.key, event.target.checked)
-                                      }
-                                      type="checkbox"
-                                    />
-                                    <span className="space-y-1">
-                                      <span className="block text-sm font-medium text-[color:var(--color-ink)]">
-                                        {field.label}
-                                      </span>
-                                      <span className="block text-xs leading-5 text-[color:var(--color-muted)]">
-                                        {field.help}
-                                      </span>
-                                    </span>
-                                  </label>
-                                ))}
-                              </div>
-                            </div>
-
-                            <div className="flex flex-wrap gap-3">
-                              <AppButton
-                                disabled={reviewAdvisorySubmitting}
-                                onClick={() => void handleSaveReviewAdvisoryStatus()}
-                              >
-                                {reviewAdvisorySubmitting ? 'Salvando...' : 'Salvar revisão'}
-                              </AppButton>
-                              <GhostButton
-                                disabled={reviewAdvisorySubmitting}
-                                onClick={() => void handleMarkReviewAdvisoryReviewed()}
-                              >
-                                {reviewAdvisorySubmitting
-                                  ? 'Concluindo...'
-                                  : 'Marcar como revisado'}
-                              </GhostButton>
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-                            Inicie uma revisão ou carregue sinais editoriais para abrir este painel.
-                          </p>
-                        )
-                      ) : null}
-
-                      {detailTab === 'classification' ? (
-                        selectedAdvisory ? (
-                          <div className="space-y-3">
-                            <div className="flex flex-wrap gap-2">
-                              <StatusPill tone={toneForAdvisoryClassification(selectedAdvisory.suggested_classification)}>
-                                {selectedAdvisory.suggested_classification}
-                              </StatusPill>
-                              <StatusPill tone={toneForVisibility(selectedAdvisory.suggested_visibility)}>
-                                {selectedAdvisory.suggested_visibility}
-                              </StatusPill>
-                              <StatusPill tone={toneForReviewStatus(selectedAdvisory.review_status)}>
-                                {selectedAdvisory.review_status}
-                              </StatusPill>
-                            </div>
-                            <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-                              {selectedAdvisory.classification_reason || 'Indisponível'}
-                            </p>
-                            {advisoryRiskFlags.length > 0 ? (
-                              <div className="flex flex-wrap gap-2">
-                                {advisoryRiskFlags.map((flag) => (
-                                  <StatusPill key={flag} tone="critical">
-                                    {flag}
-                                  </StatusPill>
-                                ))}
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-                            Classificação indisponível para este artigo no momento.
-                          </p>
-                        )
-                      ) : null}
-
-                      {detailTab === 'checklist' ? (
-                        <div className="space-y-4">
-                          {editorialChecklist ? (
-                            <div className="space-y-3">
-                              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                                Sinais automáticos
-                              </p>
-                              {editorialChecklist.automated.map((item) => (
-                                <div key={item.label} className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-3">
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <StatusPill tone={item.tone}>{item.label}</StatusPill>
+                              <td className="border-b border-[color:var(--color-border)] px-5 py-3.5 align-top">
+                                <div className="flex min-w-0 items-start gap-3">
+                                  <span className="mt-1 grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-[rgba(47,107,255,0.09)] text-[color:var(--color-brand-blue)]">
+                                    ⎘
+                                  </span>
+                                  <div className="min-w-0">
+                                    <p className="line-clamp-1 text-[0.9rem] font-semibold leading-5 text-[color:var(--color-ink)]">
+                                      {article.title || 'Indisponível'}
+                                    </p>
+                                    <p className="mt-1 line-clamp-1 text-[0.76rem] leading-5 text-[color:var(--color-muted)]">
+                                      {article.summary?.trim() || 'Resumo indisponível'}
+                                    </p>
+                                    {duplicateCount > 1 ? (
+                                      <p className="mt-1 text-[0.72rem] font-medium text-[color:var(--color-warning-ink)]">
+                                        Possível duplicidade
+                                      </p>
+                                    ) : null}
                                   </div>
-                                  <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
-                                    {item.description}
-                                  </p>
                                 </div>
-                              ))}
-                            </div>
-                          ) : null}
-
-                          <div className="space-y-3">
-                            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                              Confirmações humanas
-                            </p>
-                            {persistedHumanChecklist.map((item) => (
-                              <div key={item.label} className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-3">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <StatusPill tone={item.tone}>{item.label}</StatusPill>
+                              </td>
+                              <td className="border-b border-[color:var(--color-border)] px-3 py-3.5 align-top">
+                                <span className="block max-w-[150px] truncate text-[0.78rem] font-medium text-[color:var(--color-muted)]">
+                                  {article.slug || article.id.slice(0, 8)}
+                                </span>
+                              </td>
+                              <td className="border-b border-[color:var(--color-border)] px-3 py-3.5 align-top">
+                                <span
+                                  className={cx(
+                                    'inline-flex max-w-[170px] items-center rounded-[9px] border px-2.5 py-1 text-[0.72rem] font-semibold',
+                                    categoryBadgeClass(article.category_name),
+                                  )}
+                                >
+                                  <span className="truncate">
+                                    {compactCategoryLabel(article.category_name)}
+                                  </span>
+                                </span>
+                              </td>
+                              <td className="border-b border-[color:var(--color-border)] px-3 py-3.5 align-top">
+                                <div className="space-y-1">
+                                  <span
+                                    className={cx(
+                                      'inline-flex items-center rounded-[9px] border px-2.5 py-1 text-[0.72rem] font-semibold',
+                                      compactStatusBadgeClass(toneForArticleStatus(article.status)),
+                                    )}
+                                  >
+                                    {compactStatusBadgeLabel(article.status)}
+                                  </span>
+                                  {articleAdvisory ? (
+                                    <p className="text-[0.72rem] leading-4 text-[color:var(--color-muted)]">
+                                      {displayReviewStatus(articleAdvisory.review_status)}
+                                    </p>
+                                  ) : (
+                                    <p className="text-[0.72rem] leading-4 text-[color:var(--color-muted)]">
+                                      Sem advisory
+                                    </p>
+                                  )}
                                 </div>
-                                <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
-                                  {item.description}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {detailTab === 'advanced' ? (
-                        <div className="space-y-3 text-sm leading-6 text-[color:var(--color-muted)]">
-                          <p>Central: {articleDetail.knowledge_space_display_name || 'Indisponível'}</p>
-                          <p>Slug: {articleDetail.slug || 'Indisponível'}</p>
-                          <p>Origem: {articleDetail.source_path || 'Indisponível'}</p>
-                          <p>Hash: {articleDetail.source_hash || 'Indisponível'}</p>
-                          <p>Revisões: {articleDetail.revisions.length}</p>
-                          <p>
-                            Revisão em andamento:{' '}
-                            {publishedEditorialDraft ? 'Sim' : 'Não'}
-                          </p>
-                          {publishedEditorialDraft ? (
-                            <>
-                              <p>Slug em revisão: {publishedEditorialDraft.slug || 'Indisponível'}</p>
-                              <p>
-                                Revisão iniciada da versão:{' '}
-                                {publishedEditorialDraft.based_on_revision_number}
-                              </p>
-                              <p>
-                                Revisão atualizada em:{' '}
-                                {formatOptionalDate(publishedEditorialDraft.updated_at)}
-                              </p>
-                            </>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
+                              </td>
+                              <td className="border-b border-[color:var(--color-border)] px-3 py-3.5 align-top">
+                                <StatusPill tone={toneForVisibility(article.visibility)}>
+                                  {shortVisibilityLabel(article.visibility)}
+                                </StatusPill>
+                              </td>
+                              <td className="border-b border-[color:var(--color-border)] px-3 py-3.5 align-top">
+                                <div className="text-[0.78rem] leading-5 text-[color:var(--color-ink)]">
+                                  {formatDateTime(article.updated_at)}
+                                </div>
+                                <div className="text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
+                                  {articleContributorName(article)}
+                                </div>
+                              </td>
+                              <td className="border-b border-[color:var(--color-border)] px-3 py-3.5 align-top">
+                                <span className="text-[0.76rem] text-[color:var(--color-muted)]">
+                                  Indisponível
+                                </span>
+                              </td>
+                              <td className="border-b border-[color:var(--color-border)] px-5 py-3.5 text-right align-top">
+                                <GhostButton
+                                  className="h-9 rounded-[12px] px-3 text-[0.78rem] font-semibold"
+                                  disabled={articleActionSubmitting}
+                                  onClick={() => void openArticleEditorFromCockpit(article.id)}
+                                >
+                                  Editar
+                                </GhostButton>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
+                  <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-[color:var(--color-border)] px-5 py-3 text-[0.82rem] text-[color:var(--color-muted)]">
+                    <div>
+                      Mostrando {displayArticles.length === 0 ? 0 : pageStartIndex + 1}-{pageEndIndex} de {displayArticles.length} artigos
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <GhostButton
+                        className="h-9 rounded-[12px] px-3"
+                        disabled={safeCurrentPage <= 1}
+                        onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                      >
+                        ‹
+                      </GhostButton>
+                      <span className="rounded-[12px] bg-[rgba(47,107,255,0.1)] px-3 py-2 font-semibold text-[color:var(--color-brand-blue)]">
+                        {safeCurrentPage}
+                      </span>
+                      <span>de {totalPages}</span>
+                      <GhostButton
+                        className="h-9 rounded-[12px] px-3"
+                        disabled={safeCurrentPage >= totalPages}
+                        onClick={() =>
+                          setCurrentPage((page) => Math.min(totalPages, page + 1))
+                        }
+                      >
+                        ›
+                      </GhostButton>
+                    </div>
+                  </footer>
                 </div>
               )}
-            </div>
-          </div>
-        </section>
+            </section>
+          </main>
+
+          <aside className="flex min-h-0 flex-col gap-4 overflow-y-auto overflow-x-hidden pr-1">
+            <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-4 py-4 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-[0.9rem] font-semibold text-[color:var(--color-ink)]">
+                  Categorias
+                </h2>
+                <button
+                  className="text-[0.75rem] font-semibold text-[color:var(--color-brand-blue)]"
+                  onClick={() => setShowAllCategories((current) => !current)}
+                  type="button"
+                >
+                  {showAllCategories ? 'Ver menos' : 'Ver todas'}
+                </button>
+              </div>
+              <div className="mt-4 space-y-2">
+                {(showAllCategories ? sortedCategories : categoryRailItems).map((category, index) => (
+                  <button
+                    className={cx(
+                      'flex w-full items-center justify-between gap-3 rounded-[12px] px-2.5 py-2 text-left transition',
+                      selectedCategoryId === category.id
+                        ? 'bg-[rgba(47,107,255,0.1)] text-[color:var(--color-brand-blue)]'
+                        : 'hover:bg-[color:var(--color-surface)]',
+                    )}
+                    key={category.id}
+                    onClick={() => setSelectedCategoryId(category.id)}
+                    type="button"
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="grid h-5 w-5 shrink-0 place-items-center rounded-[6px] bg-[rgba(47,107,255,0.1)] text-[0.68rem] font-semibold">
+                        {index + 1}
+                      </span>
+                      <span className="truncate text-[0.8rem] font-medium">
+                        {displayFilterCategoryLabel(category.name)}
+                      </span>
+                    </span>
+                    <span className="text-[0.78rem] font-semibold text-[color:var(--color-ink)]">
+                      {category.article_count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <GhostButton
+                className="mt-4 h-10 w-full justify-center rounded-[12px] text-[0.8rem] font-semibold"
+                onClick={openCreateCategory}
+              >
+                Gerenciar categorias
+              </GhostButton>
+            </section>
+
+            <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-4 py-4 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-[0.9rem] font-semibold text-[color:var(--color-ink)]">
+                  Conteúdos com maior consumo
+                </h2>
+              </div>
+              <div className="mt-4 rounded-[14px] border border-dashed border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-4">
+                <p className="text-[0.82rem] font-semibold text-[color:var(--color-ink)]">
+                  Métrica ainda indisponível
+                </p>
+                <p className="mt-1 text-[0.76rem] leading-5 text-[color:var(--color-muted)]">
+                  Não há contrato real de visualizações por artigo para alimentar ranking de consumo.
+                </p>
+              </div>
+            </section>
+
+            <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-4 py-4 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+              <h2 className="text-[0.9rem] font-semibold text-[color:var(--color-ink)]">
+                Resumo operacional
+              </h2>
+              <div className="mt-3 divide-y divide-[color:var(--color-border)]">
+                {operationsSummaryItems.map((item) => (
+                  <div className="flex items-center justify-between gap-3 py-3" key={item.label}>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <StatusPill tone={item.tone}>{item.label}</StatusPill>
+                    </div>
+                    <span className="text-[0.9rem] font-semibold text-[color:var(--color-ink)]">
+                      {item.value}
+                    </span>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between gap-3 py-3">
+                  <StatusPill tone="positive">Públicos</StatusPill>
+                  <span className="text-[0.9rem] font-semibold text-[color:var(--color-ink)]">
+                    {publicArticlesCount}
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            <section className="min-h-0 flex-1 overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-4 py-4 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+              <h2 className="text-[0.9rem] font-semibold text-[color:var(--color-ink)]">
+                Alertas editoriais
+              </h2>
+              <div className="mt-3 max-h-full space-y-3 overflow-y-auto pr-1">
+                {editorialAlertItems.length > 0 ? (
+                  editorialAlertItems.map((item) => (
+                    <div
+                      className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3"
+                      key={item.label}
+                    >
+                      <StatusPill tone={item.tone}>{item.label}</StatusPill>
+                      <p className="mt-2 text-[0.76rem] leading-5 text-[color:var(--color-muted)]">
+                        {item.description}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-[14px] border border-dashed border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-4">
+                    <p className="text-[0.82rem] font-semibold text-[color:var(--color-ink)]">
+                      Sem alertas ativos
+                    </p>
+                    <p className="mt-1 text-[0.76rem] leading-5 text-[color:var(--color-muted)]">
+                      O backlog não trouxe sinal editorial crítico para os filtros atuais.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </section>
+          </aside>
+        </div>
       </div>
     </div>
   );
+
 }

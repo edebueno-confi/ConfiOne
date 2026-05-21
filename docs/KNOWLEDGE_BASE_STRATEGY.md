@@ -55,6 +55,13 @@ Criar a base editorial do Genius Support OS com versionamento, trilha de origem 
   - `scripts/knowledge/generate-curation-backlog.mjs`
   - `scripts/knowledge/reprocess-octadesk-article-assets.mjs`
 
+## Cockpit administrativo
+- `/admin/knowledge` é o cockpit operacional de governança da base de conhecimento.
+- A tela usa o blueprint aprovado de Governança de conhecimento como referência visual direta: header operacional, busca global única, filtros de status/categoria/visibilidade, KPIs reais, tabela central dominante e rail direito de categorias/resumo/alertas.
+- Criação e edição de artigos acontecem em superfície dedicada, sem preview lateral comprimido dentro do cockpit.
+- Métricas sem contrato real, como visualizações por artigo em 30 dias, devem aparecer como indisponíveis ou ser omitidas. O frontend não cria número fake.
+- A busca atual do cockpit é textual sobre campos expostos pelo read model administrativo; busca semântica ou busca por corpo completo exige contrato administrativo explícito futuro.
+
 ## Assets governados de artigos
 - Imagens de artigos Knowledge usam o bucket privado `knowledge-assets`.
 - O corpo publico nao renderiza URL externa arbitraria; o placeholder permitido e `knowledge-asset:<id>`.
