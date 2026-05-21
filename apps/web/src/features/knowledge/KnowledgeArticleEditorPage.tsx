@@ -37,7 +37,6 @@ import {
   publishKnowledgeArticleEditorialRevisionV2,
   publishKnowledgeArticleV2,
   submitKnowledgeArticleForReviewV2,
-  updateKnowledgeArticleAssetReview,
   updateKnowledgeArticleEditorialRevisionV2,
   updateKnowledgeArticleDraftV2,
   uploadKnowledgeArticleAssetFile,
@@ -52,11 +51,10 @@ import {
   type KnowledgeVisibility,
 } from '../admin/admin-api';
 import { classifyAdminError } from '../admin/admin-errors';
-import { MarkdownDocument, type MarkdownAsset } from '../help-center/markdown';
+import { type MarkdownAsset } from '../help-center/markdown';
 
 type PagePhase = 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
-type AssetActionState = 'idle' | 'saving' | 'error';
 type ArticleEditorStatus = Extract<KnowledgeArticleStatus, 'draft' | 'review' | 'published' | 'archived'>;
 
 interface ArticleEditorForm {
@@ -82,7 +80,6 @@ const EMPTY_FORM: ArticleEditorForm = {
 const TITLE_LIMIT = 150;
 const SLUG_LIMIT = 120;
 const SUMMARY_LIMIT = 160;
-const KEYWORD_LIMIT = 10;
 const PUBLIC_PUBLISH_REVIEW_NOTES =
   'Revisão humana confirmada no Admin Knowledge antes de publicação pública.';
 
@@ -321,19 +318,25 @@ function CharacterCounter({ value, limit }: { value: string; limit: number }) {
 
 function RailCard({
   title,
-  eyebrow,
+  badge,
   children,
 }: {
   title: string;
-  eyebrow: string;
+  badge?: string;
   children: ReactNode;
 }) {
   return (
     <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white/95 p-4 shadow-[0_18px_42px_rgba(20,31,71,0.06)]">
-      <h2 className="text-sm font-bold tracking-[-0.02em] text-[color:var(--color-brand-navy)]">
-        <span className="mr-1 text-[color:var(--color-brand-navy)]">{eyebrow}.</span>
-        {title}
-      </h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-[0.82rem] font-extrabold tracking-[-0.015em] text-[color:var(--color-brand-navy)]">
+          {title}
+        </h2>
+        {badge ? (
+          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[0.68rem] font-extrabold text-emerald-700">
+            {badge}
+          </span>
+        ) : null}
+      </div>
       <div className="mt-4 space-y-3">{children}</div>
     </section>
   );
@@ -352,7 +355,7 @@ function ToolbarButton({
 }) {
   return (
     <button
-      className="inline-flex h-9 min-w-9 shrink-0 items-center justify-center rounded-xl border border-transparent px-3 text-sm font-semibold text-[color:var(--color-brand-navy)] transition hover:border-[color:var(--color-border)] hover:bg-[color:var(--color-surface)] disabled:cursor-not-allowed disabled:opacity-40"
+      className="inline-flex h-8 min-w-8 shrink-0 items-center justify-center rounded-xl border border-transparent px-2 text-[0.78rem] font-semibold text-[color:var(--color-brand-navy)] transition hover:border-[color:var(--color-border)] hover:bg-[color:var(--color-surface)] disabled:cursor-not-allowed disabled:opacity-40"
       disabled={disabled}
       onClick={onClick}
       title={title}
@@ -580,23 +583,23 @@ function VisualArticleEditor({
   return (
     <div
       className={cx(
-        'min-h-full px-8 py-6 transition focus-within:bg-[rgba(234,242,255,0.06)]',
+        'min-h-full px-8 py-6 transition focus-within:bg-[rgba(234,242,255,0.05)]',
         assetState === 'saving' && 'bg-[rgba(234,242,255,0.2)]',
       )}
       onDragOver={(event) => event.preventDefault()}
       onDrop={onDrop}
       onPaste={onPaste}
     >
-      <div className="mx-auto max-w-[900px] space-y-5">
+      <div className="mx-auto max-w-[920px] space-y-5">
         {blocks.map((block, index) => {
           const key = `${block.type}-${index}`;
 
           if (block.type === 'heading') {
             const headingClass =
               block.level === 1
-                ? 'text-[1.7rem] font-extrabold leading-tight tracking-[-0.03em]'
+                ? 'text-[1.75rem] font-extrabold leading-tight tracking-[-0.03em]'
                 : block.level === 2
-                  ? 'text-[1.25rem] font-extrabold leading-snug'
+                  ? 'text-[1.22rem] font-extrabold leading-snug'
                   : 'text-[1.05rem] font-bold leading-snug';
             return (
               <input
@@ -618,7 +621,7 @@ function VisualArticleEditor({
           if (block.type === 'paragraph') {
             return (
               <textarea
-                className="min-h-[64px] w-full resize-none border-0 bg-transparent p-0 text-[0.95rem] leading-7 text-[#24324F] outline-none placeholder:text-[color:var(--color-muted)] focus:ring-0"
+                className="min-h-[46px] w-full resize-none border-0 bg-transparent p-0 text-[0.92rem] leading-7 text-[#24324F] outline-none placeholder:text-[color:var(--color-muted)] focus:ring-0"
                 key={key}
                 onChange={(event) =>
                   updateBlock(index, { ...block, text: event.target.value })
@@ -656,15 +659,27 @@ function VisualArticleEditor({
 
           if (block.type === 'quote') {
             return (
-              <textarea
-                className="min-h-[58px] w-full resize-none rounded-2xl border border-[rgba(47,107,255,0.22)] bg-[rgba(47,107,255,0.05)] px-4 py-3 text-sm leading-6 text-[#24324F] outline-none focus:ring-0"
+              <div
+                className="grid grid-cols-[22px_minmax(0,1fr)] gap-3 rounded-2xl border border-[rgba(47,107,255,0.25)] bg-[rgba(47,107,255,0.055)] px-4 py-3"
                 key={key}
-                onChange={(event) =>
-                  updateBlock(index, { ...block, text: event.target.value })
-                }
-                readOnly={isReadOnly}
-                value={block.text}
-              />
+              >
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-[color:var(--color-brand-blue)] text-[0.68rem] font-bold text-white">
+                  i
+                </span>
+                <div>
+                  <p className="text-[0.74rem] font-extrabold text-[color:var(--color-brand-navy)]">
+                    Importante
+                  </p>
+                  <textarea
+                    className="mt-1 min-h-[34px] w-full resize-none border-0 bg-transparent p-0 text-sm leading-6 text-[#24324F] outline-none focus:ring-0"
+                    onChange={(event) =>
+                      updateBlock(index, { ...block, text: event.target.value })
+                    }
+                    readOnly={isReadOnly}
+                    value={block.text}
+                  />
+                </div>
+              </div>
             );
           }
 
@@ -744,57 +759,18 @@ function VisualArticleEditor({
             />
           );
         })}
-        <button
-          className="w-full rounded-2xl border border-dashed border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 text-sm font-semibold text-[color:var(--color-brand-blue)] hover:bg-[rgba(47,107,255,0.06)]"
-          disabled={isReadOnly}
-          onClick={onImageButton}
-          type="button"
-        >
-          Inserir imagem no corpo
-        </button>
+        {blocks.length === 0 ? (
+          <button
+            className="w-full rounded-2xl border border-dashed border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-5 py-10 text-sm font-semibold text-[color:var(--color-muted)] hover:bg-[rgba(47,107,255,0.05)]"
+            disabled={isReadOnly}
+            onClick={onImageButton}
+            type="button"
+          >
+            Escreva o artigo ou cole um print aqui para começar.
+          </button>
+        ) : null}
       </div>
     </div>
-  );
-}
-
-function QuickPreview({
-  assets,
-  form,
-  categoryName,
-}: {
-  assets: Record<string, MarkdownAsset>;
-  form: ArticleEditorForm;
-  categoryName: string;
-}) {
-  return (
-    <article className="rounded-[24px] border border-[rgba(47,107,255,0.2)] bg-white p-6 shadow-[0_18px_44px_rgba(15,35,85,0.08)]">
-      <div className="max-w-4xl">
-        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[color:var(--color-muted)]">
-          <span className="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-surface)] px-3 py-1">
-            <span aria-hidden="true">□</span>
-            {categoryName || 'Categoria pendente'}
-          </span>
-          <span className="rounded-full bg-[rgba(47,107,255,0.08)] px-3 py-1 text-[color:var(--color-brand-blue)]">
-            {visibilityLabel(form.visibility)}
-          </span>
-        </div>
-        <h3 className="mt-4 text-2xl font-black leading-tight text-[color:var(--color-brand-navy)]">
-          {form.title.trim() || 'Título do artigo'}
-        </h3>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--color-muted)]">
-          {form.summary.trim() || 'Resumo curto aparece aqui para orientar a leitura pública.'}
-        </p>
-      </div>
-      {form.bodyMd.trim().length > 0 ? (
-        <div className="mt-6 max-h-[720px] overflow-auto rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-6">
-          <MarkdownDocument assets={assets} source={form.bodyMd} />
-        </div>
-      ) : (
-        <div className="mt-6 rounded-2xl border border-dashed border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-5 py-6 text-sm leading-6 text-[color:var(--color-muted)]">
-          A prévia do corpo aparece aqui depois que o conteúdo for preenchido.
-        </div>
-      )}
-    </article>
   );
 }
 
@@ -806,6 +782,8 @@ export function KnowledgeArticleEditorPage() {
   const [categories, setCategories] = useState<AdminKnowledgeCategoryV2Row[]>([]);
   const [selectedSpaceId, setSelectedSpaceId] = useState('');
   const [articleId, setArticleId] = useState<string | null>(null);
+  const [articleDetail, setArticleDetail] =
+    useState<AdminKnowledgeArticleDetailV2Row | null>(null);
   const [sourcePath, setSourcePath] = useState<string | null>(null);
   const [sourceHash, setSourceHash] = useState<string | null>(null);
   const [isEditorialRevision, setIsEditorialRevision] = useState(false);
@@ -817,11 +795,8 @@ export function KnowledgeArticleEditorPage() {
   const [submitState, setSubmitState] = useState<SaveState>('idle');
   const [reviewEvidenceState, setReviewEvidenceState] = useState<SaveState>('idle');
   const [assetState, setAssetState] = useState<SaveState>('idle');
-  const [assetActionState, setAssetActionState] = useState<AssetActionState>('idle');
-  const [assetActionId, setAssetActionId] = useState<string | null>(null);
   const [publishState, setPublishState] = useState<SaveState>('idle');
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [keywordDraft, setKeywordDraft] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -853,6 +828,26 @@ export function KnowledgeArticleEditorPage() {
   };
   checklist.ready =
     checklist.title && checklist.summary && checklist.body && checklist.category;
+  const publicationChecklist = [
+    { done: checklist.title, label: 'Título revisado' },
+    { done: checklist.summary, label: 'Resumo revisado' },
+    { done: checklist.body, label: 'Corpo revisado' },
+    { done: checklist.category, label: 'Categoria confirmada' },
+    { done: Boolean(form.visibility), label: 'Visibilidade confirmada' },
+    {
+      done:
+        form.visibility !== 'public' ||
+        advisoryHumanConfirmations.no_sensitive_data_exposed === true,
+      label: 'Sem dados sensíveis expostos',
+    },
+    {
+      done:
+        form.visibility !== 'public' ||
+        advisoryHumanConfirmations.ready_for_publish === true,
+      label: 'Pronto para publicação',
+    },
+  ];
+  const publicationChecklistDone = publicationChecklist.filter((item) => item.done).length;
   const missingRequired = [
     !checklist.title ? 'titulo claro' : null,
     !checklist.summary ? 'resumo curto' : null,
@@ -949,6 +944,7 @@ export function KnowledgeArticleEditorPage() {
         setSelectedSpaceId(primarySpace.id);
         setCategories(loadedCategories);
         setArticleId(detail?.id ?? null);
+        setArticleDetail(detail);
         setSourcePath(detail?.source_path ?? null);
         setSourceHash(detail?.source_hash ?? null);
         setIsEditorialRevision(nextIsEditorialRevision);
@@ -1071,32 +1067,6 @@ export function KnowledgeArticleEditorPage() {
     });
 
     return nextBody;
-  }
-
-  function addKeyword() {
-    if (isReadOnly) {
-      return;
-    }
-
-    const nextKeyword = keywordDraft.trim().toLowerCase();
-    if (
-      !nextKeyword ||
-      form.keywords.includes(nextKeyword) ||
-      form.keywords.length >= KEYWORD_LIMIT
-    ) {
-      return;
-    }
-
-    updateForm({ keywords: [...form.keywords, nextKeyword] });
-    setKeywordDraft('');
-  }
-
-  function removeKeyword(keyword: string) {
-    if (isReadOnly) {
-      return;
-    }
-
-    updateForm({ keywords: form.keywords.filter((item) => item !== keyword) });
   }
 
   async function refreshAssets(nextArticleId: string) {
@@ -1540,58 +1510,6 @@ export function KnowledgeArticleEditorPage() {
     }
   }
 
-  async function handleUpdateAssetReview(
-    asset: AdminKnowledgeArticleAssetRow,
-    nextStatus: 'approved' | 'blocked',
-  ) {
-    if (isReadOnly) {
-      setFeedback('Artigo arquivado é somente leitura nesta tela.');
-      return;
-    }
-
-    setAssetActionState('saving');
-    setAssetActionId(asset.id);
-    setFeedback(null);
-
-    try {
-      const updated = await updateKnowledgeArticleAssetReview({
-        p_asset_id: asset.id,
-        p_review_status: nextStatus,
-        p_visibility: nextStatus === 'approved' ? form.visibility : 'restricted',
-        p_is_blocked: nextStatus === 'blocked',
-        p_alt_text: asset.alt_text,
-        p_caption: asset.caption,
-      });
-
-      setAssets((current) =>
-        current.map((item) =>
-          item.id === asset.id
-            ? {
-                ...item,
-                ...updated,
-                signed_url: item.signed_url,
-              }
-            : item,
-        ),
-      );
-      setAssetActionState('idle');
-      setFeedback(
-        nextStatus === 'approved'
-          ? 'Imagem aprovada no contrato de assets. A exposição pública ainda depende do artigo publicado/público.'
-          : 'Imagem bloqueada no contrato de assets e não será renderizada no público.',
-      );
-    } catch (error) {
-      const classified = classifyAdminError(
-        error,
-        'Falha ao atualizar a revisão do asset.',
-      );
-      setAssetActionState('error');
-      setFeedback(classified.message);
-    } finally {
-      setAssetActionId(null);
-    }
-  }
-
   function handleInsertAsset(assetId: string) {
     const asset = assets.find((item) => item.id === assetId);
     return insertSnippet(asset ? buildAssetMarkdown(asset) : `\n\n![Imagem do artigo|size=large](knowledge-asset:${assetId})\n\n`, '', '');
@@ -1666,6 +1584,10 @@ export function KnowledgeArticleEditorPage() {
                 Governança de conhecimento
               </Link>
               <span aria-hidden="true">›</span>
+              <Link className="hover:text-[color:var(--color-brand-blue)]" to="/admin/knowledge">
+                Artigos
+              </Link>
+              <span aria-hidden="true">›</span>
               <span className="text-[color:var(--color-brand-blue)]">
                 {isEditMode ? 'Editar artigo' : 'Novo artigo'}
               </span>
@@ -1692,13 +1614,6 @@ export function KnowledgeArticleEditorPage() {
             </div>
           ) : null}
           <div className="flex shrink-0 flex-wrap justify-end gap-3">
-            <GhostButton
-              className="h-11 rounded-[12px] px-5 text-[0.82rem]"
-              disabled={saveState === 'saving' || isReadOnly}
-              type="submit"
-            >
-              ☁ {saveState === 'saving' ? 'Salvando...' : saveButtonLabel}
-            </GhostButton>
             <GhostButton
               className="h-11 rounded-[12px] px-5 text-[0.82rem] text-[color:var(--color-brand-navy)]"
               title="Transições editoriais ficam no card de status."
@@ -1792,17 +1707,9 @@ export function KnowledgeArticleEditorPage() {
                 ref={fileInputRef}
                 type="file"
               />
-              <div className="flex shrink-0 items-center justify-between border-b border-[color:var(--color-border)] px-4 py-3">
-                <div>
-                  <FormFieldLabel required>Conteúdo do artigo</FormFieldLabel>
-                  <p className="mt-1 text-[0.72rem] text-[color:var(--color-muted)]">
-                    Edição visual. O conteúdo é salvo em markdown governado.
-                  </p>
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-2 overflow-hidden border-b border-[color:var(--color-border)] bg-white px-4 py-2">
+              <div className="flex h-11 shrink-0 items-center gap-1.5 overflow-hidden border-b border-[color:var(--color-border)] bg-white px-3">
                 <button
-                  className="mr-2 inline-flex h-9 items-center gap-2 rounded-xl border border-[color:var(--color-border)] px-3 text-sm font-semibold text-[color:var(--color-brand-navy)] hover:bg-[color:var(--color-surface)]"
+                  className="mr-1 inline-flex h-8 items-center gap-1.5 rounded-xl border border-[color:var(--color-border)] px-3 text-[0.76rem] font-semibold text-[color:var(--color-brand-navy)] hover:bg-[color:var(--color-surface)]"
                   onClick={() => insertSnippet('\n\n', '', 'Parágrafo')}
                   type="button"
                 >
@@ -1817,7 +1724,7 @@ export function KnowledgeArticleEditorPage() {
                 <ToolbarButton onClick={() => insertSnippet('\n### ', '', 'Título H3')} title="H3">
                   H3
                 </ToolbarButton>
-                <span className="mx-2 h-7 w-px bg-[color:var(--color-border)]" />
+                <span className="mx-1 h-7 w-px bg-[color:var(--color-border)]" />
                 <ToolbarButton onClick={() => insertSnippet('**', '**')} title="Negrito">
                   B
                 </ToolbarButton>
@@ -1827,7 +1734,7 @@ export function KnowledgeArticleEditorPage() {
                 <ToolbarButton onClick={() => insertSnippet('<u>', '</u>')} title="Sublinhado">
                   <span className="underline">U</span>
                 </ToolbarButton>
-                <span className="mx-2 h-7 w-px bg-[color:var(--color-border)]" />
+                <span className="mx-1 h-7 w-px bg-[color:var(--color-border)]" />
                 <ToolbarButton onClick={() => insertSnippet('\n- ', '', 'item')} title="Lista">
                   ≡
                 </ToolbarButton>
@@ -1862,15 +1769,16 @@ export function KnowledgeArticleEditorPage() {
                 >
                   Vídeo
                 </ToolbarButton>
-                <ToolbarButton onClick={() => insertSnippet('\n\n', '', 'Novo bloco')} title="Inserir">
-                  Inserir⌄
-                </ToolbarButton>
                 <ToolbarButton onClick={() => insertSnippet('\n```text\n', '\n```\n', 'exemplo')} title="Código">
                   &lt;/&gt;
                 </ToolbarButton>
-                <span className="ml-auto text-[0.72rem] text-[color:var(--color-muted)]">
-                  Cole ou arraste prints no ponto do texto
-                </span>
+                <span className="ml-auto" />
+                <ToolbarButton onClick={() => setFeedback('Desfazer ainda depende de histórico local dedicado.')} title="Desfazer">
+                  ↶
+                </ToolbarButton>
+                <ToolbarButton onClick={() => setFeedback('Refazer ainda depende de histórico local dedicado.')} title="Refazer">
+                  ↷
+                </ToolbarButton>
               </div>
               <div className="min-h-0 flex-1 overflow-auto">
                 <VisualArticleEditor
@@ -1888,57 +1796,37 @@ export function KnowledgeArticleEditorPage() {
                   onPaste={handleBodyPaste}
                 />
               </div>
-              <div className="flex shrink-0 items-center justify-between border-t border-[color:var(--color-border)] px-5 py-3 text-[0.72rem] text-[color:var(--color-muted)]">
-                <span>
+              <div className="flex shrink-0 items-center justify-between gap-4 border-t border-[color:var(--color-border)] px-5 py-3 text-[0.72rem] text-[color:var(--color-muted)]">
+                <span className="min-w-[220px]">
                   {bodyPlain.split(' ').filter(Boolean).length} palavras ·{' '}
                   {saveState === 'saved' ? 'Rascunho salvo agora' : 'Edição local'}
                 </span>
-                <span>
-                  {assets.length} mídia{assets.length === 1 ? '' : 's'} vinculada
-                  {assets.length === 1 ? '' : 's'}
+                <span className="hidden flex-1 justify-center text-center xl:block">
+                  Atalhos: Ctrl+S salvar · Ctrl+K inserir link
                 </span>
-              </div>
-            </section>
-
-            <section className="shrink-0 rounded-[22px] border border-[color:var(--color-border)] bg-white px-4 py-3">
-              <div className="mb-2 text-[0.72rem] font-semibold text-[color:var(--color-brand-navy)]">
-                SEO / busca
-              </div>
-              <div className="flex items-center gap-2 rounded-2xl border border-[color:var(--color-border)] bg-white px-2 py-2">
-                {form.keywords.map((keyword) => (
-                  <button
-                    className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--color-surface)] px-3 py-1 text-xs font-semibold text-[color:var(--color-brand-navy)]"
-                    key={keyword}
-                    onClick={() => removeKeyword(keyword)}
+                <div className="flex shrink-0 items-center gap-2">
+                  <GhostButton
+                    className="min-h-9 rounded-[12px] px-4 text-[0.72rem]"
+                    onClick={() => window.location.reload()}
                     type="button"
                   >
-                    {keyword} <span aria-hidden="true">×</span>
-                  </button>
-                ))}
-                <input
-                  className="h-8 min-w-[180px] flex-1 border-0 bg-transparent px-2 text-sm outline-none placeholder:text-[color:var(--color-muted)]"
-                  disabled={isReadOnly || form.keywords.length >= KEYWORD_LIMIT}
-                  onChange={(event) => setKeywordDraft(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      addKeyword();
-                    }
-                  }}
-                  placeholder="Adicionar palavra-chave"
-                  value={keywordDraft}
-                />
-                <span className="px-2 text-xs text-[color:var(--color-muted)]">
-                  {form.keywords.length}/{KEYWORD_LIMIT}
-                </span>
+                    Descartar rascunho
+                  </GhostButton>
+                  <AppButton
+                    className="min-h-9 rounded-[12px] px-4 text-[0.72rem]"
+                    disabled={saveState === 'saving' || isReadOnly}
+                    type="submit"
+                  >
+                    {saveState === 'saving' ? 'Salvando...' : saveButtonLabel}
+                  </AppButton>
+                </div>
               </div>
             </section>
-
           </main>
 
           <aside className="min-h-0 overflow-auto pr-1">
             <div className="space-y-3">
-              <RailCard eyebrow="A" title="Configurações editoriais">
+              <RailCard title="Configurações editoriais">
                 <Field label="Categoria *">
                   <SelectInput
                     disabled={isReadOnly}
@@ -1963,7 +1851,20 @@ export function KnowledgeArticleEditorPage() {
                   >
                     <option value="internal">Interno</option>
                     <option value="restricted">Restrito</option>
-                    <option value="public">Publico</option>
+                    <option value="public">Público</option>
+                  </SelectInput>
+                </Field>
+                <Field label="Espaço público *">
+                  <SelectInput
+                    disabled={isReadOnly}
+                    onChange={(event) => void handleSpaceChange(event.target.value)}
+                    value={selectedSpaceId}
+                  >
+                    {spaces.map((space) => (
+                      <option key={space.id} value={space.id}>
+                        {space.display_name}
+                      </option>
+                    ))}
                   </SelectInput>
                 </Field>
                 <Field label="Status editorial">
@@ -1983,111 +1884,40 @@ export function KnowledgeArticleEditorPage() {
                     O fluxo é controlado por ações governadas, não por edição livre.
                   </p>
                 </Field>
-                <Field label="Espaço público">
-                  <SelectInput
-                    disabled={isReadOnly}
-                    onChange={(event) => void handleSpaceChange(event.target.value)}
-                    value={selectedSpaceId}
-                  >
-                    {spaces.map((space) => (
-                      <option key={space.id} value={space.id}>
-                        {space.display_name}
-                      </option>
-                    ))}
-                  </SelectInput>
-                </Field>
               </RailCard>
 
-              <RailCard eyebrow="B" title="Fluxo editorial">
-                <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-muted)]">
-                    Estado atual
+              <RailCard
+                badge={`${publicationChecklistDone}/${publicationChecklist.length}`}
+                title="Checklist de publicação"
+              >
+                <ul className="space-y-2">
+                  {publicationChecklist.map((item) => (
+                    <ChecklistItem done={item.done} key={item.label} label={item.label} />
+                  ))}
+                </ul>
+                {needsPublicEvidence && publishBlocker ? (
+                  <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[0.7rem] leading-5 text-amber-700">
+                    {publishBlocker}
                   </p>
-                  <p className="mt-1 text-base font-bold text-[color:var(--color-brand-navy)]">
-                    {statusLabel(status)}
-                    {isEditorialRevision ? ' com revisão em andamento' : ''}
-                  </p>
-                  <p className="mt-2 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
-                    Status não é editável por campo livre. Cada avanço passa pela RPC governada do
-                    backend e pelo gate editorial.
-                  </p>
-                </div>
-
-                {needsPublicEvidence ? (
-                  <div className="rounded-[18px] border border-[rgba(47,107,255,0.18)] bg-[rgba(234,242,255,0.5)] px-4 py-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-muted)]">
-                          Gate público
-                        </p>
-                        <p className="mt-1 text-sm font-bold text-[color:var(--color-brand-navy)]">
-                          {publicEvidenceComplete
-                            ? 'Revisão humana confirmada'
-                            : 'Evidência humana pendente'}
-                        </p>
-                      </div>
-                      <span
-                        className={cx(
-                          'rounded-full px-2.5 py-1 text-[0.68rem] font-bold',
-                          publicEvidenceComplete
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : 'bg-amber-50 text-amber-700',
-                        )}
-                      >
-                        {advisory?.review_status ?? 'sem advisory'}
-                      </span>
-                    </div>
-
-                    <div className="mt-3 space-y-1.5 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
-                      <p>
-                        Classificação: {advisory?.suggested_classification ?? 'indisponível'} ·
-                        Visibilidade sugerida: {advisory?.suggested_visibility ?? 'indisponível'}
-                      </p>
-                      <ul className="grid gap-1">
-                        {PUBLIC_PUBLISH_CONFIRMATION_FIELDS.map((field) => (
-                          <li className="flex items-center gap-2" key={field.key}>
-                            <span
-                              className={cx(
-                                'grid h-4 w-4 place-items-center rounded-full border text-[0.56rem]',
-                                advisoryHumanConfirmations[field.key] === true
-                                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                                  : 'border-[color:var(--color-border)] text-transparent',
-                              )}
-                            >
-                              ✓
-                            </span>
-                            {field.label}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {publishBlocker ? (
-                      <p className="mt-3 rounded-2xl bg-white/72 px-3 py-2 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
-                        {publishBlocker}
-                      </p>
-                    ) : null}
-
-                    <GhostButton
-                      className="mt-3 min-h-10 w-full justify-center rounded-[14px]"
-                      disabled={
-                        reviewEvidenceState === 'saving' ||
-                        !advisory ||
-                        advisory.suggested_visibility !== 'public' ||
-                        advisory.suggested_classification !== 'public'
-                      }
-                      onClick={handleConfirmHumanReviewForPublicPublish}
-                    >
-                      {reviewEvidenceState === 'saving'
-                        ? 'Confirmando...'
-                        : 'Confirmar revisão humana'}
-                    </GhostButton>
-                  </div>
                 ) : null}
-
+                {needsPublicEvidence && advisory && !publicEvidenceComplete ? (
+                  <GhostButton
+                    className="min-h-9 w-full justify-center rounded-[12px] text-[0.72rem]"
+                    disabled={
+                      reviewEvidenceState === 'saving' ||
+                      advisory.suggested_visibility !== 'public' ||
+                      advisory.suggested_classification !== 'public'
+                    }
+                    onClick={handleConfirmHumanReviewForPublicPublish}
+                  >
+                    {reviewEvidenceState === 'saving'
+                      ? 'Confirmando...'
+                      : 'Confirmar revisão humana'}
+                  </GhostButton>
+                ) : null}
                 {status === 'draft' && !isEditorialRevision ? (
                   <AppButton
-                    className="min-h-11 w-full justify-center"
+                    className="min-h-9 w-full justify-center rounded-[12px] text-[0.72rem]"
                     disabled={submitState === 'saving' || saveState === 'saving'}
                     onClick={handleSubmitForReview}
                   >
@@ -2097,7 +1927,7 @@ export function KnowledgeArticleEditorPage() {
 
                 {status === 'review' && !isEditorialRevision ? (
                   <AppButton
-                    className="min-h-11 w-full justify-center"
+                    className="min-h-9 w-full justify-center rounded-[12px] text-[0.72rem]"
                     disabled={
                       publishState === 'saving' ||
                       saveState === 'saving' ||
@@ -2112,7 +1942,7 @@ export function KnowledgeArticleEditorPage() {
 
                 {isEditorialRevision ? (
                   <AppButton
-                    className="min-h-11 w-full justify-center"
+                    className="min-h-9 w-full justify-center rounded-[12px] text-[0.72rem]"
                     disabled={
                       publishState === 'saving' ||
                       saveState === 'saving' ||
@@ -2139,32 +1969,13 @@ export function KnowledgeArticleEditorPage() {
                 ) : null}
               </RailCard>
 
-              <RailCard eyebrow="C" title="Checklist do artigo">
-                <ul className="space-y-2">
-                  <ChecklistItem done={checklist.title} label="Título claro e descritivo" />
-                  <ChecklistItem done={checklist.summary} label="Resumo curto preenchido" />
-                  <ChecklistItem done={checklist.body} label="Conteúdo completo" />
-                  <ChecklistItem done={checklist.links} label="Links revisados" />
-                  <ChecklistItem
-                    done
-                    label={
-                      checklist.assets
-                        ? 'Imagem(ns) incluída(s)'
-                        : 'Imagem opcional para este artigo'
-                    }
-                  />
-                  <ChecklistItem done={checklist.category} label="Categoria definida" />
-                  <ChecklistItem done={checklist.ready} label="Pronto para revisão" />
-                </ul>
-                <p className="text-[0.7rem] leading-5 text-[color:var(--color-muted)]">
-                  Indicador visual local. O gate final de publicação continua no backend.
-                </p>
-              </RailCard>
-
-              <RailCard eyebrow="D" title="Mídia e anexos">
+              <RailCard
+                badge={`${assets.length} ${assets.length === 1 ? 'item' : 'itens'}`}
+                title="Mídia e anexos"
+              >
                 <div className="flex items-center justify-between">
                   <span className="text-[0.72rem] text-[color:var(--color-muted)]">
-                    {assets.length} item{assets.length === 1 ? '' : 's'}
+                    Imagens entram inline no ponto do texto.
                   </span>
                   <GhostButton
                     className="min-h-9 rounded-[12px] px-3 text-[0.72rem]"
@@ -2221,9 +2032,38 @@ export function KnowledgeArticleEditorPage() {
                 )}
               </RailCard>
 
-              <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
-                Estado atual: {statusLabel(status)} · {articleId ? `ID ${articleId}` : 'ainda não salvo'}.
-              </div>
+              <RailCard title="Informações do artigo">
+                <dl className="space-y-2 text-[0.72rem] leading-5">
+                  <div>
+                    <dt className="font-extrabold text-[color:var(--color-brand-navy)]">Criado por</dt>
+                    <dd className="text-[color:var(--color-muted)]">
+                      {articleDetail?.created_by_full_name ?? 'Indisponível'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="font-extrabold text-[color:var(--color-brand-navy)]">Última edição</dt>
+                    <dd className="text-[color:var(--color-muted)]">
+                      {articleDetail?.updated_at
+                        ? new Date(articleDetail.updated_at).toLocaleString('pt-BR')
+                        : 'Ainda não salvo'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="font-extrabold text-[color:var(--color-brand-navy)]">Revisão</dt>
+                    <dd className="text-[color:var(--color-muted)]">
+                      {articleDetail?.current_revision_number
+                        ? `Rev. ${articleDetail.current_revision_number}`
+                        : 'Rascunho inicial'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="font-extrabold text-[color:var(--color-brand-navy)]">Categoria atual</dt>
+                    <dd className="text-[color:var(--color-muted)]">
+                      {selectedCategory?.name ?? 'Pendente'}
+                    </dd>
+                  </div>
+                </dl>
+              </RailCard>
             </div>
           </aside>
         </div>
