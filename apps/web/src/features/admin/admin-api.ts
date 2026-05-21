@@ -67,6 +67,8 @@ import type {
   RpcAdminUnlinkKnowledgeArticleFromTicketResponse,
   RpcAdminUpdateKnowledgeArticleReviewStatusPayload,
   RpcAdminUpdateKnowledgeArticleReviewStatusResponse,
+  RpcAdminUpsertKnowledgeArticleAssetPayload,
+  RpcAdminUpsertKnowledgeArticleAssetResponse,
   RpcAdminUpdateKnowledgeArticleAssetReviewPayload,
   RpcAdminUpdateKnowledgeArticleAssetReviewResponse,
   RpcAdminUpdateKnowledgeArticleDraftV2Payload,
@@ -89,6 +91,58 @@ function requireClient() {
 
 function escapeLookupTerm(value: string) {
   return value.replace(/[%_,]/g, ' ').trim();
+}
+
+const KNOWLEDGE_ASSET_BUCKET = 'knowledge-assets';
+const KNOWLEDGE_ASSET_MAX_BYTES = 10 * 1024 * 1024;
+const KNOWLEDGE_ASSET_ALLOWED_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
+]);
+
+function normalizeStorageFilename(fileName: string) {
+  const fallback = 'knowledge-asset';
+  const sanitized = fileName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9.]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return sanitized || fallback;
+}
+
+async function digestFileSha256(file: File) {
+  const buffer = await file.arrayBuffer();
+  const digest = await crypto.subtle.digest('SHA-256', buffer);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function readImageDimensions(file: File) {
+  if (!file.type.startsWith('image/')) {
+    return { width: null, height: null };
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = new Image();
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error('Não foi possível ler as dimensões da imagem.'));
+      image.src = objectUrl;
+    });
+
+    return {
+      width: Number.isFinite(image.naturalWidth) ? image.naturalWidth : null,
+      height: Number.isFinite(image.naturalHeight) ? image.naturalHeight : null,
+    };
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
 }
 
 export async function listAdminTenants() {
@@ -594,6 +648,93 @@ export async function listAdminKnowledgeArticleAssets(articleId: string) {
   );
 
   return enriched;
+}
+
+export async function upsertKnowledgeArticleAsset(
+  payload: RpcAdminUpsertKnowledgeArticleAssetPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_admin_upsert_knowledge_article_asset_v1',
+    payload,
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao registrar o asset governado do artigo.');
+  }
+
+  return data as RpcAdminUpsertKnowledgeArticleAssetResponse;
+}
+
+export async function uploadKnowledgeArticleAssetFile(options: {
+  articleId: string;
+  knowledgeSpaceId: string;
+  file: File;
+  sourceKind: 'upload' | 'paste';
+}) {
+  const client = requireClient();
+  const { articleId, knowledgeSpaceId, file, sourceKind } = options;
+
+  if (!KNOWLEDGE_ASSET_ALLOWED_TYPES.has(file.type)) {
+    throw toAppError(
+      new Error('Tipo de arquivo não permitido para assets da base de conhecimento.'),
+      'Use PNG, JPG, WEBP ou GIF no editor de artigos.',
+    );
+  }
+
+  if (file.size > KNOWLEDGE_ASSET_MAX_BYTES) {
+    throw toAppError(
+      new Error('Arquivo acima do limite de 10 MB.'),
+      'O asset excede o limite de 10 MB do bucket governado.',
+    );
+  }
+
+  const sourceHash = await digestFileSha256(file);
+  const dimensions = await readImageDimensions(file);
+  const safeName = normalizeStorageFilename(file.name);
+  const extension = safeName.includes('.') ? safeName.split('.').pop() : 'bin';
+  const objectPath = `${knowledgeSpaceId}/${articleId}/${sourceKind}-${sourceHash.slice(
+    0,
+    12,
+  )}-${crypto.randomUUID()}.${extension}`;
+
+  const { error: uploadError } = await client.storage
+    .from(KNOWLEDGE_ASSET_BUCKET)
+    .upload(objectPath, file, {
+      cacheControl: '3600',
+      contentType: file.type,
+      upsert: false,
+    });
+
+  if (uploadError) {
+    throw toAppError(
+      new Error(uploadError.message),
+      'Falha ao enviar a imagem para o bucket governado.',
+    );
+  }
+
+  try {
+    return await upsertKnowledgeArticleAsset({
+      p_article_id: articleId,
+      p_knowledge_space_id: knowledgeSpaceId,
+      p_source_url: null,
+      p_source_path: `manual/${sourceKind}/${safeName}`,
+      p_source_hash: sourceHash,
+      p_storage_object_path: objectPath,
+      p_detected_mime_type: file.type,
+      p_file_size_bytes: file.size,
+      p_width: dimensions.width,
+      p_height: dimensions.height,
+      p_alt_text: file.name.replace(/\.[^.]+$/, ''),
+      p_caption: null,
+      p_review_status: 'pending',
+      p_visibility: 'internal',
+      p_is_blocked: false,
+    });
+  } catch (error) {
+    await client.storage.from(KNOWLEDGE_ASSET_BUCKET).remove([objectPath]);
+    throw error;
+  }
 }
 
 export async function updateKnowledgeArticleAssetReview(

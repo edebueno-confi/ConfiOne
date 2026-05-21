@@ -1037,6 +1037,27 @@ export interface RpcAdminMarkKnowledgeArticleReviewedPayload {
 export type RpcAdminMarkKnowledgeArticleReviewedResponse =
   AdminKnowledgeArticleReviewAdvisoryRecordRow;
 
+export interface RpcAdminUpsertKnowledgeArticleAssetPayload {
+  p_article_id: Uuid;
+  p_knowledge_space_id: Uuid;
+  p_source_url?: string | null;
+  p_source_path: string;
+  p_source_hash: string;
+  p_storage_object_path: string;
+  p_detected_mime_type: string;
+  p_file_size_bytes: number;
+  p_width?: number | null;
+  p_height?: number | null;
+  p_alt_text?: string | null;
+  p_caption?: string | null;
+  p_review_status?: KnowledgeArticleAssetReviewStatus;
+  p_visibility?: KnowledgeVisibility;
+  p_is_blocked?: boolean;
+}
+
+export type RpcAdminUpsertKnowledgeArticleAssetResponse =
+  AdminKnowledgeArticleAssetRow;
+
 export interface RpcAdminUpdateKnowledgeArticleAssetReviewPayload {
   p_asset_id: Uuid;
   p_review_status: KnowledgeArticleAssetReviewStatus;
