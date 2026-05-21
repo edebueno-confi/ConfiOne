@@ -75,14 +75,17 @@ Criar a base editorial do Genius Support OS com versionamento, trilha de origem 
 Origem oficial preservada:
 - `raw_knowledge/octadesk_export/latest/articles/`
 
-Estado operacional em 2026-05-20:
+Estado operacional em 2026-05-21:
 - A esteira completa do corpus Octadesk foi organizada em allowlists por onda e registrada em `docs/reports/OCTADESK_FULL_PUBLIC_HELP_EXECUTION_PLAN.md`.
-- `54` artigos foram importados/processados localmente no Admin Knowledge sem exposicao publica.
-- Distribuicao do corpus importado: `4 review/internal`, `24 draft/internal`, `26 draft/restricted`.
-- `20` artigos permanecem bloqueados para publicacao publica por restricao, obsolescencia ou duplicidade.
-- `0` artigos Octadesk foram publicados automaticamente; Wave 1 permanece vazia ate checklist humano, advisory revisado e revisao de assets.
-- A triagem final de publicacao ficou registrada em `docs/reports/OCTADESK_PUBLICATION_FINAL_TRIAGE.md`, com `0 publish_now_candidate`, `38 needs_human_decision`, `16 restricted_blocked` e `4 obsolete_or_duplicate`.
-- O fechamento operacional da Central de Ajuda ficou registrado em `docs/reports/GENIUS_HELP_CENTER_READINESS_REPORT.md`, `docs/reports/OCTADESK_PUBLICATION_WAVES.md` e `docs/reports/OCTADESK_WAVE_0_PUBLICATION_CHECKLIST.md`: Admin Knowledge e a fila de ondas passam a ser a base diaria de curadoria, enquanto `/help/genius` permanece seguro com os 6 artigos publicos seed/manuais.
+- `54` artigos foram importados/processados localmente no Admin Knowledge com rastreabilidade de `source_path` e `source_hash`.
+- Decisao de produto atual: a origem Octadesk passa a ser tratada como Central de Ajuda publica legada aprovada para migracao, salvo bloqueio tecnico critico automatico.
+- Distribuicao runtime do corpus Octadesk: `43 published/public` e `11 draft/restricted`.
+- `43` artigos Octadesk foram publicados por gate editorial existente apos normalizacao minima e revisao automatica de bloqueios criticos.
+- `11` artigos permanecem bloqueados por risco tecnico critico: token, senha explicita, permissao tecnica, erro/autorizacao, integracao sensivel, contrato Correios ou usuario administrativo.
+- A Central Publica `/help/genius` passou a expor `49` artigos no total: `43` artigos Octadesk migrados e `6` artigos seed/manuais.
+- A triagem conservadora anterior ficou registrada em `docs/reports/OCTADESK_PUBLICATION_FINAL_TRIAGE.md`; ela foi superada pela decisao de produto de migracao publica legada e preservada como historico de governanca.
+- O fechamento operacional anterior da Central de Ajuda ficou registrado em `docs/reports/GENIUS_HELP_CENTER_READINESS_REPORT.md`, `docs/reports/OCTADESK_PUBLICATION_WAVES.md` e `docs/reports/OCTADESK_WAVE_0_PUBLICATION_CHECKLIST.md`; esses documentos continuam uteis para curadoria dos bloqueados, mas a baseline publica atual e a migracao Octadesk com bloqueios criticos automaticos.
+- A execucao efetiva da migracao publica ficou registrada em `docs/reports/OCTADESK_PUBLICATION_EXECUTION_REPORT.md` e `docs/reports/OCTADESK_PUBLIC_HELP_RELEASE_STATUS.md`.
 
 Resultado do inventário atual:
 - `58` artigos detectados por `article.json`
@@ -157,15 +160,16 @@ Metadados brutos observados em `article.json`:
 - `archived` preserva histórico e rastreabilidade.
 
 ## Regras de publicação
-- Não publicar automaticamente artigos legados.
-- Não abrir Central de Ajuda pública nesta fase.
+- A publicacao em lote do corpus Octadesk e permitida apenas quando a premissa de produto confirmar a origem como Central de Ajuda publica legada aprovada para migracao.
+- Bloquear automaticamente qualquer artigo com credencial, token, senha, chave, `service_role`, header de autorizacao, JWT, URL assinada, payload sensivel, dado pessoal sensivel, instrucao claramente interna, endpoint privado, conteudo vazio/quebrado ou duplicidade exata sem canonical.
+- Asset nao revisado, advisory pendente, checklist humano individual e linguagem legada leve nao sao bloqueios absolutos quando o artigo vem da Central de Ajuda publica legada e passa pelos bloqueios criticos automaticos.
 - Não misturar conteúdo público com playbook interno.
 - Não indexar conteúdo em IA nesta fase.
 - Não promover artigo para `published` sem trilha editorial e auditoria.
 - `published` continua sendo estado editorial, não sinal de exposição pública ativa.
 - Um `knowledge_space` futuro também precisará estar ativo antes de qualquer abertura pública.
 - O contrato público de leitura já existe, mas ainda sem UI pública, busca ou roteamento ativo no frontend.
-- O contrato público de leitura agora possui UI mínima em `/help` e busca textual simples, mas continua sem IA, chat, widget, portal B2B ou abertura pública de ticket.
+- O contrato público de leitura agora possui UI em `/help` e busca textual simples, mas continua sem IA, chat, widget, portal B2B ou abertura pública de ticket.
 
 ## Superfície pública mínima
 - Rotas ativas:
@@ -191,7 +195,8 @@ Metadados brutos observados em `article.json`:
 - Todo artigo relevante deve gerar revisão em `knowledge_article_revisions`.
 - Toda origem relevante deve ser preservada em `knowledge_article_sources`.
 - Toda mutação administrativa deve gerar `audit.audit_logs`.
-- Conteúdo legado precisa de curadoria humana antes de qualquer exposição pública.
+- Conteúdo legado privado, restrito ou sensível precisa de curadoria humana antes de qualquer exposição pública.
+- Conteúdo legado vindo de Central de Ajuda pública aprovada pode ser migrado por lote desde que passe por bloqueios técnicos críticos, RPCs editoriais existentes, auditoria e QA público.
 
 ## Pipeline de curadoria esperado
 1. Inventariar todos os artigos legados.

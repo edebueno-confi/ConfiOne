@@ -1,45 +1,77 @@
 # Octadesk Public Help Release Status
 
-Data: `2026-05-20`
+Data: `2026-05-21`
 
 ## Resultado
 
 - Artigos avaliados: `58`.
-- Artigos no Knowledge runtime: `54`.
-- Artigos publicados nesta fase: `0`.
-- Artigos Octadesk com `visibility = public`: `0`.
-- Artigos Octadesk expostos em views publicas: `0`.
-- `/help/genius` permanece com os `6` artigos publicos seed/manuais.
+- Artigos Octadesk no Knowledge runtime: `54`.
+- Artigos Octadesk publicados nesta fase: `43`.
+- Artigos Octadesk `published/public`: `43`.
+- Artigos Octadesk bloqueados por risco critico automatico: `11`.
+- Artigos Octadesk expostos nas views publicas: `43`.
+- Total atual em `/help/genius`: `49` artigos (`43` Octadesk migrados + `6` seed/manuais).
+- Advisories Octadesk: `43 reviewed/public/public` e `11 pending/restricted/restricted`.
 
 ## Distribuicao runtime
 
 | Status | Visibility | Total |
 | --- | --- | ---: |
-| review | internal | 4 |
-| draft | internal | 24 |
-| draft | restricted | 26 |
-
-Advisories pendentes: `54`.
+| published | public | 43 |
+| draft | restricted | 11 |
 
 ## Publicacao
 
-A primeira onda publica nao foi executada. Motivo: nenhum artigo possui simultaneamente checklist humano real, advisory revisado, revisao de assets e aprovacao do gate backend para publicacao segura.
+A premissa de produto foi ajustada em 2026-05-21: o corpus Octadesk passa a ser tratado como base publica legada aprovada para migracao, salvo bloqueio tecnico critico automatico. A publicacao foi executada localmente via gate editorial existente, com:
+
+- normalizacao textual minima;
+- preservacao de `source_path` e `source_hash`;
+- categorias reais usadas pelos artigos promovidas para `public` via RPC administrativa existente;
+- advisories dos publicados marcados como `reviewed` com nota de migracao legada;
+- artigos aptos promovidos para `published/public` por `rpc_admin_publish_knowledge_article_v2`.
+
+Nota de auditoria aplicada:
+
+> Publicacao migrada da Central de Ajuda Octadesk existente para a Central Genius.
+
+## Bloqueios
+
+Os `11` artigos bloqueados permaneceram `draft/restricted` por risco critico automatico:
+
+- `Como criar um usuario`
+- `Erro "Não Autorizado" ao Gerar Código de postagem`
+- `Erro de autorização ao acessar pedidos na Vtex`
+- `Erros na integração do contrato do Correios`
+- `Habilitar a API de Logística Reversa do Correios`
+- `Intalação e integração Nuvemshop`
+- `Integração e configuração com os Correios`
+- `Permissões Shopify`
+- `Permissões TrayCorp`
+- `Permissões Vtex`
+- `Regras de Cadastro  e configurações de Sellers( Estorno e Logística)`
+
+Motivos principais: token, senha explicita, permissao tecnica, integracao tecnica, contrato Correios, erro de autorizacao ou criacao de usuario administrativo.
 
 ## Estado da Central Publica
 
-A Central de Ajuda publica continua funcional e navegavel com os artigos seed/manuais. O corpus Octadesk importado permanece invisivel para o publico ate revisao humana.
+`/help/genius` passou a expor o corpus migrado aprovado automaticamente:
 
-## Proxima onda segura
+- lista publica: `43` artigos Octadesk;
+- detalhe publico: `43` artigos Octadesk;
+- busca publica validada com termo `Reenviar`;
+- amostra de artigos bloqueados validada com `0` exposicao publica.
 
-1. Selecionar poucos artigos em `needs_human_decision` e `internal_help_only`.
-2. Revisar/remover assets.
-3. Revisar advisory e preencher checklist humano real.
-4. Converter visibilidade para `public` apenas se a versao final for segura.
-5. Publicar por RPC editorial existente e validar `/help/genius`.
+## Validacao
 
-## Fechamento operacional
+- Queries SQL confirmaram `43 published/public` e `11 draft/restricted`.
+- `vw_public_knowledge_articles_list` retornou `43` artigos Octadesk.
+- `vw_public_knowledge_article_detail` retornou `43` artigos Octadesk.
+- `rpc_public_search_knowledge_articles('genius', 'Reenviar', 20)` retornou resultado Octadesk.
+- `/help/genius`, `/help/genius/articles` e detalhe de artigo publicado responderam `200`.
+- QA browser validou home, lista, detalhe e busca publica.
 
-- `docs/reports/OCTADESK_PUBLICATION_WAVES.md` organiza o corpus em ondas operacionais.
-- `docs/reports/OCTADESK_WAVE_0_PUBLICATION_CHECKLIST.md` define a checklist humana dos 4 artigos em `review/internal`.
-- `docs/reports/GENIUS_HELP_CENTER_READINESS_REPORT.md` consolida o readiness da Central de Ajuda Genius.
-- A Central Publica permanece com os 6 artigos seed/manuais ate revisao humana real.
+## Proxima onda
+
+1. Revisar os `11` bloqueados por risco critico.
+2. Definir se algum deles pode ganhar versao publica sem token, permissao tecnica, contrato ou instrucao sensivel.
+3. Manter bloqueados enquanto nao houver saneamento editorial especifico.

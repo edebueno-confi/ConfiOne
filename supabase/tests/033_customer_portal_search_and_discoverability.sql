@@ -275,7 +275,8 @@ select is(
         null,
         12,
         0
-      )$$
+      )
+      where article_id = '90000000-0000-4000-8000-500000000001'$$
   ),
   1::bigint,
   'customer encontra artigo público pela busca autenticada'
@@ -292,7 +293,8 @@ select is(
         null,
         12,
         0
-      )$$
+      )
+      where article_id = '90000000-0000-4000-8000-500000000002'$$
   ),
   1::bigint,
   'customer encontra artigo com entitlement do tenant'
@@ -361,7 +363,8 @@ select is(
         null,
         12,
         0
-      )$$
+      )
+      where article_id = '90000000-0000-4000-8000-500000000005'$$
   ),
   0::bigint,
   'customer não encontra artigo internal na busca autenticada'
@@ -395,6 +398,11 @@ select is(
         null,
         12,
         0
+      )
+      where article_id in (
+        '90000000-0000-4000-8000-500000000001'::uuid,
+        '90000000-0000-4000-8000-500000000002'::uuid,
+        '90000000-0000-4000-8000-500000000003'::uuid
       )$$
   ),
   3::bigint,
@@ -517,7 +525,8 @@ reset request.jwt.claim.sub;
 select is(
   pg_temp.safe_bigint(
     $$select count(*)
-      from public.rpc_public_search_knowledge_articles('genius', 'sem acesso', 10)$$
+      from public.rpc_public_search_knowledge_articles('genius', 'sem acesso', 10)
+      where article_id = '90000000-0000-4000-8000-500000000004'$$
   ),
   0::bigint,
   'busca pública não retorna artigo autenticado do portal'

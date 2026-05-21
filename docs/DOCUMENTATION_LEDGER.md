@@ -18,6 +18,49 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase - Octadesk Public Help Migration Release
+- fase: `knowledge-publication`
+- nome: `Octadesk Public Help Migration Release`
+- branch: `workspace-atual`
+- data: `2026-05-21`
+- resumo funcional: ajustada a premissa de produto para tratar o corpus Octadesk como Central de Ajuda publica legada aprovada para migracao, salvo bloqueio tecnico critico automatico. A execucao local publicou `43` artigos como `published/public`, manteve `11` em `draft/restricted` por risco critico e elevou `/help/genius` para `49` artigos publicos no total.
+- docs alterados:
+  - `docs/reports/OCTADESK_PUBLICATION_EXECUTION_REPORT.md`
+  - `docs/reports/OCTADESK_PUBLIC_HELP_RELEASE_STATUS.md`
+  - `docs/KNOWLEDGE_BASE_STRATEGY.md`
+  - `docs/PUBLIC_HELP_CENTER_PUBLISH_RUNBOOK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- tooling alterado:
+  - `scripts/knowledge/publish-octadesk-public-help.mjs`
+- telas afetadas:
+  - `/help/genius`
+  - `/help/genius/articles`
+  - `/help/genius/articles/:articleSlug`
+  - `/admin/knowledge` permanece como fila operacional para os bloqueados
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+  - utilizadas RPCs existentes: `rpc_admin_create_knowledge_category_v2`, `rpc_admin_update_knowledge_article_draft_v2`, `rpc_admin_submit_knowledge_article_for_review_v2`, `rpc_admin_mark_knowledge_article_reviewed`, `rpc_admin_publish_knowledge_article_v2`
+  - leitura validada em `vw_public_knowledge_articles_list`, `vw_public_knowledge_article_detail` e `rpc_public_search_knowledge_articles`
+- validacao:
+  - dry-run do script de publicacao Octadesk
+  - apply local controlado com actor QA
+  - queries SQL de distribuicao `43 published/public` e `11 draft/restricted`
+  - queries SQL de `43` artigos Octadesk em views publicas
+  - busca publica por `Reenviar`
+  - QA browser em `/help/genius`, `/help/genius/articles` e detalhe de artigo publicado
+  - `npm run knowledge:curation:backlog`
+  - `npm run knowledge:verify:octadesk:space-aware`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:test:db`
+- riscos restantes:
+  - `11` artigos seguem bloqueados por risco critico automatico e nao devem ser publicados sem saneamento especifico
+  - a publicacao foi executada no ambiente local/QA; replicacao para outro ambiente deve repetir dry-run, apply e QA
+- impacto na FAQ futura:
+  - transforma a Central de Ajuda publica em superficie real com corpus Octadesk migrado e rastreavel, preservando bloqueio dos itens criticos
+
 ### Fase - Genius Help Center Operational Readiness
 - fase: `knowledge-curation`
 - nome: `Genius Help Center Operational Readiness`

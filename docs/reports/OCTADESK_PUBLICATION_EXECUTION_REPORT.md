@@ -1,0 +1,140 @@
+# Octadesk Publication Execution Report
+
+Data: `2026-05-21`
+
+## Resumo
+
+- Modo: `apply`.
+- Artigos Octadesk avaliados: `54`.
+- `publishable_now`: `0`.
+- `publishable_with_minor_cleanup`: `43`.
+- `blocked_critical`: `11`.
+- `duplicate_or_obsolete`: `0`.
+- Artigos publicados nesta execucao: `43`.
+
+Premissa de produto aplicada: a origem Octadesk foi tratada como Central de Ajuda publica legada aprovada para migracao, salvo bloqueio tecnico critico automatico.
+
+## Artigos publicados
+
+- `como-alterar-ou-aprovar-os-produtos-de-uma-solicitacao` - Alterar ou aprovar produtos em uma solicitacao
+- `como-automatizar-a-conclusao-de-uma-solicitacao` - Como automatizar a conclusão de uma solicitação
+- `como-automatizar-o-pagamento-de-estorno-e-vale-compra` - Como automatizar o pagamento de Estorno e Vale-Compra
+- `como-cadastrar-lojas-fisicas` - Como cadastrar Lojas Físicas
+- `como-cadastrar-motivos-para-troca-ou-devolucao` - Como cadastrar motivos para troca ou devolução
+- `como-cadastrar-os-e-mails-para-notificacoes-automaticas` - Como cadastrar os e-mails para notificações automáticas
+- `como-configurar-a-cor-exibida-nos-filtros-basicos-das-solicitacoes` - Como configurar a cor exibida nos filtros básicos das solicitações
+- `como-configurar-o-blocklist` - Como configurar o BlockList?
+- `como-configurar-o-calculo-do-estorno` - Como configurar o cálculo do estorno
+- `como-configurar-o-estorno-automatico-via-pix` - Como configurar o estorno automatico via pix
+- `como-configurar-o-prazo-logistico-por-estado` - Como Configurar o Prazo Logístico por Estado?
+- `como-configurar-o-vale-compras-retencao` - Como configurar o Vale-Compras(Retenção)
+- `como-configurar-os-textos-do-front` - Como configurar os textos do portal do cliente
+- `como-informar-a-sku-durantge-a-troca` - Como informar a SKU durantge a troca
+- `como-o-consumidor-solicita-uma-reversa` - Como o cliente solicita uma reversa
+- `como-realizar-alteracoes-em-um-vale-compra-pendente` - Como realizar alterações em um Vale-compra pendente?
+- `configuracao-de-sellers-permitidos` - Configuração de Sellers Permitidos
+- `fique-com-o-item` - Configurando a funcionalidade Fique com o Item
+- `configurando-parametrizacao-geral` - Configurando parametrização geral
+- `configurar-padroes-de-seguranca` - Configurar padrões de segurança
+- `criando-e-atualizando-o-cadastro` - Criando e atualizando o cadastro
+- `criar-lojas-virtuais` - Criar Lojas Virtuais
+- `regra-por-motivo` - Entender regras por motivo na operacao
+- `posso-enviar-uma-notificacao-de-analise-ao-cliente` - Enviar uma notificacao de analise ao cliente
+- `erro-ao-tentar-realizar-o-estorno` - Erro ao Tentar Realizar o Estorno
+- `erro-no-cep-ou-endereco-incorreto` - Erro no CEP ou Endereço Incorreto
+- `formas-de-estorno-por-motivo` - Formas de estorno por motivo
+- `limitando-o-valor-maximo-de-um-estorno` - Limitando o Valor Máximo de um Estorno
+- `modo-sac` - MODO SAC
+- `operacoes-permitidas-durante-a-criacao-de-sua-solicitacao` - Operações permitidas durante a criação de sua solicitação
+- `pedidos-pagos-com-vale-compras` - Pedidos pagos com vale-compras
+- `pendencia-de-logistica-reversa` - Pendência de Logística Reversa
+- `politica-para-estorno-do-frete` - Política para estorno do frete
+- `posso-alterar-a-forma-de-reembolso-do-meu-consumidor` - Posso alterar a forma de reembolso do meu cliente?
+- `posso-alterar-o-e-mail-e-o-endereco-da-solicitacao` - Posso alterar o e-mail e o endereço da solicitação?
+- `posso-alterar-o-status-de-uma-solicitacao` - Posso alterar o status de uma solicitação?
+- `posso-filtrar-as-solicitacoes-de-reversas` - Posso filtrar as solicitações de reversas?
+- `produtos-em-excecao` - Produtos em Exceção
+- `reenviar-um-e-mail-ao-consumidor` - Reenviar uma comunicacao ao cliente
+- `regra-de-excecao-para-motivos-nao-gerar-logistica-reversa` - Regra de Exceção para Motivos - Não Gerar Logística Reversa
+- `regra-para-segunda-solicitacao` - Regra para segunda solicitação
+- `sellers-permitidos-para-criar-vale-compras` - Sellers Permitidos para Criar Vale-Compras
+- `variacao-do-produto` - Variação do Produto
+
+## Bloqueios
+
+- `como-criar-um-usuario` - Como criar um usuario: `blocked_critical` (usuario_admin).
+- `erro-nao-autorizado-ao-gerar-codigo-reverso-postagem` - Erro "Não Autorizado" ao Gerar Código de postagem: `blocked_critical` (token; erro_autorizacao).
+- `erro-de-autorizacao-ao-acessar-pedidos-na-vtex` - Erro de autorização ao acessar pedidos na Vtex: `blocked_critical` (token; erro_autorizacao).
+- `erros-na-integracao-do-contrato-do-correios` - Erros na integração do contrato do Correios: `blocked_critical` (integracao_tecnica; contrato_correios).
+- `habilitar-a-api-de-logistica-reversa-do-correios` - Habilitar a API de Logística Reversa do Correios: `blocked_critical` (contrato_correios).
+- `intalacao-e-integracao-nuvemshop` - Intalação e integração Nuvemshop: `blocked_critical` (token; integracao_tecnica).
+- `integracao-e-configuracao-com-os-correios` - Integração e configuração com os Correios: `blocked_critical` (token; senha_explicita; integracao_tecnica; contrato_correios).
+- `permissoes-shopify` - Permissões Shopify: `blocked_critical` (permissao_tecnica).
+- `permissoes-tray` - Permissões TrayCorp: `blocked_critical` (token; permissao_tecnica).
+- `permissoes-vtex` - Permissões Vtex: `blocked_critical` (permissao_tecnica).
+- `regras-de-cadastro-e-configuracoes-de-sellers-estorno-e-logistica` - Regras de Cadastro  e configurações de Sellers( Estorno e Logística): `blocked_critical` (token).
+
+## Inventario por artigo
+
+| Titulo | Status inicial | Visibility inicial | Decisao | Motivo | Source path | Source hash |
+| --- | --- | --- | --- | --- | --- | --- |
+| Alterar ou aprovar produtos em uma solicitacao | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-como-alterar-ou-aprovar-os-produtos-de-uma-solicitacao | 59b0619bf620261477c2491feaf6d274f68f95ea0ac7a1faf686704fba1a364a |
+| Como automatizar a conclusão de uma solicitação | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-como-automatizar-a-conclusao-de-uma-solicitacao | ab0edaac50b70f2d4b329f849f002082725f9addb2855a4d00465b3607387656 |
+| Como automatizar o pagamento de Estorno e Vale-Compra | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-como-automatizar-o-pagamento-de-estorno-e-vale-compra | 1db02360af9e6985f39ad46b548ba79bb1571768627989bbd51521b21d5f7427 |
+| Como cadastrar Lojas Físicas | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/sellers-e-lojafisica/000-como-cadastrar-lojas-fisicas | 405bc57b589575d261435fc6a39b24262998e104f2036d1bde35f0b7711cdc8a |
+| Como cadastrar motivos para troca ou devolução | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-como-cadastrar-motivos-para-troca-ou-devolucao | 09f209be21cd7db4e73482ca1b9a1bd5ffb19ddb4843ec82a0a2cc9411708282 |
+| Como cadastrar os e-mails para notificações automáticas | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-como-cadastrar-os-e-mails-para-notificacoes-automaticas | 1bf4872f389dba338e0099baf3969ddd7eee61eec693bb2ebc80f46c9bef5d92 |
+| Como configurar a cor exibida nos filtros básicos das solicitações | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-como-configurar-a-cor-exibida-nos-filtros-basicos-das-solicitacoes | 08475bc7a1fe8bcd566a6ffe55f4f398a51bf2a94c5a18df50b8aaf1a4fc3576 |
+| Como configurar o BlockList? | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-como-configurar-o-blocklist | 5a3bb6a9266114ebd2b2cac85c3b2edabec22027962d62a134f500f37c678679 |
+| Como configurar o cálculo do estorno | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-como-configurar-o-calculo-do-estorno | 3035f5ad886c3128959175016b4dc7ec879360de5a364c3ada0f36533ead61ea |
+| Como configurar o estorno automatico via pix | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-como-configurar-o-estorno-automatico-via-pix | cb3feeb400e9b70efd5eedf8ffe59534442d560375ff0a824723af6832685ce0 |
+| Como Configurar o Prazo Logístico por Estado? | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-como-configurar-o-prazo-logistico-por-estado | efc72a9c2d035aca0c16c2698d2c92ad3992c6368ae9d2fd50576f5d10732d93 |
+| Como configurar o Vale-Compras(Retenção) | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-como-configurar-o-vale-compras-retencao | fefe3a3924421f2031643400c9343849c19790e86a1d44243299ab2874a36468 |
+| Como configurar os textos do portal do cliente | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-como-configurar-os-textos-do-front | dc52990a11d1e5bf2f7761f5c04de941ff49dca427b1c3dd4aebf194d03c4191 |
+| Como criar um usuario | draft | restricted | blocked_critical | usuario_admin | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-como-criar-um-usuario | 76ccd25a85e3a5448feec7d9a58f11ee700a40543d1c9fb674506926d04ab9ad |
+| Como informar a SKU durantge a troca | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-como-informar-a-sku-durantge-a-troca | e5890fc955f6bf64c8f088f9523dcf682ed1a0ec10205cf05acc7cd6461bf58e |
+| Como o cliente solicita uma reversa | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-como-o-consumidor-solicita-uma-reversa | c965dd1a9eb2589338aa0e452994acf3a5ceba8962fbfffd04dba2be05c7fe55 |
+| Como realizar alterações em um Vale-compra pendente? | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-como-realizar-alteracoes-em-um-vale-compra-pendente | b663f54f5ac9703466f2ebdf37d437fb1283d2a14b2c1d3b9841352b436a4200 |
+| Configuração de Sellers Permitidos | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/sellers-e-lojafisica/000-configuracao-de-sellers-permitidos | 43a876665da6cb27ce13867a48a4f818c832d53972fa1d863acd4da655cc610a |
+| Configurando a funcionalidade Fique com o Item | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-fique-com-o-item | 9823fabac95db5d1a8432069752f0417253e4b181cd26bf81f2b843c4e460eb2 |
+| Configurando parametrização geral | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-configurando-parametrizacao-geral | 7abee7a307b493ed5dc72dad505897f5f8a28f912f5dfe4a8392df1813a821e8 |
+| Configurar padrões de segurança | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-configurar-padroes-de-seguranca | 3da2808bfaf43982dc7595aede0bf3b3924229c5eb7870022242928a3ee68b63 |
+| Criando e atualizando o cadastro | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-criando-e-atualizando-o-cadastro | c3fafd7e26095af7204ecea577ef6a2aab8a735815bd3f8c01ce37bb28414fac |
+| Criar Lojas Virtuais | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-criar-lojas-virtuais | d725f24c0db6afbe10c736846ceca5b05d51fd3f78b7c9e17f593cd5cb9f5a33 |
+| Entender regras por motivo na operacao | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-regra-por-motivo | fb3075312afaaa4cbb9ed019a683681c0c0902026f08a46283cb74906cc17aeb |
+| Enviar uma notificacao de analise ao cliente | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-posso-enviar-uma-notificacao-de-analise-ao-cliente | 7161e4ec3c080f510fbf31b30d0425ac69d5544b19bf5fdb6d0eb89a89dc9619 |
+| Erro "Não Autorizado" ao Gerar Código de postagem | draft | restricted | blocked_critical | token; erro_autorizacao | raw_knowledge/octadesk_export/latest/articles/erros-comuns-e-solucoes/erros-e-pendencias/000-erro-nao-autorizado-ao-gerar-codigo-reverso-postagem | 66520f84b4321c265881075f318e6c31272cc3b9d0929161dce3811f7468363e |
+| Erro ao Tentar Realizar o Estorno | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/erros-comuns-e-solucoes/erros-e-pendencias/000-erro-ao-tentar-realizar-o-estorno | 733ff0409fc3913e92907d24165acbffe9c1536e3829798ea4f896f66d3ac3e3 |
+| Erro de autorização ao acessar pedidos na Vtex | draft | restricted | blocked_critical | token; erro_autorizacao | raw_knowledge/octadesk_export/latest/articles/erros-comuns-e-solucoes/erros-e-pendencias/000-erro-de-autorizacao-ao-acessar-pedidos-na-vtex | adf55fd25de554ce91171930ea7ed8b5a5b580c352eb094457565d0f9cffd57a |
+| Erro no CEP ou Endereço Incorreto | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/erros-comuns-e-solucoes/erros-e-pendencias/000-erro-no-cep-ou-endereco-incorreto | 481d89ea45464508525ce9fdd059614ee6b500f21bba48e2ad01a1b2b6461302 |
+| Erros na integração do contrato do Correios | draft | restricted | blocked_critical | integracao_tecnica; contrato_correios | raw_knowledge/octadesk_export/latest/articles/cadastros/integracao-e-atualizacao/000-erros-na-integracao-do-contrato-do-correios | f887ba75ed485df27b590329e48d7d8f395d707b5b27193d9a159a36ad6ba405 |
+| Formas de estorno por motivo | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-formas-de-estorno-por-motivo | 8410b9d79d9fd1ab93dff814a6bdcdd29bee6ddc3e4a5dca446e8e003a941c9c |
+| Habilitar a API de Logística Reversa do Correios | draft | restricted | blocked_critical | contrato_correios | raw_knowledge/octadesk_export/latest/articles/cadastros/integracao-e-atualizacao/000-habilitar-a-api-de-logistica-reversa-do-correios | 3888ba963ff4899445f57f69b8c3aefd43b402785bb05b155d51ae372cf2a933 |
+| Intalação e integração Nuvemshop | draft | restricted | blocked_critical | token; integracao_tecnica | raw_knowledge/octadesk_export/latest/articles/cadastros/integracao-e-atualizacao/000-intalacao-e-integracao-nuvemshop | ef0d3c43ab04f5af3cbf70b82a2a6a2199e91dfdd218a02b859df943637a4ccc |
+| Integração e configuração com os Correios | draft | restricted | blocked_critical | token; senha_explicita; integracao_tecnica; contrato_correios | raw_knowledge/octadesk_export/latest/articles/cadastros/integracao-e-atualizacao/000-integracao-e-configuracao-com-os-correios | f4d6c23dd365592cbf8c015f705c0ce11c23b1bffb96523ec3818e80b0c1c7dc |
+| Limitando o Valor Máximo de um Estorno | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-limitando-o-valor-maximo-de-um-estorno | 641d14b667a5cab281a1a748edc703e1f3a2da97868ef99915a4bbef0215056c |
+| MODO SAC | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-modo-sac | 170cd928120b690f3e579c26f9ff29d3cc626b9c2664021b309673b6e4b821f1 |
+| Operações permitidas durante a criação de sua solicitação | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-operacoes-permitidas-durante-a-criacao-de-sua-solicitacao | 73e02fb8d0eecee3bf02161fe98aa0235bd4702fd52cff1e131d97243d93896c |
+| Pedidos pagos com vale-compras | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-pedidos-pagos-com-vale-compras | fbef07e83f7febde7f56f19cd5688d06208c8557d69e597f77ebafbd4024ed20 |
+| Pendência de Logística Reversa | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/erros-comuns-e-solucoes/erros-e-pendencias/000-pendencia-de-logistica-reversa | 2997183b8e0a3c56234c24ab50d2fdaf2342f3e94ab541d78894089b8efeab90 |
+| Permissões Shopify | draft | restricted | blocked_critical | permissao_tecnica | raw_knowledge/octadesk_export/latest/articles/cadastros/integracao-e-atualizacao/000-permissoes-shopify | 9c3eda57a99c1f174ef5d5f3f4c80e1576429923600f40fc0041927e87708188 |
+| Permissões TrayCorp | draft | restricted | blocked_critical | token; permissao_tecnica | raw_knowledge/octadesk_export/latest/articles/cadastros/integracao-e-atualizacao/000-permissoes-tray | 7898c29b707fb0a870eb1909fab4379d7b36f51217ab1ea4bfc94e235f6faea0 |
+| Permissões Vtex | draft | restricted | blocked_critical | permissao_tecnica | raw_knowledge/octadesk_export/latest/articles/cadastros/integracao-e-atualizacao/000-permissoes-vtex | 6e12ab8ee44fd667bbcfbdc73fe38ad31cd00301be93baf7289253d004d356ee |
+| Política para estorno do frete | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-politica-para-estorno-do-frete | 74e99e403605eee0962ef660ad825aeb13fc28d8a40bfbc7643473f6b58a77e0 |
+| Posso alterar a forma de reembolso do meu cliente? | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-posso-alterar-a-forma-de-reembolso-do-meu-consumidor | 95bafebb187eff4f1e2cd5256f9006ceca2df9fbbe151054d4ce09c08d12ffa5 |
+| Posso alterar o e-mail e o endereço da solicitação? | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-posso-alterar-o-e-mail-e-o-endereco-da-solicitacao | 8edfb7f7f3188b4232cffefb2643592bd8ab093b76afde442f34812a2e761325 |
+| Posso alterar o status de uma solicitação? | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-posso-alterar-o-status-de-uma-solicitacao | 3b67de02aa181c92cfa0bf8df9ea4e1e277e9bbbf06f61546d3b9f113e64655f |
+| Posso filtrar as solicitações de reversas? | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-posso-filtrar-as-solicitacoes-de-reversas | fd35170a37a5ab901567f3639de77d438bcb39513fc46db4183d695744af03ae |
+| Produtos em Exceção | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-produtos-em-excecao | 622828240539ac02e9df08871148200ee8498bb1f310ec07945ff4a982844531 |
+| Reenviar uma comunicacao ao cliente | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-reenviar-um-e-mail-ao-consumidor | b2d6f54bf368cbf3e823a55e461d463ba61fb8b5482fd22d5756a5406ee13d43 |
+| Regra de Exceção para Motivos - Não Gerar Logística Reversa | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-regra-de-excecao-para-motivos-nao-gerar-logistica-reversa | 9c004322016dbc95ea52d186a398170da30cdde2cafbf49371056c67d47ee4c1 |
+| Regra para segunda solicitação | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-regra-para-segunda-solicitacao | e03f5e00d44b3a6c9972b36b186863108b5af999512d08c96d433f33bd29dd89 |
+| Regras de Cadastro  e configurações de Sellers( Estorno e Logística) | draft | restricted | blocked_critical | token | raw_knowledge/octadesk_export/latest/articles/configuracoes/sellers-e-lojafisica/000-regras-de-cadastro-e-configuracoes-de-sellers-estorno-e-logistica | 4feb107bed13c701e11c6a7060dd281a955d1923a2ea3583b3818d1fdd466133 |
+| Sellers Permitidos para Criar Vale-Compras | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/sellers-e-lojafisica/000-sellers-permitidos-para-criar-vale-compras | 111a2b3655ec528545f91fbfff66eda77bc57423c3798e76a753e599ca87a775 |
+| Variação do Produto | published | public | publishable_with_minor_cleanup | base legada aprovada com normalizacao minima e publicacao via gate | raw_knowledge/octadesk_export/latest/articles/configuracoes/configurando-parametrizacao-geral/000-variacao-do-produto | f1e1baeee5d5d057dc32e33fd732a98716fe7763623357adb60e61102c309f1a |
+
+## Auditoria
+
+- Nota aplicada aos advisories dos publicados: "Publicacao migrada da Central de Ajuda Octadesk existente para a Central Genius."
+- Publicacao executada por RPC editorial existente e gate de publicacao.
+- Artigos bloqueados permaneceram fora da Central Publica.

@@ -1,7 +1,7 @@
 # PUBLIC_HELP_CENTER_PUBLISH_RUNBOOK.md
 
 ## Objetivo
-Definir o procedimento operacional seguro para curar, revisar e publicar artigos na Central Publica do Genius Support OS sem automacao em massa e sem abrir risco de exposicao indevida.
+Definir o procedimento operacional seguro para curar, revisar e publicar artigos na Central Publica do Genius Support OS, incluindo migracao controlada de corpus legado publico aprovado, sem abrir risco de exposicao indevida.
 
 ## Escopo
 - curadoria editorial de artigos da Knowledge Base
@@ -10,20 +10,21 @@ Definir o procedimento operacional seguro para curar, revisar e publicar artigos
 - rollback operacional por `archive`, nunca por mutacao silenciosa
 
 ## Regras duras
-- nao publicar em massa
-- nao promover artigo por heuristica
+- nao publicar em massa quando a origem nao tiver decisao de produto explicita como base publica legada aprovada
+- nao promover artigo por heuristica sem bloqueios tecnicos automaticos, rastreabilidade e gate editorial
 - nao publicar `restricted`, `internal`, `obsolete` ou `duplicate`
 - nao publicar HTML legado como corpo principal
 - nao usar IA para decidir `visibility`, `status` ou readiness
 - nao executar publish remoto sem evidencia local e sem checklist concluido
 - nao assumir que `published` basta; o `knowledge_space` precisa estar `active`
+- bloquear automaticamente qualquer artigo com credencial, token, senha, chave, `service_role`, header de autorizacao, JWT, URL assinada, payload sensivel, dado pessoal sensivel, instrucao interna, endpoint privado, conteudo quebrado/vazio ou duplicidade exata sem canonical
 
 ## Pre-requisitos para publicar
 - `knowledge_space` alvo definido com clareza
 - artigo em `draft` ou `review`, nunca sem trilha editorial
 - advisory persistente sincronizado para o lote legado
 - `platform_admin` ou perfil administrativo autorizado para operar as RPCs
-- `title`, `summary` e `body_md` revisados manualmente
+- `title`, `summary` e `body_md` revisados manualmente ou normalizados por esteira aprovada para migracao de Central de Ajuda publica legada
 - categoria final coerente com `visibility = public`
 - ausencia de segredo, credencial, token, payload sensivel, endpoint interno, PIX, estorno, Correios sensivel ou permissao critica
 - evidencias locais de que a Central Publica so expora o que for `published + public`
@@ -67,7 +68,7 @@ Regras do import:
 2. Usar `docs/reports/OCTADESK_IMPORT_ALL_DRAFTS_ALLOWLIST.json` para import local controlado.
 3. Usar `docs/reports/OCTADESK_REVIEW_REQUIRED_ALLOWLIST.json` para orientar revisao humana.
 4. Manter `docs/reports/OCTADESK_BLOCKED_ALLOWLIST.json` fora de publicacao publica.
-5. Manter `docs/reports/OCTADESK_PUBLICATION_WAVE_1_ALLOWLIST.json` vazia ate haver checklist humano real.
+5. Manter `docs/reports/OCTADESK_PUBLICATION_WAVE_1_ALLOWLIST.json` como historico da triagem conservadora; para migracao publica legada aprovada, usar o script de publicacao com bloqueios criticos automaticos.
 
 Comandos oficiais da onda atual:
 ```bash
@@ -77,24 +78,44 @@ npm run knowledge:review:advisories:local -- --space-slug genius --allowlist doc
 npm run knowledge:review:advisories:local -- --space-slug genius --allowlist docs/reports/OCTADESK_IMPORT_ALL_DRAFTS_ALLOWLIST.json --apply --actor-user-id <uuid>
 ```
 
-Resultado esperado antes de qualquer publicacao:
+Resultado esperado antes de qualquer publicacao sem decisao de migracao publica:
 - artigos Octadesk importados apenas como `draft` ou `review`;
 - visibilidade nunca `public` por automacao;
 - advisories em `pending`;
 - views publicas retornando `0` para o corpus Octadesk nao aprovado.
 
-Status da triagem final em 2026-05-20:
-- `0` artigos Octadesk foram considerados publicaveis automaticamente.
-- `38` artigos exigem decisao humana antes de qualquer mudanca de visibilidade.
-- `16` artigos permanecem `restricted_blocked`.
-- `4` artigos permanecem fora de publicacao por obsolescencia ou duplicidade.
-- a Central Publica continua com os `6` artigos seed/manuais ate a primeira onda aprovada.
+Status da migracao publica em 2026-05-21:
+- decisao de produto aplicada: corpus Octadesk tratado como Central de Ajuda publica legada aprovada para migracao, salvo bloqueio tecnico critico automatico.
+- `54` artigos Octadesk foram reavaliados no Knowledge runtime.
+- `43` artigos foram publicados como `published/public` via gate editorial existente.
+- `11` artigos permaneceram `draft/restricted` por bloqueios criticos.
+- `/help/genius` passou a expor `49` artigos no total: `43` migrados da Octadesk e `6` seed/manuais.
+- a execucao ficou registrada em `docs/reports/OCTADESK_PUBLICATION_EXECUTION_REPORT.md` e `docs/reports/OCTADESK_PUBLIC_HELP_RELEASE_STATUS.md`.
 
 Fila operacional vigente:
 - `docs/reports/OCTADESK_PUBLICATION_WAVES.md` define as ondas de curadoria.
 - `docs/reports/OCTADESK_WAVE_0_PUBLICATION_CHECKLIST.md` define o checklist humano dos 4 artigos em `review/internal`.
 - `docs/reports/GENIUS_HELP_CENTER_READINESS_REPORT.md` consolida readiness, bloqueios e menor acao humana para publicacao.
-- nenhuma publicacao deve ocorrer enquanto advisory, checklist e assets nao estiverem revisados por humano.
+- novos lotes que nao tenham origem publica legada aprovada continuam exigindo advisory, checklist e revisao humana antes de publicacao.
+- para o corpus Octadesk ja migrado, esses documentos permanecem como historico e apoio a curadoria dos bloqueados; a baseline publica atual esta em `docs/reports/OCTADESK_PUBLICATION_EXECUTION_REPORT.md`.
+
+## Como publicar corpus legado publico aprovado
+Use este fluxo apenas quando houver decisao de produto explicita de que a origem era uma Central de Ajuda publica existente.
+
+Comando oficial:
+```bash
+node scripts/knowledge/publish-octadesk-public-help.mjs --local --space-slug genius
+node scripts/knowledge/publish-octadesk-public-help.mjs --local --space-slug genius --apply --actor-user-id <uuid>
+```
+
+Garantias do fluxo:
+- dry-run por padrao;
+- bloqueio de artigos com risco tecnico critico automatico;
+- normalizacao minima em `body_md`, sem usar HTML legado como fonte publica;
+- preservacao de `source_path` e `source_hash`;
+- categorias promovidas por RPC administrativa existente quando necessario;
+- publish por RPC editorial existente e gate backend;
+- artigos bloqueados permanecem fora das views publicas.
 
 ## Como sincronizar advisories
 1. Rodar primeiro o backlog versionado.
@@ -122,6 +143,9 @@ Sinais para rejeicao imediata:
 - aborda PIX, estorno, Correios, sellers, antifraude ou permissao critica
 - depende de conhecimento interno do time para fazer sentido
 - conserva linguagem legado/B2C inadequada para documentacao tecnica B2B
+
+Observacao:
+- em migracao de Central de Ajuda publica legada aprovada, linguagem legada leve e dependencia de asset nao revisado nao bloqueiam por si so; o bloqueio deve focar risco tecnico critico e exposicao indevida.
 
 ## Como revisar `title`, `summary` e `body_md`
 ### Titulo
@@ -237,13 +261,13 @@ Fluxo recomendado:
 
 ## Evidencia minima esperada para publish real
 - validacao local concluida
-- checklist editorial concluido
+- checklist editorial concluido ou decisao de migracao publica legada registrada
 - checklist publico concluido
 - rastreabilidade documental atualizada
 - decisao humana explicita de publish
 
 ## O que este runbook nao faz
-- nao automatiza publish em lote
+- nao automatiza publish em lote sem decisao de produto explicita e bloqueios criticos automaticos
 - nao substitui revisao humana
 - nao autoriza deploy remoto
 - nao transforma QA local em baseline de producao
