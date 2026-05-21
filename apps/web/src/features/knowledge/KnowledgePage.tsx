@@ -31,6 +31,7 @@ import {
   discardKnowledgeArticleEditorialRevisionV2,
   createKnowledgeCategoryV2,
   getAdminKnowledgeArticleDetailV2,
+  listAdminKnowledgeArticleAssets,
   listAdminKnowledgeArticleReviewAdvisories,
   listAdminKnowledgeArticlesV2,
   listAdminKnowledgeCategoriesV2,
@@ -39,12 +40,14 @@ import {
   publishKnowledgeArticleV2,
   publishKnowledgeArticleEditorialRevisionV2,
   submitKnowledgeArticleForReviewV2,
+  updateKnowledgeArticleAssetReview,
   updateKnowledgeArticleReviewStatus,
   updateKnowledgeArticleDraftV2,
   updateKnowledgeArticleEditorialRevisionV2,
   type AdminKnowledgeArticleReviewAdvisoryRow,
   type AdminKnowledgeArticleDetailV2Row,
   type AdminKnowledgeArticleEditorialDraftRow,
+  type AdminKnowledgeArticleAssetRow,
   type AdminKnowledgeArticleListItemV2Row,
   type AdminKnowledgeCategoryV2Row,
   type AdminKnowledgeSpaceRow,
@@ -743,6 +746,8 @@ export function KnowledgePage() {
   const [detailPhase, setDetailPhase] = useState<DetailPhase>('idle');
   const [detailMessage, setDetailMessage] = useState<string | null>(null);
   const [articleDetail, setArticleDetail] = useState<AdminKnowledgeArticleDetailV2Row | null>(null);
+  const [articleAssets, setArticleAssets] = useState<AdminKnowledgeArticleAssetRow[]>([]);
+  const [assetActionSubmitting, setAssetActionSubmitting] = useState<string | null>(null);
   const [panelMode, setPanelMode] = useState<PanelMode>('detail');
   const [detailTab, setDetailTab] = useState<DetailTab>('preview');
   const [statusFilter, setStatusFilter] = useState<ArticleStatusFilter>('all');
@@ -1148,10 +1153,12 @@ export function KnowledgePage() {
 
     try {
       const detail = await getAdminKnowledgeArticleDetailV2(articleId);
+      const assets = await listAdminKnowledgeArticleAssets(articleId);
       setBackendDenied(false);
 
       if (!detail) {
         setArticleDetail(null);
+        setArticleAssets([]);
         setDetailPhase('error');
         setDetailMessage(
         'O detalhe do artigo selecionado não ficou disponível.',
@@ -1160,6 +1167,7 @@ export function KnowledgePage() {
       }
 
       setArticleDetail(detail);
+      setArticleAssets(assets);
       setDetailPhase('ready');
     } catch (error) {
       const classified = classifyAdminError(
@@ -1178,6 +1186,7 @@ export function KnowledgePage() {
       }
 
       setArticleDetail(null);
+      setArticleAssets([]);
       setDetailMessage(classified.message);
       setDetailPhase(
         classified.kind === 'contract-unavailable'
@@ -1228,6 +1237,7 @@ export function KnowledgePage() {
   useEffect(() => {
     if (!selectedArticleId) {
       setArticleDetail(null);
+      setArticleAssets([]);
       setDetailPhase('idle');
       setDetailMessage(null);
       return;
@@ -1817,6 +1827,60 @@ export function KnowledgePage() {
       });
     } finally {
       setArticleActionSubmitting(false);
+    }
+  }
+
+  async function handleUpdateAssetReview(
+    asset: AdminKnowledgeArticleAssetRow,
+    mode: 'approve' | 'block',
+  ) {
+    if (!selectedArticleId) {
+      return;
+    }
+
+    setAssetActionSubmitting(asset.id);
+    setArticleActionFeedback(null);
+
+    try {
+      await updateKnowledgeArticleAssetReview({
+        p_alt_text: asset.alt_text,
+        p_asset_id: asset.id,
+        p_caption: asset.caption,
+        p_is_blocked: mode === 'block',
+        p_review_status: mode === 'approve' ? 'approved' : 'blocked',
+        p_visibility: mode === 'approve' ? 'public' : 'restricted',
+      });
+
+      await refreshArticleDetail(selectedArticleId);
+      setArticleActionFeedback({
+        articleId: selectedArticleId,
+        message:
+          mode === 'approve'
+            ? 'Asset aprovado para uso governado.'
+            : 'Asset bloqueado para uso público.',
+      });
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao atualizar o asset do artigo.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      if (classified.kind === 'permission-denied') {
+        setBackendDenied(true);
+        return;
+      }
+
+      setArticleActionFeedback({
+        articleId: selectedArticleId,
+        message: classified.message,
+      });
+    } finally {
+      setAssetActionSubmitting(null);
     }
   }
 
@@ -3196,6 +3260,78 @@ export function KnowledgePage() {
                         </p>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+                          Assets do artigo
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-[color:var(--color-muted)]">
+                          Imagens legadas ficam pendentes até revisão; somente assets aprovados de artigo publicado podem aparecer no Help Center.
+                        </p>
+                      </div>
+                      <StatusPill tone={articleAssets.length > 0 ? 'warning' : 'default'}>
+                        {articleAssets.length > 0
+                          ? `${articleAssets.length} assets vinculados`
+                          : 'Sem asset vinculado'}
+                      </StatusPill>
+                    </div>
+
+                    {articleAssets.length > 0 ? (
+                      <div className="mt-4 grid gap-3 md:grid-cols-2">
+                        {articleAssets.map((asset) => (
+                          <div
+                            className="overflow-hidden rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)]"
+                            key={asset.id}
+                          >
+                            {asset.signed_url ? (
+                              <img
+                                alt={asset.alt_text ?? asset.source_path ?? 'Asset do artigo'}
+                                className="h-40 w-full bg-white object-contain"
+                                loading="lazy"
+                                src={asset.signed_url}
+                              />
+                            ) : (
+                              <div className="flex h-40 items-center justify-center bg-white px-4 text-center text-sm text-[color:var(--color-muted)]">
+                                Preview indisponível para este asset.
+                              </div>
+                            )}
+                            <div className="space-y-3 px-3 py-3">
+                              <div className="flex flex-wrap gap-2">
+                                <StatusPill tone={asset.review_status === 'approved' ? 'positive' : asset.review_status === 'blocked' ? 'critical' : 'warning'}>
+                                  {asset.review_status}
+                                </StatusPill>
+                                <StatusPill tone={toneForVisibility(asset.visibility)}>
+                                  {shortVisibilityLabel(asset.visibility)}
+                                </StatusPill>
+                                {asset.is_blocked ? (
+                                  <StatusPill tone="critical">Bloqueado</StatusPill>
+                                ) : null}
+                              </div>
+                              <p className="break-all text-xs leading-5 text-[color:var(--color-muted)]">
+                                {asset.source_path ?? asset.storage_object_path}
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                <GhostButton
+                                  disabled={assetActionSubmitting === asset.id}
+                                  onClick={() => void handleUpdateAssetReview(asset, 'approve')}
+                                >
+                                  Aprovar asset
+                                </GhostButton>
+                                <GhostButton
+                                  disabled={assetActionSubmitting === asset.id}
+                                  onClick={() => void handleUpdateAssetReview(asset, 'block')}
+                                >
+                                  Bloquear
+                                </GhostButton>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
 
                   {selectedAdvisory ? (

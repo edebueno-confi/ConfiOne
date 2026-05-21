@@ -12,6 +12,7 @@ import type {
   AdminCustomerPortalUserRow,
   AdminKnowledgeArticleDetailV2Row,
   AdminKnowledgeArticleEditorialDraftRow,
+  AdminKnowledgeArticleAssetRow,
   AdminKnowledgeArticleListItemV2Row,
   AdminKnowledgeArticleReviewAdvisoryRow,
   AdminKnowledgeEntitlementDetailRow,
@@ -66,6 +67,8 @@ import type {
   RpcAdminUnlinkKnowledgeArticleFromTicketResponse,
   RpcAdminUpdateKnowledgeArticleReviewStatusPayload,
   RpcAdminUpdateKnowledgeArticleReviewStatusResponse,
+  RpcAdminUpdateKnowledgeArticleAssetReviewPayload,
+  RpcAdminUpdateKnowledgeArticleAssetReviewResponse,
   RpcAdminUpdateKnowledgeArticleDraftV2Payload,
   RpcAdminUpdateKnowledgeArticleDraftV2Response,
   RpcAdminUpdateKnowledgeArticleEditorialRevisionV2Payload,
@@ -561,6 +564,54 @@ export async function updateTenantMemberStatus(
   return data as RpcAdminUpdateTenantMemberStatusResponse;
 }
 
+export async function listAdminKnowledgeArticleAssets(articleId: string) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_knowledge_article_assets')
+    .select('*')
+    .eq('article_id', articleId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    throw toAppError(
+      error,
+      'Falha ao carregar os assets administrativos do artigo.',
+    );
+  }
+
+  const rows = (data ?? []) as AdminKnowledgeArticleAssetRow[];
+  const enriched = await Promise.all(
+    rows.map(async (row) => {
+      const { data: signedData } = await client.storage
+        .from(row.storage_bucket)
+        .createSignedUrl(row.storage_object_path, 60 * 10);
+
+      return {
+        ...row,
+        signed_url: signedData?.signedUrl ?? null,
+      } satisfies AdminKnowledgeArticleAssetRow;
+    }),
+  );
+
+  return enriched;
+}
+
+export async function updateKnowledgeArticleAssetReview(
+  payload: RpcAdminUpdateKnowledgeArticleAssetReviewPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_admin_update_knowledge_article_asset_review_v1',
+    payload,
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao atualizar a revisão do asset do artigo.');
+  }
+
+  return data as RpcAdminUpdateKnowledgeArticleAssetReviewResponse;
+}
+
 export async function updateCustomerPortalUserRole(payload: {
   p_membership_id: string;
   p_role: CustomerPortalRole;
@@ -899,6 +950,7 @@ export type {
   AdminCustomerPortalUserRow,
   AdminKnowledgeArticleDetailV2Row,
   AdminKnowledgeArticleEditorialDraftRow,
+  AdminKnowledgeArticleAssetRow,
   AdminKnowledgeArticleListItemV2Row,
   AdminKnowledgeArticleReviewAdvisoryRow,
   AdminKnowledgeEntitlementDetailRow,

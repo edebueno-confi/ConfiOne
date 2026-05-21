@@ -1,19 +1,28 @@
-import { FormEvent, useEffect, useEffectEvent, useMemo, useState } from 'react';
-import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom';
-import { formatDateTime } from '../../app/format';
+import { useEffect, useEffectEvent, useMemo, useState } from 'react';
+import { Link, useOutletContext, useParams } from 'react-router-dom';
 import {
   ContractUnavailableState,
   EmptyState,
   ErrorState,
-  LoadingState,
 } from '../../components/states';
-import { AppButton, GhostButton, StatusPill, TextInput, cx } from '../../components/ui';
-import type { PublicKnowledgeArticleDetailRow } from '../../contracts/public-contracts';
+import { GhostButton } from '../../components/ui';
+import type {
+  PublicKnowledgeArticleAssetRow,
+  PublicKnowledgeArticleDetailRow,
+} from '../../contracts/public-contracts';
 import { classifyAdminError } from '../admin/admin-errors';
 import type { HelpCenterSpaceContext } from './context';
-import { sanitizePublicSupportContacts, useHelpCenterDocumentMeta } from './branding';
+import { useHelpCenterDocumentMeta } from './branding';
 import { MarkdownDocument } from './markdown';
-import { getPublicKnowledgeArticle } from './public-api';
+import {
+  getPublicKnowledgeArticle,
+  listPublicKnowledgeArticleAssets,
+} from './public-api';
+import {
+  HelpIcon,
+  PublicBreadcrumb,
+  formatRelativePublicDate,
+} from './public-ui';
 
 type DetailPhase = 'loading' | 'ready' | 'empty' | 'contract-unavailable' | 'error';
 
@@ -45,29 +54,35 @@ function estimateReadingTime(source: string) {
   return Math.max(1, Math.ceil(wordCount / 190));
 }
 
-function categoryJourneyLabel(name: string | null | undefined) {
-  const normalized = (name ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
+function stripDuplicateLeadHeading(source: string, title: string) {
+  const normalizedTitle = title.trim().toLowerCase();
+  const lines = source.replace(/\r\n/g, '\n').split('\n');
 
-  if (normalized.includes('primeiro')) {
-    return 'Entrada operacional';
+  if (lines.length === 0) {
+    return source;
   }
 
-  if (normalized.includes('integr')) {
-    return 'Integrações e validações';
+  const firstMeaningfulIndex = lines.findIndex((line) => line.trim().length > 0);
+  if (firstMeaningfulIndex === -1) {
+    return source;
   }
 
-  if (normalized.includes('suporte')) {
-    return 'Tratativa com suporte';
+  const firstLine = lines[firstMeaningfulIndex].trim();
+  const match = /^#\s+(.+)$/.exec(firstLine);
+  if (!match) {
+    return source;
   }
 
-  if (normalized.includes('reversa') || normalized.includes('operacao')) {
-    return 'Fluxo diário da operação';
+  if (match[1].trim().toLowerCase() !== normalizedTitle) {
+    return source;
   }
 
-  return 'Leitura por jornada';
+  lines.splice(firstMeaningfulIndex, 1);
+  if (lines[firstMeaningfulIndex]?.trim() === '') {
+    lines.splice(firstMeaningfulIndex, 1);
+  }
+
+  return lines.join('\n');
 }
 
 function extractArticleSections(source: string, fallbackTitle: string) {
@@ -78,6 +93,10 @@ function extractArticleSections(source: string, fallbackTitle: string) {
     const trimmed = rawLine.trim();
     const match = /^(#{1,3})\s+(.+)$/.exec(trimmed);
     if (!match) {
+      continue;
+    }
+
+    if (match[1].length === 1) {
       continue;
     }
 
@@ -98,242 +117,42 @@ function extractArticleSections(source: string, fallbackTitle: string) {
     ];
   }
 
-  return sections.slice(0, 9);
+  return sections.slice(0, 10);
 }
 
-function ArticleHeaderSearch({
-  spaceSlug,
-}: {
-  spaceSlug: string;
-}) {
-  const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
-
-  function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const nextTerm = searchTerm.trim();
-    if (!nextTerm) {
-      navigate(`/help/${spaceSlug}/articles`);
-      return;
-    }
-
-    navigate(`/help/${spaceSlug}?q=${encodeURIComponent(nextTerm)}`);
-  }
-
+function ArticlePageSkeleton() {
   return (
-    <form
-      className="flex w-full max-w-[360px] items-center gap-3 rounded-[18px] border border-[var(--help-border)] bg-white px-4 py-3 shadow-[0_10px_26px_rgba(20,31,71,0.05)]"
-      onSubmit={handleSearchSubmit}
-    >
-      <svg
-        aria-hidden="true"
-        className="h-5 w-5 text-[var(--help-muted)]"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        viewBox="0 0 24 24"
-      >
-        <path d="m21 21-4.35-4.35" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="11" cy="11" r="6" />
-      </svg>
-      <TextInput
-        aria-label="Buscar artigos"
-        className="h-auto flex-1 border-0 bg-transparent px-0 py-0 shadow-none focus:border-0 focus:ring-0"
-        onChange={(event) => setSearchTerm(event.target.value)}
-        placeholder="Buscar artigos..."
-        type="search"
-        value={searchTerm}
-      />
-      <span className="rounded-xl border border-[var(--help-border)] bg-[var(--help-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--help-muted)]">
-        Ctrl + K
-      </span>
-    </form>
-  );
-}
-
-function PublicArticleChrome({
-  spaceSlug,
-  brandName,
-  topCategories,
-  breadcrumbCategory,
-  articleTitle,
-  children,
-}: {
-  spaceSlug: string;
-  brandName: string;
-  topCategories: Array<{ category_id: string; category_name: string; subtree_article_count: number }>;
-  breadcrumbCategory: string;
-  articleTitle: string;
-  children: React.ReactNode;
-}) {
-  const brandMonogram = (brandName || 'GS').slice(0, 2).toUpperCase();
-
-  return (
-    <div className="min-h-screen">
-      <header className="border-b border-[var(--help-border)] bg-white/92 shadow-[0_14px_30px_rgba(20,31,71,0.04)] backdrop-blur">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-6 px-5 py-4 sm:px-6 lg:px-8">
-          <Link
-            className="flex items-center gap-3 no-underline"
-            to={`/help/${spaceSlug}`}
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,var(--color-brand-navy),var(--color-brand-blue)_66%,var(--color-brand-magenta))] text-base font-semibold text-white shadow-[0_12px_26px_rgba(20,31,71,0.22)]">
-              {brandMonogram}
-            </div>
-            <div className="leading-tight">
-              <p className="text-[1.15rem] font-semibold tracking-[-0.03em] text-[var(--help-ink-strong)]">
-                {brandName}
-              </p>
-              <p className="text-[0.95rem] text-[var(--help-muted)]">Central de ajuda</p>
-            </div>
-          </Link>
-
-          <nav className="hidden items-center gap-8 lg:flex">
-            <Link
-              className="text-base font-medium text-[var(--help-ink)] no-underline transition hover:text-[var(--help-link)]"
-              to={`/help/${spaceSlug}`}
-            >
-              Início
-            </Link>
-            <Link
-              className="text-base font-medium text-[var(--help-ink)] no-underline transition hover:text-[var(--help-link)]"
-              to={`/help/${spaceSlug}/articles`}
-            >
-              Todos os artigos
-            </Link>
-            <details className="group relative">
-              <summary className="flex cursor-pointer list-none items-center gap-2 text-base font-medium text-[var(--help-ink)] transition hover:text-[var(--help-link)]">
-                Categorias
-                <svg
-                  aria-hidden="true"
-                  className="h-4 w-4 transition group-open:rotate-180"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </summary>
-              <div className="absolute left-1/2 top-[calc(100%+12px)] z-20 w-[280px] -translate-x-1/2 rounded-[22px] border border-[var(--help-border)] bg-white p-3 shadow-[0_18px_44px_rgba(20,31,71,0.12)]">
-                <div className="grid gap-2">
-                  {topCategories.length > 0 ? (
-                    topCategories.slice(0, 6).map((category) => (
-                      <Link
-                        key={category.category_id}
-                        className="rounded-[16px] px-3 py-2 no-underline transition hover:bg-[var(--help-surface)]"
-                        to={`/help/${spaceSlug}/articles?category=${category.category_id}`}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-sm font-medium text-[var(--help-ink)]">
-                            {category.category_name}
-                          </span>
-                          <span className="text-xs text-[var(--help-muted)]">
-                            {category.subtree_article_count}
-                          </span>
-                        </div>
-                      </Link>
-                    ))
-                  ) : (
-                    <p className="px-3 py-2 text-sm text-[var(--help-muted)]">
-                      Indisponível
-                    </p>
-                  )}
-                </div>
-              </div>
-            </details>
-          </nav>
-
-          <ArticleHeaderSearch spaceSlug={spaceSlug} />
+    <div className="grid gap-5 lg:grid-cols-[196px_minmax(0,1fr)_220px] xl:grid-cols-[210px_minmax(0,1fr)_232px]">
+      <div className="hidden rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-white p-4 lg:block">
+        <div className="h-5 w-28 rounded-full bg-[var(--help-surface)]" />
+        <div className="mt-4 grid gap-2">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div key={`left-${index}`} className="h-10 rounded-[14px] bg-[var(--help-surface)]" />
+          ))}
         </div>
-      </header>
-
-      <div className="mx-auto max-w-[1600px] px-5 py-5 sm:px-6 lg:px-8">
-        <nav
-          aria-label="Breadcrumb"
-          className="mb-6 flex flex-wrap items-center gap-3 border-b border-[var(--help-border)] pb-4 text-sm text-[var(--help-muted)]"
-        >
-          <Link
-            className="font-medium text-[var(--help-ink)] no-underline transition hover:text-[var(--help-link)]"
-            to={`/help/${spaceSlug}`}
-          >
-            Central de ajuda
-          </Link>
-          <span aria-hidden="true">›</span>
-          <span>{breadcrumbCategory}</span>
-          <span aria-hidden="true">›</span>
-          <span className="font-medium text-[var(--help-ink)]">{articleTitle}</span>
-        </nav>
-
-        {children}
       </div>
-    </div>
-  );
-}
-
-function ArticlePageSkeleton({
-  sectionCount,
-}: {
-  sectionCount: number;
-}) {
-  return (
-    <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)_320px]">
-      <aside className="grid content-start gap-5 xl:sticky xl:top-6">
-        <div className="rounded-[28px] border border-[var(--help-border)] bg-white p-6 shadow-[0_18px_42px_rgba(20,31,71,0.06)]">
-          <div className="h-4 w-32 rounded-full bg-[var(--help-surface)]" />
-          <div className="mt-5 grid gap-3">
-            {Array.from({ length: sectionCount }).map((_, index) => (
-              <div
-                key={`toc-${index}`}
-                className="h-11 rounded-[18px] bg-[var(--help-surface)]"
-              />
-            ))}
-          </div>
-        </div>
-        <div className="rounded-[28px] border border-[var(--help-border)] bg-white p-6 shadow-[0_18px_42px_rgba(20,31,71,0.06)]">
-          <div className="h-6 w-40 rounded-full bg-[var(--help-surface)]" />
-          <div className="mt-4 h-16 rounded-[18px] bg-[var(--help-surface)]" />
-          <div className="mt-4 h-12 w-36 rounded-[16px] bg-[var(--help-surface)]" />
-        </div>
-      </aside>
-
-      <section className="rounded-[30px] border border-[var(--help-border)] bg-white px-8 py-8 shadow-[0_22px_48px_rgba(20,31,71,0.06)]">
-        <div className="h-8 w-28 rounded-full bg-[var(--help-surface)]" />
-        <div className="mt-5 h-14 w-3/4 rounded-[18px] bg-[var(--help-surface)]" />
-        <div className="mt-4 h-5 w-1/2 rounded-full bg-[var(--help-surface)]" />
-        <div className="mt-6 h-24 rounded-[24px] bg-[var(--help-accent-soft)]/70" />
-        <div className="mt-8 grid gap-4">
+      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-white px-6 py-6 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
+        <div className="h-5 w-48 rounded-full bg-[var(--help-surface)]" />
+        <div className="mt-5 h-12 w-3/4 rounded-[16px] bg-[var(--help-surface)]" />
+        <div className="mt-4 h-6 w-56 rounded-full bg-[var(--help-surface)]" />
+        <div className="mt-6 h-24 rounded-[20px] bg-[var(--help-surface)]" />
+        <div className="mt-6 grid gap-3">
           {Array.from({ length: 8 }).map((_, index) => (
             <div
               key={`line-${index}`}
-              className={cx(
-                'h-5 rounded-full bg-[var(--help-surface)]',
-                index % 3 === 0 ? 'w-full' : index % 3 === 1 ? 'w-[92%]' : 'w-[84%]',
-              )}
+              className={index % 2 === 0 ? 'h-4 w-full rounded-full bg-[var(--help-surface)]' : 'h-4 w-[86%] rounded-full bg-[var(--help-surface)]'}
             />
           ))}
         </div>
-      </section>
-
-      <aside className="grid content-start gap-5 xl:sticky xl:top-6">
-        <div className="rounded-[28px] border border-[var(--help-border)] bg-white p-6 shadow-[0_18px_42px_rgba(20,31,71,0.06)]">
-          <div className="h-5 w-40 rounded-full bg-[var(--help-surface)]" />
-          <div className="mt-5 grid gap-3">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div
-                key={`related-${index}`}
-                className="h-16 rounded-[18px] bg-[var(--help-surface)]"
-              />
-            ))}
-          </div>
+      </div>
+      <div className="hidden rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-white p-4 lg:block">
+        <div className="h-5 w-24 rounded-full bg-[var(--help-surface)]" />
+        <div className="mt-4 grid gap-2">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={`right-${index}`} className="h-9 rounded-[14px] bg-[var(--help-surface)]" />
+          ))}
         </div>
-        <div className="rounded-[28px] border border-[var(--help-border)] bg-white p-6 shadow-[0_18px_42px_rgba(20,31,71,0.06)]">
-          <div className="h-5 w-36 rounded-full bg-[var(--help-surface)]" />
-          <div className="mt-5 flex gap-3">
-            <div className="h-12 w-12 rounded-2xl bg-[var(--help-surface)]" />
-            <div className="h-12 w-12 rounded-2xl bg-[var(--help-surface)]" />
-          </div>
-        </div>
-      </aside>
+      </div>
     </div>
   );
 }
@@ -347,18 +166,7 @@ export function HelpCenterArticlePage() {
   const [phase, setPhase] = useState<DetailPhase>('loading');
   const [message, setMessage] = useState<string | null>(null);
   const [article, setArticle] = useState<PublicKnowledgeArticleDetailRow | null>(null);
-  const topCategories = context.navigation.filter(
-    (entry) => entry.parent_category_id === null,
-  );
-  const articleMetaTitle = article
-    ? `${article.title} | ${context.primaryRoute.brand_name}`
-    : `${context.primaryRoute.brand_name} | Artigo`;
-  const articleMetaDescription = article?.summary ??
-    `${context.primaryRoute.brand_name} reúne guias aprovados para consulta B2B.`;
-  const supportContacts = useMemo(
-    () => sanitizePublicSupportContacts(context.primaryRoute.support_contacts),
-    [context.primaryRoute.support_contacts],
-  );
+  const [articleAssets, setArticleAssets] = useState<PublicKnowledgeArticleAssetRow[]>([]);
 
   const loadArticle = useEffectEvent(
     async (targetSpaceSlug: string, targetArticleSlug: string) => {
@@ -370,12 +178,15 @@ export function HelpCenterArticlePage() {
 
         if (!data) {
           setArticle(null);
+          setArticleAssets([]);
           setMessage(null);
           setPhase('empty');
           return;
         }
 
+        const assets = await listPublicKnowledgeArticleAssets(data.id);
         setArticle(data);
+        setArticleAssets(assets);
         setMessage(null);
         setPhase('ready');
       } catch (error) {
@@ -384,6 +195,7 @@ export function HelpCenterArticlePage() {
           'Não foi possível carregar o artigo público solicitado.',
         );
         setArticle(null);
+        setArticleAssets([]);
         setMessage(classified.message);
         setPhase(
           classified.kind === 'contract-unavailable'
@@ -403,70 +215,92 @@ export function HelpCenterArticlePage() {
     void loadArticle(spaceSlug, articleSlug);
   }, [articleSlug, spaceSlug]);
 
+  const articleMetaTitle = article
+    ? `${article.title} | ${context.primaryRoute.brand_name}`
+    : `${context.primaryRoute.brand_name} | Artigo`;
+  const articleMetaDescription =
+    article?.summary ??
+    `${context.primaryRoute.brand_name} reúne guias aprovados para consulta B2B.`;
+
   useHelpCenterDocumentMeta({
     title: articleMetaTitle,
     description: articleMetaDescription,
+    type: 'article',
   });
 
+  const sameCategoryArticles = useMemo(
+    () =>
+      context.articles.filter((entry) =>
+        article?.category_id ? entry.category_id === article.category_id : false,
+      ),
+    [article?.category_id, context.articles],
+  );
   const relatedArticles = useMemo(
     () =>
-      context.articles
+      sameCategoryArticles
         .filter((entry) => entry.id !== article?.id)
-        .filter((entry) =>
-          article?.category_id ? entry.category_id === article.category_id : true,
-        )
-        .slice(0, 4),
-    [article?.category_id, article?.id, context.articles],
+        .slice(0, 3),
+    [article?.id, sameCategoryArticles],
   );
   const articleSections = useMemo(
-    () => extractArticleSections(article?.body_md ?? '', article?.title ?? 'Visão geral'),
+    () =>
+      extractArticleSections(
+        stripDuplicateLeadHeading(article?.body_md ?? '', article?.title ?? ''),
+        article?.title ?? 'Visão geral',
+      ),
     [article?.body_md, article?.title],
   );
   const readingTime = useMemo(
-    () => estimateReadingTime(article?.body_md ?? ''),
-    [article?.body_md],
+    () => estimateReadingTime(stripDuplicateLeadHeading(article?.body_md ?? '', article?.title ?? '')),
+    [article?.body_md, article?.title],
+  );
+  const articleBody = useMemo(
+    () => stripDuplicateLeadHeading(article?.body_md ?? '', article?.title ?? ''),
+    [article?.body_md, article?.title],
+  );
+  const assetMap = useMemo(
+    () =>
+      Object.fromEntries(
+        articleAssets.map((asset) => [
+          asset.id,
+          {
+            alt_text: asset.alt_text,
+            caption: asset.caption,
+            height: asset.height,
+            signed_url: asset.signed_url,
+            width: asset.width,
+          },
+        ]),
+      ),
+    [articleAssets],
   );
 
-  function renderShell(content: React.ReactNode) {
-    return (
-      <PublicArticleChrome
-        articleTitle={article?.title ?? 'Artigo'}
-        brandName={context.primaryRoute.brand_name || 'Genius Central de ajuda'}
-        breadcrumbCategory={article?.category_name ?? 'Indisponível'}
-        spaceSlug={spaceSlug ?? context.primaryRoute.knowledge_space_slug}
-        topCategories={topCategories}
-      >
-        {content}
-      </PublicArticleChrome>
-    );
-  }
-
   if (!spaceSlug || !articleSlug) {
-    return renderShell(
-      <div className="rounded-[30px] border border-[var(--help-border)] bg-white p-8 shadow-[0_20px_44px_rgba(20,31,71,0.08)]">
+    return (
+      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-white px-6 py-8 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
         <EmptyState
           title="Artigo não encontrado"
           description="A rota informada não tem os dados necessários para abrir este artigo."
         />
-      </div>,
+      </div>
     );
   }
 
   if (phase === 'loading') {
-    return renderShell(<ArticlePageSkeleton sectionCount={Math.max(articleSections.length, 4)} />);
+    return <ArticlePageSkeleton />;
   }
 
   if (phase === 'contract-unavailable') {
-    return renderShell(
-      <div className="rounded-[30px] border border-[var(--help-border)] bg-white p-8 shadow-[0_20px_44px_rgba(20,31,71,0.08)]">
-        <ContractUnavailableState contractName="leitura publica do artigo" />
-      </div>,
+    return (
+      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-white px-6 py-8 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
+        <ContractUnavailableState contractName="leitura pública do artigo" />
+      </div>
     );
   }
 
   if (phase === 'error') {
-    return renderShell(
-      <div className="rounded-[30px] border border-[var(--help-border)] bg-white p-8 shadow-[0_20px_44px_rgba(20,31,71,0.08)]">
+    return (
+      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-white px-6 py-8 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
         <ErrorState
           title="Falha ao carregar o artigo"
           description={
@@ -479,13 +313,13 @@ export function HelpCenterArticlePage() {
             </GhostButton>
           }
         />
-      </div>,
+      </div>
     );
   }
 
   if (phase === 'empty' || !article) {
-    return renderShell(
-      <div className="rounded-[30px] border border-[var(--help-border)] bg-white p-8 shadow-[0_20px_44px_rgba(20,31,71,0.08)]">
+    return (
+      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-white px-6 py-8 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
         <EmptyState
           title="Artigo não encontrado"
           description="O artigo solicitado não está disponível nesta central pública. Volte para a lista de artigos ou siga pela navegação principal."
@@ -495,235 +329,143 @@ export function HelpCenterArticlePage() {
             </Link>
           }
         />
-      </div>,
+      </div>
     );
   }
 
-  return renderShell(
-    <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)_320px]">
-      <aside className="grid content-start gap-5 xl:sticky xl:top-6">
-        <section className="rounded-[28px] border border-[var(--help-border)] bg-white p-6 shadow-[0_18px_42px_rgba(20,31,71,0.06)]">
-          <div className="space-y-5">
-            <div>
-              <p className="text-[0.78rem] font-semibold uppercase tracking-[0.24em] text-[var(--help-muted)]">
-                Neste artigo
+  return (
+    <div className="grid gap-5 lg:grid-cols-[196px_minmax(0,1fr)_220px] xl:grid-cols-[210px_minmax(0,1fr)_232px]">
+      <aside className="order-2 rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-white px-4 py-4 lg:order-1 lg:sticky lg:top-24 lg:h-fit">
+        <div className="space-y-4">
+          <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Nesta categoria</p>
+          <div className="grid gap-1.5">
+            {sameCategoryArticles.length > 0 ? (
+              sameCategoryArticles.map((entry) => (
+                <Link
+                  key={entry.id}
+                  className={`rounded-[14px] px-3 py-2 text-sm no-underline transition ${
+                    entry.id === article.id
+                      ? 'bg-[var(--help-accent-soft)] font-semibold text-[var(--help-link)]'
+                      : 'text-[var(--help-ink)] hover:bg-[#fbfcff]'
+                  }`}
+                  to={`/help/${spaceSlug}/articles/${entry.slug}`}
+                >
+                  {entry.title}
+                </Link>
+              ))
+            ) : (
+              <p className="text-sm leading-6 text-[var(--help-muted)]">
+                Esta categoria ainda não tem outros artigos publicados.
               </p>
+            )}
+          </div>
+          <Link className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--help-link)] no-underline" to={`/help/${spaceSlug}/articles`}>
+            Ver todos os artigos
+            <HelpIcon kind="chevron-right" />
+          </Link>
+        </div>
+      </aside>
+
+      <article className="order-1 rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-white px-5 py-5 shadow-[0_18px_40px_rgba(20,31,71,0.05)] sm:px-8 sm:py-6 lg:order-2 lg:px-11 xl:px-12">
+        <div className="space-y-5">
+          <PublicBreadcrumb
+            items={[
+              { label: 'Central de Ajuda', to: `/help/${spaceSlug}` },
+              ...(article.category_name
+                ? [{ label: article.category_name, to: `/help/${spaceSlug}/articles?category=${article.category_id}` }]
+                : []),
+              { label: article.title },
+            ]}
+          />
+
+          <div className="space-y-3">
+            {article.category_name ? (
+              <span className="inline-flex rounded-full bg-[var(--help-accent-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--help-link)]">
+                {article.category_name}
+              </span>
+            ) : null}
+
+            <h1 className="max-w-4xl text-[clamp(2rem,4vw,3.05rem)] font-semibold tracking-[-0.06em] text-[var(--help-ink-strong)]">
+              {article.title}
+            </h1>
+
+            <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--help-muted)] sm:text-sm">
+              <span className="inline-flex items-center gap-1.5">
+                <HelpIcon kind="calendar" />
+                {formatRelativePublicDate(article.updated_at)}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <HelpIcon kind="clock" />
+                {readingTime} min de leitura
+              </span>
             </div>
-            <div className="grid gap-1.5">
-              {articleSections.map((section, index) => (
+
+            <p className="max-w-3xl text-sm leading-7 text-[var(--help-muted)] sm:text-base">
+              {article.summary ??
+                'Aprenda como executar esta configuração pública com mais clareza e segurança.'}
+            </p>
+          </div>
+
+          <details className="rounded-[18px] border border-[rgba(20,31,71,0.08)] bg-[#fbfcff] px-4 py-3 lg:hidden">
+            <summary className="cursor-pointer list-none text-sm font-semibold text-[var(--help-ink-strong)]">
+              Neste artigo
+            </summary>
+            <div className="mt-3 grid gap-2">
+              {articleSections.map((section) => (
                 <a
                   key={section.id}
-                  className={cx(
-                    'flex items-center gap-3 rounded-[18px] px-4 py-3 text-sm no-underline transition',
-                    index === 0
-                      ? 'border border-[rgba(48,127,226,0.12)] bg-[var(--help-accent-soft)] text-[var(--help-link)] shadow-[inset_3px_0_0_var(--help-accent)]'
-                      : 'text-[var(--help-ink)] hover:bg-[var(--help-surface)]',
-                  )}
+                  className="text-sm text-[var(--help-link)] no-underline"
                   href={`#${section.id}`}
                 >
-                  <span className={cx('font-semibold', index === 0 ? 'text-[var(--help-link)]' : 'text-[var(--help-muted)]')}>
-                    {index + 1}.
-                  </span>
-                  <span className="font-medium">{section.label}</span>
+                  {section.label}
+                </a>
+              ))}
+            </div>
+          </details>
+
+          <div className="min-w-0">
+            <MarkdownDocument assets={assetMap} source={articleBody} />
+          </div>
+        </div>
+      </article>
+
+      <aside className="order-3 grid gap-4 lg:sticky lg:top-24 lg:h-fit">
+        <section className="hidden rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-white px-4 py-4 lg:block">
+          <div className="space-y-4">
+            <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Neste artigo</p>
+            <div className="grid gap-2">
+              {articleSections.map((section) => (
+                <a
+                  key={section.id}
+                  className="text-sm leading-6 text-[var(--help-muted)] no-underline hover:text-[var(--help-link)]"
+                  href={`#${section.id}`}
+                >
+                  {section.label}
                 </a>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="rounded-[28px] border border-[var(--help-border)] bg-white p-6 shadow-[0_18px_42px_rgba(20,31,71,0.06)]">
-          <div className="space-y-4">
-            <h3 className="text-[1.85rem] font-semibold tracking-[-0.05em] text-[var(--help-ink-strong)]">
-              Precisa de mais ajuda?
-            </h3>
-            <p className="text-sm leading-7 text-[var(--help-muted)]">
-              Esta central não abre atendimento público. Quando precisar de ajuda além do artigo, use o canal operacional já combinado com a sua conta.
-            </p>
-            <div className="grid gap-2">
-              {supportContacts.email ? (
-                <a
-                  className="inline-flex min-h-11 items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,var(--color-brand-navy),var(--color-brand-blue)_78%)] px-4 text-base font-semibold text-white no-underline shadow-[0_16px_34px_rgba(20,31,71,0.16)] transition hover:opacity-95"
-                  href={`mailto:${supportContacts.email}`}
-                >
-                  Falar com o canal da conta
-                </a>
-              ) : null}
-              <Link to={`/help/${spaceSlug}/articles`}>
-                <GhostButton className="w-full justify-center rounded-[16px] py-3 text-base">
-                  Ver outros artigos
-                </GhostButton>
-              </Link>
-            </div>
-            <p className="text-xs leading-5 text-[var(--help-muted)]">
-              Se a sua operação já tiver um canal técnico acordado com o time Genius, use esse fluxo para continuar o atendimento.
-            </p>
-          </div>
-        </section>
-      </aside>
-
-      <section className="rounded-[30px] border border-[var(--help-border)] bg-white px-8 py-8 shadow-[0_22px_48px_rgba(20,31,71,0.06)] sm:px-10 sm:py-9">
-          <div className="space-y-6">
+        {relatedArticles.length > 0 ? (
+          <section className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-white px-4 py-4">
             <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                <StatusPill tone="accent">
-                  {article.category_name ?? 'Indisponível'}
-                </StatusPill>
-                <StatusPill>{categoryJourneyLabel(article.category_name)}</StatusPill>
-                <StatusPill tone="positive">Conteúdo aprovado</StatusPill>
-              </div>
-              <div className="space-y-3">
-                <h1 className="text-[clamp(2.8rem,4vw,4rem)] font-semibold tracking-[-0.07em] text-[var(--help-ink-strong)]">
-                  {article.title}
-              </h1>
-              <div className="flex flex-wrap items-center gap-3 text-base text-[var(--help-muted)]">
-                <span>
-                  Atualizado em{' '}
-                  {article.updated_at ? formatDateTime(article.updated_at) : 'Indisponível'}
-                </span>
-                <span aria-hidden="true">•</span>
-                <span>{readingTime} min de leitura</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[22px] border border-[rgba(48,127,226,0.18)] bg-[linear-gradient(180deg,rgba(48,127,226,0.09),rgba(48,127,226,0.04))] px-5 py-5">
-            <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--help-accent)] text-white shadow-[0_10px_24px_rgba(48,127,226,0.22)]">
-                i
-              </div>
-              <p className="max-w-4xl text-[1.02rem] font-medium leading-8 text-[var(--help-link)]">
-                {article.summary ??
-                  'Este artigo ajuda a orientar os pontos principais desta operação pública.'}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-4">
-              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--help-muted)]">
-                Categoria
-              </p>
-              <p className="mt-2 text-sm font-semibold text-[var(--help-ink-strong)]">
-                {article.category_name ?? 'Indisponível'}
-              </p>
-            </div>
-            <div className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-4">
-              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--help-muted)]">
-                Jornada
-              </p>
-              <p className="mt-2 text-sm font-semibold text-[var(--help-ink-strong)]">
-                {categoryJourneyLabel(article.category_name)}
-              </p>
-            </div>
-            <div className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-4">
-              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--help-muted)]">
-                Publicação
-              </p>
-              <p className="mt-2 text-sm font-semibold text-[var(--help-ink-strong)]">
-                Conteúdo aprovado para leitura pública
-              </p>
-            </div>
-          </div>
-
-          <div className="min-w-0">
-            <MarkdownDocument source={article.body_md} />
-          </div>
-        </div>
-
-        <footer className="mt-10 border-t border-[var(--help-border)] pt-5 text-center text-sm text-[var(--help-muted)]">
-          © 2026 Genius Central de ajuda. Todos os direitos reservados.
-        </footer>
-      </section>
-
-      <aside className="grid content-start gap-5 xl:sticky xl:top-6">
-        <section className="rounded-[28px] border border-[var(--help-border)] bg-white p-6 shadow-[0_18px_42px_rgba(20,31,71,0.06)]">
-          <div className="space-y-5">
-            <p className="text-[0.78rem] font-semibold uppercase tracking-[0.24em] text-[var(--help-muted)]">
-              Artigos relacionados
-            </p>
-            {relatedArticles.length > 0 ? (
-              <div className="grid gap-1">
-                {relatedArticles.map((entry, index) => (
+              <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Artigos relacionados</p>
+              <div className="grid gap-3">
+                {relatedArticles.map((entry) => (
                   <Link
                     key={entry.id}
-                    className="rounded-[18px] px-2 py-3 no-underline transition hover:bg-[var(--help-surface)]"
+                    className="text-sm font-medium leading-6 text-[var(--help-link)] no-underline"
                     to={`/help/${spaceSlug}/articles/${entry.slug}`}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[var(--help-border)] bg-[var(--help-surface)] text-[var(--help-link)]">
-                        <svg
-                          aria-hidden="true"
-                          className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" strokeLinecap="round" strokeLinejoin="round" />
-                          <path d="M14 3v5h5" strokeLinecap="round" strokeLinejoin="round" />
-                          <path d="M9 13h6M9 17h4" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-base font-medium leading-7 text-[var(--help-ink-strong)]">
-                          {entry.title}
-                        </p>
-                        <p className="text-sm leading-6 text-[var(--help-muted)]">
-                          {entry.summary ?? 'Indisponível'}
-                        </p>
-                        <p className="text-xs leading-5 text-[var(--help-muted)]">
-                          {entry.category_name ?? 'Categoria pública'} ·{' '}
-                          {entry.published_at
-                            ? `Atualizado em ${formatDateTime(entry.published_at)}`
-                            : `Atualizado em ${formatDateTime(entry.updated_at)}`}
-                        </p>
-                      </div>
-                    </div>
-                    {index < relatedArticles.length - 1 ? (
-                      <div className="mt-4 border-t border-[var(--help-border)]" />
-                    ) : null}
+                    {entry.title}
                   </Link>
                 ))}
               </div>
-            ) : (
-              <p className="text-sm leading-7 text-[var(--help-muted)]">
-                Nenhum artigo relacionado disponível.
-              </p>
-            )}
-          </div>
-        </section>
-
-        <section className="rounded-[28px] border border-[var(--help-border)] bg-white p-6 shadow-[0_18px_42px_rgba(20,31,71,0.06)]">
-          <div className="space-y-5">
-            <h3 className="text-[1.7rem] font-semibold tracking-[-0.05em] text-[var(--help-ink-strong)]">
-              Próximo passo
-            </h3>
-            <div className="rounded-[20px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-4">
-              <p className="text-sm leading-7 text-[var(--help-ink)]">
-                Se este conteúdo não resolver o caso, reúna o contexto da operação e continue pelo canal técnico já acordado com o time Genius.
-              </p>
             </div>
-            {supportContacts.docsUrl ? (
-              <a
-                className="inline-flex min-h-11 items-center justify-center rounded-[16px] border border-[var(--help-border)] bg-white px-4 text-sm font-semibold text-[var(--help-link)] no-underline transition hover:border-[var(--help-accent)]/40 hover:bg-[var(--help-surface)]"
-                href={supportContacts.docsUrl}
-                rel="noreferrer"
-                target="_blank"
-              >
-                Abrir documentação oficial
-              </a>
-            ) : null}
-            <div className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-4">
-              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--help-muted)]">
-                Curadoria
-              </p>
-              <p className="mt-2 text-sm leading-7 text-[var(--help-muted)]">
-                Este artigo faz parte da camada pública aprovada no cockpit editorial de Knowledge e permanece separado de materiais internos ou restritos.
-              </p>
-            </div>
-          </div>
-        </section>
+          </section>
+        ) : null}
       </aside>
-    </div>,
+    </div>
   );
 }

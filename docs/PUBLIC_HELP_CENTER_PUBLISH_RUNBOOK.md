@@ -18,6 +18,7 @@ Definir o procedimento operacional seguro para curar, revisar e publicar artigos
 - nao executar publish remoto sem evidencia local e sem checklist concluido
 - nao assumir que `published` basta; o `knowledge_space` precisa estar `active`
 - bloquear automaticamente qualquer artigo com credencial, token, senha, chave, `service_role`, header de autorizacao, JWT, URL assinada, payload sensivel, dado pessoal sensivel, instrucao interna, endpoint privado, conteudo quebrado/vazio ou duplicidade exata sem canonical
+- nao republicar artigo Octadesk reprocessado enquanto os assets referenciados por `knowledge-asset:<id>` estiverem `pending` ou `blocked`
 
 ## Pre-requisitos para publicar
 - `knowledge_space` alvo definido com clareza
@@ -27,6 +28,7 @@ Definir o procedimento operacional seguro para curar, revisar e publicar artigos
 - `title`, `summary` e `body_md` revisados manualmente ou normalizados por esteira aprovada para migracao de Central de Ajuda publica legada
 - categoria final coerente com `visibility = public`
 - ausencia de segredo, credencial, token, payload sensivel, endpoint interno, PIX, estorno, Correios sensivel ou permissao critica
+- se o artigo tiver imagens, todos os assets usados no markdown devem estar `approved`, `public`, nao bloqueados e com alt/caption revisados quando aplicavel
 - evidencias locais de que a Central Publica so expora o que for `published + public`
 
 ## Preparacao do ambiente local
@@ -62,6 +64,25 @@ Regras do import:
 - `visibility` inicial sempre conservadora
 - preservar `source_path` e `source_hash`
 - nunca publicar durante o import
+
+## Como reprocessar artigos Octadesk com imagens
+1. Executar dry-run usando o HTML local preservado.
+2. Conferir markdown estruturado, imagens detectadas e warnings.
+3. Aplicar somente no artigo alvo ou allowlist aprovada.
+4. Manter o artigo como `review/internal` enquanto os assets ficam `pending`.
+5. Revisar assets no Admin Knowledge antes de republicar.
+
+Comandos:
+```bash
+node scripts/knowledge/reprocess-octadesk-article-assets.mjs --local --space-slug genius --title "Configuração de Sellers Permitidos"
+node scripts/knowledge/reprocess-octadesk-article-assets.mjs --local --space-slug genius --title "Configuração de Sellers Permitidos" --apply
+```
+
+Regras dos assets:
+- usar `content.local.html` como fonte estrutural e `content.txt` apenas como fallback
+- copiar imagens para `knowledge-assets`; nunca depender da Octadesk em runtime
+- renderizar no público apenas placeholders `knowledge-asset:<id>`
+- manter assets como `pending` ate revisao administrativa
 
 ## Como operar por ondas com allowlist
 1. Gerar o plano completo do corpus em `docs/reports/OCTADESK_FULL_PUBLIC_HELP_EXECUTION_PLAN.md`.

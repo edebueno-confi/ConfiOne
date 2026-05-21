@@ -17,6 +17,7 @@ Criar a base editorial do Genius Support OS com versionamento, trilha de origem 
   - `knowledge_articles`
   - `knowledge_article_revisions`
   - `knowledge_article_sources`
+  - `knowledge_article_assets`
 - Read models administrativos internos:
   - `vw_admin_knowledge_spaces`
   - `vw_admin_knowledge_categories`
@@ -30,6 +31,7 @@ Criar a base editorial do Genius Support OS com versionamento, trilha de origem 
   - `vw_public_knowledge_navigation`
   - `vw_public_knowledge_articles_list`
   - `vw_public_knowledge_article_detail`
+  - `vw_public_knowledge_article_assets`
 - Busca pública textual mínima:
   - `rpc_public_search_knowledge_articles`
 - Mutações editoriais administrativas:
@@ -45,9 +47,20 @@ Criar a base editorial do Genius Support OS com versionamento, trilha de origem 
   - `rpc_admin_submit_knowledge_article_for_review_v2`
   - `rpc_admin_publish_knowledge_article_v2`
   - `rpc_admin_archive_knowledge_article_v2`
+  - `rpc_admin_unpublish_knowledge_article_v2`
+  - `rpc_admin_upsert_knowledge_article_asset_v1`
+  - `rpc_admin_update_knowledge_article_asset_review_v1`
 - Pipeline legado local-only:
   - `scripts/knowledge/import-octadesk-drafts.mjs`
   - `scripts/knowledge/generate-curation-backlog.mjs`
+  - `scripts/knowledge/reprocess-octadesk-article-assets.mjs`
+
+## Assets governados de artigos
+- Imagens de artigos Knowledge usam o bucket privado `knowledge-assets`.
+- O corpo publico nao renderiza URL externa arbitraria; o placeholder permitido e `knowledge-asset:<id>`.
+- Assets legados Octadesk entram como `pending` e so devem aparecer no publico quando `approved`, `public`, nao bloqueados e vinculados a artigo `published/public`.
+- Admin Knowledge pode visualizar, aprovar ou bloquear assets por artigo.
+- A Central Publica usa a view filtrada `vw_public_knowledge_article_assets` e URLs assinadas curtas, sem depender da Octadesk em runtime.
 
 ## Estado de transição multi-brand
 - `knowledge_spaces`, `knowledge_space_domains` e `brand_settings` existem como fundação estrutural aditiva.

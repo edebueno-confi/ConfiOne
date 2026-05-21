@@ -612,6 +612,15 @@ export const KNOWLEDGE_ARTICLE_REVIEW_STATUSES = [
 export type KnowledgeArticleReviewStatus =
   (typeof KNOWLEDGE_ARTICLE_REVIEW_STATUSES)[number];
 
+export const KNOWLEDGE_ARTICLE_ASSET_REVIEW_STATUSES = [
+  'pending',
+  'approved',
+  'blocked',
+  'replaced',
+] as const;
+export type KnowledgeArticleAssetReviewStatus =
+  (typeof KNOWLEDGE_ARTICLE_ASSET_REVIEW_STATUSES)[number];
+
 export const KNOWLEDGE_SPACE_STATUSES = ['draft', 'active', 'archived'] as const;
 export type KnowledgeSpaceStatus = (typeof KNOWLEDGE_SPACE_STATUSES)[number];
 
@@ -844,6 +853,37 @@ export interface AdminKnowledgeArticleDetailV2Row {
   editorial_draft: AdminKnowledgeArticleEditorialDraftRow | null;
 }
 
+export interface AdminKnowledgeArticleAssetRow {
+  id: Uuid;
+  article_id: Uuid;
+  article_title: string;
+  article_slug: string;
+  article_status: KnowledgeArticleStatus;
+  article_visibility: KnowledgeVisibility;
+  knowledge_space_id: Uuid;
+  knowledge_space_slug: string;
+  category_id: Uuid | null;
+  category_name: string | null;
+  source_url: string | null;
+  source_path: string | null;
+  source_hash: string;
+  storage_bucket: string;
+  storage_object_path: string;
+  detected_mime_type: string;
+  file_size_bytes: number;
+  width: number | null;
+  height: number | null;
+  alt_text: string | null;
+  caption: string | null;
+  review_status: KnowledgeArticleAssetReviewStatus;
+  visibility: KnowledgeVisibility;
+  is_blocked: boolean;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+  reviewed_by_full_name: string | null;
+  signed_url?: string | null;
+}
+
 export interface KnowledgeReviewHumanConfirmations {
   title_reviewed?: boolean;
   summary_reviewed?: boolean;
@@ -996,3 +1036,15 @@ export interface RpcAdminMarkKnowledgeArticleReviewedPayload {
 
 export type RpcAdminMarkKnowledgeArticleReviewedResponse =
   AdminKnowledgeArticleReviewAdvisoryRecordRow;
+
+export interface RpcAdminUpdateKnowledgeArticleAssetReviewPayload {
+  p_asset_id: Uuid;
+  p_review_status: KnowledgeArticleAssetReviewStatus;
+  p_visibility?: KnowledgeVisibility;
+  p_is_blocked?: boolean;
+  p_alt_text?: string | null;
+  p_caption?: string | null;
+}
+
+export type RpcAdminUpdateKnowledgeArticleAssetReviewResponse =
+  AdminKnowledgeArticleAssetRow;
