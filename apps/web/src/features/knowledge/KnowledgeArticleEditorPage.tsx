@@ -207,7 +207,7 @@ function buildAssetMarkdown(asset: AdminKnowledgeArticleAssetRow) {
     asset.source_path?.split('/').pop()?.replace(/\.[^.]+$/, '') ||
     'Imagem do artigo';
 
-  return `\n\n![${altText}](knowledge-asset:${asset.id})\n\n`;
+  return `\n\n![${altText}|size=large](knowledge-asset:${asset.id})\n\n`;
 }
 
 function buildAssetMap(assets: AdminKnowledgeArticleAssetRow[]) {
@@ -352,7 +352,7 @@ function ToolbarButton({
 }) {
   return (
     <button
-      className="inline-flex h-9 min-w-9 items-center justify-center rounded-xl border border-transparent px-3 text-sm font-semibold text-[color:var(--color-brand-navy)] transition hover:border-[color:var(--color-border)] hover:bg-[color:var(--color-surface)] disabled:cursor-not-allowed disabled:opacity-40"
+      className="inline-flex h-9 min-w-9 shrink-0 items-center justify-center rounded-xl border border-transparent px-3 text-sm font-semibold text-[color:var(--color-brand-navy)] transition hover:border-[color:var(--color-border)] hover:bg-[color:var(--color-surface)] disabled:cursor-not-allowed disabled:opacity-40"
       disabled={disabled}
       onClick={onClick}
       title={title}
@@ -378,6 +378,382 @@ function ChecklistItem({ label, done }: { label: string; done: boolean }) {
       </span>
       {label}
     </li>
+  );
+}
+
+type VisualImageSize = 'small' | 'medium' | 'large' | 'full';
+
+type VisualEditorBlock =
+  | { type: 'heading'; level: 1 | 2 | 3; text: string }
+  | { type: 'paragraph'; text: string }
+  | { type: 'list'; ordered: boolean; items: string[] }
+  | { type: 'quote'; text: string }
+  | { type: 'code'; text: string }
+  | { type: 'image'; assetId: string; alt: string; size: VisualImageSize };
+
+function parseVisualImageAlt(value: string) {
+  const sizeMatch = /\s*\|size=(small|medium|large|full)\s*$/i.exec(value);
+  if (!sizeMatch) {
+    return { alt: value.trim() || 'Imagem do artigo', size: 'large' as VisualImageSize };
+  }
+
+  return {
+    alt: value.slice(0, sizeMatch.index).trim() || 'Imagem do artigo',
+    size: sizeMatch[1].toLowerCase() as VisualImageSize,
+  };
+}
+
+function parseVisualBlocks(source: string): VisualEditorBlock[] {
+  const lines = source.replace(/\r\n/g, '\n').split('\n');
+  const blocks: VisualEditorBlock[] = [];
+  let index = 0;
+
+  while (index < lines.length) {
+    const trimmed = (lines[index] ?? '').trim();
+    if (!trimmed) {
+      index += 1;
+      continue;
+    }
+
+    const imageMatch = /^!\[([^\]]*)\]\(knowledge-asset:([^)]+)\)$/.exec(trimmed);
+    if (imageMatch) {
+      const imageAlt = parseVisualImageAlt(imageMatch[1]);
+      blocks.push({
+        type: 'image',
+        assetId: imageMatch[2].trim(),
+        alt: imageAlt.alt,
+        size: imageAlt.size,
+      });
+      index += 1;
+      continue;
+    }
+
+    const headingMatch = /^(#{1,3})\s+(.+)$/.exec(trimmed);
+    if (headingMatch) {
+      blocks.push({
+        type: 'heading',
+        level: headingMatch[1].length as 1 | 2 | 3,
+        text: headingMatch[2].trim(),
+      });
+      index += 1;
+      continue;
+    }
+
+    if (trimmed.startsWith('> ')) {
+      const quoteLines: string[] = [];
+      while (index < lines.length && (lines[index] ?? '').trim().startsWith('> ')) {
+        quoteLines.push((lines[index] ?? '').trim().slice(2));
+        index += 1;
+      }
+      blocks.push({ type: 'quote', text: quoteLines.join('\n') });
+      continue;
+    }
+
+    if (trimmed.startsWith('```')) {
+      const codeLines: string[] = [];
+      index += 1;
+      while (index < lines.length && !(lines[index] ?? '').trim().startsWith('```')) {
+        codeLines.push(lines[index] ?? '');
+        index += 1;
+      }
+      index += 1;
+      blocks.push({ type: 'code', text: codeLines.join('\n') });
+      continue;
+    }
+
+    if (/^[-*]\s+/.test(trimmed) || /^\d+[.)]\s+/.test(trimmed)) {
+      const ordered = /^\d+[.)]\s+/.test(trimmed);
+      const pattern = ordered ? /^\d+[.)]\s+/ : /^[-*]\s+/;
+      const items: string[] = [];
+      while (index < lines.length && pattern.test((lines[index] ?? '').trim())) {
+        items.push((lines[index] ?? '').trim().replace(pattern, ''));
+        index += 1;
+      }
+      blocks.push({ type: 'list', ordered, items });
+      continue;
+    }
+
+    const paragraphLines: string[] = [];
+    while (index < lines.length) {
+      const candidate = (lines[index] ?? '').trim();
+      if (
+        !candidate ||
+        /^!\[([^\]]*)\]\(knowledge-asset:([^)]+)\)$/.test(candidate) ||
+        /^(#{1,3})\s+/.test(candidate) ||
+        candidate.startsWith('> ') ||
+        candidate.startsWith('```') ||
+        /^[-*]\s+/.test(candidate) ||
+        /^\d+[.)]\s+/.test(candidate)
+      ) {
+        break;
+      }
+
+      paragraphLines.push(candidate);
+      index += 1;
+    }
+
+    blocks.push({ type: 'paragraph', text: paragraphLines.join(' ') });
+  }
+
+  return blocks.length > 0 ? blocks : [{ type: 'heading', level: 1, text: '' }];
+}
+
+function serializeVisualBlocks(blocks: VisualEditorBlock[]) {
+  return blocks
+    .map((block) => {
+      if (block.type === 'heading') {
+        return `${'#'.repeat(block.level)} ${block.text.trim()}`.trim();
+      }
+
+      if (block.type === 'paragraph') {
+        return block.text.trim();
+      }
+
+      if (block.type === 'quote') {
+        return block.text
+          .split('\n')
+          .map((line) => `> ${line}`)
+          .join('\n');
+      }
+
+      if (block.type === 'code') {
+        return `\`\`\`text\n${block.text}\n\`\`\``;
+      }
+
+      if (block.type === 'list') {
+        return block.items
+          .filter((item) => item.trim().length > 0)
+          .map((item, index) => (block.ordered ? `${index + 1}. ${item}` : `- ${item}`))
+          .join('\n');
+      }
+
+      return `![${block.alt.trim() || 'Imagem do artigo'}|size=${block.size}](knowledge-asset:${block.assetId})`;
+    })
+    .filter((block) => block.trim().length > 0)
+    .join('\n\n');
+}
+
+function visualImageSizeClass(size: VisualImageSize) {
+  if (size === 'small') {
+    return 'max-w-[360px]';
+  }
+
+  if (size === 'medium') {
+    return 'max-w-[560px]';
+  }
+
+  if (size === 'full') {
+    return 'max-w-full';
+  }
+
+  return 'max-w-[760px]';
+}
+
+function VisualArticleEditor({
+  assets,
+  assetState,
+  bodyMd,
+  isReadOnly,
+  onChange,
+  onDrop,
+  onImageButton,
+  onPaste,
+}: {
+  assets: Record<string, MarkdownAsset>;
+  assetState: SaveState;
+  bodyMd: string;
+  isReadOnly: boolean;
+  onChange: (nextBodyMd: string) => void;
+  onDrop: (event: DragEvent<HTMLElement>) => void;
+  onImageButton: () => void;
+  onPaste: (event: ClipboardEvent<HTMLElement>) => void;
+}) {
+  const [selectedImageKey, setSelectedImageKey] = useState<string | null>(null);
+  const blocks = useMemo(() => parseVisualBlocks(bodyMd), [bodyMd]);
+
+  function updateBlock(index: number, nextBlock: VisualEditorBlock) {
+    const nextBlocks = [...blocks];
+    nextBlocks[index] = nextBlock;
+    onChange(serializeVisualBlocks(nextBlocks));
+  }
+
+  return (
+    <div
+      className={cx(
+        'min-h-full px-8 py-6 transition focus-within:bg-[rgba(234,242,255,0.06)]',
+        assetState === 'saving' && 'bg-[rgba(234,242,255,0.2)]',
+      )}
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={onDrop}
+      onPaste={onPaste}
+    >
+      <div className="mx-auto max-w-[900px] space-y-5">
+        {blocks.map((block, index) => {
+          const key = `${block.type}-${index}`;
+
+          if (block.type === 'heading') {
+            const headingClass =
+              block.level === 1
+                ? 'text-[1.7rem] font-extrabold leading-tight tracking-[-0.03em]'
+                : block.level === 2
+                  ? 'text-[1.25rem] font-extrabold leading-snug'
+                  : 'text-[1.05rem] font-bold leading-snug';
+            return (
+              <input
+                className={cx(
+                  'w-full border-0 bg-transparent p-0 text-[color:var(--color-brand-navy)] outline-none placeholder:text-[color:var(--color-muted)] focus:ring-0',
+                  headingClass,
+                )}
+                key={key}
+                onChange={(event) =>
+                  updateBlock(index, { ...block, text: event.target.value })
+                }
+                placeholder={block.level === 1 ? 'Título principal do artigo' : 'Título da seção'}
+                readOnly={isReadOnly}
+                value={block.text}
+              />
+            );
+          }
+
+          if (block.type === 'paragraph') {
+            return (
+              <textarea
+                className="min-h-[64px] w-full resize-none border-0 bg-transparent p-0 text-[0.95rem] leading-7 text-[#24324F] outline-none placeholder:text-[color:var(--color-muted)] focus:ring-0"
+                key={key}
+                onChange={(event) =>
+                  updateBlock(index, { ...block, text: event.target.value })
+                }
+                placeholder="Escreva o parágrafo do artigo..."
+                readOnly={isReadOnly}
+                value={block.text}
+              />
+            );
+          }
+
+          if (block.type === 'list') {
+            return (
+              <div className="space-y-2" key={key}>
+                {block.items.map((item, itemIndex) => (
+                  <div className="flex items-start gap-3" key={`${key}-${itemIndex}`}>
+                    <span className="mt-1 text-sm font-bold text-[color:var(--color-brand-navy)]">
+                      {block.ordered ? `${itemIndex + 1}.` : '•'}
+                    </span>
+                    <input
+                      className="w-full border-0 bg-transparent p-0 text-[0.95rem] leading-7 text-[#24324F] outline-none focus:ring-0"
+                      onChange={(event) => {
+                        const nextItems = [...block.items];
+                        nextItems[itemIndex] = event.target.value;
+                        updateBlock(index, { ...block, items: nextItems });
+                      }}
+                      readOnly={isReadOnly}
+                      value={item}
+                    />
+                  </div>
+                ))}
+              </div>
+            );
+          }
+
+          if (block.type === 'quote') {
+            return (
+              <textarea
+                className="min-h-[58px] w-full resize-none rounded-2xl border border-[rgba(47,107,255,0.22)] bg-[rgba(47,107,255,0.05)] px-4 py-3 text-sm leading-6 text-[#24324F] outline-none focus:ring-0"
+                key={key}
+                onChange={(event) =>
+                  updateBlock(index, { ...block, text: event.target.value })
+                }
+                readOnly={isReadOnly}
+                value={block.text}
+              />
+            );
+          }
+
+          if (block.type === 'image') {
+            const asset = assets[block.assetId];
+            const imageKey = `${block.assetId}-${index}`;
+            const isSelected = selectedImageKey === imageKey;
+            return (
+              <figure
+                className={cx(
+                  'relative rounded-[20px] transition',
+                  isSelected && 'ring-2 ring-[color:var(--color-brand-blue)]',
+                  visualImageSizeClass(block.size),
+                )}
+                key={key}
+                onClick={() => setSelectedImageKey(imageKey)}
+              >
+                {isSelected ? (
+                  <div className="absolute left-1/2 top-0 z-10 flex -translate-x-1/2 -translate-y-[110%] items-center gap-2 rounded-2xl border border-[color:var(--color-border)] bg-white px-2 py-2 shadow-[0_18px_42px_rgba(20,31,71,0.14)]">
+                    {[
+                      ['small', 'Pequena'],
+                      ['medium', 'Média'],
+                      ['large', 'Grande'],
+                      ['full', 'Largura total'],
+                    ].map(([size, label]) => (
+                      <button
+                        className={cx(
+                          'rounded-xl px-3 py-2 text-[0.72rem] font-bold',
+                          block.size === size
+                            ? 'bg-[color:var(--color-brand-blue)] text-white'
+                            : 'text-[color:var(--color-brand-navy)] hover:bg-[color:var(--color-surface)]',
+                        )}
+                        key={size}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          updateBlock(index, { ...block, size: size as VisualImageSize });
+                        }}
+                        type="button"
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                {asset?.signed_url ? (
+                  <img
+                    alt={asset.alt_text ?? block.alt}
+                    className="h-auto max-h-[520px] w-full rounded-[18px] border border-[color:var(--color-border)] object-contain"
+                    loading="lazy"
+                    src={asset.signed_url}
+                  />
+                ) : (
+                  <div className="rounded-[18px] border border-dashed border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-5 py-8 text-sm text-[color:var(--color-muted)]">
+                    Imagem ainda indisponível no editor. Revise o asset antes de publicar.
+                  </div>
+                )}
+                <input
+                  className="mt-2 w-full border-0 bg-transparent px-1 text-center text-xs italic text-[color:var(--color-muted)] outline-none focus:ring-0"
+                  onChange={(event) =>
+                    updateBlock(index, { ...block, alt: event.target.value })
+                  }
+                  placeholder="Legenda da imagem"
+                  readOnly={isReadOnly}
+                  value={block.alt}
+                />
+              </figure>
+            );
+          }
+
+          return (
+            <textarea
+              className="min-h-[86px] w-full resize-none rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 font-mono text-xs leading-6 text-[#24324F] outline-none focus:ring-0"
+              key={key}
+              onChange={(event) => updateBlock(index, { ...block, text: event.target.value })}
+              readOnly={isReadOnly}
+              value={block.text}
+            />
+          );
+        })}
+        <button
+          className="w-full rounded-2xl border border-dashed border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 text-sm font-semibold text-[color:var(--color-brand-blue)] hover:bg-[rgba(47,107,255,0.06)]"
+          disabled={isReadOnly}
+          onClick={onImageButton}
+          type="button"
+        >
+          Inserir imagem no corpo
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -447,7 +823,6 @@ export function KnowledgeArticleEditorPage() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [keywordDraft, setKeywordDraft] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
-  const [editorTab, setEditorTab] = useState<'edit' | 'preview'>('edit');
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isEditMode = Boolean(routeArticleId);
@@ -835,7 +1210,7 @@ export function KnowledgeArticleEditorPage() {
     }
   }
 
-  function handleBodyPaste(event: ClipboardEvent<HTMLTextAreaElement>) {
+  function handleBodyPaste(event: ClipboardEvent<HTMLElement>) {
     if (isReadOnly) {
       return;
     }
@@ -1219,7 +1594,28 @@ export function KnowledgeArticleEditorPage() {
 
   function handleInsertAsset(assetId: string) {
     const asset = assets.find((item) => item.id === assetId);
-    return insertSnippet(asset ? buildAssetMarkdown(asset) : `\n\n![Imagem do artigo](knowledge-asset:${assetId})\n\n`, '', '');
+    return insertSnippet(asset ? buildAssetMarkdown(asset) : `\n\n![Imagem do artigo|size=large](knowledge-asset:${assetId})\n\n`, '', '');
+  }
+
+  async function handleStatusTransition(nextStatus: ArticleEditorStatus) {
+    if (nextStatus === status) {
+      return;
+    }
+
+    if (status === 'draft' && nextStatus === 'review' && !isEditorialRevision) {
+      await handleSubmitForReview();
+      return;
+    }
+
+    if (
+      nextStatus === 'published' &&
+      ((status === 'review' && !isEditorialRevision) || isEditorialRevision)
+    ) {
+      await handlePublishArticle();
+      return;
+    }
+
+    setFeedback('Esta transição editorial não está disponível pelo contrato atual.');
   }
 
   if (phase === 'loading') {
@@ -1275,9 +1671,14 @@ export function KnowledgeArticleEditorPage() {
               </span>
             </nav>
             <div>
-              <h1 className="text-2xl font-bold tracking-[-0.04em] text-[color:var(--color-brand-navy)]">
-                {isEditMode ? 'Editar artigo' : 'Novo artigo'}
-              </h1>
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-[1.75rem] font-extrabold leading-tight tracking-[-0.02em] text-[color:var(--color-brand-navy)]">
+                  {isEditMode ? 'Editar artigo' : 'Novo artigo'}
+                </h1>
+                <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[0.72rem] font-bold text-emerald-700">
+                  ✓ {saveState === 'saved' ? 'Rascunho salvo agora' : 'Alterações salvas automaticamente'}
+                </span>
+              </div>
               <p className="mt-1 text-sm leading-6 text-[color:var(--color-muted)]">
                 {isEditMode
                   ? 'Atualize conteúdo da base de conhecimento com clareza e impacto.'
@@ -1285,6 +1686,11 @@ export function KnowledgeArticleEditorPage() {
               </p>
             </div>
           </div>
+          {articleId ? (
+            <div className="hidden flex-1 justify-center pt-9 text-[0.72rem] font-semibold text-[color:var(--color-muted)] xl:flex">
+              ID do artigo: {articleId}
+            </div>
+          ) : null}
           <div className="flex shrink-0 flex-wrap justify-end gap-3">
             <GhostButton
               className="h-11 rounded-[12px] px-5 text-[0.82rem]"
@@ -1293,30 +1699,15 @@ export function KnowledgeArticleEditorPage() {
             >
               ☁ {saveState === 'saving' ? 'Salvando...' : saveButtonLabel}
             </GhostButton>
-            <AppButton
-              className="h-11 rounded-[12px] px-5 text-[0.82rem]"
-              disabled={
-                submitState === 'saving' ||
-                saveState === 'saving' ||
-                status !== 'draft' ||
-                isEditorialRevision ||
-                isReadOnly
-              }
-              onClick={handleSubmitForReview}
-            >
-              ✈ Enviar para revisão
-            </AppButton>
             <GhostButton
-              className="h-11 border-transparent px-3 text-[color:var(--color-brand-blue)] shadow-none"
-              onClick={() => {
-                setEditorTab('preview');
-              }}
+              className="h-11 rounded-[12px] px-5 text-[0.82rem] text-[color:var(--color-brand-navy)]"
+              title="Transições editoriais ficam no card de status."
             >
-              ◉ Pré-visualizar
+              Ações ▾
             </GhostButton>
             <GhostButton
               className="h-11 w-11 rounded-full px-0 text-[color:var(--color-brand-blue)]"
-              title="A publicação não acontece nesta tela. Use o fluxo editorial depois da revisão."
+              title="Mais opções"
             >
               ⋮
             </GhostButton>
@@ -1401,39 +1792,15 @@ export function KnowledgeArticleEditorPage() {
                 ref={fileInputRef}
                 type="file"
               />
-              <div className="flex shrink-0 items-end justify-between border-b border-[color:var(--color-border)] px-4 pt-3">
+              <div className="flex shrink-0 items-center justify-between border-b border-[color:var(--color-border)] px-4 py-3">
                 <div>
                   <FormFieldLabel required>Conteúdo do artigo</FormFieldLabel>
-                  <div className="mt-3 flex gap-7">
-                    <button
-                      className={cx(
-                        'border-b-2 px-1 pb-3 text-sm font-bold transition',
-                        editorTab === 'edit'
-                          ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
-                          : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-brand-navy)]',
-                      )}
-                      onClick={() => setEditorTab('edit')}
-                      type="button"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      className={cx(
-                        'border-b-2 px-1 pb-3 text-sm font-bold transition',
-                        editorTab === 'preview'
-                          ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
-                          : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-brand-navy)]',
-                      )}
-                      onClick={() => setEditorTab('preview')}
-                      type="button"
-                    >
-                      Pré-visualização
-                    </button>
-                  </div>
+                  <p className="mt-1 text-[0.72rem] text-[color:var(--color-muted)]">
+                    Edição visual. O conteúdo é salvo em markdown governado.
+                  </p>
                 </div>
               </div>
-              {editorTab === 'edit' ? (
-              <div className="flex shrink-0 items-center gap-1 border-b border-[color:var(--color-border)] bg-white px-4 py-2">
+              <div className="flex shrink-0 items-center gap-2 overflow-hidden border-b border-[color:var(--color-border)] bg-white px-4 py-2">
                 <button
                   className="mr-2 inline-flex h-9 items-center gap-2 rounded-xl border border-[color:var(--color-border)] px-3 text-sm font-semibold text-[color:var(--color-brand-navy)] hover:bg-[color:var(--color-surface)]"
                   onClick={() => insertSnippet('\n\n', '', 'Parágrafo')}
@@ -1487,6 +1854,17 @@ export function KnowledgeArticleEditorPage() {
                 >
                   Imagem
                 </ToolbarButton>
+                <ToolbarButton
+                  onClick={() => {
+                    setFeedback('Vídeo YouTube ainda precisa de contrato governado de bloco seguro.');
+                  }}
+                  title="Vídeo YouTube"
+                >
+                  Vídeo
+                </ToolbarButton>
+                <ToolbarButton onClick={() => insertSnippet('\n\n', '', 'Novo bloco')} title="Inserir">
+                  Inserir⌄
+                </ToolbarButton>
                 <ToolbarButton onClick={() => insertSnippet('\n```text\n', '\n```\n', 'exemplo')} title="Código">
                   &lt;/&gt;
                 </ToolbarButton>
@@ -1494,40 +1872,21 @@ export function KnowledgeArticleEditorPage() {
                   Cole ou arraste prints no ponto do texto
                 </span>
               </div>
-              ) : null}
               <div className="min-h-0 flex-1 overflow-auto">
-                {editorTab === 'edit' ? (
-                  <div
-                    className={cx(
-                      'min-h-full px-8 py-6 transition focus-within:bg-[rgba(234,242,255,0.14)]',
-                      assetState === 'saving' && 'bg-[rgba(234,242,255,0.2)]',
-                    )}
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={handleAssetDrop}
-                  >
-                    <textarea
-                      className="min-h-[520px] w-full resize-none border-0 bg-transparent font-[ui-sans-serif] text-[1rem] leading-8 text-[color:var(--color-ink)] outline-none shadow-none placeholder:text-[color:var(--color-muted)] focus:ring-0"
-                      onChange={(event) => updateForm({ bodyMd: event.target.value })}
-                      onPaste={handleBodyPaste}
-                      placeholder={`Escreva o artigo na ordem em que o cliente deve executar:\n\n# Como configurar...\n\n1. Clique em Configurações.\n\nCole ou arraste o print aqui, exatamente depois da instrução.\n\n2. Clique no menu desejado.\n\n3. Salve a configuração.`}
-                      readOnly={isReadOnly}
-                      ref={bodyRef}
-                      value={form.bodyMd}
-                    />
-                  </div>
-                ) : (
-                  <div className="min-h-full px-8 py-6">
-                    {form.bodyMd.trim().length > 0 ? (
-                      <article className="mx-auto max-w-4xl rounded-[18px] bg-white">
-                        <MarkdownDocument assets={assetMap} source={form.bodyMd} />
-                      </article>
-                    ) : (
-                      <div className="rounded-2xl border border-dashed border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-5 py-8 text-sm leading-6 text-[color:var(--color-muted)]">
-                        A pré-visualização aparece aqui quando o artigo tiver conteúdo.
-                      </div>
-                    )}
-                  </div>
-                )}
+                <VisualArticleEditor
+                  assets={assetMap}
+                  assetState={assetState}
+                  bodyMd={form.bodyMd}
+                  isReadOnly={isReadOnly}
+                  onChange={(nextBodyMd) => updateForm({ bodyMd: nextBodyMd })}
+                  onDrop={handleAssetDrop}
+                  onImageButton={() => {
+                    if (!isReadOnly) {
+                      fileInputRef.current?.click();
+                    }
+                  }}
+                  onPaste={handleBodyPaste}
+                />
               </div>
               <div className="flex shrink-0 items-center justify-between border-t border-[color:var(--color-border)] px-5 py-3 text-[0.72rem] text-[color:var(--color-muted)]">
                 <span>
@@ -1608,7 +1967,13 @@ export function KnowledgeArticleEditorPage() {
                   </SelectInput>
                 </Field>
                 <Field label="Status editorial">
-                  <SelectInput disabled value={status}>
+                  <SelectInput
+                    disabled={submitState === 'saving' || publishState === 'saving' || isReadOnly}
+                    onChange={(event) =>
+                      void handleStatusTransition(event.target.value as ArticleEditorStatus)
+                    }
+                    value={status}
+                  >
                     <option value="draft">Rascunho</option>
                     <option value="review">Em revisão</option>
                     <option value="published">Publicado</option>

@@ -25,6 +25,35 @@ interface Block {
   ordered?: boolean;
   assetId?: string;
   alt?: string;
+  imageSize?: 'small' | 'medium' | 'large' | 'full';
+}
+
+function parseImageAlt(value: string) {
+  const sizeMatch = /\s*\|size=(small|medium|large|full)\s*$/i.exec(value);
+  if (!sizeMatch) {
+    return { alt: value.trim(), imageSize: 'large' as const };
+  }
+
+  return {
+    alt: value.slice(0, sizeMatch.index).trim(),
+    imageSize: sizeMatch[1].toLowerCase() as 'small' | 'medium' | 'large' | 'full',
+  };
+}
+
+function imageSizeClass(size?: Block['imageSize']) {
+  if (size === 'small') {
+    return 'max-w-[360px]';
+  }
+
+  if (size === 'medium') {
+    return 'max-w-[560px]';
+  }
+
+  if (size === 'full') {
+    return 'max-w-[78ch]';
+  }
+
+  return 'max-w-[680px]';
 }
 
 function isSafeHref(value: string) {
@@ -123,9 +152,11 @@ function parseMarkdown(source: string) {
 
     const imageMatch = /^!\[([^\]]*)\]\((knowledge-asset:[^)]+)\)$/.exec(trimmed);
     if (imageMatch) {
+      const imageAlt = parseImageAlt(imageMatch[1].trim());
       blocks.push({
         type: 'image',
-        alt: imageMatch[1].trim(),
+        alt: imageAlt.alt,
+        imageSize: imageAlt.imageSize,
         assetId: imageMatch[2].replace(/^knowledge-asset:/, '').trim(),
       });
       index += 1;
@@ -310,7 +341,7 @@ export function MarkdownDocument({
           return (
             <figure
               key={key}
-              className="max-w-[78ch] overflow-hidden rounded-[24px] border border-[rgba(20,31,71,0.1)] bg-white shadow-[0_14px_34px_rgba(20,31,71,0.08)]"
+              className={`${imageSizeClass(block.imageSize)} overflow-hidden rounded-[24px] border border-[rgba(20,31,71,0.1)] bg-white shadow-[0_14px_34px_rgba(20,31,71,0.08)]`}
             >
               <img
                 alt={asset.alt_text ?? block.alt ?? ''}
