@@ -12,6 +12,31 @@ function buildCategoryMap(navigation: PublicKnowledgeNavigationRow[]) {
   );
 }
 
+function collectCategoryTreeIds(
+  navigation: PublicKnowledgeNavigationRow[],
+  rootCategoryId: string,
+) {
+  const selectedIds = new Set([rootCategoryId]);
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+
+    for (const category of navigation) {
+      if (
+        category.parent_category_id &&
+        selectedIds.has(category.parent_category_id) &&
+        !selectedIds.has(category.category_id)
+      ) {
+        selectedIds.add(category.category_id);
+        changed = true;
+      }
+    }
+  }
+
+  return selectedIds;
+}
+
 function categoryJourneyLabel(name: string | null | undefined) {
   const normalized = (name ?? '')
     .normalize('NFD')
@@ -53,13 +78,20 @@ export function HelpCenterArticlesPage() {
   const selectedCategory = featuredCategories.find(
     (category) => category.category_id === selectedCategoryId,
   ) ?? null;
+  const selectedCategoryTreeIds = useMemo(
+    () =>
+      selectedCategoryId
+        ? collectCategoryTreeIds(context.navigation, selectedCategoryId)
+        : null,
+    [context.navigation, selectedCategoryId],
+  );
   const searchQuery = searchParams.get('q')?.trim().toLowerCase() ?? '';
   const [searchInput, setSearchInput] = useState(searchParams.get('q')?.trim() ?? '');
 
   const filteredArticles = useMemo(() => {
     return context.articles.filter((article) => {
-      const matchesCategory = selectedCategoryId
-        ? article.category_id === selectedCategoryId
+      const matchesCategory = selectedCategoryTreeIds
+        ? Boolean(article.category_id && selectedCategoryTreeIds.has(article.category_id))
         : true;
       const haystack = [
         article.title,
@@ -72,7 +104,7 @@ export function HelpCenterArticlesPage() {
       const matchesQuery = searchQuery ? haystack.includes(searchQuery) : true;
       return matchesCategory && matchesQuery;
     });
-  }, [context.articles, searchQuery, selectedCategoryId]);
+  }, [context.articles, searchQuery, selectedCategoryTreeIds]);
   const highlightedArticles = filteredArticles.slice(0, 3);
 
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
