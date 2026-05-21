@@ -5,7 +5,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { formatDateTime } from '../../app/format';
 import {
   AppButton,
@@ -721,6 +721,7 @@ function buildEditorialChecklist(
 }
 
 export function KnowledgePage() {
+  const navigate = useNavigate();
   const { markSessionExpired } = useAuthContext();
   const didBootstrapRef = useRef(false);
   const [backendDenied, setBackendDenied] = useState(false);
@@ -1373,10 +1374,7 @@ export function KnowledgePage() {
   }, [selectedAdvisory?.id]);
 
   function openCreateArticle() {
-    setPanelMode('create-article');
-    setArticleForm(emptyArticleForm());
-    setArticleFormMessage(null);
-    setArticleActionFeedback(null);
+    navigate('/admin/knowledge/new');
   }
 
   function closeArticleEditor() {

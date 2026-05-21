@@ -59,6 +59,9 @@ Criar a base editorial do Genius Support OS com versionamento, trilha de origem 
 - `/admin/knowledge` é o cockpit operacional de governança da base de conhecimento.
 - A tela usa o blueprint aprovado de Governança de conhecimento como referência visual direta: header operacional, busca global única, filtros de status/categoria/visibilidade, KPIs reais, tabela central dominante e rail direito de categorias/resumo/alertas.
 - Criação e edição de artigos acontecem em superfície dedicada, sem preview lateral comprimido dentro do cockpit.
+- `/admin/knowledge/new` é a superfície dedicada de criação manual de artigo. A tela segue o blueprint aprovado de novo artigo, usa categorias e espaços reais, salva rascunho por `rpc_admin_create_knowledge_article_draft_v2`/`rpc_admin_update_knowledge_article_draft_v2` e envia para revisão por `rpc_admin_submit_knowledge_article_for_review_v2`.
+- O editor V1 usa Markdown seguro, toolbar operacional, checklist visual local, prévia rápida e rail de configurações editoriais. O checklist não substitui gate backend e a tela não publica artigo.
+- Upload binário de imagem/anexo não é simulado: a tela lista assets já vinculados via `vw_admin_knowledge_article_assets` e insere apenas placeholders governados `knowledge-asset:<id>` quando houver asset disponível.
 - Métricas sem contrato real, como visualizações por artigo em 30 dias, devem aparecer como indisponíveis ou ser omitidas. O frontend não cria número fake.
 - A busca atual do cockpit é textual sobre campos expostos pelo read model administrativo; busca semântica ou busca por corpo completo exige contrato administrativo explícito futuro.
 

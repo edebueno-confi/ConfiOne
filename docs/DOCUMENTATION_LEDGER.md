@@ -18,6 +18,30 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase - Knowledge Manual Article Editor V1
+- fase: `knowledge-admin`
+- nome: `Knowledge Manual Article Editor V1`
+- branch: `workspace-atual`
+- data: `2026-05-21`
+- resumo funcional: criada a rota dedicada `/admin/knowledge/new` para criação manual de artigos, mantendo `/admin/knowledge` como cockpit/listagem. O editor salva rascunho por RPC administrativa v2, envia para revisão por RPC administrativa v2 e não publica conteúdo.
+- docs alterados:
+  - `docs/KNOWLEDGE_BASE_STRATEGY.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - `/admin/knowledge`
+  - `/admin/knowledge/new`
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+  - utilizadas RPCs existentes: `rpc_admin_create_knowledge_article_draft_v2`, `rpc_admin_update_knowledge_article_draft_v2`, `rpc_admin_submit_knowledge_article_for_review_v2`
+  - leitura administrativa por `vw_admin_knowledge_spaces`, `vw_admin_knowledge_categories_v2` e `vw_admin_knowledge_article_assets`
+- riscos restantes:
+  - upload binário direto de assets no browser segue indisponível até contrato dedicado de seleção/upload
+  - checklist visual local não substitui gate backend de publicação
+- impacto na FAQ futura:
+  - habilita criação manual governada de conteúdo para a Central de Ajuda, separando cockpit operacional de fluxo editorial dedicado
+
 ### Fase - Octadesk Public Help Migration Release
 - fase: `knowledge-publication`
 - nome: `Octadesk Public Help Migration Release`

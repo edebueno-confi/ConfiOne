@@ -64,6 +64,11 @@ const KnowledgePage = lazy(async () => {
   return { default: module.KnowledgePage };
 });
 
+const KnowledgeArticleEditorPage = lazy(async () => {
+  const module = await import('../features/knowledge/KnowledgeArticleEditorPage');
+  return { default: module.KnowledgeArticleEditorPage };
+});
+
 const CustomerPortalAdminPage = lazy(async () => {
   const module = await import('../features/admin/CustomerPortalAdminPage');
   return { default: module.CustomerPortalAdminPage };
@@ -253,6 +258,10 @@ export const router = createBrowserRouter([
           {
             path: 'knowledge',
             element: withSuspense(<KnowledgePage />),
+          },
+          {
+            path: 'knowledge/new',
+            element: withSuspense(<KnowledgeArticleEditorPage />),
           },
           {
             path: 'customer-portal',
