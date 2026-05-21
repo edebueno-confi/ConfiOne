@@ -18,6 +18,44 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase - Genius Help Center Operational Readiness
+- fase: `knowledge-curation`
+- nome: `Genius Help Center Operational Readiness`
+- branch: `workspace-atual`
+- data: `2026-05-20`
+- resumo funcional: consolidado o fechamento operacional da Central de Ajuda Genius sem publicacao insegura. O Admin Knowledge passa a ser a fila diaria de curadoria do corpus Octadesk, com ondas claras, checklist humano da Onda 0 e relatorio executivo de readiness.
+- docs alterados:
+  - `docs/reports/GENIUS_HELP_CENTER_READINESS_REPORT.md`
+  - `docs/reports/OCTADESK_PUBLICATION_WAVES.md`
+  - `docs/reports/OCTADESK_WAVE_0_PUBLICATION_CHECKLIST.md`
+  - `docs/reports/OCTADESK_PUBLIC_HELP_RELEASE_STATUS.md`
+  - `docs/reports/OCTADESK_INTERNAL_KNOWLEDGE_BACKLOG.md`
+  - `docs/KNOWLEDGE_BASE_STRATEGY.md`
+  - `docs/PUBLIC_HELP_CENTER_PUBLISH_RUNBOOK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - `/admin/knowledge` auditado como fila operacional existente
+  - `/help/genius` validado como Central Publica segura
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+  - nenhuma publicacao executada
+- validacao:
+  - queries SQL de status/visibility e exposicao publica zero
+  - QA Admin Knowledge
+  - QA Public Help
+  - `npm run knowledge:curation:backlog`
+  - `npm run knowledge:verify:octadesk:space-aware`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:test:db`
+- riscos restantes:
+  - publicacao depende de revisao humana real de assets, checklist e advisory
+  - Onda 1 permanece vazia ate haver artigo objetivamente seguro fora do piloto
+- impacto na FAQ futura:
+  - transforma o corpus importado em operacao diaria governada sem misturar conteudo interno/restrito com a Central Publica
+
 ### Fase - Octadesk Publication Final Triage
 - fase: `knowledge-curation`
 - nome: `Octadesk Publication Final Triage`

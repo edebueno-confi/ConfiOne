@@ -36,3 +36,10 @@ A Central de Ajuda publica continua funcional e navegavel com os artigos seed/ma
 3. Revisar advisory e preencher checklist humano real.
 4. Converter visibilidade para `public` apenas se a versao final for segura.
 5. Publicar por RPC editorial existente e validar `/help/genius`.
+
+## Fechamento operacional
+
+- `docs/reports/OCTADESK_PUBLICATION_WAVES.md` organiza o corpus em ondas operacionais.
+- `docs/reports/OCTADESK_WAVE_0_PUBLICATION_CHECKLIST.md` define a checklist humana dos 4 artigos em `review/internal`.
+- `docs/reports/GENIUS_HELP_CENTER_READINESS_REPORT.md` consolida o readiness da Central de Ajuda Genius.
+- A Central Publica permanece com os 6 artigos seed/manuais ate revisao humana real.

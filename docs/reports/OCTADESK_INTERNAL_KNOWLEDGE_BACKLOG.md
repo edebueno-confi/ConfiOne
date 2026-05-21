@@ -94,3 +94,12 @@ Total: `4`
 ## Criterio de saida para publicacao
 
 Um artigo so pode sair deste backlog para publicacao quando tiver revisao humana registrada, assets revisados ou removidos, advisory revisado, checklist completo e QA publico sem exposicao indevida.
+
+## Uso operacional diario
+
+- Usar `/admin/knowledge` como fila principal de trabalho.
+- Filtrar origem legado para localizar o corpus Octadesk.
+- Filtrar `review/internal` para trabalhar a Onda 0.
+- Filtrar `draft/internal` para organizar apoio interno de suporte/CS/admin.
+- Filtrar `draft/restricted` para manter material sensivel fora da Central Publica.
+- Consultar `docs/reports/OCTADESK_PUBLICATION_WAVES.md` para priorizacao por onda.

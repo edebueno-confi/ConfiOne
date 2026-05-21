@@ -90,6 +90,12 @@ Status da triagem final em 2026-05-20:
 - `4` artigos permanecem fora de publicacao por obsolescencia ou duplicidade.
 - a Central Publica continua com os `6` artigos seed/manuais ate a primeira onda aprovada.
 
+Fila operacional vigente:
+- `docs/reports/OCTADESK_PUBLICATION_WAVES.md` define as ondas de curadoria.
+- `docs/reports/OCTADESK_WAVE_0_PUBLICATION_CHECKLIST.md` define o checklist humano dos 4 artigos em `review/internal`.
+- `docs/reports/GENIUS_HELP_CENTER_READINESS_REPORT.md` consolida readiness, bloqueios e menor acao humana para publicacao.
+- nenhuma publicacao deve ocorrer enquanto advisory, checklist e assets nao estiverem revisados por humano.
+
 ## Como sincronizar advisories
 1. Rodar primeiro o backlog versionado.
 2. Sincronizar os advisories no mesmo `knowledge_space`.

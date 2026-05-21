@@ -82,6 +82,7 @@ Estado operacional em 2026-05-20:
 - `20` artigos permanecem bloqueados para publicacao publica por restricao, obsolescencia ou duplicidade.
 - `0` artigos Octadesk foram publicados automaticamente; Wave 1 permanece vazia ate checklist humano, advisory revisado e revisao de assets.
 - A triagem final de publicacao ficou registrada em `docs/reports/OCTADESK_PUBLICATION_FINAL_TRIAGE.md`, com `0 publish_now_candidate`, `38 needs_human_decision`, `16 restricted_blocked` e `4 obsolete_or_duplicate`.
+- O fechamento operacional da Central de Ajuda ficou registrado em `docs/reports/GENIUS_HELP_CENTER_READINESS_REPORT.md`, `docs/reports/OCTADESK_PUBLICATION_WAVES.md` e `docs/reports/OCTADESK_WAVE_0_PUBLICATION_CHECKLIST.md`: Admin Knowledge e a fila de ondas passam a ser a base diaria de curadoria, enquanto `/help/genius` permanece seguro com os 6 artigos publicos seed/manuais.
 
 Resultado do inventário atual:
 - `58` artigos detectados por `article.json`
