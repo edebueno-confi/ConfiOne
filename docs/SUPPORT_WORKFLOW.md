@@ -298,14 +298,15 @@
 - o painel nao expõe UUID, nomes de views/RPCs nem metadata tecnica no fluxo principal
 
 ## Contrato de link publico seguro do ticket -> KB
-- a UI 6.16 comprovou uma lacuna contratual: o suporte sabe quando um artigo pode ser enviado ao cliente, mas ainda nao recebe a rota publica segura pronta para uso
-- `vw_support_knowledge_article_picker` continua suficiente para busca e vinculo geral, mas nao deve virar montador de rota publica no frontend por heuristica
-- a review oficial desta lacuna fica em `TICKET_KNOWLEDGE_PUBLIC_LINK_CONTRACT_REVIEW.md`
-- recomendacao documental atual:
-  - manter o picker focado em selecao geral de artigo
-  - criar uma view dedicada para candidatos a link publico seguro
-  - deixar o backend decidir `can_send_to_customer`, `public_article_path` e `reason_if_blocked`
-- o objetivo da proxima camada nao e publicar artigo nem automatizar resposta; e apenas permitir copia/envio seguro de link publico quando o artigo for `public` + `published` em `knowledge_space` ativo
+- `vw_support_knowledge_article_picker` continua suficiente para busca e vinculo geral, incluindo referencias internas autorizadas.
+- `vw_support_knowledge_public_link_candidates` e o proprio picker agora projetam a decisao backend-safe de envio: `can_send_to_customer`, `public_article_path`, `article_status`, `article_visibility` e `reason_if_blocked`.
+- O frontend nao monta rota publica por slug, space ou heuristica. Ele so habilita copiar/enviar link quando o backend retornar explicitamente:
+  - `can_send_to_customer = true`
+  - `public_article_path` preenchido
+  - `article_status = published`
+  - `article_visibility = public`
+- Se qualquer requisito falhar, a acao fica desabilitada e o motivo operacional vem de `reason_if_blocked`.
+- O objetivo desse contrato nao e publicar artigo nem automatizar resposta; e apenas permitir copia/envio seguro de link publico quando o artigo for `public` + `published` em `knowledge_space` ativo.
 
 ## Ajuste visual 6.18.3 da tratativa
 - `/support/tickets/:ticketId` recebeu um passe corretivo de fidelidade visual para aproximar layout, densidade e hierarquia da blueprint aprovada

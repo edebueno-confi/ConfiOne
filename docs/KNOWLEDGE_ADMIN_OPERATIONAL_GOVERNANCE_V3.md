@@ -77,6 +77,7 @@ Alteracoes:
 
 ## Ticket Workspace
 - A aba `Central de ajuda` segue usando apenas a ponte segura de artigos publicos publicados.
+- O lote P0 Boundary QA endureceu a ponte de envio/copia: `vw_support_knowledge_public_link_candidates` e `vw_support_knowledge_article_picker` projetam `can_send_to_customer`, `reason_if_blocked`, `article_status`, `article_visibility` e `public_article_path`, e o frontend so habilita acao customer-facing quando todos os requisitos vierem do backend.
 - Nao houve alteracao no fluxo de thread, composer, status, responsavel ou timeline.
 
 ## Customer Portal autenticado

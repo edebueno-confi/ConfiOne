@@ -743,13 +743,24 @@ Fase 8.2:
 
 ### `vw_support_knowledge_public_link_candidates`
 - Finalidade: candidatos seguros de artigo publico para uso assistivo dentro de um ticket.
-- Retorna: `ticket_id`, `tenant_id`, contexto do tenant, `article_id`, `article_title`, `article_slug`, `article_summary`, `category_name`, `public_article_path` e `is_customer_send_allowed`.
+- Retorna: `ticket_id`, `tenant_id`, contexto do tenant, `article_id`, `article_title`, `article_slug`, `article_summary`, `category_name`, `article_visibility`, `article_status`, `public_article_path`, `can_send_to_customer`, `is_customer_send_allowed` e `reason_if_blocked`.
 - Regras:
   - filtra pelo tenant do ticket e pela permissao do Support Workspace;
   - depende de `app_private.vw_knowledge_articles_public_contract`;
   - retorna apenas artigos publicos publicados com `public_article_path` resolvido;
+  - `can_send_to_customer` so e verdadeiro quando `public_article_path` esta preenchido, `article_status = published` e `article_visibility = public`;
   - nao expõe draft, internal, restricted, playbook interno ou rota montada por heuristica no frontend;
   - usa `security_barrier = true`.
+
+### `vw_support_knowledge_article_picker` - elegibilidade de envio
+- O picker geral do Support Workspace continua permitindo vinculo interno de artigos autorizados ao ticket.
+- Para acao customer-facing, o frontend deve considerar apenas os campos projetados pelo backend:
+  - `can_send_to_customer = true`
+  - `is_customer_send_allowed = true`
+  - `public_article_path` preenchido
+  - `article_status = published`
+  - `article_visibility = public`
+- Quando qualquer requisito falhar, `reason_if_blocked` deve alimentar copy operacional e a acao de copiar/enviar link deve permanecer desabilitada.
 
 ### `vw_support_customer_360`
 - Finalidade: read model minimo de visao 360 do cliente B2B para suporte interno.

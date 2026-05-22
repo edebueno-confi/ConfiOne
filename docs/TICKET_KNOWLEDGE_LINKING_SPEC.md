@@ -166,6 +166,8 @@ Pertence ao vinculo:
 ### Artigos `public`
 - podem ser usados como referencia interna
 - podem ser marcados como enviados ao cliente
+- copia/envio de link publico pelo Support Workspace so pode ficar habilitado quando o backend retornar `can_send_to_customer = true`, `public_article_path` preenchido, `article_status = published` e `article_visibility = public`
+- o frontend nao monta rota publica a partir de slug, space ou path inferido; a rota publica vem do read model backend-safe
 
 ### Cliente B2B futuro
 - ve no maximo o link publico enviado

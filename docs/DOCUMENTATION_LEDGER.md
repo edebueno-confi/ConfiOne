@@ -18,6 +18,31 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase P0-B - Boundary QA + Safe Knowledge Link
+- fase: `P0-B`
+- nome: `Boundary QA + Safe Knowledge Link`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-22`
+- resumo funcional: o envio/copia de link publico de Knowledge no Support Workspace foi endurecido para depender apenas de contrato backend-safe. O picker geral e a view de candidatos publicos agora projetam `can_send_to_customer`, `reason_if_blocked`, `article_status`, `article_visibility` e `public_article_path`; o frontend bloqueia copia/envio quando qualquer requisito falha.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/TICKET_KNOWLEDGE_LINKING_SPEC.md`
+  - `docs/KNOWLEDGE_ADMIN_OPERATIONAL_GOVERNANCE_V3.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/reports/P0_BOUNDARY_QA_AND_SAFE_KNOWLEDGE_LINK_2026-05-22.md`
+- views/RPCs afetadas:
+  - `vw_support_knowledge_article_picker`
+  - `vw_support_knowledge_public_link_candidates`
+  - nenhuma RPC nova
+- telas afetadas:
+  - `/support/tickets/:ticketId`
+- riscos restantes:
+  - QA browser autenticado continua dependente da fixture local e da disponibilidade do servidor de desenvolvimento.
+- impacto na FAQ futura:
+  - confirma que links enviados pelo suporte podem ser descritos como publicos apenas quando o backend declarar artigo `published/public` e rota publica segura.
+
 ### Fase - Support Workspace Stabilization And Extraction
 - fase: `support-workspace`
 - nome: `Support Workspace Stabilization And Extraction`
