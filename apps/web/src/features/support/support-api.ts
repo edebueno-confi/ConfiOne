@@ -8,6 +8,7 @@ import type {
   CustomerOperationalStatus,
   CustomerProductLine,
   EngineeringWorkItemType,
+  InternalActionUpdateKind,
   KnowledgeArticleStatus,
   KnowledgeArticleVisibility,
   RpcAddInternalTicketNotePayload,
@@ -20,8 +21,18 @@ import type {
   RpcCloseTicketResponse,
   RpcCreateTicketPayload,
   RpcCreateTicketResponse,
+  RpcInternalActionAddEvidenceLinkPayload,
+  RpcInternalActionAddEvidenceLinkResponse,
+  RpcSupportAcceptInternalActionReturnPayload,
+  RpcSupportAcceptInternalActionReturnResponse,
+  RpcSupportCloseInternalActionPayload,
+  RpcSupportCloseInternalActionResponse,
+  RpcSupportCreateInternalActionPayload,
+  RpcSupportCreateInternalActionResponse,
   RpcSupportCreateTicketAttachmentUploadResponse,
   RpcSupportGetTicketAttachmentDownloadUrlResponse,
+  RpcSupportRequestInternalActionFollowupPayload,
+  RpcSupportRequestInternalActionFollowupResponse,
   RpcSupportRegisterTicketAttachmentResponse,
   RpcSupportUpdateTicketClassificationPayload,
   RpcSupportUpdateTicketClassificationResponse,
@@ -53,12 +64,16 @@ import type {
   SupportCustomerAccountIntegration,
   SupportCustomer360,
   SupportKnowledgeArticlePickerItem,
+  SupportInternalActionTargetArea,
+  SupportInternalActionDetail,
+  SupportInternalActionTimelineEntry,
   SupportCustomerRecentEventsWindow,
   SupportCustomerRecentTicketsWindow,
   SupportTicketAttachment,
   SupportTicketClassificationOption,
   SupportTicketDetail,
   SupportTicketEngineeringLink,
+  SupportTicketInternalAction,
   SupportTicketKnowledgeLink,
   SupportTicketQueueItem,
   SupportTicketTimelineItem,
@@ -683,6 +698,108 @@ function mapSupportTicketEngineeringLink(
   };
 }
 
+function mapSupportTicketInternalAction(
+  row: Record<string, unknown>,
+): SupportTicketInternalAction {
+  return {
+    internalActionId: String(row.internal_action_id),
+    ticketId: String(row.ticket_id),
+    tenantId: String(row.tenant_id),
+    targetArea: String(row.target_area),
+    targetAreaLabel: String(row.target_area_label),
+    supportType: row.support_type as SupportTicketInternalAction['supportType'],
+    priority: row.priority as SupportTicketInternalAction['priority'],
+    status: row.status as SupportTicketInternalAction['status'],
+    summary: String(row.summary),
+    assignedAreaUserId: (row.assigned_area_user_id as string | null) ?? null,
+    assignedAreaUserName: (row.assigned_area_user_name as string | null) ?? null,
+    requestedByUserId: String(row.requested_by_user_id),
+    requestedByUserName: (row.requested_by_user_name as string | null) ?? null,
+    lastUpdateKind: (row.last_update_kind as InternalActionUpdateKind | null) ?? null,
+    lastUpdateSummary: (row.last_update_summary as string | null) ?? null,
+    lastUpdateAt: (row.last_update_at as string | null) ?? null,
+    hasPendingReturn: Boolean(row.has_pending_return),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+function mapSupportInternalActionTargetArea(
+  row: Record<string, unknown>,
+): SupportInternalActionTargetArea {
+  return {
+    areaKey: String(row.area_key),
+    displayName: String(row.display_name),
+    status: row.status as SupportInternalActionTargetArea['status'],
+    allowsSpecializedBridge: Boolean(row.allows_specialized_bridge),
+    canCreateAction: Boolean(row.can_create_action),
+    unavailableReason: (row.unavailable_reason as string | null) ?? null,
+  };
+}
+
+function mapSupportInternalActionDetail(
+  row: Record<string, unknown>,
+): SupportInternalActionDetail {
+  return {
+    internalActionId: String(row.internal_action_id),
+    ticketId: String(row.ticket_id),
+    ticketTitle: String(row.ticket_title),
+    ticketStatus: row.ticket_status as SupportInternalActionDetail['ticketStatus'],
+    ticketPriority: row.ticket_priority as SupportInternalActionDetail['ticketPriority'],
+    ticketSeverity: row.ticket_severity as SupportInternalActionDetail['ticketSeverity'],
+    tenantId: String(row.tenant_id),
+    targetArea: String(row.target_area),
+    targetAreaLabel: String(row.target_area_label),
+    supportType: row.support_type as SupportInternalActionDetail['supportType'],
+    priority: row.priority as SupportInternalActionDetail['priority'],
+    status: row.status as SupportInternalActionDetail['status'],
+    summary: String(row.summary),
+    context: String(row.context),
+    requestedByUserId: String(row.requested_by_user_id),
+    requestedByUserName: (row.requested_by_user_name as string | null) ?? null,
+    assignedAreaUserId: (row.assigned_area_user_id as string | null) ?? null,
+    assignedAreaUserName: (row.assigned_area_user_name as string | null) ?? null,
+    returnedToSupportAt: (row.returned_to_support_at as string | null) ?? null,
+    closedAt: (row.closed_at as string | null) ?? null,
+    cancelledAt: (row.cancelled_at as string | null) ?? null,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    updatedByUserId: (row.updated_by_user_id as string | null) ?? null,
+    updatedByUserName: (row.updated_by_user_name as string | null) ?? null,
+    lastUpdateId: (row.last_update_id as string | null) ?? null,
+    lastUpdateKind: (row.last_update_kind as InternalActionUpdateKind | null) ?? null,
+    lastUpdateSummary: (row.last_update_summary as string | null) ?? null,
+    lastUpdateAt: (row.last_update_at as string | null) ?? null,
+    lastUpdateByUserId: (row.last_update_by_user_id as string | null) ?? null,
+    lastUpdateByUserName: (row.last_update_by_user_name as string | null) ?? null,
+    linkedEvidenceCount: Number(row.linked_evidence_count ?? 0),
+    hasPendingReturn: Boolean(row.has_pending_return),
+  };
+}
+
+function mapSupportInternalActionTimelineEntry(
+  row: Record<string, unknown>,
+): SupportInternalActionTimelineEntry {
+  return {
+    internalActionUpdateId: String(row.internal_action_update_id),
+    internalActionId: String(row.internal_action_id),
+    ticketId: String(row.ticket_id),
+    tenantId: String(row.tenant_id),
+    targetArea: String(row.target_area),
+    targetAreaLabel: String(row.target_area_label),
+    updateKind: row.update_kind as SupportInternalActionTimelineEntry['updateKind'],
+    statusBefore:
+      (row.status_before as SupportInternalActionTimelineEntry['statusBefore']) ?? null,
+    statusAfter:
+      (row.status_after as SupportInternalActionTimelineEntry['statusAfter']) ?? null,
+    body: String(row.body ?? ''),
+    metadata: (row.metadata as JsonObject | null) ?? {},
+    createdByUserId: String(row.created_by_user_id),
+    createdByUserName: (row.created_by_user_name as string | null) ?? null,
+    createdAt: String(row.created_at),
+  };
+}
+
 function mapSupportTicketIntakeTenant(
   row: Record<string, unknown>,
 ): SupportTicketIntakeTenant {
@@ -1051,6 +1168,77 @@ export async function listSupportTicketEngineeringLinks(ticketId: Uuid) {
   );
 }
 
+export async function listSupportTicketInternalActions(ticketId: Uuid) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_support_ticket_internal_actions')
+    .select('*')
+    .eq('ticket_id', ticketId)
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar os acionamentos internos deste ticket.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapSupportTicketInternalAction(row as Record<string, unknown>),
+  );
+}
+
+export async function listSupportInternalActionTargetAreas(
+  ticketId: Uuid,
+): Promise<SupportInternalActionTargetArea[]> {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_support_list_internal_action_target_areas',
+    {
+      p_ticket_id: ticketId,
+    },
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar as áreas internas disponíveis.');
+  }
+
+  return ((data ?? []) as Record<string, unknown>[]).map((row) =>
+    mapSupportInternalActionTargetArea(row as Record<string, unknown>),
+  );
+}
+
+export async function getSupportInternalActionDetail(internalActionId: Uuid) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_support_internal_action_detail')
+    .select('*')
+    .eq('internal_action_id', internalActionId)
+    .maybeSingle();
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o detalhe do acionamento interno.');
+  }
+
+  return data
+    ? mapSupportInternalActionDetail(data as Record<string, unknown>)
+    : null;
+}
+
+export async function listSupportInternalActionTimeline(internalActionId: Uuid) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_support_internal_action_timeline')
+    .select('*')
+    .eq('internal_action_id', internalActionId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o histórico interno deste acionamento.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapSupportInternalActionTimelineEntry(row as Record<string, unknown>),
+  );
+}
+
 export async function listSupportKnowledgeArticlePicker(ticketId: Uuid) {
   const client = requireClient();
   const { data, error } = await client
@@ -1104,6 +1292,19 @@ export async function updateTicketStatus(payload: RpcUpdateTicketStatusPayload) 
   }
 
   return data as RpcUpdateTicketStatusResponse;
+}
+
+export async function recalculateSupportTicketSla(ticketId: Uuid) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_recalculate_ticket_sla', {
+    p_ticket_id: ticketId,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao recalcular o SLA interno do ticket.');
+  }
+
+  return data;
 }
 
 export async function updateTicketClassification(
@@ -1302,6 +1503,97 @@ export async function createSupportEngineeringWorkItemFromTicket(
   }
 
   return data as RpcSupportCreateEngineeringWorkItemFromTicketResponse;
+}
+
+export async function createSupportInternalAction(
+  payload: RpcSupportCreateInternalActionPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_create_internal_action', {
+    p_ticket_id: payload.ticketId,
+    p_target_area: payload.targetArea,
+    p_support_type: payload.supportType,
+    p_priority: payload.priority ?? 'normal',
+    p_summary: payload.summary,
+    p_context: payload.context,
+    p_evidence_attachment_ids: payload.evidenceAttachmentIds ?? null,
+    p_assigned_area_user_id: payload.assignedAreaUserId ?? null,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao criar o acionamento interno.');
+  }
+
+  return data as RpcSupportCreateInternalActionResponse;
+}
+
+export async function addInternalActionEvidenceLink(
+  payload: RpcInternalActionAddEvidenceLinkPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_internal_action_add_evidence_link', {
+    p_internal_action_id: payload.internalActionId,
+    p_tenant_id: payload.tenantId,
+    p_ticket_attachment_id: payload.ticketAttachmentId,
+    p_note: payload.note ?? null,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao vincular a evidência a este acionamento.');
+  }
+
+  return data as RpcInternalActionAddEvidenceLinkResponse;
+}
+
+export async function acceptSupportInternalActionReturn(
+  payload: RpcSupportAcceptInternalActionReturnPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_accept_internal_action_return', {
+    p_internal_action_id: payload.internalActionId,
+    p_tenant_id: payload.tenantId,
+    p_note: payload.note ?? null,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao aceitar o retorno deste acionamento.');
+  }
+
+  return data as RpcSupportAcceptInternalActionReturnResponse;
+}
+
+export async function requestSupportInternalActionFollowup(
+  payload: RpcSupportRequestInternalActionFollowupPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_request_internal_action_followup', {
+    p_internal_action_id: payload.internalActionId,
+    p_tenant_id: payload.tenantId,
+    p_note: payload.note,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao solicitar complemento deste acionamento.');
+  }
+
+  return data as RpcSupportRequestInternalActionFollowupResponse;
+}
+
+export async function closeSupportInternalAction(
+  payload: RpcSupportCloseInternalActionPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_close_internal_action', {
+    p_internal_action_id: payload.internalActionId,
+    p_tenant_id: payload.tenantId,
+    p_note: payload.note ?? null,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao encerrar este acionamento.');
+  }
+
+  return data as RpcSupportCloseInternalActionResponse;
 }
 
 export async function linkSupportTicketToEngineeringWorkItem(

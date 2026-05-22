@@ -55,6 +55,16 @@ export const TICKET_EVENT_TYPES = [
   'engineering_update_added',
   'engineering_status_updated',
   'engineering_returned_to_support',
+  'internal_action_created',
+  'internal_action_assigned',
+  'internal_action_status_updated',
+  'internal_action_comment_added',
+  'internal_action_evidence_linked',
+  'internal_action_returned_to_support',
+  'internal_action_follow_up_requested',
+  'internal_action_return_accepted',
+  'internal_action_closed',
+  'internal_action_cancelled',
   'sla_updated',
   'resolved',
   'closed',
@@ -120,6 +130,62 @@ export const ENGINEERING_WORK_ITEM_UPDATE_KINDS = [
 ] as const;
 export type EngineeringWorkItemUpdateKind =
   (typeof ENGINEERING_WORK_ITEM_UPDATE_KINDS)[number];
+
+export const INTERNAL_AREA_MEMBERSHIP_ROLES = [
+  'member',
+  'manager',
+  'viewer',
+] as const;
+export type InternalAreaMembershipRole =
+  (typeof INTERNAL_AREA_MEMBERSHIP_ROLES)[number];
+
+export const INTERNAL_AREA_MEMBERSHIP_STATUSES = [
+  'active',
+  'inactive',
+  'archived',
+] as const;
+export type InternalAreaMembershipStatus =
+  (typeof INTERNAL_AREA_MEMBERSHIP_STATUSES)[number];
+
+export type InternalActionAreaKey = string;
+
+export const INTERNAL_ACTION_STATUSES = [
+  'open',
+  'assigned',
+  'in_progress',
+  'waiting_support',
+  'waiting_external',
+  'returned_to_support',
+  'follow_up_requested',
+  'closed',
+  'cancelled',
+] as const;
+export type InternalActionStatus = (typeof INTERNAL_ACTION_STATUSES)[number];
+
+export const INTERNAL_ACTION_SUPPORT_TYPES = [
+  'analysis',
+  'execution',
+  'approval',
+  'information_request',
+  'external_follow_up',
+  'technical_investigation',
+] as const;
+export type InternalActionSupportType =
+  (typeof INTERNAL_ACTION_SUPPORT_TYPES)[number];
+
+export const INTERNAL_ACTION_UPDATE_KINDS = [
+  'comment',
+  'assignment_changed',
+  'status_changed',
+  'evidence_linked',
+  'returned_to_support',
+  'support_acceptance',
+  'follow_up_requested',
+  'closed',
+  'cancelled',
+] as const;
+export type InternalActionUpdateKind =
+  (typeof INTERNAL_ACTION_UPDATE_KINDS)[number];
 
 export type TicketStatusUpdateTarget = Exclude<TicketStatus, 'closed'>;
 
@@ -756,6 +822,50 @@ export interface EngineeringTicketLinkRecord {
   updatedByUserId: Uuid | null;
 }
 
+export interface InternalActionRecord {
+  id: Uuid;
+  tenantId: Uuid;
+  ticketId: Uuid;
+  targetArea: InternalActionAreaKey;
+  supportType: InternalActionSupportType;
+  priority: TicketPriority;
+  status: InternalActionStatus;
+  summary: string;
+  context: string;
+  requestedByUserId: Uuid;
+  assignedAreaUserId: Uuid | null;
+  returnedToSupportAt: IsoTimestamp | null;
+  closedAt: IsoTimestamp | null;
+  cancelledAt: IsoTimestamp | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  updatedByUserId: Uuid | null;
+}
+
+export interface InternalActionUpdateRecord {
+  id: Uuid;
+  tenantId: Uuid;
+  internalActionId: Uuid;
+  updateKind: InternalActionUpdateKind;
+  statusBefore: InternalActionStatus | null;
+  statusAfter: InternalActionStatus | null;
+  body: string;
+  metadata: JsonObject;
+  createdByUserId: Uuid;
+  createdAt: IsoTimestamp;
+}
+
+export interface InternalActionEvidenceLinkRecord {
+  id: Uuid;
+  tenantId: Uuid;
+  internalActionId: Uuid;
+  internalActionUpdateId: Uuid;
+  ticketAttachmentId: Uuid;
+  note: string | null;
+  linkedByUserId: Uuid;
+  createdAt: IsoTimestamp;
+}
+
 export interface SupportTicketEngineeringLink {
   engineeringTicketLinkId: Uuid;
   ticketId: Uuid;
@@ -779,6 +889,118 @@ export interface SupportTicketEngineeringLink {
   lastUpdateSummary: string | null;
   lastUpdateNextStep: string | null;
   lastUpdateAt: IsoTimestamp | null;
+}
+
+export interface SupportTicketInternalAction {
+  internalActionId: Uuid;
+  ticketId: Uuid;
+  tenantId: Uuid;
+  targetArea: InternalActionAreaKey;
+  targetAreaLabel: string;
+  supportType: InternalActionSupportType;
+  priority: TicketPriority;
+  status: InternalActionStatus;
+  summary: string;
+  assignedAreaUserId: Uuid | null;
+  assignedAreaUserName: string | null;
+  requestedByUserId: Uuid;
+  requestedByUserName: string | null;
+  lastUpdateKind: InternalActionUpdateKind | null;
+  lastUpdateSummary: string | null;
+  lastUpdateAt: IsoTimestamp | null;
+  hasPendingReturn: boolean;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+}
+
+export interface SupportInternalActionTargetArea {
+  areaKey: InternalActionAreaKey;
+  displayName: string;
+  status: TicketReferenceStatus;
+  allowsSpecializedBridge: boolean;
+  canCreateAction: boolean;
+  unavailableReason: string | null;
+}
+
+export interface SupportInternalActionDetail {
+  internalActionId: Uuid;
+  ticketId: Uuid;
+  ticketTitle: string;
+  ticketStatus: TicketStatus;
+  ticketPriority: TicketPriority;
+  ticketSeverity: TicketSeverity;
+  tenantId: Uuid;
+  targetArea: InternalActionAreaKey;
+  targetAreaLabel: string;
+  supportType: InternalActionSupportType;
+  priority: TicketPriority;
+  status: InternalActionStatus;
+  summary: string;
+  context: string;
+  requestedByUserId: Uuid;
+  requestedByUserName: string | null;
+  assignedAreaUserId: Uuid | null;
+  assignedAreaUserName: string | null;
+  returnedToSupportAt: IsoTimestamp | null;
+  closedAt: IsoTimestamp | null;
+  cancelledAt: IsoTimestamp | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  updatedByUserId: Uuid | null;
+  updatedByUserName: string | null;
+  lastUpdateId: Uuid | null;
+  lastUpdateKind: InternalActionUpdateKind | null;
+  lastUpdateSummary: string | null;
+  lastUpdateAt: IsoTimestamp | null;
+  lastUpdateByUserId: Uuid | null;
+  lastUpdateByUserName: string | null;
+  linkedEvidenceCount: number;
+  hasPendingReturn: boolean;
+}
+
+export interface SupportInternalActionTimelineEntry {
+  internalActionUpdateId: Uuid;
+  internalActionId: Uuid;
+  ticketId: Uuid;
+  tenantId: Uuid;
+  targetArea: InternalActionAreaKey;
+  targetAreaLabel: string;
+  updateKind: InternalActionUpdateKind;
+  statusBefore: InternalActionStatus | null;
+  statusAfter: InternalActionStatus | null;
+  body: string;
+  metadata: JsonObject;
+  createdByUserId: Uuid;
+  createdByUserName: string | null;
+  createdAt: IsoTimestamp;
+}
+
+export interface InternalActionAreaQueueItem {
+  internalActionId: Uuid;
+  ticketId: Uuid;
+  ticketTitle: string;
+  ticketStatus: TicketStatus;
+  ticketPriority: TicketPriority;
+  ticketSeverity: TicketSeverity;
+  ticketUpdatedAt: IsoTimestamp;
+  tenantId: Uuid;
+  targetArea: InternalActionAreaKey;
+  targetAreaLabel: string;
+  supportType: InternalActionSupportType;
+  priority: TicketPriority;
+  status: InternalActionStatus;
+  summary: string;
+  context: string;
+  requestedByUserId: Uuid;
+  requestedByUserName: string | null;
+  assignedAreaUserId: Uuid | null;
+  assignedAreaUserName: string | null;
+  lastUpdateKind: InternalActionUpdateKind | null;
+  lastUpdateSummary: string | null;
+  lastUpdateAt: IsoTimestamp | null;
+  returnedToSupportAt: IsoTimestamp | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
 }
 
 export interface EngineeringWorkspaceWorkItem {
@@ -1021,6 +1243,78 @@ export interface RpcEngineeringLinkExistingWorkItemToTicketPayload {
 }
 export type RpcEngineeringLinkExistingWorkItemToTicketResponse =
   EngineeringTicketLinkRecord;
+
+export interface RpcSupportCreateInternalActionPayload {
+  ticketId: Uuid;
+  targetArea: InternalActionAreaKey;
+  supportType: InternalActionSupportType;
+  priority?: TicketPriority;
+  summary: string;
+  context: string;
+  evidenceAttachmentIds?: Uuid[] | null;
+  assignedAreaUserId?: Uuid | null;
+}
+export type RpcSupportCreateInternalActionResponse = InternalActionRecord;
+
+export interface RpcInternalActionAssignPayload {
+  internalActionId: Uuid;
+  tenantId: Uuid;
+  assignedAreaUserId: Uuid;
+}
+export type RpcInternalActionAssignResponse = InternalActionRecord;
+
+export interface RpcInternalActionAddCommentPayload {
+  internalActionId: Uuid;
+  tenantId: Uuid;
+  body: string;
+}
+export type RpcInternalActionAddCommentResponse = InternalActionUpdateRecord;
+
+export interface RpcInternalActionUpdateStatusPayload {
+  internalActionId: Uuid;
+  tenantId: Uuid;
+  status: InternalActionStatus;
+  body?: string | null;
+}
+export type RpcInternalActionUpdateStatusResponse = InternalActionRecord;
+
+export interface RpcInternalActionAddEvidenceLinkPayload {
+  internalActionId: Uuid;
+  tenantId: Uuid;
+  ticketAttachmentId: Uuid;
+  note?: string | null;
+}
+export type RpcInternalActionAddEvidenceLinkResponse =
+  InternalActionEvidenceLinkRecord;
+
+export interface RpcInternalActionReturnToSupportPayload {
+  internalActionId: Uuid;
+  tenantId: Uuid;
+  body: string;
+}
+export type RpcInternalActionReturnToSupportResponse = InternalActionRecord;
+
+export interface RpcSupportAcceptInternalActionReturnPayload {
+  internalActionId: Uuid;
+  tenantId: Uuid;
+  note?: string | null;
+}
+export type RpcSupportAcceptInternalActionReturnResponse = InternalActionRecord;
+
+export interface RpcSupportRequestInternalActionFollowupPayload {
+  internalActionId: Uuid;
+  tenantId: Uuid;
+  note: string;
+}
+export type RpcSupportRequestInternalActionFollowupResponse =
+  InternalActionRecord;
+
+export interface RpcSupportCloseInternalActionPayload {
+  internalActionId: Uuid;
+  tenantId: Uuid;
+  note?: string | null;
+}
+export type RpcSupportCloseInternalActionResponse = InternalActionRecord;
 
 export type CustomerPortalRole = 'customer_user' | 'customer_manager';
 
