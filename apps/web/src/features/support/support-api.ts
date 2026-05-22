@@ -505,7 +505,9 @@ function mapTicketKnowledgeLink(row: Record<string, unknown>): SupportTicketKnow
       (row.article_visibility as KnowledgeArticleVisibility | null) ?? null,
     articleStatus: (row.article_status as KnowledgeArticleStatus | null) ?? null,
     publicArticlePath: (row.public_article_path as string | null) ?? null,
+    canSendToCustomer: Boolean(row.can_send_to_customer),
     isCustomerSendAllowed: Boolean(row.is_customer_send_allowed),
+    reasonIfBlocked: (row.reason_if_blocked as string | null) ?? null,
   };
 }
 
@@ -522,7 +524,9 @@ function mapKnowledgeArticlePickerItem(
     articleVisibility: row.article_visibility as KnowledgeArticleVisibility,
     articleStatus: row.article_status as KnowledgeArticleStatus,
     publicArticlePath: (row.public_article_path as string | null) ?? null,
+    canSendToCustomer: Boolean(row.can_send_to_customer),
     isCustomerSendAllowed: Boolean(row.is_customer_send_allowed),
+    reasonIfBlocked: (row.reason_if_blocked as string | null) ?? null,
   };
 }
 

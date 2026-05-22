@@ -742,7 +742,9 @@ export interface SupportTicketKnowledgeLink {
   articleVisibility: KnowledgeArticleVisibility | null;
   articleStatus: KnowledgeArticleStatus | null;
   publicArticlePath: string | null;
+  canSendToCustomer: boolean;
   isCustomerSendAllowed: boolean;
+  reasonIfBlocked: string | null;
 }
 
 export interface SupportTicketAttachment {
@@ -1094,7 +1096,9 @@ export interface SupportKnowledgeArticlePickerItem {
   articleVisibility: KnowledgeArticleVisibility;
   articleStatus: KnowledgeArticleStatus;
   publicArticlePath: string | null;
+  canSendToCustomer: boolean;
   isCustomerSendAllowed: boolean;
+  reasonIfBlocked: string | null;
 }
 
 export interface RpcCreateTicketPayload {

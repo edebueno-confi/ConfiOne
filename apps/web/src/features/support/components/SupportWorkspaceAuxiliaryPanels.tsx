@@ -25,6 +25,16 @@ type KnowledgePhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'e
 type QueueMetricKind = 'open' | 'urgent' | 'unassigned' | 'waiting_customer' | 'waiting_engineering';
 type OperationalQueueBadgeTone = 'default' | 'blue' | 'positive' | 'warning' | 'critical' | 'violet';
 
+function canSendKnowledgeArticleToCustomer(article: SupportKnowledgeArticlePickerItem) {
+  return (
+    article.canSendToCustomer &&
+    article.isCustomerSendAllowed &&
+    article.publicArticlePath !== null &&
+    article.articleStatus === 'published' &&
+    article.articleVisibility === 'public'
+  );
+}
+
 export function OperationalQueueBadge({
   children,
   tone = 'default',
@@ -71,7 +81,7 @@ export function SupportHelpCenterPanel({
   articles: SupportKnowledgeArticlePickerItem[];
   loading: boolean;
   message: string | null;
-  onCopyPublicLink: (publicArticlePath: string) => void;
+  onCopyPublicLink: (article: SupportKnowledgeArticlePickerItem) => void;
   onSearchChange: (value: string) => void;
   onSendToCustomer: (articleId: Uuid) => void;
   phase: KnowledgePhase;
@@ -139,7 +149,12 @@ export function SupportHelpCenterPanel({
             <InlineNotice>Nenhum artigo público permitido apareceu para este ticket.</InlineNotice>
           ) : (
             <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-              {articles.slice(0, 6).map((article) => (
+              {articles.slice(0, 6).map((article) => {
+                  const canSendToCustomer = canSendKnowledgeArticleToCustomer(article);
+                  const blockReason =
+                    article.reasonIfBlocked ?? 'Backend não autorizou o envio ao cliente.';
+
+                  return (
                 <article
                   className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.04)]"
                   key={`help-center:${article.articleId}`}
@@ -158,30 +173,30 @@ export function SupportHelpCenterPanel({
                       </p>
                     </div>
                     <div className="flex shrink-0 flex-wrap gap-1.5">
-                      {article.publicArticlePath ? (
+                      {canSendToCustomer ? (
                         <a
                           className="inline-flex min-h-8 items-center justify-center rounded-[10px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2.5 text-[11px] font-semibold text-[color:var(--color-ink)] transition hover:border-[rgba(47,107,255,0.28)] hover:text-[color:var(--color-brand-blue)]"
-                          href={article.publicArticlePath}
+                          href={article.publicArticlePath ?? undefined}
                           rel="noreferrer"
                           target="_blank"
                         >
                           Abrir artigo
                         </a>
                       ) : null}
-                      {article.publicArticlePath ? (
-                        <GhostButton
-                          className="min-h-8 rounded-[10px] px-2.5 text-[11px]"
-                          disabled={loading}
-                          onClick={() => onCopyPublicLink(article.publicArticlePath!)}
-                          type="button"
-                        >
-                          Copiar link
-                        </GhostButton>
-                      ) : null}
+                      <GhostButton
+                        className="min-h-8 rounded-[10px] px-2.5 text-[11px]"
+                        disabled={loading || !canSendToCustomer}
+                        onClick={() => onCopyPublicLink(article)}
+                        title={canSendToCustomer ? undefined : blockReason}
+                        type="button"
+                      >
+                        Copiar link
+                      </GhostButton>
                       <AppButton
                         className="min-h-8 rounded-[10px] px-2.5 text-[11px]"
-                        disabled={loading || !article.publicArticlePath || !article.isCustomerSendAllowed}
+                        disabled={loading || !canSendToCustomer}
                         onClick={() => onSendToCustomer(article.articleId)}
+                        title={canSendToCustomer ? undefined : blockReason}
                         type="button"
                       >
                         Marcar envio
@@ -189,7 +204,8 @@ export function SupportHelpCenterPanel({
                     </div>
                   </div>
                 </article>
-              ))}
+                  );
+                })}
             </div>
           )}
         </>

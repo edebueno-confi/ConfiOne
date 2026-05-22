@@ -462,7 +462,17 @@ export function SupportKnowledgeDrawerPanel({
   loading: boolean;
   noteDraft: string;
   onArchive: (linkId: Uuid) => void;
-  onCopyPublicLink: (publicArticlePath: string) => void;
+  onCopyPublicLink: (
+    article: Pick<
+      SupportKnowledgeArticlePickerItem,
+      | 'articleStatus'
+      | 'articleVisibility'
+      | 'canSendToCustomer'
+      | 'isCustomerSendAllowed'
+      | 'publicArticlePath'
+      | 'reasonIfBlocked'
+    >,
+  ) => void;
   onLinkInternal: (articleId: Uuid) => void;
   onMarkGap: () => void;
   onNeedsUpdate: (articleId: Uuid) => void;
@@ -478,6 +488,12 @@ export function SupportKnowledgeDrawerPanel({
     .slice(0, 3);
   const publicCount = articles.filter((article) => article.articleVisibility === 'public').length;
   const internalCount = articles.filter((article) => article.articleVisibility === 'internal').length;
+  const canSendToCustomer = (article: SupportKnowledgeArticlePickerItem) =>
+    article.canSendToCustomer &&
+    article.isCustomerSendAllowed &&
+    article.publicArticlePath !== null &&
+    article.articleStatus === 'published' &&
+    article.articleVisibility === 'public';
 
   return (
     <div className="support-drawer-stack">
@@ -538,26 +554,32 @@ export function SupportKnowledgeDrawerPanel({
                   >
                     Vincular
                   </button>
-                  {article.publicArticlePath ? (
-                    <button
-                      className="support-drawer-inline-action"
-                      disabled={loading}
-                      onClick={() => onCopyPublicLink(article.publicArticlePath!)}
-                      type="button"
-                    >
-                      Copiar link
-                    </button>
-                  ) : null}
-                  {article.isCustomerSendAllowed && article.publicArticlePath ? (
-                    <button
-                      className="support-drawer-inline-action"
-                      disabled={loading}
-                      onClick={() => onSendToCustomer(article.articleId)}
-                      type="button"
-                    >
-                      Marcar como enviado
-                    </button>
-                  ) : null}
+                  <button
+                    className="support-drawer-inline-action"
+                    disabled={loading || !canSendToCustomer(article)}
+                    onClick={() => onCopyPublicLink(article)}
+                    title={
+                      canSendToCustomer(article)
+                        ? undefined
+                        : article.reasonIfBlocked ?? 'Backend não autorizou o envio ao cliente.'
+                    }
+                    type="button"
+                  >
+                    Copiar link
+                  </button>
+                  <button
+                    className="support-drawer-inline-action"
+                    disabled={loading || !canSendToCustomer(article)}
+                    onClick={() => onSendToCustomer(article.articleId)}
+                    title={
+                      canSendToCustomer(article)
+                        ? undefined
+                        : article.reasonIfBlocked ?? 'Backend não autorizou o envio ao cliente.'
+                    }
+                    type="button"
+                  >
+                    Marcar como enviado
+                  </button>
                   <SupportDrawerSecondaryMenu
                     actions={[
                       {
@@ -598,7 +620,24 @@ export function SupportKnowledgeDrawerPanel({
                   {link.publicArticlePath ? (
                     <button
                       className="support-drawer-inline-action"
-                      onClick={() => onCopyPublicLink(link.publicArticlePath!)}
+                      disabled={
+                        !link.canSendToCustomer ||
+                        !link.isCustomerSendAllowed ||
+                        link.articleStatus !== 'published' ||
+                        link.articleVisibility !== 'public'
+                      }
+                      onClick={() =>
+                        onCopyPublicLink({
+                          articleStatus: link.articleStatus ?? 'draft',
+                          articleVisibility: link.articleVisibility ?? 'internal',
+                          canSendToCustomer: link.canSendToCustomer,
+                          isCustomerSendAllowed: link.isCustomerSendAllowed,
+                          publicArticlePath: link.publicArticlePath,
+                          reasonIfBlocked: link.canSendToCustomer
+                            ? null
+                            : 'Backend não autorizou o envio ao cliente.',
+                        })
+                      }
                       type="button"
                     >
                       Copiar link

@@ -566,6 +566,36 @@ function buildAbsoluteAppUrl(path: string) {
   return new URL(path, window.location.origin).toString();
 }
 
+function getKnowledgeCustomerSendBlockReason(
+  article: Pick<
+    SupportKnowledgeArticlePickerItem,
+    | 'articleStatus'
+    | 'articleVisibility'
+    | 'canSendToCustomer'
+    | 'isCustomerSendAllowed'
+    | 'publicArticlePath'
+    | 'reasonIfBlocked'
+  >,
+) {
+  if (!article.canSendToCustomer || !article.isCustomerSendAllowed) {
+    return article.reasonIfBlocked ?? 'Backend não autorizou o envio ao cliente.';
+  }
+
+  if (!article.publicArticlePath) {
+    return 'Rota pública indisponível.';
+  }
+
+  if (article.articleStatus !== 'published') {
+    return 'Artigo ainda não publicado.';
+  }
+
+  if (article.articleVisibility !== 'public') {
+    return 'Conteúdo não é público.';
+  }
+
+  return null;
+}
+
 function humanizeTicketEventLabel(eventType: SupportTicketTimelineItem['eventType']) {
   const normalizedEventType = String(eventType ?? '').toLocaleLowerCase('pt-BR');
 
@@ -3477,7 +3507,24 @@ function SupportWorkspaceView({
     }
   }
 
-  async function handleCopyPublicKnowledgeLink(publicArticlePath: string) {
+  async function handleCopyPublicKnowledgeLink(
+    article: Pick<
+      SupportKnowledgeArticlePickerItem,
+      | 'articleStatus'
+      | 'articleVisibility'
+      | 'canSendToCustomer'
+      | 'isCustomerSendAllowed'
+      | 'publicArticlePath'
+      | 'reasonIfBlocked'
+    >,
+  ) {
+    const blockReason = getKnowledgeCustomerSendBlockReason(article);
+
+    if (blockReason) {
+      applyFailure(blockReason);
+      return;
+    }
+
     try {
       if (
         typeof navigator === 'undefined' ||
@@ -3487,7 +3534,7 @@ function SupportWorkspaceView({
         throw new Error('clipboard unavailable');
       }
 
-      await navigator.clipboard.writeText(buildAbsoluteAppUrl(publicArticlePath));
+      await navigator.clipboard.writeText(buildAbsoluteAppUrl(article.publicArticlePath ?? ''));
       applySuccess('Link público copiado com sucesso.');
     } catch {
       applyFailure('Não foi possível copiar o link público agora.');
@@ -3495,19 +3542,23 @@ function SupportWorkspaceView({
   }
 
   function handleOpenKnowledgeArticle(article: SupportKnowledgeArticlePickerItem) {
-    if (!article.publicArticlePath) {
-      applyFailure('Abertura indisponível para este conteúdo.');
+    const blockReason = getKnowledgeCustomerSendBlockReason(article);
+
+    if (blockReason) {
+      applyFailure(blockReason);
       return;
     }
 
     if (typeof window !== 'undefined' && typeof window.open === 'function') {
-      window.open(buildAbsoluteAppUrl(article.publicArticlePath), '_blank', 'noopener,noreferrer');
+      window.open(buildAbsoluteAppUrl(article.publicArticlePath ?? ''), '_blank', 'noopener,noreferrer');
     }
   }
 
   function handleUseArticleInReply(article: SupportKnowledgeArticlePickerItem) {
-    if (!article.isCustomerSendAllowed || !article.publicArticlePath) {
-      applyFailure('Este artigo não pode ser usado na resposta ao cliente.');
+    const blockReason = getKnowledgeCustomerSendBlockReason(article);
+
+    if (blockReason) {
+      applyFailure(blockReason);
       return;
     }
 
@@ -3891,6 +3942,18 @@ function SupportWorkspaceView({
   ) {
     if (!ticketDetail) {
       return;
+    }
+
+    if (linkType === 'sent_to_customer') {
+      const article = knowledgeArticlePicker.find((item) => item.articleId === articleId);
+      const blockReason = article
+        ? getKnowledgeCustomerSendBlockReason(article)
+        : 'Artigo indisponível no contrato seguro deste ticket.';
+
+      if (blockReason) {
+        applyFailure(blockReason);
+        return;
+      }
     }
 
     setKnowledgeSubmitting(true);
