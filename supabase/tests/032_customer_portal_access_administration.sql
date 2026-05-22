@@ -205,11 +205,22 @@ select lives_ok(
 select ok(
   exists(
     select 1
-    from public.vw_admin_customer_portal_access_overview
-    where portal_user_count = 3
-      and active_user_count = 2
-      and invited_user_count = 1
-      and blocked_user_count = 0
+    from (
+      select
+        sum(portal_user_count) as portal_user_count,
+        sum(active_user_count) as active_user_count,
+        sum(invited_user_count) as invited_user_count,
+        sum(blocked_user_count) as blocked_user_count
+      from public.vw_admin_customer_portal_tenant_access
+      where tenant_id in (
+          'aaaaaaaa-aaaa-4aaa-8aaa-222222222222'::uuid,
+          'bbbbbbbb-bbbb-4bbb-8bbb-222222222222'::uuid
+        )
+    ) as scoped_overview
+    where scoped_overview.portal_user_count = 3
+      and scoped_overview.active_user_count = 2
+      and scoped_overview.invited_user_count = 1
+      and scoped_overview.blocked_user_count = 0
   ),
   'overview administrativo resume usuários customer-facing e estados reais'
 );

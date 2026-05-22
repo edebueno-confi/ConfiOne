@@ -138,6 +138,9 @@ values
     timezone('utc', now())
   );
 
+delete from public.user_global_roles
+where role = 'platform_admin';
+
 select is(
   app_private.bootstrap_first_platform_admin(
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,
@@ -215,9 +218,18 @@ select is(
 );
 
 select is(
-  (select count(*)::integer from public.vw_admin_access_memberships),
+  (
+    select count(*)::integer
+    from public.vw_admin_access_memberships
+    where tenant_slug = 'access-system-a'
+      and user_id in (
+      'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid,
+      'cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid,
+      'dddddddd-dddd-4ddd-8ddd-dddddddddddd'::uuid
+    )
+  ),
   3,
-  'platform_admin le memberships pelo read model de Access'
+  'platform_admin le os memberships do teste pelo read model de Access'
 );
 
 select is(

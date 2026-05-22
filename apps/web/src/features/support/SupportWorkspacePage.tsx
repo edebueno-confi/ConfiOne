@@ -39,19 +39,27 @@ import {
 import { useAuthContext } from '../auth/auth-context';
 import { classifyAdminError } from '../admin/admin-errors';
 import {
-  createSupportEngineeringWorkItemFromTicket,
   addInternalTicketNote,
+  addInternalActionEvidenceLink,
   addTicketMessage,
+  acceptSupportInternalActionReturn,
   archiveSupportTicketArticleLink,
   assignTicket,
+  closeSupportInternalAction,
   closeTicket,
   createTicket,
+  createSupportInternalAction,
+  createSupportEngineeringWorkItemFromTicket,
+  getSupportInternalActionDetail,
   getSupportTicketAttachmentSignedUrl,
   getSupportCustomerAccountContext,
   getSupportCustomer360,
   getSupportCustomerRecentEvents,
   getSupportCustomerRecentTickets,
   getSupportTicketDetail,
+  listSupportInternalActionTargetAreas,
+  listSupportInternalActionTimeline,
+  listSupportTicketInternalActions,
   listSupportTicketAttachments,
   listSupportTicketEngineeringLinks,
   getSupportTicketKnowledgeLinks,
@@ -68,6 +76,7 @@ import {
   markSupportDocumentationGap,
   listSupportTicketsQueue,
   reopenTicket,
+  requestSupportInternalActionFollowup,
   uploadSupportTicketAttachment,
   updateTicketClassification,
   updateTicketPrioritySeverity,
@@ -75,12 +84,16 @@ import {
 } from './support-api';
 import {
   ENGINEERING_WORK_ITEM_TYPES,
+  INTERNAL_ACTION_SUPPORT_TYPES,
   TICKET_PRIORITIES,
   TICKET_SEVERITIES,
   TICKET_SOURCES,
   TICKET_STATUSES,
-  type KnowledgeArticleStatus,
-  type KnowledgeArticleVisibility,
+  type InternalActionStatus,
+  type InternalActionSupportType,
+  type SupportInternalActionTargetArea,
+  type SupportInternalActionDetail,
+  type SupportInternalActionTimelineEntry,
   type EngineeringWorkItemType,
   type SupportAssignableAgent,
   type SupportCustomerAccountAlert,
@@ -101,6 +114,7 @@ import {
   type SupportTicketDetail,
   type SupportTicketAttachment,
   type SupportTicketEngineeringLink,
+  type SupportTicketInternalAction,
   type SupportTicketKnowledgeLink,
   type SupportTicketQueueItem,
   type SupportTicketTimelineItem,
@@ -113,29 +127,94 @@ import {
   type TicketStatusUpdateTarget,
   type Uuid,
 } from '../../contracts/support-contracts';
+import {
+  QueueTicketItem,
+  EvidenceFileChip,
+  SupportWorkspaceGrid,
+} from './components/SupportWorkspacePrimitives';
+import { SupportTicketComposerSection } from './components/SupportTicketComposerSection';
+import {
+  SupportClassificationDrawerPanel,
+  SupportDrawerField,
+  SupportDrawerPill,
+  SupportEvidenceDrawerPanel,
+  SupportKnowledgeDrawerPanel,
+  SupportRelatedDrawerPanel,
+  SupportStatusDrawerPanel,
+} from './components/SupportTicketContextPanels';
+import {
+  SupportEngineeringHandoffDrawerPanel,
+  SupportInternalActionsDrawerPanel,
+} from './components/SupportTicketAdvancedContextPanels';
+import { SupportTicketContextRail } from './components/SupportTicketContextRail';
+import { SupportTicketConversationSection } from './components/SupportTicketConversationSection';
+import { SupportTicketQueue } from './components/SupportTicketQueue';
+import { SupportTicketRightRail } from './components/SupportTicketRightRail';
+import { SupportTicketWorkspaceHeader } from './components/SupportTicketWorkspaceHeader';
+import {
+  SupportHelpCenterPanel,
+  OperationalQueueBadge,
+  queueMetricIcon,
+  SupportSummaryStrip,
+  SupportTicketPreview,
+} from './components/SupportWorkspaceAuxiliaryPanels';
+import { SupportQueueLoadingScaffold, SupportTicketLoadingScaffold } from './components/SupportWorkspaceStates';
+import { CompactSupportPill, SupportSurfaceIcon } from './components/SupportWorkspaceVisuals';
+import {
+  formatSlaDueLabel,
+  formatSupportShortTime,
+  humanizeKnowledgeLinkType,
+  humanizeKnowledgeStatus,
+  humanizeKnowledgeVisibility,
+  humanizePriority,
+  humanizeSeverity,
+  humanizeStatus,
+  primaryContactFromCustomer,
+  readCustomerDocumentLabel,
+  supportTicketCode,
+  ticketTenantLabel,
+  toneForKnowledgeLinkType,
+  toneForSlaStatus,
+  toneForTicketStatus,
+  compactSlaStatusLabel,
+  compactTicketStatusLabel,
+} from './lib/SupportWorkspacePresentation';
+import {
+  supportActionDrawerSize,
+  supportActionDrawerWidthVariant,
+} from './lib/SupportWorkspaceContextRail';
+import type {
+  KnowledgePhase,
+  QueueFilters,
+  TicketActionDrawer,
+} from './lib/SupportWorkspaceTypes';
 
 type PagePhase = 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type DetailPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type AgentsPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
-type KnowledgePhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type IntakePhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type AttachmentPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type EngineeringPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
+type InternalActionsPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
+type InternalActionDetailPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
+type InternalActionTargetAreasPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type WorkspaceVariant = 'queue' | 'tickets';
 type ComposerMode = 'public' | 'internal';
-
+type TicketInboxScope = 'open' | 'closed';
+type TicketInboxFilter =
+  | 'all'
+  | 'in_progress'
+  | 'awaiting'
+  | 'urgent'
+  | 'operations'
+  | 'engineering'
+  | 'all_closed'
+  | 'resolved'
+  | 'closed'
+  | 'cancelled';
 const TICKET_ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
 const TICKET_ATTACHMENT_ACCEPT =
   '.pdf,.json,.jpg,.jpeg,.png,.webp,.csv,.txt,application/pdf,application/json,image/jpeg,image/png,image/webp,text/csv,text/plain';
-
-interface QueueFilters {
-  status: TicketStatus | 'all';
-  priority: TicketPriority | 'all';
-  severity: TicketSeverity | 'all';
-  categoryId: Uuid | 'all';
-  tenantId: Uuid | 'all';
-  assignedToUserId: Uuid | 'all' | 'unassigned';
-}
 
 interface TicketIntakeDraft {
   tenantId: Uuid | '';
@@ -148,13 +227,11 @@ interface TicketIntakeDraft {
   title: string;
   description: string;
 }
-
 interface TicketClassificationDraft {
   categoryId: Uuid | '';
   operationalReasonId: Uuid | '';
   note: string;
 }
-
 interface TicketPrioritySeverityDraft {
   priority: TicketPriority;
   severity: TicketSeverity;
@@ -167,6 +244,27 @@ interface EngineeringHandoffDraft {
   title: string;
   description: string;
   handoffNote: string;
+  impactSummary: string;
+  reproductionSteps: string;
+  expectedResult: string;
+  currentResult: string;
+  relatedEvidence: string;
+  technicalUrgency: TicketPriority;
+}
+
+interface InternalActionCreateDraft {
+  targetArea: string;
+  supportType: InternalActionSupportType | '';
+  priority: TicketPriority;
+  summary: string;
+  context: string;
+  evidenceAttachmentIds: Uuid[];
+}
+
+interface TicketAttachmentUploadDraft {
+  files: File[];
+  note: string;
+  errors: Record<string, string>;
 }
 
 interface SupportCustomerPreviewSnapshot {
@@ -176,20 +274,17 @@ interface SupportCustomerPreviewSnapshot {
   recentEventsWindow: SupportCustomerRecentEventsWindow;
 }
 
-function toneForTicketStatus(status: TicketStatus) {
-  if (status === 'resolved' || status === 'closed') {
-    return 'positive' as const;
-  }
+const OPEN_TICKET_FILTERS = ['all', 'in_progress', 'awaiting', 'urgent', 'operations', 'engineering'] as const;
+const CLOSED_TICKET_FILTERS = ['all_closed', 'resolved', 'closed', 'cancelled'] as const;
 
-  if (status === 'cancelled') {
-    return 'critical' as const;
-  }
+function defaultTicketInboxFilterForScope(scope: TicketInboxScope): TicketInboxFilter {
+  return scope === 'open' ? 'all' : 'all_closed';
+}
 
-  if (status === 'waiting_customer' || status === 'waiting_engineering') {
-    return 'warning' as const;
-  }
-
-  return 'default' as const;
+function ticketInboxFilterMatchesScope(filter: TicketInboxFilter, scope: TicketInboxScope) {
+  return scope === 'open'
+    ? OPEN_TICKET_FILTERS.some((candidate) => candidate === filter)
+    : CLOSED_TICKET_FILTERS.some((candidate) => candidate === filter);
 }
 
 function toneForPriority(priority: TicketPriority) {
@@ -216,22 +311,6 @@ function toneForSeverity(severity: TicketSeverity) {
   return 'default' as const;
 }
 
-function toneForSlaStatus(status: SupportTicketQueueItem['slaStatus'] | SupportTicketDetail['slaStatus']) {
-  if (status === 'breached') {
-    return 'critical' as const;
-  }
-
-  if (status === 'at_risk') {
-    return 'warning' as const;
-  }
-
-  if (status === 'on_track' || status === 'complete') {
-    return 'positive' as const;
-  }
-
-  return 'default' as const;
-}
-
 function humanizeSlaPolicyScope(scope: SupportTicketQueueItem['slaPolicyScope'] | SupportTicketDetail['slaPolicyScope']) {
   if (scope === 'tenant') {
     return 'Política do cliente';
@@ -244,19 +323,36 @@ function humanizeSlaPolicyScope(scope: SupportTicketQueueItem['slaPolicyScope'] 
   return 'Sem política definida';
 }
 
-function formatSlaDueLabel(
-  firstResponseDueAt: string | null,
-  resolutionDueAt: string | null,
-) {
-  if (resolutionDueAt) {
-    return `Resolução: ${formatDateTime(resolutionDueAt)}`;
+function approximateSlaPercent(detail: SupportTicketDetail) {
+  const dueAt = detail.resolutionDueAt ?? detail.firstResponseDueAt;
+  if (!dueAt) {
+    return detail.slaStatus === 'breached' ? 100 : detail.slaStatus === 'at_risk' ? 72 : 48;
   }
 
-  if (firstResponseDueAt) {
-    return `Primeira resposta: ${formatDateTime(firstResponseDueAt)}`;
+  const dueMs = Date.parse(dueAt);
+  const startMs = Date.parse(detail.createdAt);
+  if (!Number.isFinite(dueMs) || !Number.isFinite(startMs) || dueMs <= startMs) {
+    return detail.slaStatus === 'breached' ? 100 : detail.slaStatus === 'at_risk' ? 72 : 48;
   }
 
-  return 'Prazo: Indisponível';
+  const nowMs = Date.now();
+  const elapsed = Math.max(0, nowMs - startMs);
+  const total = dueMs - startMs;
+  return Math.max(0, Math.min(100, Math.round((elapsed / total) * 100)));
+}
+
+function formatRemainingTimeLabel(targetIso: string | null) {
+  if (!targetIso) {
+    return 'Prazo indisponível';
+  }
+
+  const delta = Date.parse(targetIso) - Date.now();
+  const absoluteMinutes = Math.max(0, Math.round(Math.abs(delta) / 60000));
+  const hours = Math.floor(absoluteMinutes / 60);
+  const minutes = absoluteMinutes % 60;
+  const compact = `${hours}h ${String(minutes).padStart(2, '0')}m`;
+
+  return delta >= 0 ? `${compact} restantes` : `${compact} em atraso`;
 }
 
 function humanizeVisibility(value: string) {
@@ -279,8 +375,75 @@ function formatAttachmentSize(sizeBytes: number) {
   return `${Math.round((sizeBytes / (1024 * 1024)) * 10) / 10} MB`;
 }
 
+function initialsFromSupportLabel(value: string | null | undefined) {
+  const parts = (value ?? 'IN')
+    .split(/[\s@._-]+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .slice(0, 2);
+
+  return parts.length > 0
+    ? parts.map((part) => part[0]?.toLocaleUpperCase('pt-BR') ?? '').join('')
+    : 'IN';
+}
+
+function LoadingBlock({ className }: { className?: string }) {
+  return (
+    <div
+      className={cx(
+        'animate-pulse rounded-[18px] bg-[linear-gradient(90deg,rgba(226,232,240,0.9),rgba(241,245,249,0.95),rgba(226,232,240,0.9))]',
+        className,
+      )}
+    />
+  );
+}
+function queueShortcutIcon(
+  kind: 'mine' | 'unassigned' | 'urgent' | 'waiting-customer' | 'waiting-engineering',
+) {
+  switch (kind) {
+    case 'mine':
+      return <SupportSurfaceIcon className="h-3.5 w-3.5" kind="user" />;
+    case 'unassigned':
+      return <SupportSurfaceIcon className="h-3.5 w-3.5" kind="user-plus" />;
+    case 'urgent':
+      return <SupportSurfaceIcon className="h-3.5 w-3.5" kind="alert" />;
+    case 'waiting-customer':
+      return <SupportSurfaceIcon className="h-3.5 w-3.5" kind="clock" />;
+    case 'waiting-engineering':
+      return <SupportSurfaceIcon className="h-3.5 w-3.5" kind="code" />;
+    default:
+      return null;
+  }
+}
+
 function humanizeAttachmentStatus(status: SupportTicketAttachment['status']) {
   return status === 'archived' ? 'Arquivado' : 'Disponível';
+}
+
+function attachmentKind(attachment: SupportTicketAttachment) {
+  const name = attachment.displayName.toLocaleLowerCase('pt-BR');
+  const contentType = attachment.contentType?.toLocaleLowerCase('pt-BR') ?? '';
+
+  if (contentType.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(name)) {
+    return 'Imagem';
+  }
+
+  if (contentType.includes('json') || contentType.includes('text') || /\.(json|txt|log|csv)$/i.test(name)) {
+    return 'Log';
+  }
+
+  return 'Documento';
+}
+
+function sanitizeSupportVisibleText(value: string | null | undefined) {
+  const sanitized = (value ?? 'Indisponível')
+    .replace(/\bpayload\b/gi, 'conteúdo técnico')
+    .replace(/\bRPCs?\b/g, 'contrato operacional')
+    .replace(/\bRLS\b/g, 'regra de acesso')
+    .replace(/\bSupabase\b/g, 'plataforma')
+    .replace(/\bschema\b/gi, 'estrutura');
+
+  return sanitized.length > 320 ? `${sanitized.slice(0, 317).trimEnd()}...` : sanitized;
 }
 
 function toneForAttachmentStatus(status: SupportTicketAttachment['status']) {
@@ -341,61 +504,6 @@ function friendlyAttachmentDownloadErrorMessage(message: string) {
   return message;
 }
 
-function humanizeStatus(status: TicketStatus) {
-  switch (status) {
-    case 'new':
-      return 'Novo';
-    case 'triage':
-      return 'Triagem';
-    case 'in_progress':
-      return 'Em andamento';
-    case 'waiting_customer':
-      return 'Aguardando cliente';
-    case 'waiting_support':
-      return 'Aguardando suporte';
-    case 'waiting_engineering':
-      return 'Aguardando engenharia';
-    case 'resolved':
-      return 'Resolvido';
-    case 'closed':
-      return 'Fechado';
-    case 'cancelled':
-      return 'Cancelado';
-    default:
-      return humanizeToken(status).replaceAll('_', ' ');
-  }
-}
-
-function humanizePriority(priority: TicketPriority) {
-  switch (priority) {
-    case 'low':
-      return 'Baixa';
-    case 'normal':
-      return 'Normal';
-    case 'high':
-      return 'Alta';
-    case 'urgent':
-      return 'Urgente';
-    default:
-      return humanizeToken(priority);
-  }
-}
-
-function humanizeSeverity(severity: TicketSeverity) {
-  switch (severity) {
-    case 'low':
-      return 'Baixa';
-    case 'medium':
-      return 'Média';
-    case 'high':
-      return 'Alta';
-    case 'critical':
-      return 'Crítica';
-    default:
-      return humanizeToken(severity);
-  }
-}
-
 function humanizeSource(source: TicketSource) {
   switch (source) {
     case 'portal':
@@ -435,38 +543,6 @@ function humanizeTenantStatus(value: string) {
   return humanizeCustomerValue(value);
 }
 
-function humanizeKnowledgeVisibility(visibility: KnowledgeArticleVisibility) {
-  if (visibility === 'public') {
-    return 'Público';
-  }
-
-  if (visibility === 'internal') {
-    return 'Interno';
-  }
-
-  return 'Restrito';
-}
-
-function humanizeKnowledgeStatus(status: KnowledgeArticleStatus) {
-  if (status === 'draft') {
-    return 'Rascunho';
-  }
-
-  if (status === 'review') {
-    return 'Em revisão';
-  }
-
-  if (status === 'published') {
-    return 'Publicado';
-  }
-
-  if (status === 'archived') {
-    return 'Arquivado';
-  }
-
-  return humanizeToken(status).replaceAll('_', ' ');
-}
-
 function extractPublicArticleBasePath(publicArticlePath: string | null | undefined) {
   if (!publicArticlePath) {
     return null;
@@ -490,165 +566,26 @@ function buildAbsoluteAppUrl(path: string) {
   return new URL(path, window.location.origin).toString();
 }
 
-function LoadingBlock({ className }: { className?: string }) {
-  return (
-    <div
-      className={cx(
-        'animate-pulse rounded-[18px] bg-[linear-gradient(90deg,rgba(226,232,240,0.9),rgba(241,245,249,0.95),rgba(226,232,240,0.9))]',
-        className,
-      )}
-    />
-  );
-}
-
-function SupportQueueLoadingScaffold() {
-  return (
-    <div className="space-y-5">
-      <PageHeader
-        eyebrow="Suporte"
-        title="Fila operacional"
-        description="A fila continua ocupando a área principal enquanto o contexto operacional termina de sincronizar."
-      />
-
-      <WorkspaceSplit
-        layoutClassName="xl:grid-cols-[292px_minmax(0,1fr)]"
-        sidebar={
-          <ContextSubsidebar
-            description="Filtros e filas rápidas seguem reservados na lateral para a triagem não perder a estrutura."
-            title="Triagem da fila"
-          >
-            <ContextSubsidebarSection
-              description="As ferramentas da fila aparecem no mesmo lugar assim que os dados forem liberados."
-              title="Carregando filtros"
-            >
-              <div className="space-y-3">
-                <LoadingBlock className="h-16" />
-                <LoadingBlock className="h-16" />
-                <LoadingBlock className="h-16" />
-                <LoadingBlock className="h-16" />
-              </div>
-            </ContextSubsidebarSection>
-          </ContextSubsidebar>
-        }
-        main={
-          <div className="space-y-4">
-            <SummaryStrip>
-              <LoadingBlock className="h-[76px] min-w-[160px] flex-1" />
-              <LoadingBlock className="h-[76px] min-w-[160px] flex-1" />
-              <LoadingBlock className="h-[76px] min-w-[160px] flex-1" />
-              <LoadingBlock className="h-[76px] min-w-[160px] flex-1" />
-            </SummaryStrip>
-
-            <div className="grid gap-5 xl:grid-cols-[minmax(0,0.72fr)_minmax(320px,0.28fr)]">
-              <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white px-5 py-5 shadow-[0_14px_28px_rgba(19,33,79,0.08)]">
-                <div className="mb-4 space-y-2">
-                  <LoadingBlock className="h-6 w-40" />
-                  <LoadingBlock className="h-4 w-80 max-w-full" />
-                </div>
-                <div className="space-y-3">
-                  <LoadingBlock className="h-44" />
-                  <LoadingBlock className="h-44" />
-                  <LoadingBlock className="h-44" />
-                </div>
-              </section>
-
-              <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white px-5 py-5 shadow-[0_14px_28px_rgba(19,33,79,0.08)] xl:sticky xl:top-4">
-                <div className="mb-4 space-y-2">
-                  <LoadingBlock className="h-6 w-36" />
-                  <LoadingBlock className="h-4 w-52 max-w-full" />
-                </div>
-                <LoadingBlock className="h-[420px]" />
-              </section>
-            </div>
-          </div>
-        }
-      />
-    </div>
-  );
-}
-
-function SupportTicketLoadingScaffold() {
-  return (
-    <div className="space-y-4">
-      <div className="space-y-3 rounded-[28px] border border-[color:var(--color-border)] bg-white px-5 py-5 shadow-[0_16px_30px_rgba(19,33,79,0.08)]">
-        <div className="flex flex-wrap items-center gap-3">
-          <LoadingBlock className="h-9 w-40 rounded-full" />
-          <LoadingBlock className="h-9 w-24 rounded-full" />
-          <LoadingBlock className="h-6 w-40" />
-        </div>
-        <LoadingBlock className="h-12 w-[720px] max-w-full" />
-        <div className="grid gap-3 border-t border-[color:var(--color-border)] pt-4 lg:grid-cols-4">
-          <LoadingBlock className="h-14" />
-          <LoadingBlock className="h-14" />
-          <LoadingBlock className="h-14" />
-          <LoadingBlock className="h-14" />
-        </div>
-        <div className="flex flex-wrap gap-6 border-t border-[color:var(--color-border)] pt-4">
-          <LoadingBlock className="h-6 w-24" />
-          <LoadingBlock className="h-6 w-32" />
-          <LoadingBlock className="h-6 w-32" />
-          <LoadingBlock className="h-6 w-28" />
-        </div>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,0.74fr)_minmax(318px,0.26fr)]">
-        <section className="overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white shadow-[0_16px_30px_rgba(19,33,79,0.08)]">
-          <div className="px-5 py-4">
-            <div className="flex justify-center">
-              <LoadingBlock className="h-7 w-20 rounded-full" />
-            </div>
-            <div className="mt-5 space-y-4">
-              <div className="flex items-start gap-3">
-                <LoadingBlock className="h-11 w-11 rounded-full" />
-                <LoadingBlock className="h-24 flex-1" />
-              </div>
-              <div className="flex justify-end gap-3">
-                <LoadingBlock className="h-24 w-[78%]" />
-                <LoadingBlock className="h-11 w-11 rounded-full" />
-              </div>
-              <div className="flex items-start gap-3">
-                <LoadingBlock className="h-11 w-11 rounded-full" />
-                <LoadingBlock className="h-28 w-[82%]" />
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-[color:var(--color-border)] px-5 py-5">
-            <div className="mb-4 flex gap-4">
-              <LoadingBlock className="h-7 w-32" />
-              <LoadingBlock className="h-7 w-28" />
-            </div>
-            <LoadingBlock className="h-48 rounded-[26px]" />
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex gap-2">
-                <LoadingBlock className="h-10 w-10 rounded-full" />
-                <LoadingBlock className="h-10 w-10 rounded-full" />
-                <LoadingBlock className="h-10 w-10 rounded-full" />
-              </div>
-              <LoadingBlock className="h-12 w-80 max-w-full rounded-full" />
-              <LoadingBlock className="h-12 w-40 rounded-full" />
-            </div>
-          </div>
-        </section>
-
-        <aside className="space-y-3">
-          <LoadingBlock className="h-[340px] rounded-[24px]" />
-          <LoadingBlock className="h-[180px] rounded-[24px]" />
-          <LoadingBlock className="h-[180px] rounded-[24px]" />
-        </aside>
-      </div>
-    </div>
-  );
-}
-
 function humanizeTicketEventLabel(eventType: SupportTicketTimelineItem['eventType']) {
-  switch (eventType) {
+  const normalizedEventType = String(eventType ?? '').toLocaleLowerCase('pt-BR');
+
+  switch (normalizedEventType) {
     case 'ticket_created':
       return 'Ticket criado';
     case 'assigned':
-      return 'Responsavel atualizado';
+      return 'Responsável atualizado';
     case 'status_changed':
       return 'Status atualizado';
+    case 'classification_changed':
+    case 'classification_updated':
+      return 'Classificação atualizada';
+    case 'priority_changed':
+    case 'priority_severity_changed':
+    case 'priority_severity_updated':
+      return 'Prioridade e severidade atualizadas';
+    case 'sla_policy_changed':
+    case 'sla_policy_updated':
+      return 'SLA atualizado';
     case 'message_added':
       return 'Mensagem registrada';
     case 'internal_note_added':
@@ -659,46 +596,17 @@ function humanizeTicketEventLabel(eventType: SupportTicketTimelineItem['eventTyp
       return 'Escalado para engenharia';
     case 'linked_to_work_item':
       return 'Vinculado a demanda técnica';
+    case 'engineering_update_added':
+      return 'Retorno técnico registrado';
+    case 'engineering_status_updated':
+      return 'Andamento técnico atualizado';
     case 'resolved':
       return 'Ticket resolvido';
     case 'cancelled':
       return 'Ticket cancelado';
     default:
-      return humanizeToken(eventType ?? 'evento').replaceAll('_', ' ');
+      return 'Evento operacional registrado';
   }
-}
-
-function humanizeKnowledgeLinkType(linkType: TicketKnowledgeLinkType) {
-  switch (linkType) {
-    case 'reference_internal':
-      return 'Referencia interna';
-    case 'sent_to_customer':
-      return 'Link enviado ao cliente';
-    case 'documentation_gap':
-      return 'Lacuna de documentação';
-    case 'needs_update':
-    return 'Precisa revisão';
-    case 'suggested_article':
-      return 'Artigo sugerido';
-    default:
-      return humanizeToken(linkType).replaceAll('_', ' ');
-  }
-}
-
-function toneForKnowledgeLinkType(linkType: TicketKnowledgeLinkType) {
-  if (linkType === 'sent_to_customer') {
-    return 'positive' as const;
-  }
-
-  if (linkType === 'documentation_gap' || linkType === 'needs_update') {
-    return 'warning' as const;
-  }
-
-  if (linkType === 'suggested_article') {
-    return 'accent' as const;
-  }
-
-  return 'default' as const;
 }
 
 function toneForAlertSeverity(severity: SupportCustomerAccountAlert['severity']) {
@@ -823,10 +731,6 @@ function formatAssignedAgentSummary(agent: SupportAssignableAgent | null) {
   return agent.fullName;
 }
 
-function ticketTenantLabel(ticket: Pick<SupportTicketQueueItem, 'tenantDisplayName' | 'tenantLegalName' | 'tenantSlug'>) {
-  return ticket.tenantDisplayName ?? ticket.tenantLegalName ?? ticket.tenantSlug;
-}
-
 function intakeTenantLabel(
   tenant: Pick<SupportTicketIntakeTenant, 'tenantDisplayName' | 'tenantLegalName' | 'tenantSlug'>,
 ) {
@@ -924,6 +828,31 @@ function emptyEngineeringHandoffDraft(): EngineeringHandoffDraft {
     title: '',
     description: '',
     handoffNote: '',
+    impactSummary: '',
+    reproductionSteps: '',
+    expectedResult: '',
+    currentResult: '',
+    relatedEvidence: '',
+    technicalUrgency: 'high',
+  };
+}
+
+function emptyInternalActionCreateDraft(): InternalActionCreateDraft {
+  return {
+    targetArea: '',
+    supportType: 'analysis',
+    priority: 'normal',
+    summary: '',
+    context: '',
+    evidenceAttachmentIds: [],
+  };
+}
+
+function emptyAttachmentUploadDraft(): TicketAttachmentUploadDraft {
+  return {
+    files: [],
+    note: '',
+    errors: {},
   };
 }
 
@@ -967,16 +896,36 @@ function friendlyTicketStatusErrorMessage(message: string) {
 
 function summarizeTimelineEvent(entry: SupportTicketTimelineItem) {
   if (entry.entryType === 'message') {
-    return entry.body ?? '';
+    return sanitizeSupportVisibleText(entry.body ?? '');
   }
 
-  const metadata = readTimelineMetadata(entry);
-  const statusValue = readTimelineMetadataString(entry, 'status');
+  const previousStatus = readTimelineMetadataString(entry, 'previous_status', 'previousStatus');
+  const nextStatus = readTimelineMetadataString(entry, 'new_status', 'newStatus', 'status');
   const assignedToUserId = readTimelineMetadataString(entry, 'assigned_to_user_id');
   const note = readTimelineMetadataString(entry, 'note');
+  const operationalReasonName = readTimelineMetadataString(
+    entry,
+    'operational_reason_name',
+    'operationalReasonName',
+  );
 
-  if (entry.eventType === 'status_changed' && statusValue) {
-    return `Status movido para ${humanizeStatus(statusValue as TicketStatus)}.`;
+  if (
+    (entry.eventType === 'status_changed' ||
+      entry.eventType === 'resolved' ||
+      entry.eventType === 'closed' ||
+      entry.eventType === 'cancelled' ||
+      entry.eventType === 'reopened') &&
+    nextStatus
+  ) {
+    const summary = previousStatus
+      ? `Status alterado de ${humanizeStatus(previousStatus as TicketStatus)} para ${humanizeStatus(nextStatus as TicketStatus)}.`
+      : `Status movido para ${humanizeStatus(nextStatus as TicketStatus)}.`;
+
+    if (operationalReasonName) {
+      return `${summary} Motivo: ${operationalReasonName}.`;
+    }
+
+    return summary;
   }
 
   if (entry.eventType === 'escalated_to_engineering') {
@@ -991,6 +940,31 @@ function summarizeTimelineEvent(entry: SupportTicketTimelineItem) {
     return workItemStatus
       ? `Ticket vinculado a uma demanda técnica em ${humanizeEngineeringWorkItemStatus(workItemStatus as SupportTicketEngineeringLink['workItemStatus'])}.`
       : 'Ticket vinculado a uma demanda técnica existente.';
+  }
+
+  if (
+    (entry.eventType as string) === 'engineering_update_added' ||
+    (entry.eventType as string) === 'engineering_status_updated' ||
+    (entry.eventType as string) === 'work_item_update_added'
+  ) {
+    const summary = readTimelineMetadataString(entry, 'summary');
+    const nextStep = readTimelineMetadataString(entry, 'next_step');
+
+    if (summary && nextStep) {
+      return sanitizeSupportVisibleText(`${summary} Próximo passo: ${nextStep}`);
+    }
+
+    return summary
+      ? sanitizeSupportVisibleText(summary)
+      : 'Retorno técnico registrado para apoiar a tratativa.';
+  }
+
+  if (entry.eventType === 'attachment_added') {
+    const attachmentName = readTimelineMetadataString(entry, 'attachment_name');
+    const attachmentSize = readTimelineMetadataString(entry, 'attachment_size_label');
+    return attachmentName
+      ? `Evidência registrada: ${attachmentName}${attachmentSize ? ` · ${attachmentSize}` : ''}.`
+      : 'Evidência registrada no ticket.';
   }
 
   if (entry.eventType === 'assigned') {
@@ -1024,17 +998,10 @@ function summarizeTimelineEvent(entry: SupportTicketTimelineItem) {
   }
 
   if (note) {
-    return note;
+    return sanitizeSupportVisibleText(note);
   }
 
-  const metadataSummary =
-    metadata
-      ? Object.entries(metadata)
-          .map(([key, value]) => `${humanizeToken(key)}: ${String(value)}`)
-          .join(' · ')
-      : '';
-
-  return metadataSummary || humanizeTicketEventLabel(entry.eventType);
+  return sanitizeSupportVisibleText(humanizeTicketEventLabel(entry.eventType));
 }
 
 type ConversationLane = 'customer' | 'agent' | 'internal';
@@ -1195,6 +1162,24 @@ function buildConversationDividerLabel(entries: SupportTicketTimelineItem[]) {
   });
 }
 
+function shouldHideConversationEvent(entry: SupportTicketTimelineItem) {
+  if (entry.entryType !== 'event') {
+    return false;
+  }
+
+  const haystack = `${entry.eventType ?? ''} ${summarizeTimelineEvent(entry)}`
+    .toLocaleLowerCase('pt-BR')
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '');
+
+  return (
+    haystack.includes('mensagem registrada') ||
+    haystack.includes('nota interna registrada') ||
+    haystack.includes('evidencia registrada') ||
+    haystack.includes('anexo registrado')
+  );
+}
+
 function ConversationEntry({
   entry,
   requesterName,
@@ -1217,13 +1202,15 @@ function ConversationEntry({
 
   if (lane === 'internal') {
     return (
-      <article className="mx-auto max-w-[92%] rounded-[15px] border border-amber-200 bg-[linear-gradient(180deg,rgba(255,248,227,0.98),rgba(255,241,206,0.94))] px-3 py-2 shadow-[0_6px_14px_rgba(180,120,34,0.05)]">
+      <article className="mx-auto max-w-[86%] rounded-[14px] border border-[rgba(245,184,61,0.34)] bg-[color:var(--color-support-note)] px-4 py-3 shadow-[0_4px_10px_rgba(180,120,34,0.03)]">
         <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-          <StatusPill tone="warning">{label}</StatusPill>
-          <p className="font-semibold text-[color:var(--color-ink)]">{author}</p>
+          <span className="inline-flex min-h-[18px] items-center rounded-full border border-[rgba(245,184,61,0.32)] bg-white/70 px-2 text-[8.5px] font-semibold uppercase tracking-[0.1em] text-[rgb(146,64,14)]">
+            NOTA INTERNA
+          </span>
+          <span className="font-medium text-[rgb(146,64,14)]">Visível apenas para equipe interna</span>
           <span className="ml-auto text-[color:var(--color-muted)]">{timestamp}</span>
         </div>
-        <p className="mt-1.5 whitespace-pre-wrap text-[12.5px] leading-[1.3rem] text-[color:var(--color-ink)]">
+        <p className="mt-2 whitespace-pre-wrap text-[13px] font-medium leading-5 text-[color:var(--color-ink)]">
           {summary}
         </p>
       </article>
@@ -1231,58 +1218,67 @@ function ConversationEntry({
   }
 
   return (
-    <div
-      className={cx(
-        'flex items-end gap-2.5',
-        lane === 'agent' ? 'justify-end' : 'justify-start',
-      )}
-    >
+      <div
+        className={cx(
+          'flex items-end gap-3',
+          lane === 'agent' ? 'justify-end' : 'justify-start',
+        )}
+      >
       {lane === 'customer' ? (
-        <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#f05b93,#ee3f77)] text-[13px] font-semibold text-white shadow-[0_6px_14px_rgba(240,91,147,0.2)]">
+        <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[rgba(47,107,255,0.14)] bg-[rgba(47,107,255,0.08)] text-[12px] font-semibold text-[color:var(--color-brand-blue)]">
           {avatar}
         </div>
       ) : null}
 
       <div
         className={cx(
-          'min-w-0 max-w-[min(88%,43rem)] space-y-0.5',
+          'min-w-0 max-w-[78%] space-y-1',
           lane === 'agent' && 'items-end',
         )}
       >
         <div
           className={cx(
-            'flex flex-wrap items-center gap-1.5 px-1 text-[10px]',
+            'flex flex-wrap items-center gap-1.5 px-0.5 text-[10px]',
             lane === 'agent' ? 'justify-end' : 'justify-start',
           )}
         >
           <p className="font-semibold text-[color:var(--color-ink)]">{author}</p>
+          <span className="text-[color:var(--color-muted)]">•</span>
           <span className="text-[color:var(--color-muted)]">{label}</span>
           <span className="text-[color:var(--color-muted)]">{timestamp}</span>
         </div>
         <article
           className={cx(
-            'min-w-0 rounded-[15px] border px-3 py-2 shadow-[0_6px_14px_rgba(19,33,79,0.05)]',
+            'min-w-0 rounded-[14px] border px-4 py-3 shadow-[0_4px_10px_rgba(19,33,79,0.03)]',
             lane === 'agent'
-              ? 'border-[rgba(48,127,226,0.24)] bg-[linear-gradient(180deg,rgba(243,248,255,0.98),rgba(236,244,255,0.92))]'
-              : 'border-[color:var(--color-border)] bg-white',
+              ? 'border-[rgba(47,107,255,0.2)] bg-[rgba(244,248,255,0.92)]'
+              : 'border-[rgba(220,228,242,0.92)] bg-white',
           )}
         >
-          <div className="space-y-2">
-            <p className="whitespace-pre-wrap text-[12.5px] leading-[1.3rem] text-[color:var(--color-ink)]">
+          <div className="space-y-1.5">
+            <p className="whitespace-pre-wrap text-[13px] leading-5 text-[color:var(--color-ink)]">
               {summary}
             </p>
             {attachment ? (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-[11px] border border-[color:var(--color-border)] bg-white/86 px-3 py-1.5 text-[13px]">
-                <div className="min-w-0">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-[color:var(--color-support-border)] bg-white/92 px-3 py-2 text-[11px]">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[9px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-brand-blue)]">
+                    <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="attachment" />
+                  </span>
                   <p className="truncate font-medium text-[color:var(--color-ink)]">
                     {attachment.name}
                   </p>
                 </div>
-                {attachment.sizeLabel ? (
-                  <span className="shrink-0 text-xs text-[color:var(--color-muted)]">
-                    {attachment.sizeLabel}
+                <div className="flex items-center gap-2">
+                  {attachment.sizeLabel ? (
+                    <span className="shrink-0 text-[10px] text-[color:var(--color-muted)]">
+                      {attachment.sizeLabel}
+                    </span>
+                  ) : null}
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[color:var(--color-border)] text-[color:var(--color-muted)]">
+                    <SupportSurfaceIcon className="h-[11px] w-[11px]" kind="open" />
                   </span>
-                ) : null}
+                </div>
               </div>
             ) : null}
           </div>
@@ -1290,7 +1286,7 @@ function ConversationEntry({
       </div>
 
       {lane === 'agent' ? (
-        <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#1f5dcf,#377ef7)] text-[13px] font-semibold text-white shadow-[0_6px_14px_rgba(55,126,247,0.18)]">
+        <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[rgba(240,74,174,0.22)] bg-[rgba(240,74,174,0.08)] text-[12px] font-semibold text-[color:var(--color-brand-pink)]">
           {avatar}
         </div>
       ) : null}
@@ -1323,6 +1319,29 @@ function TechnicalTimelineRow({
   );
 }
 
+function ConversationEventEntry({
+  entry,
+}: {
+  entry: SupportTicketTimelineItem;
+}) {
+  return (
+    <div className="flex items-center gap-2 py-1.5">
+      <div className="h-px flex-1 bg-[rgba(220,228,242,0.92)]" />
+      <div className="inline-flex max-w-[78%] items-center gap-2 rounded-full border border-[color:var(--color-support-border)] bg-[color:var(--color-support-surface)] px-3 py-1.5 text-[10px] text-[color:var(--color-muted)]">
+        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[color:var(--color-brand-blue)]">
+          <SupportSurfaceIcon className="h-[10px] w-[10px]" kind="ticket" />
+        </span>
+        <span className="truncate font-semibold text-[color:var(--color-ink)]">
+          {humanizeTicketEventLabel(entry.eventType)}
+        </span>
+        <span className="truncate text-[rgba(107,120,146,0.92)]">{summarizeTimelineEvent(entry)}</span>
+        <span className="shrink-0">{formatDateTime(entry.occurredAt)}</span>
+      </div>
+      <div className="h-px flex-1 bg-[rgba(220,228,242,0.92)]" />
+    </div>
+  );
+}
+
 function SupportConversation({
   window,
   requesterName,
@@ -1334,7 +1353,7 @@ function SupportConversation({
   loadingMore?: boolean;
   onLoadMore?: () => void;
 }) {
-  const entries = window.entries;
+  const entries = window.entries.filter((entry) => !shouldHideConversationEvent(entry));
   const conversationEntries = entries.filter((entry) => entry.entryType === 'message');
   const eventEntries = entries.filter((entry) => entry.entryType === 'event');
   const dividerLabel = buildConversationDividerLabel(conversationEntries);
@@ -1349,33 +1368,30 @@ function SupportConversation({
   }
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-3">
       {dividerLabel ? (
         <div className="flex items-center justify-center">
-          <span className="rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+          <span className="rounded-full border border-[color:var(--color-support-border)] bg-[color:var(--color-support-surface)] px-2.5 py-1 text-[9.5px] font-semibold text-[color:var(--color-muted)]">
             {dividerLabel}
           </span>
         </div>
       ) : null}
-      {conversationEntries.length === 0 ? (
-        <EmptyState
-          title="Sem conversa recente"
-                description="A janela atual ainda não trouxe respostas públicas nem notas internas para este ticket."
-        />
-      ) : (
-        <div className="space-y-1">
-          {conversationEntries.map((entry) => (
+      <div className="space-y-3">
+        {entries.map((entry) =>
+          entry.entryType === 'message' ? (
             <ConversationEntry
               entry={entry}
               key={entry.timelineEntryId}
               requesterName={requesterName}
             />
-          ))}
-        </div>
-      )}
+          ) : (
+            <ConversationEventEntry entry={entry} key={entry.timelineEntryId} />
+          ),
+        )}
+      </div>
 
       {window.hasMore ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-dashed border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[16px] border border-dashed border-[color:var(--color-support-border)] bg-[color:var(--color-support-surface)] px-4 py-3">
           <p className="text-xs leading-5 text-[color:var(--color-muted)]">
             Há histórico anterior disponível no contrato paginado da timeline.
           </p>
@@ -1385,51 +1401,6 @@ function SupportConversation({
             </GhostButton>
           ) : null}
         </div>
-      ) : null}
-    </div>
-  );
-}
-
-function SupportRecentActivity({
-  window,
-}: {
-  window: SupportTicketTimelineRecentWindow;
-}) {
-  const entries = window.entries.filter((entry) => entry.entryType === 'event').slice(0, 2);
-
-  if (entries.length === 0) {
-    return (
-      <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-        Nenhuma mudanca recente apareceu fora da conversa principal.
-      </p>
-    );
-  }
-
-  return (
-    <div className="space-y-1.5">
-      {entries.map((entry) => (
-        <div
-          className="rounded-[13px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2"
-          key={entry.timelineEntryId}
-        >
-          <div className="flex items-start gap-2.5">
-            <span className="mt-1 inline-flex h-2 w-2 shrink-0 rounded-full bg-[color:var(--color-brand-blue)]" />
-            <div className="min-w-0 flex-1 space-y-0.5">
-              <p className="text-[12px] font-medium leading-4 text-[color:var(--color-ink)]">
-                {summarizeTimelineEvent(entry)}
-              </p>
-              <p className="text-[10.5px] leading-4 text-[color:var(--color-muted)]">
-                {formatDateTime(entry.occurredAt)} · {entry.actorFullName ?? entry.actorEmail ?? 'Equipe Genius'}
-              </p>
-            </div>
-          </div>
-        </div>
-      ))}
-
-      {window.hasMore ? (
-        <p className="text-[10.5px] leading-4 text-[color:var(--color-muted)]">
-          O restante do historico fica recolhido para manter a tratativa leve.
-        </p>
       ) : null}
     </div>
   );
@@ -1462,918 +1433,6 @@ function SupportTechnicalHistory({
   );
 }
 
-function SupportKnowledgeLinkCard({
-  link,
-  disabled,
-  onCopyPublicLink,
-  onArchive,
-}: {
-  link: SupportTicketKnowledgeLink;
-  disabled: boolean;
-  onCopyPublicLink: (publicArticlePath: string) => void;
-  onArchive: (linkId: Uuid) => void;
-}) {
-  const title =
-    link.articleTitle ??
-    (link.linkType === 'documentation_gap'
-      ? 'Lacuna registrada sem artigo'
-      : 'Vinculo sem artigo associado');
-
-  return (
-    <article className="rounded-[13px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2">
-      <div className="flex flex-wrap items-start justify-between gap-2.5">
-        <div className="min-w-0 flex-1 space-y-1.5">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <StatusPill tone={toneForKnowledgeLinkType(link.linkType)}>
-              {humanizeKnowledgeLinkType(link.linkType)}
-            </StatusPill>
-            {link.articleVisibility ? (
-              <StatusPill>{humanizeKnowledgeVisibility(link.articleVisibility)}</StatusPill>
-            ) : null}
-            {link.articleStatus ? (
-              <StatusPill>{humanizeKnowledgeStatus(link.articleStatus)}</StatusPill>
-            ) : null}
-          </div>
-          <div className="space-y-0.5">
-            <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">{title}</p>
-            <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                      Registrado por {link.createdByFullName ?? 'Operador não identificado'} em{' '}
-              {formatDateTime(link.createdAt)}
-            </p>
-          </div>
-          {link.note ? (
-            <p className="line-clamp-2 text-[12px] leading-5 text-[color:var(--color-muted)]">
-              {link.note}
-            </p>
-          ) : null}
-          {link.publicArticlePath ? (
-            <div className="flex flex-wrap gap-1.5 pt-0.5">
-              <a
-                className="inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white px-2.5 text-[12px] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/35 hover:text-[color:var(--color-brand-blue)]"
-                href={link.publicArticlePath}
-                rel="noreferrer"
-                target="_blank"
-              >
-                    Abrir artigo público
-              </a>
-              <GhostButton
-                className="min-h-8 rounded-full px-2.5 text-[12px]"
-                disabled={disabled}
-                onClick={() => onCopyPublicLink(link.publicArticlePath!)}
-                type="button"
-              >
-                Copiar link
-              </GhostButton>
-            </div>
-          ) : link.linkType === 'sent_to_customer' ? (
-            <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                  Link público indisponível para este conteúdo no estado atual.
-            </p>
-          ) : null}
-        </div>
-        <GhostButton
-          className="min-h-8 rounded-full px-2.5 text-[13px]"
-          disabled={disabled}
-          onClick={() => onArchive(link.ticketKnowledgeLinkId)}
-          type="button"
-        >
-          Arquivar
-        </GhostButton>
-      </div>
-    </article>
-  );
-}
-
-function SupportKnowledgePickerCard({
-  article,
-  disabled,
-  onCopyPublicLink,
-  onLinkInternal,
-  onNeedsUpdate,
-  onSendToCustomer,
-}: {
-  article: SupportKnowledgeArticlePickerItem;
-  disabled: boolean;
-  onCopyPublicLink: (publicArticlePath: string) => void;
-  onLinkInternal: (articleId: Uuid) => void;
-  onNeedsUpdate: (articleId: Uuid) => void;
-  onSendToCustomer: (articleId: Uuid) => void;
-}) {
-  return (
-    <article className="rounded-[13px] border border-[color:var(--color-border)] bg-white px-3 py-2.5">
-      <div className="space-y-1.5">
-        <div className="space-y-1.5">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <StatusPill>{humanizeKnowledgeVisibility(article.articleVisibility)}</StatusPill>
-            <StatusPill>{humanizeKnowledgeStatus(article.articleStatus)}</StatusPill>
-            {article.categoryName ? <StatusPill tone="accent">{article.categoryName}</StatusPill> : null}
-          </div>
-          <div className="space-y-0.5">
-            <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-              {article.articleTitle}
-            </p>
-            <p className="line-clamp-2 text-[13px] leading-5 text-[color:var(--color-muted)]">
-                      {article.articleSummary?.trim() || 'Resumo ainda não informado para este artigo.'}
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-            {article.isCustomerSendAllowed && article.publicArticlePath
-                        ? 'Este artigo pode ser usado como link público para o cliente.'
-                        : 'Link público indisponível. Este artigo segue apenas para uso interno no estado atual.'}
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            <GhostButton
-              className="min-h-9 px-2.5 text-[13px]"
-              disabled={disabled}
-              onClick={() => onLinkInternal(article.articleId)}
-              type="button"
-            >
-              Referencia interna
-            </GhostButton>
-            {article.isCustomerSendAllowed && article.publicArticlePath ? (
-              <AppButton
-                className="min-h-9 px-3"
-                disabled={disabled}
-                onClick={() => onSendToCustomer(article.articleId)}
-                type="button"
-              >
-                Marcar como link ao cliente
-              </AppButton>
-            ) : null}
-            {article.publicArticlePath ? (
-              <>
-                <a
-                  className="inline-flex min-h-9 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white px-2.5 text-[13px] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/35 hover:text-[color:var(--color-brand-blue)]"
-                  href={article.publicArticlePath}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  Abrir artigo
-                </a>
-                <GhostButton
-                  className="min-h-9 px-2.5 text-[13px]"
-                  disabled={disabled}
-                  onClick={() => onCopyPublicLink(article.publicArticlePath!)}
-                  type="button"
-                >
-                  Copiar link
-                </GhostButton>
-              </>
-            ) : null}
-            <GhostButton
-              className="min-h-9 px-2.5 text-[13px]"
-              disabled={disabled}
-              onClick={() => onNeedsUpdate(article.articleId)}
-              type="button"
-            >
-                  Precisa revisão
-            </GhostButton>
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function SupportKnowledgePanel({
-  articles,
-  links,
-  loading,
-  noteDraft,
-  onArchive,
-  onCopyPublicLink,
-  onLinkInternal,
-  onMarkGap,
-  onNeedsUpdate,
-  onNoteChange,
-  onSearchChange,
-  onSendToCustomer,
-  phase,
-  search,
-  message,
-}: {
-  articles: SupportKnowledgeArticlePickerItem[];
-  links: SupportTicketKnowledgeLink[];
-  loading: boolean;
-  noteDraft: string;
-  onArchive: (linkId: Uuid) => void;
-  onCopyPublicLink: (publicArticlePath: string) => void;
-  onLinkInternal: (articleId: Uuid) => void;
-  onMarkGap: () => void;
-  onNeedsUpdate: (articleId: Uuid) => void;
-  onNoteChange: (value: string) => void;
-  onSearchChange: (value: string) => void;
-  onSendToCustomer: (articleId: Uuid) => void;
-  phase: KnowledgePhase;
-  search: string;
-  message: string | null;
-}) {
-  const visibleLinks = links.slice(0, 2);
-  const hiddenLinksCount = Math.max(links.length - visibleLinks.length, 0);
-  const visibleArticles = articles.slice(0, 2);
-
-  return (
-    <section className="space-y-3">
-      <div className="space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-          Conhecimento
-        </p>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-[15px] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-            Conteudo relacionado ao ticket
-          </h3>
-          <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-            {links.length === 0
-              ? 'Nenhum vinculo ativo'
-              : `${links.length} vinculo(s) acompanhando esta tratativa`}
-          </p>
-        </div>
-      </div>
-
-      {phase === 'contract-unavailable' ? (
-        <InlineNotice tone="warning">
-                  {message ?? 'O painel de conhecimento ainda não ficou disponível para esta tratativa.'}
-        </InlineNotice>
-      ) : phase === 'error' ? (
-        <InlineNotice tone="critical">
-                  {message ?? 'Não foi possível carregar o conhecimento relacionado deste ticket.'}
-        </InlineNotice>
-      ) : phase === 'loading' ? (
-        <LoadingState
-          title="Carregando conhecimento"
-          description="Estamos preparando os vinculos e os artigos disponiveis para este ticket."
-        />
-      ) : (
-        <>
-          <div className="grid gap-3 xl:grid-cols-[minmax(0,0.94fr)_minmax(260px,0.82fr)]">
-            <div className="space-y-2 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-                  Vinculos ativos
-                </h4>
-                <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                  {links.length === 0
-                    ? 'Nenhum artigo ligado'
-                    : `${links.length} referencia(s) em acompanhamento`}
-                </p>
-              </div>
-              {links.length === 0 ? (
-                <InlineNotice>
-                  Nenhum artigo foi relacionado a este ticket ainda.
-                </InlineNotice>
-              ) : (
-                <div className="space-y-1.5">
-                  {visibleLinks.map((link) => (
-                    <SupportKnowledgeLinkCard
-                      disabled={loading}
-                      key={link.ticketKnowledgeLinkId}
-                      link={link}
-                      onCopyPublicLink={onCopyPublicLink}
-                      onArchive={onArchive}
-                    />
-                  ))}
-                  {hiddenLinksCount > 0 ? (
-                    <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                      Mais {hiddenLinksCount} vinculo(s) seguem no historico deste ticket.
-                    </p>
-                  ) : null}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2 rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
-              <div className="space-y-1">
-                <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-                  Buscar e vincular
-                </h4>
-                <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                  Relacione artigos internos ou marque lacunas para a proxima tratativa.
-                </p>
-              </div>
-
-              <TextInput
-                className="min-h-10"
-                onChange={(event) => onSearchChange(event.target.value)}
-                placeholder="Buscar artigo por título, resumo ou categoria"
-                value={search}
-              />
-
-              <TextareaInput
-                className="min-h-[84px]"
-                onChange={(event) => onNoteChange(event.target.value)}
-                placeholder="Observação curta opcional para o próximo operador."
-                value={noteDraft}
-              />
-
-              <GhostButton
-                className="min-h-9 px-3 text-[13px]"
-                disabled={loading}
-                onClick={onMarkGap}
-                type="button"
-              >
-                Marcar lacuna de documentação
-              </GhostButton>
-            </div>
-          </div>
-
-          <div className="space-y-2 rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-                  Sugestões disponíveis
-              </h4>
-              <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                {articles.length === 0 ? 'Sem resultados para o filtro atual' : `${articles.length} artigo(s) encontrados`}
-              </p>
-            </div>
-
-            {articles.length === 0 ? (
-              <InlineNotice tone="warning">
-                Nenhum artigo permitido apareceu para este filtro.
-              </InlineNotice>
-            ) : (
-              <div className="grid gap-2 xl:grid-cols-2">
-                {visibleArticles.map((article) => (
-                  <SupportKnowledgePickerCard
-                    article={article}
-                    disabled={loading}
-                    key={article.articleId}
-                    onCopyPublicLink={onCopyPublicLink}
-                    onLinkInternal={onLinkInternal}
-                    onNeedsUpdate={onNeedsUpdate}
-                    onSendToCustomer={onSendToCustomer}
-                  />
-                ))}
-              </div>
-            )}
-
-            {articles.length > visibleArticles.length ? (
-              <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                Ajuste a busca para abrir outros artigos desta base.
-              </p>
-            ) : null}
-          </div>
-        </>
-      )}
-    </section>
-  );
-}
-
-function SupportHelpPanel({
-  articles,
-  links,
-  onCopyPublicLink,
-}: {
-  articles: SupportKnowledgeArticlePickerItem[];
-  links: SupportTicketKnowledgeLink[];
-  onCopyPublicLink: (publicArticlePath: string) => void;
-}) {
-  const publicArticles = articles
-    .filter((article) => article.isCustomerSendAllowed && article.publicArticlePath)
-    .slice(0, 3);
-  const publicLinks = links
-    .filter(
-      (link) =>
-        link.publicArticlePath &&
-        (link.linkType === 'sent_to_customer' || link.isCustomerSendAllowed),
-    )
-    .slice(0, 3);
-  const helpCenterBasePath =
-    extractPublicArticleBasePath(publicArticles[0]?.publicArticlePath) ??
-    extractPublicArticleBasePath(publicLinks[0]?.publicArticlePath) ??
-    '/help/genius';
-
-  return (
-    <section className="space-y-3">
-      <div className="space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-          Central de ajuda
-        </p>
-        <h3 className="text-[15px] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-          Conteúdo público sugerido para esta tratativa
-        </h3>
-        <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-          Use este painel para validar o que já nasceu como leitura pública aprovada, sem misturar rascunho editorial, referência interna ou material restrito.
-        </p>
-      </div>
-
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,0.92fr)_minmax(260px,0.8fr)]">
-        <div className="space-y-2 rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-              Artigos prontos para o cliente
-            </h4>
-            <div className="flex items-center gap-2">
-              <StatusPill tone="positive">Compartilhável</StatusPill>
-              <Link
-                className="text-[12px] font-semibold text-[color:var(--color-brand-blue)]"
-                to={helpCenterBasePath}
-              >
-                Abrir central
-              </Link>
-            </div>
-          </div>
-
-          {publicArticles.length === 0 ? (
-            <EmptyState
-              title="Nenhum artigo público sugerido"
-              description="Quando um conteúdo puder ser compartilhado com o cliente, ele aparecerá aqui."
-            />
-          ) : (
-            <div className="space-y-2">
-              {publicArticles.map((article) => (
-                <article
-                  className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5"
-                  key={article.articleId}
-                >
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <StatusPill>{humanizeKnowledgeVisibility(article.articleVisibility)}</StatusPill>
-                    <StatusPill>{humanizeKnowledgeStatus(article.articleStatus)}</StatusPill>
-                    {article.categoryName ? <StatusPill tone="accent">{article.categoryName}</StatusPill> : null}
-                  </div>
-                  <p className="mt-1.5 text-[13px] font-semibold text-[color:var(--color-ink)]">
-                    {article.articleTitle}
-                  </p>
-                  <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-[color:var(--color-muted)]">
-                      {article.articleSummary?.trim() || 'Resumo ainda não informado para este artigo.'}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    <a
-                      className="inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white px-2.5 text-[12px] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/35 hover:text-[color:var(--color-brand-blue)]"
-                      href={article.publicArticlePath!}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      Abrir artigo
-                    </a>
-                    <GhostButton
-                      className="min-h-8 rounded-full px-2.5 text-[12px]"
-                      onClick={() => onCopyPublicLink(article.publicArticlePath!)}
-                      type="button"
-                    >
-                      Copiar link
-                    </GhostButton>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-2 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
-          <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-            Conteúdos já relacionados
-          </h4>
-          {publicLinks.length === 0 ? (
-            <InlineNotice>
-              Ainda não existe conteúdo público marcado para este ticket.
-            </InlineNotice>
-          ) : (
-            <div className="space-y-1.5">
-              {publicLinks.map((link) => (
-                <div
-                  className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2"
-                  key={link.ticketKnowledgeLinkId}
-                >
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <StatusPill tone={toneForKnowledgeLinkType(link.linkType)}>
-                      {humanizeKnowledgeLinkType(link.linkType)}
-                    </StatusPill>
-                    {link.articleVisibility ? (
-                      <StatusPill>{humanizeKnowledgeVisibility(link.articleVisibility)}</StatusPill>
-                    ) : null}
-                  </div>
-                  <p className="mt-1.5 text-[13px] font-semibold text-[color:var(--color-ink)]">
-                    {link.articleTitle ?? 'Conteúdo público relacionado'}
-                  </p>
-                  <p className="mt-1 text-[11px] leading-5 text-[color:var(--color-muted)]">
-                    Vinculado em {formatDateTime(link.createdAt)}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    <a
-                      className="inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2.5 text-[12px] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/35 hover:text-[color:var(--color-brand-blue)]"
-                      href={link.publicArticlePath!}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      Abrir artigo
-                    </a>
-                    <GhostButton
-                      className="min-h-8 rounded-full px-2.5 text-[12px]"
-                      onClick={() => onCopyPublicLink(link.publicArticlePath!)}
-                      type="button"
-                    >
-                      Copiar link
-                    </GhostButton>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="rounded-[14px] border border-dashed border-[rgba(48,127,226,0.28)] bg-white/72 px-3 py-2.5">
-            <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-              Revise a leitura pública antes de compartilhar. Quando não houver conteúdo pronto, siga com a resposta pública pelos canais normais do ticket e registre a lacuna na aba Conhecimento para a curadoria editorial.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function SupportTicketAttachmentsPanel({
-  attachments,
-  message,
-  phase,
-  uploading,
-  downloadingAttachmentId,
-  onDownload,
-  onRequestUpload,
-  uploadEnabled,
-}: {
-  attachments: SupportTicketAttachment[];
-  message: string | null;
-  phase: AttachmentPhase;
-  uploading: boolean;
-  downloadingAttachmentId: string | null;
-  onDownload: (attachmentId: Uuid) => void;
-  onRequestUpload: () => void;
-  uploadEnabled: boolean;
-}) {
-  if (phase === 'loading' || phase === 'idle') {
-    return (
-      <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.06)]">
-        <h4 className="text-[13px] font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
-          Evidências
-        </h4>
-        <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
-          Carregando o inventário de anexos vinculados ao ticket.
-        </p>
-      </section>
-    );
-  }
-
-  return (
-    <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.06)]">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1.5">
-          <h4 className="text-[13px] font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
-            Evidências
-          </h4>
-          <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-            Upload governado em bucket privado com leitura sanitizada no ticket. Tipos aceitos:
-            PDF, PNG, JPG, WEBP, CSV, TXT e JSON, com até 10 MB por arquivo.
-          </p>
-        </div>
-        <AppButton
-          className="min-w-[172px]"
-          disabled={!uploadEnabled || uploading}
-          onClick={onRequestUpload}
-        >
-          {uploading ? 'Enviando evidência...' : 'Adicionar evidência'}
-        </AppButton>
-      </div>
-
-      <div className="mt-3 space-y-2.5">
-        {phase === 'contract-unavailable' || phase === 'error' ? (
-          <InlineNotice tone="warning">
-            {message ?? 'A leitura operacional de evidências não ficou disponível neste ambiente.'}
-          </InlineNotice>
-        ) : attachments.length === 0 ? (
-          <InlineNotice>
-            Nenhuma evidência vinculada apareceu neste ticket ainda.
-          </InlineNotice>
-        ) : (
-          attachments.map((attachment) => (
-            <article
-              className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3"
-              key={attachment.attachmentId}
-            >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="min-w-0 space-y-1">
-                  <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
-                    {attachment.displayName}
-                  </p>
-                  <p className="text-[12px] text-[color:var(--color-muted)]">
-                    {formatAttachmentSize(attachment.sizeBytes)}
-                    {' · '}
-                    {attachment.contentType ?? 'Tipo não informado'}
-                  </p>
-                </div>
-                <StatusPill tone={toneForAttachmentStatus(attachment.status)}>
-                  {humanizeAttachmentStatus(attachment.status)}
-                </StatusPill>
-              </div>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <StatusPill tone={attachment.canDownload ? 'positive' : 'default'}>
-                  {attachment.canDownload ? 'Download temporário disponível' : 'Download indisponível'}
-                </StatusPill>
-                <GhostButton
-                  className="px-3 py-1.5 text-xs"
-                  disabled={!attachment.canDownload || downloadingAttachmentId === attachment.attachmentId}
-                  onClick={() => onDownload(attachment.attachmentId)}
-                >
-                  {downloadingAttachmentId === attachment.attachmentId
-                    ? 'Preparando link...'
-                    : 'Baixar evidência'}
-                </GhostButton>
-              </div>
-              <p className="mt-2 text-[12px] leading-5 text-[color:var(--color-muted)]">
-                  Registrado por {attachment.uploadedByName ?? 'Operador não identificado'} em{' '}
-                {formatDateTime(attachment.createdAt)}.
-              </p>
-            </article>
-          ))
-        )}
-      </div>
-    </section>
-  );
-}
-
-function SupportEngineeringLinkCard({
-  link,
-}: {
-  link: SupportTicketEngineeringLink;
-}) {
-  return (
-    <article className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0 space-y-1">
-          <p className="text-sm font-semibold text-[color:var(--color-ink)]">
-            {link.workItemTitle}
-          </p>
-          <p className="text-[12px] uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
-            {humanizeEngineeringWorkItemType(link.workItemType)} · {humanizePriority(link.workItemPriority)}
-          </p>
-        </div>
-        <StatusPill tone={toneForEngineeringWorkItemStatus(link.workItemStatus)}>
-          {humanizeEngineeringWorkItemStatus(link.workItemStatus)}
-        </StatusPill>
-      </div>
-      <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
-        {link.workItemDescription}
-      </p>
-      {link.handoffNote ? (
-        <div className="mt-2 rounded-[14px] border border-dashed border-[rgba(48,127,226,0.24)] bg-white px-3 py-2">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
-            Contexto do handoff
-          </p>
-          <p className="mt-1 text-sm leading-6 text-[color:var(--color-ink)]">{link.handoffNote}</p>
-        </div>
-      ) : null}
-      {link.lastUpdateSummary ? (
-        <div className="mt-2 rounded-[14px] border border-[rgba(48,127,226,0.18)] bg-white px-3 py-2">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
-            Último retorno técnico
-          </p>
-          <p className="mt-1 text-sm leading-6 text-[color:var(--color-ink)]">{link.lastUpdateSummary}</p>
-          {link.lastUpdateNextStep ? (
-            <p className="mt-1 text-[12px] leading-5 text-[color:var(--color-muted)]">
-              Próximo passo: {link.lastUpdateNextStep}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[12px] text-[color:var(--color-muted)]">
-        <span>
-          Criado por {link.createdByFullName ?? 'Operador não identificado'} em {formatDateTime(link.createdAt)}
-        </span>
-        <span>Responsável: {link.assignedToFullName ?? 'Indisponível'}</span>
-      </div>
-      <Link
-        className="mt-2 inline-flex text-[12px] font-semibold text-[color:var(--color-brand-blue)]"
-        to={`/engineering/work-items/${link.engineeringWorkItemId}`}
-      >
-        Abrir na engenharia
-      </Link>
-    </article>
-  );
-}
-
-function SupportMoreActionsPanel({
-  engineeringLinks,
-  engineeringMessage,
-  engineeringPhase,
-  handoffDraft,
-  handoffSubmitting,
-  closeReason,
-  canClose,
-  canReopen,
-  canCreateEngineeringHandoff,
-  onEngineeringHandoffDraftChange,
-  onEngineeringHandoffSubmit,
-  onCloseReasonChange,
-  onCloseSubmit,
-  onReopenReasonChange,
-  onReopenSubmit,
-  reopenReason,
-  submitting,
-  window,
-}: {
-  engineeringLinks: SupportTicketEngineeringLink[];
-  engineeringMessage: string | null;
-  engineeringPhase: EngineeringPhase;
-  handoffDraft: EngineeringHandoffDraft;
-  handoffSubmitting: boolean;
-  closeReason: string;
-  canClose: boolean;
-  canReopen: boolean;
-  canCreateEngineeringHandoff: boolean;
-  onEngineeringHandoffDraftChange: (patch: Partial<EngineeringHandoffDraft>) => void;
-  onEngineeringHandoffSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onCloseReasonChange: (value: string) => void;
-  onCloseSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onReopenReasonChange: (value: string) => void;
-  onReopenSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  reopenReason: string;
-  submitting: boolean;
-  window: SupportTicketTimelineRecentWindow;
-}) {
-  return (
-    <section className="space-y-3">
-      <div className="space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-          Mais ações
-        </p>
-        <h3 className="text-[15px] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-          Movimentos secundarios da tratativa
-        </h3>
-      </div>
-
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,0.92fr)_minmax(260px,0.8fr)]">
-        <div className="space-y-3">
-          <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
-            <div className="space-y-1">
-              <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-                Escalonamento técnico
-              </h4>
-              <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-                Crie uma demanda técnica estruturada quando o ticket precisar sair do fluxo de atendimento e entrar no backlog operacional de engenharia.
-              </p>
-            </div>
-
-            <div className="mt-3 space-y-2.5">
-              {engineeringPhase === 'contract-unavailable' ? (
-                <InlineNotice tone="warning">
-                  {engineeringMessage ?? 'A leitura do handoff técnico não ficou disponível neste ambiente.'}
-                </InlineNotice>
-              ) : engineeringPhase === 'error' ? (
-                <InlineNotice tone="warning">
-                  {engineeringMessage ?? 'Não foi possível carregar o handoff técnico deste ticket.'}
-                </InlineNotice>
-              ) : engineeringLinks.length === 0 ? (
-                <InlineNotice>
-                  Nenhuma demanda técnica foi vinculada ainda a este ticket.
-                </InlineNotice>
-              ) : (
-                engineeringLinks.map((link) => (
-                  <SupportEngineeringLinkCard key={link.engineeringTicketLinkId} link={link} />
-                ))
-              )}
-            </div>
-
-            <form className="mt-3 space-y-2.5 border-t border-[color:var(--color-border)] pt-3" onSubmit={onEngineeringHandoffSubmit}>
-              <Field
-                label="Tipo da demanda técnica"
-                description="Use o tipo que melhor descreve o bloco de trabalho que vai para engenharia."
-              >
-                <SelectInput
-                  onChange={(event) =>
-                    onEngineeringHandoffDraftChange({
-                      workItemType: event.target.value as EngineeringWorkItemType,
-                    })
-                  }
-                  value={handoffDraft.workItemType}
-                >
-                  {ENGINEERING_WORK_ITEM_TYPES.map((item) => (
-                    <option key={item} value={item}>
-                      {humanizeEngineeringWorkItemType(item)}
-                    </option>
-                  ))}
-                </SelectInput>
-              </Field>
-
-              <Field label="Título técnico">
-                <TextInput
-                  onChange={(event) =>
-                    onEngineeringHandoffDraftChange({ title: event.target.value })
-                  }
-                  placeholder="Resumo curto e objetivo do problema técnico."
-                  value={handoffDraft.title}
-                />
-              </Field>
-
-              <Field label="Descrição da demanda">
-                <TextareaInput
-                  className="min-h-[96px]"
-                  onChange={(event) =>
-                    onEngineeringHandoffDraftChange({ description: event.target.value })
-                  }
-                  placeholder="Explique o impacto, o contexto e o comportamento observado."
-                  value={handoffDraft.description}
-                />
-              </Field>
-
-              <Field
-                label="Contexto do handoff"
-                description="Opcional. Use para registrar o enquadramento operacional que já foi validado pelo suporte."
-              >
-                <TextareaInput
-                  className="min-h-[84px]"
-                  onChange={(event) =>
-                    onEngineeringHandoffDraftChange({ handoffNote: event.target.value })
-                  }
-                  placeholder="Exemplo: cliente afetado, janela, impacto e o que já foi conferido."
-                  value={handoffDraft.handoffNote}
-                />
-              </Field>
-
-              <AppButton
-                className="min-h-10 rounded-[14px] px-4.5"
-                disabled={
-                  handoffSubmitting ||
-                  !canCreateEngineeringHandoff ||
-                  handoffDraft.title.trim().length === 0 ||
-                  handoffDraft.description.trim().length === 0
-                }
-                type="submit"
-              >
-                {handoffSubmitting ? 'Criando demanda...' : 'Criar demanda técnica'}
-              </AppButton>
-
-              {!canCreateEngineeringHandoff ? (
-                <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-                  A criação de handoff técnico não está disponível para este ticket no contexto atual.
-                </p>
-              ) : null}
-            </form>
-          </section>
-
-          <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
-            <InlineNotice>
-              Status, classificação e SLA são alterados no rail do ticket para preservar as regras operacionais vigentes.
-            </InlineNotice>
-          </section>
-
-          {(canClose || canReopen) ? (
-            <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
-              <div className="space-y-3">
-                {canClose ? (
-                  <form className="space-y-2.5" onSubmit={onCloseSubmit}>
-                    <Field label="Motivo do fechamento">
-                      <TextareaInput
-                        className="min-h-[96px]"
-                        onChange={(event) => onCloseReasonChange(event.target.value)}
-                        placeholder="Obrigatorio para encerrar."
-                        value={closeReason}
-                      />
-                    </Field>
-                    <AppButton
-                      className="min-h-10 rounded-[14px] bg-[linear-gradient(135deg,#8b1e3f,#c3365e)] px-4.5"
-                      disabled={submitting || closeReason.trim().length === 0}
-                      type="submit"
-                    >
-                      {submitting ? 'Fechando...' : 'Fechar ticket'}
-                    </AppButton>
-                  </form>
-                ) : null}
-
-                {canReopen ? (
-                  <form className="space-y-2.5 border-t border-[color:var(--color-border)] pt-3" onSubmit={onReopenSubmit}>
-                    <Field label="Motivo da reabertura">
-                      <TextareaInput
-                        className="min-h-[84px]"
-                        onChange={(event) => onReopenReasonChange(event.target.value)}
-                        placeholder="Opcional para reabrir."
-                        value={reopenReason}
-                      />
-                    </Field>
-                    <GhostButton className="min-h-10 w-full px-4" disabled={submitting} type="submit">
-                      {submitting ? 'Reabrindo...' : 'Reabrir ticket'}
-                    </GhostButton>
-                  </form>
-                ) : null}
-              </div>
-            </section>
-          ) : null}
-        </div>
-
-        <section className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
-          <div className="space-y-2">
-            <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-              Historico de apoio
-            </h4>
-            <SupportTechnicalHistory window={window} />
-          </div>
-        </section>
-      </div>
-    </section>
-  );
-}
-
 function SupportQueueItem({
   ticket,
   isSelected,
@@ -2383,335 +1442,84 @@ function SupportQueueItem({
   isSelected: boolean;
   onSelect: () => void;
 }) {
-  return (
-    <article
-      className={cx(
-        'rounded-[18px] border px-4 py-3 transition',
-        isSelected
-          ? 'border-[rgba(48,127,226,0.46)] bg-[rgba(48,127,226,0.08)] shadow-[0_8px_18px_rgba(19,33,79,0.08)]'
-          : 'border-[color:var(--color-border)] bg-white hover:border-[rgba(48,127,226,0.24)] hover:bg-[rgba(255,255,255,0.98)]',
-      )}
-    >
-      <button
-        className="block w-full min-w-0 text-left"
-        onClick={onSelect}
-        type="button"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <StatusPill tone={toneForTicketStatus(ticket.status)}>
-              {humanizeStatus(ticket.status)}
-            </StatusPill>
-            <StatusPill tone={toneForSlaStatus(ticket.slaStatus)}>
-              {ticket.slaStatusLabel}
-            </StatusPill>
-          </div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
-            {humanizePriority(ticket.priority)} · {humanizeSeverity(ticket.severity)}
-          </p>
-        </div>
+  const statusTone =
+    ticket.status === 'waiting_engineering'
+      ? 'violet'
+      : ticket.status === 'waiting_customer'
+        ? 'warning'
+        : ticket.priority === 'urgent' || ticket.severity === 'critical'
+          ? 'critical'
+          : ticket.status === 'resolved' || ticket.status === 'closed'
+            ? 'positive'
+            : 'blue';
+  const slaTone =
+    ticket.slaStatus === 'breached'
+      ? 'critical'
+      : ticket.slaStatus === 'at_risk'
+        ? 'warning'
+        : ticket.slaStatus === 'on_track' || ticket.slaStatus === 'complete'
+          ? 'positive'
+          : 'default';
 
-        <div className="mt-2.5 min-w-0 space-y-1.5">
-          <h3 className="line-clamp-2 max-w-full text-[1.02rem] font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
-            {ticket.title}
-          </h3>
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] leading-5 text-[color:var(--color-muted)]">
-            <span>Cliente: {ticketTenantLabel(ticket)}</span>
-            <span>Categoria: {ticket.categoryName ?? 'Indisponível'}</span>
-            <span>SLA: {ticket.slaPolicyName ?? 'Sem política definida'}</span>
-            <span>{formatSlaDueLabel(ticket.firstResponseDueAt, ticket.resolutionDueAt)}</span>
-            <span>Responsável: {ticket.assignedToFullName ?? 'Não atribuído'}</span>
-            <span>Última atividade: {formatDateTime(ticket.lastMessageAt ?? ticket.updatedAt)}</span>
-          </div>
-        </div>
-      </button>
-    </article>
+  return (
+    <QueueTicketItem
+      assigneeInitials={
+        ticket.assignedToFullName ? initialsFromSupportLabel(ticket.assignedToFullName) : '—'
+      }
+      assigneeLabel={ticket.assignedToFullName ?? 'Não atribuído'}
+      categoryLabel={ticket.categoryName ?? 'Indisponível'}
+      code={supportTicketCode(ticket.id)}
+      isSelected={isSelected}
+      onSelect={onSelect}
+      slaLabel={ticket.slaStatusLabel ?? 'Indisponível'}
+      slaTone={slaTone}
+      statusBadge={
+        <OperationalQueueBadge tone={statusTone}>
+          {compactTicketStatusLabel(ticket.status)}
+        </OperationalQueueBadge>
+      }
+      tenantLabel={ticketTenantLabel(ticket)}
+      tenantSubLabel={ticket.tenantSlug ?? 'Indisponível'}
+      timestampLabel={formatSupportShortTime(ticket.lastMessageAt ?? ticket.updatedAt)}
+      title={ticket.title}
+      variant="workspace"
+    />
   );
 }
 
-function SupportSummaryStrip({
-  totalOpen,
-  waitingCustomer,
-  highAttention,
-  unassigned,
-}: {
-  totalOpen: number;
-  waitingCustomer: number;
-  highAttention: number;
-  unassigned: number;
-}) {
-  const items = [
-    { label: 'Abertos', value: totalOpen },
-    { label: 'Alta atenção', value: highAttention },
-    { label: 'Sem dono', value: unassigned },
-    { label: 'Retorno externo', value: waitingCustomer },
-  ];
-
-  return (
-    <div className="grid shrink-0 gap-2 sm:grid-cols-2 xl:grid-cols-4">
-      {items.map((item) => (
-        <div
-          className="flex min-h-[76px] items-center justify-between rounded-[16px] border border-[color:var(--color-border)] bg-white/94 px-3.5 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.04)]"
-          key={item.label}
-        >
-          <div className="space-y-0.5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-              {item.label}
-            </p>
-            <p className="text-[12px] text-[color:var(--color-muted)]">pulso da fila</p>
-          </div>
-          <span className="text-[1.2rem] font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
-            {item.value}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function SupportTicketPreview({
+function SupportTicketInboxItem({
   ticket,
-  detail,
-  customer,
+  isSelected,
+  onSelect,
 }: {
-  ticket: SupportTicketQueueItem | null;
-  detail: SupportTicketDetail | null;
-  customer: SupportCustomer360 | null;
+  ticket: SupportTicketQueueItem;
+  isSelected: boolean;
+  onSelect: () => void;
 }) {
-  if (!ticket && !detail) {
-    return (
-      <EmptyState
-        title="Nenhum ticket em foco"
-        description="Selecione um ticket da fila para abrir a previa operacional."
-      />
-    );
-  }
-
-  const title = detail?.title ?? ticket?.title ?? 'Ticket sem título';
-  const tenant =
-    detail?.tenantDisplayName ??
-    detail?.tenantLegalName ??
-    detail?.tenantSlug ??
-      (ticket ? ticketTenantLabel(ticket) : 'Cliente não identificado');
-  const assigned =
-    detail?.assignedToFullName ?? ticket?.assignedToFullName ?? 'Não atribuído';
-  const category = detail?.categoryName ?? ticket?.categoryName ?? 'Indisponível';
-  const slaLabel = detail?.slaStatusLabel ?? ticket?.slaStatusLabel ?? 'Sem política definida';
-  const slaStatus = detail?.slaStatus ?? ticket?.slaStatus ?? 'unavailable';
-  const slaPolicy = detail?.slaPolicyName ?? ticket?.slaPolicyName ?? 'Sem política definida';
-  const slaDue = formatSlaDueLabel(
-    detail?.firstResponseDueAt ?? ticket?.firstResponseDueAt ?? null,
-    detail?.resolutionDueAt ?? ticket?.resolutionDueAt ?? null,
-  );
-  const lastActivity = formatDateTime(
-    detail?.lastMessageAt ?? detail?.updatedAt ?? ticket?.lastMessageAt ?? ticket?.updatedAt ?? null,
-  );
-  const tenantId = detail?.tenantId ?? ticket?.tenantId ?? null;
-  const ticketId = detail?.id ?? ticket?.id ?? null;
-
   return (
-    <div className="space-y-3">
-      <div className="rounded-[22px] border border-[rgba(48,127,226,0.22)] bg-[linear-gradient(180deg,rgba(17,28,66,1),rgba(24,42,97,0.98))] px-4 py-4 text-white">
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusPill tone={toneForTicketStatus(detail?.status ?? ticket?.status ?? 'new')}>
-            {humanizeStatus((detail?.status ?? ticket?.status ?? 'new') as TicketStatus)}
-          </StatusPill>
-          <StatusPill tone={toneForSlaStatus(slaStatus)}>{slaLabel}</StatusPill>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/66">
-            {humanizeToken(detail?.priority ?? ticket?.priority ?? 'normal')} ·{' '}
-            {humanizeToken(detail?.severity ?? ticket?.severity ?? 'low')}
-          </span>
-        </div>
-
-        <div className="mt-3.5 min-w-0 space-y-2">
-          <h3 className="line-clamp-3 text-[1.24rem] font-semibold tracking-[-0.05em]">{title}</h3>
-          <div className="space-y-1 text-[12px] leading-5 text-white/76">
-            <p>Cliente: {tenant}</p>
-            <p>Categoria: {category}</p>
-            <p>SLA interno: {slaLabel}</p>
-            <p>Política: {slaPolicy}</p>
-            <p>{slaDue}</p>
-            <p>Responsável: {assigned}</p>
-            <p>Última atividade: {lastActivity}</p>
-          </div>
-        </div>
-
-        {ticketId ? (
-          <div className="mt-4 flex flex-wrap gap-2.5">
-            <Link
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-[color:var(--color-brand-navy)]"
-              to={`/support/tickets/${ticketId}`}
-            >
-              Atender ticket
-            </Link>
-            {tenantId ? (
-              <Link
-                className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/22 px-4 py-2 text-sm font-semibold text-white"
-                to={`/support/customers/${tenantId}`}
-              >
-                Ver cliente
-              </Link>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-
-      <div className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 text-sm leading-6 text-[color:var(--color-muted)]">
-        <p className="font-medium text-[color:var(--color-ink)]">Prévia de atendimento</p>
-        <p className="mt-1.5">
-          {detail?.description?.trim() ||
-            'Abra o ticket para responder, registrar nota interna ou ajustar status e atribuicao.'}
-        </p>
-        {customer ? (
-          <div className="mt-3 border-t border-[color:var(--color-border)] pt-3 text-[12px] leading-5">
-            <p>Contato principal: {customer.activeContacts[0]?.fullName ?? 'Não identificado'}</p>
-            <p>Tickets abertos deste cliente: {customer.openTicketCount}</p>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function SupportQueueToolbar({
-  filters,
-  tenantOptions,
-  assigneeOptions,
-  categoryOptions,
-  onChange,
-  onRefresh,
-  embedded = false,
-}: {
-  filters: QueueFilters;
-  tenantOptions: Array<{ id: string; label: string }>;
-  assigneeOptions: Array<{ id: string; label: string }>;
-  categoryOptions: Array<{ id: string; label: string }>;
-  onChange: (next: QueueFilters) => void;
-  onRefresh: () => void;
-  embedded?: boolean;
-}) {
-  const content = (
-    <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="space-y-1">
-          <p className="text-sm font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-            Triagem operacional
-          </p>
-          <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-            Filtros de fila para definir proximo atendimento sem virar dashboard.
-          </p>
-        </div>
-        <GhostButton onClick={onRefresh}>Recarregar</GhostButton>
-      </div>
-
-      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-1">
-        <Field label="Status">
-          <SelectInput
-            onChange={(event) => onChange({ ...filters, status: event.target.value as QueueFilters['status'] })}
-            value={filters.status}
-          >
-            <option value="all">Todos</option>
-            {TICKET_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {humanizeStatus(status)}
-              </option>
-            ))}
-          </SelectInput>
-        </Field>
-
-        <Field label="Prioridade">
-          <SelectInput
-            onChange={(event) =>
-              onChange({ ...filters, priority: event.target.value as QueueFilters['priority'] })
-            }
-            value={filters.priority}
-          >
-            <option value="all">Todas</option>
-            {TICKET_PRIORITIES.map((priority) => (
-                          <option key={priority} value={priority}>
-                            {humanizePriority(priority)}
-              </option>
-            ))}
-          </SelectInput>
-        </Field>
-
-        <Field label="Severidade">
-          <SelectInput
-            onChange={(event) =>
-              onChange({ ...filters, severity: event.target.value as QueueFilters['severity'] })
-            }
-            value={filters.severity}
-          >
-            <option value="all">Todas</option>
-            {TICKET_SEVERITIES.map((severity) => (
-                          <option key={severity} value={severity}>
-                            {humanizeSeverity(severity)}
-              </option>
-            ))}
-          </SelectInput>
-        </Field>
-
-        <Field label="Categoria">
-          <SelectInput
-            onChange={(event) =>
-              onChange({ ...filters, categoryId: event.target.value as QueueFilters['categoryId'] })
-            }
-            value={filters.categoryId}
-          >
-            <option value="all">Todas</option>
-            {categoryOptions.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.label}
-              </option>
-            ))}
-          </SelectInput>
-        </Field>
-
-        <Field label="Cliente">
-          <SelectInput
-            onChange={(event) => onChange({ ...filters, tenantId: event.target.value as QueueFilters['tenantId'] })}
-            value={filters.tenantId}
-          >
-            <option value="all">Todos</option>
-            {tenantOptions.map((tenant) => (
-              <option key={tenant.id} value={tenant.id}>
-                {tenant.label}
-              </option>
-            ))}
-          </SelectInput>
-        </Field>
-
-        <Field label="Responsavel">
-          <SelectInput
-            onChange={(event) =>
-              onChange({
-                ...filters,
-                assignedToUserId: event.target.value as QueueFilters['assignedToUserId'],
-              })
-            }
-            value={filters.assignedToUserId}
-          >
-            <option value="all">Todos</option>
-                <option value="unassigned">Não atribuídos</option>
-            {assigneeOptions.map((assignee) => (
-              <option key={assignee.id} value={assignee.id}>
-                {assignee.label}
-              </option>
-            ))}
-          </SelectInput>
-        </Field>
-      </div>
-    </>
-  );
-
-  if (embedded) {
-    return content;
-  }
-
-  return (
-    <div className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4">
-      {content}
-    </div>
+    <QueueTicketItem
+      categoryLabel={ticket.categoryName ?? 'Indisponível'}
+      code={supportTicketCode(ticket.id)}
+      isSelected={isSelected}
+      onSelect={onSelect}
+      slaLabel={ticket.slaStatusLabel ?? 'Indisponível'}
+      slaTone={
+        ticket.slaStatus === 'breached'
+          ? 'critical'
+          : ticket.slaStatus === 'at_risk'
+            ? 'warning'
+            : 'positive'
+      }
+      statusBadge={
+        <CompactSupportPill tone={toneForTicketStatus(ticket.status)}>
+          {compactTicketStatusLabel(ticket.status)}
+        </CompactSupportPill>
+      }
+      tenantLabel={ticketTenantLabel(ticket)}
+      timestampLabel={formatSupportShortTime(ticket.lastMessageAt ?? ticket.updatedAt)}
+      title={ticket.title}
+      variant="inbox"
+    />
   );
 }
 
@@ -2971,8 +1779,73 @@ function SupportRecentEventCard({
   );
 }
 
-function primaryContactFromCustomer(customer: SupportCustomer360) {
-  return customer.activeContacts.find((contact) => contact.isPrimary) ?? customer.activeContacts[0] ?? null;
+function isOperationsQueueTicket(ticket: SupportTicketQueueItem) {
+  const candidate = `${ticket.categorySlug ?? ''} ${ticket.categoryName ?? ''}`.toLocaleLowerCase('pt-BR');
+  return (
+    candidate.includes('opera') ||
+    candidate.includes('support') ||
+    candidate.includes('suporte')
+  );
+}
+
+function ticketMatchesInboxScope(
+  ticket: SupportTicketQueueItem,
+  scope: TicketInboxScope,
+) {
+  if (scope === 'open') {
+    return (
+      ticket.status === 'new' ||
+      ticket.status === 'triage' ||
+      ticket.status === 'waiting_customer' ||
+      ticket.status === 'waiting_support' ||
+      ticket.status === 'waiting_engineering' ||
+      ticket.status === 'in_progress'
+    );
+  }
+
+  return (
+    ticket.status === 'resolved' ||
+    ticket.status === 'closed' ||
+    ticket.status === 'cancelled'
+  );
+}
+
+function ticketMatchesInboxFilter(
+  ticket: SupportTicketQueueItem,
+  filter: TicketInboxFilter,
+) {
+  switch (filter) {
+    case 'in_progress':
+      return ticket.status === 'in_progress';
+    case 'awaiting':
+      return (
+        ticket.isWaitingCustomer ||
+        ticket.isWaitingEngineering ||
+        ticket.status === 'waiting_customer' ||
+        ticket.status === 'waiting_engineering'
+      );
+    case 'urgent':
+      return (
+        ticket.priority === 'urgent' ||
+        ticket.severity === 'critical' ||
+        ticket.slaStatus === 'at_risk' ||
+        ticket.slaStatus === 'breached'
+      );
+    case 'operations':
+      return isOperationsQueueTicket(ticket);
+    case 'engineering':
+      return ticket.isWaitingEngineering;
+    case 'resolved':
+      return ticket.status === 'resolved';
+    case 'closed':
+      return ticket.status === 'closed';
+    case 'cancelled':
+      return ticket.status === 'cancelled';
+    case 'all_closed':
+    case 'all':
+    default:
+      return true;
+  }
 }
 
 function primaryPlatformFromContext(accountContext: SupportCustomerAccountContext | null) {
@@ -3494,6 +2367,10 @@ function SupportWorkspaceView({
   const [pageMessage, setPageMessage] = useState<string | null>(null);
   const [tickets, setTickets] = useState<SupportTicketQueueItem[]>([]);
   const [filters, setFilters] = useState<QueueFilters>(emptyFilters);
+  const [ticketInboxScope, setTicketInboxScope] = useState<TicketInboxScope>('open');
+  const [ticketInboxFilter, setTicketInboxFilter] = useState<TicketInboxFilter>('all');
+  const [ticketInboxSearch, setTicketInboxSearch] = useState('');
+  const [ticketInboxPage, setTicketInboxPage] = useState(1);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(focusTicketId ?? null);
   const [detailPhase, setDetailPhase] = useState<DetailPhase>('idle');
   const [detailMessage, setDetailMessage] = useState<string | null>(null);
@@ -3519,10 +2396,37 @@ function SupportWorkspaceView({
   const [attachmentMessage, setAttachmentMessage] = useState<string | null>(null);
   const [attachmentSubmitting, setAttachmentSubmitting] = useState(false);
   const [attachmentDownloadingId, setAttachmentDownloadingId] = useState<Uuid | null>(null);
+  const [attachmentUploadDraft, setAttachmentUploadDraft] =
+    useState<TicketAttachmentUploadDraft>(emptyAttachmentUploadDraft());
   const [engineeringLinks, setEngineeringLinks] =
     useState<SupportTicketEngineeringLink[]>(emptyTicketEngineeringLinks());
   const [engineeringPhase, setEngineeringPhase] = useState<EngineeringPhase>('idle');
   const [engineeringMessage, setEngineeringMessage] = useState<string | null>(null);
+  const [internalActions, setInternalActions] = useState<SupportTicketInternalAction[]>([]);
+  const [internalActionsPhase, setInternalActionsPhase] = useState<InternalActionsPhase>('idle');
+  const [internalActionsMessage, setInternalActionsMessage] = useState<string | null>(null);
+  const [internalActionTargetAreas, setInternalActionTargetAreas] =
+    useState<SupportInternalActionTargetArea[]>([]);
+  const [internalActionTargetAreasPhase, setInternalActionTargetAreasPhase] =
+    useState<InternalActionTargetAreasPhase>('idle');
+  const [internalActionTargetAreasMessage, setInternalActionTargetAreasMessage] =
+    useState<string | null>(null);
+  const [internalActionCreateDraft, setInternalActionCreateDraft] =
+    useState<InternalActionCreateDraft>(emptyInternalActionCreateDraft());
+  const [selectedInternalActionId, setSelectedInternalActionId] = useState<Uuid | null>(null);
+  const [internalActionDetail, setInternalActionDetail] =
+    useState<SupportInternalActionDetail | null>(null);
+  const [internalActionTimeline, setInternalActionTimeline] =
+    useState<SupportInternalActionTimelineEntry[]>([]);
+  const [internalActionDetailPhase, setInternalActionDetailPhase] =
+    useState<InternalActionDetailPhase>('idle');
+  const [internalActionDetailMessage, setInternalActionDetailMessage] =
+    useState<string | null>(null);
+  const [internalActionSupportNote, setInternalActionSupportNote] = useState('');
+  const [internalActionEvidenceAttachmentId, setInternalActionEvidenceAttachmentId] =
+    useState<Uuid | ''>('');
+  const [internalActionEvidenceNote, setInternalActionEvidenceNote] = useState('');
+  const [internalActionSubmitting, setInternalActionSubmitting] = useState(false);
   const [knowledgePhase, setKnowledgePhase] = useState<KnowledgePhase>('idle');
   const [knowledgeMessage, setKnowledgeMessage] = useState<string | null>(null);
   const [knowledgeSearch, setKnowledgeSearch] = useState('');
@@ -3562,9 +2466,7 @@ function SupportWorkspaceView({
   const [detailNotice, setDetailNotice] = useState<string | null>(null);
   const [detailNoticeTone, setDetailNoticeTone] = useState<'default' | 'critical'>('default');
   const [submitting, setSubmitting] = useState(false);
-  const [ticketToolbarTab, setTicketToolbarTab] = useState<
-    'conversation' | 'knowledge' | 'help' | 'more'
-  >('conversation');
+  const [activeDrawer, setActiveDrawer] = useState<TicketActionDrawer>('none');
   const threadScrollContainerRef = useRef<HTMLDivElement | null>(null);
   const pendingThreadScrollRef = useRef<'idle' | 'latest'>('idle');
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
@@ -3740,6 +2642,14 @@ function SupportWorkspaceView({
     setAttachmentMessage(null);
     setEngineeringPhase('loading');
     setEngineeringMessage(null);
+    setInternalActionsPhase('loading');
+    setInternalActionsMessage(null);
+    setInternalActionTargetAreasPhase('loading');
+    setInternalActionTargetAreasMessage(null);
+    setInternalActionDetailPhase('idle');
+    setInternalActionDetailMessage(null);
+    setInternalActionDetail(null);
+    setInternalActionTimeline([]);
     setKnowledgePhase('loading');
     setKnowledgeMessage(null);
 
@@ -3764,6 +2674,18 @@ function SupportWorkspaceView({
         setEngineeringLinks(emptyTicketEngineeringLinks());
         setEngineeringPhase('idle');
         setEngineeringMessage(null);
+        setInternalActions([]);
+        setInternalActionsPhase('idle');
+        setInternalActionsMessage(null);
+        setInternalActionTargetAreas([]);
+        setInternalActionTargetAreasPhase('idle');
+        setInternalActionTargetAreasMessage(null);
+        setInternalActionCreateDraft(emptyInternalActionCreateDraft());
+        setSelectedInternalActionId(null);
+        setInternalActionDetail(null);
+        setInternalActionTimeline([]);
+        setInternalActionDetailPhase('idle');
+        setInternalActionDetailMessage(null);
         setKnowledgeLinks(emptyTicketKnowledgeLinks());
         setKnowledgeArticlePicker(emptyKnowledgeArticlePicker());
         setKnowledgePhase('idle');
@@ -3807,7 +2729,7 @@ function SupportWorkspaceView({
         setHandoffDraft(emptyEngineeringHandoffDraft());
       }
       if (!options?.preserveSurfaceState) {
-        setTicketToolbarTab('conversation');
+        setActiveDrawer('none');
       }
       setComposerMode((currentMode) => {
         if (options?.preserveSurfaceState) {
@@ -3824,6 +2746,10 @@ function SupportWorkspaceView({
       });
       setKnowledgeSearch('');
       setKnowledgeNoteDraft('');
+      setInternalActionSupportNote('');
+      setInternalActionEvidenceAttachmentId('');
+      setInternalActionEvidenceNote('');
+      setInternalActionCreateDraft(emptyInternalActionCreateDraft());
 
       try {
         const agentRows = await listSupportAssignableAgents(detail.tenantId);
@@ -3877,6 +2803,55 @@ function SupportWorkspaceView({
         setEngineeringPhase(
           classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
         );
+      }
+
+      try {
+        const [internalActionRows, targetAreaRows] = await Promise.all([
+          listSupportTicketInternalActions(detail.id),
+          listSupportInternalActionTargetAreas(detail.id),
+        ]);
+        setInternalActions(internalActionRows);
+        setInternalActionsPhase('ready');
+        setInternalActionsMessage(null);
+        setInternalActionTargetAreas(targetAreaRows);
+        setInternalActionTargetAreasPhase('ready');
+        setInternalActionTargetAreasMessage(null);
+        setInternalActionCreateDraft((current) => ({
+          ...current,
+          targetArea:
+            current.targetArea && targetAreaRows.some((area) => area.areaKey === current.targetArea)
+              ? current.targetArea
+              : targetAreaRows[0]?.areaKey ?? '',
+        }));
+        setSelectedInternalActionId((current) => {
+          if (current && internalActionRows.some((row) => row.internalActionId === current)) {
+            return current;
+          }
+
+          return internalActionRows[0]?.internalActionId ?? null;
+        });
+      } catch (error) {
+        const classified = classifyAdminError(
+          error,
+          'Falha ao carregar os acionamentos internos deste ticket.',
+        );
+
+        if (classified.kind === 'session-expired') {
+          markSessionExpired();
+          return;
+        }
+
+        setInternalActions([]);
+        setInternalActionsMessage(classified.message);
+        setInternalActionsPhase(
+          classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
+        );
+        setInternalActionTargetAreas([]);
+        setInternalActionTargetAreasMessage(classified.message);
+        setInternalActionTargetAreasPhase(
+          classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
+        );
+        setSelectedInternalActionId(null);
       }
 
       try {
@@ -3934,6 +2909,18 @@ function SupportWorkspaceView({
       setEngineeringLinks(emptyTicketEngineeringLinks());
       setEngineeringPhase('idle');
       setEngineeringMessage(null);
+      setInternalActions([]);
+      setInternalActionsPhase('idle');
+      setInternalActionsMessage(null);
+      setInternalActionTargetAreas([]);
+      setInternalActionTargetAreasPhase('idle');
+      setInternalActionTargetAreasMessage(null);
+      setInternalActionCreateDraft(emptyInternalActionCreateDraft());
+      setSelectedInternalActionId(null);
+      setInternalActionDetail(null);
+      setInternalActionTimeline([]);
+      setInternalActionDetailPhase('idle');
+      setInternalActionDetailMessage(null);
       setKnowledgeLinks(emptyTicketKnowledgeLinks());
       setKnowledgeArticlePicker(emptyKnowledgeArticlePicker());
       setKnowledgePhase('idle');
@@ -3994,6 +2981,18 @@ function SupportWorkspaceView({
       setEngineeringLinks(emptyTicketEngineeringLinks());
       setEngineeringPhase('idle');
       setEngineeringMessage(null);
+      setInternalActions([]);
+      setInternalActionsPhase('idle');
+      setInternalActionsMessage(null);
+      setInternalActionTargetAreas([]);
+      setInternalActionTargetAreasPhase('idle');
+      setInternalActionTargetAreasMessage(null);
+      setInternalActionCreateDraft(emptyInternalActionCreateDraft());
+      setSelectedInternalActionId(null);
+      setInternalActionDetail(null);
+      setInternalActionTimeline([]);
+      setInternalActionDetailPhase('idle');
+      setInternalActionDetailMessage(null);
       setKnowledgeLinks(emptyTicketKnowledgeLinks());
       setKnowledgeArticlePicker(emptyKnowledgeArticlePicker());
       setKnowledgePhase('idle');
@@ -4025,7 +3024,7 @@ function SupportWorkspaceView({
   }, [selectedTicketId]);
 
   useEffect(() => {
-    if (ticketToolbarTab !== 'conversation' || pendingThreadScrollRef.current !== 'latest') {
+    if (pendingThreadScrollRef.current !== 'latest') {
       return;
     }
 
@@ -4055,7 +3054,7 @@ function SupportWorkspaceView({
         window.clearTimeout(retry);
       }
     };
-  }, [detailNotice, ticketToolbarTab, timelineWindow]);
+  }, [detailNotice, timelineWindow]);
 
   const tenantOptions = useMemo(() => {
     const items = new Map<string, { id: string; label: string }>();
@@ -4166,12 +3165,20 @@ function SupportWorkspaceView({
       : null;
   const currentUserAssignableAgent =
     user?.id ? assignableAgents.find((agent) => agent.userId === user.id) ?? null : null;
-  const totalOpen = tickets.filter(
-    (ticket) =>
-      ticket.status !== 'resolved' &&
-      ticket.status !== 'closed' &&
-      ticket.status !== 'cancelled',
-  ).length;
+  const queueOpenTickets = useMemo(
+    () => tickets.filter((ticket) => ticketMatchesInboxScope(ticket, 'open')),
+    [tickets],
+  );
+  const queueClosedTickets = useMemo(
+    () => tickets.filter((ticket) => ticketMatchesInboxScope(ticket, 'closed')),
+    [tickets],
+  );
+  const ticketInboxScopeTickets = ticketInboxScope === 'open' ? queueOpenTickets : queueClosedTickets;
+  const ticketInboxScopeCounts = {
+    open: queueOpenTickets.length,
+    closed: queueClosedTickets.length,
+  };
+  const totalOpen = queueOpenTickets.length;
   const waitingCustomer = tickets.filter((ticket) => ticket.isWaitingCustomer).length;
   const highAttention = tickets.filter(
     (ticket) =>
@@ -4181,9 +3188,120 @@ function SupportWorkspaceView({
       ticket.slaStatus === 'at_risk',
   ).length;
   const unassigned = tickets.filter((ticket) => ticket.isUnassigned).length;
+  const waitingEngineering = tickets.filter((ticket) => ticket.isWaitingEngineering).length;
+  const ticketInboxTabs = useMemo(
+    () =>
+      ticketInboxScope === 'open'
+        ? [
+            { key: 'all' as const, label: 'Todos', count: ticketInboxScopeTickets.length },
+            {
+              key: 'in_progress' as const,
+              label: 'Em tratativa',
+              count: ticketInboxScopeTickets.filter((ticket) => ticketMatchesInboxFilter(ticket, 'in_progress')).length,
+            },
+            {
+              key: 'awaiting' as const,
+              label: 'Aguardando',
+              count: ticketInboxScopeTickets.filter((ticket) => ticketMatchesInboxFilter(ticket, 'awaiting')).length,
+            },
+            {
+              key: 'urgent' as const,
+              label: 'Urgentes',
+              count: ticketInboxScopeTickets.filter((ticket) => ticketMatchesInboxFilter(ticket, 'urgent')).length,
+            },
+            {
+              key: 'operations' as const,
+              label: 'Operações',
+              count: ticketInboxScopeTickets.filter((ticket) => ticketMatchesInboxFilter(ticket, 'operations')).length,
+            },
+            {
+              key: 'engineering' as const,
+              label: 'Engenharia',
+              count: ticketInboxScopeTickets.filter((ticket) => ticketMatchesInboxFilter(ticket, 'engineering')).length,
+            },
+          ]
+        : [
+            { key: 'all_closed' as const, label: 'Todos fechados', count: ticketInboxScopeTickets.length },
+            {
+              key: 'resolved' as const,
+              label: 'Resolvidos',
+              count: ticketInboxScopeTickets.filter((ticket) => ticketMatchesInboxFilter(ticket, 'resolved')).length,
+            },
+            {
+              key: 'closed' as const,
+              label: 'Fechados',
+              count: ticketInboxScopeTickets.filter((ticket) => ticketMatchesInboxFilter(ticket, 'closed')).length,
+            },
+            {
+              key: 'cancelled' as const,
+              label: 'Cancelados',
+              count: ticketInboxScopeTickets.filter((ticket) => ticketMatchesInboxFilter(ticket, 'cancelled')).length,
+            },
+          ],
+    [ticketInboxScope, ticketInboxScopeTickets],
+  );
+  const ticketInboxFilteredTickets = useMemo(() => {
+    const search = ticketInboxSearch.trim().toLocaleLowerCase('pt-BR');
+
+    return ticketInboxScopeTickets.filter((ticket) => {
+      if (!ticketMatchesInboxFilter(ticket, ticketInboxFilter)) {
+        return false;
+      }
+
+      if (search.length === 0) {
+        return true;
+      }
+
+      const haystack = [
+        supportTicketCode(ticket.id),
+        ticket.title,
+        ticketTenantLabel(ticket),
+        ticket.tenantSlug,
+        ticket.categoryName ?? '',
+        ticket.assignedToFullName ?? '',
+        ticket.slaStatusLabel ?? '',
+      ]
+        .join(' ')
+        .toLocaleLowerCase('pt-BR');
+
+      return haystack.includes(search);
+    });
+  }, [ticketInboxFilter, ticketInboxScopeTickets, ticketInboxSearch]);
+  const ticketInboxPageSize = 8;
+  const ticketInboxTotalPages = Math.max(
+    1,
+    Math.ceil(ticketInboxFilteredTickets.length / ticketInboxPageSize),
+  );
+  const safeTicketInboxPage = Math.min(ticketInboxPage, ticketInboxTotalPages);
+  const ticketInboxVisibleTickets = ticketInboxFilteredTickets.slice(
+    (safeTicketInboxPage - 1) * ticketInboxPageSize,
+    safeTicketInboxPage * ticketInboxPageSize,
+  );
+  const ticketInboxStart =
+    ticketInboxFilteredTickets.length === 0 ? 0 : (safeTicketInboxPage - 1) * ticketInboxPageSize + 1;
+  const ticketInboxEnd = Math.min(
+    ticketInboxFilteredTickets.length,
+    safeTicketInboxPage * ticketInboxPageSize,
+  );
+
+  function resetTicketInboxFilters(scope: TicketInboxScope = ticketInboxScope) {
+    setTicketInboxSearch('');
+    setTicketInboxFilter(defaultTicketInboxFilterForScope(scope));
+  }
+
+  function handleChangeTicketInboxScope(scope: TicketInboxScope) {
+    if (scope === ticketInboxScope) {
+      return;
+    }
+
+    setTicketInboxScope(scope);
+    setTicketInboxFilter(defaultTicketInboxFilterForScope(scope));
+  }
 
   function handleSelectTicket(ticketId: string) {
     setSelectedTicketId(ticketId);
+    setActiveDrawer('none');
+    setAttachmentUploadDraft(emptyAttachmentUploadDraft());
     if (variant === 'tickets') {
       void navigate(`/support/tickets/${ticketId}`);
     }
@@ -4200,6 +3318,7 @@ function SupportWorkspaceView({
   }
 
   function openAttachmentPicker() {
+    setActiveDrawer('evidence');
     attachmentInputRef.current?.click();
   }
 
@@ -4230,48 +3349,126 @@ function SupportWorkspaceView({
     }
   }
 
-  async function handleAttachmentSelection(file: File | null) {
-    if (!ticketDetail || !file) {
+  function handleAttachmentSelection(fileList: FileList | File[] | File | null) {
+    const files =
+      fileList instanceof File
+        ? [fileList]
+        : fileList
+          ? Array.from(fileList)
+          : [];
+
+    if (files.length === 0) {
       return;
     }
 
+    const nextFiles: File[] = [];
+    const nextErrors: Record<string, string> = {};
+
+    files.forEach((file, index) => {
+      const key = `${file.name}:${index}`;
+      if (file.size <= 0) {
+        nextErrors[key] = 'Arquivo vazio.';
+        return;
+      }
+
+      if (file.size > TICKET_ATTACHMENT_MAX_BYTES) {
+        nextErrors[key] = 'Ultrapassa 10 MB.';
+        return;
+      }
+
+      if (!file.type) {
+        nextErrors[key] = 'Tipo indisponível.';
+        return;
+      }
+
+      nextFiles.push(file);
+    });
+
+    setAttachmentUploadDraft((current) => ({
+      ...current,
+      files: [...current.files, ...nextFiles],
+      errors: { ...current.errors, ...nextErrors },
+    }));
     setDetailNotice(null);
+    setActiveDrawer('evidence');
 
-    if (file.size <= 0) {
-      applyFailure('Selecione um arquivo com conteúdo antes de enviar.');
-      return;
+    if (Object.keys(nextErrors).length > 0 && nextFiles.length === 0) {
+      applyFailure('Alguns arquivos não puderam ser preparados para upload.');
     }
+  }
 
-    if (file.size > TICKET_ATTACHMENT_MAX_BYTES) {
-      applyFailure('O arquivo ultrapassa o limite de 10 MB para evidências.');
-      return;
-    }
+  function handleRemoveDraftAttachment(indexToRemove: number) {
+    setAttachmentUploadDraft((current) => ({
+      ...current,
+      files: current.files.filter((_, index) => index !== indexToRemove),
+      errors: Object.fromEntries(
+        Object.entries(current.errors).filter((_, index) => index !== indexToRemove),
+      ),
+    }));
+  }
 
-    if (!file.type) {
-      applyFailure('O arquivo selecionado precisa informar um tipo permitido.');
+  async function handleSubmitAttachmentUpload() {
+    if (!ticketDetail || attachmentUploadDraft.files.length === 0) {
       return;
     }
 
     setAttachmentSubmitting(true);
+    setDetailNotice(null);
+
+    const failedFiles: File[] = [];
+    const failedErrors: Record<string, string> = {};
+    let successCount = 0;
 
     try {
-      await uploadSupportTicketAttachment({
-        ticketId: ticketDetail.id,
-        tenantId: ticketDetail.tenantId,
-        file,
-      });
-      await loadDetail(ticketDetail.id, { preserveSurfaceState: true });
-      applySuccess('Evidência enviada com sucesso.');
-    } catch (error) {
-      const classified = classifyAdminError(
-        error,
-        'Falha ao enviar a evidência para o storage governado.',
-      );
-      if (classified.kind === 'session-expired') {
-        markSessionExpired();
-        return;
+      for (const [index, file] of attachmentUploadDraft.files.entries()) {
+        const key = `${file.name}:${index}`;
+        try {
+          await uploadSupportTicketAttachment({
+            ticketId: ticketDetail.id,
+            tenantId: ticketDetail.tenantId,
+            file,
+          });
+          successCount += 1;
+        } catch (error) {
+          const classified = classifyAdminError(
+            error,
+            'Falha ao enviar a evidência para o storage governado.',
+          );
+          if (classified.kind === 'session-expired') {
+            markSessionExpired();
+            return;
+          }
+
+          failedFiles.push(file);
+          failedErrors[key] = friendlyAttachmentUploadErrorMessage(classified.message);
+        }
       }
-      applyFailure(friendlyAttachmentUploadErrorMessage(classified.message));
+
+      if (successCount > 0) {
+        await loadDetail(ticketDetail.id, { preserveSurfaceState: true });
+      }
+
+      setAttachmentUploadDraft((current) => ({
+        ...current,
+        files: failedFiles,
+        errors: failedErrors,
+        note: failedFiles.length === 0 ? '' : current.note,
+      }));
+
+      if (successCount > 0 && failedFiles.length === 0) {
+        applySuccess(
+          successCount === 1
+            ? 'Evidência enviada com sucesso.'
+            : `${successCount} evidências enviadas com sucesso.`,
+        );
+        setActiveDrawer('evidence');
+      } else if (successCount > 0) {
+        applyFailure(
+          `${successCount} arquivo(s) enviado(s), mas ainda há itens com falha.`,
+        );
+      } else {
+        applyFailure('Nenhum arquivo pôde ser enviado agora.');
+      }
     } finally {
       if (attachmentInputRef.current) {
         attachmentInputRef.current.value = '';
@@ -4295,6 +3492,36 @@ function SupportWorkspaceView({
     } catch {
       applyFailure('Não foi possível copiar o link público agora.');
     }
+  }
+
+  function handleOpenKnowledgeArticle(article: SupportKnowledgeArticlePickerItem) {
+    if (!article.publicArticlePath) {
+      applyFailure('Abertura indisponível para este conteúdo.');
+      return;
+    }
+
+    if (typeof window !== 'undefined' && typeof window.open === 'function') {
+      window.open(buildAbsoluteAppUrl(article.publicArticlePath), '_blank', 'noopener,noreferrer');
+    }
+  }
+
+  function handleUseArticleInReply(article: SupportKnowledgeArticlePickerItem) {
+    if (!article.isCustomerSendAllowed || !article.publicArticlePath) {
+      applyFailure('Este artigo não pode ser usado na resposta ao cliente.');
+      return;
+    }
+
+    setComposerMode('public');
+    setActiveDrawer('none');
+    setMessageDraft((current) => {
+      const link = buildAbsoluteAppUrl(article.publicArticlePath ?? '');
+      if (current.includes(link)) {
+        return current;
+      }
+
+      return current.trim().length === 0 ? link : `${current.trim()}\n${link}`;
+    });
+    applySuccess('Link preparado na resposta pública.');
   }
 
   async function handleLoadOlderTimeline() {
@@ -4406,6 +3633,50 @@ function SupportWorkspaceView({
     await Promise.all([loadQueue(ticketId), loadDetail(ticketId, options)]);
   }
 
+  const loadSelectedInternalAction = useEffectEvent(async (internalActionId: Uuid) => {
+    setInternalActionDetailPhase('loading');
+    setInternalActionDetailMessage(null);
+
+    try {
+      const [detailRow, timelineRows] = await Promise.all([
+        getSupportInternalActionDetail(internalActionId),
+        listSupportInternalActionTimeline(internalActionId),
+      ]);
+
+      if (!detailRow) {
+        setInternalActionDetail(null);
+        setInternalActionTimeline([]);
+        setInternalActionDetailPhase('error');
+        setInternalActionDetailMessage(
+          'O acionamento selecionado não apareceu na leitura interna disponível.',
+        );
+        return;
+      }
+
+      setInternalActionDetail(detailRow);
+      setInternalActionTimeline(timelineRows);
+      setInternalActionDetailPhase('ready');
+      setInternalActionDetailMessage(null);
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao carregar o detalhe do acionamento interno.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      setInternalActionDetail(null);
+      setInternalActionTimeline([]);
+      setInternalActionDetailMessage(classified.message);
+      setInternalActionDetailPhase(
+        classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
+      );
+    }
+  });
+
   async function handleSubmitTicketIntake(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -4466,7 +3737,29 @@ function SupportWorkspaceView({
     }
 
     const title = handoffDraft.title.trim();
-    const description = handoffDraft.description.trim();
+    const baseDescription = handoffDraft.description.trim();
+    const impactSummary = handoffDraft.impactSummary.trim();
+    const reproductionSteps = handoffDraft.reproductionSteps.trim();
+    const expectedResult = handoffDraft.expectedResult.trim();
+    const currentResult = handoffDraft.currentResult.trim();
+    const relatedEvidence = handoffDraft.relatedEvidence.trim();
+    const technicalUrgency = handoffDraft.technicalUrgency;
+    const description = [
+      baseDescription,
+      impactSummary ? `Impacto: ${impactSummary}` : null,
+      reproductionSteps ? `Passos para reproduzir: ${reproductionSteps}` : null,
+      expectedResult ? `Resultado esperado: ${expectedResult}` : null,
+      currentResult ? `Resultado atual: ${currentResult}` : null,
+    ]
+      .filter((value): value is string => Boolean(value))
+      .join('\n\n');
+    const handoffNote = [
+      relatedEvidence ? `Evidências relacionadas: ${relatedEvidence}` : null,
+      technicalUrgency ? `Urgência técnica: ${humanizePriority(technicalUrgency)}` : null,
+      handoffDraft.handoffNote.trim() || null,
+    ]
+      .filter((value): value is string => Boolean(value))
+      .join('\n');
 
     if (!ticketDetail.canUpdateStatus || title.length === 0 || description.length === 0) {
       return;
@@ -4481,11 +3774,11 @@ function SupportWorkspaceView({
         workItemType: handoffDraft.workItemType,
         title,
         description,
-        handoffNote: handoffDraft.handoffNote.trim() || null,
+        handoffNote: handoffNote || null,
       });
       setHandoffDraft(emptyEngineeringHandoffDraft());
       await refreshDetail(ticketDetail.id);
-      setTicketToolbarTab('more');
+      setActiveDrawer('handoff');
       applySuccess('Demanda técnica criada e vinculada ao ticket com sucesso.');
     } catch (error) {
       const classified = classifyAdminError(
@@ -4499,6 +3792,67 @@ function SupportWorkspaceView({
       applyFailure(classified.message);
     } finally {
       setHandoffSubmitting(false);
+    }
+  }
+
+  async function handleCreateInternalAction(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!ticketDetail) {
+      return;
+    }
+
+    const targetArea = internalActionCreateDraft.targetArea.trim();
+    const supportType = internalActionCreateDraft.supportType;
+    const summary = internalActionCreateDraft.summary.trim();
+    const context = internalActionCreateDraft.context.trim();
+    const selectedArea = internalActionTargetAreas.find((area) => area.areaKey === targetArea);
+
+    if (!targetArea || !supportType || !internalActionCreateDraft.priority || summary.length === 0 || context.length === 0) {
+      applyFailure('Preencha área, tipo de apoio, prioridade, resumo e contexto do acionamento.');
+      return;
+    }
+
+    if (!selectedArea?.canCreateAction) {
+      applyFailure('Esta área interna não está disponível para acionamento neste ticket.');
+      return;
+    }
+
+    setInternalActionSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      const created = await createSupportInternalAction({
+        ticketId: ticketDetail.id,
+        targetArea,
+        supportType,
+        priority: internalActionCreateDraft.priority,
+        summary,
+        context,
+        evidenceAttachmentIds:
+          internalActionCreateDraft.evidenceAttachmentIds.length > 0
+            ? internalActionCreateDraft.evidenceAttachmentIds
+            : null,
+      });
+
+      setInternalActionCreateDraft({
+        ...emptyInternalActionCreateDraft(),
+        targetArea: internalActionTargetAreas[0]?.areaKey ?? '',
+      });
+      setSelectedInternalActionId(created.id);
+      await refreshDetail(ticketDetail.id);
+      setSelectedInternalActionId(created.id);
+      setActiveDrawer('automation');
+      applySuccess('Acionamento interno criado com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(error, 'Falha ao criar o acionamento interno.');
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(classified.message);
+    } finally {
+      setInternalActionSubmitting(false);
     }
   }
 
@@ -4633,10 +3987,159 @@ function SupportWorkspaceView({
     }
   }
 
+  async function handleAcceptInternalActionReturn() {
+    if (!ticketDetail || !internalActionDetail) {
+      return;
+    }
+
+    setInternalActionSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      await acceptSupportInternalActionReturn({
+        internalActionId: internalActionDetail.internalActionId,
+        tenantId: internalActionDetail.tenantId,
+        note: internalActionSupportNote.trim() || null,
+      });
+      await refreshDetail(ticketDetail.id);
+      await loadSelectedInternalAction(internalActionDetail.internalActionId);
+      setInternalActionSupportNote('');
+      applySuccess('Retorno do acionamento aceito com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao aceitar o retorno deste acionamento.',
+      );
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(classified.message);
+    } finally {
+      setInternalActionSubmitting(false);
+    }
+  }
+
+  async function handleRequestInternalActionFollowup() {
+    if (!ticketDetail || !internalActionDetail) {
+      return;
+    }
+
+    const note = internalActionSupportNote.trim();
+    if (note.length === 0) {
+      applyFailure('Descreva o complemento solicitado à área interna.');
+      return;
+    }
+
+    setInternalActionSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      await requestSupportInternalActionFollowup({
+        internalActionId: internalActionDetail.internalActionId,
+        tenantId: internalActionDetail.tenantId,
+        note,
+      });
+      await refreshDetail(ticketDetail.id);
+      await loadSelectedInternalAction(internalActionDetail.internalActionId);
+      setInternalActionSupportNote('');
+      applySuccess('Complemento solicitado à área interna com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao solicitar complemento deste acionamento.',
+      );
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(classified.message);
+    } finally {
+      setInternalActionSubmitting(false);
+    }
+  }
+
+  async function handleCloseInternalAction() {
+    if (!ticketDetail || !internalActionDetail) {
+      return;
+    }
+
+    setInternalActionSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      await closeSupportInternalAction({
+        internalActionId: internalActionDetail.internalActionId,
+        tenantId: internalActionDetail.tenantId,
+        note: internalActionSupportNote.trim() || null,
+      });
+      await refreshDetail(ticketDetail.id);
+      await loadSelectedInternalAction(internalActionDetail.internalActionId);
+      setInternalActionSupportNote('');
+      applySuccess('Acionamento encerrado com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(error, 'Falha ao encerrar este acionamento.');
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(classified.message);
+    } finally {
+      setInternalActionSubmitting(false);
+    }
+  }
+
+  async function handleLinkInternalActionEvidence() {
+    if (!ticketDetail || !internalActionDetail || !internalActionEvidenceAttachmentId) {
+      return;
+    }
+
+    setInternalActionSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      await addInternalActionEvidenceLink({
+        internalActionId: internalActionDetail.internalActionId,
+        tenantId: internalActionDetail.tenantId,
+        ticketAttachmentId: internalActionEvidenceAttachmentId,
+        note: internalActionEvidenceNote.trim() || null,
+      });
+      await refreshDetail(ticketDetail.id);
+      await loadSelectedInternalAction(internalActionDetail.internalActionId);
+      setInternalActionEvidenceAttachmentId('');
+      setInternalActionEvidenceNote('');
+      applySuccess('Evidência vinculada ao acionamento com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao vincular a evidência a este acionamento.',
+      );
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(classified.message);
+    } finally {
+      setInternalActionSubmitting(false);
+    }
+  }
+
   async function handleUpdateStatus(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!ticketDetail) {
+      return;
+    }
+
+    const nextStatusChoices = buildStatusChoices(ticketDetail.status, ticketDetail.allowedNextStatuses);
+
+    if (nextStatusChoices.length === 0) {
+      applyFailure('Nenhuma transição de status está disponível para este ticket.');
+      return;
+    }
+
+    if (requiresOperationalReasonForStatus(statusDraft) && !statusReasonId) {
+      applyFailure('Informe o motivo da mudança de status.');
       return;
     }
 
@@ -4653,6 +4156,7 @@ function SupportWorkspaceView({
       setStatusNote('');
       setStatusReasonId('');
       await refreshDetail(ticketDetail.id);
+      setActiveDrawer((current) => (current === 'status' ? 'none' : current));
       applySuccess('Status atualizado com sucesso.');
     } catch (error) {
       const classified = classifyAdminError(error, 'Falha ao atualizar o status do ticket.');
@@ -4661,6 +4165,53 @@ function SupportWorkspaceView({
         return;
       }
       applyFailure(friendlyTicketStatusErrorMessage(classified.message));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleSaveClassificationDrawer() {
+    if (!ticketDetail) {
+      return;
+    }
+
+    if (!classificationDraft.categoryId) {
+      applyFailure('Selecione a categoria operacional antes de salvar.');
+      return;
+    }
+
+    setSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      await updateTicketClassification({
+        ticketId: ticketDetail.id,
+        categoryId: classificationDraft.categoryId,
+        operationalReasonId: classificationDraft.operationalReasonId || null,
+        note: classificationDraft.note.trim() || null,
+      });
+
+      await updateTicketPrioritySeverity({
+        ticketId: ticketDetail.id,
+        priority: prioritySeverityDraft.priority,
+        severity: prioritySeverityDraft.severity,
+        operationalReasonId: prioritySeverityDraft.operationalReasonId || null,
+        note: prioritySeverityDraft.note.trim() || null,
+      });
+
+      await refreshDetail(ticketDetail.id);
+      setActiveDrawer('none');
+      applySuccess('Classificação operacional atualizada com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao salvar a classificação operacional do ticket.',
+      );
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(classified.message);
     } finally {
       setSubmitting(false);
     }
@@ -4849,6 +4400,85 @@ function SupportWorkspaceView({
     }
   }
 
+  useEffect(() => {
+    setTicketInboxPage(1);
+  }, [ticketInboxFilter, ticketInboxScope, ticketInboxSearch]);
+
+  useEffect(() => {
+    if (ticketInboxFilterMatchesScope(ticketInboxFilter, ticketInboxScope)) {
+      return;
+    }
+
+    setTicketInboxFilter(defaultTicketInboxFilterForScope(ticketInboxScope));
+  }, [ticketInboxFilter, ticketInboxScope]);
+
+  useEffect(() => {
+    setAttachmentUploadDraft(emptyAttachmentUploadDraft());
+  }, [ticketDetail?.id]);
+
+  useEffect(() => {
+    setInternalActionSupportNote('');
+    setInternalActionEvidenceAttachmentId('');
+    setInternalActionEvidenceNote('');
+  }, [selectedInternalActionId]);
+
+  useEffect(() => {
+    if (activeDrawer !== 'automation' || !selectedInternalActionId) {
+      setInternalActionDetailPhase('idle');
+      setInternalActionDetailMessage(null);
+      setInternalActionDetail(null);
+      setInternalActionTimeline([]);
+      return;
+    }
+
+    void loadSelectedInternalAction(selectedInternalActionId);
+  }, [activeDrawer, selectedInternalActionId]);
+
+  useEffect(() => {
+    if (!selectedTicketId) {
+      return;
+    }
+
+    const selectedIndex = ticketInboxFilteredTickets.findIndex(
+      (ticket) => ticket.id === selectedTicketId,
+    );
+
+    if (selectedIndex < 0) {
+      return;
+    }
+
+    const expectedPage = Math.floor(selectedIndex / ticketInboxPageSize) + 1;
+    if (expectedPage !== ticketInboxPage) {
+      setTicketInboxPage(expectedPage);
+    }
+  }, [selectedTicketId, ticketInboxFilteredTickets, ticketInboxPage]);
+
+  useEffect(() => {
+    if (ticketInboxFilteredTickets.length === 0) {
+      return;
+    }
+
+    const selectedIsVisible =
+      selectedTicketId !== null &&
+      ticketInboxFilteredTickets.some((ticket) => ticket.id === selectedTicketId);
+
+    if (selectedIsVisible) {
+      return;
+    }
+
+    const nextSelectedTicketId = ticketInboxFilteredTickets[0]?.id ?? null;
+    if (!nextSelectedTicketId) {
+      return;
+    }
+
+    setSelectedTicketId(nextSelectedTicketId);
+    setActiveDrawer('none');
+    setAttachmentUploadDraft(emptyAttachmentUploadDraft());
+    if (variant === 'tickets') {
+      void navigate(`/support/tickets/${nextSelectedTicketId}`);
+    }
+  }, [navigate, selectedTicketId, ticketInboxFilteredTickets, variant]);
+
   if (backendDenied) {
     return <Navigate replace state={{ reason: 'backend-permission' }} to="/access-denied" />;
   }
@@ -4953,54 +4583,595 @@ function SupportWorkspaceView({
       apply: () => setFilters({ ...filters, status: 'waiting_customer' }),
       disabled: false,
     },
+    {
+      key: 'waiting-engineering',
+      label: 'Aguardando engenharia',
+      helper: 'dependencia tecnica',
+      value: waitingEngineering,
+      active: filters.status === 'waiting_engineering',
+      apply: () => setFilters({ ...filters, status: 'waiting_engineering' }),
+      disabled: false,
+    },
   ] as const;
+  const queueSearchTerm = ticketInboxSearch.trim().toLocaleLowerCase('pt-BR');
+  const queueVisibleTickets =
+    queueSearchTerm.length === 0
+      ? tickets
+      : tickets.filter((ticket) => {
+          const haystack = [
+            supportTicketCode(ticket.id),
+            ticket.title,
+            ticketTenantLabel(ticket),
+            ticket.tenantSlug ?? '',
+            ticket.categoryName ?? '',
+            ticket.assignedToFullName ?? '',
+          ]
+            .join(' ')
+            .toLocaleLowerCase('pt-BR');
+          return haystack.includes(queueSearchTerm);
+        });
   const requesterLabel =
     ticketDetail?.requesterContactFullName ??
     ticketDetail?.requesterContactEmail ??
     'Cliente B2B';
+  const primaryCustomerContact = customer ? primaryContactFromCustomer(customer) : null;
+  const customerDocumentLabel = readCustomerDocumentLabel(customer);
   const currentAssignedLabel =
     formatAssignedAgentSummary(currentAssignedAgent) ??
     ticketDetail?.assignedToFullName ??
     'Sem responsavel definido';
-  const publicKnowledgeSuggestions = filteredKnowledgeArticles.filter(
-    (article) => article.isCustomerSendAllowed && article.publicArticlePath,
-  );
-  const knowledgePreviewLinks = knowledgeLinks.slice(0, 2);
+  const pendingCloseItems = [
+    !ticketDetail?.categoryName ? 'Definir categoria operacional.' : null,
+    !ticketDetail?.assignedToUserId ? 'Atribuir responsável pela tratativa.' : null,
+    ticketDetail?.status === 'waiting_customer' ? 'Aguardar retorno do cliente antes do encerramento.' : null,
+    ticketDetail?.status === 'waiting_engineering' ? 'Consolidar retorno da engenharia antes do encerramento.' : null,
+    ticketDetail && !ticketDetail.canClose ? 'O contrato ainda não liberou o encerramento deste ticket.' : null,
+  ].filter((item): item is string => Boolean(item));
+  const slaProgress = ticketDetail ? approximateSlaPercent(ticketDetail) : 0;
+  const slaDueAt = ticketDetail?.resolutionDueAt ?? ticketDetail?.firstResponseDueAt ?? null;
 
-  function openConversationSurface() {
-    setTicketToolbarTab('conversation');
+  function closeAuxiliarySurface() {
+    setActiveDrawer('none');
+  }
+
+  function openClassificationSurface() {
+    setActiveDrawer('classification');
+  }
+
+  function openStatusSurface() {
+    setActiveDrawer('status');
   }
 
   function openKnowledgeSurface() {
-    setTicketToolbarTab('knowledge');
+    setActiveDrawer('knowledge');
   }
 
-  function openAdvancedSurface() {
-    setTicketToolbarTab('more');
+  function openEvidenceSurface() {
+    setActiveDrawer('evidence');
+  }
+
+  function openAutomationSurface() {
+    setActiveDrawer('automation');
+  }
+
+  function openHandoffSurface() {
+    setActiveDrawer('handoff');
+  }
+
+  function openRelatedSurface() {
+    setActiveDrawer('related');
+  }
+
+  function renderBlueprintLayout() {
+    if (!ticketDetail || !selectedTicketSummary) {
+      return null;
+    }
+
+    const detail = ticketDetail;
+    const contextRailTitle =
+      activeDrawer === 'classification'
+        ? 'Classificar ticket'
+        : activeDrawer === 'status'
+          ? 'Alterar status'
+        : activeDrawer === 'evidence'
+          ? 'Evidências'
+          : activeDrawer === 'knowledge'
+            ? 'Conhecimento'
+            : activeDrawer === 'automation'
+              ? 'Acionamentos'
+              : activeDrawer === 'handoff'
+                ? 'Handoff técnico'
+                : activeDrawer === 'related'
+                  ? 'Relacionados'
+              : null;
+    const contextRailSubtitle =
+      activeDrawer === 'classification'
+        ? 'Atualize a categoria, prioridade e severidade sem sair da tratativa.'
+        : activeDrawer === 'status'
+          ? 'Mude a etapa operacional usando o contrato real e informe o motivo correto quando exigido.'
+        : activeDrawer === 'evidence'
+          ? 'Anexe arquivos e acompanhe as evidências já vinculadas ao ticket.'
+          : activeDrawer === 'knowledge'
+            ? 'Busque referências, vincule artigos e registre lacunas de documentação.'
+            : activeDrawer === 'automation'
+              ? 'Acompanhe acionamentos internos do ticket e use apenas as ações de suporte cobertas por contrato real.'
+              : activeDrawer === 'handoff'
+                ? 'Escalone para engenharia mantendo o ticket como fonte da tratativa.'
+                : activeDrawer === 'related'
+                  ? 'Consulte tickets, vínculos e evidências já relacionados a este caso.'
+              : null;
+    const contextRailDrawerSize = supportActionDrawerSize(activeDrawer);
+    const contextRailWidthVariant = supportActionDrawerWidthVariant(activeDrawer);
+
+    const quickActions = [
+      {
+        key: 'classification',
+        icon: <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="filter" />,
+        label: 'Classificar',
+        onClick: openClassificationSurface,
+      },
+      {
+        key: 'status',
+        icon: <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="clock" />,
+        label: 'Alterar status',
+        onClick: openStatusSurface,
+      },
+      {
+        key: 'evidence',
+        icon: <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="attachment" />,
+        label: 'Evidências',
+        onClick: openEvidenceSurface,
+      },
+      {
+        key: 'knowledge',
+        icon: <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="open" />,
+        label: 'Conhecimento',
+        onClick: openKnowledgeSurface,
+      },
+      {
+        key: 'automation',
+        icon: <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="alert" />,
+        label: 'Acionamentos',
+        onClick: openAutomationSurface,
+      },
+      {
+        key: 'related',
+        icon: <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="open" />,
+        label: 'Relacionados',
+        onClick: openRelatedSurface,
+      },
+    ];
+
+    const defaultRail = (
+      <SupportTicketRightRail
+        assignedLabel={currentAssignedLabel}
+        priorityIndicator={<span className="text-[color:var(--color-brand-pink)]">↑</span>}
+        priorityLabel={humanizePriority(detail.priority)}
+        quickActions={quickActions}
+        resolutionDueLabel={detail.resolutionDueAt ? formatDateTime(detail.resolutionDueAt) : 'Indisponível'}
+        slaDueLabel={slaDueAt ? formatDateTime(slaDueAt) : 'Indisponível'}
+        slaPolicyName={detail.slaPolicyName ?? 'Fallback interno'}
+        slaPriorityBadge={
+          <CompactSupportPill tone={toneForPriority(detail.priority)}>
+            {humanizePriority(detail.priority)}
+          </CompactSupportPill>
+        }
+        slaProgress={slaProgress}
+        slaReference={detail.slaReference || 'Governança interna urgente'}
+        slaRemainingLabel={formatRemainingTimeLabel(slaDueAt)}
+        sourceBadge={<CompactSupportPill>{humanizeSource(detail.source)}</CompactSupportPill>}
+        tenantLabel={detail.tenantDisplayName ?? detail.tenantLegalName ?? detail.tenantSlug}
+      />
+    );
+
+    const contextPanel =
+      activeDrawer === 'classification' ? (
+        <SupportClassificationDrawerPanel
+          classificationDraft={classificationDraft}
+          classificationOptionsMessage={classificationOptionsMessage}
+          classificationReasonOptions={classificationReasonOptions}
+          humanizePriority={humanizePriority}
+          humanizeSeverity={humanizeSeverity}
+          onClassificationDraftChange={(patch) =>
+            setClassificationDraft((current) => ({
+              ...current,
+              ...patch,
+            }))
+          }
+          onPrioritySeverityDraftChange={(patch) =>
+            setPrioritySeverityDraft((current) => ({
+              ...current,
+              ...patch,
+            }))
+          }
+          priorityReasonOptions={priorityReasonOptions}
+          prioritySeverityDraft={prioritySeverityDraft}
+          submitting={submitting}
+          ticketCategoryOptions={ticketCategoryOptions}
+        />
+      ) : activeDrawer === 'status' ? (
+        <SupportStatusDrawerPanel
+          humanizeStatus={humanizeStatus}
+          nextStatusChoices={buildStatusChoices(detail.status, detail.allowedNextStatuses)}
+          onStatusDraftChange={(status) => {
+            setStatusDraft(status);
+            setStatusReasonId('');
+          }}
+          onStatusNoteChange={setStatusNote}
+          onStatusReasonChange={setStatusReasonId}
+          onSubmit={(event) => void handleUpdateStatus(event)}
+          requireStatusReason={requiresOperationalReasonForStatus(statusDraft)}
+          statusDraft={statusDraft}
+          statusNote={statusNote}
+          statusReasonId={statusReasonId}
+          statusReasonOptions={statusReasonOptions}
+          submitting={submitting}
+          ticketDetail={detail}
+        />
+      ) : activeDrawer === 'knowledge' ? (
+        <SupportKnowledgeDrawerPanel
+          articles={filteredKnowledgeArticles}
+          humanizeKnowledgeLinkType={humanizeKnowledgeLinkType}
+          humanizeKnowledgeStatus={humanizeKnowledgeStatus}
+          humanizeKnowledgeVisibility={humanizeKnowledgeVisibility}
+          links={knowledgeLinks}
+          loading={knowledgeSubmitting || knowledgePhase === 'loading'}
+          noteDraft={knowledgeNoteDraft}
+          onArchive={(linkId) => void handleArchiveKnowledgeLink(linkId)}
+          onCopyPublicLink={handleCopyPublicKnowledgeLink}
+          onLinkInternal={(articleId) => void handleLinkKnowledgeArticle(articleId, 'reference_internal')}
+          onMarkGap={() => void handleMarkDocumentationGap()}
+          onNeedsUpdate={(articleId) => void handleMarkKnowledgeNeedsUpdate(articleId)}
+          onNoteChange={setKnowledgeNoteDraft}
+          onSearchChange={setKnowledgeSearch}
+          onSendToCustomer={(articleId) => void handleLinkKnowledgeArticle(articleId, 'sent_to_customer')}
+          search={knowledgeSearch}
+        />
+      ) : activeDrawer === 'evidence' ? (
+        <SupportEvidenceDrawerPanel
+          attachmentUploadDraft={attachmentUploadDraft}
+          attachments={attachments}
+          formatAttachmentSize={formatAttachmentSize}
+          onNoteChange={(value) =>
+            setAttachmentUploadDraft((current) => ({
+              ...current,
+              note: value,
+            }))
+          }
+          onRemoveDraftFile={handleRemoveDraftAttachment}
+          onSelectFiles={() => attachmentInputRef.current?.click()}
+        />
+      ) : activeDrawer === 'automation' ? (
+        <SupportInternalActionsDrawerPanel
+          attachmentKind={attachmentKind}
+          attachments={attachments}
+          formatAttachmentSize={formatAttachmentSize}
+          humanizeAttachmentStatus={humanizeAttachmentStatus}
+          humanizePriority={humanizePriority}
+          internalActionDetail={internalActionDetail}
+          internalActionDetailMessage={internalActionDetailMessage}
+          internalActionDetailPhase={internalActionDetailPhase}
+          internalActionCreateDraft={internalActionCreateDraft}
+          internalActionEvidenceAttachmentId={internalActionEvidenceAttachmentId}
+          internalActionEvidenceNote={internalActionEvidenceNote}
+          internalActionSubmitting={internalActionSubmitting}
+          internalActionSupportNote={internalActionSupportNote}
+          internalActionTargetAreas={internalActionTargetAreas}
+          internalActionTargetAreasMessage={internalActionTargetAreasMessage}
+          internalActionTargetAreasPhase={internalActionTargetAreasPhase}
+          internalActions={internalActions}
+          internalActionsMessage={internalActionsMessage}
+          internalActionsPhase={internalActionsPhase}
+          onAcceptReturn={() => void handleAcceptInternalActionReturn()}
+          onCloseAction={() => void handleCloseInternalAction()}
+          onCreateDraftChange={(patch) =>
+            setInternalActionCreateDraft((current) => ({
+              ...current,
+              ...patch,
+            }))
+          }
+          onCreateSubmit={(event) => void handleCreateInternalAction(event)}
+          onEvidenceAttachmentChange={setInternalActionEvidenceAttachmentId}
+          onEvidenceNoteChange={setInternalActionEvidenceNote}
+          onLinkEvidence={() => void handleLinkInternalActionEvidence()}
+          onOpenHandoff={openHandoffSurface}
+          onRequestFollowup={() => void handleRequestInternalActionFollowup()}
+          onSelectInternalAction={setSelectedInternalActionId}
+          onSupportNoteChange={setInternalActionSupportNote}
+          selectedInternalActionId={selectedInternalActionId}
+          timelineEntries={internalActionTimeline}
+          toneForAttachmentStatus={toneForAttachmentStatus}
+          toneForPriority={toneForPriority}
+        />
+      ) : activeDrawer === 'handoff' ? (
+        <SupportEngineeringHandoffDrawerPanel
+          attachments={attachments}
+          canCreateEngineeringHandoff={canCreateEngineeringHandoff}
+          handoffDraft={handoffDraft}
+          handoffSubmitting={handoffSubmitting}
+          humanizeEngineeringWorkItemType={humanizeEngineeringWorkItemType}
+          onEngineeringHandoffDraftChange={(patch) =>
+            setHandoffDraft((current) => ({
+              ...current,
+              ...patch,
+            }))
+          }
+          onEngineeringHandoffSubmit={(event) => void handleCreateEngineeringHandoff(event)}
+        />
+      ) : activeDrawer === 'related' ? (
+        <SupportRelatedDrawerPanel
+          attachmentKind={attachmentKind}
+          attachments={attachments}
+          compactTicketStatusLabel={compactTicketStatusLabel}
+          engineeringLinks={engineeringLinks}
+          formatAttachmentSize={formatAttachmentSize}
+          humanizeEngineeringWorkItemStatus={humanizeEngineeringWorkItemStatus}
+          humanizeEngineeringWorkItemType={humanizeEngineeringWorkItemType}
+          humanizeKnowledgeLinkType={humanizeKnowledgeLinkType}
+          humanizePriority={humanizePriority}
+          humanizeSeverity={humanizeSeverity}
+          knowledgeLinks={knowledgeLinks}
+          recentTickets={customerRecentTickets.tickets.filter((ticket) => ticket.id !== detail.id).slice(0, 4)}
+          supportTicketCode={supportTicketCode}
+          toneForTicketStatus={toneForTicketStatus}
+        />
+      ) : null;
+
+    const contextRailFooter =
+      activeDrawer === 'classification' ? (
+        <div className="support-drawer-footer-actions">
+          <GhostButton className="support-drawer-footer-button" onClick={closeAuxiliarySurface} type="button">
+            Cancelar
+          </GhostButton>
+          <AppButton
+            className="support-drawer-footer-button"
+            disabled={submitting || !classificationDraft.categoryId}
+            onClick={() => void handleSaveClassificationDrawer()}
+            type="button"
+          >
+            {submitting ? 'Salvando...' : 'Salvar classificação'}
+          </AppButton>
+        </div>
+      ) : activeDrawer === 'status' ? (
+        <div className="support-drawer-footer-actions">
+          <GhostButton className="support-drawer-footer-button" onClick={closeAuxiliarySurface} type="button">
+            Cancelar
+          </GhostButton>
+          <AppButton
+            className="support-drawer-footer-button"
+            disabled={
+              submitting ||
+              !detail.canUpdateStatus ||
+              buildStatusChoices(detail.status, detail.allowedNextStatuses).length === 0
+            }
+            form="support-ticket-status-form"
+            type="submit"
+          >
+            {submitting ? 'Salvando...' : 'Salvar status'}
+          </AppButton>
+        </div>
+      ) : activeDrawer === 'evidence' ? (
+        <div className="support-drawer-footer-actions">
+          <GhostButton className="support-drawer-footer-button" onClick={closeAuxiliarySurface} type="button">
+            Cancelar
+          </GhostButton>
+          <AppButton
+            className="support-drawer-footer-button"
+            disabled={attachmentSubmitting || attachmentUploadDraft.files.length === 0}
+            onClick={() => void handleSubmitAttachmentUpload()}
+            type="button"
+          >
+            {attachmentSubmitting ? 'Enviando...' : 'Anexar evidência'}
+          </AppButton>
+        </div>
+      ) : activeDrawer === 'handoff' ? (
+        <div className="support-drawer-footer-actions">
+          <GhostButton className="support-drawer-footer-button" onClick={closeAuxiliarySurface} type="button">
+            Cancelar
+          </GhostButton>
+          <AppButton
+            className="support-drawer-footer-button"
+            disabled={
+              handoffSubmitting ||
+              !canCreateEngineeringHandoff ||
+              handoffDraft.title.trim().length === 0 ||
+              handoffDraft.description.trim().length === 0
+            }
+            form="support-engineering-handoff-form"
+            type="submit"
+          >
+            {handoffSubmitting ? 'Escalando...' : 'Escalar para engenharia'}
+          </AppButton>
+        </div>
+      ) : null;
+
+    const contextRail = (
+      <SupportTicketContextRail
+        defaultRail={defaultRail}
+        drawerSize={contextRailDrawerSize}
+        footer={contextRailFooter}
+        onClose={closeAuxiliarySurface}
+        panel={contextPanel}
+        subtitle={contextRailSubtitle}
+        title={contextRailTitle}
+      />
+    );
+
+    return (
+      <>
+        <SupportWorkspaceGrid
+          mainPane={
+            <SupportTicketConversationSection
+              composer={
+                <SupportTicketComposerSection
+                  attachmentIcon={<SupportSurfaceIcon className="h-[13px] w-[13px]" kind="attachment" />}
+                  canUseInternalComposer={canUseInternalComposer}
+                  canUsePublicComposer={canUsePublicComposer}
+                  composerDisabled={composerDisabled}
+                  composerDraft={composerDraft}
+                  composerMode={composerMode}
+                  onComposerDraftChange={(value) =>
+                    composerMode === 'public' ? setMessageDraft(value) : setNoteDraft(value)
+                  }
+                  onOpenEvidenceSurface={openEvidenceSurface}
+                  onSelectInternalMode={() => setComposerMode('internal')}
+                  onSelectPublicMode={() => setComposerMode('public')}
+                  onSubmit={handleSubmitComposer}
+                  submitting={submitting}
+                />
+              }
+              detailNotice={detailNotice}
+              detailNoticeTone={detailNoticeTone}
+              header={
+                <SupportTicketWorkspaceHeader
+                  badges={
+                    <>
+                      <CompactSupportPill tone={toneForTicketStatus(detail.status)}>
+                        {compactTicketStatusLabel(detail.status)}
+                      </CompactSupportPill>
+                      <CompactSupportPill tone={toneForPriority(detail.priority)}>
+                        {humanizePriority(detail.priority)}
+                      </CompactSupportPill>
+                      <CompactSupportPill tone={toneForSeverity(detail.severity)}>
+                        {humanizeSeverity(detail.severity)}
+                      </CompactSupportPill>
+                      <CompactSupportPill>{detail.categoryName ?? 'Indisponível'}</CompactSupportPill>
+                    </>
+                  }
+                  menuAction={
+                    <GhostButton className="min-h-8 min-w-8 rounded-[10px] px-0 text-[12px]" type="button">
+                      <SupportSurfaceIcon className="h-[13px] w-[13px]" kind="more" />
+                    </GhostButton>
+                  }
+                  ticketCode={supportTicketCode(detail.id)}
+                  title={detail.title}
+                />
+              }
+              thread={
+                <SupportConversation
+                  loadingMore={timelineLoadingMore}
+                  onLoadMore={() => void handleLoadOlderTimeline()}
+                  requesterName={requesterLabel}
+                  window={timelineWindow}
+                />
+              }
+              threadScrollRef={threadScrollContainerRef}
+            />
+          }
+          queuePanel={
+            <SupportTicketQueue
+              activeTab={ticketInboxFilter}
+              canGoNext={safeTicketInboxPage < ticketInboxTotalPages}
+              canGoPrevious={safeTicketInboxPage > 1}
+              currentPageLabel={safeTicketInboxPage}
+              filterIcon={<SupportSurfaceIcon className="h-[14px] w-[14px]" kind="filter" />}
+              onNextPage={() => setTicketInboxPage((current) => Math.min(ticketInboxTotalPages, current + 1))}
+              onPreviousPage={() => setTicketInboxPage((current) => Math.max(1, current - 1))}
+              onReset={resetTicketInboxFilters}
+              onScopeChange={handleChangeTicketInboxScope}
+              onSearchChange={setTicketInboxSearch}
+              onTabChange={(tabKey) => setTicketInboxFilter(tabKey as TicketInboxFilter)}
+              pageLabel={
+                <>
+                  {ticketInboxStart}-{ticketInboxEnd} de {ticketInboxFilteredTickets.length}
+                </>
+              }
+              scope={ticketInboxScope}
+              scopeCounts={ticketInboxScopeCounts}
+              search={ticketInboxSearch}
+              searchIcon={<SupportSurfaceIcon className="h-[14px] w-[14px]" kind="search" />}
+              tabs={ticketInboxTabs}
+              ticketsContent={
+                ticketInboxVisibleTickets.length === 0 ? (
+                  <InlineNotice>Nenhum ticket encontrado com os filtros atuais.</InlineNotice>
+                ) : (
+                  <div className="space-y-2">
+                    {ticketInboxVisibleTickets.map((ticket) => (
+                      <SupportTicketInboxItem
+                        isSelected={ticket.id === selectedTicketId}
+                        key={ticket.id}
+                        onSelect={() => handleSelectTicket(ticket.id)}
+                        ticket={ticket}
+                      />
+                    ))}
+                  </div>
+                )
+              }
+              totalCount={ticketInboxScopeTickets.length}
+            />
+          }
+          rightPaneWidth={contextRailWidthVariant}
+          rightRail={contextRail}
+          showDrawer={false}
+        />
+        <input
+          accept={TICKET_ATTACHMENT_ACCEPT}
+          className="hidden"
+          multiple
+          onChange={(event) => void handleAttachmentSelection(event.currentTarget.files)}
+          ref={attachmentInputRef}
+          type="file"
+        />
+      </>
+    );
   }
 
   return (
     <div
       className={cx(
         variant === 'tickets'
-          ? 'flex h-full min-h-0 flex-col gap-2.5 overflow-hidden'
-          : 'flex h-full min-h-0 flex-col gap-2.5 overflow-hidden',
+          ? 'flex h-full min-h-0 flex-col gap-[var(--workspace-panel-gap)] overflow-hidden'
+          : 'flex h-full min-h-0 flex-col gap-[var(--workspace-panel-gap)] overflow-hidden',
       )}
     >
-      {variant === 'queue' ? (
+      {variant === 'tickets' ? (
         <section className="shrink-0 rounded-[20px] border border-[color:var(--color-border)] bg-white/96 px-4 py-3 shadow-[0_12px_22px_rgba(19,33,79,0.07)]">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 space-y-1">
-              <h1 className="text-[1.65rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
-                Fila operacional
+              <h1 className="text-[1.62rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
+                Tickets e conversas
               </h1>
               <p className="text-[13px] leading-5 text-[color:var(--color-muted)]">
-                Bancada de triagem para priorizar, assumir e abrir o próximo atendimento.
+                Tratativa operacional com contexto, histórico e comunicação centralizados.
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
               <AppButton
+                className="min-h-9 rounded-[12px] px-4 text-[12px]"
+                onClick={() => void navigate('/support/queue')}
+                type="button"
+              >
+                Novo ticket
+              </AppButton>
+              <GhostButton
+                aria-label="Notificações indisponíveis nesta etapa"
+                className="min-h-9 min-w-9 rounded-[12px] px-0 text-[12px]"
+                disabled
+                type="button"
+              >
+                <SupportSurfaceIcon className="h-[14px] w-[14px]" kind="bell" />
+              </GhostButton>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {variant === 'queue' ? (
+        <section className="shrink-0 px-1 pt-0">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0 space-y-1">
+              <h1 className="text-[1.9rem] font-bold tracking-[-0.06em] text-[color:var(--color-ink)]">
+                Fila operacional
+              </h1>
+              <p className="text-[13px] leading-5 text-[color:var(--color-muted)]">
+                Acompanhe, priorize e assuma os tickets da fila operacional.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <AppButton
+                className="min-h-10 rounded-[14px] bg-[color:var(--color-brand-pink)] px-4 text-[13px] font-semibold"
                 disabled={!canOpenIntake}
                 onClick={() => {
                   setShowCreateTicket((current) => !current);
@@ -5016,7 +5187,7 @@ function SupportWorkspaceView({
                 {showCreateTicket ? 'Fechar intake' : intakeActionLabel}
               </AppButton>
               <GhostButton
-                className="min-h-9 rounded-full px-4 text-[12px]"
+                className="min-h-10 rounded-[14px] px-4 text-[13px] font-semibold"
                 onClick={() => void loadQueue(focusTicketId ?? null)}
               >
                 Recarregar
@@ -5031,75 +5202,90 @@ function SupportWorkspaceView({
           highAttention={highAttention}
           totalOpen={totalOpen}
           unassigned={unassigned}
+          waitingEngineering={waitingEngineering}
           waitingCustomer={waitingCustomer}
         />
       ) : null}
 
       {variant === 'queue' ? (
-        <div className="grid gap-3 xl:min-h-0 xl:flex-1 xl:grid-cols-[280px_minmax(0,1fr)_356px]">
-          <aside className="space-y-2.5 rounded-[20px] border border-[color:var(--color-border)] bg-white/96 px-3 py-3 shadow-[0_12px_22px_rgba(19,33,79,0.07)] xl:min-h-0 xl:overflow-y-auto">
-            <div className="space-y-0.5">
-              <h2 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                Triagem da fila
-              </h2>
-              <p className="text-[11px] leading-4 text-[color:var(--color-muted)]">
-                Atalhos e recorte sem roubar espaço da lista.
-              </p>
-            </div>
+        <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(280px,296px)_minmax(0,1fr)_minmax(304px,332px)]">
+          <aside className="grid min-h-0 gap-4 xl:grid-rows-[auto_minmax(0,1fr)]">
+            <section className="rounded-[20px] border border-[rgba(220,228,242,0.96)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.06)]">
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <h2 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                    Triagem da fila
+                  </h2>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
+                    Filas rápidas
+                  </p>
+                </div>
+                <SupportSurfaceIcon className="h-4 w-4 text-[rgba(107,120,146,0.8)]" kind="filter" />
+              </div>
 
-            <div className="space-y-1.5 rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                Filas rápidas
-              </p>
-              <div className="grid gap-1.5">
+              <div className="mt-3 grid gap-2">
                 {queueShortcuts.map((shortcut) => (
                   <button
                     className={cx(
-                      'flex items-center justify-between gap-3 rounded-[14px] border px-3 py-1.5 text-left transition',
+                      'flex items-center justify-between gap-3 rounded-[14px] border px-3 py-2 text-left transition',
                       shortcut.active
-                        ? 'border-[rgba(48,127,226,0.42)] bg-white text-[color:var(--color-brand-blue)]'
-                        : 'border-[color:var(--color-border)] bg-white/88 text-[color:var(--color-ink)] hover:border-[rgba(48,127,226,0.28)]',
+                        ? 'border-[rgba(47,107,255,0.34)] bg-[rgba(47,107,255,0.06)] text-[color:var(--color-brand-blue)]'
+                        : 'border-[rgba(220,228,242,0.92)] bg-white text-[color:var(--color-ink)] hover:border-[rgba(47,107,255,0.24)]',
                       shortcut.disabled && 'cursor-not-allowed opacity-50',
                     )}
                     disabled={shortcut.disabled}
                     key={`queue-shortcut:${shortcut.key}`}
                     onClick={shortcut.apply}
                     type="button"
-                    >
+                  >
+                    <span className="min-w-0 flex items-center gap-2.5">
+                      <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[rgba(220,228,242,0.9)] bg-[rgba(244,247,252,0.95)] text-[color:var(--color-brand-navy)] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+                        {queueShortcutIcon(shortcut.key)}
+                      </span>
                       <span className="min-w-0">
-                        <span className="block text-[12px] font-semibold leading-5">{shortcut.label}</span>
-                        <span className="block text-[10px] leading-4 text-[color:var(--color-muted)]">
+                        <span className="block truncate text-[12px] font-semibold leading-5">{shortcut.label}</span>
+                        <span className="block truncate text-[10px] leading-4 text-[color:var(--color-muted)]">
                           {shortcut.helper}
                         </span>
                       </span>
-                    <span className="text-[12px] font-semibold tabular-nums tracking-[-0.02em]">
-                      {shortcut.value ?? 'Indisponível'}
+                    </span>
+                    <span className="text-[11.5px] font-semibold tabular-nums tracking-[-0.02em] text-[color:var(--color-ink)]">
+                      {shortcut.value ?? 'Indisponivel'}
                     </span>
                   </button>
                 ))}
               </div>
-            </div>
 
-            <div className="space-y-2 rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-2.5">
+              <button
+                className="mt-3 inline-flex items-center text-[12px] font-semibold text-[color:var(--color-brand-blue)]"
+                onClick={() => setFilters(emptyFilters())}
+                type="button"
+              >
+                Ver todas as filas
+              </button>
+            </section>
+
+            <section className="min-h-0 rounded-[20px] border border-[rgba(220,228,242,0.96)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.06)] xl:flex xl:flex-col xl:overflow-hidden">
               <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                    Filtros
-                  </p>
-                  <p className="text-[11px] leading-4 text-[color:var(--color-muted)]">
-                    Recorte real da fila.
-                  </p>
+                <div className="space-y-1">
+                  <h2 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">Filtros</h2>
+                  <p className="text-[11px] leading-4 text-[color:var(--color-muted)]">Recorte real da fila.</p>
                 </div>
+                <button
+                  className="text-[11px] font-semibold text-[color:var(--color-brand-blue)]"
+                  onClick={() => setFilters(emptyFilters())}
+                  type="button"
+                >
+                  Redefinir layout
+                </button>
               </div>
 
-              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-2">
-                <label className="grid gap-1">
+              <div className="mt-3 grid gap-2.5 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
+                <label className="grid gap-1.5">
                   <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Status</span>
                   <SelectInput
-                    className="h-8.5 rounded-[12px] px-3 text-[12px]"
-                    onChange={(event) =>
-                      setFilters({ ...filters, status: event.target.value as QueueFilters['status'] })
-                    }
+                    className="h-10 rounded-[12px] px-3 text-[12px]"
+                    onChange={(event) => setFilters({ ...filters, status: event.target.value as QueueFilters['status'] })}
                     value={filters.status}
                   >
                     <option value="all">Todos</option>
@@ -5111,10 +5297,10 @@ function SupportWorkspaceView({
                   </SelectInput>
                 </label>
 
-                <label className="grid gap-1">
+                <label className="grid gap-1.5">
                   <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Prioridade</span>
                   <SelectInput
-                    className="h-8.5 rounded-[12px] px-3 text-[12px]"
+                    className="h-10 rounded-[12px] px-3 text-[12px]"
                     onChange={(event) =>
                       setFilters({
                         ...filters,
@@ -5132,10 +5318,10 @@ function SupportWorkspaceView({
                   </SelectInput>
                 </label>
 
-                <label className="grid gap-1">
+                <label className="grid gap-1.5">
                   <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Severidade</span>
                   <SelectInput
-                    className="h-8.5 rounded-[12px] px-3 text-[12px]"
+                    className="h-10 rounded-[12px] px-3 text-[12px]"
                     onChange={(event) =>
                       setFilters({
                         ...filters,
@@ -5153,10 +5339,10 @@ function SupportWorkspaceView({
                   </SelectInput>
                 </label>
 
-                <label className="grid gap-1">
+                <label className="grid gap-1.5">
                   <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Categoria</span>
                   <SelectInput
-                    className="h-8.5 rounded-[12px] px-3 text-[12px]"
+                    className="h-10 rounded-[12px] px-3 text-[12px]"
                     disabled={ticketCategoryOptions.length === 0}
                     onChange={(event) =>
                       setFilters({
@@ -5175,10 +5361,10 @@ function SupportWorkspaceView({
                   </SelectInput>
                 </label>
 
-                <label className="grid gap-1">
+                <label className="grid gap-1.5">
                   <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Responsável</span>
                   <SelectInput
-                    className="h-8.5 rounded-[12px] px-3 text-[12px]"
+                    className="h-10 rounded-[12px] px-3 text-[12px]"
                     onChange={(event) =>
                       setFilters({
                         ...filters,
@@ -5197,13 +5383,11 @@ function SupportWorkspaceView({
                   </SelectInput>
                 </label>
 
-                <label className="grid gap-1 sm:col-span-2 xl:col-span-2">
+                <label className="grid gap-1.5">
                   <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Cliente</span>
                   <SelectInput
-                    className="h-8.5 rounded-[12px] px-3 text-[12px]"
-                    onChange={(event) =>
-                      setFilters({ ...filters, tenantId: event.target.value as QueueFilters['tenantId'] })
-                    }
+                    className="h-10 rounded-[12px] px-3 text-[12px]"
+                    onChange={(event) => setFilters({ ...filters, tenantId: event.target.value as QueueFilters['tenantId'] })}
                     value={filters.tenantId}
                   >
                     <option value="all">Todos</option>
@@ -5215,27 +5399,68 @@ function SupportWorkspaceView({
                   </SelectInput>
                 </label>
               </div>
-            </div>
+
+              <button
+                className="mt-3 inline-flex min-h-10 items-center justify-center rounded-[12px] border border-[rgba(240,74,174,0.26)] px-3 text-[13px] font-semibold text-[color:var(--color-brand-pink)]"
+                onClick={() => setFilters(emptyFilters())}
+                type="button"
+              >
+                Limpar filtros
+              </button>
+            </section>
           </aside>
 
           <div className="xl:min-h-0 xl:flex xl:flex-col xl:overflow-hidden">
-            <section className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-1 xl:flex-col xl:overflow-hidden">
-              <div className="mb-3 space-y-1">
-                <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                  Fila dominante
-                </h2>
-                <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-                  A lista central continua como eixo principal da triagem.
-                </p>
+            <section className="rounded-[20px] border border-[rgba(220,228,242,0.96)] bg-white shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-1 xl:flex-col xl:overflow-hidden">
+              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-4 py-3">
+                <div className="relative min-w-0 flex-1 max-w-[460px]">
+                  <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[color:var(--color-muted)]">
+                    <SupportSurfaceIcon className="h-[14px] w-[14px]" kind="search" />
+                  </span>
+                  <TextInput
+                    className="h-10 rounded-[13px] border-[rgba(220,228,242,0.96)] bg-[rgba(244,247,252,0.72)] pl-10 pr-3.5 text-[13px] placeholder:text-[rgba(107,120,146,0.72)]"
+                    onChange={(event) => setTicketInboxSearch(event.target.value)}
+                    placeholder="Buscar por ticket, assunto ou cliente..."
+                    value={ticketInboxSearch}
+                  />
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
+                  {selectedQueueTicket ? (
+                    <span className="inline-flex min-h-9 items-center rounded-[12px] border border-[rgba(47,107,255,0.22)] bg-[rgba(47,107,255,0.08)] px-3 text-[11.5px] font-semibold text-[color:var(--color-brand-blue)]">
+                      1 selecionado
+                    </span>
+                  ) : null}
+                  <button
+                    aria-label="Mais ações da fila"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-[12px] border border-[rgba(220,228,242,0.92)] text-[color:var(--color-muted)] disabled:cursor-not-allowed"
+                    disabled
+                    type="button"
+                  >
+                    <SupportSurfaceIcon className="h-[14px] w-[14px]" kind="more" />
+                  </button>
+                </div>
               </div>
-              {tickets.length === 0 ? (
+
+              <div className="grid grid-cols-[26px_108px_minmax(0,1.96fr)_minmax(0,1.12fr)_minmax(0,0.92fr)_88px_minmax(0,0.9fr)_86px] gap-4 border-b border-[color:var(--color-border)] bg-[rgba(244,247,252,0.82)] px-[18px] py-2.5 text-[9px] font-medium tracking-[0.14em] text-[color:var(--color-muted)]">
+                <span />
+                <span>Status / SLA</span>
+                <span>Ticket / Assunto</span>
+                <span>Cliente</span>
+                <span>Categoria</span>
+                <span>SLA</span>
+                <span>Responsável</span>
+                <span className="text-right">Última atividade</span>
+              </div>
+
+              {queueVisibleTickets.length === 0 ? (
                 <EmptyState
                   title="Sem tickets para esta combinação de filtros"
-                  description="Nenhum ticket apareceu com esse recorte. Ajuste os filtros ou recarregue a fila."
+                  description="Nenhum ticket apareceu com esse recorte. Ajuste os filtros, a busca ou recarregue a fila."
                 />
               ) : (
-                <div className="space-y-2.5 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
-                  {tickets.map((ticket) => (
+                <div className="xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
+                  {queueVisibleTickets.map((ticket) => (
                     <SupportQueueItem
                       isSelected={ticket.id === selectedTicketId}
                       key={ticket.id}
@@ -5245,20 +5470,32 @@ function SupportWorkspaceView({
                   ))}
                 </div>
               )}
+
+              <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-[color:var(--color-border)] px-4 py-3 text-[11px] text-[color:var(--color-muted)]">
+                <span>
+                  Mostrando {queueVisibleTickets.length === 0 ? 0 : 1} a {queueVisibleTickets.length} de {tickets.length} tickets
+                </span>
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-[10px] border border-[rgba(240,74,174,0.22)] bg-[rgba(240,74,174,0.08)] px-2 text-[11.5px] font-semibold text-[color:var(--color-brand-pink)]">
+                    1
+                  </span>
+                  <span>Itens por página: {queueVisibleTickets.length}</span>
+                </div>
+              </footer>
             </section>
           </div>
 
-            <section className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-3.5 py-3.5 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
-              <div className="mb-3 space-y-1">
-                <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                  {showCreateTicket ? 'Intake operacional' : 'Preview do ticket'}
-                </h2>
-                <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-                  {showCreateTicket
-                    ? 'Abra o ticket com tenant explícito, origem contratual e trilha auditável.'
-                    : 'Contexto curto antes de abrir o atendimento completo.'}
-                </p>
-              </div>
+          <section className="rounded-[20px] border border-[rgba(220,228,242,0.96)] bg-white px-3.5 py-3.5 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+            <div className="mb-3 space-y-1">
+              <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                {showCreateTicket ? 'Intake operacional' : 'Preview do ticket'}
+              </h2>
+              <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
+                {showCreateTicket
+                  ? 'Abra o ticket com tenant explicito, origem contratual e trilha auditavel.'
+                  : 'Contexto operacional do ticket selecionado.'}
+              </p>
+            </div>
             {showCreateTicket ? (
               intakePhase === 'loading' ? (
                 <LoadingState
@@ -5548,7 +5785,19 @@ function SupportWorkspaceView({
               <ErrorState description={detailMessage ?? 'A prévia do ticket não ficou disponível.'} />
             ) : (
               <div className="xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
-                <SupportTicketPreview customer={customer} detail={previewTicket} ticket={selectedQueueTicket} />
+                <SupportTicketPreview
+                  compactSlaStatusLabel={compactSlaStatusLabel}
+                  compactTicketStatusLabel={compactTicketStatusLabel}
+                  customer={customer}
+                  detail={previewTicket}
+                  formatSlaDueLabel={formatSlaDueLabel}
+                  primaryContactFromCustomer={primaryContactFromCustomer}
+                  readCustomerDocumentLabel={readCustomerDocumentLabel}
+                  supportTicketCode={supportTicketCode}
+                  ticket={selectedQueueTicket}
+                  ticketTenantLabel={ticketTenantLabel}
+                  toneForSlaStatus={toneForSlaStatus}
+                />
               </div>
             )}
           </section>
@@ -5590,745 +5839,19 @@ function SupportWorkspaceView({
           />
         )
       ) : (
-        <div className="flex h-full min-h-0 flex-col gap-2.5 overflow-hidden xl:flex-row">
-          <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-hidden">
-            <section className="shrink-0 overflow-hidden rounded-[18px] border border-[rgba(22,42,93,0.1)] bg-white shadow-[0_8px_18px_rgba(19,33,79,0.06)]">
-              <div className="px-4 py-2.5 sm:px-4.5">
-                <div className="space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <StatusPill tone={toneForTicketStatus(ticketDetail.status)}>
-                      {humanizeStatus(ticketDetail.status)}
-                    </StatusPill>
-                    <StatusPill tone={toneForPriority(ticketDetail.priority)}>
-                      {humanizePriority(ticketDetail.priority)}
-                    </StatusPill>
-                    <StatusPill tone={toneForSeverity(ticketDetail.severity)}>
-                      {humanizeSeverity(ticketDetail.severity)}
-                    </StatusPill>
-                    <StatusPill tone={toneForSlaStatus(ticketDetail.slaStatus)}>
-                      {ticketDetail.slaStatusLabel}
-                    </StatusPill>
-                    <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">
-                      #{ticketDetail.id.slice(0, 8)}
-                    </span>
-                    <span className="text-[10.5px] text-[color:var(--color-muted)]">
-                      Criado em {formatDateTime(ticketDetail.createdAt)}
-                    </span>
-                  </div>
-
-                  <h3 className="max-w-4xl truncate text-[0.94rem] font-semibold leading-tight tracking-[-0.03em] text-[color:var(--color-ink)]">
-                    {ticketDetail.title}
-                  </h3>
-
-                  <div className="grid gap-2 border-t border-[color:var(--color-border)] pt-2 text-[10.5px] md:grid-cols-2 xl:grid-cols-6">
-                    <div className="min-w-0">
-                      <p className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                        Cliente
-                      </p>
-                      <p className="truncate font-semibold leading-4 text-[color:var(--color-ink)]">
-                        {ticketDetail.tenantDisplayName ?? ticketDetail.tenantLegalName ?? ticketDetail.tenantSlug}
-                      </p>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                        Solicitante
-                      </p>
-                      <p className="truncate font-semibold leading-4 text-[color:var(--color-ink)]">
-                        {requesterLabel}
-                      </p>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                        Categoria
-                      </p>
-                      <p className="truncate font-semibold leading-4 text-[color:var(--color-ink)]">
-                        {ticketDetail.categoryName ?? 'Indisponível'}
-                      </p>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                        SLA interno
-                      </p>
-                      <p className="truncate font-semibold leading-4 text-[color:var(--color-ink)]">
-                        {ticketDetail.slaPolicyName ?? ticketDetail.slaStatusLabel}
-                      </p>
-                      <p className="truncate leading-4 text-[color:var(--color-muted)]">
-                        {formatSlaDueLabel(ticketDetail.firstResponseDueAt, ticketDetail.resolutionDueAt)}
-                      </p>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                        Responsavel
-                      </p>
-                      <p className="truncate font-semibold leading-4 text-[color:var(--color-ink)]">
-                        {currentAssignedLabel}
-                      </p>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                        Última atualização
-                      </p>
-                      <p className="truncate font-semibold leading-4 text-[color:var(--color-ink)]">
-                        {formatDateTime(ticketDetail.lastMessageAt ?? ticketDetail.updatedAt)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-[color:var(--color-border)] px-4 sm:px-4.5">
-                <div className="flex items-center gap-3 overflow-x-auto">
-                  <button
-                    className={cx(
-                      'inline-flex min-h-7 shrink-0 items-center border-b-2 px-1 text-[11.5px] font-semibold transition',
-                      ticketToolbarTab === 'conversation'
-                        ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
-                        : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
-                    )}
-                    onClick={openConversationSurface}
-                    type="button"
-                  >
-                    Conversar
-                  </button>
-                  <button
-                    className={cx(
-                      'inline-flex min-h-7 shrink-0 items-center border-b-2 px-1 text-[11.5px] font-semibold transition',
-                      ticketToolbarTab === 'knowledge'
-                        ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
-                        : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
-                    )}
-                    onClick={openKnowledgeSurface}
-                    type="button"
-                  >
-                    Conhecimento
-                  </button>
-                  <button
-                    className={cx(
-                      'inline-flex min-h-7 shrink-0 items-center border-b-2 px-1 text-[11.5px] font-semibold transition',
-                      ticketToolbarTab === 'help'
-                        ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
-                        : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
-                    )}
-                    onClick={() => setTicketToolbarTab('help')}
-                    type="button"
-                  >
-                    Central de ajuda
-                  </button>
-                  <button
-                    className={cx(
-                      'inline-flex min-h-7 shrink-0 items-center border-b-2 px-1 text-[11.5px] font-semibold transition',
-                      ticketToolbarTab === 'more'
-                        ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
-                        : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
-                    )}
-                    onClick={openAdvancedSurface}
-                    type="button"
-                  >
-                    Mais ações
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            {detailNotice ? (
-              <div
-                className={cx(
-                  'rounded-[14px] border px-3 py-2 text-[12px] leading-5 shadow-[0_6px_12px_rgba(19,33,79,0.05)]',
-                  detailNoticeTone === 'critical'
-                    ? 'border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] text-[color:var(--color-danger-ink)]'
-                    : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-muted)]',
-                )}
-              >
-                {detailNotice}
-              </div>
-            ) : null}
-
-            <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white shadow-[0_8px_18px_rgba(19,33,79,0.06)]">
-              {ticketToolbarTab === 'conversation' ? (
-                <>
-                  <div
-                    className="min-h-0 flex-1 overflow-y-auto px-4 py-2.5 sm:px-4.5"
-                    data-ticket-thread-scroll
-                    ref={threadScrollContainerRef}
-                  >
-                    <SupportConversation
-                      loadingMore={timelineLoadingMore}
-                      onLoadMore={() => void handleLoadOlderTimeline()}
-                      requesterName={requesterLabel}
-                      window={timelineWindow}
-                    />
-                  </div>
-
-                  <div
-                    className="shrink-0 border-t border-[color:var(--color-border)] bg-[linear-gradient(180deg,rgba(247,250,255,0.96),rgba(255,255,255,1))] px-4 py-2.5 sm:px-4.5"
-                    data-ticket-composer
-                  >
-                    <form className="space-y-1.5" onSubmit={handleSubmitComposer}>
-                      <div className="flex flex-wrap gap-4 border-b border-[color:var(--color-border)]">
-                        <button
-                          className={cx(
-                            'inline-flex min-h-7 items-center border-b-2 px-1 text-[11.5px] font-semibold transition',
-                            composerMode === 'public'
-                              ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
-                              : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
-                          )}
-                          disabled={!canUsePublicComposer}
-                          onClick={() => setComposerMode('public')}
-                          type="button"
-                        >
-                          Resposta pública
-                        </button>
-                        <button
-                          className={cx(
-                            'inline-flex min-h-7 items-center border-b-2 px-1 text-[11.5px] font-semibold transition',
-                            composerMode === 'internal'
-                              ? 'border-[color:var(--color-danger-ink)] text-[color:var(--color-danger-ink)]'
-                              : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
-                          )}
-                          disabled={!canUseInternalComposer}
-                          onClick={() => setComposerMode('internal')}
-                          type="button"
-                        >
-                          Nota interna
-                        </button>
-                      </div>
-                      <div
-                        className={cx(
-                          'rounded-[16px] border px-3 py-2 shadow-[0_8px_18px_rgba(19,33,79,0.04)] transition-colors',
-                          composerMode === 'internal'
-                            ? 'border-amber-200 bg-[linear-gradient(180deg,rgba(255,248,227,0.98),rgba(255,243,214,0.95))]'
-                            : 'border-[color:var(--color-border)] bg-white',
-                        )}
-                      >
-                        <TextareaInput
-                          className={cx(
-                            'h-[108px] min-h-[108px] w-full resize-none overflow-hidden border-0 !bg-transparent px-0 py-0 text-[12.5px] leading-[1.3rem] shadow-none focus:border-transparent focus:ring-0',
-                            composerMode === 'internal' && 'placeholder:text-[rgba(125,92,13,0.68)]',
-                          )}
-                          onChange={(event) =>
-                            composerMode === 'public'
-                              ? setMessageDraft(event.target.value)
-                              : setNoteDraft(event.target.value)
-                          }
-                          placeholder={
-                            composerMode === 'public'
-                              ? 'Digite sua resposta pública para o cliente...'
-                              : 'Registre a nota interna da tratativa...'
-                          }
-                          value={composerDraft}
-                        />
-                        <div
-                          className={cx(
-                            'mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t pt-2',
-                            composerMode === 'internal'
-                              ? 'border-amber-200/90'
-                              : 'border-[color:var(--color-border)]',
-                          )}
-                        >
-                          <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                            {composerMode === 'public'
-                              ? 'A resposta sera enviada para o cliente.'
-                              : 'A nota ficara visivel apenas para a equipe interna.'}
-                          </p>
-                          <AppButton
-                            className={
-                              composerMode === 'internal'
-                                ? 'min-h-8.5 rounded-[12px] px-4.5 text-[12px] bg-[linear-gradient(135deg,#7c2648,#b63f76)]'
-                                : 'min-h-8.5 rounded-[12px] px-4.5 text-[12px]'
-                            }
-                            disabled={composerDisabled}
-                            type="submit"
-                          >
-                            {submitting
-                              ? composerMode === 'public'
-                                ? 'Enviando...'
-                                : 'Salvando...'
-                              : composerMode === 'public'
-                                ? 'Enviar resposta'
-                                : 'Salvar nota interna'}
-                          </AppButton>
-                        </div>
-                      </div>
-                    </form>
-                  </div>
-                </>
-              ) : (
-                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-2.5 sm:px-4.5">
-                  {ticketToolbarTab === 'knowledge' ? (
-                    <SupportKnowledgePanel
-                      articles={filteredKnowledgeArticles}
-                      links={knowledgeLinks}
-                      loading={knowledgeBusy}
-                      message={knowledgeMessage}
-                      noteDraft={knowledgeNoteDraft}
-                      onArchive={(linkId) => void handleArchiveKnowledgeLink(linkId)}
-                      onCopyPublicLink={(publicArticlePath) =>
-                        void handleCopyPublicKnowledgeLink(publicArticlePath)
-                      }
-                      onLinkInternal={(articleId) =>
-                        void handleLinkKnowledgeArticle(articleId, 'reference_internal')
-                      }
-                      onMarkGap={() => void handleMarkDocumentationGap()}
-                      onNeedsUpdate={(articleId) => void handleMarkKnowledgeNeedsUpdate(articleId)}
-                      onNoteChange={setKnowledgeNoteDraft}
-                      onSearchChange={setKnowledgeSearch}
-                      onSendToCustomer={(articleId) =>
-                        void handleLinkKnowledgeArticle(articleId, 'sent_to_customer')
-                      }
-                      phase={knowledgePhase}
-                      search={knowledgeSearch}
-                    />
-                  ) : ticketToolbarTab === 'help' ? (
-                    <SupportHelpPanel
-                      articles={filteredKnowledgeArticles}
-                      links={knowledgeLinks}
-                      onCopyPublicLink={(publicArticlePath) =>
-                        void handleCopyPublicKnowledgeLink(publicArticlePath)
-                      }
-                    />
-                  ) : (
-                    <SupportMoreActionsPanel
-                      canCreateEngineeringHandoff={canCreateEngineeringHandoff}
-                      canClose={ticketDetail.canClose}
-                      canReopen={ticketDetail.canReopen}
-                      closeReason={closeReason}
-                      engineeringLinks={engineeringLinks}
-                      engineeringMessage={engineeringMessage}
-                      engineeringPhase={engineeringPhase}
-                      handoffDraft={handoffDraft}
-                      handoffSubmitting={handoffSubmitting}
-                      onEngineeringHandoffDraftChange={(patch) =>
-                        setHandoffDraft((current) => ({ ...current, ...patch }))
-                      }
-                      onEngineeringHandoffSubmit={handleCreateEngineeringHandoff}
-                      onCloseReasonChange={setCloseReason}
-                      onCloseSubmit={handleClose}
-                      onReopenReasonChange={setReopenReason}
-                      onReopenSubmit={handleReopen}
-                      reopenReason={reopenReason}
-                      submitting={submitting}
-                      window={timelineWindow}
-                    />
-                  )}
-                </div>
-              )}
-            </section>
-          </div>
-
-          <aside
-            className="min-h-0 space-y-2.5 overflow-y-auto pr-1 xl:w-[344px] xl:shrink-0"
-            data-ticket-rail
-          >
-            <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.06)]">
-              <h4 className="text-[13px] font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
-                Cliente
-              </h4>
-              <div className="mt-1.5">
-                <SupportTicketCustomerSnapshot
-                  accountContext={customerAccountContext}
-                  customer={customer}
-                />
-              </div>
-            </section>
-
-            <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.06)]">
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <h4 className="text-[13px] font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
-                    SLA interno
-                  </h4>
-                  <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-                    Sinal calculado pela plataforma para priorização operacional.
-                  </p>
-                </div>
-                <StatusPill tone={toneForSlaStatus(ticketDetail.slaStatus)}>
-                  {ticketDetail.slaStatusLabel}
-                </StatusPill>
-              </div>
-
-              <div className="mt-3 grid gap-2 text-[12px] leading-5">
-                <div className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2">
-                  <p className="font-semibold text-[color:var(--color-ink)]">
-                    {ticketDetail.slaPolicyName ?? 'Sem política definida'}
-                  </p>
-                  <p className="text-[color:var(--color-muted)]">
-                    {humanizeSlaPolicyScope(ticketDetail.slaPolicyScope)}
-                  </p>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
-                  <div className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
-                      Primeira resposta
-                    </p>
-                    <p className="mt-1 font-semibold text-[color:var(--color-ink)]">
-                      {ticketDetail.firstResponseDueAt
-                        ? formatDateTime(ticketDetail.firstResponseDueAt)
-                        : 'Indisponível'}
-                    </p>
-                  </div>
-                  <div className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
-                      Resolução
-                    </p>
-                    <p className="mt-1 font-semibold text-[color:var(--color-ink)]">
-                      {ticketDetail.resolutionDueAt
-                        ? formatDateTime(ticketDetail.resolutionDueAt)
-                        : 'Indisponível'}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-                  Calendário: {ticketDetail.slaBusinessCalendarName ?? 'Indisponível'}
-                </p>
-              </div>
-            </section>
-
-            <SupportTicketAttachmentsPanel
-              attachments={attachments}
-              downloadingAttachmentId={attachmentDownloadingId}
-              message={attachmentMessage}
-              onDownload={handleDownloadAttachment}
-              onRequestUpload={openAttachmentPicker}
-              phase={attachmentPhase}
-              uploadEnabled={detailPhase === 'ready' && ticketDetail !== null}
-              uploading={attachmentSubmitting}
-            />
-            <input
-              accept={TICKET_ATTACHMENT_ACCEPT}
-              className="hidden"
-              onChange={(event) =>
-                void handleAttachmentSelection(event.currentTarget.files?.[0] ?? null)
-              }
-              ref={attachmentInputRef}
-              type="file"
-            />
-
-            <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.06)]">
-              <div className="space-y-1.5">
-                <h4 className="text-[13px] font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
-                  Ações do ticket
-                </h4>
-
-                {agentsPhase === 'contract-unavailable' ? (
-                  <InlineNotice tone="critical">
-                  {agentsMessage ?? 'A lista de agentes não ficou disponível para esta tratativa.'}
-                  </InlineNotice>
-                ) : agentsPhase === 'error' ? (
-                  <InlineNotice tone="critical">
-                  {agentsMessage ?? 'Não foi possível carregar o diretório de agentes atribuíveis.'}
-                  </InlineNotice>
-                ) : agentsPhase === 'loading' ? (
-                  <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-                    Carregando agentes disponíveis...
-                  </p>
-                ) : assignableAgents.length === 0 ? (
-                  <InlineNotice tone="warning">
-                    Nenhum agente ativo ficou disponível para este cliente.
-                  </InlineNotice>
-                ) : (
-                  <form className="space-y-2" onSubmit={handleAssign}>
-                    <Field label="Responsável">
-                      <SelectInput
-                        className="h-8.5 rounded-[12px] px-3 text-[11.5px] font-medium"
-                        onChange={(event) => setAssignDraft(event.target.value)}
-                        value={assignDraft}
-                      >
-                        <option value="">Sem responsável</option>
-                        {assignableAgents.map((agent) => (
-                          <option key={`${agent.tenantId}:${agent.userId}`} value={agent.userId}>
-                            {formatAssignableAgentLabel(agent)}
-                          </option>
-                        ))}
-                      </SelectInput>
-                    </Field>
-                    <AppButton
-                      className="min-h-8.5 w-full rounded-[12px] px-4 text-[12px]"
-                      disabled={submitting || !ticketDetail.canAssign}
-                      type="submit"
-                    >
-                      {submitting ? 'Salvando...' : 'Salvar alterações'}
-                    </AppButton>
-                    <div className="grid gap-1.5 sm:grid-cols-2">
-                      <GhostButton
-                        className="min-h-8 rounded-[12px] px-2 text-[11px]"
-                        disabled={
-                          submitting ||
-                          !ticketDetail.canAssign ||
-                          !currentUserAssignableAgent
-                        }
-                        onClick={() =>
-                          void runAssignment(currentUserAssignableAgent?.userId ?? null)
-                        }
-                        type="button"
-                      >
-                        Atribuir a mim
-                      </GhostButton>
-                      <GhostButton
-                        className="min-h-8 rounded-[12px] px-2 text-[11px]"
-                        disabled={submitting || !ticketDetail.canAssign || !ticketDetail.assignedToUserId}
-                        onClick={() => void runAssignment(null)}
-                        type="button"
-                      >
-                        Desatribuir
-                      </GhostButton>
-                    </div>
-                  </form>
-                )}
-
-                <form className="space-y-2 border-t border-[color:var(--color-border)] pt-2" onSubmit={handleUpdateClassification}>
-                  <Field label="Categoria operacional">
-                    <SelectInput
-                      className="h-8.5 rounded-[12px] px-3 text-[12px]"
-                      disabled={submitting || ticketCategoryOptions.length === 0}
-                      onChange={(event) =>
-                        setClassificationDraft((current) => ({
-                          ...current,
-                          categoryId: event.target.value as Uuid | '',
-                        }))
-                      }
-                      value={classificationDraft.categoryId}
-                    >
-                      <option value="">Indisponível</option>
-                      {ticketCategoryOptions.map((category) => (
-                        <option key={category.optionId} value={category.optionId}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </SelectInput>
-                  </Field>
-                  <Field label="Motivo da classificação">
-                    <SelectInput
-                      className="h-8.5 rounded-[12px] px-3 text-[12px]"
-                      disabled={submitting || classificationReasonOptions.length === 0}
-                      onChange={(event) =>
-                        setClassificationDraft((current) => ({
-                          ...current,
-                          operationalReasonId: event.target.value as Uuid | '',
-                        }))
-                      }
-                      value={classificationDraft.operationalReasonId}
-                    >
-                      <option value="">Sem motivo adicional</option>
-                      {classificationReasonOptions.map((reason) => (
-                        <option key={reason.optionId} value={reason.optionId}>
-                          {reason.name}
-                        </option>
-                      ))}
-                    </SelectInput>
-                  </Field>
-                  <TextareaInput
-                    className="min-h-[72px] text-[12px]"
-                    disabled={submitting}
-                    onChange={(event) =>
-                      setClassificationDraft((current) => ({ ...current, note: event.target.value }))
-                    }
-                    placeholder="Nota opcional da reclassificação"
-                    value={classificationDraft.note}
-                  />
-                  <AppButton
-                    className="min-h-8.5 w-full rounded-[12px] px-4 text-[12px]"
-                    disabled={
-                      submitting ||
-                      !ticketDetail.canUpdateStatus ||
-                      !classificationDraft.categoryId
-                    }
-                    type="submit"
-                  >
-                    {submitting ? 'Atualizando...' : 'Salvar classificação'}
-                  </AppButton>
-                </form>
-
-                <form className="space-y-2 border-t border-[color:var(--color-border)] pt-2" onSubmit={handleUpdatePrioritySeverity}>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <Field label="Prioridade">
-                      <SelectInput
-                        className="h-8.5 rounded-[12px] px-3 text-[12px]"
-                        disabled={submitting}
-                        onChange={(event) =>
-                          setPrioritySeverityDraft((current) => ({
-                            ...current,
-                            priority: event.target.value as TicketPriority,
-                          }))
-                        }
-                        value={prioritySeverityDraft.priority}
-                      >
-                        {TICKET_PRIORITIES.map((priority) => (
-                          <option key={priority} value={priority}>
-                            {humanizePriority(priority)}
-                          </option>
-                        ))}
-                      </SelectInput>
-                    </Field>
-                    <Field label="Severidade">
-                      <SelectInput
-                        className="h-8.5 rounded-[12px] px-3 text-[12px]"
-                        disabled={submitting}
-                        onChange={(event) =>
-                          setPrioritySeverityDraft((current) => ({
-                            ...current,
-                            severity: event.target.value as TicketSeverity,
-                          }))
-                        }
-                        value={prioritySeverityDraft.severity}
-                      >
-                        {TICKET_SEVERITIES.map((severity) => (
-                          <option key={severity} value={severity}>
-                            {humanizeSeverity(severity)}
-                          </option>
-                        ))}
-                      </SelectInput>
-                    </Field>
-                  </div>
-                  <Field label="Motivo da prioridade">
-                    <SelectInput
-                      className="h-8.5 rounded-[12px] px-3 text-[12px]"
-                      disabled={submitting || priorityReasonOptions.length === 0}
-                      onChange={(event) =>
-                        setPrioritySeverityDraft((current) => ({
-                          ...current,
-                          operationalReasonId: event.target.value as Uuid | '',
-                        }))
-                      }
-                      value={prioritySeverityDraft.operationalReasonId}
-                    >
-                      <option value="">Sem motivo adicional</option>
-                      {priorityReasonOptions.map((reason) => (
-                        <option key={reason.optionId} value={reason.optionId}>
-                          {reason.name}
-                        </option>
-                      ))}
-                    </SelectInput>
-                  </Field>
-                  <AppButton
-                    className="min-h-8.5 w-full rounded-[12px] px-4 text-[12px]"
-                    disabled={submitting || !ticketDetail.canUpdateStatus}
-                    type="submit"
-                  >
-                    {submitting ? 'Recalculando...' : 'Salvar prioridade/SLA'}
-                  </AppButton>
-                </form>
-
-                <form className="space-y-2 border-t border-[color:var(--color-border)] pt-2" onSubmit={handleUpdateStatus}>
-                  <Field label="Status">
-                    <SelectInput
-                      className="h-8.5 rounded-[12px] px-3 text-[12px]"
-                      onChange={(event) => {
-                        setStatusDraft(event.target.value as TicketStatusUpdateTarget);
-                        setStatusReasonId('');
-                      }}
-                      value={statusDraft}
-                    >
-                      {buildStatusChoices(ticketDetail.status, ticketDetail.allowedNextStatuses).length === 0 ? (
-                        <option value={statusDraft}>Sem transição disponível</option>
-                      ) : null}
-                      {buildStatusChoices(ticketDetail.status, ticketDetail.allowedNextStatuses).map((status) => (
-                        <option key={status} value={status}>
-                          {humanizeStatus(status)}
-                        </option>
-                      ))}
-                    </SelectInput>
-                  </Field>
-                  <Field label="Motivo do status">
-                    <SelectInput
-                      className="h-8.5 rounded-[12px] px-3 text-[12px]"
-                      disabled={submitting || statusReasonOptions.length === 0}
-                      onChange={(event) => setStatusReasonId(event.target.value as Uuid | '')}
-                      value={statusReasonId}
-                    >
-                      <option value="">Sem motivo adicional</option>
-                      {statusReasonOptions.map((reason) => (
-                        <option key={reason.optionId} value={reason.optionId}>
-                          {reason.name}
-                        </option>
-                      ))}
-                    </SelectInput>
-                  </Field>
-                  <TextareaInput
-                    className="min-h-[72px] text-[12px]"
-                    disabled={submitting}
-                    onChange={(event) => setStatusNote(event.target.value)}
-                    placeholder="Nota opcional para o evento de status"
-                    value={statusNote}
-                  />
-                  {requiresOperationalReasonForStatus(statusDraft) && !statusReasonId ? (
-                    <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                      Esta transição exige motivo operacional registrado pela plataforma.
-                    </p>
-                  ) : null}
-                  <AppButton
-                    className="min-h-8.5 w-full rounded-[12px] px-4 text-[12px]"
-                    disabled={
-                      submitting ||
-                      !ticketDetail.canUpdateStatus ||
-                      buildStatusChoices(ticketDetail.status, ticketDetail.allowedNextStatuses).length === 0 ||
-                      (requiresOperationalReasonForStatus(statusDraft) && !statusReasonId)
-                    }
-                    type="submit"
-                  >
-                    {submitting ? 'Atualizando...' : 'Salvar andamento'}
-                  </AppButton>
-                </form>
-              </div>
-            </section>
-
-            <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.06)]">
-              <div className="flex items-center justify-between gap-2">
-                <h4 className="text-[13px] font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
-                  Conhecimento relacionado
-                </h4>
-                <GhostButton className="min-h-7.5 px-2 text-[10px]" onClick={openKnowledgeSurface}>
-                  Abrir aba
-                </GhostButton>
-              </div>
-              <div className="mt-1.5 space-y-1.5">
-                {knowledgePhase === 'loading' ? (
-                  <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                    Carregando vinculos...
-                  </p>
-                ) : knowledgePhase === 'contract-unavailable' || knowledgePhase === 'error' ? (
-                  <InlineNotice tone={knowledgePhase === 'error' ? 'critical' : 'warning'}>
-                    {knowledgeMessage ?? 'O painel de conhecimento não ficou disponível para este ticket.'}
-                  </InlineNotice>
-                ) : knowledgePreviewLinks.length === 0 ? (
-                  <InlineNotice>
-                    Nenhum artigo relacionado ainda.
-                  </InlineNotice>
-                ) : (
-                  knowledgePreviewLinks.slice(0, 1).map((link) => (
-                    <div
-                      className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2.5 py-2"
-                      key={link.ticketKnowledgeLinkId}
-                    >
-                      <div className="flex flex-wrap items-center gap-1">
-                        <StatusPill tone={toneForKnowledgeLinkType(link.linkType)}>
-                          {humanizeKnowledgeLinkType(link.linkType)}
-                        </StatusPill>
-                      </div>
-                      <p className="mt-1 text-[11px] font-semibold leading-4.5 text-[color:var(--color-ink)]">
-                        {link.articleTitle ?? 'Vínculo sem título visível'}
-                      </p>
-                    </div>
-                  ))
-                )}
-                <p className="text-[10px] leading-5 text-[color:var(--color-muted)]">
-                  {publicKnowledgeSuggestions.length > 0
-                    ? `${publicKnowledgeSuggestions.length} sugestão(ões) públicas disponíveis.`
-                    : 'Nenhuma sugestão pública pronta no momento.'}
-                </p>
-              </div>
-            </section>
-
-            <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.06)]">
-              <h4 className="text-[13px] font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
-                Atividade recente
-              </h4>
-              <div className="mt-1.5">
-                <SupportRecentActivity window={timelineWindow} />
-              </div>
-            </section>
-          </aside>
-        </div>
+        <>
+          {renderBlueprintLayout()}
+        <input
+          accept={TICKET_ATTACHMENT_ACCEPT}
+          className="hidden"
+          multiple
+          onChange={(event) => void handleAttachmentSelection(event.currentTarget.files)}
+          ref={attachmentInputRef}
+          type="file"
+        />
+        </>
       )}
+
     </div>
   );
 }

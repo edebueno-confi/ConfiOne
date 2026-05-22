@@ -3,6 +3,264 @@ import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
+const POPULATED_QA_TICKET_TITLE =
+  'QA Support | Operação crítica com histórico extenso, anexos e handoff técnico';
+
+const EXTRA_INBOX_TICKETS = [
+  {
+    tenantSlug: 'support-qa-a',
+    title: 'QA Support | Janela de expedição não refletiu aprovação no tenant enterprise multiunidade',
+    description:
+      'A operação reportou que a janela aprovada não refletiu corretamente no tenant enterprise multiunidade.',
+    priority: 'high',
+    severity: 'medium',
+    source: 'portal',
+    categorySlug: 'operacao-plataforma',
+    operationalReasonSlug: 'classificacao-ajustada',
+    assignee: 'support-agent-a',
+    status: 'in_progress',
+    publicMessage:
+      'Estamos conferindo a janela aprovada e a aplicação operacional para responder com contexto único.',
+    internalNote:
+      'Comparar rollout homologado, variação do tenant e impacto na fila antes de devolver ao cliente.',
+  },
+  {
+    tenantSlug: 'support-qa-a',
+    title: 'QA Support | SLA contratual com virada de turno e cliente em operação contínua 24x7',
+    description:
+      'O cliente questionou o prazo interno durante a virada de turno e pediu validação da leitura operacional.',
+    priority: 'normal',
+    severity: 'low',
+    source: 'email',
+    categorySlug: 'dados-relatorios',
+    operationalReasonSlug: 'classificacao-ajustada',
+    assignee: 'support-manager-a',
+    status: 'waiting_customer',
+    publicMessage:
+      'Solicitamos confirmação da janela operacional aplicada para revisar a leitura do prazo internamente.',
+    internalNote:
+      'Revisar corte operacional e evitar prometer mudança de SLA sem respaldo contratual.',
+  },
+  {
+    tenantSlug: 'support-qa-a',
+    title: 'QA Support | Reprocessamento manual em lote após falha de sincronização de evento externo',
+    description:
+      'Foi solicitado apoio para reprocessamento manual após falha intermitente em evento externo.',
+    priority: 'urgent',
+    severity: 'high',
+    source: 'phone',
+    categorySlug: 'integracao-tecnica',
+    operationalReasonSlug: 'classificacao-inicial',
+    assignee: 'support-manager-a',
+    status: 'waiting_engineering',
+    publicMessage:
+      'A tratativa foi priorizada e a engenharia já recebeu o recorte técnico da sincronização.',
+    internalNote:
+      'Consolidar lote afetado, id externo e janela de erro antes do próximo retorno operacional.',
+  },
+  {
+    tenantSlug: 'support-qa-a',
+    title: 'QA Support | Solicitação de evidência complementar para reenvio logístico com múltiplas coletas',
+    description:
+      'O suporte precisa consolidar a trilha de múltiplas coletas antes do retorno final.',
+    priority: 'normal',
+    severity: 'medium',
+    source: 'portal',
+    categorySlug: 'devolucao-troca',
+    operationalReasonSlug: 'classificacao-ajustada',
+    assignee: 'support-agent-a',
+    status: 'waiting_support',
+    publicMessage:
+      'Estamos reunindo as evidências do reenvio para responder sem fragmentar a comunicação.',
+    internalNote:
+      'Garantir que a fila mostre o histórico completo das coletas relacionadas.',
+  },
+  {
+    tenantSlug: 'support-qa-b',
+    title: 'QA Support | Cliente B com divergência entre motivo homologado e fluxo exibido na experiência autenticada',
+    description:
+      'O tenant B identificou divergência entre o motivo homologado e o fluxo apresentado ao usuário autenticado.',
+    priority: 'high',
+    severity: 'medium',
+    source: 'portal',
+    categorySlug: 'operacao-plataforma',
+    operationalReasonSlug: 'classificacao-inicial',
+    assignee: 'support-agent-b',
+    status: 'triage',
+    publicMessage:
+      'Abrimos a triagem e vamos validar o comportamento observado na experiência autenticada.',
+    internalNote:
+      'Cruzar onboarding assistido, regra ativa e artigos restritos vigentes do tenant B.',
+  },
+  {
+    tenantSlug: 'support-qa-b',
+    title: 'QA Support | Tracking parcial em conta growth com múltiplos centros operacionais ativos',
+    description:
+      'Conta growth reportou tracking parcial e ausência de atualização em parte dos centros operacionais.',
+    priority: 'urgent',
+    severity: 'high',
+    source: 'api',
+    categorySlug: 'integracao-tecnica',
+    operationalReasonSlug: 'classificacao-ajustada',
+    assignee: 'support-agent-b',
+    status: 'in_progress',
+    publicMessage:
+      'Estamos correlacionando os eventos recebidos para consolidar um retorno único ao cliente.',
+    internalNote:
+      'Separar centro afetado, payload mais recente e possível atraso do provedor.',
+  },
+  {
+    tenantSlug: 'support-qa-b',
+    title: 'QA Support | Solicitação de revisão de política operacional em onboarding assistido com restrição de janela',
+    description:
+      'O cliente pediu revisão da política operacional durante onboarding assistido e com janela restrita.',
+    priority: 'low',
+    severity: 'low',
+    source: 'internal',
+    categorySlug: 'dados-relatorios',
+    operationalReasonSlug: 'classificacao-ajustada',
+    assignee: 'support-manager-a',
+    status: 'new',
+    publicMessage:
+      'Ticket aberto para acompanhar a revisão antes de qualquer orientação definitiva ao cliente.',
+    internalNote:
+      'Manter o caso na fila até a confirmação formal da política revisada.',
+  },
+  {
+    tenantSlug: 'support-qa-c',
+    title: 'QA Support | Intake recorrente sem solicitante ativo e contexto reduzido para triagem inicial',
+    description:
+      'Novo ticket de intake aberto sem solicitante ativo para validar consistência da fila em volume.',
+    priority: 'normal',
+    severity: 'medium',
+    source: 'internal',
+    assignee: null,
+    status: 'new',
+    publicMessage:
+      'Registro criado pelo intake para validar o comportamento da fila sem solicitante associado.',
+    internalNote:
+      'Conferir ordenação, visibilidade e leitura operacional do contexto reduzido.',
+    viaRpc: true,
+  },
+  {
+    tenantSlug: 'support-qa-a',
+    title: 'QA Support | Ajuste de classificação após retorno parcial do cliente com evidência textual extensa',
+    description:
+      'O cliente retornou com evidência textual extensa e o suporte precisa reclassificar a tratativa.',
+    priority: 'high',
+    severity: 'medium',
+    source: 'email',
+    categorySlug: 'estorno-reembolso',
+    operationalReasonSlug: 'classificacao-ajustada',
+    assignee: 'support-agent-a',
+    status: 'waiting_customer',
+    publicMessage:
+      'Recebemos o material complementar e pedimos confirmação final de alguns pontos antes de seguir.',
+    internalNote:
+      'Validar se a evidência é suficiente para reclassificação sem envolver nova escalada técnica.',
+  },
+  {
+    tenantSlug: 'support-qa-a',
+    title: 'QA Support | Retorno de engenharia pronto para devolutiva operacional em caso de integração sensível',
+    description:
+      'O suporte recebeu retorno técnico e precisa preparar a devolutiva operacional final.',
+    priority: 'normal',
+    severity: 'low',
+    source: 'internal',
+    categorySlug: 'integracao-tecnica',
+    operationalReasonSlug: 'classificacao-ajustada',
+    assignee: 'support-manager-a',
+    status: 'waiting_support',
+    publicMessage:
+      'A devolutiva técnica está sendo traduzida para o contexto operacional do cliente.',
+    internalNote:
+      'Garantir linguagem clara e sem expor detalhe técnico cru na resposta.',
+  },
+];
+
+const EXTRA_TICKET_TIMELINE_MESSAGES = [
+  {
+    fixtureKey: 'qa-thread-customer-01',
+    ticketTenantSlug: 'support-qa-a',
+    ticketTitle: POPULATED_QA_TICKET_TITLE,
+    actorKey: 'customer-manager-a',
+    visibility: 'customer',
+    lane: 'customer',
+    body:
+      'Abrimos este chamado porque o webhook não respondeu em três tentativas, o painel do cliente segue sem atualização e precisamos de uma posição consolidada.',
+  },
+  {
+    fixtureKey: 'qa-thread-agent-01',
+    ticketTenantSlug: 'support-qa-a',
+    ticketTitle: POPULATED_QA_TICKET_TITLE,
+    actorKey: 'support-manager-a',
+    visibility: 'customer',
+    lane: 'agent',
+    body:
+      'Estamos revisando a trilha operacional completa e já separamos os eventos mais recentes para comparar com a integração ativa do tenant.',
+  },
+  {
+    fixtureKey: 'qa-thread-internal-01',
+    ticketTenantSlug: 'support-qa-a',
+    ticketTitle: POPULATED_QA_TICKET_TITLE,
+    actorKey: 'support-manager-a',
+    visibility: 'internal',
+    lane: 'internal',
+    body:
+      'Confirmar se a fila está lendo corretamente a última devolutiva da engenharia antes de responder em público.',
+  },
+  {
+    fixtureKey: 'qa-thread-customer-02',
+    ticketTenantSlug: 'support-qa-a',
+    ticketTitle: POPULATED_QA_TICKET_TITLE,
+    actorKey: 'customer-user-a',
+    visibility: 'customer',
+    lane: 'customer',
+    body:
+      'O ambiente afetado é produção. Também percebemos atraso na conciliação e isso aumentou o volume de contatos internos.',
+  },
+  {
+    fixtureKey: 'qa-thread-agent-02',
+    ticketTenantSlug: 'support-qa-a',
+    ticketTitle: POPULATED_QA_TICKET_TITLE,
+    actorKey: 'support-agent-a',
+    visibility: 'customer',
+    lane: 'agent',
+    body:
+      'Perfeito. Já incluímos esse recorte na investigação e vamos responder com um próximo passo único para evitar mensagens fragmentadas.',
+  },
+  {
+    fixtureKey: 'qa-thread-internal-02',
+    ticketTenantSlug: 'support-qa-a',
+    ticketTitle: POPULATED_QA_TICKET_TITLE,
+    actorKey: 'support-agent-a',
+    visibility: 'internal',
+    lane: 'internal',
+    body:
+      'Priorizar esta conversa na leitura da inbox, porque ela concentra anexos, vínculo de conhecimento e retorno técnico recente.',
+  },
+  {
+    fixtureKey: 'qa-thread-customer-03',
+    ticketTenantSlug: 'support-qa-a',
+    ticketTitle: POPULATED_QA_TICKET_TITLE,
+    actorKey: 'customer-manager-a',
+    visibility: 'customer',
+    lane: 'customer',
+    body:
+      'Anexamos novas evidências e precisamos confirmar se a tratativa seguirá com engenharia ou se o suporte já consegue orientar o time operacional.',
+  },
+  {
+    fixtureKey: 'qa-thread-agent-03',
+    ticketTenantSlug: 'support-qa-a',
+    ticketTitle: POPULATED_QA_TICKET_TITLE,
+    actorKey: 'support-manager-a',
+    visibility: 'customer',
+    lane: 'agent',
+    body:
+      'A engenharia já recebeu o handoff. Assim que a atualização técnica voltar, consolidamos a orientação operacional e retornamos no mesmo thread.',
+  },
+];
+
 const FIXTURE = {
   qaAdmin: {
     email: 'qa.local.platform-admin@genius.local',
@@ -188,7 +446,7 @@ const FIXTURE = {
     {
       slug: 'support-qa-a',
       legalName: 'Support QA Tenant A Ltda',
-      displayName: 'Support QA Tenant A',
+      displayName: 'Support QA Tenant A Operação Enterprise',
       contact: {
         fullName: 'Marina Operações QA',
         email: 'marina.ops@support-qa-a.local',
@@ -260,7 +518,7 @@ const FIXTURE = {
     {
       slug: 'support-qa-b',
       legalName: 'Support QA Tenant B Ltda',
-      displayName: 'Support QA Tenant B',
+      displayName: 'Support QA Tenant B Growth Multioperação',
       contact: {
         fullName: 'Rafael Integrações QA',
         email: 'rafael.integracoes@support-qa-b.local',
@@ -363,6 +621,7 @@ const FIXTURE = {
         'Registramos o incidente e escalamos a validação técnica do endpoint informado.',
       internalNote:
         'Conferir timeout, retries e eventuais bloqueios no endpoint do tenant.',
+      extraTimelineEntries: 16,
     },
     {
       tenantSlug: 'support-qa-a',
@@ -493,7 +752,28 @@ const FIXTURE = {
       internalNote:
         'Aguardando o retorno do cliente com o mapeamento final dos motivos aprovados.',
     },
+    {
+      tenantSlug: 'support-qa-a',
+      title: POPULATED_QA_TICKET_TITLE,
+      description:
+        'Ticket principal da massa local de QA para validar thread longa, anexos múltiplos, links de conhecimento e retorno de engenharia.',
+      priority: 'urgent',
+      severity: 'critical',
+      source: 'portal',
+      categorySlug: 'integracao-tecnica',
+      operationalReasonSlug: 'classificacao-inicial',
+      assignee: 'support-manager-a',
+      status: 'waiting_engineering',
+      slaScenario: 'breached',
+      publicMessage:
+        'Recebemos o caso principal da QA e já centralizamos a validação operacional com engenharia.',
+      internalNote:
+        'Usar este ticket para validar densidade, rolagem da thread, evidências, links e atividade recente.',
+      extraTimelineEntries: 22,
+    },
+    ...EXTRA_INBOX_TICKETS,
   ],
+  ticketTimelineMessages: EXTRA_TICKET_TIMELINE_MESSAGES,
   customerPortalCollaborations: [
     {
       ticketTenantSlug: 'support-qa-a',
@@ -653,9 +933,43 @@ const FIXTURE = {
         linkType: 'documentation_gap',
         note: 'Falta uma página dedicada explicando a divergência de expedição aprovada no rollout.',
       },
+      {
+        ticketTitle: POPULATED_QA_TICKET_TITLE,
+        ticketTenantSlug: 'support-qa-a',
+        actorKey: 'support-manager-a',
+        linkType: 'sent_to_customer',
+        articleSlug: 'como-compartilhar-evidencias-em-um-ticket',
+        note: 'Artigo público adicional para validar truncamento e volume de conhecimento relacionado.',
+      },
+      {
+        ticketTitle: POPULATED_QA_TICKET_TITLE,
+        ticketTenantSlug: 'support-qa-a',
+        actorKey: 'support-manager-a',
+        linkType: 'reference_internal',
+        articleSlug: 'erp-diagnostico-interno-webhook',
+        note: 'Playbook interno usado para revisar a investigação longa da fixture de QA.',
+      },
+      {
+        ticketTitle: POPULATED_QA_TICKET_TITLE,
+        ticketTenantSlug: 'support-qa-a',
+        actorKey: 'support-manager-a',
+        linkType: 'documentation_gap',
+        note: 'Ainda falta uma orientação consolidada que una webhook, evidências e devolutiva operacional.',
+      },
     ],
   },
   engineeringHandoffs: [
+    {
+      ticketTitle: 'QA Support | Conciliacao de devoluções com atraso',
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      workItemType: 'improvement',
+      title: 'Melhorar conciliação de devoluções',
+      description:
+        'Otimizar a confirmação entre lote de conciliação, janela operacional e retorno exibido para o suporte.',
+      handoffNote:
+        'Suporte precisa de rastreabilidade clara para orientar o cliente sem abrir investigação duplicada.',
+    },
     {
       ticketTitle: 'QA Support | Webhook sem retorno na integração ERP',
       ticketTenantSlug: 'support-qa-a',
@@ -667,8 +981,84 @@ const FIXTURE = {
       handoffNote:
         'Cliente A com operação crítica parada. Suporte já confirmou impacto, janela e ausência de retorno na trilha externa.',
     },
+    {
+      ticketTitle: 'QA Support | Etiqueta sem baixa automatica',
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      workItemType: 'bug',
+      title: 'Webhooks não disparam na baixa automática',
+      description:
+        'Validar por que etiquetas expedidas não disparam atualização automática no fluxo operacional do cliente.',
+      handoffNote:
+        'A fila logística depende da confirmação para reduzir reenvios manuais e evitar divergência no atendimento.',
+    },
+    {
+      ticketTitle: 'QA Support | Painel de SLA interno desalinhado',
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      workItemType: 'technical_task',
+      title: 'Ajuste no cálculo de prazo de SLA',
+      description:
+        'Revisar o cálculo operacional de prazo aplicado à fila interna e comparar com a janela contratual validada.',
+      handoffNote:
+        'Retorno técnico precisa ser traduzível para o suporte antes de qualquer comunicação ao cliente.',
+    },
+    {
+      ticketTitle: 'QA Support | Reenvio de coleta sem tracking',
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      workItemType: 'investigation',
+      title: 'Investigar falha no processamento de tracking',
+      description:
+        'Conferir a chegada do evento de tracking e o ponto em que a informação deixou de aparecer no atendimento.',
+      handoffNote:
+        'Suporte confirmou impacto operacional e precisa de orientação objetiva para o próximo contato.',
+    },
+    {
+      ticketTitle: 'QA Support | Divergência na regra de expedição',
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      workItemType: 'bug',
+      title: 'Timeout na integração com transportadora',
+      description:
+        'Investigar timeout recorrente na integração de expedição antes de confirmar ajuste operacional ao suporte.',
+      handoffNote:
+        'Caso prioritário do tenant A, com risco de nova divergência se a regra for ajustada sem evidência técnica.',
+    },
+    {
+      ticketTitle: 'QA Support | Ajuste de motivo pendente em homologação',
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      workItemType: 'technical_task',
+      title: 'Refatoração do módulo de regras',
+      description:
+        'Remover duplicidade de avaliação e melhorar testes da regra de motivo antes da liberação operacional.',
+      handoffNote:
+        'Demanda técnica concluível sem exposição ao cliente, mas precisa aparecer na visão semanal de engenharia.',
+    },
+    {
+      ticketTitle: POPULATED_QA_TICKET_TITLE,
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      workItemType: 'investigation',
+      title: 'Investigar trilha extensa da operação crítica QA',
+      description:
+        'Consolidar o histórico de mensagens, anexos e timeout recorrente antes de orientar o suporte sobre a próxima resposta pública.',
+      handoffNote:
+        'Ticket principal da QA visual. A leitura da engenharia precisa aparecer de forma compacta, útil e com contexto suficiente para o suporte.',
+    },
   ],
   engineeringOperations: [
+    {
+      handoffTitle: 'Melhorar conciliação de devoluções',
+      actorKey: 'engineering-member-a',
+      assign: true,
+      status: 'triage',
+      updateSummary:
+        'Demanda qualificada com recorte de conciliação e janela operacional confirmada pelo suporte.',
+      updateNextStep:
+        'Mapear pontos de confirmação antes de propor ajuste técnico.',
+    },
     {
       handoffTitle: 'Investigar timeout do webhook ERP do tenant A',
       actorKey: 'engineering-member-a',
@@ -678,12 +1068,107 @@ const FIXTURE = {
         'Engenharia iniciou a demanda e confirmou que a análise técnica deve seguir no tenant A.',
       statusNextStep: 'Consolidar evidências antes do retorno ao suporte.',
       updateSummary:
-        'Timeout reproduzido em ambiente controlado sem expor payload sensível.',
+        'Timeout reproduzido em ambiente controlado sem expor conteúdo sensível.',
       updateNextStep:
         'Preparar orientação operacional para o suporte validar com o cliente.',
     },
+    {
+      handoffTitle: 'Webhooks não disparam na baixa automática',
+      actorKey: 'engineering-member-a',
+      assign: true,
+      status: 'waiting_external',
+      statusSummary:
+        'Validação depende de confirmação externa do evento de baixa recebido pela operação.',
+      statusNextStep:
+        'Aguardar evidência do provedor antes de alterar a regra de tratamento.',
+      updateSummary:
+        'Fluxo interno revisado e sem falha reproduzida com os dados atuais.',
+      updateNextStep:
+        'Solicitar ao suporte evidência do evento externo mais recente.',
+    },
+    {
+      handoffTitle: 'Ajuste no cálculo de prazo de SLA',
+      actorKey: 'engineering-member-a',
+      assign: true,
+      status: 'returned_to_support',
+      statusSummary:
+        'Cálculo revisado e pronto para devolutiva operacional ao suporte.',
+      statusNextStep:
+        'Suporte deve validar a explicação com a janela contratual do cliente.',
+      updateSummary:
+        'Diferença explicada por regra de corte operacional aplicada fora do horário principal.',
+      updateNextStep:
+        'Retornar ao suporte com orientação de leitura do prazo.',
+    },
+    {
+      handoffTitle: 'Investigar falha no processamento de tracking',
+      actorKey: 'engineering-member-a',
+      assign: false,
+      status: 'accepted',
+      statusSummary:
+        'Demanda aceita para análise técnica do processamento de tracking.',
+      statusNextStep:
+        'Definir responsável técnico antes de iniciar alteração.',
+      updateSummary:
+        'Caso aceito e aguardando distribuição interna.',
+      updateNextStep:
+        'Priorizar junto ao responsável da integração logística.',
+    },
+    {
+      handoffTitle: 'Timeout na integração com transportadora',
+      actorKey: 'engineering-member-a',
+      assign: true,
+      status: 'in_progress',
+      statusSummary:
+        'Investigação em andamento com foco no tempo de resposta da transportadora.',
+      statusNextStep:
+        'Comparar tentativas recentes e preparar retorno ao suporte.',
+      updateSummary:
+        'Timeout intermitente confirmado em parte das tentativas monitoradas.',
+      updateNextStep:
+        'Validar se o fallback operacional pode ser acionado no próximo atendimento.',
+    },
+    {
+      handoffTitle: 'Refatoração do módulo de regras',
+      actorKey: 'engineering-member-a',
+      assign: true,
+      status: 'in_progress',
+      statusSummary:
+        'Ajuste técnico em execução para acompanhamento operacional.',
+      statusNextStep:
+        'Concluir validação antes de devolver ao suporte.',
+      updateSummary:
+        'Duplicidade identificada e comportamento validado no fluxo local.',
+      updateNextStep:
+        'Preparar validação final antes do retorno operacional.',
+    },
+    {
+      handoffTitle: 'Investigar trilha extensa da operação crítica QA',
+      actorKey: 'engineering-member-a',
+      assign: true,
+      status: 'in_progress',
+      statusSummary:
+        'A engenharia assumiu o caso principal da QA e está consolidando a trilha técnica para apoiar a resposta operacional.',
+      statusNextStep:
+        'Confirmar evidências mais recentes, revisar timeout e devolver orientação acionável ao suporte.',
+      updateSummary:
+        'Histórico longo reproduzido localmente com o recorte do tenant enterprise e os anexos mais recentes.',
+      updateNextStep:
+        'Preparar devolutiva técnica curta para o suporte responder no mesmo thread.',
+    },
   ],
   attachments: [
+    {
+      ticketTitle: 'QA Support | Webhook sem retorno na integração ERP',
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      fileName: 'webhook-erp-timeout-evidencia-qa.txt',
+      contentType: 'text/plain',
+      visibility: 'internal',
+      uploadBoundary: 'internal',
+      body:
+        'Evidência técnica sanitizada para validar a tratativa do ticket com anexo real, sem expor conteúdo sensível.',
+    },
     {
       ticketTitle: 'QA Support | Conciliacao de devoluções com atraso',
       ticketTenantSlug: 'support-qa-a',
@@ -694,6 +1179,50 @@ const FIXTURE = {
       uploadBoundary: 'customer',
       body:
         'Evidência operacional da fila de conciliação para o tenant A. Conteúdo sanitizado para validar o fluxo seguro de anexos.',
+    },
+    {
+      ticketTitle: POPULATED_QA_TICKET_TITLE,
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      fileName: 'operacao-critica-qA-retorno-webhook.txt',
+      contentType: 'text/plain',
+      visibility: 'internal',
+      uploadBoundary: 'internal',
+      body:
+        'Resumo sanitizado do histórico do webhook com foco em timeout, retries e janelas de validação operacional.',
+    },
+    {
+      ticketTitle: POPULATED_QA_TICKET_TITLE,
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-agent-a',
+      fileName: 'operacao-critica-qa-log-integracao.json',
+      contentType: 'application/json',
+      visibility: 'internal',
+      uploadBoundary: 'internal',
+      body:
+        '{"event":"webhook_timeout","tenant":"support-qa-a","note":"payload sanitizado para validacao local da UI"}',
+    },
+    {
+      ticketTitle: POPULATED_QA_TICKET_TITLE,
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'customer-manager-a',
+      fileName: 'operacao-critica-qa-evidencia-cliente.pdf',
+      contentType: 'application/pdf',
+      visibility: 'customer',
+      uploadBoundary: 'customer',
+      body:
+        'Documento sanitizado do cliente com o recorte operacional do incidente principal de QA.',
+    },
+    {
+      ticketTitle: POPULATED_QA_TICKET_TITLE,
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'customer-user-a',
+      fileName: 'operacao-critica-qa-captura-painel.png',
+      contentType: 'image/png',
+      visibility: 'customer',
+      uploadBoundary: 'customer',
+      body:
+        '2026-05-14T09:00:00Z timeout recorte sanitizado para validar o rail de evidencias\n2026-05-14T09:03:00Z retry segunda tentativa sem retorno',
     },
   ],
   publicHelpCenter: {
@@ -3025,6 +3554,105 @@ function queryTicketAttachmentId(ticketId, fileName) {
   return result.rows?.[0]?.id ?? null;
 }
 
+function queryFixtureTicketMessageId(ticketId, fixtureKey) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id
+    from public.ticket_messages
+    where ticket_id = '${sqlEscape(ticketId)}'::uuid
+      and metadata ->> 'fixture_key' = '${sqlEscape(fixtureKey)}'
+    order by created_at desc
+    limit 1;
+  `);
+
+  return result.rows?.[0]?.id ?? null;
+}
+
+function queryFixtureTicketEventId(ticketId, fixtureKey, eventType) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id
+    from public.ticket_events
+    where ticket_id = '${sqlEscape(ticketId)}'::uuid
+      and event_type = '${sqlEscape(eventType)}'::public.ticket_event_type
+      and metadata ->> 'fixture_key' = '${sqlEscape(fixtureKey)}'
+    order by created_at desc
+    limit 1;
+  `);
+
+  return result.rows?.[0]?.id ?? null;
+}
+
+function ensureFixtureTimelineMessage({
+  actorUserId,
+  entry,
+  tenantId,
+  ticketId,
+}) {
+  const eventType = entry.visibility === 'internal' ? 'internal_note_added' : 'message_added';
+
+  let messageId = queryFixtureTicketMessageId(ticketId, entry.fixtureKey);
+  if (!messageId) {
+    const createdMessage = runSupabaseDbQuery(`
+      insert into public.ticket_messages (
+        tenant_id,
+        ticket_id,
+        visibility,
+        body,
+        created_by_user_id,
+        metadata
+      )
+      values (
+        '${sqlEscape(tenantId)}'::uuid,
+        '${sqlEscape(ticketId)}'::uuid,
+        '${sqlEscape(entry.visibility)}'::public.message_visibility,
+        '${sqlEscape(entry.body)}',
+        '${sqlEscape(actorUserId)}'::uuid,
+        jsonb_build_object(
+          'fixture_key', '${sqlEscape(entry.fixtureKey)}',
+          'conversation_lane', '${sqlEscape(entry.lane)}'
+        )
+      )
+      returning id::text as id;
+    `);
+
+    messageId = createdMessage.rows?.[0]?.id ?? null;
+  }
+
+  if (!messageId) {
+    fail(`Mensagem de fixture ausente para ${entry.fixtureKey}.`);
+  }
+
+  const existingEventId = queryFixtureTicketEventId(ticketId, entry.fixtureKey, eventType);
+  if (existingEventId) {
+    return messageId;
+  }
+
+  runSupabaseDbQuery(`
+    insert into public.ticket_events (
+      tenant_id,
+      ticket_id,
+      event_type,
+      visibility,
+      actor_user_id,
+      message_id,
+      metadata
+    )
+    values (
+      '${sqlEscape(tenantId)}'::uuid,
+      '${sqlEscape(ticketId)}'::uuid,
+      '${sqlEscape(eventType)}'::public.ticket_event_type,
+      '${sqlEscape(entry.visibility)}'::public.message_visibility,
+      '${sqlEscape(actorUserId)}'::uuid,
+      '${sqlEscape(messageId)}'::uuid,
+      jsonb_build_object(
+        'fixture_key', '${sqlEscape(entry.fixtureKey)}',
+        'conversation_lane', '${sqlEscape(entry.lane)}'
+      )
+    );
+  `);
+
+  return messageId;
+}
+
 function applyFixtureUploadIntentVisibility({ uploadIntentId, visibility }) {
   if (visibility !== 'customer') {
     return;
@@ -3496,6 +4124,31 @@ async function main() {
       status: ticket.status,
     });
     ticketMap.set(`${ticket.tenantSlug}::${ticket.title}`, ticketId);
+  }
+
+  for (const entry of FIXTURE.ticketTimelineMessages ?? []) {
+    const ticketId = ticketMap.get(`${entry.ticketTenantSlug}::${entry.ticketTitle}`);
+    const tenantId = tenantMap.get(entry.ticketTenantSlug);
+    const actorUserId = operatorMap.get(entry.actorKey);
+
+    if (!ticketId) {
+      fail(`Ticket ausente para mensagem adicional da fixture: ${entry.ticketTitle}.`);
+    }
+
+    if (!tenantId) {
+      fail(`Tenant ausente para mensagem adicional da fixture: ${entry.ticketTenantSlug}.`);
+    }
+
+    if (!actorUserId) {
+      fail(`Ator ausente para mensagem adicional da fixture: ${entry.actorKey}.`);
+    }
+
+    ensureFixtureTimelineMessage({
+      actorUserId,
+      entry,
+      tenantId,
+      ticketId,
+    });
   }
 
   const createdCustomerPortalCollaborations = [];

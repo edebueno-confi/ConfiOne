@@ -85,10 +85,23 @@ values
   );
 
 select is(
-  (select count(*)::integer from public.profiles),
+  (
+    select count(*)::integer
+    from public.profiles
+    where id in (
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+      'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+      'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'
+    )
+  ),
   5,
   'sync auth.users -> profiles continua cobrindo todos os usuarios'
 );
+
+delete from public.user_global_roles
+where role = 'platform_admin';
 
 select is(
   app_private.bootstrap_first_platform_admin(

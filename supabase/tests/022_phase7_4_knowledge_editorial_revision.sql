@@ -119,6 +119,9 @@ values (
 )
 on conflict (id) do nothing;
 
+delete from public.user_global_roles
+where role = 'platform_admin';
+
 select is(
   app_private.bootstrap_first_platform_admin(
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,

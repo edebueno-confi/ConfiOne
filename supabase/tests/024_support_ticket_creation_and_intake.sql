@@ -333,6 +333,11 @@ select is(
   (
     select count(*)::integer
     from public.vw_support_ticket_intake_tenants
+    where tenant_id in (
+      '11111111-1111-4111-8111-111111111111',
+      '22222222-2222-4222-8222-222222222222',
+      '33333333-3333-4333-8333-333333333333'
+    )
   ),
   3,
   'platform_admin vê todos os tenants elegíveis para intake'
@@ -342,6 +347,11 @@ select is(
   (
     select count(*)::integer
     from public.vw_support_ticket_intake_contacts
+    where tenant_id in (
+      '11111111-1111-4111-8111-111111111111',
+      '22222222-2222-4222-8222-222222222222',
+      '33333333-3333-4333-8333-333333333333'
+    )
   ),
   2,
   'platform_admin vê apenas contatos ativos realmente existentes'
