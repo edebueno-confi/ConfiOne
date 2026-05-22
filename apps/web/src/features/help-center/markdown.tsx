@@ -35,6 +35,7 @@ interface Block {
   assetId?: string;
   alt?: string;
   imageSize?: 'small' | 'medium' | 'large' | 'full';
+  mediaSize?: 'small' | 'medium' | 'large' | 'full';
   tone?: 'info' | 'warning' | 'success';
   videoId?: string;
 }
@@ -67,6 +68,28 @@ function imageSizeClass(size?: Block['imageSize']) {
   return 'max-w-[680px]';
 }
 
+function mediaSizeClass(size?: Block['mediaSize']) {
+  if (size === 'small') {
+    return 'max-w-[360px]';
+  }
+
+  if (size === 'medium') {
+    return 'max-w-[560px]';
+  }
+
+  if (size === 'full') {
+    return 'max-w-[78ch]';
+  }
+
+  return 'max-w-[680px]';
+}
+
+function parseMediaSize(value?: string) {
+  return value && /^(small|medium|large|full)$/i.test(value)
+    ? (value.toLowerCase() as NonNullable<Block['mediaSize']>)
+    : 'large';
+}
+
 function isSafeHref(value: string) {
   return /^(https?:\/\/|mailto:)/i.test(value);
 }
@@ -77,8 +100,7 @@ function isValidYouTubeId(value: string) {
 
 function parseInline(text: string): InlinePart[] {
   const parts: InlinePart[] = [];
-  const pattern =
-    /(\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`|\*([^*]+)\*)/g;
+  const pattern = /(\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`|\*([^*]+)\*)/g;
   let lastIndex = 0;
 
   for (const match of text.matchAll(pattern)) {
@@ -197,9 +219,16 @@ function parseMarkdown(source: string) {
       continue;
     }
 
-    const youtubeMatch = /^::youtube\s+([A-Za-z0-9_-]{6,20})\s*$/.exec(trimmed);
+    const youtubeMatch =
+      /^::youtube\s+([A-Za-z0-9_-]{6,20})(?:\s*\|size=(small|medium|large|full))?\s*$/i.exec(
+        trimmed,
+      );
     if (youtubeMatch && isValidYouTubeId(youtubeMatch[1])) {
-      blocks.push({ type: 'youtube', videoId: youtubeMatch[1] });
+      blocks.push({
+        mediaSize: parseMediaSize(youtubeMatch[2]),
+        type: 'youtube',
+        videoId: youtubeMatch[1],
+      });
       index += 1;
       continue;
     }
@@ -223,7 +252,9 @@ function parseMarkdown(source: string) {
         !candidate ||
         candidate.startsWith('```') ||
         /^:::callout\s+(info|warning|success)\s*$/i.test(candidate) ||
-        /^::youtube\s+([A-Za-z0-9_-]{6,20})\s*$/.test(candidate) ||
+        /^::youtube\s+([A-Za-z0-9_-]{6,20})(?:\s*\|size=(small|medium|large|full))?\s*$/i.test(
+          candidate,
+        ) ||
         /^(#{1,6})\s+/.test(candidate) ||
         /^!\[([^\]]*)\]\((knowledge-asset:[^)]+)\)$/.test(candidate) ||
         candidate.startsWith('> ') ||
@@ -316,12 +347,7 @@ export function MarkdownDocument({
         const key = `${block.type}-${index}`;
 
         if (block.type === 'rule') {
-          return (
-            <hr
-              key={key}
-              className="border-0 border-t border-[rgba(20,31,71,0.12)]"
-            />
-          );
+          return <hr key={key} className="border-0 border-t border-[rgba(20,31,71,0.12)]" />;
         }
 
         if (block.type === 'heading') {
@@ -389,7 +415,9 @@ export function MarkdownDocument({
               key={key}
               className={`grid max-w-[78ch] grid-cols-[24px_minmax(0,1fr)] gap-3 rounded-[18px] border px-4 py-3 ${toneClass}`}
             >
-              <span className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${iconClass}`}>
+              <span
+                className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${iconClass}`}
+              >
                 {tone === 'warning' ? '!' : tone === 'success' ? '✓' : 'i'}
               </span>
               <div className="space-y-1">
@@ -408,7 +436,7 @@ export function MarkdownDocument({
           return (
             <figure
               key={key}
-              className="max-w-[680px] overflow-hidden rounded-[22px] border border-[rgba(20,31,71,0.12)] bg-[#090f2d] shadow-[0_18px_42px_rgba(20,31,71,0.12)]"
+              className={`${mediaSizeClass(block.mediaSize)} overflow-hidden rounded-[22px] border border-[rgba(20,31,71,0.12)] bg-[#090f2d] shadow-[0_18px_42px_rgba(20,31,71,0.12)]`}
             >
               <div className="aspect-video w-full">
                 <iframe

@@ -20,11 +20,7 @@ import {
   TextInput,
   TextareaInput,
 } from '../../components/ui';
-import {
-  ContractUnavailableState,
-  ErrorState,
-  LoadingState,
-} from '../../components/states';
+import { ContractUnavailableState, ErrorState, LoadingState } from '../../components/states';
 import {
   createKnowledgeArticleDraftV2,
   beginKnowledgeArticleEditorialRevisionV2,
@@ -55,7 +51,10 @@ import { type MarkdownAsset } from '../help-center/markdown';
 
 type PagePhase = 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
-type ArticleEditorStatus = Extract<KnowledgeArticleStatus, 'draft' | 'review' | 'published' | 'archived'>;
+type ArticleEditorStatus = Extract<
+  KnowledgeArticleStatus,
+  'draft' | 'review' | 'published' | 'archived'
+>;
 
 interface ArticleEditorForm {
   title: string;
@@ -112,9 +111,7 @@ function normalizeOptionalText(value: string) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-function buildArticleFormFromDetail(
-  article: AdminKnowledgeArticleDetailV2Row,
-): ArticleEditorForm {
+function buildArticleFormFromDetail(article: AdminKnowledgeArticleDetailV2Row): ArticleEditorForm {
   return {
     title: article.title ?? '',
     slug: article.slug ?? '',
@@ -201,7 +198,10 @@ function hasAssetReference(bodyMd: string, assets: AdminKnowledgeArticleAssetRow
 function buildAssetMarkdown(asset: AdminKnowledgeArticleAssetRow) {
   const altText =
     asset.alt_text?.trim() ||
-    asset.source_path?.split('/').pop()?.replace(/\.[^.]+$/, '') ||
+    asset.source_path
+      ?.split('/')
+      .pop()
+      ?.replace(/\.[^.]+$/, '') ||
     'Imagem do artigo';
 
   return `\n\n![${altText}|size=large](knowledge-asset:${asset.id})\n\n`;
@@ -247,9 +247,7 @@ function buildCompleteHumanConfirmations(): KnowledgeReviewHumanConfirmations {
 
 function hasCompleteHumanConfirmations(value: unknown) {
   const confirmations = normalizeHumanConfirmations(value);
-  return PUBLIC_PUBLISH_CONFIRMATION_FIELDS.every(
-    (field) => confirmations[field.key] === true,
-  );
+  return PUBLIC_PUBLISH_CONFIRMATION_FIELDS.every((field) => confirmations[field.key] === true);
 }
 
 function publicPublishBlocker(
@@ -286,13 +284,7 @@ function publicPublishBlocker(
   return null;
 }
 
-function FormFieldLabel({
-  children,
-  required = false,
-}: {
-  children: string;
-  required?: boolean;
-}) {
+function FormFieldLabel({ children, required = false }: { children: string; required?: boolean }) {
   return (
     <span className="text-[0.72rem] font-semibold text-[color:var(--color-brand-navy)]">
       {children}
@@ -416,7 +408,7 @@ type VisualEditorBlock =
   | { type: 'code'; text: string }
   | { type: 'image'; assetId: string; alt: string; size: VisualImageSize }
   | { type: 'callout'; tone: 'info' | 'warning' | 'success'; text: string }
-  | { type: 'youtube'; videoId: string };
+  | { type: 'youtube'; videoId: string; size: VisualImageSize };
 
 function extractYouTubeVideoId(value: string) {
   const trimmed = value.trim();
@@ -432,11 +424,7 @@ function extractYouTubeVideoId(value: string) {
       return /^[A-Za-z0-9_-]{6,20}$/.test(id) ? id : null;
     }
 
-    if (
-      host === 'youtube.com' ||
-      host === 'm.youtube.com' ||
-      host === 'youtube-nocookie.com'
-    ) {
+    if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtube-nocookie.com') {
       const watchId = url.searchParams.get('v');
       const embedMatch = /\/embed\/([A-Za-z0-9_-]{6,20})/.exec(url.pathname);
       const shortMatch = /\/shorts\/([A-Za-z0-9_-]{6,20})/.exec(url.pathname);
@@ -453,13 +441,27 @@ function extractYouTubeVideoId(value: string) {
 function parseVisualImageAlt(value: string) {
   const sizeMatch = /\s*\|size=(small|medium|large|full)\s*$/i.exec(value);
   if (!sizeMatch) {
-    return { alt: value.trim() || 'Imagem do artigo', size: 'large' as VisualImageSize };
+    return {
+      alt: value.trim() || 'Imagem do artigo',
+      size: 'large' as VisualImageSize,
+    };
   }
 
   return {
     alt: value.slice(0, sizeMatch.index).trim() || 'Imagem do artigo',
     size: sizeMatch[1].toLowerCase() as VisualImageSize,
   };
+}
+
+function parseVisualMediaSize(value?: string | null): VisualImageSize {
+  return value && /^(small|medium|large|full)$/i.test(value)
+    ? (value.toLowerCase() as VisualImageSize)
+    : 'large';
+}
+
+function renderYoutubeFigure(videoId: string, size: VisualImageSize = 'large') {
+  const safeVideoId = escapeHtml(videoId);
+  return `<figure draggable="true" data-youtube-id="${safeVideoId}" data-size="${size}" contenteditable="false" tabindex="0"><div class="youtube-card"><span class="youtube-card__play">▶</span><strong>Vídeo YouTube</strong><small>youtube-nocookie.com/embed/${safeVideoId}</small></div></figure>`;
 }
 
 function parseVisualBlocks(source: string): VisualEditorBlock[] {
@@ -539,9 +541,16 @@ function parseVisualBlocks(source: string): VisualEditorBlock[] {
       continue;
     }
 
-    const youtubeMatch = /^::youtube\s+([A-Za-z0-9_-]{6,20})\s*$/.exec(trimmed);
+    const youtubeMatch =
+      /^::youtube\s+([A-Za-z0-9_-]{6,20})(?:\s*\|size=(small|medium|large|full))?\s*$/i.exec(
+        trimmed,
+      );
     if (youtubeMatch) {
-      blocks.push({ type: 'youtube', videoId: youtubeMatch[1] });
+      blocks.push({
+        type: 'youtube',
+        videoId: youtubeMatch[1],
+        size: parseVisualMediaSize(youtubeMatch[2]),
+      });
       index += 1;
       continue;
     }
@@ -568,7 +577,9 @@ function parseVisualBlocks(source: string): VisualEditorBlock[] {
         candidate.startsWith('> ') ||
         candidate.startsWith('```') ||
         /^:::callout\s+(info|warning|success)\s*$/i.test(candidate) ||
-        /^::youtube\s+([A-Za-z0-9_-]{6,20})\s*$/.test(candidate) ||
+        /^::youtube\s+([A-Za-z0-9_-]{6,20})(?:\s*\|size=(small|medium|large|full))?\s*$/i.test(
+          candidate,
+        ) ||
         /^[-*]\s+/.test(candidate) ||
         /^\d+[.)]\s+/.test(candidate)
       ) {
@@ -612,10 +623,7 @@ function renderInlineMarkdown(value: string) {
     .replace(/`([^`]+)`/g, '<code>$1</code>');
 }
 
-function renderEditorHtmlFromMarkdown(
-  source: string,
-  assets: Record<string, MarkdownAsset>,
-) {
+function renderEditorHtmlFromMarkdown(source: string, assets: Record<string, MarkdownAsset>) {
   if (!source.trim()) {
     return '';
   }
@@ -650,7 +658,7 @@ function renderEditorHtmlFromMarkdown(
       }
 
       if (block.type === 'youtube') {
-        return `<figure data-youtube-id="${block.videoId}" contenteditable="false"><div class="youtube-card"><span>▶</span><strong>Vídeo YouTube</strong><small>youtube-nocookie.com/embed/${block.videoId}</small></div></figure>`;
+        return renderYoutubeFigure(block.videoId, block.size);
       }
 
       const asset = assets[block.assetId];
@@ -739,7 +747,8 @@ function blockElementToMarkdown(element: HTMLElement): string {
   }
 
   if (tag === 'figure' && element.dataset.youtubeId) {
-    return `::youtube ${element.dataset.youtubeId}`;
+    const size = parseVisualMediaSize(element.dataset.size);
+    return `::youtube ${element.dataset.youtubeId}|size=${size}`;
   }
 
   if (tag === 'figure' && element.dataset.assetId) {
@@ -926,8 +935,7 @@ function RichTextArticleEditor({
     }
 
     restoreSelection();
-    const normalizedValue =
-      command === 'formatBlock' && value ? `<${value.toLowerCase()}>` : value;
+    const normalizedValue = command === 'formatBlock' && value ? `<${value.toLowerCase()}>` : value;
     document.execCommand(command, false, normalizedValue);
     rememberSelection();
     emitChange();
@@ -942,6 +950,8 @@ function RichTextArticleEditor({
     selectedFigure.classList.add(`image-${size}`);
     emitChange();
   }
+
+  const selectedFigureKind = selectedFigure?.dataset.youtubeId ? 'video' : 'image';
 
   function moveSelectedImage(direction: 'up' | 'down') {
     if (!selectedFigure) {
@@ -988,9 +998,7 @@ function RichTextArticleEditor({
     if (!videoId) {
       return;
     }
-    insertHtmlAtCursor(
-      `<figure data-youtube-id="${videoId}" contenteditable="false"><div class="youtube-card"><span>▶</span><strong>Vídeo YouTube</strong><small>youtube-nocookie.com/embed/${videoId}</small></div></figure>`,
-    );
+    insertHtmlAtCursor(renderYoutubeFigure(videoId, 'large'));
   }
 
   useEffect(() => {
@@ -1048,17 +1056,40 @@ function RichTextArticleEditor({
           H3
         </ToolbarButton>
         <span className="mx-1 h-7 w-px bg-[color:var(--color-border)]" />
-        <ToolbarButton onClick={() => runCommand('bold')} title="Negrito">B</ToolbarButton>
-        <ToolbarButton onClick={() => runCommand('italic')} title="Itálico"><span className="italic">I</span></ToolbarButton>
-        <ToolbarButton onClick={() => runCommand('underline')} title="Sublinhado"><span className="underline">U</span></ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('bold')} title="Negrito">
+          B
+        </ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('italic')} title="Itálico">
+          <span className="italic">I</span>
+        </ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('underline')} title="Sublinhado">
+          <span className="underline">U</span>
+        </ToolbarButton>
         <span className="mx-1 h-7 w-px bg-[color:var(--color-border)]" />
-        <ToolbarButton onClick={() => runCommand('insertUnorderedList')} title="Lista com marcadores">•</ToolbarButton>
-        <ToolbarButton onClick={() => runCommand('insertOrderedList')} title="Lista numerada">1.</ToolbarButton>
-        <ToolbarButton onClick={() => runCommand('outdent')} title="Reduzir recuo">←</ToolbarButton>
-        <ToolbarButton onClick={() => runCommand('indent')} title="Aumentar recuo">→</ToolbarButton>
-        <ToolbarButton onClick={() => runCommand('justifyLeft')} title="Alinhar à esquerda">≡</ToolbarButton>
-        <ToolbarButton onClick={() => runCommand('justifyCenter')} title="Centralizar">≣</ToolbarButton>
-        <ToolbarButton onClick={() => runCommand('formatBlock', 'blockquote')} title="Citação">❝</ToolbarButton>
+        <ToolbarButton
+          onClick={() => runCommand('insertUnorderedList')}
+          title="Lista com marcadores"
+        >
+          •
+        </ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('insertOrderedList')} title="Lista numerada">
+          1.
+        </ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('outdent')} title="Reduzir recuo">
+          ←
+        </ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('indent')} title="Aumentar recuo">
+          →
+        </ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('justifyLeft')} title="Alinhar à esquerda">
+          ≡
+        </ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('justifyCenter')} title="Centralizar">
+          ≣
+        </ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('formatBlock', 'blockquote')} title="Citação">
+          ❝
+        </ToolbarButton>
         <ToolbarButton
           onClick={() => {
             const href = window.prompt('Cole a URL do link');
@@ -1070,21 +1101,29 @@ function RichTextArticleEditor({
         >
           🔗
         </ToolbarButton>
-        <ToolbarButton disabled={assetState === 'saving'} onClick={onImageButton} title="Imagem">
-          🖼
+        <ToolbarButton
+          disabled={assetState === 'saving'}
+          onClick={onImageButton}
+          title="Inserir imagem no corpo"
+        >
+          Imagem
         </ToolbarButton>
-        <ToolbarButton onClick={insertYoutube} title="Vídeo YouTube">
-          ▶
+        <ToolbarButton onClick={insertYoutube} title="Inserir vídeo YouTube">
+          Vídeo
         </ToolbarButton>
         <ToolbarButton onClick={() => insertCallout('info')} title="Nota">
-          ⓘ
+          Nota
         </ToolbarButton>
         <ToolbarButton onClick={() => runCommand('formatBlock', 'pre')} title="Código">
           &lt;/&gt;
         </ToolbarButton>
         <span className="ml-auto" />
-        <ToolbarButton onClick={undoEditor} title="Desfazer">↶</ToolbarButton>
-        <ToolbarButton onClick={redoEditor} title="Refazer">↷</ToolbarButton>
+        <ToolbarButton onClick={undoEditor} title="Desfazer">
+          ↶
+        </ToolbarButton>
+        <ToolbarButton onClick={redoEditor} title="Refazer">
+          ↷
+        </ToolbarButton>
       </div>
 
       {selectedFigure ? (
@@ -1101,7 +1140,13 @@ function RichTextArticleEditor({
               onClick={() => setImageSize(size)}
               type="button"
             >
-              {size === 'small' ? 'Pequena' : size === 'medium' ? 'Média' : size === 'large' ? 'Grande' : 'Largura total'}
+              {size === 'small'
+                ? 'Pequena'
+                : size === 'medium'
+                  ? 'Média'
+                  : size === 'large'
+                    ? 'Grande'
+                    : 'Largura total'}
             </button>
           ))}
           <span className="mx-1 h-7 w-px bg-[color:var(--color-border)]" />
@@ -1124,7 +1169,7 @@ function RichTextArticleEditor({
             onClick={removeSelectedImage}
             type="button"
           >
-            Remover imagem
+            {selectedFigureKind === 'video' ? 'Remover vídeo' : 'Remover imagem'}
           </button>
         </div>
       ) : null}
@@ -1215,20 +1260,25 @@ function RichTextArticleEditor({
               overflow: auto;
               padding: 16px;
             }
-            .knowledge-rich-editor figure[data-asset-id] {
+            .knowledge-rich-editor figure[data-asset-id],
+            .knowledge-rich-editor figure[data-youtube-id] {
               margin: 24px 0;
               position: relative;
             }
-            .knowledge-rich-editor figure[data-asset-id][data-size='small'] {
+            .knowledge-rich-editor figure[data-asset-id][data-size='small'],
+            .knowledge-rich-editor figure[data-youtube-id][data-size='small'] {
               max-width: 360px;
             }
-            .knowledge-rich-editor figure[data-asset-id][data-size='medium'] {
+            .knowledge-rich-editor figure[data-asset-id][data-size='medium'],
+            .knowledge-rich-editor figure[data-youtube-id][data-size='medium'] {
               max-width: 520px;
             }
-            .knowledge-rich-editor figure[data-asset-id][data-size='large'] {
+            .knowledge-rich-editor figure[data-asset-id][data-size='large'],
+            .knowledge-rich-editor figure[data-youtube-id][data-size='large'] {
               max-width: 720px;
             }
-            .knowledge-rich-editor figure[data-asset-id][data-size='full'] {
+            .knowledge-rich-editor figure[data-asset-id][data-size='full'],
+            .knowledge-rich-editor figure[data-youtube-id][data-size='full'] {
               max-width: 100%;
             }
             .knowledge-rich-editor figure[data-asset-id] img,
@@ -1240,11 +1290,14 @@ function RichTextArticleEditor({
               object-fit: contain;
               width: 100%;
             }
-            .knowledge-rich-editor figure[data-asset-id].image-dragging {
+            .knowledge-rich-editor figure[data-asset-id].image-dragging,
+            .knowledge-rich-editor figure[data-youtube-id].image-dragging {
               opacity: 0.55;
             }
             .knowledge-rich-editor figure[data-asset-id]:focus,
-            .knowledge-rich-editor figure[data-asset-id]:has(img:hover) {
+            .knowledge-rich-editor figure[data-asset-id]:has(img:hover),
+            .knowledge-rich-editor figure[data-youtube-id]:focus,
+            .knowledge-rich-editor figure[data-youtube-id]:has(.youtube-card:hover) {
               outline: 2px solid #2F6BFF;
               outline-offset: 3px;
             }
@@ -1256,20 +1309,45 @@ function RichTextArticleEditor({
               text-align: center;
             }
             .knowledge-rich-editor figure[data-youtube-id] {
-              margin: 24px 0;
-              max-width: 760px;
+              cursor: grab;
             }
             .knowledge-rich-editor .youtube-card {
               align-items: center;
-              background: #090f2d;
+              aspect-ratio: 16 / 9;
+              background:
+                radial-gradient(circle at 50% 38%, rgba(47, 107, 255, 0.28), transparent 24%),
+                linear-gradient(135deg, #07113f 0%, #090f2d 52%, #111944 100%);
+              border: 1px solid rgba(255, 255, 255, 0.1);
               border-radius: 20px;
+              box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 18px 42px rgba(20,31,71,0.12);
               color: white;
               display: grid;
               gap: 8px;
-              min-height: 220px;
               padding: 24px;
               place-items: center;
               text-align: center;
+              width: 100%;
+            }
+            .knowledge-rich-editor .youtube-card__play {
+              align-items: center;
+              background: #ff0033;
+              border-radius: 999px;
+              box-shadow: 0 16px 36px rgba(255, 0, 51, 0.28);
+              display: inline-flex;
+              font-size: 16px;
+              height: 48px;
+              justify-content: center;
+              line-height: 1;
+              width: 64px;
+            }
+            .knowledge-rich-editor .youtube-card strong {
+              font-size: 15px;
+              letter-spacing: -0.01em;
+            }
+            .knowledge-rich-editor .youtube-card small {
+              color: rgba(255, 255, 255, 0.72);
+              font-size: 12px;
+              word-break: break-all;
             }
           `}
         </style>
@@ -1278,13 +1356,17 @@ function RichTextArticleEditor({
           contentEditable={!isReadOnly}
           onBlur={rememberSelection}
           onClick={(event) => {
-            const figure = (event.target as HTMLElement).closest('figure[data-asset-id]');
+            const figure = (event.target as HTMLElement).closest(
+              'figure[data-asset-id], figure[data-youtube-id]',
+            );
             setSelectedFigure(figure as HTMLElement | null);
             rememberSelection();
           }}
           onDragOver={(event) => event.preventDefault()}
           onDragStart={(event) => {
-            const figure = (event.target as HTMLElement).closest('figure[data-asset-id]');
+            const figure = (event.target as HTMLElement).closest(
+              'figure[data-asset-id], figure[data-youtube-id]',
+            );
             if (figure instanceof HTMLElement) {
               draggedFigureRef.current = figure;
               figure.classList.add('image-dragging');
@@ -1364,7 +1446,9 @@ function RichTextArticleEditor({
           onMouseUp={rememberSelection}
           onPaste={(event) => {
             const hasImage =
-              Array.from(event.clipboardData.files).some((file) => file.type.startsWith('image/')) ||
+              Array.from(event.clipboardData.files).some((file) =>
+                file.type.startsWith('image/'),
+              ) ||
               Array.from(event.clipboardData.items).some(
                 (item) => item.kind === 'file' && item.type.startsWith('image/'),
               );
@@ -1395,6 +1479,7 @@ function RichTextArticleEditor({
           ref={editorRef}
           role="textbox"
           suppressContentEditableWarning
+          tabIndex={0}
         />
       </div>
     </div>
@@ -1409,8 +1494,7 @@ export function KnowledgeArticleEditorPage() {
   const [categories, setCategories] = useState<AdminKnowledgeCategoryV2Row[]>([]);
   const [selectedSpaceId, setSelectedSpaceId] = useState('');
   const [articleId, setArticleId] = useState<string | null>(null);
-  const [articleDetail, setArticleDetail] =
-    useState<AdminKnowledgeArticleDetailV2Row | null>(null);
+  const [articleDetail, setArticleDetail] = useState<AdminKnowledgeArticleDetailV2Row | null>(null);
   const [sourcePath, setSourcePath] = useState<string | null>(null);
   const [sourceHash, setSourceHash] = useState<string | null>(null);
   const [isEditorialRevision, setIsEditorialRevision] = useState(false);
@@ -1432,8 +1516,7 @@ export function KnowledgeArticleEditorPage() {
   const isEditMode = Boolean(routeArticleId);
 
   const selectedSpace = spaces.find((space) => space.id === selectedSpaceId) ?? null;
-  const selectedCategory =
-    categories.find((category) => category.id === form.categoryId) ?? null;
+  const selectedCategory = categories.find((category) => category.id === form.categoryId) ?? null;
   const assetMap = useMemo(() => buildAssetMap(assets), [assets]);
   const isReadOnly = status === 'archived';
   const saveButtonLabel = isEditorialRevision
@@ -1455,14 +1538,21 @@ export function KnowledgeArticleEditorPage() {
     category: Boolean(form.categoryId),
     ready: false,
   };
-  checklist.ready =
-    checklist.title && checklist.summary && checklist.body && checklist.category;
+  checklist.ready = checklist.title && checklist.summary && checklist.body && checklist.category;
   const publicationChecklist = [
     { action: 'title', done: checklist.title, label: 'Título revisado' },
     { action: 'summary', done: checklist.summary, label: 'Resumo revisado' },
     { action: 'body', done: checklist.body, label: 'Corpo revisado' },
-    { action: 'category', done: checklist.category, label: 'Categoria confirmada' },
-    { action: 'visibility', done: Boolean(form.visibility), label: 'Visibilidade confirmada' },
+    {
+      action: 'category',
+      done: checklist.category,
+      label: 'Categoria confirmada',
+    },
+    {
+      action: 'visibility',
+      done: Boolean(form.visibility),
+      label: 'Visibilidade confirmada',
+    },
     {
       action: 'evidence',
       done:
@@ -1472,9 +1562,7 @@ export function KnowledgeArticleEditorPage() {
     },
     {
       action: 'publish-readiness',
-      done:
-        form.visibility !== 'public' ||
-        advisoryHumanConfirmations.ready_for_publish === true,
+      done: form.visibility !== 'public' || advisoryHumanConfirmations.ready_for_publish === true,
       label: 'Pronto para publicação',
     },
   ];
@@ -1523,8 +1611,7 @@ export function KnowledgeArticleEditorPage() {
           }
 
           primarySpace =
-            loadedSpaces.find((space) => space.id === detail?.knowledge_space_id) ??
-            primarySpace;
+            loadedSpaces.find((space) => space.id === detail?.knowledge_space_id) ?? primarySpace;
 
           if (detail.status === 'published') {
             if (!detail.editorial_draft) {
@@ -1564,7 +1651,7 @@ export function KnowledgeArticleEditorPage() {
             : [];
         const loadedAdvisory =
           routeArticleId && detail
-            ? loadedAdvisories.find((item) => item.article_id === detail.id) ?? null
+            ? (loadedAdvisories.find((item) => item.article_id === detail.id) ?? null)
             : null;
 
         if (cancelled) {
@@ -1778,7 +1865,8 @@ export function KnowledgeArticleEditorPage() {
       });
       await refreshAssets(savedArticleId);
       const assetMarkdown = buildAssetMarkdown(uploadedAsset);
-      const nextBody = editorMarkdownInserterRef.current?.(assetMarkdown) ?? insertSnippet(assetMarkdown, '', '');
+      const nextBody =
+        editorMarkdownInserterRef.current?.(assetMarkdown) ?? insertSnippet(assetMarkdown, '', '');
       await saveDraft({
         allowIncompleteBody: true,
         bodyMd: nextBody,
@@ -1789,10 +1877,7 @@ export function KnowledgeArticleEditorPage() {
         'Imagem enviada para o bucket governado e inserida no corpo como referência segura.',
       );
     } catch (error) {
-      const classified = classifyAdminError(
-        error,
-        'Falha ao anexar a imagem ao artigo.',
-      );
+      const classified = classifyAdminError(error, 'Falha ao anexar a imagem ao artigo.');
       setAssetState('error');
       setFeedback(classified.message);
     }
@@ -1803,7 +1888,9 @@ export function KnowledgeArticleEditorPage() {
 
     if (files.length === 0) {
       setAssetState('error');
-      setFeedback('Use imagens PNG, JPG, WEBP ou GIF. PDFs ainda não têm contrato de asset nesta V1.');
+      setFeedback(
+        'Use imagens PNG, JPG, WEBP ou GIF. PDFs ainda não têm contrato de asset nesta V1.',
+      );
       return;
     }
 
@@ -1859,9 +1946,7 @@ export function KnowledgeArticleEditorPage() {
       !checklist.title ? 'titulo claro' : null,
       !checklist.summary ? 'resumo curto' : null,
       !checklist.category ? 'categoria' : null,
-      !options?.allowIncompleteBody && effectiveBodyPlain.length < 80
-        ? 'conteudo completo'
-        : null,
+      !options?.allowIncompleteBody && effectiveBodyPlain.length < 80 ? 'conteudo completo' : null,
     ].filter(Boolean);
 
     if (requiredFields.length > 0) {
@@ -1920,28 +2005,29 @@ export function KnowledgeArticleEditorPage() {
         p_source_hash: sourceHash,
       };
 
-      const saved = isEditorialRevision && targetArticleId
-        ? await updateKnowledgeArticleEditorialRevisionV2({
-            p_article_id: targetArticleId,
-            p_knowledge_space_id: activeSpace.id,
-            p_title: articlePayload.p_title,
-            p_slug: articlePayload.p_slug,
-            p_summary: articlePayload.p_summary,
-            p_body_md: articlePayload.p_body_md,
-            p_category_id: articlePayload.p_category_id,
-            p_visibility: articlePayload.p_visibility,
-            p_source_path: articlePayload.p_source_path,
-            p_source_hash: articlePayload.p_source_hash,
-          })
-        : targetArticleId
-          ? await updateKnowledgeArticleDraftV2({
-            ...articlePayload,
-            p_article_id: targetArticleId,
-          })
-          : await createKnowledgeArticleDraftV2({
-            ...articlePayload,
-            p_tenant_id: activeSpace.owner_tenant_id ?? null,
-          });
+      const saved =
+        isEditorialRevision && targetArticleId
+          ? await updateKnowledgeArticleEditorialRevisionV2({
+              p_article_id: targetArticleId,
+              p_knowledge_space_id: activeSpace.id,
+              p_title: articlePayload.p_title,
+              p_slug: articlePayload.p_slug,
+              p_summary: articlePayload.p_summary,
+              p_body_md: articlePayload.p_body_md,
+              p_category_id: articlePayload.p_category_id,
+              p_visibility: articlePayload.p_visibility,
+              p_source_path: articlePayload.p_source_path,
+              p_source_hash: articlePayload.p_source_hash,
+            })
+          : targetArticleId
+            ? await updateKnowledgeArticleDraftV2({
+                ...articlePayload,
+                p_article_id: targetArticleId,
+              })
+            : await createKnowledgeArticleDraftV2({
+                ...articlePayload,
+                p_tenant_id: activeSpace.owner_tenant_id ?? null,
+              });
 
       const savedArticleId = 'article_id' in saved ? saved.article_id : saved.id;
       setArticleId(savedArticleId);
@@ -1999,9 +2085,7 @@ export function KnowledgeArticleEditorPage() {
 
     if (!checklist.ready) {
       setSubmitState('error');
-      setFeedback(
-        `Para enviar para revisão, complete primeiro: ${missingRequired.join(', ')}.`,
-      );
+      setFeedback(`Para enviar para revisão, complete primeiro: ${missingRequired.join(', ')}.`);
       return;
     }
 
@@ -2128,7 +2212,9 @@ export function KnowledgeArticleEditorPage() {
     let effectiveAdvisory = advisory;
     let currentPublishBlocker = publicPublishBlocker(effectiveAdvisory, form.visibility);
     if (currentPublishBlocker && form.visibility === 'public') {
-      effectiveAdvisory = await preparePublicEvidenceForPublish({ silent: true });
+      effectiveAdvisory = await preparePublicEvidenceForPublish({
+        silent: true,
+      });
       currentPublishBlocker = publicPublishBlocker(effectiveAdvisory, form.visibility);
     }
 
@@ -2235,11 +2321,7 @@ export function KnowledgeArticleEditorPage() {
     return (
       <ErrorState
         description={errorMessage ?? 'Não foi possível abrir o editor de artigo.'}
-        action={
-          <GhostButton onClick={() => window.location.reload()}>
-            Recarregar
-          </GhostButton>
-        }
+        action={<GhostButton onClick={() => window.location.reload()}>Recarregar</GhostButton>}
       />
     );
   }
@@ -2271,7 +2353,10 @@ export function KnowledgeArticleEditorPage() {
                   {isEditMode ? 'Editar artigo' : 'Novo artigo'}
                 </h1>
                 <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[0.72rem] font-bold text-emerald-700">
-                  ✓ {saveState === 'saved' ? 'Rascunho salvo agora' : 'Alterações salvas automaticamente'}
+                  ✓{' '}
+                  {saveState === 'saved'
+                    ? 'Rascunho salvo agora'
+                    : 'Alterações salvas automaticamente'}
                 </span>
               </div>
               <p className="mt-1 text-[0.82rem] leading-5 text-[#6B7892]">
@@ -2416,7 +2501,9 @@ export function KnowledgeArticleEditorPage() {
                       <SelectInput
                         disabled={isReadOnly}
                         onChange={(event) =>
-                          updateForm({ visibility: event.target.value as KnowledgeVisibility })
+                          updateForm({
+                            visibility: event.target.value as KnowledgeVisibility,
+                          })
                         }
                         value={form.visibility}
                       >
@@ -2440,7 +2527,9 @@ export function KnowledgeArticleEditorPage() {
                     </Field>
                     <Field label="Status editorial">
                       <SelectInput
-                        disabled={submitState === 'saving' || publishState === 'saving' || isReadOnly}
+                        disabled={
+                          submitState === 'saving' || publishState === 'saving' || isReadOnly
+                        }
                         onChange={(event) =>
                           void handleStatusTransition(event.target.value as ArticleEditorStatus)
                         }
@@ -2562,7 +2651,9 @@ export function KnowledgeArticleEditorPage() {
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-[0.72rem] font-semibold text-[color:var(--color-brand-navy)]">
-                                {asset.source_path?.split('/').pop() ?? asset.detected_mime_type ?? 'Imagem'}
+                                {asset.source_path?.split('/').pop() ??
+                                  asset.detected_mime_type ??
+                                  'Imagem'}
                               </p>
                               <p className="text-[0.66rem] text-[color:var(--color-muted)]">
                                 {asset.file_size_bytes
@@ -2594,7 +2685,8 @@ export function KnowledgeArticleEditorPage() {
                       </ul>
                     ) : (
                       <p className="rounded-2xl bg-[color:var(--color-surface)] px-3 py-3 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
-                        Cole ou arraste uma imagem no editor quando o artigo precisar de apoio visual.
+                        Cole ou arraste uma imagem no editor quando o artigo precisar de apoio
+                        visual.
                       </p>
                     )}
                   </RailCard>
