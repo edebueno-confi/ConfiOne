@@ -18,6 +18,40 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase - Support Workspace Stabilization And Extraction
+- fase: `support-workspace`
+- nome: `Support Workspace Stabilization And Extraction`
+- branch: `workspace-atual`
+- data: `2026-05-22`
+- resumo funcional: o Support Workspace foi estabilizado e parcialmente desmonolitizado sem alterar backend, contratos ou regra de negócio. O lote restaurou `web:typecheck` e `web:build`, corrigiu corte inferior e scroll do rail/context slot, revalidou QA autenticado com `support_manager`, extraiu fila/header/conversa/composer/rail/context slot/painéis avançados/helpers para componentes e libs dedicadas, e deixou `SupportWorkspacePage.tsx` em cerca de 7.2k linhas.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/LOCAL_QA_AUTH.md`
+  - `docs/design/FRONTEND_VISUAL_GOVERNANCE.md`
+  - `docs/reports/SUPPORT_WORKSPACE_HANDOFF_2026-05-22.md`
+- telas afetadas:
+  - `/support/queue`
+  - `/support/tickets`
+  - `/support/tickets/:ticketId`
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada nesta frente
+  - nenhuma RPC criada ou alterada nesta frente
+  - fixture QA local reutilizada via `npm run supabase:qa:local-support-fixture`
+- validacao:
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:test:db` no fechamento do bloco de QA local
+  - `npm run supabase:lint:db` no fechamento do bloco de QA local
+  - QA autenticado com `qa.local.support-manager-a@genius.local`
+- riscos restantes:
+  - `SupportWorkspacePage.tsx` ainda concentra orquestração demais
+  - existe drift visual atual do cockpit, especialmente no header geral, peso do rail e dominância da conversa
+  - o fluxo de QA depende de usar ticket atual da fila após reidratar fixture; UUID antigo pode falhar por stale data
+- impacto na FAQ futura:
+  - consolida a base operacional do cockpit de suporte e a disciplina de validação real com perfil de suporte, sem depender apenas de `platform_admin`
+
 ### Fase - Knowledge Manual Article Editor V1
 - fase: `knowledge-admin`
 - nome: `Knowledge Manual Article Editor V1`
