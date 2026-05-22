@@ -33,7 +33,7 @@ import {
   listAdminKnowledgeArticleReviewAdvisories,
   listAdminKnowledgeCategoriesV2,
   listAdminKnowledgeSpaces,
-  markKnowledgeArticleReviewed,
+  prepareKnowledgeArticlePublicationEvidence,
   publishKnowledgeArticleEditorialRevisionV2,
   publishKnowledgeArticleV2,
   submitKnowledgeArticleForReviewV2,
@@ -261,14 +261,14 @@ function publicPublishBlocker(
   }
 
   if (!advisory) {
-    return 'Este artigo não possui advisory persistido. O backend bloqueia publicação pública sem evidência humana revisada.';
+    return 'Falta preparar a evidência pública deste artigo.';
   }
 
   if (
     advisory.suggested_visibility !== 'public' ||
     advisory.suggested_classification !== 'public'
   ) {
-    return 'O advisory deste artigo não está classificado como público. Revise a curadoria antes de publicar.';
+    return 'A evidência editorial ainda não está marcada como pública.';
   }
 
   if (
@@ -276,11 +276,11 @@ function publicPublishBlocker(
     !advisory.reviewed_by_user_id ||
     !advisory.reviewed_at
   ) {
-    return 'Confirme a revisão humana antes de publicar este artigo como público.';
+    return 'Confirme a revisão editorial antes de publicar.';
   }
 
   if (!hasCompleteHumanConfirmations(advisory.human_confirmations)) {
-    return 'O checklist humano do advisory ainda não está completo para publicação pública.';
+    return 'Conclua o checklist de publicação.';
   }
 
   return null;
@@ -366,7 +366,19 @@ function ToolbarButton({
   );
 }
 
-function ChecklistItem({ label, done }: { label: string; done: boolean }) {
+function ChecklistItem({
+  actionLabel,
+  disabled = false,
+  done,
+  label,
+  onAction,
+}: {
+  actionLabel?: string;
+  disabled?: boolean;
+  done: boolean;
+  label: string;
+  onAction?: () => void;
+}) {
   return (
     <li className="flex items-center gap-2 text-[0.78rem] leading-5 text-[color:var(--color-brand-navy)]">
       <span
@@ -374,12 +386,22 @@ function ChecklistItem({ label, done }: { label: string; done: boolean }) {
           'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[0.56rem]',
           done
             ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-            : 'border-[color:var(--color-border)] text-[color:var(--color-muted)]',
+            : 'border-[#C8D4EA] bg-white text-[#98A3B8]',
         )}
       >
         {done ? '✓' : ''}
       </span>
-      {label}
+      <span className="min-w-0 flex-1">{label}</span>
+      {!done && onAction ? (
+        <button
+          className="shrink-0 rounded-full px-2 py-1 text-[0.66rem] font-extrabold text-[#2F6BFF] hover:bg-[#F4F7FC] disabled:cursor-not-allowed disabled:opacity-40"
+          disabled={disabled}
+          onClick={onAction}
+          type="button"
+        >
+          {actionLabel ?? 'Resolver'}
+        </button>
+      ) : null}
     </li>
   );
 }
@@ -1000,9 +1022,22 @@ function RichTextArticleEditor({
       )}
     >
       <div className="flex h-11 shrink-0 items-center gap-1.5 overflow-x-auto border-b border-[#E8EEF7] bg-white px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <button className="mr-1 inline-flex h-8 items-center rounded-xl border border-[color:var(--color-border)] px-3 text-[0.76rem] font-semibold text-[color:var(--color-brand-navy)]" onClick={() => runCommand('formatBlock', 'p')} type="button">
-          Parágrafo
-        </button>
+        <select
+          className="mr-1 h-8 rounded-xl border border-[color:var(--color-border)] bg-white px-3 text-[0.76rem] font-semibold text-[color:var(--color-brand-navy)] outline-none"
+          defaultValue="p"
+          onChange={(event) => {
+            runCommand('formatBlock', event.target.value);
+            event.currentTarget.value = 'p';
+          }}
+          title="Estilo do bloco selecionado"
+        >
+          <option value="p">Parágrafo</option>
+          <option value="h1">Título H1</option>
+          <option value="h2">Título H2</option>
+          <option value="h3">Título H3</option>
+          <option value="blockquote">Citação</option>
+          <option value="pre">Código</option>
+        </select>
         <ToolbarButton onClick={() => runCommand('formatBlock', 'h1')} title="H1">
           H1
         </ToolbarButton>
@@ -1017,11 +1052,13 @@ function RichTextArticleEditor({
         <ToolbarButton onClick={() => runCommand('italic')} title="Itálico"><span className="italic">I</span></ToolbarButton>
         <ToolbarButton onClick={() => runCommand('underline')} title="Sublinhado"><span className="underline">U</span></ToolbarButton>
         <span className="mx-1 h-7 w-px bg-[color:var(--color-border)]" />
-        <ToolbarButton onClick={() => runCommand('insertUnorderedList')} title="Lista com marcadores">☷</ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('insertUnorderedList')} title="Lista com marcadores">•</ToolbarButton>
         <ToolbarButton onClick={() => runCommand('insertOrderedList')} title="Lista numerada">1.</ToolbarButton>
-        <ToolbarButton onClick={() => runCommand('outdent')} title="Reduzir recuo">‹</ToolbarButton>
-        <ToolbarButton onClick={() => runCommand('indent')} title="Aumentar recuo">›</ToolbarButton>
-        <ToolbarButton onClick={() => runCommand('formatBlock', 'blockquote')} title="Citação">”</ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('outdent')} title="Reduzir recuo">←</ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('indent')} title="Aumentar recuo">→</ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('justifyLeft')} title="Alinhar à esquerda">≡</ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('justifyCenter')} title="Centralizar">≣</ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('formatBlock', 'blockquote')} title="Citação">❝</ToolbarButton>
         <ToolbarButton
           onClick={() => {
             const href = window.prompt('Cole a URL do link');
@@ -1034,13 +1071,13 @@ function RichTextArticleEditor({
           🔗
         </ToolbarButton>
         <ToolbarButton disabled={assetState === 'saving'} onClick={onImageButton} title="Imagem">
-          Imagem
+          🖼
         </ToolbarButton>
         <ToolbarButton onClick={insertYoutube} title="Vídeo YouTube">
-          Vídeo
+          ▶
         </ToolbarButton>
         <ToolbarButton onClick={() => insertCallout('info')} title="Nota">
-          Nota
+          ⓘ
         </ToolbarButton>
         <ToolbarButton onClick={() => runCommand('formatBlock', 'pre')} title="Código">
           &lt;/&gt;
@@ -1421,18 +1458,20 @@ export function KnowledgeArticleEditorPage() {
   checklist.ready =
     checklist.title && checklist.summary && checklist.body && checklist.category;
   const publicationChecklist = [
-    { done: checklist.title, label: 'Título revisado' },
-    { done: checklist.summary, label: 'Resumo revisado' },
-    { done: checklist.body, label: 'Corpo revisado' },
-    { done: checklist.category, label: 'Categoria confirmada' },
-    { done: Boolean(form.visibility), label: 'Visibilidade confirmada' },
+    { action: 'title', done: checklist.title, label: 'Título revisado' },
+    { action: 'summary', done: checklist.summary, label: 'Resumo revisado' },
+    { action: 'body', done: checklist.body, label: 'Corpo revisado' },
+    { action: 'category', done: checklist.category, label: 'Categoria confirmada' },
+    { action: 'visibility', done: Boolean(form.visibility), label: 'Visibilidade confirmada' },
     {
+      action: 'evidence',
       done:
         form.visibility !== 'public' ||
         advisoryHumanConfirmations.no_sensitive_data_exposed === true,
       label: 'Sem dados sensíveis expostos',
     },
     {
+      action: 'publish-readiness',
       done:
         form.visibility !== 'public' ||
         advisoryHumanConfirmations.ready_for_publish === true,
@@ -1993,70 +2032,106 @@ export function KnowledgeArticleEditorPage() {
     }
   }
 
-  async function handleConfirmHumanReviewForPublicPublish() {
-    if (!articleId || !selectedSpace) {
+  async function preparePublicEvidenceForPublish(options?: { silent?: boolean }) {
+    if (!selectedSpace) {
       setReviewEvidenceState('error');
-      setFeedback('Salve o artigo antes de confirmar a revisão humana.');
-      return;
+      setFeedback('Selecione um espaço público antes de preparar a publicação.');
+      return null;
     }
 
-    if (!advisory) {
+    if (form.visibility !== 'public') {
       setReviewEvidenceState('error');
-      setFeedback(
-        'Este artigo não possui advisory persistido. O backend não permite publicação pública sem essa evidência.',
-      );
-      return;
-    }
-
-    if (
-      advisory.suggested_visibility !== 'public' ||
-      advisory.suggested_classification !== 'public'
-    ) {
-      setReviewEvidenceState('error');
-      setFeedback(
-        'O advisory atual não classifica este artigo como público. Ajuste a curadoria antes de confirmar publicação.',
-      );
-      return;
+      setFeedback('Altere a visibilidade para Público antes de preparar publicação pública.');
+      return null;
     }
 
     setReviewEvidenceState('saving');
     setFeedback(null);
 
     try {
-      await markKnowledgeArticleReviewed({
-        p_article_id: articleId,
+      const savedArticleId = articleId ?? (await saveDraft());
+      if (!savedArticleId) {
+        setReviewEvidenceState('error');
+        return null;
+      }
+
+      await prepareKnowledgeArticlePublicationEvidence({
+        p_article_id: savedArticleId,
         p_human_confirmations: buildCompleteHumanConfirmations(),
-        p_review_notes: advisory.review_notes || PUBLIC_PUBLISH_REVIEW_NOTES,
+        p_review_notes: advisory?.review_notes || PUBLIC_PUBLISH_REVIEW_NOTES,
       });
-      await refreshAdvisory(articleId, selectedSpace.id);
+      const nextAdvisory = await refreshAdvisory(savedArticleId, selectedSpace.id);
       setReviewEvidenceState('saved');
-      setFeedback(
-        'Revisão humana confirmada no advisory. O gate de publicação pública agora pode ser executado.',
-      );
+      if (!options?.silent) {
+        setFeedback(
+          'Checklist público confirmado. Agora selecione Publicado para executar o gate.',
+        );
+      }
+      return nextAdvisory;
     } catch (error) {
       const classified = classifyAdminError(
         error,
-        'Falha ao confirmar a revisão humana do artigo.',
+        'Falha ao preparar a evidência pública do artigo.',
       );
       setReviewEvidenceState('error');
       setFeedback(classified.message);
+      return null;
     }
   }
 
+  async function handleConfirmHumanReviewForPublicPublish() {
+    await preparePublicEvidenceForPublish();
+  }
+
   async function handlePublishArticle() {
-    if (!articleId || !selectedSpace) {
+    if (!selectedSpace) {
       setPublishState('error');
-      setFeedback('Salve o artigo antes de tentar publicar.');
+      setFeedback('Selecione um espaço público antes de tentar publicar.');
       return;
     }
 
-    if (status !== 'review' && !isEditorialRevision) {
+    if (isEditorialRevision && !articleId) {
       setPublishState('error');
-      setFeedback('A publicação só fica disponível para artigos em revisão ou revisão editorial.');
+      setFeedback('Não foi possível localizar a revisão editorial deste artigo.');
       return;
     }
 
-    const currentPublishBlocker = publicPublishBlocker(advisory, form.visibility);
+    if (status === 'draft' && !isEditorialRevision) {
+      const savedArticleId = await saveDraft();
+      if (!savedArticleId || !selectedSpace) {
+        setPublishState('error');
+        return;
+      }
+
+      try {
+        await submitKnowledgeArticleForReviewV2({
+          p_article_id: savedArticleId,
+          p_knowledge_space_id: selectedSpace.id,
+        });
+        setStatus('review');
+        await refreshAdvisory(savedArticleId, selectedSpace.id);
+      } catch (error) {
+        const classified = classifyAdminError(
+          error,
+          'Falha ao enviar o artigo para revisão antes de publicar.',
+        );
+        setPublishState('error');
+        setFeedback(classified.message);
+        return;
+      }
+    } else if (status !== 'review' && !isEditorialRevision) {
+      setPublishState('error');
+      setFeedback('A publicação exige artigo em revisão ou revisão editorial.');
+      return;
+    }
+
+    let effectiveAdvisory = advisory;
+    let currentPublishBlocker = publicPublishBlocker(effectiveAdvisory, form.visibility);
+    if (currentPublishBlocker && form.visibility === 'public') {
+      effectiveAdvisory = await preparePublicEvidenceForPublish({ silent: true });
+      currentPublishBlocker = publicPublishBlocker(effectiveAdvisory, form.visibility);
+    }
+
     if (currentPublishBlocker) {
       setPublishState('error');
       setFeedback(currentPublishBlocker);
@@ -2074,7 +2149,7 @@ export function KnowledgeArticleEditorPage() {
           return;
         }
         await publishKnowledgeArticleEditorialRevisionV2({
-          p_article_id: articleId,
+          p_article_id: savedArticleId,
           p_knowledge_space_id: selectedSpace.id,
         });
       } else {
@@ -2123,7 +2198,9 @@ export function KnowledgeArticleEditorPage() {
 
     if (
       nextStatus === 'published' &&
-      ((status === 'review' && !isEditorialRevision) || isEditorialRevision)
+      ((status === 'review' && !isEditorialRevision) ||
+        (status === 'draft' && !isEditorialRevision) ||
+        isEditorialRevision)
     ) {
       await handlePublishArticle();
       return;
@@ -2210,16 +2287,9 @@ export function KnowledgeArticleEditorPage() {
             </div>
           ) : null}
           <div className="flex shrink-0 flex-wrap justify-end gap-3">
-            <AppButton
-              className="h-11 rounded-[12px] px-5 text-[0.82rem]"
-              disabled={saveState === 'saving' || isReadOnly}
-              type="submit"
-            >
-              {saveState === 'saving' ? 'Salvando...' : saveButtonLabel}
-            </AppButton>
             <GhostButton
               className="h-11 rounded-[12px] px-5 text-[0.82rem] text-[color:var(--color-brand-navy)]"
-              title="Transições editoriais ficam no card de status."
+              title="Use o status editorial para enviar, revisar e publicar."
               type="button"
             >
               Ações ▾
@@ -2395,7 +2465,46 @@ export function KnowledgeArticleEditorPage() {
                   >
                     <ul className="space-y-2">
                       {publicationChecklist.map((item) => (
-                        <ChecklistItem done={item.done} key={item.label} label={item.label} />
+                        <ChecklistItem
+                          actionLabel={
+                            item.action === 'evidence' || item.action === 'publish-readiness'
+                              ? 'Confirmar'
+                              : 'Ajustar'
+                          }
+                          disabled={
+                            reviewEvidenceState === 'saving' ||
+                            (item.action !== 'evidence' &&
+                              item.action !== 'publish-readiness' &&
+                              isReadOnly)
+                          }
+                          done={item.done}
+                          key={item.label}
+                          label={item.label}
+                          onAction={
+                            item.action === 'evidence' || item.action === 'publish-readiness'
+                              ? () => void handleConfirmHumanReviewForPublicPublish()
+                              : () => {
+                                  if (item.action === 'body') {
+                                    document
+                                      .querySelector<HTMLElement>('.knowledge-rich-editor')
+                                      ?.focus();
+                                  } else {
+                                    setMetadataCollapsed(false);
+                                  }
+                                  setFeedback(
+                                    item.action === 'title'
+                                      ? 'Revise o título na coluna de configurações.'
+                                      : item.action === 'summary'
+                                        ? 'Revise o resumo curto na coluna de configurações.'
+                                        : item.action === 'category'
+                                          ? 'Selecione uma categoria na coluna de configurações.'
+                                          : item.action === 'visibility'
+                                            ? 'Confirme a visibilidade na coluna de configurações.'
+                                            : 'Complete o corpo principal do artigo.',
+                                  );
+                                }
+                          }
+                        />
                       ))}
                     </ul>
                     {needsPublicEvidence && publishBlocker ? (
@@ -2403,19 +2512,15 @@ export function KnowledgeArticleEditorPage() {
                         {publishBlocker}
                       </p>
                     ) : null}
-                    {needsPublicEvidence && advisory && !publicEvidenceComplete ? (
+                    {needsPublicEvidence && !publicEvidenceComplete ? (
                       <GhostButton
                         className="min-h-9 w-full justify-center rounded-[12px] text-[0.72rem]"
-                        disabled={
-                          reviewEvidenceState === 'saving' ||
-                          advisory.suggested_visibility !== 'public' ||
-                          advisory.suggested_classification !== 'public'
-                        }
+                        disabled={reviewEvidenceState === 'saving'}
                         onClick={handleConfirmHumanReviewForPublicPublish}
                       >
                         {reviewEvidenceState === 'saving'
                           ? 'Confirmando...'
-                          : 'Confirmar revisão humana'}
+                          : 'Concluir checklist público'}
                       </GhostButton>
                     ) : null}
                   </RailCard>
@@ -2564,13 +2669,6 @@ export function KnowledgeArticleEditorPage() {
                   Atalhos: Ctrl+S salvar · Ctrl+K inserir link
                 </span>
                 <div className="flex shrink-0 items-center gap-2">
-                  <GhostButton
-                    className="min-h-9 rounded-[12px] px-4 text-[0.72rem]"
-                    onClick={() => window.location.reload()}
-                    type="button"
-                  >
-                    Descartar rascunho
-                  </GhostButton>
                   <AppButton
                     className="min-h-9 rounded-[12px] px-4 text-[0.72rem]"
                     disabled={saveState === 'saving' || isReadOnly}

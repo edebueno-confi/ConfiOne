@@ -36,7 +36,7 @@ exception
 end;
 $$;
 
-select plan(18);
+select plan(23);
 
 select is(
   (
@@ -78,11 +78,12 @@ select is(
       and gr.specific_schema = 'public'
       and gr.routine_name in (
         'rpc_admin_mark_knowledge_article_reviewed',
+        'rpc_admin_prepare_knowledge_article_publication_evidence_v1',
         'rpc_admin_update_knowledge_article_review_status'
       )
   ),
-  2,
-  'authenticated recebe EXECUTE nas duas RPCs de advisory editorial'
+  3,
+  'authenticated recebe EXECUTE nas RPCs de advisory editorial'
 );
 
 select is(
@@ -151,6 +152,9 @@ values
     timezone('utc', now())
   )
 on conflict (id) do nothing;
+
+delete from public.user_global_roles
+where role = 'platform_admin';
 
 select is(
   app_private.bootstrap_first_platform_admin(
@@ -373,6 +377,82 @@ select is(
   ),
   'draft',
   'advisory nao altera automaticamente o status do artigo'
+);
+
+select throws_ok(
+  $$
+    select public.rpc_admin_prepare_knowledge_article_publication_evidence_v1(
+      '72000000-0000-4000-8000-000000000002'::uuid,
+      '{}'::jsonb,
+      null
+    )
+  $$,
+  'P0001',
+  'knowledge article must be public before preparing public evidence',
+  'RPC de evidencia publica recusa artigo que nao esta publico'
+);
+
+reset role;
+reset request.jwt.claim.role;
+reset request.jwt.claim.sub;
+
+update public.knowledge_articles
+set visibility = 'public'
+where id = '72000000-0000-4000-8000-000000000001'::uuid;
+
+set local role authenticated;
+set local request.jwt.claim.role = 'authenticated';
+set local request.jwt.claim.sub = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+select is(
+  (
+    public.rpc_admin_prepare_knowledge_article_publication_evidence_v1(
+      '72000000-0000-4000-8000-000000000001'::uuid,
+      '{
+        "title_reviewed": true,
+        "summary_reviewed": true,
+        "body_reviewed": true,
+        "category_reviewed": true,
+        "public_visibility_reviewed": true,
+        "no_sensitive_data_exposed": true,
+        "ready_for_review": true,
+        "ready_for_publish": true
+      }'::jsonb,
+      'Publicacao manual confirmada no Admin Knowledge.'
+    )
+  ).review_status::text,
+  'reviewed',
+  'RPC prepara evidencia publica revisada sem publicar automaticamente'
+);
+
+select is(
+  pg_temp.safe_text(
+    $$select suggested_classification::text || '/' || suggested_visibility::text
+      from public.vw_admin_knowledge_article_review_advisories
+      where article_id = '72000000-0000-4000-8000-000000000001'::uuid$$
+  ),
+  'public/public',
+  'RPC classifica o advisory como publico para o gate editorial'
+);
+
+select is(
+  pg_temp.safe_text(
+    $$select human_confirmations ->> 'ready_for_publish'
+      from public.vw_admin_knowledge_article_review_advisories
+      where article_id = '72000000-0000-4000-8000-000000000001'::uuid$$
+  ),
+  'true',
+  'RPC persiste checklist publico completo'
+);
+
+select is(
+  pg_temp.safe_text(
+    $$select status::text
+      from public.vw_admin_knowledge_article_detail_v2
+      where id = '72000000-0000-4000-8000-000000000001'::uuid$$
+  ),
+  'draft',
+  'preparar evidencia publica nao publica o artigo'
 );
 
 reset role;

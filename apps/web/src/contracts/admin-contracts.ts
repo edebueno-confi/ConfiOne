@@ -1037,6 +1037,15 @@ export interface RpcAdminMarkKnowledgeArticleReviewedPayload {
 export type RpcAdminMarkKnowledgeArticleReviewedResponse =
   AdminKnowledgeArticleReviewAdvisoryRecordRow;
 
+export interface RpcAdminPrepareKnowledgeArticlePublicationEvidencePayload {
+  p_article_id: Uuid;
+  p_human_confirmations?: KnowledgeReviewHumanConfirmations | null;
+  p_review_notes?: string | null;
+}
+
+export type RpcAdminPrepareKnowledgeArticlePublicationEvidenceResponse =
+  AdminKnowledgeArticleReviewAdvisoryRecordRow;
+
 export interface RpcAdminUpsertKnowledgeArticleAssetPayload {
   p_article_id: Uuid;
   p_knowledge_space_id: Uuid;

@@ -60,6 +60,8 @@ import type {
   RpcAdminLinkKnowledgeArticleToTicketResponse,
   RpcAdminMarkKnowledgeArticleReviewedPayload,
   RpcAdminMarkKnowledgeArticleReviewedResponse,
+  RpcAdminPrepareKnowledgeArticlePublicationEvidencePayload,
+  RpcAdminPrepareKnowledgeArticlePublicationEvidenceResponse,
   RpcAdminPublishKnowledgeArticleV2Response,
   RpcAdminPublishKnowledgeArticleEditorialRevisionV2Response,
   RpcAdminSubmitKnowledgeArticleForReviewV2Response,
@@ -1077,6 +1079,22 @@ export async function markKnowledgeArticleReviewed(
   }
 
   return data as RpcAdminMarkKnowledgeArticleReviewedResponse;
+}
+
+export async function prepareKnowledgeArticlePublicationEvidence(
+  payload: RpcAdminPrepareKnowledgeArticlePublicationEvidencePayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_admin_prepare_knowledge_article_publication_evidence_v1',
+    payload,
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao preparar evidência editorial pública.');
+  }
+
+  return data as RpcAdminPrepareKnowledgeArticlePublicationEvidenceResponse;
 }
 
 export type {
