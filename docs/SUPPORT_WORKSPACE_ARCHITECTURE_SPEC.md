@@ -15,6 +15,16 @@ Definir a arquitetura do futuro Support Workspace do Genius Support OS como ambi
 - explicitar as lacunas antes de abrir qualquer fase de UI
 - evitar dashboard pesado e manter foco em fila, detalhe e contexto operacional
 
+## Estado atual de runtime em 2026-05-16
+- `/support/tickets/:ticketId` materializa o Ticket Workspace operacional em tres zonas apos a sidebar global: fila viva, conversa central dominante e rail direito ou drawer lateral substituto.
+- A timeline central do ticket e a unica superficie visual de historico operacional; o card redundante de `Atividade recente` foi removido do rail direito.
+- O rail direito padrao ficou restrito a `Resumo do ticket`, `Ações rápidas` e `SLA interno`, reforcando a separacao entre contexto operacional e historico da tratativa.
+- O drawer lateral continua substituindo integralmente o rail direito quando uma acao rapida e aberta; nao existe toolbar flutuante, coluna intermediaria nem compressao adicional da conversa alem da largura aprovada do painel.
+- A fila viva agora opera com segmentacao explicita `Abertos | Fechados`, iniciando por padrao em `Abertos`; tickets encerrados continuam acessiveis por filtro, sem poluir a operacao diaria.
+- O split de lifecycle da fila usa apenas status reais ja carregados pela `vw_support_tickets_queue`, sem contrato novo, sem mock e sem view parametrizada adicional.
+- Os status operacionais hoje reutilizados para esse split sao `new`, `triage`, `waiting_customer`, `waiting_support`, `waiting_engineering`, `in_progress`, `resolved`, `closed` e `cancelled`.
+- A UI continua restrita a contratos reais ja materializados para fila, detalhe, timeline, contexto do cliente, classificacao, anexos, knowledge links, handoff tecnico, SLA e acionamentos internos. O drawer `Acionamentos` consome read models/RPCs reais de `internal_actions`; nao le tabela base, nao usa mock e nao altera `ticket.status`.
+
 ## Escopo do Support Workspace
 O Support Workspace deve cobrir:
 - fila interna de tickets
@@ -61,6 +71,7 @@ O Support Workspace deve cobrir:
 ### RPCs ja materializadas
 - `rpc_create_ticket`
 - `rpc_update_ticket_status`
+- `rpc_support_update_ticket_status_v2`
 - `rpc_assign_ticket`
 - `rpc_add_ticket_message`
 - `rpc_add_internal_ticket_note`
@@ -364,6 +375,16 @@ No medio prazo:
 - notas internas nao podem vazar para a camada publica
 - o workspace deve continuar orientado a cliente B2B, nunca a consumidor final
 
+## Status flow vigente no runtime
+- o read model principal `vw_support_ticket_detail` ja projeta `can_update_status`, `can_close`, `can_reopen` e `allowed_next_statuses`
+- a UI deve tratar essas flags como resposta pronta do backend, e nao como sugestao para recalculo local
+- mudanca normal de andamento usa `rpc_support_update_ticket_status_v2`
+- fechamento continua caminho dedicado por `rpc_close_ticket`, apenas quando o ticket estiver elegivel para encerramento
+- reabertura continua caminho dedicado por `rpc_reopen_ticket`, retornando o ticket para `waiting_support`
+- `closed` nao deve ser tratado como opcao comum do seletor de andamento; faz parte do fluxo dedicado de encerramento
+- a matriz canonica de transicao permanece no backend por `app_private.allowed_next_ticket_statuses(...)` e `app_private.ticket_status_transition_allowed(...)`
+- se `allowed_next_statuses` vier vazio, a UX correta e expor indisponibilidade contratual ou ausencia de transicao, nunca liberar lista ampla de status teoricos
+
 ## Sequencia recomendada de fases futuras
 1. criar read models especificos de suporte, se necessario
 2. definir authz explicita do Support Workspace
@@ -378,3 +399,40 @@ No medio prazo:
 - tratar visao 360 do cliente B2B como contexto operacional, nao como CRM
 - deixar KB link, handoff para engenharia e SLA preparados como proximas camadas controladas
 - manter a gramatica visual do dominio de suporte local ao proprio workspace, usando primitives compartilhadas sem copiar o layout do Admin Console
+
+## Internal Actions V1
+- o workspace agora possui um dominio formal de `internal_actions` separado do ticket principal e separado do dominio tecnico de engenharia.
+- esse dominio possui integracao minima no Ticket Workspace para o lado do suporte:
+  - drawer `Acionamentos`
+  - catalogo real de areas acionaveis
+  - criacao de acionamento
+  - lista por ticket
+  - detalhe
+  - timeline interna
+  - aceite de retorno
+  - pedido de complemento
+  - fechamento
+  - vinculo de evidencia existente quando aplicavel
+- o modelo materializado inclui:
+  - catalogo governado de areas internas
+  - membership explicito por area e tenant
+  - entidade principal de acionamento interno
+  - ledger append-only de updates
+  - vinculo de evidencia apenas por `ticket_attachments`
+  - fila por area e views de suporte
+- decisoes estruturais do V1:
+  - criar acionamento nao altera `ticket.status`
+  - pendencia interna aparece por read model, nao por status publico
+  - cliente nao ve o subfluxo
+  - suporte continua owner do ticket
+  - bridge com `engineering_work_items` continua fora deste lote
+- consequencia arquitetural:
+  - o Support Workspace passa a ter dois trilhos internos coexistindo:
+    - handoff tecnico especializado de engenharia
+    - acionamento interno generico multiarea
+  - a UI precisa manter essa separacao sem misturar lifecycle de ticket com lifecycle do subfluxo interno
+- limites ainda abertos:
+  - nao existe workspace/fila da area acionada nesta V1
+  - nao existe Admin Console para governar `internal_area_memberships`
+  - nao existe bridge automatica com `engineering_work_items`
+  - estados de retorno pendente exigem massa QA estavel para validacao visual recorrente

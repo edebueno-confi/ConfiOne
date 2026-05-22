@@ -136,6 +136,22 @@
 - frontend continua sem calcular SLA, sem criar timer e sem inferir breach
 - pausa por status, feriados aplicados ao calculo e notificacao externa continuam fora do contrato ate decisao explicita
 
+## Contrato vigente de status do Support Workspace
+- o fluxo operacional atual do ticket usa `rpc_support_update_ticket_status_v2` para mudancas normais de andamento
+- fechamento e reabertura continuam fluxos dedicados e nao devem ser reimplementados no dropdown geral:
+  - `rpc_close_ticket`
+  - `rpc_reopen_ticket`
+- o read model `vw_support_ticket_detail` ja projeta as flags que o frontend deve respeitar:
+  - `can_update_status`
+  - `can_close`
+  - `can_reopen`
+  - `allowed_next_statuses`
+- o frontend deve consumir essas flags como verdade pronta do backend, sem recalcular a matriz de transicao e sem liberar fallback amplo quando `allowed_next_statuses` vier vazio
+- a matriz canonica continua no backend por `app_private.allowed_next_ticket_statuses(...)` e pelo gate `app_private.ticket_status_transition_allowed(...)`
+- o seletor de status normal nao deve oferecer `closed`; encerramento continua sendo CTA dedicado quando `can_close = true`
+- reabertura continua sendo CTA dedicado quando `can_reopen = true`, levando o ticket de volta para `waiting_support`
+- tickets com transicao indisponivel devem aparecer como estado honestamente bloqueado, e nao como lista ampla de status teoricos
+
 ## Boundary materializado na Fase 8.12
 - a usabilidade operacional do suporte foi revisada sem backend novo
 - copies visiveis de estados indisponiveis passaram a evitar termos de implementacao como backend/contrato quando isso nao ajuda o operador
@@ -351,6 +367,37 @@
 - o ticket workspace passa a mostrar ultimo retorno tecnico e link para abrir a demanda no Engineering Workspace quando existir permissao e rota.
 - suporte pode acompanhar o vinculo tecnico do ticket, mas nao altera work item sem papel tecnico autorizado.
 - o workspace de engenharia nao substitui backlog de produto, sprint, kanban, chat interno ou sistema externo de notificacao.
+
+## Acionamentos internos da fase 8.27
+- o backend agora possui um dominio formal `internal_actions` para subfluxos internos multiárea vinculados ao ticket.
+- o suporte continua dono do ticket principal e da comunicação com o cliente.
+- a área acionada:
+  - não assume o ticket;
+  - trabalha no próprio subfluxo;
+  - comenta, muda status interno, vincula evidência já existente e devolve retorno ao suporte.
+- o catálogo inicial governado de áreas inclui:
+  - engenharia
+  - financeiro
+  - customer success
+  - produto
+  - operações
+  - outra área interna
+- memberships de área são explícitos por tenant; o sistema não usa role global nova para representar área.
+- o V1 não muda `ticket.status` quando um acionamento interno é criado; a pendência interna aparece por read model dedicado.
+- toda mutação relevante gera:
+  - `internal_action_update`
+  - `ticket_event` interno
+  - `audit_log`
+- cliente nunca vê esse subfluxo no portal B2B.
+- o Support Workspace agora possui integração mínima no drawer `Acionamentos`:
+  - lê áreas acionáveis por `rpc_support_list_internal_action_target_areas`
+  - cria acionamento por `rpc_support_create_internal_action`
+  - lista por `vw_support_ticket_internal_actions`
+  - abre detalhe por `vw_support_internal_action_detail`
+  - exibe timeline interna por `vw_support_internal_action_timeline`
+  - permite ao suporte aceitar retorno, pedir complemento, fechar e vincular evidência existente quando o estado/contrato permitir
+- a área acionada ainda não possui workspace/fila operacional nesta V1; engenharia continua com o fluxo técnico especializado existente em `engineering_work_items`, sem bridge automática com `internal_actions`.
+- criar ou operar acionamento interno não altera `ticket.status`; pendência interna deve ser exibida por read model.
 
 ## Evidencias seguras da fase 8.9
 - `/support/tickets/:ticketId` agora pode enviar evidencias reais por fluxo governado.

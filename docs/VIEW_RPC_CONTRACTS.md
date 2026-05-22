@@ -7,6 +7,21 @@
 
 ## Estado executável atual
 
+Fase Knowledge Assets V1:
+- A Central de Ajuda possui fundacao governada para imagens de artigos:
+  - `knowledge_article_assets`
+  - bucket privado `knowledge-assets`
+- Leitura administrativa de assets por artigo:
+  - `vw_admin_knowledge_article_assets`
+- Leitura publica filtrada de assets aprovados:
+  - `vw_public_knowledge_article_assets`
+- Mutacoes administrativas:
+  - `rpc_admin_unpublish_knowledge_article_v2`
+  - `rpc_admin_upsert_knowledge_article_asset_v1`
+  - `rpc_admin_update_knowledge_article_asset_review_v1`
+- O frontend publico renderiza apenas placeholders governados `knowledge-asset:<id>` resolvidos pela view publica de assets; URL externa arbitraria no markdown nao e renderizada como imagem.
+- `anon` nao recebe SELECT direto em `knowledge_article_assets`; `authenticated` administra via views/RPCs e policies de storage.
+
 Fase 1.2:
 - RPCs administrativas de tenancy e identidade continuam vigentes.
 
@@ -1146,6 +1161,11 @@ Fase 8.2:
   - `vw_support_ticket_intake_tenants`
   - `vw_support_ticket_intake_contacts`
   - `vw_support_ticket_attachments`
+  - `vw_support_internal_action_target_areas`
+  - `vw_support_ticket_internal_actions`
+  - `vw_support_internal_action_detail`
+  - `vw_support_internal_action_timeline`
+  - `vw_internal_action_queue_by_area`
   - `vw_support_ticket_engineering_links`
   - `vw_engineering_work_items_queue`
   - `vw_engineering_work_item_detail`
@@ -1193,6 +1213,16 @@ Fase 8.2:
   - `rpc_support_create_ticket_attachment_upload`
   - `rpc_support_register_ticket_attachment`
   - `rpc_support_get_ticket_attachment_download_url`
+  - `rpc_support_list_internal_action_target_areas`
+  - `rpc_support_create_internal_action`
+  - `rpc_internal_action_assign`
+  - `rpc_internal_action_add_comment`
+  - `rpc_internal_action_update_status`
+  - `rpc_internal_action_add_evidence_link`
+  - `rpc_internal_action_return_to_support`
+  - `rpc_support_accept_internal_action_return`
+  - `rpc_support_request_internal_action_followup`
+  - `rpc_support_close_internal_action`
   - `rpc_support_create_engineering_work_item_from_ticket`
   - `rpc_support_link_ticket_to_engineering_work_item`
   - `rpc_engineering_assign_work_item`
@@ -1561,6 +1591,41 @@ Fase 8.2:
 - o seletor mostra apenas operadores ativos e atribuiveis pelo contrato do backend
 - `Atribuir a mim` e `Desatribuir` continuam usando somente `rpc_assign_ticket`
 - o `user_id` tecnico permanece apenas como fallback recolhido para excecao operacional
+
+## Fase 8.27 - Internal Actions Backend Foundation V1
+
+### Leitura materializada no backend
+- `vw_support_internal_action_target_areas`
+- `vw_support_ticket_internal_actions`
+- `vw_support_internal_action_detail`
+- `vw_support_internal_action_timeline`
+- `vw_internal_action_queue_by_area`
+
+### Escrita materializada no backend
+- `rpc_support_list_internal_action_target_areas`
+- `rpc_support_create_internal_action`
+- `rpc_internal_action_assign`
+- `rpc_internal_action_add_comment`
+- `rpc_internal_action_update_status`
+- `rpc_internal_action_add_evidence_link`
+- `rpc_internal_action_return_to_support`
+- `rpc_support_accept_internal_action_return`
+- `rpc_support_request_internal_action_followup`
+- `rpc_support_close_internal_action`
+
+### Regras de consumo
+- `internal_actions` nasce como domínio novo, neutro e ticket-cêntrico; não substitui `engineering_work_items` neste corte.
+- O suporte continua owner do ticket principal; a área acionada atua só no subfluxo interno.
+- O catálogo acionável para o Support Workspace vem de `rpc_support_list_internal_action_target_areas`, que filtra áreas ativas por ticket/tenant acessível ao suporte e não expõe tabela base.
+- Criar, atribuir, comentar, devolver, pedir complemento e fechar acionamento gera ledger append-only, `ticket_event` interno e `audit.audit_logs`.
+- O V1 usa apenas evidências já existentes em `ticket_attachments`; não cria bucket, storage path ou upload próprio.
+- Pendência interna não altera `ticket.status`; a sinalização sai por read model dedicado.
+- As views novas não expõem conversa completa do ticket para a fila da área nem metadata sensível de storage.
+
+### Boundary mantido
+- Cliente/portal não lê nem escreve `internal_actions`.
+- O frontend do Support Workspace já possui integração mínima no drawer `Acionamentos` para o lado do suporte: catálogo real de áreas, criação, lista, detalhe, timeline interna, aceite de retorno, pedido de complemento, fechamento e vínculo de evidência existente. Não existe workspace/fila da área acionada nesta fase.
+- Não existe bridge com Engenharia neste lote; `engineering_work_items` segue íntegro e separado.
 
 ## Próximos contratos planejados
 - Atualização posterior - entitlement arquivado no portal cliente:
