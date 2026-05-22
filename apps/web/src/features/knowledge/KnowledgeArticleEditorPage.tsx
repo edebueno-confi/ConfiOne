@@ -583,14 +583,14 @@ function VisualArticleEditor({
   return (
     <div
       className={cx(
-        'min-h-full px-8 py-6 transition focus-within:bg-[rgba(234,242,255,0.05)]',
+        'min-h-full px-7 py-5 transition focus-within:bg-[rgba(234,242,255,0.05)]',
         assetState === 'saving' && 'bg-[rgba(234,242,255,0.2)]',
       )}
       onDragOver={(event) => event.preventDefault()}
       onDrop={onDrop}
       onPaste={onPaste}
     >
-      <div className="mx-auto max-w-[920px] space-y-5">
+      <div className="max-w-[1120px] space-y-4">
         {blocks.map((block, index) => {
           const key = `${block.type}-${index}`;
 
@@ -1601,7 +1601,7 @@ export function KnowledgeArticleEditorPage() {
                   ✓ {saveState === 'saved' ? 'Rascunho salvo agora' : 'Alterações salvas automaticamente'}
                 </span>
               </div>
-              <p className="mt-1 text-sm leading-6 text-[color:var(--color-muted)]">
+              <p className="mt-0.5 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
                 {isEditMode
                   ? 'Atualize conteúdo da base de conhecimento com clareza e impacto.'
                   : 'Crie conteúdo para a Central de Ajuda com clareza e impacto.'}
@@ -1652,46 +1652,7 @@ export function KnowledgeArticleEditorPage() {
         ) : null}
 
         <div className="grid min-h-0 flex-1 gap-4 overflow-hidden xl:grid-cols-[minmax(0,1fr)_320px]">
-          <main className="flex min-h-0 flex-col gap-4 overflow-hidden">
-            <section className="grid shrink-0 gap-4 rounded-[22px] border border-[color:var(--color-border)] bg-white p-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)_minmax(0,1fr)]">
-              <label className="grid min-w-0 gap-2">
-                <FormFieldLabel required>Título do artigo</FormFieldLabel>
-                <TextInput
-                  maxLength={TITLE_LIMIT + 20}
-                  disabled={isReadOnly}
-                  onChange={handleTitleChange}
-                  placeholder="Ex.: Como configurar sellers permitidos"
-                  value={form.title}
-                />
-                <CharacterCounter limit={TITLE_LIMIT} value={form.title} />
-              </label>
-
-              <label className="grid min-w-0 gap-2">
-                <FormFieldLabel required>Slug</FormFieldLabel>
-                <TextInput
-                  maxLength={SLUG_LIMIT + 20}
-                  disabled={isReadOnly}
-                  onChange={handleSlugChange}
-                  placeholder="configurar-sellers-permitidos"
-                  value={form.slug}
-                />
-                <CharacterCounter limit={SLUG_LIMIT} value={form.slug} />
-              </label>
-
-              <label className="grid min-w-0 gap-2">
-                <FormFieldLabel required>Resumo curto</FormFieldLabel>
-                <TextareaInput
-                  className="min-h-[46px] rounded-2xl py-3"
-                  disabled={isReadOnly}
-                  maxLength={SUMMARY_LIMIT + 40}
-                  onChange={(event) => updateForm({ summary: event.target.value })}
-                  placeholder="Explique em uma frase o que o artigo resolve."
-                  value={form.summary}
-                />
-                <CharacterCounter limit={SUMMARY_LIMIT} value={form.summary} />
-              </label>
-            </section>
-
+          <main className="flex min-h-0 flex-col overflow-hidden">
             <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[22px] border border-[color:var(--color-border)] bg-white">
               <input
                 accept="image/png,image/jpeg,image/webp,image/gif"
@@ -1707,6 +1668,20 @@ export function KnowledgeArticleEditorPage() {
                 ref={fileInputRef}
                 type="file"
               />
+              <div className="grid shrink-0 gap-1 border-b border-[color:var(--color-border)] px-5 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <FormFieldLabel required>Título do artigo</FormFieldLabel>
+                  <CharacterCounter limit={TITLE_LIMIT} value={form.title} />
+                </div>
+                <input
+                  className="h-10 w-full border-0 bg-transparent p-0 text-[1.38rem] font-extrabold leading-tight tracking-[-0.025em] text-[color:var(--color-brand-navy)] outline-none placeholder:text-[color:var(--color-muted)] focus:ring-0"
+                  disabled={isReadOnly}
+                  maxLength={TITLE_LIMIT + 20}
+                  onChange={handleTitleChange}
+                  placeholder="Título claro do artigo"
+                  value={form.title}
+                />
+              </div>
               <div className="flex h-11 shrink-0 items-center gap-1.5 overflow-hidden border-b border-[color:var(--color-border)] bg-white px-3">
                 <button
                   className="mr-1 inline-flex h-8 items-center gap-1.5 rounded-xl border border-[color:var(--color-border)] px-3 text-[0.76rem] font-semibold text-[color:var(--color-brand-navy)] hover:bg-[color:var(--color-surface)]"
@@ -1827,6 +1802,27 @@ export function KnowledgeArticleEditorPage() {
           <aside className="min-h-0 overflow-auto pr-1">
             <div className="space-y-3">
               <RailCard title="Configurações editoriais">
+                <Field label="Slug *">
+                  <TextInput
+                    disabled={isReadOnly}
+                    maxLength={SLUG_LIMIT + 20}
+                    onChange={handleSlugChange}
+                    placeholder="slug-do-artigo"
+                    value={form.slug}
+                  />
+                  <CharacterCounter limit={SLUG_LIMIT} value={form.slug} />
+                </Field>
+                <Field label="Resumo curto *">
+                  <TextareaInput
+                    className="min-h-[72px] rounded-2xl py-3"
+                    disabled={isReadOnly}
+                    maxLength={SUMMARY_LIMIT + 40}
+                    onChange={(event) => updateForm({ summary: event.target.value })}
+                    placeholder="Explique em uma frase o que o artigo resolve."
+                    value={form.summary}
+                  />
+                  <CharacterCounter limit={SUMMARY_LIMIT} value={form.summary} />
+                </Field>
                 <Field label="Categoria *">
                   <SelectInput
                     disabled={isReadOnly}
