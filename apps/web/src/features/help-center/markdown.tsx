@@ -17,7 +17,16 @@ export interface MarkdownAsset {
 }
 
 interface Block {
-  type: 'heading' | 'paragraph' | 'list' | 'code' | 'quote' | 'rule' | 'image';
+  type:
+    | 'heading'
+    | 'paragraph'
+    | 'list'
+    | 'code'
+    | 'quote'
+    | 'rule'
+    | 'image'
+    | 'callout'
+    | 'youtube';
   level?: 1 | 2 | 3 | 4 | 5 | 6;
   text?: string;
   items?: string[];
@@ -26,6 +35,8 @@ interface Block {
   assetId?: string;
   alt?: string;
   imageSize?: 'small' | 'medium' | 'large' | 'full';
+  tone?: 'info' | 'warning' | 'success';
+  videoId?: string;
 }
 
 function parseImageAlt(value: string) {
@@ -58,6 +69,10 @@ function imageSizeClass(size?: Block['imageSize']) {
 
 function isSafeHref(value: string) {
   return /^(https?:\/\/|mailto:)/i.test(value);
+}
+
+function isValidYouTubeId(value: string) {
+  return /^[A-Za-z0-9_-]{6,20}$/.test(value);
 }
 
 function parseInline(text: string): InlinePart[] {
@@ -163,6 +178,32 @@ function parseMarkdown(source: string) {
       continue;
     }
 
+    const calloutMatch = /^:::callout\s+(info|warning|success)\s*$/i.exec(trimmed);
+    if (calloutMatch) {
+      const calloutLines: string[] = [];
+      index += 1;
+      while (index < lines.length && lines[index].trim() !== ':::') {
+        calloutLines.push(lines[index]);
+        index += 1;
+      }
+      if (index < lines.length) {
+        index += 1;
+      }
+      blocks.push({
+        type: 'callout',
+        lines: calloutLines,
+        tone: calloutMatch[1].toLowerCase() as Block['tone'],
+      });
+      continue;
+    }
+
+    const youtubeMatch = /^::youtube\s+([A-Za-z0-9_-]{6,20})\s*$/.exec(trimmed);
+    if (youtubeMatch && isValidYouTubeId(youtubeMatch[1])) {
+      blocks.push({ type: 'youtube', videoId: youtubeMatch[1] });
+      index += 1;
+      continue;
+    }
+
     if (/^[-*]\s+/.test(trimmed) || /^\d+[.)]\s+/.test(trimmed)) {
       const items: string[] = [];
       const ordered = /^\d+[.)]\s+/.test(trimmed);
@@ -181,6 +222,8 @@ function parseMarkdown(source: string) {
       if (
         !candidate ||
         candidate.startsWith('```') ||
+        /^:::callout\s+(info|warning|success)\s*$/i.test(candidate) ||
+        /^::youtube\s+([A-Za-z0-9_-]{6,20})\s*$/.test(candidate) ||
         /^(#{1,6})\s+/.test(candidate) ||
         /^!\[([^\]]*)\]\((knowledge-asset:[^)]+)\)$/.test(candidate) ||
         candidate.startsWith('> ') ||
@@ -321,6 +364,65 @@ export function MarkdownDocument({
             >
               {renderInline(block.text ?? '')}
             </p>
+          );
+        }
+
+        if (block.type === 'callout') {
+          const tone = block.tone ?? 'info';
+          const toneClass =
+            tone === 'warning'
+              ? 'border-amber-300 bg-amber-50 text-amber-900'
+              : tone === 'success'
+                ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                : 'border-blue-300 bg-blue-50 text-blue-950';
+          const iconClass =
+            tone === 'warning'
+              ? 'bg-amber-500 text-white'
+              : tone === 'success'
+                ? 'bg-emerald-500 text-white'
+                : 'bg-[color:var(--help-link)] text-white';
+          const title =
+            tone === 'warning' ? 'Atenção' : tone === 'success' ? 'Sucesso' : 'Importante';
+
+          return (
+            <aside
+              key={key}
+              className={`grid max-w-[78ch] grid-cols-[24px_minmax(0,1fr)] gap-3 rounded-[18px] border px-4 py-3 ${toneClass}`}
+            >
+              <span className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${iconClass}`}>
+                {tone === 'warning' ? '!' : tone === 'success' ? '✓' : 'i'}
+              </span>
+              <div className="space-y-1">
+                <p className="text-sm font-extrabold">{title}</p>
+                {(block.lines?.length ? block.lines : ['']).map((line, lineIndex) => (
+                  <p key={`${key}-${lineIndex}`} className="text-sm leading-6">
+                    {renderInline(line)}
+                  </p>
+                ))}
+              </div>
+            </aside>
+          );
+        }
+
+        if (block.type === 'youtube' && block.videoId) {
+          return (
+            <figure
+              key={key}
+              className="max-w-[680px] overflow-hidden rounded-[22px] border border-[rgba(20,31,71,0.12)] bg-[#090f2d] shadow-[0_18px_42px_rgba(20,31,71,0.12)]"
+            >
+              <div className="aspect-video w-full">
+                <iframe
+                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  className="h-full w-full"
+                  loading="lazy"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  sandbox="allow-scripts allow-same-origin allow-presentation"
+                  src={`https://www.youtube-nocookie.com/embed/${block.videoId}`}
+                  title="Vídeo incorporado do YouTube"
+                />
+              </div>
+            </figure>
           );
         }
 

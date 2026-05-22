@@ -392,7 +392,41 @@ type VisualEditorBlock =
   | { type: 'list'; ordered: boolean; items: string[] }
   | { type: 'quote'; text: string }
   | { type: 'code'; text: string }
-  | { type: 'image'; assetId: string; alt: string; size: VisualImageSize };
+  | { type: 'image'; assetId: string; alt: string; size: VisualImageSize }
+  | { type: 'callout'; tone: 'info' | 'warning' | 'success'; text: string }
+  | { type: 'youtube'; videoId: string };
+
+function extractYouTubeVideoId(value: string) {
+  const trimmed = value.trim();
+  if (/^[A-Za-z0-9_-]{6,20}$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  try {
+    const url = new URL(trimmed);
+    const host = url.hostname.replace(/^www\./, '');
+    if (host === 'youtu.be') {
+      const id = url.pathname.replace(/^\//, '').split('/')[0];
+      return /^[A-Za-z0-9_-]{6,20}$/.test(id) ? id : null;
+    }
+
+    if (
+      host === 'youtube.com' ||
+      host === 'm.youtube.com' ||
+      host === 'youtube-nocookie.com'
+    ) {
+      const watchId = url.searchParams.get('v');
+      const embedMatch = /\/embed\/([A-Za-z0-9_-]{6,20})/.exec(url.pathname);
+      const shortMatch = /\/shorts\/([A-Za-z0-9_-]{6,20})/.exec(url.pathname);
+      const id = watchId ?? embedMatch?.[1] ?? shortMatch?.[1] ?? '';
+      return /^[A-Za-z0-9_-]{6,20}$/.test(id) ? id : null;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
 
 function parseVisualImageAlt(value: string) {
   const sizeMatch = /\s*\|size=(small|medium|large|full)\s*$/i.exec(value);
@@ -464,6 +498,32 @@ function parseVisualBlocks(source: string): VisualEditorBlock[] {
       continue;
     }
 
+    const calloutMatch = /^:::callout\s+(info|warning|success)\s*$/i.exec(trimmed);
+    if (calloutMatch) {
+      const calloutLines: string[] = [];
+      index += 1;
+      while (index < lines.length && (lines[index] ?? '').trim() !== ':::') {
+        calloutLines.push(lines[index] ?? '');
+        index += 1;
+      }
+      if (index < lines.length) {
+        index += 1;
+      }
+      blocks.push({
+        type: 'callout',
+        tone: calloutMatch[1].toLowerCase() as 'info' | 'warning' | 'success',
+        text: calloutLines.join('\n'),
+      });
+      continue;
+    }
+
+    const youtubeMatch = /^::youtube\s+([A-Za-z0-9_-]{6,20})\s*$/.exec(trimmed);
+    if (youtubeMatch) {
+      blocks.push({ type: 'youtube', videoId: youtubeMatch[1] });
+      index += 1;
+      continue;
+    }
+
     if (/^[-*]\s+/.test(trimmed) || /^\d+[.)]\s+/.test(trimmed)) {
       const ordered = /^\d+[.)]\s+/.test(trimmed);
       const pattern = ordered ? /^\d+[.)]\s+/ : /^[-*]\s+/;
@@ -485,6 +545,8 @@ function parseVisualBlocks(source: string): VisualEditorBlock[] {
         /^(#{1,3})\s+/.test(candidate) ||
         candidate.startsWith('> ') ||
         candidate.startsWith('```') ||
+        /^:::callout\s+(info|warning|success)\s*$/i.test(candidate) ||
+        /^::youtube\s+([A-Za-z0-9_-]{6,20})\s*$/.test(candidate) ||
         /^[-*]\s+/.test(candidate) ||
         /^\d+[.)]\s+/.test(candidate)
       ) {
@@ -501,63 +563,183 @@ function parseVisualBlocks(source: string): VisualEditorBlock[] {
   return blocks.length > 0 ? blocks : [{ type: 'heading', level: 1, text: '' }];
 }
 
-function serializeVisualBlocks(blocks: VisualEditorBlock[]) {
-  return blocks
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function isSafeEditorHref(value: string) {
+  return /^(https?:\/\/|mailto:)/i.test(value.trim());
+}
+
+function renderInlineMarkdown(value: string) {
+  const escaped = escapeHtml(value);
+  return escaped
+    .replace(/\[([^\]]+)]\((https?:\/\/[^)]+|mailto:[^)]+)\)/gi, (_match, label, href) => {
+      const safeHref = String(href).trim();
+      return isSafeEditorHref(safeHref)
+        ? `<a href="${escapeHtml(safeHref)}" target="_blank" rel="noreferrer">${label}</a>`
+        : label;
+    })
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/_([^_]+)_/g, '<em>$1</em>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+
+function renderEditorHtmlFromMarkdown(
+  source: string,
+  assets: Record<string, MarkdownAsset>,
+) {
+  if (!source.trim()) {
+    return '';
+  }
+
+  return parseVisualBlocks(source)
     .map((block) => {
       if (block.type === 'heading') {
-        return `${'#'.repeat(block.level)} ${block.text.trim()}`.trim();
+        return `<h${block.level}>${renderInlineMarkdown(block.text)}</h${block.level}>`;
       }
 
       if (block.type === 'paragraph') {
-        return block.text.trim();
-      }
-
-      if (block.type === 'quote') {
-        return block.text
-          .split('\n')
-          .map((line) => `> ${line}`)
-          .join('\n');
-      }
-
-      if (block.type === 'code') {
-        return `\`\`\`text\n${block.text}\n\`\`\``;
+        return `<p>${renderInlineMarkdown(block.text)}</p>`;
       }
 
       if (block.type === 'list') {
-        return block.items
-          .filter((item) => item.trim().length > 0)
-          .map((item, index) => (block.ordered ? `${index + 1}. ${item}` : `- ${item}`))
-          .join('\n');
+        const tag = block.ordered ? 'ol' : 'ul';
+        return `<${tag}>${block.items
+          .map((item) => `<li>${renderInlineMarkdown(item)}</li>`)
+          .join('')}</${tag}>`;
       }
 
-      return `![${block.alt.trim() || 'Imagem do artigo'}|size=${block.size}](knowledge-asset:${block.assetId})`;
+      if (block.type === 'quote') {
+        return `<blockquote>${renderInlineMarkdown(block.text)}</blockquote>`;
+      }
+
+      if (block.type === 'code') {
+        return `<pre><code>${escapeHtml(block.text)}</code></pre>`;
+      }
+
+      if (block.type === 'callout') {
+        return `<aside data-callout-tone="${block.tone}"><strong>${block.tone === 'warning' ? 'Atenção' : block.tone === 'success' ? 'Sucesso' : 'Importante'}</strong><p>${renderInlineMarkdown(block.text)}</p></aside>`;
+      }
+
+      if (block.type === 'youtube') {
+        return `<figure data-youtube-id="${block.videoId}" contenteditable="false"><div class="youtube-card"><span>▶</span><strong>Vídeo YouTube</strong><small>youtube-nocookie.com/embed/${block.videoId}</small></div></figure>`;
+      }
+
+      const asset = assets[block.assetId];
+      const src = asset?.signed_url ? escapeHtml(asset.signed_url) : '';
+      const alt = escapeHtml(asset?.alt_text ?? block.alt ?? 'Imagem do artigo');
+      const caption = escapeHtml(block.alt || asset?.caption || '');
+      return `<figure draggable="true" data-asset-id="${block.assetId}" data-size="${block.size}" contenteditable="false">${src ? `<img src="${src}" alt="${alt}" loading="lazy" />` : '<div class="image-missing">Imagem indisponível no editor</div>'}<figcaption>${caption}</figcaption></figure>`;
     })
+    .join('');
+}
+
+function inlineNodeToMarkdown(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return node.textContent ?? '';
+  }
+
+  if (!(node instanceof HTMLElement)) {
+    return '';
+  }
+
+  const content = Array.from(node.childNodes).map(inlineNodeToMarkdown).join('');
+  const tag = node.tagName.toLowerCase();
+
+  if (tag === 'strong' || tag === 'b') {
+    return content.trim() ? `**${content}**` : '';
+  }
+
+  if (tag === 'em' || tag === 'i') {
+    return content.trim() ? `_${content}_` : '';
+  }
+
+  if (tag === 'code') {
+    return content.trim() ? `\`${content}\`` : '';
+  }
+
+  if (tag === 'a') {
+    const href = node.getAttribute('href') ?? '';
+    return href && isSafeEditorHref(href) ? `[${content}](${href})` : content;
+  }
+
+  return content;
+}
+
+function blockElementToMarkdown(element: HTMLElement): string {
+  const tag = element.tagName.toLowerCase();
+
+  if (/^h[1-3]$/.test(tag)) {
+    return `${'#'.repeat(Number(tag.slice(1)))} ${inlineNodeToMarkdown(element).trim()}`;
+  }
+
+  if (tag === 'p' || tag === 'div') {
+    return inlineNodeToMarkdown(element).trim();
+  }
+
+  if (tag === 'blockquote') {
+    return inlineNodeToMarkdown(element)
+      .split('\n')
+      .map((line) => `> ${line.trim()}`)
+      .join('\n');
+  }
+
+  if (tag === 'pre') {
+    return `\`\`\`text\n${element.textContent ?? ''}\n\`\`\``;
+  }
+
+  if (tag === 'ul' || tag === 'ol') {
+    return Array.from(element.querySelectorAll(':scope > li'))
+      .map((item, index) => {
+        const marker = tag === 'ol' ? `${index + 1}.` : '-';
+        return `${marker} ${inlineNodeToMarkdown(item).trim()}`;
+      })
+      .join('\n');
+  }
+
+  if (tag === 'aside' && element.dataset.calloutTone) {
+    const tone = element.dataset.calloutTone;
+    const text = Array.from(element.querySelectorAll('p'))
+      .map((item) => inlineNodeToMarkdown(item).trim())
+      .filter(Boolean)
+      .join('\n');
+    return `:::callout ${tone}\n${text}\n:::`;
+  }
+
+  if (tag === 'figure' && element.dataset.youtubeId) {
+    return `::youtube ${element.dataset.youtubeId}`;
+  }
+
+  if (tag === 'figure' && element.dataset.assetId) {
+    const assetId = element.dataset.assetId;
+    const size = (element.dataset.size ?? 'large') as VisualImageSize;
+    const caption = element.querySelector('figcaption')?.textContent?.trim() || 'Imagem do artigo';
+    return `![${caption}|size=${size}](knowledge-asset:${assetId})`;
+  }
+
+  return inlineNodeToMarkdown(element).trim();
+}
+
+function editorHtmlToMarkdown(root: HTMLElement) {
+  return Array.from(root.children)
+    .map((child) => (child instanceof HTMLElement ? blockElementToMarkdown(child) : ''))
     .filter((block) => block.trim().length > 0)
     .join('\n\n');
 }
 
-function visualImageSizeClass(size: VisualImageSize) {
-  if (size === 'small') {
-    return 'max-w-[360px]';
-  }
-
-  if (size === 'medium') {
-    return 'max-w-[560px]';
-  }
-
-  if (size === 'full') {
-    return 'max-w-full';
-  }
-
-  return 'max-w-[760px]';
-}
-
-function VisualArticleEditor({
+function RichTextArticleEditor({
   assets,
   assetState,
   bodyMd,
   isReadOnly,
   onChange,
+  onRegisterMarkdownInserter,
   onDrop,
   onImageButton,
   onPaste,
@@ -567,208 +749,446 @@ function VisualArticleEditor({
   bodyMd: string;
   isReadOnly: boolean;
   onChange: (nextBodyMd: string) => void;
+  onRegisterMarkdownInserter: (inserter: ((markdown: string) => string | null) | null) => void;
   onDrop: (event: DragEvent<HTMLElement>) => void;
   onImageButton: () => void;
   onPaste: (event: ClipboardEvent<HTMLElement>) => void;
 }) {
-  const [selectedImageKey, setSelectedImageKey] = useState<string | null>(null);
-  const blocks = useMemo(() => parseVisualBlocks(bodyMd), [bodyMd]);
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const savedRangeRef = useRef<Range | null>(null);
+  const draggedFigureRef = useRef<HTMLElement | null>(null);
+  const [selectedFigure, setSelectedFigure] = useState<HTMLElement | null>(null);
+  const lastAppliedBodyRef = useRef<string | null>(null);
 
-  function updateBlock(index: number, nextBlock: VisualEditorBlock) {
-    const nextBlocks = [...blocks];
-    nextBlocks[index] = nextBlock;
-    onChange(serializeVisualBlocks(nextBlocks));
+  function emitChange() {
+    const editor = editorRef.current;
+    if (!editor) {
+      return null;
+    }
+    const nextBodyMd = editorHtmlToMarkdown(editor);
+    onChange(nextBodyMd);
+    return nextBodyMd;
   }
+
+  function rememberSelection() {
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    if (!editor || !selection || selection.rangeCount === 0) {
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    if (editor.contains(range.commonAncestorContainer)) {
+      savedRangeRef.current = range.cloneRange();
+    }
+  }
+
+  function restoreSelection() {
+    const selection = window.getSelection();
+    if (!selection || !savedRangeRef.current) {
+      editorRef.current?.focus();
+      return;
+    }
+
+    selection.removeAllRanges();
+    selection.addRange(savedRangeRef.current);
+  }
+
+  function insertHtmlAtCursor(html: string) {
+    const editor = editorRef.current;
+    if (!editor) {
+      return null;
+    }
+
+    editor.focus();
+    restoreSelection();
+    const selection = window.getSelection();
+    const range =
+      selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : document.createRange();
+    if (!selection?.rangeCount) {
+      range.selectNodeContents(editor);
+      range.collapse(false);
+    }
+
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    const fragment = template.content;
+    const lastNode = fragment.lastChild;
+    range.deleteContents();
+    range.insertNode(fragment);
+
+    if (lastNode) {
+      range.setStartAfter(lastNode);
+      range.collapse(true);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+      savedRangeRef.current = range.cloneRange();
+    }
+
+    return emitChange();
+  }
+
+  function insertMarkdownAtCursor(markdown: string) {
+    return insertHtmlAtCursor(renderEditorHtmlFromMarkdown(markdown, assets));
+  }
+
+  function runCommand(command: string, value?: string) {
+    if (isReadOnly) {
+      return;
+    }
+
+    restoreSelection();
+    document.execCommand(command, false, value);
+    rememberSelection();
+    emitChange();
+  }
+
+  function setImageSize(size: VisualImageSize) {
+    if (!selectedFigure) {
+      return;
+    }
+    selectedFigure.dataset.size = size;
+    selectedFigure.classList.remove('image-small', 'image-medium', 'image-large', 'image-full');
+    selectedFigure.classList.add(`image-${size}`);
+    emitChange();
+  }
+
+  function removeSelectedImage() {
+    if (!selectedFigure) {
+      return;
+    }
+    selectedFigure.remove();
+    setSelectedFigure(null);
+    emitChange();
+  }
+
+  function insertCallout(tone: 'info' | 'warning' | 'success') {
+    insertHtmlAtCursor(
+      `<aside data-callout-tone="${tone}"><strong>${tone === 'warning' ? 'Atenção' : tone === 'success' ? 'Sucesso' : 'Importante'}</strong><p>Escreva a observação do artigo.</p></aside>`,
+    );
+  }
+
+  function insertYoutube() {
+    const value = window.prompt('Cole uma URL do YouTube ou youtu.be');
+    if (!value) {
+      return;
+    }
+    const videoId = extractYouTubeVideoId(value);
+    if (!videoId) {
+      return;
+    }
+    insertHtmlAtCursor(
+      `<figure data-youtube-id="${videoId}" contenteditable="false"><div class="youtube-card"><span>▶</span><strong>Vídeo YouTube</strong><small>youtube-nocookie.com/embed/${videoId}</small></div></figure>`,
+    );
+  }
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || lastAppliedBodyRef.current === bodyMd) {
+      return;
+    }
+
+    const isFocused = document.activeElement === editor || editor.contains(document.activeElement);
+    if (isFocused) {
+      return;
+    }
+
+    editor.innerHTML = renderEditorHtmlFromMarkdown(bodyMd, assets);
+    lastAppliedBodyRef.current = bodyMd;
+  }, [assets, bodyMd]);
+
+  useEffect(() => {
+    onRegisterMarkdownInserter(insertMarkdownAtCursor);
+    return () => onRegisterMarkdownInserter(null);
+  });
 
   return (
     <div
       className={cx(
-        'min-h-full px-7 py-5 transition focus-within:bg-[rgba(234,242,255,0.05)]',
+        'relative flex min-h-0 flex-1 flex-col transition focus-within:bg-[rgba(234,242,255,0.05)]',
         assetState === 'saving' && 'bg-[rgba(234,242,255,0.2)]',
       )}
-      onDragOver={(event) => event.preventDefault()}
-      onDrop={onDrop}
-      onPaste={onPaste}
     >
-      <div className="max-w-[1120px] space-y-4">
-        {blocks.map((block, index) => {
-          const key = `${block.type}-${index}`;
+      <div className="flex h-12 shrink-0 items-center gap-1.5 overflow-x-auto border-b border-[color:var(--color-border)] bg-white px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <button className="mr-1 inline-flex h-8 items-center rounded-xl border border-[color:var(--color-border)] px-3 text-[0.76rem] font-semibold text-[color:var(--color-brand-navy)]" onClick={() => runCommand('formatBlock', 'p')} type="button">
+          Parágrafo
+        </button>
+        <ToolbarButton onClick={() => runCommand('formatBlock', 'h1')} title="H1">
+          H1
+        </ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('formatBlock', 'h2')} title="H2">
+          H2
+        </ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('formatBlock', 'h3')} title="H3">
+          H3
+        </ToolbarButton>
+        <span className="mx-1 h-7 w-px bg-[color:var(--color-border)]" />
+        <ToolbarButton onClick={() => runCommand('bold')} title="Negrito">B</ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('italic')} title="Itálico"><span className="italic">I</span></ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('underline')} title="Sublinhado"><span className="underline">U</span></ToolbarButton>
+        <span className="mx-1 h-7 w-px bg-[color:var(--color-border)]" />
+        <ToolbarButton onClick={() => runCommand('insertUnorderedList')} title="Lista">≡</ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('insertOrderedList')} title="Lista numerada">1.</ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('formatBlock', 'blockquote')} title="Citação">”</ToolbarButton>
+        <ToolbarButton
+          onClick={() => {
+            const href = window.prompt('Cole a URL do link');
+            if (href && isSafeEditorHref(href)) {
+              runCommand('createLink', href);
+            }
+          }}
+          title="Link"
+        >
+          🔗
+        </ToolbarButton>
+        <ToolbarButton disabled={assetState === 'saving'} onClick={onImageButton} title="Imagem">
+          Imagem
+        </ToolbarButton>
+        <ToolbarButton onClick={insertYoutube} title="Vídeo YouTube">
+          Vídeo
+        </ToolbarButton>
+        <ToolbarButton onClick={() => insertCallout('info')} title="Nota">
+          Nota
+        </ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('formatBlock', 'pre')} title="Código">
+          &lt;/&gt;
+        </ToolbarButton>
+        <span className="ml-auto" />
+        <ToolbarButton onClick={() => runCommand('undo')} title="Desfazer">↶</ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('redo')} title="Refazer">↷</ToolbarButton>
+      </div>
 
-          if (block.type === 'heading') {
-            const headingClass =
-              block.level === 1
-                ? 'text-[1.75rem] font-extrabold leading-tight tracking-[-0.03em]'
-                : block.level === 2
-                  ? 'text-[1.22rem] font-extrabold leading-snug'
-                  : 'text-[1.05rem] font-bold leading-snug';
-            return (
-              <input
-                className={cx(
-                  'w-full border-0 bg-transparent p-0 text-[color:var(--color-brand-navy)] outline-none placeholder:text-[color:var(--color-muted)] focus:ring-0',
-                  headingClass,
-                )}
-                key={key}
-                onChange={(event) =>
-                  updateBlock(index, { ...block, text: event.target.value })
-                }
-                placeholder={block.level === 1 ? 'Título principal do artigo' : 'Título da seção'}
-                readOnly={isReadOnly}
-                value={block.text}
-              />
-            );
-          }
-
-          if (block.type === 'paragraph') {
-            return (
-              <textarea
-                className="min-h-[46px] w-full resize-none border-0 bg-transparent p-0 text-[0.92rem] leading-7 text-[#24324F] outline-none placeholder:text-[color:var(--color-muted)] focus:ring-0"
-                key={key}
-                onChange={(event) =>
-                  updateBlock(index, { ...block, text: event.target.value })
-                }
-                placeholder="Escreva o parágrafo do artigo..."
-                readOnly={isReadOnly}
-                value={block.text}
-              />
-            );
-          }
-
-          if (block.type === 'list') {
-            return (
-              <div className="space-y-2" key={key}>
-                {block.items.map((item, itemIndex) => (
-                  <div className="flex items-start gap-3" key={`${key}-${itemIndex}`}>
-                    <span className="mt-1 text-sm font-bold text-[color:var(--color-brand-navy)]">
-                      {block.ordered ? `${itemIndex + 1}.` : '•'}
-                    </span>
-                    <input
-                      className="w-full border-0 bg-transparent p-0 text-[0.95rem] leading-7 text-[#24324F] outline-none focus:ring-0"
-                      onChange={(event) => {
-                        const nextItems = [...block.items];
-                        nextItems[itemIndex] = event.target.value;
-                        updateBlock(index, { ...block, items: nextItems });
-                      }}
-                      readOnly={isReadOnly}
-                      value={item}
-                    />
-                  </div>
-                ))}
-              </div>
-            );
-          }
-
-          if (block.type === 'quote') {
-            return (
-              <div
-                className="grid grid-cols-[22px_minmax(0,1fr)] gap-3 rounded-2xl border border-[rgba(47,107,255,0.25)] bg-[rgba(47,107,255,0.055)] px-4 py-3"
-                key={key}
-              >
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-[color:var(--color-brand-blue)] text-[0.68rem] font-bold text-white">
-                  i
-                </span>
-                <div>
-                  <p className="text-[0.74rem] font-extrabold text-[color:var(--color-brand-navy)]">
-                    Importante
-                  </p>
-                  <textarea
-                    className="mt-1 min-h-[34px] w-full resize-none border-0 bg-transparent p-0 text-sm leading-6 text-[#24324F] outline-none focus:ring-0"
-                    onChange={(event) =>
-                      updateBlock(index, { ...block, text: event.target.value })
-                    }
-                    readOnly={isReadOnly}
-                    value={block.text}
-                  />
-                </div>
-              </div>
-            );
-          }
-
-          if (block.type === 'image') {
-            const asset = assets[block.assetId];
-            const imageKey = `${block.assetId}-${index}`;
-            const isSelected = selectedImageKey === imageKey;
-            return (
-              <figure
-                className={cx(
-                  'relative rounded-[20px] transition',
-                  isSelected && 'ring-2 ring-[color:var(--color-brand-blue)]',
-                  visualImageSizeClass(block.size),
-                )}
-                key={key}
-                onClick={() => setSelectedImageKey(imageKey)}
-              >
-                {isSelected ? (
-                  <div className="absolute left-1/2 top-0 z-10 flex -translate-x-1/2 -translate-y-[110%] items-center gap-2 rounded-2xl border border-[color:var(--color-border)] bg-white px-2 py-2 shadow-[0_18px_42px_rgba(20,31,71,0.14)]">
-                    {[
-                      ['small', 'Pequena'],
-                      ['medium', 'Média'],
-                      ['large', 'Grande'],
-                      ['full', 'Largura total'],
-                    ].map(([size, label]) => (
-                      <button
-                        className={cx(
-                          'rounded-xl px-3 py-2 text-[0.72rem] font-bold',
-                          block.size === size
-                            ? 'bg-[color:var(--color-brand-blue)] text-white'
-                            : 'text-[color:var(--color-brand-navy)] hover:bg-[color:var(--color-surface)]',
-                        )}
-                        key={size}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          updateBlock(index, { ...block, size: size as VisualImageSize });
-                        }}
-                        type="button"
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-                {asset?.signed_url ? (
-                  <img
-                    alt={asset.alt_text ?? block.alt}
-                    className="h-auto max-h-[520px] w-full rounded-[18px] border border-[color:var(--color-border)] object-contain"
-                    loading="lazy"
-                    src={asset.signed_url}
-                  />
-                ) : (
-                  <div className="rounded-[18px] border border-dashed border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-5 py-8 text-sm text-[color:var(--color-muted)]">
-                    Imagem ainda indisponível no editor. Revise o asset antes de publicar.
-                  </div>
-                )}
-                <input
-                  className="mt-2 w-full border-0 bg-transparent px-1 text-center text-xs italic text-[color:var(--color-muted)] outline-none focus:ring-0"
-                  onChange={(event) =>
-                    updateBlock(index, { ...block, alt: event.target.value })
-                  }
-                  placeholder="Legenda da imagem"
-                  readOnly={isReadOnly}
-                  value={block.alt}
-                />
-              </figure>
-            );
-          }
-
-          return (
-            <textarea
-              className="min-h-[86px] w-full resize-none rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 font-mono text-xs leading-6 text-[#24324F] outline-none focus:ring-0"
-              key={key}
-              onChange={(event) => updateBlock(index, { ...block, text: event.target.value })}
-              readOnly={isReadOnly}
-              value={block.text}
-            />
-          );
-        })}
-        {blocks.length === 0 ? (
+      {selectedFigure ? (
+        <div className="absolute left-1/2 top-[58px] z-20 flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-[color:var(--color-border)] bg-white px-2 py-2 shadow-[0_18px_42px_rgba(20,31,71,0.14)]">
+          {(['small', 'medium', 'large', 'full'] as const).map((size) => (
+            <button
+              className={cx(
+                'rounded-xl px-3 py-2 text-[0.72rem] font-bold',
+                selectedFigure.dataset.size === size
+                  ? 'bg-[color:var(--color-brand-blue)] text-white'
+                  : 'text-[color:var(--color-brand-navy)] hover:bg-[color:var(--color-surface)]',
+              )}
+              key={size}
+              onClick={() => setImageSize(size)}
+              type="button"
+            >
+              {size === 'small' ? 'Pequena' : size === 'medium' ? 'Média' : size === 'large' ? 'Grande' : 'Largura total'}
+            </button>
+          ))}
           <button
-            className="w-full rounded-2xl border border-dashed border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-5 py-10 text-sm font-semibold text-[color:var(--color-muted)] hover:bg-[rgba(47,107,255,0.05)]"
-            disabled={isReadOnly}
-            onClick={onImageButton}
+            className="rounded-xl px-3 py-2 text-[0.72rem] font-bold text-red-600 hover:bg-red-50"
+            onClick={removeSelectedImage}
             type="button"
           >
-            Escreva o artigo ou cole um print aqui para começar.
+            Remover imagem
           </button>
-        ) : null}
+        </div>
+      ) : null}
+
+      <div className="min-h-0 flex-1 overflow-auto bg-white">
+        <style>
+          {`
+            .knowledge-rich-editor:empty::before {
+              color: #98A3B8;
+              content: 'Comece a escrever o artigo aqui. Cole prints no ponto exato da instrução.';
+              font-size: 15px;
+            }
+            .knowledge-rich-editor h1 {
+              color: #162443;
+              font-size: 30px;
+              font-weight: 800;
+              letter-spacing: -0.03em;
+              line-height: 1.18;
+              margin: 0 0 18px;
+            }
+            .knowledge-rich-editor h2 {
+              color: #162443;
+              font-size: 22px;
+              font-weight: 800;
+              line-height: 1.25;
+              margin: 28px 0 10px;
+            }
+            .knowledge-rich-editor h3 {
+              color: #162443;
+              font-size: 18px;
+              font-weight: 750;
+              line-height: 1.35;
+              margin: 22px 0 8px;
+            }
+            .knowledge-rich-editor p {
+              color: #24324F;
+              font-size: 15px;
+              line-height: 1.72;
+              margin: 0 0 16px;
+            }
+            .knowledge-rich-editor ul,
+            .knowledge-rich-editor ol {
+              color: #24324F;
+              font-size: 15px;
+              line-height: 1.7;
+              margin: 0 0 18px 24px;
+              padding: 0;
+            }
+            .knowledge-rich-editor li {
+              margin: 5px 0;
+            }
+            .knowledge-rich-editor blockquote,
+            .knowledge-rich-editor aside[data-callout-tone] {
+              border: 1px solid rgba(47, 107, 255, 0.25);
+              border-radius: 18px;
+              background: rgba(47, 107, 255, 0.06);
+              color: #24324F;
+              margin: 22px 0;
+              padding: 14px 16px;
+            }
+            .knowledge-rich-editor aside[data-callout-tone='warning'] {
+              border-color: #F5B83D;
+              background: #FFF4D9;
+            }
+            .knowledge-rich-editor aside[data-callout-tone='success'] {
+              border-color: #22C55E;
+              background: #EAF9F0;
+            }
+            .knowledge-rich-editor aside[data-callout-tone] strong {
+              color: #162443;
+              display: block;
+              font-size: 13px;
+              margin-bottom: 6px;
+            }
+            .knowledge-rich-editor a {
+              color: #2F6BFF;
+              font-weight: 700;
+              text-decoration: underline;
+              text-underline-offset: 4px;
+            }
+            .knowledge-rich-editor pre {
+              background: #0b153c;
+              border-radius: 18px;
+              color: #f8fafc;
+              font-size: 13px;
+              line-height: 1.65;
+              margin: 22px 0;
+              overflow: auto;
+              padding: 16px;
+            }
+            .knowledge-rich-editor figure[data-asset-id] {
+              margin: 24px 0;
+              position: relative;
+            }
+            .knowledge-rich-editor figure[data-asset-id][data-size='small'] {
+              max-width: 360px;
+            }
+            .knowledge-rich-editor figure[data-asset-id][data-size='medium'] {
+              max-width: 560px;
+            }
+            .knowledge-rich-editor figure[data-asset-id][data-size='large'] {
+              max-width: 760px;
+            }
+            .knowledge-rich-editor figure[data-asset-id][data-size='full'] {
+              max-width: 100%;
+            }
+            .knowledge-rich-editor figure[data-asset-id] img,
+            .knowledge-rich-editor .image-missing {
+              border: 1px solid #DCE4F2;
+              border-radius: 18px;
+              display: block;
+              max-height: 560px;
+              object-fit: contain;
+              width: 100%;
+            }
+            .knowledge-rich-editor figure[data-asset-id]:focus,
+            .knowledge-rich-editor figure[data-asset-id]:has(img:hover) {
+              outline: 2px solid #2F6BFF;
+              outline-offset: 3px;
+            }
+            .knowledge-rich-editor figcaption {
+              color: #6B7892;
+              font-size: 12px;
+              font-style: italic;
+              margin-top: 8px;
+              text-align: center;
+            }
+            .knowledge-rich-editor figure[data-youtube-id] {
+              margin: 24px 0;
+              max-width: 760px;
+            }
+            .knowledge-rich-editor .youtube-card {
+              align-items: center;
+              background: #090f2d;
+              border-radius: 20px;
+              color: white;
+              display: grid;
+              gap: 8px;
+              min-height: 220px;
+              padding: 24px;
+              place-items: center;
+              text-align: center;
+            }
+          `}
+        </style>
+        <div
+          className="knowledge-rich-editor mx-auto min-h-full max-w-[920px] px-10 py-8 text-[#24324F] outline-none"
+          contentEditable={!isReadOnly}
+          onBlur={rememberSelection}
+          onClick={(event) => {
+            const figure = (event.target as HTMLElement).closest('figure[data-asset-id]');
+            setSelectedFigure(figure as HTMLElement | null);
+            rememberSelection();
+          }}
+          onDragOver={(event) => event.preventDefault()}
+          onDragStart={(event) => {
+            const figure = (event.target as HTMLElement).closest('figure[data-asset-id]');
+            if (figure instanceof HTMLElement) {
+              draggedFigureRef.current = figure;
+              event.dataTransfer.effectAllowed = 'move';
+              event.dataTransfer.setData('text/plain', 'knowledge-asset-move');
+            }
+          }}
+          onDrop={(event) => {
+            if (event.dataTransfer.files.length > 0) {
+              onDrop(event);
+              return;
+            }
+
+            const dragged = draggedFigureRef.current;
+            if (!dragged) {
+              return;
+            }
+
+            event.preventDefault();
+            const range =
+              document.caretRangeFromPoint?.(event.clientX, event.clientY) ?? savedRangeRef.current;
+            if (range) {
+              const clone = dragged.cloneNode(true);
+              dragged.remove();
+              range.insertNode(clone);
+              draggedFigureRef.current = null;
+              emitChange();
+            }
+          }}
+          onInput={emitChange}
+          onKeyUp={rememberSelection}
+          onMouseUp={rememberSelection}
+          onPaste={(event) => {
+            const hasImage =
+              Array.from(event.clipboardData.files).some((file) => file.type.startsWith('image/')) ||
+              Array.from(event.clipboardData.items).some(
+                (item) => item.kind === 'file' && item.type.startsWith('image/'),
+              );
+            if (hasImage) {
+              onPaste(event);
+              return;
+            }
+
+            event.preventDefault();
+            restoreSelection();
+            document.execCommand('insertText', false, event.clipboardData.getData('text/plain'));
+            emitChange();
+          }}
+          ref={editorRef}
+          role="textbox"
+          suppressContentEditableWarning
+        />
       </div>
     </div>
   );
@@ -798,8 +1218,12 @@ export function KnowledgeArticleEditorPage() {
   const [publishState, setPublishState] = useState<SaveState>('idle');
   const [feedback, setFeedback] = useState<string | null>(null);
   const [slugTouched, setSlugTouched] = useState(false);
+  const [metadataCollapsed, setMetadataCollapsed] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 1500,
+  );
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const editorMarkdownInserterRef = useRef<((markdown: string) => string | null) | null>(null);
   const isEditMode = Boolean(routeArticleId);
 
   const selectedSpace = spaces.find((space) => space.id === selectedSpaceId) ?? null;
@@ -1146,7 +1570,8 @@ export function KnowledgeArticleEditorPage() {
         sourceKind,
       });
       await refreshAssets(savedArticleId);
-      const nextBody = insertSnippet(buildAssetMarkdown(uploadedAsset), '', '');
+      const assetMarkdown = buildAssetMarkdown(uploadedAsset);
+      const nextBody = editorMarkdownInserterRef.current?.(assetMarkdown) ?? insertSnippet(assetMarkdown, '', '');
       await saveDraft({
         allowIncompleteBody: true,
         bodyMd: nextBody,
@@ -1614,15 +2039,24 @@ export function KnowledgeArticleEditorPage() {
             </div>
           ) : null}
           <div className="flex shrink-0 flex-wrap justify-end gap-3">
+            <AppButton
+              className="h-11 rounded-[12px] px-5 text-[0.82rem]"
+              disabled={saveState === 'saving' || isReadOnly}
+              type="submit"
+            >
+              {saveState === 'saving' ? 'Salvando...' : saveButtonLabel}
+            </AppButton>
             <GhostButton
               className="h-11 rounded-[12px] px-5 text-[0.82rem] text-[color:var(--color-brand-navy)]"
               title="Transições editoriais ficam no card de status."
+              type="button"
             >
               Ações ▾
             </GhostButton>
             <GhostButton
               className="h-11 w-11 rounded-full px-0 text-[color:var(--color-brand-blue)]"
               title="Mais opções"
+              type="button"
             >
               ⋮
             </GhostButton>
@@ -1651,7 +2085,261 @@ export function KnowledgeArticleEditorPage() {
           </div>
         ) : null}
 
-        <div className="grid min-h-0 flex-1 gap-4 overflow-hidden xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div
+          className={cx(
+            'grid min-h-0 flex-1 gap-4 overflow-hidden',
+            metadataCollapsed
+              ? 'xl:grid-cols-[64px_minmax(0,1fr)]'
+              : 'xl:grid-cols-[320px_minmax(0,1fr)]',
+          )}
+        >
+          <aside className="min-h-0 overflow-hidden">
+            {metadataCollapsed ? (
+              <div className="flex h-full flex-col items-center gap-3 rounded-[22px] border border-[color:var(--color-border)] bg-white px-2 py-3 shadow-[0_18px_42px_rgba(20,31,71,0.06)]">
+                <button
+                  className="grid h-10 w-10 place-items-center rounded-2xl bg-[color:var(--color-brand-blue)] text-white shadow-[0_12px_28px_rgba(47,107,255,0.24)]"
+                  onClick={() => setMetadataCollapsed(false)}
+                  title="Expandir metadados"
+                  type="button"
+                >
+                  ›
+                </button>
+                {['✎', '✓', '🖼'].map((item) => (
+                  <span
+                    className="grid h-9 w-9 place-items-center rounded-2xl bg-[color:var(--color-surface)] text-[0.86rem] text-[color:var(--color-brand-navy)]"
+                    key={item}
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div className="h-full overflow-auto pr-1">
+                <div className="space-y-3">
+                  <RailCard title="Configurações editoriais">
+                    <div className="flex justify-end">
+                      <button
+                        className="rounded-full px-2 py-1 text-[0.68rem] font-bold text-[color:var(--color-brand-blue)] hover:bg-[color:var(--color-surface)]"
+                        onClick={() => setMetadataCollapsed(true)}
+                        type="button"
+                      >
+                        Recolher
+                      </button>
+                    </div>
+                    <Field label="Título do artigo *">
+                      <TextInput
+                        disabled={isReadOnly}
+                        maxLength={TITLE_LIMIT + 20}
+                        onChange={handleTitleChange}
+                        placeholder="Título claro do artigo"
+                        value={form.title}
+                      />
+                      <CharacterCounter limit={TITLE_LIMIT} value={form.title} />
+                    </Field>
+                    <Field label="Slug *">
+                      <TextInput
+                        disabled={isReadOnly}
+                        maxLength={SLUG_LIMIT + 20}
+                        onChange={handleSlugChange}
+                        placeholder="slug-do-artigo"
+                        value={form.slug}
+                      />
+                      <CharacterCounter limit={SLUG_LIMIT} value={form.slug} />
+                    </Field>
+                    <Field label="Resumo curto *">
+                      <TextareaInput
+                        className="min-h-[108px] rounded-2xl py-3 leading-5"
+                        disabled={isReadOnly}
+                        maxLength={SUMMARY_LIMIT + 40}
+                        onChange={(event) => updateForm({ summary: event.target.value })}
+                        placeholder="Explique em até 160 caracteres o que o artigo resolve."
+                        value={form.summary}
+                      />
+                      <CharacterCounter limit={SUMMARY_LIMIT} value={form.summary} />
+                    </Field>
+                    <Field label="Categoria *">
+                      <SelectInput
+                        disabled={isReadOnly}
+                        onChange={(event) => updateForm({ categoryId: event.target.value })}
+                        value={form.categoryId}
+                      >
+                        <option value="">Selecione uma categoria</option>
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </SelectInput>
+                    </Field>
+                    <Field label="Visibilidade *">
+                      <SelectInput
+                        disabled={isReadOnly}
+                        onChange={(event) =>
+                          updateForm({ visibility: event.target.value as KnowledgeVisibility })
+                        }
+                        value={form.visibility}
+                      >
+                        <option value="internal">Interno</option>
+                        <option value="restricted">Restrito</option>
+                        <option value="public">Público</option>
+                      </SelectInput>
+                    </Field>
+                    <Field label="Espaço público *">
+                      <SelectInput
+                        disabled={isReadOnly}
+                        onChange={(event) => void handleSpaceChange(event.target.value)}
+                        value={selectedSpaceId}
+                      >
+                        {spaces.map((space) => (
+                          <option key={space.id} value={space.id}>
+                            {space.display_name}
+                          </option>
+                        ))}
+                      </SelectInput>
+                    </Field>
+                    <Field label="Status editorial">
+                      <SelectInput
+                        disabled={submitState === 'saving' || publishState === 'saving' || isReadOnly}
+                        onChange={(event) =>
+                          void handleStatusTransition(event.target.value as ArticleEditorStatus)
+                        }
+                        value={status}
+                      >
+                        <option value="draft">Rascunho</option>
+                        <option value="review">Em revisão</option>
+                        <option value="published">Publicado</option>
+                        <option disabled value="archived">
+                          Arquivado
+                        </option>
+                      </SelectInput>
+                      <p className="mt-1 text-[0.68rem] leading-4 text-[color:var(--color-muted)]">
+                        Cada mudança chama RPC governada e respeita o gate editorial.
+                      </p>
+                    </Field>
+                  </RailCard>
+
+                  <RailCard
+                    badge={`${publicationChecklistDone}/${publicationChecklist.length}`}
+                    title="Checklist de publicação"
+                  >
+                    <ul className="space-y-2">
+                      {publicationChecklist.map((item) => (
+                        <ChecklistItem done={item.done} key={item.label} label={item.label} />
+                      ))}
+                    </ul>
+                    {needsPublicEvidence && publishBlocker ? (
+                      <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[0.7rem] leading-5 text-amber-700">
+                        {publishBlocker}
+                      </p>
+                    ) : null}
+                    {needsPublicEvidence && advisory && !publicEvidenceComplete ? (
+                      <GhostButton
+                        className="min-h-9 w-full justify-center rounded-[12px] text-[0.72rem]"
+                        disabled={
+                          reviewEvidenceState === 'saving' ||
+                          advisory.suggested_visibility !== 'public' ||
+                          advisory.suggested_classification !== 'public'
+                        }
+                        onClick={handleConfirmHumanReviewForPublicPublish}
+                      >
+                        {reviewEvidenceState === 'saving'
+                          ? 'Confirmando...'
+                          : 'Confirmar revisão humana'}
+                      </GhostButton>
+                    ) : null}
+                  </RailCard>
+
+                  <RailCard
+                    badge={`${assets.length} ${assets.length === 1 ? 'item' : 'itens'}`}
+                    title="Mídia e anexos"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[0.72rem] text-[color:var(--color-muted)]">
+                        Imagens entram inline no texto.
+                      </span>
+                      <GhostButton
+                        className="min-h-8 rounded-[12px] px-3 text-[0.7rem]"
+                        disabled={isReadOnly || assetState === 'saving'}
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        + Adicionar
+                      </GhostButton>
+                    </div>
+                    {assets.length > 0 ? (
+                      <ul className="space-y-2">
+                        {assets.slice(0, 3).map((asset) => (
+                          <li
+                            className="flex items-center gap-2 rounded-2xl border border-[color:var(--color-border)] bg-white px-2 py-2"
+                            key={asset.id}
+                          >
+                            <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)]">
+                              {asset.signed_url ? (
+                                <img
+                                  alt={asset.alt_text ?? 'Imagem do artigo'}
+                                  className="h-full w-full object-cover"
+                                  loading="lazy"
+                                  src={asset.signed_url}
+                                />
+                              ) : (
+                                <span className="text-xs text-[color:var(--color-muted)]">IMG</span>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-[0.72rem] font-semibold text-[color:var(--color-brand-navy)]">
+                                {asset.source_path?.split('/').pop() ?? asset.detected_mime_type ?? 'Imagem'}
+                              </p>
+                              <p className="text-[0.66rem] text-[color:var(--color-muted)]">
+                                {asset.file_size_bytes
+                                  ? formatFileSize(asset.file_size_bytes)
+                                  : 'tamanho indisponível'}
+                              </p>
+                            </div>
+                            <button
+                              className="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-[color:var(--color-brand-blue)] hover:bg-[color:var(--color-surface)]"
+                              onClick={() => handleInsertAsset(asset.id)}
+                              title="Inserir no corpo"
+                              type="button"
+                            >
+                              ⋮
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="rounded-2xl bg-[color:var(--color-surface)] px-3 py-3 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
+                        Cole ou arraste uma imagem no editor quando o artigo precisar de apoio visual.
+                      </p>
+                    )}
+                  </RailCard>
+
+                  <RailCard title="Informações do artigo">
+                    <dl className="space-y-2 text-[0.72rem] leading-5">
+                      <div>
+                        <dt className="font-extrabold text-[color:var(--color-brand-navy)]">
+                          Última edição
+                        </dt>
+                        <dd className="text-[color:var(--color-muted)]">
+                          {articleDetail?.updated_at
+                            ? new Date(articleDetail.updated_at).toLocaleString('pt-BR')
+                            : 'Ainda não salvo'}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="font-extrabold text-[color:var(--color-brand-navy)]">
+                          Revisão
+                        </dt>
+                        <dd className="text-[color:var(--color-muted)]">
+                          {articleDetail?.current_revision_number
+                            ? `Rev. ${articleDetail.current_revision_number}`
+                            : 'Rascunho inicial'}
+                        </dd>
+                      </div>
+                    </dl>
+                  </RailCard>
+                </div>
+              </div>
+            )}
+          </aside>
           <main className="flex min-h-0 flex-col overflow-hidden">
             <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[22px] border border-[color:var(--color-border)] bg-white">
               <input
@@ -1668,109 +2356,23 @@ export function KnowledgeArticleEditorPage() {
                 ref={fileInputRef}
                 type="file"
               />
-              <div className="grid shrink-0 gap-1 border-b border-[color:var(--color-border)] px-5 py-3">
-                <div className="flex items-center justify-between gap-3">
-                  <FormFieldLabel required>Título do artigo</FormFieldLabel>
-                  <CharacterCounter limit={TITLE_LIMIT} value={form.title} />
-                </div>
-                <input
-                  className="h-10 w-full border-0 bg-transparent p-0 text-[1.38rem] font-extrabold leading-tight tracking-[-0.025em] text-[color:var(--color-brand-navy)] outline-none placeholder:text-[color:var(--color-muted)] focus:ring-0"
-                  disabled={isReadOnly}
-                  maxLength={TITLE_LIMIT + 20}
-                  onChange={handleTitleChange}
-                  placeholder="Título claro do artigo"
-                  value={form.title}
-                />
-              </div>
-              <div className="flex h-11 shrink-0 items-center gap-1.5 overflow-hidden border-b border-[color:var(--color-border)] bg-white px-3">
-                <button
-                  className="mr-1 inline-flex h-8 items-center gap-1.5 rounded-xl border border-[color:var(--color-border)] px-3 text-[0.76rem] font-semibold text-[color:var(--color-brand-navy)] hover:bg-[color:var(--color-surface)]"
-                  onClick={() => insertSnippet('\n\n', '', 'Parágrafo')}
-                  type="button"
-                >
-                  Parágrafo <span className="text-[0.7rem]">⌄</span>
-                </button>
-                <ToolbarButton onClick={() => insertSnippet('\n# ', '', 'Título H1')} title="H1">
-                  H1
-                </ToolbarButton>
-                <ToolbarButton onClick={() => insertSnippet('\n## ', '', 'Título H2')} title="H2">
-                  H2
-                </ToolbarButton>
-                <ToolbarButton onClick={() => insertSnippet('\n### ', '', 'Título H3')} title="H3">
-                  H3
-                </ToolbarButton>
-                <span className="mx-1 h-7 w-px bg-[color:var(--color-border)]" />
-                <ToolbarButton onClick={() => insertSnippet('**', '**')} title="Negrito">
-                  B
-                </ToolbarButton>
-                <ToolbarButton onClick={() => insertSnippet('_', '_')} title="Itálico">
-                  <span className="italic">I</span>
-                </ToolbarButton>
-                <ToolbarButton onClick={() => insertSnippet('<u>', '</u>')} title="Sublinhado">
-                  <span className="underline">U</span>
-                </ToolbarButton>
-                <span className="mx-1 h-7 w-px bg-[color:var(--color-border)]" />
-                <ToolbarButton onClick={() => insertSnippet('\n- ', '', 'item')} title="Lista">
-                  ≡
-                </ToolbarButton>
-                <ToolbarButton onClick={() => insertSnippet('\n1. ', '', 'passo')} title="Lista numerada">
-                  1.
-                </ToolbarButton>
-                <ToolbarButton onClick={() => insertSnippet('\n> ', '', 'observação')} title="Citação">
-                  ”
-                </ToolbarButton>
-                <ToolbarButton
-                  onClick={() => insertSnippet('[', '](https://)', 'texto do link')}
-                  title="Link"
-                >
-                  🔗
-                </ToolbarButton>
-                <ToolbarButton
-                  disabled={assetState === 'saving'}
-                  onClick={() => {
-                    if (!isReadOnly) {
-                      fileInputRef.current?.click();
-                    }
-                  }}
-                  title="Inserir print/imagem no ponto atual do artigo"
-                >
-                  Imagem
-                </ToolbarButton>
-                <ToolbarButton
-                  onClick={() => {
-                    setFeedback('Vídeo YouTube ainda precisa de contrato governado de bloco seguro.');
-                  }}
-                  title="Vídeo YouTube"
-                >
-                  Vídeo
-                </ToolbarButton>
-                <ToolbarButton onClick={() => insertSnippet('\n```text\n', '\n```\n', 'exemplo')} title="Código">
-                  &lt;/&gt;
-                </ToolbarButton>
-                <span className="ml-auto" />
-                <ToolbarButton onClick={() => setFeedback('Desfazer ainda depende de histórico local dedicado.')} title="Desfazer">
-                  ↶
-                </ToolbarButton>
-                <ToolbarButton onClick={() => setFeedback('Refazer ainda depende de histórico local dedicado.')} title="Refazer">
-                  ↷
-                </ToolbarButton>
-              </div>
-              <div className="min-h-0 flex-1 overflow-auto">
-                <VisualArticleEditor
-                  assets={assetMap}
-                  assetState={assetState}
-                  bodyMd={form.bodyMd}
-                  isReadOnly={isReadOnly}
-                  onChange={(nextBodyMd) => updateForm({ bodyMd: nextBodyMd })}
-                  onDrop={handleAssetDrop}
-                  onImageButton={() => {
-                    if (!isReadOnly) {
-                      fileInputRef.current?.click();
-                    }
-                  }}
-                  onPaste={handleBodyPaste}
-                />
-              </div>
+              <RichTextArticleEditor
+                assets={assetMap}
+                assetState={assetState}
+                bodyMd={form.bodyMd}
+                isReadOnly={isReadOnly}
+                onChange={(nextBodyMd) => updateForm({ bodyMd: nextBodyMd })}
+                onDrop={handleAssetDrop}
+                onImageButton={() => {
+                  if (!isReadOnly) {
+                    fileInputRef.current?.click();
+                  }
+                }}
+                onPaste={handleBodyPaste}
+                onRegisterMarkdownInserter={(inserter) => {
+                  editorMarkdownInserterRef.current = inserter;
+                }}
+              />
               <div className="flex shrink-0 items-center justify-between gap-4 border-t border-[color:var(--color-border)] px-5 py-3 text-[0.72rem] text-[color:var(--color-muted)]">
                 <span className="min-w-[220px]">
                   {bodyPlain.split(' ').filter(Boolean).length} palavras ·{' '}
@@ -1798,270 +2400,6 @@ export function KnowledgeArticleEditorPage() {
               </div>
             </section>
           </main>
-
-          <aside className="min-h-0 overflow-auto pr-1">
-            <div className="space-y-3">
-              <RailCard title="Configurações editoriais">
-                <Field label="Slug *">
-                  <TextInput
-                    disabled={isReadOnly}
-                    maxLength={SLUG_LIMIT + 20}
-                    onChange={handleSlugChange}
-                    placeholder="slug-do-artigo"
-                    value={form.slug}
-                  />
-                  <CharacterCounter limit={SLUG_LIMIT} value={form.slug} />
-                </Field>
-                <Field label="Resumo curto *">
-                  <TextareaInput
-                    className="min-h-[72px] rounded-2xl py-3"
-                    disabled={isReadOnly}
-                    maxLength={SUMMARY_LIMIT + 40}
-                    onChange={(event) => updateForm({ summary: event.target.value })}
-                    placeholder="Explique em uma frase o que o artigo resolve."
-                    value={form.summary}
-                  />
-                  <CharacterCounter limit={SUMMARY_LIMIT} value={form.summary} />
-                </Field>
-                <Field label="Categoria *">
-                  <SelectInput
-                    disabled={isReadOnly}
-                    onChange={(event) => updateForm({ categoryId: event.target.value })}
-                    value={form.categoryId}
-                  >
-                    <option value="">Selecione uma categoria</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </SelectInput>
-                </Field>
-                <Field label="Visibilidade *">
-                  <SelectInput
-                    disabled={isReadOnly}
-                    onChange={(event) =>
-                      updateForm({ visibility: event.target.value as KnowledgeVisibility })
-                    }
-                    value={form.visibility}
-                  >
-                    <option value="internal">Interno</option>
-                    <option value="restricted">Restrito</option>
-                    <option value="public">Público</option>
-                  </SelectInput>
-                </Field>
-                <Field label="Espaço público *">
-                  <SelectInput
-                    disabled={isReadOnly}
-                    onChange={(event) => void handleSpaceChange(event.target.value)}
-                    value={selectedSpaceId}
-                  >
-                    {spaces.map((space) => (
-                      <option key={space.id} value={space.id}>
-                        {space.display_name}
-                      </option>
-                    ))}
-                  </SelectInput>
-                </Field>
-                <Field label="Status editorial">
-                  <SelectInput
-                    disabled={submitState === 'saving' || publishState === 'saving' || isReadOnly}
-                    onChange={(event) =>
-                      void handleStatusTransition(event.target.value as ArticleEditorStatus)
-                    }
-                    value={status}
-                  >
-                    <option value="draft">Rascunho</option>
-                    <option value="review">Em revisão</option>
-                    <option value="published">Publicado</option>
-                    <option value="archived">Arquivado</option>
-                  </SelectInput>
-                  <p className="mt-1 text-[0.68rem] leading-4 text-[color:var(--color-muted)]">
-                    O fluxo é controlado por ações governadas, não por edição livre.
-                  </p>
-                </Field>
-              </RailCard>
-
-              <RailCard
-                badge={`${publicationChecklistDone}/${publicationChecklist.length}`}
-                title="Checklist de publicação"
-              >
-                <ul className="space-y-2">
-                  {publicationChecklist.map((item) => (
-                    <ChecklistItem done={item.done} key={item.label} label={item.label} />
-                  ))}
-                </ul>
-                {needsPublicEvidence && publishBlocker ? (
-                  <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[0.7rem] leading-5 text-amber-700">
-                    {publishBlocker}
-                  </p>
-                ) : null}
-                {needsPublicEvidence && advisory && !publicEvidenceComplete ? (
-                  <GhostButton
-                    className="min-h-9 w-full justify-center rounded-[12px] text-[0.72rem]"
-                    disabled={
-                      reviewEvidenceState === 'saving' ||
-                      advisory.suggested_visibility !== 'public' ||
-                      advisory.suggested_classification !== 'public'
-                    }
-                    onClick={handleConfirmHumanReviewForPublicPublish}
-                  >
-                    {reviewEvidenceState === 'saving'
-                      ? 'Confirmando...'
-                      : 'Confirmar revisão humana'}
-                  </GhostButton>
-                ) : null}
-                {status === 'draft' && !isEditorialRevision ? (
-                  <AppButton
-                    className="min-h-9 w-full justify-center rounded-[12px] text-[0.72rem]"
-                    disabled={submitState === 'saving' || saveState === 'saving'}
-                    onClick={handleSubmitForReview}
-                  >
-                    Enviar para revisão
-                  </AppButton>
-                ) : null}
-
-                {status === 'review' && !isEditorialRevision ? (
-                  <AppButton
-                    className="min-h-9 w-full justify-center rounded-[12px] text-[0.72rem]"
-                    disabled={
-                      publishState === 'saving' ||
-                      saveState === 'saving' ||
-                      reviewEvidenceState === 'saving' ||
-                      Boolean(publishBlocker)
-                    }
-                    onClick={handlePublishArticle}
-                  >
-                    {publishState === 'saving' ? 'Publicando...' : 'Publicar via gate'}
-                  </AppButton>
-                ) : null}
-
-                {isEditorialRevision ? (
-                  <AppButton
-                    className="min-h-9 w-full justify-center rounded-[12px] text-[0.72rem]"
-                    disabled={
-                      publishState === 'saving' ||
-                      saveState === 'saving' ||
-                      reviewEvidenceState === 'saving' ||
-                      Boolean(publishBlocker)
-                    }
-                    onClick={handlePublishArticle}
-                  >
-                    {publishState === 'saving' ? 'Publicando revisão...' : 'Publicar revisão'}
-                  </AppButton>
-                ) : null}
-
-                {status === 'published' && !isEditorialRevision ? (
-                  <InlineNotice>
-                    Artigo publicado. Ao editar, esta tela salva uma revisão editorial sem alterar
-                    a versão pública até a publicação da revisão.
-                  </InlineNotice>
-                ) : null}
-
-                {status === 'archived' ? (
-                  <InlineNotice tone="warning">
-                    Artigo arquivado. O contrato atual não expõe reativação nesta tela.
-                  </InlineNotice>
-                ) : null}
-              </RailCard>
-
-              <RailCard
-                badge={`${assets.length} ${assets.length === 1 ? 'item' : 'itens'}`}
-                title="Mídia e anexos"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[0.72rem] text-[color:var(--color-muted)]">
-                    Imagens entram inline no ponto do texto.
-                  </span>
-                  <GhostButton
-                    className="min-h-9 rounded-[12px] px-3 text-[0.72rem]"
-                    disabled={isReadOnly || assetState === 'saving'}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    Gerenciar mídia
-                  </GhostButton>
-                </div>
-                {assets.length > 0 ? (
-                  <ul className="space-y-2">
-                    {assets.slice(0, 4).map((asset) => (
-                      <li
-                        className="flex items-center gap-3 rounded-2xl border border-[color:var(--color-border)] bg-white px-3 py-2"
-                        key={asset.id}
-                      >
-                        <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)]">
-                          {asset.signed_url ? (
-                            <img
-                              alt={asset.alt_text ?? 'Imagem do artigo'}
-                              className="h-full w-full object-cover"
-                              loading="lazy"
-                              src={asset.signed_url}
-                            />
-                          ) : (
-                            <span className="text-xs text-[color:var(--color-muted)]">IMG</span>
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-[0.74rem] font-semibold text-[color:var(--color-brand-navy)]">
-                            {asset.source_path?.split('/').pop() ?? asset.detected_mime_type ?? 'Imagem'}
-                          </p>
-                          <p className="text-[0.68rem] text-[color:var(--color-muted)]">
-                            {asset.detected_mime_type ?? 'imagem'} ·{' '}
-                            {asset.file_size_bytes ? formatFileSize(asset.file_size_bytes) : 'tamanho indisponível'}
-                          </p>
-                        </div>
-                        <button
-                          className="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-[color:var(--color-brand-blue)] hover:bg-[color:var(--color-surface)]"
-                          onClick={() => handleInsertAsset(asset.id)}
-                          title="Inserir no corpo"
-                          type="button"
-                        >
-                          ⋮
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="rounded-2xl bg-[color:var(--color-surface)] px-3 py-3 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
-                    Arraste, selecione ou cole uma imagem no editor quando o artigo precisar de
-                    apoio visual.
-                  </p>
-                )}
-              </RailCard>
-
-              <RailCard title="Informações do artigo">
-                <dl className="space-y-2 text-[0.72rem] leading-5">
-                  <div>
-                    <dt className="font-extrabold text-[color:var(--color-brand-navy)]">Criado por</dt>
-                    <dd className="text-[color:var(--color-muted)]">
-                      {articleDetail?.created_by_full_name ?? 'Indisponível'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="font-extrabold text-[color:var(--color-brand-navy)]">Última edição</dt>
-                    <dd className="text-[color:var(--color-muted)]">
-                      {articleDetail?.updated_at
-                        ? new Date(articleDetail.updated_at).toLocaleString('pt-BR')
-                        : 'Ainda não salvo'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="font-extrabold text-[color:var(--color-brand-navy)]">Revisão</dt>
-                    <dd className="text-[color:var(--color-muted)]">
-                      {articleDetail?.current_revision_number
-                        ? `Rev. ${articleDetail.current_revision_number}`
-                        : 'Rascunho inicial'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="font-extrabold text-[color:var(--color-brand-navy)]">Categoria atual</dt>
-                    <dd className="text-[color:var(--color-muted)]">
-                      {selectedCategory?.name ?? 'Pendente'}
-                    </dd>
-                  </div>
-                </dl>
-              </RailCard>
-            </div>
-          </aside>
         </div>
       </div>
     </form>
