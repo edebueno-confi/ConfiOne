@@ -54,6 +54,10 @@ function estimateReadingTime(source: string) {
   return Math.max(1, Math.ceil(wordCount / 190));
 }
 
+function hasKnowledgeAssetReferences(source: string) {
+  return /!\[[^\]]*]\(knowledge-asset:[^)]+\)/i.test(source);
+}
+
 function stripDuplicateLeadHeading(source: string, title: string) {
   const normalizedTitle = title.trim().toLowerCase();
   const lines = source.replace(/\r\n/g, '\n').split('\n');
@@ -184,7 +188,17 @@ export function HelpCenterArticlePage() {
           return;
         }
 
-        const assets = await listPublicKnowledgeArticleAssets(data.id);
+        let assets: PublicKnowledgeArticleAssetRow[] = [];
+        if (hasKnowledgeAssetReferences(data.body_md ?? '')) {
+          try {
+            assets = await listPublicKnowledgeArticleAssets(data.id);
+          } catch {
+            // Safe degradation: without the public assets read model, the article can
+            // still render and governed image placeholders remain non-public.
+            assets = [];
+          }
+        }
+
         setArticle(data);
         setArticleAssets(assets);
         setMessage(null);
