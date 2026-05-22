@@ -76,6 +76,10 @@ function isEngineeringRoute(pathname: string) {
   return pathname.startsWith('/engineering');
 }
 
+function isInternalActionsRoute(pathname: string) {
+  return pathname === '/internal-actions' || pathname.startsWith('/internal-actions/');
+}
+
 function isAdminRoute(pathname: string) {
   return pathname === '/admin' || pathname.startsWith('/admin/');
 }
@@ -100,8 +104,9 @@ export function buildInternalNavigation({
 }): UnifiedInternalNavigation {
   const { isPlatformAdmin } = permissions;
   const currentSupport = isSupportRoute(pathname);
+  const currentInternalActions = isInternalActionsRoute(pathname);
   const currentEngineering = isEngineeringRoute(pathname);
-  const operationEnabled = isPlatformAdmin || currentSupport;
+  const operationEnabled = isPlatformAdmin || currentSupport || currentInternalActions;
   const operationAvailability = operationEnabled ? 'enabled' : 'disabled';
   const operationDisabledReason = operationEnabled ? undefined : 'Sem acesso neste perfil';
   const engineeringEnabled = isPlatformAdmin || currentEngineering;
@@ -117,7 +122,7 @@ export function buildInternalNavigation({
         icon: 'queue',
         availability: operationAvailability,
         disabledReason: operationDisabledReason,
-        matches: isSupportRoute,
+        matches: (path) => isSupportRoute(path) || isInternalActionsRoute(path),
         items: [
           {
             id: 'support-queue',
@@ -145,6 +150,15 @@ export function buildInternalNavigation({
             availability: operationAvailability,
             disabledReason: operationDisabledReason,
             matches: (path) => path.startsWith('/support/customers'),
+          },
+          {
+            id: 'internal-actions',
+            label: 'Acionamentos',
+            to: operationEnabled ? '/internal-actions' : undefined,
+            icon: 'return',
+            availability: operationAvailability,
+            disabledReason: operationDisabledReason,
+            matches: isInternalActionsRoute,
           },
           {
             id: 'support-knowledge',
@@ -215,6 +229,14 @@ export function buildInternalNavigation({
             icon: 'portal',
             ...governanceAccess,
             matches: (path) => path.startsWith('/admin/customer-portal'),
+          },
+          {
+            id: 'admin-internal-areas',
+            label: 'Áreas internas',
+            to: isPlatformAdmin ? '/admin/internal-areas' : undefined,
+            icon: 'access',
+            ...governanceAccess,
+            matches: (path) => path.startsWith('/admin/internal-areas'),
           },
           {
             id: 'admin-access',

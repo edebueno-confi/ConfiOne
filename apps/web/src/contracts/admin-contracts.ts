@@ -1,4 +1,45 @@
-import type { IsoTimestamp, JsonValue, Uuid } from '@genius-support-os/contracts';
+import type {
+  AdminInternalActionTargetArea,
+  AdminInternalAreaMembership,
+  InternalAreaMembershipRecord,
+  InternalAreaMembershipRole,
+  InternalAreaMembershipStatus,
+  IsoTimestamp,
+  JsonValue,
+  RpcAdminAddInternalAreaMembershipPayload,
+  RpcAdminAddInternalAreaMembershipResponse,
+  RpcAdminArchiveInternalAreaMembershipPayload,
+  RpcAdminArchiveInternalAreaMembershipResponse,
+  RpcAdminUpdateInternalAreaMembershipPayload,
+  RpcAdminUpdateInternalAreaMembershipResponse,
+  Uuid,
+} from '@genius-support-os/contracts';
+
+export type {
+  AdminInternalActionTargetArea,
+  AdminInternalAreaMembership,
+  InternalAreaMembershipRecord,
+  InternalAreaMembershipRole,
+  InternalAreaMembershipStatus,
+  RpcAdminAddInternalAreaMembershipPayload,
+  RpcAdminAddInternalAreaMembershipResponse,
+  RpcAdminArchiveInternalAreaMembershipPayload,
+  RpcAdminArchiveInternalAreaMembershipResponse,
+  RpcAdminUpdateInternalAreaMembershipPayload,
+  RpcAdminUpdateInternalAreaMembershipResponse,
+};
+
+export const INTERNAL_AREA_MEMBERSHIP_ROLES = [
+  'member',
+  'manager',
+  'viewer',
+] as const satisfies readonly InternalAreaMembershipRole[];
+
+export const INTERNAL_AREA_MEMBERSHIP_STATUSES = [
+  'active',
+  'inactive',
+  'archived',
+] as const satisfies readonly InternalAreaMembershipStatus[];
 
 export const TENANT_STATUSES = ['active', 'suspended', 'archived'] as const;
 export type TenantStatus = (typeof TENANT_STATUSES)[number];

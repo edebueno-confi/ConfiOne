@@ -866,6 +866,19 @@ export interface InternalActionEvidenceLinkRecord {
   createdAt: IsoTimestamp;
 }
 
+export interface InternalAreaMembershipRecord {
+  id: Uuid;
+  tenantId: Uuid;
+  userId: Uuid;
+  areaKey: InternalActionAreaKey;
+  role: InternalAreaMembershipRole;
+  status: InternalAreaMembershipStatus;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  createdByUserId: Uuid | null;
+  updatedByUserId: Uuid | null;
+}
+
 export interface SupportTicketEngineeringLink {
   engineeringTicketLinkId: Uuid;
   ticketId: Uuid;
@@ -1263,6 +1276,12 @@ export interface RpcInternalActionAssignPayload {
 }
 export type RpcInternalActionAssignResponse = InternalActionRecord;
 
+export interface RpcInternalActionAssignToSelfPayload {
+  internalActionId: Uuid;
+  tenantId: Uuid;
+}
+export type RpcInternalActionAssignToSelfResponse = InternalActionRecord;
+
 export interface RpcInternalActionAddCommentPayload {
   internalActionId: Uuid;
   tenantId: Uuid;
@@ -1315,6 +1334,96 @@ export interface RpcSupportCloseInternalActionPayload {
   note?: string | null;
 }
 export type RpcSupportCloseInternalActionResponse = InternalActionRecord;
+
+export interface InternalActionAreaDetail
+  extends InternalActionAreaQueueItem {
+  tenantSlug: string;
+  tenantDisplayName: string | null;
+  tenantLegalName: string | null;
+  updatedByUserId: Uuid | null;
+  updatedByUserName: string | null;
+  closedAt: IsoTimestamp | null;
+  cancelledAt: IsoTimestamp | null;
+  linkedEvidenceCount: number;
+}
+
+export interface InternalActionAreaTimelineEntry {
+  internalActionUpdateId: Uuid;
+  internalActionId: Uuid;
+  ticketId: Uuid;
+  tenantId: Uuid;
+  targetArea: InternalActionAreaKey;
+  targetAreaLabel: string;
+  updateKind: InternalActionUpdateKind;
+  statusBefore: InternalActionStatus | null;
+  statusAfter: InternalActionStatus | null;
+  body: string;
+  metadata: JsonObject;
+  createdByUserId: Uuid | null;
+  createdByUserName: string | null;
+  createdAt: IsoTimestamp;
+}
+
+export interface AdminInternalActionTargetArea {
+  areaKey: InternalActionAreaKey;
+  displayName: string;
+  status: TicketReferenceStatus;
+  isSystem: boolean;
+  allowsSpecializedBridge: boolean;
+  activeMembershipCount: number;
+  openActionCount: number;
+  updatedAt: IsoTimestamp;
+}
+
+export interface AdminInternalAreaMembership {
+  membershipId: Uuid;
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantDisplayName: string;
+  tenantStatus: string;
+  areaKey: InternalActionAreaKey;
+  areaLabel: string;
+  areaStatus: TicketReferenceStatus;
+  userId: Uuid;
+  userFullName: string | null;
+  userEmail: string | null;
+  userIsActive: boolean;
+  role: InternalAreaMembershipRole;
+  status: InternalAreaMembershipStatus;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  createdByUserId: Uuid | null;
+  createdByFullName: string | null;
+  updatedByUserId: Uuid | null;
+  updatedByFullName: string | null;
+  canUpdateRole: boolean;
+  canUpdateStatus: boolean;
+  canArchive: boolean;
+}
+
+export interface RpcAdminAddInternalAreaMembershipPayload {
+  tenantId: Uuid;
+  userId: Uuid;
+  areaKey: InternalActionAreaKey;
+  role: InternalAreaMembershipRole;
+  status?: InternalAreaMembershipStatus;
+}
+export type RpcAdminAddInternalAreaMembershipResponse =
+  InternalAreaMembershipRecord;
+
+export interface RpcAdminUpdateInternalAreaMembershipPayload {
+  membershipId: Uuid;
+  role: InternalAreaMembershipRole;
+  status: InternalAreaMembershipStatus;
+}
+export type RpcAdminUpdateInternalAreaMembershipResponse =
+  InternalAreaMembershipRecord;
+
+export interface RpcAdminArchiveInternalAreaMembershipPayload {
+  membershipId: Uuid;
+}
+export type RpcAdminArchiveInternalAreaMembershipResponse =
+  InternalAreaMembershipRecord;
 
 export type CustomerPortalRole = 'customer_user' | 'customer_manager';
 

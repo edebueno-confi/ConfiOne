@@ -146,6 +146,11 @@ const CustomerPortalAdminPage = lazyRouteModule(
   'CustomerPortalAdminPage',
 );
 
+const InternalAreasAdminPage = lazyRouteModule(
+  () => import('../features/admin/InternalAreasAdminPage'),
+  'InternalAreasAdminPage',
+);
+
 const BuildJournalPage = lazyRouteModule(
   () => import('../features/build-journal/BuildJournalPage'),
   'BuildJournalPage',
@@ -208,6 +213,11 @@ const SupportTicketPage = lazyRouteModule(
 const EngineeringWorkspacePage = lazyRouteModule(
   () => import('../features/engineering/EngineeringWorkspacePage'),
   'EngineeringWorkspacePage',
+);
+
+const InternalActionsWorkspacePage = lazyRouteModule(
+  () => import('../features/internal-actions/InternalActionsWorkspacePage'),
+  'InternalActionsWorkspacePage',
 );
 
 const SupportCustomerPage = lazyRouteModule(
@@ -344,6 +354,10 @@ export const router = createBrowserRouter([
             element: withSuspense(<CustomerPortalAdminPage />),
           },
           {
+            path: 'internal-areas',
+            element: withSuspense(<InternalAreasAdminPage />),
+          },
+          {
             path: 'build-journal',
             element: withSuspense(<BuildJournalPage />),
           },
@@ -410,6 +424,24 @@ export const router = createBrowserRouter([
           {
             path: 'work-items/:workItemId',
             element: withSuspense(<EngineeringWorkspacePage />),
+          },
+        ],
+      },
+      {
+        path: '/internal-actions',
+        element: withSuspense(
+          <SupportGate>
+            <SupportWorkspaceShell />
+          </SupportGate>,
+        ),
+        children: [
+          {
+            index: true,
+            element: withSuspense(<InternalActionsWorkspacePage />),
+          },
+          {
+            path: ':actionId',
+            element: withSuspense(<InternalActionsWorkspacePage />),
           },
         ],
       },

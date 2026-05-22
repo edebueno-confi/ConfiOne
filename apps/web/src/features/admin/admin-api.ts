@@ -4,6 +4,8 @@ import type {
   AdminAuditFeedRow,
   AdminAccessMembershipRow,
   AdminAccessUserRow,
+  AdminInternalActionTargetArea,
+  AdminInternalAreaMembership,
   AdminCustomerPortalAccessOverviewRow,
   AdminCustomerPortalArticleCandidateRow,
   AdminCustomerPortalTicketCandidateRow,
@@ -40,6 +42,10 @@ import type {
   KnowledgeVisibility,
   RpcAdminAddTenantMemberPayload,
   RpcAdminAddTenantMemberResponse,
+  RpcAdminAddInternalAreaMembershipPayload,
+  RpcAdminAddInternalAreaMembershipResponse,
+  RpcAdminArchiveInternalAreaMembershipPayload,
+  RpcAdminArchiveInternalAreaMembershipResponse,
   RpcAdminArchiveKnowledgeArticleV2Response,
   RpcAdminArticleSpaceActionV2Payload,
   RpcAdminBeginKnowledgeArticleEditorialRevisionV2Response,
@@ -87,10 +93,57 @@ import type {
   RpcAdminUpdateTenantMemberStatusResponse,
   RpcAdminUpdateTenantStatusPayload,
   RpcAdminUpdateTenantStatusResponse,
+  RpcAdminUpdateInternalAreaMembershipPayload,
+  RpcAdminUpdateInternalAreaMembershipResponse,
 } from '../../contracts/admin-contracts';
 
 function requireClient() {
   return requireSupabaseBrowserClient();
+}
+
+function mapAdminInternalActionTargetArea(
+  row: Record<string, unknown>,
+): AdminInternalActionTargetArea {
+  return {
+    activeMembershipCount: Number(row.active_membership_count ?? 0),
+    allowsSpecializedBridge: Boolean(row.allows_specialized_bridge),
+    areaKey: String(row.area_key),
+    displayName: String(row.display_name),
+    isSystem: Boolean(row.is_system),
+    openActionCount: Number(row.open_action_count ?? 0),
+    status: row.status as AdminInternalActionTargetArea['status'],
+    updatedAt: String(row.updated_at),
+  };
+}
+
+function mapAdminInternalAreaMembership(
+  row: Record<string, unknown>,
+): AdminInternalAreaMembership {
+  return {
+    areaKey: String(row.area_key),
+    areaLabel: String(row.area_label),
+    areaStatus: row.area_status as AdminInternalAreaMembership['areaStatus'],
+    canArchive: Boolean(row.can_archive),
+    canUpdateRole: Boolean(row.can_update_role),
+    canUpdateStatus: Boolean(row.can_update_status),
+    createdAt: String(row.created_at),
+    createdByFullName: (row.created_by_full_name as string | null) ?? null,
+    createdByUserId: (row.created_by_user_id as string | null) ?? null,
+    membershipId: String(row.membership_id),
+    role: row.role as AdminInternalAreaMembership['role'],
+    status: row.status as AdminInternalAreaMembership['status'],
+    tenantDisplayName: String(row.tenant_display_name),
+    tenantId: String(row.tenant_id),
+    tenantSlug: String(row.tenant_slug),
+    tenantStatus: String(row.tenant_status),
+    updatedAt: String(row.updated_at),
+    updatedByFullName: (row.updated_by_full_name as string | null) ?? null,
+    updatedByUserId: (row.updated_by_user_id as string | null) ?? null,
+    userEmail: (row.user_email as string | null) ?? null,
+    userFullName: (row.user_full_name as string | null) ?? null,
+    userId: String(row.user_id),
+    userIsActive: Boolean(row.user_is_active),
+  };
 }
 
 function escapeLookupTerm(value: string) {
@@ -225,6 +278,40 @@ export async function listAdminAccessMemberships() {
   }
 
   return (data ?? []) as AdminAccessMembershipRow[];
+}
+
+export async function listAdminInternalActionTargetAreas() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_internal_action_target_areas')
+    .select('*')
+    .order('display_name', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar as áreas internas acionáveis.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapAdminInternalActionTargetArea(row as Record<string, unknown>),
+  );
+}
+
+export async function listAdminInternalAreaMemberships() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_internal_area_memberships')
+    .select('*')
+    .order('tenant_display_name', { ascending: true })
+    .order('area_label', { ascending: true })
+    .order('user_full_name', { ascending: true, nullsFirst: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar memberships de áreas internas.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapAdminInternalAreaMembership(row as Record<string, unknown>),
+  );
 }
 
 export async function lookupAdminUsers(rawQuery: string, limit = 8) {
@@ -620,6 +707,57 @@ export async function updateTenantMemberStatus(
   }
 
   return data as RpcAdminUpdateTenantMemberStatusResponse;
+}
+
+export async function addInternalAreaMembership(
+  payload: RpcAdminAddInternalAreaMembershipPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_add_internal_area_membership', {
+    p_area_key: payload.areaKey,
+    p_role: payload.role,
+    p_status: payload.status ?? 'active',
+    p_tenant_id: payload.tenantId,
+    p_user_id: payload.userId,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao adicionar membership de área interna.');
+  }
+
+  return data as RpcAdminAddInternalAreaMembershipResponse;
+}
+
+export async function updateInternalAreaMembership(
+  payload: RpcAdminUpdateInternalAreaMembershipPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_update_internal_area_membership', {
+    p_membership_id: payload.membershipId,
+    p_role: payload.role,
+    p_status: payload.status,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao atualizar membership de área interna.');
+  }
+
+  return data as RpcAdminUpdateInternalAreaMembershipResponse;
+}
+
+export async function archiveInternalAreaMembership(
+  payload: RpcAdminArchiveInternalAreaMembershipPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_archive_internal_area_membership', {
+    p_membership_id: payload.membershipId,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao arquivar membership de área interna.');
+  }
+
+  return data as RpcAdminArchiveInternalAreaMembershipResponse;
 }
 
 export async function listAdminKnowledgeArticleAssets(articleId: string) {
@@ -1119,6 +1257,8 @@ export type {
   AdminAccessMembershipRow,
   AdminAccessUserRow,
   AdminAuditFeedRow,
+  AdminInternalActionTargetArea,
+  AdminInternalAreaMembership,
   AdminCustomerPortalAccessOverviewRow,
   AdminCustomerPortalArticleCandidateRow,
   AdminCustomerPortalTicketCandidateRow,
