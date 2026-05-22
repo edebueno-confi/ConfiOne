@@ -413,6 +413,16 @@ No medio prazo:
   - pedido de complemento
   - fechamento
   - vinculo de evidencia existente quando aplicavel
+- a operacao da area acionada agora possui superficie propria:
+  - `/internal-actions`
+  - `/internal-actions/:actionId`
+  - fila por membership ativo da area
+  - detalhe operacional, timeline interna, assumir para si, update, status interno permitido e devolucao estruturada ao suporte
+- a governanca de memberships agora possui superficie administrativa:
+  - `/admin/internal-areas`
+  - areas acionaveis
+  - memberships por area/tenant/usuario
+  - add/update/archive por RPC administrativa
 - o modelo materializado inclui:
   - catalogo governado de areas internas
   - membership explicito por area e tenant
@@ -432,7 +442,5 @@ No medio prazo:
     - acionamento interno generico multiarea
   - a UI precisa manter essa separacao sem misturar lifecycle de ticket com lifecycle do subfluxo interno
 - limites ainda abertos:
-  - nao existe workspace/fila da area acionada nesta V1
-  - nao existe Admin Console para governar `internal_area_memberships`
   - nao existe bridge automatica com `engineering_work_items`
   - estados de retorno pendente exigem massa QA estavel para validacao visual recorrente

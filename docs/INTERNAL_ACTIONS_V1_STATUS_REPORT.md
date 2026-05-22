@@ -4,18 +4,20 @@ Data: 2026-05-22
 
 ## 1. Veredito atual
 
-O domínio V1 de Acionamentos Internos existe como fundação backend formal e já possui integração mínima no Ticket Workspace para o lado do suporte.
+O domínio V1 de Acionamentos Internos existe como fluxo operacional mínimo ponta a ponta: suporte aciona, a área interna opera em workspace próprio e o suporte recebe a devolução estruturada.
 
 Status operacional:
 - Backend foundation: implementado.
 - Contrato seguro de áreas acionáveis: implementado.
 - Contracts TS: implementados.
 - Drawer `Acionamentos` em `/support/tickets/:ticketId`: integrado ao domínio real para criação, lista, detalhe, timeline interna e ações de suporte.
-- Workspace da área acionada: ainda não implementado.
+- Workspace da área acionada: implementado em `/internal-actions`.
+- Detalhe operacional da área acionada: implementado em `/internal-actions/:actionId`.
+- Admin de memberships por área: implementado em `/admin/internal-areas`.
 - Bridge com `engineering_work_items`: ainda não implementada por decisão de escopo.
 - Alteração automática de `ticket.status`: não existe no V1 e não deve ser adicionada sem decisão de produto.
 
-Conclusão: a V1 está pronta como base controlada e suporte-side mínimo. Ela ainda não é o fluxo ponta a ponta completo entre suporte e área interna.
+Conclusão: a V1 está pronta como fluxo operacional mínimo entre suporte e área interna. Ela ainda não substitui Engenharia nem cria bridge automática com `engineering_work_items`.
 
 ## 2. O que foi feito
 
@@ -45,11 +47,16 @@ Conclusão: a V1 está pronta como base controlada e suporte-side mínimo. Ela a
   - `vw_support_internal_action_detail`
   - `vw_support_internal_action_timeline`
   - `vw_internal_action_queue_by_area`
+  - `vw_internal_action_detail_by_area`
+  - `vw_internal_action_timeline_by_area`
   - `vw_support_internal_action_target_areas`
+  - `vw_admin_internal_action_target_areas`
+  - `vw_admin_internal_area_memberships`
 - RPCs:
   - `rpc_support_list_internal_action_target_areas`
   - `rpc_support_create_internal_action`
   - `rpc_internal_action_assign`
+  - `rpc_internal_action_assign_to_self`
   - `rpc_internal_action_add_comment`
   - `rpc_internal_action_update_status`
   - `rpc_internal_action_add_evidence_link`
@@ -57,6 +64,9 @@ Conclusão: a V1 está pronta como base controlada e suporte-side mínimo. Ela a
   - `rpc_support_accept_internal_action_return`
   - `rpc_support_request_internal_action_followup`
   - `rpc_support_close_internal_action`
+  - `rpc_admin_add_internal_area_membership`
+  - `rpc_admin_update_internal_area_membership`
+  - `rpc_admin_archive_internal_area_membership`
 
 ### Frontend
 - O drawer `Acionamentos` no Ticket Workspace consome contratos reais.
@@ -72,13 +82,14 @@ Conclusão: a V1 está pronta como base controlada e suporte-side mínimo. Ela a
   - vincular evidência existente quando aplicável pelo contrato.
 - Não há mock, catálogo hardcoded de áreas, leitura direta de tabela base ou alteração de `ticket.status`.
 - O fluxo especializado de `Handoff técnico` continua separado e baseado em `engineering_work_items`.
+- A rota `/internal-actions` mostra a fila da área do usuário por membership ativo, com filtros por status, área e prioridade.
+- A rota `/internal-actions/:actionId` mostra contexto, ticket de origem, tenant resumido, responsável, timeline sanitizada, evidências vinculadas por contagem e ações reais da área.
+- A área acionada pode assumir o acionamento para si, registrar update, atualizar andamento permitido e devolver ao suporte por RPC.
+- A rota `/admin/internal-areas` permite ao `platform_admin` listar áreas, revisar memberships, adicionar, atualizar role/status e arquivar vínculos por RPC.
 
 ## 3. O que precisa de atenção
 
-- O repositório está com muitas mudanças paralelas, incluindo arquivos de Internal Actions ainda não rastreados no git. Antes de nova frente tocar esse domínio, isolar branch/commit ou checkpoint é recomendável.
 - `engineering` aparece no catálogo de áreas internas, mas isso não cria work item técnico automaticamente. A bridge com `engineering_work_items` é decisão futura.
-- A UI atual cobre o lado do suporte, não a operação da área acionada. Ainda falta fila/workspace para Engenharia, Financeiro, CS, Produto, Operações ou outra área trabalharem o subfluxo.
-- A governança administrativa de `internal_area_memberships` ainda não tem superfície própria no Admin Console.
 - O identificador interno do drawer no frontend ainda pode aparecer como `automation` em código legado, apesar da UI/copy ser `Acionamentos`. Isso é dívida de nomenclatura, não bug funcional conhecido.
 - `npm run supabase:verify` já foi afetado por instabilidade local de Auth/Kong no Windows. O domínio foi validado por testes de DB, lint de DB, contracts e build, mas essa limitação de infra local deve continuar documentada quando reaparecer.
 
@@ -92,20 +103,14 @@ Correções documentais feitas nesta consolidação:
 
 Correções técnicas recomendadas para lote futuro:
 - Renomear, em refactor pequeno e isolado, chaves internas legadas do drawer que ainda usem `automation` para `internalActions`, se isso não gerar churn alto.
-- Criar massa QA estável para estados `returned_to_support` e `has_pending_return`, reduzindo dependência de cenário manual.
-- Criar superfície administrativa para memberships por área antes de expandir operação multiárea.
+- Criar QA browser autenticado dedicado para `/internal-actions` e `/admin/internal-areas`, cobrindo estado vazio, detalhe, atualização, devolução e arquivamento de membership.
 
 ## 5. O que ainda precisa ser feito
 
 Próxima fase recomendada:
-- Criar workspace/fila da área acionada usando `vw_internal_action_queue_by_area`.
-- Expor ações da área acionada:
-  - assumir/atribuir acionamento;
-  - comentar internamente;
-  - mudar status interno;
-  - vincular evidência existente;
-  - devolver retorno ao suporte.
-- Criar Admin Console para `internal_area_memberships`.
+Próxima fase recomendada:
+- Ampliar QA autenticado e observabilidade operacional do fluxo.
+- Definir se evidências vinculadas devem ter picker seguro na superfície da área acionada; hoje a área vê contagem e o suporte mantém o vínculo operacional existente.
 - Definir estratégia formal para Engenharia:
   - manter separado;
   - criar bridge opcional;
@@ -139,6 +144,11 @@ Próxima fase recomendada:
 - `packages/contracts/src/ticketing.ts`
 - `apps/web/src/features/support/support-api.ts`
 - `apps/web/src/features/support/SupportWorkspacePage.tsx`
+- `apps/web/src/features/internal-actions/InternalActionsWorkspacePage.tsx`
+- `apps/web/src/features/internal-actions/internal-actions-api.ts`
+- `apps/web/src/features/admin/InternalAreasAdminPage.tsx`
+- `supabase/migrations/20260522190000_internal_actions_operational_closure_v1.sql`
+- `supabase/tests/040_internal_actions_operational_closure.sql`
 
 ## 8. Validações conhecidas
 

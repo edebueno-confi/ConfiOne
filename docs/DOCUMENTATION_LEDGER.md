@@ -4704,3 +4704,47 @@ Cada registro deve informar:
   - governança administrativa de memberships por área ainda não existe
 - validação documental:
   - `git diff --check`
+
+### Internal Actions Operational Closure P0-A
+- data: `2026-05-22`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- resumo funcional: fechado o fluxo operacional mínimo de Acionamentos Internos ponta a ponta. O suporte segue criando e acompanhando pelo Ticket Workspace; a área acionada ganhou `/internal-actions` e `/internal-actions/:actionId` para fila, detalhe, timeline, assumir para si, registrar update, atualizar andamento permitido e devolver resposta ao suporte; o Admin Console ganhou `/admin/internal-areas` para governar `internal_area_memberships`.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/SUPPORT_WORKSPACE_ARCHITECTURE_SPEC.md`
+  - `docs/INTERNAL_ACTIONS_V1_STATUS_REPORT.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- arquivos de código e teste alterados:
+  - `supabase/migrations/20260522190000_internal_actions_operational_closure_v1.sql`
+  - `supabase/tests/040_internal_actions_operational_closure.sql`
+  - `packages/contracts/src/ticketing.ts`
+  - `packages/contracts/src/index.ts`
+  - `apps/web/src/contracts/support-contracts.ts`
+  - `apps/web/src/contracts/admin-contracts.ts`
+  - `apps/web/src/features/internal-actions/internal-actions-api.ts`
+  - `apps/web/src/features/internal-actions/InternalActionsWorkspacePage.tsx`
+  - `apps/web/src/features/admin/admin-api.ts`
+  - `apps/web/src/features/admin/InternalAreasAdminPage.tsx`
+  - `apps/web/src/app/router.tsx`
+  - `apps/web/src/features/navigation/UnifiedEnvironmentNavigation.tsx`
+- views/RPCs afetadas:
+  - `vw_internal_action_detail_by_area`
+  - `vw_internal_action_timeline_by_area`
+  - `vw_admin_internal_action_target_areas`
+  - `vw_admin_internal_area_memberships`
+  - `rpc_internal_action_assign_to_self`
+  - `rpc_admin_add_internal_area_membership`
+  - `rpc_admin_update_internal_area_membership`
+  - `rpc_admin_archive_internal_area_membership`
+- boundaries preservados:
+  - criar, operar ou devolver acionamento interno não altera `ticket.status`
+  - cliente/portal não lê nem escreve `internal_actions`
+  - área interna não responde cliente diretamente
+  - `engineering_work_items` não foi substituído nem bridgeado automaticamente
+  - frontend lê por views/read models e escreve por RPC
+- riscos restantes:
+  - picker seguro de evidências na superfície da área acionada permanece fora do corte; o suporte continua com o vínculo operacional existente
+  - bridge opcional com Engenharia exige decisão própria de produto/arquitetura
+  - QA browser autenticado dedicado deve ser ampliado para massa local estável de áreas internas

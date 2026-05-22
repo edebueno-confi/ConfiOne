@@ -1600,11 +1600,16 @@ Fase 8.2:
 - `vw_support_internal_action_detail`
 - `vw_support_internal_action_timeline`
 - `vw_internal_action_queue_by_area`
+- `vw_internal_action_detail_by_area`
+- `vw_internal_action_timeline_by_area`
+- `vw_admin_internal_action_target_areas`
+- `vw_admin_internal_area_memberships`
 
 ### Escrita materializada no backend
 - `rpc_support_list_internal_action_target_areas`
 - `rpc_support_create_internal_action`
 - `rpc_internal_action_assign`
+- `rpc_internal_action_assign_to_self`
 - `rpc_internal_action_add_comment`
 - `rpc_internal_action_update_status`
 - `rpc_internal_action_add_evidence_link`
@@ -1612,6 +1617,9 @@ Fase 8.2:
 - `rpc_support_accept_internal_action_return`
 - `rpc_support_request_internal_action_followup`
 - `rpc_support_close_internal_action`
+- `rpc_admin_add_internal_area_membership`
+- `rpc_admin_update_internal_area_membership`
+- `rpc_admin_archive_internal_area_membership`
 
 ### Regras de consumo
 - `internal_actions` nasce como domínio novo, neutro e ticket-cêntrico; não substitui `engineering_work_items` neste corte.
@@ -1621,10 +1629,13 @@ Fase 8.2:
 - O V1 usa apenas evidências já existentes em `ticket_attachments`; não cria bucket, storage path ou upload próprio.
 - Pendência interna não altera `ticket.status`; a sinalização sai por read model dedicado.
 - As views novas não expõem conversa completa do ticket para a fila da área nem metadata sensível de storage.
+- `/internal-actions` consome `vw_internal_action_queue_by_area`, `vw_internal_action_detail_by_area`, `vw_internal_action_timeline_by_area` e apenas RPCs do domínio para assumir, comentar, atualizar andamento e devolver ao suporte.
+- `/admin/internal-areas` consome views `vw_admin_*` e RPCs administrativas para adicionar, atualizar ou arquivar `internal_area_memberships`.
 
 ### Boundary mantido
 - Cliente/portal não lê nem escreve `internal_actions`.
-- O frontend do Support Workspace já possui integração mínima no drawer `Acionamentos` para o lado do suporte: catálogo real de áreas, criação, lista, detalhe, timeline interna, aceite de retorno, pedido de complemento, fechamento e vínculo de evidência existente. Não existe workspace/fila da área acionada nesta fase.
+- O frontend do Support Workspace já possui integração mínima no drawer `Acionamentos` para o lado do suporte: catálogo real de áreas, criação, lista, detalhe, timeline interna, aceite de retorno, pedido de complemento, fechamento e vínculo de evidência existente.
+- A área acionada possui workspace/fila própria, mas não responde cliente, não fecha ticket e não altera `ticket.status`.
 - Não existe bridge com Engenharia neste lote; `engineering_work_items` segue íntegro e separado.
 
 ## Próximos contratos planejados

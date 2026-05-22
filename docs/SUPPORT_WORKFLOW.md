@@ -396,7 +396,10 @@
   - abre detalhe por `vw_support_internal_action_detail`
   - exibe timeline interna por `vw_support_internal_action_timeline`
   - permite ao suporte aceitar retorno, pedir complemento, fechar e vincular evidência existente quando o estado/contrato permitir
-- a área acionada ainda não possui workspace/fila operacional nesta V1; engenharia continua com o fluxo técnico especializado existente em `engineering_work_items`, sem bridge automática com `internal_actions`.
+- a área acionada agora possui workspace/fila operacional em `/internal-actions`, lendo `vw_internal_action_queue_by_area` e abrindo detalhe/timeline por views dedicadas da área.
+- o membro da área pode assumir acionamento para si, registrar update, atualizar andamento permitido e devolver resposta estruturada ao suporte por RPC.
+- o Admin Console agora possui `/admin/internal-areas` para governar `internal_area_memberships` por tenant/área/usuário, com add/update/archive por RPC.
+- engenharia continua com o fluxo técnico especializado existente em `engineering_work_items`, sem bridge automática com `internal_actions`.
 - criar ou operar acionamento interno não altera `ticket.status`; pendência interna deve ser exibida por read model.
 
 ## Evidencias seguras da fase 8.9
