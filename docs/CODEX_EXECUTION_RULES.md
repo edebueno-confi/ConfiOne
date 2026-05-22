@@ -20,18 +20,29 @@ Sempre verificar:
 - Não criar operação sem audit log.
 - Não criar leitura sensível sem RLS.
 - Não criar IA sem fonte citável.
+- Não fechar lote relevante sem revisar documentação impactada.
 - Não alterar Git global.
 - Não expor token, segredo ou credencial.
 - Não fazer mudança destrutiva sem explicar impacto.
+
+## Regra obrigatória de documentação
+Toda mudança relevante precisa verificar, no mesmo lote:
+- `PROJECT_STATE.md`, quando o estado real do sistema mudar;
+- `DOCUMENTATION_LEDGER.md`, quando a fase exigir trilha documental;
+- documento específico da área alterada;
+- `README.md`, quando nascer documento novo relevante.
+
+Se não houver impacto documental, isso deve ser verdade de forma objetiva, não por omissão.
 
 ## Entrega padrão
 Toda entrega deve conter:
 1. Arquivos criados/alterados.
 2. Decisões tomadas.
-3. Riscos encontrados.
-4. Testes executados.
-5. Pendências.
-6. Próximo passo recomendado.
+3. Documentação atualizada.
+4. Riscos encontrados.
+5. Testes executados.
+6. Pendências.
+7. Próximo passo recomendado.
 
 ## Quando bloquear
 Bloquear a implementação se:

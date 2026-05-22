@@ -438,7 +438,11 @@ export function HelpCenterArticlePage() {
           </details>
 
           <div className="min-w-0">
-            <MarkdownDocument assets={assetMap} source={articleBody} />
+            <MarkdownDocument
+              assets={assetMap}
+              relatedArticles={context.articles}
+              source={articleBody}
+            />
           </div>
         </div>
       </article>

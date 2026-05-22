@@ -42,6 +42,45 @@ Cada registro deve informar:
 - impacto na FAQ futura:
   - habilita criação manual governada de conteúdo para a Central de Ajuda, separando cockpit operacional de fluxo editorial dedicado
 
+### Fase - Help Center Octadesk Refactor Foundation
+- fase: `knowledge-refactor`
+- nome: `Help Center Octadesk Refactor Foundation`
+- branch: `workspace-atual`
+- data: `2026-05-21`
+- resumo funcional: retirada a publicacao bruta dos `43` artigos Octadesk, mantendo `/help/genius` somente com os `6` artigos seed/manuais; criada a taxonomia Genius B2B; criada fundacao governada de assets Knowledge; reprocessados `5` artigos internos com `8` assets pendentes, sem republicacao.
+- docs alterados:
+  - `docs/reports/HELP_CENTER_REFACTOR_MASTER_PLAN.md`
+  - `docs/reports/OCTADESK_ARTICLE_TAXONOMY_REMAP.md`
+  - `docs/reports/OCTADESK_ASSET_RENDERING_AUDIT.md`
+  - `docs/reports/ADMIN_KNOWLEDGE_CMS_GAP_ANALYSIS.md`
+  - `docs/KNOWLEDGE_BASE_STRATEGY.md`
+  - `docs/PUBLIC_HELP_CENTER_PUBLISH_RUNBOOK.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- tooling alterado:
+  - `scripts/knowledge/reprocess-octadesk-article-assets.mjs`
+- telas afetadas:
+  - `/admin/knowledge`
+  - `/help/genius/articles/:articleSlug`
+- views/RPCs afetadas:
+  - `vw_admin_knowledge_article_assets`
+  - `vw_public_knowledge_article_assets`
+  - `rpc_admin_unpublish_knowledge_article_v2`
+  - `rpc_admin_upsert_knowledge_article_asset_v1`
+  - `rpc_admin_update_knowledge_article_asset_review_v1`
+- validacao:
+  - reprocessamento dry-run/apply de `Configuração de Sellers Permitidos`
+  - reprocessamento dry-run/apply dos 4 artigos da Onda 0
+  - queries SQL de `0` Octadesk em views publicas e `8` assets pendentes
+  - validações finais registradas no fechamento do lote
+- riscos restantes:
+  - assets permanecem `pending` ate aprovacao editorial
+  - reprocessamento completo dos demais artigos ainda deve ocorrer por ondas
+  - republicacao Octadesk deve aguardar taxonomia, assets aprovados e QA
+- impacto na FAQ futura:
+  - cria a base tecnica para artigos ricos com imagens governadas e evita repetir a publicacao textual bruta do corpus legado
+
 ### Fase - Octadesk Public Help Migration Release
 - fase: `knowledge-publication`
 - nome: `Octadesk Public Help Migration Release`
@@ -159,39 +198,167 @@ Cada registro deve informar:
 - impacto na FAQ futura:
   - define a fronteira entre conteudo publico seguro, backlog interno e material restrito antes de qualquer onda de publicacao
 
-### Fase - Octadesk Import Runtime Status
+### Fase - Octadesk Full Corpus Safe Pipeline
 - fase: `knowledge-curation`
-- nome: `Octadesk Import Runtime Status`
+- nome: `Octadesk Full Corpus Safe Pipeline`
 - branch: `workspace-atual`
 - data: `2026-05-20`
-- resumo funcional: registrado o estado runtime local apos a execucao segura do corpus Octadesk: `58` artigos avaliados, `54` materializados no Admin Knowledge, `54` advisories `pending`, `4 review/internal`, `24 draft/internal`, `26 draft/restricted`, `0 published`, `0 public` e `0` exposicao nas views publicas.
+- resumo funcional: criada e executada localmente a esteira completa por allowlists para o corpus Octadesk. Foram avaliados `58` artigos, `54` foram processados/importados no Admin Knowledge, `54` advisories foram sincronizados, nenhum artigo foi publicado e a Wave 1 permaneceu vazia por falta de checklist humano real e revisao de assets.
 - docs alterados:
-  - `docs/reports/OCTADESK_IMPORT_RUNTIME_STATUS.md`
+  - `docs/reports/OCTADESK_FULL_PUBLIC_HELP_EXECUTION_PLAN.md`
+  - `docs/reports/OCTADESK_IMPORT_ALL_DRAFTS_ALLOWLIST.json`
+  - `docs/reports/OCTADESK_PUBLICATION_WAVE_1_ALLOWLIST.json`
+  - `docs/reports/OCTADESK_REVIEW_REQUIRED_ALLOWLIST.json`
+  - `docs/reports/OCTADESK_BLOCKED_ALLOWLIST.json`
+  - `docs/reports/OCTADESK_EDITORIAL_REWRITE_BACKLOG.md`
+  - `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_PLAN.md`
+  - `docs/KNOWLEDGE_BASE_STRATEGY.md`
+  - `docs/PUBLIC_HELP_CENTER_PUBLISH_RUNBOOK.md`
   - `docs/PROJECT_STATE.md`
   - `docs/DOCUMENTATION_LEDGER.md`
+- tooling alterado:
+  - `scripts/knowledge/import-octadesk-drafts.mjs`
 - telas afetadas:
-  - `/admin/knowledge` contem o backlog Octadesk governado sem exposicao publica
-  - `/help/genius` permanece exibindo somente os artigos publicos seed/manuais
+  - `/admin/knowledge` passa a conter o corpus Octadesk importado sem exposicao publica
+  - `/help/genius` permanece sem expor artigos Octadesk nao aprovados
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+  - usadas RPCs existentes de draft/import e advisories
+- validacao:
+  - `npm run knowledge:curation:backlog`
+  - import dry-run/apply com `OCTADESK_IMPORT_ALL_DRAFTS_ALLOWLIST.json`
+  - advisory dry-run/apply com `OCTADESK_IMPORT_ALL_DRAFTS_ALLOWLIST.json`
+  - validacao SQL de `0` artigos Octadesk publicos
+- riscos restantes:
+  - publicacao depende de checklist humano, advisory `reviewed` e revisao de assets
+  - `26` artigos permanecem `draft/restricted`
+  - `20` artigos estao bloqueados para publicacao publica nesta fase
+- impacto na FAQ futura:
+  - transforma o corpus Octadesk em backlog governado no Admin Knowledge sem abrir exposicao publica indevida
+
+### Fase - Docs GPT Canonical Decision
+- fase: `documentation-governance`
+- nome: `Docs GPT Canonical Decision`
+- branch: `workspace-atual`
+- data: `2026-05-20`
+- resumo funcional: consolidada a decisão operacional sobre `docs/GPT/` e o mapa documental canônico. A árvore `docs/GPT/` foi classificada como shadow tree auxiliar e não canônica; `docs/` permanece como fonte única de verdade. O parecer registra critérios de canonização, impactos em checkpoints centrais e backlog de consolidação antes de eventual arquivamento.
+- docs alterados:
+  - `README.md`
+  - `docs/README.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/REPOSITORY_STRUCTURE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/reports/DOCS_GPT_CANONICAL_DECISION_2026-05-20.md`
+- telas afetadas:
+  - nenhuma tela de produto alterada
 - views/RPCs afetadas:
   - nenhuma view criada ou alterada
   - nenhuma RPC criada ou alterada
 - validacao:
-  - queries SQL de distribuicao status/visibility e exposicao publica zero
-  - QA Admin Knowledge
-  - QA Public Help
-  - `npm run knowledge:curation:backlog`
-  - `npm run knowledge:verify:octadesk:space-aware`
-  - import dry-run com allowlist geral
-  - advisory dry-run com allowlist geral
-  - `npm run web:typecheck`
-  - `npm run web:build`
-  - `npm run supabase:test:db`
+  - leitura cruzada de `docs/reports/REPOSITORY_SANITIZATION_REPORT.md`
+  - leitura cruzada do handoff do card `t_c286ae33` (`DOCS P0 · auditoria de documentação interna`)
+  - leitura cruzada de `docs/reports/SUPPORT_WORKSPACE_STABILIZATION_PLAN_2026-05-20.md`
+  - inventário comparativo entre `docs/` e `docs/GPT/` para medir sobreposição, divergência e itens exclusivos
+  - revisão de coerência com `docs/DOCUMENTATION_UPDATE_POLICY.md`
 - riscos restantes:
-  - assets continuam pendentes de revisao humana
-  - advisories continuam `pending`
-  - Wave 1 segue vazia ate checklist humano real
+  - `docs/GPT/` ainda existe fisicamente e continua exigindo disciplina para não ser lido como fonte oficial
+  - os itens exclusivos da shadow tree ainda precisam de triagem para promover, relocar ou descartar em lote próprio
+  - checkpoints centrais continuam grandes e ainda merecem saneamento estrutural adicional
 - impacto na FAQ futura:
-  - preserva rastreabilidade do runtime importado e impede que corpus Octadesk seja confundido com conteudo publico aprovado
+  - reduz risco de derivar respostas, documentação interna ou FAQ de uma árvore espelho com drift
+
+### Fase - Knowledge Legacy Batch Execution Plan
+- fase: `knowledge-curation`
+- nome: `Knowledge Legacy Batch Execution Plan`
+- branch: `workspace-atual`
+- data: `2026-05-20`
+- resumo funcional: o fechamento documental do corpus legado da Knowledge foi convertido em plano operacional por waves separadas (`duplicate`, `obsolete`, `public`, `internal`, `restricted`), com gate global de readiness, dependências de ambiente local, critérios de entrada/saída por lote e métricas mínimas de throughput e risco editorial. Nenhum import, sync, publish ou side effect foi executado nesta fase.
+- docs alterados:
+  - `docs/knowledge/KNOWLEDGE_LEGACY_BATCH_EXECUTION_PLAN.md`
+  - `docs/README.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - nenhuma tela de produto alterada
+  - `/admin/knowledge` e `/help/genius` seguem apenas como superfícies-alvo de execução futura governada
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- validacao:
+  - leitura cruzada de `docs/reports/KNOWLEDGE_LEGACY_INVENTORY_REPORT.md`
+  - leitura cruzada de `docs/reports/KNOWLEDGE_LEGACY_CURATION_BACKLOG.md`
+  - leitura cruzada de `docs/KNOWLEDGE_CONTENT_CURATION_PLAN.md`
+  - leitura cruzada de `docs/PUBLIC_HELP_CENTER_PUBLISH_RUNBOOK.md`
+  - leitura cruzada de `docs/CONTENT_OPERATIONS_GOVERNANCE.md`
+  - leitura cruzada de `docs/knowledge/KNOWLEDGE_REMAINING_CORPUS_CLOSURE.md`
+  - leitura cruzada de `docs/knowledge/KNOWLEDGE_LEGACY_CORPUS_FINAL_READINESS_PACK.md`
+- riscos restantes:
+  - os gates humanos de `Produto`, `Suporte/CS` e `Engenharia` continuam pendentes para boa parte das waves
+  - a wave `restricted` permanece dependente de novo recorte técnico governado antes de qualquer materialização
+  - o plano ainda depende de execução disciplinada por micro-lotes; tratar o corpus inteiro como fila única volta a elevar risco editorial
+- impacto na FAQ futura:
+  - organiza a transformação do legado em lotes auditáveis e reduz o risco de derivar FAQ pública a partir de conteúdo ainda não gateado
+
+
+### Fase - Support Workspace Status Flow P0 Spec
+- fase: `support-workspace-stabilization`
+- nome: `Support Workspace Status Flow P0 Spec`
+- branch: `workspace-atual`
+- data: `2026-05-20`
+- resumo funcional: a trilha documental do fluxo de status do Support Workspace foi alinhada ao runtime real. O lote consolidou a especificacao P0 do boundary backend-first, confirmou `vw_support_ticket_detail` + `rpc_support_update_ticket_status_v2` + `rpc_close_ticket` + `rpc_reopen_ticket` como superficie vigente e registrou o risco de fallback permissivo do frontend quando `allowed_next_statuses` vier vazio.
+- docs alterados:
+  - `docs/reports/SUPPORT_WORKSPACE_STATUS_FLOW_P0_SPEC_2026-05-20.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/SUPPORT_WORKSPACE_ARCHITECTURE_SPEC.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - nenhuma tela alterada neste lote documental
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+  - contratos auditados: `vw_support_ticket_detail`, `rpc_support_update_ticket_status_v2`, `rpc_close_ticket`, `rpc_reopen_ticket`
+- validacao:
+  - leitura cruzada de `apps/web/src/features/support/support-api.ts`
+  - leitura cruzada de `apps/web/src/features/support/SupportWorkspacePage.tsx`
+  - leitura cruzada de `apps/web/src/features/support/components/SupportTicketAdvancedContextPanels.tsx`
+  - leitura cruzada de `supabase/migrations/20260429225342_phase2_ticketing_core_backend_contracts.sql`
+  - leitura cruzada de `supabase/migrations/20260509001100_ticket_classification_and_sla_governance_v3.sql`
+  - leitura cruzada de `supabase/tests/005_phase2_ticketing_core.sql`
+- riscos restantes:
+  - `buildStatusChoices()` ainda usa fallback amplo para `TICKET_STATUSES` quando `allowedNextStatuses` vier vazio, o que pode aparentar permissoes indevidas no frontend apesar do backend bloquear a mutacao
+  - ainda e necessario um lote de runtime para endurecer esse fallback e transformar drift contratual em estado honestamente indisponivel
+- impacto na FAQ futura:
+  - nenhum impacto direto para usuario final; melhora a rastreabilidade tecnica do fluxo interno de suporte e reduz risco de drift entre documentacao e runtime
+
+### Fase - Root Artifact Hygiene Policy
+- fase: `repository-governance`
+- nome: `Root Artifact Hygiene Policy`
+- branch: `workspace-atual`
+- data: `2026-05-20`
+- resumo funcional: a contaminação recorrente da raiz por screenshots, dumps, logs e evidências transitórias foi convertida em política operacional explícita. O documento define o que pode permanecer na raiz, destinos corretos por categoria (`docs/reports/`, `docs/design/`, `.tmp/`, quarentena), convenções de naming, retenção e backlog de saneamento futuro sem mover/apagar artefatos nesta fase.
+- docs alterados:
+  - `docs/ROOT_ARTIFACT_HYGIENE_POLICY.md`
+  - `docs/REPOSITORY_STRUCTURE.md`
+  - `docs/README.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - nenhuma tela de produto alterada
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- validacao:
+  - leitura cruzada de `docs/reports/REPOSITORY_SANITIZATION_REPORT.md`
+  - leitura cruzada de `docs/DOCUMENTATION_GOVERNANCE_RUNBOOK.md`
+  - inventário da raiz via `git status --short` e listagem atual de arquivos soltos
+  - classificação local dos artefatos atuais por família, categoria e volume
+- riscos restantes:
+  - a raiz continua contaminada até uma task futura executar triagem, promoção e remoção controlada dos artefatos existentes
+  - scripts e fluxos de QA ainda podem continuar escrevendo fora de `.tmp/` até serem ajustados explicitamente
+- impacto na FAQ futura:
+  - nenhum impacto direto de produto; melhora governança operacional e reduz drift entre evidência transitória e documentação canônica
 
 ### Fase - Octadesk Public Help Pilot Internal Review
 - fase: `knowledge-curation`
@@ -218,6 +385,90 @@ Cada registro deve informar:
   - `Regra por motivo` ainda exige decisao explicita sobre permanecer interno ou virar candidato publico
 - impacto na FAQ futura:
   - move o lote piloto para revisao formal interna sem abrir exposicao publica
+
+### Fase - Supabase Verify Split Proposal
+- fase: `qa-governance`
+- nome: `Supabase Verify Split Proposal`
+- branch: `workspace-atual`
+- data: `2026-05-20`
+- resumo funcional: consolidada a proposta operacional para separar `supabase:verify` em três faixas explícitas — `safe smoke`, `integration local` e `destructive reset` — preservando aderência à baseline de validação já auditada e ao mapa operacional Supabase. A fase permaneceu documental, sem alterar scripts e sem executar reset destrutivo.
+- docs alterados:
+  - `docs/reports/SUPABASE_VERIFY_SPLIT_PROPOSAL_2026-05-20.md`
+  - `docs/README.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - nenhuma tela de produto alterada
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- validacao:
+  - leitura de `package.json`
+  - leitura de `scripts/ci/run-supabase-verify.mjs`
+  - leitura de `scripts/ci/wait-for-supabase-ready.mjs`
+  - leitura de `.github/workflows/supabase-db.yml`
+  - revisão cruzada com `docs/reports/VALIDATION_BASELINE_MATRIX_2026-05-20.md`
+  - revisão cruzada com `docs/reports/SUPABASE_OPERATIONAL_MAP.md`
+- riscos restantes:
+  - o split ainda não é executável porque o repositório segue com drift de portas/readiness entre `supabase/config.toml`, `wait-for-supabase-ready.mjs`, `docs/PROJECT_STATE.md` e `apps/web/README.md`
+  - `supabase:verify` atual continua destrutivo e suscetível a uso indevido até renomeação/extração dos novos entrypoints
+- impacto na FAQ futura:
+  - melhora a clareza operacional de validação técnica, reduzindo risco de instruções ambíguas para QA local e CI
+
+### Fase - Documentation Governance Runbook
+- fase: `documentation-governance`
+- nome: `Documentation Governance Runbook`
+- branch: `workspace-atual`
+- data: `2026-05-20`
+- resumo funcional: a política documental foi convertida em rotina operacional contínua com checkpoints por lote, papéis por frente, ritual de revisão para `PROJECT_STATE.md`, `DOCUMENTATION_LEDGER.md`, docs de área e `README.md`, além de conexão explícita com validação técnica e com o fechamento de cards no Kanban.
+- docs alterados:
+  - `docs/DOCUMENTATION_GOVERNANCE_RUNBOOK.md`
+  - `docs/README.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - nenhuma tela de produto alterada
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- validacao:
+  - leitura cruzada de `docs/DOCUMENTATION_UPDATE_POLICY.md`
+  - revisão de coerência com `docs/KANBAN_OPERATIONAL_GOVERNANCE.md`
+  - revisão de consistência entre `docs/README.md`, `docs/PROJECT_STATE.md` e o novo runbook
+- riscos restantes:
+  - `PROJECT_STATE.md` e `DOCUMENTATION_LEDGER.md` seguem grandes e ainda pedem saneamento estrutural futuro para manter leitura rápida
+  - o runbook depende de disciplina operacional do board; sem enforcement contínuo, o drift documental pode reaparecer
+- impacto na FAQ futura:
+  - fortalece o processo que mantém documentação oficial confiável antes de qualquer derivação futura para FAQ
+
+### Fase - Kanban Operational Governance Bootstrap
+- fase: `operational-governance`
+- nome: `Kanban Operational Governance Bootstrap`
+- branch: `workspace-atual`
+- data: `2026-05-20`
+- resumo funcional: criada a camada operacional duravel de desenvolvimento no Hermes para o Genius Support OS, com board dedicado `genius-support-os`, perfis especializados, backlog inicial com dependencias e automacoes recorrentes read-only para documentacao, monitoramento de board e heartbeat.
+- docs alterados:
+  - `docs/KANBAN_OPERATIONAL_GOVERNANCE.md`
+  - `docs/README.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - nenhuma tela de produto alterada
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- validacao:
+  - `hermes kanban boards list`
+  - `hermes kanban --board genius-support-os assignees`
+  - `hermes kanban --board genius-support-os list`
+  - `hermes kanban --board genius-support-os stats`
+  - `hermes cron list`
+- riscos restantes:
+  - os perfis novos ainda dependem do mesmo ambiente/modelo herdado do host e devem ser observados nas primeiras execucoes reais
+  - o refresh automatico de backlog knowledge e o sync automatico de advisories ficaram fora desta fase por risco de side effects no repositorio e no Supabase local
+- impacto na FAQ futura:
+  - estabelece o fluxo oficial de organizacao e governanca tecnica do projeto sem alterar runtime de produto
+
 ### Fase - Octadesk Public Help Pilot Editorial Drafts
 - fase: `knowledge-curation`
 - nome: `Octadesk Public Help Pilot Editorial Drafts`
@@ -242,6 +493,7 @@ Cada registro deve informar:
   - artigo `Regra por motivo` precisa decisao explicita se sera publico ou permanecera interno
 - impacto na FAQ futura:
   - transforma o lote piloto em base editorial revisavel, sem liberar conteudo publico antes do gate humano
+
 ### Fase - Octadesk Public Help Pilot Human Review Prep
 - fase: `knowledge-curation`
 - nome: `Octadesk Public Help Pilot Human Review Prep`
@@ -271,6 +523,7 @@ Cada registro deve informar:
   - nenhum artigo deve ir para `review`, `published` ou `public` sem checklist humano completo
 - impacto na FAQ futura:
   - transforma o lote piloto importado em fila revisavel, mantendo bloqueio de publicacao automatica e preservando rastreabilidade de origem
+
 ### Fase - Octadesk Public Help Pilot Draft Import
 - fase: `knowledge-curation`
 - nome: `Octadesk Public Help Pilot Draft Import`
@@ -355,6 +608,7 @@ Cada registro deve informar:
   - novos documentos continuam exigindo whitelist + sync antes de aparecer no runtime
 - impacto na FAQ futura:
   - consolida Product Docs e Build Journal sobre uma única fonte documental oficial, versionada e sanitizada, reduzindo drift entre markdown real, banco e UI
+
 ### Fase - Internal Documents Foundation V3/V4
 - fase: `backend-contracts-tooling`
 - nome: `Internal Documents Foundation V3/V4`
@@ -471,6 +725,70 @@ Cada registro deve informar:
 - impacto na FAQ futura:
   - cria base de governança para expor documentação oficial interna sem duplicação de corpo documental no frontend e sem leitura runtime de filesystem
 
+### Fase - Build Journal Documents Inline Reader V1
+- fase: `runtime-ui`
+- nome: `Build Journal Documents Inline Reader V1`
+- branch: `workspace-atual`
+- data: `2026-05-17`
+- resumo funcional: refatorada a integração entre a aba `Documentos oficiais` de `/admin/build-journal` e `/admin/product-docs`. O Diário agora abre documentos whitelisted inline, dentro do contexto narrativo, reutilizando o mesmo reader e a mesma fonte estática controlada do Product Docs. `/admin/product-docs` permanece como leitor oficial completo, com busca local, categorias e deep link `?doc=` preservados.
+- docs alterados:
+  - `docs/BUILD_JOURNAL_SCREEN_SPEC.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/INTERNAL_DOCUMENTATION_AREAS_CHECKPOINT_V1.md`
+- arquivos de código alterados:
+  - `apps/web/src/features/product-docs/ProductDocsPage.tsx`
+  - `apps/web/src/features/product-docs/ProductDocMarkdownPreview.tsx`
+  - `apps/web/src/features/product-docs/ProductDocReaderPanel.tsx`
+  - `apps/web/src/features/build-journal/BuildJournalDocuments.tsx`
+- telas afetadas:
+  - `/admin/build-journal`
+  - `/admin/product-docs`
+- views/RPCs afetadas:
+  - nenhum contrato novo
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- runtime/UI:
+  - parser/preview de markdown foi extraído para componente compartilhado, evitando leitor concorrente
+  - Product Docs mantém a experiência oficial completa
+  - Build Journal mantém a camada narrativa e oferece CTA secundário para abrir o mesmo documento em `/admin/product-docs?doc=...`
+  - documentos fora da whitelist continuam pendentes, sem ação fake
+- riscos restantes:
+  - novos documentos continuam dependendo de decisão editorial para entrar na whitelist controlada
+  - QA visual autenticada continua recomendada para validar densidade do reader inline em viewport real
+- impacto na FAQ futura:
+  - reforça a separação entre narrativa guiada e fonte oficial controlada sem duplicar conteúdo documental
+
+### Fase - Build Journal Official Documents Narrative V1
+- fase: `runtime-ui`
+- nome: `Build Journal Official Documents Narrative V1`
+- branch: `workspace-atual`
+- data: `2026-05-17`
+- resumo funcional: implementada a aba `Documentos oficiais` em `/admin/build-journal` como camada narrativa sobre as fontes oficiais do Genius Support OS. A tela organiza categorias documentais, explica o papel de cada grupo na construção e conecta somente documentos já whitelisted ao leitor `/admin/product-docs`; itens ainda fora da whitelist aparecem como pendentes, sem ação fake.
+- docs alterados:
+  - `docs/BUILD_JOURNAL_SCREEN_SPEC.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- arquivos de código alterados:
+  - `apps/web/src/features/build-journal/BuildJournalPage.tsx`
+  - `apps/web/src/features/build-journal/BuildJournalDocuments.tsx`
+  - `apps/web/src/features/build-journal/buildJournalContent.ts`
+- telas afetadas:
+  - `/admin/build-journal`
+- views/RPCs afetadas:
+  - nenhum contrato novo
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- runtime/UI:
+  - a aba deixou de ser placeholder e passou a ser uma tela narrativa light/white-tech
+  - não há leitura dinâmica de filesystem, file explorer, busca backend ou duplicação do Product Docs
+  - links são restritos a IDs reais já aceitos por `/admin/product-docs?doc=...`
+- riscos restantes:
+  - documentos citados fora da whitelist continuam pendentes até uma rodada própria de Product Docs
+  - `Próximos passos` segue como placeholder honesto até receber blueprint própria
+- impacto na FAQ futura:
+  - melhora a rastreabilidade entre categorias documentais e decisões de construção sem ampliar exposição de arquivos
+
 ### Fase - Build Journal Structural Cleanup V1
 - fase: `runtime-ui`
 - nome: `Build Journal Structural Cleanup V1`
@@ -485,10 +803,7 @@ Cada registro deve informar:
 - arquivos de código alterados:
   - `apps/web/src/features/build-journal/BuildJournalPage.tsx`
   - `apps/web/src/features/build-journal/BuildJournalArchitecture.tsx`
-  - `apps/web/src/features/build-journal/BuildJournalAI.tsx`
-  - `apps/web/src/features/build-journal/BuildJournalQuoteFooter.tsx`
   - `apps/web/src/features/build-journal/buildJournalContent.ts`
-  - `apps/web/src/assets/build-journal/build-journal-hero-mountain-path.png`
 - telas afetadas:
   - `/admin/build-journal`
 - views/RPCs afetadas:
@@ -507,6 +822,369 @@ Cada registro deve informar:
 - impacto na FAQ futura:
   - reforça a separação entre narrativa do Diário e Product Docs como fonte oficial controlada
   - reduz drift estrutural antes de novas telas documentais
+
+### Fase - Build Journal Immersive Blueprint Fidelity V1
+- fase: `runtime-ui`
+- nome: `Build Journal Immersive Blueprint Fidelity V1`
+- branch: `workspace-atual`
+- data: `2026-05-16`
+- resumo funcional: recriada `/admin/build-journal` com alta fidelidade à blueprint dark aprovada, substituindo a aparência de dashboard branco genérico por uma superfície editorial imersiva, compacta e desktop-first com hero dark horizontal, jornada em uma visão, mapa da construção, timeline, documentos curados, arquitetura explicada, papel da IA, estado atual e fechamento editorial. `/admin/product-docs` não foi alterado nesta fase.
+- docs alterados:
+  - `docs/BUILD_JOURNAL_STRATEGY.md`
+  - `docs/BUILD_JOURNAL_SCREEN_SPEC.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/README.md`
+- arquivos de código alterados:
+  - `apps/web/src/features/build-journal/BuildJournalPage.tsx`
+  - `apps/web/src/features/build-journal/buildJournalContent.ts`
+- telas afetadas:
+  - `/admin/build-journal`
+- views/RPCs afetadas:
+  - nenhum contrato novo
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- runtime/UI:
+  - a rota ganhou dark mode próprio e premium sem alterar o restante do Admin Console
+  - a narrativa agora fica organizada pela composição hero -> jornada -> mapa/timeline/docs -> arquitetura/IA/estado -> decisões/limites/próximos blocos
+  - os links de aprofundamento continuam apontando apenas para `/admin/product-docs` e para documentos curados
+  - nenhuma interatividade fake, file explorer, parser dinâmico, busca backend ou IA interativa foi adicionada
+- riscos restantes:
+  - a fidelidade visual final ainda depende de QA autenticada em browser real, porque a automação local pode não compartilhar a mesma sessão administrativa do navegador do usuário
+  - a rota continua sustentada por conteúdo estático no frontend e exige disciplina editorial para evitar drift em relação aos markdowns oficiais
+  - a área continua sem permissão granular dedicada além do gate administrativo consolidado
+- impacto na FAQ futura:
+  - melhora muito a leitura institucional e técnica da construção do produto, acelerando onboarding interno sem ampliar exposição sensível nem criar backend novo
+- validação final:
+  - `npm run web:typecheck`
+  - `npm run web:build`
+
+### Fase - Build Journal Experience Upgrade V1
+- fase: `runtime-ui`
+- nome: `Build Journal Experience Upgrade V1`
+- branch: `workspace-atual`
+- data: `2026-05-16`
+- resumo funcional: refatorada a experiência estática de `/admin/build-journal` para leitura guiada com índice sticky, âncoras por seção, trilha `entenda em 5 minutos`, melhor explicação de stack/arquitetura/segurança/IA, decisões expansíveis e domínios por chips; `/admin/product-docs` recebeu `Por onde começar`, trilhas de leitura e copy mais clara, sem alterar whitelist nem modelo estático.
+- docs alterados:
+  - `docs/BUILD_JOURNAL_STRATEGY.md`
+  - `docs/BUILD_JOURNAL_SCREEN_SPEC.md`
+  - `docs/PRODUCT_DOCS_INTERNAL_READER_V1.md`
+  - `docs/INTERNAL_DOCUMENTATION_AREAS_CHECKPOINT_V1.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/README.md`
+- arquivos de código alterados:
+  - `apps/web/src/features/build-journal/BuildJournalPage.tsx`
+  - `apps/web/src/features/build-journal/buildJournalContent.ts`
+  - `apps/web/src/features/product-docs/ProductDocsPage.tsx`
+  - `apps/web/src/features/product-docs/productDocsContent.ts`
+- telas afetadas:
+  - `/admin/build-journal`
+  - `/admin/product-docs`
+- views/RPCs afetadas:
+  - nenhum contrato novo
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- runtime/UI:
+  - o Diário agora opera como narrativa guiada, com melhor separação entre visão executiva, detalhe técnico e próximos blocos recomendados
+  - Product Docs continua estático e whitelisted, agora com trilhas de leitura e orientação de entrada
+  - nenhuma interatividade fake, busca backend, parser dinâmico ou IA interativa foi adicionada
+- riscos restantes:
+  - o conteúdo das superfícies continua hardcoded no frontend e exige disciplina editorial para evitar drift em relação aos docs oficiais
+  - `build-journal` e `product-docs` continuam dependendo do gate administrativo consolidado, sem permissão granular dedicada
+  - QA manual autenticada em browser real continua recomendada após mudanças visuais relevantes
+- impacto na FAQ futura:
+  - melhora a leitura interna das decisões e contratos do produto, facilitando onboarding e continuidade sem ampliar a exposição documental nem abrir superfícies dinâmicas
+- validação final:
+  - `npm run web:typecheck`
+  - `npm run web:build`
+
+### Fase - Build Journal Source Reading Direction Addendum
+- fase: `documental`
+- nome: `Build Journal Source Reading Direction Addendum`
+- branch: `workspace-atual`
+- data: `2026-05-16`
+- resumo funcional: registrado o adendo da próxima rodada para aproximar `/admin/build-journal` e `/admin/product-docs` dos markdowns-fonte originais aprovados, com leitura aprofundada controlada, trilhas curatoriais e ilustrações estáticas informativas, sem abrir backend dinâmico nem file explorer.
+- docs alterados:
+  - `docs/BUILD_JOURNAL_STRATEGY.md`
+  - `docs/BUILD_JOURNAL_SCREEN_SPEC.md`
+  - `docs/PRODUCT_DOCS_INTERNAL_READER_V1.md`
+  - `docs/INTERNAL_DOCUMENTATION_AREAS_CHECKPOINT_V1.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - nenhuma implementação runtime nesta fase
+- views/RPCs afetadas:
+  - nenhum contrato novo
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- riscos restantes:
+  - a futura leitura dos markdowns originais precisa continuar sob whitelist explícita para não virar explorador genérico
+  - ilustrações futuras exigem sanitização e fidelidade editorial ao Design System V3
+- impacto na FAQ futura:
+  - melhora a clareza sobre como os documentos-fonte sustentam a construção do produto e prepara uma camada de aprofundamento interno mais organizada
+- validacao final:
+  - revisão documental local
+
+### Fase - Genius Cockpit UI Blueprint Skill V1
+- fase: `documental`
+- nome: `Genius Cockpit UI Blueprint Skill V1`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-15`
+- resumo funcional: criada a skill local versionada `.skills/genius-cockpit-ui-blueprint` para orientar tarefas futuras de UI/UX do Genius Support OS baseadas em blueprint, screenshot, crítica visual, copy operacional e implementação React/Tailwind fiel ao Design System V3 e aos contratos reais.
+- docs alterados:
+  - `.skills/genius-cockpit-ui-blueprint/SKILL.md`
+  - `.skills/genius-cockpit-ui-blueprint/references/blueprint-analysis-checklist.md`
+  - `.skills/genius-cockpit-ui-blueprint/references/cockpit-layout-rules.md`
+  - `.skills/genius-cockpit-ui-blueprint/references/copy-and-language-rules.md`
+  - `.skills/genius-cockpit-ui-blueprint/references/visual-density-and-scroll-rules.md`
+  - `.skills/genius-cockpit-ui-blueprint/references/blueprint-to-react-tailwind-rules.md`
+  - `.skills/genius-cockpit-ui-blueprint/references/qa-visual-validation-checklist.md`
+  - `docs/README.md`
+  - `docs/REPOSITORY_STRUCTURE.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `README.md`
+- telas afetadas:
+  - nenhuma tela runtime alterada
+- views/RPCs afetadas:
+  - nenhum contrato novo
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- riscos restantes:
+  - a skill depende de disciplina para continuar alinhada ao Design System V3 e às futuras decisões reais de produto
+  - a skill não substitui a leitura dos contratos reais da tela antes de qualquer implementação visual
+  - futuras superfícies novas podem exigir refinamento adicional das referências quando surgirem novos padrões operacionais
+- impacto na FAQ futura:
+  - melhora a consistência das futuras execuções de UI do cockpit interno, reduzindo drift visual, jargão técnico e padrões genéricos nas telas operacionais
+- validacao final:
+  - `python C:\Users\edebu\.codex\skills\.system\skill-creator\scripts\quick_validate.py .skills/genius-cockpit-ui-blueprint`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+
+### Fase - Documentation Update Policy V1
+- fase: `documental`
+- nome: `Documentation Update Policy V1`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-13`
+- resumo funcional: formalizada a política que torna atualização documental parte obrigatória do processo de entrega, integrando regra explícita ao índice de docs, ao checkpoint do projeto e aos checklists de execução/validação.
+- docs alterados:
+  - `docs/DOCUMENTATION_UPDATE_POLICY.md`
+  - `docs/CODEX_EXECUTION_RULES.md`
+  - `docs/VALIDATION_CHECKLIST.md`
+  - `docs/README.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - nenhuma tela runtime alterada
+- views/RPCs afetadas:
+  - nenhum contrato novo
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- riscos restantes:
+  - a política reduz drift, mas ainda depende de disciplina de revisão em cada lote
+  - futuras automações de enforcement em CI ainda não existem
+  - documentos antigos podem exigir alinhamento gradual quando forem tocados por novos lotes
+- impacto na FAQ futura:
+  - melhora a confiabilidade da trilha documental interna, reduzindo divergência entre código, estado real e narrativa do produto
+- validacao final:
+  - `npm run web:typecheck`
+  - `npm run web:build`
+
+### Fase - Internal Documentation Areas Checkpoint V1
+- fase: `documental`
+- nome: `Internal Documentation Areas Checkpoint V1`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-13`
+- resumo funcional: consolidado o checkpoint documental final das áreas internas `/admin/build-journal` e `/admin/product-docs`, registrando objetivo, diferença conceitual, acesso atual, política de exposição, sanitização, whitelist documental e critérios de evolução futura.
+- docs alterados:
+  - `docs/INTERNAL_DOCUMENTATION_AREAS_CHECKPOINT_V1.md`
+  - `docs/README.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - `/admin/build-journal`
+  - `/admin/product-docs`
+- views/RPCs afetadas:
+  - nenhum contrato novo
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- riscos restantes:
+  - `build-journal` e `product-docs` ainda dependem do gate administrativo consolidado, sem permissão granular dedicada
+  - novos documentos e prints futuros continuam exigindo revisão editorial e sanitização explícita
+  - qualquer expansão para conteúdo dinâmico, anexos, comentários, histórico ou busca backend depende de contrato futuro
+  - QA manual autenticada em browser real continua recomendada após mudanças visuais relevantes nessas duas áreas
+- impacto na FAQ futura:
+  - cria um checkpoint consolidado para explicar internamente a diferença entre processo de construção e fonte oficial controlada, sem transformar a documentação interna em material público ou customer-facing
+- validacao final:
+  - `npm run web:typecheck`
+  - `npm run web:build`
+
+### Fase - Product Docs Internal Reader V1
+- fase: `runtime-ui`
+- nome: `Product Docs Internal Reader V1`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-13`
+- resumo funcional: criada a área interna protegida `Documentos do Produto` em `/admin/product-docs`, dentro do Admin Console e protegida pelo gate administrativo existente, com catálogo estático whitelisted, conteúdo sanitizado, busca local e agrupamento por categoria.
+- docs alterados:
+  - `docs/README.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/PRODUCT_DOCS_INTERNAL_READER_V1.md`
+- arquivos criados:
+  - `apps/web/src/features/product-docs/productDocsContent.ts`
+  - `apps/web/src/features/product-docs/ProductDocsPage.tsx`
+  - `docs/PRODUCT_DOCS_INTERNAL_READER_V1.md`
+- arquivos de código alterados:
+  - `apps/web/src/app/router.tsx`
+  - `apps/web/src/features/admin-shell/AdminSidebar.tsx`
+  - `apps/web/src/features/admin-shell/AdminTopbar.tsx`
+  - `apps/web/src/features/navigation/UnifiedEnvironmentNavigation.tsx`
+- rota afetada:
+  - `/admin/product-docs`
+- documentos expostos na whitelist:
+  - `PRODUCT.md`
+  - `DESIGN.md`
+  - `docs/PRODUCT_VISION.md`
+  - `docs/ARCHITECTURE_RULES.md`
+  - `docs/AUTH_CONTEXT_STRATEGY.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/ENGINEERING_WORKFLOW.md`
+  - `docs/BUILD_JOURNAL_STRATEGY.md`
+  - `docs/BUILD_JOURNAL_SCREEN_SPEC.md`
+- views/RPCs afetadas:
+  - nenhum contrato novo
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- telas afetadas:
+  - nova rota interna `/admin/product-docs`
+  - navegação administrativa do Admin Console
+- runtime/UI:
+  - tela real com índice por categoria, busca local, leitura sanitizada, status, sensibilidade, origem e estado vazio
+  - conteúdo estático versionado no frontend
+  - sem parser dinâmico de filesystem, explorador genérico de arquivos, backend próprio, storage, IA ou mocks
+- impacto futuro na FAQ:
+  - passa a existir referência interna controlada para explicar quais documentos sustentam visão, arquitetura, segurança, operação, design, governança e construção do produto.
+  - qualquer expansão para FAQ externa ou customer-facing continua dependendo de sanitização e revisão editorial.
+- riscos restantes:
+  - permissão específica de `product-docs` ainda não existe; a V1 usa o gate administrativo consolidado do Admin Console
+  - documentos novos exigem inclusão explícita na whitelist e revisão de sensibilidade
+  - busca backend, leitura dinâmica, comentários, anexos, histórico ou IA exigem contrato futuro antes de implementação
+  - se a seleção de documento precisar persistir na URL durante a navegação interna, será necessária estratégia própria de roteamento/estado para não reintroduzir repaint visual da rota
+  - QA manual autenticada em browser real continua recomendada após mudanças visuais relevantes
+- validação final:
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - auditoria visual/UX com Impeccable
+
+### Fase - Product Docs Interaction Hardening V1
+- fase: `runtime-ui`
+- nome: `Product Docs Interaction Hardening V1`
+- branch: `workspace-atual`
+- data: `2026-05-15`
+- resumo funcional: endurecida a interação de seleção em `/admin/product-docs` para evitar flicker/repaint visual ao clicar em itens do índice, preservando o parâmetro `?doc=` apenas como deep-link de entrada controlada.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/PRODUCT_DOCS_INTERNAL_READER_V1.md`
+- arquivos de código alterados:
+  - `apps/web/src/features/product-docs/ProductDocsPage.tsx`
+- views/RPCs afetadas:
+  - nenhum contrato novo
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- telas afetadas:
+  - `/admin/product-docs`
+- runtime/UI:
+  - cliques no índice trocam o documento localmente, sem sincronização contínua da seleção com `searchParams`
+  - deep-link `?doc=` continua suportado para abrir a tela já posicionada em um documento whitelisted
+- riscos restantes:
+  - permissão específica de `product-docs` continua inexistente
+  - persistir seleção interna na URL sem reintroduzir repaint da rota continua como decisão técnica futura
+  - QA manual autenticada em browser real continua recomendada após mudanças visuais relevantes
+- impacto futuro na FAQ:
+  - nenhum impacto direto na FAQ; o ajuste reduz ruído visual da leitura interna sem alterar a whitelist nem a política de exposição
+- validação final:
+  - `npm run web:typecheck`
+  - `npm run web:build`
+
+### Fase - Build Journal Runtime UI V1
+- fase: `runtime-ui`
+- nome: `Build Journal Runtime UI V1`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-13`
+- resumo funcional: criada a área interna navegável `Diário de Construção` em `/admin/build-journal`, dentro do Admin Console e protegida pelo gate administrativo existente, com conteúdo estático versionado e sanitizado no frontend.
+- docs alterados:
+  - `docs/README.md`
+  - `docs/BUILD_JOURNAL_STRATEGY.md`
+  - `docs/BUILD_JOURNAL_SCREEN_SPEC.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- arquivos de codigo alterados:
+  - `apps/web/src/app/router.tsx`
+  - `apps/web/src/features/admin-shell/AdminSidebar.tsx`
+  - `apps/web/src/features/admin-shell/AdminTopbar.tsx`
+  - `apps/web/src/features/navigation/UnifiedEnvironmentNavigation.tsx`
+  - `apps/web/src/features/build-journal/buildJournalContent.ts`
+  - `apps/web/src/features/build-journal/BuildJournalPage.tsx`
+- views/RPCs afetadas:
+  - nenhum contrato novo
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- telas afetadas:
+  - nova rota interna `/admin/build-journal`
+  - navegação administrativa do Admin Console
+- runtime/UI:
+  - tela real com visão geral, timeline de fases, workflow Humano + ChatGPT + Codex, fluxo documentação-produto, stack, segurança, decisões-chave, limites e estado futuro para prints
+  - conteúdo estático versionado no frontend
+  - sem parser dinâmico de markdown, backend próprio, storage, IA ou mocks
+- impacto futuro na FAQ:
+  - passa a existir base navegável interna para explicar método de construção, stack, segurança, colaboração humano/IA/Codex e limites do produto.
+  - qualquer uso externo ou customer-facing continua dependendo de sanitização e revisão editorial.
+- riscos restantes:
+  - permissão específica do Diário ainda não existe; a V1 usa o gate administrativo consolidado do Admin Console
+  - prints futuros ainda precisam de processo de sanitização e curadoria antes de aparecerem na tela
+  - busca, comentários, anexos, filtros persistidos ou histórico em banco exigem contrato futuro antes de implementação
+- validação final:
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - auditoria visual/UX com Impeccable
+
+### Fase documental - Build Journal Strategy V1
+- fase: `documental`
+- nome: `Build Journal Strategy V1`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-13`
+- resumo funcional: criada a fundacao documental da futura area interna `Diario de Construcao`, explicando como o Genius Support OS foi planejado, arquitetado e construido com colaboracao entre humano, ChatGPT e Codex, sem criar feature runtime.
+- docs alterados:
+  - `docs/BUILD_JOURNAL_STRATEGY.md`
+  - `docs/BUILD_JOURNAL_SCREEN_SPEC.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma view criada ou alterada
+  - nenhuma RPC criada ou alterada
+- telas afetadas:
+  - nenhuma tela runtime criada ou alterada
+  - rotas futuras apenas sugeridas: `/admin/build-journal` ou `/system/build-journal`
+- runtime/UI:
+  - sem alteracao runtime
+  - sem mocks
+  - sem componente React
+- impacto futuro na FAQ:
+  - pode alimentar uma FAQ interna sobre metodo de construcao, papeis de Humano + ChatGPT + Codex, arquitetura backend-first, seguranca, stack e limites atuais do produto.
+  - nao deve alimentar FAQ publica nem material customer-facing sem sanitizacao e revisao editorial.
+- riscos restantes:
+  - futura tela depende de decisao de Produto e contrato de acesso antes de implementacao
+  - prints futuros precisam ser sanitizados para remover dados reais, secrets, payloads, logs crus e qualquer coordenada sensivel
+  - se a futura tela precisar de conteudo dinamico, busca, anexos ou comentarios, sera necessario contrato backend proprio antes da UI
+- validacao final:
+  - `npm run web:typecheck`
+  - `npm run web:build`
+
 ### Fase 8.22 - Customer Portal Tenant Context And Switching V3
 - fase: `8.22`
 - branch: `codex/phase7-5-z2-admin-access-system-blueprint`
@@ -3169,6 +3847,39 @@ Cada registro deve informar:
 - validacao final:
   - CI verde no workflow `Supabase DB`, run `25390082441`
   - correcao de escopo aplicada sem alterar backend, schema, RPCs ou contracts
+
+### Ajuste complementar 7.6.1 - Ticket Workspace queue lifecycle + rail cleanup
+- fase: `7.6.1`
+- data: `2026-05-16`
+- resumo funcional: o Ticket Workspace removeu o card redundante de `Atividade recente` do rail direito e passou a operar a fila viva por ciclo de vida, com `Abertos` como escopo padrao e `Fechados` acessiveis por segmentacao explicita.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/SUPPORT_WORKSPACE_ARCHITECTURE_SPEC.md`
+- arquivos de código alterados no lote runtime:
+  - `apps/web/src/features/support/SupportWorkspacePage.tsx`
+  - `apps/web/src/index.css`
+- contratos/read models afetados:
+  - nenhuma alteracao de backend
+  - reaproveito de `vw_support_tickets_queue`
+  - reaproveito do enum `TICKET_STATUSES` em `packages/contracts/src/ticketing.ts`
+- telas afetadas:
+  - `/support/tickets/:ticketId`
+- decisao operacional registrada:
+  - a timeline central e a unica fonte visual de historico da tratativa
+  - o rail direito fica restrito a contexto, acoes rapidas e SLA
+  - tickets encerrados nao aparecem por padrao na fila ativa
+- definicao atual do split de lifecycle:
+  - abertos: `new`, `triage`, `waiting_customer`, `waiting_support`, `waiting_engineering`, `in_progress`
+  - fechados: `resolved`, `closed`, `cancelled`
+- validacao final:
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - browser local com fila em `Abertos`, fila em `Fechados`, ticket fechado selecionado e drawer de classificacao
+  - ausencia de scroll global e scroll horizontal nas validacoes registradas
+- riscos restantes:
+  - `vw_support_tickets_queue` ainda nao expõe `status_group` ou `lifecycle` pronto para filtro server-side
+  - se a fila crescer em volume ou semantica, vale abrir lote futuro para contrato dedicado de lifecycle
 - impacto na FAQ futura:
   - registra que fidelidade de tratativa deve ser medida por densidade, hierarquia e continuidade operacional, nao so por reorganizacao de cards
 
@@ -3845,3 +4556,117 @@ Cada registro deve informar:
   - nao existe modo offline
   - host indisponivel por periodo prolongado continua dependendo de retry manual apos retorno do backend
   - observabilidade especifica de outage customer-facing continua para lote proprio
+
+### Fase 8.27 - Internal Actions Backend Foundation V1
+- fase: `8.27`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- data: `2026-05-16`
+- resumo funcional: o backend ganhou o dominio formal `internal_actions` para subfluxos internos multiárea vinculados a tickets, com catálogo governado de áreas, membership por área, ledger append-only, vínculo seguro de evidências já existentes, views/RPCs dedicadas, `ticket_events` internos e auditoria, sem UI nova, sem bridge com Engenharia e sem alterar `ticket.status`.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/SUPPORT_WORKSPACE_ARCHITECTURE_SPEC.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- arquivos de código e teste alterados:
+  - `supabase/migrations/20260516120420_internal_actions_foundation_v1.sql`
+  - `supabase/tests/037_internal_actions_foundation.sql`
+  - `packages/contracts/src/ticketing.ts`
+  - `packages/contracts/src/index.ts`
+- contratos/read models afetados:
+  - `vw_support_ticket_internal_actions`
+  - `vw_support_internal_action_detail`
+  - `vw_support_internal_action_timeline`
+  - `vw_internal_action_queue_by_area`
+  - `rpc_support_create_internal_action`
+  - `rpc_internal_action_assign`
+  - `rpc_internal_action_add_comment`
+  - `rpc_internal_action_update_status`
+  - `rpc_internal_action_add_evidence_link`
+  - `rpc_internal_action_return_to_support`
+  - `rpc_support_accept_internal_action_return`
+  - `rpc_support_request_internal_action_followup`
+  - `rpc_support_close_internal_action`
+- boundary materializado:
+  - cliente nao enxerga `internal_actions`
+  - suporte continua owner do ticket principal
+  - area interna nao responde cliente e nao fecha ticket
+  - `engineering_work_items` nao foi substituido nem bridgeado neste corte
+  - pendencia interna nao altera `ticket.status`
+- validacao final:
+  - `npm run supabase:verify`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+- riscos restantes:
+  - a UI do Support Workspace ainda nao expoe o novo dominio
+  - a ponte opcional com `engineering_work_items` continua para fase posterior
+  - governanca administrativa de memberships por area ainda depende de superficie propria futura
+
+### Knowledge Article Editor V1 - Edição e assets governados
+- data: `2026-05-21`
+- resumo funcional: `/admin/knowledge/new` e `/admin/knowledge/:articleId/edit` usam a mesma tela dedicada para criação e edição de artigos, mantendo o cockpit `/admin/knowledge` como listagem/governança.
+- código alterado:
+  - `apps/web/src/app/router.tsx`
+  - `apps/web/src/contracts/admin-contracts.ts`
+  - `apps/web/src/features/admin/admin-api.ts`
+  - `apps/web/src/features/knowledge/KnowledgeArticleEditorPage.tsx`
+  - `apps/web/src/features/knowledge/KnowledgePage.tsx`
+- contratos usados:
+  - `rpc_admin_create_knowledge_article_draft_v2`
+  - `rpc_admin_update_knowledge_article_draft_v2`
+  - `rpc_admin_submit_knowledge_article_for_review_v2`
+  - `rpc_admin_begin_knowledge_article_editorial_revision_v2`
+  - `rpc_admin_update_knowledge_article_editorial_revision_v2`
+  - `rpc_admin_upsert_knowledge_article_asset_v1`
+  - `vw_admin_knowledge_article_assets`
+- limites conhecidos:
+  - upload funcional apenas para imagens permitidas pelo bucket `knowledge-assets` (`PNG`, `JPG`, `WEBP`, `GIF`, até 10 MB)
+  - remoção definitiva de asset e PDFs exigem contrato adicional antes de liberar no editor
+  - a tela não publica artigo e não altera status/visibility em massa
+
+### Knowledge Article Editor V1.1 - Fluxo editorial e imagem inline
+- data: `2026-05-21`
+- resumo funcional: o editor dedicado de Knowledge foi simplificado para operar status por ações governadas e imagem inline como markdown seguro, sem token cru no corpo visual e sem preview comprimido no rail.
+- código alterado:
+  - `apps/web/src/features/knowledge/KnowledgeArticleEditorPage.tsx`
+- contratos usados:
+  - `rpc_admin_create_knowledge_article_draft_v2`
+  - `rpc_admin_update_knowledge_article_draft_v2`
+  - `rpc_admin_submit_knowledge_article_for_review_v2`
+  - `rpc_admin_publish_knowledge_article_v2`
+  - `rpc_admin_begin_knowledge_article_editorial_revision_v2`
+  - `rpc_admin_update_knowledge_article_editorial_revision_v2`
+  - `rpc_admin_publish_knowledge_article_editorial_revision_v2`
+  - `rpc_admin_upsert_knowledge_article_asset_v1`
+  - `rpc_admin_update_knowledge_article_asset_review_v1`
+  - `vw_admin_knowledge_article_assets`
+- comportamento validado:
+  - `/admin/knowledge/new` cria rascunho, aceita upload/colagem de imagem e insere `![alt](knowledge-asset:<id>)`
+  - `/admin/knowledge/:articleId/edit` reabre o mesmo artigo com imagem persistida e preview amplo usando o renderer seguro
+  - `draft -> review` acontece por `rpc_admin_submit_knowledge_article_for_review_v2`
+  - `/help/genius` não expõe artigo interno/em revisão
+- limites conhecidos:
+  - PDF/anexo genérico segue bloqueado pelo contrato atual do bucket de assets
+  - publicação continua dependente do gate backend e não é automática
+
+### Internal Actions V1 - Consolidação de status e documentação
+- data: `2026-05-22`
+- resumo funcional: documentação consolidada para refletir o estado real do domínio de Acionamentos Internos V1: backend foundation implementado, contrato seguro de áreas acionáveis implementado e integração mínima do drawer `Acionamentos` no Ticket Workspace já conectada a contratos reais.
+- docs alterados:
+  - `docs/INTERNAL_ACTIONS_V1_STATUS_REPORT.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/SUPPORT_WORKSPACE_ARCHITECTURE_SPEC.md`
+  - `docs/README.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- fronteiras registradas:
+  - suporte continua owner do ticket principal
+  - cliente não vê `internal_actions`
+  - `ticket.status` não muda no V1
+  - `engineering_work_items` segue separado, sem bridge automática
+  - workspace/fila da área acionada ainda não existe
+  - governança administrativa de memberships por área ainda não existe
+- validação documental:
+  - `git diff --check`

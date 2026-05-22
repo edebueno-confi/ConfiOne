@@ -47,6 +47,9 @@ Documentos prioritários:
 - `CUSTOMER_PORTAL_AND_OMNI_FOUNDATION_V3.md`
 - `CUSTOMER_PORTAL_SECURE_EVIDENCE_UPLOAD_V3.md`
 - `CUSTOMER_PORTAL_TICKET_COLLABORATION_V3.md`
+- `BUILD_JOURNAL_STRATEGY.md`
+- `BUILD_JOURNAL_SCREEN_SPEC.md`
+- `DOCUMENTATION_UPDATE_POLICY.md`
 - `reports/KNOWLEDGE_LEGACY_CURATION_BACKLOG.md`
 - `reports/LEGACY_CORPUS_EDITORIAL_AUDIT.md`
 - `knowledge/LEGACY_CORPUS_HUMAN_CURATION_SPRINT.md`
@@ -70,15 +73,25 @@ Documentos históricos:
 - Documentação deve ser viva e versionada no repositório.
 
 ## Estado atual em 2026-05-10
-- Em 2026-05-21, a rota dedicada `/admin/knowledge/new` foi criada como editor V1 de novo artigo da base de conhecimento, separando criação/edição do cockpit `/admin/knowledge`. A tela usa blueprint aprovado, categorias e espaços reais, salva rascunho por RPC administrativa v2, envia para revisão por RPC administrativa v2, não publica automaticamente e trata upload de assets de forma honesta, sem simular contrato inexistente.
+- Em 2026-05-22, a frente de estabilização e extração estrutural do Support Workspace foi consolidada com `web:typecheck` e `web:build` verdes, QA autenticado real com `support_manager`, slot contextual sem corte inferior e redução progressiva de `SupportWorkspacePage.tsx` para cerca de 7.2k linhas. O handoff operacional desta frente, incluindo drift visual atual, backlog recomendado e regra de validação com ticket atual da fila após reidratação, está registrado em `docs/reports/SUPPORT_WORKSPACE_HANDOFF_2026-05-22.md`.
+- Em 2026-05-21, as rotas dedicadas `/admin/knowledge/new` e `/admin/knowledge/:articleId/edit` consolidam o editor V1 de artigos da base de conhecimento, separando criação/edição do cockpit `/admin/knowledge`. A tela usa blueprint aprovado, categorias e espaços reais, salva rascunho por RPC administrativa v2, edita artigos existentes na mesma superfície, abre revisão editorial para artigo publicado por RPC existente, envia drafts para revisão por RPC administrativa v2, não publica automaticamente e suporta imagens governadas por upload, drag/drop e colagem no corpo via bucket privado `knowledge-assets` + `rpc_admin_upsert_knowledge_article_asset_v1`.
+- Em 2026-05-21, a publicacao bruta do corpus Octadesk foi corrigida: os `43` artigos Octadesk antes `published/public` voltaram para `review/internal` via RPC editorial, os `11` itens de risco permanecem `draft/restricted`, `/help/genius` voltou a expor apenas os `6` artigos seed/manuais e `0` artigos Octadesk aparecem nas views publicas. A taxonomia Genius B2B foi criada/aplicada como metadado editorial para os `54` artigos e a fundacao de assets Knowledge foi materializada com `knowledge_article_assets`, bucket privado `knowledge-assets`, views/RPCs de assets, renderer seguro `knowledge-asset:<id>`, painel administrativo de assets e reprocessamento local de 5 artigos com 8 assets pendentes.
 - Em 2026-05-21, a premissa de produto da Central de Ajuda Octadesk foi ajustada: o corpus exportado passou a ser tratado como base publica legada aprovada para migracao, salvo bloqueio tecnico critico automatico. A publicacao local via contratos existentes promoveu `43` artigos Octadesk para `published/public`, mantendo `11` como `draft/restricted` por risco critico. `/help/genius` agora expoe `49` artigos no total (`43` Octadesk + `6` seed/manuais), com busca e detalhe publico validados e `0` exposicao dos bloqueados amostrados.
 - Em 2026-05-20, o fechamento operacional da Central de Ajuda Genius foi consolidado em `docs/reports/GENIUS_HELP_CENTER_READINESS_REPORT.md`, `docs/reports/OCTADESK_PUBLICATION_WAVES.md` e `docs/reports/OCTADESK_WAVE_0_PUBLICATION_CHECKLIST.md`. O Admin Knowledge fica como fila diaria de curadoria do corpus Octadesk, com `4 review/internal`, `24 draft/internal`, `26 draft/restricted`, `54` advisories pendentes e `0` vazamento publico; `/help/genius` segue seguro com 6 artigos seed/manuais.
 - Em 2026-05-20, a triagem final de publicacao do corpus Octadesk foi registrada em `docs/reports/OCTADESK_PUBLICATION_FINAL_TRIAGE.md`, `docs/reports/OCTADESK_PUBLIC_HELP_RELEASE_STATUS.md` e `docs/reports/OCTADESK_INTERNAL_KNOWLEDGE_BACKLOG.md`: `0 publish_now_candidate`, `38 needs_human_decision`, `16 restricted_blocked`, `4 obsolete_or_duplicate` e `0` artigos publicados. A Central Publica permanece com os 6 artigos seed/manuais ate revisao humana real, advisory revisado e revisao de assets.
-- Em 2026-05-20, o estado runtime do import Octadesk foi registrado em `docs/reports/OCTADESK_IMPORT_RUNTIME_STATUS.md`: `58` artigos avaliados, `54` materializados no Admin Knowledge, `4 review/internal`, `24 draft/internal`, `26 draft/restricted`, `54` advisories `pending`, `0 published`, `0 public` e `0` exposicao nas views publicas. `/help/genius` segue apenas com os 6 artigos seed/manuais; publicacao automatica permanece bloqueada ate checklist humano, advisory revisado e revisao de assets.
+- Em 2026-05-20, a esteira completa do corpus Octadesk foi executada de forma local e segura: `58` artigos avaliados, `54` processados/importados no Admin Knowledge por allowlist, `54` advisories sincronizados, `4 review/internal`, `24 draft/internal`, `26 draft/restricted`, `0 published`, `0 public` e `0` exposicao em `/help/genius`. Wave 1 ficou vazia por falta de checklist humano real e revisao de assets.
+- Em 2026-05-20, a estabilizacao documental do fluxo de status do Support Workspace foi consolidada em `docs/reports/SUPPORT_WORKSPACE_STATUS_FLOW_P0_SPEC_2026-05-20.md`. A revisao confirmou o boundary backend-first vigente (`vw_support_ticket_detail` + `rpc_support_update_ticket_status_v2` + `rpc_close_ticket` + `rpc_reopen_ticket`), registrou como P0 o fallback permissivo de `allowed_next_statuses` no frontend quando o array vier vazio e alinhou `SUPPORT_WORKFLOW.md` e `SUPPORT_WORKSPACE_ARCHITECTURE_SPEC.md` ao contrato real.
+- Em 2026-05-20, o legado da Knowledge Base ganhou plano operacional por waves em `docs/knowledge/KNOWLEDGE_LEGACY_BATCH_EXECUTION_PLAN.md`, separando `duplicate`, `obsolete`, `public`, `internal` e `restricted`, com gate global de readiness, donos humanos por lote, dependências de ambiente local e metas mínimas de throughput/risco editorial. Esta fase permaneceu documental e não executou import, sync, publish, migration, contrato, RLS ou alteração de UI.
+- Em 2026-05-20, a política operacional `docs/ROOT_ARTIFACT_HYGIENE_POLICY.md` transformou os achados da auditoria estrutural da raiz em regra explícita para artefatos, evidências, logs, dumps temporários e quarentena. A política ancora destinos corretos (`docs/reports/`, `docs/design/`, `.tmp/`), naming, retenção e backlog de saneamento sem mover ou apagar artefatos nesta fase.
+- Em 2026-05-20, `docs/reports/DOCS_GPT_CANONICAL_DECISION_2026-05-20.md` consolidou a decisão operacional sobre `docs/GPT/`: a árvore passa a ser tratada como shadow tree auxiliar e não canônica, `docs/` permanece como fonte única de verdade e qualquer limpeza final da área depende primeiro da consolidação dos itens exclusivos úteis. Esta fase não moveu nem removeu conteúdo.
 - Em 2026-05-20, os 4 artigos piloto Octadesk foram submetidos para `review/internal` via `rpc_admin_submit_knowledge_article_for_review_v2`, mantendo advisories `pending`, `visibility = internal`, `source_path` e `source_hash` preservados. Nenhum artigo foi publicado, nenhum ficou `public` e `/help/genius` continua sem expor o lote piloto.
+- Em 2026-05-20, a proposta operacional de split entre verify seguro e verify destrutivo foi consolidada em `docs/reports/SUPABASE_VERIFY_SPLIT_PROPOSAL_2026-05-20.md`, formalizando três faixas de validação (`safe smoke`, `integration local` e `destructive reset`) ancoradas na baseline `docs/reports/VALIDATION_BASELINE_MATRIX_2026-05-20.md` e no mapa `docs/reports/SUPABASE_OPERATIONAL_MAP.md`. A fase permaneceu documental: não alterou scripts, não executou reset e registrou como P0 o alinhamento de readiness/portas antes de qualquer split executável.
+- Em 2026-05-20, a rotina de governanca documental foi operacionalizada em `docs/DOCUMENTATION_GOVERNANCE_RUNBOOK.md`, conectando a policy oficial a checkpoints por lote, papéis por frente, ritual de revisão de `PROJECT_STATE.md`/`DOCUMENTATION_LEDGER.md`/docs de área/`README.md`, cadência semanal de saneamento e critério de fechamento no Kanban. Esta fase não alterou runtime de produto, contrato, migration, RLS ou tela.
+- Em 2026-05-20, a governanca operacional de desenvolvimento foi materializada no Hermes com board dedicado `genius-support-os`, perfis especializados (`orchestrator`, `architect`, `web`, `supabase`, `qa`, `docsgovernor`, `knowledgeops`), backlog inicial com dependencias e automacoes read-only para documentacao e monitoramento do board. Esta fase nao alterou runtime de produto, contrato, migration, RLS ou tela.
 - Em 2026-05-20, as versoes editoriais sugeridas dos 4 drafts piloto Octadesk foram preparadas em `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_EDITORIAL_DRAFTS.md` e aplicadas localmente via `rpc_admin_update_knowledge_article_draft_v2`. Os textos removem linguagem legada, contatos operacionais e dependencias obrigatorias de prints, mas continuam `draft/internal`, com advisories `pending`, revisao humana e revisao de assets obrigatorias antes de qualquer review ou publicacao.
 - Em 2026-05-20, a curadoria humana dos 4 drafts piloto Octadesk foi preparada sem publicacao: `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_HUMAN_REVIEW.md` consolida identificacao, riscos editoriais, sugestoes de versao publica e checklist humano por artigo. Os 4 artigos continuam `draft/internal`, com advisories `pending`, `source_path` e `source_hash` preservados, sem aparecer em `/help/genius`.
 - Em 2026-05-20, o lote piloto Octadesk da Central de Ajuda foi preparado e executado apenas como draft local controlado. Foram criados `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_ALLOWLIST.json` e `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_REVIEW_PACK.md`, o importador e o sync de advisories passaram a suportar `--allowlist`, e 4 artigos foram importados para o espaco `genius` como `draft/internal` com `source_path` e `source_hash` preservados. Nenhum artigo foi publicado; `/help/genius` continua sem expor os drafts. A proxima etapa e revisao humana artigo por artigo, reescrita e revisao de assets antes de qualquer publicacao.
+- O lote `Internal Actions V1` criou o domínio neutro `internal_actions` para subfluxos internos de ticket, com catálogo governado de áreas, memberships por área, ledger append-only, views/RPCs dedicadas, `ticket_events` internos e pgTAP. Em 2026-05-22, o Ticket Workspace já possui integração mínima no drawer `Acionamentos` para suporte criar, listar, abrir detalhe, acompanhar timeline interna, aceitar retorno, pedir complemento, fechar e vincular evidência existente por contratos reais. Continuam fora do V1: workspace da área acionada, bridge com Engenharia e qualquer alteração automática de `ticket.status`. Status consolidado em `docs/INTERNAL_ACTIONS_V1_STATUS_REPORT.md`.
 - A curadoria refinada da Knowledge Base está pausada; os candidatos continuam como corpus/documentação inicial.
 - O foco atual é buildout funcional da plataforma interna CX B2B técnica.
 - O lote `Support Ticket Operational Flow V3` fechou o primeiro bloco real de contratos operacionais de ticket.
@@ -104,9 +117,47 @@ Documentos históricos:
 - Nenhuma ação fake foi habilitada no frontend; ações sem contrato completo seguem bloqueadas para lote futuro.
 - Os 8 candidatos documentais da Knowledge continuam pendentes, nao aprovados, nao publicados e nao injetados automaticamente no Help Center.
 - Próximo bloco recomendado: `Customer Portal Tenant Context And Switching V3`, para suportar multiplos vinculos customer-facing com `active_tenant_id` governado por backend e sem contaminar o contexto administrativo.
+- A fase documental `Build Journal Strategy V1` criou a fundacao editorial da futura area interna `Diario de Construcao`, registrando narrativa, limites de seguranca, workflow Humano + ChatGPT + Codex e uma especificacao futura de tela interna.
+- Nenhuma tela runtime, backend, migration, tabela, RPC, RLS, fixture, mock ou contrato novo foi criado nesta fase documental.
+- A fase `Build Journal Runtime UI V1` criou a rota real `/admin/build-journal` dentro do Admin Console, protegida pelo gate administrativo existente.
+- A tela real do `Diario de Construcao` usa conteudo estatico versionado em `apps/web/src/features/build-journal/buildJournalContent.ts`, derivado dos documentos oficiais e sanitizado para nao expor dados reais, secrets, logs crus ou payloads sensiveis.
+- A interface inclui visao geral, timeline de construcao, workflow Humano + ChatGPT + Codex, fluxo documentacao -> produto, stack tecnica, seguranca, decisoes-chave, limites/riscos e estado honesto para prints futuros.
+- O lote nao criou backend novo, migration, RPC, tabela, RLS nova, fixture, mock enganoso, storage, indexacao de documentos, IA ou contrato novo.
+- A fase `Product Docs Internal Reader V1` criou a rota real `/admin/product-docs` dentro do Admin Console, protegida pelo gate administrativo existente.
+- A tela `Documentos do Produto` expõe apenas a whitelist inicial `PRODUCT.md`, `DESIGN.md`, `docs/PRODUCT_VISION.md`, `docs/ARCHITECTURE_RULES.md`, `docs/AUTH_CONTEXT_STRATEGY.md`, `docs/ROADMAP_BUILDOUT_V3.md`, `docs/PROJECT_STATE.md`, `docs/DOCUMENTATION_LEDGER.md`, `docs/SUPPORT_WORKFLOW.md`, `docs/ENGINEERING_WORKFLOW.md`, `docs/BUILD_JOURNAL_STRATEGY.md` e `docs/BUILD_JOURNAL_SCREEN_SPEC.md`.
+- O conteúdo é estático, sanitizado e versionado em `apps/web/src/features/product-docs/productDocsContent.ts`, sem parser dinâmico de filesystem, explorador genérico, leitura arbitrária, busca backend, IA ou contrato novo.
+- A V1 usa busca local no catálogo estático, agrupamento por categoria, status/sensibilidade por documento e avisos de leitura restrita quando aplicável.
+- A interação de seleção em `/admin/product-docs` foi endurecida para evitar repaint visual da rota ao clicar em documentos do índice; o parâmetro `?doc=` permanece como deep-link de entrada controlada, não como sincronização contínua da navegação interna.
+- O lote `Product Docs Internal Reader V1` não criou backend novo, migration, RPC, tabela, RLS nova, fixture, Supabase ou contrato novo.
+- O checkpoint documental `Internal Documentation Areas Checkpoint V1` consolidou as duas áreas internas `/admin/build-journal` e `/admin/product-docs`, reafirmando a diferença entre narrativa de construção e fonte oficial controlada.
+- A consolidação registrou modelo atual de acesso por gate administrativo existente, a limitação de ausência de permissão granular dedicada, a política de exposição/sanitização e os critérios de evolução futura.
+- Pendências atuais das áreas documentais internas:
+  - permissão granular dedicada para `build-journal` e `product-docs` continua inexistente;
+  - qualquer tentativa futura de refletir a seleção interna de `/admin/product-docs` na URL sem reintroduzir flicker depende de estratégia própria de roteamento/estado;
+  - QA manual autenticada em browser real continua recomendada após mudanças visuais relevantes nessas superfícies.
+- O checkpoint permaneceu estritamente documental: sem backend novo, migration, RPC, tabela, RLS nova, fixture, Supabase, contrato novo, UI nova ou feature nova.
+- A política `Documentation Update Policy V1` tornou atualização documental parte explícita do processo de entrega do repositório.
+- O processo agora exige revisão de `PROJECT_STATE.md`, `DOCUMENTATION_LEDGER.md`, documento específico da área e `README.md` sempre que um lote relevante alterar comportamento real, fluxo, contrato, limite ou superfície operacional.
+- `CODEX_EXECUTION_RULES.md` e `VALIDATION_CHECKLIST.md` foram atualizados para tratar ausência de documentação em lote relevante como falha de processo, não como detalhe opcional.
+- Esta fase permaneceu estritamente documental: sem backend novo, migration, RPC, tabela, RLS nova, fixture, Supabase, contrato novo, UI nova ou feature nova.
+- A fase documental `Genius Cockpit UI Blueprint Skill V1` criou a skill local versionada `.skills/genius-cockpit-ui-blueprint` para guiar futuras tarefas de cockpit UI do Genius Support OS a partir de blueprints, screenshots, críticas visuais e decisões de produto.
+- A skill consolida regras de fidelidade visual, densidade, scroll, copy operacional, drawers, rails, React/Tailwind e QA visual em referências reutilizáveis ligadas ao Design System V3.
+- O lote atualizou `docs/README.md`, `docs/REPOSITORY_STRUCTURE.md`, `docs/PROJECT_STATE.md`, `docs/DOCUMENTATION_LEDGER.md` e `README.md` para registrar a existência e o uso da skill local dentro do repositório.
+- Esta fase permaneceu estritamente documental: sem backend novo, migration, RPC, tabela, RLS nova, fixture, Supabase, contrato novo, UI nova ou feature nova.
+- A fase `Build Journal Experience Upgrade V1` refatorou `/admin/build-journal` em uma experiência guiada com índice sticky, seções ancoradas, trilha `entenda em 5 minutos`, distinção entre leitura técnica e não técnica, decisões expansíveis e melhor explicação de stack, arquitetura, segurança e IA.
+- A mesma fase fez ajustes leves em `/admin/product-docs`, adicionando `Por onde começar`, trilhas de leitura por tema e copy mais clara para reforçar que a rota é uma fonte oficial controlada, sem mudar a whitelist explícita nem o modelo estático da superfície.
+- O lote permaneceu estritamente de runtime UI estática e documentação: sem backend novo, migration, RPC, tabela, RLS nova, policy nova, parser dinâmico, busca backend, storage, IA interativa ou permissão granular nova.
+- A fase `Build Journal Immersive Blueprint Fidelity V1` recriou `/admin/build-journal` com alta fidelidade à blueprint dark aprovada, usando hero imersivo horizontal, jornada em uma visão, mapa da construção, timeline por fases, documentos-fonte curados, arquitetura explicada, papel da IA, estado atual e fechamento editorial dentro da mesma rota protegida do Admin Console.
+- A exceção visual dark ficou confinada ao conteúdo da rota do Diário e não alterou navegação, auth, permissões, Product Docs, backend, contratos ou o restante do shell administrativo.
+- O lote permaneceu estritamente de runtime UI estática e documentação: sem backend novo, migration, RPC, tabela, RLS nova, policy nova, storage, parser dinâmico, busca backend, file explorer, IA interativa ou permissão granular nova.
+- A validação visual desktop desta fase foi fechada em viewport `1600x1024`, com primeira dobra mostrando hero, jornada e início claro do grid principal, sem scroll horizontal.
 - A fase `Build Journal Structural Cleanup V1` saneou o frontend atual de `/admin/build-journal` após as recriações visuais: a rota segue única, com abas internas locais; `Visão geral`, `Linha do tempo`, `Arquitetura` e `IA na Construção` estão implementadas em blueprint light; `Documentos oficiais` e `Próximos passos` seguem placeholders estáticos honestos.
 - A mesma fase consolidou `apps/web/src/features/build-journal/buildJournalContent.ts` como fonte central enxuta para tabs, timeline, entregas recentes, placeholders e copy compartilhada, removendo datasets legados órfãos e entradas mortas de arquitetura/IA no painel simples.
 - O lote `Build Journal Structural Cleanup V1` não criou backend novo, migration, RPC, view, tabela, RLS nova, policy nova, Supabase contract, parser dinâmico, busca backend, file explorer, IA interativa ou permissão granular nova.
+- A aba `Documentos oficiais` de `/admin/build-journal` foi implementada como camada narrativa sobre as fontes oficiais do produto. Ela organiza categorias documentais, explica o papel de cada grupo na construção e conecta apenas documentos whitelisted ao leitor `/admin/product-docs`, marcando itens fora da whitelist como pendentes sem ação fake.
+- A implementação de `Documentos oficiais` permaneceu frontend estático e sanitizado: sem backend novo, migration, RPC, view, RLS, Supabase contract, parser dinâmico, file explorer ou busca backend.
+- A refatoração `Build Journal Documents Inline Reader V1` manteve `/admin/product-docs` como leitor oficial controlado e passou a reutilizar o mesmo reader/whitelist dentro da aba `Documentos oficiais` do Diário. O clique em documento whitelisted agora preserva o contexto narrativo de `/admin/build-journal`; o deep link `/admin/product-docs?doc=...` permanece disponível como CTA secundário.
+- A refatoração não criou segunda whitelist, parser markdown concorrente, leitura dinâmica de filesystem, backend novo, migration, RPC, view, RLS, tabela, Supabase contract, busca backend ou permissão granular nova.
 - A fase documental `Internal Documents Architecture V1` especificou a arquitetura final desejada para documentos internos oficiais: `.md` real whitelisted -> dry-run/sanitização -> banco versionado -> views/RPCs -> Product Docs e Build Journal.
 - A spec `docs/INTERNAL_DOCUMENTS_ARCHITECTURE.md` registra que o estado atual de `productDocsContent.ts` com corpos hardcoded deve ser tratado como transitório. A evolução correta exige whitelist versionada, sync idempotente, sanitização, hash, versionamento, catálogo/detalhe por contrato real e remoção futura da duplicação de corpo documental no frontend.
 - Esta fase permaneceu estritamente documental: sem frontend novo, backend novo, migration, tabela, RPC, view, RLS, seed, Supabase, script de sync ou commit do reader inline como solução final.
@@ -825,24 +876,27 @@ Documentos históricos:
     - pre-condicoes obrigatorias antes desse refactor: auditoria de auth, roles, rotas, RLS, navegacao e estados de acesso
     - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit visual e nao deve entrar em commit documental sem decisao explicita
 - Fase 7.6: Saneamento Visual Support Workspace V3 concluido localmente.
-  - O commit visual aprovado `fcf78cd5f3289eaec74c8a68fe0d2d0d15b49488` consolidou o Support Workspace para viewport real do navegador, sem tratar `1920x1080` como altura fisica obrigatoria da app.
-  - O shell operacional de suporte passou a respeitar a viewport util real do navegador com `--app-viewport-height`, sem assumir `1920x1080` como altura fisica literal da app.
-  - `/support/queue` foi reconstruida como bancada de triagem operacional em tres colunas, com lateral compacta sem scroll, lista central dominante e rail de preview util.
-  - `/support/tickets/:ticketId` foi densificada como estacao de atendimento B2B, com thread central, composer amplo, nota interna destacada em amarelo claro e rail direito ordenado por contexto do cliente, acoes do ticket, conhecimento e atividade.
-  - `/support/customers` passou a operar como cockpit de contas B2B em tres colunas, com segmentacao lateral, lista central dominante e preview operacional do cliente usando apenas contratos reais; quando o contrato nao entrega contexto suficiente, a UI assume `Indisponivel`.
-  - `/support/customers/:tenantId` foi compactada para manter densidade operacional, sem scroll global e sem usar a coluna esquerda como solucao de rolagem.
-  - Validacoes visuais registradas:
-    - viewport real `1920x920`
-    - resize validado em `1440x780`
-    - refresh direto de rota
-    - navegacao entre telas Support
-    - ausencia de scroll global e scroll horizontal nas rotas validadas
-    - scroll interno restrito a lista/thread/feed/rail quando necessario
-  - Validacao regressiva do Admin apos o lote Support:
-    - `/admin/tenants`
-    - `/admin/knowledge`
-    - `/admin/access`
-    - `/admin/system`
+    - O commit visual aprovado `fcf78cd5f3289eaec74c8a68fe0d2d0d15b49488` consolidou o Support Workspace para viewport real do navegador, sem tratar `1920x1080` como altura fisica obrigatoria da app.
+    - O shell operacional de suporte passou a respeitar a viewport util real do navegador com `--app-viewport-height`, sem assumir `1920x1080` como altura fisica literal da app.
+    - `/support/queue` foi reconstruida como bancada de triagem operacional em tres colunas, com lateral compacta sem scroll, lista central dominante e rail de preview util.
+    - `/support/tickets/:ticketId` foi densificada como estacao de atendimento B2B, com thread central dominante, composer amplo, nota interna destacada em amarelo claro e rail direito restrito a contexto, acoes rapidas e SLA interno; a timeline central passou a ser a unica superficie visual de historico operacional.
+    - `/support/tickets/:ticketId` agora inicia a fila viva no escopo `Abertos`, com segmentacao explicita `Abertos | Fechados`; tickets encerrados ficam acessiveis por filtro, sem poluir a operacao diaria.
+    - O split operacional da fila usa apenas status reais ja expostos por `vw_support_tickets_queue`, sem contrato novo, sem view parametrizada e sem logica inventada no backend.
+    - `/support/customers` passou a operar como cockpit de contas B2B em tres colunas, com segmentacao lateral, lista central dominante e preview operacional do cliente usando apenas contratos reais; quando o contrato nao entrega contexto suficiente, a UI assume `Indisponivel`.
+    - `/support/customers/:tenantId` foi compactada para manter densidade operacional, sem scroll global e sem usar a coluna esquerda como solucao de rolagem.
+    - Validacoes visuais registradas:
+      - viewport real `1920x920`
+      - resize validado em `1440x780`
+      - refresh direto de rota
+      - navegacao entre telas Support
+      - ausencia de scroll global e scroll horizontal nas rotas validadas
+      - scroll interno restrito a lista/thread/feed/rail quando necessario
+      - fila aberta, fila fechada, ticket aberto, ticket fechado e drawer de classificacao validados no navegador local
+    - Validacao regressiva do Admin apos o lote Support:
+      - `/admin/tenants`
+      - `/admin/knowledge`
+      - `/admin/access`
+      - `/admin/system`
     - todas seguiram sem scroll global e sem regressao visual obvia no shell validado
   - Testes executados para o lote visual:
     - `npm run web:typecheck`
@@ -2008,6 +2062,13 @@ Documentos históricos:
 
 ## Próxima prioridade
 Executar o proximo lote tecnico grande `Customer Portal Session Recovery And Reauthentication V3`, cobrindo sessao stale/expirada, retomada segura apos offline e comportamento previsivel quando o portal volta com credenciais invalidadas sem confundir boundary admin/customer.
+
+Atualização do editor de Knowledge:
+- `/admin/knowledge/new` e `/admin/knowledge/:articleId/edit` agora usam o mesmo fluxo profissional de criação/edição, com status editorial tratado por ações governadas e não por dropdown livre.
+- Imagens coladas, arrastadas ou selecionadas no editor são enviadas ao bucket governado `knowledge-assets`, registradas por RPC administrativa e inseridas no corpo como `![alt](knowledge-asset:<id>)`.
+- A prévia do artigo saiu do rail direito e passou para um painel amplo na área principal, usando o mesmo renderer seguro da Central Pública com assets administrativos assinados.
+- QA local confirmou rascunho com imagem inline persistida ao reabrir edição, submit para `review/internal`, ausência de overflow horizontal e ausência de exposição em `/help/genius`.
+- Nenhum artigo foi publicado automaticamente, nenhum import foi executado e nenhuma alteração de schema/backend foi necessária nesta correção.
 
 Atualização posterior antes de multi-aba:
 - `Customer Portal Entitlement Visibility Regression Fix V3` foi fechado para eliminar a inconsistência observada no tenant B.

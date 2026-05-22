@@ -35,16 +35,28 @@ playwright-report/
 .tmp/
 tmp/
 temp/
+/.codex-local/
 .vercel/
 .supabase/
 supabase/.temp/
 
 # Logs
 *.log
+/.codex-*.log
+/.tmp*.log
+/.tmp_*.log
+/.tmp-*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# Local reports and runtime dumps
+/.tmp-*/
+/*.out
+/*.err
+/*-backup.patch
+/untracked-files-inventory.txt
 
 # Editor and OS
 .DS_Store
@@ -55,3 +67,4 @@ Thumbs.db
 !.vscode/settings.json
 *.swp
 *.swo
+.worktrees/

@@ -64,6 +64,8 @@ import type {
   RpcAdminPrepareKnowledgeArticlePublicationEvidenceResponse,
   RpcAdminPublishKnowledgeArticleV2Response,
   RpcAdminPublishKnowledgeArticleEditorialRevisionV2Response,
+  RpcAdminReplaceKnowledgeArticleTagsV1Payload,
+  RpcAdminReplaceKnowledgeArticleTagsV1Response,
   RpcAdminSubmitKnowledgeArticleForReviewV2Response,
   RpcAdminUnlinkKnowledgeArticleFromTicketPayload,
   RpcAdminUnlinkKnowledgeArticleFromTicketResponse,
@@ -920,6 +922,22 @@ export async function updateKnowledgeArticleDraftV2(
   }
 
   return data as RpcAdminUpdateKnowledgeArticleDraftV2Response;
+}
+
+export async function replaceKnowledgeArticleTagsV1(
+  payload: RpcAdminReplaceKnowledgeArticleTagsV1Payload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_admin_replace_knowledge_article_tags_v1',
+    payload,
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao persistir as tags do artigo.');
+  }
+
+  return (data ?? []) as RpcAdminReplaceKnowledgeArticleTagsV1Response;
 }
 
 export async function beginKnowledgeArticleEditorialRevisionV2(

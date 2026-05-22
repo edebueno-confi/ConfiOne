@@ -1,7 +1,7 @@
 import mascotUrl from '../../../assets/brand/genius-mascot.svg';
 import { cx } from '../../components/ui';
 
-type QuoteFooterVariant = 'standard' | 'architecture' | 'ai';
+type QuoteFooterVariant = 'standard' | 'architecture' | 'ai' | 'documents';
 
 const variantClassNames: Record<QuoteFooterVariant, { quote: string; author: string; mark: string }> = {
   standard: {
@@ -18,6 +18,11 @@ const variantClassNames: Record<QuoteFooterVariant, { quote: string; author: str
     quote: 'text-2xl leading-9',
     author: 'text-base leading-7',
     mark: 'text-7xl',
+  },
+  documents: {
+    quote: 'text-xl leading-8',
+    author: 'text-base leading-7',
+    mark: 'text-6xl',
   },
 };
 

@@ -731,8 +731,8 @@ export function TenantsPage() {
   }
 
   return (
-    <div className="space-y-3 xl:flex xl:h-[calc(100dvh-2rem)] xl:flex-col xl:overflow-hidden">
-      <section className="rounded-[30px] border border-[color:var(--color-border)] bg-white/96 px-6 py-4 shadow-[0_18px_40px_rgba(16,30,74,0.08)]">
+    <div className="space-y-3 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
+      <section className="rounded-[30px] border border-[color:var(--color-border)] bg-white/96 px-6 py-[var(--workspace-header-y)] shadow-[0_18px_40px_rgba(16,30,74,0.08)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-[1.92rem] font-semibold tracking-[-0.055em] text-[color:var(--color-ink)]">
@@ -752,9 +752,9 @@ export function TenantsPage() {
         </div>
       </section>
 
-      <div className="grid gap-3 xl:min-h-0 xl:flex-1 xl:grid-cols-[292px_minmax(0,1fr)_424px] 2xl:grid-cols-[300px_minmax(0,1fr)_436px]">
-        <aside className="space-y-4 xl:min-h-0">
-          <section className="rounded-[28px] border border-[color:var(--color-border)] bg-white/96 p-3 shadow-[0_16px_34px_rgba(16,30,74,0.08)] xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
+      <div className="grid gap-[var(--workspace-panel-gap)] xl:min-h-0 xl:flex-1 xl:grid-cols-[292px_minmax(0,1fr)_minmax(360px,424px)] 2xl:grid-cols-[300px_minmax(0,1fr)_minmax(372px,436px)]">
+        <aside className="space-y-4 xl:min-h-0 xl:overflow-hidden">
+          <section className="rounded-[28px] border border-[color:var(--color-border)] bg-white/96 p-3 shadow-[0_16px_34px_rgba(16,30,74,0.08)] xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-y-auto">
             <div className="space-y-2 xl:flex xl:h-full xl:flex-col">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
                 Ferramentas

@@ -18,6 +18,13 @@ export interface MarkdownAsset {
   height?: number | null;
 }
 
+export interface MarkdownRelatedArticle {
+  id: string;
+  slug: string;
+  title: string;
+  summary?: string | null;
+}
+
 interface Block {
   type:
     | 'heading'
@@ -43,6 +50,7 @@ interface Block {
   tone?: 'info' | 'warning' | 'success' | 'danger';
   videoId?: string;
   dividerStyle?: 'solid' | 'dashed' | 'space';
+  relatedArticleId?: string;
   relatedSlug?: string;
   relatedTitle?: string;
   relatedSummary?: string;
@@ -248,7 +256,7 @@ function parseMarkdown(source: string) {
       continue;
     }
 
-    const relatedMatch = /^::related\s+([a-z0-9-]+)\s*$/i.exec(trimmed);
+    const relatedMatch = /^::related\s+([a-z0-9-]+|[a-f0-9-]{36})\s*$/i.exec(trimmed);
     if (relatedMatch) {
       const relatedLines: string[] = [];
       index += 1;
@@ -260,6 +268,7 @@ function parseMarkdown(source: string) {
         index += 1;
       }
       blocks.push({
+        relatedArticleId: /^[a-f0-9-]{36}$/i.test(relatedMatch[1]) ? relatedMatch[1] : undefined,
         relatedSlug: relatedMatch[1],
         relatedSummary: relatedLines[1]?.trim() || 'Abra este artigo relacionado na Central.',
         relatedTitle: relatedLines[0]?.trim() || 'Artigo relacionado',
@@ -302,7 +311,7 @@ function parseMarkdown(source: string) {
         candidate.startsWith('```') ||
         /^:::callout\s+(info|warning|success|danger)\s*$/i.test(candidate) ||
         /^::divider(?:\s+(solid|dashed|space))?\s*$/i.test(candidate) ||
-        /^::related\s+([a-z0-9-]+)\s*$/i.test(candidate) ||
+        /^::related\s+([a-z0-9-]+|[a-f0-9-]{36})\s*$/i.test(candidate) ||
         /^::youtube\s+([A-Za-z0-9_-]{6,20})(?:\s*\|size=(small|medium|large|full))?\s*$/i.test(
           candidate,
         ) ||
@@ -421,14 +430,18 @@ function slugifyHeading(value: string) {
 
 export function MarkdownDocument({
   assets = {},
+  relatedArticles = [],
   source,
 }: {
   assets?: Record<string, MarkdownAsset>;
+  relatedArticles?: MarkdownRelatedArticle[];
   source: string;
 }) {
   const blocks = parseMarkdown(source);
   const headingUsage = new Map<string, number>();
   let levelTwoIndex = 0;
+  const relatedById = new Map(relatedArticles.map((article) => [article.id, article]));
+  const relatedBySlug = new Map(relatedArticles.map((article) => [article.slug, article]));
 
   return (
     <div className="space-y-6 text-[color:var(--help-ink)]">
@@ -547,16 +560,26 @@ export function MarkdownDocument({
         }
 
         if (block.type === 'related') {
+          const related =
+            (block.relatedArticleId ? relatedById.get(block.relatedArticleId) : null) ??
+            (block.relatedSlug ? relatedBySlug.get(block.relatedSlug) : null);
+
+          if (!related) {
+            return null;
+          }
+
           return (
             <a
               key={key}
               className="grid max-w-[78ch] grid-cols-[minmax(0,1fr)_auto] gap-1 rounded-[18px] border border-violet-200 bg-violet-50 px-5 py-4 text-violet-950 no-underline shadow-[0_14px_34px_rgba(124,58,237,0.08)]"
-              href={`/help/genius/articles/${block.relatedSlug}`}
+              href={`/help/genius/articles/${related.slug}`}
             >
               <span className="col-span-2 text-sm font-extrabold text-violet-700">Leia também</span>
-              <strong className="text-base font-extrabold">{block.relatedTitle}</strong>
+              <strong className="text-base font-extrabold">{related.title}</strong>
               <span className="text-xl text-violet-600">→</span>
-              <span className="text-sm leading-6 text-slate-600">{block.relatedSummary}</span>
+              <span className="text-sm leading-6 text-slate-600">
+                {related.summary || 'Abra este artigo relacionado na Central.'}
+              </span>
             </a>
           );
         }

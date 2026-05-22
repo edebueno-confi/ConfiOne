@@ -25,6 +25,10 @@ function sanitizeRedirectTo(rawValue: string | null) {
   return rawValue;
 }
 
+function matchesRedirectTarget(redirectTo: string, basePath: string) {
+  return redirectTo === basePath || redirectTo.startsWith(`${basePath}/`);
+}
+
 export function LoginPage() {
   const [searchParams] = useSearchParams();
   const redirectTo = sanitizeRedirectTo(searchParams.get('redirectTo'));
@@ -39,7 +43,10 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const isPortalRedirect = redirectTo === '/portal' || redirectTo.startsWith('/portal/');
+  const isPortalRedirect = matchesRedirectTarget(redirectTo, '/portal');
+  const isSupportRedirect =
+    matchesRedirectTarget(redirectTo, '/support') ||
+    matchesRedirectTarget(redirectTo, '/engineering');
 
   if (phase === 'config-error') {
     return (
@@ -56,6 +63,10 @@ export function LoginPage() {
   }
 
   if (phase === 'authenticated' && isPortalRedirect) {
+    return <Navigate replace to={redirectTo} />;
+  }
+
+  if (phase === 'authenticated' && isSupportRedirect) {
     return <Navigate replace to={redirectTo} />;
   }
 

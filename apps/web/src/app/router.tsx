@@ -1,158 +1,229 @@
-import { lazy, type ReactNode, Suspense } from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { LoadingState } from '../components/states';
+import { lazy, type ComponentType, type ReactNode, Suspense } from 'react';
+import { createBrowserRouter, Navigate, useRouteError } from 'react-router-dom';
+import { ErrorState, LoadingState } from '../components/states';
+import { AppButton, GhostButton } from '../components/ui';
 import { AuthBootstrap } from '../features/auth/AuthBootstrap';
 import { AdminGate } from '../features/auth/AdminGate';
 
-const AdminConsoleShell = lazy(async () => {
-  const module = await import('../features/admin-shell/AdminConsoleShell');
-  return { default: module.AdminConsoleShell };
-});
+const CHUNK_RECOVERY_KEY = 'genius.lazy-reload-once';
 
-const LoginPage = lazy(async () => {
-  const module = await import('../features/login/LoginPage');
-  return { default: module.LoginPage };
-});
+function isChunkLoadError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
 
-const AccessDeniedPage = lazy(async () => {
-  const module = await import('../features/auth/AccessDeniedPage');
-  return { default: module.AccessDeniedPage };
-});
+  return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(
+    error.message,
+  );
+}
 
-const CustomerPortalGate = lazy(async () => {
-  const module = await import('../features/customer-portal/CustomerPortalPage');
-  return { default: module.CustomerPortalGate };
-});
+async function importWithChunkRecovery<T>(loader: () => Promise<T>) {
+  try {
+    const module = await loader();
 
-const CustomerPortalLayout = lazy(async () => {
-  const module = await import('../features/customer-portal/CustomerPortalPage');
-  return { default: module.CustomerPortalLayout };
-});
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem(CHUNK_RECOVERY_KEY);
+    }
 
-const CustomerPortalHomePage = lazy(async () => {
-  const module = await import('../features/customer-portal/CustomerPortalPage');
-  return { default: module.CustomerPortalHomePage };
-});
+    return module;
+  } catch (error) {
+    if (typeof window !== 'undefined' && isChunkLoadError(error)) {
+      const alreadyRetried = window.sessionStorage.getItem(CHUNK_RECOVERY_KEY) === '1';
 
-const CustomerPortalTicketsPage = lazy(async () => {
-  const module = await import('../features/customer-portal/CustomerPortalPage');
-  return { default: module.CustomerPortalTicketsPage };
-});
+      if (!alreadyRetried) {
+        window.sessionStorage.setItem(CHUNK_RECOVERY_KEY, '1');
+        window.location.reload();
 
-const CustomerPortalTicketPage = lazy(async () => {
-  const module = await import('../features/customer-portal/CustomerPortalPage');
-  return { default: module.CustomerPortalTicketPage };
-});
+        return await new Promise<never>(() => {
+          // Wait for the reload to replace this execution path.
+        });
+      }
 
-const CustomerPortalHelpPage = lazy(async () => {
-  const module = await import('../features/customer-portal/CustomerPortalPage');
-  return { default: module.CustomerPortalHelpPage };
-});
+      window.sessionStorage.removeItem(CHUNK_RECOVERY_KEY);
+    }
 
-const CustomerPortalHelpArticlePage = lazy(async () => {
-  const module = await import('../features/customer-portal/CustomerPortalPage');
-  return { default: module.CustomerPortalHelpArticlePage };
-});
+    throw error;
+  }
+}
 
-const TenantsPage = lazy(async () => {
-  const module = await import('../features/tenants/TenantsPage');
-  return { default: module.TenantsPage };
-});
+function lazyRouteModule<TModule, TKey extends keyof TModule>(
+  loader: () => Promise<TModule>,
+  exportName: TKey,
+) {
+  return lazy(async () => {
+    const module = await importWithChunkRecovery(loader);
+    return { default: module[exportName] as ComponentType };
+  });
+}
 
-const KnowledgePage = lazy(async () => {
-  const module = await import('../features/knowledge/KnowledgePage');
-  return { default: module.KnowledgePage };
-});
+function RouteErrorBoundary() {
+  const error = useRouteError();
+  const description = isChunkLoadError(error)
+    ? 'A aplicação tentou abrir uma área com um arquivo de interface que ficou desatualizado no navegador. Recarregue a página para sincronizar os assets do build atual.'
+    : error instanceof Error
+      ? error.message
+      : 'Ocorreu uma falha inesperada ao abrir esta área.';
 
-const KnowledgeArticleEditorPage = lazy(async () => {
-  const module = await import('../features/knowledge/KnowledgeArticleEditorPage');
-  return { default: module.KnowledgeArticleEditorPage };
-});
+  return (
+    <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-6 py-12">
+      <ErrorState
+        title="Não foi possível abrir esta superfície"
+        description={description}
+        action={
+          <>
+            <AppButton onClick={() => window.location.reload()}>Recarregar página</AppButton>
+            <GhostButton onClick={() => window.location.assign('/admin')}>
+              Voltar ao Admin
+            </GhostButton>
+          </>
+        }
+      />
+    </div>
+  );
+}
 
-const CustomerPortalAdminPage = lazy(async () => {
-  const module = await import('../features/admin/CustomerPortalAdminPage');
-  return { default: module.CustomerPortalAdminPage };
-});
+const AdminConsoleShell = lazyRouteModule(
+  () => import('../features/admin-shell/AdminConsoleShell'),
+  'AdminConsoleShell',
+);
 
-const BuildJournalPage = lazy(async () => {
-  const module = await import('../features/build-journal/BuildJournalPage');
-  return { default: module.BuildJournalPage };
-});
+const LoginPage = lazyRouteModule(() => import('../features/login/LoginPage'), 'LoginPage');
 
-const HelpCenterPage = lazy(async () => {
-  const module = await import('../features/help-center/HelpCenterPage');
-  return { default: module.HelpCenterPage };
-});
+const AccessDeniedPage = lazyRouteModule(
+  () => import('../features/auth/AccessDeniedPage'),
+  'AccessDeniedPage',
+);
 
-const HelpCenterSpaceLayout = lazy(async () => {
-  const module = await import('../features/help-center/HelpCenterPage');
-  return { default: module.HelpCenterSpaceLayout };
-});
+const CustomerPortalGate = lazyRouteModule(
+  () => import('../features/customer-portal/CustomerPortalPage'),
+  'CustomerPortalGate',
+) as ReturnType<typeof lazy<ComponentType<{ children?: ReactNode }>>>;
 
-const HelpCenterHomePage = lazy(async () => {
-  const module = await import('../features/help-center/HelpCenterHomePage');
-  return { default: module.HelpCenterHomePage };
-});
+const CustomerPortalLayout = lazyRouteModule(
+  () => import('../features/customer-portal/CustomerPortalPage'),
+  'CustomerPortalLayout',
+);
 
-const HelpCenterArticlesPage = lazy(async () => {
-  const module = await import('../features/help-center/HelpCenterArticlesPage');
-  return { default: module.HelpCenterArticlesPage };
-});
+const CustomerPortalHomePage = lazyRouteModule(
+  () => import('../features/customer-portal/CustomerPortalPage'),
+  'CustomerPortalHomePage',
+);
 
-const HelpCenterArticlePage = lazy(async () => {
-  const module = await import('../features/help-center/HelpCenterArticlePage');
-  return { default: module.HelpCenterArticlePage };
-});
+const CustomerPortalTicketsPage = lazyRouteModule(
+  () => import('../features/customer-portal/CustomerPortalPage'),
+  'CustomerPortalTicketsPage',
+);
 
-const AccessPage = lazy(async () => {
-  const module = await import('../features/access/AccessPage');
-  return { default: module.AccessPage };
-});
+const CustomerPortalTicketPage = lazyRouteModule(
+  () => import('../features/customer-portal/CustomerPortalPage'),
+  'CustomerPortalTicketPage',
+);
 
-const SystemPage = lazy(async () => {
-  const module = await import('../features/system/SystemPage');
-  return { default: module.SystemPage };
-});
+const CustomerPortalHelpPage = lazyRouteModule(
+  () => import('../features/customer-portal/CustomerPortalPage'),
+  'CustomerPortalHelpPage',
+);
 
-const SupportWorkspaceShell = lazy(async () => {
-  const module = await import('../features/support/SupportWorkspaceShell');
-  return { default: module.SupportWorkspaceShell };
-});
+const CustomerPortalHelpArticlePage = lazyRouteModule(
+  () => import('../features/customer-portal/CustomerPortalPage'),
+  'CustomerPortalHelpArticlePage',
+);
 
-const SupportQueuePage = lazy(async () => {
-  const module = await import('../features/support/SupportWorkspacePage');
-  return { default: module.SupportQueuePage };
-});
+const TenantsPage = lazyRouteModule(() => import('../features/tenants/TenantsPage'), 'TenantsPage');
 
-const SupportTicketsPage = lazy(async () => {
-  const module = await import('../features/support/SupportWorkspacePage');
-  return { default: module.SupportTicketsPage };
-});
+const KnowledgePage = lazyRouteModule(
+  () => import('../features/knowledge/KnowledgePage'),
+  'KnowledgePage',
+);
 
-const SupportTicketPage = lazy(async () => {
-  const module = await import('../features/support/SupportWorkspacePage');
-  return { default: module.SupportTicketPage };
-});
+const KnowledgeArticleEditorPage = lazyRouteModule(
+  () => import('../features/knowledge/KnowledgeArticleEditorPage'),
+  'KnowledgeArticleEditorPage',
+);
 
-const EngineeringWorkspacePage = lazy(async () => {
-  const module = await import('../features/engineering/EngineeringWorkspacePage');
-  return { default: module.EngineeringWorkspacePage };
-});
+const CustomerPortalAdminPage = lazyRouteModule(
+  () => import('../features/admin/CustomerPortalAdminPage'),
+  'CustomerPortalAdminPage',
+);
 
-const SupportCustomerPage = lazy(async () => {
-  const module = await import('../features/support/SupportWorkspacePage');
-  return { default: module.SupportCustomerPage };
-});
+const BuildJournalPage = lazyRouteModule(
+  () => import('../features/build-journal/BuildJournalPage'),
+  'BuildJournalPage',
+);
 
-const SupportCustomersPage = lazy(async () => {
-  const module = await import('../features/support/SupportWorkspacePage');
-  return { default: module.SupportCustomersPage };
-});
+const ProductDocsPage = lazyRouteModule(
+  () => import('../features/product-docs/ProductDocsPage'),
+  'ProductDocsPage',
+);
 
-const SupportGate = lazy(async () => {
-  const module = await import('../features/support/SupportGate');
-  return { default: module.SupportGate };
-});
+const HelpCenterPage = lazyRouteModule(
+  () => import('../features/help-center/HelpCenterPage'),
+  'HelpCenterPage',
+);
+
+const HelpCenterSpaceLayout = lazyRouteModule(
+  () => import('../features/help-center/HelpCenterPage'),
+  'HelpCenterSpaceLayout',
+);
+
+const HelpCenterHomePage = lazyRouteModule(
+  () => import('../features/help-center/HelpCenterHomePage'),
+  'HelpCenterHomePage',
+);
+
+const HelpCenterArticlesPage = lazyRouteModule(
+  () => import('../features/help-center/HelpCenterArticlesPage'),
+  'HelpCenterArticlesPage',
+);
+
+const HelpCenterArticlePage = lazyRouteModule(
+  () => import('../features/help-center/HelpCenterArticlePage'),
+  'HelpCenterArticlePage',
+);
+
+const AccessPage = lazyRouteModule(() => import('../features/access/AccessPage'), 'AccessPage');
+
+const SystemPage = lazyRouteModule(() => import('../features/system/SystemPage'), 'SystemPage');
+
+const SupportWorkspaceShell = lazyRouteModule(
+  () => import('../features/support/SupportWorkspaceShell'),
+  'SupportWorkspaceShell',
+);
+
+const SupportQueuePage = lazyRouteModule(
+  () => import('../features/support/SupportWorkspacePage'),
+  'SupportQueuePage',
+);
+
+const SupportTicketsPage = lazyRouteModule(
+  () => import('../features/support/SupportWorkspacePage'),
+  'SupportTicketsPage',
+);
+
+const SupportTicketPage = lazyRouteModule(
+  () => import('../features/support/SupportWorkspacePage'),
+  'SupportTicketPage',
+);
+
+const EngineeringWorkspacePage = lazyRouteModule(
+  () => import('../features/engineering/EngineeringWorkspacePage'),
+  'EngineeringWorkspacePage',
+);
+
+const SupportCustomerPage = lazyRouteModule(
+  () => import('../features/support/SupportWorkspacePage'),
+  'SupportCustomerPage',
+);
+
+const SupportCustomersPage = lazyRouteModule(
+  () => import('../features/support/SupportWorkspacePage'),
+  'SupportCustomersPage',
+);
+
+const SupportGate = lazyRouteModule(
+  () => import('../features/support/SupportGate'),
+  'SupportGate',
+) as ReturnType<typeof lazy<ComponentType<{ children?: ReactNode }>>>;
 
 function RouteLoading() {
   return (
@@ -172,6 +243,7 @@ function withSuspense(element: ReactNode) {
 export const router = createBrowserRouter([
   {
     element: <AuthBootstrap />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       {
         path: '/',
@@ -264,12 +336,20 @@ export const router = createBrowserRouter([
             element: withSuspense(<KnowledgeArticleEditorPage />),
           },
           {
+            path: 'knowledge/:articleId/edit',
+            element: withSuspense(<KnowledgeArticleEditorPage />),
+          },
+          {
             path: 'customer-portal',
             element: withSuspense(<CustomerPortalAdminPage />),
           },
           {
             path: 'build-journal',
             element: withSuspense(<BuildJournalPage />),
+          },
+          {
+            path: 'product-docs',
+            element: withSuspense(<ProductDocsPage />),
           },
           {
             path: 'access',
