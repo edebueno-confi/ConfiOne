@@ -326,9 +326,9 @@ function RailCard({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white/95 p-4 shadow-[0_18px_42px_rgba(20,31,71,0.06)]">
+    <section className="rounded-[20px] border border-[#DCE4F2] bg-white p-3 shadow-[0_18px_50px_rgba(22,36,67,0.06)]">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[0.82rem] font-extrabold tracking-[-0.015em] text-[color:var(--color-brand-navy)]">
+        <h2 className="text-[0.82rem] font-extrabold tracking-[-0.015em] text-[#162443]">
           {title}
         </h2>
         {badge ? (
@@ -337,7 +337,7 @@ function RailCard({
           </span>
         ) : null}
       </div>
-      <div className="mt-4 space-y-3">{children}</div>
+      <div className="mt-3 space-y-2.5">{children}</div>
     </section>
   );
 }
@@ -355,7 +355,7 @@ function ToolbarButton({
 }) {
   return (
     <button
-      className="inline-flex h-8 min-w-8 shrink-0 items-center justify-center rounded-xl border border-transparent px-2 text-[0.78rem] font-semibold text-[color:var(--color-brand-navy)] transition hover:border-[color:var(--color-border)] hover:bg-[color:var(--color-surface)] disabled:cursor-not-allowed disabled:opacity-40"
+      className="inline-flex h-8 min-w-8 shrink-0 items-center justify-center rounded-xl border border-transparent px-2 text-[0.78rem] font-bold text-[#162443] transition hover:border-[#DCE4F2] hover:bg-[#F4F7FC] disabled:cursor-not-allowed disabled:opacity-40"
       disabled={disabled}
       onClick={onClick}
       title={title}
@@ -664,6 +664,10 @@ function inlineNodeToMarkdown(node: Node): string {
     return content.trim() ? `\`${content}\`` : '';
   }
 
+  if (tag === 'br') {
+    return '\n';
+  }
+
   if (tag === 'a') {
     const href = node.getAttribute('href') ?? '';
     return href && isSafeEditorHref(href) ? `[${content}](${href})` : content;
@@ -759,6 +763,66 @@ function RichTextArticleEditor({
   const draggedFigureRef = useRef<HTMLElement | null>(null);
   const [selectedFigure, setSelectedFigure] = useState<HTMLElement | null>(null);
   const lastAppliedBodyRef = useRef<string | null>(null);
+  const historyRef = useRef<string[]>([]);
+  const historyIndexRef = useRef(-1);
+  const isApplyingHistoryRef = useRef(false);
+
+  function pushHistory(nextBodyMd: string) {
+    if (isApplyingHistoryRef.current) {
+      return;
+    }
+
+    const current = historyRef.current[historyIndexRef.current];
+    if (current === nextBodyMd) {
+      return;
+    }
+
+    const nextHistory = historyRef.current.slice(0, historyIndexRef.current + 1);
+    nextHistory.push(nextBodyMd);
+
+    if (nextHistory.length > 80) {
+      nextHistory.shift();
+    }
+
+    historyRef.current = nextHistory;
+    historyIndexRef.current = nextHistory.length - 1;
+  }
+
+  function applyMarkdownSnapshot(nextBodyMd: string) {
+    const editor = editorRef.current;
+    if (!editor) {
+      return;
+    }
+
+    isApplyingHistoryRef.current = true;
+    editor.innerHTML = renderEditorHtmlFromMarkdown(nextBodyMd, assets);
+    lastAppliedBodyRef.current = nextBodyMd;
+    onChange(nextBodyMd);
+    isApplyingHistoryRef.current = false;
+    setSelectedFigure(null);
+  }
+
+  function undoEditor() {
+    if (historyIndexRef.current <= 0) {
+      document.execCommand('undo');
+      emitChange();
+      return;
+    }
+
+    historyIndexRef.current -= 1;
+    applyMarkdownSnapshot(historyRef.current[historyIndexRef.current] ?? '');
+  }
+
+  function redoEditor() {
+    if (historyIndexRef.current >= historyRef.current.length - 1) {
+      document.execCommand('redo');
+      emitChange();
+      return;
+    }
+
+    historyIndexRef.current += 1;
+    applyMarkdownSnapshot(historyRef.current[historyIndexRef.current] ?? '');
+  }
 
   function emitChange() {
     const editor = editorRef.current;
@@ -766,6 +830,8 @@ function RichTextArticleEditor({
       return null;
     }
     const nextBodyMd = editorHtmlToMarkdown(editor);
+    lastAppliedBodyRef.current = nextBodyMd;
+    pushHistory(nextBodyMd);
     onChange(nextBodyMd);
     return nextBodyMd;
   }
@@ -838,7 +904,9 @@ function RichTextArticleEditor({
     }
 
     restoreSelection();
-    document.execCommand(command, false, value);
+    const normalizedValue =
+      command === 'formatBlock' && value ? `<${value.toLowerCase()}>` : value;
+    document.execCommand(command, false, normalizedValue);
     rememberSelection();
     emitChange();
   }
@@ -850,6 +918,27 @@ function RichTextArticleEditor({
     selectedFigure.dataset.size = size;
     selectedFigure.classList.remove('image-small', 'image-medium', 'image-large', 'image-full');
     selectedFigure.classList.add(`image-${size}`);
+    emitChange();
+  }
+
+  function moveSelectedImage(direction: 'up' | 'down') {
+    if (!selectedFigure) {
+      return;
+    }
+
+    const sibling =
+      direction === 'up'
+        ? selectedFigure.previousElementSibling
+        : selectedFigure.nextElementSibling;
+    if (!sibling) {
+      return;
+    }
+
+    if (direction === 'up') {
+      sibling.before(selectedFigure);
+    } else {
+      sibling.after(selectedFigure);
+    }
     emitChange();
   }
 
@@ -895,6 +984,7 @@ function RichTextArticleEditor({
 
     editor.innerHTML = renderEditorHtmlFromMarkdown(bodyMd, assets);
     lastAppliedBodyRef.current = bodyMd;
+    pushHistory(bodyMd);
   }, [assets, bodyMd]);
 
   useEffect(() => {
@@ -909,7 +999,7 @@ function RichTextArticleEditor({
         assetState === 'saving' && 'bg-[rgba(234,242,255,0.2)]',
       )}
     >
-      <div className="flex h-12 shrink-0 items-center gap-1.5 overflow-x-auto border-b border-[color:var(--color-border)] bg-white px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex h-11 shrink-0 items-center gap-1.5 overflow-x-auto border-b border-[#E8EEF7] bg-white px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <button className="mr-1 inline-flex h-8 items-center rounded-xl border border-[color:var(--color-border)] px-3 text-[0.76rem] font-semibold text-[color:var(--color-brand-navy)]" onClick={() => runCommand('formatBlock', 'p')} type="button">
           Parágrafo
         </button>
@@ -927,8 +1017,10 @@ function RichTextArticleEditor({
         <ToolbarButton onClick={() => runCommand('italic')} title="Itálico"><span className="italic">I</span></ToolbarButton>
         <ToolbarButton onClick={() => runCommand('underline')} title="Sublinhado"><span className="underline">U</span></ToolbarButton>
         <span className="mx-1 h-7 w-px bg-[color:var(--color-border)]" />
-        <ToolbarButton onClick={() => runCommand('insertUnorderedList')} title="Lista">≡</ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('insertUnorderedList')} title="Lista com marcadores">☷</ToolbarButton>
         <ToolbarButton onClick={() => runCommand('insertOrderedList')} title="Lista numerada">1.</ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('outdent')} title="Reduzir recuo">‹</ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('indent')} title="Aumentar recuo">›</ToolbarButton>
         <ToolbarButton onClick={() => runCommand('formatBlock', 'blockquote')} title="Citação">”</ToolbarButton>
         <ToolbarButton
           onClick={() => {
@@ -954,8 +1046,8 @@ function RichTextArticleEditor({
           &lt;/&gt;
         </ToolbarButton>
         <span className="ml-auto" />
-        <ToolbarButton onClick={() => runCommand('undo')} title="Desfazer">↶</ToolbarButton>
-        <ToolbarButton onClick={() => runCommand('redo')} title="Refazer">↷</ToolbarButton>
+        <ToolbarButton onClick={undoEditor} title="Desfazer">↶</ToolbarButton>
+        <ToolbarButton onClick={redoEditor} title="Refazer">↷</ToolbarButton>
       </div>
 
       {selectedFigure ? (
@@ -975,6 +1067,21 @@ function RichTextArticleEditor({
               {size === 'small' ? 'Pequena' : size === 'medium' ? 'Média' : size === 'large' ? 'Grande' : 'Largura total'}
             </button>
           ))}
+          <span className="mx-1 h-7 w-px bg-[color:var(--color-border)]" />
+          <button
+            className="rounded-xl px-3 py-2 text-[0.72rem] font-bold text-[color:var(--color-brand-navy)] hover:bg-[color:var(--color-surface)]"
+            onClick={() => moveSelectedImage('up')}
+            type="button"
+          >
+            Mover acima
+          </button>
+          <button
+            className="rounded-xl px-3 py-2 text-[0.72rem] font-bold text-[color:var(--color-brand-navy)] hover:bg-[color:var(--color-surface)]"
+            onClick={() => moveSelectedImage('down')}
+            type="button"
+          >
+            Mover abaixo
+          </button>
           <button
             className="rounded-xl px-3 py-2 text-[0.72rem] font-bold text-red-600 hover:bg-red-50"
             onClick={removeSelectedImage}
@@ -995,7 +1102,7 @@ function RichTextArticleEditor({
             }
             .knowledge-rich-editor h1 {
               color: #162443;
-              font-size: 30px;
+              font-size: 28px;
               font-weight: 800;
               letter-spacing: -0.03em;
               line-height: 1.18;
@@ -1003,7 +1110,7 @@ function RichTextArticleEditor({
             }
             .knowledge-rich-editor h2 {
               color: #162443;
-              font-size: 22px;
+              font-size: 21px;
               font-weight: 800;
               line-height: 1.25;
               margin: 28px 0 10px;
@@ -1026,8 +1133,8 @@ function RichTextArticleEditor({
               color: #24324F;
               font-size: 15px;
               line-height: 1.7;
-              margin: 0 0 18px 24px;
-              padding: 0;
+              margin: 0 0 18px 0;
+              padding-left: 24px;
             }
             .knowledge-rich-editor li {
               margin: 5px 0;
@@ -1079,10 +1186,10 @@ function RichTextArticleEditor({
               max-width: 360px;
             }
             .knowledge-rich-editor figure[data-asset-id][data-size='medium'] {
-              max-width: 560px;
+              max-width: 520px;
             }
             .knowledge-rich-editor figure[data-asset-id][data-size='large'] {
-              max-width: 760px;
+              max-width: 720px;
             }
             .knowledge-rich-editor figure[data-asset-id][data-size='full'] {
               max-width: 100%;
@@ -1090,11 +1197,14 @@ function RichTextArticleEditor({
             .knowledge-rich-editor figure[data-asset-id] img,
             .knowledge-rich-editor .image-missing {
               border: 1px solid #DCE4F2;
-              border-radius: 18px;
+              border-radius: 16px;
               display: block;
               max-height: 560px;
               object-fit: contain;
               width: 100%;
+            }
+            .knowledge-rich-editor figure[data-asset-id].image-dragging {
+              opacity: 0.55;
             }
             .knowledge-rich-editor figure[data-asset-id]:focus,
             .knowledge-rich-editor figure[data-asset-id]:has(img:hover) {
@@ -1127,7 +1237,7 @@ function RichTextArticleEditor({
           `}
         </style>
         <div
-          className="knowledge-rich-editor mx-auto min-h-full max-w-[920px] px-10 py-8 text-[#24324F] outline-none"
+          className="knowledge-rich-editor min-h-full max-w-[980px] px-10 py-8 text-[#24324F] outline-none xl:px-12"
           contentEditable={!isReadOnly}
           onBlur={rememberSelection}
           onClick={(event) => {
@@ -1140,6 +1250,7 @@ function RichTextArticleEditor({
             const figure = (event.target as HTMLElement).closest('figure[data-asset-id]');
             if (figure instanceof HTMLElement) {
               draggedFigureRef.current = figure;
+              figure.classList.add('image-dragging');
               event.dataTransfer.effectAllowed = 'move';
               event.dataTransfer.setData('text/plain', 'knowledge-asset-move');
             }
@@ -1161,12 +1272,57 @@ function RichTextArticleEditor({
             if (range) {
               const clone = dragged.cloneNode(true);
               dragged.remove();
+              (clone as HTMLElement).classList.remove('image-dragging');
               range.insertNode(clone);
               draggedFigureRef.current = null;
               emitChange();
             }
           }}
+          onDragEnd={() => {
+            draggedFigureRef.current?.classList.remove('image-dragging');
+            draggedFigureRef.current = null;
+          }}
           onInput={emitChange}
+          onKeyDown={(event) => {
+            const key = event.key.toLowerCase();
+            const isModifier = event.ctrlKey || event.metaKey;
+
+            if (isModifier && key === 'z') {
+              event.preventDefault();
+              if (event.shiftKey) {
+                redoEditor();
+              } else {
+                undoEditor();
+              }
+              return;
+            }
+
+            if (isModifier && key === 'y') {
+              event.preventDefault();
+              redoEditor();
+              return;
+            }
+
+            if (isModifier && key === 'k') {
+              event.preventDefault();
+              const href = window.prompt('Cole a URL do link');
+              if (href && isSafeEditorHref(href)) {
+                runCommand('createLink', href);
+              }
+              return;
+            }
+
+            if (isModifier && key === 's') {
+              event.preventDefault();
+              editorRef.current?.closest('form')?.requestSubmit();
+              return;
+            }
+
+            if (event.key === 'Tab') {
+              event.preventDefault();
+              runCommand(event.shiftKey ? 'outdent' : 'indent');
+            }
+          }}
           onKeyUp={rememberSelection}
           onMouseUp={rememberSelection}
           onPaste={(event) => {
@@ -1182,7 +1338,21 @@ function RichTextArticleEditor({
 
             event.preventDefault();
             restoreSelection();
-            document.execCommand('insertText', false, event.clipboardData.getData('text/plain'));
+            const pastedText = event.clipboardData.getData('text/plain');
+            const paragraphs = pastedText
+              .split(/\n{2,}/)
+              .map((paragraph) => paragraph.trim())
+              .filter(Boolean);
+            if (paragraphs.length > 1) {
+              insertHtmlAtCursor(
+                paragraphs
+                  .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, '<br />')}</p>`)
+                  .join(''),
+              );
+              return;
+            }
+
+            document.execCommand('insertText', false, pastedText);
             emitChange();
           }}
           ref={editorRef}
@@ -1218,9 +1388,7 @@ export function KnowledgeArticleEditorPage() {
   const [publishState, setPublishState] = useState<SaveState>('idle');
   const [feedback, setFeedback] = useState<string | null>(null);
   const [slugTouched, setSlugTouched] = useState(false);
-  const [metadataCollapsed, setMetadataCollapsed] = useState(
-    () => typeof window !== 'undefined' && window.innerWidth < 1500,
-  );
+  const [metadataCollapsed, setMetadataCollapsed] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const editorMarkdownInserterRef = useRef<((markdown: string) => string | null) | null>(null);
@@ -1937,7 +2105,10 @@ export function KnowledgeArticleEditorPage() {
 
   function handleInsertAsset(assetId: string) {
     const asset = assets.find((item) => item.id === assetId);
-    return insertSnippet(asset ? buildAssetMarkdown(asset) : `\n\n![Imagem do artigo|size=large](knowledge-asset:${assetId})\n\n`, '', '');
+    const markdown = asset
+      ? buildAssetMarkdown(asset)
+      : `\n\n![Imagem do artigo|size=large](knowledge-asset:${assetId})\n\n`;
+    return editorMarkdownInserterRef.current?.(markdown) ?? insertSnippet(markdown, '', '');
   }
 
   async function handleStatusTransition(nextStatus: ArticleEditorStatus) {
@@ -1998,11 +2169,11 @@ export function KnowledgeArticleEditorPage() {
 
   return (
     <form
-      className="flex h-full min-h-0 flex-col overflow-hidden rounded-[30px] border border-[color:var(--color-border)] bg-white/88 shadow-[0_26px_80px_rgba(20,31,71,0.08)]"
+      className="flex h-full min-h-0 flex-col overflow-hidden bg-[#F4F7FC] font-[Inter,Geist,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe_UI',sans-serif]"
       onSubmit={handleSaveDraft}
     >
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 py-4 xl:px-7">
-        <header className="flex shrink-0 items-start justify-between gap-5 pb-4">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 py-4 xl:px-6">
+        <header className="flex shrink-0 items-start justify-between gap-5 pb-3">
           <div className="min-w-0 space-y-2">
             <nav className="flex items-center gap-2 text-xs font-semibold text-[color:var(--color-muted)]">
               <Link className="hover:text-[color:var(--color-brand-blue)]" to="/admin/knowledge">
@@ -2019,14 +2190,14 @@ export function KnowledgeArticleEditorPage() {
             </nav>
             <div>
               <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-[1.75rem] font-extrabold leading-tight tracking-[-0.02em] text-[color:var(--color-brand-navy)]">
+                <h1 className="text-[1.75rem] font-extrabold leading-[1.1] tracking-[-0.02em] text-[#162443]">
                   {isEditMode ? 'Editar artigo' : 'Novo artigo'}
                 </h1>
                 <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[0.72rem] font-bold text-emerald-700">
                   ✓ {saveState === 'saved' ? 'Rascunho salvo agora' : 'Alterações salvas automaticamente'}
                 </span>
               </div>
-              <p className="mt-0.5 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
+              <p className="mt-1 text-[0.82rem] leading-5 text-[#6B7892]">
                 {isEditMode
                   ? 'Atualize conteúdo da base de conhecimento com clareza e impacto.'
                   : 'Crie conteúdo para a Central de Ajuda com clareza e impacto.'}
@@ -2090,7 +2261,7 @@ export function KnowledgeArticleEditorPage() {
             'grid min-h-0 flex-1 gap-4 overflow-hidden',
             metadataCollapsed
               ? 'xl:grid-cols-[64px_minmax(0,1fr)]'
-              : 'xl:grid-cols-[320px_minmax(0,1fr)]',
+              : 'xl:grid-cols-[360px_minmax(0,1fr)]',
           )}
         >
           <aside className="min-h-0 overflow-hidden">
@@ -2117,9 +2288,9 @@ export function KnowledgeArticleEditorPage() {
               <div className="h-full overflow-auto pr-1">
                 <div className="space-y-3">
                   <RailCard title="Configurações editoriais">
-                    <div className="flex justify-end">
+                    <div className="-mt-1 flex justify-end">
                       <button
-                        className="rounded-full px-2 py-1 text-[0.68rem] font-bold text-[color:var(--color-brand-blue)] hover:bg-[color:var(--color-surface)]"
+                        className="rounded-full px-2 py-1 text-[0.72rem] font-bold text-[#2F6BFF] hover:bg-[#F4F7FC]"
                         onClick={() => setMetadataCollapsed(true)}
                         type="button"
                       >
@@ -2148,7 +2319,7 @@ export function KnowledgeArticleEditorPage() {
                     </Field>
                     <Field label="Resumo curto *">
                       <TextareaInput
-                        className="min-h-[108px] rounded-2xl py-3 leading-5"
+                        className="min-h-[104px] rounded-[14px] py-3 leading-[1.45]"
                         disabled={isReadOnly}
                         maxLength={SUMMARY_LIMIT + 40}
                         onChange={(event) => updateForm({ summary: event.target.value })}
@@ -2295,13 +2466,24 @@ export function KnowledgeArticleEditorPage() {
                               </p>
                             </div>
                             <button
-                              className="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-[color:var(--color-brand-blue)] hover:bg-[color:var(--color-surface)]"
+                              className="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-[#2F6BFF] hover:bg-[#F4F7FC]"
                               onClick={() => handleInsertAsset(asset.id)}
                               title="Inserir no corpo"
                               type="button"
                             >
-                              ⋮
+                              +
                             </button>
+                            {asset.signed_url ? (
+                              <a
+                                className="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-[#6B7892] hover:bg-[#F4F7FC]"
+                                href={asset.signed_url}
+                                rel="noreferrer"
+                                target="_blank"
+                                title="Abrir imagem"
+                              >
+                                ↓
+                              </a>
+                            ) : null}
                           </li>
                         ))}
                       </ul>
@@ -2341,7 +2523,7 @@ export function KnowledgeArticleEditorPage() {
             )}
           </aside>
           <main className="flex min-h-0 flex-col overflow-hidden">
-            <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[22px] border border-[color:var(--color-border)] bg-white">
+            <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[22px] border border-[#DCE4F2] bg-white shadow-[0_18px_50px_rgba(22,36,67,0.06)]">
               <input
                 accept="image/png,image/jpeg,image/webp,image/gif"
                 className="hidden"
@@ -2373,7 +2555,7 @@ export function KnowledgeArticleEditorPage() {
                   editorMarkdownInserterRef.current = inserter;
                 }}
               />
-              <div className="flex shrink-0 items-center justify-between gap-4 border-t border-[color:var(--color-border)] px-5 py-3 text-[0.72rem] text-[color:var(--color-muted)]">
+              <div className="flex h-12 shrink-0 items-center justify-between gap-4 border-t border-[#E8EEF7] px-5 text-[0.72rem] text-[#6B7892]">
                 <span className="min-w-[220px]">
                   {bodyPlain.split(' ').filter(Boolean).length} palavras ·{' '}
                   {saveState === 'saved' ? 'Rascunho salvo agora' : 'Edição local'}
