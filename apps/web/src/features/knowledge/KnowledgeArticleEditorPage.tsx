@@ -239,14 +239,12 @@ function normalizeHumanConfirmations(value: unknown): KnowledgeReviewHumanConfir
   return result;
 }
 
-function buildCompleteHumanConfirmations(): KnowledgeReviewHumanConfirmations {
-  return Object.fromEntries(
-    PUBLIC_PUBLISH_CONFIRMATION_FIELDS.map((field) => [field.key, true]),
-  ) as KnowledgeReviewHumanConfirmations;
-}
-
 function hasCompleteHumanConfirmations(value: unknown) {
   const confirmations = normalizeHumanConfirmations(value);
+  return PUBLIC_PUBLISH_CONFIRMATION_FIELDS.every((field) => confirmations[field.key] === true);
+}
+
+function publicConfirmationComplete(confirmations: KnowledgeReviewHumanConfirmations) {
   return PUBLIC_PUBLISH_CONFIRMATION_FIELDS.every((field) => confirmations[field.key] === true);
 }
 
@@ -464,8 +462,20 @@ function renderYoutubeFigure(videoId: string, size: VisualImageSize = 'large') {
   return `<figure draggable="true" data-youtube-id="${safeVideoId}" data-size="${size}" contenteditable="false" tabindex="0"><div class="youtube-card"><span class="youtube-card__play">▶</span><strong>Vídeo YouTube</strong><small>youtube-nocookie.com/embed/${safeVideoId}</small></div></figure>`;
 }
 
+function normalizeLegacyVisualTokens(source: string) {
+  return source
+    .replace(
+      /(?:▶\s*)?(?:\*\*)?Vídeo YouTube(?:\*\*)?\s*youtube-nocookie\.com\/embed\/([A-Za-z0-9_-]{6,20})/gi,
+      '\n\n::youtube $1|size=large\n\n',
+    )
+    .replace(
+      /(^|\s)youtube-nocookie\.com\/embed\/([A-Za-z0-9_-]{6,20})(?=\s|$)/gi,
+      '\n\n::youtube $2|size=large\n\n',
+    );
+}
+
 function parseVisualBlocks(source: string): VisualEditorBlock[] {
-  const lines = source.replace(/\r\n/g, '\n').split('\n');
+  const lines = normalizeLegacyVisualTokens(source).replace(/\r\n/g, '\n').split('\n');
   const blocks: VisualEditorBlock[] = [];
   let index = 0;
 
@@ -706,6 +716,49 @@ function inlineNodeToMarkdown(node: Node): string {
   return content;
 }
 
+function isVisualBlockElement(node: Node): node is HTMLElement {
+  if (!(node instanceof HTMLElement)) {
+    return false;
+  }
+
+  const tag = node.tagName.toLowerCase();
+  return (
+    /^h[1-3]$/.test(tag) ||
+    tag === 'blockquote' ||
+    tag === 'pre' ||
+    tag === 'ul' ||
+    tag === 'ol' ||
+    (tag === 'aside' && Boolean(node.dataset.calloutTone)) ||
+    (tag === 'figure' && (Boolean(node.dataset.youtubeId) || Boolean(node.dataset.assetId)))
+  );
+}
+
+function mixedChildrenToMarkdown(element: HTMLElement) {
+  const chunks: string[] = [];
+  let inlineParts: string[] = [];
+
+  function flushInlineParts() {
+    const inline = inlineParts.join('').trim();
+    if (inline) {
+      chunks.push(inline);
+    }
+    inlineParts = [];
+  }
+
+  for (const child of Array.from(element.childNodes)) {
+    if (isVisualBlockElement(child)) {
+      flushInlineParts();
+      chunks.push(blockElementToMarkdown(child));
+      continue;
+    }
+
+    inlineParts.push(inlineNodeToMarkdown(child));
+  }
+
+  flushInlineParts();
+  return chunks.filter((chunk) => chunk.trim().length > 0).join('\n\n');
+}
+
 function blockElementToMarkdown(element: HTMLElement): string {
   const tag = element.tagName.toLowerCase();
 
@@ -714,6 +767,10 @@ function blockElementToMarkdown(element: HTMLElement): string {
   }
 
   if (tag === 'p' || tag === 'div') {
+    if (Array.from(element.childNodes).some(isVisualBlockElement)) {
+      return mixedChildrenToMarkdown(element);
+    }
+
     return inlineNodeToMarkdown(element).trim();
   }
 
@@ -762,10 +819,12 @@ function blockElementToMarkdown(element: HTMLElement): string {
 }
 
 function editorHtmlToMarkdown(root: HTMLElement) {
-  return Array.from(root.children)
+  const markdown = Array.from(root.children)
     .map((child) => (child instanceof HTMLElement ? blockElementToMarkdown(child) : ''))
     .filter((block) => block.trim().length > 0)
     .join('\n\n');
+
+  return normalizeLegacyVisualTokens(markdown);
 }
 
 function RichTextArticleEditor({
@@ -925,8 +984,79 @@ function RichTextArticleEditor({
     return emitChange();
   }
 
+  function insertBlockHtmlAtCursor(html: string) {
+    const editor = editorRef.current;
+    if (!editor) {
+      return null;
+    }
+
+    editor.focus();
+    restoreSelection();
+    const selection = window.getSelection();
+    const range =
+      selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : document.createRange();
+    if (!selection?.rangeCount) {
+      range.selectNodeContents(editor);
+      range.collapse(false);
+    }
+
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    const nodes = Array.from(template.content.childNodes);
+    const firstElement = nodes.find((node): node is HTMLElement => node instanceof HTMLElement);
+    const shouldSplitBlock =
+      firstElement &&
+      (firstElement.matches('figure[data-asset-id], figure[data-youtube-id], aside[data-callout-tone]') ||
+        firstElement.querySelector('figure[data-asset-id], figure[data-youtube-id], aside[data-callout-tone]'));
+
+    if (!shouldSplitBlock) {
+      return insertHtmlAtCursor(html);
+    }
+
+    const startElement =
+      range.startContainer instanceof HTMLElement
+        ? range.startContainer
+        : range.startContainer.parentElement;
+    const closestTextBlock = startElement?.closest('p,h1,h2,h3,li,blockquote');
+
+    if (!closestTextBlock || !editor.contains(closestTextBlock)) {
+      return insertHtmlAtCursor(html);
+    }
+
+    const afterRange = range.cloneRange();
+    afterRange.selectNodeContents(closestTextBlock);
+    afterRange.setStart(range.endContainer, range.endOffset);
+    const afterFragment = afterRange.extractContents();
+    range.deleteContents();
+
+    const afterText = afterFragment.textContent?.trim() ?? '';
+    const afterBlock = afterText ? document.createElement('p') : null;
+    if (afterBlock) {
+      afterBlock.append(afterFragment);
+    }
+
+    const insertedNodes = Array.from(template.content.childNodes);
+    closestTextBlock.after(...insertedNodes, ...(afterBlock ? [afterBlock] : []));
+
+    if (!closestTextBlock.textContent?.trim()) {
+      closestTextBlock.remove();
+    }
+
+    const lastInserted = afterBlock ?? insertedNodes[insertedNodes.length - 1];
+    if (lastInserted) {
+      const nextRange = document.createRange();
+      nextRange.setStartAfter(lastInserted);
+      nextRange.collapse(true);
+      selection?.removeAllRanges();
+      selection?.addRange(nextRange);
+      savedRangeRef.current = nextRange.cloneRange();
+    }
+
+    return emitChange();
+  }
+
   function insertMarkdownAtCursor(markdown: string) {
-    return insertHtmlAtCursor(renderEditorHtmlFromMarkdown(markdown, assets));
+    return insertBlockHtmlAtCursor(renderEditorHtmlFromMarkdown(markdown, assets));
   }
 
   function runCommand(command: string, value?: string) {
@@ -984,7 +1114,7 @@ function RichTextArticleEditor({
   }
 
   function insertCallout(tone: 'info' | 'warning' | 'success') {
-    insertHtmlAtCursor(
+    insertBlockHtmlAtCursor(
       `<aside data-callout-tone="${tone}"><strong>${tone === 'warning' ? 'Atenção' : tone === 'success' ? 'Sucesso' : 'Importante'}</strong><p>Escreva a observação do artigo.</p></aside>`,
     );
   }
@@ -998,7 +1128,7 @@ function RichTextArticleEditor({
     if (!videoId) {
       return;
     }
-    insertHtmlAtCursor(renderYoutubeFigure(videoId, 'large'));
+    insertBlockHtmlAtCursor(renderYoutubeFigure(videoId, 'large'));
   }
 
   useEffect(() => {
@@ -1508,6 +1638,10 @@ export function KnowledgeArticleEditorPage() {
   const [assetState, setAssetState] = useState<SaveState>('idle');
   const [publishState, setPublishState] = useState<SaveState>('idle');
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [feedbackActionHref, setFeedbackActionHref] = useState<string | null>(null);
+  const [publicConfirmationOpen, setPublicConfirmationOpen] = useState(false);
+  const [publicConfirmation, setPublicConfirmation] =
+    useState<KnowledgeReviewHumanConfirmations>({});
   const [slugTouched, setSlugTouched] = useState(false);
   const [metadataCollapsed, setMetadataCollapsed] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
@@ -1516,19 +1650,15 @@ export function KnowledgeArticleEditorPage() {
   const isEditMode = Boolean(routeArticleId);
 
   const selectedSpace = spaces.find((space) => space.id === selectedSpaceId) ?? null;
-  const selectedCategory = categories.find((category) => category.id === form.categoryId) ?? null;
   const assetMap = useMemo(() => buildAssetMap(assets), [assets]);
   const isReadOnly = status === 'archived';
-  const saveButtonLabel = isEditorialRevision
-    ? 'Salvar revisão'
-    : status === 'draft'
-      ? 'Salvar rascunho'
-      : 'Salvar alterações';
+  const saveButtonLabel = 'Salvar alterações';
+  const publishButtonLabel = 'Publicar agora';
   const bodyPlain = getBodyWithoutMarkdown(form.bodyMd);
   const publishBlocker = publicPublishBlocker(advisory, form.visibility);
   const needsPublicEvidence = form.visibility === 'public';
-  const publicEvidenceComplete = needsPublicEvidence && !publishBlocker;
   const advisoryHumanConfirmations = normalizeHumanConfirmations(advisory?.human_confirmations);
+  const publicConfirmationReady = publicConfirmationComplete(publicConfirmation);
   const checklist = {
     title: form.title.trim().length >= 8 && form.title.length <= TITLE_LIMIT,
     summary: form.summary.trim().length >= 12 && form.summary.length <= SUMMARY_LIMIT,
@@ -1573,6 +1703,18 @@ export function KnowledgeArticleEditorPage() {
     !checklist.body ? 'conteudo completo' : null,
     !checklist.category ? 'categoria' : null,
   ].filter(Boolean);
+
+  useEffect(() => {
+    const persisted = normalizeHumanConfirmations(advisory?.human_confirmations);
+    setPublicConfirmation((current) => ({
+      ...current,
+      ...Object.fromEntries(
+        PUBLIC_PUBLISH_CONFIRMATION_FIELDS.filter((field) => persisted[field.key] === true).map(
+          (field) => [field.key, true],
+        ),
+      ),
+    }));
+  }, [advisory]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1732,6 +1874,7 @@ export function KnowledgeArticleEditorPage() {
     setPublishState('idle');
     setReviewEvidenceState('idle');
     setFeedback(null);
+    setFeedbackActionHref(null);
     setForm((current) => ({ ...current, ...partial }));
   }
 
@@ -1745,6 +1888,7 @@ export function KnowledgeArticleEditorPage() {
     setSaveState('idle');
     setReviewEvidenceState('idle');
     setFeedback(null);
+    setFeedbackActionHref(null);
   }
 
   function handleSlugChange(event: ChangeEvent<HTMLInputElement>) {
@@ -2037,11 +2181,8 @@ export function KnowledgeArticleEditorPage() {
           : 'draft',
       );
       setSaveState('saved');
-      setFeedback(
-        isEditorialRevision
-          ? 'Revisão editorial salva por contrato administrativo. Nada foi publicado.'
-          : 'Rascunho salvo por contrato administrativo. Nada foi publicado.',
-      );
+      setFeedback('Alterações salvas. Ainda não publicadas.');
+      setFeedbackActionHref(null);
       await refreshAssets(savedArticleId);
       await refreshAdvisory(savedArticleId, activeSpace.id);
       return savedArticleId;
@@ -2116,7 +2257,21 @@ export function KnowledgeArticleEditorPage() {
     }
   }
 
-  async function preparePublicEvidenceForPublish(options?: { silent?: boolean }) {
+  function openPublicConfirmation() {
+    const persisted = normalizeHumanConfirmations(advisory?.human_confirmations);
+    setPublicConfirmation((current) => ({ ...current, ...persisted }));
+    setPublicConfirmationOpen(true);
+    setReviewEvidenceState('idle');
+    setFeedback(
+      'Confirme explicitamente o checklist humano para tentar publicar este artigo público.',
+    );
+    setFeedbackActionHref(null);
+  }
+
+  async function preparePublicEvidenceForPublish(options: {
+    articleId?: string;
+    confirmations: KnowledgeReviewHumanConfirmations;
+  }) {
     if (!selectedSpace) {
       setReviewEvidenceState('error');
       setFeedback('Selecione um espaço público antes de preparar a publicação.');
@@ -2129,11 +2284,19 @@ export function KnowledgeArticleEditorPage() {
       return null;
     }
 
+    if (!publicConfirmationComplete(options.confirmations)) {
+      setReviewEvidenceState('error');
+      setPublicConfirmationOpen(true);
+      setFeedback('Marque todos os itens da confirmação editorial pública antes de publicar.');
+      return null;
+    }
+
     setReviewEvidenceState('saving');
     setFeedback(null);
+    setFeedbackActionHref(null);
 
     try {
-      const savedArticleId = articleId ?? (await saveDraft());
+      const savedArticleId = options.articleId ?? articleId ?? (await saveDraft());
       if (!savedArticleId) {
         setReviewEvidenceState('error');
         return null;
@@ -2141,16 +2304,11 @@ export function KnowledgeArticleEditorPage() {
 
       await prepareKnowledgeArticlePublicationEvidence({
         p_article_id: savedArticleId,
-        p_human_confirmations: buildCompleteHumanConfirmations(),
+        p_human_confirmations: options.confirmations,
         p_review_notes: advisory?.review_notes || PUBLIC_PUBLISH_REVIEW_NOTES,
       });
       const nextAdvisory = await refreshAdvisory(savedArticleId, selectedSpace.id);
       setReviewEvidenceState('saved');
-      if (!options?.silent) {
-        setFeedback(
-          'Checklist público confirmado. Agora selecione Publicado para executar o gate.',
-        );
-      }
       return nextAdvisory;
     } catch (error) {
       const classified = classifyAdminError(
@@ -2164,10 +2322,10 @@ export function KnowledgeArticleEditorPage() {
   }
 
   async function handleConfirmHumanReviewForPublicPublish() {
-    await preparePublicEvidenceForPublish();
+    await handlePublishArticle({ confirmedPublicEvidence: true });
   }
 
-  async function handlePublishArticle() {
+  async function handlePublishArticle(options?: { confirmedPublicEvidence?: boolean }) {
     if (!selectedSpace) {
       setPublishState('error');
       setFeedback('Selecione um espaço público antes de tentar publicar.');
@@ -2180,20 +2338,30 @@ export function KnowledgeArticleEditorPage() {
       return;
     }
 
-    if (status === 'draft' && !isEditorialRevision) {
-      const savedArticleId = await saveDraft();
-      if (!savedArticleId || !selectedSpace) {
-        setPublishState('error');
-        return;
-      }
+    setFeedbackActionHref(null);
 
+    if (!checklist.ready) {
+      setPublishState('error');
+      setFeedback(`Antes de publicar, complete: ${missingRequired.join(', ')}.`);
+      return;
+    }
+
+    const savedArticleId = await saveDraft();
+    if (!savedArticleId || !selectedSpace) {
+      setPublishState('error');
+      return;
+    }
+
+    let effectiveAdvisory = advisory;
+
+    if (status === 'draft' && !isEditorialRevision) {
       try {
         await submitKnowledgeArticleForReviewV2({
           p_article_id: savedArticleId,
           p_knowledge_space_id: selectedSpace.id,
         });
         setStatus('review');
-        await refreshAdvisory(savedArticleId, selectedSpace.id);
+        effectiveAdvisory = await refreshAdvisory(savedArticleId, selectedSpace.id);
       } catch (error) {
         const classified = classifyAdminError(
           error,
@@ -2209,18 +2377,29 @@ export function KnowledgeArticleEditorPage() {
       return;
     }
 
-    let effectiveAdvisory = advisory;
     let currentPublishBlocker = publicPublishBlocker(effectiveAdvisory, form.visibility);
     if (currentPublishBlocker && form.visibility === 'public') {
+      if (!options?.confirmedPublicEvidence) {
+        setPublishState('error');
+        openPublicConfirmation();
+        return;
+      }
+
       effectiveAdvisory = await preparePublicEvidenceForPublish({
-        silent: true,
+        articleId: savedArticleId,
+        confirmations: publicConfirmation,
       });
+      if (!effectiveAdvisory) {
+        setPublishState('error');
+        return;
+      }
       currentPublishBlocker = publicPublishBlocker(effectiveAdvisory, form.visibility);
     }
 
     if (currentPublishBlocker) {
       setPublishState('error');
-      setFeedback(currentPublishBlocker);
+      setFeedback(`${currentPublishBlocker} Próxima ação: revise a confirmação editorial e tente publicar novamente.`);
+      setPublicConfirmationOpen(form.visibility === 'public');
       return;
     }
 
@@ -2229,21 +2408,11 @@ export function KnowledgeArticleEditorPage() {
 
     try {
       if (isEditorialRevision) {
-        const savedArticleId = await saveDraft();
-        if (!savedArticleId) {
-          setPublishState('error');
-          return;
-        }
         await publishKnowledgeArticleEditorialRevisionV2({
           p_article_id: savedArticleId,
           p_knowledge_space_id: selectedSpace.id,
         });
       } else {
-        const savedArticleId = await saveDraft();
-        if (!savedArticleId) {
-          setPublishState('error');
-          return;
-        }
         await publishKnowledgeArticleV2({
           p_article_id: savedArticleId,
           p_knowledge_space_id: selectedSpace.id,
@@ -2253,14 +2422,17 @@ export function KnowledgeArticleEditorPage() {
       setStatus('published');
       setIsEditorialRevision(false);
       setPublishState('saved');
-      setFeedback('Artigo publicado pelo gate editorial existente.');
+      setPublicConfirmationOpen(false);
+      const nextHref = `/help/${selectedSpace.slug}/articles/${slugify(form.slug || form.title)}`;
+      setFeedback('Artigo publicado.');
+      setFeedbackActionHref(nextHref);
     } catch (error) {
       const classified = classifyAdminError(
         error,
         'Falha ao publicar pelo gate editorial existente.',
       );
       setPublishState('error');
-      setFeedback(classified.message);
+      setFeedback(`${classified.message} Próxima ação: verifique o checklist editorial e o gate público.`);
     }
   }
 
@@ -2270,29 +2442,6 @@ export function KnowledgeArticleEditorPage() {
       ? buildAssetMarkdown(asset)
       : `\n\n![Imagem do artigo|size=large](knowledge-asset:${assetId})\n\n`;
     return editorMarkdownInserterRef.current?.(markdown) ?? insertSnippet(markdown, '', '');
-  }
-
-  async function handleStatusTransition(nextStatus: ArticleEditorStatus) {
-    if (nextStatus === status) {
-      return;
-    }
-
-    if (status === 'draft' && nextStatus === 'review' && !isEditorialRevision) {
-      await handleSubmitForReview();
-      return;
-    }
-
-    if (
-      nextStatus === 'published' &&
-      ((status === 'review' && !isEditorialRevision) ||
-        (status === 'draft' && !isEditorialRevision) ||
-        isEditorialRevision)
-    ) {
-      await handlePublishArticle();
-      return;
-    }
-
-    setFeedback('Esta transição editorial não está disponível pelo contrato atual.');
   }
 
   if (phase === 'loading') {
@@ -2372,6 +2521,21 @@ export function KnowledgeArticleEditorPage() {
             </div>
           ) : null}
           <div className="flex shrink-0 flex-wrap justify-end gap-3">
+            <AppButton
+              className="h-11 rounded-[12px] px-5 text-[0.82rem]"
+              disabled={saveState === 'saving' || isReadOnly}
+              type="submit"
+            >
+              {saveState === 'saving' ? 'Salvando...' : saveButtonLabel}
+            </AppButton>
+            <AppButton
+              className="h-11 rounded-[12px] px-5 text-[0.82rem]"
+              disabled={publishState === 'saving' || isReadOnly}
+              onClick={() => void handlePublishArticle()}
+              type="button"
+            >
+              {publishState === 'saving' ? 'Publicando...' : publishButtonLabel}
+            </AppButton>
             <GhostButton
               className="h-11 rounded-[12px] px-5 text-[0.82rem] text-[color:var(--color-brand-navy)]"
               title="Use o status editorial para enviar, revisar e publicar."
@@ -2406,7 +2570,15 @@ export function KnowledgeArticleEditorPage() {
                     : 'default'
               }
             >
-              {feedback}
+              <span>{feedback}</span>
+              {feedbackActionHref ? (
+                <Link
+                  className="ml-3 inline-flex rounded-full bg-white px-3 py-1 text-[0.72rem] font-extrabold text-[#2F6BFF] underline-offset-2 hover:underline"
+                  to={feedbackActionHref}
+                >
+                  Ver na Central de Ajuda
+                </Link>
+              ) : null}
             </InlineNotice>
           </div>
         ) : null}
@@ -2526,25 +2698,61 @@ export function KnowledgeArticleEditorPage() {
                       </SelectInput>
                     </Field>
                     <Field label="Status editorial">
-                      <SelectInput
-                        disabled={
-                          submitState === 'saving' || publishState === 'saving' || isReadOnly
-                        }
-                        onChange={(event) =>
-                          void handleStatusTransition(event.target.value as ArticleEditorStatus)
-                        }
-                        value={status}
-                      >
-                        <option value="draft">Rascunho</option>
-                        <option value="review">Em revisão</option>
-                        <option value="published">Publicado</option>
-                        <option disabled value="archived">
-                          Arquivado
-                        </option>
-                      </SelectInput>
-                      <p className="mt-1 text-[0.68rem] leading-4 text-[color:var(--color-muted)]">
-                        Cada mudança chama RPC governada e respeita o gate editorial.
-                      </p>
+                      <div className="rounded-[16px] border border-[#DCE4F2] bg-[#F8FBFF] p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-[0.68rem] font-extrabold uppercase tracking-[0.12em] text-[#6B7892]">
+                              Estado atual
+                            </p>
+                            <p className="mt-1 text-[0.9rem] font-extrabold text-[#162443]">
+                              {statusLabel(status)}
+                            </p>
+                          </div>
+                          <span
+                            className={cx(
+                              'rounded-full px-2.5 py-1 text-[0.66rem] font-extrabold',
+                              status === 'published'
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : status === 'review'
+                                  ? 'bg-blue-50 text-[#2F6BFF]'
+                                  : status === 'archived'
+                                    ? 'bg-slate-100 text-slate-600'
+                                    : 'bg-amber-50 text-amber-700',
+                            )}
+                          >
+                            RPC
+                          </span>
+                        </div>
+                        <p className="mt-2 text-[0.68rem] leading-4 text-[color:var(--color-muted)]">
+                          Status não é editado livremente. Cada avanço chama a RPC governada e
+                          respeita o gate editorial.
+                        </p>
+                        <div className="mt-3 grid gap-2">
+                          {status === 'draft' && !isEditorialRevision ? (
+                            <GhostButton
+                              className="min-h-9 justify-center rounded-[12px] text-[0.72rem]"
+                              disabled={submitState === 'saving' || isReadOnly}
+                              onClick={() => void handleSubmitForReview()}
+                            >
+                              {submitState === 'saving' ? 'Enviando...' : 'Enviar para revisão'}
+                            </GhostButton>
+                          ) : null}
+                          {status !== 'archived' ? (
+                            <AppButton
+                              className="min-h-9 justify-center rounded-[12px] text-[0.72rem]"
+                              disabled={publishState === 'saving' || isReadOnly}
+                              onClick={() => void handlePublishArticle()}
+                            >
+                              {publishState === 'saving' ? 'Publicando...' : publishButtonLabel}
+                            </AppButton>
+                          ) : (
+                            <p className="rounded-xl bg-slate-50 px-3 py-2 text-[0.68rem] leading-4 text-slate-600">
+                              Artigo arquivado fica somente leitura até existir contrato de
+                              reativação.
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </Field>
                   </RailCard>
 
@@ -2571,7 +2779,7 @@ export function KnowledgeArticleEditorPage() {
                           label={item.label}
                           onAction={
                             item.action === 'evidence' || item.action === 'publish-readiness'
-                              ? () => void handleConfirmHumanReviewForPublicPublish()
+                              ? openPublicConfirmation
                               : () => {
                                   if (item.action === 'body') {
                                     document
@@ -2601,15 +2809,66 @@ export function KnowledgeArticleEditorPage() {
                         {publishBlocker}
                       </p>
                     ) : null}
-                    {needsPublicEvidence && !publicEvidenceComplete ? (
+                    {needsPublicEvidence && publicConfirmationOpen ? (
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
+                        <h3 className="text-[0.76rem] font-extrabold text-[#162443]">
+                          Confirmação editorial para publicação pública
+                        </h3>
+                        <p className="mt-1 text-[0.68rem] leading-4 text-amber-800">
+                          Marque apenas após revisão humana real. Isso será persistido por RPC
+                          antes da tentativa de publicação.
+                        </p>
+                        <div className="mt-3 space-y-2">
+                          {PUBLIC_PUBLISH_CONFIRMATION_FIELDS.map((field) => (
+                            <label
+                              className="flex items-start gap-2 text-[0.72rem] leading-4 text-[#162443]"
+                              key={field.key}
+                            >
+                              <input
+                                checked={publicConfirmation[field.key] === true}
+                                className="mt-0.5 h-4 w-4 rounded border-[#C8D4EA]"
+                                onChange={(event) =>
+                                  setPublicConfirmation((current) => ({
+                                    ...current,
+                                    [field.key]: event.target.checked,
+                                  }))
+                                }
+                                type="checkbox"
+                              />
+                              <span>{field.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                        <div className="mt-3 flex gap-2">
+                          <AppButton
+                            className="min-h-9 flex-1 justify-center rounded-[12px] text-[0.72rem]"
+                            disabled={
+                              reviewEvidenceState === 'saving' ||
+                              publishState === 'saving' ||
+                              !publicConfirmationReady
+                            }
+                            onClick={() => void handleConfirmHumanReviewForPublicPublish()}
+                          >
+                            {reviewEvidenceState === 'saving' || publishState === 'saving'
+                              ? 'Publicando...'
+                              : 'Confirmar e publicar'}
+                          </AppButton>
+                          <GhostButton
+                            className="min-h-9 rounded-[12px] px-3 text-[0.72rem]"
+                            disabled={reviewEvidenceState === 'saving' || publishState === 'saving'}
+                            onClick={() => setPublicConfirmationOpen(false)}
+                          >
+                            Cancelar
+                          </GhostButton>
+                        </div>
+                      </div>
+                    ) : needsPublicEvidence && publishBlocker ? (
                       <GhostButton
                         className="min-h-9 w-full justify-center rounded-[12px] text-[0.72rem]"
                         disabled={reviewEvidenceState === 'saving'}
-                        onClick={handleConfirmHumanReviewForPublicPublish}
+                        onClick={openPublicConfirmation}
                       >
-                        {reviewEvidenceState === 'saving'
-                          ? 'Confirmando...'
-                          : 'Concluir checklist público'}
+                        Abrir confirmação pública
                       </GhostButton>
                     ) : null}
                   </RailCard>
@@ -2761,6 +3020,13 @@ export function KnowledgeArticleEditorPage() {
                   Atalhos: Ctrl+S salvar · Ctrl+K inserir link
                 </span>
                 <div className="flex shrink-0 items-center gap-2">
+                  <GhostButton
+                    className="min-h-9 rounded-[12px] px-4 text-[0.72rem]"
+                    disabled={publishState === 'saving' || isReadOnly}
+                    onClick={() => void handlePublishArticle()}
+                  >
+                    {publishState === 'saving' ? 'Publicando...' : publishButtonLabel}
+                  </GhostButton>
                   <AppButton
                     className="min-h-9 rounded-[12px] px-4 text-[0.72rem]"
                     disabled={saveState === 'saving' || isReadOnly}
