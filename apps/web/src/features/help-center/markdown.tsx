@@ -6,6 +6,8 @@ interface InlinePart {
   italic?: boolean;
   code?: boolean;
   href?: string;
+  markTone?: 'blue' | 'green' | 'yellow' | 'pink' | 'purple' | 'gray';
+  textTone?: 'blue' | 'green' | 'yellow' | 'red' | 'gray';
 }
 
 export interface MarkdownAsset {
@@ -26,7 +28,9 @@ interface Block {
     | 'rule'
     | 'image'
     | 'callout'
-    | 'youtube';
+    | 'youtube'
+    | 'divider'
+    | 'related';
   level?: 1 | 2 | 3 | 4 | 5 | 6;
   text?: string;
   items?: string[];
@@ -36,8 +40,12 @@ interface Block {
   alt?: string;
   imageSize?: 'small' | 'medium' | 'large' | 'full';
   mediaSize?: 'small' | 'medium' | 'large' | 'full';
-  tone?: 'info' | 'warning' | 'success';
+  tone?: 'info' | 'warning' | 'success' | 'danger';
   videoId?: string;
+  dividerStyle?: 'solid' | 'dashed' | 'space';
+  relatedSlug?: string;
+  relatedTitle?: string;
+  relatedSummary?: string;
 }
 
 function parseImageAlt(value: string) {
@@ -100,7 +108,8 @@ function isValidYouTubeId(value: string) {
 
 function parseInline(text: string): InlinePart[] {
   const parts: InlinePart[] = [];
-  const pattern = /(\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`|\*([^*]+)\*)/g;
+  const pattern =
+    /(\[color:(blue|green|yellow|red|gray)]([\s\S]+?)\[\/color]|\[mark:(blue|green|yellow|pink|purple|gray)]([\s\S]+?)\[\/mark]|\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`|\*([^*]+)\*)/g;
   let lastIndex = 0;
 
   for (const match of text.matchAll(pattern)) {
@@ -111,15 +120,25 @@ function parseInline(text: string): InlinePart[] {
 
     if (match[2] && match[3]) {
       parts.push({
-        text: match[2],
-        href: isSafeHref(match[3].trim()) ? match[3].trim() : undefined,
+        text: match[3],
+        textTone: match[2] as InlinePart['textTone'],
       });
-    } else if (match[4]) {
-      parts.push({ text: match[4], bold: true });
-    } else if (match[5]) {
-      parts.push({ text: match[5], code: true });
-    } else if (match[6]) {
-      parts.push({ text: match[6], italic: true });
+    } else if (match[4] && match[5]) {
+      parts.push({
+        markTone: match[4] as InlinePart['markTone'],
+        text: match[5],
+      });
+    } else if (match[6] && match[7]) {
+      parts.push({
+        text: match[6],
+        href: isSafeHref(match[7].trim()) ? match[7].trim() : undefined,
+      });
+    } else if (match[8]) {
+      parts.push({ text: match[8], bold: true });
+    } else if (match[9]) {
+      parts.push({ text: match[9], code: true });
+    } else if (match[10]) {
+      parts.push({ text: match[10], italic: true });
     }
 
     lastIndex = index + match[0].length;
@@ -200,7 +219,7 @@ function parseMarkdown(source: string) {
       continue;
     }
 
-    const calloutMatch = /^:::callout\s+(info|warning|success)\s*$/i.exec(trimmed);
+    const calloutMatch = /^:::callout\s+(info|warning|success|danger)\s*$/i.exec(trimmed);
     if (calloutMatch) {
       const calloutLines: string[] = [];
       index += 1;
@@ -215,6 +234,36 @@ function parseMarkdown(source: string) {
         type: 'callout',
         lines: calloutLines,
         tone: calloutMatch[1].toLowerCase() as Block['tone'],
+      });
+      continue;
+    }
+
+    const dividerMatch = /^::divider(?:\s+(solid|dashed|space))?\s*$/i.exec(trimmed);
+    if (dividerMatch) {
+      blocks.push({
+        type: 'divider',
+        dividerStyle: (dividerMatch[1]?.toLowerCase() as Block['dividerStyle']) ?? 'dashed',
+      });
+      index += 1;
+      continue;
+    }
+
+    const relatedMatch = /^::related\s+([a-z0-9-]+)\s*$/i.exec(trimmed);
+    if (relatedMatch) {
+      const relatedLines: string[] = [];
+      index += 1;
+      while (index < lines.length && lines[index].trim() !== '::') {
+        relatedLines.push(lines[index]);
+        index += 1;
+      }
+      if (index < lines.length) {
+        index += 1;
+      }
+      blocks.push({
+        relatedSlug: relatedMatch[1],
+        relatedSummary: relatedLines[1]?.trim() || 'Abra este artigo relacionado na Central.',
+        relatedTitle: relatedLines[0]?.trim() || 'Artigo relacionado',
+        type: 'related',
       });
       continue;
     }
@@ -251,7 +300,9 @@ function parseMarkdown(source: string) {
       if (
         !candidate ||
         candidate.startsWith('```') ||
-        /^:::callout\s+(info|warning|success)\s*$/i.test(candidate) ||
+        /^:::callout\s+(info|warning|success|danger)\s*$/i.test(candidate) ||
+        /^::divider(?:\s+(solid|dashed|space))?\s*$/i.test(candidate) ||
+        /^::related\s+([a-z0-9-]+)\s*$/i.test(candidate) ||
         /^::youtube\s+([A-Za-z0-9_-]{6,20})(?:\s*\|size=(small|medium|large|full))?\s*$/i.test(
           candidate,
         ) ||
@@ -314,6 +365,44 @@ function renderInline(text: string): ReactNode[] {
 
     if (part.italic) {
       return <em key={key}>{part.text}</em>;
+    }
+
+    if (part.textTone) {
+      const colorClass =
+        part.textTone === 'blue'
+          ? 'text-blue-700'
+          : part.textTone === 'green'
+            ? 'text-emerald-700'
+            : part.textTone === 'yellow'
+              ? 'text-amber-700'
+              : part.textTone === 'red'
+                ? 'text-red-700'
+                : 'text-slate-500';
+      return (
+        <span key={key} className={colorClass}>
+          {part.text}
+        </span>
+      );
+    }
+
+    if (part.markTone) {
+      const markClass =
+        part.markTone === 'blue'
+          ? 'bg-blue-50'
+          : part.markTone === 'green'
+            ? 'bg-emerald-50'
+            : part.markTone === 'yellow'
+              ? 'bg-amber-50'
+              : part.markTone === 'pink'
+                ? 'bg-pink-50'
+                : part.markTone === 'purple'
+                  ? 'bg-violet-50'
+                  : 'bg-slate-100';
+      return (
+        <span key={key} className={`rounded-md px-1 ${markClass}`}>
+          {part.text}
+        </span>
+      );
     }
 
     return <span key={key}>{part.text}</span>;
@@ -400,15 +489,25 @@ export function MarkdownDocument({
               ? 'border-amber-300 bg-amber-50 text-amber-900'
               : tone === 'success'
                 ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
-                : 'border-blue-300 bg-blue-50 text-blue-950';
+                : tone === 'danger'
+                  ? 'border-red-300 bg-red-50 text-red-900'
+                  : 'border-blue-300 bg-blue-50 text-blue-950';
           const iconClass =
             tone === 'warning'
               ? 'bg-amber-500 text-white'
               : tone === 'success'
                 ? 'bg-emerald-500 text-white'
-                : 'bg-[color:var(--help-link)] text-white';
+                : tone === 'danger'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-[color:var(--help-link)] text-white';
           const title =
-            tone === 'warning' ? 'Atenção' : tone === 'success' ? 'Sucesso' : 'Importante';
+            tone === 'warning'
+              ? 'Atenção'
+              : tone === 'success'
+                ? 'Importante'
+                : tone === 'danger'
+                  ? 'Cuidado'
+                  : 'Nota';
 
           return (
             <aside
@@ -418,7 +517,7 @@ export function MarkdownDocument({
               <span
                 className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${iconClass}`}
               >
-                {tone === 'warning' ? '!' : tone === 'success' ? '✓' : 'i'}
+                {tone === 'warning' ? '!' : tone === 'success' ? '★' : tone === 'danger' ? '!' : 'i'}
               </span>
               <div className="space-y-1">
                 <p className="text-sm font-extrabold">{title}</p>
@@ -429,6 +528,36 @@ export function MarkdownDocument({
                 ))}
               </div>
             </aside>
+          );
+        }
+
+        if (block.type === 'divider') {
+          if (block.dividerStyle === 'space') {
+            return <div key={key} className="h-8 max-w-[78ch]" />;
+          }
+
+          return (
+            <hr
+              key={key}
+              className={`my-8 max-w-[78ch] border-0 border-t-2 border-[#DCE4F2] ${
+                block.dividerStyle === 'solid' ? 'border-solid' : 'border-dashed'
+              }`}
+            />
+          );
+        }
+
+        if (block.type === 'related') {
+          return (
+            <a
+              key={key}
+              className="grid max-w-[78ch] grid-cols-[minmax(0,1fr)_auto] gap-1 rounded-[18px] border border-violet-200 bg-violet-50 px-5 py-4 text-violet-950 no-underline shadow-[0_14px_34px_rgba(124,58,237,0.08)]"
+              href={`/help/genius/articles/${block.relatedSlug}`}
+            >
+              <span className="col-span-2 text-sm font-extrabold text-violet-700">Leia também</span>
+              <strong className="text-base font-extrabold">{block.relatedTitle}</strong>
+              <span className="text-xl text-violet-600">→</span>
+              <span className="text-sm leading-6 text-slate-600">{block.relatedSummary}</span>
+            </a>
           );
         }
 

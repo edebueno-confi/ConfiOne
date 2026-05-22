@@ -356,6 +356,19 @@ function ToolbarButton({
   );
 }
 
+function ToolbarMenu({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <div
+      className={cx(
+        'absolute z-30 rounded-2xl border border-[#DCE4F2] bg-white p-2 shadow-[0_18px_50px_rgba(22,36,67,0.16)]',
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 function ChecklistItem({
   actionLabel,
   disabled = false,
@@ -397,6 +410,28 @@ function ChecklistItem({
 }
 
 type VisualImageSize = 'small' | 'medium' | 'large' | 'full';
+type CalloutTone = 'info' | 'warning' | 'success' | 'danger';
+type TextTone = 'default' | 'blue' | 'green' | 'yellow' | 'red' | 'gray';
+type MarkTone = 'none' | 'blue' | 'green' | 'yellow' | 'pink' | 'purple' | 'gray';
+
+const TEXT_TONE_LABELS: Record<TextTone, string> = {
+  default: 'Padrão',
+  blue: 'Azul',
+  green: 'Verde',
+  yellow: 'Amarelo',
+  red: 'Vermelho',
+  gray: 'Cinza',
+};
+
+const MARK_TONE_LABELS: Record<MarkTone, string> = {
+  none: 'Sem destaque',
+  blue: 'Azul',
+  green: 'Verde',
+  yellow: 'Amarelo',
+  pink: 'Rosa',
+  purple: 'Lilás',
+  gray: 'Cinza',
+};
 
 type VisualEditorBlock =
   | { type: 'heading'; level: 1 | 2 | 3; text: string }
@@ -405,8 +440,10 @@ type VisualEditorBlock =
   | { type: 'quote'; text: string }
   | { type: 'code'; text: string }
   | { type: 'image'; assetId: string; alt: string; size: VisualImageSize }
-  | { type: 'callout'; tone: 'info' | 'warning' | 'success'; text: string }
-  | { type: 'youtube'; videoId: string; size: VisualImageSize };
+  | { type: 'callout'; tone: CalloutTone; text: string }
+  | { type: 'youtube'; videoId: string; size: VisualImageSize }
+  | { type: 'divider'; style: 'solid' | 'dashed' | 'space' }
+  | { type: 'related'; title: string; summary: string; slug: string };
 
 function extractYouTubeVideoId(value: string) {
   const trimmed = value.trim();
@@ -460,6 +497,19 @@ function parseVisualMediaSize(value?: string | null): VisualImageSize {
 function renderYoutubeFigure(videoId: string, size: VisualImageSize = 'large') {
   const safeVideoId = escapeHtml(videoId);
   return `<figure draggable="true" data-youtube-id="${safeVideoId}" data-size="${size}" contenteditable="false" tabindex="0"><div class="youtube-card"><span class="youtube-card__play">▶</span><strong>Vídeo YouTube</strong><small>youtube-nocookie.com/embed/${safeVideoId}</small></div></figure>`;
+}
+
+function calloutLabel(tone: CalloutTone) {
+  if (tone === 'warning') {
+    return 'Atenção';
+  }
+  if (tone === 'success') {
+    return 'Importante';
+  }
+  if (tone === 'danger') {
+    return 'Cuidado';
+  }
+  return 'Nota';
 }
 
 function normalizeLegacyVisualTokens(source: string) {
@@ -532,7 +582,7 @@ function parseVisualBlocks(source: string): VisualEditorBlock[] {
       continue;
     }
 
-    const calloutMatch = /^:::callout\s+(info|warning|success)\s*$/i.exec(trimmed);
+    const calloutMatch = /^:::callout\s+(info|warning|success|danger)\s*$/i.exec(trimmed);
     if (calloutMatch) {
       const calloutLines: string[] = [];
       index += 1;
@@ -545,8 +595,40 @@ function parseVisualBlocks(source: string): VisualEditorBlock[] {
       }
       blocks.push({
         type: 'callout',
-        tone: calloutMatch[1].toLowerCase() as 'info' | 'warning' | 'success',
+        tone: calloutMatch[1].toLowerCase() as CalloutTone,
         text: calloutLines.join('\n'),
+      });
+      continue;
+    }
+
+    const dividerMatch = /^::divider(?:\s+(solid|dashed|space))?\s*$/i.exec(trimmed);
+    if (dividerMatch) {
+      blocks.push({
+        type: 'divider',
+        style: (dividerMatch[1]?.toLowerCase() as 'solid' | 'dashed' | 'space') ?? 'dashed',
+      });
+      index += 1;
+      continue;
+    }
+
+    const relatedMatch = /^::related\s+([a-z0-9-]+)\s*$/i.exec(trimmed);
+    if (relatedMatch) {
+      const relatedLines: string[] = [];
+      index += 1;
+      while (index < lines.length && (lines[index] ?? '').trim() !== '::') {
+        relatedLines.push(lines[index] ?? '');
+        index += 1;
+      }
+      if (index < lines.length) {
+        index += 1;
+      }
+      const [title = 'Artigo relacionado', summary = 'Abra este artigo relacionado na Central.'] =
+        relatedLines;
+      blocks.push({
+        type: 'related',
+        slug: relatedMatch[1],
+        title: title.trim() || 'Artigo relacionado',
+        summary: summary.trim() || 'Abra este artigo relacionado na Central.',
       });
       continue;
     }
@@ -586,7 +668,9 @@ function parseVisualBlocks(source: string): VisualEditorBlock[] {
         /^(#{1,3})\s+/.test(candidate) ||
         candidate.startsWith('> ') ||
         candidate.startsWith('```') ||
-        /^:::callout\s+(info|warning|success)\s*$/i.test(candidate) ||
+        /^:::callout\s+(info|warning|success|danger)\s*$/i.test(candidate) ||
+        /^::divider(?:\s+(solid|dashed|space))?\s*$/i.test(candidate) ||
+        /^::related\s+([a-z0-9-]+)\s*$/i.test(candidate) ||
         /^::youtube\s+([A-Za-z0-9_-]{6,20})(?:\s*\|size=(small|medium|large|full))?\s*$/i.test(
           candidate,
         ) ||
@@ -622,6 +706,18 @@ function isSafeEditorHref(value: string) {
 function renderInlineMarkdown(value: string) {
   const escaped = escapeHtml(value);
   return escaped
+    .replace(
+      /\[color:(default|blue|green|yellow|red|gray)]([\s\S]+?)\[\/color]/gi,
+      (_match, tone, content) =>
+        tone === 'default'
+          ? content
+          : `<span data-text-tone="${String(tone).toLowerCase()}">${content}</span>`,
+    )
+    .replace(
+      /\[mark:(blue|green|yellow|pink|purple|gray)]([\s\S]+?)\[\/mark]/gi,
+      (_match, tone, content) =>
+        `<span data-mark-tone="${String(tone).toLowerCase()}">${content}</span>`,
+    )
     .replace(/\[([^\]]+)]\((https?:\/\/[^)]+|mailto:[^)]+)\)/gi, (_match, label, href) => {
       const safeHref = String(href).trim();
       return isSafeEditorHref(safeHref)
@@ -664,11 +760,19 @@ function renderEditorHtmlFromMarkdown(source: string, assets: Record<string, Mar
       }
 
       if (block.type === 'callout') {
-        return `<aside data-callout-tone="${block.tone}"><strong>${block.tone === 'warning' ? 'Atenção' : block.tone === 'success' ? 'Sucesso' : 'Importante'}</strong><p>${renderInlineMarkdown(block.text)}</p></aside>`;
+        return `<aside data-callout-tone="${block.tone}"><strong>${calloutLabel(block.tone)}</strong><p>${renderInlineMarkdown(block.text)}</p></aside>`;
       }
 
       if (block.type === 'youtube') {
         return renderYoutubeFigure(block.videoId, block.size);
+      }
+
+      if (block.type === 'divider') {
+        return `<hr data-divider-style="${block.style}" />`;
+      }
+
+      if (block.type === 'related') {
+        return `<section data-related-slug="${escapeHtml(block.slug)}" contenteditable="false" class="related-card"><strong>Leia também</strong><p data-related-title>${renderInlineMarkdown(block.title)}</p><small data-related-summary>${renderInlineMarkdown(block.summary)}</small><span>→</span></section>`;
       }
 
       const asset = assets[block.assetId];
@@ -713,6 +817,18 @@ function inlineNodeToMarkdown(node: Node): string {
     return href && isSafeEditorHref(href) ? `[${content}](${href})` : content;
   }
 
+  if (tag === 'span') {
+    const textTone = node.dataset.textTone as TextTone | undefined;
+    const markTone = node.dataset.markTone as MarkTone | undefined;
+    if (textTone && textTone !== 'default') {
+      return `[color:${textTone}]${content}[/color]`;
+    }
+    if (markTone && markTone !== 'none') {
+      return `[mark:${markTone}]${content}[/mark]`;
+    }
+    return content;
+  }
+
   return content;
 }
 
@@ -726,8 +842,10 @@ function isVisualBlockElement(node: Node): node is HTMLElement {
     /^h[1-3]$/.test(tag) ||
     tag === 'blockquote' ||
     tag === 'pre' ||
+    tag === 'hr' ||
     tag === 'ul' ||
     tag === 'ol' ||
+    (tag === 'section' && Boolean(node.dataset.relatedSlug)) ||
     (tag === 'aside' && Boolean(node.dataset.calloutTone)) ||
     (tag === 'figure' && (Boolean(node.dataset.youtubeId) || Boolean(node.dataset.assetId)))
   );
@@ -785,6 +903,10 @@ function blockElementToMarkdown(element: HTMLElement): string {
     return `\`\`\`text\n${element.textContent ?? ''}\n\`\`\``;
   }
 
+  if (tag === 'hr') {
+    return `::divider ${element.dataset.dividerStyle ?? 'dashed'}`;
+  }
+
   if (tag === 'ul' || tag === 'ol') {
     return Array.from(element.querySelectorAll(':scope > li'))
       .map((item, index) => {
@@ -801,6 +923,13 @@ function blockElementToMarkdown(element: HTMLElement): string {
       .filter(Boolean)
       .join('\n');
     return `:::callout ${tone}\n${text}\n:::`;
+  }
+
+  if (tag === 'section' && element.dataset.relatedSlug) {
+    const slug = element.dataset.relatedSlug;
+    const title = element.querySelector('[data-related-title]')?.textContent?.trim();
+    const summary = element.querySelector('[data-related-summary]')?.textContent?.trim();
+    return `::related ${slug}\n${title || 'Artigo relacionado'}\n${summary || 'Abra este artigo relacionado na Central.'}\n::`;
   }
 
   if (tag === 'figure' && element.dataset.youtubeId) {
@@ -852,6 +981,9 @@ function RichTextArticleEditor({
   const savedRangeRef = useRef<Range | null>(null);
   const draggedFigureRef = useRef<HTMLElement | null>(null);
   const [selectedFigure, setSelectedFigure] = useState<HTMLElement | null>(null);
+  const [openToolbarMenu, setOpenToolbarMenu] = useState<
+    'block' | 'text-color' | 'mark-color' | 'insert' | null
+  >(null);
   const lastAppliedBodyRef = useRef<string | null>(null);
   const historyRef = useRef<string[]>([]);
   const historyIndexRef = useRef(-1);
@@ -1071,6 +1203,49 @@ function RichTextArticleEditor({
     emitChange();
   }
 
+  function wrapSelectionWithSpan(kind: 'text' | 'mark', tone: TextTone | MarkTone) {
+    if (isReadOnly) {
+      return;
+    }
+
+    restoreSelection();
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    const span = document.createElement('span');
+    if (kind === 'text') {
+      const textTone = tone as TextTone;
+      if (textTone === 'default') {
+        const content = range.extractContents();
+        range.insertNode(content);
+        emitChange();
+        return;
+      }
+      span.dataset.textTone = textTone;
+    } else {
+      const markTone = tone as MarkTone;
+      if (markTone === 'none') {
+        const content = range.extractContents();
+        range.insertNode(content);
+        emitChange();
+        return;
+      }
+      span.dataset.markTone = markTone;
+    }
+    span.append(range.extractContents());
+    range.insertNode(span);
+    selection.removeAllRanges();
+    const nextRange = document.createRange();
+    nextRange.selectNodeContents(span);
+    nextRange.collapse(false);
+    selection.addRange(nextRange);
+    rememberSelection();
+    emitChange();
+  }
+
   function setImageSize(size: VisualImageSize) {
     if (!selectedFigure) {
       return;
@@ -1113,10 +1288,33 @@ function RichTextArticleEditor({
     emitChange();
   }
 
-  function insertCallout(tone: 'info' | 'warning' | 'success') {
+  function insertCallout(tone: CalloutTone) {
     insertBlockHtmlAtCursor(
-      `<aside data-callout-tone="${tone}"><strong>${tone === 'warning' ? 'Atenção' : tone === 'success' ? 'Sucesso' : 'Importante'}</strong><p>Escreva a observação do artigo.</p></aside>`,
+      `<aside data-callout-tone="${tone}"><strong>${calloutLabel(tone)}</strong><p>Escreva a observação do artigo.</p></aside>`,
     );
+  }
+
+  function insertDivider(style: 'solid' | 'dashed' | 'space' = 'dashed') {
+    insertBlockHtmlAtCursor(`<hr data-divider-style="${style}" />`);
+  }
+
+  function insertRelatedArticle() {
+    const slug = window.prompt('Informe o slug de um artigo público relacionado');
+    if (!slug) {
+      return;
+    }
+    const normalizedSlug = slugify(slug);
+    if (!normalizedSlug) {
+      return;
+    }
+    const title = window.prompt('Título do artigo relacionado') ?? 'Artigo relacionado';
+    insertBlockHtmlAtCursor(
+      `<section data-related-slug="${normalizedSlug}" contenteditable="false" class="related-card"><strong>Leia também</strong><p data-related-title>${escapeHtml(title)}</p><small data-related-summary>Artigo relacionado da base de conhecimento.</small><span>→</span></section>`,
+    );
+  }
+
+  function insertMarker(label: string) {
+    insertHtmlAtCursor(`<span data-mark-tone="blue"> ${escapeHtml(label)} </span>`);
   }
 
   function insertYoutube() {
@@ -1130,6 +1328,22 @@ function RichTextArticleEditor({
     }
     insertBlockHtmlAtCursor(renderYoutubeFigure(videoId, 'large'));
   }
+
+  const blockOptions: Array<{
+    label: string;
+    onClick: () => void;
+    icon: string;
+  }> = [
+    { label: 'Parágrafo', icon: '¶', onClick: () => runCommand('formatBlock', 'p') },
+    { label: 'Título 1', icon: 'H1', onClick: () => runCommand('formatBlock', 'h1') },
+    { label: 'Título 2', icon: 'H2', onClick: () => runCommand('formatBlock', 'h2') },
+    { label: 'Título 3', icon: 'H3', onClick: () => runCommand('formatBlock', 'h3') },
+    { label: 'Citação', icon: '“', onClick: () => runCommand('formatBlock', 'blockquote') },
+    { label: 'Nota', icon: 'ⓘ', onClick: () => insertCallout('info') },
+    { label: 'Importante', icon: '★', onClick: () => insertCallout('success') },
+    { label: 'Alerta', icon: '⚠', onClick: () => insertCallout('warning') },
+    { label: 'Cuidado', icon: '!', onClick: () => insertCallout('danger') },
+  ];
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -1155,36 +1369,40 @@ function RichTextArticleEditor({
   return (
     <div
       className={cx(
-        'relative flex min-h-0 flex-1 flex-col transition focus-within:bg-[rgba(234,242,255,0.05)]',
+        'relative flex flex-col transition focus-within:bg-[rgba(234,242,255,0.05)]',
         assetState === 'saving' && 'bg-[rgba(234,242,255,0.2)]',
       )}
     >
-      <div className="flex h-11 shrink-0 items-center gap-1.5 overflow-x-auto border-b border-[#E8EEF7] bg-white px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <select
-          className="mr-1 h-8 rounded-xl border border-[color:var(--color-border)] bg-white px-3 text-[0.76rem] font-semibold text-[color:var(--color-brand-navy)] outline-none"
-          defaultValue="p"
-          onChange={(event) => {
-            runCommand('formatBlock', event.target.value);
-            event.currentTarget.value = 'p';
-          }}
-          title="Estilo do bloco selecionado"
-        >
-          <option value="p">Parágrafo</option>
-          <option value="h1">Título H1</option>
-          <option value="h2">Título H2</option>
-          <option value="h3">Título H3</option>
-          <option value="blockquote">Citação</option>
-          <option value="pre">Código</option>
-        </select>
-        <ToolbarButton onClick={() => runCommand('formatBlock', 'h1')} title="H1">
-          H1
-        </ToolbarButton>
-        <ToolbarButton onClick={() => runCommand('formatBlock', 'h2')} title="H2">
-          H2
-        </ToolbarButton>
-        <ToolbarButton onClick={() => runCommand('formatBlock', 'h3')} title="H3">
-          H3
-        </ToolbarButton>
+      <div className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-1.5 overflow-x-auto border-b border-[#E8EEF7] bg-white px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="relative">
+          <button
+            className="mr-1 inline-flex h-8 min-w-[112px] items-center justify-between gap-2 rounded-xl border border-[color:var(--color-border)] bg-white px-3 text-[0.76rem] font-bold text-[color:var(--color-brand-navy)] shadow-sm"
+            onClick={() => setOpenToolbarMenu(openToolbarMenu === 'block' ? null : 'block')}
+            type="button"
+          >
+            Parágrafo <span className="text-[#6B7892]">⌄</span>
+          </button>
+          {openToolbarMenu === 'block' ? (
+            <ToolbarMenu className="left-0 top-10 w-40">
+              {blockOptions.map((option) => (
+                <button
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-[0.76rem] font-bold text-[#162443] hover:bg-[#F4F7FC]"
+                  key={option.label}
+                  onClick={() => {
+                    option.onClick();
+                    setOpenToolbarMenu(null);
+                  }}
+                  type="button"
+                >
+                  <span className="grid h-5 w-6 place-items-center text-[#2F6BFF]">
+                    {option.icon}
+                  </span>
+                  {option.label}
+                </button>
+              ))}
+            </ToolbarMenu>
+          ) : null}
+        </div>
         <span className="mx-1 h-7 w-px bg-[color:var(--color-border)]" />
         <ToolbarButton onClick={() => runCommand('bold')} title="Negrito">
           B
@@ -1194,6 +1412,9 @@ function RichTextArticleEditor({
         </ToolbarButton>
         <ToolbarButton onClick={() => runCommand('underline')} title="Sublinhado">
           <span className="underline">U</span>
+        </ToolbarButton>
+        <ToolbarButton onClick={() => runCommand('strikeThrough')} title="Tachado">
+          <span className="line-through">S</span>
         </ToolbarButton>
         <span className="mx-1 h-7 w-px bg-[color:var(--color-border)]" />
         <ToolbarButton
@@ -1231,19 +1452,105 @@ function RichTextArticleEditor({
         >
           🔗
         </ToolbarButton>
+        <div className="relative">
+          <ToolbarButton
+            onClick={() =>
+              setOpenToolbarMenu(openToolbarMenu === 'text-color' ? null : 'text-color')
+            }
+            title="Cor do texto"
+          >
+            A
+          </ToolbarButton>
+          {openToolbarMenu === 'text-color' ? (
+            <ToolbarMenu className="left-0 top-10 w-36">
+              {(Object.keys(TEXT_TONE_LABELS) as TextTone[]).map((tone) => (
+                <button
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[0.76rem] font-bold text-[#162443] hover:bg-[#F4F7FC]"
+                  key={tone}
+                  onClick={() => {
+                    wrapSelectionWithSpan('text', tone);
+                    setOpenToolbarMenu(null);
+                  }}
+                  type="button"
+                >
+                  <span className={`toolbar-swatch text-${tone}`} />
+                  {TEXT_TONE_LABELS[tone]}
+                </button>
+              ))}
+            </ToolbarMenu>
+          ) : null}
+        </div>
+        <div className="relative">
+          <ToolbarButton
+            onClick={() => setOpenToolbarMenu(openToolbarMenu === 'mark-color' ? null : 'mark-color')}
+            title="Marca-texto"
+          >
+            ✎
+          </ToolbarButton>
+          {openToolbarMenu === 'mark-color' ? (
+            <ToolbarMenu className="left-0 top-10 w-40">
+              {(Object.keys(MARK_TONE_LABELS) as MarkTone[]).map((tone) => (
+                <button
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[0.76rem] font-bold text-[#162443] hover:bg-[#F4F7FC]"
+                  key={tone}
+                  onClick={() => {
+                    wrapSelectionWithSpan('mark', tone);
+                    setOpenToolbarMenu(null);
+                  }}
+                  type="button"
+                >
+                  <span className={`toolbar-swatch mark-${tone}`} />
+                  {MARK_TONE_LABELS[tone]}
+                </button>
+              ))}
+            </ToolbarMenu>
+          ) : null}
+        </div>
+        <span className="mx-1 h-7 w-px bg-[color:var(--color-border)]" />
         <ToolbarButton
           disabled={assetState === 'saving'}
           onClick={onImageButton}
           title="Inserir imagem no corpo"
         >
-          Imagem
+          ▣
         </ToolbarButton>
         <ToolbarButton onClick={insertYoutube} title="Inserir vídeo YouTube">
-          Vídeo
+          ▶
         </ToolbarButton>
-        <ToolbarButton onClick={() => insertCallout('info')} title="Nota">
-          Nota
-        </ToolbarButton>
+        <div className="relative">
+          <ToolbarButton
+            onClick={() => setOpenToolbarMenu(openToolbarMenu === 'insert' ? null : 'insert')}
+            title="Inserir bloco"
+          >
+            ⊞
+          </ToolbarButton>
+          {openToolbarMenu === 'insert' ? (
+            <ToolbarMenu className="right-0 top-10 w-44">
+              {[
+                ['Nota', () => insertCallout('info')],
+                ['Importante', () => insertCallout('success')],
+                ['Alerta', () => insertCallout('warning')],
+                ['Cuidado', () => insertCallout('danger')],
+                ['Leia também', insertRelatedArticle],
+                ['Divisor', () => insertDivider('dashed')],
+                ['Marcador check', () => insertMarker('✓')],
+              ].map(([label, action]) => (
+                <button
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-[0.76rem] font-bold text-[#162443] hover:bg-[#F4F7FC]"
+                  key={String(label)}
+                  onClick={() => {
+                    (action as () => void)();
+                    setOpenToolbarMenu(null);
+                  }}
+                  type="button"
+                >
+                  {String(label)}
+                  <span className="text-[#2F6BFF]">+</span>
+                </button>
+              ))}
+            </ToolbarMenu>
+          ) : null}
+        </div>
         <ToolbarButton onClick={() => runCommand('formatBlock', 'pre')} title="Código">
           &lt;/&gt;
         </ToolbarButton>
@@ -1304,7 +1611,7 @@ function RichTextArticleEditor({
         </div>
       ) : null}
 
-      <div className="min-h-0 flex-1 overflow-auto bg-white">
+      <div className="bg-white">
         <style>
           {`
             .knowledge-rich-editor:empty::before {
@@ -1368,12 +1675,27 @@ function RichTextArticleEditor({
               border-color: #22C55E;
               background: #EAF9F0;
             }
+            .knowledge-rich-editor aside[data-callout-tone='danger'] {
+              border-color: #DC2626;
+              background: #FDEBEC;
+            }
             .knowledge-rich-editor aside[data-callout-tone] strong {
               color: #162443;
               display: block;
               font-size: 13px;
               margin-bottom: 6px;
             }
+            .knowledge-rich-editor span[data-text-tone='blue'] { color: #2F6BFF; }
+            .knowledge-rich-editor span[data-text-tone='green'] { color: #16A34A; }
+            .knowledge-rich-editor span[data-text-tone='yellow'] { color: #D97706; }
+            .knowledge-rich-editor span[data-text-tone='red'] { color: #DC2626; }
+            .knowledge-rich-editor span[data-text-tone='gray'] { color: #6B7892; }
+            .knowledge-rich-editor span[data-mark-tone='blue'] { background: #EAF2FF; border-radius: 6px; padding: 0 4px; }
+            .knowledge-rich-editor span[data-mark-tone='green'] { background: #EAF9F0; border-radius: 6px; padding: 0 4px; }
+            .knowledge-rich-editor span[data-mark-tone='yellow'] { background: #FFF4D9; border-radius: 6px; padding: 0 4px; }
+            .knowledge-rich-editor span[data-mark-tone='pink'] { background: #FCE7F3; border-radius: 6px; padding: 0 4px; }
+            .knowledge-rich-editor span[data-mark-tone='purple'] { background: #F3E8FF; border-radius: 6px; padding: 0 4px; }
+            .knowledge-rich-editor span[data-mark-tone='gray'] { background: #EEF2F7; border-radius: 6px; padding: 0 4px; }
             .knowledge-rich-editor a {
               color: #2F6BFF;
               font-weight: 700;
@@ -1389,6 +1711,44 @@ function RichTextArticleEditor({
               margin: 22px 0;
               overflow: auto;
               padding: 16px;
+            }
+            .knowledge-rich-editor hr {
+              border: 0;
+              border-top: 2px dashed #DCE4F2;
+              margin: 28px 0;
+            }
+            .knowledge-rich-editor hr[data-divider-style='solid'] {
+              border-top-style: solid;
+            }
+            .knowledge-rich-editor hr[data-divider-style='space'] {
+              border-top: 0;
+              height: 28px;
+            }
+            .knowledge-rich-editor .related-card {
+              align-items: center;
+              background: #F3E8FF;
+              border: 1px solid rgba(124, 58, 237, 0.22);
+              border-radius: 18px;
+              color: #162443;
+              display: grid;
+              grid-template-columns: 1fr auto;
+              gap: 4px 16px;
+              margin: 24px 0;
+              padding: 16px 18px;
+            }
+            .knowledge-rich-editor .related-card strong {
+              color: #7C3AED;
+              font-size: 13px;
+              grid-column: 1 / -1;
+            }
+            .knowledge-rich-editor .related-card p {
+              color: #4C1D95;
+              font-weight: 800;
+              margin: 0;
+            }
+            .knowledge-rich-editor .related-card small {
+              color: #6B7892;
+              font-size: 12px;
             }
             .knowledge-rich-editor figure[data-asset-id],
             .knowledge-rich-editor figure[data-youtube-id] {
@@ -1479,10 +1839,30 @@ function RichTextArticleEditor({
               font-size: 12px;
               word-break: break-all;
             }
+            .toolbar-swatch {
+              border: 1px solid #DCE4F2;
+              border-radius: 999px;
+              display: inline-block;
+              height: 14px;
+              width: 14px;
+            }
+            .toolbar-swatch.text-default { background: #162443; }
+            .toolbar-swatch.text-blue { background: #2F6BFF; }
+            .toolbar-swatch.text-green { background: #16A34A; }
+            .toolbar-swatch.text-yellow { background: #F5B83D; }
+            .toolbar-swatch.text-red { background: #EF4444; }
+            .toolbar-swatch.text-gray { background: #98A3B8; }
+            .toolbar-swatch.mark-none { background: #FFFFFF; }
+            .toolbar-swatch.mark-blue { background: #EAF2FF; }
+            .toolbar-swatch.mark-green { background: #EAF9F0; }
+            .toolbar-swatch.mark-yellow { background: #FFF4D9; }
+            .toolbar-swatch.mark-pink { background: #FCE7F3; }
+            .toolbar-swatch.mark-purple { background: #F3E8FF; }
+            .toolbar-swatch.mark-gray { background: #EEF2F7; }
           `}
         </style>
         <div
-          className="knowledge-rich-editor min-h-full max-w-[980px] px-10 py-8 text-[#24324F] outline-none xl:px-12"
+          className="knowledge-rich-editor min-h-[680px] max-w-[980px] px-10 py-8 text-[#24324F] outline-none xl:px-12"
           contentEditable={!isReadOnly}
           onBlur={rememberSelection}
           onClick={(event) => {
@@ -1642,6 +2022,7 @@ export function KnowledgeArticleEditorPage() {
   const [publicConfirmationOpen, setPublicConfirmationOpen] = useState(false);
   const [publicConfirmation, setPublicConfirmation] =
     useState<KnowledgeReviewHumanConfirmations>({});
+  const [tagDraft, setTagDraft] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
   const [metadataCollapsed, setMetadataCollapsed] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
@@ -1894,6 +2275,30 @@ export function KnowledgeArticleEditorPage() {
   function handleSlugChange(event: ChangeEvent<HTMLInputElement>) {
     setSlugTouched(true);
     updateForm({ slug: slugify(event.target.value) });
+  }
+
+  function normalizeTag(value: string) {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9- ]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .slice(0, 32);
+  }
+
+  function addTag() {
+    const normalized = normalizeTag(tagDraft);
+    if (!normalized || form.keywords.includes(normalized) || form.keywords.length >= 10) {
+      return;
+    }
+    updateForm({ keywords: [...form.keywords, normalized] });
+    setTagDraft('');
+  }
+
+  function removeTag(tag: string) {
+    updateForm({ keywords: form.keywords.filter((item) => item !== tag) });
   }
 
   function insertSnippet(before: string, after = '', fallback = 'texto') {
@@ -2477,11 +2882,11 @@ export function KnowledgeArticleEditorPage() {
 
   return (
     <form
-      className="flex h-full min-h-0 flex-col overflow-hidden bg-[#F4F7FC] font-[Inter,Geist,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe_UI',sans-serif]"
+      className="min-h-full bg-[#F4F7FC] font-[Inter,Geist,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe_UI',sans-serif]"
       onSubmit={handleSaveDraft}
     >
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 py-4 xl:px-6">
-        <header className="flex shrink-0 items-start justify-between gap-5 pb-3">
+      <div className="px-5 py-4 xl:px-6">
+        <header className="sticky top-0 z-20 flex items-start justify-between gap-5 bg-[#F4F7FC]/95 pb-3 backdrop-blur">
           <div className="min-w-0 space-y-2">
             <nav className="flex items-center gap-2 text-xs font-semibold text-[color:var(--color-muted)]">
               <Link className="hover:text-[color:var(--color-brand-blue)]" to="/admin/knowledge">
@@ -2522,19 +2927,11 @@ export function KnowledgeArticleEditorPage() {
           ) : null}
           <div className="flex shrink-0 flex-wrap justify-end gap-3">
             <AppButton
-              className="h-11 rounded-[12px] px-5 text-[0.82rem]"
+              className="h-11 rounded-[14px] px-5 text-[0.82rem] shadow-[0_14px_32px_rgba(47,107,255,0.24)]"
               disabled={saveState === 'saving' || isReadOnly}
               type="submit"
             >
               {saveState === 'saving' ? 'Salvando...' : saveButtonLabel}
-            </AppButton>
-            <AppButton
-              className="h-11 rounded-[12px] px-5 text-[0.82rem]"
-              disabled={publishState === 'saving' || isReadOnly}
-              onClick={() => void handlePublishArticle()}
-              type="button"
-            >
-              {publishState === 'saving' ? 'Publicando...' : publishButtonLabel}
             </AppButton>
             <GhostButton
               className="h-11 rounded-[12px] px-5 text-[0.82rem] text-[color:var(--color-brand-navy)]"
@@ -2585,13 +2982,13 @@ export function KnowledgeArticleEditorPage() {
 
         <div
           className={cx(
-            'grid min-h-0 flex-1 gap-4 overflow-hidden',
+            'grid items-start gap-4',
             metadataCollapsed
               ? 'xl:grid-cols-[64px_minmax(0,1fr)]'
               : 'xl:grid-cols-[360px_minmax(0,1fr)]',
           )}
         >
-          <aside className="min-h-0 overflow-hidden">
+          <aside className="sticky top-[92px] max-h-[calc(100vh-112px)] overflow-hidden">
             {metadataCollapsed ? (
               <div className="flex h-full flex-col items-center gap-3 rounded-[22px] border border-[color:var(--color-border)] bg-white px-2 py-3 shadow-[0_18px_42px_rgba(20,31,71,0.06)]">
                 <button
@@ -2612,8 +3009,8 @@ export function KnowledgeArticleEditorPage() {
                 ))}
               </div>
             ) : (
-              <div className="h-full overflow-auto pr-1">
-                <div className="space-y-3">
+              <div className="max-h-[calc(100vh-112px)] overflow-auto pr-1">
+                <div className="space-y-2.5">
                   <RailCard title="Configurações editoriais">
                     <div className="-mt-1 flex justify-end">
                       <button
@@ -2646,7 +3043,7 @@ export function KnowledgeArticleEditorPage() {
                     </Field>
                     <Field label="Resumo curto *">
                       <TextareaInput
-                        className="min-h-[104px] rounded-[14px] py-3 leading-[1.45]"
+                        className="min-h-[96px] rounded-[14px] py-3 leading-[1.45]"
                         disabled={isReadOnly}
                         maxLength={SUMMARY_LIMIT + 40}
                         onChange={(event) => updateForm({ summary: event.target.value })}
@@ -2668,6 +3065,56 @@ export function KnowledgeArticleEditorPage() {
                           </option>
                         ))}
                       </SelectInput>
+                    </Field>
+                    <Field label="Tags">
+                      <div className="rounded-[16px] border border-[#DCE4F2] bg-white p-2">
+                        {form.keywords.length > 0 ? (
+                          <div className="mb-2 flex flex-wrap gap-1.5">
+                            {form.keywords.map((tag) => (
+                              <span
+                                className="inline-flex items-center gap-1 rounded-full bg-[#EEF2F7] px-2 py-1 text-[0.68rem] font-bold text-[#162443]"
+                                key={tag}
+                              >
+                                {tag}
+                                <button
+                                  className="text-[#6B7892] hover:text-red-600"
+                                  onClick={() => removeTag(tag)}
+                                  type="button"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+                        <div className="flex gap-2">
+                          <input
+                            className="min-h-9 min-w-0 flex-1 rounded-xl border border-[#DCE4F2] px-3 text-[0.78rem] font-semibold text-[#162443] outline-none focus:border-[#2F6BFF]"
+                            disabled={isReadOnly || form.keywords.length >= 10}
+                            onChange={(event) => setTagDraft(event.target.value)}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter') {
+                                event.preventDefault();
+                                addTag();
+                              }
+                            }}
+                            placeholder="Adicionar tag"
+                            value={tagDraft}
+                          />
+                          <button
+                            className="rounded-xl bg-[#F4F7FC] px-3 text-[0.72rem] font-extrabold text-[#2F6BFF] disabled:opacity-40"
+                            disabled={!tagDraft.trim() || form.keywords.length >= 10}
+                            onClick={addTag}
+                            type="button"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <div className="mt-1 flex justify-between text-[0.65rem] text-[#6B7892]">
+                          <span>Contrato de tags ainda não persiste no backend.</span>
+                          <span>{form.keywords.length}/10</span>
+                        </div>
+                      </div>
                     </Field>
                     <Field label="Visibilidade *">
                       <SelectInput
@@ -2873,83 +3320,6 @@ export function KnowledgeArticleEditorPage() {
                     ) : null}
                   </RailCard>
 
-                  <RailCard
-                    badge={`${assets.length} ${assets.length === 1 ? 'item' : 'itens'}`}
-                    title="Mídia e anexos"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[0.72rem] text-[color:var(--color-muted)]">
-                        Imagens entram inline no texto.
-                      </span>
-                      <GhostButton
-                        className="min-h-8 rounded-[12px] px-3 text-[0.7rem]"
-                        disabled={isReadOnly || assetState === 'saving'}
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        + Adicionar
-                      </GhostButton>
-                    </div>
-                    {assets.length > 0 ? (
-                      <ul className="space-y-2">
-                        {assets.slice(0, 3).map((asset) => (
-                          <li
-                            className="flex items-center gap-2 rounded-2xl border border-[color:var(--color-border)] bg-white px-2 py-2"
-                            key={asset.id}
-                          >
-                            <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)]">
-                              {asset.signed_url ? (
-                                <img
-                                  alt={asset.alt_text ?? 'Imagem do artigo'}
-                                  className="h-full w-full object-cover"
-                                  loading="lazy"
-                                  src={asset.signed_url}
-                                />
-                              ) : (
-                                <span className="text-xs text-[color:var(--color-muted)]">IMG</span>
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-[0.72rem] font-semibold text-[color:var(--color-brand-navy)]">
-                                {asset.source_path?.split('/').pop() ??
-                                  asset.detected_mime_type ??
-                                  'Imagem'}
-                              </p>
-                              <p className="text-[0.66rem] text-[color:var(--color-muted)]">
-                                {asset.file_size_bytes
-                                  ? formatFileSize(asset.file_size_bytes)
-                                  : 'tamanho indisponível'}
-                              </p>
-                            </div>
-                            <button
-                              className="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-[#2F6BFF] hover:bg-[#F4F7FC]"
-                              onClick={() => handleInsertAsset(asset.id)}
-                              title="Inserir no corpo"
-                              type="button"
-                            >
-                              +
-                            </button>
-                            {asset.signed_url ? (
-                              <a
-                                className="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-[#6B7892] hover:bg-[#F4F7FC]"
-                                href={asset.signed_url}
-                                rel="noreferrer"
-                                target="_blank"
-                                title="Abrir imagem"
-                              >
-                                ↓
-                              </a>
-                            ) : null}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="rounded-2xl bg-[color:var(--color-surface)] px-3 py-3 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
-                        Cole ou arraste uma imagem no editor quando o artigo precisar de apoio
-                        visual.
-                      </p>
-                    )}
-                  </RailCard>
-
                   <RailCard title="Informações do artigo">
                     <dl className="space-y-2 text-[0.72rem] leading-5">
                       <div>
@@ -2978,8 +3348,8 @@ export function KnowledgeArticleEditorPage() {
               </div>
             )}
           </aside>
-          <main className="flex min-h-0 flex-col overflow-hidden">
-            <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[22px] border border-[#DCE4F2] bg-white shadow-[0_18px_50px_rgba(22,36,67,0.06)]">
+          <main className="min-w-0">
+            <section className="overflow-hidden rounded-[22px] border border-[#DCE4F2] bg-white shadow-[0_18px_50px_rgba(22,36,67,0.06)]">
               <input
                 accept="image/png,image/jpeg,image/webp,image/gif"
                 className="hidden"
@@ -3011,30 +3381,17 @@ export function KnowledgeArticleEditorPage() {
                   editorMarkdownInserterRef.current = inserter;
                 }}
               />
-              <div className="flex h-12 shrink-0 items-center justify-between gap-4 border-t border-[#E8EEF7] px-5 text-[0.72rem] text-[#6B7892]">
+              <div className="flex h-12 items-center justify-between gap-4 border-t border-[#E8EEF7] px-5 text-[0.72rem] text-[#6B7892]">
                 <span className="min-w-[220px]">
                   {bodyPlain.split(' ').filter(Boolean).length} palavras ·{' '}
-                  {saveState === 'saved' ? 'Rascunho salvo agora' : 'Edição local'}
+                  {saveState === 'saved' ? 'Alterações salvas' : 'Edição local'}
                 </span>
                 <span className="hidden flex-1 justify-center text-center xl:block">
                   Atalhos: Ctrl+S salvar · Ctrl+K inserir link
                 </span>
-                <div className="flex shrink-0 items-center gap-2">
-                  <GhostButton
-                    className="min-h-9 rounded-[12px] px-4 text-[0.72rem]"
-                    disabled={publishState === 'saving' || isReadOnly}
-                    onClick={() => void handlePublishArticle()}
-                  >
-                    {publishState === 'saving' ? 'Publicando...' : publishButtonLabel}
-                  </GhostButton>
-                  <AppButton
-                    className="min-h-9 rounded-[12px] px-4 text-[0.72rem]"
-                    disabled={saveState === 'saving' || isReadOnly}
-                    type="submit"
-                  >
-                    {saveState === 'saving' ? 'Salvando...' : saveButtonLabel}
-                  </AppButton>
-                </div>
+                <span className="shrink-0 text-right">
+                  Último salvamento: {saveState === 'saved' ? 'agora' : 'pendente'}
+                </span>
               </div>
             </section>
           </main>
