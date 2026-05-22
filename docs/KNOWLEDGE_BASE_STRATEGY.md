@@ -60,14 +60,16 @@ Criar a base editorial do Genius Support OS com versionamento, trilha de origem 
 - A tela usa o blueprint aprovado de Governança de conhecimento como referência visual direta: header operacional, busca global única, filtros de status/categoria/visibilidade, KPIs reais, tabela central dominante e rail direito de categorias/resumo/alertas.
 - Criação e edição de artigos acontecem em superfície dedicada, sem preview lateral comprimido dentro do cockpit.
 - `/admin/knowledge/new` é a superfície dedicada de criação manual de artigo. A tela segue o blueprint aprovado de novo artigo, usa categorias e espaços reais, salva rascunho por `rpc_admin_create_knowledge_article_draft_v2`/`rpc_admin_update_knowledge_article_draft_v2` e envia para revisão por `rpc_admin_submit_knowledge_article_for_review_v2`.
-- O editor V1 usa Markdown seguro, toolbar operacional, checklist visual local, prévia rápida e rail de configurações editoriais. O checklist não substitui gate backend e a tela não publica artigo.
-- Upload binário de imagem/anexo não é simulado: a tela lista assets já vinculados via `vw_admin_knowledge_article_assets` e insere apenas placeholders governados `knowledge-asset:<id>` quando houver asset disponível.
+- `/admin/knowledge/:articleId/edit` reutiliza a mesma superfície dedicada para edição de artigos existentes. Artigos publicados abrem revisão editorial por `rpc_admin_begin_knowledge_article_editorial_revision_v2` e salvam por `rpc_admin_update_knowledge_article_editorial_revision_v2`; drafts/reviews salvam por `rpc_admin_update_knowledge_article_draft_v2`.
+- O editor V1 usa Markdown seguro, toolbar operacional, checklist visual local, prévia ampla na área principal e rail de configurações/governança. O checklist não substitui gate backend e status editorial não é dropdown livre: transições acontecem por ações governadas via RPC.
+- Upload binário de imagem agora usa o bucket privado `knowledge-assets` e registra metadados por `rpc_admin_upsert_knowledge_article_asset_v1`. A tela aceita seleção, drag and drop e colagem de imagens no corpo, insere markdown governado `![alt](knowledge-asset:<id>)` e lista previews assinados via `vw_admin_knowledge_article_assets`.
+- Remoção definitiva de asset e anexos não imagem continuam fora do editor V1: o contrato atual permite imagem PNG/JPG/WEBP/GIF até 10 MB; PDF/arquivo genérico exige ampliação explícita de contrato antes de liberar no browser.
 - Métricas sem contrato real, como visualizações por artigo em 30 dias, devem aparecer como indisponíveis ou ser omitidas. O frontend não cria número fake.
 - A busca atual do cockpit é textual sobre campos expostos pelo read model administrativo; busca semântica ou busca por corpo completo exige contrato administrativo explícito futuro.
 
 ## Assets governados de artigos
 - Imagens de artigos Knowledge usam o bucket privado `knowledge-assets`.
-- O corpo publico nao renderiza URL externa arbitraria; o placeholder permitido e `knowledge-asset:<id>`.
+- O corpo publico nao renderiza URL externa arbitraria; a referencia permitida no markdown e `![alt](knowledge-asset:<id>)`.
 - Assets legados Octadesk entram como `pending` e so devem aparecer no publico quando `approved`, `public`, nao bloqueados e vinculados a artigo `published/public`.
 - Admin Knowledge pode visualizar, aprovar ou bloquear assets por artigo.
 - A Central Publica usa a view filtrada `vw_public_knowledge_article_assets` e URLs assinadas curtas, sem depender da Octadesk em runtime.

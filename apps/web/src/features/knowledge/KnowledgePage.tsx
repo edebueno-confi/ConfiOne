@@ -26,7 +26,6 @@ import {
 } from '../../components/states';
 import {
   archiveKnowledgeArticleV2,
-  beginKnowledgeArticleEditorialRevisionV2,
   createKnowledgeArticleDraftV2,
   discardKnowledgeArticleEditorialRevisionV2,
   createKnowledgeCategoryV2,
@@ -1390,151 +1389,16 @@ export function KnowledgePage() {
     setArticleActionFeedback(null);
   }
 
-  async function openEditArticle() {
+  function openEditArticle() {
     if (!articleDetail) {
       return;
     }
 
-    let detailForEditing = articleDetail;
-
-    if (articleDetail.status === 'published') {
-      if (!selectedSpaceId) {
-        return;
-      }
-
-      setArticleActionSubmitting(true);
-      setArticleActionFeedback(null);
-
-      try {
-        if (!articleDetail.editorial_draft) {
-          await beginKnowledgeArticleEditorialRevisionV2({
-            p_article_id: articleDetail.id,
-            p_knowledge_space_id: selectedSpaceId,
-          });
-          await refreshSelectedSpace(articleDetail.id);
-        }
-
-        const refreshedDetail = await getAdminKnowledgeArticleDetailV2(articleDetail.id);
-        if (refreshedDetail) {
-          detailForEditing = refreshedDetail;
-          setArticleDetail(refreshedDetail);
-        }
-      } catch (error) {
-        const classified = classifyAdminError(
-          error,
-        'Falha ao iniciar a revisão editorial do artigo publicado.',
-        );
-
-        if (classified.kind === 'session-expired') {
-          markSessionExpired();
-          return;
-        }
-
-        if (classified.kind === 'permission-denied') {
-          setBackendDenied(true);
-          return;
-        }
-
-        setArticleActionFeedback({
-          articleId: articleDetail.id,
-          message: classified.message,
-        });
-        return;
-      } finally {
-        setArticleActionSubmitting(false);
-      }
-    }
-
-    const nextDraft =
-      detailForEditing.status === 'published'
-        ? detailForEditing.editorial_draft
-        : null;
-
-    setPanelMode('edit-article');
-    setArticleForm(
-      nextDraft
-        ? buildArticleFormFromEditorialDraft(nextDraft)
-        : buildArticleForm(detailForEditing),
-    );
-    setArticleFormMessage(null);
-    setArticleActionFeedback(null);
+    navigate(`/admin/knowledge/${articleDetail.id}/edit`);
   }
 
-  async function openArticleEditorFromCockpit(articleId: string) {
-    if (!selectedSpaceId) {
-      return;
-    }
-
-    setSelectedArticleId(articleId);
-    setArticleActionSubmitting(true);
-    setArticleActionFeedback(null);
-
-    try {
-      let detailForEditing = await getAdminKnowledgeArticleDetailV2(articleId);
-      const assets = await listAdminKnowledgeArticleAssets(articleId);
-
-      if (!detailForEditing) {
-        setDetailPhase('error');
-        setDetailMessage('O detalhe do artigo selecionado não ficou disponível.');
-        return;
-      }
-
-      setArticleDetail(detailForEditing);
-      setArticleAssets(assets);
-      setDetailPhase('ready');
-      setBackendDenied(false);
-
-      if (detailForEditing.status === 'published') {
-        if (!detailForEditing.editorial_draft) {
-          await beginKnowledgeArticleEditorialRevisionV2({
-            p_article_id: detailForEditing.id,
-            p_knowledge_space_id: selectedSpaceId,
-          });
-          await refreshSelectedSpace(detailForEditing.id);
-        }
-
-        const refreshedDetail = await getAdminKnowledgeArticleDetailV2(articleId);
-        if (refreshedDetail) {
-          detailForEditing = refreshedDetail;
-          setArticleDetail(refreshedDetail);
-        }
-      }
-
-      const nextDraft =
-        detailForEditing.status === 'published'
-          ? detailForEditing.editorial_draft
-          : null;
-
-      setPanelMode('edit-article');
-      setArticleForm(
-        nextDraft
-          ? buildArticleFormFromEditorialDraft(nextDraft)
-          : buildArticleForm(detailForEditing),
-      );
-      setArticleFormMessage(null);
-    } catch (error) {
-      const classified = classifyAdminError(
-        error,
-        'Falha ao abrir o artigo para edição.',
-      );
-
-      if (classified.kind === 'session-expired') {
-        markSessionExpired();
-        return;
-      }
-
-      if (classified.kind === 'permission-denied') {
-        setBackendDenied(true);
-        return;
-      }
-
-      setArticleActionFeedback({
-        articleId,
-        message: classified.message,
-      });
-    } finally {
-      setArticleActionSubmitting(false);
-    }
+  function openArticleEditorFromCockpit(articleId: string) {
+    navigate(`/admin/knowledge/${articleId}/edit`);
   }
 
   async function refreshSelectedSpace(preferredArticleId?: string | null) {
@@ -2433,24 +2297,26 @@ export function KnowledgePage() {
       <div className="min-h-0 flex-1 overflow-hidden px-6 py-4">
         <div className="grid h-full min-h-0 gap-4 xl:grid-cols-[minmax(0,1fr)_292px] 2xl:grid-cols-[minmax(0,1fr)_320px]">
           <main className="flex min-h-0 flex-col gap-4 overflow-hidden">
-            <section className="grid shrink-0 gap-4 rounded-[18px] border border-[color:var(--color-border)] bg-white/95 px-4 py-4 shadow-[0_18px_48px_rgba(19,33,79,0.06)] xl:grid-cols-[minmax(360px,1fr)_170px_170px_170px] 2xl:grid-cols-[minmax(520px,1fr)_184px_184px_184px]">
-              <Field label="Busca global de conhecimento">
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--color-brand-blue)]">
-                    ⌕
-                  </span>
-                  <TextInput
-                    className="h-11 rounded-[14px] border-[rgba(47,107,255,0.22)] bg-[rgba(234,242,255,0.54)] pl-10 pr-4 text-[0.9rem] shadow-[0_0_0_1px_rgba(47,107,255,0.04)]"
-                    onChange={(event) => setSearchQuery(event.target.value)}
-                    placeholder="Buscar por artigo, dúvida, processo, categoria ou palavra-chave..."
-                    value={searchQuery}
-                  />
-                </div>
-              </Field>
+            <section className="grid shrink-0 gap-3 rounded-[18px] border border-[color:var(--color-border)] bg-white/95 px-4 py-3 shadow-[0_18px_48px_rgba(19,33,79,0.06)] md:grid-cols-3 xl:grid-cols-[minmax(0,1fr)_168px_168px_168px] 2xl:grid-cols-[minmax(620px,1fr)_180px_180px_180px]">
+              <div className="md:col-span-3 xl:col-span-1">
+                <Field label="Busca global de conhecimento">
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--color-brand-blue)]">
+                      ⌕
+                    </span>
+                    <TextInput
+                      className="h-10 w-full rounded-[14px] border-[rgba(47,107,255,0.22)] bg-[rgba(234,242,255,0.5)] pl-10 pr-4 text-[0.88rem] shadow-[0_0_0_1px_rgba(47,107,255,0.04)]"
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      placeholder="Buscar por artigo, dúvida, processo, categoria ou palavra-chave..."
+                      value={searchQuery}
+                    />
+                  </div>
+                </Field>
+              </div>
 
               <Field label="Status de governança">
                 <SelectInput
-                  className="h-11 rounded-[14px] px-3.5 text-[0.86rem]"
+                  className="h-10 rounded-[14px] px-3.5 text-[0.86rem]"
                   onChange={(event) =>
                     setListStatusFilter(event.target.value as ArticleStatusFilter)
                   }
@@ -2466,7 +2332,7 @@ export function KnowledgePage() {
 
               <Field label="Categoria">
                 <SelectInput
-                  className="h-11 rounded-[14px] px-3.5 text-[0.86rem]"
+                  className="h-10 rounded-[14px] px-3.5 text-[0.86rem]"
                   onChange={(event) => setSelectedCategoryId(event.target.value)}
                   value={selectedCategoryId}
                 >
@@ -2481,7 +2347,7 @@ export function KnowledgePage() {
 
               <Field label="Visibilidade">
                 <SelectInput
-                  className="h-11 rounded-[14px] px-3.5 text-[0.86rem]"
+                  className="h-10 rounded-[14px] px-3.5 text-[0.86rem]"
                   onChange={(event) =>
                     setVisibilityFilter(event.target.value as ArticleVisibilityFilter)
                   }
@@ -2495,25 +2361,25 @@ export function KnowledgePage() {
               </Field>
             </section>
 
-            <section className="grid shrink-0 gap-4 lg:grid-cols-2 2xl:grid-cols-4">
-              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-5 py-4 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+            <section className="grid shrink-0 gap-3 lg:grid-cols-2 2xl:grid-cols-4">
+              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-5 py-3.5 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-[0.76rem] font-semibold text-[color:var(--color-ink)]">
                       Publicados
                     </p>
-                    <p className="mt-3 text-[2rem] font-semibold leading-none tracking-[-0.05em] text-[color:var(--color-ink)]">
+                    <p className="mt-2 text-[1.85rem] font-semibold leading-none tracking-[-0.05em] text-[color:var(--color-ink)]">
                       {publishedArticlesCount}
                     </p>
                     <p className="mt-2 text-[0.8rem] text-[color:var(--color-muted)]">
                       {publicCoverageLabel}
                     </p>
                   </div>
-                  <span className="grid h-11 w-11 place-items-center rounded-[14px] bg-[rgba(47,107,255,0.1)] text-[1.35rem] text-[color:var(--color-brand-blue)]">
+                  <span className="grid h-10 w-10 place-items-center rounded-[14px] bg-[rgba(47,107,255,0.1)] text-[1.25rem] text-[color:var(--color-brand-blue)]">
                     ▥
                   </span>
                 </div>
-                <div className="mt-4 h-1 rounded-full bg-[rgba(47,107,255,0.16)]">
+                <div className="mt-3 h-1 rounded-full bg-[rgba(47,107,255,0.16)]">
                   <div
                     className="h-full rounded-full bg-[color:var(--color-brand-blue)]"
                     style={{
@@ -2523,24 +2389,24 @@ export function KnowledgePage() {
                 </div>
               </article>
 
-              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-5 py-4 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-5 py-3.5 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-[0.76rem] font-semibold text-[color:var(--color-ink)]">
                       Precisam atualização
                     </p>
-                    <p className="mt-3 text-[2rem] font-semibold leading-none tracking-[-0.05em] text-[color:var(--color-ink)]">
+                    <p className="mt-2 text-[1.85rem] font-semibold leading-none tracking-[-0.05em] text-[color:var(--color-ink)]">
                       {needsUpdateCount}
                     </p>
                     <p className="mt-2 text-[0.8rem] text-[color:var(--color-muted)]">
                       {needsUpdateCoverageLabel}
                     </p>
                   </div>
-                  <span className="grid h-11 w-11 place-items-center rounded-[14px] bg-[rgba(255,122,32,0.12)] text-[1.35rem] text-[color:var(--color-warning-ink)]">
+                  <span className="grid h-10 w-10 place-items-center rounded-[14px] bg-[rgba(255,122,32,0.12)] text-[1.25rem] text-[color:var(--color-warning-ink)]">
                     △
                   </span>
                 </div>
-                <div className="mt-4 h-1 rounded-full bg-[rgba(255,122,32,0.14)]">
+                <div className="mt-3 h-1 rounded-full bg-[rgba(255,122,32,0.14)]">
                   <div
                     className="h-full rounded-full bg-[color:var(--color-warning-ink)]"
                     style={{
@@ -2550,24 +2416,24 @@ export function KnowledgePage() {
                 </div>
               </article>
 
-              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-5 py-4 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-5 py-3.5 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-[0.76rem] font-semibold text-[color:var(--color-ink)]">
                       Arquivamento sugerido
                     </p>
-                    <p className="mt-3 text-[2rem] font-semibold leading-none tracking-[-0.05em] text-[color:var(--color-ink)]">
+                    <p className="mt-2 text-[1.85rem] font-semibold leading-none tracking-[-0.05em] text-[color:var(--color-ink)]">
                       {archiveSuggestedCount}
                     </p>
                     <p className="mt-2 text-[0.8rem] text-[color:var(--color-muted)]">
                       {archiveCoverageLabel}
                     </p>
                   </div>
-                  <span className="grid h-11 w-11 place-items-center rounded-[14px] bg-[rgba(129,83,255,0.12)] text-[1.35rem] text-[color:var(--color-brand-blue)]">
+                  <span className="grid h-10 w-10 place-items-center rounded-[14px] bg-[rgba(129,83,255,0.12)] text-[1.25rem] text-[color:var(--color-brand-blue)]">
                     ▣
                   </span>
                 </div>
-                <div className="mt-4 h-1 rounded-full bg-[rgba(129,83,255,0.14)]">
+                <div className="mt-3 h-1 rounded-full bg-[rgba(129,83,255,0.14)]">
                   <div
                     className="h-full rounded-full bg-[color:var(--color-brand-blue)]"
                     style={{
@@ -2577,40 +2443,40 @@ export function KnowledgePage() {
                 </div>
               </article>
 
-              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-5 py-4 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-5 py-3.5 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-[0.76rem] font-semibold text-[color:var(--color-ink)]">
                       Visualizações (30 dias)
                     </p>
-                    <p className="mt-3 text-[1.45rem] font-semibold leading-none tracking-[-0.04em] text-[color:var(--color-ink)]">
+                    <p className="mt-2 text-[1.35rem] font-semibold leading-none tracking-[-0.04em] text-[color:var(--color-ink)]">
                       Indisponível
                     </p>
                     <p className="mt-2 text-[0.8rem] text-[color:var(--color-muted)]">
                       Sem contrato real de consumo
                     </p>
                   </div>
-                  <span className="grid h-11 w-11 place-items-center rounded-[14px] bg-[rgba(16,185,129,0.12)] text-[1.25rem] text-[color:var(--color-success-ink)]">
+                  <span className="grid h-10 w-10 place-items-center rounded-[14px] bg-[rgba(16,185,129,0.12)] text-[1.15rem] text-[color:var(--color-success-ink)]">
                     ↗
                   </span>
                 </div>
-                <div className="mt-4 h-1 rounded-full bg-[rgba(16,185,129,0.12)]" />
+                <div className="mt-3 h-1 rounded-full bg-[rgba(16,185,129,0.12)]" />
               </article>
             </section>
 
             <section className="min-h-0 flex-1 overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/97 shadow-[0_18px_48px_rgba(19,33,79,0.07)]">
-              <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-5 py-4">
+              <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-4 py-3">
                 <div>
-                  <h2 className="text-[1.12rem] font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
+                  <h2 className="text-[1.05rem] font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
                     Artigos ({displayArticles.length})
                   </h2>
-                  <p className="mt-1 text-[0.78rem] text-[color:var(--color-muted)]">
+                  <p className="mt-0.5 text-[0.74rem] text-[color:var(--color-muted)]">
                     Tabela operacional para triagem, busca, edição e revisão governada.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <SelectInput
-                    className="h-10 min-w-[162px] rounded-[14px] px-3.5 text-[0.84rem]"
+                    className="h-9 min-w-[150px] rounded-[14px] px-3.5 text-[0.82rem]"
                     onChange={(event) => setListSort(event.target.value as KnowledgeListSort)}
                     value={listSort}
                   >
@@ -2618,13 +2484,6 @@ export function KnowledgePage() {
                     <option value="oldest">Mais antigos</option>
                     <option value="title">Título A-Z</option>
                   </SelectInput>
-                  <GhostButton
-                    className="h-10 rounded-[14px] px-3.5 text-[0.82rem] font-semibold"
-                    disabled
-                    title="Exportação não possui contrato visual nesta fase."
-                  >
-                    Exportar
-                  </GhostButton>
                 </div>
               </header>
 
@@ -2668,19 +2527,25 @@ export function KnowledgePage() {
                   />
                 </div>
               ) : (
-                <div className="flex h-[calc(100%-76px)] min-h-0 flex-col">
+                <div className="flex min-h-0 flex-1 flex-col">
                   <div className="min-h-0 flex-1 overflow-auto">
-                    <table className="min-w-[980px] w-full border-separate border-spacing-0">
+                    <table className="min-w-[760px] w-full border-separate border-spacing-0">
+                      <colgroup>
+                        <col className="w-[38%]" />
+                        <col className="w-[19%]" />
+                        <col className="w-[19%]" />
+                        <col className="w-[12%]" />
+                        <col className="w-[8%]" />
+                        <col className="w-[4%]" />
+                      </colgroup>
                       <thead className="sticky top-0 z-10 bg-[color:var(--color-surface)]">
                         <tr className="text-left text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                          <th className="border-b border-[color:var(--color-border)] px-5 py-3.5">Título</th>
-                          <th className="border-b border-[color:var(--color-border)] px-3 py-3.5">Código</th>
-                          <th className="border-b border-[color:var(--color-border)] px-3 py-3.5">Categoria</th>
-                          <th className="border-b border-[color:var(--color-border)] px-3 py-3.5">Status de governança</th>
-                          <th className="border-b border-[color:var(--color-border)] px-3 py-3.5">Visibilidade</th>
-                          <th className="border-b border-[color:var(--color-border)] px-3 py-3.5">Última atualização</th>
-                          <th className="border-b border-[color:var(--color-border)] px-3 py-3.5">Consumo</th>
-                          <th className="border-b border-[color:var(--color-border)] px-5 py-3.5 text-right">Ação</th>
+                          <th className="border-b border-[color:var(--color-border)] px-4 py-2.5">Título</th>
+                          <th className="border-b border-[color:var(--color-border)] px-3 py-2.5">Categoria</th>
+                          <th className="border-b border-[color:var(--color-border)] px-3 py-2.5">Status de governança</th>
+                          <th className="border-b border-[color:var(--color-border)] px-3 py-2.5">Visibilidade</th>
+                          <th className="border-b border-[color:var(--color-border)] px-3 py-2.5">Consumo</th>
+                          <th className="border-b border-[color:var(--color-border)] px-4 py-2.5 text-right">Ação</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2697,35 +2562,30 @@ export function KnowledgePage() {
                               className="group border-b border-[color:var(--color-border)] transition hover:bg-[rgba(234,242,255,0.52)]"
                               key={article.id}
                             >
-                              <td className="border-b border-[color:var(--color-border)] px-5 py-3.5 align-top">
-                                <div className="flex min-w-0 items-start gap-3">
-                                  <span className="mt-1 grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-[rgba(47,107,255,0.09)] text-[color:var(--color-brand-blue)]">
+                              <td className="border-b border-[color:var(--color-border)] px-4 py-2.5 align-top">
+                                <div className="flex min-w-0 items-start gap-2.5">
+                                  <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-[7px] bg-[rgba(47,107,255,0.09)] text-[0.78rem] text-[color:var(--color-brand-blue)]">
                                     ⎘
                                   </span>
                                   <div className="min-w-0">
-                                    <p className="line-clamp-1 text-[0.9rem] font-semibold leading-5 text-[color:var(--color-ink)]">
+                                    <p className="line-clamp-1 text-[0.86rem] font-semibold leading-4 text-[color:var(--color-ink)]">
                                       {article.title || 'Indisponível'}
                                     </p>
-                                    <p className="mt-1 line-clamp-1 text-[0.76rem] leading-5 text-[color:var(--color-muted)]">
+                                    <p className="mt-0.5 line-clamp-1 text-[0.72rem] leading-4 text-[color:var(--color-muted)]">
                                       {article.summary?.trim() || 'Resumo indisponível'}
                                     </p>
                                     {duplicateCount > 1 ? (
-                                      <p className="mt-1 text-[0.72rem] font-medium text-[color:var(--color-warning-ink)]">
+                                      <p className="mt-0.5 text-[0.68rem] font-medium text-[color:var(--color-warning-ink)]">
                                         Possível duplicidade
                                       </p>
                                     ) : null}
                                   </div>
                                 </div>
                               </td>
-                              <td className="border-b border-[color:var(--color-border)] px-3 py-3.5 align-top">
-                                <span className="block max-w-[150px] truncate text-[0.78rem] font-medium text-[color:var(--color-muted)]">
-                                  {article.slug || article.id.slice(0, 8)}
-                                </span>
-                              </td>
-                              <td className="border-b border-[color:var(--color-border)] px-3 py-3.5 align-top">
+                              <td className="border-b border-[color:var(--color-border)] px-3 py-2.5 align-top">
                                 <span
                                   className={cx(
-                                    'inline-flex max-w-[170px] items-center rounded-[9px] border px-2.5 py-1 text-[0.72rem] font-semibold',
+                                    'inline-flex max-w-[190px] items-center rounded-[9px] border px-2.5 py-0.5 text-[0.7rem] font-semibold',
                                     categoryBadgeClass(article.category_name),
                                   )}
                                 >
@@ -2734,48 +2594,40 @@ export function KnowledgePage() {
                                   </span>
                                 </span>
                               </td>
-                              <td className="border-b border-[color:var(--color-border)] px-3 py-3.5 align-top">
-                                <div className="space-y-1">
+                              <td className="border-b border-[color:var(--color-border)] px-3 py-2.5 align-top">
+                                <div className="space-y-0.5">
                                   <span
                                     className={cx(
-                                      'inline-flex items-center rounded-[9px] border px-2.5 py-1 text-[0.72rem] font-semibold',
+                                      'inline-flex items-center rounded-[9px] border px-2.5 py-0.5 text-[0.7rem] font-semibold',
                                       compactStatusBadgeClass(toneForArticleStatus(article.status)),
                                     )}
                                   >
                                     {compactStatusBadgeLabel(article.status)}
                                   </span>
                                   {articleAdvisory ? (
-                                    <p className="text-[0.72rem] leading-4 text-[color:var(--color-muted)]">
+                                    <p className="text-[0.68rem] leading-4 text-[color:var(--color-muted)]">
                                       {displayReviewStatus(articleAdvisory.review_status)}
                                     </p>
                                   ) : (
-                                    <p className="text-[0.72rem] leading-4 text-[color:var(--color-muted)]">
+                                    <p className="text-[0.68rem] leading-4 text-[color:var(--color-muted)]">
                                       Sem advisory
                                     </p>
                                   )}
                                 </div>
                               </td>
-                              <td className="border-b border-[color:var(--color-border)] px-3 py-3.5 align-top">
+                              <td className="border-b border-[color:var(--color-border)] px-3 py-2.5 align-top">
                                 <StatusPill tone={toneForVisibility(article.visibility)}>
                                   {shortVisibilityLabel(article.visibility)}
                                 </StatusPill>
                               </td>
-                              <td className="border-b border-[color:var(--color-border)] px-3 py-3.5 align-top">
-                                <div className="text-[0.78rem] leading-5 text-[color:var(--color-ink)]">
-                                  {formatDateTime(article.updated_at)}
-                                </div>
-                                <div className="text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
-                                  {articleContributorName(article)}
-                                </div>
-                              </td>
-                              <td className="border-b border-[color:var(--color-border)] px-3 py-3.5 align-top">
-                                <span className="text-[0.76rem] text-[color:var(--color-muted)]">
-                                  Indisponível
+                              <td className="border-b border-[color:var(--color-border)] px-3 py-2.5 align-top">
+                                <span className="text-[0.72rem] text-[color:var(--color-muted)]">
+                                  Sem métrica
                                 </span>
                               </td>
-                              <td className="border-b border-[color:var(--color-border)] px-5 py-3.5 text-right align-top">
+                              <td className="border-b border-[color:var(--color-border)] px-4 py-2.5 text-right align-top">
                                 <GhostButton
-                                  className="h-9 rounded-[12px] px-3 text-[0.78rem] font-semibold"
+                                  className="h-8 rounded-[12px] px-3 text-[0.76rem] font-semibold"
                                   disabled={articleActionSubmitting}
                                   onClick={() => void openArticleEditorFromCockpit(article.id)}
                                 >
@@ -2788,7 +2640,7 @@ export function KnowledgePage() {
                       </tbody>
                     </table>
                   </div>
-                  <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-[color:var(--color-border)] px-5 py-3 text-[0.82rem] text-[color:var(--color-muted)]">
+                  <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-[color:var(--color-border)] px-4 py-2.5 text-[0.8rem] text-[color:var(--color-muted)]">
                     <div>
                       Mostrando {displayArticles.length === 0 ? 0 : pageStartIndex + 1}-{pageEndIndex} de {displayArticles.length} artigos
                     </div>

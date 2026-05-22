@@ -712,6 +712,7 @@ export interface AdminKnowledgeArticleRecordRow {
   slug: string;
   summary: string | null;
   body_md: string;
+  tags: string[];
   source_path: string | null;
   source_hash: string | null;
   current_revision_number: number;
@@ -747,6 +748,7 @@ export interface AdminKnowledgeArticleListItemV2Row {
   title: string;
   slug: string;
   summary: string | null;
+  tags: string[];
   source_path: string | null;
   source_hash: string | null;
   public_article_path: string | null;
@@ -802,6 +804,7 @@ export interface AdminKnowledgeArticleEditorialDraftRow {
   slug: string;
   summary: string | null;
   body_md: string;
+  tags: string[];
   source_path: string | null;
   source_hash: string | null;
   based_on_revision_number: number;
@@ -837,6 +840,7 @@ export interface AdminKnowledgeArticleDetailV2Row {
   slug: string;
   summary: string | null;
   body_md: string;
+  tags: string[];
   source_path: string | null;
   source_hash: string | null;
   public_article_path: string | null;
@@ -980,6 +984,14 @@ export interface RpcAdminUpdateKnowledgeArticleDraftV2Payload {
 
 export type RpcAdminUpdateKnowledgeArticleDraftV2Response =
   AdminKnowledgeArticleRecordRow;
+
+export interface RpcAdminReplaceKnowledgeArticleTagsV1Payload {
+  p_article_id: Uuid;
+  p_knowledge_space_id: Uuid;
+  p_tags?: string[];
+}
+
+export type RpcAdminReplaceKnowledgeArticleTagsV1Response = string[];
 
 export interface RpcAdminArticleSpaceActionV2Payload {
   p_article_id: Uuid;

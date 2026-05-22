@@ -10,6 +10,17 @@ import {
   useState,
 } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { Mark, Node as TiptapNode, mergeAttributes } from '@tiptap/core';
+import {
+  EditorContent,
+  NodeViewWrapper,
+  ReactNodeViewRenderer,
+  type NodeViewProps,
+  useEditor,
+} from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import LinkExtension from '@tiptap/extension-link';
+import Underline from '@tiptap/extension-underline';
 import {
   AppButton,
   cx,
@@ -25,6 +36,7 @@ import {
   createKnowledgeArticleDraftV2,
   beginKnowledgeArticleEditorialRevisionV2,
   getAdminKnowledgeArticleDetailV2,
+  listAdminKnowledgeArticlesV2,
   listAdminKnowledgeArticleAssets,
   listAdminKnowledgeArticleReviewAdvisories,
   listAdminKnowledgeCategoriesV2,
@@ -32,6 +44,7 @@ import {
   prepareKnowledgeArticlePublicationEvidence,
   publishKnowledgeArticleEditorialRevisionV2,
   publishKnowledgeArticleV2,
+  replaceKnowledgeArticleTagsV1,
   submitKnowledgeArticleForReviewV2,
   updateKnowledgeArticleEditorialRevisionV2,
   updateKnowledgeArticleDraftV2,
@@ -39,6 +52,7 @@ import {
   type AdminKnowledgeArticleAssetRow,
   type AdminKnowledgeArticleDetailV2Row,
   type AdminKnowledgeArticleEditorialDraftRow,
+  type AdminKnowledgeArticleListItemV2Row,
   type AdminKnowledgeArticleReviewAdvisoryRow,
   type AdminKnowledgeCategoryV2Row,
   type AdminKnowledgeSpaceRow,
@@ -119,7 +133,7 @@ function buildArticleFormFromDetail(article: AdminKnowledgeArticleDetailV2Row): 
     bodyMd: article.body_md ?? '',
     categoryId: article.category_id ?? '',
     visibility: article.visibility,
-    keywords: [],
+    keywords: article.tags ?? [],
   };
 }
 
@@ -134,7 +148,7 @@ function buildArticleFormFromEditorialDraft(
     bodyMd: draft.body_md ?? fallback.body_md ?? '',
     categoryId: draft.category_id ?? fallback.category_id ?? '',
     visibility: draft.visibility ?? fallback.visibility,
-    keywords: [],
+    keywords: fallback.tags ?? [],
   };
 }
 
@@ -443,7 +457,7 @@ type VisualEditorBlock =
   | { type: 'callout'; tone: CalloutTone; text: string }
   | { type: 'youtube'; videoId: string; size: VisualImageSize }
   | { type: 'divider'; style: 'solid' | 'dashed' | 'space' }
-  | { type: 'related'; title: string; summary: string; slug: string };
+  | { type: 'related'; articleId?: string; title: string; summary: string; slug: string };
 
 function extractYouTubeVideoId(value: string) {
   const trimmed = value.trim();
@@ -611,7 +625,7 @@ function parseVisualBlocks(source: string): VisualEditorBlock[] {
       continue;
     }
 
-    const relatedMatch = /^::related\s+([a-z0-9-]+)\s*$/i.exec(trimmed);
+    const relatedMatch = /^::related\s+([a-z0-9-]+|[a-f0-9-]{36})\s*$/i.exec(trimmed);
     if (relatedMatch) {
       const relatedLines: string[] = [];
       index += 1;
@@ -626,6 +640,7 @@ function parseVisualBlocks(source: string): VisualEditorBlock[] {
         relatedLines;
       blocks.push({
         type: 'related',
+        articleId: /^[a-f0-9-]{36}$/i.test(relatedMatch[1]) ? relatedMatch[1] : undefined,
         slug: relatedMatch[1],
         title: title.trim() || 'Artigo relacionado',
         summary: summary.trim() || 'Abra este artigo relacionado na Central.',
@@ -670,7 +685,7 @@ function parseVisualBlocks(source: string): VisualEditorBlock[] {
         candidate.startsWith('```') ||
         /^:::callout\s+(info|warning|success|danger)\s*$/i.test(candidate) ||
         /^::divider(?:\s+(solid|dashed|space))?\s*$/i.test(candidate) ||
-        /^::related\s+([a-z0-9-]+)\s*$/i.test(candidate) ||
+        /^::related\s+([a-z0-9-]+|[a-f0-9-]{36})\s*$/i.test(candidate) ||
         /^::youtube\s+([A-Za-z0-9_-]{6,20})(?:\s*\|size=(small|medium|large|full))?\s*$/i.test(
           candidate,
         ) ||
@@ -772,7 +787,7 @@ function renderEditorHtmlFromMarkdown(source: string, assets: Record<string, Mar
       }
 
       if (block.type === 'related') {
-        return `<section data-related-slug="${escapeHtml(block.slug)}" contenteditable="false" class="related-card"><strong>Leia também</strong><p data-related-title>${renderInlineMarkdown(block.title)}</p><small data-related-summary>${renderInlineMarkdown(block.summary)}</small><span>→</span></section>`;
+        return `<section ${block.articleId ? `data-related-article-id="${escapeHtml(block.articleId)}"` : ''} data-related-slug="${escapeHtml(block.slug)}" contenteditable="false" class="related-card"><strong>Leia também</strong><p data-related-title>${renderInlineMarkdown(block.title)}</p><small data-related-summary>${renderInlineMarkdown(block.summary)}</small><span>→</span></section>`;
       }
 
       const asset = assets[block.assetId];
@@ -926,10 +941,10 @@ function blockElementToMarkdown(element: HTMLElement): string {
   }
 
   if (tag === 'section' && element.dataset.relatedSlug) {
-    const slug = element.dataset.relatedSlug;
+    const reference = element.dataset.relatedArticleId || element.dataset.relatedSlug;
     const title = element.querySelector('[data-related-title]')?.textContent?.trim();
     const summary = element.querySelector('[data-related-summary]')?.textContent?.trim();
-    return `::related ${slug}\n${title || 'Artigo relacionado'}\n${summary || 'Abra este artigo relacionado na Central.'}\n::`;
+    return `::related ${reference}\n${title || 'Artigo relacionado'}\n${summary || 'Abra este artigo relacionado na Central.'}\n::`;
   }
 
   if (tag === 'figure' && element.dataset.youtubeId) {
@@ -956,7 +971,1238 @@ function editorHtmlToMarkdown(root: HTMLElement) {
   return normalizeLegacyVisualTokens(markdown);
 }
 
+const TextToneMark = Mark.create({
+  name: 'textTone',
+  addAttributes() {
+    return {
+      tone: {
+        default: null,
+        parseHTML: (element) => element.getAttribute('data-text-tone'),
+        renderHTML: (attributes) =>
+          attributes.tone ? { 'data-text-tone': attributes.tone } : {},
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: 'span[data-text-tone]' }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ['span', mergeAttributes(HTMLAttributes), 0];
+  },
+});
+
+const MarkToneMark = Mark.create({
+  name: 'markTone',
+  addAttributes() {
+    return {
+      tone: {
+        default: null,
+        parseHTML: (element) => element.getAttribute('data-mark-tone'),
+        renderHTML: (attributes) =>
+          attributes.tone ? { 'data-mark-tone': attributes.tone } : {},
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: 'span[data-mark-tone]' }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ['span', mergeAttributes(HTMLAttributes), 0];
+  },
+});
+
+function VisualMediaNodeView({ deleteNode, editor, getPos, node, updateAttributes }: NodeViewProps) {
+  const isYoutube = node.type.name === 'knowledgeYoutube';
+  const size = (node.attrs.size ?? 'large') as VisualImageSize;
+  const src = String(node.attrs.src ?? '');
+  const caption = String(node.attrs.caption ?? node.attrs.alt ?? '');
+  const videoId = String(node.attrs.videoId ?? '');
+
+  function setSize(nextSize: VisualImageSize) {
+    updateAttributes({ size: nextSize });
+  }
+
+  function move(direction: 'up' | 'down') {
+    if (typeof getPos !== 'function') {
+      return;
+    }
+    const pos = getPos();
+    if (typeof pos !== 'number') {
+      return;
+    }
+    const json = node.toJSON();
+    const targetPos = direction === 'up' ? Math.max(0, pos - 1) : pos + node.nodeSize + 1;
+    editor
+      .chain()
+      .focus()
+      .deleteRange({ from: pos, to: pos + node.nodeSize })
+      .insertContentAt(targetPos, json)
+      .run();
+  }
+
+  return (
+    <NodeViewWrapper
+      as="figure"
+      className={`knowledge-media-node knowledge-media-node-${size}`}
+      data-asset-id={node.attrs.assetId ?? undefined}
+      data-size={size}
+      data-youtube-id={isYoutube ? videoId : undefined}
+    >
+      <div className="knowledge-media-toolbar" contentEditable={false}>
+        {(['small', 'medium', 'large', 'full'] as const).map((option) => (
+          <button
+            className={option === size ? 'is-active' : ''}
+            key={option}
+            onClick={() => setSize(option)}
+            type="button"
+          >
+            {option === 'small'
+              ? 'Pequena'
+              : option === 'medium'
+                ? 'Média'
+                : option === 'large'
+                  ? 'Grande'
+                  : 'Largura total'}
+          </button>
+        ))}
+        <button onClick={() => move('up')} type="button">
+          Mover acima
+        </button>
+        <button onClick={() => move('down')} type="button">
+          Mover abaixo
+        </button>
+        <button className="is-danger" onClick={() => deleteNode()} type="button">
+          {isYoutube ? 'Remover vídeo' : 'Remover imagem'}
+        </button>
+      </div>
+      {isYoutube ? (
+        <div className="youtube-card" contentEditable={false}>
+          <span className="youtube-card__play">▶</span>
+          <strong>Vídeo YouTube</strong>
+          <small>youtube-nocookie.com/embed/{videoId}</small>
+        </div>
+      ) : src ? (
+        <img alt={String(node.attrs.alt ?? caption ?? 'Imagem do artigo')} src={src} />
+      ) : (
+        <div className="image-missing">Imagem indisponível no editor</div>
+      )}
+      {!isYoutube ? <figcaption>{caption}</figcaption> : null}
+    </NodeViewWrapper>
+  );
+}
+
+const KnowledgeImageNode = TiptapNode.create({
+  name: 'knowledgeImage',
+  group: 'block',
+  atom: true,
+  draggable: true,
+  selectable: true,
+  addAttributes() {
+    return {
+      assetId: { default: null, parseHTML: (element) => element.getAttribute('data-asset-id') },
+      alt: { default: 'Imagem do artigo' },
+      caption: {
+        default: 'Imagem do artigo',
+        parseHTML: (element) => element.querySelector('figcaption')?.textContent ?? '',
+      },
+      size: { default: 'large', parseHTML: (element) => element.getAttribute('data-size') },
+      src: {
+        default: null,
+        parseHTML: (element) => element.querySelector('img')?.getAttribute('src'),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: 'figure[data-asset-id]' }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return [
+      'figure',
+      mergeAttributes(HTMLAttributes, {
+        'data-asset-id': HTMLAttributes.assetId,
+        'data-size': HTMLAttributes.size,
+      }),
+      ['img', { alt: HTMLAttributes.alt, src: HTMLAttributes.src }],
+      ['figcaption', {}, HTMLAttributes.caption],
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(VisualMediaNodeView);
+  },
+});
+
+const KnowledgeYoutubeNode = TiptapNode.create({
+  name: 'knowledgeYoutube',
+  group: 'block',
+  atom: true,
+  draggable: true,
+  selectable: true,
+  addAttributes() {
+    return {
+      size: { default: 'large', parseHTML: (element) => element.getAttribute('data-size') },
+      videoId: { default: null, parseHTML: (element) => element.getAttribute('data-youtube-id') },
+    };
+  },
+  parseHTML() {
+    return [{ tag: 'figure[data-youtube-id]' }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return [
+      'figure',
+      mergeAttributes(HTMLAttributes, {
+        'data-size': HTMLAttributes.size,
+        'data-youtube-id': HTMLAttributes.videoId,
+      }),
+      [
+        'div',
+        { class: 'youtube-card' },
+        ['span', { class: 'youtube-card__play' }, '▶'],
+        ['strong', {}, 'Vídeo YouTube'],
+        ['small', {}, `youtube-nocookie.com/embed/${HTMLAttributes.videoId}`],
+      ],
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(VisualMediaNodeView);
+  },
+});
+
+const CalloutNode = TiptapNode.create({
+  name: 'callout',
+  group: 'block',
+  content: 'paragraph+',
+  addAttributes() {
+    return {
+      tone: { default: 'info', parseHTML: (element) => element.getAttribute('data-callout-tone') },
+    };
+  },
+  parseHTML() {
+    return [{ tag: 'aside[data-callout-tone]' }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return [
+      'aside',
+      mergeAttributes(HTMLAttributes, { 'data-callout-tone': HTMLAttributes.tone }),
+      ['strong', {}, calloutLabel((HTMLAttributes.tone ?? 'info') as CalloutTone)],
+      ['div', 0],
+    ];
+  },
+});
+
+const RelatedArticleNode = TiptapNode.create({
+  name: 'relatedArticle',
+  group: 'block',
+  atom: true,
+  selectable: true,
+  addAttributes() {
+    return {
+      slug: { default: null, parseHTML: (element) => element.getAttribute('data-related-slug') },
+      articleId: {
+        default: null,
+        parseHTML: (element) => element.getAttribute('data-related-article-id'),
+      },
+      summary: {
+        default: 'Artigo relacionado da base de conhecimento.',
+        parseHTML: (element) =>
+          element.querySelector('[data-related-summary]')?.textContent ??
+          'Artigo relacionado da base de conhecimento.',
+      },
+      title: {
+        default: 'Artigo relacionado',
+        parseHTML: (element) =>
+          element.querySelector('[data-related-title]')?.textContent ?? 'Artigo relacionado',
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: 'section[data-related-slug]' }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return [
+      'section',
+      mergeAttributes(HTMLAttributes, {
+        class: 'related-card',
+        'data-related-article-id': HTMLAttributes.articleId,
+        'data-related-slug': HTMLAttributes.slug,
+      }),
+      ['strong', {}, 'Leia também'],
+      ['p', { 'data-related-title': '' }, HTMLAttributes.title],
+      ['small', { 'data-related-summary': '' }, HTMLAttributes.summary],
+      ['span', {}, '→'],
+    ];
+  },
+});
+
+function editorHtmlStringToMarkdown(html: string) {
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = html;
+  return editorHtmlToMarkdown(wrapper);
+}
+
 function RichTextArticleEditor({
+  assets,
+  assetState,
+  bodyMd,
+  isReadOnly,
+  onChange,
+  relatedArticles,
+  onRegisterMarkdownInserter,
+  onDrop,
+  onImageButton,
+  onPaste,
+}: {
+  assets: Record<string, MarkdownAsset>;
+  assetState: SaveState;
+  bodyMd: string;
+  isReadOnly: boolean;
+  onChange: (nextBodyMd: string) => void;
+  relatedArticles: AdminKnowledgeArticleListItemV2Row[];
+  onRegisterMarkdownInserter: (inserter: ((markdown: string) => string | null) | null) => void;
+  onDrop: (event: DragEvent<HTMLElement>) => void;
+  onImageButton: () => void;
+  onPaste: (event: ClipboardEvent<HTMLElement>) => void;
+}) {
+  const [openToolbarMenu, setOpenToolbarMenu] = useState<
+    'block' | 'text-color' | 'mark-color' | 'insert' | null
+  >(null);
+  const [relatedDraftOpen, setRelatedDraftOpen] = useState(false);
+  const [relatedQuery, setRelatedQuery] = useState('');
+
+  const htmlContent = useMemo(
+    () => renderEditorHtmlFromMarkdown(bodyMd, assets),
+    [assets, bodyMd],
+  );
+
+  const editor = useEditor({
+    editable: !isReadOnly,
+    extensions: [
+      StarterKit.configure({
+        horizontalRule: {
+          HTMLAttributes: {
+            'data-divider-style': 'dashed',
+          },
+        },
+      }),
+      Underline,
+      LinkExtension.configure({
+        autolink: false,
+        openOnClick: false,
+        linkOnPaste: true,
+        validate: (href) => isSafeEditorHref(href),
+        HTMLAttributes: {
+          rel: 'noreferrer',
+          target: '_blank',
+        },
+      }),
+      TextToneMark,
+      MarkToneMark,
+      KnowledgeImageNode,
+      KnowledgeYoutubeNode,
+      CalloutNode,
+      RelatedArticleNode,
+    ],
+    content: htmlContent,
+    immediatelyRender: false,
+    onUpdate: ({ editor: activeEditor }) => {
+      onChange(editorHtmlStringToMarkdown(activeEditor.getHTML()));
+    },
+  });
+
+  useEffect(() => {
+    editor?.setEditable(!isReadOnly);
+  }, [editor, isReadOnly]);
+
+  useEffect(() => {
+    if (!editor || editor.isFocused) {
+      return;
+    }
+
+    const currentMarkdown = editorHtmlStringToMarkdown(editor.getHTML());
+    if (currentMarkdown !== normalizeLegacyVisualTokens(bodyMd)) {
+      editor.commands.setContent(htmlContent, { emitUpdate: false });
+    }
+  }, [bodyMd, editor, htmlContent]);
+
+  useEffect(() => {
+    if (!editor) {
+      onRegisterMarkdownInserter(null);
+      return;
+    }
+
+    onRegisterMarkdownInserter((markdown) => {
+      const nextHtml = renderEditorHtmlFromMarkdown(markdown, assets);
+      editor.chain().focus().insertContent(nextHtml).run();
+      return editorHtmlStringToMarkdown(editor.getHTML());
+    });
+
+    return () => onRegisterMarkdownInserter(null);
+  }, [assets, editor, onRegisterMarkdownInserter]);
+
+  const wordCount = useMemo(() => {
+    const text = editor?.getText() ?? bodyMd;
+    return text.trim() ? text.trim().split(/\s+/).length : 0;
+  }, [bodyMd, editor]);
+
+  function getBlockLabel() {
+    if (!editor) {
+      return 'Parágrafo';
+    }
+    if (editor.isActive('heading', { level: 1 })) {
+      return 'Título 1';
+    }
+    if (editor.isActive('heading', { level: 2 })) {
+      return 'Título 2';
+    }
+    if (editor.isActive('heading', { level: 3 })) {
+      return 'Título 3';
+    }
+    if (editor.isActive('blockquote')) {
+      return 'Citação';
+    }
+    if (editor.isActive('callout', { tone: 'info' })) {
+      return 'Nota';
+    }
+    if (editor.isActive('callout', { tone: 'success' })) {
+      return 'Importante';
+    }
+    if (editor.isActive('callout', { tone: 'warning' })) {
+      return 'Alerta';
+    }
+    if (editor.isActive('callout', { tone: 'danger' })) {
+      return 'Cuidado';
+    }
+    return 'Parágrafo';
+  }
+
+  function insertCallout(tone: CalloutTone) {
+    editor
+      ?.chain()
+      .focus()
+      .insertContent({
+        type: 'callout',
+        attrs: { tone },
+        content: [
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: 'Escreva a orientação deste bloco.' }],
+          },
+        ],
+      })
+      .run();
+  }
+
+  function setTextTone(tone: TextTone) {
+    if (!editor) {
+      return;
+    }
+    if (tone === 'default') {
+      editor.chain().focus().unsetMark('textTone').run();
+      return;
+    }
+    editor.chain().focus().setMark('textTone', { tone }).run();
+  }
+
+  function setMarkTone(tone: MarkTone) {
+    if (!editor) {
+      return;
+    }
+    if (tone === 'none') {
+      editor.chain().focus().unsetMark('markTone').run();
+      return;
+    }
+    editor.chain().focus().setMark('markTone', { tone }).run();
+  }
+
+  function insertLink() {
+    if (!editor) {
+      return;
+    }
+    const previousHref = editor.getAttributes('link').href as string | undefined;
+    const href = window.prompt('Cole a URL segura do link', previousHref ?? 'https://');
+    if (href === null) {
+      return;
+    }
+    if (!href.trim()) {
+      editor.chain().focus().unsetLink().run();
+      return;
+    }
+    if (!isSafeEditorHref(href)) {
+      window.alert('Use apenas links http, https ou mailto.');
+      return;
+    }
+    editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
+  }
+
+  function insertVideo() {
+    const value = window.prompt('Cole uma URL do YouTube');
+    if (!value) {
+      return;
+    }
+    const videoId = extractYouTubeVideoId(value);
+    if (!videoId) {
+      window.alert('Use apenas URLs youtube.com, youtu.be ou youtube-nocookie.com.');
+      return;
+    }
+    editor
+      ?.chain()
+      .focus()
+      .insertContent({ type: 'knowledgeYoutube', attrs: { videoId, size: 'medium' } })
+      .run();
+  }
+
+  const relatedArticleOptions = useMemo(() => {
+    const normalizedQuery = relatedQuery.trim().toLowerCase();
+    return relatedArticles
+      .filter((article) => {
+        if (!normalizedQuery) {
+          return true;
+        }
+        return `${article.title} ${article.slug} ${article.summary ?? ''} ${article.category_name ?? ''}`
+          .toLowerCase()
+          .includes(normalizedQuery);
+      })
+      .slice(0, 8);
+  }, [relatedArticles, relatedQuery]);
+
+  function insertRelatedArticle(article: AdminKnowledgeArticleListItemV2Row) {
+    editor
+      ?.chain()
+      .focus()
+      .insertContent({
+        type: 'relatedArticle',
+        attrs: {
+          articleId: article.id,
+          slug: article.slug,
+          title: article.title,
+          summary: article.summary || 'Abra este artigo relacionado na Central de Ajuda.',
+        },
+      })
+      .run();
+    setRelatedQuery('');
+    setRelatedDraftOpen(false);
+    setOpenToolbarMenu(null);
+  }
+
+  function insertIconMarker() {
+    editor?.chain().focus().insertContent('✓ ').run();
+  }
+
+  const toolbarButton = (
+    label: ReactNode,
+    onClick: () => void,
+    active = false,
+    title?: string,
+  ) => (
+    <button
+      className={cx('knowledge-toolbar-button', active && 'is-active')}
+      disabled={!editor || isReadOnly}
+      onClick={onClick}
+      title={title}
+      type="button"
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <div
+      className="knowledge-editor-card"
+      onDrop={onDrop}
+      onPaste={(event) => {
+        const hasImage =
+          Array.from(event.clipboardData.files).some((file) => file.type.startsWith('image/')) ||
+          Array.from(event.clipboardData.items).some(
+            (item) => item.kind === 'file' && item.type.startsWith('image/'),
+          );
+        if (hasImage) {
+          onPaste(event);
+        }
+      }}
+    >
+      <div className="knowledge-editor-toolbar">
+        <div className="knowledge-toolbar-group">
+          <div className="knowledge-toolbar-menu">
+            <button
+              className="knowledge-block-select"
+              disabled={!editor || isReadOnly}
+              onClick={() => setOpenToolbarMenu(openToolbarMenu === 'block' ? null : 'block')}
+              type="button"
+            >
+              {getBlockLabel()}
+              <span>⌄</span>
+            </button>
+            {openToolbarMenu === 'block' ? (
+              <div className="knowledge-toolbar-popover knowledge-block-menu">
+                {[
+                  ['Parágrafo', () => editor?.chain().focus().setParagraph().run(), '¶'],
+                  [
+                    'Título 1',
+                    () => editor?.chain().focus().toggleHeading({ level: 1 }).run(),
+                    'H1',
+                  ],
+                  [
+                    'Título 2',
+                    () => editor?.chain().focus().toggleHeading({ level: 2 }).run(),
+                    'H2',
+                  ],
+                  [
+                    'Título 3',
+                    () => editor?.chain().focus().toggleHeading({ level: 3 }).run(),
+                    'H3',
+                  ],
+                  ['Citação', () => editor?.chain().focus().toggleBlockquote().run(), '❝'],
+                  ['Nota', () => insertCallout('info'), 'ⓘ'],
+                  ['Importante', () => insertCallout('success'), '☆'],
+                  ['Alerta', () => insertCallout('warning'), '△'],
+                  ['Cuidado', () => insertCallout('danger'), '!'],
+                ].map(([label, action, icon]) => (
+                  <button
+                    key={String(label)}
+                    onClick={() => {
+                      (action as () => void)();
+                      setOpenToolbarMenu(null);
+                    }}
+                    type="button"
+                  >
+                    <span>{icon as ReactNode}</span>
+                    {label as ReactNode}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="knowledge-toolbar-divider" />
+        <div className="knowledge-toolbar-group">
+          {toolbarButton('B', () => editor?.chain().focus().toggleBold().run(), Boolean(editor?.isActive('bold')), 'Negrito')}
+          {toolbarButton('I', () => editor?.chain().focus().toggleItalic().run(), Boolean(editor?.isActive('italic')), 'Itálico')}
+          {toolbarButton('U', () => editor?.chain().focus().toggleUnderline().run(), Boolean(editor?.isActive('underline')), 'Sublinhado')}
+          {toolbarButton('S', () => editor?.chain().focus().toggleStrike().run(), Boolean(editor?.isActive('strike')), 'Tachado')}
+        </div>
+
+        <div className="knowledge-toolbar-divider" />
+        <div className="knowledge-toolbar-group">
+          {toolbarButton('•', () => editor?.chain().focus().toggleBulletList().run(), Boolean(editor?.isActive('bulletList')), 'Lista com bullets')}
+          {toolbarButton('1.', () => editor?.chain().focus().toggleOrderedList().run(), Boolean(editor?.isActive('orderedList')), 'Lista numerada')}
+          {toolbarButton('❝', () => editor?.chain().focus().toggleBlockquote().run(), Boolean(editor?.isActive('blockquote')), 'Citação')}
+          {toolbarButton('🔗', insertLink, Boolean(editor?.isActive('link')), 'Link')}
+        </div>
+
+        <div className="knowledge-toolbar-divider" />
+        <div className="knowledge-toolbar-group">
+          <div className="knowledge-toolbar-menu">
+            {toolbarButton('A', () => setOpenToolbarMenu(openToolbarMenu === 'text-color' ? null : 'text-color'), false, 'Cor do texto')}
+            {openToolbarMenu === 'text-color' ? (
+              <div className="knowledge-toolbar-popover knowledge-color-menu">
+                <strong>Cor do texto</strong>
+                {(Object.keys(TEXT_TONE_LABELS) as TextTone[]).map((tone) => (
+                  <button key={tone} onClick={() => setTextTone(tone)} type="button">
+                    <span className={`knowledge-tone-dot tone-${tone}`} />
+                    {TEXT_TONE_LABELS[tone]}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <div className="knowledge-toolbar-menu">
+            {toolbarButton('▧', () => setOpenToolbarMenu(openToolbarMenu === 'mark-color' ? null : 'mark-color'), false, 'Marca-texto')}
+            {openToolbarMenu === 'mark-color' ? (
+              <div className="knowledge-toolbar-popover knowledge-color-menu">
+                <strong>Marcador texto</strong>
+                {(Object.keys(MARK_TONE_LABELS) as MarkTone[]).map((tone) => (
+                  <button key={tone} onClick={() => setMarkTone(tone)} type="button">
+                    <span className={`knowledge-mark-swatch mark-${tone}`} />
+                    {MARK_TONE_LABELS[tone]}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="knowledge-toolbar-divider" />
+        <div className="knowledge-toolbar-group">
+          {toolbarButton('Imagem', onImageButton, false, 'Inserir imagem')}
+          {toolbarButton('Vídeo', insertVideo, false, 'Inserir vídeo YouTube')}
+          <div className="knowledge-toolbar-menu">
+            {toolbarButton('Leia também', () => {
+              setRelatedDraftOpen(!relatedDraftOpen);
+              setOpenToolbarMenu('insert');
+            }, false, 'Inserir Leia também')}
+            {relatedDraftOpen ? (
+              <div className="knowledge-toolbar-popover knowledge-related-popover">
+                <strong>Leia também</strong>
+                <p>
+                  Selecione um artigo público publicado. O card mantém referência governada por
+                  slug.
+                </p>
+                <input
+                  onChange={(event) => setRelatedQuery(event.target.value)}
+                  placeholder="Buscar por título, slug ou categoria"
+                  value={relatedQuery}
+                />
+                <div className="knowledge-related-list">
+                  {relatedArticleOptions.length > 0 ? (
+                    relatedArticleOptions.map((article) => (
+                      <button
+                        key={article.id}
+                        onClick={() => insertRelatedArticle(article)}
+                        type="button"
+                      >
+                        <span>{article.title}</span>
+                        <small>
+                          {article.category_name ?? 'Sem categoria'} · {article.slug}
+                        </small>
+                      </button>
+                    ))
+                  ) : (
+                    <span className="knowledge-related-empty">
+                      Nenhum artigo público publicado elegível encontrado.
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </div>
+          {toolbarButton('Divisor', () => editor?.chain().focus().setHorizontalRule().run(), false, 'Inserir divisor')}
+          {toolbarButton('✓', insertIconMarker, false, 'Ícone ou marcador visual')}
+          {toolbarButton('</>', () => editor?.chain().focus().toggleCodeBlock().run(), Boolean(editor?.isActive('codeBlock')), 'Código')}
+        </div>
+
+        <div className="knowledge-toolbar-spacer" />
+        <div className="knowledge-toolbar-group">
+          {toolbarButton('↶', () => editor?.chain().focus().undo().run(), false, 'Desfazer')}
+          {toolbarButton('↷', () => editor?.chain().focus().redo().run(), false, 'Refazer')}
+        </div>
+      </div>
+
+      <EditorContent className="knowledge-rich-editor" editor={editor} />
+
+      <div className="knowledge-editor-statusbar">
+        <span>{wordCount} palavras · Edição local</span>
+        <span>Atalhos: Ctrl+S salvar · Ctrl+K inserir link</span>
+        <span>
+          {assetState === 'saving'
+            ? 'Enviando mídia'
+            : assetState === 'error'
+              ? 'Falha ao enviar mídia'
+              : 'Último salvamento: agora'}
+        </span>
+      </div>
+
+      <style>{`
+        .knowledge-editor-card {
+          min-width: 0;
+          overflow: visible;
+          border: 1px solid #DCE4F2;
+          border-radius: 22px;
+          background: #FFFFFF;
+          box-shadow: 0 18px 50px rgba(22, 36, 67, 0.06);
+        }
+
+        .knowledge-editor-toolbar {
+          position: sticky;
+          top: 92px;
+          z-index: 50;
+          display: flex;
+          min-height: 48px;
+          align-items: center;
+          gap: 8px;
+          border-bottom: 1px solid #E8EEF7;
+          background: rgba(255, 255, 255, 0.96);
+          padding: 8px 14px;
+        }
+
+        .knowledge-toolbar-group {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .knowledge-toolbar-spacer {
+          flex: 1 1 auto;
+        }
+
+        .knowledge-toolbar-divider {
+          height: 24px;
+          width: 1px;
+          background: #E8EEF7;
+        }
+
+        .knowledge-toolbar-button,
+        .knowledge-block-select {
+          display: inline-flex;
+          height: 32px;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          border: 1px solid transparent;
+          border-radius: 10px;
+          background: transparent;
+          color: #162443;
+          cursor: pointer;
+          font-size: 0.8rem;
+          font-weight: 600;
+          min-width: 32px;
+          padding: 0 9px;
+        }
+
+        .knowledge-block-select {
+          min-width: 112px;
+          justify-content: space-between;
+          border-color: #DCE4F2;
+          background: #FFFFFF;
+        }
+
+        .knowledge-toolbar-button:hover,
+        .knowledge-block-select:hover,
+        .knowledge-toolbar-button.is-active {
+          border-color: #DCE4F2;
+          background: #F4F7FC;
+        }
+
+        .knowledge-toolbar-button:disabled,
+        .knowledge-block-select:disabled {
+          cursor: not-allowed;
+          opacity: 0.45;
+        }
+
+        .knowledge-toolbar-menu {
+          position: relative;
+          display: inline-flex;
+        }
+
+        .knowledge-toolbar-popover {
+          position: absolute;
+          left: 0;
+          top: calc(100% + 10px);
+          z-index: 40;
+          min-width: 190px;
+          border: 1px solid #DCE4F2;
+          border-radius: 18px;
+          background: #FFFFFF;
+          box-shadow: 0 18px 46px rgba(22, 36, 67, 0.14);
+          padding: 8px;
+        }
+
+        .knowledge-block-menu button,
+        .knowledge-color-menu button {
+          display: flex;
+          width: 100%;
+          align-items: center;
+          gap: 10px;
+          border: 0;
+          border-radius: 12px;
+          background: transparent;
+          color: #162443;
+          cursor: pointer;
+          font-size: 0.78rem;
+          font-weight: 500;
+          padding: 10px 12px;
+          text-align: left;
+        }
+
+        .knowledge-block-menu button:hover,
+        .knowledge-color-menu button:hover {
+          background: #F4F7FC;
+        }
+
+        .knowledge-color-menu {
+          display: grid;
+          gap: 4px;
+        }
+
+        .knowledge-color-menu strong,
+        .knowledge-related-popover strong {
+          color: #162443;
+          font-size: 0.75rem;
+          font-weight: 700;
+          padding: 8px 10px 4px;
+        }
+
+        .knowledge-tone-dot,
+        .knowledge-mark-swatch {
+          display: inline-block;
+          height: 14px;
+          width: 14px;
+          border: 1px solid #C8D4EA;
+          border-radius: 999px;
+        }
+
+        .knowledge-mark-swatch {
+          border-radius: 4px;
+        }
+
+        .tone-default { background: #162443; }
+        .tone-blue { background: #2F6BFF; }
+        .tone-green { background: #16A34A; }
+        .tone-yellow { background: #D97706; }
+        .tone-red { background: #DC2626; }
+        .tone-gray { background: #6B7892; }
+        .mark-none { background: #FFFFFF; }
+        .mark-blue { background: #DCEBFF; }
+        .mark-green { background: #DDF8E8; }
+        .mark-yellow { background: #FFF1B8; }
+        .mark-pink { background: #FFE0F0; }
+        .mark-purple { background: #F3E8FF; }
+        .mark-gray { background: #E8EEF7; }
+
+        .knowledge-related-popover {
+          display: grid;
+          gap: 8px;
+          min-width: 360px;
+          max-width: 420px;
+        }
+
+        .knowledge-related-popover p {
+          color: #6B7892;
+          font-size: 0.72rem;
+          line-height: 1.4;
+          margin: 0;
+          padding: 0 10px;
+        }
+
+        .knowledge-related-popover input,
+        .knowledge-related-popover textarea {
+          border: 1px solid #DCE4F2;
+          border-radius: 12px;
+          color: #162443;
+          font-size: 0.78rem;
+          font-weight: 500;
+          padding: 9px 11px;
+        }
+
+        .knowledge-related-list {
+          display: grid;
+          gap: 6px;
+          max-height: 280px;
+          overflow: auto;
+        }
+
+        .knowledge-related-list button {
+          display: grid;
+          gap: 3px;
+          border: 1px solid #E8EEF7;
+          border-radius: 12px;
+          background: #FFFFFF;
+          color: #162443;
+          cursor: pointer;
+          font-weight: 600;
+          justify-items: start;
+          padding: 10px 11px;
+          text-align: left;
+        }
+
+        .knowledge-related-list button:hover {
+          border-color: #C8D4EA;
+          background: #F4F7FC;
+        }
+
+        .knowledge-related-list small {
+          color: #6B7892;
+          font-size: 0.68rem;
+          font-weight: 500;
+        }
+
+        .knowledge-related-empty {
+          border: 1px dashed #C8D4EA;
+          border-radius: 12px;
+          color: #6B7892;
+          font-size: 0.75rem;
+          padding: 12px;
+        }
+
+        .knowledge-rich-editor .ProseMirror {
+          min-height: 660px;
+          max-width: 980px;
+          outline: none;
+          padding: 34px 48px 56px;
+          color: #162443;
+        }
+
+        .knowledge-rich-editor .ProseMirror h1 {
+          color: #162443;
+          font-size: clamp(1.72rem, 1.4vw, 2rem);
+          font-weight: 900;
+          letter-spacing: -0.03em;
+          line-height: 1.18;
+          margin: 0 0 1rem;
+        }
+
+        .knowledge-rich-editor .ProseMirror h2 {
+          color: #162443;
+          font-size: 1.32rem;
+          font-weight: 900;
+          letter-spacing: -0.02em;
+          line-height: 1.22;
+          margin: 2rem 0 0.7rem;
+        }
+
+        .knowledge-rich-editor .ProseMirror h3 {
+          color: #162443;
+          font-size: 1.08rem;
+          font-weight: 850;
+          margin: 1.5rem 0 0.6rem;
+        }
+
+        .knowledge-rich-editor .ProseMirror p,
+        .knowledge-rich-editor .ProseMirror li {
+          color: #24324F;
+          font-size: 0.95rem;
+          line-height: 1.72;
+        }
+
+        .knowledge-rich-editor .ProseMirror ul,
+        .knowledge-rich-editor .ProseMirror ol {
+          margin: 0.4rem 0 1rem 1.25rem;
+          padding-left: 1rem;
+        }
+
+        .knowledge-rich-editor .ProseMirror blockquote {
+          border-radius: 14px;
+          background: #F4F7FC;
+          color: #162443;
+          margin: 1.2rem 0;
+          padding: 14px 18px;
+        }
+
+        .knowledge-rich-editor .ProseMirror code {
+          border-radius: 7px;
+          background: #F4F7FC;
+          color: #162443;
+          font-size: 0.86em;
+          padding: 0.16rem 0.36rem;
+        }
+
+        .knowledge-rich-editor .ProseMirror pre {
+          border-radius: 16px;
+          background: #061B54;
+          color: #F4F7FC;
+          padding: 16px;
+        }
+
+        .knowledge-rich-editor .ProseMirror a {
+          color: #2F6BFF;
+          font-weight: 800;
+          text-decoration: underline;
+          text-underline-offset: 3px;
+        }
+
+        .knowledge-rich-editor [data-text-tone="blue"] { color: #2F6BFF; }
+        .knowledge-rich-editor [data-text-tone="green"] { color: #16A34A; }
+        .knowledge-rich-editor [data-text-tone="yellow"] { color: #D97706; }
+        .knowledge-rich-editor [data-text-tone="red"] { color: #DC2626; }
+        .knowledge-rich-editor [data-text-tone="gray"] { color: #6B7892; }
+        .knowledge-rich-editor [data-mark-tone="blue"] { background: #DCEBFF; }
+        .knowledge-rich-editor [data-mark-tone="green"] { background: #DDF8E8; }
+        .knowledge-rich-editor [data-mark-tone="yellow"] { background: #FFF1B8; }
+        .knowledge-rich-editor [data-mark-tone="pink"] { background: #FFE0F0; }
+        .knowledge-rich-editor [data-mark-tone="purple"] { background: #F3E8FF; }
+        .knowledge-rich-editor [data-mark-tone="gray"] { background: #E8EEF7; }
+
+        .knowledge-rich-editor .ProseMirror aside[data-callout-tone] {
+          align-items: flex-start;
+          border: 1px solid #B9D2FF;
+          border-radius: 16px;
+          display: grid;
+          gap: 6px;
+          grid-template-columns: auto 1fr;
+          margin: 1.35rem 0;
+          padding: 15px 18px;
+        }
+
+        .knowledge-rich-editor .ProseMirror aside[data-callout-tone] strong {
+          grid-column: 1 / -1;
+          font-size: 0.9rem;
+          font-weight: 900;
+        }
+
+        .knowledge-rich-editor .ProseMirror aside[data-callout-tone] p {
+          grid-column: 1 / -1;
+          margin: 0;
+        }
+
+        .knowledge-rich-editor .ProseMirror aside[data-callout-tone="info"] {
+          background: #EAF2FF;
+          color: #1F58E7;
+        }
+
+        .knowledge-rich-editor .ProseMirror aside[data-callout-tone="success"] {
+          border-color: #A7F3D0;
+          background: #EAF9F0;
+          color: #15803D;
+        }
+
+        .knowledge-rich-editor .ProseMirror aside[data-callout-tone="warning"] {
+          border-color: #FAD38C;
+          background: #FFF4D9;
+          color: #B45309;
+        }
+
+        .knowledge-rich-editor .ProseMirror aside[data-callout-tone="danger"] {
+          border-color: #FCA5A5;
+          background: #FDEBEC;
+          color: #B91C1C;
+        }
+
+        .knowledge-rich-editor .ProseMirror hr {
+          border: 0;
+          border-top: 2px dashed #DCE4F2;
+          margin: 2rem 0;
+        }
+
+        .knowledge-rich-editor .related-card {
+          align-items: center;
+          border: 1px solid #DDD6FE;
+          border-radius: 16px;
+          background: #F3E8FF;
+          color: #4C1D95;
+          display: grid;
+          gap: 3px 14px;
+          grid-template-columns: 1fr auto;
+          margin: 1.35rem 0;
+          padding: 16px 18px;
+        }
+
+        .knowledge-rich-editor .related-card strong {
+          font-size: 0.9rem;
+          font-weight: 900;
+        }
+
+        .knowledge-rich-editor .related-card p {
+          color: #4C1D95;
+          font-weight: 850;
+          margin: 0;
+        }
+
+        .knowledge-rich-editor .related-card small {
+          color: #6D28D9;
+        }
+
+        .knowledge-media-node {
+          position: relative;
+          border: 1px solid #DCE4F2;
+          border-radius: 18px;
+          background: #FFFFFF;
+          margin: 1.45rem 0;
+          max-width: 100%;
+          padding: 0;
+        }
+
+        .knowledge-media-node img {
+          display: block;
+          width: 100%;
+          border-radius: 16px 16px 0 0;
+        }
+
+        .knowledge-media-node figcaption {
+          color: #6B7892;
+          font-size: 0.78rem;
+          padding: 9px 12px 12px;
+        }
+
+        .knowledge-media-node-small { width: min(320px, 100%); }
+        .knowledge-media-node-medium { width: min(560px, 100%); }
+        .knowledge-media-node-large { width: min(760px, 100%); }
+        .knowledge-media-node-full { width: 100%; }
+
+        .knowledge-media-toolbar {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          justify-content: center;
+          margin: -17px auto 8px;
+          max-width: max-content;
+          border: 1px solid #DCE4F2;
+          border-radius: 14px;
+          background: #FFFFFF;
+          box-shadow: 0 12px 26px rgba(22, 36, 67, 0.12);
+          padding: 6px;
+        }
+
+        .knowledge-media-toolbar button {
+          border: 0;
+          border-radius: 9px;
+          background: transparent;
+          color: #162443;
+          cursor: pointer;
+          font-size: 0.72rem;
+          font-weight: 850;
+          padding: 7px 9px;
+        }
+
+        .knowledge-media-toolbar button.is-active {
+          background: #2F6BFF;
+          color: #FFFFFF;
+        }
+
+        .knowledge-media-toolbar button.is-danger {
+          color: #DC2626;
+        }
+
+        .youtube-card {
+          align-items: center;
+          background: radial-gradient(circle at 50% 30%, #132653, #070F2E);
+          border-radius: 16px;
+          color: #FFFFFF;
+          display: grid;
+          gap: 10px;
+          justify-items: center;
+          min-height: 240px;
+          padding: 28px;
+          text-align: center;
+        }
+
+        .youtube-card__play {
+          align-items: center;
+          background: #EF4444;
+          border-radius: 999px;
+          display: inline-flex;
+          height: 44px;
+          justify-content: center;
+          width: 44px;
+        }
+
+        .image-missing {
+          border-radius: 16px;
+          background: #F4F7FC;
+          color: #6B7892;
+          padding: 24px;
+          text-align: center;
+        }
+
+        .knowledge-editor-statusbar {
+          display: grid;
+          grid-template-columns: 1fr auto 1fr;
+          gap: 12px;
+          border-top: 1px solid #E8EEF7;
+          color: #6B7892;
+          font-size: 0.75rem;
+          padding: 12px 16px;
+        }
+
+        .knowledge-editor-statusbar span:last-child {
+          justify-self: end;
+        }
+
+        @media (max-width: 1280px) {
+          .knowledge-editor-toolbar {
+            align-items: flex-start;
+            flex-wrap: wrap;
+            top: 86px;
+          }
+
+          .knowledge-rich-editor .ProseMirror {
+            padding: 28px 32px 48px;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function LegacyRichTextArticleEditor({
   assets,
   assetState,
   bodyMd,
@@ -2010,6 +3256,7 @@ export function KnowledgeArticleEditorPage() {
   const [isEditorialRevision, setIsEditorialRevision] = useState(false);
   const [advisory, setAdvisory] = useState<AdminKnowledgeArticleReviewAdvisoryRow | null>(null);
   const [assets, setAssets] = useState<AdminKnowledgeArticleAssetRow[]>([]);
+  const [relatedArticles, setRelatedArticles] = useState<AdminKnowledgeArticleListItemV2Row[]>([]);
   const [form, setForm] = useState<ArticleEditorForm>(EMPTY_FORM);
   const [status, setStatus] = useState<ArticleEditorStatus>('draft');
   const [saveState, setSaveState] = useState<SaveState>('idle');
@@ -2166,6 +3413,11 @@ export function KnowledgeArticleEditorPage() {
         }
 
         const loadedCategories = await listAdminKnowledgeCategoriesV2(primarySpace.id);
+        const loadedRelatedArticles = await listAdminKnowledgeArticlesV2({
+          knowledgeSpaceId: primarySpace.id,
+          status: 'published',
+          visibility: 'public',
+        });
         const loadedAssets =
           routeArticleId && detail ? await listAdminKnowledgeArticleAssets(detail.id) : [];
         const loadedAdvisories =
@@ -2184,6 +3436,9 @@ export function KnowledgeArticleEditorPage() {
         setSpaces(loadedSpaces);
         setSelectedSpaceId(primarySpace.id);
         setCategories(loadedCategories);
+        setRelatedArticles(
+          loadedRelatedArticles.filter((article) => article.id !== (detail?.id ?? '')),
+        );
         setArticleId(detail?.id ?? null);
         setArticleDetail(detail);
         setSourcePath(detail?.source_path ?? null);
@@ -2228,7 +3483,15 @@ export function KnowledgeArticleEditorPage() {
     setFeedback(null);
     try {
       const loadedCategories = await listAdminKnowledgeCategoriesV2(nextSpaceId);
+      const loadedRelatedArticles = await listAdminKnowledgeArticlesV2({
+        knowledgeSpaceId: nextSpaceId,
+        status: 'published',
+        visibility: 'public',
+      });
       setCategories(loadedCategories);
+      setRelatedArticles(
+        loadedRelatedArticles.filter((article) => article.id !== (articleId ?? '')),
+      );
       setForm((current) => ({
         ...current,
         categoryId: loadedCategories.some((category) => category.id === current.categoryId)
@@ -2579,7 +3842,13 @@ export function KnowledgeArticleEditorPage() {
               });
 
       const savedArticleId = 'article_id' in saved ? saved.article_id : saved.id;
+      const persistedTags = await replaceKnowledgeArticleTagsV1({
+        p_article_id: savedArticleId,
+        p_knowledge_space_id: activeSpace.id,
+        p_tags: form.keywords,
+      });
       setArticleId(savedArticleId);
+      updateForm({ keywords: persistedTags });
       setStatus((current) =>
         current === 'published' || current === 'archived' || current === 'review'
           ? current
@@ -2882,7 +4151,7 @@ export function KnowledgeArticleEditorPage() {
 
   return (
     <form
-      className="min-h-full bg-[#F4F7FC] font-[Inter,Geist,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe_UI',sans-serif]"
+      className="h-full min-h-screen overflow-y-auto bg-[#F4F7FC] font-[Inter,Geist,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe_UI',sans-serif]"
       onSubmit={handleSaveDraft}
     >
       <div className="px-5 py-4 xl:px-6">
@@ -3014,7 +4283,7 @@ export function KnowledgeArticleEditorPage() {
                   <RailCard title="Configurações editoriais">
                     <div className="-mt-1 flex justify-end">
                       <button
-                        className="rounded-full px-2 py-1 text-[0.72rem] font-bold text-[#2F6BFF] hover:bg-[#F4F7FC]"
+                        className="rounded-full px-2 py-1 text-[0.72rem] font-medium text-[#2F6BFF] hover:bg-[#F4F7FC]"
                         onClick={() => setMetadataCollapsed(true)}
                         type="button"
                       >
@@ -3072,7 +4341,7 @@ export function KnowledgeArticleEditorPage() {
                           <div className="mb-2 flex flex-wrap gap-1.5">
                             {form.keywords.map((tag) => (
                               <span
-                                className="inline-flex items-center gap-1 rounded-full bg-[#EEF2F7] px-2 py-1 text-[0.68rem] font-bold text-[#162443]"
+                                className="inline-flex items-center gap-1 rounded-full bg-[#EEF2F7] px-2 py-1 text-[0.68rem] font-medium text-[#162443]"
                                 key={tag}
                               >
                                 {tag}
@@ -3111,7 +4380,7 @@ export function KnowledgeArticleEditorPage() {
                           </button>
                         </div>
                         <div className="mt-1 flex justify-between text-[0.65rem] text-[#6B7892]">
-                          <span>Contrato de tags ainda não persiste no backend.</span>
+                          <span>Tags normalizadas e persistidas por RPC ao salvar.</span>
                           <span>{form.keywords.length}/10</span>
                         </div>
                       </div>
@@ -3349,7 +4618,7 @@ export function KnowledgeArticleEditorPage() {
             )}
           </aside>
           <main className="min-w-0">
-            <section className="overflow-hidden rounded-[22px] border border-[#DCE4F2] bg-white shadow-[0_18px_50px_rgba(22,36,67,0.06)]">
+            <section className="min-w-0">
               <input
                 accept="image/png,image/jpeg,image/webp,image/gif"
                 className="hidden"
@@ -3377,22 +4646,11 @@ export function KnowledgeArticleEditorPage() {
                   }
                 }}
                 onPaste={handleBodyPaste}
+                relatedArticles={relatedArticles}
                 onRegisterMarkdownInserter={(inserter) => {
                   editorMarkdownInserterRef.current = inserter;
                 }}
               />
-              <div className="flex h-12 items-center justify-between gap-4 border-t border-[#E8EEF7] px-5 text-[0.72rem] text-[#6B7892]">
-                <span className="min-w-[220px]">
-                  {bodyPlain.split(' ').filter(Boolean).length} palavras ·{' '}
-                  {saveState === 'saved' ? 'Alterações salvas' : 'Edição local'}
-                </span>
-                <span className="hidden flex-1 justify-center text-center xl:block">
-                  Atalhos: Ctrl+S salvar · Ctrl+K inserir link
-                </span>
-                <span className="shrink-0 text-right">
-                  Último salvamento: {saveState === 'saved' ? 'agora' : 'pendente'}
-                </span>
-              </div>
             </section>
           </main>
         </div>
