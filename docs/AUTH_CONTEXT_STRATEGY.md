@@ -56,6 +56,20 @@ Permissões devem ser validadas no banco/RPC/policy, nunca apenas no frontend.
   - o portal bloqueia mutacoes e limpa a superficie operacional local quando a leitura falha por rede.
   - retry de contexto e sempre manual; nao existe loop automatico nem modo offline.
 
+## Redirect pós-login por papel
+- O redirect inicial pós-login deve resolver a área operacional do usuário antes de navegar.
+- A ausência de `redirectTo` não pode cair em `/admin` por padrão para usuários não-admin.
+- A matriz vigente é:
+  - `platform_admin` -> `/admin`;
+  - `support_manager` ou `support_agent` -> `/support/queue`;
+  - membro ativo de área interna com fila visível -> `/internal-actions`;
+  - `engineering_member` ou `engineering_manager` -> `/engineering`;
+  - `customer_user` ou `customer_manager` com contexto portal ativo -> `/portal`;
+  - usuário autenticado sem workspace autorizado -> `/access-denied`.
+- `redirectTo` explícito só deve ser preservado quando a rota for compatível com o contexto autenticado atual; destino proibido cai no default do papel.
+- A resolução de landing usa read models existentes (`vw_admin_auth_context`, `vw_customer_portal_auth_context` e `vw_internal_action_queue_by_area`) e não substitui os gates de rota.
+- Nenhum redirect pode inferir permissão por e-mail, `localStorage`, texto de UI ou mock.
+
 ## Estado da Fase 1.2
 - Bootstrap do primeiro `platform_admin` implementado em `app_private.bootstrap_first_platform_admin(...)`.
 - Verificação de status de bootstrap em `app_private.platform_admin_bootstrap_status()`.

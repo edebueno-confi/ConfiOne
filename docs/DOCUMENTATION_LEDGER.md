@@ -4869,3 +4869,34 @@ Cada registro deve informar:
   - edição de integração não altera tipo/provedor porque o contrato atual só atualiza status, ambiente e nota segura
   - contatos B2B tipados seguem backlog
   - warning `DEP0190` permanece no script legado de suporte
+
+### Auth Redirect by Role P1-C
+- data: `2026-05-22`
+- branch: `codex/p1-c-auth-redirect-by-role`
+- resumo funcional: corrigido o redirect inicial pós-login por papel/contexto autenticado. O login deixou de cair em `/admin/tenants` como fallback universal e passou a escolher a landing por read models existentes antes de navegar.
+- arquivos alterados:
+  - `apps/web/src/features/auth/post-login-redirect.ts`
+  - `apps/web/src/features/login/LoginPage.tsx`
+  - `docs/AUTH_CONTEXT_STRATEGY.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/reports/P1_AUTH_REDIRECT_BY_ROLE_2026-05-22.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- contratos consumidos:
+  - `vw_admin_auth_context`
+  - `vw_customer_portal_auth_context`
+  - `vw_internal_action_queue_by_area`
+- validações:
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:qa:local-functional-fixture`
+  - smoke browser autenticado em `/login` para `platform_admin`, `support_manager`, `support_agent`, `internal_area_member`, `engineering_member`, `customer_user`, `customer_manager` e `internal_area_non_member`
+  - cenários `redirectTo` autorizado e proibido
+- boundaries preservados:
+  - `/access-denied` segue ativo para acesso real negado
+  - redirect não decide permissão por e-mail ou `localStorage`
+  - gates de rota continuam responsáveis pelo bloqueio final
+  - não houve backend, migration, RLS, contrato novo ou redesign
+- riscos restantes:
+  - membro de área interna sem nenhum acionamento visível ainda não tem read model dedicado de contexto para landing perfeita
+  - warning `DEP0190` permanece no script legado de suporte
