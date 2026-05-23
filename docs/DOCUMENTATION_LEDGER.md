@@ -4835,3 +4835,37 @@ Cada registro deve informar:
 - riscos restantes:
   - redirect pós-login de usuários não-admin ainda cai em `/access-denied` antes da navegação para a rota correta do papel
   - warning `DEP0190` permanece no script legado de suporte por trecho fora do escopo deste lote
+
+### Customer Account UX + Authenticated QA Pass P1-B
+- data: `2026-05-22`
+- branch: `codex/p1-b-customer-account-ux-authenticated-qa`
+- resumo funcional: executado QA autenticado real do Customer Account em Admin, Support e Portal. A aba `Conta B2B` de `/admin/tenants` passou a expor edição real de integração, customização e alerta existentes por RPC administrativa; o Portal teve copy customer-facing ajustada para não citar áreas internas; e a fixture funcional sanitizou o ticket QA principal para remover termos internos visíveis ao cliente.
+- arquivos alterados:
+  - `apps/web/src/features/tenants/TenantsPage.tsx`
+  - `apps/web/src/features/customer-portal/CustomerPortalPage.tsx`
+  - `supabase/qa/create-local-support-fixture.mjs`
+  - `supabase/qa/create-local-functional-fixture.mjs`
+  - `docs/LOCAL_QA_AUTH.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/reports/P1_CUSTOMER_ACCOUNT_UX_AUTHENTICATED_QA_2026-05-22.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- validações:
+  - `node --check supabase/qa/create-local-support-fixture.mjs`
+  - `node --check supabase/qa/create-local-functional-fixture.mjs`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:lint:db`
+  - `npm run supabase:test:db` com `43` arquivos e `887` testes
+  - duas execuções de `npm run supabase:qa:local-functional-fixture`
+  - smoke browser autenticado em `/admin/tenants`, `/support/customers`, `/support/customers/:tenantId`, `/support/tickets/:ticketId`, `/portal`, `/portal/tickets`, `/portal/tickets/:ticketId`, `/portal/help` e slugs autorizados/bloqueados
+- boundaries preservados:
+  - Admin escreve Customer Account apenas por RPCs administrativas
+  - Support consome Customer Account por read models e segue read-only
+  - Portal não recebe alertas internos, customizações internas, integrações sensíveis, audit bruto, storage path, internal actions ou engineering work items
+  - nenhum CSV, planilha real, dump ou dado real foi usado
+- riscos restantes:
+  - redirect pós-login por papel ainda precisa lote próprio
+  - edição de integração não altera tipo/provedor porque o contrato atual só atualiza status, ambiente e nota segura
+  - contatos B2B tipados seguem backlog
+  - warning `DEP0190` permanece no script legado de suporte

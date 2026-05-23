@@ -24,6 +24,14 @@ npm run supabase:qa:local-functional-fixture
 
 Esse comando reaproveita a fixture de suporte, valida que o Supabase é local, cria usuários estáveis de área interna, adiciona membership `finance` por RPC administrativa e materializa acionamentos internos persistidos para `/internal-actions` e `/support/tickets/:ticketId`.
 
+Desde o lote P1-B, a fixture funcional também preserva o ticket QA principal com título customer-facing sanitizado:
+
+```text
+QA Support | Operação crítica com histórico extenso, anexos e retorno operacional
+```
+
+O título legado com `handoff técnico` é reconhecido apenas para atualizar massa local antiga sem duplicar ticket.
+
 ## Credenciais locais de referência
 
 ### Support Workspace
@@ -76,6 +84,7 @@ Esse comando reaproveita a fixture de suporte, valida que o Supabase é local, c
 - Para validar `/support/tickets/:ticketId`, prefira primeiro reidratar a fixture local de suporte.
 - A fixture local de suporte pode recriar os tickets com novos UUIDs. Não assuma que um `ticketId` antigo continua válido após reidratação.
 - A fixture funcional imprime IDs atuais de tenant, ticket, acionamentos internos, work item e slugs de Knowledge no final da execução.
+- Para QA do Portal, valide o ticket atual impresso pela fixture e confirme ausência de termos internos como `handoff técnico`, `retorno de engenharia`, `storage_bucket`, `storage_object_path`, `internal_actions` e `engineering_work_items`.
 - Depois de reidratar, abra `/support/queue` ou `/support/tickets` e use um ticket atual da fila para validar o workspace autenticado.
 - `Invalid login credentials` indica drift de fixture/credencial/Auth.
 - `Failed to fetch` ou `502` no Kong/Auth local indica instabilidade do runtime local e deve ser tratado separadamente de credencial inválida.
