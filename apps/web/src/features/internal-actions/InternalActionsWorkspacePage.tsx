@@ -6,7 +6,7 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { formatDateTime } from '../../app/format';
 import {
   EmptyState,
@@ -28,6 +28,7 @@ import {
 import {
   INTERNAL_ACTION_STATUSES,
   TICKET_PRIORITIES,
+  type InternalActionAreaAuthContext,
   type InternalActionAreaDetail,
   type InternalActionAreaKey,
   type InternalActionAreaQueueItem,
@@ -41,6 +42,7 @@ import {
   addInternalActionComment,
   assignInternalActionToSelf,
   getInternalActionAreaDetail,
+  listInternalActionAreaAuthContexts,
   listInternalActionAreaQueue,
   listInternalActionAreaTimeline,
   returnInternalActionToSupport,
@@ -387,9 +389,10 @@ function DetailPanel({
 export function InternalActionsWorkspacePage() {
   const { actionId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuthContext();
+  const { gate, user } = useAuthContext();
   const [phase, setPhase] = useState<Phase>('loading');
   const [message, setMessage] = useState<string | null>(null);
+  const [areaContexts, setAreaContexts] = useState<InternalActionAreaAuthContext[]>([]);
   const [items, setItems] = useState<InternalActionAreaQueueItem[]>([]);
   const [detail, setDetail] = useState<InternalActionAreaDetail | null>(null);
   const [timeline, setTimeline] = useState<InternalActionAreaTimelineEntry[]>([]);
@@ -412,11 +415,15 @@ export function InternalActionsWorkspacePage() {
     setPhase('loading');
     setMessage(null);
     try {
-      const queue = await listInternalActionAreaQueue({
-        priority: priorityFilter,
-        status: statusFilter,
-        targetArea: areaFilter,
-      });
+      const [contexts, queue] = await Promise.all([
+        listInternalActionAreaAuthContexts(),
+        listInternalActionAreaQueue({
+          priority: priorityFilter,
+          status: statusFilter,
+          targetArea: areaFilter,
+        }),
+      ]);
+      setAreaContexts(contexts);
       setItems(queue);
 
       const nextSelectedId = actionId ?? queue[0]?.internalActionId ?? null;
@@ -463,9 +470,29 @@ export function InternalActionsWorkspacePage() {
 
   const areaOptions = useMemo(() => {
     return Array.from(
-      new Map(items.map((item) => [item.targetArea, item.targetAreaLabel])).entries(),
+      new Map([
+        ...areaContexts.map((context) => [context.areaKey, context.areaLabel] as const),
+        ...items.map((item) => [item.targetArea, item.targetAreaLabel] as const),
+      ]).entries(),
     ).sort((left, right) => left[1].localeCompare(right[1]));
-  }, [items]);
+  }, [areaContexts, items]);
+
+  const isPlatformAdmin = gate.actor?.is_platform_admin === true;
+  const gateStillResolving = gate.phase === 'idle' || gate.phase === 'loading';
+  const hasInternalAreaContext = areaContexts.some((context) => context.canViewQueue);
+  const filtersAreBroad = statusFilter === 'all' && areaFilter === 'all' && priorityFilter === 'all';
+  const visibleAreaLabels = areaContexts
+    .map((context) => context.areaLabel)
+    .filter((label, index, labels) => labels.indexOf(label) === index)
+    .join(', ');
+  const emptyQueueTitle =
+    filtersAreBroad && hasInternalAreaContext
+      ? 'Nenhum acionamento pendente para sua área.'
+      : 'Nenhum acionamento neste recorte';
+  const emptyQueueDescription =
+    filtersAreBroad && hasInternalAreaContext
+      ? `Quando o suporte acionar ${visibleAreaLabels || 'sua área'}, os itens aparecerão aqui.`
+      : 'Ajuste os filtros ou atualize a fila para consultar novamente os acionamentos autorizados pelo backend.';
 
   async function runAction(action: () => Promise<unknown>, successMessage: string) {
     setSubmitting(true);
@@ -575,6 +602,22 @@ export function InternalActionsWorkspacePage() {
       <ErrorState
         description={message ?? 'Não foi possível carregar acionamentos internos.'}
         action={<GhostButton onClick={() => void loadWorkspace()}>Tentar novamente</GhostButton>}
+      />
+    );
+  }
+
+  if (
+    phase === 'ready' &&
+    items.length === 0 &&
+    !hasInternalAreaContext &&
+    !isPlatformAdmin &&
+    !gateStillResolving
+  ) {
+    return (
+      <Navigate
+        replace
+        to="/access-denied"
+        state={{ reason: 'missing-authorized-workspace' }}
       />
     );
   }
@@ -699,8 +742,13 @@ export function InternalActionsWorkspacePage() {
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
               {items.length === 0 ? (
                 <EmptyState
-                  title="Nenhum acionamento neste recorte"
-                  description="A fila só mostra demandas da sua área interna ativa. Ajuste filtros ou confirme o membership no Admin."
+                  title={emptyQueueTitle}
+                  description={emptyQueueDescription}
+                  action={
+                    <GhostButton onClick={() => void loadWorkspace()} type="button">
+                      Atualizar fila
+                    </GhostButton>
+                  }
                 />
               ) : (
                 <div className="overflow-hidden rounded-[14px] border border-[color:var(--color-border)] bg-white">

@@ -51,6 +51,7 @@ export type {
   EngineeringTicketLinkRecord,
   AdminInternalActionTargetArea,
   AdminInternalAreaMembership,
+  InternalActionAreaAuthContext,
   InternalActionAreaDetail,
   InternalActionAreaKey,
   InternalActionAreaQueueItem,

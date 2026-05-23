@@ -47,6 +47,7 @@ export interface UnifiedNavigationDomain {
 
 export interface InternalNavigationPermissions {
   isPlatformAdmin: boolean;
+  hasInternalActionAreaAccess?: boolean;
 }
 
 export interface UnifiedInternalNavigation {
@@ -106,9 +107,18 @@ export function buildInternalNavigation({
   const currentSupport = isSupportRoute(pathname);
   const currentInternalActions = isInternalActionsRoute(pathname);
   const currentEngineering = isEngineeringRoute(pathname);
-  const operationEnabled = isPlatformAdmin || currentSupport || currentInternalActions;
+  const hasInternalActionAreaAccess = permissions.hasInternalActionAreaAccess === true;
+  const supportEnabled = isPlatformAdmin || currentSupport;
+  const internalActionsEnabled = isPlatformAdmin || currentInternalActions || hasInternalActionAreaAccess;
+  const operationEnabled = supportEnabled || internalActionsEnabled;
   const operationAvailability = operationEnabled ? 'enabled' : 'disabled';
   const operationDisabledReason = operationEnabled ? undefined : 'Sem acesso neste perfil';
+  const supportAvailability = supportEnabled ? 'enabled' : 'disabled';
+  const supportDisabledReason = supportEnabled ? undefined : 'Sem acesso neste perfil';
+  const internalActionsAvailability = internalActionsEnabled ? 'enabled' : 'disabled';
+  const internalActionsDisabledReason = internalActionsEnabled
+    ? undefined
+    : 'Sem membership ativo de área interna';
   const engineeringEnabled = isPlatformAdmin || currentEngineering;
   const engineeringAvailability = engineeringEnabled ? 'enabled' : 'disabled';
   const engineeringDisabledReason = engineeringEnabled ? undefined : 'Sem acesso neste perfil';
@@ -127,37 +137,37 @@ export function buildInternalNavigation({
           {
             id: 'support-queue',
             label: 'Fila operacional',
-            to: operationEnabled ? '/support/queue' : undefined,
+            to: supportEnabled ? '/support/queue' : undefined,
             icon: 'queue',
-            availability: operationAvailability,
-            disabledReason: operationDisabledReason,
+            availability: supportAvailability,
+            disabledReason: supportDisabledReason,
             matches: (path) => path === '/support' || path === '/support/queue',
           },
           {
             id: 'support-tickets',
             label: 'Tickets',
-            to: operationEnabled ? '/support/tickets' : undefined,
+            to: supportEnabled ? '/support/tickets' : undefined,
             icon: 'tickets',
-            availability: operationAvailability,
-            disabledReason: operationDisabledReason,
+            availability: supportAvailability,
+            disabledReason: supportDisabledReason,
             matches: (path) => path.startsWith('/support/tickets'),
           },
           {
             id: 'support-customers',
             label: 'Clientes B2B',
-            to: operationEnabled ? '/support/customers' : undefined,
+            to: supportEnabled ? '/support/customers' : undefined,
             icon: 'customers',
-            availability: operationAvailability,
-            disabledReason: operationDisabledReason,
+            availability: supportAvailability,
+            disabledReason: supportDisabledReason,
             matches: (path) => path.startsWith('/support/customers'),
           },
           {
             id: 'internal-actions',
             label: 'Acionamentos',
-            to: operationEnabled ? '/internal-actions' : undefined,
+            to: internalActionsEnabled ? '/internal-actions' : undefined,
             icon: 'return',
-            availability: operationAvailability,
-            disabledReason: operationDisabledReason,
+            availability: internalActionsAvailability,
+            disabledReason: internalActionsDisabledReason,
             matches: isInternalActionsRoute,
           },
           {

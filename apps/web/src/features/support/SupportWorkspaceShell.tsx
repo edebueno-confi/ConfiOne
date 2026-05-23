@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { cx } from '../../components/ui';
 import { useAuthContext } from '../auth/auth-context';
+import { listInternalActionAreaAuthContexts } from '../internal-actions/internal-actions-api';
 import {
   UnifiedInternalSidebar,
   UnifiedInternalTopbar,
@@ -20,18 +22,52 @@ function buildInitials(fullName: string | null | undefined, email: string | null
   return parts.map((chunk) => chunk[0]?.toUpperCase() ?? '').join('');
 }
 
+function useInternalActionAreaAccess(userId: string | null | undefined, isPlatformAdmin: boolean) {
+  const [hasInternalActionAreaAccess, setHasInternalActionAreaAccess] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!userId || isPlatformAdmin) {
+      setHasInternalActionAreaAccess(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    listInternalActionAreaAuthContexts()
+      .then((contexts) => {
+        if (!cancelled) {
+          setHasInternalActionAreaAccess(contexts.some((context) => context.canViewQueue));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setHasInternalActionAreaAccess(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isPlatformAdmin, userId]);
+
+  return hasInternalActionAreaAccess;
+}
+
 function SupportSidebar() {
   const location = useLocation();
   const { gate, signOut, user } = useAuthContext();
   const fullName = String(user?.user_metadata?.full_name ?? '').trim() || null;
   const email = user?.email ?? null;
   const isPlatformAdmin = gate.actor?.is_platform_admin === true;
+  const hasInternalActionAreaAccess = useInternalActionAreaAccess(user?.id, isPlatformAdmin);
 
   return (
     <UnifiedInternalSidebar
       onSignOut={() => void signOut()}
       pathname={location.pathname}
-      permissions={{ isPlatformAdmin }}
+      permissions={{ isPlatformAdmin, hasInternalActionAreaAccess }}
       userInitials={buildInitials(fullName, email)}
       userSubtitle={isPlatformAdmin ? 'Administrador da plataforma' : 'Operação interna'}
       userTitle={fullName ?? email ?? 'Operador interno'}
@@ -41,19 +77,23 @@ function SupportSidebar() {
 
 function SupportTopbar() {
   const location = useLocation();
-  const { gate } = useAuthContext();
+  const { gate, user } = useAuthContext();
+  const isPlatformAdmin = gate.actor?.is_platform_admin === true;
+  const hasInternalActionAreaAccess = useInternalActionAreaAccess(user?.id, isPlatformAdmin);
 
   return (
     <UnifiedInternalTopbar
       pathname={location.pathname}
-      permissions={{ isPlatformAdmin: gate.actor?.is_platform_admin === true }}
+      permissions={{ isPlatformAdmin, hasInternalActionAreaAccess }}
     />
   );
 }
 
 export function SupportWorkspaceShell() {
   const location = useLocation();
-  const isOperationalSupportRoute = /^\/(support|engineering)(\/|$)/.test(location.pathname);
+  const isOperationalSupportRoute = /^\/(support|engineering|internal-actions)(\/|$)/.test(
+    location.pathname,
+  );
 
   return (
     <div

@@ -116,12 +116,12 @@ async function hasCustomerPortalAccess() {
 async function hasInternalActionAreaAccess() {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client
-    .from('vw_internal_action_queue_by_area')
-    .select('internal_action_id')
+    .from('vw_internal_action_area_auth_context')
+    .select('tenant_id')
     .limit(1);
 
   if (error) {
-    throw toAppError(error, 'Falha ao validar a fila de acionamentos internos.');
+    throw toAppError(error, 'Falha ao validar o contexto de áreas internas.');
   }
 
   return (data ?? []).length > 0;

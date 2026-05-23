@@ -2,6 +2,7 @@ import { toAppError } from '../../app/errors';
 import { requireSupabaseBrowserClient } from '../../app/supabase-browser';
 import type {
   InternalActionAreaDetail,
+  InternalActionAreaAuthContext,
   InternalActionAreaKey,
   InternalActionAreaQueueItem,
   InternalActionAreaTimelineEntry,
@@ -59,6 +60,22 @@ function mapInternalActionQueueItem(
   };
 }
 
+function mapInternalActionAreaAuthContext(
+  row: Record<string, unknown>,
+): InternalActionAreaAuthContext {
+  return {
+    tenantId: String(row.tenant_id),
+    tenantSlug: String(row.tenant_slug),
+    tenantDisplayName: (row.tenant_display_name as string | null) ?? null,
+    areaKey: row.area_key as InternalActionAreaKey,
+    areaLabel: String(row.area_label),
+    role: row.role as InternalActionAreaAuthContext['role'],
+    status: row.status as InternalActionAreaAuthContext['status'],
+    visibleOpenActionCount: Number(row.visible_open_action_count ?? 0),
+    canViewQueue: row.can_view_queue === true,
+  };
+}
+
 function mapInternalActionDetail(
   row: Record<string, unknown>,
 ): InternalActionAreaDetail {
@@ -103,6 +120,23 @@ export interface ListInternalActionQueueOptions {
   status?: InternalActionStatus | 'all';
   targetArea?: InternalActionAreaKey | 'all';
   priority?: TicketPriority | 'all';
+}
+
+export async function listInternalActionAreaAuthContexts() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_internal_action_area_auth_context')
+    .select('*')
+    .order('tenant_slug', { ascending: true })
+    .order('area_label', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao validar memberships de áreas internas.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapInternalActionAreaAuthContext(row as Record<string, unknown>),
+  );
 }
 
 export async function listInternalActionAreaQueue(

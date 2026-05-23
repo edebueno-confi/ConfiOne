@@ -45,6 +45,7 @@ export type {
   EngineeringWorkItemStatus,
   EngineeringWorkItemUpdateKind,
   EngineeringWorkItemType,
+  InternalActionAreaAuthContext,
   InternalActionAreaDetail,
   InternalActionAreaKey,
   InternalActionAreaQueueItem,

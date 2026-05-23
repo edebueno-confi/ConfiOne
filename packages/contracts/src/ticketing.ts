@@ -1175,6 +1175,18 @@ export interface InternalActionAreaQueueItem {
   updatedAt: IsoTimestamp;
 }
 
+export interface InternalActionAreaAuthContext {
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantDisplayName: string | null;
+  areaKey: InternalActionAreaKey;
+  areaLabel: string;
+  role: InternalAreaMembershipRole;
+  status: InternalAreaMembershipStatus;
+  visibleOpenActionCount: number;
+  canViewQueue: boolean;
+}
+
 export interface EngineeringWorkspaceWorkItem {
   engineeringWorkItemId: Uuid;
   tenantId: Uuid;
