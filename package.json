@@ -21,6 +21,7 @@
     "supabase:verify": "node scripts/ci/run-supabase-verify.mjs",
     "supabase:qa:local-admin-fixture": "node supabase/qa/create-local-admin-fixture.mjs",
     "supabase:qa:local-support-fixture": "node supabase/qa/create-local-support-fixture.mjs",
+    "supabase:qa:local-functional-fixture": "node supabase/qa/create-local-functional-fixture.mjs",
     "knowledge:curation:backlog": "node scripts/knowledge/generate-curation-backlog.mjs",
     "knowledge:import:octadesk:local": "node scripts/knowledge/import-octadesk-drafts.mjs --local",
     "knowledge:import:octadesk:pilot": "node scripts/knowledge/import-octadesk-drafts.mjs --local --space-slug genius --allowlist docs/reports/OCTADESK_PUBLIC_HELP_PILOT_ALLOWLIST.json",
