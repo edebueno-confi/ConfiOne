@@ -443,6 +443,34 @@ Fase 6.8:
   - `platform_admin` continua sendo o write actor garantido do primeiro corte;
   - o dominio bloqueia tokens, senhas, chaves, payloads sigilosos e endpoints sensiveis antes de persistir ou auditar.
 
+Fase P1 Customer Account Operations Buildout:
+- O dominio Customer Account foi fechado como operacao minima governada para Admin e Support, sem transformar o produto em CRM generico.
+- Novas views administrativas dedicadas:
+  - `vw_admin_customer_account_profile_detail`
+  - `vw_admin_customer_account_integrations`
+  - `vw_admin_customer_account_customizations`
+  - `vw_admin_customer_account_alerts`
+  - `vw_admin_customer_account_features`
+- Novos aliases operacionais de suporte:
+  - `vw_support_customers_list`
+  - `vw_support_customer_detail`
+- Novas RPCs administrativas:
+  - `rpc_admin_archive_customer_integration`
+  - `rpc_admin_archive_customer_customization`
+  - `rpc_admin_update_customer_account_alert`
+- Permanecem vigentes:
+  - `rpc_admin_upsert_customer_account_profile`
+  - `rpc_admin_add_customer_integration`
+  - `rpc_admin_update_customer_integration`
+  - `rpc_admin_add_customer_customization`
+  - `rpc_admin_update_customer_customization`
+  - `rpc_admin_add_customer_account_alert`
+  - `rpc_admin_archive_customer_account_alert`
+  - `rpc_admin_set_customer_feature_flag`
+- `/admin/tenants` passa a usar a aba `Conta B2B` para editar perfil, adicionar/arquivar integracoes, adicionar/arquivar customizacoes, adicionar/arquivar alertas e atualizar feature flags por RPC.
+- O frontend continua sem ler `customer_account_*` diretamente e sem persistir estado local como fonte de verdade.
+- Portal Cliente permanece limitado a contexto customer-facing seguro; alertas internos, customizacoes, integracoes detalhadas, observacoes internas, audit bruto e paths de storage continuam fora das views do Portal.
+
 Fase 6.15:
 - O backend minimo do vinculo ticket -> Knowledge Base agora foi materializado como dominio auditavel proprio, sem abrir tabela-base ao frontend.
 - O app autenticado continua sem `SELECT` direto em `ticket_knowledge_links`.

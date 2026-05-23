@@ -255,6 +255,7 @@ Uso esperado:
 - historico de tickets
 - contexto do tenant para atendimento tecnico-operacional
 - ponto natural de leitura aprofundada do futuro Customer Account Profile
+- no P1 Customer Account Operations Buildout, a leitura aprofundada foi fechada por read models de suporte (`vw_support_customers_list`, `vw_support_customer_detail`, `vw_support_customer_account_context`) e a escrita permaneceu fora do Support Workspace; alteracoes estruturais de conta B2B pertencem ao Admin.
 
 ### `/support/queue`
 - recorte operacional prioritario

@@ -16,6 +16,7 @@ O corte entrega boundary customer-facing autenticada, tenant-aware e segura para
 - Storage seguro de evidencias por bucket privado `ticket-evidence`, grants curtos e edge function `ticket-evidence-download`.
 - Knowledge publica publicada e links de artigo enviados ao cliente por `ticket_knowledge_links`.
 - `customer_account_profiles` como fonte segura de contexto resumido.
+- O P1 Customer Account Operations Buildout ampliou a operacao interna da conta B2B, mas nao ampliou a superficie customer-facing: portal continua recebendo apenas o resumo seguro ja permitido por contrato.
 
 ### Endurecido
 - `tenant_role` passou a aceitar `customer_user` e `customer_manager`.
@@ -39,6 +40,7 @@ O corte entrega boundary customer-facing autenticada, tenant-aware e segura para
 - IA.
 - Auth paralela.
 - Dados internos de suporte, engenharia, auditoria, advisory, drafts ou Knowledge interna/restrita.
+- Alertas internos, customizacoes operacionais, notas internas de conta, detalhes sensiveis de integracao e feature flags internas de Customer Account.
 - Storage path, bucket, URL permanente ou payload bruto.
 
 ## Boundary de acesso

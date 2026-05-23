@@ -18,6 +18,43 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase P1 - Customer Account Operations Buildout
+- fase: `P1`
+- nome: `Customer Account Operations Buildout`
+- branch: `codex/p1-customer-account-operations-buildout`
+- data: `2026-05-22`
+- resumo funcional: fechada a operacao minima de Conta B2B/Customer Account com contratos backend-first, aba `Conta B2B` em `/admin/tenants`, CRUD governado parcial de profile/integracoes/customizacoes/alertas/features, fixture funcional local enriquecida e boundary do Portal preservado.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/CUSTOMER_ACCOUNT_PROFILE_SPEC.md`
+  - `docs/CUSTOMER_PORTAL_CONTRACT_FOUNDATION_V3.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/SUPPORT_WORKSPACE_ARCHITECTURE_SPEC.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/reports/P1_CUSTOMER_ACCOUNT_OPERATIONS_BUILDOUT_2026-05-22.md`
+- views/RPCs afetadas:
+  - `vw_admin_customer_account_profile_detail`
+  - `vw_admin_customer_account_integrations`
+  - `vw_admin_customer_account_customizations`
+  - `vw_admin_customer_account_alerts`
+  - `vw_admin_customer_account_features`
+  - `vw_support_customers_list`
+  - `vw_support_customer_detail`
+  - `rpc_admin_archive_customer_integration`
+  - `rpc_admin_archive_customer_customization`
+  - `rpc_admin_update_customer_account_alert`
+- telas afetadas:
+  - `/admin/tenants`
+  - `/support/customers`
+  - `/support/customers/:tenantId`
+  - `/support/tickets/:ticketId`
+- riscos restantes:
+  - Admin ainda nao possui onboarding governado novo de usuario customer-facing; `/admin/customer-portal` continua usando contratos existentes de role/status.
+  - Edicao fina inline de registros existentes pode evoluir em lote menor; o contrato backend ja cobre update/archive.
+- impacto na FAQ futura:
+  - permite descrever a Conta B2B como fonte operacional interna de produto, plano, stack, customizacoes, alertas e features, separada do Portal Cliente e sem expor dados sensiveis.
+
 ### Fase P0-B - Boundary QA + Safe Knowledge Link
 - fase: `P0-B`
 - nome: `Boundary QA + Safe Knowledge Link`

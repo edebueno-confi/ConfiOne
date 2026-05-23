@@ -83,6 +83,7 @@
 ## Boundary materializado na Fase 6.8
 - o suporte continua lendo apenas por read models contratuais, nunca por tabela-base do perfil do cliente
 - o primeiro read model executável desse dominio agora e `vw_support_customer_account_context`
+- no lote P1 Customer Account Operations Buildout, o suporte tambem passa a ter aliases operacionais `vw_support_customers_list` e `vw_support_customer_detail`, enquanto a manutencao segue restrita ao Admin por RPC; o Ticket Workspace continua consumindo apenas recorte essencial do cliente.
 - a manutencao do perfil operacional passou a existir apenas por RPCs administrativas dedicadas
 - `platform_admin` continua como write actor garantido do primeiro corte
 - `support_manager` e `support_agent` continuam apenas com leitura controlada por tenant no MVP do dominio
