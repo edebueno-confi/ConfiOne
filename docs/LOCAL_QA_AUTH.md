@@ -22,7 +22,7 @@ Para QA funcional autenticado ponta a ponta das rotas privadas, use:
 npm run supabase:qa:local-functional-fixture
 ```
 
-Esse comando reaproveita a fixture de suporte, valida que o Supabase é local, cria usuários estáveis de área interna, adiciona membership `finance` por RPC administrativa e materializa acionamentos internos persistidos para `/internal-actions` e `/support/tickets/:ticketId`.
+Esse comando reaproveita a fixture de suporte, valida que o Supabase é local, cria usuários estáveis de área interna, adiciona membership `finance` por RPC administrativa, adiciona um membership `operations` sem acionamentos para QA de empty state e materializa acionamentos internos persistidos para `/internal-actions` e `/support/tickets/:ticketId`.
 
 Desde o lote P1-B, a fixture funcional também preserva o ticket QA principal com título customer-facing sanitizado:
 
@@ -52,6 +52,10 @@ O título legado com `handoff técnico` é reconhecido apenas para atualizar mas
 - `qa.local.internal-area-member@genius.local`
 - senha: `Local-QA-Internal-Area-2026!`
 - papel operacional: membro ativo da área `finance` no tenant `support-qa-a`
+
+- `qa.local.internal-area-empty@genius.local`
+- senha: `Local-QA-Internal-Empty-2026!`
+- papel operacional: membro ativo da área `operations` no tenant `support-qa-a`, sem acionamentos persistidos pela fixture
 
 - `qa.local.internal-area-non-member@genius.local`
 - senha: `Local-QA-Internal-NoArea-2026!`

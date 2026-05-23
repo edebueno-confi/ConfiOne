@@ -4900,3 +4900,47 @@ Cada registro deve informar:
 - riscos restantes:
   - membro de área interna sem nenhum acionamento visível ainda não tem read model dedicado de contexto para landing perfeita
   - warning `DEP0190` permanece no script legado de suporte
+
+### Internal Area Empty State + Navigation Hardening P1-D
+- data: `2026-05-22`
+- branch: `codex/p1-d-internal-area-empty-state-navigation`
+- resumo funcional: corrigido o caso de membro de área interna com membership ativo e zero acionamentos visíveis. O redirect e a navegação passaram a consumir contexto de área separado da fila, `/internal-actions` mostra empty state honesto para área sem demanda e usuário sem membership continua bloqueado.
+- arquivos alterados:
+  - `supabase/migrations/20260523154739_internal_action_area_auth_context_v1.sql`
+  - `supabase/tests/040_internal_actions_operational_closure.sql`
+  - `packages/contracts/src/ticketing.ts`
+  - `packages/contracts/src/index.ts`
+  - `apps/web/src/contracts/support-contracts.ts`
+  - `apps/web/src/features/auth/post-login-redirect.ts`
+  - `apps/web/src/features/internal-actions/internal-actions-api.ts`
+  - `apps/web/src/features/internal-actions/InternalActionsWorkspacePage.tsx`
+  - `apps/web/src/features/navigation/UnifiedEnvironmentNavigation.tsx`
+  - `apps/web/src/features/support/SupportWorkspaceShell.tsx`
+  - `supabase/qa/create-local-functional-fixture.mjs`
+  - `docs/PROJECT_STATE.md`
+  - `docs/AUTH_CONTEXT_STRATEGY.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/INTERNAL_ACTIONS_V1_STATUS_REPORT.md`
+  - `docs/LOCAL_QA_AUTH.md`
+  - `docs/reports/P1_INTERNAL_AREA_EMPTY_STATE_AND_NAVIGATION_2026-05-22.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- contratos afetados:
+  - criada `vw_internal_action_area_auth_context`
+  - nenhuma RPC nova
+- validações:
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:lint:db`
+  - `npm run supabase:test:db` com 43 arquivos e 892 testes
+  - `npm run supabase:qa:local-functional-fixture` duas vezes, validando idempotência
+  - smoke browser autenticado para area com itens, area sem itens, non-member, support_manager e platform_admin
+- boundaries preservados:
+  - empty state não mascara ausência de membership
+  - suporte sem membership não ganha fila interna
+  - cliente/portal não acessa internal actions
+  - `ticket.status` não muda automaticamente
+  - PNGs de blueprint não entram no lote
+- riscos restantes:
+  - QA browser autenticado depende de runtime local estável após reidratar fixture
+  - warning `DEP0190` permanece no script legado de suporte

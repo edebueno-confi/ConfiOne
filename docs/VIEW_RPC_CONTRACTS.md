@@ -1639,6 +1639,7 @@ Fase 8.2:
 - `vw_support_internal_action_detail`
 - `vw_support_internal_action_timeline`
 - `vw_internal_action_queue_by_area`
+- `vw_internal_action_area_auth_context`
 - `vw_internal_action_detail_by_area`
 - `vw_internal_action_timeline_by_area`
 - `vw_admin_internal_action_target_areas`
@@ -1668,6 +1669,7 @@ Fase 8.2:
 - O V1 usa apenas evidências já existentes em `ticket_attachments`; não cria bucket, storage path ou upload próprio.
 - Pendência interna não altera `ticket.status`; a sinalização sai por read model dedicado.
 - As views novas não expõem conversa completa do ticket para a fila da área nem metadata sensível de storage.
+- `vw_internal_action_area_auth_context` expõe apenas tenant, área, role/status de membership ativo e contagem operacional, permitindo distinguir área autorizada sem demanda de usuário sem membership.
 - `/internal-actions` consome `vw_internal_action_queue_by_area`, `vw_internal_action_detail_by_area`, `vw_internal_action_timeline_by_area` e apenas RPCs do domínio para assumir, comentar, atualizar andamento e devolver ao suporte.
 - `/admin/internal-areas` consome views `vw_admin_*` e RPCs administrativas para adicionar, atualizar ou arquivar `internal_area_memberships`.
 

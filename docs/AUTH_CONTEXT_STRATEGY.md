@@ -62,12 +62,13 @@ Permissões devem ser validadas no banco/RPC/policy, nunca apenas no frontend.
 - A matriz vigente é:
   - `platform_admin` -> `/admin`;
   - `support_manager` ou `support_agent` -> `/support/queue`;
-  - membro ativo de área interna com fila visível -> `/internal-actions`;
+  - membro ativo de área interna com membership autorizado -> `/internal-actions`;
   - `engineering_member` ou `engineering_manager` -> `/engineering`;
   - `customer_user` ou `customer_manager` com contexto portal ativo -> `/portal`;
   - usuário autenticado sem workspace autorizado -> `/access-denied`.
 - `redirectTo` explícito só deve ser preservado quando a rota for compatível com o contexto autenticado atual; destino proibido cai no default do papel.
-- A resolução de landing usa read models existentes (`vw_admin_auth_context`, `vw_customer_portal_auth_context` e `vw_internal_action_queue_by_area`) e não substitui os gates de rota.
+- A resolução de landing usa read models existentes (`vw_admin_auth_context`, `vw_customer_portal_auth_context` e `vw_internal_action_area_auth_context`) e não substitui os gates de rota.
+- O contexto de área interna precisa diferenciar membership ativo sem acionamentos de ausência real de acesso. A fila `vw_internal_action_queue_by_area` continua sendo read model operacional de itens, mas não deve ser usada como prova única de workspace autorizado.
 - Nenhum redirect pode inferir permissão por e-mail, `localStorage`, texto de UI ou mock.
 
 ## Estado da Fase 1.2

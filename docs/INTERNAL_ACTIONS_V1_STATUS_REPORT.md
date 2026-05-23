@@ -12,6 +12,7 @@ Status operacional:
 - Contracts TS: implementados.
 - Drawer `Acionamentos` em `/support/tickets/:ticketId`: integrado ao domínio real para criação, lista, detalhe, timeline interna e ações de suporte.
 - Workspace da área acionada: implementado em `/internal-actions`.
+- Empty state de área sem demanda: implementado sem mascarar falta de membership.
 - Detalhe operacional da área acionada: implementado em `/internal-actions/:actionId`.
 - Admin de memberships por área: implementado em `/admin/internal-areas`.
 - Bridge com `engineering_work_items`: ainda não implementada por decisão de escopo.
@@ -47,6 +48,7 @@ Conclusão: a V1 está pronta como fluxo operacional mínimo entre suporte e ár
   - `vw_support_internal_action_detail`
   - `vw_support_internal_action_timeline`
   - `vw_internal_action_queue_by_area`
+  - `vw_internal_action_area_auth_context`
   - `vw_internal_action_detail_by_area`
   - `vw_internal_action_timeline_by_area`
   - `vw_support_internal_action_target_areas`
@@ -83,6 +85,7 @@ Conclusão: a V1 está pronta como fluxo operacional mínimo entre suporte e ár
 - Não há mock, catálogo hardcoded de áreas, leitura direta de tabela base ou alteração de `ticket.status`.
 - O fluxo especializado de `Handoff técnico` continua separado e baseado em `engineering_work_items`.
 - A rota `/internal-actions` mostra a fila da área do usuário por membership ativo, com filtros por status, área e prioridade.
+- A rota `/internal-actions` diferencia membership ativo sem itens de ausência de acesso por `vw_internal_action_area_auth_context`; usuário autorizado sem demanda vê empty state honesto e usuário sem membership segue para `/access-denied`.
 - A rota `/internal-actions/:actionId` mostra contexto, ticket de origem, tenant resumido, responsável, timeline sanitizada, evidências vinculadas por contagem e ações reais da área.
 - A área acionada pode assumir o acionamento para si, registrar update, atualizar andamento permitido e devolver ao suporte por RPC.
 - A rota `/admin/internal-areas` permite ao `platform_admin` listar áreas, revisar memberships, adicionar, atualizar role/status e arquivar vínculos por RPC.
@@ -103,7 +106,7 @@ Correções documentais feitas nesta consolidação:
 
 Correções técnicas recomendadas para lote futuro:
 - Renomear, em refactor pequeno e isolado, chaves internas legadas do drawer que ainda usem `automation` para `internalActions`, se isso não gerar churn alto.
-- Criar QA browser autenticado dedicado para `/internal-actions` e `/admin/internal-areas`, cobrindo estado vazio, detalhe, atualização, devolução e arquivamento de membership.
+- Manter QA browser autenticado dedicado para `/internal-actions` e `/admin/internal-areas`, cobrindo detalhe, atualização, devolução e arquivamento de membership.
 
 ## 5. O que ainda precisa ser feito
 
@@ -148,6 +151,7 @@ Próxima fase recomendada:
 - `apps/web/src/features/internal-actions/internal-actions-api.ts`
 - `apps/web/src/features/admin/InternalAreasAdminPage.tsx`
 - `supabase/migrations/20260522190000_internal_actions_operational_closure_v1.sql`
+- `supabase/migrations/20260523154739_internal_action_area_auth_context_v1.sql`
 - `supabase/tests/040_internal_actions_operational_closure.sql`
 
 ## 8. Validações conhecidas
