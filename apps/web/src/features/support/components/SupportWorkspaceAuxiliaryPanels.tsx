@@ -372,8 +372,8 @@ export function SupportTicketPreview({
 
   return (
     <div className="space-y-3">
-      <div className="rounded-[18px] border border-[rgba(84,113,214,0.22)] bg-[linear-gradient(180deg,rgba(6,27,84,1),rgba(4,19,61,0.985))] px-4 py-4 text-white shadow-[0_14px_30px_rgba(6,27,84,0.24)]">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-white/60">Ticket selecionado</p>
+      <div className="rounded-[16px] border border-[rgba(220,228,242,0.96)] bg-white px-4 py-4 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-[color:var(--color-muted)]">Ticket selecionado</p>
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
           <OperationalQueueBadge tone={statusTone}>
             {compactTicketStatusLabel((detail?.status ?? ticket?.status ?? 'new') as TicketStatus)}
@@ -398,14 +398,14 @@ export function SupportTicketPreview({
           <p className="text-[1.45rem] font-bold leading-none tracking-[-0.06em]">
             {supportTicketCode(ticketId)}
           </p>
-          <h3 className="line-clamp-3 text-[1.06rem] font-bold leading-[1.36rem] tracking-[-0.04em]">{title}</h3>
-          <p className="text-[11.5px] text-white/72">{tenant}</p>
+          <h3 className="line-clamp-3 text-[1.06rem] font-bold leading-[1.36rem] tracking-[-0.04em] text-[color:var(--color-ink)]">{title}</h3>
+          <p className="text-[11.5px] text-[color:var(--color-muted)]">{tenant}</p>
 
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 border-t border-white/12 pt-3">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 border-t border-[color:var(--color-border)] pt-3">
             {previewFacts.map((fact) => (
               <div className="min-w-0 space-y-1" key={fact.label}>
-                <p className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-white/48">{fact.label}</p>
-                <p className="truncate text-[11.5px] font-semibold text-white">{fact.value || 'Indisponivel'}</p>
+                <p className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">{fact.label}</p>
+                <p className="truncate text-[11.5px] font-semibold text-[color:var(--color-ink)]">{fact.value || 'Indisponivel'}</p>
               </div>
             ))}
           </div>
@@ -421,7 +421,7 @@ export function SupportTicketPreview({
             </Link>
             <button
               aria-label="Mais ações do ticket"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-white/14 text-white/66 disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-[color:var(--color-support-border)] text-[color:var(--color-muted)] disabled:cursor-not-allowed disabled:opacity-70"
               disabled
               type="button"
             >
@@ -431,18 +431,18 @@ export function SupportTicketPreview({
         ) : null}
       </div>
 
-      <div className="rounded-[18px] border border-[rgba(84,113,214,0.18)] bg-[linear-gradient(180deg,rgba(6,27,84,0.98),rgba(7,31,96,0.96))] px-4 py-4 text-white shadow-[0_12px_26px_rgba(6,27,84,0.2)]">
-        <p className="text-[12.5px] font-semibold text-white">Prévia de atendimento</p>
+      <div className="rounded-[16px] border border-[rgba(220,228,242,0.96)] bg-white px-4 py-4 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+        <p className="text-[12.5px] font-semibold text-[color:var(--color-ink)]">Resumo do caso</p>
 
-        <div className="mt-3 space-y-3 text-[11.5px] leading-[1.35rem] text-white/76">
+        <div className="mt-3 space-y-3 text-[11.5px] leading-[1.35rem] text-[color:var(--color-muted)]">
           <div>
-            <p className="font-semibold text-white">Resumo operacional</p>
-            <p className="mt-1 text-white/74">{summary || 'Resumo indisponível.'}</p>
+            <p className="font-semibold text-[color:var(--color-ink)]">Resumo operacional</p>
+            <p className="mt-1">{summary || 'Resumo indisponível.'}</p>
           </div>
 
-          <div className="border-t border-white/10 pt-3">
-            <p className="font-semibold text-white">Contato do cliente</p>
-            <div className="mt-1.5 space-y-1 text-white/74">
+          <div className="border-t border-[color:var(--color-border)] pt-3">
+            <p className="font-semibold text-[color:var(--color-ink)]">Contato do cliente</p>
+            <div className="mt-1.5 space-y-1">
               <p>{requester?.fullName ?? 'Indisponivel'}</p>
               <p>{requester ? 'Contato principal' : 'Indisponivel'}</p>
               <p>{requester?.email ?? 'Indisponivel'}</p>
@@ -450,9 +450,9 @@ export function SupportTicketPreview({
             </div>
           </div>
 
-          <div className="border-t border-white/10 pt-3">
-            <p className="font-semibold text-white">Contexto rapido</p>
-            <div className="mt-1.5 space-y-1 text-white/74">
+          <div className="border-t border-[color:var(--color-border)] pt-3">
+            <p className="font-semibold text-[color:var(--color-ink)]">Contexto rapido</p>
+            <div className="mt-1.5 space-y-1">
               <p>Cliente: {tenant}</p>
               <p>CNPJ: {readCustomerDocumentLabel(customer) ?? 'Indisponivel'}</p>
               <p>Tickets abertos: {customer ? String(customer.openTicketCount) : 'Indisponivel'}</p>
@@ -461,7 +461,7 @@ export function SupportTicketPreview({
 
           {tenantId ? (
             <Link
-              className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-white underline underline-offset-4"
+              className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-[color:var(--color-brand-blue)] underline underline-offset-4"
               to={`/support/customers/${tenantId}`}
             >
               <SupportSurfaceIcon className="h-3.5 w-3.5" kind="open" />

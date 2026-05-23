@@ -52,9 +52,12 @@ Para qualquer implementação visual, seguir esta ordem:
 
 1. Blueprint PNG aprovado da tela.
 2. Screen spec da tela em `docs/design/screens/*.md`.
-3. Este Design System.
-4. Contratos reais de dados, views, RPCs e permissões.
-5. Implementação atual.
+3. Primitive operacional do domínio.
+4. Este Design System.
+5. Tokens globais aprovados.
+6. Primitive genérica/fallback.
+7. Contratos reais de dados, views, RPCs e permissões.
+8. Implementação atual.
 
 A implementação antiga nunca é argumento para manter:
 - layout genérico;
@@ -64,6 +67,10 @@ A implementação antiga nunca é argumento para manter:
 - componente falso;
 - texto técnico no front;
 - baixa fidelidade ao blueprint.
+
+Primitive genérica não é argumento para enfraquecer blueprint operacional aprovado.
+
+Quando houver blueprint + screen spec claros, a superfície deve usar ou gerar primitive operacional do domínio em vez de se apoiar principalmente em primitive genérica.
 
 Se a implementação atual divergir do blueprint, corrigir para o blueprint.
 

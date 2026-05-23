@@ -12,6 +12,151 @@ export type SupportBadgeTone =
 
 export type SupportBadgeVariant = 'pill' | 'queue';
 
+export function SupportPrimaryActionButton({
+  children,
+  className,
+  disabled = false,
+  onClick,
+  type = 'button',
+}: {
+  children: ReactNode;
+  className?: string;
+  disabled?: boolean;
+  onClick?: () => void;
+  type?: 'button' | 'submit';
+}) {
+  return (
+    <button
+      className={cx(
+        'support-primary-action-button inline-flex min-h-10 items-center justify-center gap-2 rounded-[12px] px-4 text-[12px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-55',
+        className,
+      )}
+      disabled={disabled}
+      onClick={onClick}
+      type={type}
+    >
+      {children}
+    </button>
+  );
+}
+
+export function SupportSecondaryActionButton({
+  children,
+  className,
+  disabled = false,
+  onClick,
+  title,
+  type = 'button',
+}: {
+  children: ReactNode;
+  className?: string;
+  disabled?: boolean;
+  onClick?: () => void;
+  title?: string;
+  type?: 'button' | 'submit';
+}) {
+  return (
+    <button
+      className={cx(
+        'support-secondary-action-button inline-flex min-h-9 items-center justify-center gap-2 rounded-[12px] border px-3 text-[11.5px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-55',
+        className,
+      )}
+      disabled={disabled}
+      onClick={onClick}
+      title={title}
+      type={type}
+    >
+      {children}
+    </button>
+  );
+}
+
+export function SupportIconActionButton({
+  children,
+  ariaLabel,
+  className,
+  disabled = false,
+  onClick,
+  title,
+}: {
+  children: ReactNode;
+  ariaLabel: string;
+  className?: string;
+  disabled?: boolean;
+  onClick?: () => void;
+  title?: string;
+}) {
+  return (
+    <button
+      aria-label={ariaLabel}
+      className={cx(
+        'support-icon-action-button inline-flex h-9 w-9 items-center justify-center rounded-[12px] border text-[12px] transition disabled:cursor-not-allowed disabled:opacity-55',
+        className,
+      )}
+      disabled={disabled}
+      onClick={onClick}
+      title={title}
+      type="button"
+    >
+      {children}
+    </button>
+  );
+}
+
+export function SupportSearchInput({
+  icon,
+  onChange,
+  placeholder,
+  value,
+  className,
+}: {
+  icon?: ReactNode;
+  onChange: (value: string) => void;
+  placeholder: string;
+  value: string;
+  className?: string;
+}) {
+  return (
+    <div className={cx('relative min-w-0 flex-1', className)}>
+      {icon ? (
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--color-muted)]">
+          {icon}
+        </span>
+      ) : null}
+      <input
+        className={cx('support-operational-input h-10 w-full', icon ? 'pl-9' : 'pl-3')}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        value={value}
+      />
+    </div>
+  );
+}
+
+export function SupportComposerTextarea({
+  internal = false,
+  onChange,
+  placeholder,
+  value,
+}: {
+  internal?: boolean;
+  onChange: (value: string) => void;
+  placeholder: string;
+  value: string;
+}) {
+  return (
+    <textarea
+      className={cx(
+        'support-composer-textarea',
+        internal && 'support-composer-textarea--internal',
+      )}
+      onChange={(event) => onChange(event.target.value)}
+      placeholder={placeholder}
+      value={value}
+    />
+  );
+}
+
 export function SupportBadge({
   children,
   tone = 'default',
@@ -240,7 +385,7 @@ export function QueueTicketItem({
         className={cx(
           'flex h-4 w-4 items-center justify-center rounded-[4px] border text-[8px] font-bold',
           isSelected
-            ? 'border-[color:var(--color-brand-pink)] bg-[color:var(--color-brand-pink)] text-white'
+            ? 'border-[color:var(--color-brand-blue)] bg-[color:var(--color-brand-blue)] text-white'
             : 'border-[rgba(148,163,184,0.42)] bg-white text-transparent',
         )}
       >
@@ -455,6 +600,105 @@ export function SupportConversationThread({
       ref={scrollRef}
     >
       {children}
+    </div>
+  );
+}
+
+export function SupportConversationMessage({
+  author,
+  avatar,
+  children,
+  meta,
+  attachment,
+  lane,
+}: {
+  author: ReactNode;
+  avatar: ReactNode;
+  children: ReactNode;
+  meta: ReactNode;
+  attachment?: ReactNode;
+  lane: 'customer' | 'agent';
+}) {
+  return (
+    <div className={cx('flex items-end gap-3', lane === 'agent' ? 'justify-end' : 'justify-start')}>
+      {lane === 'customer' ? avatar : null}
+      <div className={cx('min-w-0 max-w-[78%] space-y-1', lane === 'agent' && 'items-end')}>
+        <div
+          className={cx(
+            'flex flex-wrap items-center gap-1.5 px-0.5 text-[10px]',
+            lane === 'agent' ? 'justify-end' : 'justify-start',
+          )}
+        >
+          <p className="font-semibold text-[color:var(--color-ink)]">{author}</p>
+          {meta}
+        </div>
+        <article
+          className={cx(
+            'min-w-0 rounded-[14px] border px-4 py-3 shadow-[0_4px_10px_rgba(19,33,79,0.03)]',
+            lane === 'agent'
+              ? 'border-[rgba(47,107,255,0.2)] bg-[rgba(244,248,255,0.92)]'
+              : 'border-[rgba(220,228,242,0.92)] bg-white',
+          )}
+        >
+          <div className="space-y-1.5">
+            <p className="whitespace-pre-wrap text-[13px] leading-5 text-[color:var(--color-ink)]">
+              {children}
+            </p>
+            {attachment}
+          </div>
+        </article>
+      </div>
+      {lane === 'agent' ? avatar : null}
+    </div>
+  );
+}
+
+export function SupportInternalNote({
+  children,
+  timestamp,
+}: {
+  children: ReactNode;
+  timestamp: ReactNode;
+}) {
+  return (
+    <article className="mx-auto max-w-[86%] rounded-[14px] border border-[rgba(245,184,61,0.34)] bg-[color:var(--color-support-note)] px-4 py-3 shadow-[0_4px_10px_rgba(180,120,34,0.03)]">
+      <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+        <span className="inline-flex min-h-[18px] items-center rounded-full border border-[rgba(245,184,61,0.32)] bg-white/70 px-2 text-[8.5px] font-semibold uppercase tracking-[0.1em] text-[rgb(146,64,14)]">
+          NOTA INTERNA
+        </span>
+        <span className="font-medium text-[rgb(146,64,14)]">Visível apenas para equipe interna</span>
+        <span className="ml-auto text-[color:var(--color-muted)]">{timestamp}</span>
+      </div>
+      <p className="mt-2 whitespace-pre-wrap text-[13px] font-medium leading-5 text-[color:var(--color-ink)]">
+        {children}
+      </p>
+    </article>
+  );
+}
+
+export function SupportSystemEvent({
+  icon,
+  label,
+  summary,
+  timestamp,
+}: {
+  icon: ReactNode;
+  label: ReactNode;
+  summary: ReactNode;
+  timestamp: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2 py-1.5">
+      <div className="h-px flex-1 bg-[rgba(220,228,242,0.92)]" />
+      <div className="inline-flex max-w-[78%] items-center gap-2 rounded-full border border-[color:var(--color-support-border)] bg-[color:var(--color-support-surface)] px-3 py-1.5 text-[10px] text-[color:var(--color-muted)]">
+        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[color:var(--color-brand-blue)]">
+          {icon}
+        </span>
+        <span className="truncate font-semibold text-[color:var(--color-ink)]">{label}</span>
+        <span className="truncate text-[rgba(107,120,146,0.92)]">{summary}</span>
+        <span className="shrink-0">{timestamp}</span>
+      </div>
+      <div className="h-px flex-1 bg-[rgba(220,228,242,0.92)]" />
     </div>
   );
 }

@@ -130,6 +130,13 @@ import {
 import {
   QueueTicketItem,
   EvidenceFileChip,
+  SupportConversationMessage,
+  SupportIconActionButton,
+  SupportInternalNote,
+  SupportPrimaryActionButton,
+  SupportSearchInput,
+  SupportSecondaryActionButton,
+  SupportSystemEvent,
   SupportWorkspaceGrid,
 } from './components/SupportWorkspacePrimitives';
 import { SupportTicketComposerSection } from './components/SupportTicketComposerSection';
@@ -1232,95 +1239,62 @@ function ConversationEntry({
 
   if (lane === 'internal') {
     return (
-      <article className="mx-auto max-w-[86%] rounded-[14px] border border-[rgba(245,184,61,0.34)] bg-[color:var(--color-support-note)] px-4 py-3 shadow-[0_4px_10px_rgba(180,120,34,0.03)]">
-        <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-          <span className="inline-flex min-h-[18px] items-center rounded-full border border-[rgba(245,184,61,0.32)] bg-white/70 px-2 text-[8.5px] font-semibold uppercase tracking-[0.1em] text-[rgb(146,64,14)]">
-            NOTA INTERNA
-          </span>
-          <span className="font-medium text-[rgb(146,64,14)]">Visível apenas para equipe interna</span>
-          <span className="ml-auto text-[color:var(--color-muted)]">{timestamp}</span>
-        </div>
-        <p className="mt-2 whitespace-pre-wrap text-[13px] font-medium leading-5 text-[color:var(--color-ink)]">
-          {summary}
-        </p>
-      </article>
+      <SupportInternalNote timestamp={timestamp}>
+        {summary}
+      </SupportInternalNote>
     );
   }
 
   return (
-      <div
-        className={cx(
-          'flex items-end gap-3',
-          lane === 'agent' ? 'justify-end' : 'justify-start',
-        )}
-      >
-      {lane === 'customer' ? (
-        <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[rgba(47,107,255,0.14)] bg-[rgba(47,107,255,0.08)] text-[12px] font-semibold text-[color:var(--color-brand-blue)]">
-          {avatar}
-        </div>
-      ) : null}
-
-      <div
-        className={cx(
-          'min-w-0 max-w-[78%] space-y-1',
-          lane === 'agent' && 'items-end',
-        )}
-      >
+    <SupportConversationMessage
+      author={author}
+      avatar={
         <div
           className={cx(
-            'flex flex-wrap items-center gap-1.5 px-0.5 text-[10px]',
-            lane === 'agent' ? 'justify-end' : 'justify-start',
+            'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-[12px] font-semibold',
+            lane === 'agent'
+              ? 'border-[rgba(240,74,174,0.22)] bg-[rgba(240,74,174,0.08)] text-[color:var(--color-brand-pink)]'
+              : 'border-[rgba(47,107,255,0.14)] bg-[rgba(47,107,255,0.08)] text-[color:var(--color-brand-blue)]',
           )}
         >
-          <p className="font-semibold text-[color:var(--color-ink)]">{author}</p>
+          {avatar}
+        </div>
+      }
+      attachment={
+        attachment ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-[color:var(--color-support-border)] bg-white/92 px-3 py-2 text-[11px]">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[9px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-brand-blue)]">
+                <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="attachment" />
+              </span>
+              <p className="truncate font-medium text-[color:var(--color-ink)]">
+                {attachment.name}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {attachment.sizeLabel ? (
+                <span className="shrink-0 text-[10px] text-[color:var(--color-muted)]">
+                  {attachment.sizeLabel}
+                </span>
+              ) : null}
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[color:var(--color-border)] text-[color:var(--color-muted)]">
+                <SupportSurfaceIcon className="h-[11px] w-[11px]" kind="open" />
+              </span>
+            </div>
+          </div>
+        ) : null
+      }
+      lane={lane === 'agent' ? 'agent' : 'customer'}
+      meta={
+        <>
           <span className="text-[color:var(--color-muted)]">•</span>
           <span className="text-[color:var(--color-muted)]">{label}</span>
           <span className="text-[color:var(--color-muted)]">{timestamp}</span>
-        </div>
-        <article
-          className={cx(
-            'min-w-0 rounded-[14px] border px-4 py-3 shadow-[0_4px_10px_rgba(19,33,79,0.03)]',
-            lane === 'agent'
-              ? 'border-[rgba(47,107,255,0.2)] bg-[rgba(244,248,255,0.92)]'
-              : 'border-[rgba(220,228,242,0.92)] bg-white',
-          )}
-        >
-          <div className="space-y-1.5">
-            <p className="whitespace-pre-wrap text-[13px] leading-5 text-[color:var(--color-ink)]">
-              {summary}
-            </p>
-            {attachment ? (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-[color:var(--color-support-border)] bg-white/92 px-3 py-2 text-[11px]">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[9px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-brand-blue)]">
-                    <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="attachment" />
-                  </span>
-                  <p className="truncate font-medium text-[color:var(--color-ink)]">
-                    {attachment.name}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {attachment.sizeLabel ? (
-                    <span className="shrink-0 text-[10px] text-[color:var(--color-muted)]">
-                      {attachment.sizeLabel}
-                    </span>
-                  ) : null}
-                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[color:var(--color-border)] text-[color:var(--color-muted)]">
-                    <SupportSurfaceIcon className="h-[11px] w-[11px]" kind="open" />
-                  </span>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </article>
-      </div>
-
-      {lane === 'agent' ? (
-        <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[rgba(240,74,174,0.22)] bg-[rgba(240,74,174,0.08)] text-[12px] font-semibold text-[color:var(--color-brand-pink)]">
-          {avatar}
-        </div>
-      ) : null}
-    </div>
+        </>
+      }
+    >
+      {summary}
+    </SupportConversationMessage>
   );
 }
 
@@ -1355,20 +1329,12 @@ function ConversationEventEntry({
   entry: SupportTicketTimelineItem;
 }) {
   return (
-    <div className="flex items-center gap-2 py-1.5">
-      <div className="h-px flex-1 bg-[rgba(220,228,242,0.92)]" />
-      <div className="inline-flex max-w-[78%] items-center gap-2 rounded-full border border-[color:var(--color-support-border)] bg-[color:var(--color-support-surface)] px-3 py-1.5 text-[10px] text-[color:var(--color-muted)]">
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[color:var(--color-brand-blue)]">
-          <SupportSurfaceIcon className="h-[10px] w-[10px]" kind="ticket" />
-        </span>
-        <span className="truncate font-semibold text-[color:var(--color-ink)]">
-          {humanizeTicketEventLabel(entry.eventType)}
-        </span>
-        <span className="truncate text-[rgba(107,120,146,0.92)]">{summarizeTimelineEvent(entry)}</span>
-        <span className="shrink-0">{formatDateTime(entry.occurredAt)}</span>
-      </div>
-      <div className="h-px flex-1 bg-[rgba(220,228,242,0.92)]" />
-    </div>
+    <SupportSystemEvent
+      icon={<SupportSurfaceIcon className="h-[10px] w-[10px]" kind="ticket" />}
+      label={humanizeTicketEventLabel(entry.eventType)}
+      summary={summarizeTimelineEvent(entry)}
+      timestamp={formatDateTime(entry.occurredAt)}
+    />
   );
 }
 
@@ -4808,9 +4774,17 @@ function SupportWorkspaceView({
     const defaultRail = (
       <SupportTicketRightRail
         assignedLabel={currentAssignedLabel}
+        categoryLabel={detail.categoryName ?? 'Indisponível'}
+        customerDocumentLabel={customerDocumentLabel ?? 'Indisponível'}
         priorityIndicator={<span className="text-[color:var(--color-brand-pink)]">↑</span>}
         priorityLabel={humanizePriority(detail.priority)}
         quickActions={quickActions}
+        relatedArticles={filteredKnowledgeArticles.slice(0, 3).map((article) => ({
+          id: article.articleId,
+          title: article.articleTitle,
+          summary: article.articleSummary,
+        }))}
+        requesterLabel={requesterLabel}
         resolutionDueLabel={detail.resolutionDueAt ? formatDateTime(detail.resolutionDueAt) : 'Indisponível'}
         slaDueLabel={slaDueAt ? formatDateTime(slaDueAt) : 'Indisponível'}
         slaPolicyName={detail.slaPolicyName ?? 'Fallback interno'}
@@ -4823,6 +4797,7 @@ function SupportWorkspaceView({
         slaReference={detail.slaReference || 'Governança interna urgente'}
         slaRemainingLabel={formatRemainingTimeLabel(slaDueAt)}
         sourceBadge={<CompactSupportPill>{humanizeSource(detail.source)}</CompactSupportPill>}
+        statusLabel={compactTicketStatusLabel(detail.status)}
         tenantLabel={detail.tenantDisplayName ?? detail.tenantLegalName ?? detail.tenantSlug}
       />
     );
@@ -5102,9 +5077,12 @@ function SupportWorkspaceView({
                     </>
                   }
                   menuAction={
-                    <GhostButton className="min-h-8 min-w-8 rounded-[10px] px-0 text-[12px]" type="button">
+                    <SupportIconActionButton
+                      ariaLabel="Mais ações do ticket"
+                      className="h-8 w-8 rounded-[10px]"
+                    >
                       <SupportSurfaceIcon className="h-[13px] w-[13px]" kind="more" />
-                    </GhostButton>
+                    </SupportIconActionButton>
                   }
                   ticketCode={supportTicketCode(detail.id)}
                   title={detail.title}
@@ -5200,21 +5178,18 @@ function SupportWorkspaceView({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <AppButton
-                className="min-h-9 rounded-[12px] px-4 text-[12px]"
+              <SupportPrimaryActionButton
+                className="min-h-9 px-4"
                 onClick={() => void navigate('/support/queue')}
-                type="button"
               >
                 Novo ticket
-              </AppButton>
-              <GhostButton
-                aria-label="Notificações indisponíveis nesta etapa"
-                className="min-h-9 min-w-9 rounded-[12px] px-0 text-[12px]"
+              </SupportPrimaryActionButton>
+              <SupportIconActionButton
+                ariaLabel="Notificações indisponíveis nesta etapa"
                 disabled
-                type="button"
               >
                 <SupportSurfaceIcon className="h-[14px] w-[14px]" kind="bell" />
-              </GhostButton>
+              </SupportIconActionButton>
             </div>
           </div>
         </section>
@@ -5233,8 +5208,7 @@ function SupportWorkspaceView({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <AppButton
-                className="min-h-10 rounded-[14px] bg-[color:var(--color-brand-pink)] px-4 text-[13px] font-semibold"
+              <SupportPrimaryActionButton
                 disabled={!canOpenIntake}
                 onClick={() => {
                   setShowCreateTicket((current) => !current);
@@ -5248,13 +5222,12 @@ function SupportWorkspaceView({
                 }}
               >
                 {showCreateTicket ? 'Fechar intake' : intakeActionLabel}
-              </AppButton>
-              <GhostButton
-                className="min-h-10 rounded-[14px] px-4 text-[13px] font-semibold"
+              </SupportPrimaryActionButton>
+              <SupportSecondaryActionButton
                 onClick={() => void loadQueue(focusTicketId ?? null)}
               >
                 Recarregar
-              </GhostButton>
+              </SupportSecondaryActionButton>
             </div>
           </div>
         </section>
@@ -5271,16 +5244,16 @@ function SupportWorkspaceView({
       ) : null}
 
       {variant === 'queue' ? (
-        <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(280px,296px)_minmax(0,1fr)_minmax(304px,332px)]">
+        <div className="grid gap-3 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(236px,260px)_minmax(0,1fr)_minmax(320px,352px)]">
           <aside className="grid min-h-0 gap-4 xl:grid-rows-[auto_minmax(0,1fr)]">
-            <section className="rounded-[20px] border border-[rgba(220,228,242,0.96)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.06)]">
+            <section className="rounded-[16px] border border-[rgba(220,228,242,0.96)] bg-white px-3.5 py-3.5 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
               <div className="flex items-center justify-between gap-3">
                 <div className="space-y-1">
-                  <h2 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                    Triagem da fila
+                  <h2 className="text-[0.95rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                    Filtros rápidos
                   </h2>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
-                    Filas rápidas
+                    Operação da fila
                   </p>
                 </div>
                 <SupportSurfaceIcon className="h-4 w-4 text-[rgba(107,120,146,0.8)]" kind="filter" />
@@ -5290,7 +5263,7 @@ function SupportWorkspaceView({
                 {queueShortcuts.map((shortcut) => (
                   <button
                     className={cx(
-                      'flex items-center justify-between gap-3 rounded-[14px] border px-3 py-2 text-left transition',
+                      'flex items-center justify-between gap-3 rounded-[12px] border px-2.5 py-2 text-left transition',
                       shortcut.active
                         ? 'border-[rgba(47,107,255,0.34)] bg-[rgba(47,107,255,0.06)] text-[color:var(--color-brand-blue)]'
                         : 'border-[rgba(220,228,242,0.92)] bg-white text-[color:var(--color-ink)] hover:border-[rgba(47,107,255,0.24)]',
@@ -5320,7 +5293,7 @@ function SupportWorkspaceView({
               </div>
 
               <button
-                className="mt-3 inline-flex items-center text-[12px] font-semibold text-[color:var(--color-brand-blue)]"
+                className="mt-3 inline-flex min-h-8 items-center rounded-[10px] border border-[rgba(47,107,255,0.16)] bg-[rgba(47,107,255,0.04)] px-2.5 text-[11.5px] font-semibold text-[color:var(--color-brand-blue)]"
                 onClick={() => setFilters(emptyFilters())}
                 type="button"
               >
@@ -5328,11 +5301,11 @@ function SupportWorkspaceView({
               </button>
             </section>
 
-            <section className="min-h-0 rounded-[20px] border border-[rgba(220,228,242,0.96)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.06)] xl:flex xl:flex-col xl:overflow-hidden">
+            <section className="min-h-0 rounded-[16px] border border-[rgba(220,228,242,0.96)] bg-white px-3.5 py-3.5 shadow-[0_8px_18px_rgba(19,33,79,0.05)] xl:flex xl:flex-col xl:overflow-hidden">
               <div className="flex items-center justify-between gap-3">
                 <div className="space-y-1">
-                  <h2 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">Filtros</h2>
-                  <p className="text-[11px] leading-4 text-[color:var(--color-muted)]">Recorte real da fila.</p>
+                  <h2 className="text-[0.95rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">Recorte</h2>
+                  <p className="text-[11px] leading-4 text-[color:var(--color-muted)]">Filtros do contrato real.</p>
                 </div>
                 <button
                   className="text-[11px] font-semibold text-[color:var(--color-brand-blue)]"
@@ -5464,7 +5437,7 @@ function SupportWorkspaceView({
               </div>
 
               <button
-                className="mt-3 inline-flex min-h-10 items-center justify-center rounded-[12px] border border-[rgba(240,74,174,0.26)] px-3 text-[13px] font-semibold text-[color:var(--color-brand-pink)]"
+                className="mt-3 inline-flex min-h-9 items-center justify-center rounded-[12px] border border-[rgba(47,107,255,0.22)] px-3 text-[12px] font-semibold text-[color:var(--color-brand-blue)]"
                 onClick={() => setFilters(emptyFilters())}
                 type="button"
               >
@@ -5474,34 +5447,31 @@ function SupportWorkspaceView({
           </aside>
 
           <div className="xl:min-h-0 xl:flex xl:flex-col xl:overflow-hidden">
-            <section className="rounded-[20px] border border-[rgba(220,228,242,0.96)] bg-white shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-1 xl:flex-col xl:overflow-hidden">
-              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-4 py-3">
-                <div className="relative min-w-0 flex-1 max-w-[460px]">
-                  <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[color:var(--color-muted)]">
-                    <SupportSurfaceIcon className="h-[14px] w-[14px]" kind="search" />
-                  </span>
-                  <TextInput
-                    className="h-10 rounded-[13px] border-[rgba(220,228,242,0.96)] bg-[rgba(244,247,252,0.72)] pl-10 pr-3.5 text-[13px] placeholder:text-[rgba(107,120,146,0.72)]"
-                    onChange={(event) => setTicketInboxSearch(event.target.value)}
-                    placeholder="Buscar por ticket, assunto ou cliente..."
-                    value={ticketInboxSearch}
-                  />
-                </div>
+            <section className="rounded-[16px] border border-[rgba(220,228,242,0.96)] bg-white shadow-[0_8px_20px_rgba(19,33,79,0.06)] xl:flex xl:min-h-0 xl:flex-1 xl:flex-col xl:overflow-hidden">
+              <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-4 py-3">
+                <SupportSearchInput
+                  className="max-w-[520px]"
+                  icon={<SupportSurfaceIcon className="h-[14px] w-[14px]" kind="search" />}
+                  onChange={setTicketInboxSearch}
+                  placeholder="Buscar por ticket, assunto ou cliente..."
+                  value={ticketInboxSearch}
+                />
 
                 <div className="flex shrink-0 items-center gap-2">
+                  <span className="inline-flex min-h-9 items-center rounded-[12px] border border-[rgba(220,228,242,0.96)] bg-[rgba(244,247,252,0.8)] px-3 text-[11.5px] font-semibold text-[color:var(--color-muted)]">
+                    Visão salva: Padrão
+                  </span>
                   {selectedQueueTicket ? (
                     <span className="inline-flex min-h-9 items-center rounded-[12px] border border-[rgba(47,107,255,0.22)] bg-[rgba(47,107,255,0.08)] px-3 text-[11.5px] font-semibold text-[color:var(--color-brand-blue)]">
                       1 selecionado
                     </span>
                   ) : null}
-                  <button
-                    aria-label="Mais ações da fila"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-[12px] border border-[rgba(220,228,242,0.92)] text-[color:var(--color-muted)] disabled:cursor-not-allowed"
+                  <SupportIconActionButton
+                    ariaLabel="Mais ações da fila"
                     disabled
-                    type="button"
                   >
                     <SupportSurfaceIcon className="h-[14px] w-[14px]" kind="more" />
-                  </button>
+                  </SupportIconActionButton>
                 </div>
               </div>
 
@@ -5548,15 +5518,15 @@ function SupportWorkspaceView({
             </section>
           </div>
 
-          <section className="rounded-[20px] border border-[rgba(220,228,242,0.96)] bg-white px-3.5 py-3.5 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+          <section className="rounded-[16px] border border-[rgba(220,228,242,0.96)] bg-white px-3.5 py-3.5 shadow-[0_8px_20px_rgba(19,33,79,0.06)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
             <div className="mb-3 space-y-1">
               <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                {showCreateTicket ? 'Intake operacional' : 'Preview do ticket'}
+                {showCreateTicket ? 'Intake operacional' : 'Contexto do ticket'}
               </h2>
               <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
                 {showCreateTicket
                   ? 'Abra o ticket com tenant explicito, origem contratual e trilha auditavel.'
-                  : 'Contexto operacional do ticket selecionado.'}
+                  : 'Resumo, contato, SLA e ações rápidas do ticket selecionado.'}
               </p>
             </div>
             {showCreateTicket ? (

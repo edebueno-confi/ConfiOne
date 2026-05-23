@@ -20,6 +20,8 @@ export function SupportTicketRightRail({
   sourceBadge,
   priorityLabel,
   priorityIndicator,
+  statusLabel,
+  categoryLabel,
   slaReference,
   slaPolicyName,
   slaRemainingLabel,
@@ -29,11 +31,16 @@ export function SupportTicketRightRail({
   slaPriorityBadge,
   resolutionDueLabel,
   slaDueLabel,
+  requesterLabel,
+  customerDocumentLabel,
+  relatedArticles = [],
 }: {
   tenantLabel: string;
   sourceBadge: ReactNode;
   priorityLabel: string;
   priorityIndicator?: ReactNode;
+  statusLabel: string;
+  categoryLabel: string;
   slaReference: string;
   slaPolicyName: string;
   slaRemainingLabel: string;
@@ -43,6 +50,13 @@ export function SupportTicketRightRail({
   slaPriorityBadge: ReactNode;
   resolutionDueLabel: string;
   slaDueLabel: string;
+  requesterLabel: string;
+  customerDocumentLabel: string;
+  relatedArticles?: Array<{
+    id: string;
+    title: string;
+    summary?: string | null;
+  }>;
 }) {
   return (
     <SupportRightRail>
@@ -66,6 +80,9 @@ export function SupportTicketRightRail({
               </div>
             }
           />
+          <SupportSummaryRow label="Status" value={statusLabel} />
+          <SupportSummaryRow label="Categoria" value={categoryLabel} />
+          <SupportSummaryRow label="Responsável" value={assignedLabel} />
           <SupportSummaryRow
             label="SLA interno"
             value={
@@ -80,7 +97,6 @@ export function SupportTicketRightRail({
               </div>
             }
           />
-          <SupportSummaryRow label="Responsável" value={assignedLabel} />
         </SupportTicketSummaryCard>
       </SupportRailCard>
 
@@ -117,6 +133,36 @@ export function SupportTicketRightRail({
             <span className="text-[10.5px] font-semibold text-[color:var(--color-muted)]">{slaProgress}%</span>
           </div>
         </div>
+      </SupportRailCard>
+
+      {relatedArticles.length > 0 ? (
+        <SupportRailCard title="Artigos relacionados">
+          <div className="space-y-3">
+            {relatedArticles.slice(0, 3).map((article) => (
+              <article
+                className="rounded-[12px] border border-[color:var(--color-support-border)] bg-[color:var(--color-support-surface)] px-3 py-2.5"
+                key={article.id}
+              >
+                <p className="line-clamp-2 text-[11.5px] font-semibold leading-4 text-[color:var(--color-ink)]">
+                  {article.title}
+                </p>
+                {article.summary ? (
+                  <p className="mt-1 line-clamp-2 text-[10.5px] leading-4 text-[color:var(--color-muted)]">
+                    {article.summary}
+                  </p>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        </SupportRailCard>
+      ) : null}
+
+      <SupportRailCard title="Cliente / Conta">
+        <SupportTicketSummaryCard>
+          <SupportSummaryRow label="Cliente" value={tenantLabel} />
+          <SupportSummaryRow label="Contato" value={requesterLabel} />
+          <SupportSummaryRow label="Documento" value={customerDocumentLabel} />
+        </SupportTicketSummaryCard>
       </SupportRailCard>
     </SupportRightRail>
   );

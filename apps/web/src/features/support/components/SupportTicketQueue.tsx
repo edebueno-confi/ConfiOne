@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react';
-import { GhostButton, TextInput, cx } from '../../../components/ui';
-import { SupportQueuePanel } from './SupportWorkspacePrimitives';
+import { cx } from '../../../components/ui';
+import {
+  SupportIconActionButton,
+  SupportQueuePanel,
+  SupportSearchInput,
+} from './SupportWorkspacePrimitives';
 
 export interface SupportTicketQueueTab {
   key: string;
@@ -59,25 +63,25 @@ export function SupportTicketQueue({
         <div className="flex items-center justify-between gap-2 text-[10.5px] text-[color:var(--color-muted)]">
           <span>{pageLabel}</span>
           <div className="flex items-center gap-1.5">
-            <GhostButton
-              className="min-h-7 min-w-7 rounded-[10px] px-0 text-[12px]"
+            <SupportIconActionButton
+              ariaLabel="Página anterior da fila"
+              className="h-7 w-7 rounded-[10px]"
               disabled={!canGoPrevious}
               onClick={onPreviousPage}
-              type="button"
             >
               ‹
-            </GhostButton>
+            </SupportIconActionButton>
             <span className="min-w-[3ch] text-center font-semibold text-[color:var(--color-ink)]">
               {currentPageLabel}
             </span>
-            <GhostButton
-              className="min-h-7 min-w-7 rounded-[10px] px-0 text-[12px]"
+            <SupportIconActionButton
+              ariaLabel="Próxima página da fila"
+              className="h-7 w-7 rounded-[10px]"
               disabled={!canGoNext}
               onClick={onNextPage}
-              type="button"
             >
               ›
-            </GhostButton>
+            </SupportIconActionButton>
           </div>
         </div>
       }
@@ -94,26 +98,20 @@ export function SupportTicketQueue({
             </div>
           </div>
           <div className="support-queue-search-row mt-3">
-            <div className="relative min-w-0 flex-1">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--color-muted)]">
-                {searchIcon}
-              </span>
-              <TextInput
-                className="h-10 rounded-[12px] border-[color:var(--color-support-border)] bg-[color:var(--color-support-surface)] pl-9 text-[12px]"
-                onChange={(event) => onSearchChange(event.target.value)}
-                placeholder="Buscar tickets..."
-                value={search}
-              />
-            </div>
-            <GhostButton
-              aria-label="Limpar busca e filtros rápidos"
-              className="min-h-10 min-w-10 rounded-[12px] px-0 text-[12px]"
+            <SupportSearchInput
+              icon={searchIcon}
+              onChange={onSearchChange}
+              placeholder="Buscar tickets..."
+              value={search}
+            />
+            <SupportIconActionButton
+              ariaLabel="Limpar busca e filtros rápidos"
+              className="h-10 w-10"
               onClick={onReset}
               title="Limpar busca e filtros rápidos"
-              type="button"
             >
               {filterIcon}
-            </GhostButton>
+            </SupportIconActionButton>
           </div>
           <div className="support-queue-segmented mt-3" role="tablist" aria-label="Escopo da fila">
             <button

@@ -1,6 +1,11 @@
 import type { FormEventHandler, ReactNode } from 'react';
-import { AppButton, GhostButton, TextareaInput, cx } from '../../../components/ui';
-import { SupportComposer } from './SupportWorkspacePrimitives';
+import { cx } from '../../../components/ui';
+import {
+  SupportComposer,
+  SupportComposerTextarea,
+  SupportPrimaryActionButton,
+  SupportSecondaryActionButton,
+} from './SupportWorkspacePrimitives';
 
 export function SupportTicketComposerSection({
   composerMode,
@@ -61,14 +66,9 @@ export function SupportTicketComposerSection({
           </button>
         </div>
         <div className="rounded-[16px] border border-[color:var(--color-support-border)] bg-white px-3 py-3">
-          <TextareaInput
-            className={cx(
-              'min-h-[84px] w-full resize-none overflow-hidden rounded-[12px] border px-3 py-3 text-[13px] leading-5 shadow-none focus:ring-0',
-              composerMode === 'internal'
-                ? 'border-amber-200 bg-[color:var(--color-support-note)] placeholder:text-[rgba(125,92,13,0.7)]'
-                : 'border-[color:var(--color-support-border)] bg-white',
-            )}
-            onChange={(event) => onComposerDraftChange(event.target.value)}
+          <SupportComposerTextarea
+            internal={composerMode === 'internal'}
+            onChange={onComposerDraftChange}
             placeholder={
               composerMode === 'public'
                 ? 'Digite sua resposta para o cliente...'
@@ -96,22 +96,19 @@ export function SupportTicketComposerSection({
               ))}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <GhostButton
-                className="min-h-9 rounded-[12px] px-3 text-[11px]"
+              <SupportSecondaryActionButton
                 onClick={onOpenEvidenceSurface}
-                type="button"
               >
                 <span className="inline-flex items-center gap-1.5">
                   {attachmentIcon}
                   Anexar evidência
                 </span>
-              </GhostButton>
-              <AppButton
+              </SupportSecondaryActionButton>
+              <SupportPrimaryActionButton
                 className={cx(
-                  'min-h-10 rounded-[12px] px-4 text-[12px] text-white disabled:opacity-60',
                   composerMode === 'internal'
-                    ? 'bg-[linear-gradient(135deg,#9a5d12,#f5b83d)] shadow-[0_10px_18px_rgba(245,184,61,0.22)]'
-                    : 'bg-[color:var(--color-brand-blue)] shadow-[0_12px_20px_rgba(47,107,255,0.18)]',
+                    ? 'support-primary-action-button--internal'
+                    : 'support-primary-action-button--public',
                 )}
                 disabled={composerDisabled}
                 type="submit"
@@ -123,7 +120,7 @@ export function SupportTicketComposerSection({
                   : composerMode === 'public'
                     ? 'Enviar resposta'
                     : 'Salvar nota'}
-              </AppButton>
+              </SupportPrimaryActionButton>
             </div>
           </div>
         </div>
