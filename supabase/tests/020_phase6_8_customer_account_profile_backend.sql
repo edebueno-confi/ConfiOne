@@ -2,7 +2,7 @@ create extension if not exists pgtap with schema extensions;
 
 begin;
 
-select plan(26);
+select plan(35);
 
 insert into auth.users (
   instance_id,
@@ -214,6 +214,17 @@ select ok(
 );
 
 select ok(
+  has_table_privilege('authenticated', 'public.vw_admin_customer_account_profile_detail', 'SELECT')
+  and has_table_privilege('authenticated', 'public.vw_admin_customer_account_integrations', 'SELECT')
+  and has_table_privilege('authenticated', 'public.vw_admin_customer_account_customizations', 'SELECT')
+  and has_table_privilege('authenticated', 'public.vw_admin_customer_account_alerts', 'SELECT')
+  and has_table_privilege('authenticated', 'public.vw_admin_customer_account_features', 'SELECT')
+  and has_table_privilege('authenticated', 'public.vw_support_customers_list', 'SELECT')
+  and has_table_privilege('authenticated', 'public.vw_support_customer_detail', 'SELECT'),
+  'authenticated recebe SELECT nas views operacionais de customer account sem acesso as tabelas base'
+);
+
+select ok(
   not has_table_privilege('authenticated', 'public.customer_account_profiles', 'SELECT')
   and not has_table_privilege('authenticated', 'public.customer_account_integrations', 'SELECT')
   and not has_table_privilege('authenticated', 'public.customer_account_features', 'SELECT')
@@ -381,6 +392,18 @@ select is(
   'view administrativa agrega features habilitadas do tenant'
 );
 
+select is(
+  (
+    select count(*)::integer
+    from public.vw_admin_customer_account_profile_detail
+    where tenant_id = '11111111-1111-4111-8111-111111111111'::uuid
+      and product_line = 'genius_returns'::public.customer_product_line
+      and can_update_profile
+  ),
+  1,
+  'view administrativa dedicada expõe detalhe governado do profile para platform_admin'
+);
+
 reset role;
 reset request.jwt.claim.role;
 reset request.jwt.claim.sub;
@@ -416,6 +439,15 @@ select is(
   ),
   0,
   'support_manager nao enxerga a view administrativa do dominio'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.vw_admin_customer_account_profile_detail
+  ),
+  0,
+  'support_manager nao enxerga as views administrativas dedicadas do customer account'
 );
 
 reset role;
@@ -544,11 +576,97 @@ select ok(
 
 select lives_ok(
   $$
+    select public.rpc_admin_update_customer_account_alert(
+      (
+        select id
+        from public.vw_admin_customer_account_alerts
+        where tenant_id = '11111111-1111-4111-8111-111111111111'::uuid
+        order by created_at desc
+        limit 1
+      ),
+      'high'::public.customer_alert_severity,
+      'Janela de ERP criticamente reduzida',
+      'Operacao deve confirmar disponibilidade antes de prometer retorno ao cliente.',
+      true,
+      timezone('utc', now()) + interval '3 days'
+    )
+  $$,
+  'platform_admin atualiza alerta operacional por RPC dedicada'
+);
+
+select is(
+  (
+    select severity::text
+    from public.vw_admin_customer_account_alerts
+    where tenant_id = '11111111-1111-4111-8111-111111111111'::uuid
+      and title = 'Janela de ERP criticamente reduzida'
+    limit 1
+  ),
+  'high',
+  'view administrativa reflete update governado de alerta'
+);
+
+select lives_ok(
+  $$
+    select public.rpc_admin_archive_customer_integration(
+      (
+        select id
+        from public.vw_admin_customer_account_integrations
+        where tenant_id = '11111111-1111-4111-8111-111111111111'::uuid
+        order by created_at desc
+        limit 1
+      )
+    )
+  $$,
+  'platform_admin arquiva integracao operacional sem delete fisico'
+);
+
+select is(
+  (
+    select status::text
+    from public.vw_admin_customer_account_integrations
+    where tenant_id = '11111111-1111-4111-8111-111111111111'::uuid
+    limit 1
+  ),
+  'disabled',
+  'archive de integracao aplica status disabled auditavel'
+);
+
+select lives_ok(
+  $$
+    select public.rpc_admin_archive_customer_customization(
+      (
+        select id
+        from public.vw_admin_customer_account_customizations
+        where tenant_id = '11111111-1111-4111-8111-111111111111'::uuid
+        order by created_at desc
+        limit 1
+      )
+    )
+  $$,
+  'platform_admin arquiva customizacao operacional sem delete fisico'
+);
+
+select is(
+  (
+    select status
+    from public.vw_admin_customer_account_customizations
+    where tenant_id = '11111111-1111-4111-8111-111111111111'::uuid
+    limit 1
+  ),
+  'archived',
+  'archive de customizacao aplica status archived auditavel'
+);
+
+select lives_ok(
+  $$
     select public.rpc_admin_archive_customer_account_alert(
       (
-        select (alerts -> 0 ->> 'id')::uuid
-        from public.vw_admin_customer_account_profiles
+        select id
+        from public.vw_admin_customer_account_alerts
         where tenant_id = '11111111-1111-4111-8111-111111111111'::uuid
+        order by created_at desc
+        limit 1
       )
     )
   $$,

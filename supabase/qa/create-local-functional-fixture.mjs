@@ -612,6 +612,39 @@ function querySummary({ tenantId, ticketId, actionIds }) {
         order by ewi.created_at desc
         limit 1
       ),
+      'customer_account', (
+        select jsonb_build_object(
+          'profile_id', profile.id,
+          'product_line', profile.product_line,
+          'operational_status', profile.operational_status,
+          'account_tier', profile.account_tier,
+          'integrations_count', (
+            select count(*)::integer
+            from public.customer_account_integrations as integration
+            where integration.tenant_id = profile.tenant_id
+          ),
+          'features_count', (
+            select count(*)::integer
+            from public.customer_account_features as feature
+            where feature.tenant_id = profile.tenant_id
+              and feature.enabled
+          ),
+          'customizations_count', (
+            select count(*)::integer
+            from public.customer_account_customizations as customization
+            where customization.tenant_id = profile.tenant_id
+              and customization.status = 'active'
+          ),
+          'alerts_count', (
+            select count(*)::integer
+            from public.customer_account_alerts as alert
+            where alert.tenant_id = profile.tenant_id
+              and alert.active
+          )
+        )
+        from public.customer_account_profiles as profile
+        where profile.tenant_id = '${sqlEscape(tenantId)}'::uuid
+      ),
       'articles', jsonb_build_object(
         'public_published_slug', 'como-compartilhar-evidencias-em-um-ticket',
         'internal_slug', 'erp-diagnostico-interno-webhook',
