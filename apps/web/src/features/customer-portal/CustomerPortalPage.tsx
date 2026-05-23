@@ -781,8 +781,8 @@ export function CustomerPortalHomePage() {
               Acompanhe seus tickets autorizados
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--color-muted)]">
-              Este portal mostra somente dados do seu tenant, sem contexto interno de suporte,
-              engenharia, auditoria ou rascunhos de Knowledge.
+              Este portal mostra somente as informações autorizadas da sua conta e dos seus
+              atendimentos.
             </p>
           </div>
           <Link to="/portal/tickets">
@@ -2133,7 +2133,7 @@ export function CustomerPortalTicketPage() {
 
         <Panel
           title="Timeline"
-          description="Somente mensagens e eventos visíveis para o cliente. Eventos internos e engenharia não são expostos aqui."
+          description="Somente mensagens e atualizações liberadas para acompanhamento do cliente aparecem aqui."
           className="mt-5"
         >
           {timeline.length === 0 ? (

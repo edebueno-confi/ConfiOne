@@ -79,6 +79,9 @@ import {
   listAdminMemberships,
   listAdminTenants,
   setCustomerAccountFeatureFlag,
+  updateCustomerAccountAlert,
+  updateCustomerAccountCustomization,
+  updateCustomerAccountIntegration,
   updateTenantContact,
   updateTenantStatus,
   upsertCustomerAccountProfile,
@@ -247,6 +250,39 @@ function buildAccountProfileForm(
     financialAttentionRequired: flags.financial_attention_required === true,
     restrictedSupportWindow: flags.restricted_support_window === true,
     integrationSensitiveAccount: flags.integration_sensitive_account === true,
+  };
+}
+
+function buildAccountIntegrationForm(
+  integration: AdminCustomerAccountIntegration,
+): AccountIntegrationFormState {
+  return {
+    integrationType: integration.integrationType,
+    provider: integration.provider,
+    status: integration.status,
+    environment: integration.environment,
+    notes: integration.notes ?? '',
+  };
+}
+
+function buildAccountCustomizationForm(
+  customization: AdminCustomerAccountCustomization,
+): AccountCustomizationFormState {
+  return {
+    title: customization.title,
+    description: customization.description,
+    riskLevel: customization.riskLevel,
+    operationalNote: customization.operationalNote ?? '',
+    status: customization.status,
+  };
+}
+
+function buildAccountAlertForm(alert: AdminCustomerAccountAlert): AccountAlertFormState {
+  return {
+    severity: alert.severity,
+    title: alert.title,
+    description: alert.description,
+    expiresAt: alert.expiresAt ?? '',
   };
 }
 
@@ -614,6 +650,9 @@ export function TenantsPage() {
     useState<AccountAlertFormState>(emptyAccountAlertForm);
   const [accountFeatureForm, setAccountFeatureForm] =
     useState<AccountFeatureFormState>(emptyAccountFeatureForm);
+  const [editingIntegrationId, setEditingIntegrationId] = useState<string | null>(null);
+  const [editingCustomizationId, setEditingCustomizationId] = useState<string | null>(null);
+  const [editingAlertId, setEditingAlertId] = useState<string | null>(null);
   const [accountSubmittingKey, setAccountSubmittingKey] = useState<string | null>(null);
   const [accountMessage, setAccountMessage] = useState<string | null>(null);
   const deferredQuery = useDeferredValue(query);
@@ -708,6 +747,12 @@ export function TenantsPage() {
         features,
       });
       setAccountProfileForm(buildAccountProfileForm(accountProfile));
+      setAccountIntegrationForm(emptyAccountIntegrationForm());
+      setAccountCustomizationForm(emptyAccountCustomizationForm());
+      setAccountAlertForm(emptyAccountAlertForm());
+      setEditingIntegrationId(null);
+      setEditingCustomizationId(null);
+      setEditingAlertId(null);
       setDetailPhase('ready');
       setStatusDraft(detail.status);
     } catch (error) {
@@ -1073,63 +1118,115 @@ export function TenantsPage() {
     });
   }
 
-  async function handleAddAccountIntegration(event: FormEvent<HTMLFormElement>) {
+  async function handleSaveAccountIntegration(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!selectedTenantId) {
       return;
     }
 
-    await runAccountAction('integration:add', async () => {
-      await addCustomerAccountIntegration({
-        p_tenant_id: selectedTenantId,
-        p_integration_type: accountIntegrationForm.integrationType,
-        p_provider: accountIntegrationForm.provider.trim(),
-        p_status: accountIntegrationForm.status,
-        p_environment: accountIntegrationForm.environment,
-        p_notes: normalizeOptionalText(accountIntegrationForm.notes),
-      });
+    await runAccountAction(
+      editingIntegrationId ? `integration:${editingIntegrationId}:update` : 'integration:add',
+      async () => {
+        if (editingIntegrationId) {
+          await updateCustomerAccountIntegration({
+            p_integration_id: editingIntegrationId,
+            p_status: accountIntegrationForm.status,
+            p_environment: accountIntegrationForm.environment,
+            p_notes: normalizeOptionalText(accountIntegrationForm.notes),
+          });
+        } else {
+          await addCustomerAccountIntegration({
+            p_tenant_id: selectedTenantId,
+            p_integration_type: accountIntegrationForm.integrationType,
+            p_provider: accountIntegrationForm.provider.trim(),
+            p_status: accountIntegrationForm.status,
+            p_environment: accountIntegrationForm.environment,
+            p_notes: normalizeOptionalText(accountIntegrationForm.notes),
+          });
+        }
+
+        setEditingIntegrationId(null);
+      },
+    );
+    if (!editingIntegrationId) {
       setAccountIntegrationForm(emptyAccountIntegrationForm());
-    });
+    }
   }
 
-  async function handleAddAccountCustomization(event: FormEvent<HTMLFormElement>) {
+  async function handleSaveAccountCustomization(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!selectedTenantId) {
       return;
     }
 
-    await runAccountAction('customization:add', async () => {
-      await addCustomerAccountCustomization({
-        p_tenant_id: selectedTenantId,
-        p_title: accountCustomizationForm.title.trim(),
-        p_description: accountCustomizationForm.description.trim(),
-        p_risk_level: accountCustomizationForm.riskLevel,
-        p_operational_note: normalizeOptionalText(accountCustomizationForm.operationalNote),
-        p_status: accountCustomizationForm.status.trim() || 'active',
-      });
+    await runAccountAction(
+      editingCustomizationId ? `customization:${editingCustomizationId}:update` : 'customization:add',
+      async () => {
+        if (editingCustomizationId) {
+          await updateCustomerAccountCustomization({
+            p_customization_id: editingCustomizationId,
+            p_title: accountCustomizationForm.title.trim(),
+            p_description: accountCustomizationForm.description.trim(),
+            p_risk_level: accountCustomizationForm.riskLevel,
+            p_operational_note: normalizeOptionalText(accountCustomizationForm.operationalNote),
+            p_status: accountCustomizationForm.status.trim() || 'active',
+          });
+        } else {
+          await addCustomerAccountCustomization({
+            p_tenant_id: selectedTenantId,
+            p_title: accountCustomizationForm.title.trim(),
+            p_description: accountCustomizationForm.description.trim(),
+            p_risk_level: accountCustomizationForm.riskLevel,
+            p_operational_note: normalizeOptionalText(accountCustomizationForm.operationalNote),
+            p_status: accountCustomizationForm.status.trim() || 'active',
+          });
+        }
+
+        setEditingCustomizationId(null);
+      },
+    );
+    if (!editingCustomizationId) {
       setAccountCustomizationForm(emptyAccountCustomizationForm());
-    });
+    }
   }
 
-  async function handleAddAccountAlert(event: FormEvent<HTMLFormElement>) {
+  async function handleSaveAccountAlert(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!selectedTenantId) {
       return;
     }
 
-    await runAccountAction('alert:add', async () => {
-      await addCustomerAccountAlert({
-        p_tenant_id: selectedTenantId,
-        p_severity: accountAlertForm.severity,
-        p_title: accountAlertForm.title.trim(),
-        p_description: accountAlertForm.description.trim(),
-        p_expires_at: normalizeOptionalText(accountAlertForm.expiresAt),
-      });
+    await runAccountAction(
+      editingAlertId ? `alert:${editingAlertId}:update` : 'alert:add',
+      async () => {
+        if (editingAlertId) {
+          await updateCustomerAccountAlert({
+            p_alert_id: editingAlertId,
+            p_severity: accountAlertForm.severity,
+            p_title: accountAlertForm.title.trim(),
+            p_description: accountAlertForm.description.trim(),
+            p_active: true,
+            p_expires_at: normalizeOptionalText(accountAlertForm.expiresAt),
+          });
+        } else {
+          await addCustomerAccountAlert({
+            p_tenant_id: selectedTenantId,
+            p_severity: accountAlertForm.severity,
+            p_title: accountAlertForm.title.trim(),
+            p_description: accountAlertForm.description.trim(),
+            p_expires_at: normalizeOptionalText(accountAlertForm.expiresAt),
+          });
+        }
+
+        setEditingAlertId(null);
+      },
+    );
+    if (!editingAlertId) {
       setAccountAlertForm(emptyAccountAlertForm());
-    });
+    }
   }
 
   async function handleSetAccountFeature(event: FormEvent<HTMLFormElement>) {
@@ -1779,9 +1876,16 @@ export function TenantsPage() {
                           <p className="text-[0.92rem] font-semibold text-[color:var(--color-ink)]">
                             Integrações principais
                           </p>
-                          <form className="grid gap-2" onSubmit={handleAddAccountIntegration}>
+                          <form className="grid gap-2" onSubmit={handleSaveAccountIntegration}>
+                            {editingIntegrationId ? (
+                              <InlineNotice>
+                                Editando integração existente. Tipo e provedor ficam governados pelo
+                                cadastro original; esta ação atualiza status, ambiente e nota segura.
+                              </InlineNotice>
+                            ) : null}
                             <Field label="Tipo">
                               <SelectInput
+                                disabled={Boolean(editingIntegrationId)}
                                 value={accountIntegrationForm.integrationType}
                                 onChange={(event) =>
                                   setAccountIntegrationForm((current) => ({
@@ -1799,6 +1903,7 @@ export function TenantsPage() {
                             </Field>
                             <Field label="Provedor">
                               <TextInput
+                                disabled={Boolean(editingIntegrationId)}
                                 onChange={(event) =>
                                   setAccountIntegrationForm((current) => ({
                                     ...current,
@@ -1857,9 +1962,28 @@ export function TenantsPage() {
                                 value={accountIntegrationForm.notes}
                               />
                             </Field>
-                            <AppButton disabled={accountSubmittingKey === 'integration:add'} type="submit">
-                              Adicionar integração
-                            </AppButton>
+                            <div className="flex flex-wrap gap-2">
+                              <AppButton
+                                disabled={
+                                  accountSubmittingKey === 'integration:add' ||
+                                  accountSubmittingKey === `integration:${editingIntegrationId}:update`
+                                }
+                                type="submit"
+                              >
+                                {editingIntegrationId ? 'Salvar integração' : 'Adicionar integração'}
+                              </AppButton>
+                              {editingIntegrationId ? (
+                                <GhostButton
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingIntegrationId(null);
+                                    setAccountIntegrationForm(emptyAccountIntegrationForm());
+                                  }}
+                                >
+                                  Cancelar edição
+                                </GhostButton>
+                              ) : null}
+                            </div>
                           </form>
                           <div className="space-y-2">
                             {customerAccount.integrations.length === 0 ? (
@@ -1876,20 +2000,33 @@ export function TenantsPage() {
                                         {labelForIntegrationType(integration.integrationType)} · {labelForIntegrationStatus(integration.status)} · {labelForIntegrationEnvironment(integration.environment)}
                                       </p>
                                     </div>
-                                    <GhostButton
-                                      className="min-h-8 px-3 text-xs"
-                                      disabled={!integration.canArchive || accountSubmittingKey === `integration:${integration.id}`}
-                                      onClick={() =>
-                                        void runAccountAction(`integration:${integration.id}`, async () => {
-                                          await archiveCustomerAccountIntegration({
-                                            p_integration_id: integration.id,
-                                          });
-                                        })
-                                      }
-                                      type="button"
-                                    >
-                                      Arquivar
-                                    </GhostButton>
+                                    <div className="flex flex-wrap justify-end gap-2">
+                                      <GhostButton
+                                        className="min-h-8 px-3 text-xs"
+                                        disabled={!integration.canUpdate}
+                                        onClick={() => {
+                                          setEditingIntegrationId(integration.id);
+                                          setAccountIntegrationForm(buildAccountIntegrationForm(integration));
+                                        }}
+                                        type="button"
+                                      >
+                                        Editar
+                                      </GhostButton>
+                                      <GhostButton
+                                        className="min-h-8 px-3 text-xs"
+                                        disabled={!integration.canArchive || accountSubmittingKey === `integration:${integration.id}`}
+                                        onClick={() =>
+                                          void runAccountAction(`integration:${integration.id}`, async () => {
+                                            await archiveCustomerAccountIntegration({
+                                              p_integration_id: integration.id,
+                                            });
+                                          })
+                                        }
+                                        type="button"
+                                      >
+                                        Arquivar
+                                      </GhostButton>
+                                    </div>
                                   </div>
                                 </div>
                               ))
@@ -1901,7 +2038,12 @@ export function TenantsPage() {
                           <p className="text-[0.92rem] font-semibold text-[color:var(--color-ink)]">
                             Customizações e alertas
                           </p>
-                          <form className="grid gap-2" onSubmit={handleAddAccountCustomization}>
+                          <form className="grid gap-2" onSubmit={handleSaveAccountCustomization}>
+                            {editingCustomizationId ? (
+                              <InlineNotice>
+                                Editando customização existente por contrato administrativo auditado.
+                              </InlineNotice>
+                            ) : null}
                             <Field label="Customização">
                               <TextInput
                                 onChange={(event) =>
@@ -1943,9 +2085,28 @@ export function TenantsPage() {
                                 ))}
                               </SelectInput>
                             </Field>
-                            <AppButton disabled={accountSubmittingKey === 'customization:add'} type="submit">
-                              Adicionar customização
-                            </AppButton>
+                            <div className="flex flex-wrap gap-2">
+                              <AppButton
+                                disabled={
+                                  accountSubmittingKey === 'customization:add' ||
+                                  accountSubmittingKey === `customization:${editingCustomizationId}:update`
+                                }
+                                type="submit"
+                              >
+                                {editingCustomizationId ? 'Salvar customização' : 'Adicionar customização'}
+                              </AppButton>
+                              {editingCustomizationId ? (
+                                <GhostButton
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingCustomizationId(null);
+                                    setAccountCustomizationForm(emptyAccountCustomizationForm());
+                                  }}
+                                >
+                                  Cancelar edição
+                                </GhostButton>
+                              ) : null}
+                            </div>
                           </form>
                           <div className="space-y-2">
                             {customerAccount.customizations.map((customization) => (
@@ -1955,26 +2116,47 @@ export function TenantsPage() {
                                     <p className="text-sm font-semibold text-[color:var(--color-ink)]">{customization.title}</p>
                                     <p className="mt-1 text-[0.78rem] text-[color:var(--color-muted)]">{labelForRiskLevel(customization.riskLevel)} · {customization.status}</p>
                                   </div>
-                                  <GhostButton
-                                    className="min-h-8 px-3 text-xs"
-                                    disabled={!customization.canArchive || accountSubmittingKey === `customization:${customization.id}`}
-                                    onClick={() =>
-                                      void runAccountAction(`customization:${customization.id}`, async () => {
-                                        await archiveCustomerAccountCustomization({
-                                          p_customization_id: customization.id,
-                                        });
-                                      })
-                                    }
-                                    type="button"
-                                  >
-                                    Arquivar
-                                  </GhostButton>
+                                  <div className="flex flex-wrap justify-end gap-2">
+                                    <GhostButton
+                                      className="min-h-8 px-3 text-xs"
+                                      disabled={!customization.canUpdate}
+                                      onClick={() => {
+                                        setEditingCustomizationId(customization.id);
+                                        setAccountCustomizationForm(
+                                          buildAccountCustomizationForm(customization),
+                                        );
+                                      }}
+                                      type="button"
+                                    >
+                                      Editar
+                                    </GhostButton>
+                                    <GhostButton
+                                      className="min-h-8 px-3 text-xs"
+                                      disabled={!customization.canArchive || accountSubmittingKey === `customization:${customization.id}`}
+                                      onClick={() =>
+                                        void runAccountAction(`customization:${customization.id}`, async () => {
+                                          await archiveCustomerAccountCustomization({
+                                            p_customization_id: customization.id,
+                                          });
+                                        })
+                                      }
+                                      type="button"
+                                    >
+                                      Arquivar
+                                    </GhostButton>
+                                  </div>
                                 </div>
                               </div>
                             ))}
                           </div>
 
-                          <form className="grid gap-2 border-t border-[color:var(--color-border)] pt-3" onSubmit={handleAddAccountAlert}>
+                          <form className="grid gap-2 border-t border-[color:var(--color-border)] pt-3" onSubmit={handleSaveAccountAlert}>
+                            {editingAlertId ? (
+                              <InlineNotice>
+                                Editando alerta existente. O alerta permanece ativo após salvar; use
+                                arquivar para encerrar o aviso.
+                              </InlineNotice>
+                            ) : null}
                             <Field label="Alerta interno">
                               <TextInput
                                 onChange={(event) =>
@@ -2016,9 +2198,28 @@ export function TenantsPage() {
                                 ))}
                               </SelectInput>
                             </Field>
-                            <AppButton disabled={accountSubmittingKey === 'alert:add'} type="submit">
-                              Adicionar alerta
-                            </AppButton>
+                            <div className="flex flex-wrap gap-2">
+                              <AppButton
+                                disabled={
+                                  accountSubmittingKey === 'alert:add' ||
+                                  accountSubmittingKey === `alert:${editingAlertId}:update`
+                                }
+                                type="submit"
+                              >
+                                {editingAlertId ? 'Salvar alerta' : 'Adicionar alerta'}
+                              </AppButton>
+                              {editingAlertId ? (
+                                <GhostButton
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingAlertId(null);
+                                    setAccountAlertForm(emptyAccountAlertForm());
+                                  }}
+                                >
+                                  Cancelar edição
+                                </GhostButton>
+                              ) : null}
+                            </div>
                           </form>
                           <div className="space-y-2">
                             {customerAccount.alerts.map((alert) => (
@@ -2028,18 +2229,31 @@ export function TenantsPage() {
                                     <p className="text-sm font-semibold text-[color:var(--color-ink)]">{alert.title}</p>
                                     <p className="mt-1 text-[0.78rem] text-[color:var(--color-muted)]">{labelForAlertSeverity(alert.severity)} · {alert.active ? 'Ativo' : 'Arquivado'}</p>
                                   </div>
-                                  <GhostButton
-                                    className="min-h-8 px-3 text-xs"
-                                    disabled={!alert.canArchive || accountSubmittingKey === `alert:${alert.id}`}
-                                    onClick={() =>
-                                      void runAccountAction(`alert:${alert.id}`, async () => {
-                                        await archiveCustomerAccountAlert({ p_alert_id: alert.id });
-                                      })
-                                    }
-                                    type="button"
-                                  >
-                                    Arquivar
-                                  </GhostButton>
+                                  <div className="flex flex-wrap justify-end gap-2">
+                                    <GhostButton
+                                      className="min-h-8 px-3 text-xs"
+                                      disabled={!alert.canUpdate}
+                                      onClick={() => {
+                                        setEditingAlertId(alert.id);
+                                        setAccountAlertForm(buildAccountAlertForm(alert));
+                                      }}
+                                      type="button"
+                                    >
+                                      Editar
+                                    </GhostButton>
+                                    <GhostButton
+                                      className="min-h-8 px-3 text-xs"
+                                      disabled={!alert.canArchive || accountSubmittingKey === `alert:${alert.id}`}
+                                      onClick={() =>
+                                        void runAccountAction(`alert:${alert.id}`, async () => {
+                                          await archiveCustomerAccountAlert({ p_alert_id: alert.id });
+                                        })
+                                      }
+                                      type="button"
+                                    >
+                                      Arquivar
+                                    </GhostButton>
+                                  </div>
                                 </div>
                               </div>
                             ))}
