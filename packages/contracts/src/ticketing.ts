@@ -715,6 +715,163 @@ export interface SupportCustomerAccountContext {
   activeAlerts: SupportCustomerAccountAlert[];
 }
 
+export interface AdminCustomerAccountProfileDetail {
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantDisplayName: string;
+  tenantLegalName: string;
+  tenantStatus: string;
+  profileId: Uuid | null;
+  productLine: CustomerProductLine | null;
+  operationalStatus: CustomerOperationalStatus | null;
+  accountTier: string | null;
+  internalNotes: string | null;
+  operationalFlags: JsonObject;
+  createdAt: IsoTimestamp | null;
+  updatedAt: IsoTimestamp | null;
+  createdByUserId: Uuid | null;
+  createdByFullName: string | null;
+  updatedByUserId: Uuid | null;
+  updatedByFullName: string | null;
+  canUpdateProfile: boolean;
+}
+
+export interface AdminCustomerAccountIntegration extends SupportCustomerAccountIntegration {
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantDisplayName: string;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  createdByUserId: Uuid;
+  updatedByUserId: Uuid;
+  canUpdate: boolean;
+  canArchive: boolean;
+}
+
+export interface AdminCustomerAccountFeature extends SupportCustomerAccountFeature {
+  id: Uuid;
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantDisplayName: string;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  createdByUserId: Uuid;
+  updatedByUserId: Uuid;
+  canUpdate: boolean;
+}
+
+export interface AdminCustomerAccountCustomization
+  extends SupportCustomerAccountCustomization {
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantDisplayName: string;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  createdByUserId: Uuid;
+  updatedByUserId: Uuid;
+  canUpdate: boolean;
+  canArchive: boolean;
+}
+
+export interface AdminCustomerAccountAlert extends SupportCustomerAccountAlert {
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantDisplayName: string;
+  active: boolean;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  createdByUserId: Uuid;
+  updatedByUserId: Uuid;
+  canUpdate: boolean;
+  canArchive: boolean;
+}
+
+export interface RpcAdminUpsertCustomerAccountProfilePayload {
+  p_tenant_id: Uuid;
+  p_product_line: CustomerProductLine;
+  p_operational_status: CustomerOperationalStatus;
+  p_account_tier: string;
+  p_internal_notes?: string | null;
+  p_operational_flags?: JsonObject;
+  p_features?: Array<{
+    feature_key: string;
+    enabled: boolean;
+    source: string;
+    notes?: string | null;
+  }> | null;
+}
+
+export interface RpcAdminAddCustomerIntegrationPayload {
+  p_tenant_id: Uuid;
+  p_integration_type: CustomerIntegrationType;
+  p_provider: string;
+  p_status: CustomerIntegrationStatus;
+  p_environment: CustomerIntegrationEnvironment;
+  p_notes?: string | null;
+}
+
+export interface RpcAdminUpdateCustomerIntegrationPayload {
+  p_integration_id: Uuid;
+  p_status: CustomerIntegrationStatus;
+  p_environment: CustomerIntegrationEnvironment;
+  p_notes?: string | null;
+}
+
+export interface RpcAdminArchiveCustomerIntegrationPayload {
+  p_integration_id: Uuid;
+}
+
+export interface RpcAdminAddCustomerCustomizationPayload {
+  p_tenant_id: Uuid;
+  p_title: string;
+  p_description: string;
+  p_risk_level: CustomerCustomizationRiskLevel;
+  p_operational_note?: string | null;
+  p_status?: string;
+}
+
+export interface RpcAdminUpdateCustomerCustomizationPayload {
+  p_customization_id: Uuid;
+  p_title: string;
+  p_description: string;
+  p_risk_level: CustomerCustomizationRiskLevel;
+  p_operational_note?: string | null;
+  p_status?: string;
+}
+
+export interface RpcAdminArchiveCustomerCustomizationPayload {
+  p_customization_id: Uuid;
+}
+
+export interface RpcAdminAddCustomerAccountAlertPayload {
+  p_tenant_id: Uuid;
+  p_severity: CustomerAlertSeverity;
+  p_title: string;
+  p_description: string;
+  p_expires_at?: IsoTimestamp | null;
+}
+
+export interface RpcAdminUpdateCustomerAccountAlertPayload {
+  p_alert_id: Uuid;
+  p_severity: CustomerAlertSeverity;
+  p_title: string;
+  p_description: string;
+  p_active?: boolean;
+  p_expires_at?: IsoTimestamp | null;
+}
+
+export interface RpcAdminArchiveCustomerAccountAlertPayload {
+  p_alert_id: Uuid;
+}
+
+export interface RpcAdminSetCustomerFeatureFlagPayload {
+  p_tenant_id: Uuid;
+  p_feature_key: string;
+  p_enabled: boolean;
+  p_source?: string;
+  p_notes?: string | null;
+}
+
 export interface TicketKnowledgeLinkRecord {
   id: Uuid;
   tenantId: Uuid;

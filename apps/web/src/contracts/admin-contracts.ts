@@ -1,33 +1,135 @@
 import type {
   AdminInternalActionTargetArea,
   AdminInternalAreaMembership,
+  AdminCustomerAccountAlert,
+  AdminCustomerAccountCustomization,
+  AdminCustomerAccountFeature,
+  AdminCustomerAccountIntegration,
+  AdminCustomerAccountProfileDetail,
+  CustomerAlertSeverity,
+  CustomerCustomizationRiskLevel,
+  CustomerIntegrationEnvironment,
+  CustomerIntegrationStatus,
+  CustomerIntegrationType,
+  CustomerOperationalStatus,
+  CustomerProductLine,
   InternalAreaMembershipRecord,
   InternalAreaMembershipRole,
   InternalAreaMembershipStatus,
   IsoTimestamp,
   JsonValue,
+  RpcAdminAddCustomerAccountAlertPayload,
+  RpcAdminAddCustomerCustomizationPayload,
+  RpcAdminAddCustomerIntegrationPayload,
   RpcAdminAddInternalAreaMembershipPayload,
   RpcAdminAddInternalAreaMembershipResponse,
+  RpcAdminArchiveCustomerAccountAlertPayload,
+  RpcAdminArchiveCustomerCustomizationPayload,
+  RpcAdminArchiveCustomerIntegrationPayload,
   RpcAdminArchiveInternalAreaMembershipPayload,
   RpcAdminArchiveInternalAreaMembershipResponse,
+  RpcAdminSetCustomerFeatureFlagPayload,
+  RpcAdminUpdateCustomerAccountAlertPayload,
+  RpcAdminUpdateCustomerCustomizationPayload,
+  RpcAdminUpdateCustomerIntegrationPayload,
   RpcAdminUpdateInternalAreaMembershipPayload,
   RpcAdminUpdateInternalAreaMembershipResponse,
+  RpcAdminUpsertCustomerAccountProfilePayload,
   Uuid,
 } from '@genius-support-os/contracts';
 
 export type {
+  AdminCustomerAccountAlert,
+  AdminCustomerAccountCustomization,
+  AdminCustomerAccountFeature,
+  AdminCustomerAccountIntegration,
+  AdminCustomerAccountProfileDetail,
   AdminInternalActionTargetArea,
   AdminInternalAreaMembership,
+  CustomerAlertSeverity,
+  CustomerCustomizationRiskLevel,
+  CustomerIntegrationEnvironment,
+  CustomerIntegrationStatus,
+  CustomerIntegrationType,
+  CustomerOperationalStatus,
+  CustomerProductLine,
   InternalAreaMembershipRecord,
   InternalAreaMembershipRole,
   InternalAreaMembershipStatus,
+  RpcAdminAddCustomerAccountAlertPayload,
+  RpcAdminAddCustomerCustomizationPayload,
+  RpcAdminAddCustomerIntegrationPayload,
   RpcAdminAddInternalAreaMembershipPayload,
   RpcAdminAddInternalAreaMembershipResponse,
+  RpcAdminArchiveCustomerAccountAlertPayload,
+  RpcAdminArchiveCustomerCustomizationPayload,
+  RpcAdminArchiveCustomerIntegrationPayload,
   RpcAdminArchiveInternalAreaMembershipPayload,
   RpcAdminArchiveInternalAreaMembershipResponse,
+  RpcAdminSetCustomerFeatureFlagPayload,
+  RpcAdminUpdateCustomerAccountAlertPayload,
+  RpcAdminUpdateCustomerCustomizationPayload,
+  RpcAdminUpdateCustomerIntegrationPayload,
   RpcAdminUpdateInternalAreaMembershipPayload,
   RpcAdminUpdateInternalAreaMembershipResponse,
+  RpcAdminUpsertCustomerAccountProfilePayload,
 };
+
+export const CUSTOMER_PRODUCT_LINES = [
+  'genius_returns',
+  'after_sale',
+  'hybrid',
+  'other',
+] as const satisfies readonly CustomerProductLine[];
+
+export const CUSTOMER_OPERATIONAL_STATUSES = [
+  'onboarding',
+  'active',
+  'limited',
+  'suspended',
+  'legacy',
+] as const satisfies readonly CustomerOperationalStatus[];
+
+export const CUSTOMER_INTEGRATION_TYPES = [
+  'ecommerce_platform',
+  'erp',
+  'oms',
+  'logistics_provider',
+  'carrier',
+  'gateway',
+  'refund_provider',
+  'custom_api',
+  'other',
+] as const satisfies readonly CustomerIntegrationType[];
+
+export const CUSTOMER_INTEGRATION_STATUSES = [
+  'planned',
+  'active',
+  'degraded',
+  'disabled',
+  'deprecated',
+] as const satisfies readonly CustomerIntegrationStatus[];
+
+export const CUSTOMER_INTEGRATION_ENVIRONMENTS = [
+  'production',
+  'sandbox',
+  'staging',
+  'other',
+] as const satisfies readonly CustomerIntegrationEnvironment[];
+
+export const CUSTOMER_CUSTOMIZATION_RISK_LEVELS = [
+  'low',
+  'medium',
+  'high',
+  'critical',
+] as const satisfies readonly CustomerCustomizationRiskLevel[];
+
+export const CUSTOMER_ALERT_SEVERITIES = [
+  'info',
+  'warning',
+  'high',
+  'critical',
+] as const satisfies readonly CustomerAlertSeverity[];
 
 export const INTERNAL_AREA_MEMBERSHIP_ROLES = [
   'member',
