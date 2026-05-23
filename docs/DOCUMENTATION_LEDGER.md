@@ -4773,3 +4773,28 @@ Cada registro deve informar:
   - picker seguro de evidências na superfície da área acionada permanece fora do corte; o suporte continua com o vínculo operacional existente
   - bridge opcional com Engenharia exige decisão própria de produto/arquitetura
   - QA browser autenticado dedicado deve ser ampliado para massa local estável de áreas internas
+
+### Private Routes Authenticated QA P0-C
+- data: `2026-05-22`
+- branch: `codex/phase7-5-z2-admin-access-system-blueprint`
+- resumo funcional: criada fixture funcional autenticada local para reidratar massa persistida de Admin, Support, Internal Actions, Engineering, Customer Portal e Public Help, com usuários QA estáveis e acionamentos internos reais para smoke privado.
+- arquivos alterados:
+  - `package.json`
+  - `supabase/qa/create-local-functional-fixture.mjs`
+  - `docs/LOCAL_QA_AUTH.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/reports/P0_PRIVATE_ROUTES_AUTHENTICATED_QA_2026-05-22.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- validações:
+  - `node --check supabase/qa/create-local-functional-fixture.mjs`
+  - `npm run supabase:qa:local-functional-fixture`
+  - segunda execução de `npm run supabase:qa:local-functional-fixture`
+  - smoke browser autenticado em `/admin/*`, `/support/*`, `/internal-actions/*`, `/engineering/*`, `/portal/*` e `/help/genius/*`
+- boundaries preservados:
+  - Portal Cliente não exibiu nota interna, internal actions, engenharia interna, audit bruto ou storage path
+  - Public Help não exibiu internal/restricted/draft por lista ou slug direto
+  - usuário sem membership de área interna não viu acionamentos da área
+  - internal actions não alteraram `ticket.status`
+- riscos restantes:
+  - redirect pós-login de usuários não-admin ainda cai em `/access-denied` antes da navegação para a rota correta do papel
+  - warning `DEP0190` permanece no script legado de suporte por trecho fora do escopo deste lote
