@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 const SUPPORT_FIXTURE_SCRIPT = 'supabase/qa/create-local-support-fixture.mjs';
 const TENANT_SLUG = 'support-qa-a';
 const POPULATED_TICKET_TITLE =
-  'QA Support | Operação crítica com histórico extenso, anexos e handoff técnico';
+  'QA Support | Operação crítica com histórico extenso, anexos e retorno operacional';
 
 const USERS = {
   platformAdmin: {

@@ -3,8 +3,10 @@ import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-const POPULATED_QA_TICKET_TITLE =
+const LEGACY_POPULATED_QA_TICKET_TITLE =
   'QA Support | Operação crítica com histórico extenso, anexos e handoff técnico';
+const POPULATED_QA_TICKET_TITLE =
+  'QA Support | Operação crítica com histórico extenso, anexos e retorno operacional';
 
 const EXTRA_INBOX_TICKETS = [
   {
@@ -54,7 +56,7 @@ const EXTRA_INBOX_TICKETS = [
     assignee: 'support-manager-a',
     status: 'waiting_engineering',
     publicMessage:
-      'A tratativa foi priorizada e a engenharia já recebeu o recorte técnico da sincronização.',
+      'A tratativa foi priorizada e o time Genius já recebeu o recorte necessário da sincronização.',
     internalNote:
       'Consolidar lote afetado, id externo e janela de erro antes do próximo retorno operacional.',
   },
@@ -161,7 +163,10 @@ const EXTRA_INBOX_TICKETS = [
   },
   {
     tenantSlug: 'support-qa-a',
-    title: 'QA Support | Retorno de engenharia pronto para devolutiva operacional em caso de integração sensível',
+    title: 'QA Support | Retorno técnico pronto para devolutiva operacional em caso de integração sensível',
+    legacyTitles: [
+      'QA Support | Retorno de engenharia pronto para devolutiva operacional em caso de integração sensível',
+    ],
     description:
       'O suporte recebeu retorno técnico e precisa preparar a devolutiva operacional final.',
     priority: 'normal',
@@ -247,7 +252,7 @@ const EXTRA_TICKET_TIMELINE_MESSAGES = [
     visibility: 'customer',
     lane: 'customer',
     body:
-      'Anexamos novas evidências e precisamos confirmar se a tratativa seguirá com engenharia ou se o suporte já consegue orientar o time operacional.',
+      'Anexamos novas evidências e precisamos confirmar se a tratativa seguirá em validação ou se o suporte já consegue orientar o time operacional.',
   },
   {
     fixtureKey: 'qa-thread-agent-03',
@@ -257,7 +262,7 @@ const EXTRA_TICKET_TIMELINE_MESSAGES = [
     visibility: 'customer',
     lane: 'agent',
     body:
-      'A engenharia já recebeu o handoff. Assim que a atualização técnica voltar, consolidamos a orientação operacional e retornamos no mesmo thread.',
+      'O time Genius já recebeu o contexto necessário. Assim que a validação voltar, consolidamos a orientação operacional e retornamos no mesmo thread.',
   },
 ];
 
@@ -755,8 +760,9 @@ const FIXTURE = {
     {
       tenantSlug: 'support-qa-a',
       title: POPULATED_QA_TICKET_TITLE,
+      legacyTitles: [LEGACY_POPULATED_QA_TICKET_TITLE],
       description:
-        'Ticket principal da massa local de QA para validar thread longa, anexos múltiplos, links de conhecimento e retorno de engenharia.',
+        'Ticket principal da massa local de QA para validar thread longa, anexos múltiplos, links de conhecimento e retorno operacional.',
       priority: 'urgent',
       severity: 'critical',
       source: 'portal',
@@ -766,7 +772,7 @@ const FIXTURE = {
       status: 'waiting_engineering',
       slaScenario: 'breached',
       publicMessage:
-        'Recebemos o caso principal da QA e já centralizamos a validação operacional com engenharia.',
+        'Recebemos o caso principal da QA e já centralizamos a validação operacional com o time Genius.',
       internalNote:
         'Usar este ticket para validar densidade, rolagem da thread, evidências, links e atividade recente.',
       extraTimelineEntries: 22,
@@ -2327,12 +2333,15 @@ function ensureCustomerPortalContact({ actorUserId, tenantId, userId, contact })
   return contactId;
 }
 
-function queryExistingSupportTicket(tenantId, title) {
+function queryExistingSupportTicket(tenantId, title, legacyTitles = []) {
+  const titleList = [title, ...legacyTitles]
+    .map((candidate) => `'${sqlEscape(candidate)}'`)
+    .join(', ');
   const result = runSupabaseDbQuery(`
     select id::text as id
     from public.tickets
     where tenant_id = '${sqlEscape(tenantId)}'::uuid
-      and title = '${sqlEscape(title)}'
+      and title in (${titleList})
     limit 1;
   `);
 
@@ -2916,8 +2925,20 @@ function queryTicketSlaPolicyIdBySlug(slug) {
 }
 
 function createSupportTicket({ actorUserId, tenantId, contactId, ticket }) {
-  const existingTicketId = queryExistingSupportTicket(tenantId, ticket.title);
+  const existingTicketId = queryExistingSupportTicket(
+    tenantId,
+    ticket.title,
+    ticket.legacyTitles ?? [],
+  );
   if (existingTicketId) {
+    runSupabaseDbQuery(`
+      update public.tickets
+      set
+        title = '${sqlEscape(ticket.title)}',
+        description = '${sqlEscape(ticket.description)}',
+        updated_by_user_id = '${sqlEscape(actorUserId)}'::uuid
+      where id = '${sqlEscape(existingTicketId)}'::uuid;
+    `);
     return existingTicketId;
   }
 
