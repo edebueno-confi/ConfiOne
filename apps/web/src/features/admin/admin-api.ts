@@ -4,6 +4,11 @@ import type {
   AdminAuditFeedRow,
   AdminAccessMembershipRow,
   AdminAccessUserRow,
+  AdminCustomerAccountAlert,
+  AdminCustomerAccountCustomization,
+  AdminCustomerAccountFeature,
+  AdminCustomerAccountIntegration,
+  AdminCustomerAccountProfileDetail,
   AdminInternalActionTargetArea,
   AdminInternalAreaMembership,
   AdminCustomerPortalAccessOverviewRow,
@@ -42,8 +47,14 @@ import type {
   KnowledgeVisibility,
   RpcAdminAddTenantMemberPayload,
   RpcAdminAddTenantMemberResponse,
+  RpcAdminAddCustomerAccountAlertPayload,
+  RpcAdminAddCustomerCustomizationPayload,
+  RpcAdminAddCustomerIntegrationPayload,
   RpcAdminAddInternalAreaMembershipPayload,
   RpcAdminAddInternalAreaMembershipResponse,
+  RpcAdminArchiveCustomerAccountAlertPayload,
+  RpcAdminArchiveCustomerCustomizationPayload,
+  RpcAdminArchiveCustomerIntegrationPayload,
   RpcAdminArchiveInternalAreaMembershipPayload,
   RpcAdminArchiveInternalAreaMembershipResponse,
   RpcAdminArchiveKnowledgeArticleV2Response,
@@ -93,8 +104,13 @@ import type {
   RpcAdminUpdateTenantMemberStatusResponse,
   RpcAdminUpdateTenantStatusPayload,
   RpcAdminUpdateTenantStatusResponse,
+  RpcAdminSetCustomerFeatureFlagPayload,
+  RpcAdminUpdateCustomerAccountAlertPayload,
+  RpcAdminUpdateCustomerCustomizationPayload,
+  RpcAdminUpdateCustomerIntegrationPayload,
   RpcAdminUpdateInternalAreaMembershipPayload,
   RpcAdminUpdateInternalAreaMembershipResponse,
+  RpcAdminUpsertCustomerAccountProfilePayload,
 } from '../../contracts/admin-contracts';
 
 function requireClient() {
@@ -236,6 +252,204 @@ export async function getAdminTenantDetail(tenantId: string) {
     ...(data as AdminTenantDetailRow),
     contacts: Array.isArray(data.contacts) ? (data.contacts as AdminTenantDetailRow['contacts']) : [],
   } satisfies AdminTenantDetailRow;
+}
+
+function mapAdminCustomerAccountProfile(
+  row: Record<string, unknown>,
+): AdminCustomerAccountProfileDetail {
+  return {
+    tenantId: String(row.tenant_id),
+    tenantSlug: String(row.tenant_slug),
+    tenantDisplayName: String(row.tenant_display_name),
+    tenantLegalName: String(row.tenant_legal_name),
+    tenantStatus: String(row.tenant_status),
+    profileId: (row.profile_id as string | null) ?? null,
+    productLine: (row.product_line as AdminCustomerAccountProfileDetail['productLine']) ?? null,
+    operationalStatus:
+      (row.operational_status as AdminCustomerAccountProfileDetail['operationalStatus']) ?? null,
+    accountTier: (row.account_tier as string | null) ?? null,
+    internalNotes: (row.internal_notes as string | null) ?? null,
+    operationalFlags:
+      row.operational_flags && typeof row.operational_flags === 'object' && !Array.isArray(row.operational_flags)
+        ? (row.operational_flags as AdminCustomerAccountProfileDetail['operationalFlags'])
+        : {},
+    createdAt: (row.created_at as string | null) ?? null,
+    updatedAt: (row.updated_at as string | null) ?? null,
+    createdByUserId: (row.created_by_user_id as string | null) ?? null,
+    createdByFullName: (row.created_by_full_name as string | null) ?? null,
+    updatedByUserId: (row.updated_by_user_id as string | null) ?? null,
+    updatedByFullName: (row.updated_by_full_name as string | null) ?? null,
+    canUpdateProfile: Boolean(row.can_update_profile),
+  };
+}
+
+function mapAdminCustomerAccountIntegration(
+  row: Record<string, unknown>,
+): AdminCustomerAccountIntegration {
+  return {
+    id: String(row.id),
+    tenantId: String(row.tenant_id),
+    tenantSlug: String(row.tenant_slug),
+    tenantDisplayName: String(row.tenant_display_name),
+    integrationType: row.integration_type as AdminCustomerAccountIntegration['integrationType'],
+    provider: String(row.provider),
+    status: row.status as AdminCustomerAccountIntegration['status'],
+    environment: row.environment as AdminCustomerAccountIntegration['environment'],
+    notes: (row.notes as string | null) ?? null,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    createdByUserId: String(row.created_by_user_id),
+    updatedByUserId: String(row.updated_by_user_id),
+    canUpdate: Boolean(row.can_update),
+    canArchive: Boolean(row.can_archive),
+  };
+}
+
+function mapAdminCustomerAccountCustomization(
+  row: Record<string, unknown>,
+): AdminCustomerAccountCustomization {
+  return {
+    id: String(row.id),
+    tenantId: String(row.tenant_id),
+    tenantSlug: String(row.tenant_slug),
+    tenantDisplayName: String(row.tenant_display_name),
+    title: String(row.title),
+    description: String(row.description),
+    riskLevel: row.risk_level as AdminCustomerAccountCustomization['riskLevel'],
+    operationalNote: (row.operational_note as string | null) ?? null,
+    status: String(row.status),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    createdByUserId: String(row.created_by_user_id),
+    updatedByUserId: String(row.updated_by_user_id),
+    canUpdate: Boolean(row.can_update),
+    canArchive: Boolean(row.can_archive),
+  };
+}
+
+function mapAdminCustomerAccountAlert(
+  row: Record<string, unknown>,
+): AdminCustomerAccountAlert {
+  return {
+    id: String(row.id),
+    tenantId: String(row.tenant_id),
+    tenantSlug: String(row.tenant_slug),
+    tenantDisplayName: String(row.tenant_display_name),
+    severity: row.severity as AdminCustomerAccountAlert['severity'],
+    title: String(row.title),
+    description: String(row.description),
+    active: Boolean(row.active),
+    expiresAt: (row.expires_at as string | null) ?? null,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    createdByUserId: String(row.created_by_user_id),
+    updatedByUserId: String(row.updated_by_user_id),
+    canUpdate: Boolean(row.can_update),
+    canArchive: Boolean(row.can_archive),
+  };
+}
+
+function mapAdminCustomerAccountFeature(
+  row: Record<string, unknown>,
+): AdminCustomerAccountFeature {
+  return {
+    id: String(row.id),
+    tenantId: String(row.tenant_id),
+    tenantSlug: String(row.tenant_slug),
+    tenantDisplayName: String(row.tenant_display_name),
+    featureKey: String(row.feature_key),
+    enabled: Boolean(row.enabled),
+    source: String(row.source),
+    notes: (row.notes as string | null) ?? null,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    createdByUserId: String(row.created_by_user_id),
+    updatedByUserId: String(row.updated_by_user_id),
+    canUpdate: Boolean(row.can_update),
+  };
+}
+
+export async function getAdminCustomerAccountProfile(tenantId: string) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_customer_account_profile_detail')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .maybeSingle();
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o perfil operacional da conta B2B.');
+  }
+
+  return data ? mapAdminCustomerAccountProfile(data as Record<string, unknown>) : null;
+}
+
+export async function listAdminCustomerAccountIntegrations(tenantId: string) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_customer_account_integrations')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar integrações da conta B2B.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapAdminCustomerAccountIntegration(row as Record<string, unknown>),
+  );
+}
+
+export async function listAdminCustomerAccountCustomizations(tenantId: string) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_customer_account_customizations')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar customizações da conta B2B.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapAdminCustomerAccountCustomization(row as Record<string, unknown>),
+  );
+}
+
+export async function listAdminCustomerAccountAlerts(tenantId: string) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_customer_account_alerts')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar alertas internos da conta B2B.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapAdminCustomerAccountAlert(row as Record<string, unknown>),
+  );
+}
+
+export async function listAdminCustomerAccountFeatures(tenantId: string) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_customer_account_features')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .order('feature_key', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar features da conta B2B.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapAdminCustomerAccountFeature(row as Record<string, unknown>),
+  );
 }
 
 export async function listAdminMemberships() {
@@ -664,6 +878,152 @@ export async function updateTenantStatus(payload: RpcAdminUpdateTenantStatusPayl
   }
 
   return data as RpcAdminUpdateTenantStatusResponse;
+}
+
+export async function upsertCustomerAccountProfile(
+  payload: RpcAdminUpsertCustomerAccountProfilePayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_admin_upsert_customer_account_profile',
+    payload,
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao salvar o perfil operacional da conta B2B.');
+  }
+
+  return data;
+}
+
+export async function addCustomerAccountIntegration(
+  payload: RpcAdminAddCustomerIntegrationPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_add_customer_integration', payload);
+
+  if (error) {
+    throw toAppError(error, 'Falha ao adicionar integração da conta B2B.');
+  }
+
+  return data;
+}
+
+export async function updateCustomerAccountIntegration(
+  payload: RpcAdminUpdateCustomerIntegrationPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_update_customer_integration', payload);
+
+  if (error) {
+    throw toAppError(error, 'Falha ao atualizar integração da conta B2B.');
+  }
+
+  return data;
+}
+
+export async function archiveCustomerAccountIntegration(
+  payload: RpcAdminArchiveCustomerIntegrationPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_archive_customer_integration', payload);
+
+  if (error) {
+    throw toAppError(error, 'Falha ao arquivar integração da conta B2B.');
+  }
+
+  return data;
+}
+
+export async function addCustomerAccountCustomization(
+  payload: RpcAdminAddCustomerCustomizationPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_add_customer_customization', payload);
+
+  if (error) {
+    throw toAppError(error, 'Falha ao adicionar customização da conta B2B.');
+  }
+
+  return data;
+}
+
+export async function updateCustomerAccountCustomization(
+  payload: RpcAdminUpdateCustomerCustomizationPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_update_customer_customization', payload);
+
+  if (error) {
+    throw toAppError(error, 'Falha ao atualizar customização da conta B2B.');
+  }
+
+  return data;
+}
+
+export async function archiveCustomerAccountCustomization(
+  payload: RpcAdminArchiveCustomerCustomizationPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_archive_customer_customization', payload);
+
+  if (error) {
+    throw toAppError(error, 'Falha ao arquivar customização da conta B2B.');
+  }
+
+  return data;
+}
+
+export async function addCustomerAccountAlert(
+  payload: RpcAdminAddCustomerAccountAlertPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_add_customer_account_alert', payload);
+
+  if (error) {
+    throw toAppError(error, 'Falha ao adicionar alerta interno da conta B2B.');
+  }
+
+  return data;
+}
+
+export async function updateCustomerAccountAlert(
+  payload: RpcAdminUpdateCustomerAccountAlertPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_update_customer_account_alert', payload);
+
+  if (error) {
+    throw toAppError(error, 'Falha ao atualizar alerta interno da conta B2B.');
+  }
+
+  return data;
+}
+
+export async function archiveCustomerAccountAlert(
+  payload: RpcAdminArchiveCustomerAccountAlertPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_archive_customer_account_alert', payload);
+
+  if (error) {
+    throw toAppError(error, 'Falha ao arquivar alerta interno da conta B2B.');
+  }
+
+  return data;
+}
+
+export async function setCustomerAccountFeatureFlag(
+  payload: RpcAdminSetCustomerFeatureFlagPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_set_customer_feature_flag', payload);
+
+  if (error) {
+    throw toAppError(error, 'Falha ao atualizar feature da conta B2B.');
+  }
+
+  return data;
 }
 
 export async function addTenantMember(payload: RpcAdminAddTenantMemberPayload) {

@@ -30,30 +30,64 @@ import {
 } from '../../components/ui';
 import type {
   AdminAuditFeedRow,
+  AdminCustomerAccountAlert,
+  AdminCustomerAccountCustomization,
+  AdminCustomerAccountFeature,
+  AdminCustomerAccountIntegration,
+  AdminCustomerAccountProfileDetail,
   AdminTenantContactRecordRow,
   AdminTenantContactViewRow,
   AdminTenantDetailRow,
   AdminTenantMembershipRow,
   AdminTenantsListItemRow,
+  CustomerAlertSeverity,
+  CustomerCustomizationRiskLevel,
+  CustomerIntegrationEnvironment,
+  CustomerIntegrationStatus,
+  CustomerIntegrationType,
+  CustomerOperationalStatus,
+  CustomerProductLine,
   TenantStatus,
 } from '../../contracts/admin-contracts';
-import { TENANT_STATUSES } from '../../contracts/admin-contracts';
+import {
+  CUSTOMER_ALERT_SEVERITIES,
+  CUSTOMER_CUSTOMIZATION_RISK_LEVELS,
+  CUSTOMER_INTEGRATION_ENVIRONMENTS,
+  CUSTOMER_INTEGRATION_STATUSES,
+  CUSTOMER_INTEGRATION_TYPES,
+  CUSTOMER_OPERATIONAL_STATUSES,
+  CUSTOMER_PRODUCT_LINES,
+  TENANT_STATUSES,
+} from '../../contracts/admin-contracts';
 import { useAuthContext } from '../auth/auth-context';
 import {
   createTenant,
   createTenantContact,
+  addCustomerAccountAlert,
+  addCustomerAccountCustomization,
+  addCustomerAccountIntegration,
+  archiveCustomerAccountAlert,
+  archiveCustomerAccountCustomization,
+  archiveCustomerAccountIntegration,
   getAdminTenantDetail,
+  getAdminCustomerAccountProfile,
   listAdminAuditFeed,
+  listAdminCustomerAccountAlerts,
+  listAdminCustomerAccountCustomizations,
+  listAdminCustomerAccountFeatures,
+  listAdminCustomerAccountIntegrations,
   listAdminMemberships,
   listAdminTenants,
+  setCustomerAccountFeatureFlag,
   updateTenantContact,
   updateTenantStatus,
+  upsertCustomerAccountProfile,
 } from '../admin/admin-api';
 import { classifyAdminError } from '../admin/admin-errors';
 
 type PagePhase = 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type DetailPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
-type TenantTab = 'summary' | 'members' | 'status' | 'activity';
+type TenantTab = 'summary' | 'account' | 'members' | 'status' | 'activity';
 type TenantUpdatedFilter = 'all' | '24h' | '7d' | '30d';
 type TenantMembershipFilter = 'all' | 'active' | 'invited' | 'none';
 type TenantSort = 'updated' | 'name';
@@ -75,6 +109,56 @@ interface ContactFormState {
   isActive: boolean;
 }
 
+interface AccountProfileFormState {
+  productLine: CustomerProductLine;
+  operationalStatus: CustomerOperationalStatus;
+  accountTier: string;
+  internalNotes: string;
+  highTouchAccount: boolean;
+  customOperationalFlow: boolean;
+  financialAttentionRequired: boolean;
+  restrictedSupportWindow: boolean;
+  integrationSensitiveAccount: boolean;
+}
+
+interface AccountIntegrationFormState {
+  integrationType: CustomerIntegrationType;
+  provider: string;
+  status: CustomerIntegrationStatus;
+  environment: CustomerIntegrationEnvironment;
+  notes: string;
+}
+
+interface AccountCustomizationFormState {
+  title: string;
+  description: string;
+  riskLevel: CustomerCustomizationRiskLevel;
+  operationalNote: string;
+  status: string;
+}
+
+interface AccountAlertFormState {
+  severity: CustomerAlertSeverity;
+  title: string;
+  description: string;
+  expiresAt: string;
+}
+
+interface AccountFeatureFormState {
+  featureKey: string;
+  enabled: boolean;
+  source: string;
+  notes: string;
+}
+
+interface CustomerAccountState {
+  profile: AdminCustomerAccountProfileDetail | null;
+  integrations: AdminCustomerAccountIntegration[];
+  customizations: AdminCustomerAccountCustomization[];
+  alerts: AdminCustomerAccountAlert[];
+  features: AdminCustomerAccountFeature[];
+}
+
 function emptyTenantForm(): TenantFormState {
   return {
     slug: '',
@@ -93,6 +177,76 @@ function emptyContactForm(): ContactFormState {
     linkedUserId: '',
     isPrimary: false,
     isActive: true,
+  };
+}
+
+function emptyAccountProfileForm(): AccountProfileFormState {
+  return {
+    productLine: 'genius_returns',
+    operationalStatus: 'active',
+    accountTier: '',
+    internalNotes: '',
+    highTouchAccount: false,
+    customOperationalFlow: false,
+    financialAttentionRequired: false,
+    restrictedSupportWindow: false,
+    integrationSensitiveAccount: false,
+  };
+}
+
+function emptyAccountIntegrationForm(): AccountIntegrationFormState {
+  return {
+    integrationType: 'ecommerce_platform',
+    provider: '',
+    status: 'active',
+    environment: 'production',
+    notes: '',
+  };
+}
+
+function emptyAccountCustomizationForm(): AccountCustomizationFormState {
+  return {
+    title: '',
+    description: '',
+    riskLevel: 'medium',
+    operationalNote: '',
+    status: 'active',
+  };
+}
+
+function emptyAccountAlertForm(): AccountAlertFormState {
+  return {
+    severity: 'warning',
+    title: '',
+    description: '',
+    expiresAt: '',
+  };
+}
+
+function emptyAccountFeatureForm(): AccountFeatureFormState {
+  return {
+    featureKey: '',
+    enabled: true,
+    source: 'operations',
+    notes: '',
+  };
+}
+
+function buildAccountProfileForm(
+  profile: AdminCustomerAccountProfileDetail | null,
+): AccountProfileFormState {
+  const flags = profile?.operationalFlags ?? {};
+
+  return {
+    productLine: profile?.productLine ?? 'genius_returns',
+    operationalStatus: profile?.operationalStatus ?? 'active',
+    accountTier: profile?.accountTier ?? '',
+    internalNotes: profile?.internalNotes ?? '',
+    highTouchAccount: flags.high_touch_account === true,
+    customOperationalFlow: flags.custom_operational_flow === true,
+    financialAttentionRequired: flags.financial_attention_required === true,
+    restrictedSupportWindow: flags.restricted_support_window === true,
+    integrationSensitiveAccount: flags.integration_sensitive_account === true,
   };
 }
 
@@ -135,6 +289,111 @@ function labelForTenantStatus(status: TenantStatus) {
   }
 
   return 'Arquivado';
+}
+
+function labelForProductLine(value: CustomerProductLine | null | undefined) {
+  if (value === 'genius_returns') {
+    return 'Genius Returns';
+  }
+
+  if (value === 'after_sale') {
+    return 'After Sale';
+  }
+
+  if (value === 'hybrid') {
+    return 'Híbrido';
+  }
+
+  if (value === 'other') {
+    return 'Outro';
+  }
+
+  return 'Indisponível';
+}
+
+function labelForOperationalStatus(value: CustomerOperationalStatus | null | undefined) {
+  if (value === 'onboarding') {
+    return 'Onboarding';
+  }
+
+  if (value === 'active') {
+    return 'Ativo';
+  }
+
+  if (value === 'limited') {
+    return 'Limitado';
+  }
+
+  if (value === 'suspended') {
+    return 'Suspenso';
+  }
+
+  if (value === 'legacy') {
+    return 'Legado';
+  }
+
+  return 'Indisponível';
+}
+
+function labelForIntegrationType(value: CustomerIntegrationType) {
+  const labels: Record<CustomerIntegrationType, string> = {
+    carrier: 'Transportadora',
+    custom_api: 'API customizada',
+    ecommerce_platform: 'E-commerce',
+    erp: 'ERP',
+    gateway: 'Gateway',
+    logistics_provider: 'Logística',
+    oms: 'OMS',
+    other: 'Outro',
+    refund_provider: 'Estorno',
+  };
+
+  return labels[value];
+}
+
+function labelForIntegrationStatus(value: CustomerIntegrationStatus) {
+  const labels: Record<CustomerIntegrationStatus, string> = {
+    active: 'Ativa',
+    degraded: 'Degradada',
+    deprecated: 'Legada',
+    disabled: 'Arquivada',
+    planned: 'Planejada',
+  };
+
+  return labels[value];
+}
+
+function labelForIntegrationEnvironment(value: CustomerIntegrationEnvironment) {
+  const labels: Record<CustomerIntegrationEnvironment, string> = {
+    other: 'Outro',
+    production: 'Produção',
+    sandbox: 'Sandbox',
+    staging: 'Homologação',
+  };
+
+  return labels[value];
+}
+
+function labelForRiskLevel(value: CustomerCustomizationRiskLevel) {
+  const labels: Record<CustomerCustomizationRiskLevel, string> = {
+    critical: 'Crítico',
+    high: 'Alto',
+    low: 'Baixo',
+    medium: 'Médio',
+  };
+
+  return labels[value];
+}
+
+function labelForAlertSeverity(value: CustomerAlertSeverity) {
+  const labels: Record<CustomerAlertSeverity, string> = {
+    critical: 'Crítico',
+    high: 'Alto',
+    info: 'Informativo',
+    warning: 'Atenção',
+  };
+
+  return labels[value];
 }
 
 function membershipPillTone(activeMembershipCount: number, membershipCount: number) {
@@ -319,6 +578,13 @@ export function TenantsPage() {
   const [detailPhase, setDetailPhase] = useState<DetailPhase>('idle');
   const [detailMessage, setDetailMessage] = useState<string | null>(null);
   const [tenantDetail, setTenantDetail] = useState<AdminTenantDetailRow | null>(null);
+  const [customerAccount, setCustomerAccount] = useState<CustomerAccountState>({
+    profile: null,
+    integrations: [],
+    customizations: [],
+    alerts: [],
+    features: [],
+  });
   const [activeTab, setActiveTab] = useState<TenantTab>('summary');
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | TenantStatus>('all');
@@ -338,6 +604,18 @@ export function TenantsPage() {
   const [contactForm, setContactForm] = useState<ContactFormState>(emptyContactForm);
   const [contactSubmitting, setContactSubmitting] = useState(false);
   const [contactMessage, setContactMessage] = useState<string | null>(null);
+  const [accountProfileForm, setAccountProfileForm] =
+    useState<AccountProfileFormState>(emptyAccountProfileForm);
+  const [accountIntegrationForm, setAccountIntegrationForm] =
+    useState<AccountIntegrationFormState>(emptyAccountIntegrationForm);
+  const [accountCustomizationForm, setAccountCustomizationForm] =
+    useState<AccountCustomizationFormState>(emptyAccountCustomizationForm);
+  const [accountAlertForm, setAccountAlertForm] =
+    useState<AccountAlertFormState>(emptyAccountAlertForm);
+  const [accountFeatureForm, setAccountFeatureForm] =
+    useState<AccountFeatureFormState>(emptyAccountFeatureForm);
+  const [accountSubmittingKey, setAccountSubmittingKey] = useState<string | null>(null);
+  const [accountMessage, setAccountMessage] = useState<string | null>(null);
   const deferredQuery = useDeferredValue(query);
 
   const loadSurface = useEffectEvent(async (preferredTenantId?: string | null) => {
@@ -396,17 +674,40 @@ export function TenantsPage() {
     setDetailMessage(null);
 
     try {
-      const detail = await getAdminTenantDetail(tenantId);
+      const [detail, accountProfile, integrations, customizations, alerts, features] =
+        await Promise.all([
+          getAdminTenantDetail(tenantId),
+          getAdminCustomerAccountProfile(tenantId),
+          listAdminCustomerAccountIntegrations(tenantId),
+          listAdminCustomerAccountCustomizations(tenantId),
+          listAdminCustomerAccountAlerts(tenantId),
+          listAdminCustomerAccountFeatures(tenantId),
+        ]);
       setBackendDenied(false);
 
       if (!detail) {
         setTenantDetail(null);
+        setCustomerAccount({
+          profile: null,
+          integrations: [],
+          customizations: [],
+          alerts: [],
+          features: [],
+        });
         setDetailPhase('error');
         setDetailMessage('Não foi possível abrir o cliente selecionado.');
         return;
       }
 
       setTenantDetail(detail);
+      setCustomerAccount({
+        profile: accountProfile,
+        integrations,
+        customizations,
+        alerts,
+        features,
+      });
+      setAccountProfileForm(buildAccountProfileForm(accountProfile));
       setDetailPhase('ready');
       setStatusDraft(detail.status);
     } catch (error) {
@@ -426,6 +727,13 @@ export function TenantsPage() {
       }
 
       setTenantDetail(null);
+      setCustomerAccount({
+        profile: null,
+        integrations: [],
+        customizations: [],
+        alerts: [],
+        features: [],
+      });
       setDetailMessage(classified.message);
       setDetailPhase(
         classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
@@ -457,6 +765,11 @@ export function TenantsPage() {
     setEditingContactId(null);
     setContactForm(emptyContactForm());
     setContactMessage(null);
+    setAccountMessage(null);
+    setAccountIntegrationForm(emptyAccountIntegrationForm());
+    setAccountCustomizationForm(emptyAccountCustomizationForm());
+    setAccountAlertForm(emptyAccountAlertForm());
+    setAccountFeatureForm(emptyAccountFeatureForm());
   }, [selectedTenantId]);
 
   const filteredTenants = useMemo(() => {
@@ -697,6 +1010,145 @@ export function TenantsPage() {
     } finally {
       setContactSubmitting(false);
     }
+  }
+
+  async function runAccountAction(actionKey: string, action: () => Promise<void>) {
+    if (!selectedTenantId) {
+      return;
+    }
+
+    setAccountSubmittingKey(actionKey);
+    setAccountMessage(null);
+
+    try {
+      await action();
+      await loadSurface(selectedTenantId);
+      await loadTenantDetail(selectedTenantId);
+      setAccountMessage('Operação da conta B2B sincronizada com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Não foi possível sincronizar a operação da conta B2B.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      if (classified.kind === 'permission-denied') {
+        setBackendDenied(true);
+        return;
+      }
+
+      setAccountMessage(classified.message);
+    } finally {
+      setAccountSubmittingKey(null);
+    }
+  }
+
+  async function handleSaveAccountProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!selectedTenantId) {
+      return;
+    }
+
+    await runAccountAction('profile', async () => {
+      await upsertCustomerAccountProfile({
+        p_tenant_id: selectedTenantId,
+        p_product_line: accountProfileForm.productLine,
+        p_operational_status: accountProfileForm.operationalStatus,
+        p_account_tier: accountProfileForm.accountTier.trim(),
+        p_internal_notes: normalizeOptionalText(accountProfileForm.internalNotes),
+        p_operational_flags: {
+          high_touch_account: accountProfileForm.highTouchAccount,
+          custom_operational_flow: accountProfileForm.customOperationalFlow,
+          financial_attention_required: accountProfileForm.financialAttentionRequired,
+          restricted_support_window: accountProfileForm.restrictedSupportWindow,
+          integration_sensitive_account: accountProfileForm.integrationSensitiveAccount,
+        },
+        p_features: null,
+      });
+    });
+  }
+
+  async function handleAddAccountIntegration(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!selectedTenantId) {
+      return;
+    }
+
+    await runAccountAction('integration:add', async () => {
+      await addCustomerAccountIntegration({
+        p_tenant_id: selectedTenantId,
+        p_integration_type: accountIntegrationForm.integrationType,
+        p_provider: accountIntegrationForm.provider.trim(),
+        p_status: accountIntegrationForm.status,
+        p_environment: accountIntegrationForm.environment,
+        p_notes: normalizeOptionalText(accountIntegrationForm.notes),
+      });
+      setAccountIntegrationForm(emptyAccountIntegrationForm());
+    });
+  }
+
+  async function handleAddAccountCustomization(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!selectedTenantId) {
+      return;
+    }
+
+    await runAccountAction('customization:add', async () => {
+      await addCustomerAccountCustomization({
+        p_tenant_id: selectedTenantId,
+        p_title: accountCustomizationForm.title.trim(),
+        p_description: accountCustomizationForm.description.trim(),
+        p_risk_level: accountCustomizationForm.riskLevel,
+        p_operational_note: normalizeOptionalText(accountCustomizationForm.operationalNote),
+        p_status: accountCustomizationForm.status.trim() || 'active',
+      });
+      setAccountCustomizationForm(emptyAccountCustomizationForm());
+    });
+  }
+
+  async function handleAddAccountAlert(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!selectedTenantId) {
+      return;
+    }
+
+    await runAccountAction('alert:add', async () => {
+      await addCustomerAccountAlert({
+        p_tenant_id: selectedTenantId,
+        p_severity: accountAlertForm.severity,
+        p_title: accountAlertForm.title.trim(),
+        p_description: accountAlertForm.description.trim(),
+        p_expires_at: normalizeOptionalText(accountAlertForm.expiresAt),
+      });
+      setAccountAlertForm(emptyAccountAlertForm());
+    });
+  }
+
+  async function handleSetAccountFeature(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!selectedTenantId) {
+      return;
+    }
+
+    await runAccountAction('feature:set', async () => {
+      await setCustomerAccountFeatureFlag({
+        p_tenant_id: selectedTenantId,
+        p_feature_key: accountFeatureForm.featureKey.trim(),
+        p_enabled: accountFeatureForm.enabled,
+        p_source: accountFeatureForm.source.trim() || 'operations',
+        p_notes: normalizeOptionalText(accountFeatureForm.notes),
+      });
+      setAccountFeatureForm(emptyAccountFeatureForm());
+    });
   }
 
   function resetFilters() {
@@ -1071,6 +1523,7 @@ export function TenantsPage() {
                   <div className="mt-3.5 flex flex-wrap gap-2 border-b border-[color:var(--color-border)] pb-2.5">
                     {[
                       { id: 'summary', label: 'Resumo' },
+                      { id: 'account', label: 'Conta B2B' },
                       { id: 'members', label: 'Membros' },
                       { id: 'status', label: 'Status' },
                       { id: 'activity', label: 'Atividade' },
@@ -1116,8 +1569,14 @@ export function TenantsPage() {
                           <TenantRailInfoRow label="Grupo" value="Indisponível" />
                           <TenantRailInfoRow label="Slug" value={tenantDetail.slug} />
                           <TenantRailInfoRow label="Empresa" value={tenantDetail.legal_name} />
-                          <TenantRailInfoRow label="Plano" value="Indisponível" />
-                          <TenantRailInfoRow label="Produto" value="Indisponível" />
+                          <TenantRailInfoRow
+                            label="Plano"
+                            value={customerAccount.profile?.accountTier ?? 'Indisponível'}
+                          />
+                          <TenantRailInfoRow
+                            label="Produto"
+                            value={labelForProductLine(customerAccount.profile?.productLine)}
+                          />
                           <TenantRailInfoRow
                             label="Atualizado"
                             value={formatDateTime(tenantDetail.updated_at)}
@@ -1199,6 +1658,441 @@ export function TenantsPage() {
                           </div>
                         </div>
                       </>
+                    ) : null}
+
+                    {activeTab === 'account' ? (
+                      <div className="space-y-3">
+                        {accountMessage ? <InlineNotice>{accountMessage}</InlineNotice> : null}
+
+                        <form
+                          className="space-y-3 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3.5"
+                          onSubmit={handleSaveAccountProfile}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-[0.92rem] font-semibold text-[color:var(--color-ink)]">
+                                Perfil operacional
+                              </p>
+                              <p className="mt-1 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
+                                Mantido por RPC administrativa, com auditoria e sanitização de conteúdo sensível.
+                              </p>
+                            </div>
+                            <AppButton
+                              className="min-h-9 px-3 text-xs"
+                              disabled={accountSubmittingKey === 'profile'}
+                              type="submit"
+                            >
+                              Salvar perfil
+                            </AppButton>
+                          </div>
+
+                          <div className="grid gap-2">
+                            <Field label="Produto">
+                              <SelectInput
+                                value={accountProfileForm.productLine}
+                                onChange={(event) =>
+                                  setAccountProfileForm((current) => ({
+                                    ...current,
+                                    productLine: event.target.value as CustomerProductLine,
+                                  }))
+                                }
+                              >
+                                {CUSTOMER_PRODUCT_LINES.map((value) => (
+                                  <option key={value} value={value}>
+                                    {labelForProductLine(value)}
+                                  </option>
+                                ))}
+                              </SelectInput>
+                            </Field>
+                            <Field label="Status operacional">
+                              <SelectInput
+                                value={accountProfileForm.operationalStatus}
+                                onChange={(event) =>
+                                  setAccountProfileForm((current) => ({
+                                    ...current,
+                                    operationalStatus: event.target.value as CustomerOperationalStatus,
+                                  }))
+                                }
+                              >
+                                {CUSTOMER_OPERATIONAL_STATUSES.map((value) => (
+                                  <option key={value} value={value}>
+                                    {labelForOperationalStatus(value)}
+                                  </option>
+                                ))}
+                              </SelectInput>
+                            </Field>
+                            <Field label="Plano / tier">
+                              <TextInput
+                                onChange={(event) =>
+                                  setAccountProfileForm((current) => ({
+                                    ...current,
+                                    accountTier: event.target.value,
+                                  }))
+                                }
+                                placeholder="enterprise"
+                                value={accountProfileForm.accountTier}
+                              />
+                            </Field>
+                            <Field label="Observação interna segura">
+                              <TextareaInput
+                                onChange={(event) =>
+                                  setAccountProfileForm((current) => ({
+                                    ...current,
+                                    internalNotes: event.target.value,
+                                  }))
+                                }
+                                placeholder="Sem tokens, URLs internas, endpoints ou credenciais."
+                                rows={3}
+                                value={accountProfileForm.internalNotes}
+                              />
+                            </Field>
+                          </div>
+
+                          <div className="grid gap-2 text-[0.82rem] text-[color:var(--color-ink)]">
+                            {[
+                              ['highTouchAccount', 'Conta high-touch'],
+                              ['customOperationalFlow', 'Fluxo operacional customizado'],
+                              ['financialAttentionRequired', 'Atenção financeira'],
+                              ['restrictedSupportWindow', 'Janela de suporte restrita'],
+                              ['integrationSensitiveAccount', 'Conta sensível a integração'],
+                            ].map(([key, label]) => (
+                              <label className="flex items-center gap-2" key={key}>
+                                <input
+                                  checked={Boolean(
+                                    accountProfileForm[key as keyof AccountProfileFormState],
+                                  )}
+                                  onChange={(event) =>
+                                    setAccountProfileForm((current) => ({
+                                      ...current,
+                                      [key]: event.target.checked,
+                                    }))
+                                  }
+                                  type="checkbox"
+                                />
+                                {label}
+                              </label>
+                            ))}
+                          </div>
+                        </form>
+
+                        <section className="space-y-2 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3.5">
+                          <p className="text-[0.92rem] font-semibold text-[color:var(--color-ink)]">
+                            Integrações principais
+                          </p>
+                          <form className="grid gap-2" onSubmit={handleAddAccountIntegration}>
+                            <Field label="Tipo">
+                              <SelectInput
+                                value={accountIntegrationForm.integrationType}
+                                onChange={(event) =>
+                                  setAccountIntegrationForm((current) => ({
+                                    ...current,
+                                    integrationType: event.target.value as CustomerIntegrationType,
+                                  }))
+                                }
+                              >
+                                {CUSTOMER_INTEGRATION_TYPES.map((value) => (
+                                  <option key={value} value={value}>
+                                    {labelForIntegrationType(value)}
+                                  </option>
+                                ))}
+                              </SelectInput>
+                            </Field>
+                            <Field label="Provedor">
+                              <TextInput
+                                onChange={(event) =>
+                                  setAccountIntegrationForm((current) => ({
+                                    ...current,
+                                    provider: event.target.value,
+                                  }))
+                                }
+                                placeholder="Plataforma ou parceiro"
+                                value={accountIntegrationForm.provider}
+                              />
+                            </Field>
+                            <div className="grid grid-cols-2 gap-2">
+                              <Field label="Status">
+                                <SelectInput
+                                  value={accountIntegrationForm.status}
+                                  onChange={(event) =>
+                                    setAccountIntegrationForm((current) => ({
+                                      ...current,
+                                      status: event.target.value as CustomerIntegrationStatus,
+                                    }))
+                                  }
+                                >
+                                  {CUSTOMER_INTEGRATION_STATUSES.map((value) => (
+                                    <option key={value} value={value}>
+                                      {labelForIntegrationStatus(value)}
+                                    </option>
+                                  ))}
+                                </SelectInput>
+                              </Field>
+                              <Field label="Ambiente">
+                                <SelectInput
+                                  value={accountIntegrationForm.environment}
+                                  onChange={(event) =>
+                                    setAccountIntegrationForm((current) => ({
+                                      ...current,
+                                      environment: event.target.value as CustomerIntegrationEnvironment,
+                                    }))
+                                  }
+                                >
+                                  {CUSTOMER_INTEGRATION_ENVIRONMENTS.map((value) => (
+                                    <option key={value} value={value}>
+                                      {labelForIntegrationEnvironment(value)}
+                                    </option>
+                                  ))}
+                                </SelectInput>
+                              </Field>
+                            </div>
+                            <Field label="Nota segura">
+                              <TextareaInput
+                                onChange={(event) =>
+                                  setAccountIntegrationForm((current) => ({
+                                    ...current,
+                                    notes: event.target.value,
+                                  }))
+                                }
+                                rows={2}
+                                value={accountIntegrationForm.notes}
+                              />
+                            </Field>
+                            <AppButton disabled={accountSubmittingKey === 'integration:add'} type="submit">
+                              Adicionar integração
+                            </AppButton>
+                          </form>
+                          <div className="space-y-2">
+                            {customerAccount.integrations.length === 0 ? (
+                              <InlineNotice>Nenhuma integração operacional registrada.</InlineNotice>
+                            ) : (
+                              customerAccount.integrations.map((integration) => (
+                                <div className="rounded-[16px] border border-[color:var(--color-border)] bg-white p-3" key={integration.id}>
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                      <p className="text-sm font-semibold text-[color:var(--color-ink)]">
+                                        {integration.provider}
+                                      </p>
+                                      <p className="mt-1 text-[0.78rem] text-[color:var(--color-muted)]">
+                                        {labelForIntegrationType(integration.integrationType)} · {labelForIntegrationStatus(integration.status)} · {labelForIntegrationEnvironment(integration.environment)}
+                                      </p>
+                                    </div>
+                                    <GhostButton
+                                      className="min-h-8 px-3 text-xs"
+                                      disabled={!integration.canArchive || accountSubmittingKey === `integration:${integration.id}`}
+                                      onClick={() =>
+                                        void runAccountAction(`integration:${integration.id}`, async () => {
+                                          await archiveCustomerAccountIntegration({
+                                            p_integration_id: integration.id,
+                                          });
+                                        })
+                                      }
+                                      type="button"
+                                    >
+                                      Arquivar
+                                    </GhostButton>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </section>
+
+                        <section className="space-y-2 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3.5">
+                          <p className="text-[0.92rem] font-semibold text-[color:var(--color-ink)]">
+                            Customizações e alertas
+                          </p>
+                          <form className="grid gap-2" onSubmit={handleAddAccountCustomization}>
+                            <Field label="Customização">
+                              <TextInput
+                                onChange={(event) =>
+                                  setAccountCustomizationForm((current) => ({
+                                    ...current,
+                                    title: event.target.value,
+                                  }))
+                                }
+                                placeholder="Exceção operacional"
+                                value={accountCustomizationForm.title}
+                              />
+                            </Field>
+                            <Field label="Descrição">
+                              <TextareaInput
+                                onChange={(event) =>
+                                  setAccountCustomizationForm((current) => ({
+                                    ...current,
+                                    description: event.target.value,
+                                  }))
+                                }
+                                rows={2}
+                                value={accountCustomizationForm.description}
+                              />
+                            </Field>
+                            <Field label="Risco">
+                              <SelectInput
+                                value={accountCustomizationForm.riskLevel}
+                                onChange={(event) =>
+                                  setAccountCustomizationForm((current) => ({
+                                    ...current,
+                                    riskLevel: event.target.value as CustomerCustomizationRiskLevel,
+                                  }))
+                                }
+                              >
+                                {CUSTOMER_CUSTOMIZATION_RISK_LEVELS.map((value) => (
+                                  <option key={value} value={value}>
+                                    {labelForRiskLevel(value)}
+                                  </option>
+                                ))}
+                              </SelectInput>
+                            </Field>
+                            <AppButton disabled={accountSubmittingKey === 'customization:add'} type="submit">
+                              Adicionar customização
+                            </AppButton>
+                          </form>
+                          <div className="space-y-2">
+                            {customerAccount.customizations.map((customization) => (
+                              <div className="rounded-[16px] border border-[color:var(--color-border)] bg-white p-3" key={customization.id}>
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <p className="text-sm font-semibold text-[color:var(--color-ink)]">{customization.title}</p>
+                                    <p className="mt-1 text-[0.78rem] text-[color:var(--color-muted)]">{labelForRiskLevel(customization.riskLevel)} · {customization.status}</p>
+                                  </div>
+                                  <GhostButton
+                                    className="min-h-8 px-3 text-xs"
+                                    disabled={!customization.canArchive || accountSubmittingKey === `customization:${customization.id}`}
+                                    onClick={() =>
+                                      void runAccountAction(`customization:${customization.id}`, async () => {
+                                        await archiveCustomerAccountCustomization({
+                                          p_customization_id: customization.id,
+                                        });
+                                      })
+                                    }
+                                    type="button"
+                                  >
+                                    Arquivar
+                                  </GhostButton>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <form className="grid gap-2 border-t border-[color:var(--color-border)] pt-3" onSubmit={handleAddAccountAlert}>
+                            <Field label="Alerta interno">
+                              <TextInput
+                                onChange={(event) =>
+                                  setAccountAlertForm((current) => ({
+                                    ...current,
+                                    title: event.target.value,
+                                  }))
+                                }
+                                placeholder="Aviso para suporte/CS"
+                                value={accountAlertForm.title}
+                              />
+                            </Field>
+                            <Field label="Descrição">
+                              <TextareaInput
+                                onChange={(event) =>
+                                  setAccountAlertForm((current) => ({
+                                    ...current,
+                                    description: event.target.value,
+                                  }))
+                                }
+                                rows={2}
+                                value={accountAlertForm.description}
+                              />
+                            </Field>
+                            <Field label="Severidade">
+                              <SelectInput
+                                value={accountAlertForm.severity}
+                                onChange={(event) =>
+                                  setAccountAlertForm((current) => ({
+                                    ...current,
+                                    severity: event.target.value as CustomerAlertSeverity,
+                                  }))
+                                }
+                              >
+                                {CUSTOMER_ALERT_SEVERITIES.map((value) => (
+                                  <option key={value} value={value}>
+                                    {labelForAlertSeverity(value)}
+                                  </option>
+                                ))}
+                              </SelectInput>
+                            </Field>
+                            <AppButton disabled={accountSubmittingKey === 'alert:add'} type="submit">
+                              Adicionar alerta
+                            </AppButton>
+                          </form>
+                          <div className="space-y-2">
+                            {customerAccount.alerts.map((alert) => (
+                              <div className="rounded-[16px] border border-[color:var(--color-border)] bg-white p-3" key={alert.id}>
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <p className="text-sm font-semibold text-[color:var(--color-ink)]">{alert.title}</p>
+                                    <p className="mt-1 text-[0.78rem] text-[color:var(--color-muted)]">{labelForAlertSeverity(alert.severity)} · {alert.active ? 'Ativo' : 'Arquivado'}</p>
+                                  </div>
+                                  <GhostButton
+                                    className="min-h-8 px-3 text-xs"
+                                    disabled={!alert.canArchive || accountSubmittingKey === `alert:${alert.id}`}
+                                    onClick={() =>
+                                      void runAccountAction(`alert:${alert.id}`, async () => {
+                                        await archiveCustomerAccountAlert({ p_alert_id: alert.id });
+                                      })
+                                    }
+                                    type="button"
+                                  >
+                                    Arquivar
+                                  </GhostButton>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </section>
+
+                        <section className="space-y-2 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3.5">
+                          <p className="text-[0.92rem] font-semibold text-[color:var(--color-ink)]">
+                            Features e módulos
+                          </p>
+                          <form className="grid gap-2" onSubmit={handleSetAccountFeature}>
+                            <Field label="Feature key">
+                              <TextInput
+                                onChange={(event) =>
+                                  setAccountFeatureForm((current) => ({
+                                    ...current,
+                                    featureKey: event.target.value,
+                                  }))
+                                }
+                                placeholder="returns_portal"
+                                value={accountFeatureForm.featureKey}
+                              />
+                            </Field>
+                            <label className="flex items-center gap-2 text-[0.82rem] text-[color:var(--color-ink)]">
+                              <input
+                                checked={accountFeatureForm.enabled}
+                                onChange={(event) =>
+                                  setAccountFeatureForm((current) => ({
+                                    ...current,
+                                    enabled: event.target.checked,
+                                  }))
+                                }
+                                type="checkbox"
+                              />
+                              Habilitada
+                            </label>
+                            <AppButton disabled={accountSubmittingKey === 'feature:set'} type="submit">
+                              Atualizar feature
+                            </AppButton>
+                          </form>
+                          <div className="flex flex-wrap gap-2">
+                            {customerAccount.features.length === 0 ? (
+                              <InlineNotice>Nenhuma feature registrada.</InlineNotice>
+                            ) : (
+                              customerAccount.features.map((feature) => (
+                                <StatusPill key={feature.id} tone={feature.enabled ? 'positive' : 'default'}>
+                                  {feature.featureKey}: {feature.enabled ? 'on' : 'off'}
+                                </StatusPill>
+                              ))
+                            )}
+                          </div>
+                        </section>
+                      </div>
                     ) : null}
 
                     {activeTab === 'members' ? (
