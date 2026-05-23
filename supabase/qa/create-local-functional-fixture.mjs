@@ -30,6 +30,12 @@ const USERS = {
     password: 'Local-QA-Internal-Area-2026!',
     fullName: 'QA Local Internal Area Member',
   },
+  internalAreaEmpty: {
+    key: 'internal_area_empty',
+    email: 'qa.local.internal-area-empty@genius.local',
+    password: 'Local-QA-Internal-Empty-2026!',
+    fullName: 'QA Local Internal Area Empty',
+  },
   internalAreaNonMember: {
     key: 'internal_area_non_member',
     email: 'qa.local.internal-area-non-member@genius.local',
@@ -456,7 +462,7 @@ function queryInternalActionBySummary(tenantId, ticketId, summary) {
   return result.rows?.[0] ?? null;
 }
 
-async function ensureAreaMembership({ adminSession, tenantId, userId }) {
+async function ensureAreaMembership({ adminSession, tenantId, userId, areaKey = 'finance' }) {
   const membership = await callRpcAsUser({
     apiUrl: adminSession.apiUrl,
     anonKey: adminSession.anonKey,
@@ -465,7 +471,7 @@ async function ensureAreaMembership({ adminSession, tenantId, userId }) {
     body: {
       p_tenant_id: tenantId,
       p_user_id: userId,
-      p_area_key: 'finance',
+      p_area_key: areaKey,
       p_role: 'member',
       p_status: 'active',
     },
@@ -685,6 +691,13 @@ async function main() {
     password: USERS.internalAreaMember.password,
     fullName: USERS.internalAreaMember.fullName,
   });
+  const internalEmptyAuth = await createOrUpdateAuthUser({
+    apiUrl,
+    serviceRoleKey,
+    email: USERS.internalAreaEmpty.email,
+    password: USERS.internalAreaEmpty.password,
+    fullName: USERS.internalAreaEmpty.fullName,
+  });
   const internalNonMemberAuth = await createOrUpdateAuthUser({
     apiUrl,
     serviceRoleKey,
@@ -694,10 +707,15 @@ async function main() {
   });
 
   const internalMemberProfile = queryProfileByEmail(USERS.internalAreaMember.email);
+  const internalEmptyProfile = queryProfileByEmail(USERS.internalAreaEmpty.email);
   const internalNonMemberProfile = queryProfileByEmail(USERS.internalAreaNonMember.email);
 
   if (!internalMemberProfile?.id || !internalMemberProfile.is_active) {
     fail(`Profile ativo ausente para ${USERS.internalAreaMember.email}.`);
+  }
+
+  if (!internalEmptyProfile?.id || !internalEmptyProfile.is_active) {
+    fail(`Profile ativo ausente para ${USERS.internalAreaEmpty.email}.`);
   }
 
   if (!internalNonMemberProfile?.id || !internalNonMemberProfile.is_active) {
@@ -708,6 +726,11 @@ async function main() {
     actorUserId: adminProfile.id,
     tenantId: tenant.id,
     userId: internalMemberProfile.id,
+  });
+  ensureTenantMembership({
+    actorUserId: adminProfile.id,
+    tenantId: tenant.id,
+    userId: internalEmptyProfile.id,
   });
   ensureTenantMembership({
     actorUserId: adminProfile.id,
@@ -723,6 +746,12 @@ async function main() {
     adminSession,
     tenantId: tenant.id,
     userId: internalMemberProfile.id,
+  });
+  const emptyMembershipId = await ensureAreaMembership({
+    adminSession,
+    tenantId: tenant.id,
+    userId: internalEmptyProfile.id,
+    areaKey: 'operations',
   });
 
   const openAction = await ensureInternalAction({
@@ -768,6 +797,11 @@ async function main() {
             user_id: internalMemberAuth.id ?? internalMemberProfile.id,
             profile_id: internalMemberProfile.id,
           },
+          internalAreaEmpty: {
+            ...USERS.internalAreaEmpty,
+            user_id: internalEmptyAuth.id ?? internalEmptyProfile.id,
+            profile_id: internalEmptyProfile.id,
+          },
           internalAreaNonMember: {
             ...USERS.internalAreaNonMember,
             user_id: internalNonMemberAuth.id ?? internalNonMemberProfile.id,
@@ -776,8 +810,11 @@ async function main() {
         },
         internal_area_membership: {
           membership_id: membershipId,
+          empty_membership_id: emptyMembershipId,
           area_key: 'finance',
+          empty_area_key: 'operations',
           member_profile_id: internalMemberProfile.id,
+          empty_profile_id: internalEmptyProfile.id,
           non_member_profile_id: internalNonMemberProfile.id,
         },
         ...summary,

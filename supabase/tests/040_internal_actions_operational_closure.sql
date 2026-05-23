@@ -2,7 +2,7 @@ create extension if not exists pgtap with schema extensions;
 
 begin;
 
-select plan(15);
+select plan(20);
 
 insert into auth.users (
   instance_id,
@@ -21,7 +21,8 @@ values
   ('00000000-0000-0000-0000-000000000000', '40000000-0000-4000-8000-000000000001', 'authenticated', 'authenticated', 'admin@internal-actions-closure.local', crypt('password', gen_salt('bf')), timezone('utc', now()), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Platform Admin Closure"}'::jsonb, timezone('utc', now()), timezone('utc', now())),
   ('00000000-0000-0000-0000-000000000000', '40000000-0000-4000-8000-000000000002', 'authenticated', 'authenticated', 'support@internal-actions-closure.local', crypt('password', gen_salt('bf')), timezone('utc', now()), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Support Closure"}'::jsonb, timezone('utc', now()), timezone('utc', now())),
   ('00000000-0000-0000-0000-000000000000', '40000000-0000-4000-8000-000000000003', 'authenticated', 'authenticated', 'finance@internal-actions-closure.local', crypt('password', gen_salt('bf')), timezone('utc', now()), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Finance Closure"}'::jsonb, timezone('utc', now()), timezone('utc', now())),
-  ('00000000-0000-0000-0000-000000000000', '40000000-0000-4000-8000-000000000004', 'authenticated', 'authenticated', 'outsider@internal-actions-closure.local', crypt('password', gen_salt('bf')), timezone('utc', now()), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Outsider Closure"}'::jsonb, timezone('utc', now()), timezone('utc', now()));
+  ('00000000-0000-0000-0000-000000000000', '40000000-0000-4000-8000-000000000004', 'authenticated', 'authenticated', 'outsider@internal-actions-closure.local', crypt('password', gen_salt('bf')), timezone('utc', now()), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Outsider Closure"}'::jsonb, timezone('utc', now()), timezone('utc', now())),
+  ('00000000-0000-0000-0000-000000000000', '40000000-0000-4000-8000-000000000005', 'authenticated', 'authenticated', 'operations-empty@internal-actions-closure.local', crypt('password', gen_salt('bf')), timezone('utc', now()), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Operations Empty Closure"}'::jsonb, timezone('utc', now()), timezone('utc', now()));
 
 insert into public.user_global_roles (
   user_id,
@@ -58,6 +59,7 @@ insert into public.tenant_memberships (
 values
   ('40000000-0000-4000-8000-000000000010', '40000000-0000-4000-8000-000000000002', 'tenant_admin', 'active', '40000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000001'),
   ('40000000-0000-4000-8000-000000000010', '40000000-0000-4000-8000-000000000003', 'tenant_viewer', 'active', '40000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000001'),
+  ('40000000-0000-4000-8000-000000000010', '40000000-0000-4000-8000-000000000005', 'tenant_viewer', 'active', '40000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000001'),
   ('40000000-0000-4000-8000-000000000020', '40000000-0000-4000-8000-000000000004', 'tenant_viewer', 'active', '40000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000001');
 
 insert into public.tickets (
@@ -102,6 +104,19 @@ select lives_ok(
   'platform_admin adiciona membership de área interna por RPC'
 );
 
+select lives_ok(
+  $$
+    select public.rpc_admin_add_internal_area_membership(
+      '40000000-0000-4000-8000-000000000010'::uuid,
+      '40000000-0000-4000-8000-000000000005'::uuid,
+      'operations',
+      'member'::public.internal_area_membership_role,
+      'active'::public.internal_area_membership_status
+    )
+  $$,
+  'platform_admin adiciona membership de área interna sem acionamentos'
+);
+
 select is(
   (
     select count(*)::integer
@@ -112,6 +127,44 @@ select is(
   ),
   1,
   'admin read model expõe membership criado para governança'
+);
+
+reset role;
+reset request.jwt.claim.role;
+reset request.jwt.claim.sub;
+
+set local role authenticated;
+set local request.jwt.claim.role = 'authenticated';
+set local request.jwt.claim.sub = '40000000-0000-4000-8000-000000000005';
+
+select is(
+  (
+    select count(*)::integer
+    from public.vw_internal_action_area_auth_context
+    where area_key = 'operations'
+      and can_view_queue
+  ),
+  1,
+  'membro com membership ativo e zero acionamentos tem contexto de área'
+);
+
+select is(
+  (
+    select visible_open_action_count
+    from public.vw_internal_action_area_auth_context
+    where area_key = 'operations'
+  ),
+  0,
+  'contexto de área sem demanda informa zero acionamentos abertos'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.vw_internal_action_queue_by_area
+  ),
+  0,
+  'membro de área sem demanda não enxerga fila de outra área'
 );
 
 reset role;
@@ -270,6 +323,15 @@ select is(
   ),
   0,
   'usuário sem membership no tenant da área não enxerga a fila'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.vw_internal_action_area_auth_context
+  ),
+  0,
+  'usuário sem membership não recebe contexto de área vazio enganoso'
 );
 
 reset role;
