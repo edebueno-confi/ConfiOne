@@ -1,8 +1,7 @@
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import mascotUrl from '../../../assets/brand/genius-mascot.svg';
 import {
-  ContractUnavailableState,
   ErrorState,
   LoadingState,
 } from '../../components/states';
@@ -16,25 +15,22 @@ import {
 } from '../../components/ui';
 import { signInWithPassword } from '../auth/auth-api';
 import { useAuthContext } from '../auth/auth-context';
+import {
+  resolvePostLoginRedirect,
+  type PostLoginDenialReason,
+} from '../auth/post-login-redirect';
 
-function sanitizeRedirectTo(rawValue: string | null) {
-  if (!rawValue || !rawValue.startsWith('/') || rawValue.startsWith('//')) {
-    return '/admin/tenants';
-  }
-
-  return rawValue;
-}
-
-function matchesRedirectTarget(redirectTo: string, basePath: string) {
-  return redirectTo === basePath || redirectTo.startsWith(`${basePath}/`);
-}
+type RedirectResolverState =
+  | { phase: 'idle' | 'loading' }
+  | { phase: 'resolved'; destination: string }
+  | { phase: 'denied'; reason: PostLoginDenialReason }
+  | { phase: 'error'; message: string };
 
 export function LoginPage() {
   const [searchParams] = useSearchParams();
-  const redirectTo = sanitizeRedirectTo(searchParams.get('redirectTo'));
+  const redirectTo = searchParams.get('redirectTo');
   const {
     phase,
-    gate,
     sessionExpired,
     clearSessionExpired,
     configError,
@@ -43,10 +39,56 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const isPortalRedirect = matchesRedirectTarget(redirectTo, '/portal');
-  const isSupportRedirect =
-    matchesRedirectTarget(redirectTo, '/support') ||
-    matchesRedirectTarget(redirectTo, '/engineering');
+  const [redirectResolver, setRedirectResolver] = useState<RedirectResolverState>({
+    phase: 'idle',
+  });
+
+  useEffect(() => {
+    if (phase !== 'authenticated') {
+      setRedirectResolver({ phase: 'idle' });
+      return;
+    }
+
+    let cancelled = false;
+    setRedirectResolver({ phase: 'loading' });
+
+    resolvePostLoginRedirect(redirectTo)
+      .then((resolution) => {
+        if (cancelled) {
+          return;
+        }
+
+        if (resolution.destination) {
+          setRedirectResolver({
+            phase: 'resolved',
+            destination: resolution.destination,
+          });
+          return;
+        }
+
+        setRedirectResolver({
+          phase: 'denied',
+          reason: resolution.denialReason ?? 'missing-authorized-workspace',
+        });
+      })
+      .catch((error) => {
+        if (cancelled) {
+          return;
+        }
+
+        setRedirectResolver({
+          phase: 'error',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Sua sessão foi encontrada, mas o destino inicial não pôde ser validado.',
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [phase, redirectTo]);
 
   if (phase === 'config-error') {
     return (
@@ -62,15 +104,7 @@ export function LoginPage() {
     );
   }
 
-  if (phase === 'authenticated' && isPortalRedirect) {
-    return <Navigate replace to={redirectTo} />;
-  }
-
-  if (phase === 'authenticated' && isSupportRedirect) {
-    return <Navigate replace to={redirectTo} />;
-  }
-
-  if (phase === 'booting' || (phase === 'authenticated' && gate.phase === 'loading')) {
+  if (phase === 'booting' || (phase === 'authenticated' && redirectResolver.phase === 'loading')) {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-6 py-12">
         <LoadingState
@@ -81,36 +115,36 @@ export function LoginPage() {
     );
   }
 
-  if (phase === 'authenticated' && gate.phase === 'ready') {
-    return <Navigate replace to={redirectTo} />;
+  if (phase === 'authenticated' && redirectResolver.phase === 'resolved') {
+    return <Navigate replace to={redirectResolver.destination} />;
   }
 
-  if (phase === 'authenticated' && gate.phase === 'denied') {
+  if (phase === 'authenticated' && redirectResolver.phase === 'denied') {
     return (
       <Navigate
         replace
-        state={{ reason: gate.denialReason }}
+        state={{ reason: redirectResolver.reason }}
         to="/access-denied"
       />
     );
   }
 
-  if (phase === 'authenticated' && gate.phase === 'contract-unavailable') {
+  if (phase === 'authenticated' && redirectResolver.phase === 'error') {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-6 py-12">
-        <ContractUnavailableState contractName="acesso do workspace" />
+        <ErrorState
+          description={redirectResolver.message}
+        />
       </div>
     );
   }
 
-  if (phase === 'authenticated' && gate.phase === 'error') {
+  if (phase === 'authenticated') {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-6 py-12">
-        <ErrorState
-          description={
-            gate.message ??
-            'Sua sessão foi encontrada, mas o acesso ao workspace não pôde ser validado.'
-          }
+        <LoadingState
+          title="Carregando sessão"
+          description="Estamos validando sua área inicial."
         />
       </div>
     );
