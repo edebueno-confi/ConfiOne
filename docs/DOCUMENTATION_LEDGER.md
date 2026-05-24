@@ -18,6 +18,51 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase P4-A - MVP Operational Closure & End-to-End Workflow Hardening
+- fase: `P4-A`
+- nome: `MVP Operational Closure & End-to-End Workflow Hardening`
+- branch: `codex/p4-a-mvp-operational-closure`
+- data: `2026-05-24`
+- resumo funcional: validado o fluxo MVP ponta a ponta sem criar feature nova. Cliente cria ticket pelo Portal, suporte recebe e responde, nota interna não vaza, Knowledge público é enviado, área interna recebe/devolve acionamento, engenharia recebe/devolve update, Portal vê apenas conteúdo customer-facing e Admin mostra readiness de canais/AI sem provider ou automação real.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/PRODUCT_VISION.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/SUPPORT_WORKSPACE_ARCHITECTURE_SPEC.md`
+  - `docs/CUSTOMER_PORTAL_CONTRACT_FOUNDATION_V3.md`
+  - `docs/CUSTOMER_PORTAL_TICKET_COLLABORATION_V3.md`
+  - `docs/CUSTOMER_PORTAL_SECURE_EVIDENCE_UPLOAD_V3.md`
+  - `docs/ENGINEERING_WORKSPACE_OPERATIONAL_CORE_V3.md`
+  - `docs/INTERNAL_ACTIONS_V1_STATUS_REPORT.md`
+  - `docs/AI_NATIVE_OPERATIONAL_READINESS.md`
+  - `docs/LOCAL_QA_AUTH.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/reports/P4_MVP_OPERATIONAL_CLOSURE_2026-05-24.md`
+- views/RPCs afetadas:
+  - nenhuma migration ou contrato novo; validação integrada de contratos existentes de Portal, Support, Knowledge, Internal Actions, Engineering, Channel Governance e AI readiness.
+- telas afetadas:
+  - `/admin/tenants`
+  - `/admin/customer-portal`
+  - `/admin/internal-areas`
+  - `/admin/knowledge`
+  - `/admin/system`
+  - `/support/queue`
+  - `/support/tickets/:ticketId`
+  - `/support/customers/:tenantId`
+  - `/portal`
+  - `/portal/tickets/:ticketId`
+  - `/portal/help/:articleSlug`
+  - `/internal-actions`
+  - `/internal-actions/:actionId`
+  - `/engineering/work-items/:workItemId`
+  - `/help/genius/articles/:articleSlug`
+- riscos restantes:
+  - fixture funcional é pesada em Windows local e precisa de timeout maior.
+  - QA exploratório humano ainda é recomendado antes de release interno amplo.
+- impacto na FAQ futura:
+  - permite documentar o fluxo MVP real de atendimento B2B de ponta a ponta e os limites de visibilidade do cliente.
+
 ### Fase P3-B - AI Readiness Admin Visibility + Functional Fixture Reliability
 - fase: `P3-B`
 - nome: `AI Readiness Admin Visibility + Functional Fixture Reliability`

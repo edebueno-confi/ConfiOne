@@ -1,5 +1,9 @@
 # Customer Portal Ticket Collaboration V3
 
+## Atualizacao P4-A - Fechamento operacional do MVP
+- A colaboração customer-facing foi validada no fluxo MVP: ticket criado pelo cliente no Portal aparece para suporte, resposta pública do suporte aparece no Portal, nota interna fica oculta e Knowledge público enviado aparece como referência segura.
+- O Portal continuou sem expor internal actions, engineering, delivery técnico, provider/readiness, audit bruto, storage path ou AI readiness.
+
 ## Objetivo
 Consolidar a colaboracao real do cliente B2B no portal autenticado, cobrindo leitura/ack, resposta customer-facing, timeline segura e solicitacoes controladas de resolucao/reabertura sem expor operacao interna.
 

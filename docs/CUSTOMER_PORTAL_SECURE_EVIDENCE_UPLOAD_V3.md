@@ -6,6 +6,11 @@ Fechar upload customer-facing seguro de evidencias no portal B2B autenticado, re
 
 Este lote nao cria portal visual final, scan/antivirus, notificacao externa, IA ou Omni Inbox.
 
+## Atualizacao P4-A - Fechamento operacional do MVP
+- O fechamento MVP validou evidências da fixture por `vw_support_ticket_attachments` e `vw_customer_portal_ticket_attachments`.
+- Support vê evidências do ticket operacional; Portal vê apenas `attachment_id`, `ticket_id`, `tenant_id`, `display_name`, `content_type`, `size_bytes`, `size_label`, `uploaded_by_label`, `created_at`, `status` e `can_download`.
+- Portal segue sem `storage_bucket`, `storage_object_path`, path interno, bucket bruto ou URL permanente.
+
 ## Decisao de boundary
 
 O upload do cliente usa boundary propria, separada do fluxo interno de suporte:

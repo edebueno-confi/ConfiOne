@@ -7,6 +7,16 @@
 
 ## Estado executável atual
 
+Fase P4-A - MVP Operational Closure & End-to-End Workflow Hardening:
+- Nenhum contrato novo foi criado.
+- O fechamento MVP validou a convivência dos contratos já existentes:
+  - Portal: `rpc_customer_create_ticket`, `rpc_customer_add_ticket_message`, `vw_customer_portal_ticket_timeline`, `vw_customer_portal_ticket_knowledge_links`.
+  - Support: `vw_support_tickets_queue`, `vw_support_ticket_detail`, `rpc_add_ticket_message`, `rpc_add_internal_ticket_note`, `rpc_support_get_ticket_timeline`, `rpc_support_link_ticket_article`.
+  - Internal Actions: `rpc_support_create_internal_action`, `vw_internal_action_queue_by_area`, `rpc_internal_action_return_to_support`.
+  - Engineering: `rpc_support_create_engineering_work_item_from_ticket`, `vw_support_ticket_engineering_links`, `rpc_engineering_add_work_item_update`, `rpc_engineering_return_work_item_to_support`.
+  - Governance: `vw_admin_communication_channel_readiness`, `vw_ai_operational_context_readiness`.
+- O Portal continuou sem acesso a nota interna, internal actions, engenharia, audit bruto, storage path, readiness/provider e AI readiness.
+
 Fase P3-B - AI Readiness Admin Visibility + Functional Fixture Reliability:
 - `/admin/system` passou a ler readiness AI-native por contratos existentes, sem migration nova.
 - Read models consumidos:

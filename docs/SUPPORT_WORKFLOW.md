@@ -1,5 +1,11 @@
 # SUPPORT_WORKFLOW.md
 
+## Atualizacao P4-A - Fechamento operacional do MVP
+- O fluxo MVP foi validado ponta a ponta com dados locais sanitizados: ticket criado pelo Portal, entrada na fila de suporte, resposta pública via Portal, nota interna sem vazamento, Knowledge público enviado, acionamento interno com retorno, escalonamento para engenharia com update/retorno e continuidade da tratativa pelo suporte.
+- O suporte continua operando apenas por views/RPCs. Nenhuma ação visível validada nesta fase dependeu de mock, DML direto ou regra inventada no frontend.
+- Canais externos seguem bloqueados pelo backend; o caso de e-mail futuro retornou motivo operacional e não aceitou resposta pública.
+- IA permanece sem Copilot, geração ativa, provider, modelo, embedding ou automação.
+
 ## Fluxo padrão
 1. Ticket criado.
 2. Classificação inicial por categoria operacional, quando disponível.

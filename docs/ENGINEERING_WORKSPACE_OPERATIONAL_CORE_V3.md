@@ -3,6 +3,10 @@
 ## Objetivo
 Materializar o núcleo operacional do Engineering Workspace para demandas técnicas originadas de tickets, mantendo `ticket` e `engineering_work_item` como domínios separados e conectados apenas por `engineering_ticket_links`.
 
+## Atualizacao P4-A - Fechamento operacional do MVP
+- O handoff técnico foi validado como parte do fluxo MVP: suporte cria work item a partir do ticket, engenharia registra update estruturado, devolve retorno ao suporte e o cliente não vê engenharia interna.
+- O retorno técnico não transforma Engenharia em conversa direta com cliente e não cria automação customer-facing.
+
 ## Decisão de escopo
 - O Engineering Workspace não é um Jira interno.
 - Não há sprint, backlog de produto genérico, chat interno, notificação externa, IA ou upload/storage neste corte.

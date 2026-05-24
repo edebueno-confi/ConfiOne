@@ -40,3 +40,6 @@ Cada solicitação B2B deve ter dono, status, histórico, contexto, prazo, vínc
 
 ## Resultado esperado
 Menos dependência de WhatsApp e e-mail como memória informal, menos informação perdida, mais previsibilidade operacional e base técnica para escalar suporte, CS, engenharia e documentação oficial com identidade pública segura por marca, sem escalar caos.
+
+## Fechamento MVP P4-A
+Em 2026-05-24, o fluxo MVP operacional foi validado ponta a ponta: cliente B2B autenticado abre ticket no Portal, suporte recebe na fila, responde pelo Portal, registra nota interna, usa Knowledge público, aciona área interna, escala para engenharia, recebe retornos estruturados e preserva boundary customer-facing. O MVP segue sem IA real, provider externo, WhatsApp/e-mail real, chatbot, CRM genérico ou automação perigosa.

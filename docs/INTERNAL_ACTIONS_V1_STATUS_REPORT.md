@@ -6,6 +6,10 @@ Data: 2026-05-22
 
 O domínio V1 de Acionamentos Internos existe como fluxo operacional mínimo ponta a ponta: suporte aciona, a área interna opera em workspace próprio e o suporte recebe a devolução estruturada.
 
+Atualizacao P4-A:
+- O fluxo foi validado dentro do fechamento MVP: suporte cria acionamento interno por RPC, a área interna visualiza por membership ativo, devolve retorno ao suporte e o Portal não recebe acionamento interno.
+- A criação/operação do acionamento continua sem alterar `ticket.status` automaticamente.
+
 Status operacional:
 - Backend foundation: implementado.
 - Contrato seguro de áreas acionáveis: implementado.

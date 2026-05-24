@@ -63,6 +63,9 @@ A tela mostra somente readiness operacional sanitizado:
 
 A tela nao expõe ledger bruto, prompt, output, provider, token, API key, storage path ou acao para ativar IA real.
 
+## Fechamento MVP P4-A
+No fechamento operacional do MVP, AI-native readiness foi validada apenas como leitura administrativa. Support não recebeu Copilot, botão de geração ou sugestão ativa; Portal não recebeu readiness interna; nenhuma IA alterou status, enviou mensagem, publicou Knowledge, criou delivery, criou internal action ou criou engineering work item.
+
 ## RPCs
 - `rpc_ai_validate_context_access`
 - `rpc_ai_log_usage_event`

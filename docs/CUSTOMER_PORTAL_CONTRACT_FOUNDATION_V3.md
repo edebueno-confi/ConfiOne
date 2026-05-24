@@ -5,6 +5,10 @@ Fechar a fundacao contratual e operacional do futuro portal do cliente B2B sem c
 
 O corte entrega boundary customer-facing autenticada, tenant-aware e segura para leitura de tickets, timeline, evidencias, artigos publicos enviados e contexto operacional minimo do proprio cliente.
 
+## Atualizacao P4-A - Fechamento operacional do MVP
+- O Portal foi validado como entrada customer-facing real do MVP: cliente autenticado cria ticket, acompanha resposta pública do suporte, vê artigo público enviado e continua sem acesso a nota interna, acionamento interno, engenharia, audit bruto, storage path, provider/readiness ou AI readiness.
+- A rota pública de Help Center segue separada e expõe apenas conteúdo publicado/público.
+
 ## Auditoria estrutural
 
 ### Reaproveitado
