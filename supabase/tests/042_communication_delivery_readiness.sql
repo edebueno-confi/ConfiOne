@@ -332,6 +332,16 @@ select is(
     select count(*)::integer
     from audit.audit_logs
     where entity_table = 'ticket_message_deliveries'
+      and entity_id in (
+        select delivery.id
+        from public.ticket_message_deliveries as delivery
+        join public.ticket_messages as message
+          on message.id = delivery.message_id
+        where message.body in (
+          'Resposta publica disponivel no portal.',
+          'Mensagem inbound pelo portal.'
+        )
+      )
   ),
   2,
   'ledger de delivery gera audit log por insert'

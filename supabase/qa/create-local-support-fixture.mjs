@@ -7,6 +7,8 @@ const LEGACY_POPULATED_QA_TICKET_TITLE =
   'QA Support | Operação crítica com histórico extenso, anexos e handoff técnico';
 const POPULATED_QA_TICKET_TITLE =
   'QA Support | Operação crítica com histórico extenso, anexos e retorno operacional';
+const FETCH_TIMEOUT_MS = Number(process.env.GENIUS_QA_FETCH_TIMEOUT_MS ?? 20_000);
+const PROCESS_TIMEOUT_MS = Number(process.env.GENIUS_QA_PROCESS_TIMEOUT_MS ?? 90_000);
 
 const EXTRA_INBOX_TICKETS = [
   {
@@ -1431,8 +1433,32 @@ function fail(message) {
   process.exit(1);
 }
 
+function logStep(message) {
+  console.log(`[support-fixture] ${message}`);
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithTimeout(label, url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error(`Timeout em ${label} apos ${timeoutMs}ms.`);
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function readLocalSupabaseStatusEnv() {
@@ -1441,7 +1467,16 @@ function readLocalSupabaseStatusEnv() {
     env: process.env,
     encoding: 'utf-8',
     shell: process.platform === 'win32',
+    timeout: PROCESS_TIMEOUT_MS,
   });
+
+  if (status.error) {
+    fail(
+      status.error.code === 'ETIMEDOUT'
+        ? 'Timeout ao ler o ambiente local do Supabase.'
+        : status.error.message,
+    );
+  }
 
   if (status.status !== 0) {
     fail(`Falha ao ler o ambiente local do Supabase: ${status.stderr || status.stdout}`);
@@ -1465,9 +1500,12 @@ function readLocalSupabaseStatusEnv() {
 
 async function isEdgeRuntimeHealthy(apiUrl) {
   try {
-    const response = await fetch(`${apiUrl.replace(/\/$/, '')}/functions/v1/_internal/health`, {
-      method: 'HEAD',
-    });
+    const response = await fetchWithTimeout(
+      'health check da Edge Runtime local',
+      `${apiUrl.replace(/\/$/, '')}/functions/v1/_internal/health`,
+      { method: 'HEAD' },
+      5_000,
+    );
     return response.ok;
   } catch {
     return false;
@@ -1475,6 +1513,7 @@ async function isEdgeRuntimeHealthy(apiUrl) {
 }
 
 async function ensureLocalEdgeRuntime() {
+  logStep('validando Edge Runtime local');
   const localEnv = readLocalSupabaseStatusEnv();
   const apiUrl = localEnv.API_URL;
   const anonKey = localEnv.ANON_KEY;
@@ -1485,6 +1524,7 @@ async function ensureLocalEdgeRuntime() {
   }
 
   if (await isEdgeRuntimeHealthy(apiUrl)) {
+    logStep('Edge Runtime local saudavel');
     return { apiUrl, anonKey, serviceRoleKey };
   }
 
@@ -1519,6 +1559,7 @@ async function ensureLocalEdgeRuntime() {
   const startedAt = Date.now();
   while (Date.now() - startedAt < 30_000) {
     if (await isEdgeRuntimeHealthy(apiUrl)) {
+      logStep('Edge Runtime local iniciado pela fixture');
       return { apiUrl, anonKey, serviceRoleKey };
     }
 
@@ -1556,10 +1597,14 @@ function runProcess(command, args, options = {}) {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
     env: process.env,
+    timeout: PROCESS_TIMEOUT_MS,
     ...options,
   });
 
   if (result.error) {
+    if (result.error.code === 'ETIMEDOUT') {
+      fail(`Timeout ao executar ${command} ${args.join(' ')}.`);
+    }
     fail(result.error.message);
   }
 
@@ -1679,17 +1724,21 @@ async function signInLocalUser({ apiUrl, anonKey, email, password }) {
 
   for (let attempt = 1; attempt <= 5; attempt += 1) {
     try {
-      const response = await fetch(`${apiUrl}/auth/v1/token?grant_type=password`, {
-        method: 'POST',
-        headers: {
-          apikey: anonKey,
-          'Content-Type': 'application/json',
+      const response = await fetchWithTimeout(
+        `login local ${email}`,
+        `${apiUrl}/auth/v1/token?grant_type=password`,
+        {
+          method: 'POST',
+          headers: {
+            apikey: anonKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            password,
+          }),
         },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
+      );
 
       if (!response.ok) {
         const detail = await response.text();
@@ -1716,16 +1765,20 @@ async function signInLocalUser({ apiUrl, anonKey, email, password }) {
 }
 
 async function callRpcAsUser({ apiUrl, anonKey, accessToken, rpcName, body }) {
-  const response = await fetch(`${apiUrl}/rest/v1/rpc/${rpcName}`, {
-    method: 'POST',
-    headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-      Prefer: 'return=representation',
+  const response = await fetchWithTimeout(
+    `RPC ${rpcName}`,
+    `${apiUrl}/rest/v1/rpc/${rpcName}`,
+    {
+      method: 'POST',
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  });
+  );
 
   if (!response.ok) {
     const detail = await response.text();
@@ -1776,15 +1829,19 @@ async function createOrUpdateAuthUser({
   };
 
   if (existingUser?.id) {
-    const updateResponse = await fetch(`${apiUrl}/auth/v1/admin/users/${existingUser.id}`, {
-      method: 'PUT',
-      headers: {
-        apikey: serviceRoleKey,
-        Authorization: `Bearer ${serviceRoleKey}`,
-        'Content-Type': 'application/json',
+    const updateResponse = await fetchWithTimeout(
+      `atualizacao Auth local ${email}`,
+      `${apiUrl}/auth/v1/admin/users/${existingUser.id}`,
+      {
+        method: 'PUT',
+        headers: {
+          apikey: serviceRoleKey,
+          Authorization: `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    });
+    );
 
     if (!updateResponse.ok) {
       const detail = await updateResponse.text();
@@ -1794,15 +1851,19 @@ async function createOrUpdateAuthUser({
     return updateResponse.json();
   }
 
-  const createResponse = await fetch(`${apiUrl}/auth/v1/admin/users`, {
-    method: 'POST',
-    headers: {
-      apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`,
-      'Content-Type': 'application/json',
+  const createResponse = await fetchWithTimeout(
+    `criacao Auth local ${email}`,
+    `${apiUrl}/auth/v1/admin/users`,
+    {
+      method: 'POST',
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
     },
-    body: JSON.stringify(payload),
-  });
+  );
 
   if (!createResponse.ok) {
     const detail = await createResponse.text();
@@ -1841,10 +1902,14 @@ function bootstrapFirstPlatformAdmin(userId) {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
       env: process.env,
+      timeout: PROCESS_TIMEOUT_MS,
     },
   );
 
   if (result.error) {
+    if (result.error.code === 'ETIMEDOUT') {
+      fail('Timeout ao executar bootstrap local do platform_admin de suporte.');
+    }
     fail(result.error.message);
   }
 
@@ -3734,14 +3799,18 @@ async function uploadTicketAttachmentViaSecureFlow({
     attachment.fileName,
   );
 
-  const uploadResponse = await fetch(`${actorSession.apiUrl}${uploadContract.upload_url}`, {
-    method: 'POST',
-    headers: {
-      apikey: actorSession.anonKey,
-      Authorization: `Bearer ${actorSession.accessToken}`,
+  const uploadResponse = await fetchWithTimeout(
+    `upload de evidencia ${attachment.fileName}`,
+    `${actorSession.apiUrl}${uploadContract.upload_url}`,
+    {
+      method: 'POST',
+      headers: {
+        apikey: actorSession.anonKey,
+        Authorization: `Bearer ${actorSession.accessToken}`,
+      },
+      body: formData,
     },
-    body: formData,
-  });
+  );
 
   if (!uploadResponse.ok) {
     const detail = await uploadResponse.text();
@@ -3873,10 +3942,12 @@ async function ensurePublicHelpCenterFixture(authorSession) {
 }
 
 async function main() {
+  logStep('iniciando fixture local de suporte');
   const envMap = runSupabaseStatusEnv();
   const { apiUrl, serviceRoleKey, anonKey } = assertLocalOnly(envMap);
   await ensureLocalEdgeRuntime();
 
+  logStep('criando/atualizando usuarios internos principais');
   const qaAdmin = await createOrUpdateAuthUser({
     apiUrl,
     serviceRoleKey,
@@ -3906,6 +3977,7 @@ async function main() {
   const tenantMap = new Map();
   const contactMap = new Map();
 
+  logStep('hidratando tenants, contatos e customer accounts');
   for (const tenant of FIXTURE.tenants) {
     const tenantId = ensureTenant(profile.id, tenant);
     tenantMap.set(tenant.slug, tenantId);
@@ -3947,6 +4019,7 @@ async function main() {
       },
     ],
   ]);
+  logStep('hidratando agentes de suporte');
   for (const agent of FIXTURE.agents) {
     const authUser = await createOrUpdateAuthUser({
       apiUrl,
@@ -3988,6 +4061,7 @@ async function main() {
     });
   }
 
+  logStep('hidratando usuarios de access');
   for (const accessUser of FIXTURE.accessUsers) {
     const authUser = await createOrUpdateAuthUser({
       apiUrl,
@@ -4021,6 +4095,7 @@ async function main() {
   }
 
   const customerPortalUserMap = new Map();
+  logStep('hidratando usuarios do portal cliente');
   for (const portalUser of FIXTURE.customerPortalUsers) {
     const authUser = await createOrUpdateAuthUser({
       apiUrl,
@@ -4092,6 +4167,7 @@ async function main() {
     return session;
   };
 
+  logStep('hidratando politica de SLA');
   await ensureSupportSlaPolicyFixture({
     actorSession: await getSessionForKey('qa-admin'),
     tenantMap,
@@ -4101,6 +4177,7 @@ async function main() {
 
   const createdTickets = [];
   const ticketMap = new Map();
+  logStep('criando/atualizando tickets da fixture');
   for (const ticket of FIXTURE.tickets) {
     const tenantId = tenantMap.get(ticket.tenantSlug);
     const contactId = contactMap.get(ticket.tenantSlug);
@@ -4147,6 +4224,7 @@ async function main() {
     ticketMap.set(`${ticket.tenantSlug}::${ticket.title}`, ticketId);
   }
 
+  logStep('criando timeline adicional de tickets');
   for (const entry of FIXTURE.ticketTimelineMessages ?? []) {
     const ticketId = ticketMap.get(`${entry.ticketTenantSlug}::${entry.ticketTitle}`);
     const tenantId = tenantMap.get(entry.ticketTenantSlug);
@@ -4173,6 +4251,7 @@ async function main() {
   }
 
   const createdCustomerPortalCollaborations = [];
+  logStep('criando colaboracoes do portal cliente');
   for (const collaboration of FIXTURE.customerPortalCollaborations ?? []) {
     const ticketId = ticketMap.get(
       `${collaboration.ticketTenantSlug}::${collaboration.ticketTitle}`,
@@ -4225,6 +4304,7 @@ async function main() {
   const createdAttachments = [];
   const adminSession = await getSessionForKey('qa-admin');
   const contentAuthorSession = await getSessionForKey('content-author');
+  logStep('hidratando Public Help e Knowledge Base');
   const publicHelpCenter = await ensurePublicHelpCenterFixture(contentAuthorSession);
 
   for (const category of FIXTURE.knowledgeBase.categories ?? []) {
@@ -4348,6 +4428,7 @@ async function main() {
     });
   }
 
+  logStep('criando handoffs de engenharia');
   for (const handoff of FIXTURE.engineeringHandoffs ?? []) {
     const ticketId = ticketMap.get(`${handoff.ticketTenantSlug}::${handoff.ticketTitle}`);
     if (!ticketId) {
@@ -4379,6 +4460,7 @@ async function main() {
     });
   }
 
+  logStep('aplicando operacoes de engenharia');
   for (const operation of FIXTURE.engineeringOperations ?? []) {
     const target = engineeringWorkItemMap.get(operation.handoffTitle);
     if (!target?.workItemId || !target.tenantId) {
@@ -4402,6 +4484,7 @@ async function main() {
     });
   }
 
+  logStep('enviando evidencias seguras');
   for (const attachment of FIXTURE.attachments ?? []) {
     const ticketId = ticketMap.get(`${attachment.ticketTenantSlug}::${attachment.ticketTitle}`);
     const tenantId = tenantMap.get(attachment.ticketTenantSlug);

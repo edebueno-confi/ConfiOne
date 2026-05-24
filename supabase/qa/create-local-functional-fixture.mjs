@@ -4,6 +4,11 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 const SUPPORT_FIXTURE_SCRIPT = 'supabase/qa/create-local-support-fixture.mjs';
+const FETCH_TIMEOUT_MS = Number(process.env.GENIUS_QA_FETCH_TIMEOUT_MS ?? 20_000);
+const PROCESS_TIMEOUT_MS = Number(process.env.GENIUS_QA_PROCESS_TIMEOUT_MS ?? 90_000);
+const SUPPORT_FIXTURE_TIMEOUT_MS = Number(
+  process.env.GENIUS_QA_SUPPORT_FIXTURE_TIMEOUT_MS ?? 10 * 60_000,
+);
 const TENANT_SLUG = 'support-qa-a';
 const POPULATED_TICKET_TITLE =
   'QA Support | Operação crítica com histórico extenso, anexos e retorno operacional';
@@ -107,6 +112,30 @@ function fail(message) {
   process.exit(1);
 }
 
+function logStep(message) {
+  console.log(`[functional-fixture] ${message}`);
+}
+
+async function fetchWithTimeout(label, url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error(`Timeout em ${label} apos ${timeoutMs}ms.`);
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function localSupabaseCommandArgs(args) {
   const localSupabaseBinary = join(
     process.cwd(),
@@ -135,10 +164,14 @@ function runProcess(command, args, options = {}) {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
     env: process.env,
+    timeout: PROCESS_TIMEOUT_MS,
     ...options,
   });
 
   if (result.error) {
+    if (result.error.code === 'ETIMEDOUT') {
+      fail(`Timeout ao executar ${command} ${args.join(' ')}.`);
+    }
     fail(result.error.message);
   }
 
@@ -153,20 +186,29 @@ function runProcess(command, args, options = {}) {
 }
 
 function runSupportFixture() {
+  logStep('iniciando fixture base de suporte');
   const result = spawnSync(process.execPath, [SUPPORT_FIXTURE_SCRIPT], {
     cwd: process.cwd(),
     env: process.env,
     encoding: 'utf8',
     stdio: 'inherit',
+    timeout: SUPPORT_FIXTURE_TIMEOUT_MS,
   });
 
   if (result.error) {
+    if (result.error.code === 'ETIMEDOUT') {
+      fail(
+        `Fixture funcional abortada: fixture de suporte excedeu ${SUPPORT_FIXTURE_TIMEOUT_MS}ms sem concluir.`,
+      );
+    }
     fail(result.error.message);
   }
 
   if (result.status !== 0) {
     fail('Fixture funcional abortada: fixture de suporte nao concluiu com sucesso.');
   }
+
+  logStep('fixture base de suporte concluida');
 }
 
 function runSupabaseStatusEnv() {
@@ -291,15 +333,19 @@ async function createOrUpdateAuthUser({
   };
 
   if (existingUser?.id) {
-    const updateResponse = await fetch(`${apiUrl}/auth/v1/admin/users/${existingUser.id}`, {
-      method: 'PUT',
-      headers: {
-        apikey: serviceRoleKey,
-        Authorization: `Bearer ${serviceRoleKey}`,
-        'Content-Type': 'application/json',
+    const updateResponse = await fetchWithTimeout(
+      `atualizacao Auth local ${email}`,
+      `${apiUrl}/auth/v1/admin/users/${existingUser.id}`,
+      {
+        method: 'PUT',
+        headers: {
+          apikey: serviceRoleKey,
+          Authorization: `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    });
+    );
 
     if (!updateResponse.ok) {
       const detail = await updateResponse.text();
@@ -309,15 +355,19 @@ async function createOrUpdateAuthUser({
     return updateResponse.json();
   }
 
-  const createResponse = await fetch(`${apiUrl}/auth/v1/admin/users`, {
-    method: 'POST',
-    headers: {
-      apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`,
-      'Content-Type': 'application/json',
+  const createResponse = await fetchWithTimeout(
+    `criacao Auth local ${email}`,
+    `${apiUrl}/auth/v1/admin/users`,
+    {
+      method: 'POST',
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
     },
-    body: JSON.stringify(payload),
-  });
+  );
 
   if (!createResponse.ok) {
     const detail = await createResponse.text();
@@ -670,14 +720,18 @@ function ensureP2CommunicationFixture({ tenantId, supportUserId, customerUserId 
 }
 
 async function signInLocalUser({ apiUrl, anonKey, email, password }) {
-  const response = await fetch(`${apiUrl}/auth/v1/token?grant_type=password`, {
-    method: 'POST',
-    headers: {
-      apikey: anonKey,
-      'Content-Type': 'application/json',
+  const response = await fetchWithTimeout(
+    `login local ${email}`,
+    `${apiUrl}/auth/v1/token?grant_type=password`,
+    {
+      method: 'POST',
+      headers: {
+        apikey: anonKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
     },
-    body: JSON.stringify({ email, password }),
-  });
+  );
 
   if (!response.ok) {
     const detail = await response.text();
@@ -703,16 +757,20 @@ async function sessionFor({ apiUrl, anonKey, user }) {
 }
 
 async function callRpcAsUser({ apiUrl, anonKey, accessToken, rpcName, body }) {
-  const response = await fetch(`${apiUrl}/rest/v1/rpc/${rpcName}`, {
-    method: 'POST',
-    headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-      Prefer: 'return=representation',
+  const response = await fetchWithTimeout(
+    `RPC ${rpcName}`,
+    `${apiUrl}/rest/v1/rpc/${rpcName}`,
+    {
+      method: 'POST',
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  });
+  );
 
   if (!response.ok) {
     const detail = await response.text();
@@ -1020,8 +1078,10 @@ function querySummary({ tenantId, ticketId, actionIds }) {
 }
 
 async function main() {
+  logStep('iniciando fixture funcional local');
   runSupportFixture();
 
+  logStep('validando ambiente local e dados base');
   const envMap = runSupabaseStatusEnv();
   const { apiUrl, serviceRoleKey, anonKey } = assertLocalOnly(envMap);
   const tenant = queryTenantBySlug(TENANT_SLUG);
@@ -1051,6 +1111,7 @@ async function main() {
     fail(`Customer user local ausente: ${USERS.customerUser.email}.`);
   }
 
+  logStep('hidratando usuarios de areas internas');
   const internalMemberAuth = await createOrUpdateAuthUser({
     apiUrl,
     serviceRoleKey,
@@ -1089,6 +1150,7 @@ async function main() {
     fail(`Profile ativo ausente para ${USERS.internalAreaNonMember.email}.`);
   }
 
+  logStep('garantindo memberships e fixture de comunicacao P2');
   ensureTenantMembership({
     actorUserId: adminProfile.id,
     tenantId: tenant.id,
@@ -1111,10 +1173,12 @@ async function main() {
     customerUserId: customerUserProfile.id,
   });
 
+  logStep('abrindo sessoes QA');
   const adminSession = await sessionFor({ apiUrl, anonKey, user: USERS.platformAdmin });
   const supportSession = await sessionFor({ apiUrl, anonKey, user: USERS.supportManager });
   const memberSession = await sessionFor({ apiUrl, anonKey, user: USERS.internalAreaMember });
 
+  logStep('garantindo memberships de areas internas');
   const membershipId = await ensureAreaMembership({
     adminSession,
     tenantId: tenant.id,
@@ -1127,6 +1191,7 @@ async function main() {
     areaKey: 'operations',
   });
 
+  logStep('criando acionamentos internos funcionais');
   const openAction = await ensureInternalAction({
     supportSession,
     tenantId: tenant.id,
@@ -1145,6 +1210,7 @@ async function main() {
     fail('Nao foi possivel materializar os acionamentos internos funcionais.');
   }
 
+  logStep('finalizando acionamento retornado');
   await ensureReturnedInternalAction({
     memberSession,
     tenantId: tenant.id,
@@ -1152,6 +1218,7 @@ async function main() {
     action: INTERNAL_ACTIONS.returned,
   });
 
+  logStep('coletando resumo final da fixture');
   const summary = querySummary({
     tenantId: tenant.id,
     ticketId: ticket.id,
