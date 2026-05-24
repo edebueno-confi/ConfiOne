@@ -122,6 +122,33 @@ export type TicketReplyMode =
   | 'support_public_message'
   | 'unavailable';
 
+export type TicketDeliveryChannel =
+  | 'customer_portal'
+  | 'email_future'
+  | 'whatsapp_future'
+  | 'chat_future'
+  | 'api_future';
+
+export type TicketDeliveryStatus =
+  | 'not_required'
+  | 'pending'
+  | 'delivered'
+  | 'blocked'
+  | 'failed'
+  | 'cancelled';
+
+export type TicketDeliveryDirection =
+  | 'inbound'
+  | 'outbound'
+  | 'internal'
+  | 'system';
+
+export type TicketDeliveryProviderState =
+  | 'native'
+  | 'not_configured'
+  | 'disabled'
+  | 'future';
+
 export interface TicketCommunicationCapability {
   originKey: TicketOriginKey;
   originLabel: string;
@@ -541,6 +568,13 @@ export interface SupportTicketTimelineMessageItem {
   communicationChannel: TicketChannelKey;
   communicationChannelLabel: string;
   isCustomerVisible: boolean;
+  deliveryChannel: TicketDeliveryChannel | null;
+  deliveryStatus: TicketDeliveryStatus | null;
+  deliveryProviderState: TicketDeliveryProviderState | null;
+  deliveryStatusLabel: string | null;
+  deliveryReasonIfBlocked: string | null;
+  deliveryDeliveredAt: IsoTimestamp | null;
+  deliveryFailedAt: IsoTimestamp | null;
 }
 
 export interface SupportTicketTimelineEventItem {
@@ -565,6 +599,13 @@ export interface SupportTicketTimelineEventItem {
   communicationChannel: TicketChannelKey;
   communicationChannelLabel: string;
   isCustomerVisible: boolean;
+  deliveryChannel: TicketDeliveryChannel | null;
+  deliveryStatus: TicketDeliveryStatus | null;
+  deliveryProviderState: TicketDeliveryProviderState | null;
+  deliveryStatusLabel: string | null;
+  deliveryReasonIfBlocked: string | null;
+  deliveryDeliveredAt: IsoTimestamp | null;
+  deliveryFailedAt: IsoTimestamp | null;
 }
 
 export type SupportTicketTimelineItem =
@@ -1804,6 +1845,7 @@ export interface CustomerPortalTicketTimelineItem {
   eventLabel: string | null;
   body: string | null;
   customerEntryLabel: string;
+  customerDeliveryLabel: string | null;
 }
 
 export interface CustomerPortalTicketAttachment {
