@@ -361,6 +361,20 @@ export type AdminAccessMembershipRow = AdminTenantMembershipRow & {
 
 export type AdminSystemSeverity = 'ok' | 'attention' | 'critical';
 export type AdminSystemCheckStatus = AdminSystemSeverity | 'unavailable';
+export type CommunicationChannelReadinessStatus =
+  | 'active'
+  | 'disabled'
+  | 'not_configured'
+  | 'future'
+  | 'blocked'
+  | 'unavailable';
+
+export type CommunicationDeliveryChannel =
+  | 'customer_portal'
+  | 'email_future'
+  | 'whatsapp_future'
+  | 'chat_future'
+  | 'api_future';
 
 export interface AdminSystemAuditEventRow {
   id: Uuid;
@@ -398,6 +412,36 @@ export interface AdminSystemOperationalSummaryRow {
   attention_event_count: number;
   observed_service_count: number;
   last_event_at: IsoTimestamp | null;
+}
+
+export interface AdminCommunicationChannelReadinessRow {
+  tenant_id: Uuid;
+  tenant_slug: string;
+  tenant_display_name: string;
+  tenant_status: TenantStatus;
+  channel_key: CommunicationDeliveryChannel;
+  channel_label: string;
+  direction_supported: 'inbound' | 'outbound' | 'bidirectional';
+  is_external: boolean;
+  is_real_channel: boolean;
+  provider_required: boolean;
+  status_global: CommunicationChannelReadinessStatus;
+  future_provider_type: string | null;
+  description: string;
+  readiness_status: CommunicationChannelReadinessStatus;
+  is_enabled: boolean;
+  can_send: boolean;
+  can_receive: boolean;
+  reason_if_unavailable: string | null;
+  required_setup_summary: string;
+  operational_note: string | null;
+  last_checked_at: IsoTimestamp;
+  managed_by_user_id: Uuid | null;
+  managed_by_full_name: string | null;
+  managed_by_email: string | null;
+  updated_at: IsoTimestamp | null;
+  can_mark_active: boolean;
+  activation_blocked_by_contract: boolean;
 }
 
 export type InternalDocumentStatus = 'draft' | 'published' | 'archived' | 'blocked';

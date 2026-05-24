@@ -9,8 +9,10 @@ import {
 import { Navigate } from 'react-router-dom';
 import {
   getAdminSystemOperationalSummary,
+  listAdminCommunicationChannelReadiness,
   listAdminSystemAuditEvents,
   listAdminSystemHealthChecks,
+  type AdminCommunicationChannelReadinessRow,
   type AdminSystemAuditEventRow,
   type AdminSystemHealthCheckRow,
   type AdminSystemOperationalSummaryRow,
@@ -39,6 +41,19 @@ type SystemTab = 'health' | 'audit' | 'jobs' | 'security';
 type SystemSeverity = 'ok' | 'attention' | 'critical';
 type SystemPeriodFilter = '24h' | '7d' | '30d' | 'all';
 type AdminAuditFeedRow = AdminSystemAuditEventRow;
+type ChannelReadinessSummary = {
+  channelKey: AdminCommunicationChannelReadinessRow['channel_key'];
+  channelLabel: string;
+  statusLabel: string;
+  tone: 'positive' | 'warning' | 'critical' | 'default';
+  tenantCount: number;
+  activeCount: number;
+  unavailableCount: number;
+  isExternal: boolean;
+  canSendCount: number;
+  reason: string;
+  setup: string;
+};
 
 function lower(value: string | null | undefined) {
   return String(value ?? '').toLowerCase();
@@ -66,6 +81,46 @@ function humanizeSystemSeverity(severity: SystemSeverity) {
   }
 
   return 'Estavel';
+}
+
+function humanizeChannelReadiness(status: AdminCommunicationChannelReadinessRow['readiness_status']) {
+  if (status === 'active') {
+    return 'Ativo';
+  }
+
+  if (status === 'not_configured') {
+    return 'Não configurado';
+  }
+
+  if (status === 'future') {
+    return 'Preparado para futuro';
+  }
+
+  if (status === 'blocked') {
+    return 'Bloqueado';
+  }
+
+  if (status === 'disabled') {
+    return 'Desabilitado';
+  }
+
+  return 'Indisponível';
+}
+
+function toneForChannelReadiness(status: AdminCommunicationChannelReadinessRow['readiness_status']) {
+  if (status === 'active') {
+    return 'positive' as const;
+  }
+
+  if (status === 'blocked' || status === 'unavailable') {
+    return 'critical' as const;
+  }
+
+  if (status === 'disabled' || status === 'not_configured' || status === 'future') {
+    return 'warning' as const;
+  }
+
+  return 'default' as const;
 }
 
 function formatSanitizedContext(value: unknown) {
@@ -260,6 +315,7 @@ export function SystemPage() {
   const [phase, setPhase] = useState<PagePhase>('loading');
   const [pageMessage, setPageMessage] = useState<string | null>(null);
   const [auditFeed, setAuditFeed] = useState<AdminAuditFeedRow[]>([]);
+  const [channelReadiness, setChannelReadiness] = useState<AdminCommunicationChannelReadinessRow[]>([]);
   const [healthChecks, setHealthChecks] = useState<AdminSystemHealthCheckRow[]>([]);
   const [summary, setSummary] = useState<AdminSystemOperationalSummaryRow | null>(null);
   const [activeTab, setActiveTab] = useState<SystemTab>('health');
@@ -273,16 +329,18 @@ export function SystemPage() {
 
   const loadSurface = useEffectEvent(async () => {
     try {
-      const [auditRows, healthRows, summaryRow] = await Promise.all([
+      const [auditRows, healthRows, summaryRow, channelRows] = await Promise.all([
         listAdminSystemAuditEvents(),
         listAdminSystemHealthChecks(),
         getAdminSystemOperationalSummary(),
+        listAdminCommunicationChannelReadiness(),
       ]);
 
       setBackendDenied(false);
       setAuditFeed(auditRows);
       setHealthChecks(healthRows);
       setSummary(summaryRow);
+      setChannelReadiness(channelRows);
       setPageMessage(null);
       setPhase('ready');
     } catch (error) {
@@ -301,8 +359,9 @@ export function SystemPage() {
         return;
       }
 
-      setAuditFeed([]);
-      setHealthChecks([]);
+        setAuditFeed([]);
+        setChannelReadiness([]);
+        setHealthChecks([]);
       setSummary(null);
       setPageMessage(classified.message);
       setPhase(
@@ -388,6 +447,46 @@ export function SystemPage() {
 
   const selectedEntry =
     filteredFeed.find((entry) => entry.id === selectedEventId) ?? filteredFeed[0] ?? null;
+
+  const channelSummaries = useMemo(() => {
+    const grouped = new Map<string, AdminCommunicationChannelReadinessRow[]>();
+
+    for (const row of channelReadiness) {
+      const rows = grouped.get(row.channel_key) ?? [];
+      rows.push(row);
+      grouped.set(row.channel_key, rows);
+    }
+
+    return Array.from(grouped.values()).map((rows): ChannelReadinessSummary => {
+      const first = rows[0];
+      const activeCount = rows.filter((row) => row.readiness_status === 'active').length;
+      const canSendCount = rows.filter((row) => row.can_send).length;
+      const unavailableRows = rows.filter((row) => row.readiness_status !== 'active');
+      const referenceRow = unavailableRows[0] ?? first;
+
+      return {
+        channelKey: first.channel_key,
+        channelLabel: first.channel_label,
+        statusLabel:
+          activeCount === rows.length
+            ? 'Ativo'
+            : humanizeChannelReadiness(referenceRow.readiness_status),
+        tone:
+          activeCount === rows.length
+            ? 'positive'
+            : toneForChannelReadiness(referenceRow.readiness_status),
+        tenantCount: rows.length,
+        activeCount,
+        unavailableCount: rows.length - activeCount,
+        isExternal: first.is_external,
+        canSendCount,
+        reason:
+          referenceRow.reason_if_unavailable ??
+          (activeCount === rows.length ? 'Canal disponível conforme contrato atual.' : 'Indisponível'),
+        setup: referenceRow.required_setup_summary || 'Indisponível',
+      };
+    });
+  }, [channelReadiness]);
 
   const relatedEntries = useMemo(() => {
     if (!selectedEntry) {
@@ -587,6 +686,58 @@ export function SystemPage() {
             className="xl:flex xl:min-h-0 xl:flex-1 xl:flex-col"
             title="Feed operacional"
           >
+            <div className="mb-4 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <h3 className="text-[0.98rem] font-semibold text-[color:var(--color-ink)]">
+                    Governança de canais
+                  </h3>
+                  <p className="text-sm leading-6 text-[color:var(--color-muted)]">
+                    Portal é o canal ativo do MVP. Canais externos permanecem sem envio real.
+                  </p>
+                </div>
+                <StatusPill>Sem segredo configurado</StatusPill>
+              </div>
+
+              {channelSummaries.length === 0 ? (
+                <div className="mt-3">
+                  <InlineNotice>
+                    Readiness de canais indisponível neste ambiente.
+                  </InlineNotice>
+                </div>
+              ) : (
+                <div className="mt-4 grid gap-2 lg:grid-cols-2">
+                  {channelSummaries.map((channel) => (
+                    <div
+                      className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-3.5 py-3"
+                      key={channel.channelKey}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[color:var(--color-ink)]">
+                            {channel.channelLabel}
+                          </p>
+                          <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
+                            {channel.isExternal
+                              ? 'Provider externo não configurado'
+                              : 'Canal nativo governado'}
+                          </p>
+                        </div>
+                        <StatusPill tone={channel.tone}>{channel.statusLabel}</StatusPill>
+                      </div>
+                      <div className="mt-3 grid gap-1 text-xs leading-5 text-[color:var(--color-muted)]">
+                        <p>
+                          Tenants ativos: {channel.activeCount}/{channel.tenantCount}
+                        </p>
+                        <p>Envio permitido: {channel.canSendCount > 0 ? 'Sim, via contrato atual' : 'Não'}</p>
+                        <p>{channel.reason}</p>
+                        <p>Próximo requisito: {channel.setup}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="mb-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
               <SystemMetricCard helper="Em leitura estável." label="Checks verdes" value={String(checksOkCount)} />
               <SystemMetricCard helper="Eventos classificados pelo backend." label="Alertas" value={String(alertCount)} />

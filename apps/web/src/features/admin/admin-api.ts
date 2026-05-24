@@ -35,6 +35,7 @@ import type {
   AdminTenantRecordRow,
   AdminTenantsListItemRow,
   AdminSystemAuditEventRow,
+  AdminCommunicationChannelReadinessRow,
   AdminSystemHealthCheckRow,
   AdminSystemOperationalSummaryRow,
   AdminTicketKnowledgeLinkRow,
@@ -606,6 +607,40 @@ export async function getAdminSystemOperationalSummary() {
   }
 
   return data as AdminSystemOperationalSummaryRow | null;
+}
+
+export async function listAdminCommunicationChannelReadiness() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_communication_channel_readiness')
+    .select('*')
+    .order('tenant_display_name', { ascending: true })
+    .order('channel_key', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar a governança dos canais de comunicação.');
+  }
+
+  return (data ?? []) as AdminCommunicationChannelReadinessRow[];
+}
+
+export async function disableAdminTenantCommunicationChannel(
+  tenantId: string,
+  channelKey: AdminCommunicationChannelReadinessRow['channel_key'],
+  reasonIfUnavailable: string,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_disable_tenant_channel', {
+    p_tenant_id: tenantId,
+    p_channel: channelKey,
+    p_reason_if_unavailable: reasonIfUnavailable,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao desabilitar o canal de comunicação.');
+  }
+
+  return data as AdminCommunicationChannelReadinessRow;
 }
 
 export async function getAdminCustomerPortalAccessOverview() {
@@ -1643,6 +1678,7 @@ export type {
   AdminTenantRecordRow,
   AdminTenantsListItemRow,
   AdminSystemAuditEventRow,
+  AdminCommunicationChannelReadinessRow,
   AdminSystemHealthCheckRow,
   AdminSystemOperationalSummaryRow,
   AdminTicketKnowledgeLinkRow,
