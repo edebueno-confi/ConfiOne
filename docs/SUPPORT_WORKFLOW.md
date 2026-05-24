@@ -60,6 +60,12 @@
 - engenharia continua fora destes read models especificos ate existir contrato proprio para Engineering Workspace
 
 ## Origem, canal e comunicação no P2
+- O P2-C adiciona governanca de readiness de canais por tenant:
+  - `customer_portal` permanece o unico canal real do MVP.
+  - `email_future`, `whatsapp_future`, `chat_future` e `api_future` continuam futuros/bloqueados por contrato.
+  - Admin visualiza readiness sanitizado em `/admin/system`.
+  - Support consome capabilities backend-safe e nao simula envio externo.
+  - nenhum segredo, token, webhook, job externo, retry ou provider fake foi criado.
 - O P2-B adiciona readiness de delivery sem provider externo:
   - `customer_portal` e o unico canal real de disponibilidade customer-facing.
   - respostas publicas do suporte e mensagens do cliente registram `ticket_message_deliveries`.

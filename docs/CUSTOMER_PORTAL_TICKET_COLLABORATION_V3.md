@@ -43,6 +43,7 @@ Consolidar a colaboracao real do cliente B2B no portal autenticado, cobrindo lei
 - O portal mostra atualizacoes novas, ultima leitura, ultima resposta do cliente e ultima resposta da equipe Genius.
 - O portal mostra origem segura do ticket quando útil, sem `source`, `customer_portal`, canal interno ou metadata.
 - O P2-B adiciona estado customer-facing sanitizado de delivery por `vw_customer_portal_ticket_delivery_state` e `customer_delivery_label`; o portal nao recebe `provider_state`, tentativa de envio, reason tecnico, enum cru ou metadata de provider.
+- O P2-C adiciona governanca interna de readiness de canais por tenant, mas o Portal Cliente nao recebe essa superficie. Cliente nao ve `readiness_status`, `provider_required`, `reason_if_unavailable`, pre-condicoes de provider, segredo, token, webhook ou enum tecnico.
 - O composer customer-facing usa `can_reply` do backend.
 - O ack usa `latest_timeline_entry_id` derivado pelo backend.
 - Confirmacao de resolucao e solicitacao de reabertura aparecem apenas quando as flags contratuais permitem.

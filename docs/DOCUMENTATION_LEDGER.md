@@ -18,6 +18,44 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase P2-C - Communication Channel Governance & Provider Readiness
+- fase: `P2-C`
+- nome: `Communication Channel Governance & Provider Readiness`
+- branch: `codex/p2-c-communication-channel-governance-readiness`
+- data: `2026-05-24`
+- resumo funcional: criada governanca de readiness de canais por tenant sem provider externo real. `customer_portal` permanece como unico canal ativo do MVP; e-mail, WhatsApp, chat e API ficam futuros/bloqueados sem segredo, token, webhook, job, retry ou envio externo.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/SUPPORT_WORKSPACE_ARCHITECTURE_SPEC.md`
+  - `docs/CUSTOMER_PORTAL_TICKET_COLLABORATION_V3.md`
+  - `docs/CUSTOMER_PORTAL_CONTRACT_FOUNDATION_V3.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/reports/P2_COMMUNICATION_CHANNEL_GOVERNANCE_READINESS_2026-05-24.md`
+- views/RPCs afetadas:
+  - `communication_channel_definitions`
+  - `tenant_communication_channel_settings`
+  - `vw_admin_communication_channel_readiness`
+  - `vw_support_tenant_communication_capabilities`
+  - `vw_support_ticket_channel_readiness`
+  - `vw_support_ticket_channel_context`
+  - `vw_support_ticket_communication_capabilities`
+  - `vw_support_ticket_delivery_capabilities`
+  - `vw_admin_communication_delivery_summary`
+  - `vw_admin_system_audit_events`
+  - `rpc_admin_update_tenant_channel_readiness`
+  - `rpc_admin_disable_tenant_channel`
+  - `rpc_admin_mark_channel_future_ready`
+- telas afetadas:
+  - `/admin/system`
+  - `/support/tickets/:ticketId`
+- riscos restantes:
+  - provider real ainda exige lote proprio de secrets, webhook, consentimento, templates, retry, idempotencia e observabilidade.
+  - configuracao real de provider permanece fora do MVP.
+- impacto na FAQ futura:
+  - permite explicar que o Portal e o canal real atual e que demais canais estao preparados por contrato, mas ainda nao enviam mensagens externas.
+
 ### Fase P2-B - Communication Delivery Readiness & Outbox Foundation
 - fase: `P2-B`
 - nome: `Communication Delivery Readiness & Outbox Foundation`

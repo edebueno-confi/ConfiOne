@@ -26,6 +26,7 @@ O corte entrega boundary customer-facing autenticada, tenant-aware e segura para
 - Download de evidencia pelo portal usa grant curto e a edge function valida tambem a view customer-facing sanitizada.
 - A fundacao P2 adicionou labels customer-facing de origem/comunicacao aos read models do portal sem expor enum cru, canal interno, provider externo ou metadata operacional.
 - O P2-B adicionou ledger de delivery para disponibilidade no Portal, mas o Portal recebe apenas labels customer-facing. `provider_state`, reason tecnico, tentativas, audit e metadata de delivery continuam fora da superficie cliente.
+- O P2-C adicionou governanca interna de readiness de canais por tenant sem ampliar a superficie customer-facing. O Portal nao recebe readiness, provider, motivo tecnico, pre-condicoes de canal, segredo, token, webhook ou enum cru.
 
 ### Criado
 - `customer_ticket_update_acknowledgements`.

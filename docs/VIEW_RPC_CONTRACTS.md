@@ -7,6 +7,35 @@
 
 ## Estado executável atual
 
+Fase P2-C - Communication Channel Governance & Provider Readiness:
+- Governanca de canais por tenant foi criada sem provider externo real.
+- Canal real do MVP:
+  - `customer_portal`
+- Canais futuros/bloqueados:
+  - `email_future`
+  - `whatsapp_future`
+  - `chat_future`
+  - `api_future`
+- Estruturas novas:
+  - `communication_channel_definitions`
+  - `tenant_communication_channel_settings`
+- Read models novos ou ampliados:
+  - `vw_admin_communication_channel_readiness`
+  - `vw_support_tenant_communication_capabilities`
+  - `vw_support_ticket_channel_readiness`
+  - `vw_support_ticket_channel_context`
+  - `vw_support_ticket_communication_capabilities`
+  - `vw_support_ticket_delivery_capabilities`
+  - `vw_admin_communication_delivery_summary`
+  - `vw_admin_system_audit_events`
+- RPCs administrativas:
+  - `rpc_admin_update_tenant_channel_readiness`
+  - `rpc_admin_disable_tenant_channel`
+  - `rpc_admin_mark_channel_future_ready`
+- `authenticated` nao possui DML direto nas tabelas de governanca.
+- RPCs bloqueiam segredo/token/API key/webhook em campos de texto e impedem canal externo `active`.
+- Portal Cliente nao recebe readiness, provider, reason tecnico, audit bruto ou enum cru.
+
 Fase P2-B - Communication Delivery Readiness & Outbox Foundation:
 - Delivery customer-facing agora possui ledger append-only, auditado e provider-agnostic.
 - Canal real neste corte:

@@ -16,6 +16,7 @@ Definir a arquitetura do futuro Support Workspace do Genius Support OS como ambi
 - evitar dashboard pesado e manter foco em fila, detalhe e contexto operacional
 
 ## Estado atual de runtime em 2026-05-16
+- Em 2026-05-24, o P2-C adicionou governanca de readiness de canais por tenant sem provider externo. O Support Workspace continua usando `customer_portal` como canal real e recebe motivos backend-safe para canais externos futuros. `/admin/system` mostra readiness operacional sanitizado; nao existe configuracao de segredo, token, webhook, job, retry, provider fake ou envio externo real.
 - Em 2026-05-23, o P2-B adicionou a camada de readiness de delivery sem provider externo. O Support Workspace continua sem WhatsApp/e-mail/chat/API reais, mas agora consegue exibir status leve de disponibilidade no Portal para mensagens customer-facing por `ticket_message_deliveries` e `vw_support_ticket_message_deliveries`. Canais externos seguem bloqueados por `vw_support_ticket_delivery_capabilities`; nao existe botao de envio externo, retry, job ou provider fake.
 - Em 2026-05-23, a fundação P2 de origem/canal foi adicionada ao workspace sem integrar canal externo real. A fila e o detalhe passam a receber `origin_*`, `channel_*`, `can_reply_now`, `reply_mode` e `reason_if_unavailable` por read models; o composer só habilita resposta pública quando o backend permite; canais `email`, `chat` e `api` são exibidos como futuros/indisponíveis, sem botão funcional de envio externo.
 - `/support/tickets/:ticketId` materializa o Ticket Workspace operacional em tres zonas apos a sidebar global: fila viva, conversa central dominante e rail direito ou drawer lateral substituto.
@@ -71,6 +72,8 @@ O Support Workspace deve cobrir:
 - `vw_support_assignable_agents`
 - `vw_support_ticket_channel_context`
 - `vw_support_ticket_communication_capabilities`
+- `vw_support_tenant_communication_capabilities`
+- `vw_support_ticket_channel_readiness`
 - `vw_support_ticket_message_deliveries`
 - `vw_support_ticket_delivery_capabilities`
 
