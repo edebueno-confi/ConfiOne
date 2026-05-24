@@ -91,6 +91,7 @@ O título legado com `handoff técnico` é reconhecido apenas para atualizar mas
 - A fixture local de suporte pode recriar os tickets com novos UUIDs. Não assuma que um `ticketId` antigo continua válido após reidratação.
 - A fixture funcional imprime IDs atuais de tenant, ticket, acionamentos internos, work item e slugs de Knowledge no final da execução.
 - No P4-A, a fixture funcional levou mais de 240s em Windows local e concluiu com timeout maior. Use timeout operacional de pelo menos 10 a 15 minutos para gates completos da fixture funcional.
+- No P4-B, o pacote de release readiness formalizou esse timeout maior como requisito do checklist e do runbook de smoke. Para piloto controlado, rode `npm run supabase:qa:local-functional-fixture` duas vezes e use os IDs impressos pela fixture no smoke de Admin, Support, Portal, Internal Actions, Engineering e Public Help.
 - O QA ponta a ponta P4 pode criar tickets locais sanitizados com prefixo `QA P4 MVP |`; esses registros não são versionados e podem ser descartados por reset/reidratação local.
 - Se a fixture funcional parar por timeout, use a última linha `[functional-fixture]` ou `[support-fixture]` como ponto de investigação antes de alterar dados.
 - Para QA do Portal, valide o ticket atual impresso pela fixture e confirme ausência de termos internos como `handoff técnico`, `retorno de engenharia`, `storage_bucket`, `storage_object_path`, `internal_actions` e `engineering_work_items`.

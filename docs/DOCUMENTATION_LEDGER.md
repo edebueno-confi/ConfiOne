@@ -18,6 +18,34 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase P4-B - MVP Release Readiness & Pilot Control Pack
+- fase: `P4-B`
+- nome: `MVP Release Readiness & Pilot Control Pack`
+- branch: `codex/p4-b-mvp-release-readiness`
+- data: `2026-05-24`
+- resumo funcional: criado pacote operacional para piloto controlado do MVP, sem feature nova, migration, backend, frontend, fixture, deploy, secrets, provider externo ou IA real. O lote formalizou matriz de regressao, checklist de release, plano de rollback, observabilidade minima, smoke runbook e Go/No-Go para ambiente local/staging.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/PRODUCT_VISION.md`
+  - `docs/LOCAL_QA_AUTH.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/release/MVP_REGRESSION_MATRIX_2026-05-24.md`
+  - `docs/release/MVP_RELEASE_CHECKLIST_2026-05-24.md`
+  - `docs/release/MVP_ROLLBACK_PLAN_2026-05-24.md`
+  - `docs/release/MVP_OBSERVABILITY_MINIMUM_2026-05-24.md`
+  - `docs/release/MVP_SMOKE_TEST_RUNBOOK_2026-05-24.md`
+  - `docs/reports/P4_MVP_RELEASE_READINESS_2026-05-24.md`
+- views/RPCs afetadas:
+  - nenhuma view, RPC, tabela, migration ou contrato novo.
+- telas afetadas:
+  - nenhuma tela alterada; o pacote documenta smoke de Admin, Support, Portal, Internal Actions, Engineering e Public Help.
+- riscos restantes:
+  - release remoto/staging ainda precisa execucao controlada do runbook e decisao humana Go/No-Go.
+  - observabilidade continua minima/manual neste corte.
+  - QA exploratorio humano continua recomendado antes de ampliar piloto.
+- impacto na FAQ futura:
+  - permite explicar quais gates, boundaries e responsabilidades precisam estar satisfeitos antes de piloto MVP.
+
 ### Fase P4-A - MVP Operational Closure & End-to-End Workflow Hardening
 - fase: `P4-A`
 - nome: `MVP Operational Closure & End-to-End Workflow Hardening`

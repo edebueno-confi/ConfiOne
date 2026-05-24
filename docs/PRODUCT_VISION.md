@@ -43,3 +43,6 @@ Menos dependência de WhatsApp e e-mail como memória informal, menos informaç�
 
 ## Fechamento MVP P4-A
 Em 2026-05-24, o fluxo MVP operacional foi validado ponta a ponta: cliente B2B autenticado abre ticket no Portal, suporte recebe na fila, responde pelo Portal, registra nota interna, usa Knowledge público, aciona área interna, escala para engenharia, recebe retornos estruturados e preserva boundary customer-facing. O MVP segue sem IA real, provider externo, WhatsApp/e-mail real, chatbot, CRM genérico ou automação perigosa.
+
+## Readiness de piloto P4-B
+Em 2026-05-24, o MVP ganhou pacote operacional de piloto controlado: matriz de regressão, checklist de release, plano de rollback, observabilidade mínima e runbook de smoke em `docs/release/`. O piloto só deve abrir em ambiente local/staging controlado com gates técnicos verdes, fixture idempotente, smoke autenticado por papel, boundaries customer-facing confirmados e rollback entendido. Deploy remoto, produção, provider externo, IA real, secrets, dados reais e integrações externas continuam fora do corte.
