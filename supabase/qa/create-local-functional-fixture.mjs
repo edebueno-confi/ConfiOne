@@ -7,6 +7,28 @@ const SUPPORT_FIXTURE_SCRIPT = 'supabase/qa/create-local-support-fixture.mjs';
 const TENANT_SLUG = 'support-qa-a';
 const POPULATED_TICKET_TITLE =
   'QA Support | Operação crítica com histórico extenso, anexos e retorno operacional';
+const P2_COMMUNICATION_TICKETS = {
+  supportManual: {
+    id: '8e5ee201-7e27-45ef-9e61-f3209f6ad201',
+    title: 'QA P2 | Ticket criado pelo suporte manual',
+    source: 'internal',
+  },
+  portalOrigin: {
+    id: '8e5ee201-7e27-45ef-9e61-f3209f6ad202',
+    title: 'QA P2 | Ticket criado pelo portal cliente',
+    source: 'portal',
+  },
+  futureEmail: {
+    id: '8e5ee201-7e27-45ef-9e61-f3209f6ad203',
+    title: 'QA P2 | Canal email futuro indisponivel',
+    source: 'email',
+  },
+  futureApi: {
+    id: '8e5ee201-7e27-45ef-9e61-f3209f6ad204',
+    title: 'QA P2 | Canal API futuro indisponivel',
+    source: 'api',
+  },
+};
 
 const USERS = {
   platformAdmin: {
@@ -383,6 +405,117 @@ function ensureTenantMembership({ actorUserId, tenantId, userId, role = 'tenant_
   `);
 }
 
+function ensureP2CommunicationFixture({ tenantId, supportUserId, customerUserId }) {
+  const requester = runSupabaseDbQuery(`
+    select id::text as id
+    from public.tenant_contacts
+    where tenant_id = '${sqlEscape(tenantId)}'::uuid
+      and linked_user_id = '${sqlEscape(customerUserId)}'::uuid
+      and is_active
+    order by is_primary desc, created_at asc
+    limit 1;
+  `).rows?.[0];
+
+  if (!requester?.id) {
+    fail('Fixture P2 abortada: contato customer-facing principal ausente.');
+  }
+
+  for (const ticket of Object.values(P2_COMMUNICATION_TICKETS)) {
+    const createdBy = ticket.source === 'portal' ? customerUserId : supportUserId;
+    runSupabaseDbQuery(`
+      insert into public.tickets (
+        id,
+        tenant_id,
+        requester_contact_id,
+        title,
+        description,
+        source,
+        priority,
+        severity,
+        created_by_user_id,
+        updated_by_user_id
+      )
+      values (
+        '${sqlEscape(ticket.id)}'::uuid,
+        '${sqlEscape(tenantId)}'::uuid,
+        '${sqlEscape(requester.id)}'::uuid,
+        '${sqlEscape(ticket.title)}',
+        'Fixture local sanitizada para validar origem, canal e comunicação de tickets.',
+        '${sqlEscape(ticket.source)}'::public.ticket_source,
+        'normal'::public.ticket_priority,
+        'medium'::public.ticket_severity,
+        '${sqlEscape(createdBy)}'::uuid,
+        '${sqlEscape(createdBy)}'::uuid
+      )
+      on conflict (id)
+      do update
+      set
+        title = excluded.title,
+        description = excluded.description,
+        source = excluded.source,
+        requester_contact_id = excluded.requester_contact_id,
+        updated_by_user_id = excluded.updated_by_user_id;
+    `);
+  }
+
+  runSupabaseDbQuery(`
+    insert into public.ticket_messages (
+      id,
+      tenant_id,
+      ticket_id,
+      visibility,
+      body,
+      created_by_user_id,
+      metadata
+    )
+    values
+      (
+        '8e5ee201-7e27-45ef-9e61-f3209f6ad211'::uuid,
+        '${sqlEscape(tenantId)}'::uuid,
+        '${P2_COMMUNICATION_TICKETS.portalOrigin.id}'::uuid,
+        'customer'::public.message_visibility,
+        'Mensagem customer-facing enviada pelo portal na fixture P2.',
+        '${sqlEscape(customerUserId)}'::uuid,
+        jsonb_build_object(
+          'visibility', 'customer',
+          'communication_direction', 'inbound',
+          'communication_channel', 'customer_portal',
+          'communication_channel_label', 'Portal Cliente'
+        )
+      ),
+      (
+        '8e5ee201-7e27-45ef-9e61-f3209f6ad212'::uuid,
+        '${sqlEscape(tenantId)}'::uuid,
+        '${P2_COMMUNICATION_TICKETS.portalOrigin.id}'::uuid,
+        'customer'::public.message_visibility,
+        'Resposta publica do suporte registrada na fixture P2.',
+        '${sqlEscape(supportUserId)}'::uuid,
+        jsonb_build_object(
+          'visibility', 'customer',
+          'communication_direction', 'outbound',
+          'communication_channel', 'customer_portal',
+          'communication_channel_label', 'Portal Cliente'
+        )
+      ),
+      (
+        '8e5ee201-7e27-45ef-9e61-f3209f6ad213'::uuid,
+        '${sqlEscape(tenantId)}'::uuid,
+        '${P2_COMMUNICATION_TICKETS.portalOrigin.id}'::uuid,
+        'internal'::public.message_visibility,
+        'Nota interna P2 que o portal nao pode ver.',
+        '${sqlEscape(supportUserId)}'::uuid,
+        jsonb_build_object(
+          'visibility', 'internal',
+          'communication_direction', 'internal',
+          'communication_channel', 'internal_support',
+          'communication_channel_label', 'Suporte interno'
+        )
+      )
+    on conflict (id)
+    do nothing;
+  `);
+}
+
 async function signInLocalUser({ apiUrl, anonKey, email, password }) {
   const response = await fetch(`${apiUrl}/auth/v1/token?grant_type=password`, {
     method: 'POST',
@@ -656,6 +789,48 @@ function querySummary({ tenantId, ticketId, actionIds }) {
         'internal_slug', 'erp-diagnostico-interno-webhook',
         'restricted_entitled_slug', 'expedicao-checklist-autenticado-tenant-a',
         'restricted_without_entitlement_slug', 'erp-observacoes-restritas-rollout'
+      ),
+      'p2_ticket_intake_sources', (
+        select coalesce(jsonb_agg(jsonb_build_object(
+          'id', ticket.id,
+          'title', ticket.title,
+          'source', ticket.source,
+          'origin_key', case ticket.source
+            when 'portal' then 'customer_portal'
+            when 'internal' then 'suporte_manual'
+            when 'email' then 'email_future'
+            when 'api' then 'api_future'
+            else 'system_future'
+          end,
+          'channel_key', case ticket.source
+            when 'portal' then 'customer_portal'
+            when 'email' then 'email'
+            when 'api' then 'api'
+            else 'internal_support'
+          end,
+          'channel_label', case ticket.source
+            when 'portal' then 'Portal do cliente'
+            when 'email' then 'Email'
+            when 'api' then 'API'
+            else 'Suporte interno'
+          end,
+          'can_reply_now', (
+            ticket.status <> all(array['resolved', 'closed', 'cancelled']::public.ticket_status[])
+            and ticket.source <> all(array['email', 'chat', 'api']::public.ticket_source[])
+          ),
+          'reason_if_unavailable', case
+            when ticket.source = 'email'::public.ticket_source then 'Email ainda nao esta integrado para resposta direta.'
+            when ticket.source = 'api'::public.ticket_source then 'API ainda nao esta integrado para resposta direta.'
+            else null
+          end
+        ) order by ticket.title), '[]'::jsonb)
+        from public.tickets as ticket
+        where ticket.id = any(array[
+          '${P2_COMMUNICATION_TICKETS.supportManual.id}'::uuid,
+          '${P2_COMMUNICATION_TICKETS.portalOrigin.id}'::uuid,
+          '${P2_COMMUNICATION_TICKETS.futureEmail.id}'::uuid,
+          '${P2_COMMUNICATION_TICKETS.futureApi.id}'::uuid
+        ])
       )
     ) as summary;
   `);
@@ -682,6 +857,17 @@ async function main() {
   const adminProfile = queryProfileByEmail(USERS.platformAdmin.email);
   if (!adminProfile?.id) {
     fail(`Platform admin local ausente: ${USERS.platformAdmin.email}.`);
+  }
+
+  const supportManagerProfile = queryProfileByEmail(USERS.supportManager.email);
+  const customerUserProfile = queryProfileByEmail(USERS.customerUser.email);
+
+  if (!supportManagerProfile?.id) {
+    fail(`Support manager local ausente: ${USERS.supportManager.email}.`);
+  }
+
+  if (!customerUserProfile?.id) {
+    fail(`Customer user local ausente: ${USERS.customerUser.email}.`);
   }
 
   const internalMemberAuth = await createOrUpdateAuthUser({
@@ -736,6 +922,12 @@ async function main() {
     actorUserId: adminProfile.id,
     tenantId: tenant.id,
     userId: internalNonMemberProfile.id,
+  });
+
+  ensureP2CommunicationFixture({
+    tenantId: tenant.id,
+    supportUserId: supportManagerProfile.id,
+    customerUserId: customerUserProfile.id,
   });
 
   const adminSession = await sessionFor({ apiUrl, anonKey, user: USERS.platformAdmin });
