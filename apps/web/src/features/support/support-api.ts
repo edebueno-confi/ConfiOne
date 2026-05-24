@@ -319,6 +319,17 @@ function mapTimelineItem(row: Record<string, unknown>): SupportTicketTimelineIte
       row.communication_channel as SupportTicketTimelineItem['communicationChannel'],
     communicationChannelLabel: String(row.communication_channel_label ?? 'Canal indisponivel'),
     isCustomerVisible: Boolean(row.is_customer_visible),
+    deliveryChannel:
+      (row.delivery_channel as SupportTicketTimelineItem['deliveryChannel'] | null) ?? null,
+    deliveryStatus:
+      (row.delivery_status as SupportTicketTimelineItem['deliveryStatus'] | null) ?? null,
+    deliveryProviderState:
+      (row.delivery_provider_state as SupportTicketTimelineItem['deliveryProviderState'] | null) ??
+      null,
+    deliveryStatusLabel: (row.delivery_status_label as string | null) ?? null,
+    deliveryReasonIfBlocked: (row.delivery_reason_if_blocked as string | null) ?? null,
+    deliveryDeliveredAt: (row.delivery_delivered_at as string | null) ?? null,
+    deliveryFailedAt: (row.delivery_failed_at as string | null) ?? null,
   };
 
   return base as SupportTicketTimelineItem;

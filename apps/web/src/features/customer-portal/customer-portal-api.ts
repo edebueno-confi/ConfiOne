@@ -401,6 +401,7 @@ function mapTimelineItem(row: Record<string, unknown>): CustomerPortalTicketTime
     eventLabel: (row.event_label as string | null) ?? null,
     body: (row.body as string | null) ?? null,
     customerEntryLabel: String(row.customer_entry_label ?? 'Atualização do ticket'),
+    customerDeliveryLabel: (row.customer_delivery_label as string | null) ?? null,
   };
 }
 

@@ -1293,6 +1293,14 @@ function ConversationEntry({
           <span className="text-[color:var(--color-muted)]">
             {entry.communicationChannelLabel ?? 'Canal indisponível'}
           </span>
+          {entry.deliveryStatusLabel ? (
+            <>
+              <span className="text-[color:var(--color-muted)]">·</span>
+              <span className="text-[color:var(--color-muted)]">
+                {entry.deliveryStatusLabel}
+              </span>
+            </>
+          ) : null}
           <span className="text-[color:var(--color-muted)]">{timestamp}</span>
         </>
       }
@@ -5065,7 +5073,7 @@ function SupportWorkspaceView({
                   composerMode={composerMode}
                   publicReplyLabel={
                     detail.replyMode === 'customer_portal_public_reply'
-                      ? 'Resposta pública no Portal Cliente'
+                      ? 'Resposta pública via Portal'
                       : 'Resposta pública registrada no ticket'
                   }
                   publicReplyUnavailableReason={detail.reasonIfUnavailable}
