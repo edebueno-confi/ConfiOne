@@ -220,6 +220,8 @@ export type {
   TicketDeliveryChannel,
   TicketDeliveryProviderState,
   TicketDeliveryStatus,
+  CommunicationChannelReadiness,
+  CommunicationChannelReadinessStatus,
   TicketDetail,
   TicketEventType,
   TicketOperationalReasonType,

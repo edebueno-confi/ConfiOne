@@ -149,6 +149,44 @@ export type TicketDeliveryProviderState =
   | 'disabled'
   | 'future';
 
+export type CommunicationChannelReadinessStatus =
+  | 'active'
+  | 'disabled'
+  | 'not_configured'
+  | 'future'
+  | 'blocked'
+  | 'unavailable';
+
+export interface CommunicationChannelReadiness {
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantDisplayName: string;
+  tenantStatus: string;
+  channelKey: TicketDeliveryChannel;
+  channelLabel: string;
+  directionSupported: string;
+  isExternal: boolean;
+  isRealChannel: boolean;
+  providerRequired: boolean;
+  statusGlobal: CommunicationChannelReadinessStatus;
+  futureProviderType: string | null;
+  description: string;
+  readinessStatus: CommunicationChannelReadinessStatus;
+  isEnabled: boolean;
+  canSend: boolean;
+  canReceive: boolean;
+  reasonIfUnavailable: string | null;
+  requiredSetupSummary: string | null;
+  operationalNote: string | null;
+  lastCheckedAt: IsoTimestamp | null;
+  managedByUserId: Uuid | null;
+  managedByFullName: string | null;
+  managedByEmail: string | null;
+  updatedAt: IsoTimestamp | null;
+  canMarkActive: boolean;
+  activationBlockedByContract: boolean;
+}
+
 export interface TicketCommunicationCapability {
   originKey: TicketOriginKey;
   originLabel: string;
