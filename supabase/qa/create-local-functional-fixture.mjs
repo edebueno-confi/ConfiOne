@@ -514,6 +514,65 @@ function ensureP2CommunicationFixture({ tenantId, supportUserId, customerUserId 
     on conflict (id)
     do nothing;
   `);
+
+  runSupabaseDbQuery(`
+    insert into public.ticket_message_deliveries (
+      id,
+      tenant_id,
+      ticket_id,
+      message_id,
+      channel,
+      direction,
+      status,
+      provider_state,
+      recipient_contact_id,
+      recipient_user_id,
+      delivered_at,
+      created_by_user_id,
+      metadata
+    )
+    values
+      (
+        '8e5ee201-7e27-45ef-9e61-f3209f6ad221'::uuid,
+        '${sqlEscape(tenantId)}'::uuid,
+        '${P2_COMMUNICATION_TICKETS.portalOrigin.id}'::uuid,
+        '8e5ee201-7e27-45ef-9e61-f3209f6ad211'::uuid,
+        'customer_portal'::public.ticket_delivery_channel,
+        'inbound'::public.ticket_delivery_direction,
+        'delivered'::public.ticket_delivery_status,
+        'native'::public.ticket_delivery_provider_state,
+        null,
+        null,
+        timezone('utc', now()),
+        '${sqlEscape(customerUserId)}'::uuid,
+        jsonb_build_object(
+          'delivery_surface', 'customer_portal',
+          'provider_state', 'native',
+          'fixture', 'p2_delivery_readiness'
+        )
+      ),
+      (
+        '8e5ee201-7e27-45ef-9e61-f3209f6ad222'::uuid,
+        '${sqlEscape(tenantId)}'::uuid,
+        '${P2_COMMUNICATION_TICKETS.portalOrigin.id}'::uuid,
+        '8e5ee201-7e27-45ef-9e61-f3209f6ad212'::uuid,
+        'customer_portal'::public.ticket_delivery_channel,
+        'outbound'::public.ticket_delivery_direction,
+        'delivered'::public.ticket_delivery_status,
+        'native'::public.ticket_delivery_provider_state,
+        '${sqlEscape(requester.id)}'::uuid,
+        '${sqlEscape(customerUserId)}'::uuid,
+        timezone('utc', now()),
+        '${sqlEscape(supportUserId)}'::uuid,
+        jsonb_build_object(
+          'delivery_surface', 'customer_portal',
+          'provider_state', 'native',
+          'fixture', 'p2_delivery_readiness'
+        )
+      )
+    on conflict (message_id, channel)
+    do nothing;
+  `);
 }
 
 async function signInLocalUser({ apiUrl, anonKey, email, password }) {
@@ -830,6 +889,22 @@ function querySummary({ tenantId, ticketId, actionIds }) {
           '${P2_COMMUNICATION_TICKETS.portalOrigin.id}'::uuid,
           '${P2_COMMUNICATION_TICKETS.futureEmail.id}'::uuid,
           '${P2_COMMUNICATION_TICKETS.futureApi.id}'::uuid
+        ])
+      ),
+      'p2_delivery_readiness', (
+        select coalesce(jsonb_agg(jsonb_build_object(
+          'delivery_id', delivery.id,
+          'ticket_id', delivery.ticket_id,
+          'message_id', delivery.message_id,
+          'channel', delivery.channel,
+          'direction', delivery.direction,
+          'status', delivery.status,
+          'provider_state', delivery.provider_state
+        ) order by delivery.created_at), '[]'::jsonb)
+        from public.ticket_message_deliveries as delivery
+        where delivery.message_id = any(array[
+          '8e5ee201-7e27-45ef-9e61-f3209f6ad211'::uuid,
+          '8e5ee201-7e27-45ef-9e61-f3209f6ad212'::uuid
         ])
       )
     ) as summary;
