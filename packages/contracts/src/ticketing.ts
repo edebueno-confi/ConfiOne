@@ -90,6 +90,48 @@ export type TicketSlaStatus =
 
 export type TicketSlaPolicyScope = 'none' | 'global_fallback' | 'tenant';
 
+export type TicketOriginKey =
+  | 'suporte_manual'
+  | 'customer_portal'
+  | 'email_future'
+  | 'whatsapp_future'
+  | 'chat_future'
+  | 'api_future'
+  | 'import_future'
+  | 'system_future'
+  | 'unknown';
+
+export type TicketChannelKey =
+  | 'internal_support'
+  | 'customer_portal'
+  | 'public_help'
+  | 'email'
+  | 'whatsapp'
+  | 'chat'
+  | 'api'
+  | 'unknown';
+
+export type TicketCommunicationDirection =
+  | 'inbound'
+  | 'outbound'
+  | 'internal'
+  | 'system';
+
+export type TicketReplyMode =
+  | 'customer_portal_public_reply'
+  | 'support_public_message'
+  | 'unavailable';
+
+export interface TicketCommunicationCapability {
+  originKey: TicketOriginKey;
+  originLabel: string;
+  channelKey: TicketChannelKey;
+  channelLabel: string;
+  canReplyNow: boolean;
+  replyMode: TicketReplyMode;
+  reasonIfUnavailable: string | null;
+}
+
 export const TICKET_TIMELINE_ENTRY_TYPES = ['message', 'event'] as const;
 export type TicketTimelineEntryType = (typeof TICKET_TIMELINE_ENTRY_TYPES)[number];
 
@@ -373,6 +415,13 @@ export interface SupportTicketQueueItem extends TicketViewPermissionFlags {
   requesterContactEmail: string | null;
   title: string;
   source: TicketSource;
+  originKey: TicketOriginKey;
+  originLabel: string;
+  channelKey: TicketChannelKey;
+  channelLabel: string;
+  canReplyNow: boolean;
+  replyMode: TicketReplyMode;
+  reasonIfUnavailable: string | null;
   status: TicketStatus;
   priority: TicketPriority;
   severity: TicketSeverity;
@@ -423,6 +472,13 @@ export interface SupportTicketDetail extends TicketViewPermissionFlags {
   title: string;
   description: string;
   source: TicketSource;
+  originKey: TicketOriginKey;
+  originLabel: string;
+  channelKey: TicketChannelKey;
+  channelLabel: string;
+  canReplyNow: boolean;
+  replyMode: TicketReplyMode;
+  reasonIfUnavailable: string | null;
   status: TicketStatus;
   priority: TicketPriority;
   severity: TicketSeverity;
@@ -481,6 +537,10 @@ export interface SupportTicketTimelineMessageItem {
   assignmentId: null;
   body: string;
   metadata: JsonObject;
+  communicationDirection: TicketCommunicationDirection;
+  communicationChannel: TicketChannelKey;
+  communicationChannelLabel: string;
+  isCustomerVisible: boolean;
 }
 
 export interface SupportTicketTimelineEventItem {
@@ -501,6 +561,10 @@ export interface SupportTicketTimelineEventItem {
   assignmentId: Uuid | null;
   body: null;
   metadata: JsonObject;
+  communicationDirection: TicketCommunicationDirection;
+  communicationChannel: TicketChannelKey;
+  communicationChannelLabel: string;
+  isCustomerVisible: boolean;
 }
 
 export type SupportTicketTimelineItem =
@@ -1686,6 +1750,7 @@ export interface CustomerPortalTicketListItem {
   customerMessageCount: number;
   customerAttachmentCount: number;
   publicArticleCount: number;
+  customerOriginLabel: string;
 }
 
 export interface CustomerPortalTicketDetail {
@@ -1706,6 +1771,7 @@ export interface CustomerPortalTicketDetail {
   canAddMessage: boolean;
   canViewAttachments: boolean;
   canViewPublicArticles: boolean;
+  customerOriginLabel: string;
 }
 
 export interface CustomerPortalTicketCollaborationState {
@@ -1737,6 +1803,7 @@ export interface CustomerPortalTicketTimelineItem {
   eventType: TicketEventType | null;
   eventLabel: string | null;
   body: string | null;
+  customerEntryLabel: string;
 }
 
 export interface CustomerPortalTicketAttachment {
