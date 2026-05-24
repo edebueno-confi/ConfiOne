@@ -8,10 +8,16 @@ import {
 } from 'react';
 import { Navigate } from 'react-router-dom';
 import {
+  getAdminAiOperationalContextReadiness,
   getAdminSystemOperationalSummary,
+  listAdminAiActionPolicies,
+  listAdminAiContextSourcePolicies,
   listAdminCommunicationChannelReadiness,
   listAdminSystemAuditEvents,
   listAdminSystemHealthChecks,
+  type AdminAiActionPolicyRow,
+  type AdminAiContextSourcePolicyRow,
+  type AdminAiOperationalContextReadinessRow,
   type AdminCommunicationChannelReadinessRow,
   type AdminSystemAuditEventRow,
   type AdminSystemHealthCheckRow,
@@ -316,6 +322,10 @@ export function SystemPage() {
   const [pageMessage, setPageMessage] = useState<string | null>(null);
   const [auditFeed, setAuditFeed] = useState<AdminAuditFeedRow[]>([]);
   const [channelReadiness, setChannelReadiness] = useState<AdminCommunicationChannelReadinessRow[]>([]);
+  const [aiReadiness, setAiReadiness] =
+    useState<AdminAiOperationalContextReadinessRow | null>(null);
+  const [aiSourcePolicies, setAiSourcePolicies] = useState<AdminAiContextSourcePolicyRow[]>([]);
+  const [aiActionPolicies, setAiActionPolicies] = useState<AdminAiActionPolicyRow[]>([]);
   const [healthChecks, setHealthChecks] = useState<AdminSystemHealthCheckRow[]>([]);
   const [summary, setSummary] = useState<AdminSystemOperationalSummaryRow | null>(null);
   const [activeTab, setActiveTab] = useState<SystemTab>('health');
@@ -329,11 +339,22 @@ export function SystemPage() {
 
   const loadSurface = useEffectEvent(async () => {
     try {
-      const [auditRows, healthRows, summaryRow, channelRows] = await Promise.all([
+      const [
+        auditRows,
+        healthRows,
+        summaryRow,
+        channelRows,
+        aiReadinessRow,
+        aiSourcePolicyRows,
+        aiActionPolicyRows,
+      ] = await Promise.all([
         listAdminSystemAuditEvents(),
         listAdminSystemHealthChecks(),
         getAdminSystemOperationalSummary(),
         listAdminCommunicationChannelReadiness(),
+        getAdminAiOperationalContextReadiness(),
+        listAdminAiContextSourcePolicies(),
+        listAdminAiActionPolicies(),
       ]);
 
       setBackendDenied(false);
@@ -341,6 +362,9 @@ export function SystemPage() {
       setHealthChecks(healthRows);
       setSummary(summaryRow);
       setChannelReadiness(channelRows);
+      setAiReadiness(aiReadinessRow);
+      setAiSourcePolicies(aiSourcePolicyRows);
+      setAiActionPolicies(aiActionPolicyRows);
       setPageMessage(null);
       setPhase('ready');
     } catch (error) {
@@ -361,6 +385,9 @@ export function SystemPage() {
 
         setAuditFeed([]);
         setChannelReadiness([]);
+        setAiReadiness(null);
+        setAiSourcePolicies([]);
+        setAiActionPolicies([]);
         setHealthChecks([]);
       setSummary(null);
       setPageMessage(classified.message);
@@ -487,6 +514,28 @@ export function SystemPage() {
       };
     });
   }, [channelReadiness]);
+
+  const aiPolicySummary = useMemo(() => {
+    const updatedAt = [...aiSourcePolicies, ...aiActionPolicies]
+      .map((policy) => policy.updated_at)
+      .filter(Boolean)
+      .sort()
+      .at(-1);
+    const blockedAutomationCount = aiActionPolicies.filter(
+      (policy) => policy.decision === 'denied',
+    ).length;
+    const reviewRequiredCount = aiActionPolicies.filter(
+      (policy) => policy.requires_human_review,
+    ).length;
+
+    return {
+      actionPolicyCount: aiActionPolicies.length,
+      blockedAutomationCount,
+      sourcePolicyCount: aiSourcePolicies.length,
+      reviewRequiredCount,
+      updatedAt: updatedAt ?? null,
+    };
+  }, [aiActionPolicies, aiSourcePolicies]);
 
   const relatedEntries = useMemo(() => {
     if (!selectedEntry) {
@@ -736,6 +785,81 @@ export function SystemPage() {
                     </div>
                   ))}
                 </div>
+              )}
+            </div>
+            <div className="mb-4 rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <h3 className="text-[0.98rem] font-semibold text-[color:var(--color-ink)]">
+                    AI-native readiness
+                  </h3>
+                  <p className="text-sm leading-6 text-[color:var(--color-muted)]">
+                    Preparado para governança, não ativo. Nenhuma resposta é enviada automaticamente.
+                  </p>
+                </div>
+                <StatusPill tone="warning">Preparada, não ativa</StatusPill>
+              </div>
+
+              {!aiReadiness ? (
+                <div className="mt-3">
+                  <InlineNotice>Readiness AI-native indisponível neste ambiente.</InlineNotice>
+                </div>
+              ) : (
+                <>
+                  <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3.5 py-3">
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                        Fontes
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
+                        {aiPolicySummary.sourcePolicyCount || aiReadiness.allowed_source_count + aiReadiness.restricted_source_count + aiReadiness.future_source_count}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
+                        {aiReadiness.allowed_source_count} permitidas, {aiReadiness.restricted_source_count} restritas, {aiReadiness.future_source_count} futuras
+                      </p>
+                    </div>
+                    <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3.5 py-3">
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                        Políticas de ação
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
+                        {aiPolicySummary.actionPolicyCount || 'Indisponível'}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
+                        {aiPolicySummary.blockedAutomationCount} automações bloqueadas; {aiPolicySummary.reviewRequiredCount} exigem revisão humana
+                      </p>
+                    </div>
+                    <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3.5 py-3">
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                        Provider/modelo
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
+                        Não configurado
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
+                        Sem LLM, embedding, job ou credencial externa nesta versão
+                      </p>
+                    </div>
+                    <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3.5 py-3">
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                        Última atualização
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
+                        {aiPolicySummary.updatedAt ? formatDateTime(aiPolicySummary.updatedAt) : 'Indisponível'}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
+                        Fonte: policies AI-native governadas pelo backend
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <StatusPill>{aiReadiness.human_review_required ? 'Revisão humana obrigatória' : 'Revisão indisponível'}</StatusPill>
+                    <StatusPill>{aiReadiness.audit_required ? 'Auditoria obrigatória' : 'Auditoria indisponível'}</StatusPill>
+                    <StatusPill tone={aiReadiness.auto_send_enabled ? 'critical' : 'default'}>Resposta automática bloqueada</StatusPill>
+                    <StatusPill tone={aiReadiness.auto_publish_enabled ? 'critical' : 'default'}>Publicação automática bloqueada</StatusPill>
+                    <StatusPill tone={aiReadiness.embeddings_enabled ? 'critical' : 'default'}>Embeddings inativos</StatusPill>
+                  </div>
+                </>
               )}
             </div>
             <div className="mb-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">

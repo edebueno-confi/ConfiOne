@@ -6,6 +6,12 @@ import type {
   AdminCustomerAccountFeature,
   AdminCustomerAccountIntegration,
   AdminCustomerAccountProfileDetail,
+  AiActionKey,
+  AiIntendedUse,
+  AiPolicyDecision,
+  AiSourceStatus,
+  AiSourceType,
+  AiSourceVisibility,
   CustomerAlertSeverity,
   CustomerCustomizationRiskLevel,
   CustomerIntegrationEnvironment,
@@ -442,6 +448,51 @@ export interface AdminCommunicationChannelReadinessRow {
   updated_at: IsoTimestamp | null;
   can_mark_active: boolean;
   activation_blocked_by_contract: boolean;
+}
+
+export interface AdminAiOperationalContextReadinessRow {
+  readiness_key: string;
+  readiness_status: 'prepared_not_active';
+  readiness_label: string;
+  allowed_source_count: number;
+  restricted_source_count: number;
+  future_source_count: number;
+  citation_required_count: number;
+  redaction_required_count: number;
+  human_review_required: boolean;
+  audit_required: boolean;
+  llm_provider_configured: boolean;
+  embeddings_enabled: boolean;
+  auto_send_enabled: boolean;
+  auto_publish_enabled: boolean;
+}
+
+export interface AdminAiContextSourcePolicyRow {
+  policy_key: string;
+  source_type: AiSourceType;
+  source_status: AiSourceStatus;
+  visibility: AiSourceVisibility;
+  allowed_uses: AiIntendedUse[];
+  requires_tenant: boolean;
+  requires_entitlement: boolean;
+  requires_citation: boolean;
+  requires_redaction: boolean;
+  allowed_destinations: string[];
+  forbidden_destinations: string[];
+  policy_summary: string;
+  updated_at: IsoTimestamp;
+}
+
+export interface AdminAiActionPolicyRow {
+  action_key: AiActionKey;
+  decision: AiPolicyDecision;
+  requires_human_review: boolean;
+  allowed_source_types: AiSourceType[];
+  allowed_destinations: string[];
+  forbidden_reason: string | null;
+  audit_required: boolean;
+  policy_summary: string;
+  updated_at: IsoTimestamp;
 }
 
 export type InternalDocumentStatus = 'draft' | 'published' | 'archived' | 'blocked';

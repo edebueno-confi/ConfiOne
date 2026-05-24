@@ -34,6 +34,9 @@ import type {
   AdminTenantMembershipRow,
   AdminTenantRecordRow,
   AdminTenantsListItemRow,
+  AdminAiActionPolicyRow,
+  AdminAiContextSourcePolicyRow,
+  AdminAiOperationalContextReadinessRow,
   AdminSystemAuditEventRow,
   AdminCommunicationChannelReadinessRow,
   AdminSystemHealthCheckRow,
@@ -622,6 +625,48 @@ export async function listAdminCommunicationChannelReadiness() {
   }
 
   return (data ?? []) as AdminCommunicationChannelReadinessRow[];
+}
+
+export async function getAdminAiOperationalContextReadiness() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_ai_operational_context_readiness')
+    .select('*')
+    .maybeSingle();
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o readiness AI-native.');
+  }
+
+  return data as AdminAiOperationalContextReadinessRow | null;
+}
+
+export async function listAdminAiContextSourcePolicies() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_ai_context_source_policies')
+    .select('*')
+    .order('source_type', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar as políticas de fonte AI-native.');
+  }
+
+  return (data ?? []) as AdminAiContextSourcePolicyRow[];
+}
+
+export async function listAdminAiActionPolicies() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_ai_action_policies')
+    .select('*')
+    .order('action_key', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar as políticas de ação AI-native.');
+  }
+
+  return (data ?? []) as AdminAiActionPolicyRow[];
 }
 
 export async function disableAdminTenantCommunicationChannel(
@@ -1677,6 +1722,9 @@ export type {
   AdminTenantMembershipRow,
   AdminTenantRecordRow,
   AdminTenantsListItemRow,
+  AdminAiActionPolicyRow,
+  AdminAiContextSourcePolicyRow,
+  AdminAiOperationalContextReadinessRow,
   AdminSystemAuditEventRow,
   AdminCommunicationChannelReadinessRow,
   AdminSystemHealthCheckRow,
