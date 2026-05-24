@@ -3,6 +3,8 @@
 ## Visão
 Genius Support OS é a plataforma de operação CX B2B técnica do ecossistema Genius, desenhada para transformar suporte, conhecimento e tecnologia em um sistema único, rastreável e escalável para SaaS de logística reversa.
 
+O produto deve ser AI-native, human-governed: a arquitetura prepara fontes, contexto, permissões, citações, auditoria e revisão humana para IA futura, mas IA não é source of truth e não executa ação operacional sem humano.
+
 ## Problema
 A operação atual depende de canais descentralizados, conhecimento informal e baixa rastreabilidade entre suporte, CS, times técnicos, engenharia e clientes B2B. Isso gera demora, retrabalho, perda de contexto, falta de devolutiva e dependência de pessoas específicas.
 
@@ -31,6 +33,7 @@ Criar uma plataforma interna robusta para:
 - Operação manual de troca ou devolução em nome da loja.
 - SAC B2C genérico.
 - Atendimento omnichannel para consumidor final.
+- IA que responde, publica, fecha ticket, altera status, cria engenharia/internal action ou envia mensagem automaticamente.
 
 ## Norte do produto
 Cada solicitação B2B deve ter dono, status, histórico, contexto, prazo, vínculo com conhecimento oficial e devolutiva clara para cliente B2B e times internos.

@@ -7,6 +7,33 @@
 
 ## Estado executável atual
 
+Fase P3 - AI-Native Operational Readiness Foundation:
+- Fundacao AI-native, human-governed criada sem LLM, provider, embedding, vector database, chatbot ou automacao.
+- Tabelas novas:
+  - `ai_context_source_policies`
+  - `ai_action_policies`
+  - `ai_usage_audit_events`
+- Read models novos:
+  - `vw_ai_context_source_policies`
+  - `vw_ai_action_policies`
+  - `vw_ai_operational_context_readiness`
+  - `vw_ai_support_ticket_context_readiness`
+  - `vw_ai_customer_account_context_readiness`
+  - `vw_ai_knowledge_context_readiness`
+  - `vw_ai_usage_audit_events`
+- RPCs novas:
+  - `rpc_ai_validate_context_access`
+  - `rpc_ai_log_usage_event`
+  - `rpc_ai_register_human_review_decision`
+- Boundary:
+  - AI nao e source of truth.
+  - AI nao escreve direto no banco.
+  - AI nao altera `ticket.status`.
+  - AI nao envia mensagem ao cliente.
+  - AI nao publica Knowledge.
+  - AI nao cria delivery/provider, engineering work item ou internal action.
+  - `ai_usage_audit_events` nao armazena provider, modelo, prompt ou output nesta fase.
+
 Fase P2-C - Communication Channel Governance & Provider Readiness:
 - Governanca de canais por tenant foi criada sem provider externo real.
 - Canal real do MVP:

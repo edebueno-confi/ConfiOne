@@ -18,6 +18,44 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase P3 - AI-Native Operational Readiness Foundation
+- fase: `P3`
+- nome: `AI-Native Operational Readiness Foundation`
+- branch: `codex/p3-ai-native-operational-readiness-foundation`
+- data: `2026-05-24`
+- resumo funcional: criada fundacao AI-native, human-governed sem integrar LLM, provider, embedding, chatbot, vector database ou automacao. O backend passa a ter catalogo de fontes, catalogo de acoes, ledger de uso/revisao humana, read models `vw_ai_*` e RPCs de validacao/log/revisao. IA permanece sem poder enviar resposta, publicar artigo, alterar status, criar delivery, criar engenharia/internal action, alterar entitlement/RLS, ler storage path ou ler segredo.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/PRODUCT_VISION.md`
+  - `docs/AI_GOVERNANCE.md`
+  - `docs/AI_NATIVE_OPERATIONAL_READINESS.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/KNOWLEDGE_BASE_STRATEGY.md`
+  - `docs/CUSTOMER_PORTAL_CONTRACT_FOUNDATION_V3.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/reports/P3_AI_NATIVE_OPERATIONAL_READINESS_2026-05-24.md`
+- views/RPCs afetadas:
+  - `ai_context_source_policies`
+  - `ai_action_policies`
+  - `ai_usage_audit_events`
+  - `vw_ai_context_source_policies`
+  - `vw_ai_action_policies`
+  - `vw_ai_operational_context_readiness`
+  - `vw_ai_support_ticket_context_readiness`
+  - `vw_ai_customer_account_context_readiness`
+  - `vw_ai_knowledge_context_readiness`
+  - `vw_ai_usage_audit_events`
+  - `rpc_ai_validate_context_access`
+  - `rpc_ai_log_usage_event`
+  - `rpc_ai_register_human_review_decision`
+- telas afetadas:
+  - nenhuma tela nova; readiness fica contratual/documental nesta fase para evitar placeholder de IA real.
+- riscos restantes:
+  - IA real ainda exige provider/modelo aprovado, redaction avaliada, prompt evaluation, rate limits, custo, monitoramento, opt-in, kill switch e politica de retencao.
+- impacto na FAQ futura:
+  - permite explicar que o produto foi preparado para IA governada por fontes, permissao, citacao, auditoria e revisao humana, mas sem automacao ativa.
+
 ### Fase P2-C - Communication Channel Governance & Provider Readiness
 - fase: `P2-C`
 - nome: `Communication Channel Governance & Provider Readiness`

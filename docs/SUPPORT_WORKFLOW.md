@@ -60,6 +60,11 @@
 - engenharia continua fora destes read models especificos ate existir contrato proprio para Engineering Workspace
 
 ## Origem, canal e comunicação no P2
+- O P3 adiciona governanca AI-native sem IA real:
+  - o Support Workspace nao deve exibir botao ativo de "gerar resposta" ou Copilot enquanto nao houver provider/modelo aprovado;
+  - fontes de ticket, timeline, Customer Account e Knowledge podem ser validadas por `rpc_ai_validate_context_access` apenas como readiness governado;
+  - qualquer sugestao futura exige citacao, redaction quando aplicavel, auditoria e revisao humana;
+  - IA nao altera status, nao envia resposta, nao cria delivery externo, nao cria engineering work item e nao cria internal action.
 - O P2-C adiciona governanca de readiness de canais por tenant:
   - `customer_portal` permanece o unico canal real do MVP.
   - `email_future`, `whatsapp_future`, `chat_future` e `api_future` continuam futuros/bloqueados por contrato.

@@ -27,6 +27,7 @@ O corte entrega boundary customer-facing autenticada, tenant-aware e segura para
 - A fundacao P2 adicionou labels customer-facing de origem/comunicacao aos read models do portal sem expor enum cru, canal interno, provider externo ou metadata operacional.
 - O P2-B adicionou ledger de delivery para disponibilidade no Portal, mas o Portal recebe apenas labels customer-facing. `provider_state`, reason tecnico, tentativas, audit e metadata de delivery continuam fora da superficie cliente.
 - O P2-C adicionou governanca interna de readiness de canais por tenant sem ampliar a superficie customer-facing. O Portal nao recebe readiness, provider, motivo tecnico, pre-condicoes de canal, segredo, token, webhook ou enum cru.
+- O P3 adicionou governanca AI-native interna sem ativar IA no Portal. O cliente nao recebe readiness de IA, provider/modelo, prompt, output, policy interna ou ledger de auditoria; `customer_portal_ticket` permanece fonte `future` para qualquer assistencia futura.
 
 ### Criado
 - `customer_ticket_update_acknowledgements`.

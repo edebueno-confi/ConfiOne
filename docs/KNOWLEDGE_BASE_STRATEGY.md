@@ -3,6 +3,13 @@
 ## Objetivo
 Criar a base editorial do Genius Support OS com versionamento, trilha de origem e governança suficiente para operar conteúdo interno primeiro e preparar documentação pública técnica para clientes B2B e usuários da plataforma, sem abrir Central Pública nesta fase.
 
+## Atualizacao P3 - AI-native, human-governed
+- Knowledge publica so pode ser fonte citavel de IA quando estiver `published/public` e projetada por contrato backend.
+- Knowledge interna pode apoiar operador/editor, mas nao pode virar resposta customer-facing sem reclassificacao e revisao humana.
+- Knowledge restrita exige entitlement antes de qualquer rascunho customer-facing.
+- IA nao publica artigo, nao altera visibilidade/status e nao substitui o gate humano de publicacao.
+- `source_path` e `source_hash` continuam rastreabilidade editorial; nao viram prompt bruto nem payload customer-facing.
+
 ## Princípio canônico atual
 - `knowledge_space` é a unidade editorial e pública da plataforma.
 - `tenant` continua como eixo operacional e de compatibilidade da KB atual.
