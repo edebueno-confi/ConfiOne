@@ -338,6 +338,7 @@ function mapTicketListItem(row: Record<string, unknown>): CustomerPortalTicketLi
     customerMessageCount: Number(row.customer_message_count ?? 0),
     customerAttachmentCount: Number(row.customer_attachment_count ?? 0),
     publicArticleCount: Number(row.public_article_count ?? 0),
+    customerOriginLabel: String(row.customer_origin_label ?? 'Atendimento Genius'),
   };
 }
 
@@ -360,6 +361,7 @@ function mapTicketDetail(row: Record<string, unknown>): CustomerPortalTicketDeta
     canAddMessage: Boolean(row.can_add_message),
     canViewAttachments: Boolean(row.can_view_attachments),
     canViewPublicArticles: Boolean(row.can_view_public_articles),
+    customerOriginLabel: String(row.customer_origin_label ?? 'Atendimento Genius'),
   };
 }
 
@@ -398,6 +400,7 @@ function mapTimelineItem(row: Record<string, unknown>): CustomerPortalTicketTime
     eventType: (row.event_type as TicketEventType | null) ?? null,
     eventLabel: (row.event_label as string | null) ?? null,
     body: (row.body as string | null) ?? null,
+    customerEntryLabel: String(row.customer_entry_label ?? 'Atualização do ticket'),
   };
 }
 

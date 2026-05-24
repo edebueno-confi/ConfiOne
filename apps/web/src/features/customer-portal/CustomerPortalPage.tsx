@@ -885,6 +885,7 @@ function TicketListRow({ ticket }: { ticket: CustomerPortalTicketListItem }) {
         <StatusPill tone="accent">{ticket.customerStatusLabel}</StatusPill>
       </div>
       <div className="mt-3 flex flex-wrap gap-2 text-xs text-[color:var(--color-muted)]">
+        <span>{ticket.customerOriginLabel}</span>
         <span>{ticket.customerMessageCount} mensagens</span>
         <span>{ticket.customerAttachmentCount} evidências</span>
         <span>Artigos autorizados: Indisponível</span>
@@ -2105,6 +2106,7 @@ export function CustomerPortalTicketPage() {
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           <InfoLine label="Cliente" value={detail.tenantDisplayName} />
           <InfoLine label="Solicitante" value={detail.requesterContactFullName} />
+          <InfoLine label="Origem" value={detail.customerOriginLabel} />
           <InfoLine label="Atualizado" value={formatDate(detail.updatedAt)} />
           <InfoLine
             label="Última resposta Genius"
@@ -2149,9 +2151,10 @@ export function CustomerPortalTicketPage() {
                     <p className="text-sm font-semibold text-[color:var(--color-ink)]">
                       {item.entryType === 'message' ? item.actorLabel : item.eventLabel}
                     </p>
-                    <p className="text-xs text-[color:var(--color-muted)]">
-                      {formatDate(item.occurredAt)}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-[color:var(--color-muted)]">
+                      <span>{item.customerEntryLabel}</span>
+                      <span>{formatDate(item.occurredAt)}</span>
+                    </div>
                   </div>
                   {item.body ? (
                     <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[color:var(--color-muted)]">

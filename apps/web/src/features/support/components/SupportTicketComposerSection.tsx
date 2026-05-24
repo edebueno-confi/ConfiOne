@@ -13,6 +13,8 @@ export function SupportTicketComposerSection({
   canUseInternalComposer,
   composerDraft,
   composerDisabled,
+  publicReplyLabel,
+  publicReplyUnavailableReason,
   submitting,
   onSelectPublicMode,
   onSelectInternalMode,
@@ -26,6 +28,8 @@ export function SupportTicketComposerSection({
   canUseInternalComposer: boolean;
   composerDraft: string;
   composerDisabled: boolean;
+  publicReplyLabel: string;
+  publicReplyUnavailableReason: string | null;
   submitting: boolean;
   onSelectPublicMode: () => void;
   onSelectInternalMode: () => void;
@@ -64,6 +68,11 @@ export function SupportTicketComposerSection({
           >
             Nota interna
           </button>
+          <span className="ml-auto inline-flex min-h-7 items-center text-[11px] font-medium text-[color:var(--color-muted)]">
+            {composerMode === 'public'
+              ? publicReplyUnavailableReason ?? publicReplyLabel
+              : 'Visível apenas para operação interna'}
+          </span>
         </div>
         <div className="rounded-[16px] border border-[color:var(--color-support-border)] bg-white px-3 py-3">
           <SupportComposerTextarea

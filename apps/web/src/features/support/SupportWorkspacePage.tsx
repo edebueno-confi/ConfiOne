@@ -1289,6 +1289,10 @@ function ConversationEntry({
         <>
           <span className="text-[color:var(--color-muted)]">•</span>
           <span className="text-[color:var(--color-muted)]">{label}</span>
+          <span className="text-[color:var(--color-muted)]">·</span>
+          <span className="text-[color:var(--color-muted)]">
+            {entry.communicationChannelLabel ?? 'Canal indisponível'}
+          </span>
           <span className="text-[color:var(--color-muted)]">{timestamp}</span>
         </>
       }
@@ -1312,6 +1316,11 @@ function TechnicalTimelineRow({
           <StatusPill tone={entry.visibility === 'internal' ? 'critical' : 'default'}>
             {entry.eventType ? humanizeToken(entry.eventType) : 'evento'}
           </StatusPill>
+          <StatusPill tone={entry.isCustomerVisible ? 'accent' : 'default'}>
+            {entry.communicationDirection === 'system'
+              ? 'Sistema'
+              : entry.communicationChannelLabel ?? 'Canal indisponível'}
+          </StatusPill>
           <p className="text-xs text-[color:var(--color-muted)]">
                     {entry.actorFullName ?? entry.actorEmail ?? 'Autor não identificado'}
           </p>
@@ -1331,7 +1340,7 @@ function ConversationEventEntry({
   return (
     <SupportSystemEvent
       icon={<SupportSurfaceIcon className="h-[10px] w-[10px]" kind="ticket" />}
-      label={humanizeTicketEventLabel(entry.eventType)}
+      label={`${humanizeTicketEventLabel(entry.eventType)} · ${entry.communicationChannelLabel ?? 'Canal indisponível'}`}
       summary={summarizeTimelineEvent(entry)}
       timestamp={formatDateTime(entry.occurredAt)}
     />
@@ -1464,6 +1473,7 @@ function SupportQueueItem({
       }
       assigneeLabel={ticket.assignedToFullName ?? 'Não atribuído'}
       categoryLabel={ticket.categoryName ?? 'Indisponível'}
+      channelLabel={ticket.channelLabel ?? 'Canal indisponível'}
       code={supportTicketCode(ticket.id)}
       isSelected={isSelected}
       onSelect={onSelect}
@@ -1495,6 +1505,7 @@ function SupportTicketInboxItem({
   return (
     <QueueTicketItem
       categoryLabel={ticket.categoryName ?? 'Indisponível'}
+      channelLabel={ticket.channelLabel ?? 'Canal indisponível'}
       code={supportTicketCode(ticket.id)}
       isSelected={isSelected}
       onSelect={onSelect}
@@ -4534,10 +4545,10 @@ function SupportWorkspaceView({
     submitting ||
     composerDraft.trim().length === 0 ||
     (composerMode === 'public'
-      ? !ticketDetail?.canAddMessage
+      ? !ticketDetail?.canReplyNow
       : !ticketDetail?.canAddInternalNote);
 
-  const canUsePublicComposer = ticketDetail?.canAddMessage ?? false;
+  const canUsePublicComposer = ticketDetail?.canReplyNow ?? false;
   const canUseInternalComposer = ticketDetail?.canAddInternalNote ?? false;
   const knowledgeBusy = knowledgeSubmitting;
   const canCreateEngineeringHandoff =
@@ -4796,7 +4807,11 @@ function SupportWorkspaceView({
         slaProgress={slaProgress}
         slaReference={detail.slaReference || 'Governança interna urgente'}
         slaRemainingLabel={formatRemainingTimeLabel(slaDueAt)}
-        sourceBadge={<CompactSupportPill>{humanizeSource(detail.source)}</CompactSupportPill>}
+        sourceBadge={
+          <CompactSupportPill>
+            {detail.originLabel ?? humanizeSource(detail.source)} · {detail.channelLabel ?? 'Canal indisponível'}
+          </CompactSupportPill>
+        }
         statusLabel={compactTicketStatusLabel(detail.status)}
         tenantLabel={detail.tenantDisplayName ?? detail.tenantLegalName ?? detail.tenantSlug}
       />
@@ -5048,6 +5063,12 @@ function SupportWorkspaceView({
                   composerDisabled={composerDisabled}
                   composerDraft={composerDraft}
                   composerMode={composerMode}
+                  publicReplyLabel={
+                    detail.replyMode === 'customer_portal_public_reply'
+                      ? 'Resposta pública no Portal Cliente'
+                      : 'Resposta pública registrada no ticket'
+                  }
+                  publicReplyUnavailableReason={detail.reasonIfUnavailable}
                   onComposerDraftChange={(value) =>
                     composerMode === 'public' ? setMessageDraft(value) : setNoteDraft(value)
                   }
@@ -5074,6 +5095,8 @@ function SupportWorkspaceView({
                         {humanizeSeverity(detail.severity)}
                       </CompactSupportPill>
                       <CompactSupportPill>{detail.categoryName ?? 'Indisponível'}</CompactSupportPill>
+                      <CompactSupportPill>{detail.originLabel ?? 'Origem indisponível'}</CompactSupportPill>
+                      <CompactSupportPill>{detail.channelLabel ?? 'Canal indisponível'}</CompactSupportPill>
                     </>
                   }
                   menuAction={

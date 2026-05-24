@@ -173,6 +173,13 @@ function mapQueueItem(row: Record<string, unknown>): SupportTicketQueueItem {
     requesterContactEmail: (row.requester_contact_email as string | null) ?? null,
     title: String(row.title),
     source: row.source as SupportTicketQueueItem['source'],
+    originKey: row.origin_key as SupportTicketQueueItem['originKey'],
+    originLabel: String(row.origin_label ?? 'Origem indisponivel'),
+    channelKey: row.channel_key as SupportTicketQueueItem['channelKey'],
+    channelLabel: String(row.channel_label ?? 'Canal indisponivel'),
+    canReplyNow: Boolean(row.can_reply_now),
+    replyMode: row.reply_mode as SupportTicketQueueItem['replyMode'],
+    reasonIfUnavailable: (row.reason_if_unavailable as string | null) ?? null,
     status: row.status as SupportTicketQueueItem['status'],
     priority: row.priority as SupportTicketQueueItem['priority'],
     severity: row.severity as SupportTicketQueueItem['severity'],
@@ -229,6 +236,13 @@ function mapTicketDetail(row: Record<string, unknown>): SupportTicketDetail {
     title: String(row.title),
     description: String(row.description),
     source: row.source as SupportTicketDetail['source'],
+    originKey: row.origin_key as SupportTicketDetail['originKey'],
+    originLabel: String(row.origin_label ?? 'Origem indisponivel'),
+    channelKey: row.channel_key as SupportTicketDetail['channelKey'],
+    channelLabel: String(row.channel_label ?? 'Canal indisponivel'),
+    canReplyNow: Boolean(row.can_reply_now),
+    replyMode: row.reply_mode as SupportTicketDetail['replyMode'],
+    reasonIfUnavailable: (row.reason_if_unavailable as string | null) ?? null,
     status: row.status as SupportTicketDetail['status'],
     priority: row.priority as SupportTicketDetail['priority'],
     severity: row.severity as SupportTicketDetail['severity'],
@@ -299,6 +313,12 @@ function mapTimelineItem(row: Record<string, unknown>): SupportTicketTimelineIte
       row.metadata && typeof row.metadata === 'object' && !Array.isArray(row.metadata)
         ? (row.metadata as JsonObject)
         : ({} as JsonObject),
+    communicationDirection:
+      row.communication_direction as SupportTicketTimelineItem['communicationDirection'],
+    communicationChannel:
+      row.communication_channel as SupportTicketTimelineItem['communicationChannel'],
+    communicationChannelLabel: String(row.communication_channel_label ?? 'Canal indisponivel'),
+    isCustomerVisible: Boolean(row.is_customer_visible),
   };
 
   return base as SupportTicketTimelineItem;

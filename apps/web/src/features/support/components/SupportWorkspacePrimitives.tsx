@@ -278,6 +278,7 @@ export function QueueTicketItem({
   tenantLabel,
   tenantSubLabel,
   categoryLabel,
+  channelLabel,
   slaLabel,
   slaTone = 'default',
   assigneeInitials,
@@ -293,6 +294,7 @@ export function QueueTicketItem({
   tenantLabel: string;
   tenantSubLabel?: string;
   categoryLabel: string;
+  channelLabel?: string;
   slaLabel: string;
   slaTone?: 'default' | 'positive' | 'warning' | 'critical';
   assigneeInitials?: string;
@@ -352,7 +354,7 @@ export function QueueTicketItem({
           {tenantLabel}
         </p>
         <p className="mt-1 truncate text-[10px] leading-4 text-[color:var(--color-muted)]">
-          {categoryLabel}
+          {categoryLabel} · {channelLabel ?? 'Canal indisponível'}
         </p>
         <div className="mt-2 flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-1.5">
@@ -414,9 +416,14 @@ export function QueueTicketItem({
           {tenantSubLabel ?? 'Indisponível'}
         </p>
       </div>
-      <p className="min-w-0 truncate text-[10px] leading-4 text-[color:var(--color-muted)]">
-        {categoryLabel}
-      </p>
+      <div className="min-w-0 space-y-0.5">
+        <p className="truncate text-[10px] leading-4 text-[color:var(--color-muted)]">
+          {categoryLabel}
+        </p>
+        <p className="truncate text-[9.5px] font-semibold leading-4 text-[color:var(--color-brand-blue)]">
+          {channelLabel ?? 'Canal indisponível'}
+        </p>
+      </div>
       <p className={cx('truncate text-[10px] font-semibold', slaToneClass)}>{slaLabel}</p>
       <div className="flex min-w-0 items-center gap-2">
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[rgba(220,228,242,0.92)] bg-[rgba(244,247,252,0.95)] text-[9px] font-semibold text-[color:var(--color-brand-navy)]">
