@@ -25,6 +25,7 @@ O corte entrega boundary customer-facing autenticada, tenant-aware e segura para
 - Customer manager ve tickets do proprio tenant, sem atravessar tenant.
 - Download de evidencia pelo portal usa grant curto e a edge function valida tambem a view customer-facing sanitizada.
 - A fundacao P2 adicionou labels customer-facing de origem/comunicacao aos read models do portal sem expor enum cru, canal interno, provider externo ou metadata operacional.
+- O P2-B adicionou ledger de delivery para disponibilidade no Portal, mas o Portal recebe apenas labels customer-facing. `provider_state`, reason tecnico, tentativas, audit e metadata de delivery continuam fora da superficie cliente.
 
 ### Criado
 - `customer_ticket_update_acknowledgements`.
@@ -38,6 +39,7 @@ O corte entrega boundary customer-facing autenticada, tenant-aware e segura para
 - Dashboard com metricas fake.
 - SLA publico ou timers.
 - Chat/Omni Inbox.
+- Provider de email/WhatsApp/chat/API, outbox externa, retry e entrega externa real.
 - IA.
 - Auth paralela.
 - Dados internos de suporte, engenharia, auditoria, advisory, drafts ou Knowledge interna/restrita.

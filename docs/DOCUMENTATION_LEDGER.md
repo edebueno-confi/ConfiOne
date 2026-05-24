@@ -18,6 +18,42 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase P2-B - Communication Delivery Readiness & Outbox Foundation
+- fase: `P2-B`
+- nome: `Communication Delivery Readiness & Outbox Foundation`
+- branch: `codex/p2-b-communication-delivery-readiness`
+- data: `2026-05-23`
+- resumo funcional: criada fundacao auditavel de delivery customer-facing sem provider externo. `ticket_message_deliveries` registra disponibilidade nativa no Portal para mensagens publicas; email, WhatsApp, chat e API permanecem bloqueados como canais futuros sem provider.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/SUPPORT_WORKSPACE_ARCHITECTURE_SPEC.md`
+  - `docs/CUSTOMER_PORTAL_TICKET_COLLABORATION_V3.md`
+  - `docs/CUSTOMER_PORTAL_CONTRACT_FOUNDATION_V3.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/reports/P2_COMMUNICATION_DELIVERY_READINESS_2026-05-23.md`
+- views/RPCs afetadas:
+  - `ticket_message_deliveries`
+  - `vw_support_ticket_message_deliveries`
+  - `vw_support_ticket_delivery_capabilities`
+  - `vw_customer_portal_ticket_delivery_state`
+  - `vw_admin_communication_delivery_summary`
+  - `vw_support_ticket_timeline`
+  - `vw_support_ticket_timeline_recent`
+  - `vw_customer_portal_ticket_timeline`
+  - `rpc_add_ticket_message`
+  - `rpc_customer_add_ticket_message`
+  - `rpc_support_get_ticket_timeline`
+- telas afetadas:
+  - `/support/tickets/:ticketId`
+  - `/portal/tickets/:ticketId`
+- riscos restantes:
+  - provider real, retry, webhooks, reconciliacao e outbox externa seguem fora de escopo.
+  - configuracao administrativa de provider nao existe e nao deve ser simulada.
+- impacto na FAQ futura:
+  - permite explicar que respostas customer-facing ficam disponiveis no Portal hoje, enquanto e-mail/WhatsApp/chat/API exigem contrato de provider futuro.
+
 ### Fase P2 - Ticket Intake, Sources & Communication Foundation
 - fase: `P2`
 - nome: `Ticket Intake, Sources & Communication Foundation`

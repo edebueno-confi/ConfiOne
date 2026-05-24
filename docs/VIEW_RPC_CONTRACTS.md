@@ -7,6 +7,35 @@
 
 ## Estado executável atual
 
+Fase P2-B - Communication Delivery Readiness & Outbox Foundation:
+- Delivery customer-facing agora possui ledger append-only, auditado e provider-agnostic.
+- Canal real neste corte:
+  - `customer_portal`
+- Canais preparados e bloqueados, sem provider externo:
+  - `email_future`
+  - `whatsapp_future`
+  - `chat_future`
+  - `api_future`
+- Estrutura nova:
+  - `ticket_message_deliveries`
+- Read models novos:
+  - `vw_support_ticket_message_deliveries`
+  - `vw_support_ticket_delivery_capabilities`
+  - `vw_customer_portal_ticket_delivery_state`
+  - `vw_admin_communication_delivery_summary`
+- Read models ampliados:
+  - `vw_support_ticket_timeline`
+  - `vw_support_ticket_timeline_recent`
+  - `vw_customer_portal_ticket_timeline`
+- RPCs ajustadas:
+  - `rpc_add_ticket_message`
+  - `rpc_customer_add_ticket_message`
+  - `rpc_support_get_ticket_timeline`
+- Notas internas nao geram delivery customer-facing.
+- `rpc_add_ticket_message` bloqueia canais externos futuros (`email`, `chat`, `api`) para nao simular envio.
+- `authenticated` nao possui DML direto em `ticket_message_deliveries`; leitura do app passa apenas por views sanitizadas.
+- Portal Cliente nao recebe `provider_state`, erro tecnico, reason bruto, audit, storage path ou metadata de delivery.
+
 Fase P2 - Ticket Intake, Sources & Communication Foundation:
 - Origem/canal de ticket agora é contrato de leitura derivado no backend, sem integração externa real.
 - Read models novos:

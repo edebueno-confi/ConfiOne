@@ -60,6 +60,13 @@
 - engenharia continua fora destes read models especificos ate existir contrato proprio para Engineering Workspace
 
 ## Origem, canal e comunicação no P2
+- O P2-B adiciona readiness de delivery sem provider externo:
+  - `customer_portal` e o unico canal real de disponibilidade customer-facing.
+  - respostas publicas do suporte e mensagens do cliente registram `ticket_message_deliveries`.
+  - a timeline de suporte pode mostrar `Disponivel no Portal` ou `Recebida pelo Portal`.
+  - notas internas nao geram delivery.
+  - email, WhatsApp, chat e API continuam indisponiveis sem provider configurado.
+  - nenhuma entrega altera `ticket.status`, cria engenharia, cria internal action ou publica Knowledge.
 - `tickets.source` continua sendo o campo base do schema, mas o operador deve consumir labels normalizados pelos read models.
 - A fila e o workspace projetam origem/canal por backend:
   - `origin_key`
