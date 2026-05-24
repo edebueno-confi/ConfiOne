@@ -59,6 +59,26 @@
 - membros comuns do tenant continuam fora do workspace
 - engenharia continua fora destes read models especificos ate existir contrato proprio para Engineering Workspace
 
+## Origem, canal e comunicação no P2
+- `tickets.source` continua sendo o campo base do schema, mas o operador deve consumir labels normalizados pelos read models.
+- A fila e o workspace projetam origem/canal por backend:
+  - `origin_key`
+  - `origin_label`
+  - `channel_key`
+  - `channel_label`
+  - `can_reply_now`
+  - `reply_mode`
+  - `reason_if_unavailable`
+- Resposta pública só fica disponível quando `can_reply_now = true`.
+- Canais externos futuros (`email`, `chat`, `api`) aparecem como preparados/bloqueados, sem envio real.
+- Mensagens e eventos de timeline carregam direção de comunicação:
+  - `inbound`
+  - `outbound`
+  - `internal`
+  - `system`
+- Nota interna continua interna; Portal Cliente recebe apenas mensagens/eventos customer-facing.
+- O suporte não deve prometer resposta por WhatsApp, email, chat ou API enquanto não houver provider e contrato de entrega.
+
 ## Customer 360 minimo
 - tenant operacional e seu status
 - contatos ativos do tenant

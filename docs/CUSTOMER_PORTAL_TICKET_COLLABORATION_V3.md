@@ -13,10 +13,12 @@ Consolidar a colaboracao real do cliente B2B no portal autenticado, cobrindo lei
 ## Contratos finais
 - `vw_customer_portal_ticket_detail`
   - bloqueia nova mensagem customer-facing em tickets `resolved`, `closed` e `cancelled`.
+  - expõe `customer_origin_label` com copy customer-facing, sem enum cru de source/canal.
 - `vw_customer_portal_ticket_timeline`
   - expõe apenas mensagens publicas/customer-facing.
   - expõe apenas eventos seguros para cliente.
   - nao expõe nota interna, engenharia, audit bruto, advisory, metadata sensivel ou anexo interno.
+  - expõe `customer_entry_label` como "Enviado pelo portal", "Resposta do suporte" ou "Atualizacao do ticket", sem termos técnicos.
 - `vw_customer_portal_ticket_collaboration_state`
   - deriva `can_reply`, `can_acknowledge`, `can_confirm_resolution`, `can_request_reopen`, `unread_count`, `has_new_updates`, `last_customer_message_at` e `last_support_response_at`.
 - `rpc_customer_add_ticket_message`
@@ -39,6 +41,7 @@ Consolidar a colaboracao real do cliente B2B no portal autenticado, cobrindo lei
 ## Frontend
 - `/portal/tickets/:ticketId` consome `vw_customer_portal_ticket_collaboration_state`.
 - O portal mostra atualizacoes novas, ultima leitura, ultima resposta do cliente e ultima resposta da equipe Genius.
+- O portal mostra origem segura do ticket quando útil, sem `source`, `customer_portal`, canal interno ou metadata.
 - O composer customer-facing usa `can_reply` do backend.
 - O ack usa `latest_timeline_entry_id` derivado pelo backend.
 - Confirmacao de resolucao e solicitacao de reabertura aparecem apenas quando as flags contratuais permitem.

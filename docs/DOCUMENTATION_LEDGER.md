@@ -18,6 +18,50 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase P2 - Ticket Intake, Sources & Communication Foundation
+- fase: `P2`
+- nome: `Ticket Intake, Sources & Communication Foundation`
+- branch: `codex/p2-ticket-intake-sources-communication-foundation`
+- data: `2026-05-23`
+- resumo funcional: consolidada a fundacao de origem, canal e comunicacao de tickets sem integrar canais externos. O backend normaliza source/channel, projeta capacidade de resposta, grava metadata de direcao/canal em mensagens/eventos e bloqueia canais futuros como email/chat/API com motivo operacional. Support e Portal consomem labels seguros por read models.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/SUPPORT_WORKFLOW.md`
+  - `docs/SUPPORT_WORKSPACE_ARCHITECTURE_SPEC.md`
+  - `docs/CUSTOMER_PORTAL_TICKET_COLLABORATION_V3.md`
+  - `docs/CUSTOMER_PORTAL_CONTRACT_FOUNDATION_V3.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/reports/P2_TICKET_INTAKE_SOURCES_COMMUNICATION_FOUNDATION_2026-05-23.md`
+- views/RPCs afetadas:
+  - `vw_admin_ticket_channel_definitions`
+  - `vw_support_ticket_channel_context`
+  - `vw_support_ticket_communication_capabilities`
+  - `vw_support_tickets_queue`
+  - `vw_support_ticket_detail`
+  - `vw_ticket_timeline`
+  - `vw_support_ticket_timeline`
+  - `vw_support_ticket_timeline_recent`
+  - `vw_customer_portal_ticket_list`
+  - `vw_customer_portal_ticket_detail`
+  - `vw_customer_portal_ticket_timeline`
+  - `rpc_create_ticket`
+  - `rpc_add_ticket_message`
+  - `rpc_add_internal_ticket_note`
+  - `rpc_support_get_ticket_timeline`
+  - `rpc_customer_create_ticket`
+  - `rpc_customer_add_ticket_message`
+- telas afetadas:
+  - `/support/queue`
+  - `/support/tickets/:ticketId`
+  - `/portal/tickets`
+  - `/portal/tickets/:ticketId`
+- riscos restantes:
+  - `tickets.source` ainda concentra origem/canal no schema base; tabela dedicada de canais pode ser necessária quando provider externo real existir.
+  - email/chat/API continuam preparados e bloqueados, sem delivery, inbox, retry ou integração externa.
+- impacto na FAQ futura:
+  - permite explicar de onde veio um ticket e por qual canal ele pode receber resposta hoje, diferenciando comunicacao real do portal/suporte manual de canais externos futuros.
+
 ### Fase P1 - Customer Account Operations Buildout
 - fase: `P1`
 - nome: `Customer Account Operations Buildout`

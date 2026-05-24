@@ -7,6 +7,32 @@
 
 ## Estado executável atual
 
+Fase P2 - Ticket Intake, Sources & Communication Foundation:
+- Origem/canal de ticket agora é contrato de leitura derivado no backend, sem integração externa real.
+- Read models novos:
+  - `vw_admin_ticket_channel_definitions`
+  - `vw_support_ticket_channel_context`
+  - `vw_support_ticket_communication_capabilities`
+- Read models ampliados:
+  - `vw_support_tickets_queue`
+  - `vw_support_ticket_detail`
+  - `vw_ticket_timeline`
+  - `vw_support_ticket_timeline`
+  - `vw_support_ticket_timeline_recent`
+  - `vw_customer_portal_ticket_list`
+  - `vw_customer_portal_ticket_detail`
+  - `vw_customer_portal_ticket_timeline`
+- RPCs ajustadas para gravar metadata de comunicação:
+  - `rpc_create_ticket`
+  - `rpc_add_ticket_message`
+  - `rpc_add_internal_ticket_note`
+  - `rpc_support_get_ticket_timeline`
+  - `rpc_customer_create_ticket`
+  - `rpc_customer_add_ticket_message`
+- `can_reply_now`, `reply_mode` e `reason_if_unavailable` são derivados por backend; o frontend não decide se canal externo pode responder.
+- Canais `email`, `chat` e `api` permanecem preparados para futuro e bloqueados para resposta direta até integração explícita.
+- O Portal Cliente recebe apenas labels customer-facing e continua sem nota interna, internal actions, engenharia, audit bruto, storage path ou enum técnico.
+
 Fase Knowledge Assets V1:
 - A Central de Ajuda possui fundacao governada para imagens de artigos:
   - `knowledge_article_assets`

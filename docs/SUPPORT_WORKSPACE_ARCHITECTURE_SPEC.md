@@ -16,6 +16,7 @@ Definir a arquitetura do futuro Support Workspace do Genius Support OS como ambi
 - evitar dashboard pesado e manter foco em fila, detalhe e contexto operacional
 
 ## Estado atual de runtime em 2026-05-16
+- Em 2026-05-23, a fundação P2 de origem/canal foi adicionada ao workspace sem integrar canal externo real. A fila e o detalhe passam a receber `origin_*`, `channel_*`, `can_reply_now`, `reply_mode` e `reason_if_unavailable` por read models; o composer só habilita resposta pública quando o backend permite; canais `email`, `chat` e `api` são exibidos como futuros/indisponíveis, sem botão funcional de envio externo.
 - `/support/tickets/:ticketId` materializa o Ticket Workspace operacional em tres zonas apos a sidebar global: fila viva, conversa central dominante e rail direito ou drawer lateral substituto.
 - A timeline central do ticket e a unica superficie visual de historico operacional; o card redundante de `Atividade recente` foi removido do rail direito.
 - O rail direito padrao ficou restrito a `Resumo do ticket`, `Ações rápidas` e `SLA interno`, reforcando a separacao entre contexto operacional e historico da tratativa.
@@ -67,6 +68,8 @@ O Support Workspace deve cobrir:
 - `vw_support_customer_recent_tickets`
 - `vw_support_customer_recent_events`
 - `vw_support_assignable_agents`
+- `vw_support_ticket_channel_context`
+- `vw_support_ticket_communication_capabilities`
 
 ### RPCs ja materializadas
 - `rpc_create_ticket`
@@ -77,6 +80,7 @@ O Support Workspace deve cobrir:
 - `rpc_add_internal_ticket_note`
 - `rpc_close_ticket`
 - `rpc_reopen_ticket`
+- `rpc_support_get_ticket_timeline`
 
 ## O que esses contratos ja cobrem
 
@@ -108,6 +112,7 @@ Ja cobre:
 - timeline unificada de mensagens e eventos
 - separacao entre mensagem publica e nota interna
 - historico de status, atribuicao, resolucao, fechamento e reabertura
+- direcao/canal de comunicacao normalizados quando disponiveis (`inbound`, `outbound`, `internal`, `system`)
 
 ### RPCs
 Ja cobrem:

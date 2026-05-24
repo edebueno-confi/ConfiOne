@@ -24,6 +24,7 @@ O corte entrega boundary customer-facing autenticada, tenant-aware e segura para
 - Cliente comum ve tickets criados por ele ou vinculados ao seu contato.
 - Customer manager ve tickets do proprio tenant, sem atravessar tenant.
 - Download de evidencia pelo portal usa grant curto e a edge function valida tambem a view customer-facing sanitizada.
+- A fundacao P2 adicionou labels customer-facing de origem/comunicacao aos read models do portal sem expor enum cru, canal interno, provider externo ou metadata operacional.
 
 ### Criado
 - `customer_ticket_update_acknowledgements`.
@@ -92,6 +93,7 @@ Cada RPC valida ator ativo, tenant, membership customer-facing, contato vinculad
 ### Timeline
 - Exibe mensagens publicas do cliente/suporte e eventos sanitizados.
 - Nao exibe notas internas, handoff tecnico, audit bruto, payloads ou metadata operacional sensivel.
+- Mensagens customer-facing podem exibir labels como `Enviado pelo portal` e `Resposta do suporte`; `source`, `customer_portal`, canal interno e detalhes de integração externa continuam ocultos.
 
 ### Evidencias
 - View customer-facing expoe somente `attachment_id`, nome sanitizado, tipo, tamanho, autor rotulado, data, status e `can_download`.
