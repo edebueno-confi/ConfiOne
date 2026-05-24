@@ -46,6 +46,23 @@ Nesta fase, o ledger proibe:
 - `vw_ai_knowledge_context_readiness`
 - `vw_ai_usage_audit_events`
 
+## Visibilidade administrativa P3-B
+`/admin/system` consome:
+- `vw_ai_operational_context_readiness`
+- `vw_ai_context_source_policies`
+- `vw_ai_action_policies`
+
+A tela mostra somente readiness operacional sanitizado:
+- AI-native, human-governed;
+- IA real preparada para governanca, nao ativa;
+- provider/modelo nao configurado;
+- embeddings inativos;
+- resposta e publicacao automatica bloqueadas;
+- revisao humana e auditoria obrigatorias;
+- contagens de fontes e policies.
+
+A tela nao expõe ledger bruto, prompt, output, provider, token, API key, storage path ou acao para ativar IA real.
+
 ## RPCs
 - `rpc_ai_validate_context_access`
 - `rpc_ai_log_usage_event`

@@ -7,6 +7,16 @@
 
 ## Estado executável atual
 
+Fase P3-B - AI Readiness Admin Visibility + Functional Fixture Reliability:
+- `/admin/system` passou a ler readiness AI-native por contratos existentes, sem migration nova.
+- Read models consumidos:
+  - `vw_ai_operational_context_readiness`
+  - `vw_ai_context_source_policies`
+  - `vw_ai_action_policies`
+- A UI administrativa mostra somente resumo sanitizado: IA preparada para governanca, nao ativa; provider/modelo nao configurado; embeddings inativos; respostas/publicacao automatica bloqueadas; revisao humana e auditoria obrigatorias.
+- Nenhuma RPC de IA e chamada pela tela; as RPCs P3 seguem reservadas para validacao/log/revisao humana futura.
+- O app nao exibe ledger bruto, prompt, output, token, API key, storage path ou botao de ativacao de IA.
+
 Fase P3 - AI-Native Operational Readiness Foundation:
 - Fundacao AI-native, human-governed criada sem LLM, provider, embedding, vector database, chatbot ou automacao.
 - Tabelas novas:

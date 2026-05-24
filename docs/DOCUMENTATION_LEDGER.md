@@ -18,6 +18,33 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase P3-B - AI Readiness Admin Visibility + Functional Fixture Reliability
+- fase: `P3-B`
+- nome: `AI Readiness Admin Visibility + Functional Fixture Reliability`
+- branch: `codex/p3-b-ai-readiness-admin-fixture-reliability`
+- data: `2026-05-24`
+- resumo funcional: estabilizada a fixture funcional local com timeouts e logs por etapa para evitar espera infinita sem diagnostico; `/admin/system` agora mostra readiness AI-native compacto e honesto por views existentes, mantendo IA real inativa e sem provider/modelo/embedding/job/Copilot/segredo.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/AI_GOVERNANCE.md`
+  - `docs/AI_NATIVE_OPERATIONAL_READINESS.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/LOCAL_QA_AUTH.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/reports/P3_AI_READINESS_ADMIN_VISIBILITY_AND_FIXTURE_RELIABILITY_2026-05-24.md`
+- views/RPCs afetadas:
+  - `vw_ai_operational_context_readiness`
+  - `vw_ai_context_source_policies`
+  - `vw_ai_action_policies`
+  - nenhuma migration, tabela ou RPC nova.
+- telas afetadas:
+  - `/admin/system`
+- riscos restantes:
+  - IA real segue dependente de provider/modelo aprovado, redaction, prompt evaluation, opt-in, kill switch, monitoramento, custo/rate limit e política de retenção.
+  - A fixture ainda depende da saúde do Supabase local e Edge Runtime, mas agora falha com etapa identificável.
+- impacto na FAQ futura:
+  - permite explicar que o Admin mostra readiness de IA governada sem ativar automação, e que fixtures locais têm diagnóstico operacional para QA autenticado.
+
 ### Fase P3 - AI-Native Operational Readiness Foundation
 - fase: `P3`
 - nome: `AI-Native Operational Readiness Foundation`

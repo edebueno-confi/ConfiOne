@@ -16,6 +16,13 @@ IA e assistente operacional. Nunca e source of truth, nunca decide permissao, nu
   - views `vw_ai_*`
   - RPCs de validacao/log/revisao humana.
 
+## Estado P3-B
+- `/admin/system` expõe leitura compacta de readiness AI-native por views governadas.
+- A leitura administrativa mostra que a IA esta preparada para governanca, mas nao ativa.
+- Provider/modelo, embeddings, resposta automatica e publicacao automatica permanecem inativos/bloqueados.
+- A UI nao possui botao de ativacao, campo de segredo, token, API key, Copilot, chatbot ou geracao de resposta.
+- O ledger de uso/revisao continua backend-only para governanca futura; `/admin/system` nao mostra audit bruto nem prompt/output.
+
 ## Base permitida para IA futura
 IA so pode usar conteudo que seja:
 - versionado;
