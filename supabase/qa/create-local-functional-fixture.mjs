@@ -573,6 +573,100 @@ function ensureP2CommunicationFixture({ tenantId, supportUserId, customerUserId 
     on conflict (message_id, channel)
     do nothing;
   `);
+
+  runSupabaseDbQuery(`
+    insert into public.tenant_communication_channel_settings (
+      tenant_id,
+      channel_key,
+      readiness_status,
+      is_enabled,
+      can_send,
+      can_receive,
+      reason_if_unavailable,
+      required_setup_summary,
+      operational_note,
+      last_checked_at,
+      managed_by_user_id
+    )
+    values
+      (
+        '${sqlEscape(tenantId)}'::uuid,
+        'customer_portal'::public.ticket_delivery_channel,
+        'active'::public.communication_channel_readiness_status,
+        true,
+        true,
+        true,
+        null,
+        'Canal nativo ativo no MVP, sem provider externo.',
+        'Fixture P2-C: Portal e o canal customer-facing real.',
+        timezone('utc', now()),
+        '${sqlEscape(supportUserId)}'::uuid
+      ),
+      (
+        '${sqlEscape(tenantId)}'::uuid,
+        'email_future'::public.ticket_delivery_channel,
+        'not_configured'::public.communication_channel_readiness_status,
+        false,
+        false,
+        false,
+        'Email ainda nao esta integrado para resposta direta. Provider externo nao configurado; sem envio real nesta versao.',
+        'Definir provider oficial, opt-in, identidade de remetente, templates, bounce handling e auditoria de envio.',
+        'Fixture P2-C: email permanece preparado e bloqueado.',
+        timezone('utc', now()),
+        '${sqlEscape(supportUserId)}'::uuid
+      ),
+      (
+        '${sqlEscape(tenantId)}'::uuid,
+        'whatsapp_future'::public.ticket_delivery_channel,
+        'not_configured'::public.communication_channel_readiness_status,
+        false,
+        false,
+        false,
+        'WhatsApp nao configurado. Sem envio real nesta versao.',
+        'Definir provider oficial, consentimento, templates aprovados, janela de atendimento e reconciliacao de entrega.',
+        'Fixture P2-C: WhatsApp permanece preparado e bloqueado.',
+        timezone('utc', now()),
+        '${sqlEscape(supportUserId)}'::uuid
+      ),
+      (
+        '${sqlEscape(tenantId)}'::uuid,
+        'chat_future'::public.ticket_delivery_channel,
+        'future'::public.communication_channel_readiness_status,
+        false,
+        false,
+        false,
+        'Chat preparado para futuro. Sem provider conectado.',
+        'Definir superficie de chat autenticada, persistencia de thread, presenca e regras de atendimento.',
+        'Fixture P2-C: chat fica como futuro.',
+        timezone('utc', now()),
+        '${sqlEscape(supportUserId)}'::uuid
+      ),
+      (
+        '${sqlEscape(tenantId)}'::uuid,
+        'api_future'::public.ticket_delivery_channel,
+        'blocked'::public.communication_channel_readiness_status,
+        false,
+        false,
+        false,
+        'API externa bloqueada ate existir contrato de provider, autenticacao e auditoria de envio.',
+        'Definir contrato de API, autenticacao, idempotencia, assinatura de eventos e observabilidade.',
+        'Fixture P2-C: API fica bloqueada.',
+        timezone('utc', now()),
+        '${sqlEscape(supportUserId)}'::uuid
+      )
+    on conflict (tenant_id, channel_key)
+    do update
+    set
+      readiness_status = excluded.readiness_status,
+      is_enabled = excluded.is_enabled,
+      can_send = excluded.can_send,
+      can_receive = excluded.can_receive,
+      reason_if_unavailable = excluded.reason_if_unavailable,
+      required_setup_summary = excluded.required_setup_summary,
+      operational_note = excluded.operational_note,
+      last_checked_at = excluded.last_checked_at,
+      managed_by_user_id = excluded.managed_by_user_id;
+  `);
 }
 
 async function signInLocalUser({ apiUrl, anonKey, email, password }) {
@@ -906,6 +1000,18 @@ function querySummary({ tenantId, ticketId, actionIds }) {
           '8e5ee201-7e27-45ef-9e61-f3209f6ad211'::uuid,
           '8e5ee201-7e27-45ef-9e61-f3209f6ad212'::uuid
         ])
+      ),
+      'p2_channel_governance', (
+        select coalesce(jsonb_agg(jsonb_build_object(
+          'channel', setting.channel_key,
+          'readiness_status', setting.readiness_status,
+          'is_enabled', setting.is_enabled,
+          'can_send', setting.can_send,
+          'can_receive', setting.can_receive,
+          'reason_if_unavailable', setting.reason_if_unavailable
+        ) order by setting.channel_key), '[]'::jsonb)
+        from public.tenant_communication_channel_settings as setting
+        where setting.tenant_id = '${sqlEscape(tenantId)}'::uuid
       )
     ) as summary;
   `);
