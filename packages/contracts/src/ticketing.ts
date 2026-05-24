@@ -157,6 +157,184 @@ export type CommunicationChannelReadinessStatus =
   | 'blocked'
   | 'unavailable';
 
+export type AiSourceType =
+  | 'support_ticket'
+  | 'ticket_timeline'
+  | 'customer_account'
+  | 'knowledge_article_public'
+  | 'knowledge_article_internal'
+  | 'knowledge_article_restricted'
+  | 'customer_portal_ticket'
+  | 'engineering_work_item'
+  | 'internal_action'
+  | 'documentation'
+  | 'audit_summary';
+
+export type AiSourceStatus = 'allowed' | 'restricted' | 'forbidden' | 'future';
+
+export type AiSourceVisibility =
+  | 'support_only'
+  | 'admin_only'
+  | 'engineering_only'
+  | 'customer_facing'
+  | 'public'
+  | 'system_only';
+
+export type AiIntendedUse =
+  | 'summarize'
+  | 'suggest_reply'
+  | 'suggest_article'
+  | 'detect_gap'
+  | 'classify_suggestion'
+  | 'risk_warning'
+  | 'explain_context'
+  | 'draft_internal_note'
+  | 'draft_article';
+
+export type AiActionKey =
+  | 'summarize_ticket'
+  | 'suggest_reply'
+  | 'suggest_article'
+  | 'suggest_category'
+  | 'suggest_priority'
+  | 'detect_documentation_gap'
+  | 'summarize_customer'
+  | 'risk_warning'
+  | 'draft_internal_note'
+  | 'draft_article'
+  | 'auto_send'
+  | 'auto_publish'
+  | 'auto_close_ticket'
+  | 'auto_change_status'
+  | 'auto_create_provider_delivery'
+  | 'auto_expose_internal'
+  | 'auto_modify_entitlement'
+  | 'auto_modify_rls'
+  | 'auto_create_internal_action'
+  | 'auto_create_engineering_work_item'
+  | 'read_storage_path'
+  | 'read_secret';
+
+export type AiPolicyDecision = 'allowed' | 'denied' | 'requires_review' | 'future';
+
+export type AiReviewDecision = 'pending' | 'approved' | 'rejected' | 'discarded';
+
+export interface AiContextSourcePolicy {
+  policyKey: string;
+  sourceType: AiSourceType;
+  sourceStatus: AiSourceStatus;
+  visibility: AiSourceVisibility;
+  allowedUses: AiIntendedUse[];
+  requiresTenant: boolean;
+  requiresEntitlement: boolean;
+  requiresCitation: boolean;
+  requiresRedaction: boolean;
+  allowedDestinations: string[];
+  forbiddenDestinations: string[];
+  policySummary: string;
+  updatedAt: IsoTimestamp;
+}
+
+export interface AiActionPolicy {
+  actionKey: AiActionKey;
+  decision: AiPolicyDecision;
+  requiresHumanReview: boolean;
+  allowedSourceTypes: AiSourceType[];
+  allowedDestinations: string[];
+  forbiddenReason: string | null;
+  auditRequired: boolean;
+  policySummary: string;
+  updatedAt: IsoTimestamp;
+}
+
+export interface AiOperationalContextReadiness {
+  readinessKey: string;
+  readinessStatus: 'prepared_not_active';
+  readinessLabel: string;
+  allowedSourceCount: number;
+  restrictedSourceCount: number;
+  futureSourceCount: number;
+  citationRequiredCount: number;
+  redactionRequiredCount: number;
+  humanReviewRequired: boolean;
+  auditRequired: boolean;
+  llmProviderConfigured: boolean;
+  embeddingsEnabled: boolean;
+  autoSendEnabled: boolean;
+  autoPublishEnabled: boolean;
+}
+
+export interface AiContextAccessDecision {
+  allowed: boolean;
+  decision: AiPolicyDecision;
+  requiresHumanReview: boolean;
+  reason: string;
+  policyKey: string | null;
+}
+
+export interface AiUsageAuditEvent {
+  id: Uuid;
+  tenantId: Uuid | null;
+  tenantSlug: string | null;
+  tenantDisplayName: string | null;
+  actorUserId: Uuid;
+  actorFullName: string | null;
+  actorEmail: string | null;
+  sourceType: AiSourceType;
+  intendedUse: AiIntendedUse;
+  policyKey: string | null;
+  sourceIds: JsonValue[];
+  outputType: string;
+  allowedDestination: string;
+  requiresHumanReview: boolean;
+  reviewDecision: AiReviewDecision;
+  reviewedByUserId: Uuid | null;
+  reviewedByFullName: string | null;
+  reviewedByEmail: string | null;
+  reviewedAt: IsoTimestamp | null;
+  reviewNote: string | null;
+  metadata: JsonObject;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  providerConfigured: boolean;
+  promptStored: boolean;
+  outputStored: boolean;
+}
+
+export interface RpcAiValidateContextAccessPayload {
+  p_source_type: AiSourceType;
+  p_tenant_id?: Uuid | null;
+  p_source_id?: Uuid | null;
+  p_intended_use?: AiIntendedUse | null;
+  p_destination?: string | null;
+}
+
+export type RpcAiValidateContextAccessResponse = AiContextAccessDecision;
+
+export interface RpcAiLogUsageEventPayload {
+  p_tenant_id: Uuid;
+  p_source_type: AiSourceType;
+  p_intended_use: AiIntendedUse;
+  p_source_ids?: JsonValue[];
+  p_output_type?: string;
+  p_allowed_destination?: string;
+  p_metadata?: JsonObject;
+}
+
+export interface RpcAiLogUsageEventResponse {
+  id: Uuid;
+}
+
+export interface RpcAiRegisterHumanReviewDecisionPayload {
+  p_usage_event_id: Uuid;
+  p_review_decision: Exclude<AiReviewDecision, 'pending'>;
+  p_review_note?: string | null;
+}
+
+export interface RpcAiRegisterHumanReviewDecisionResponse {
+  id: Uuid;
+}
+
 export interface CommunicationChannelReadiness {
   tenantId: Uuid;
   tenantSlug: string;
