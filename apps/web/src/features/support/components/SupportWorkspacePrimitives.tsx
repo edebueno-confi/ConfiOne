@@ -1,4 +1,9 @@
-import type { ReactNode, Ref } from 'react';
+import {
+  useEffect,
+  useRef,
+  type ReactNode,
+  type Ref,
+} from 'react';
 import { cx } from '../../../components/ui';
 
 export type SupportBadgeTone =
@@ -154,6 +159,152 @@ export function SupportComposerTextarea({
       placeholder={placeholder}
       value={value}
     />
+  );
+}
+
+export function OperationalModal({
+  children,
+  description,
+  footer,
+  labelledById,
+  onClose,
+  open,
+  title,
+}: {
+  children: ReactNode;
+  description?: ReactNode;
+  footer?: ReactNode;
+  labelledById: string;
+  onClose: () => void;
+  open: boolean;
+  title: string;
+}) {
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const frame = window.requestAnimationFrame(() => {
+      const firstFocusable = modalRef.current?.querySelector<HTMLElement>(
+        '.support-operational-modal__body select:not(:disabled), .support-operational-modal__body input:not(:disabled), .support-operational-modal__body textarea:not(:disabled), .support-operational-modal__body button:not(:disabled), .support-operational-modal__body [href], .support-operational-modal__body [tabindex]:not([tabindex="-1"])',
+      );
+      firstFocusable?.focus();
+    });
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [onClose, open]);
+
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div className="support-operational-modal">
+      <button
+        aria-label="Fechar modal de intake"
+        className="support-operational-modal__scrim"
+        onClick={onClose}
+        type="button"
+      />
+      <section
+        aria-labelledby={labelledById}
+        aria-modal="true"
+        className="support-operational-modal__panel"
+        ref={modalRef}
+        role="dialog"
+      >
+        <header className="support-operational-modal__header">
+          <div className="min-w-0">
+            <p className="support-operational-modal__eyebrow">Intake operacional</p>
+            <h2 className="support-operational-modal__title" id={labelledById}>
+              {title}
+            </h2>
+            {description ? (
+              <div className="support-operational-modal__description">{description}</div>
+            ) : null}
+          </div>
+          <button
+            className="support-operational-modal__close"
+            onClick={onClose}
+            type="button"
+          >
+            Fechar
+          </button>
+        </header>
+        <div className="support-operational-modal__body">{children}</div>
+        {footer ? <footer className="support-operational-modal__footer">{footer}</footer> : null}
+      </section>
+    </div>
+  );
+}
+
+export function OperationalFormGrid({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return <div className={cx('support-operational-form-grid', className)}>{children}</div>;
+}
+
+export function OperationalField({
+  children,
+  description,
+  label,
+  span = 'normal',
+}: {
+  children: ReactNode;
+  description?: ReactNode;
+  label: string;
+  span?: 'normal' | 'wide';
+}) {
+  return (
+    <label
+      className={cx(
+        'support-operational-field',
+        span === 'wide' && 'support-operational-field--wide',
+      )}
+    >
+      <span className="support-operational-field__label">{label}</span>
+      {description ? (
+        <span className="support-operational-field__description">{description}</span>
+      ) : null}
+      {children}
+    </label>
+  );
+}
+
+export function OperationalFooterActions({
+  children,
+  note,
+}: {
+  children: ReactNode;
+  note?: ReactNode;
+}) {
+  return (
+    <div className="support-operational-footer-actions">
+      {note ? <p className="support-operational-footer-actions__note">{note}</p> : null}
+      <div className="support-operational-footer-actions__buttons">{children}</div>
+    </div>
   );
 }
 

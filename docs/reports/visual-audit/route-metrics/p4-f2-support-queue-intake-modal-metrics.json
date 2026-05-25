@@ -1,0 +1,64 @@
+{
+  "innerWidth": 1600,
+  "innerHeight": 900,
+  "scrollHeight": 900,
+  "clientHeight": 900,
+  "hasGlobalScroll": false,
+  "hasHorizontalScroll": false,
+  "activeElement": {
+    "tag": "SELECT",
+    "text": "Selecione um clienteSupport QA Tenant A Operação Enterprise",
+    "aria": null,
+    "value": "c12185f7-cc66-4731-b1e5-aa81023ef1a8"
+  },
+  "dialog": {
+    "width": 1060,
+    "height": 820,
+    "left": 270,
+    "top": 40,
+    "ariaModal": "true",
+    "labelledBy": "support-ticket-intake-title"
+  },
+  "scrollables": [
+    {
+      "tag": "div",
+      "cls": "mt-3 grid gap-2.5 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1",
+      "scrollHeight": 449,
+      "clientHeight": 126,
+      "scrollWidth": 220,
+      "clientWidth": 220,
+      "overflowY": "auto",
+      "overflowX": "auto"
+    },
+    {
+      "tag": "div",
+      "cls": "xl:min-h-0 xl:flex-1 xl:overflow-y-auto",
+      "scrollHeight": 1326,
+      "clientHeight": 542,
+      "scrollWidth": 648,
+      "clientWidth": 648,
+      "overflowY": "auto",
+      "overflowX": "auto"
+    },
+    {
+      "tag": "div",
+      "cls": "xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1",
+      "scrollHeight": 821,
+      "clientHeight": 607,
+      "scrollWidth": 312,
+      "clientWidth": 312,
+      "overflowY": "auto",
+      "overflowX": "auto"
+    },
+    {
+      "tag": "div",
+      "cls": "support-operational-modal__body",
+      "scrollHeight": 950,
+      "clientHeight": 638,
+      "scrollWidth": 1048,
+      "clientWidth": 1048,
+      "overflowY": "auto",
+      "overflowX": "hidden"
+    }
+  ]
+}

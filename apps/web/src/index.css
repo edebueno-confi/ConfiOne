@@ -264,8 +264,297 @@
 
 .support-operational-input:focus {
   border-color: rgba(47, 107, 255, 0.38);
-  background: #ffffff;
+  background: var(--color-surface-elevated);
   box-shadow: 0 0 0 3px rgba(47, 107, 255, 0.08);
+}
+
+.support-operational-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 2.5vw, 2rem);
+}
+
+.support-operational-modal__scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(9, 17, 38, 0.48);
+  backdrop-filter: blur(2px);
+}
+
+.support-operational-modal__panel {
+  position: relative;
+  display: flex;
+  width: min(1060px, calc(100vw - 2rem));
+  max-height: min(820px, calc(100dvh - 2rem));
+  min-height: min(680px, calc(100dvh - 2rem));
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(205, 216, 235, 0.96);
+  border-radius: 18px;
+  background: var(--color-surface-elevated);
+  box-shadow: 0 28px 80px rgba(10, 22, 50, 0.28);
+}
+
+.support-operational-modal__header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--color-support-border);
+  padding: 1.125rem 1.25rem 1rem;
+}
+
+.support-operational-modal__eyebrow {
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.support-operational-modal__title {
+  margin-top: 0.125rem;
+  color: var(--color-ink);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+}
+
+.support-operational-modal__description {
+  margin-top: 0.25rem;
+  max-width: 68ch;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.support-operational-modal__close {
+  display: inline-flex;
+  min-height: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-support-border);
+  border-radius: 0.75rem;
+  background: rgba(244, 247, 252, 0.86);
+  color: var(--color-ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding-inline: 0.875rem;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.support-operational-modal__close:hover {
+  border-color: rgba(47, 107, 255, 0.28);
+  background: rgba(47, 107, 255, 0.06);
+  color: var(--color-brand-blue);
+}
+
+.support-operational-modal__body {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1.125rem 1.25rem;
+}
+
+.support-operational-modal__footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-support-border);
+  background: rgba(248, 250, 253, 0.96);
+  padding: 0.875rem 1.25rem;
+}
+
+.support-ticket-intake-form {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 300px);
+  gap: 1rem;
+}
+
+.support-ticket-intake-form__main {
+  display: grid;
+  min-width: 0;
+  gap: 0.875rem;
+}
+
+.support-ticket-intake-form__section,
+.support-ticket-intake-form__rules {
+  border: 1px solid var(--color-support-border);
+  border-radius: 14px;
+  background: var(--color-surface-elevated);
+  padding: 0.875rem;
+}
+
+.support-ticket-intake-form__section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.support-ticket-intake-form__section-title {
+  color: var(--color-ink);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.support-ticket-intake-form__section-helper {
+  max-width: 42ch;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.support-operational-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.support-operational-field {
+  display: grid;
+  min-width: 0;
+  gap: 0.375rem;
+}
+
+.support-operational-field--wide {
+  grid-column: 1 / -1;
+}
+
+.support-operational-field__label {
+  color: var(--color-ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.support-operational-field__description {
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  line-height: 1.35;
+}
+
+.support-operational-control {
+  min-height: 2.5rem;
+  width: 100%;
+  border-radius: 0.75rem;
+  border-color: var(--color-support-border);
+  background: rgba(248, 250, 253, 0.9);
+  font-size: 0.8125rem;
+}
+
+.support-operational-control--textarea {
+  min-height: 7.75rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.support-ticket-intake-form__tenant-summary {
+  margin-top: 0.75rem;
+  border: 1px solid rgba(47, 107, 255, 0.18);
+  border-radius: 12px;
+  background: rgba(47, 107, 255, 0.045);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  padding: 0.75rem;
+}
+
+.support-ticket-intake-form__aside {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.support-ticket-intake-form__rules {
+  background: rgba(244, 247, 252, 0.78);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.support-ticket-intake-form__rules ul {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-left: 1rem;
+}
+
+.support-ticket-intake-form__rules--muted {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.support-ticket-intake-form__rules--muted p:last-child {
+  margin-top: 0.5rem;
+}
+
+.support-operational-footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.support-operational-footer-actions__note {
+  max-width: 58ch;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.support-operational-footer-actions__buttons {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+@media (max-width: 980px) {
+  .support-operational-modal__panel {
+    min-height: auto;
+  }
+
+  .support-ticket-intake-form {
+    grid-template-columns: 1fr;
+  }
+
+  .support-operational-footer-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .support-operational-footer-actions__buttons {
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .support-operational-modal {
+    padding: 0;
+  }
+
+  .support-operational-modal__panel {
+    width: 100vw;
+    max-height: 100dvh;
+    min-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .support-operational-form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .support-primary-action-button {

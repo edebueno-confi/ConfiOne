@@ -23,7 +23,6 @@ import {
   AppButton,
   ContextSubsidebar,
   ContextSubsidebarSection,
-  Field,
   GhostButton,
   InlineNotice,
   PageHeader,
@@ -130,6 +129,10 @@ import {
 import {
   QueueTicketItem,
   EvidenceFileChip,
+  OperationalField,
+  OperationalFooterActions,
+  OperationalFormGrid,
+  OperationalModal,
   SupportConversationMessage,
   SupportIconActionButton,
   SupportInternalNote,
@@ -4682,6 +4685,15 @@ function SupportWorkspaceView({
     setActiveDrawer('none');
   }
 
+  function closeTicketIntakeModal() {
+    if (intakeSubmitting) {
+      return;
+    }
+
+    setShowCreateTicket(false);
+    setDetailNotice(null);
+  }
+
   function openClassificationSurface() {
     setActiveDrawer('classification');
   }
@@ -4708,6 +4720,344 @@ function SupportWorkspaceView({
 
   function openRelatedSurface() {
     setActiveDrawer('related');
+  }
+
+  function renderTicketIntakeModal() {
+    return (
+      <OperationalModal
+        description="Registre cliente, solicitante, origem, prioridade e contexto inicial sem sair da fila."
+        labelledById="support-ticket-intake-title"
+        onClose={closeTicketIntakeModal}
+        open={showCreateTicket}
+        title="Abrir ticket"
+        footer={
+          intakePhase === 'ready' && intakeTenants.length > 0 ? (
+            <OperationalFooterActions
+              note="O ticket abre com trilha de auditoria, evento inicial e navegação direta para o workspace."
+            >
+              <GhostButton
+                className="rounded-[12px] px-4 text-[12px]"
+                disabled={intakeSubmitting}
+                onClick={closeTicketIntakeModal}
+                type="button"
+              >
+                Cancelar
+              </GhostButton>
+              <AppButton
+                className="rounded-[12px] px-4 text-[12px]"
+                disabled={intakeSubmitDisabled}
+                form="support-ticket-intake-form"
+                type="submit"
+              >
+                {intakeSubmitting ? 'Abrindo ticket' : 'Abrir ticket'}
+              </AppButton>
+            </OperationalFooterActions>
+          ) : null
+        }
+      >
+        {intakePhase === 'loading' ? (
+          <LoadingState
+            title="Carregando intake"
+            description="Estamos preparando os clientes e contatos elegíveis para abrir ticket."
+          />
+        ) : intakePhase === 'contract-unavailable' ? (
+          <ContractUnavailableState contractName="intake operacional de tickets" />
+        ) : intakePhase === 'error' ? (
+          <ErrorState
+            action={<AppButton onClick={() => void loadIntakeTenants()}>Tentar novamente</AppButton>}
+            description={intakeMessage ?? 'O intake operacional não ficou disponível neste ambiente.'}
+          />
+        ) : intakeTenants.length === 0 ? (
+          <EmptyState
+            title="Nenhum cliente elegível para intake"
+            description="Nenhum cliente com acesso disponível foi liberado para abrir ticket nesta sessão."
+          />
+        ) : (
+          <form
+            className="support-ticket-intake-form"
+            id="support-ticket-intake-form"
+            onSubmit={(event) => void handleSubmitTicketIntake(event)}
+          >
+            <div className="support-ticket-intake-form__main">
+              <section className="support-ticket-intake-form__section">
+                <div className="support-ticket-intake-form__section-header">
+                  <p className="support-ticket-intake-form__section-title">Cliente e origem</p>
+                  <p className="support-ticket-intake-form__section-helper">
+                    O tenant e o canal inicial ficam registrados pelo contrato de ticket.
+                  </p>
+                </div>
+
+                <OperationalFormGrid>
+                  <OperationalField
+                    label="Cliente B2B"
+                    description="Obrigatório para abrir o ticket no escopo correto."
+                    span="wide"
+                  >
+                    <SelectInput
+                      autoFocus
+                      className="support-operational-control"
+                      disabled={intakeSubmitting}
+                      onChange={(event) =>
+                        setIntakeDraft((current) => ({
+                          ...current,
+                          tenantId: event.target.value as Uuid | '',
+                          requesterContactId: '',
+                        }))
+                      }
+                      value={intakeDraft.tenantId}
+                    >
+                      <option value="">Selecione um cliente</option>
+                      {intakeTenants.map((tenant) => (
+                        <option key={tenant.tenantId} value={tenant.tenantId}>
+                          {intakeTenantLabel(tenant)}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </OperationalField>
+
+                  <OperationalField label="Contato solicitante">
+                    <SelectInput
+                      className="support-operational-control"
+                      disabled={!intakeDraft.tenantId || intakeContactsLoading || intakeSubmitting}
+                      onChange={(event) =>
+                        setIntakeDraft((current) => ({
+                          ...current,
+                          requesterContactId: event.target.value as Uuid | '',
+                        }))
+                      }
+                      value={intakeDraft.requesterContactId}
+                    >
+                      <option value="">
+                        {intakeContactsLoading
+                          ? 'Carregando contatos'
+                          : intakeContacts.length === 0
+                            ? 'Indisponível'
+                            : 'Sem solicitante vinculado'}
+                      </option>
+                      {intakeContacts.map((contact) => (
+                        <option key={contact.id} value={contact.id}>
+                          {contact.fullName} · {contact.email}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </OperationalField>
+
+                  <OperationalField label="Origem">
+                    <SelectInput
+                      className="support-operational-control"
+                      disabled={intakeSubmitting}
+                      onChange={(event) =>
+                        setIntakeDraft((current) => ({
+                          ...current,
+                          source: event.target.value as TicketSource,
+                        }))
+                      }
+                      value={intakeDraft.source}
+                    >
+                      {TICKET_SOURCES.map((source) => (
+                        <option key={source} value={source}>
+                          {humanizeSource(source)}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </OperationalField>
+                </OperationalFormGrid>
+
+                {selectedIntakeTenant ? (
+                  <div className="support-ticket-intake-form__tenant-summary">
+                    <p className="font-semibold text-[color:var(--color-ink)]">
+                      {intakeTenantLabel(selectedIntakeTenant)}
+                    </p>
+                    <p>Status da conta: {humanizeTenantStatus(selectedIntakeTenant.tenantStatus)}</p>
+                    <p>Contatos ativos disponíveis: {selectedIntakeTenant.activeContactsCount}</p>
+                  </div>
+                ) : null}
+
+                {intakeContactsMessage ? (
+                  <InlineNotice tone="warning">{intakeContactsMessage}</InlineNotice>
+                ) : null}
+
+                {!intakeContactsLoading &&
+                intakeDraft.tenantId &&
+                intakeContacts.length === 0 ? (
+                  <InlineNotice>
+                    Nenhum contato ativo apareceu para este cliente. O ticket pode ser aberto
+                    sem solicitante vinculado se a plataforma aceitar esse contexto.
+                  </InlineNotice>
+                ) : null}
+              </section>
+
+              <section className="support-ticket-intake-form__section">
+                <div className="support-ticket-intake-form__section-header">
+                  <p className="support-ticket-intake-form__section-title">Classificação inicial</p>
+                  <p className="support-ticket-intake-form__section-helper">
+                    Prioridade, severidade e motivo seguem opções reais do backend.
+                  </p>
+                </div>
+
+                {classificationOptionsMessage ? (
+                  <InlineNotice tone="warning">{classificationOptionsMessage}</InlineNotice>
+                ) : null}
+
+                <OperationalFormGrid>
+                  <OperationalField label="Prioridade">
+                    <SelectInput
+                      className="support-operational-control"
+                      disabled={intakeSubmitting}
+                      onChange={(event) =>
+                        setIntakeDraft((current) => ({
+                          ...current,
+                          priority: event.target.value as TicketPriority,
+                        }))
+                      }
+                      value={intakeDraft.priority}
+                    >
+                      {TICKET_PRIORITIES.map((priority) => (
+                        <option key={priority} value={priority}>
+                          {humanizePriority(priority)}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </OperationalField>
+
+                  <OperationalField label="Severidade">
+                    <SelectInput
+                      className="support-operational-control"
+                      disabled={intakeSubmitting}
+                      onChange={(event) =>
+                        setIntakeDraft((current) => ({
+                          ...current,
+                          severity: event.target.value as TicketSeverity,
+                        }))
+                      }
+                      value={intakeDraft.severity}
+                    >
+                      {TICKET_SEVERITIES.map((severity) => (
+                        <option key={severity} value={severity}>
+                          {humanizeSeverity(severity)}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </OperationalField>
+
+                  <OperationalField label="Categoria operacional">
+                    <SelectInput
+                      className="support-operational-control"
+                      disabled={intakeSubmitting || ticketCategoryOptions.length === 0}
+                      onChange={(event) =>
+                        setIntakeDraft((current) => ({
+                          ...current,
+                          categoryId: event.target.value as Uuid | '',
+                          operationalReasonId: event.target.value ? current.operationalReasonId : '',
+                        }))
+                      }
+                      value={intakeDraft.categoryId}
+                    >
+                      <option value="">Indisponível/sem categoria inicial</option>
+                      {ticketCategoryOptions.map((category) => (
+                        <option key={category.optionId} value={category.optionId}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </OperationalField>
+
+                  <OperationalField label="Motivo operacional inicial">
+                    <SelectInput
+                      className="support-operational-control"
+                      disabled={
+                        intakeSubmitting ||
+                        !intakeDraft.categoryId ||
+                        classificationReasonOptions.length === 0
+                      }
+                      onChange={(event) =>
+                        setIntakeDraft((current) => ({
+                          ...current,
+                          operationalReasonId: event.target.value as Uuid | '',
+                        }))
+                      }
+                      value={intakeDraft.operationalReasonId}
+                    >
+                      <option value="">Sem motivo inicial</option>
+                      {classificationReasonOptions.map((reason) => (
+                        <option key={reason.optionId} value={reason.optionId}>
+                          {reason.name}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </OperationalField>
+                </OperationalFormGrid>
+              </section>
+
+              <section className="support-ticket-intake-form__section">
+                <div className="support-ticket-intake-form__section-header">
+                  <p className="support-ticket-intake-form__section-title">Assunto e contexto</p>
+                  <p className="support-ticket-intake-form__section-helper">
+                    Registre o mínimo necessário para triagem sem inventar regra operacional.
+                  </p>
+                </div>
+
+                {detailNotice && detailNoticeTone === 'critical' ? (
+                  <InlineNotice tone="critical">{detailNotice}</InlineNotice>
+                ) : null}
+
+                <OperationalFormGrid>
+                  <OperationalField label="Título" span="wide">
+                    <TextInput
+                      className="support-operational-control"
+                      disabled={intakeSubmitting}
+                      onChange={(event) =>
+                        setIntakeDraft((current) => ({
+                          ...current,
+                          title: event.target.value,
+                        }))
+                      }
+                      placeholder="Resumo objetivo do caso operacional"
+                      value={intakeDraft.title}
+                    />
+                  </OperationalField>
+
+                  <OperationalField label="Descrição" span="wide">
+                    <TextareaInput
+                      className="support-operational-control support-operational-control--textarea"
+                      disabled={intakeSubmitting}
+                      onChange={(event) =>
+                        setIntakeDraft((current) => ({
+                          ...current,
+                          description: event.target.value,
+                        }))
+                      }
+                      placeholder="Contexto mínimo para iniciar a triagem."
+                      rows={6}
+                      value={intakeDraft.description}
+                    />
+                  </OperationalField>
+                </OperationalFormGrid>
+              </section>
+            </div>
+
+            <aside className="support-ticket-intake-form__aside">
+              <section className="support-ticket-intake-form__rules">
+                <p className="support-ticket-intake-form__section-title">Regras do intake</p>
+                <ul>
+                  <li>Status inicial: a plataforma registra o ticket como Novo.</li>
+                  <li>Categoria e motivo inicial são opcionais e validados por contrato real.</li>
+                  <li>SLA é governança interna calculada pela plataforma.</li>
+                  <li>Origem e canal ficam normalizados pelos read models existentes.</li>
+                </ul>
+              </section>
+              <section className="support-ticket-intake-form__rules support-ticket-intake-form__rules--muted">
+                <p className="support-ticket-intake-form__section-title">Sem automação externa</p>
+                <p>
+                  Este intake apenas cria o ticket pelo contrato atual. Ele não envia e-mail,
+                  WhatsApp ou qualquer canal externo.
+                </p>
+              </section>
+            </aside>
+          </form>
+        )}
+      </OperationalModal>
+    );
   }
 
   function renderBlueprintLayout() {
@@ -5242,7 +5592,7 @@ function SupportWorkspaceView({
               <SupportPrimaryActionButton
                 disabled={!canOpenIntake}
                 onClick={() => {
-                  setShowCreateTicket((current) => !current);
+                  setShowCreateTicket(true);
                   setDetailNotice(null);
                   if (!intakeDraft.tenantId && intakeTenants[0]?.tenantId) {
                     setIntakeDraft((current) => ({
@@ -5252,7 +5602,7 @@ function SupportWorkspaceView({
                   }
                 }}
               >
-                {showCreateTicket ? 'Fechar intake' : intakeActionLabel}
+                {intakeActionLabel}
               </SupportPrimaryActionButton>
               <SupportSecondaryActionButton
                 onClick={() => void loadQueue(focusTicketId ?? null)}
@@ -5552,293 +5902,13 @@ function SupportWorkspaceView({
           <section className="rounded-[16px] border border-[rgba(220,228,242,0.96)] bg-white px-3.5 py-3.5 shadow-[0_8px_20px_rgba(19,33,79,0.06)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
             <div className="mb-3 space-y-1">
               <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                {showCreateTicket ? 'Intake operacional' : 'Contexto do ticket'}
+                Contexto do ticket
               </h2>
               <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-                {showCreateTicket
-                  ? 'Abra o ticket com tenant explicito, origem contratual e trilha auditavel.'
-                  : 'Resumo, contato, SLA e ações rápidas do ticket selecionado.'}
+                Resumo, contato, SLA e ações rápidas do ticket selecionado.
               </p>
             </div>
-            {showCreateTicket ? (
-              intakePhase === 'loading' ? (
-                <LoadingState
-                  title="Carregando intake"
-                  description="Estamos preparando os clientes e contatos elegíveis para abrir ticket."
-                />
-              ) : intakePhase === 'contract-unavailable' ? (
-                <ContractUnavailableState contractName="intake operacional de tickets" />
-              ) : intakePhase === 'error' ? (
-                <ErrorState
-                  action={
-                    <AppButton onClick={() => void loadIntakeTenants()}>
-                      Tentar novamente
-                    </AppButton>
-                  }
-                  description={
-                    intakeMessage ?? 'O intake operacional não ficou disponível neste ambiente.'
-                  }
-                />
-              ) : intakeTenants.length === 0 ? (
-                <EmptyState
-                  title="Nenhum cliente elegível para intake"
-                  description="Nenhum cliente com acesso disponível foi liberado para abrir ticket nesta sessão."
-                />
-              ) : (
-                <div className="space-y-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
-                  <div className="rounded-[18px] border border-[rgba(48,127,226,0.2)] bg-[rgba(48,127,226,0.06)] px-4 py-3">
-                    <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-                      Regras do intake
-                    </p>
-                    <div className="mt-2 space-y-1 text-[12px] leading-5 text-[color:var(--color-muted)]">
-                      <p>Status inicial: a plataforma registra o ticket como Novo.</p>
-                      <p>
-                        Categoria e motivo inicial são opcionais e validados por contrato real.
-                      </p>
-                      <p>
-                        SLA é governança interna calculada pela plataforma; o operador não configura prazo manualmente.
-                      </p>
-                    </div>
-                  </div>
-
-                  {classificationOptionsMessage ? (
-                    <InlineNotice tone="warning">{classificationOptionsMessage}</InlineNotice>
-                  ) : null}
-
-                  {detailNotice && detailNoticeTone === 'critical' ? (
-                    <InlineNotice tone="critical">{detailNotice}</InlineNotice>
-                  ) : null}
-
-                  <form className="space-y-3" onSubmit={(event) => void handleSubmitTicketIntake(event)}>
-                    <Field label="Cliente B2B">
-                      <SelectInput
-                        disabled={intakeSubmitting}
-                        onChange={(event) =>
-                          setIntakeDraft((current) => ({
-                            ...current,
-                            tenantId: event.target.value as Uuid | '',
-                            requesterContactId: '',
-                          }))
-                        }
-                        value={intakeDraft.tenantId}
-                      >
-                        <option value="">Selecione um cliente</option>
-                        {intakeTenants.map((tenant) => (
-                          <option key={tenant.tenantId} value={tenant.tenantId}>
-                            {intakeTenantLabel(tenant)}
-                          </option>
-                        ))}
-                      </SelectInput>
-                    </Field>
-
-                    {selectedIntakeTenant ? (
-                      <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 text-[12px] leading-5 text-[color:var(--color-muted)]">
-                        <p className="font-semibold text-[color:var(--color-ink)]">
-                          {intakeTenantLabel(selectedIntakeTenant)}
-                        </p>
-                        <p>Status da conta: {humanizeTenantStatus(selectedIntakeTenant.tenantStatus)}</p>
-                        <p>Contatos ativos disponíveis: {selectedIntakeTenant.activeContactsCount}</p>
-                      </div>
-                    ) : null}
-
-                    <Field label="Contato solicitante">
-                      <SelectInput
-                        disabled={!intakeDraft.tenantId || intakeContactsLoading || intakeSubmitting}
-                        onChange={(event) =>
-                          setIntakeDraft((current) => ({
-                            ...current,
-                            requesterContactId: event.target.value as Uuid | '',
-                          }))
-                        }
-                        value={intakeDraft.requesterContactId}
-                      >
-                        <option value="">
-                          {intakeContactsLoading
-                            ? 'Carregando contatos'
-                            : intakeContacts.length === 0
-                              ? 'Indisponível'
-                              : 'Sem solicitante vinculado'}
-                        </option>
-                        {intakeContacts.map((contact) => (
-                          <option key={contact.id} value={contact.id}>
-                            {contact.fullName} · {contact.email}
-                          </option>
-                        ))}
-                      </SelectInput>
-                    </Field>
-
-                    {intakeContactsMessage ? (
-                      <InlineNotice tone="warning">{intakeContactsMessage}</InlineNotice>
-                    ) : null}
-
-                    {!intakeContactsLoading &&
-                    intakeDraft.tenantId &&
-                    intakeContacts.length === 0 ? (
-                      <InlineNotice>
-                        Nenhum contato ativo apareceu para este cliente. O ticket pode ser aberto
-                        sem solicitante vinculado se a plataforma aceitar esse contexto.
-                      </InlineNotice>
-                    ) : null}
-
-                    <div className="grid gap-3 md:grid-cols-3">
-                      <Field label="Origem">
-                        <SelectInput
-                          disabled={intakeSubmitting}
-                          onChange={(event) =>
-                            setIntakeDraft((current) => ({
-                              ...current,
-                              source: event.target.value as TicketSource,
-                            }))
-                          }
-                          value={intakeDraft.source}
-                        >
-                          {TICKET_SOURCES.map((source) => (
-                            <option key={source} value={source}>
-                              {humanizeSource(source)}
-                            </option>
-                          ))}
-                        </SelectInput>
-                      </Field>
-
-                      <Field label="Prioridade">
-                        <SelectInput
-                          disabled={intakeSubmitting}
-                          onChange={(event) =>
-                            setIntakeDraft((current) => ({
-                              ...current,
-                              priority: event.target.value as TicketPriority,
-                            }))
-                          }
-                          value={intakeDraft.priority}
-                        >
-                          {TICKET_PRIORITIES.map((priority) => (
-                            <option key={priority} value={priority}>
-                              {humanizePriority(priority)}
-                            </option>
-                          ))}
-                        </SelectInput>
-                      </Field>
-
-                      <Field label="Severidade">
-                        <SelectInput
-                          disabled={intakeSubmitting}
-                          onChange={(event) =>
-                            setIntakeDraft((current) => ({
-                              ...current,
-                              severity: event.target.value as TicketSeverity,
-                            }))
-                          }
-                          value={intakeDraft.severity}
-                        >
-                          {TICKET_SEVERITIES.map((severity) => (
-                            <option key={severity} value={severity}>
-                              {humanizeSeverity(severity)}
-                            </option>
-                          ))}
-                        </SelectInput>
-                      </Field>
-                    </div>
-
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <Field label="Categoria operacional">
-                        <SelectInput
-                          disabled={intakeSubmitting || ticketCategoryOptions.length === 0}
-                          onChange={(event) =>
-                            setIntakeDraft((current) => ({
-                              ...current,
-                              categoryId: event.target.value as Uuid | '',
-                              operationalReasonId: event.target.value ? current.operationalReasonId : '',
-                            }))
-                          }
-                          value={intakeDraft.categoryId}
-                        >
-                          <option value="">Indisponível/sem categoria inicial</option>
-                          {ticketCategoryOptions.map((category) => (
-                            <option key={category.optionId} value={category.optionId}>
-                              {category.name}
-                            </option>
-                          ))}
-                        </SelectInput>
-                      </Field>
-
-                      <Field label="Motivo operacional inicial">
-                        <SelectInput
-                          disabled={
-                            intakeSubmitting ||
-                            !intakeDraft.categoryId ||
-                            classificationReasonOptions.length === 0
-                          }
-                          onChange={(event) =>
-                            setIntakeDraft((current) => ({
-                              ...current,
-                              operationalReasonId: event.target.value as Uuid | '',
-                            }))
-                          }
-                          value={intakeDraft.operationalReasonId}
-                        >
-                          <option value="">Sem motivo inicial</option>
-                          {classificationReasonOptions.map((reason) => (
-                            <option key={reason.optionId} value={reason.optionId}>
-                              {reason.name}
-                            </option>
-                          ))}
-                        </SelectInput>
-                      </Field>
-                    </div>
-
-                    <Field label="Título">
-                      <TextInput
-                        disabled={intakeSubmitting}
-                        onChange={(event) =>
-                          setIntakeDraft((current) => ({
-                            ...current,
-                            title: event.target.value,
-                          }))
-                        }
-                        placeholder="Resumo objetivo do caso operacional"
-                        value={intakeDraft.title}
-                      />
-                    </Field>
-
-                    <Field label="Descrição">
-                      <TextareaInput
-                        disabled={intakeSubmitting}
-                        onChange={(event) =>
-                          setIntakeDraft((current) => ({
-                            ...current,
-                            description: event.target.value,
-                          }))
-                        }
-                        placeholder="Contexto mínimo para iniciar a triagem sem inventar regra."
-                        rows={6}
-                        value={intakeDraft.description}
-                      />
-                    </Field>
-
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--color-border)] pt-3">
-                      <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-                        O ticket abre com trilha de auditoria, evento inicial e navegação direta
-                        para o workspace.
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <GhostButton
-                          onClick={() => {
-                            setShowCreateTicket(false);
-                            setDetailNotice(null);
-                          }}
-                          type="button"
-                        >
-                          Cancelar
-                        </GhostButton>
-                        <AppButton disabled={intakeSubmitDisabled} type="submit">
-                          {intakeSubmitting ? 'Abrindo ticket' : 'Abrir ticket'}
-                        </AppButton>
-                      </div>
-                    </div>
-                  </form>
-                </div>
-              )
-            ) : detailPhase === 'loading' ? (
+            {detailPhase === 'loading' ? (
               <LoadingState
                 title="Carregando prévia"
                 description="Estamos preparando a leitura do ticket selecionado."
@@ -5916,6 +5986,7 @@ function SupportWorkspaceView({
         </>
       )}
 
+      {variant === 'queue' ? renderTicketIntakeModal() : null}
     </div>
   );
 }

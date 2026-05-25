@@ -18,6 +18,25 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase P4-F.2 - Support Intake Layout Refactor
+- fase: `P4-F.2`
+- nome: `Support Intake Layout Refactor + Minimal Operational Primitives`
+- branch: `codex/p4-f2-support-intake-layout-refactor`
+- data: `2026-05-25`
+- resumo funcional: substituido o intake estreito de novo ticket em `/support/queue` por modal operacional amplo. O lote inicia uma base visual operacional mais flexivel para os proximos dominios, criando primitives locais que evitam dependencia automatica de tres colunas, drawer lateral, cards inflados e controles grandes demais.
+- docs alterados:
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/reports/P4_SUPPORT_INTAKE_LAYOUT_REFACTOR_2026-05-25.md`
+- views/RPCs afetadas:
+  - nenhuma view, RPC, tabela, migration ou contrato novo.
+- telas afetadas:
+  - `/support/queue`
+- riscos restantes:
+  - as primitives ainda estao no dominio Support e devem ser promovidas para contrato compartilhado somente apos validacao em mais telas operacionais.
+  - os proximos lotes devem refatorar fila, ticket workspace, customer 360, Admin, Internal Actions, Engineering, Portal e Public Help conforme objetivo operacional de cada tela.
+- impacto na FAQ futura:
+  - registra que abertura de ticket e operacao central, nao acao secundaria comprimida em drawer.
+
 ### Fase P4-F.1 - Visual System Constraint Audit
 - fase: `P4-F.1`
 - nome: `Visual System Constraint Audit`
