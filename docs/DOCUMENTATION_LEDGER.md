@@ -18,6 +18,26 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase P4-E.1 - Blueprint Asset Consolidation & Worktree Cleanup
+- fase: `P4-E.1`
+- nome: `Blueprint Asset Consolidation & Worktree Cleanup`
+- branch: `codex/p4-e1-blueprint-asset-cleanup`
+- data: `2026-05-24`
+- resumo funcional: consolidados os PNGs de blueprint pendentes do Support Workspace. Os blueprints canonicos `fila operacional.png` e `tickets e conversas.png` foram preservados como referencias aprovadas; as variantes temporarias `tickets e conversas NEW*.png` foram removidas por duplicidade, ausencia de referencias documentais e presenca de acoes fora do MVP. O screen spec de tickets passou a apontar para o blueprint canonico sem promessa de canal externo ativo.
+- docs alterados:
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/design/screens/SUPPORT_TICKET_WORKSPACE.md`
+  - `docs/design/blueprint/suporte/fila operacional.png`
+  - `docs/design/blueprint/suporte/tickets e conversas.png`
+- views/RPCs afetadas:
+  - nenhuma view, RPC, tabela, migration ou contrato novo.
+- telas afetadas:
+  - nenhuma tela runtime alterada; apenas assets e spec visual do Support Workspace.
+- riscos restantes:
+  - `tickets e conversas omni.png` permanece preservado como referencia historica, mas deixou de ser fonte canonica do screen spec por sugerir canais externos ativos fora do MVP.
+- impacto na FAQ futura:
+  - documenta que a referencia visual de suporte do MVP deve representar conversa operacional governada por origem/canal, sem prometer omni/provider externo ativo.
+
 ### Fase P4-E - Staging Environment Authorization & Remote Dry Run
 - fase: `P4-E`
 - nome: `Staging Environment Authorization & Remote Dry Run`

@@ -8,7 +8,7 @@
 
 Fonte visual obrigatória:
 
-`docs/design/blueprint/suporte/tickets e conversas omni.png`
+`docs/design/blueprint/suporte/tickets e conversas.png`
 
 Este é o blueprint vigente para a reconstrução visual da superfície.
 
@@ -18,13 +18,13 @@ Se houver divergência entre implementação atual, spec anterior e blueprint ap
 
 O contrato vigente não é chat-only.
 
-Ele é um workspace conversacional operacional com leitura **omnichannel**.
+Ele é um workspace conversacional operacional com leitura de origem e canal governada.
 
 Isso significa que a tela deve suportar visualmente, no mesmo fluxo:
 - mensagem pública;
 - nota interna;
 - evento de sistema;
-- contexto de canal;
+- contexto de origem/canal permitido pelo backend;
 - tratativa operacional do ticket.
 
 Não é feed social, não é inbox B2C e não é dashboard de cards.
@@ -39,7 +39,7 @@ A tela deve parecer uma ferramenta diária de atendimento técnico.
 
 Para esta superfície, seguir nesta ordem:
 
-1. Blueprint PNG aprovado de tickets e conversas omni.
+1. Blueprint PNG aprovado de tickets e conversas.
 2. Este screen spec.
 3. Primitive operacional do domínio Support.
 4. `docs/design/GENIUS_SUPPORT_OS_DESIGN_SYSTEM.md`
@@ -75,7 +75,7 @@ São responsabilidades desta superfície:
 - header operacional do ticket;
 - thread conversacional;
 - composer dockado;
-- contexto omnichannel;
+- contexto de origem/canal;
 - rail direito com resumo, cliente, SLA e ações rápidas.
 
 ## Estrutura obrigatória
@@ -268,7 +268,7 @@ Esta superfície deve comunicar:
 - cockpit operacional B2B;
 - atendimento técnico diário;
 - conversa real com contexto;
-- omnichannel operacional;
+- origem/canal operacional;
 - decisão rápida com contexto lateral.
 
 Ela não deve comunicar:
@@ -304,8 +304,8 @@ Regras:
 
 A tela só pode ser considerada pronta se:
 
-- lembrar claramente o blueprint `tickets e conversas omni.png`;
-- o contrato visual ficar explícito como omnichannel operacional, não chat-only simples;
+- lembrar claramente o blueprint `tickets e conversas.png`;
+- o contrato visual ficar explícito como conversa operacional com origem/canal governados, não chat-only simples;
 - a thread distinguir mensagem pública, nota interna e evento de sistema;
 - o composer estiver dockado ao fluxo da conversa;
 - o rail direito concentrar resumo do ticket, ações rápidas, SLA/contexto e cliente;
