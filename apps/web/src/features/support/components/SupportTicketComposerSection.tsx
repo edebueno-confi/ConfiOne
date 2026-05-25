@@ -91,18 +91,12 @@ export function SupportTicketComposerSection({
               composerMode === 'internal' ? 'border-amber-200/80' : 'border-[color:var(--color-border)]',
             )}
           >
-            <div className="flex flex-wrap items-center gap-1.5">
-              {['B', 'I', 'U', '≡', '⋯'].map((item) => (
-                <button
-                  className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-[10px] border border-[color:var(--color-support-border)] bg-[color:var(--color-support-surface)] px-0 text-[10px] font-semibold text-[color:var(--color-muted)]"
-                  disabled
-                  key={item}
-                  title="Disponível em breve"
-                  type="button"
-                >
-                  {item}
-                </button>
-              ))}
+            <div className="flex min-w-0 flex-wrap items-center gap-2 text-[11px] font-medium text-[color:var(--color-muted)]">
+              <span>
+                {composerMode === 'public'
+                  ? 'Resposta customer-facing via Portal'
+                  : 'Nota interna protegida'}
+              </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <SupportSecondaryActionButton

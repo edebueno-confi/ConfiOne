@@ -132,10 +132,7 @@ import {
   OperationalField,
   OperationalFooterActions,
   OperationalFormGrid,
-  OperationalContextPanel,
-  OperationalFilterStack,
   OperationalModal,
-  OperationalQueueSummary,
   SupportConversationMessage,
   SupportIconActionButton,
   SupportInternalNote,
@@ -169,7 +166,6 @@ import {
   OperationalQueueBadge,
   queueMetricIcon,
   SupportSummaryStrip,
-  SupportTicketPreview,
 } from './components/SupportWorkspaceAuxiliaryPanels';
 import { SupportQueueLoadingScaffold, SupportTicketLoadingScaffold } from './components/SupportWorkspaceStates';
 import { CompactSupportPill, SupportSurfaceIcon } from './components/SupportWorkspaceVisuals';
@@ -187,9 +183,7 @@ import {
   supportTicketCode,
   ticketTenantLabel,
   toneForKnowledgeLinkType,
-  toneForSlaStatus,
   toneForTicketStatus,
-  compactSlaStatusLabel,
   compactTicketStatusLabel,
 } from './lib/SupportWorkspacePresentation';
 import {
@@ -409,24 +403,6 @@ function LoadingBlock({ className }: { className?: string }) {
       )}
     />
   );
-}
-function queueShortcutIcon(
-  kind: 'mine' | 'unassigned' | 'urgent' | 'waiting-customer' | 'waiting-engineering',
-) {
-  switch (kind) {
-    case 'mine':
-      return <SupportSurfaceIcon className="h-3.5 w-3.5" kind="user" />;
-    case 'unassigned':
-      return <SupportSurfaceIcon className="h-3.5 w-3.5" kind="user-plus" />;
-    case 'urgent':
-      return <SupportSurfaceIcon className="h-3.5 w-3.5" kind="alert" />;
-    case 'waiting-customer':
-      return <SupportSurfaceIcon className="h-3.5 w-3.5" kind="clock" />;
-    case 'waiting-engineering':
-      return <SupportSurfaceIcon className="h-3.5 w-3.5" kind="code" />;
-    default:
-      return null;
-  }
 }
 
 function humanizeAttachmentStatus(status: SupportTicketAttachment['status']) {
@@ -1455,11 +1431,15 @@ function SupportTechnicalHistory({
 function SupportQueueItem({
   ticket,
   isSelected,
+  isBulkSelected,
   onSelect,
+  onToggleBulk,
 }: {
   ticket: SupportTicketQueueItem;
   isSelected: boolean;
+  isBulkSelected: boolean;
   onSelect: () => void;
+  onToggleBulk: () => void;
 }) {
   const statusTone =
     ticket.status === 'waiting_engineering'
@@ -1480,30 +1460,84 @@ function SupportQueueItem({
           ? 'positive'
           : 'default';
 
+  const priorityTone =
+    ticket.priority === 'urgent' || ticket.severity === 'critical'
+      ? 'critical'
+      : ticket.priority === 'high'
+        ? 'warning'
+        : ticket.priority === 'low'
+          ? 'positive'
+          : 'default';
+  const assigneeInitials = ticket.assignedToFullName
+    ? initialsFromSupportLabel(ticket.assignedToFullName)
+    : 'QL';
+  const assigneeLabel = ticket.assignedToFullName ?? 'Sem responsável';
+  const slaLabel = ticket.slaStatusLabel ?? 'Indisponível';
+
   return (
-    <QueueTicketItem
-      assigneeInitials={
-        ticket.assignedToFullName ? initialsFromSupportLabel(ticket.assignedToFullName) : '—'
-      }
-      assigneeLabel={ticket.assignedToFullName ?? 'Não atribuído'}
-      categoryLabel={ticket.categoryName ?? 'Indisponível'}
-      channelLabel={ticket.channelLabel ?? 'Canal indisponível'}
-      code={supportTicketCode(ticket.id)}
-      isSelected={isSelected}
-      onSelect={onSelect}
-      slaLabel={ticket.slaStatusLabel ?? 'Indisponível'}
-      slaTone={slaTone}
-      statusBadge={
-        <OperationalQueueBadge tone={statusTone}>
-          {compactTicketStatusLabel(ticket.status)}
-        </OperationalQueueBadge>
-      }
-      tenantLabel={ticketTenantLabel(ticket)}
-      tenantSubLabel={ticket.tenantSlug ?? 'Indisponível'}
-      timestampLabel={formatSupportShortTime(ticket.lastMessageAt ?? ticket.updatedAt)}
-      title={ticket.title}
-      variant="workspace"
-    />
+    <article
+      className={cx(
+        'support-true-queue-row',
+        isSelected && 'support-true-queue-row--selected',
+        isBulkSelected && 'support-true-queue-row--bulk-selected',
+      )}
+    >
+      <button
+        aria-label={`${isBulkSelected ? 'Remover' : 'Selecionar'} ${supportTicketCode(ticket.id)} para ação em massa`}
+        aria-pressed={isBulkSelected}
+        className="support-true-queue-row__check"
+        onClick={(event) => {
+          event.stopPropagation();
+          onToggleBulk();
+        }}
+        type="button"
+      >
+        {isBulkSelected ? '✓' : ''}
+      </button>
+
+      <button className="support-true-queue-row__body" onClick={onSelect} type="button">
+        <span className="support-true-queue-row__id">
+          <strong>{supportTicketCode(ticket.id)}</strong>
+          <span>{formatSupportShortTime(ticket.createdAt ?? ticket.updatedAt)}</span>
+        </span>
+        <span className="support-true-queue-row__customer">
+          <strong>{ticketTenantLabel(ticket)}</strong>
+          <span>{ticket.tenantSlug ?? 'Plano indisponível'}</span>
+        </span>
+        <span className="support-true-queue-row__subject">
+          <strong>{ticket.title}</strong>
+          <span>{ticket.categoryName ?? 'Sem categoria operacional'}</span>
+        </span>
+        <span className="support-true-queue-row__policy">
+          <OperationalQueueBadge tone={statusTone}>
+            {compactTicketStatusLabel(ticket.status)}
+          </OperationalQueueBadge>
+        </span>
+        <span className="support-true-queue-row__priority">
+          <OperationalQueueBadge tone={priorityTone}>
+            {humanizePriority(ticket.priority)}
+          </OperationalQueueBadge>
+        </span>
+        <span className="support-true-queue-row__source">
+          <SupportSurfaceIcon className="h-[15px] w-[15px]" kind={ticket.channelKey === 'api' ? 'code' : 'open'} />
+          <span>
+            <strong>{ticket.originLabel ?? ticket.channelLabel ?? 'Indisponível'}</strong>
+            <small>{ticket.channelLabel ?? 'Canal indisponível'}</small>
+          </span>
+        </span>
+        <span className="support-true-queue-row__owner">
+          <span className="support-true-avatar">{assigneeInitials}</span>
+          <span>
+            <strong>{assigneeLabel}</strong>
+            <small>{ticket.assignedToFullName ? 'Operação CX' : 'Precisa de dono'}</small>
+          </span>
+        </span>
+        <span className={cx('support-true-queue-row__sla', `support-true-queue-row__sla--${slaTone}`)}>
+          <strong>{slaLabel}</strong>
+          <span>{ticket.slaStatus === 'breached' ? 'vencido' : 'dentro'}</span>
+        </span>
+      </button>
+    </article>
   );
 }
 
@@ -2488,6 +2522,8 @@ function SupportWorkspaceView({
   const [detailNoticeTone, setDetailNoticeTone] = useState<'default' | 'critical'>('default');
   const [submitting, setSubmitting] = useState(false);
   const [activeDrawer, setActiveDrawer] = useState<TicketActionDrawer>('none');
+  const [showQueueFilters, setShowQueueFilters] = useState(false);
+  const [bulkSelectedTicketIds, setBulkSelectedTicketIds] = useState<Uuid[]>([]);
   const threadScrollContainerRef = useRef<HTMLDivElement | null>(null);
   const pendingThreadScrollRef = useRef<'idle' | 'latest'>('idle');
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
@@ -3241,7 +3277,7 @@ function SupportWorkspaceView({
             },
             {
               key: 'engineering' as const,
-              label: 'Engenharia',
+              label: 'Dependências',
               count: ticketInboxScopeTickets.filter((ticket) => ticketMatchesInboxFilter(ticket, 'engineering')).length,
             },
           ]
@@ -3324,12 +3360,32 @@ function SupportWorkspaceView({
   }
 
   function handleSelectTicket(ticketId: string) {
+    setBulkSelectedTicketIds([]);
     setSelectedTicketId(ticketId);
     setActiveDrawer('none');
     setAttachmentUploadDraft(emptyAttachmentUploadDraft());
     if (variant === 'tickets') {
       void navigate(`/support/tickets/${ticketId}`);
     }
+  }
+
+  function handleToggleQueueBulkTicket(ticketId: Uuid) {
+    setBulkSelectedTicketIds((current) =>
+      current.includes(ticketId)
+        ? current.filter((id) => id !== ticketId)
+        : [...current, ticketId],
+    );
+    setActiveDrawer('none');
+  }
+
+  function handleSelectAllQueueVisibleTickets() {
+    setBulkSelectedTicketIds(queueVisibleTickets.map((ticket) => ticket.id));
+    setSelectedTicketId(null);
+    setActiveDrawer('none');
+  }
+
+  function handleClearQueueBulkSelection() {
+    setBulkSelectedTicketIds([]);
   }
 
   function applySuccess(message: string) {
@@ -4669,13 +4725,6 @@ function SupportWorkspaceView({
       tone: 'default' as const,
     },
     {
-      key: 'attention',
-      label: 'Atenção alta',
-      value: highAttention,
-      helper: 'prioridade ou SLA',
-      tone: 'critical' as const,
-    },
-    {
       key: 'unassigned',
       label: 'Sem responsável',
       value: unassigned,
@@ -4683,18 +4732,25 @@ function SupportWorkspaceView({
       tone: 'attention' as const,
     },
     {
-      key: 'customer',
+      key: 'waiting_customer',
       label: 'Aguardando cliente',
       value: waitingCustomer,
       helper: 'retorno externo',
       tone: 'warning' as const,
     },
     {
-      key: 'internal',
+      key: 'waiting_engineering',
       label: 'Dependências internas',
       value: waitingEngineering,
       helper: 'áreas internas',
       tone: 'internal' as const,
+    },
+    {
+      key: 'urgent',
+      label: 'Urgentes',
+      value: highAttention,
+      helper: 'prioridade ou SLA',
+      tone: 'critical' as const,
     },
   ];
   const queueSearchTerm = ticketInboxSearch.trim().toLocaleLowerCase('pt-BR');
@@ -4714,6 +4770,11 @@ function SupportWorkspaceView({
             .toLocaleLowerCase('pt-BR');
           return haystack.includes(queueSearchTerm);
         });
+  const bulkSelectedTickets = queueVisibleTickets.filter((ticket) =>
+    bulkSelectedTicketIds.includes(ticket.id),
+  );
+  const isQueueBulkMode = bulkSelectedTicketIds.length > 1;
+  const selectedQueueContextTicket = isQueueBulkMode ? null : selectedQueueTicket;
   const requesterLabel =
     ticketDetail?.requesterContactFullName ??
     ticketDetail?.requesterContactEmail ??
@@ -5600,51 +5661,46 @@ function SupportWorkspaceView({
       )}
     >
       {variant === 'tickets' ? (
-        <section className="shrink-0 rounded-[20px] border border-[color:var(--color-border)] bg-white/96 px-4 py-3 shadow-[0_12px_22px_rgba(19,33,79,0.07)]">
+        <section className="support-true-ticket-topbar">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 space-y-1">
-              <h1 className="text-[1.62rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
+              <h1 className="support-true-ticket-topbar__title">
                 Tickets e conversas
               </h1>
-              <p className="text-[13px] leading-5 text-[color:var(--color-muted)]">
+              <p className="support-true-ticket-topbar__description">
                 Tratativa operacional com contexto, histórico e comunicação centralizados.
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <SupportPrimaryActionButton
-                className="min-h-9 px-4"
+              <SupportSecondaryActionButton
                 onClick={() => void navigate('/support/queue')}
               >
-                Novo ticket
-              </SupportPrimaryActionButton>
-              <SupportIconActionButton
-                ariaLabel="Notificações indisponíveis nesta etapa"
-                disabled
-              >
-                <SupportSurfaceIcon className="h-[14px] w-[14px]" kind="bell" />
-              </SupportIconActionButton>
+                Voltar para fila
+              </SupportSecondaryActionButton>
             </div>
           </div>
         </section>
       ) : null}
 
       {variant === 'queue' ? (
-        <section className="support-operational-queue-header">
-          <div className="support-operational-queue-header__main">
+        <section className="support-true-queue-header">
+          <div className="support-true-queue-header__main">
             <div className="min-w-0 space-y-1">
-              <h1 className="support-operational-queue-header__title">
+              <h1 className="support-true-queue-header__title">
                 Fila operacional
               </h1>
-              <p className="support-operational-queue-header__description">
-                Triagem diária de suporte B2B: priorize, atribua e entre no ticket certo.
+              <p className="support-true-queue-header__description">
+                Triagem diária de suporte B2B. Priorize, atribua e atue nos tickets com foco operacional.
               </p>
             </div>
 
-            <div className="support-operational-queue-header__actions">
+            <div className="support-true-queue-header__actions">
               <SupportPrimaryActionButton
                 disabled={!canOpenIntake}
                 onClick={() => {
+                  setBulkSelectedTicketIds([]);
+                  setSelectedTicketId(null);
                   setShowCreateTicket(true);
                   setDetailNotice(null);
                   if (!intakeDraft.tenantId && intakeTenants[0]?.tenantId) {
@@ -5664,79 +5720,123 @@ function SupportWorkspaceView({
               </SupportSecondaryActionButton>
             </div>
           </div>
-          <OperationalQueueSummary items={queueSummaryItems} />
+          <div className="support-true-queue-metrics" aria-label="Indicadores da fila">
+            {queueSummaryItems.map((item) => (
+              <article
+                className={cx(
+                  'support-true-queue-metric',
+                  item.tone && `support-true-queue-metric--${item.tone}`,
+                )}
+                key={`queue-metric:${item.key}`}
+              >
+                <span className="support-true-queue-metric__icon">
+                  {queueMetricIcon(item.key as Parameters<typeof queueMetricIcon>[0])}
+                </span>
+                <span className="support-true-queue-metric__content">
+                  <strong>{item.value}</strong>
+                  <span>{item.label}</span>
+                  <small>{item.helper}</small>
+                </span>
+              </article>
+            ))}
+          </div>
         </section>
       ) : null}
 
       {variant === 'queue' ? (
-        <div className="support-operational-queue-layout">
-          <aside className="support-operational-queue-sidebar">
-            <OperationalFilterStack
-              action={<SupportSurfaceIcon className="h-4 w-4 text-[rgba(107,120,146,0.8)]" kind="filter" />}
-              title="Recortes rápidos"
-              description="Atalhos reais para triagem."
-            >
-
-              <div className="support-operational-shortcut-list">
-                {queueShortcuts.map((shortcut) => (
-                  <button
-                    className={cx(
-                      'support-operational-shortcut',
-                      shortcut.active
-                        ? 'support-operational-shortcut--active'
-                        : 'support-operational-shortcut--idle',
-                      shortcut.disabled && 'support-operational-shortcut--disabled',
-                    )}
-                    disabled={shortcut.disabled}
-                    key={`queue-shortcut:${shortcut.key}`}
-                    onClick={shortcut.apply}
-                    type="button"
-                  >
-                    <span className="min-w-0 flex items-center gap-2.5">
-                      <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[rgba(220,228,242,0.9)] bg-[rgba(244,247,252,0.95)] text-[color:var(--color-brand-navy)] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
-                        {queueShortcutIcon(shortcut.key)}
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block truncate text-[12px] font-semibold leading-5">{shortcut.label}</span>
-                        <span className="block truncate text-[10px] leading-4 text-[color:var(--color-muted)]">
-                          {shortcut.helper}
-                        </span>
-                      </span>
-                    </span>
-                    <span className="text-[11.5px] font-semibold tabular-nums tracking-[-0.02em] text-[color:var(--color-ink)]">
-                      {shortcut.value ?? 'Indisponivel'}
-                    </span>
-                  </button>
-                ))}
-              </div>
-
+        <div
+          className={cx(
+            'support-true-queue-layout',
+            (selectedQueueContextTicket || isQueueBulkMode) && 'support-true-queue-layout--with-panel',
+          )}
+        >
+          <section className="support-true-queue-surface">
+            <div className="support-true-queue-tabs" role="tablist" aria-label="Recortes da fila">
               <button
-                className="support-operational-filter-link"
+                aria-selected={!queueShortcuts.some((shortcut) => shortcut.active)}
+                className={cx(
+                  'support-true-queue-tab',
+                  !queueShortcuts.some((shortcut) => shortcut.active) && 'support-true-queue-tab--active',
+                )}
                 onClick={() => setFilters(emptyFilters())}
+                role="tab"
                 type="button"
               >
-                Ver todas as filas
+                Todos <span>{tickets.length}</span>
               </button>
-            </OperationalFilterStack>
-
-            <OperationalFilterStack
-              action={
+              {queueShortcuts.map((shortcut) => (
                 <button
-                  className="support-operational-filter-reset"
-                  onClick={() => setFilters(emptyFilters())}
+                  aria-selected={shortcut.active}
+                  className={cx(
+                    'support-true-queue-tab',
+                    shortcut.active && 'support-true-queue-tab--active',
+                  )}
+                  disabled={shortcut.disabled}
+                  key={`queue-tab:${shortcut.key}`}
+                  onClick={shortcut.apply}
+                  role="tab"
                   type="button"
                 >
-                  Redefinir
+                  {shortcut.label.replace('Meus tickets', 'Meus')}
+                  <span>{shortcut.value ?? 0}</span>
                 </button>
-              }
-              title="Filtros"
-              description="Contrato real da fila."
-            >
-              <div className="support-operational-filter-stack__scroll">
-                <label className="grid gap-1.5">
-                  <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Status</span>
+              ))}
+            </div>
+
+            <div className="support-true-queue-toolbar">
+              <SupportSearchInput
+                className="support-true-queue-search"
+                icon={<SupportSurfaceIcon className="h-[15px] w-[15px]" kind="search" />}
+                onChange={setTicketInboxSearch}
+                placeholder="Buscar por ID, cliente, assunto ou contato..."
+                value={ticketInboxSearch}
+              />
+              <button
+                aria-expanded={showQueueFilters}
+                className="support-true-filter-button"
+                onClick={() => setShowQueueFilters((current) => !current)}
+                type="button"
+              >
+                <SupportSurfaceIcon className="h-[15px] w-[15px]" kind="filter" />
+                Filtros
+              </button>
+              {filters.status !== 'all' ? (
+                <button
+                  className="support-true-filter-chip"
+                  onClick={() => setFilters({ ...filters, status: 'all' })}
+                  type="button"
+                >
+                  Status: {humanizeStatus(filters.status)}
+                  <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="close" />
+                </button>
+              ) : null}
+              {filters.priority !== 'all' ? (
+                <button
+                  className="support-true-filter-chip"
+                  onClick={() => setFilters({ ...filters, priority: 'all' })}
+                  type="button"
+                >
+                  Prioridade: {humanizePriority(filters.priority)}
+                  <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="close" />
+                </button>
+              ) : null}
+              <button
+                className="support-true-filter-clear"
+                onClick={() => {
+                  setFilters(emptyFilters());
+                  setTicketInboxSearch('');
+                }}
+                type="button"
+              >
+                Limpar tudo
+              </button>
+            </div>
+
+            {showQueueFilters ? (
+              <div className="support-true-queue-filter-grid">
+                <label>
+                  <span>Status</span>
                   <SelectInput
-                    className="h-10 rounded-[12px] px-3 text-[12px]"
                     onChange={(event) => setFilters({ ...filters, status: event.target.value as QueueFilters['status'] })}
                     value={filters.status}
                   >
@@ -5748,17 +5848,10 @@ function SupportWorkspaceView({
                     ))}
                   </SelectInput>
                 </label>
-
-                <label className="grid gap-1.5">
-                  <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Prioridade</span>
+                <label>
+                  <span>Prioridade</span>
                   <SelectInput
-                    className="h-10 rounded-[12px] px-3 text-[12px]"
-                    onChange={(event) =>
-                      setFilters({
-                        ...filters,
-                        priority: event.target.value as QueueFilters['priority'],
-                      })
-                    }
+                    onChange={(event) => setFilters({ ...filters, priority: event.target.value as QueueFilters['priority'] })}
                     value={filters.priority}
                   >
                     <option value="all">Todas</option>
@@ -5769,17 +5862,10 @@ function SupportWorkspaceView({
                     ))}
                   </SelectInput>
                 </label>
-
-                <label className="grid gap-1.5">
-                  <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Severidade</span>
+                <label>
+                  <span>Severidade</span>
                   <SelectInput
-                    className="h-10 rounded-[12px] px-3 text-[12px]"
-                    onChange={(event) =>
-                      setFilters({
-                        ...filters,
-                        severity: event.target.value as QueueFilters['severity'],
-                      })
-                    }
+                    onChange={(event) => setFilters({ ...filters, severity: event.target.value as QueueFilters['severity'] })}
                     value={filters.severity}
                   >
                     <option value="all">Todas</option>
@@ -5790,43 +5876,14 @@ function SupportWorkspaceView({
                     ))}
                   </SelectInput>
                 </label>
-
-                <label className="grid gap-1.5">
-                  <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Categoria</span>
+                <label>
+                  <span>Responsável</span>
                   <SelectInput
-                    className="h-10 rounded-[12px] px-3 text-[12px]"
-                    disabled={ticketCategoryOptions.length === 0}
-                    onChange={(event) =>
-                      setFilters({
-                        ...filters,
-                        categoryId: event.target.value as QueueFilters['categoryId'],
-                      })
-                    }
-                    value={filters.categoryId}
-                  >
-                    <option value="all">Todas</option>
-                    {ticketCategoryOptions.map((category) => (
-                      <option key={category.optionId} value={category.optionId}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </SelectInput>
-                </label>
-
-                <label className="grid gap-1.5">
-                  <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Responsável</span>
-                  <SelectInput
-                    className="h-10 rounded-[12px] px-3 text-[12px]"
-                    onChange={(event) =>
-                      setFilters({
-                        ...filters,
-                        assignedToUserId: event.target.value as QueueFilters['assignedToUserId'],
-                      })
-                    }
+                    onChange={(event) => setFilters({ ...filters, assignedToUserId: event.target.value as QueueFilters['assignedToUserId'] })}
                     value={filters.assignedToUserId}
                   >
                     <option value="all">Todos</option>
-                    <option value="unassigned">Não atribuídos</option>
+                    <option value="unassigned">Sem responsável</option>
                     {assigneeOptions.map((assignee) => (
                       <option key={assignee.id} value={assignee.id}>
                         {assignee.label}
@@ -5834,11 +5891,9 @@ function SupportWorkspaceView({
                     ))}
                   </SelectInput>
                 </label>
-
-                <label className="grid gap-1.5">
-                  <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Cliente</span>
+                <label>
+                  <span>Cliente</span>
                   <SelectInput
-                    className="h-10 rounded-[12px] px-3 text-[12px]"
                     onChange={(event) => setFilters({ ...filters, tenantId: event.target.value as QueueFilters['tenantId'] })}
                     value={filters.tenantId}
                   >
@@ -5851,114 +5906,159 @@ function SupportWorkspaceView({
                   </SelectInput>
                 </label>
               </div>
+            ) : null}
 
-              <button
-                className="support-operational-filter-clear"
-                onClick={() => setFilters(emptyFilters())}
-                type="button"
-              >
-                Limpar filtros
-              </button>
-            </OperationalFilterStack>
-          </aside>
-
-          <div className="support-operational-queue-main">
-            <section className="support-operational-queue-table">
-              <div className="support-operational-queue-table__toolbar">
-                <SupportSearchInput
-                  className="max-w-[520px]"
-                  icon={<SupportSurfaceIcon className="h-[14px] w-[14px]" kind="search" />}
-                  onChange={setTicketInboxSearch}
-                  placeholder="Buscar por ticket, assunto ou cliente..."
-                  value={ticketInboxSearch}
-                />
-
-                <div className="support-operational-queue-table__meta">
-                  <span className="support-operational-queue-chip">
-                    Visão salva: Padrão
-                  </span>
-                  {selectedQueueTicket ? (
-                    <span className="support-operational-queue-chip support-operational-queue-chip--active">
-                      1 selecionado
-                    </span>
-                  ) : null}
-                </div>
+            {bulkSelectedTicketIds.length > 0 ? (
+              <div className="support-true-queue-bulkbar">
+                <span>{bulkSelectedTicketIds.length} ticket(s) selecionado(s)</span>
+                <button onClick={handleClearQueueBulkSelection} type="button">
+                  Limpar seleção
+                </button>
               </div>
+            ) : null}
 
-              <div className="support-operational-queue-table__head">
-                <span />
-                <span>Status / SLA</span>
-                <span>Ticket / Assunto</span>
+            <div className="support-true-queue-table" role="table" aria-label="Fila operacional de tickets">
+              <div className="support-true-queue-table__head" role="row">
+                <button
+                  aria-label="Selecionar todos os tickets visíveis para ações em massa"
+                  className="support-true-queue-row__check"
+                  disabled={queueVisibleTickets.length === 0}
+                  onClick={handleSelectAllQueueVisibleTickets}
+                  type="button"
+                >
+                  {bulkSelectedTicketIds.length > 1 ? '✓' : ''}
+                </button>
+                <span>ID / Data</span>
                 <span>Cliente</span>
-                <span>Categoria</span>
-                <span>SLA</span>
+                <span>Assunto / Resumo</span>
+                <span>Política / Status</span>
+                <span>Prioridade</span>
+                <span>Origem / Canal</span>
                 <span>Responsável</span>
-                <span className="text-right">Última atividade</span>
+                <span>SLA</span>
               </div>
 
               {queueVisibleTickets.length === 0 ? (
                 <EmptyState
                   title="Sem tickets para esta combinação de filtros"
-                  description="Nenhum ticket apareceu com esse recorte. Ajuste os filtros, a busca ou recarregue a fila."
+                  description="Nenhum ticket apareceu com esse recorte. Ajuste filtros, busca ou recarregue a fila."
                 />
               ) : (
-                <div className="support-operational-queue-table__body">
+                <div className="support-true-queue-table__body">
                   {queueVisibleTickets.map((ticket) => (
                     <SupportQueueItem
+                      isBulkSelected={bulkSelectedTicketIds.includes(ticket.id)}
                       isSelected={ticket.id === selectedTicketId}
                       key={ticket.id}
                       onSelect={() => handleSelectTicket(ticket.id)}
+                      onToggleBulk={() => handleToggleQueueBulkTicket(ticket.id)}
                       ticket={ticket}
                     />
                   ))}
                 </div>
               )}
+            </div>
 
-              <footer className="support-operational-queue-table__footer">
-                <span>
-                  Mostrando {queueVisibleTickets.length === 0 ? 0 : 1} a {queueVisibleTickets.length} de {tickets.length} tickets
-                </span>
-                <div className="support-operational-queue-table__footer-meta">
-                  <span className="support-operational-queue-page">
-                    1
-                  </span>
-                  <span>Itens por página: {queueVisibleTickets.length}</span>
+            <footer className="support-true-queue-footer">
+              <span>
+                Mostrando {queueVisibleTickets.length === 0 ? 0 : 1}-{queueVisibleTickets.length} de {tickets.length} tickets
+              </span>
+              <span>{queueVisibleTickets.length} por página</span>
+            </footer>
+          </section>
+
+          {isQueueBulkMode ? (
+            <aside className="support-true-bulk-panel">
+              <div className="support-true-panel-title-row">
+                <div>
+                  <h2>Ações em massa</h2>
+                  <p>{bulkSelectedTicketIds.length} tickets selecionados</p>
                 </div>
-              </footer>
-            </section>
-          </div>
-
-          <OperationalContextPanel
-            title="Contexto do ticket"
-            description="Resumo, contato, SLA e próxima entrada operacional."
-          >
-            {detailPhase === 'loading' ? (
-              <LoadingState
-                title="Carregando prévia"
-                description="Estamos preparando a leitura do ticket selecionado."
-              />
-            ) : detailPhase === 'contract-unavailable' ? (
-              <ContractUnavailableState contractName="prévia operacional do ticket" />
-            ) : detailPhase === 'error' ? (
-              <ErrorState description={detailMessage ?? 'A prévia do ticket não ficou disponível.'} />
-            ) : (
-              <div className="xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
-                <SupportTicketPreview
-                  compactSlaStatusLabel={compactSlaStatusLabel}
-                  compactTicketStatusLabel={compactTicketStatusLabel}
-                  customer={customer}
-                  detail={previewTicket}
-                  formatSlaDueLabel={formatSlaDueLabel}
-                  primaryContactFromCustomer={primaryContactFromCustomer}
-                  readCustomerDocumentLabel={readCustomerDocumentLabel}
-                  supportTicketCode={supportTicketCode}
-                  ticket={selectedQueueTicket}
-                  ticketTenantLabel={ticketTenantLabel}
-                  toneForSlaStatus={toneForSlaStatus}
-                />
+                <button aria-label="Fechar ações em massa" onClick={handleClearQueueBulkSelection} type="button">
+                  <SupportSurfaceIcon kind="close" />
+                </button>
               </div>
-            )}
-          </OperationalContextPanel>
+              <p className="support-true-panel-copy">
+                As ações abaixo dependem de permissões, status e governança retornados pelo backend.
+              </p>
+              <div className="support-true-bulk-summary">
+                <span>{bulkSelectedTickets.filter((ticket) => ticket.isUnassigned).length} sem responsável</span>
+                <span>{bulkSelectedTickets.filter((ticket) => ticket.isWaitingCustomer).length} aguardando cliente</span>
+                <span>{bulkSelectedTickets.filter((ticket) => ticket.isWaitingEngineering).length} dependência interna</span>
+              </div>
+              {[
+                'Exportar',
+                'Finalizar',
+                'Transferir',
+                'Atribuir responsável',
+                'Alterar prioridade',
+                'Adicionar tag',
+                'Vincular acionamento',
+                'Mais ações',
+              ].map((label) => (
+                <button className="support-true-bulk-action" disabled key={label} type="button">
+                  {label}
+                </button>
+              ))}
+              <div className="support-true-bulk-warning">
+                Algumas ações dependem do status e da governança aplicada aos tickets selecionados.
+              </div>
+            </aside>
+          ) : selectedQueueContextTicket ? (
+            <aside className="support-true-queue-context">
+              <div className="support-true-panel-title-row">
+                <div>
+                  <h2>{supportTicketCode(selectedQueueContextTicket.id)}</h2>
+                  <p>{selectedQueueContextTicket.slaPolicyName ?? 'Sem política definida'}</p>
+                </div>
+                <button aria-label="Fechar contexto" onClick={() => setSelectedTicketId(null)} type="button">
+                  <SupportSurfaceIcon kind="close" />
+                </button>
+              </div>
+              {detailPhase === 'loading' ? (
+                <LoadingState title="Carregando prévia" description="Preparando a leitura operacional." />
+              ) : detailPhase === 'contract-unavailable' ? (
+                <ContractUnavailableState contractName="prévia operacional do ticket" />
+              ) : detailPhase === 'error' ? (
+                <ErrorState description={detailMessage ?? 'A prévia do ticket não ficou disponível.'} />
+              ) : (
+                <>
+                  <div className="support-true-context-customer">
+                    <strong>{ticketTenantLabel(selectedQueueContextTicket)}</strong>
+                    <span>{selectedQueueContextTicket.requesterContactFullName ?? 'Contato indisponível'}</span>
+                    <span>{selectedQueueContextTicket.requesterContactEmail ?? 'E-mail indisponível'}</span>
+                  </div>
+                  <div className="support-true-context-tiles">
+                    <span>
+                      <small>SLA</small>
+                      <strong>{selectedQueueContextTicket.slaStatusLabel ?? 'Indisponível'}</strong>
+                    </span>
+                    <span>
+                      <small>Prioridade</small>
+                      <strong>{humanizePriority(selectedQueueContextTicket.priority)}</strong>
+                    </span>
+                  </div>
+                  <div className="support-true-context-summary">
+                    <strong>Resumo operacional</strong>
+                    <p>{previewTicket?.description ?? selectedQueueContextTicket.title}</p>
+                  </div>
+                  <div className="support-true-context-timeline">
+                    <strong>Linha do tempo</strong>
+                    <span>Hoje · {formatSupportShortTime(selectedQueueContextTicket.updatedAt)}</span>
+                    <p>{compactTicketStatusLabel(selectedQueueContextTicket.status)} · {selectedQueueContextTicket.originLabel}</p>
+                  </div>
+                  <button
+                    className="support-true-context-primary"
+                    onClick={() => void navigate(`/support/tickets/${selectedQueueContextTicket.id}`)}
+                    type="button"
+                  >
+                    Abrir tratativa
+                    <span>→</span>
+                  </button>
+                </>
+              )}
+            </aside>
+          ) : null}
         </div>
       ) : detailPhase === 'idle' ? (
         <Panel

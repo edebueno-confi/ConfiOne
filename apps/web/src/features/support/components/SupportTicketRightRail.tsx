@@ -83,20 +83,8 @@ export function SupportTicketRightRail({
           <SupportSummaryRow label="Status" value={statusLabel} />
           <SupportSummaryRow label="Categoria" value={categoryLabel} />
           <SupportSummaryRow label="Responsável" value={assignedLabel} />
-          <SupportSummaryRow
-            label="SLA interno"
-            value={
-              <div className="space-y-1.5">
-                <p>{slaReference}</p>
-                <p className="text-[10.5px] font-medium text-[color:var(--color-muted)]">{slaPolicyName}</p>
-                <p className="text-[10.5px] font-medium text-[color:var(--color-muted)]">{slaRemainingLabel}</p>
-                <div className="flex items-center gap-2">
-                  <meter className="support-sla-meter" max={100} min={0} value={slaProgress} />
-                  <span className="text-[10.5px] font-semibold text-[color:var(--color-muted)]">{slaProgress}%</span>
-                </div>
-              </div>
-            }
-          />
+          <SupportSummaryRow label="Solicitante" value={requesterLabel} />
+          <SupportSummaryRow label="Documento" value={customerDocumentLabel} />
         </SupportTicketSummaryCard>
       </SupportRailCard>
 
@@ -157,13 +145,6 @@ export function SupportTicketRightRail({
         </SupportRailCard>
       ) : null}
 
-      <SupportRailCard title="Cliente / Conta">
-        <SupportTicketSummaryCard>
-          <SupportSummaryRow label="Cliente" value={tenantLabel} />
-          <SupportSummaryRow label="Contato" value={requesterLabel} />
-          <SupportSummaryRow label="Documento" value={customerDocumentLabel} />
-        </SupportTicketSummaryCard>
-      </SupportRailCard>
     </SupportRightRail>
   );
 }

@@ -90,7 +90,7 @@ export function SupportTicketQueue({
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <h2 className="text-[16px] font-bold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                Fila viva
+                Caixa de entrada
               </h2>
               <span className="inline-flex h-5 items-center rounded-full bg-[rgba(47,107,255,0.08)] px-2 text-[10px] font-semibold text-[color:var(--color-brand-blue)]">
                 {totalCount}
@@ -101,7 +101,7 @@ export function SupportTicketQueue({
             <SupportSearchInput
               icon={searchIcon}
               onChange={onSearchChange}
-              placeholder="Buscar tickets..."
+              placeholder="Buscar tickets, cliente ou contato..."
               value={search}
             />
             <SupportIconActionButton
