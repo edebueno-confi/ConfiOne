@@ -1,0 +1,24 @@
+{
+  "route": "/internal-actions/9cc7e9c7-4a59-40a9-bc8a-7b43b306b35d",
+  "innerWidth": 1600,
+  "innerHeight": 900,
+  "scrollHeight": 900,
+  "clientHeight": 900,
+  "hasGlobalScroll": false,
+  "hasHorizontalScroll": false,
+  "scrollables": [
+    {
+      "tag": "aside",
+      "cls": "min-h-0 overflow-y-auto rounded-[18px] border border-[color:var(--color-border)] bg-white/93 p-3 shadow-[0_12px_24px_rgb",
+      "role": null,
+      "scrollHeight": 1067,
+      "clientHeight": 723,
+      "scrollWidth": 368,
+      "clientWidth": 368,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "IA-9CC7E9C7Devolvido ao suporteNormalQA P4 valida retorno interno 20260524141106"
+    }
+  ],
+  "sampleText": "Genius Support OS\n\nOperação interna CX B2B\n\nNAVEGAÇÃO\n\nOperação CX\nFila operacional\nTickets\nClientes B2B\nAcionamentos\nConhecimento\nEngenharia\nFila técnica\nItens técnicos\nRetornos ao CX\nGovernança\nContas B2B\nPortal do cliente\nÁreas internas\nAcessos\nSistema\nGovernança de conhecimento\nDiário de Construção\nDocumentos do produto\nQL\n\nQA Local Internal Area Member\n\nOperação interna\n\nEncerrar sessão\nAcionamentos internos\n\nFila operacional para áreas acionadas pelo suporte, sem alterar ownership do ticket.\n\nRecarregar\n\nEm aberto\n\n4\n\nAguardando suporte\n\n0\n\nDevolvidos\n\n2\n\nFILTROS\n\nStatus\nTodos\nAberto\nAssumido\nEm execução\nAguardando suporte\nAguardando externo\nDevolvido ao suporte\nComplemento solicitado\nEncerrado\nCancelado\nÁrea\nTodas\nFinanceiro\nPrioridade\nTodas\nBaixa\nNormal\nAlta\nUrgente\n\nRECORTE ATUAL\n\n4 acionamento(s) visíveis para sua área.\n\nFila da área\n\nApenas acionamentos autorizados pelo membership ativo.\n\n4 ITENS\nACIONAMENTO\nSTATUS\nÁREA\nRESPONSÁVEL\nATUALIZADO\n\nIA-9CC7E9C7\n\nQA P4 valida retorno interno 20260524141106\n\nQA P4 MVP | Ticket portal ponta a ponta 20260524141106\n\nDEVOLVIDO AO SUPORTE\n\nFinanceiro\n\nSem responsável\n\n24/05/2026, 11:10\n\nIA-C3DE12B0\n\nQA P4 valida retorno interno 20260"
+}

@@ -1,0 +1,36 @@
+{
+  "route": "/portal/tickets/8e5ee201-7e27-45ef-9e61-f3209f6ad202",
+  "innerWidth": 1600,
+  "innerHeight": 900,
+  "scrollHeight": 900,
+  "clientHeight": 900,
+  "hasGlobalScroll": false,
+  "hasHorizontalScroll": false,
+  "scrollables": [
+    {
+      "tag": "section",
+      "cls": "min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-5 shadow-[var(--shadow-pa",
+      "role": null,
+      "scrollHeight": 988,
+      "clientHeight": 866,
+      "scrollWidth": 934,
+      "clientWidth": 934,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "Voltar para ticketsRecebido2 atualização(ões) nova(s)QA P2 | Ticket criado pelo "
+    },
+    {
+      "tag": "aside",
+      "cls": "min-h-0 space-y-4 overflow-y-auto",
+      "role": null,
+      "scrollHeight": 2192,
+      "clientHeight": 858,
+      "scrollWidth": 431,
+      "clientWidth": 350,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "ResoluçãoAções disponíveis conforme as regras operacionais desta conta.Confirmaç"
+    }
+  ],
+  "sampleText": "GENIUS SUPPORT OS\n\nPortal do cliente\n\nAcesso autenticado ao próprio contexto B2B.\n\nVisão operacional\nTickets\nCentral autorizada\n\nTENANT ATIVO\n\nSupport QA Tenant A Operação Enterprise\n\nUsuário cliente\n\nmarina.ops@support-qa-a.local\n\nAmbiente do cliente\n\nSair\nVoltar para tickets\nRECEBIDO\n2 ATUALIZAÇÃO(ÕES) NOVA(S)\nQA P2 | Ticket criado pelo portal cliente\n\nFixture local sanitizada para validar origem, canal e comunicação de tickets.\n\nMarcar como lido\n\nCLIENTE\n\nSupport QA Tenant A Operação Enterprise\n\nSOLICITANTE\n\nMarina Operações QA\n\nORIGEM\n\nEnviado pelo portal\n\nATUALIZADO\n\n25/05/2026, 07:49\n\nÚLTIMA RESPOSTA GENIUS\n\n24/05/2026, 09:34\n\nSUA ÚLTIMA RESPOSTA\n\n24/05/2026, 09:34\n\nÚLTIMA LEITURA\n\nIndisponível\n\nTimeline\n\nSomente mensagens e atualizações liberadas para acompanhamento do cliente aparecem aqui.\n\nVocê\n\nEnviado pelo portal\n24/05/2026, 09:34\n\nMensagem customer-facing enviada pelo portal na fixture P2.\n\nEquipe Genius\n\nResposta do suporte\n24/05/2026, 09:34\n\nResposta publica do suporte registrada na fixture P2.\n\nResponder\n\nMensagem pública do cliente no ticket.\n\nEnviar mensagem\nResolução\n\nAções disponíveis conforme as regras operacionais desta conta.\n\nConfirmação de resolução e reabe"
+}

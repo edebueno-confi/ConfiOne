@@ -18,6 +18,29 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase P4-F.1 - Visual System Constraint Audit
+- fase: `P4-F.1`
+- nome: `Visual System Constraint Audit`
+- branch: `codex/p4-f1-visual-system-constraint-audit`
+- data: `2026-05-25`
+- resumo funcional: auditado o sistema visual do MVP para identificar por que telas operacionais ainda nao seguem fielmente os blueprints aprovados. Foram capturados screenshots e metricas de scroll em rotas Admin, Support, Portal, Internal Actions, Engineering e Public Help. A auditoria concluiu que os principais bloqueios sao primitives genericas infladas, drawers como padrao de acao, cardizacao excessiva, tokens incompletos e tendencia a tres colunas fora do contexto correto.
+- docs alterados:
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/reports/P4_VISUAL_SYSTEM_CONSTRAINT_AUDIT_2026-05-24.md`
+  - `docs/reports/visual-audit/component-constraints.md`
+  - `docs/reports/visual-audit/screen-priority-backlog.md`
+  - `docs/reports/visual-audit/screenshots/*`
+  - `docs/reports/visual-audit/route-metrics/*`
+- views/RPCs afetadas:
+  - nenhuma view, RPC, tabela, migration ou contrato novo.
+- telas afetadas:
+  - nenhuma tela runtime alterada; auditoria cobriu Support, Admin, Portal, Internal Actions, Engineering e Public Help.
+- riscos restantes:
+  - o proximo lote deve corrigir primeiro o intake de novo ticket em `/support/queue`, sem alterar backend.
+  - mexer em primitives globais sem migracao incremental pode causar regressao visual em Admin e areas internas.
+- impacto na FAQ futura:
+  - registra que o MVP deve prometer operacao real e clara, nao layout generico de dashboard, drawer comprimido ou blueprint parcialmente aplicado.
+
 ### Fase P4-E.1 - Blueprint Asset Consolidation & Worktree Cleanup
 - fase: `P4-E.1`
 - nome: `Blueprint Asset Consolidation & Worktree Cleanup`

@@ -1,0 +1,36 @@
+{
+  "route": "/support/customers/c12185f7-cc66-4731-b1e5-aa81023ef1a8",
+  "innerWidth": 1600,
+  "innerHeight": 900,
+  "scrollHeight": 900,
+  "clientHeight": 900,
+  "hasGlobalScroll": false,
+  "hasHorizontalScroll": false,
+  "scrollables": [
+    {
+      "tag": "div",
+      "cls": "space-y-4 xl:min-h-0 xl:overflow-y-auto xl:pr-1",
+      "role": null,
+      "scrollHeight": 1682,
+      "clientHeight": 824,
+      "scrollWidth": 664,
+      "clientWidth": 664,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "Resumo operacionalOs indicadores que mais ajudam o suporte e o CS a decidir o pr"
+    },
+    {
+      "tag": "aside",
+      "cls": "space-y-4 xl:min-h-0 xl:overflow-y-auto xl:pr-1",
+      "role": null,
+      "scrollHeight": 1292,
+      "clientHeight": 824,
+      "scrollWidth": 308,
+      "clientWidth": 308,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "Saúde da contaLeitura curta da conta para decidir se a tratativa pede atenção ex"
+    }
+  ],
+  "sampleText": "Genius Support OS\n\nOperação interna CX B2B\n\nNAVEGAÇÃO\n\nOperação CX\nFila operacional\nTickets\nClientes B2B\nAcionamentos\nConhecimento\nEngenharia\nFila técnica\nItens técnicos\nRetornos ao CX\nGovernança\nContas B2B\nPortal do cliente\nÁreas internas\nAcessos\nSistema\nGovernança de conhecimento\nDiário de Construção\nDocumentos do produto\nQL\n\nQA Local Support Manager A\n\nOperação interna\n\nEncerrar sessão\nCLIENTES\nGENIUS RETURNS\nEM ATENÇÃO\nSupport QA Tenant A Operação Enterprise\n\nContexto operacional completo da conta, contatos, tickets e sinais de saúde.\n\nVoltar\nAbrir fila\n\nSLUG\n\nsupport-qa-a\n\nPRODUTO\n\nGenius Returns\n\nPLATAFORMA\n\nIndisponível\n\nPLANO\n\nEnterprise\n\nRESPONSAVEL\n\nQA Local Support Manager A\n\nResumo\nContatos\nTickets\nMigração\nSaúde\nAtividade\nSQ\nSupport QA Tenant A Operação Enterprise\nATIVO\nOPERAÇÃO ATIVA\nEM ATENÇÃO\nPlataforma\nIndisponível\nProduto\nGenius Returns\nResponsável\nQA Local Support Manager A\nÚltima atividade\n25/05/2026, 07:49\nAbrir ticketsVoltar para a conta anterior\nContato principal\n\nContato operacional mais confiavel para continuar a tratativa.\n\nMarina Operações QA\n\nmarina.ops@support-qa-a.local\n\nVinculo principal: Sim\n\nUsuário vinculado: Ativo\n\nResumo operacional\n\nOs indicador"
+}

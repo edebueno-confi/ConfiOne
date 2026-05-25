@@ -1,0 +1,48 @@
+{
+  "route": "/support/queue",
+  "innerWidth": 1600,
+  "innerHeight": 900,
+  "scrollHeight": 900,
+  "clientHeight": 900,
+  "hasGlobalScroll": false,
+  "hasHorizontalScroll": false,
+  "scrollables": [
+    {
+      "tag": "div",
+      "cls": "mt-3 grid gap-2.5 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1",
+      "role": null,
+      "scrollHeight": 449,
+      "clientHeight": 126,
+      "scrollWidth": 220,
+      "clientWidth": 220,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "StatusTodosNovoTriagemAguardando clienteAguardando suporteAguardando engenhariaE"
+    },
+    {
+      "tag": "div",
+      "cls": "xl:min-h-0 xl:flex-1 xl:overflow-y-auto",
+      "role": null,
+      "scrollHeight": 1326,
+      "clientHeight": 542,
+      "scrollWidth": 648,
+      "clientWidth": 648,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "✓NovoSem politica definida#8E5EE201QA P2 | Canal API futuro indisponivelSupport "
+    },
+    {
+      "tag": "div",
+      "cls": "space-y-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1",
+      "role": null,
+      "scrollHeight": 1061,
+      "clientHeight": 607,
+      "scrollWidth": 312,
+      "clientWidth": 312,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "Regras do intakeStatus inicial: a plataforma registra o ticket como Novo.Categor"
+    }
+  ],
+  "sampleText": "Genius Support OS\n\nOperação interna CX B2B\n\nNAVEGAÇÃO\n\nOperação CX\nFila operacional\nTickets\nClientes B2B\nAcionamentos\nConhecimento\nEngenharia\nFila técnica\nItens técnicos\nRetornos ao CX\nGovernança\nContas B2B\nPortal do cliente\nÁreas internas\nAcessos\nSistema\nGovernança de conhecimento\nDiário de Construção\nDocumentos do produto\nQL\n\nQA Local Support Manager A\n\nOperação interna\n\nEncerrar sessão\nFila operacional\n\nAcompanhe, priorize e assuma os tickets da fila operacional.\n\nFechar intake\nRecarregar\n\nAbertos\n\n21\n\nDados atuais\n\nUrgentes\n\n5\n\nDados atuais\n\nNão atribuídos\n\n10\n\nDados atuais\n\nAguardando cliente\n\n2\n\nDados atuais\n\nAguardando engenharia\n\n9\n\nDados atuais\n\nFiltros rápidos\n\nOPERAÇÃO DA FILA\n\nMeus tickets\nfila pessoal\n6\nNão atribuídos\npedem dono\n10\nUrgentes\nalta prioridade\n5\nAguardando cliente\nretorno externo\n2\nAguardando engenharia\ndependencia tecnica\n9\nVer todas as filas\nRecorte\n\nFiltros do contrato real.\n\nRedefinir layout\nStatus\nTodos\nNovo\nTriagem\nAguardando cliente\nAguardando suporte\nAguardando engenharia\nEm andamento\nResolvido\nFechado\nCancelado\nPrioridade\nTodas\nBaixa\nNormal\nAlta\nUrgente\nSeveridade\nTodas\nBaixa\nMédia\nAlta\nCrítica\nCategoria\nTodas\nDevolucao e troca\nEstorno e reembolso"
+}

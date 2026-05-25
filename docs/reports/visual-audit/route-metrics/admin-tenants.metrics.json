@@ -1,0 +1,24 @@
+{
+  "route": "/admin/tenants",
+  "innerWidth": 1600,
+  "innerHeight": 900,
+  "scrollHeight": 900,
+  "clientHeight": 900,
+  "hasGlobalScroll": false,
+  "hasHorizontalScroll": false,
+  "scrollables": [
+    {
+      "tag": "div",
+      "cls": "space-y-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1",
+      "role": null,
+      "scrollHeight": 1139,
+      "clientHeight": 703,
+      "scrollWidth": 396,
+      "clientWidth": 396,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "SQAtivo2/3 membershipsSupport QA Tenant Csupport-qa-c · Support QA Tenant C Ltda"
+    }
+  ],
+  "sampleText": "Genius Support OS\n\nOperação interna CX B2B\n\nNAVEGAÇÃO\n\nOperação CX\nFila operacional\nTickets\nClientes B2B\nAcionamentos\nConhecimento\nEngenharia\nFila técnica\nItens técnicos\nRetornos ao CX\nGovernança\nContas B2B\nPortal do cliente\nÁreas internas\nAcessos\nSistema\nGovernança de conhecimento\nDiário de Construção\nDocumentos do produto\nQL\n\nQA Local Platform Admin\n\nAdministrador da plataforma\n\nEncerrar sessão\nClientes B2B\n\nRevise status e contexto de cada cliente.\n\n+ Novo cliente\n\nFERRAMENTAS\n\nResumo da base\n\nCLIENTES\n\n3\n\nbase atual\n\nATIVOS\n\n3\n\nem operação\n\nSUSPENSOS\n\n0\n\npedem atenção\n\nCONTATOS\n\n7\n\nprontos para contato\n\nAções rápidas\n\nCriar cliente\nAtualizar lista\nAbrir contexto\n\nFiltros\n\nSTATUS\nTodos\nAtivo\nSuspenso\nArquivado\nMEMBERSHIPS\nTodas\nCom memberships ativas\nCom convites pendentes\nSem memberships\nÚLTIMA ATUALIZAÇÃO\nTodas\nÚltimas 24 horas\nÚltimos 7 dias\nÚltimos 30 dias\nLimpar filtros\nBase de clientes\n\n3 cliente(s) no recorte atual\n\nMais recentes\nOrdem alfabética\nATIVO\n2/3 MEMBERSHIPS\n\nSupport QA Tenant C\n\nsupport-qa-c · Support QA Tenant C Ltda\n\nGrupo: Indisponível\nContato principal: Camila Multi Tenant QA\nPlano: Indisponível\nAtualizado em 24/05/2026, 01:09\n⋮\nATIVO\n4/6 MEMBERSHIPS\n\nSuppo"
+}
