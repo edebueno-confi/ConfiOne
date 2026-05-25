@@ -1388,7 +1388,7 @@ function SupportConversation({
       {window.hasMore ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-[16px] border border-dashed border-[color:var(--color-support-border)] bg-[color:var(--color-support-surface)] px-4 py-3">
           <p className="text-xs leading-5 text-[color:var(--color-muted)]">
-            Há histórico anterior disponível no contrato paginado da timeline.
+            Há histórico anterior disponível para consulta.
           </p>
           {onLoadMore ? (
             <GhostButton disabled={loadingMore} onClick={onLoadMore} type="button">
@@ -4897,7 +4897,7 @@ function SupportWorkspaceView({
                 <div className="support-ticket-intake-form__section-header">
                   <p className="support-ticket-intake-form__section-title">Cliente e origem</p>
                   <p className="support-ticket-intake-form__section-helper">
-                    O tenant e o canal inicial ficam registrados pelo contrato de ticket.
+                    Selecione o cliente e o solicitante para abrir o ticket no contexto correto.
                   </p>
                 </div>
 
@@ -5005,7 +5005,7 @@ function SupportWorkspaceView({
                 <div className="support-ticket-intake-form__section-header">
                   <p className="support-ticket-intake-form__section-title">Classificação inicial</p>
                   <p className="support-ticket-intake-form__section-helper">
-                    Prioridade, severidade e motivo seguem opções reais do backend.
+                    A prioridade e a severidade ajudam na triagem inicial.
                   </p>
                 </div>
 
@@ -5107,7 +5107,7 @@ function SupportWorkspaceView({
                 <div className="support-ticket-intake-form__section-header">
                   <p className="support-ticket-intake-form__section-title">Assunto e contexto</p>
                   <p className="support-ticket-intake-form__section-helper">
-                    Registre o mínimo necessário para triagem sem inventar regra operacional.
+                    Use a descrição para registrar o problema com clareza.
                   </p>
                 </div>
 
@@ -5152,19 +5152,19 @@ function SupportWorkspaceView({
 
             <aside className="support-ticket-intake-form__aside">
               <section className="support-ticket-intake-form__rules">
-                <p className="support-ticket-intake-form__section-title">Regras do intake</p>
+                <p className="support-ticket-intake-form__section-title">Orientações para triagem</p>
                 <ul>
-                  <li>Status inicial: a plataforma registra o ticket como Novo.</li>
-                  <li>Categoria e motivo inicial são opcionais e validados por contrato real.</li>
-                  <li>SLA é governança interna calculada pela plataforma.</li>
-                  <li>Origem e canal ficam normalizados pelos read models existentes.</li>
+                  <li>Registre cliente, solicitante e origem antes de criar o ticket.</li>
+                  <li>A SLA será aplicada conforme a política operacional configurada.</li>
+                  <li>Use prioridade e severidade para indicar impacto inicial.</li>
+                  <li>Anexe evidências quando ajudarem na análise.</li>
                 </ul>
               </section>
               <section className="support-ticket-intake-form__rules support-ticket-intake-form__rules--muted">
-                <p className="support-ticket-intake-form__section-title">Sem automação externa</p>
+                <p className="support-ticket-intake-form__section-title">Contexto esperado</p>
                 <p>
-                  Este intake apenas cria o ticket pelo contrato atual. Ele não envia e-mail,
-                  WhatsApp ou qualquer canal externo.
+                  Descreva o problema, impacto percebido, horário aproximado e qualquer evidência
+                  que ajude o suporte a iniciar a análise.
                 </p>
               </section>
             </aside>
@@ -5187,10 +5187,10 @@ function SupportWorkspaceView({
           ? 'Alterar status'
         : activeDrawer === 'evidence'
           ? 'Evidências'
-          : activeDrawer === 'knowledge'
-            ? 'Conhecimento'
-            : activeDrawer === 'automation'
-              ? 'Acionamentos'
+            : activeDrawer === 'knowledge'
+              ? 'Conhecimento'
+              : activeDrawer === 'automation'
+              ? 'Acionamentos internos'
               : activeDrawer === 'handoff'
                 ? 'Handoff técnico'
                 : activeDrawer === 'related'
@@ -5200,13 +5200,13 @@ function SupportWorkspaceView({
       activeDrawer === 'classification'
         ? 'Atualize a categoria, prioridade e severidade sem sair da tratativa.'
         : activeDrawer === 'status'
-          ? 'Mude a etapa operacional usando o contrato real e informe o motivo correto quando exigido.'
+          ? 'Mude a etapa operacional e informe o motivo correto quando exigido.'
         : activeDrawer === 'evidence'
           ? 'Anexe arquivos e acompanhe as evidências já vinculadas ao ticket.'
-          : activeDrawer === 'knowledge'
-            ? 'Busque referências, vincule artigos e registre lacunas de documentação.'
-            : activeDrawer === 'automation'
-              ? 'Acompanhe acionamentos internos do ticket e use apenas as ações de suporte cobertas por contrato real.'
+            : activeDrawer === 'knowledge'
+              ? 'Busque referências, vincule artigos e registre lacunas de documentação.'
+              : activeDrawer === 'automation'
+              ? 'Acione áreas internas e mantenha o retorno dentro da tratativa.'
               : activeDrawer === 'handoff'
                 ? 'Escalone para engenharia mantendo o ticket como fonte da tratativa.'
                 : activeDrawer === 'related'
@@ -5579,6 +5579,8 @@ function SupportWorkspaceView({
                       <SupportSurfaceIcon className="h-[13px] w-[13px]" kind="more" />
                     </SupportIconActionButton>
                   }
+                  assignedLabel={currentAssignedLabel}
+                  requesterLabel={requesterLabel}
                   ticketCode={supportTicketCode(detail.id)}
                   title={detail.title}
                 />
@@ -5979,7 +5981,7 @@ function SupportWorkspaceView({
                 </button>
               </div>
               <p className="support-true-panel-copy">
-                As ações abaixo dependem de permissões, status e governança retornados pelo backend.
+                As ações abaixo dependem das permissões, do status e da governança da fila.
               </p>
               <div className="support-true-bulk-summary">
                 <span>{bulkSelectedTickets.filter((ticket) => ticket.isUnassigned).length} sem responsável</span>

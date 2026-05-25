@@ -337,7 +337,7 @@ export function SupportInternalActionsDrawerPanel({
               'Não foi possível carregar as áreas internas disponíveis para este ticket.'}
           </InlineNotice>
         ) : internalActionTargetAreas.length === 0 ? (
-          <InlineNotice>Nenhuma área interna disponível para acionamento neste tenant.</InlineNotice>
+          <InlineNotice>Nenhuma área interna disponível para acionamento neste cliente.</InlineNotice>
         ) : (
           <form className="support-drawer-card space-y-3" onSubmit={onCreateSubmit}>
             <div className="grid gap-3 md:grid-cols-3">
@@ -1079,7 +1079,7 @@ function SupportClassificationPanel({
                 {ticketDetail.categoryName ?? 'Indisponível'}
               </p>
               <p className="mt-1 text-[11px] text-[color:var(--color-muted)]">
-                O contrato atual ainda não expõe um campo dedicado de edição para integração afetada.
+                A integração afetada ainda não está disponível para edição nesta etapa.
               </p>
             </div>
 

@@ -696,7 +696,7 @@ export function SupportTicketHeader({
 
 export function SupportConversationPane({ children }: { children: ReactNode }) {
   return (
-    <section className="support-panel-shell support-conversation-pane flex min-h-0 flex-1 flex-col">
+    <section className="support-panel-shell support-conversation-pane support-true-conversation-pane flex min-h-0 flex-1 flex-col">
       {children}
     </section>
   );
@@ -834,7 +834,7 @@ export function SupportConversationThread({
 }) {
   return (
     <div
-      className={cx('min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5', className)}
+      className={cx('support-true-conversation-thread min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5', className)}
       data-ticket-thread-scroll
       ref={scrollRef}
     >
@@ -859,9 +859,9 @@ export function SupportConversationMessage({
   lane: 'customer' | 'agent';
 }) {
   return (
-    <div className={cx('flex items-end gap-3', lane === 'agent' ? 'justify-end' : 'justify-start')}>
+    <div className={cx('support-true-message-row flex items-end gap-3', lane === 'agent' ? 'justify-end' : 'justify-start')}>
       {lane === 'customer' ? avatar : null}
-      <div className={cx('min-w-0 max-w-[78%] space-y-1', lane === 'agent' && 'items-end')}>
+      <div className={cx('support-true-message min-w-0 max-w-[78%] space-y-1', lane === 'agent' && 'support-true-message--agent items-end')}>
         <div
           className={cx(
             'flex flex-wrap items-center gap-1.5 px-0.5 text-[10px]',
@@ -873,10 +873,10 @@ export function SupportConversationMessage({
         </div>
         <article
           className={cx(
-            'min-w-0 rounded-[14px] border px-4 py-3 shadow-[0_4px_10px_rgba(19,33,79,0.03)]',
+            'support-true-message-bubble min-w-0 rounded-[14px] border px-4 py-3 shadow-[0_4px_10px_rgba(19,33,79,0.03)]',
             lane === 'agent'
-              ? 'border-[rgba(47,107,255,0.2)] bg-[rgba(244,248,255,0.92)]'
-              : 'border-[rgba(220,228,242,0.92)] bg-white',
+              ? 'support-true-message-bubble--agent border-[rgba(47,107,255,0.2)] bg-[rgba(244,248,255,0.92)]'
+              : 'support-true-message-bubble--customer border-[rgba(220,228,242,0.92)] bg-white',
           )}
         >
           <div className="space-y-1.5">
@@ -900,7 +900,7 @@ export function SupportInternalNote({
   timestamp: ReactNode;
 }) {
   return (
-    <article className="mx-auto max-w-[86%] rounded-[14px] border border-[rgba(245,184,61,0.34)] bg-[color:var(--color-support-note)] px-4 py-3 shadow-[0_4px_10px_rgba(180,120,34,0.03)]">
+    <article className="support-true-internal-note mx-auto max-w-[86%] rounded-[14px] border border-[rgba(245,184,61,0.34)] bg-[color:var(--color-support-note)] px-4 py-3 shadow-[0_4px_10px_rgba(180,120,34,0.03)]">
       <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
         <span className="inline-flex min-h-[18px] items-center rounded-full border border-[rgba(245,184,61,0.32)] bg-white/70 px-2 text-[8.5px] font-semibold uppercase tracking-[0.1em] text-[rgb(146,64,14)]">
           NOTA INTERNA
@@ -927,7 +927,7 @@ export function SupportSystemEvent({
   timestamp: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-2 py-1.5">
+    <div className="support-true-system-event flex items-center gap-2 py-1.5">
       <div className="h-px flex-1 bg-[rgba(220,228,242,0.92)]" />
       <div className="inline-flex max-w-[78%] items-center gap-2 rounded-full border border-[color:var(--color-support-border)] bg-[color:var(--color-support-surface)] px-3 py-1.5 text-[10px] text-[color:var(--color-muted)]">
         <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[color:var(--color-brand-blue)]">

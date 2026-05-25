@@ -781,7 +781,7 @@ export function SupportEvidenceDrawerPanel({
             />
           </SupportDrawerField>
           <p className="support-drawer-section__helper">
-            O upload usa contrato real de intent, registro e download seguro, sem expor bucket ou path persistente.
+            Os anexos ficam disponíveis para a análise do suporte sem expor detalhes internos de armazenamento.
           </p>
         </section>
       </div>
@@ -813,20 +813,20 @@ export function SupportAutomationDrawerPanel({
     {
       key: 'playbook',
       title: 'Executar playbook',
-      description: 'Fluxo ainda não materializado com contrato operacional para este ticket.',
+      description: 'Fluxo ainda indisponível para este ticket.',
       actionLabel: 'Indisponível',
       onClick: undefined,
       disabled: true,
-      status: 'Sem contrato',
+      status: 'Indisponível',
     },
     {
       key: 'task',
       title: 'Criar tarefa',
-      description: 'A criação de tarefa operacional ainda não está vinculada ao ticket por contrato real.',
+      description: 'A criação de tarefa operacional ainda não está disponível para este ticket.',
       actionLabel: 'Indisponível',
       onClick: undefined,
       disabled: true,
-      status: 'Sem contrato',
+      status: 'Indisponível',
     },
     {
       key: 'share',
@@ -835,7 +835,7 @@ export function SupportAutomationDrawerPanel({
       actionLabel: 'Indisponível',
       onClick: undefined,
       disabled: true,
-      status: 'Sem contrato',
+      status: 'Indisponível',
     },
   ] as const;
 
@@ -843,7 +843,7 @@ export function SupportAutomationDrawerPanel({
     <div className="support-drawer-stack">
       <div className="support-drawer-note">
         <p>
-          Ações sem contrato real permanecem bloqueadas. O frontend não simula SLA, playbook, tarefa ou compartilhamento.
+          Ações indisponíveis permanecem bloqueadas. A interface não simula SLA, playbook, tarefa ou compartilhamento.
         </p>
       </div>
 
@@ -1088,7 +1088,7 @@ export function SupportRelatedDrawerPanel({
   if (!hasContent) {
     return (
       <InlineNotice>
-        Nenhum item relacionado apareceu nos read models disponíveis para este ticket.
+        Nenhum item relacionado apareceu para este ticket.
       </InlineNotice>
     );
   }

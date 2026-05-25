@@ -60,8 +60,8 @@
   --support-workspace-drawer-width: 22.5rem;
   --support-workspace-gap: 0.75rem;
   --support-workspace-right-width: var(--support-workspace-rail-width);
-  --support-action-drawer-width: 22.5rem;
-  --support-action-drawer-wide-width: 27.5rem;
+  --support-action-drawer-width: 27.5rem;
+  --support-action-drawer-wide-width: 32rem;
   --support-action-drawer-padding: 0.875rem;
   --support-action-drawer-header-height: 4.5rem;
   --support-action-drawer-footer-height: 4.5rem;
@@ -1291,7 +1291,7 @@
 
 .support-true-queue-layout--with-panel .support-true-queue-table__head,
 .support-true-queue-layout--with-panel .support-true-queue-row__body {
-  grid-template-columns: 78px minmax(126px, 0.95fr) minmax(220px, 1.65fr) minmax(78px, 0.5fr) minmax(120px, 0.76fr) minmax(66px, 0.42fr);
+  grid-template-columns: 78px minmax(148px, 1fr) minmax(260px, 1.85fr) minmax(78px, 0.5fr) minmax(120px, 0.7fr) minmax(66px, 0.42fr);
 }
 
 .support-true-queue-layout--with-panel .support-true-queue-table__head span:nth-of-type(4),
@@ -1357,7 +1357,7 @@
   overflow: hidden;
   color: var(--color-ink);
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: 590;
   line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1385,7 +1385,18 @@
 }
 
 .support-true-queue-row__subject strong {
+  font-size: 0.8rem;
+  font-weight: 620;
+  line-height: 1.28;
   white-space: normal;
+}
+
+.support-true-queue-row__id strong {
+  font-weight: 690;
+}
+
+.support-true-queue-row__customer strong {
+  font-weight: 620;
 }
 
 .support-true-queue-row__source,
@@ -1561,22 +1572,247 @@
 
 .support-true-bulk-action {
   min-height: 2.55rem;
-  border: 1px solid rgba(214, 224, 240, 0.96);
+  border: 1px solid rgba(47, 107, 255, 0.14);
   border-radius: 9px;
-  background: #ffffff;
-  color: #243653;
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(247,250,255,0.94));
+  color: #334463;
   font-size: 0.8rem;
   font-weight: 750;
 }
 
 .support-true-bulk-action:disabled {
-  opacity: 0.62;
+  cursor: not-allowed;
+  opacity: 0.74;
+  filter: saturate(0.92);
 }
 
 .support-true-bulk-warning {
   border-color: rgba(245, 158, 11, 0.2);
   background: rgba(245, 158, 11, 0.08);
   color: #9a5d12;
+}
+
+.support-true-ticket-topbar {
+  padding-bottom: 0.25rem;
+}
+
+.support-workspace-grid {
+  gap: 0.875rem;
+}
+
+.support-queue-panel {
+  border-radius: 10px;
+}
+
+.support-queue-panel__header {
+  padding: 1rem;
+}
+
+.support-queue-panel__body {
+  padding: 0.65rem 0.75rem;
+}
+
+.support-queue-panel__body button.relative {
+  border-radius: 10px;
+  padding: 0.82rem 0.86rem;
+  box-shadow: none;
+}
+
+.support-queue-panel__body button.relative h3 {
+  font-size: 0.88rem;
+  font-weight: 720;
+  line-height: 1.2rem;
+}
+
+.support-queue-panel__body button.relative p {
+  letter-spacing: 0;
+}
+
+.support-ticket-header {
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(20, 38, 72, 0.055);
+}
+
+.support-ticket-header__content {
+  padding: 1rem 1.25rem;
+}
+
+.support-true-ticket-header__top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: start;
+  gap: 1rem;
+}
+
+.support-true-ticket-header__identity {
+  min-width: 0;
+}
+
+.support-true-ticket-header__identity span {
+  display: block;
+  color: var(--color-brand-blue);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.support-true-ticket-header__identity h3 {
+  margin-top: 0.25rem;
+  overflow: hidden;
+  color: var(--color-ink);
+  font-size: 1.2rem;
+  font-weight: 780;
+  letter-spacing: -0.01em;
+  line-height: 1.18;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.support-true-ticket-header__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(8.5rem, 1fr));
+  gap: 0.75rem;
+}
+
+.support-true-ticket-header__meta span {
+  display: grid;
+  gap: 0.25rem;
+  border-left: 1px solid rgba(220, 228, 242, 0.86);
+  padding-left: 0.875rem;
+}
+
+.support-true-ticket-header__meta small {
+  color: #65738f;
+  font-size: 0.66rem;
+  font-weight: 750;
+}
+
+.support-true-ticket-header__meta strong {
+  max-width: 10rem;
+  overflow: hidden;
+  color: var(--color-ink);
+  font-size: 0.78rem;
+  font-weight: 720;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.support-true-ticket-header__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.support-true-ticket-header__badges [class*='support-badge'],
+.support-true-ticket-header__badges span {
+  letter-spacing: 0.04em;
+}
+
+.support-true-conversation-pane {
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+}
+
+.support-true-conversation-thread {
+  padding: 1.125rem 1.25rem;
+}
+
+.support-true-message-row {
+  align-items: flex-start;
+}
+
+.support-true-message {
+  max-width: 80%;
+}
+
+.support-true-message-bubble {
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+}
+
+.support-true-message-bubble p {
+  font-size: 0.86rem;
+  line-height: 1.45rem;
+}
+
+.support-true-message-bubble--customer {
+  border-color: rgba(220, 228, 242, 0.96);
+  box-shadow: 0 8px 22px rgba(20, 38, 72, 0.045);
+}
+
+.support-true-message-bubble--agent {
+  border-color: rgba(47, 107, 255, 0.18);
+  background: rgba(239, 246, 255, 0.9);
+}
+
+.support-true-internal-note {
+  max-width: 82%;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fff7df, #fff1c7);
+}
+
+.support-true-system-event > div:nth-child(2) {
+  max-width: 84%;
+  border-radius: 999px;
+  background: #f8fbff;
+}
+
+.support-docked-composer {
+  padding: 0.875rem 1rem;
+}
+
+.support-composer-textarea {
+  min-height: 6rem;
+  border-radius: 10px;
+  font-size: 0.86rem;
+  line-height: 1.45rem;
+}
+
+.support-rail-column {
+  gap: 0.75rem;
+}
+
+.support-rail-card {
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(20, 38, 72, 0.045);
+}
+
+.support-rail-card h4 {
+  letter-spacing: -0.01em;
+}
+
+.support-true-rail-helper {
+  margin-bottom: 0.625rem;
+  color: #65738f;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.support-true-rail-link {
+  color: var(--color-brand-blue);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.support-action-card-button {
+  min-height: 3.75rem;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.support-context-panel {
+  border-radius: 10px;
+}
+
+.support-context-panel__title {
+  font-size: 1.05rem;
+  font-weight: 780;
+}
+
+.support-context-panel__subtitle {
+  max-width: 42ch;
+  line-height: 1.25rem;
 }
 
 @media (max-width: 980px) {

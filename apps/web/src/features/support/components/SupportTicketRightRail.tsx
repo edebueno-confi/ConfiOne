@@ -89,6 +89,9 @@ export function SupportTicketRightRail({
       </SupportRailCard>
 
       <SupportRailCard title="Ações rápidas">
+        <p className="support-true-rail-helper">
+          Use apenas ações operacionais da tratativa. Resposta e nota ficam no composer.
+        </p>
         <SupportQuickActionGrid>
           {quickActions.map((action) => (
             <SupportQuickActionButton
@@ -124,7 +127,10 @@ export function SupportTicketRightRail({
       </SupportRailCard>
 
       {relatedArticles.length > 0 ? (
-        <SupportRailCard title="Artigos relacionados">
+        <SupportRailCard
+          headerAction={<span className="support-true-rail-link">Ver todos</span>}
+          title="Artigos relacionados"
+        >
           <div className="space-y-3">
             {relatedArticles.slice(0, 3).map((article) => (
               <article
