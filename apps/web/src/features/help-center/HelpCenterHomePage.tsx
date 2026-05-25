@@ -21,7 +21,7 @@ import {
 
 type SearchPhase = 'idle' | 'loading' | 'ready' | 'empty' | 'contract-unavailable' | 'error';
 
-const avatarPromptItems = [
+const suggestedSearchItems = [
   'Como configurar a integração com Shopify?',
   'Onde acompanho uma solicitação?',
   'Quais são as boas práticas de operação?',
@@ -188,7 +188,7 @@ export function HelpCenterHomePage() {
     context.articles.find((article) => article.category_name?.toLowerCase().includes('primeiro')) ??
     context.articles[0] ??
     null;
-  const avatarHref = onboardingArticle
+  const guideHref = onboardingArticle
     ? `/help/${context.primaryRoute.knowledge_space_slug}/articles/${onboardingArticle.slug}`
     : `/help/${context.primaryRoute.knowledge_space_slug}/articles`;
 
@@ -383,17 +383,17 @@ export function HelpCenterHomePage() {
               </Link>
               <Link
                 className="inline-flex min-h-9 items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.14)] bg-[rgba(7,24,89,0.16)] px-3.5 text-[rgba(235,241,255,0.92)] no-underline transition hover:bg-[rgba(255,255,255,0.08)]"
-                to={avatarHref}
+                to={guideHref}
               >
                 <HelpIcon kind="doc" className="h-4 w-4" />
                 Guias passo a passo
               </Link>
               <Link
                 className="inline-flex min-h-9 items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.14)] bg-[rgba(7,24,89,0.16)] px-3.5 text-[rgba(235,241,255,0.92)] no-underline transition hover:bg-[rgba(255,255,255,0.08)]"
-                to={avatarHref}
+                to={guideHref}
               >
                 <HelpIcon kind="support" className="h-4 w-4" />
-                Perguntar ao Avatar
+                Buscar orientação
               </Link>
             </div>
 
@@ -412,17 +412,17 @@ export function HelpCenterHomePage() {
                   </div>
                   <div className="space-y-1.5">
                     <h2 className="text-[1.18rem] font-semibold leading-7 tracking-[-0.04em] text-[var(--help-ink-strong)]">
-                      Genius Avatar AI
+                      Orientação por artigos
                     </h2>
                     <p className="text-sm leading-6 text-[var(--help-muted)]">
-                      Tire dúvidas em linguagem natural, encontre conteúdos
-                      relevantes e receba orientação contextual.
+                      Encontre conteúdos oficiais, siga guias públicos e abra
+                      um ticket quando precisar do suporte.
                     </p>
                   </div>
                 </div>
 
                 <div className="grid gap-2.5">
-                  {avatarPromptItems.map((prompt) => (
+                  {suggestedSearchItems.map((prompt) => (
                     <Link
                       key={prompt}
                       className="flex min-h-[44px] items-center gap-3 rounded-[14px] border border-[rgba(20,31,71,0.08)] px-3.5 text-sm text-[var(--help-ink)] no-underline transition hover:border-[rgba(48,127,226,0.22)] hover:bg-[#fbfcff]"
@@ -435,15 +435,15 @@ export function HelpCenterHomePage() {
                 </div>
 
                 <div className="space-y-3 pt-1">
-                  <Link className="block no-underline" to={avatarHref}>
+                  <Link className="block no-underline" to={guideHref}>
                     <AppButton className="min-h-[46px] w-full justify-center rounded-[14px] text-base">
-                      Conversar com o Avatar
+                      Ver guia recomendado
                     </AppButton>
                   </Link>
                   <div className="text-center">
                     <Link
                       className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--help-link)] no-underline"
-                      to={avatarHref}
+                      to={guideHref}
                     >
                       Saiba como funciona
                       <HelpIcon kind="chevron-right" />
@@ -463,16 +463,16 @@ export function HelpCenterHomePage() {
               </div>
               <div className="space-y-1.5">
                 <h2 className="text-[1.1rem] font-semibold tracking-[-0.04em] text-[var(--help-ink-strong)]">
-                  Genius Avatar AI
+                  Orientação por artigos
                 </h2>
                 <p className="text-sm leading-6 text-[var(--help-muted)]">
-                  Tire dúvidas, encontre conteúdos relevantes e receba orientação
-                  contextual.
+                  Encontre conteúdos oficiais e use o portal quando precisar
+                  falar com o suporte.
                 </p>
               </div>
             </div>
             <div className="grid gap-2.5">
-              {avatarPromptItems.map((prompt) => (
+              {suggestedSearchItems.map((prompt) => (
                 <Link
                   key={`mobile-${prompt}`}
                   className="flex min-h-[44px] items-center gap-3 rounded-[14px] border border-[rgba(20,31,71,0.08)] px-3.5 text-sm text-[var(--help-ink)] no-underline"
@@ -483,15 +483,15 @@ export function HelpCenterHomePage() {
                 </Link>
               ))}
             </div>
-            <Link className="block no-underline" to={avatarHref}>
+            <Link className="block no-underline" to={guideHref}>
               <AppButton className="min-h-[46px] w-full justify-center rounded-[14px] text-base">
-                Conversar com o Avatar
+                Ver guia recomendado
               </AppButton>
             </Link>
             <div>
               <Link
                 className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--help-link)] no-underline"
-                to={avatarHref}
+                to={guideHref}
               >
                 Saiba como funciona
                 <HelpIcon kind="chevron-right" />
@@ -531,14 +531,15 @@ export function HelpCenterHomePage() {
             <PublicIconBadge className="h-12 w-12 rounded-[18px]" icon="support" tone="blue" />
             <div className="min-w-0 flex-1 space-y-1.5">
               <h2 className="text-[1.15rem] font-semibold tracking-[-0.04em] text-[var(--help-ink-strong)]">
-                Usar o Genius Avatar AI
+                Orientação assistida por conteúdo
               </h2>
               <p className="text-sm leading-6 text-[var(--help-muted)]">
-                Converse em linguagem natural e receba orientações personalizadas.
+                Use guias públicos e sugestões de busca para encontrar o próximo
+                passo sem depender de automação.
               </p>
               <Link
                 className="inline-flex items-center gap-2 pt-1 text-sm font-semibold text-[var(--help-link)] no-underline"
-                to={avatarHref}
+                to={guideHref}
               >
                 Saiba como funciona
                 <HelpIcon kind="chevron-right" />
@@ -760,8 +761,8 @@ export function HelpCenterHomePage() {
                     <HelpIcon kind="chevron-right" />
                   </a>
                 ) : null}
-                <Link className="flex items-center justify-between gap-3 text-sm font-medium text-[var(--help-link)] no-underline" to={avatarHref}>
-                  <span>Falar com o Avatar</span>
+                <Link className="flex items-center justify-between gap-3 text-sm font-medium text-[var(--help-link)] no-underline" to={guideHref}>
+                  <span>Ver guia recomendado</span>
                   <HelpIcon kind="chevron-right" />
                 </Link>
               </div>
@@ -784,8 +785,8 @@ export function HelpCenterHomePage() {
                 <div className="flex items-start gap-3">
                   <PublicIconBadge className="h-11 w-11 rounded-[16px]" icon="search" tone="blue" />
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Busca inteligente e contextual</p>
-                    <p className="text-sm leading-6 text-[var(--help-muted)]">Encontre respostas mais rápido com busca global e o Avatar AI.</p>
+                    <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Busca por artigos e contexto</p>
+                    <p className="text-sm leading-6 text-[var(--help-muted)]">Encontre respostas mais rápido usando a busca da central e guias públicos.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
