@@ -18,6 +18,30 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase P4-D - Staging Pilot Candidate + Public Copy Safety Pass
+- fase: `P4-D`
+- nome: `Staging Pilot Candidate + Public Copy Safety Pass`
+- branch: `codex/p4-d-staging-pilot-candidate`
+- data: `2026-05-24`
+- resumo funcional: auditado o ambiente de staging e confirmado que nao ha staging explicitamente configurado no repositorio. Nenhum deploy remoto, db push remoto, migration remota, secret ou dado real foi usado. Os gates locais passaram e a copy publica legada de Avatar/IA em Public Help foi substituida por orientacao baseada em artigos e suporte pelo Portal.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/PRODUCT_VISION.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/release/STAGING_PILOT_CANDIDATE_CHECKLIST_2026-05-24.md`
+  - `docs/release/PUBLIC_COPY_SAFETY_REVIEW_2026-05-24.md`
+  - `docs/reports/P4_STAGING_PILOT_CANDIDATE_2026-05-24.md`
+- views/RPCs afetadas:
+  - nenhuma view, RPC, tabela, migration ou contrato novo.
+- telas afetadas:
+  - `/help/genius` teve ajuste de copy publica sem redesign e sem criar funcionalidade.
+- riscos restantes:
+  - staging execution segue bloqueado ate existir ambiente explicitamente configurado e autorizado.
+  - observabilidade continua minima/manual.
+  - revisao humana final continua obrigatoria antes de cliente real.
+- impacto na FAQ futura:
+  - documenta que a experiencia publica do MVP promete Central de Ajuda, artigos, tickets e suporte pelo Portal, nao Avatar, chatbot ou IA ativa.
+
 ### Fase P4-C - Controlled Pilot Dry Run & Release Candidate Gate
 - fase: `P4-C`
 - nome: `Controlled Pilot Dry Run & Release Candidate Gate`
@@ -35,7 +59,7 @@ Cada registro deve informar:
   - nenhuma tela alterada; o dry run validou `/admin/system`, `/support/queue`, `/support/tickets/:ticketId`, `/portal`, `/portal/tickets/:ticketId`, `/portal/help`, `/internal-actions`, `/engineering`, `/engineering/work-items/:workItemId`, `/help/genius` e artigos publicos.
 - riscos restantes:
   - repetir gates no ambiente alvo antes de qualquer piloto staging.
-  - revisar copy publica de Avatar AI antes de cliente real, pois a rota publica contem CTA legado que navega para artigo publico sem IA real ativa.
+  - risco de copy publica de Avatar AI tratado no P4-D por ajuste cirurgico em Public Help.
   - observabilidade segue minima/manual neste corte.
 - impacto na FAQ futura:
   - documenta o criterio objetivo de release candidate e os limites de Go/No-Go para piloto controlado.

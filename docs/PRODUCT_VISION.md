@@ -46,3 +46,6 @@ Em 2026-05-24, o fluxo MVP operacional foi validado ponta a ponta: cliente B2B a
 
 ## Readiness de piloto P4-B
 Em 2026-05-24, o MVP ganhou pacote operacional de piloto controlado: matriz de regressão, checklist de release, plano de rollback, observabilidade mínima e runbook de smoke em `docs/release/`. O piloto só deve abrir em ambiente local/staging controlado com gates técnicos verdes, fixture idempotente, smoke autenticado por papel, boundaries customer-facing confirmados e rollback entendido. Deploy remoto, produção, provider externo, IA real, secrets, dados reais e integrações externas continuam fora do corte.
+
+## Candidato de piloto P4-D
+Em 2026-05-24, a preparação de candidato staging confirmou que o repositório ainda não possui staging explicitamente configurado. O produto permanece apto como candidato local de piloto, com gates locais verdes e copy pública ajustada para não prometer Avatar, chatbot ou IA ativa. A experiência pública deve comunicar apenas Central de Ajuda, artigos, tickets e suporte pelo Portal até existir provider/modelo governado e autorizado.
