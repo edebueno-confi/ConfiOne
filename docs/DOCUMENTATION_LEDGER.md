@@ -18,6 +18,29 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase P4-E - Staging Environment Authorization & Remote Dry Run
+- fase: `P4-E`
+- nome: `Staging Environment Authorization & Remote Dry Run`
+- branch: `codex/p4-e-staging-environment-authorization`
+- data: `2026-05-24`
+- resumo funcional: preparada a camada de autorizacao para dry run remoto em staging. A auditoria confirmou que nao ha staging explicitamente configurado, project ref staging versionado, URL staging autorizada ou autorizacao humana preenchida; por isso nenhum comando remoto, deploy, db push, migration, query remota, secret, provider ou IA real foi executado. Gates locais e smoke local passaram.
+- docs alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/release/STAGING_ENVIRONMENT_AUTHORIZATION_CHECKLIST_2026-05-24.md`
+  - `docs/release/STAGING_REMOTE_DRY_RUN_EVIDENCE_2026-05-24.md`
+  - `docs/reports/P4_STAGING_ENVIRONMENT_AUTHORIZATION_2026-05-24.md`
+- views/RPCs afetadas:
+  - nenhuma view, RPC, tabela, migration ou contrato novo.
+- telas afetadas:
+  - nenhuma tela alterada; smoke local validou Admin, Support, Portal, Public Help, Internal Actions e Engineering.
+- riscos restantes:
+  - staging permanece bloqueado ate autorizacao humana com URL, project ref, credenciais QA, comandos permitidos e confirmacao de que nao e producao.
+  - observabilidade remota ainda precisa ser confirmada no ambiente alvo.
+  - um PNG de blueprint modificado fora do escopo segue pendente no worktree e nao foi commitado.
+- impacto na FAQ futura:
+  - documenta a regra de que piloto staging exige autorizacao explicita e comandos nao destrutivos antes de qualquer execucao remota.
+
 ### Fase P4-D - Staging Pilot Candidate + Public Copy Safety Pass
 - fase: `P4-D`
 - nome: `Staging Pilot Candidate + Public Copy Safety Pass`
