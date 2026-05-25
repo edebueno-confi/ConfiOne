@@ -308,6 +308,87 @@ export function OperationalFooterActions({
   );
 }
 
+export function OperationalQueueSummary({
+  items,
+}: {
+  items: Array<{
+    key: string;
+    label: ReactNode;
+    value: ReactNode;
+    helper?: ReactNode;
+    tone?: 'default' | 'attention' | 'warning' | 'critical' | 'internal';
+  }>;
+}) {
+  return (
+    <div className="support-operational-queue-summary">
+      {items.map((item) => (
+        <div
+          className={cx(
+            'support-operational-queue-summary__item',
+            item.tone && `support-operational-queue-summary__item--${item.tone}`,
+          )}
+          key={item.key}
+        >
+          <span className="support-operational-queue-summary__value">{item.value}</span>
+          <span className="support-operational-queue-summary__label">{item.label}</span>
+          {item.helper ? (
+            <span className="support-operational-queue-summary__helper">{item.helper}</span>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function OperationalFilterStack({
+  action,
+  children,
+  description,
+  title,
+}: {
+  action?: ReactNode;
+  children: ReactNode;
+  description?: ReactNode;
+  title: ReactNode;
+}) {
+  return (
+    <section className="support-operational-filter-stack">
+      <header className="support-operational-filter-stack__header">
+        <div className="min-w-0">
+          <h2 className="support-operational-filter-stack__title">{title}</h2>
+          {description ? (
+            <p className="support-operational-filter-stack__description">{description}</p>
+          ) : null}
+        </div>
+        {action ? <div className="support-operational-filter-stack__action">{action}</div> : null}
+      </header>
+      <div className="support-operational-filter-stack__body">{children}</div>
+    </section>
+  );
+}
+
+export function OperationalContextPanel({
+  children,
+  description,
+  title,
+}: {
+  children: ReactNode;
+  description?: ReactNode;
+  title: ReactNode;
+}) {
+  return (
+    <section className="support-operational-context-panel">
+      <header className="support-operational-context-panel__header">
+        <h2 className="support-operational-context-panel__title">{title}</h2>
+        {description ? (
+          <p className="support-operational-context-panel__description">{description}</p>
+        ) : null}
+      </header>
+      <div className="support-operational-context-panel__body">{children}</div>
+    </section>
+  );
+}
+
 export function SupportBadge({
   children,
   tone = 'default',
@@ -526,10 +607,10 @@ export function QueueTicketItem({
   return (
     <button
       className={cx(
-        'grid min-h-[56px] w-full grid-cols-[22px_92px_minmax(0,1.9fr)_minmax(0,1.02fr)_minmax(0,0.86fr)_66px_minmax(0,0.86fr)_68px] items-center gap-3 border-b border-[color:var(--color-border)] px-3.5 py-2 text-left transition last:border-b-0',
+        'support-operational-queue-row',
         isSelected
-          ? 'relative z-[1] rounded-[12px] border border-[rgba(47,107,255,0.36)] bg-[rgba(47,107,255,0.04)] shadow-[0_8px_20px_rgba(22,36,67,0.05)]'
-          : 'hover:bg-[color:var(--color-support-surface)]',
+          ? 'support-operational-queue-row--selected'
+          : 'support-operational-queue-row--idle',
       )}
       onClick={onSelect}
       type="button"

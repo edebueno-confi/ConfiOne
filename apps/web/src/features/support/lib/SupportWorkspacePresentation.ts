@@ -74,7 +74,7 @@ export function humanizeStatus(status: TicketStatus) {
     case 'waiting_support':
       return 'Aguardando suporte';
     case 'waiting_engineering':
-      return 'Aguardando engenharia';
+      return 'Dependência interna';
     case 'resolved':
       return 'Resolvido';
     case 'closed':
@@ -93,7 +93,7 @@ export function compactTicketStatusLabel(status: TicketStatus) {
     case 'waiting_support':
       return 'Ag. suporte';
     case 'waiting_engineering':
-      return 'Ag. eng.';
+      return 'Dep. interna';
     case 'in_progress':
       return 'Em tratativa';
     default:

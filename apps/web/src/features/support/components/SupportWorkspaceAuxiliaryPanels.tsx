@@ -371,8 +371,8 @@ export function SupportTicketPreview({
   ];
 
   return (
-    <div className="space-y-3">
-      <div className="rounded-[16px] border border-[rgba(220,228,242,0.96)] bg-white px-4 py-4 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+    <div className="support-queue-context-stack">
+      <div className="support-queue-context-card">
         <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-[color:var(--color-muted)]">Ticket selecionado</p>
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
           <OperationalQueueBadge tone={statusTone}>
@@ -419,19 +419,11 @@ export function SupportTicketPreview({
             >
               Abrir ticket
             </Link>
-            <button
-              aria-label="Mais ações do ticket"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-[color:var(--color-support-border)] text-[color:var(--color-muted)] disabled:cursor-not-allowed disabled:opacity-70"
-              disabled
-              type="button"
-            >
-              <SupportSurfaceIcon className="h-4 w-4" kind="more" />
-            </button>
           </div>
         ) : null}
       </div>
 
-      <div className="rounded-[16px] border border-[rgba(220,228,242,0.96)] bg-white px-4 py-4 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+      <div className="support-queue-context-card support-queue-context-card--subtle">
         <p className="text-[12.5px] font-semibold text-[color:var(--color-ink)]">Resumo do caso</p>
 
         <div className="mt-3 space-y-3 text-[11.5px] leading-[1.35rem] text-[color:var(--color-muted)]">

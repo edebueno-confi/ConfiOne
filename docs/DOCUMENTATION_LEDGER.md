@@ -18,6 +18,28 @@ Cada registro deve informar:
 
 ## Registros
 
+### Fase P4-F.3 - Support Queue Full Operational Refactor
+- fase: `P4-F.3`
+- nome: `Support Queue Full Operational Refactor`
+- branch: `codex/p4-f3-support-queue-operational-refactor`
+- data: `2026-05-25`
+- resumo funcional: refatorada visualmente `/support/queue` como cockpit operacional de triagem diaria. A tela passou a usar header compacto, faixa de sumario, filtros consolidados, tabela/lista central dominante e painel de contexto mais compacto. A fila deixou de selecionar automaticamente o primeiro ticket em carregamento inicial e removeu acoes falsas/desabilitadas que competiam com o fluxo real.
+- docs alterados:
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/reports/P4_SUPPORT_QUEUE_OPERATIONAL_REFACTOR_2026-05-25.md`
+  - `docs/reports/visual-audit/screenshots/p4-f3-support-queue-*.png`
+  - `docs/reports/visual-audit/route-metrics/p4-f3-support-queue-*-metrics.json`
+- views/RPCs afetadas:
+  - nenhuma view, RPC, tabela, migration ou contrato novo.
+- telas afetadas:
+  - `/support/queue`
+- riscos restantes:
+  - primitives ainda sao locais ao dominio Support e devem ser promovidas somente depois de validacao em mais telas.
+  - a tabela ainda usa as colunas do contrato atual; proximos lotes podem ajustar apresentacao sem alterar negocio.
+  - PNGs de blueprint pendentes fora do escopo continuam sem stage por este lote.
+- impacto na FAQ futura:
+  - registra que a fila e superficie de triagem operacional, nao dashboard decorativo nem lista secundaria comprimida.
+
 ### Fase P4-F.2 - Support Intake Layout Refactor
 - fase: `P4-F.2`
 - nome: `Support Intake Layout Refactor + Minimal Operational Primitives`

@@ -132,7 +132,10 @@ import {
   OperationalField,
   OperationalFooterActions,
   OperationalFormGrid,
+  OperationalContextPanel,
+  OperationalFilterStack,
   OperationalModal,
+  OperationalQueueSummary,
   SupportConversationMessage,
   SupportIconActionButton,
   SupportInternalNote,
@@ -2497,6 +2500,10 @@ function SupportWorkspaceView({
       setPhase('ready');
       setPageMessage(null);
       setSelectedTicketId((current) => {
+        if (variant === 'queue' && !preferredTicketId && !focusTicketId) {
+          return data.some((ticket) => ticket.id === current) ? current : null;
+        }
+
         const nextSelected =
           preferredTicketId ??
           focusTicketId ??
@@ -4517,6 +4524,15 @@ function SupportWorkspaceView({
       return;
     }
 
+    if (variant === 'queue') {
+      if (selectedTicketId !== null) {
+        setSelectedTicketId(null);
+        setActiveDrawer('none');
+        setAttachmentUploadDraft(emptyAttachmentUploadDraft());
+      }
+      return;
+    }
+
     const nextSelectedTicketId = ticketInboxFilteredTickets[0]?.id ?? null;
     if (!nextSelectedTicketId) {
       return;
@@ -4636,14 +4652,51 @@ function SupportWorkspaceView({
     },
     {
       key: 'waiting-engineering',
-      label: 'Aguardando engenharia',
-      helper: 'dependencia tecnica',
+      label: 'Dependências internas',
+      helper: 'áreas internas',
       value: waitingEngineering,
       active: filters.status === 'waiting_engineering',
       apply: () => setFilters({ ...filters, status: 'waiting_engineering' }),
       disabled: false,
     },
   ] as const;
+  const queueSummaryItems = [
+    {
+      key: 'open',
+      label: 'Abertos',
+      value: totalOpen,
+      helper: 'fila ativa',
+      tone: 'default' as const,
+    },
+    {
+      key: 'attention',
+      label: 'Atenção alta',
+      value: highAttention,
+      helper: 'prioridade ou SLA',
+      tone: 'critical' as const,
+    },
+    {
+      key: 'unassigned',
+      label: 'Sem responsável',
+      value: unassigned,
+      helper: 'pedem dono',
+      tone: 'attention' as const,
+    },
+    {
+      key: 'customer',
+      label: 'Aguardando cliente',
+      value: waitingCustomer,
+      helper: 'retorno externo',
+      tone: 'warning' as const,
+    },
+    {
+      key: 'internal',
+      label: 'Dependências internas',
+      value: waitingEngineering,
+      helper: 'áreas internas',
+      tone: 'internal' as const,
+    },
+  ];
   const queueSearchTerm = ticketInboxSearch.trim().toLocaleLowerCase('pt-BR');
   const queueVisibleTickets =
     queueSearchTerm.length === 0
@@ -5577,18 +5630,18 @@ function SupportWorkspaceView({
       ) : null}
 
       {variant === 'queue' ? (
-        <section className="shrink-0 px-1 pt-0">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <section className="support-operational-queue-header">
+          <div className="support-operational-queue-header__main">
             <div className="min-w-0 space-y-1">
-              <h1 className="text-[1.9rem] font-bold tracking-[-0.06em] text-[color:var(--color-ink)]">
+              <h1 className="support-operational-queue-header__title">
                 Fila operacional
               </h1>
-              <p className="text-[13px] leading-5 text-[color:var(--color-muted)]">
-                Acompanhe, priorize e assuma os tickets da fila operacional.
+              <p className="support-operational-queue-header__description">
+                Triagem diária de suporte B2B: priorize, atribua e entre no ticket certo.
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="support-operational-queue-header__actions">
               <SupportPrimaryActionButton
                 disabled={!canOpenIntake}
                 onClick={() => {
@@ -5611,44 +5664,28 @@ function SupportWorkspaceView({
               </SupportSecondaryActionButton>
             </div>
           </div>
+          <OperationalQueueSummary items={queueSummaryItems} />
         </section>
       ) : null}
 
       {variant === 'queue' ? (
-        <SupportSummaryStrip
-          highAttention={highAttention}
-          totalOpen={totalOpen}
-          unassigned={unassigned}
-          waitingEngineering={waitingEngineering}
-          waitingCustomer={waitingCustomer}
-        />
-      ) : null}
+        <div className="support-operational-queue-layout">
+          <aside className="support-operational-queue-sidebar">
+            <OperationalFilterStack
+              action={<SupportSurfaceIcon className="h-4 w-4 text-[rgba(107,120,146,0.8)]" kind="filter" />}
+              title="Recortes rápidos"
+              description="Atalhos reais para triagem."
+            >
 
-      {variant === 'queue' ? (
-        <div className="grid gap-3 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(236px,260px)_minmax(0,1fr)_minmax(320px,352px)]">
-          <aside className="grid min-h-0 gap-4 xl:grid-rows-[auto_minmax(0,1fr)]">
-            <section className="rounded-[16px] border border-[rgba(220,228,242,0.96)] bg-white px-3.5 py-3.5 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
-              <div className="flex items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <h2 className="text-[0.95rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                    Filtros rápidos
-                  </h2>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
-                    Operação da fila
-                  </p>
-                </div>
-                <SupportSurfaceIcon className="h-4 w-4 text-[rgba(107,120,146,0.8)]" kind="filter" />
-              </div>
-
-              <div className="mt-3 grid gap-2">
+              <div className="support-operational-shortcut-list">
                 {queueShortcuts.map((shortcut) => (
                   <button
                     className={cx(
-                      'flex items-center justify-between gap-3 rounded-[12px] border px-2.5 py-2 text-left transition',
+                      'support-operational-shortcut',
                       shortcut.active
-                        ? 'border-[rgba(47,107,255,0.34)] bg-[rgba(47,107,255,0.06)] text-[color:var(--color-brand-blue)]'
-                        : 'border-[rgba(220,228,242,0.92)] bg-white text-[color:var(--color-ink)] hover:border-[rgba(47,107,255,0.24)]',
-                      shortcut.disabled && 'cursor-not-allowed opacity-50',
+                        ? 'support-operational-shortcut--active'
+                        : 'support-operational-shortcut--idle',
+                      shortcut.disabled && 'support-operational-shortcut--disabled',
                     )}
                     disabled={shortcut.disabled}
                     key={`queue-shortcut:${shortcut.key}`}
@@ -5674,30 +5711,28 @@ function SupportWorkspaceView({
               </div>
 
               <button
-                className="mt-3 inline-flex min-h-8 items-center rounded-[10px] border border-[rgba(47,107,255,0.16)] bg-[rgba(47,107,255,0.04)] px-2.5 text-[11.5px] font-semibold text-[color:var(--color-brand-blue)]"
+                className="support-operational-filter-link"
                 onClick={() => setFilters(emptyFilters())}
                 type="button"
               >
                 Ver todas as filas
               </button>
-            </section>
+            </OperationalFilterStack>
 
-            <section className="min-h-0 rounded-[16px] border border-[rgba(220,228,242,0.96)] bg-white px-3.5 py-3.5 shadow-[0_8px_18px_rgba(19,33,79,0.05)] xl:flex xl:flex-col xl:overflow-hidden">
-              <div className="flex items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <h2 className="text-[0.95rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">Recorte</h2>
-                  <p className="text-[11px] leading-4 text-[color:var(--color-muted)]">Filtros do contrato real.</p>
-                </div>
+            <OperationalFilterStack
+              action={
                 <button
-                  className="text-[11px] font-semibold text-[color:var(--color-brand-blue)]"
+                  className="support-operational-filter-reset"
                   onClick={() => setFilters(emptyFilters())}
                   type="button"
                 >
-                  Redefinir layout
+                  Redefinir
                 </button>
-              </div>
-
-              <div className="mt-3 grid gap-2.5 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
+              }
+              title="Filtros"
+              description="Contrato real da fila."
+            >
+              <div className="support-operational-filter-stack__scroll">
                 <label className="grid gap-1.5">
                   <span className="text-[11px] font-semibold text-[color:var(--color-ink)]">Status</span>
                   <SelectInput
@@ -5818,18 +5853,18 @@ function SupportWorkspaceView({
               </div>
 
               <button
-                className="mt-3 inline-flex min-h-9 items-center justify-center rounded-[12px] border border-[rgba(47,107,255,0.22)] px-3 text-[12px] font-semibold text-[color:var(--color-brand-blue)]"
+                className="support-operational-filter-clear"
                 onClick={() => setFilters(emptyFilters())}
                 type="button"
               >
                 Limpar filtros
               </button>
-            </section>
+            </OperationalFilterStack>
           </aside>
 
-          <div className="xl:min-h-0 xl:flex xl:flex-col xl:overflow-hidden">
-            <section className="rounded-[16px] border border-[rgba(220,228,242,0.96)] bg-white shadow-[0_8px_20px_rgba(19,33,79,0.06)] xl:flex xl:min-h-0 xl:flex-1 xl:flex-col xl:overflow-hidden">
-              <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-4 py-3">
+          <div className="support-operational-queue-main">
+            <section className="support-operational-queue-table">
+              <div className="support-operational-queue-table__toolbar">
                 <SupportSearchInput
                   className="max-w-[520px]"
                   icon={<SupportSurfaceIcon className="h-[14px] w-[14px]" kind="search" />}
@@ -5838,25 +5873,19 @@ function SupportWorkspaceView({
                   value={ticketInboxSearch}
                 />
 
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className="inline-flex min-h-9 items-center rounded-[12px] border border-[rgba(220,228,242,0.96)] bg-[rgba(244,247,252,0.8)] px-3 text-[11.5px] font-semibold text-[color:var(--color-muted)]">
+                <div className="support-operational-queue-table__meta">
+                  <span className="support-operational-queue-chip">
                     Visão salva: Padrão
                   </span>
                   {selectedQueueTicket ? (
-                    <span className="inline-flex min-h-9 items-center rounded-[12px] border border-[rgba(47,107,255,0.22)] bg-[rgba(47,107,255,0.08)] px-3 text-[11.5px] font-semibold text-[color:var(--color-brand-blue)]">
+                    <span className="support-operational-queue-chip support-operational-queue-chip--active">
                       1 selecionado
                     </span>
                   ) : null}
-                  <SupportIconActionButton
-                    ariaLabel="Mais ações da fila"
-                    disabled
-                  >
-                    <SupportSurfaceIcon className="h-[14px] w-[14px]" kind="more" />
-                  </SupportIconActionButton>
                 </div>
               </div>
 
-              <div className="grid grid-cols-[26px_108px_minmax(0,1.96fr)_minmax(0,1.12fr)_minmax(0,0.92fr)_88px_minmax(0,0.9fr)_86px] gap-4 border-b border-[color:var(--color-border)] bg-[rgba(244,247,252,0.82)] px-[18px] py-2.5 text-[9px] font-medium tracking-[0.14em] text-[color:var(--color-muted)]">
+              <div className="support-operational-queue-table__head">
                 <span />
                 <span>Status / SLA</span>
                 <span>Ticket / Assunto</span>
@@ -5873,7 +5902,7 @@ function SupportWorkspaceView({
                   description="Nenhum ticket apareceu com esse recorte. Ajuste os filtros, a busca ou recarregue a fila."
                 />
               ) : (
-                <div className="xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
+                <div className="support-operational-queue-table__body">
                   {queueVisibleTickets.map((ticket) => (
                     <SupportQueueItem
                       isSelected={ticket.id === selectedTicketId}
@@ -5885,12 +5914,12 @@ function SupportWorkspaceView({
                 </div>
               )}
 
-              <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-[color:var(--color-border)] px-4 py-3 text-[11px] text-[color:var(--color-muted)]">
+              <footer className="support-operational-queue-table__footer">
                 <span>
                   Mostrando {queueVisibleTickets.length === 0 ? 0 : 1} a {queueVisibleTickets.length} de {tickets.length} tickets
                 </span>
-                <div className="flex items-center gap-3">
-                  <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-[10px] border border-[rgba(240,74,174,0.22)] bg-[rgba(240,74,174,0.08)] px-2 text-[11.5px] font-semibold text-[color:var(--color-brand-pink)]">
+                <div className="support-operational-queue-table__footer-meta">
+                  <span className="support-operational-queue-page">
                     1
                   </span>
                   <span>Itens por página: {queueVisibleTickets.length}</span>
@@ -5899,15 +5928,10 @@ function SupportWorkspaceView({
             </section>
           </div>
 
-          <section className="rounded-[16px] border border-[rgba(220,228,242,0.96)] bg-white px-3.5 py-3.5 shadow-[0_8px_20px_rgba(19,33,79,0.06)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
-            <div className="mb-3 space-y-1">
-              <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                Contexto do ticket
-              </h2>
-              <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-                Resumo, contato, SLA e ações rápidas do ticket selecionado.
-              </p>
-            </div>
+          <OperationalContextPanel
+            title="Contexto do ticket"
+            description="Resumo, contato, SLA e próxima entrada operacional."
+          >
             {detailPhase === 'loading' ? (
               <LoadingState
                 title="Carregando prévia"
@@ -5934,7 +5958,7 @@ function SupportWorkspaceView({
                 />
               </div>
             )}
-          </section>
+          </OperationalContextPanel>
         </div>
       ) : detailPhase === 'idle' ? (
         <Panel
