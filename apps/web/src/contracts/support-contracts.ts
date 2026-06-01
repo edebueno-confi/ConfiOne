@@ -50,6 +50,7 @@ export type {
   InternalActionAreaKey,
   InternalActionAreaQueueItem,
   InternalActionAreaTimelineEntry,
+  InternalAreaLandingContext,
   InternalActionStatus,
   InternalActionSupportType,
   InternalActionUpdateKind,

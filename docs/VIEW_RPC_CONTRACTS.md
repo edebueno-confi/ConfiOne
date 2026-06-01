@@ -1810,6 +1810,47 @@ Fase 8.2:
 - A área acionada possui workspace/fila própria, mas não responde cliente, não fecha ticket e não altera `ticket.status`.
 - Não existe bridge com Engenharia neste lote; `engineering_work_items` segue íntegro e separado.
 
+## OCP V1-A - Internal Areas Contract Consolidation
+
+### Leitura materializada no backend
+- `vw_admin_internal_areas`
+- `vw_admin_internal_collaborators`
+- `vw_admin_internal_area_memberships`
+- `vw_internal_area_landing_context`
+
+### Escrita materializada no backend
+- nenhuma RPC nova.
+- a manutenção de memberships segue pelos contratos existentes:
+  - `rpc_admin_add_internal_area_membership`
+  - `rpc_admin_update_internal_area_membership`
+  - `rpc_admin_archive_internal_area_membership`
+
+### Decisão semântica
+- `internal_action_target_areas` passa a funcionar como catálogo inicial de áreas internas para o OCP V1-A, sem criar `internal_areas` ou `internal_areas_v2`.
+- `internal_area_memberships` passa a funcionar como membership operacional de colaborador por área, mantendo vínculo com `profiles`, `tenants` e `area_key`.
+- `profiles`, `tenants`, `user_global_roles` e `tenant_memberships` continuam entidades canônicas; o lote não cria identidade, cliente, role ou membership paralelos.
+- `vw_admin_internal_area_memberships` já cobre o contrato necessário de membership administrativo e foi preservada.
+- `vw_internal_area_landing_context` é uma camada canônica de roteamento futuro, derivada de `vw_internal_action_area_auth_context`, sem mudar o frontend atual.
+
+### Regras de consumo
+- Admin/OCP deve ler áreas por `vw_admin_internal_areas`.
+- Admin/OCP deve ler colaboradores por `vw_admin_internal_collaborators`.
+- Admin/OCP deve ler vínculos área-colaborador por `vw_admin_internal_area_memberships`.
+- Roteamento futuro de área interna deve preferir `vw_internal_area_landing_context`, não a fila operacional como prova de acesso.
+- Frontend futuro continua proibido de ler `profiles`, `user_global_roles`, `internal_action_target_areas` ou `internal_area_memberships` diretamente.
+
+### Boundary mantido
+- sem UI nova;
+- sem catálogo comercial;
+- sem CS Workspace;
+- sem Finance Workspace;
+- sem Kanban/tarefas;
+- sem projetos operacionais;
+- sem health score;
+- sem RPC nova;
+- sem tabela nova;
+- sem duplicação de identidade, tenant, roles ou memberships.
+
 ## Próximos contratos planejados
 - Atualização posterior - entitlement arquivado no portal cliente:
   - `knowledge_article_entitlements.archived_at is not null` remove a exposição do artigo em:

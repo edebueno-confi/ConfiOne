@@ -2148,3 +2148,41 @@ Pendência arquitetural futura já mapeada, mas fora do escopo atual:
     - `npm run web:build`
     - `npm run supabase:qa:local-support-fixture`
   - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
+
+### OCP V1-A Internal Areas Contract Consolidation
+- data: `2026-06-01`
+- branch: `codex/project-forensic-recovery-audit`
+- resumo funcional: consolidado o primeiro corte backend-first do Operational Control Plane V1 para areas internas e colaboradores, sem UI nova e sem criar tabela paralela.
+- decisao semantica:
+  - `internal_action_target_areas` funciona como catalogo inicial de areas internas no OCP V1-A.
+  - `internal_area_memberships` funciona como membership operacional de colaborador por area.
+  - `profiles`, `tenants`, `user_global_roles` e `tenant_memberships` continuam canonicos e nao foram duplicados.
+- migration criada:
+  - `supabase/migrations/20260601134126_ocp_v1_a_internal_areas_contract_consolidation.sql`
+- views criadas:
+  - `vw_admin_internal_areas`
+  - `vw_admin_internal_collaborators`
+  - `vw_internal_area_landing_context`
+- view reaproveitada:
+  - `vw_admin_internal_area_memberships`
+- RPCs novas: nenhuma.
+- contratos TypeScript adicionados:
+  - `PlatformRole`
+  - `AdminInternalArea`
+  - `AdminInternalCollaborator`
+  - `InternalAreaLandingContext`
+- teste pgTAP criado:
+  - `supabase/tests/045_ocp_v1_a_internal_areas_contract_consolidation.sql`
+- boundaries preservados:
+  - sem UI;
+  - sem catalogo comercial;
+  - sem CS Workspace;
+  - sem Finance Workspace;
+  - sem Kanban/tarefas;
+  - sem projetos operacionais;
+  - sem health score;
+  - sem duplicar identidade, tenant, roles ou memberships.
+- riscos restantes:
+  - eventual criacao de `internal_areas` so deve ocorrer se houver necessidade semantica comprovada e plano de migracao.
+  - atributos operacionais de colaborador seguem pendentes antes de qualquer `internal_collaborator_profiles`.
+  - catalogo comercial, assinatura cliente-produto-plano, ownership interno, CS, Financeiro, tarefas, projetos e health score seguem lotes futuros.

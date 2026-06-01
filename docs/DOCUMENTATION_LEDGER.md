@@ -5500,6 +5500,36 @@ Cada registro deve informar:
   - membro de área interna sem nenhum acionamento visível ainda não tem read model dedicado de contexto para landing perfeita
   - warning `DEP0190` permanece no script legado de suporte
 
+### OCP V1-A Internal Areas Contract Consolidation
+- data: `2026-06-01`
+- branch: `codex/project-forensic-recovery-audit`
+- objetivo: consolidar contratos/read models de areas internas e colaboradores como primeiro corte seguro do Operational Control Plane V1.
+- arquivos documentais atualizados:
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/reports/OCP_V1_A_INTERNAL_AREAS_CONTRACT_CONSOLIDATION_2026-06-01.md`
+- artefatos tecnicos relacionados:
+  - `supabase/migrations/20260601134126_ocp_v1_a_internal_areas_contract_consolidation.sql`
+  - `supabase/tests/045_ocp_v1_a_internal_areas_contract_consolidation.sql`
+  - `packages/contracts/src/ticketing.ts`
+  - `packages/contracts/src/index.ts`
+  - `apps/web/src/contracts/admin-contracts.ts`
+  - `apps/web/src/contracts/support-contracts.ts`
+- contratos criados:
+  - `vw_admin_internal_areas`
+  - `vw_admin_internal_collaborators`
+  - `vw_internal_area_landing_context`
+- contratos reaproveitados:
+  - `vw_admin_internal_area_memberships`
+  - `rpc_admin_add_internal_area_membership`
+  - `rpc_admin_update_internal_area_membership`
+  - `rpc_admin_archive_internal_area_membership`
+- decisao registrada:
+  - `internal_action_target_areas` e o catalogo inicial de areas internas do OCP V1-A.
+  - `internal_area_memberships` e o membership operacional de colaborador por area.
+  - nao houve tabela nova, UI nova, RPC nova, catalogo comercial, CS, Financeiro, Kanban, projeto ou health score.
+
 ### Internal Area Empty State + Navigation Hardening P1-D
 - data: `2026-05-22`
 - branch: `codex/p1-d-internal-area-empty-state-navigation`

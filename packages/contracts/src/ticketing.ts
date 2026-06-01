@@ -1508,6 +1508,54 @@ export interface InternalActionAreaAuthContext {
   canViewQueue: boolean;
 }
 
+export type PlatformRole =
+  | 'platform_admin'
+  | 'support_agent'
+  | 'support_manager'
+  | 'engineering_member'
+  | 'engineering_manager'
+  | 'knowledge_manager'
+  | 'audit_reviewer';
+
+export interface AdminInternalArea {
+  areaKey: InternalActionAreaKey;
+  displayName: string;
+  status: TicketReferenceStatus;
+  isSystem: boolean;
+  allowsSpecializedBridge: boolean;
+  sourceTable: 'internal_action_target_areas';
+  canUseAsOperationalArea: boolean;
+  totalMembershipCount: number;
+  activeMembershipCount: number;
+  activeUserCount: number;
+  activeTenantCount: number;
+  openActionCount: number;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+}
+
+export interface AdminInternalCollaborator {
+  userId: Uuid;
+  userFullName: string | null;
+  userEmail: string | null;
+  locale: string;
+  timezone: string;
+  userIsActive: boolean;
+  globalRoles: PlatformRole[];
+  totalAreaMembershipCount: number;
+  activeAreaMembershipCount: number;
+  activeAreaTenantCount: number;
+  activeAreaKeys: InternalActionAreaKey[];
+  lastAreaMembershipUpdatedAt: IsoTimestamp | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  canManageInternalMemberships: boolean;
+}
+
+export interface InternalAreaLandingContext extends InternalActionAreaAuthContext {
+  defaultLandingPath: '/internal-actions';
+}
+
 export interface EngineeringWorkspaceWorkItem {
   engineeringWorkItemId: Uuid;
   tenantId: Uuid;

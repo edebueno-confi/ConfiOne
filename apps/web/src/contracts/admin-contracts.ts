@@ -1,6 +1,8 @@
 import type {
   AdminInternalActionTargetArea,
+  AdminInternalArea,
   AdminInternalAreaMembership,
+  AdminInternalCollaborator,
   AdminCustomerAccountAlert,
   AdminCustomerAccountCustomization,
   AdminCustomerAccountFeature,
@@ -51,7 +53,9 @@ export type {
   AdminCustomerAccountIntegration,
   AdminCustomerAccountProfileDetail,
   AdminInternalActionTargetArea,
+  AdminInternalArea,
   AdminInternalAreaMembership,
+  AdminInternalCollaborator,
   CustomerAlertSeverity,
   CustomerCustomizationRiskLevel,
   CustomerIntegrationEnvironment,
