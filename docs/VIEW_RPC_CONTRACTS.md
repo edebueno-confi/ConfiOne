@@ -1851,7 +1851,61 @@ Fase 8.2:
 - sem tabela nova;
 - sem duplicação de identidade, tenant, roles ou memberships.
 
+## OCP V1-C - Product Catalog Foundation
+
+### Leitura materializada no backend
+- `vw_admin_commercial_products`
+- `vw_admin_commercial_product_detail`
+- `vw_admin_commercial_product_plans`
+- `vw_admin_product_area_ownerships`
+
+### Escrita materializada no backend
+- `rpc_admin_create_commercial_product`
+- `rpc_admin_update_commercial_product`
+- `rpc_admin_create_commercial_product_plan`
+- `rpc_admin_update_commercial_product_plan`
+- `rpc_admin_create_commercial_product_module`
+- `rpc_admin_update_commercial_product_module`
+- `rpc_admin_create_commercial_product_feature`
+- `rpc_admin_update_commercial_product_feature`
+- `rpc_admin_set_commercial_plan_feature`
+- `rpc_admin_assign_product_area_ownership`
+- `rpc_admin_archive_product_area_ownership`
+
+### Decisão semântica
+- O catalogo comercial global passa a existir como dominio proprio em `commercial_products`, planos, modulos, features, relacao plano-feature e ownership por area.
+- `customer_account_features` continua sendo feature operacional habilitada por conta e nao foi migrada nem reinterpretada.
+- `product_line` e `account_tier` continuam como resumo operacional em Customer Account, nao fonte canonica de produto/plano.
+- `product_area_ownerships` referencia `internal_action_target_areas.area_key` e nao concede permissao individual; permissao de pessoa continua em `profiles`, `user_global_roles`, `tenant_memberships` e `internal_area_memberships`.
+
+### Regras de consumo
+- Admin/OCP futuro deve ler catalogo comercial por `vw_admin_commercial_products` e detalhe por `vw_admin_commercial_product_detail`.
+- Admin/OCP futuro deve ler planos por `vw_admin_commercial_product_plans`.
+- Admin/OCP futuro deve ler ownership por `vw_admin_product_area_ownerships`.
+- Mutacoes administrativas devem passar exclusivamente pelas RPCs `rpc_admin_*` do catalogo.
+- Views administrativas retornam zero linhas para usuario autenticado sem `platform_admin`.
+- `anon` nao possui leitura do catalogo administrativo.
+- `authenticated` nao possui SELECT ou DML direto nas tabelas base do catalogo.
+- Todas as RPCs novas sao `SECURITY DEFINER` com `SET search_path = ''`.
+- Todas as mutacoes passam por audit trail via `audit.audit_logs`.
+
+### Boundary mantido
+- sem UI nova;
+- sem assinatura cliente-produto-plano;
+- sem `customer_product_subscriptions`;
+- sem `customer_product_feature_entitlements`;
+- sem migrar `customer_account_features`;
+- sem CS Workspace;
+- sem Finance Workspace;
+- sem Kanban/tarefas;
+- sem projetos operacionais;
+- sem health score;
+- sem colunas financeiras ou preco no catalogo V1-C.
+
 ## Próximos contratos planejados
+- OCP V1-D Customer Product Subscriptions Planning:
+  - planejar, sem migration, o vinculo `tenants` -> produto/plano e os entitlements comerciais futuros.
+  - manter `customer_account_features` como override/habilitacao operacional ate haver decisao de produto e migration explicita.
 - Atualização posterior - entitlement arquivado no portal cliente:
   - `knowledge_article_entitlements.archived_at is not null` remove a exposição do artigo em:
     - `vw_customer_portal_knowledge_articles`

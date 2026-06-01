@@ -1517,6 +1517,378 @@ export type PlatformRole =
   | 'knowledge_manager'
   | 'audit_reviewer';
 
+export const COMMERCIAL_PRODUCT_STATUSES = [
+  'draft',
+  'active',
+  'deprecated',
+  'archived',
+] as const;
+export type CommercialProductStatus =
+  (typeof COMMERCIAL_PRODUCT_STATUSES)[number];
+
+export const COMMERCIAL_PRODUCT_PLAN_STATUSES = [
+  'draft',
+  'active',
+  'deprecated',
+  'archived',
+] as const;
+export type CommercialProductPlanStatus =
+  (typeof COMMERCIAL_PRODUCT_PLAN_STATUSES)[number];
+
+export const COMMERCIAL_PRODUCT_MODULE_STATUSES = [
+  'draft',
+  'active',
+  'deprecated',
+  'archived',
+] as const;
+export type CommercialProductModuleStatus =
+  (typeof COMMERCIAL_PRODUCT_MODULE_STATUSES)[number];
+
+export const COMMERCIAL_PRODUCT_FEATURE_STATUSES = [
+  'draft',
+  'active',
+  'deprecated',
+  'archived',
+] as const;
+export type CommercialProductFeatureStatus =
+  (typeof COMMERCIAL_PRODUCT_FEATURE_STATUSES)[number];
+
+export const COMMERCIAL_PLAN_FEATURE_INCLUSION_TYPES = [
+  'included',
+  'optional',
+  'addon_available',
+  'excluded',
+] as const;
+export type CommercialPlanFeatureInclusionType =
+  (typeof COMMERCIAL_PLAN_FEATURE_INCLUSION_TYPES)[number];
+
+export const PRODUCT_AREA_OWNERSHIP_ROLES = [
+  'business_owner',
+  'technical_owner',
+  'support_owner',
+  'contributor',
+] as const;
+export type ProductAreaOwnershipRole =
+  (typeof PRODUCT_AREA_OWNERSHIP_ROLES)[number];
+
+export const PRODUCT_AREA_OWNERSHIP_STATUSES = [
+  'active',
+  'inactive',
+  'archived',
+] as const;
+export type ProductAreaOwnershipStatus =
+  (typeof PRODUCT_AREA_OWNERSHIP_STATUSES)[number];
+
+export interface CommercialProductRecord {
+  id: Uuid;
+  productKey: string;
+  displayName: string;
+  description: string | null;
+  status: CommercialProductStatus;
+  archivedAt: IsoTimestamp | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  createdByUserId: Uuid | null;
+  updatedByUserId: Uuid | null;
+}
+
+export interface CommercialProductPlanRecord {
+  id: Uuid;
+  productId: Uuid;
+  planKey: string;
+  displayName: string;
+  description: string | null;
+  status: CommercialProductPlanStatus;
+  sortOrder: number;
+  archivedAt: IsoTimestamp | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  createdByUserId: Uuid | null;
+  updatedByUserId: Uuid | null;
+}
+
+export interface CommercialProductModuleRecord {
+  id: Uuid;
+  productId: Uuid;
+  moduleKey: string;
+  displayName: string;
+  description: string | null;
+  status: CommercialProductModuleStatus;
+  sortOrder: number;
+  archivedAt: IsoTimestamp | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  createdByUserId: Uuid | null;
+  updatedByUserId: Uuid | null;
+}
+
+export interface CommercialProductFeatureRecord {
+  id: Uuid;
+  productId: Uuid;
+  moduleId: Uuid | null;
+  featureKey: string;
+  displayName: string;
+  description: string | null;
+  status: CommercialProductFeatureStatus;
+  customerVisibleDefault: boolean;
+  supportVisibleDefault: boolean;
+  sortOrder: number;
+  archivedAt: IsoTimestamp | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  createdByUserId: Uuid | null;
+  updatedByUserId: Uuid | null;
+}
+
+export interface CommercialPlanFeatureRecord {
+  id: Uuid;
+  planId: Uuid;
+  featureId: Uuid;
+  inclusionType: CommercialPlanFeatureInclusionType;
+  defaultEnabled: boolean;
+  limitKey: string | null;
+  limitValue: number | null;
+  limitUnit: string | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  createdByUserId: Uuid | null;
+  updatedByUserId: Uuid | null;
+}
+
+export interface ProductAreaOwnershipRecord {
+  id: Uuid;
+  productId: Uuid;
+  moduleId: Uuid | null;
+  featureId: Uuid | null;
+  areaKey: InternalActionAreaKey;
+  ownershipRole: ProductAreaOwnershipRole;
+  status: ProductAreaOwnershipStatus;
+  archivedAt: IsoTimestamp | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  createdByUserId: Uuid | null;
+  updatedByUserId: Uuid | null;
+}
+
+export interface AdminCommercialProduct {
+  productId: Uuid;
+  productKey: string;
+  displayName: string;
+  description: string | null;
+  status: CommercialProductStatus;
+  planCount: number;
+  activePlanCount: number;
+  moduleCount: number;
+  featureCount: number;
+  activeOwnershipCount: number;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+}
+
+export interface AdminCommercialProductDetailPlan {
+  planId: Uuid;
+  planKey: string;
+  displayName: string;
+  description: string | null;
+  status: CommercialProductPlanStatus;
+  sortOrder: number;
+}
+
+export interface AdminCommercialProductDetailModule {
+  moduleId: Uuid;
+  moduleKey: string;
+  displayName: string;
+  description: string | null;
+  status: CommercialProductModuleStatus;
+  sortOrder: number;
+}
+
+export interface AdminCommercialProductDetailFeature {
+  featureId: Uuid;
+  moduleId: Uuid | null;
+  featureKey: string;
+  displayName: string;
+  description: string | null;
+  status: CommercialProductFeatureStatus;
+  customerVisibleDefault: boolean;
+  supportVisibleDefault: boolean;
+  sortOrder: number;
+}
+
+export interface AdminCommercialProductDetailOwnership {
+  ownershipId: Uuid;
+  areaKey: InternalActionAreaKey;
+  areaLabel: string;
+  ownershipRole: ProductAreaOwnershipRole;
+  status: ProductAreaOwnershipStatus;
+  moduleId: Uuid | null;
+  featureId: Uuid | null;
+}
+
+export interface AdminCommercialProductDetail {
+  productId: Uuid;
+  productKey: string;
+  displayName: string;
+  description: string | null;
+  status: CommercialProductStatus;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  plans: AdminCommercialProductDetailPlan[];
+  modules: AdminCommercialProductDetailModule[];
+  features: AdminCommercialProductDetailFeature[];
+  ownerships: AdminCommercialProductDetailOwnership[];
+}
+
+export interface AdminCommercialProductPlan {
+  planId: Uuid;
+  productId: Uuid;
+  productKey: string;
+  productDisplayName: string;
+  planKey: string;
+  displayName: string;
+  description: string | null;
+  status: CommercialProductPlanStatus;
+  sortOrder: number;
+  featureCount: number;
+  includedFeatureCount: number;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+}
+
+export interface AdminProductAreaOwnership {
+  ownershipId: Uuid;
+  productId: Uuid;
+  productKey: string;
+  productDisplayName: string;
+  moduleId: Uuid | null;
+  moduleKey: string | null;
+  moduleDisplayName: string | null;
+  featureId: Uuid | null;
+  featureKey: string | null;
+  featureDisplayName: string | null;
+  areaKey: InternalActionAreaKey;
+  areaDisplayName: string;
+  areaStatus: TicketReferenceStatus;
+  ownershipRole: ProductAreaOwnershipRole;
+  status: ProductAreaOwnershipStatus;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+}
+
+export interface RpcAdminCreateCommercialProductPayload {
+  productKey: string;
+  displayName: string;
+  description?: string | null;
+  status?: CommercialProductStatus;
+}
+export type RpcAdminCreateCommercialProductResponse = CommercialProductRecord;
+
+export interface RpcAdminUpdateCommercialProductPayload {
+  productId: Uuid;
+  displayName?: string | null;
+  description?: string | null;
+  status?: CommercialProductStatus | null;
+}
+export type RpcAdminUpdateCommercialProductResponse = CommercialProductRecord;
+
+export interface RpcAdminCreateCommercialProductPlanPayload {
+  productId: Uuid;
+  planKey: string;
+  displayName: string;
+  description?: string | null;
+  status?: CommercialProductPlanStatus;
+  sortOrder?: number;
+}
+export type RpcAdminCreateCommercialProductPlanResponse =
+  CommercialProductPlanRecord;
+
+export interface RpcAdminUpdateCommercialProductPlanPayload {
+  planId: Uuid;
+  displayName?: string | null;
+  description?: string | null;
+  status?: CommercialProductPlanStatus | null;
+  sortOrder?: number | null;
+}
+export type RpcAdminUpdateCommercialProductPlanResponse =
+  CommercialProductPlanRecord;
+
+export interface RpcAdminCreateCommercialProductModulePayload {
+  productId: Uuid;
+  moduleKey: string;
+  displayName: string;
+  description?: string | null;
+  status?: CommercialProductModuleStatus;
+  sortOrder?: number;
+}
+export type RpcAdminCreateCommercialProductModuleResponse =
+  CommercialProductModuleRecord;
+
+export interface RpcAdminUpdateCommercialProductModulePayload {
+  moduleId: Uuid;
+  displayName?: string | null;
+  description?: string | null;
+  status?: CommercialProductModuleStatus | null;
+  sortOrder?: number | null;
+}
+export type RpcAdminUpdateCommercialProductModuleResponse =
+  CommercialProductModuleRecord;
+
+export interface RpcAdminCreateCommercialProductFeaturePayload {
+  productId: Uuid;
+  featureKey: string;
+  displayName: string;
+  moduleId?: Uuid | null;
+  description?: string | null;
+  status?: CommercialProductFeatureStatus;
+  customerVisibleDefault?: boolean;
+  supportVisibleDefault?: boolean;
+  sortOrder?: number;
+}
+export type RpcAdminCreateCommercialProductFeatureResponse =
+  CommercialProductFeatureRecord;
+
+export interface RpcAdminUpdateCommercialProductFeaturePayload {
+  featureId: Uuid;
+  displayName?: string | null;
+  moduleId?: Uuid | null;
+  description?: string | null;
+  status?: CommercialProductFeatureStatus | null;
+  customerVisibleDefault?: boolean | null;
+  supportVisibleDefault?: boolean | null;
+  sortOrder?: number | null;
+}
+export type RpcAdminUpdateCommercialProductFeatureResponse =
+  CommercialProductFeatureRecord;
+
+export interface RpcAdminSetCommercialPlanFeaturePayload {
+  planId: Uuid;
+  featureId: Uuid;
+  inclusionType: CommercialPlanFeatureInclusionType;
+  defaultEnabled?: boolean;
+  limitKey?: string | null;
+  limitValue?: number | null;
+  limitUnit?: string | null;
+}
+export type RpcAdminSetCommercialPlanFeatureResponse =
+  CommercialPlanFeatureRecord;
+
+export interface RpcAdminAssignProductAreaOwnershipPayload {
+  productId: Uuid;
+  areaKey: InternalActionAreaKey;
+  ownershipRole: ProductAreaOwnershipRole;
+  moduleId?: Uuid | null;
+  featureId?: Uuid | null;
+  status?: ProductAreaOwnershipStatus;
+}
+export type RpcAdminAssignProductAreaOwnershipResponse =
+  ProductAreaOwnershipRecord;
+
+export interface RpcAdminArchiveProductAreaOwnershipPayload {
+  ownershipId: Uuid;
+}
+export type RpcAdminArchiveProductAreaOwnershipResponse =
+  ProductAreaOwnershipRecord;
+
 export interface AdminInternalArea {
   areaKey: InternalActionAreaKey;
   displayName: string;

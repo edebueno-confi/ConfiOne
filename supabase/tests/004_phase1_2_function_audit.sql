@@ -45,8 +45,8 @@ select is(
       and p.prosecdef
       and p.proname like 'rpc_%'
   ),
-  107,
-  'as 107 RPCs expostas existem como funcoes SECURITY DEFINER controladas'
+  118,
+  'as 118 RPCs expostas existem como funcoes SECURITY DEFINER controladas'
 );
 
 select is(
@@ -112,7 +112,11 @@ select is(
         'is_customer_portal_member',
         'is_customer_portal_manager',
         'can_access_customer_ticket',
-        'customer_portal_actor_label'
+        'customer_portal_actor_label',
+        'require_commercial_catalog_admin',
+        'assert_commercial_catalog_key',
+        'assert_commercial_catalog_text',
+        'assert_commercial_catalog_product_links'
       ]) as proname
     ),
     grants as (
@@ -182,7 +186,7 @@ select is(
     from grants
       where grantee = (select oid from pg_roles where rolname = 'authenticated')
   ),
-  107,
+  118,
   'authenticated recebe execute em todas as RPCs expostas e somente por grant explicito'
 );
 

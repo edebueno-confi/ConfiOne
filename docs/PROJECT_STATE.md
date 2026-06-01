@@ -2215,3 +2215,61 @@ Pendência arquitetural futura já mapeada, mas fora do escopo atual:
   - sem CS, Financeiro, Kanban, projetos ou health score.
 - primeiro lote implementavel recomendado:
   - `OCP V1-C Product Catalog Foundation`, criando apenas fundacao backend do catalogo comercial global e ownership por area, ainda sem UI e sem assinatura por cliente.
+
+### OCP V1-C Product Catalog Foundation
+- data: `2026-06-01`
+- branch: `codex/project-forensic-recovery-audit`
+- resumo funcional: criada a fundacao backend-first do catalogo comercial global do Operational Control Plane V1, sem UI e sem assinatura cliente-produto-plano.
+- migration criada:
+  - `supabase/migrations/20260601163921_ocp_v1_c_product_catalog_foundation.sql`
+- tabelas criadas:
+  - `commercial_products`
+  - `commercial_product_plans`
+  - `commercial_product_modules`
+  - `commercial_product_features`
+  - `commercial_plan_features`
+  - `product_area_ownerships`
+- views criadas:
+  - `vw_admin_commercial_products`
+  - `vw_admin_commercial_product_detail`
+  - `vw_admin_commercial_product_plans`
+  - `vw_admin_product_area_ownerships`
+- RPCs criadas:
+  - `rpc_admin_create_commercial_product`
+  - `rpc_admin_update_commercial_product`
+  - `rpc_admin_create_commercial_product_plan`
+  - `rpc_admin_update_commercial_product_plan`
+  - `rpc_admin_create_commercial_product_module`
+  - `rpc_admin_update_commercial_product_module`
+  - `rpc_admin_create_commercial_product_feature`
+  - `rpc_admin_update_commercial_product_feature`
+  - `rpc_admin_set_commercial_plan_feature`
+  - `rpc_admin_assign_product_area_ownership`
+  - `rpc_admin_archive_product_area_ownership`
+- contratos TypeScript adicionados:
+  - status/enums de produto, plano, modulo, feature, inclusao plano-feature e ownership por area.
+  - read models `AdminCommercialProduct`, `AdminCommercialProductDetail`, `AdminCommercialProductPlan` e `AdminProductAreaOwnership`.
+  - payloads/responses das RPCs administrativas do catalogo.
+- teste pgTAP criado:
+  - `supabase/tests/046_ocp_v1_c_product_catalog_foundation.sql`
+- teste global ajustado:
+  - `supabase/tests/004_phase1_2_function_audit.sql` agora reconhece 118 RPCs controladas e os helpers privados do catalogo.
+- decisoes preservadas:
+  - `customer_account_features` continua como feature operacional por conta.
+  - `product_line` e `account_tier` continuam como resumo operacional, nao catalogo canonico.
+  - `product_area_ownerships` aponta para areas internas existentes e nao concede permissao individual.
+- boundaries preservados:
+  - sem UI;
+  - sem `customer_product_subscriptions`;
+  - sem `customer_product_feature_entitlements`;
+  - sem migrar `customer_account_features`;
+  - sem CS Workspace;
+  - sem Finance Workspace;
+  - sem Kanban/tarefas;
+  - sem projetos operacionais;
+  - sem health score;
+  - sem colunas financeiras/preco.
+- riscos restantes:
+  - assinatura cliente-produto-plano ainda depende de planejamento V1-D.
+  - visibilidade por suporte, portal, CS e financeiro ainda depende de decisao de produto.
+  - catalogo ainda nao tem UI administrativa; operacao futura deve usar somente views/RPCs.

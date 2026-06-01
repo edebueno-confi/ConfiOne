@@ -5559,6 +5559,54 @@ Cada registro deve informar:
   - nenhuma UI;
   - nenhum CS/Financeiro/Kanban/projeto/health score.
 
+### OCP V1-C Product Catalog Foundation
+- data: `2026-06-01`
+- branch: `codex/project-forensic-recovery-audit`
+- objetivo: criar a fundacao backend do catalogo comercial global do Operational Control Plane V1, sem UI e sem assinatura cliente-produto-plano.
+- arquivos documentais atualizados:
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/reports/OCP_V1_C_PRODUCT_CATALOG_FOUNDATION_2026-06-01.md`
+- artefatos tecnicos relacionados:
+  - `supabase/migrations/20260601163921_ocp_v1_c_product_catalog_foundation.sql`
+  - `supabase/tests/004_phase1_2_function_audit.sql`
+  - `supabase/tests/046_ocp_v1_c_product_catalog_foundation.sql`
+  - `packages/contracts/src/ticketing.ts`
+  - `packages/contracts/src/index.ts`
+- contratos criados:
+  - `vw_admin_commercial_products`
+  - `vw_admin_commercial_product_detail`
+  - `vw_admin_commercial_product_plans`
+  - `vw_admin_product_area_ownerships`
+  - `rpc_admin_create_commercial_product`
+  - `rpc_admin_update_commercial_product`
+  - `rpc_admin_create_commercial_product_plan`
+  - `rpc_admin_update_commercial_product_plan`
+  - `rpc_admin_create_commercial_product_module`
+  - `rpc_admin_update_commercial_product_module`
+  - `rpc_admin_create_commercial_product_feature`
+  - `rpc_admin_update_commercial_product_feature`
+  - `rpc_admin_set_commercial_plan_feature`
+  - `rpc_admin_assign_product_area_ownership`
+  - `rpc_admin_archive_product_area_ownership`
+- decisoes registradas:
+  - catalogo comercial global nasce separado de `customer_account_features`.
+  - `customer_account_features` permanece feature operacional habilitada por conta.
+  - assinatura cliente-produto-plano fica para planejamento V1-D e implementacao posterior.
+  - ownership por area referencia `internal_action_target_areas` e nao substitui memberships individuais.
+- validacoes executadas:
+  - `npm run supabase:db:reset` para reidratar a migration corrigida localmente.
+  - `npm run supabase:test:db` com 49 arquivos e 1040 testes.
+- boundaries:
+  - sem UI;
+  - sem subscriptions;
+  - sem entitlements comerciais por cliente;
+  - sem migrar `customer_account_features`;
+  - sem CS/Financeiro/Kanban/projeto/health score;
+  - sem colunas financeiras ou preco.
+
 ### Internal Area Empty State + Navigation Hardening P1-D
 - data: `2026-05-22`
 - branch: `codex/p1-d-internal-area-empty-state-navigation`

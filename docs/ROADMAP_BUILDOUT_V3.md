@@ -38,9 +38,10 @@ O fechamento P4-F.4D e os lotes OCP V1-A/V1-B deslocaram a prioridade corrente p
 Estado atual:
 - OCP V1-A consolidou areas internas e colaboradores por contratos backend-first, sem UI nova.
 - OCP V1-B planejou o catalogo comercial futuro e reafirmou que `customer_account_features` nao deve virar catalogo de produtos/planos/features comercializadas.
+- OCP V1-C criou a fundacao backend do catalogo comercial global com produtos, planos, modulos, features, relacao plano-feature e ownership por area, sem UI e sem assinatura cliente-produto-plano.
 
 Proximo lote recomendado:
-- `OCP V1-C Product Catalog Foundation`: criar apenas a fundacao backend do catalogo comercial global e ownership por area, ainda sem UI e sem assinatura cliente-produto-plano.
+- `OCP V1-D Customer Product Subscriptions Planning`: planejar o vinculo cliente-produto-plano e entitlements comerciais futuros, sem migration, sem UI e sem migrar `customer_account_features`.
 
 ## Auditoria de rotas
 
