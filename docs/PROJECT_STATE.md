@@ -2186,3 +2186,32 @@ Pendência arquitetural futura já mapeada, mas fora do escopo atual:
   - eventual criacao de `internal_areas` so deve ocorrer se houver necessidade semantica comprovada e plano de migracao.
   - atributos operacionais de colaborador seguem pendentes antes de qualquer `internal_collaborator_profiles`.
   - catalogo comercial, assinatura cliente-produto-plano, ownership interno, CS, Financeiro, tarefas, projetos e health score seguem lotes futuros.
+
+### OCP V1-B Commercial Product Catalog Planning & Contract Design
+- data: `2026-06-01`
+- branch: `codex/project-forensic-recovery-audit`
+- resumo funcional: planejado o catalogo comercial futuro do Operational Control Plane V1 sem migration, schema, tabela, RPC, UI ou runtime.
+- arquivo criado:
+  - `docs/reports/OCP_V1_B_COMMERCIAL_PRODUCT_CATALOG_PLANNING_AND_CONTRACT_DESIGN_2026-06-01.md`
+- entidades auditadas:
+  - `tenants`
+  - `customer_account_profiles`
+  - `customer_account_features`
+  - `customer_account_integrations`
+  - `internal_action_target_areas`
+  - `internal_area_memberships`
+  - docs de produto, roadmap e OCP V1
+- decisao semantica:
+  - `customer_account_features` permanece como feature operacional habilitada por conta.
+  - `product_line` e `account_tier` permanecem como resumo operacional, nao catalogo canonico.
+  - catalogo comercial futuro deve nascer separado em `commercial_products`, planos, modulos, features canonicas e relacao plano-feature.
+  - assinatura cliente-produto-plano deve apontar para `tenants`, sem duplicar cliente B2B.
+- boundaries preservados:
+  - sem alteracao em `supabase/`;
+  - sem migration;
+  - sem schema;
+  - sem UI;
+  - sem catalogo implementado;
+  - sem CS, Financeiro, Kanban, projetos ou health score.
+- primeiro lote implementavel recomendado:
+  - `OCP V1-C Product Catalog Foundation`, criando apenas fundacao backend do catalogo comercial global e ownership por area, ainda sem UI e sem assinatura por cliente.

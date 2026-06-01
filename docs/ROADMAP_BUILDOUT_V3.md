@@ -31,6 +31,17 @@ Prioridade atual:
 3. Decidir se `supabase_vector` exige ajuste local ou pode permanecer como ruído não bloqueante de observabilidade.
 4. Só depois retomar novo buildout de produto.
 
+## Checkpoint OCP 2026-06-01
+
+O fechamento P4-F.4D e os lotes OCP V1-A/V1-B deslocaram a prioridade corrente para a fundacao do Operational Control Plane V1.
+
+Estado atual:
+- OCP V1-A consolidou areas internas e colaboradores por contratos backend-first, sem UI nova.
+- OCP V1-B planejou o catalogo comercial futuro e reafirmou que `customer_account_features` nao deve virar catalogo de produtos/planos/features comercializadas.
+
+Proximo lote recomendado:
+- `OCP V1-C Product Catalog Foundation`: criar apenas a fundacao backend do catalogo comercial global e ownership por area, ainda sem UI e sem assinatura cliente-produto-plano.
+
 ## Auditoria de rotas
 
 | Rota | Estado | Contratos atuais | Lacuna principal | Risco arquitetural |

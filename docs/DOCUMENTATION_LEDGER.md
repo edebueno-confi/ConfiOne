@@ -5530,6 +5530,35 @@ Cada registro deve informar:
   - `internal_area_memberships` e o membership operacional de colaborador por area.
   - nao houve tabela nova, UI nova, RPC nova, catalogo comercial, CS, Financeiro, Kanban, projeto ou health score.
 
+### OCP V1-B Commercial Product Catalog Planning & Contract Design
+- data: `2026-06-01`
+- branch: `codex/project-forensic-recovery-audit`
+- objetivo: planejar o catalogo comercial do Operational Control Plane V1 sem implementar migration, schema, RPC, tabela, UI ou runtime.
+- arquivos documentais atualizados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/reports/OCP_V1_B_COMMERCIAL_PRODUCT_CATALOG_PLANNING_AND_CONTRACT_DESIGN_2026-06-01.md`
+- entidades auditadas:
+  - `tenants`
+  - `customer_account_profiles`
+  - `customer_account_features`
+  - `customer_account_integrations`
+  - `internal_action_target_areas`
+  - `internal_area_memberships`
+- decisoes registradas:
+  - `customer_account_features` nao vira catalogo comercial.
+  - `product_line` e `account_tier` nao substituem produtos e planos canonicos.
+  - catalogo futuro deve separar produtos, planos, modulos, features comerciais, relacao plano-feature, assinaturas por cliente e ownership por area.
+  - `customer_product_subscriptions` deve referenciar `tenants`, sem duplicar cliente.
+- boundaries:
+  - nenhuma alteracao em `supabase/`;
+  - nenhuma migration;
+  - nenhuma tabela;
+  - nenhuma RPC;
+  - nenhuma UI;
+  - nenhum CS/Financeiro/Kanban/projeto/health score.
+
 ### Internal Area Empty State + Navigation Hardening P1-D
 - data: `2026-05-22`
 - branch: `codex/p1-d-internal-area-empty-state-navigation`
