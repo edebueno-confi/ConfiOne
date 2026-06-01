@@ -18,6 +18,196 @@ Cada registro deve informar:
 
 ## Registros
 
+### Project Forensic Recovery Audit 2026-05-29
+- fase: `Project Forensic Recovery Audit`
+- nome: `Project Forensic Recovery Audit 2026-05-29`
+- branch: `codex/project-forensic-recovery-audit`
+- data: `2026-05-29`
+- resumo funcional: auditoria forense de retomada do repositório sem feature nova. Foram mapeados estado git, estrutura, rotas frontend, consumo de views/RPCs, migrations, RLS/policies/grants, storage, scripts, docs canônicas e validações disponíveis. O lote registrou drift documental, runtime Supabase local bloqueado por Docker indisponível e worktree visual preexistente ainda aberto.
+- docs alterados:
+  - `docs/reports/PROJECT_FORENSIC_RECOVERY_AUDIT_2026-05-29.md`
+  - `docs/README.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma view, RPC, tabela, migration, policy ou contrato novo.
+- telas afetadas:
+  - nenhuma tela runtime alterada por este lote.
+- riscos restantes:
+  - Docker local indisponível impediu validação runtime de Supabase.
+  - worktree visual preexistente possui alterações e deleções ainda não classificadas para fechamento.
+  - scripts legados de Knowledge mantêm fallback literal de credencial local e precisam hardening em lote próprio.
+- impacto na FAQ futura:
+  - estabelece o checkpoint de retomada segura, diferenciando estado real validado, pendências de ambiente e backlog antes de novas features.
+
+### Fase 0 pós-auditoria runtime Supabase
+- fase: `Fase 0 pós-auditoria runtime Supabase`
+- nome: `Runtime Supabase Gate Recovery 2026-05-29`
+- branch: `codex/project-forensic-recovery-audit`
+- data: `2026-05-29`
+- resumo funcional: Docker Desktop foi iniciado, a stack Supabase local subiu e os gates runtime de banco foram executados. A causa raiz da falha de `supabase:verify` era readiness hardcoded para portas antigas; o script passou a derivar API e DB do status local do Supabase.
+- docs alterados:
+  - `docs/reports/PROJECT_FORENSIC_RECOVERY_AUDIT_2026-05-29.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- arquivos técnicos alterados:
+  - `scripts/ci/wait-for-supabase-ready.mjs`
+- views/RPCs afetadas:
+  - nenhuma view, RPC, tabela, migration, policy ou contrato novo.
+- telas afetadas:
+  - nenhuma tela runtime alterada.
+- validações:
+  - `docker version`
+  - `docker ps`
+  - `npx supabase status`
+  - `npm run supabase:start`
+  - `npm run supabase:lint:db`
+  - `npm run supabase:test:db` com 47 arquivos/979 testes
+  - `npm run supabase:verify`
+- riscos restantes:
+  - container local `supabase_vector` reinicia por falha de coleta de logs Docker, sem bloquear gates de banco.
+  - serviços opcionais `imgproxy`, `edge_runtime` e `pooler` aparecem parados no status local.
+  - Supabase CLI local informa versão mais nova disponível.
+- impacto na FAQ futura:
+  - registra que o backend local passou pelos gates de RLS/grants/policies/functions/storage e que a falha anterior era de readiness/porta local, não de contrato de produto.
+
+### Worktree Visual/Blueprint Recovery Closure 2026-05-29
+- fase: `Worktree Visual/Blueprint Recovery Closure`
+- nome: `Worktree Visual/Blueprint Recovery Closure 2026-05-29`
+- branch: `codex/project-forensic-recovery-audit`
+- data: `2026-05-29`
+- resumo funcional: fechamento da frente visual/documental herdada de `codex/p4-true-support-visual-refactor`. As mudanças de Support Workspace foram classificadas como alinhadas aos blueprints P4-F.4D; blueprints foram reorganizados por domínio/estado; screenshots históricos versionados foram restaurados; artefatos locais de limpeza foram removidos.
+- docs alterados:
+  - `docs/reports/WORKTREE_VISUAL_BLUEPRINT_RECOVERY_CLOSURE_2026-05-29.md`
+  - `docs/reports/PROJECT_FORENSIC_RECOVERY_AUDIT_2026-05-29.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- arquivos técnicos alterados:
+  - nenhum arquivo técnico novo neste lote; alterações em `apps/web/src/features/support/*` e `apps/web/src/index.css` foram herdadas e classificadas para manter.
+- views/RPCs afetadas:
+  - nenhuma view, RPC, tabela, migration, policy ou contrato novo.
+- telas afetadas:
+  - `Support Workspace`: fila, novo ticket, ticket workspace, composer e rail direito, sem alteração de contrato de dados.
+- validações:
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run documentation:validate:internal-docs`
+  - `git diff --check`
+- riscos restantes:
+  - screenshots `p4-f4d-*` citados no relatório visual anterior não estavam no índice Git nem no worktree; precisam ser regenerados em QA visual autenticado se forem exigidos como evidência atual.
+  - aprovação pixel-a-pixel contra blueprints ainda depende de revisão humana ou lote dedicado de browser QA.
+- impacto na FAQ futura:
+  - separa o que é reorganização visual canônica, evidência histórica restaurada e artefato local descartado, evitando que o worktree visual seja confundido com lixo ou feature nova.
+
+### P4-F.4D Authenticated Visual QA 2026-05-29
+- fase: `P4-F.4D`
+- nome: `P4-F.4D Authenticated Visual QA 2026-05-29`
+- branch: `codex/project-forensic-recovery-audit`
+- data: `2026-05-29`
+- resumo funcional: QA visual autenticado do Support Workspace com fixture local populada. Foram gerados screenshots atuais `p4-f4d-*`, métricas de viewport/scroll/overflow e comparação contra os blueprints aprovados de suporte.
+- docs alterados:
+  - `docs/reports/P4_F4D_AUTHENTICATED_VISUAL_QA_2026-05-29.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- evidências geradas:
+  - `docs/reports/visual-audit/screenshots/p4-f4d-support-queue.png`
+  - `docs/reports/visual-audit/screenshots/p4-f4d-support-queue-new-ticket.png`
+  - `docs/reports/visual-audit/screenshots/p4-f4d-ticket-conversation.png`
+  - `docs/reports/visual-audit/screenshots/p4-f4d-ticket-classification.png`
+  - `docs/reports/visual-audit/screenshots/p4-f4d-ticket-knowledge.png`
+  - `docs/reports/visual-audit/screenshots/p4-f4d-ticket-evidence.png`
+  - `docs/reports/visual-audit/screenshots/p4-f4d-ticket-status.png`
+  - `docs/reports/visual-audit/screenshots/p4-f4d-ticket-related.png`
+  - `docs/reports/visual-audit/screenshots/p4-f4d-ticket-internal-actions.png`
+- views/RPCs afetadas:
+  - nenhuma view, RPC, tabela, migration, policy ou contrato novo.
+- telas afetadas:
+  - `Support Workspace`: fila operacional, novo ticket, conversa, composer, rail direito e paineis de acoes rapidas.
+- validações:
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run documentation:validate:internal-docs`
+  - `git diff --check`
+- riscos restantes:
+  - resultado visual `aprovado com ajustes`; existe P1 no fluxo `Novo ticket` por divergencia estrutural contra o blueprint aprovado.
+  - aprovacao pixel-a-pixel depende de revisao humana sobre os PNGs gerados.
+- impacto na FAQ futura:
+  - cria evidencia visual autenticada atual do P4-F.4D e delimita que a pendencia restante e visual, nao backend ou contrato Supabase.
+
+### P4-F.4D Novo Ticket Visual Alignment 2026-05-31
+- fase: `P4-F.4D`
+- nome: `P4-F.4D Novo Ticket Visual Alignment`
+- branch: `codex/project-forensic-recovery-audit`
+- data: `2026-05-31`
+- resumo funcional: microcorrecao visual do fluxo `Novo ticket` em `/support/queue`. O formulario foi compactado para manter descricao/evidencias acima do footer no viewport de referencia, e o rail lateral passou de orientacoes textuais para resumo operacional/SLA com estados `Indisponivel` quando o contrato nao entrega dado antes da criacao.
+- docs alterados:
+  - `docs/reports/P4_F4D_AUTHENTICATED_VISUAL_QA_2026-05-29.md`
+  - `docs/reports/PROJECT_FORENSIC_RECOVERY_AUDIT_2026-05-29.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- arquivos técnicos alterados:
+  - `apps/web/src/features/support/SupportWorkspacePage.tsx`
+  - `apps/web/src/index.css`
+- evidências geradas:
+  - `docs/reports/visual-audit/screenshots/p4-f4d-support-queue-new-ticket-aligned.png`
+  - `docs/reports/visual-audit/route-metrics/p4-f4d-support-queue-new-ticket-aligned.metrics.json`
+- views/RPCs afetadas:
+  - nenhuma view, RPC, tabela, migration, policy ou contrato novo. A criacao continua por `rpc_create_ticket`.
+- telas afetadas:
+  - `Support Workspace` em `/support/queue`, apenas modal/fluxo `Novo ticket`.
+- validações:
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run documentation:validate:internal-docs`
+  - `git diff --check`
+- riscos restantes:
+  - revisao humana pixel-a-pixel ainda pode pedir ajuste fino.
+  - acoes superiores de rascunho/menu do blueprint seguem P2 aceito por ausencia de contrato atual; nenhuma acao fake foi criada.
+- impacto na FAQ futura:
+  - fecha a divergencia P1 visual do intake sem mudar contrato, permissao, schema ou fluxo funcional de abertura de ticket.
+
+### P4-F.4D Final Human Pixel Review & Worktree Closure 2026-06-01
+- fase: `P4-F.4D`
+- nome: `P4-F.4D Final Human Pixel Review & Worktree Closure`
+- branch: `codex/project-forensic-recovery-audit`
+- data: `2026-06-01`
+- resumo funcional: revisao visual final pixel-a-pixel do Support Workspace contra os blueprints aprovados de fila, novo ticket, conversa, classificacao, conhecimento, evidencias, status, relacionados e acionamentos. Resultado final aprovado para fechamento do worktree P4-F.4D, sem P0/P1 remanescente.
+- docs alterados:
+  - `docs/reports/P4_F4D_AUTHENTICATED_VISUAL_QA_2026-05-29.md`
+  - `docs/reports/WORKTREE_VISUAL_BLUEPRINT_RECOVERY_CLOSURE_2026-05-29.md`
+  - `docs/reports/PROJECT_FORENSIC_RECOVERY_AUDIT_2026-05-29.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- evidências consideradas:
+  - `docs/reports/visual-audit/screenshots/p4-f4d-support-queue.png`
+  - `docs/reports/visual-audit/screenshots/p4-f4d-support-queue-new-ticket-aligned.png`
+  - `docs/reports/visual-audit/screenshots/p4-f4d-ticket-conversation.png`
+  - `docs/reports/visual-audit/screenshots/p4-f4d-ticket-classification.png`
+  - `docs/reports/visual-audit/screenshots/p4-f4d-ticket-knowledge.png`
+  - `docs/reports/visual-audit/screenshots/p4-f4d-ticket-evidence.png`
+  - `docs/reports/visual-audit/screenshots/p4-f4d-ticket-status.png`
+  - `docs/reports/visual-audit/screenshots/p4-f4d-ticket-related.png`
+  - `docs/reports/visual-audit/screenshots/p4-f4d-ticket-internal-actions.png`
+- views/RPCs afetadas:
+  - nenhuma view, RPC, tabela, migration, policy ou contrato novo. `rpc_create_ticket` segue preservado.
+- telas afetadas:
+  - `Support Workspace`: revisao final de fila, intake, conversa, composer, tabs e rails.
+- validações:
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run documentation:validate:internal-docs`
+  - `git diff --check`
+- riscos restantes:
+  - P2 aceitos: truncamento de nomes longos em sidebar/fila/inbox e ausencia de rascunho/menu no `Novo ticket` por falta de contrato atual. Nenhuma acao fake foi criada.
+  - QA visual usa fixture local; staging/producao seguem fora do escopo.
+- impacto na FAQ futura:
+  - registra fechamento visual aprovado do cockpit de suporte sem alterar backend, Supabase, contratos ou regras de negocio.
+
 ### Fase P4-F.3 - Support Queue Full Operational Refactor
 - fase: `P4-F.3`
 - nome: `Support Queue Full Operational Refactor`

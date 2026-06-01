@@ -1481,6 +1481,15 @@ function SupportQueueItem({
         isSelected && 'support-true-queue-row--selected',
         isBulkSelected && 'support-true-queue-row--bulk-selected',
       )}
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
+      role="button"
+      tabIndex={0}
     >
       <button
         aria-label={`${isBulkSelected ? 'Remover' : 'Selecionar'} ${supportTicketCode(ticket.id)} para ação em massa`}
@@ -1495,7 +1504,7 @@ function SupportQueueItem({
         {isBulkSelected ? '✓' : ''}
       </button>
 
-      <button className="support-true-queue-row__body" onClick={onSelect} type="button">
+      <div className="support-true-queue-row__body">
         <span className="support-true-queue-row__id">
           <strong>{supportTicketCode(ticket.id)}</strong>
           <span>{formatSupportShortTime(ticket.createdAt ?? ticket.updatedAt)}</span>
@@ -1536,7 +1545,7 @@ function SupportQueueItem({
           <strong>{slaLabel}</strong>
           <span>{ticket.slaStatus === 'breached' ? 'vencido' : 'dentro'}</span>
         </span>
-      </button>
+      </div>
     </article>
   );
 }
@@ -2517,6 +2526,9 @@ function SupportWorkspaceView({
   const [messageDraft, setMessageDraft] = useState('');
   const [noteDraft, setNoteDraft] = useState('');
   const [composerMode, setComposerMode] = useState<ComposerMode>('public');
+  const [workspaceTab, setWorkspaceTab] = useState<
+    'conversation' | 'details' | 'activities' | 'related' | 'sla' | 'history'
+  >('conversation');
   const [assignDraft, setAssignDraft] = useState('');
   const [detailNotice, setDetailNotice] = useState<string | null>(null);
   const [detailNoticeTone, setDetailNoticeTone] = useState<'default' | 'critical'>('default');
@@ -4645,6 +4657,18 @@ function SupportWorkspaceView({
     intakeDraft.tenantId
       ? intakeTenants.find((tenant) => tenant.tenantId === intakeDraft.tenantId) ?? null
       : null;
+  const selectedIntakeContact =
+    intakeDraft.requesterContactId
+      ? intakeContacts.find((contact) => contact.id === intakeDraft.requesterContactId) ?? null
+      : null;
+  const selectedIntakeCategory =
+    intakeDraft.categoryId
+      ? ticketCategoryOptions.find((category) => category.optionId === intakeDraft.categoryId) ?? null
+      : null;
+  const selectedIntakeReason =
+    intakeDraft.operationalReasonId
+      ? classificationReasonOptions.find((reason) => reason.optionId === intakeDraft.operationalReasonId) ?? null
+      : null;
   const canOpenIntake = intakePhase === 'ready' && intakeTenants.length > 0;
   const intakeActionLabel =
     intakePhase === 'contract-unavailable'
@@ -4839,15 +4863,15 @@ function SupportWorkspaceView({
   function renderTicketIntakeModal() {
     return (
       <OperationalModal
-        description="Registre cliente, solicitante, origem, prioridade e contexto inicial sem sair da fila."
+        description="Abra um ticket com contexto claro para que o time possa agir com mais agilidade."
         labelledById="support-ticket-intake-title"
         onClose={closeTicketIntakeModal}
         open={showCreateTicket}
-        title="Abrir ticket"
+        title="Novo ticket"
         footer={
           intakePhase === 'ready' && intakeTenants.length > 0 ? (
             <OperationalFooterActions
-              note="O ticket abre com trilha de auditoria, evento inicial e navegação direta para o workspace."
+              note="As informações serão registradas com trilha de auditoria."
             >
               <GhostButton
                 className="rounded-[12px] px-4 text-[12px]"
@@ -4863,7 +4887,7 @@ function SupportWorkspaceView({
                 form="support-ticket-intake-form"
                 type="submit"
               >
-                {intakeSubmitting ? 'Abrindo ticket' : 'Abrir ticket'}
+                {intakeSubmitting ? 'Criando ticket' : 'Criar ticket'}
               </AppButton>
             </OperationalFooterActions>
           ) : null
@@ -4895,10 +4919,8 @@ function SupportWorkspaceView({
             <div className="support-ticket-intake-form__main">
               <section className="support-ticket-intake-form__section">
                 <div className="support-ticket-intake-form__section-header">
-                  <p className="support-ticket-intake-form__section-title">Cliente e origem</p>
-                  <p className="support-ticket-intake-form__section-helper">
-                    Selecione o cliente e o solicitante para abrir o ticket no contexto correto.
-                  </p>
+                  <p className="support-ticket-intake-form__section-title">Informações do ticket</p>
+                  <p className="support-ticket-intake-form__section-helper">Contexto mínimo para abrir a triagem.</p>
                 </div>
 
                 <OperationalFormGrid>
@@ -4975,45 +4997,7 @@ function SupportWorkspaceView({
                       ))}
                     </SelectInput>
                   </OperationalField>
-                </OperationalFormGrid>
 
-                {selectedIntakeTenant ? (
-                  <div className="support-ticket-intake-form__tenant-summary">
-                    <p className="font-semibold text-[color:var(--color-ink)]">
-                      {intakeTenantLabel(selectedIntakeTenant)}
-                    </p>
-                    <p>Status da conta: {humanizeTenantStatus(selectedIntakeTenant.tenantStatus)}</p>
-                    <p>Contatos ativos disponíveis: {selectedIntakeTenant.activeContactsCount}</p>
-                  </div>
-                ) : null}
-
-                {intakeContactsMessage ? (
-                  <InlineNotice tone="warning">{intakeContactsMessage}</InlineNotice>
-                ) : null}
-
-                {!intakeContactsLoading &&
-                intakeDraft.tenantId &&
-                intakeContacts.length === 0 ? (
-                  <InlineNotice>
-                    Nenhum contato ativo apareceu para este cliente. O ticket pode ser aberto
-                    sem solicitante vinculado se a plataforma aceitar esse contexto.
-                  </InlineNotice>
-                ) : null}
-              </section>
-
-              <section className="support-ticket-intake-form__section">
-                <div className="support-ticket-intake-form__section-header">
-                  <p className="support-ticket-intake-form__section-title">Classificação inicial</p>
-                  <p className="support-ticket-intake-form__section-helper">
-                    A prioridade e a severidade ajudam na triagem inicial.
-                  </p>
-                </div>
-
-                {classificationOptionsMessage ? (
-                  <InlineNotice tone="warning">{classificationOptionsMessage}</InlineNotice>
-                ) : null}
-
-                <OperationalFormGrid>
                   <OperationalField label="Prioridade">
                     <SelectInput
                       className="support-operational-control"
@@ -5076,7 +5060,7 @@ function SupportWorkspaceView({
                     </SelectInput>
                   </OperationalField>
 
-                  <OperationalField label="Motivo operacional inicial">
+                  <OperationalField label="Motivo operacional inicial" span="wide">
                     <SelectInput
                       className="support-operational-control"
                       disabled={
@@ -5101,14 +5085,29 @@ function SupportWorkspaceView({
                     </SelectInput>
                   </OperationalField>
                 </OperationalFormGrid>
-              </section>
 
-              <section className="support-ticket-intake-form__section">
-                <div className="support-ticket-intake-form__section-header">
-                  <p className="support-ticket-intake-form__section-title">Assunto e contexto</p>
-                  <p className="support-ticket-intake-form__section-helper">
-                    Use a descrição para registrar o problema com clareza.
-                  </p>
+                {classificationOptionsMessage ? (
+                  <InlineNotice tone="warning">{classificationOptionsMessage}</InlineNotice>
+                ) : null}
+
+                {intakeContactsMessage ? (
+                  <InlineNotice tone="warning">{intakeContactsMessage}</InlineNotice>
+                ) : null}
+
+                {!intakeContactsLoading &&
+                intakeDraft.tenantId &&
+                intakeContacts.length === 0 ? (
+                  <InlineNotice>
+                    Nenhum contato ativo apareceu para este cliente. O ticket pode ser aberto
+                    sem solicitante vinculado se a plataforma aceitar esse contexto.
+                  </InlineNotice>
+                ) : null}
+
+                <div className="support-ticket-intake-form__subsection">
+                  <div>
+                    <p className="support-ticket-intake-form__section-title">Assunto e contexto</p>
+                    <p className="support-ticket-intake-form__section-helper">Descreva o impacto para iniciar a análise.</p>
+                  </div>
                 </div>
 
                 {detailNotice && detailNoticeTone === 'critical' ? (
@@ -5142,30 +5141,80 @@ function SupportWorkspaceView({
                         }))
                       }
                       placeholder="Contexto mínimo para iniciar a triagem."
-                      rows={6}
+                      rows={4}
                       value={intakeDraft.description}
                     />
                   </OperationalField>
                 </OperationalFormGrid>
+                <div className="support-ticket-intake-form__evidence">
+                  <div className="support-ticket-intake-form__evidence-icon">
+                    <SupportSurfaceIcon className="h-[15px] w-[15px]" kind="attachment" />
+                  </div>
+                  <div className="min-w-0">
+                    <p>Anexe evidências quando ajudarem na análise.</p>
+                    <span>Arquivos podem ser adicionados na tratativa assim que o ticket for criado.</span>
+                  </div>
+                  <button disabled type="button">Disponível após criar ticket</button>
+                </div>
               </section>
             </div>
 
             <aside className="support-ticket-intake-form__aside">
-              <section className="support-ticket-intake-form__rules">
-                <p className="support-ticket-intake-form__section-title">Orientações para triagem</p>
-                <ul>
-                  <li>Registre cliente, solicitante e origem antes de criar o ticket.</li>
-                  <li>A SLA será aplicada conforme a política operacional configurada.</li>
-                  <li>Use prioridade e severidade para indicar impacto inicial.</li>
-                  <li>Anexe evidências quando ajudarem na análise.</li>
-                </ul>
+              <section className="support-ticket-intake-form__summary">
+                <div className="support-ticket-intake-form__summary-header">
+                  <p className="support-ticket-intake-form__section-title">Resumo do ticket</p>
+                  <span>Novo</span>
+                </div>
+                <dl className="support-ticket-intake-form__summary-list">
+                  <div>
+                    <dt>Cliente</dt>
+                    <dd>{selectedIntakeTenant ? intakeTenantLabel(selectedIntakeTenant) : 'Indisponível'}</dd>
+                  </div>
+                  <div>
+                    <dt>Conta</dt>
+                    <dd>
+                      {selectedIntakeTenant
+                        ? `${humanizeTenantStatus(selectedIntakeTenant.tenantStatus)} · ${selectedIntakeTenant.activeContactsCount} contatos`
+                        : 'Indisponível'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Solicitante</dt>
+                    <dd>{selectedIntakeContact?.fullName ?? 'Indisponível'}</dd>
+                  </div>
+                  <div>
+                    <dt>Origem</dt>
+                    <dd>{humanizeSource(intakeDraft.source)}</dd>
+                  </div>
+                  <div>
+                    <dt>Prioridade</dt>
+                    <dd>{humanizePriority(intakeDraft.priority)}</dd>
+                  </div>
+                  <div>
+                    <dt>Severidade</dt>
+                    <dd>{humanizeSeverity(intakeDraft.severity)}</dd>
+                  </div>
+                  <div>
+                    <dt>Classificação</dt>
+                    <dd>{selectedIntakeCategory?.name ?? 'Indisponível'}</dd>
+                  </div>
+                  <div>
+                    <dt>Motivo</dt>
+                    <dd>{selectedIntakeReason?.name ?? 'Indisponível'}</dd>
+                  </div>
+                </dl>
               </section>
-              <section className="support-ticket-intake-form__rules support-ticket-intake-form__rules--muted">
-                <p className="support-ticket-intake-form__section-title">Contexto esperado</p>
-                <p>
-                  Descreva o problema, impacto percebido, horário aproximado e qualquer evidência
-                  que ajude o suporte a iniciar a análise.
-                </p>
+              <section className="support-ticket-intake-form__summary support-ticket-intake-form__summary--sla">
+                <p className="support-ticket-intake-form__section-title">SLA estimado</p>
+                <div className="support-ticket-intake-form__sla-row">
+                  <span>Status</span>
+                  <strong>Indisponível</strong>
+                </div>
+                <div className="support-ticket-intake-form__sla-row">
+                  <span>Previsão de resposta</span>
+                  <strong>Indisponível</strong>
+                </div>
+                <p>O prazo será calculado após criação, conforme política retornada pelo backend.</p>
               </section>
             </aside>
           </form>
@@ -5182,15 +5231,15 @@ function SupportWorkspaceView({
     const detail = ticketDetail;
     const contextRailTitle =
       activeDrawer === 'classification'
-        ? 'Classificar ticket'
+        ? 'Classificar conversa'
         : activeDrawer === 'status'
           ? 'Alterar status'
         : activeDrawer === 'evidence'
-          ? 'Evidências'
-            : activeDrawer === 'knowledge'
-              ? 'Conhecimento'
-              : activeDrawer === 'automation'
-              ? 'Acionamentos internos'
+          ? 'Evidências e relacionados'
+              : activeDrawer === 'knowledge'
+                ? 'Conhecimento relacionado'
+                : activeDrawer === 'automation'
+              ? 'Acionamentos'
               : activeDrawer === 'handoff'
                 ? 'Handoff técnico'
                 : activeDrawer === 'related'
@@ -5198,22 +5247,104 @@ function SupportWorkspaceView({
               : null;
     const contextRailSubtitle =
       activeDrawer === 'classification'
-        ? 'Atualize a categoria, prioridade e severidade sem sair da tratativa.'
+        ? 'Classifique este ticket para ajudar na triagem e na análise do time.'
         : activeDrawer === 'status'
-          ? 'Mude a etapa operacional e informe o motivo correto quando exigido.'
+          ? 'Atualize o andamento da tratativa sem sair da conversa.'
         : activeDrawer === 'evidence'
-          ? 'Anexe arquivos e acompanhe as evidências já vinculadas ao ticket.'
-            : activeDrawer === 'knowledge'
-              ? 'Busque referências, vincule artigos e registre lacunas de documentação.'
-              : activeDrawer === 'automation'
-              ? 'Acione áreas internas e mantenha o retorno dentro da tratativa.'
+          ? 'Anexe e consulte evidências sem expor armazenamento interno.'
+              : activeDrawer === 'knowledge'
+                ? 'Busque artigos seguros e vínculos usados nesta conversa.'
+                : activeDrawer === 'automation'
+              ? 'Acione outras áreas para apoiar na resolução deste ticket.'
               : activeDrawer === 'handoff'
                 ? 'Escalone para engenharia mantendo o ticket como fonte da tratativa.'
                 : activeDrawer === 'related'
-                  ? 'Consulte tickets, vínculos e evidências já relacionados a este caso.'
+                  ? 'Consulte tickets, artigos e vínculos disponíveis para este caso.'
               : null;
     const contextRailDrawerSize = supportActionDrawerSize(activeDrawer);
     const contextRailWidthVariant = supportActionDrawerWidthVariant(activeDrawer);
+    const workspaceTabs = [
+      { key: 'conversation', label: 'Conversa', count: null },
+      { key: 'details', label: 'Detalhes', count: null },
+      { key: 'activities', label: 'Atividades', count: timelineWindow.entries.length },
+      { key: 'related', label: 'Relacionados', count: knowledgeLinks.length + engineeringLinks.length },
+      { key: 'sla', label: 'SLA', count: null },
+      { key: 'history', label: 'Histórico', count: null },
+    ] as const;
+    const workspaceTabPanel =
+      workspaceTab === 'conversation' ? (
+        <SupportConversation
+          loadingMore={timelineLoadingMore}
+          onLoadMore={() => void handleLoadOlderTimeline()}
+          requesterName={requesterLabel}
+          window={timelineWindow}
+        />
+      ) : workspaceTab === 'details' ? (
+        <div className="support-ticket-tab-panel">
+          <h3>Detalhes do ticket</h3>
+          <div className="support-ticket-tab-grid">
+            <span><small>Status</small><strong>{compactTicketStatusLabel(detail.status)}</strong></span>
+            <span><small>Prioridade</small><strong>{humanizePriority(detail.priority)}</strong></span>
+            <span><small>Severidade</small><strong>{humanizeSeverity(detail.severity)}</strong></span>
+            <span><small>Categoria</small><strong>{detail.categoryName ?? 'Indisponível'}</strong></span>
+            <span><small>Origem</small><strong>{detail.originLabel ?? humanizeSource(detail.source)}</strong></span>
+            <span><small>Canal</small><strong>{detail.channelLabel ?? 'Indisponível'}</strong></span>
+            <span><small>Solicitante</small><strong>{requesterLabel}</strong></span>
+            <span><small>Responsável</small><strong>{currentAssignedLabel}</strong></span>
+          </div>
+        </div>
+      ) : workspaceTab === 'activities' ? (
+        <div className="support-ticket-tab-panel">
+          <h3>Atividades</h3>
+          <SupportTechnicalHistory window={timelineWindow} />
+        </div>
+      ) : workspaceTab === 'related' ? (
+        <div className="support-ticket-tab-panel">
+          <h3>Relacionados</h3>
+          <div className="support-ticket-tab-list">
+            {knowledgeLinks.length === 0 && engineeringLinks.length === 0 ? (
+              <InlineNotice>Nenhum vínculo operacional apareceu para este ticket.</InlineNotice>
+            ) : (
+              <>
+                {knowledgeLinks.slice(0, 4).map((link) => (
+                  <article key={link.ticketKnowledgeLinkId}>
+                    <strong>{link.articleTitle ?? 'Artigo indisponível'}</strong>
+                    <span>
+                      {humanizeKnowledgeLinkType(link.linkType)} · {link.articleVisibility ? humanizeKnowledgeVisibility(link.articleVisibility) : 'Visibilidade indisponível'}
+                    </span>
+                  </article>
+                ))}
+                {engineeringLinks.slice(0, 4).map((link) => (
+                  <article key={link.engineeringTicketLinkId}>
+                    <strong>{link.workItemTitle}</strong>
+                    <span>{humanizeEngineeringWorkItemType(link.workItemType)} · {humanizeEngineeringWorkItemStatus(link.workItemStatus)}</span>
+                  </article>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+      ) : workspaceTab === 'sla' ? (
+        <div className="support-ticket-tab-panel">
+          <h3>SLA</h3>
+          <div className="support-ticket-tab-grid">
+            <span><small>Política</small><strong>{detail.slaPolicyName ?? 'Fallback interno'}</strong></span>
+            <span><small>Referência</small><strong>{detail.slaReference || 'Governança operacional'}</strong></span>
+            <span><small>Resposta</small><strong>{slaDueAt ? formatDateTime(slaDueAt) : 'Indisponível'}</strong></span>
+            <span><small>Resolução</small><strong>{detail.resolutionDueAt ? formatDateTime(detail.resolutionDueAt) : 'Indisponível'}</strong></span>
+          </div>
+        </div>
+      ) : (
+        <div className="support-ticket-tab-panel">
+          <h3>Histórico</h3>
+          <SupportConversation
+            loadingMore={timelineLoadingMore}
+            onLoadMore={() => void handleLoadOlderTimeline()}
+            requesterName={requesterLabel}
+            window={timelineWindow}
+          />
+        </div>
+      );
 
     const quickActions = [
       {
@@ -5545,6 +5676,14 @@ function SupportWorkspaceView({
                     composerMode === 'public' ? setMessageDraft(value) : setNoteDraft(value)
                   }
                   onOpenEvidenceSurface={openEvidenceSurface}
+                  onOpenStatusSurface={() => {
+                    setStatusDraft((current) =>
+                      buildStatusChoices(detail.status, detail.allowedNextStatuses).includes(current)
+                        ? current
+                        : buildStatusChoices(detail.status, detail.allowedNextStatuses)[0] ?? 'triage',
+                    );
+                    openStatusSurface();
+                  }}
                   onSelectInternalMode={() => setComposerMode('internal')}
                   onSelectPublicMode={() => setComposerMode('public')}
                   onSubmit={handleSubmitComposer}
@@ -5585,14 +5724,27 @@ function SupportWorkspaceView({
                   title={detail.title}
                 />
               }
-              thread={
-                <SupportConversation
-                  loadingMore={timelineLoadingMore}
-                  onLoadMore={() => void handleLoadOlderTimeline()}
-                  requesterName={requesterLabel}
-                  window={timelineWindow}
-                />
+              tabs={
+                <div className="support-ticket-workspace-tabs__list" role="tablist" aria-label="Seções da tratativa">
+                  {workspaceTabs.map((tab) => (
+                    <button
+                      aria-selected={workspaceTab === tab.key}
+                      className={cx(
+                        'support-ticket-workspace-tabs__button',
+                        workspaceTab === tab.key && 'support-ticket-workspace-tabs__button--active',
+                      )}
+                      key={tab.key}
+                      onClick={() => setWorkspaceTab(tab.key)}
+                      role="tab"
+                      type="button"
+                    >
+                      <span>{tab.label}</span>
+                      {tab.count !== null ? <small>{tab.count}</small> : null}
+                    </button>
+                  ))}
+                </div>
               }
+              thread={workspaceTabPanel}
               threadScrollRef={threadScrollContainerRef}
             />
           }
@@ -5676,9 +5828,20 @@ function SupportWorkspaceView({
 
             <div className="flex flex-wrap gap-2">
               <SupportSecondaryActionButton
-                onClick={() => void navigate('/support/queue')}
+                disabled={!ticketDetail}
+                onClick={() => {
+                  if (ticketDetail) {
+                    window.open(`/portal/tickets/${ticketDetail.id}`, '_blank', 'noopener,noreferrer');
+                  }
+                }}
               >
-                Voltar para fila
+                Ver no portal do cliente
+              </SupportSecondaryActionButton>
+              <SupportSecondaryActionButton
+                disabled={!ticketDetail}
+                onClick={openRelatedSurface}
+              >
+                Mais ações
               </SupportSecondaryActionButton>
             </div>
           </div>

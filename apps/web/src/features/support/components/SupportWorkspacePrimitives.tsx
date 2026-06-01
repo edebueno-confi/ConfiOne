@@ -142,11 +142,13 @@ export function SupportComposerTextarea({
   internal = false,
   onChange,
   placeholder,
+  textareaRef,
   value,
 }: {
   internal?: boolean;
   onChange: (value: string) => void;
   placeholder: string;
+  textareaRef?: Ref<HTMLTextAreaElement>;
   value: string;
 }) {
   return (
@@ -157,6 +159,7 @@ export function SupportComposerTextarea({
       )}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
+      ref={textareaRef}
       value={value}
     />
   );

@@ -9,6 +9,7 @@ export function SupportTicketConversationSection({
   thread,
   composer,
   threadScrollRef,
+  tabs,
 }: {
   header: ReactNode;
   detailNotice?: ReactNode;
@@ -16,10 +17,12 @@ export function SupportTicketConversationSection({
   thread: ReactNode;
   composer: ReactNode;
   threadScrollRef: RefObject<HTMLDivElement | null>;
+  tabs?: ReactNode;
 }) {
   return (
     <div className="min-w-0 flex min-h-0 flex-1 flex-col gap-3 overflow-hidden xl:gap-4">
       {header}
+      {tabs ? <div className="support-ticket-workspace-tabs">{tabs}</div> : null}
       {detailNotice ? (
         <div
           className={cx(

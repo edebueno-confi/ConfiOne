@@ -21,6 +21,16 @@ Este documento organiza o estado atual do produto, as lacunas reais por dominio,
 ## Mudanca de foco
 A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos candidatos permanecem como corpus/documentacao inicial, sem necessidade de nova validacao humana neste momento. O foco atual passa a ser buildout funcional da plataforma: telas, contratos, fluxos operacionais, navegacao, estados e continuidade diaria entre suporte, clientes, Knowledge e Central Publica.
 
+## Checkpoint de retomada 2026-05-29
+
+O lote forense de retomada registrou que este roadmap contém blocos historicos já concluídos e ainda úteis para rastrear decisões, mas não deve ser lido linearmente como "próximo passo" atual. A fonte de retomada corrente é `docs/reports/PROJECT_FORENSIC_RECOVERY_AUDIT_2026-05-29.md`.
+
+Prioridade atual:
+1. Refazer QA visual autenticado P4-F.4D para gerar screenshots atuais `p4-f4d-*`, se a aprovação visual exigir evidência nova.
+2. Atualizar docs técnicas de Supabase/tests e endurecer scripts legados de Knowledge com fallback literal de credencial local.
+3. Decidir se `supabase_vector` exige ajuste local ou pode permanecer como ruído não bloqueante de observabilidade.
+4. Só depois retomar novo buildout de produto.
+
 ## Auditoria de rotas
 
 | Rota | Estado | Contratos atuais | Lacuna principal | Risco arquitetural |

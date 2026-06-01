@@ -212,6 +212,13 @@ export function SupportClassificationDrawerPanel({
   submitting: boolean;
   ticketCategoryOptions: SupportTicketClassificationOption[];
 }) {
+  const selectedCategory = ticketCategoryOptions.find(
+    (category) => category.optionId === classificationDraft.categoryId,
+  );
+  const selectedReason = classificationReasonOptions.find(
+    (reason) => reason.optionId === classificationDraft.operationalReasonId,
+  );
+
   return (
     <div className="support-drawer-stack">
       <div className="support-drawer-section">
@@ -219,7 +226,7 @@ export function SupportClassificationDrawerPanel({
           <InlineNotice tone="warning">{classificationOptionsMessage}</InlineNotice>
         ) : null}
         <div className="support-drawer-section">
-          <SupportDrawerField label="Categoria operacional">
+          <SupportDrawerField label="Categoria operacional *">
             <SelectInput
               className="support-drawer-select"
               disabled={submitting || ticketCategoryOptions.length === 0}
@@ -237,7 +244,7 @@ export function SupportClassificationDrawerPanel({
             </SelectInput>
           </SupportDrawerField>
 
-          <SupportDrawerField label="Motivo operacional">
+          <SupportDrawerField label="Motivo operacional *">
             <SelectInput
               className="support-drawer-select"
               disabled={submitting || classificationReasonOptions.length === 0}
@@ -258,8 +265,8 @@ export function SupportClassificationDrawerPanel({
           </SupportDrawerField>
 
           <div className="support-drawer-section">
-            <p className="support-drawer-section__title">Prioridade</p>
-            <div className="grid gap-2">
+            <p className="support-drawer-section__title">Prioridade *</p>
+            <div className="support-drawer-option-grid">
               {TICKET_PRIORITIES.map((priority) => (
                 <SupportPriorityOptionCard
                   active={prioritySeverityDraft.priority === priority}
@@ -288,8 +295,8 @@ export function SupportClassificationDrawerPanel({
           </div>
 
           <div className="support-drawer-section">
-            <p className="support-drawer-section__title">Severidade</p>
-            <div className="grid gap-2">
+            <p className="support-drawer-section__title">Severidade *</p>
+            <div className="support-drawer-option-grid">
               {TICKET_SEVERITIES.map((severity) => (
                 <SupportPriorityOptionCard
                   active={prioritySeverityDraft.severity === severity}
@@ -338,6 +345,46 @@ export function SupportClassificationDrawerPanel({
               ))}
             </SelectInput>
           </SupportDrawerField>
+
+          <SupportDrawerField
+            description="Opcional; use apenas quando a decisão precisar ficar clara para a equipe."
+            label="Observação para histórico"
+          >
+            <TextareaInput
+              className="support-drawer-textarea border-[color:var(--color-support-border)]"
+              disabled={submitting}
+              onChange={(event) => onClassificationDraftChange({ note: event.target.value })}
+              placeholder="Explique brevemente o critério usado nesta classificação."
+              value={classificationDraft.note}
+            />
+          </SupportDrawerField>
+
+          <section className="support-drawer-card support-drawer-classification-summary">
+            <div>
+              <p className="support-drawer-card__title">Resumo da classificação</p>
+              <p className="support-drawer-card__summary">
+                Revise os campos principais antes de salvar.
+              </p>
+            </div>
+            <dl className="support-drawer-summary-list">
+              <div>
+                <dt>Categoria</dt>
+                <dd>{selectedCategory?.name ?? 'Indisponível'}</dd>
+              </div>
+              <div>
+                <dt>Motivo</dt>
+                <dd>{selectedReason?.name ?? 'Indisponível'}</dd>
+              </div>
+              <div>
+                <dt>Prioridade</dt>
+                <dd>{humanizePriority(prioritySeverityDraft.priority)}</dd>
+              </div>
+              <div>
+                <dt>Severidade</dt>
+                <dd>{humanizeSeverity(prioritySeverityDraft.severity)}</dd>
+              </div>
+            </dl>
+          </section>
         </div>
       </div>
     </div>
@@ -384,23 +431,43 @@ export function SupportStatusDrawerPanel({
           </SelectInput>
         </SupportDrawerField>
 
-        <SupportDrawerField label="Novo status">
-          <SelectInput
-            className="support-drawer-select"
-            disabled={submitting || nextStatusChoices.length === 0}
-            onChange={(event) => onStatusDraftChange(event.target.value as TicketStatusUpdateTarget)}
-            value={statusDraft}
-          >
-            {nextStatusChoices.length === 0 ? (
-              <option value={statusDraft}>Sem transição disponível</option>
-            ) : null}
-            {nextStatusChoices.map((status) => (
-              <option key={status} value={status}>
-                {humanizeStatus(status)}
-              </option>
-            ))}
-          </SelectInput>
-        </SupportDrawerField>
+        <div className="support-drawer-section">
+          <p className="support-drawer-section__title">Novo status</p>
+          {nextStatusChoices.length === 0 ? (
+            <InlineNotice>Sem transição disponível para o status atual.</InlineNotice>
+          ) : (
+            <div className="support-status-choice-list">
+              {nextStatusChoices.map((status) => (
+                <button
+                  className={cx('support-status-choice', statusDraft === status && 'is-selected')}
+                  disabled={submitting}
+                  key={status}
+                  onClick={() => onStatusDraftChange(status)}
+                  type="button"
+                >
+                  <span>{humanizeStatus(status)}</span>
+                  <small>
+                    {status === 'new'
+                      ? 'Aberto e aguardando triagem'
+                      : status === 'triage'
+                        ? 'Em triagem operacional'
+                      : status === 'in_progress'
+                        ? 'Sendo tratado pela equipe'
+                        : status === 'waiting_customer'
+                          ? 'Aguardando retorno do cliente'
+                          : status === 'waiting_support'
+                            ? 'Aguardando ação do suporte'
+                          : status === 'waiting_engineering'
+                            ? 'Aguardando dependência técnica'
+                            : status === 'resolved'
+                              ? 'Concluído e validado'
+                              : 'Cancelado'}
+                  </small>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         <SupportDrawerField label="Motivo da mudança de status">
           <SelectInput
@@ -561,7 +628,7 @@ export function SupportKnowledgeDrawerPanel({
                     title={
                       canSendToCustomer(article)
                         ? undefined
-                        : article.reasonIfBlocked ?? 'Backend não autorizou o envio ao cliente.'
+                        : article.reasonIfBlocked ?? 'Envio ao cliente indisponível para este artigo.'
                     }
                     type="button"
                   >
@@ -574,7 +641,7 @@ export function SupportKnowledgeDrawerPanel({
                     title={
                       canSendToCustomer(article)
                         ? undefined
-                        : article.reasonIfBlocked ?? 'Backend não autorizou o envio ao cliente.'
+                        : article.reasonIfBlocked ?? 'Envio ao cliente indisponível para este artigo.'
                     }
                     type="button"
                   >
@@ -635,7 +702,7 @@ export function SupportKnowledgeDrawerPanel({
                           publicArticlePath: link.publicArticlePath,
                           reasonIfBlocked: link.canSendToCustomer
                             ? null
-                            : 'Backend não autorizou o envio ao cliente.',
+                            : 'Disponível apenas como referência interna.',
                         })
                       }
                       type="button"
@@ -1155,9 +1222,9 @@ export function SupportRelatedDrawerPanel({
       {engineeringLinks.length > 0 ? (
         <section className="support-drawer-section">
           <div>
-            <p className="support-drawer-section__title">Work items técnicos</p>
+            <p className="support-drawer-section__title">Vínculos técnicos</p>
             <p className="support-drawer-section__helper">
-              Escaladas e itens técnicos já relacionados ao ticket no domínio de engenharia.
+              Itens técnicos já relacionados ao ticket para apoiar a continuidade da tratativa.
             </p>
           </div>
           <div className="support-drawer-compact-list">

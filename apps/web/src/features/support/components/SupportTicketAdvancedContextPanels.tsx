@@ -310,14 +310,24 @@ export function SupportInternalActionsDrawerPanel({
   const canCloseAction = canRequestFollowup;
   const isImmutable =
     internalActionDetail?.status === 'closed' || internalActionDetail?.status === 'cancelled';
+  const selectedAction = internalActions.find(
+    (action) => action.internalActionId === selectedInternalActionId,
+  );
+  const handoffAction = selectedAction ?? internalActions[0] ?? null;
+  const canCreateInternalAction =
+    !internalActionSubmitting &&
+    internalActionCreateDraft.targetArea.trim().length > 0 &&
+    internalActionCreateDraft.supportType.trim().length > 0 &&
+    internalActionCreateDraft.summary.trim().length > 0 &&
+    internalActionCreateDraft.context.trim().length > 0;
 
   return (
-    <div className="support-drawer-stack">
-      <section className="support-drawer-section">
+    <div className="support-internal-actions-panel">
+      <section className="support-internal-actions-panel__create">
         <div>
-          <p className="support-drawer-section__title">Novo acionamento</p>
-          <p className="support-drawer-section__helper">
-            O ticket continua sob responsabilidade do Suporte. O histórico abaixo é interno e não aparece para o cliente.
+          <p className="support-internal-actions-panel__title">Novo acionamento</p>
+          <p className="support-internal-actions-panel__helper">
+            Acione outra área para apoiar na resolução deste ticket. O cliente não vê esse fluxo interno.
           </p>
         </div>
         {internalActionTargetAreasPhase === 'loading' ||
@@ -339,67 +349,61 @@ export function SupportInternalActionsDrawerPanel({
         ) : internalActionTargetAreas.length === 0 ? (
           <InlineNotice>Nenhuma área interna disponível para acionamento neste cliente.</InlineNotice>
         ) : (
-          <form className="support-drawer-card space-y-3" onSubmit={onCreateSubmit}>
-            <div className="grid gap-3 md:grid-cols-3">
-              <SupportDrawerField label="Área acionada">
-                <SelectInput
-                  className="support-drawer-select"
-                  onChange={(event) => onCreateDraftChange({ targetArea: event.target.value })}
-                  value={internalActionCreateDraft.targetArea}
-                >
-                  <option value="">Selecione</option>
-                  {internalActionTargetAreas.map((area) => (
-                    <option
-                      disabled={!area.canCreateAction}
-                      key={area.areaKey}
-                      value={area.areaKey}
-                    >
-                      {area.displayName}
-                    </option>
-                  ))}
-                </SelectInput>
-              </SupportDrawerField>
+          <form className="support-internal-actions-form" onSubmit={onCreateSubmit}>
+            <SupportDrawerField label="Área acionada">
+              <SelectInput
+                className="support-drawer-select"
+                onChange={(event) => onCreateDraftChange({ targetArea: event.target.value })}
+                value={internalActionCreateDraft.targetArea}
+              >
+                <option value="">Selecione a área</option>
+                {internalActionTargetAreas.map((area) => (
+                  <option disabled={!area.canCreateAction} key={area.areaKey} value={area.areaKey}>
+                    {area.displayName}
+                  </option>
+                ))}
+              </SelectInput>
+            </SupportDrawerField>
 
-              <SupportDrawerField label="Tipo de apoio">
-                <SelectInput
-                  className="support-drawer-select"
-                  onChange={(event) =>
-                    onCreateDraftChange({
-                      supportType: event.target.value as InternalActionSupportType,
-                    })
-                  }
-                  value={internalActionCreateDraft.supportType}
-                >
-                  {INTERNAL_ACTION_SUPPORT_TYPES.map((supportType) => (
-                    <option key={supportType} value={supportType}>
-                      {humanizeInternalActionSupportType(supportType)}
-                    </option>
-                  ))}
-                </SelectInput>
-              </SupportDrawerField>
+            <SupportDrawerField label="Tipo de apoio">
+              <SelectInput
+                className="support-drawer-select"
+                onChange={(event) =>
+                  onCreateDraftChange({
+                    supportType: event.target.value as InternalActionSupportType,
+                  })
+                }
+                value={internalActionCreateDraft.supportType}
+              >
+                {INTERNAL_ACTION_SUPPORT_TYPES.map((supportType) => (
+                  <option key={supportType} value={supportType}>
+                    {humanizeInternalActionSupportType(supportType)}
+                  </option>
+                ))}
+              </SelectInput>
+            </SupportDrawerField>
 
-              <SupportDrawerField label="Prioridade">
-                <SelectInput
-                  className="support-drawer-select"
-                  onChange={(event) =>
-                    onCreateDraftChange({ priority: event.target.value as TicketPriority })
-                  }
-                  value={internalActionCreateDraft.priority}
-                >
-                  {TICKET_PRIORITIES.map((priority) => (
-                    <option key={priority} value={priority}>
-                      {humanizePriority(priority)}
-                    </option>
-                  ))}
-                </SelectInput>
-              </SupportDrawerField>
-            </div>
+            <SupportDrawerField label="Prioridade">
+              <SelectInput
+                className="support-drawer-select"
+                onChange={(event) =>
+                  onCreateDraftChange({ priority: event.target.value as TicketPriority })
+                }
+                value={internalActionCreateDraft.priority}
+              >
+                {TICKET_PRIORITIES.map((priority) => (
+                  <option key={priority} value={priority}>
+                    {humanizePriority(priority)}
+                  </option>
+                ))}
+              </SelectInput>
+            </SupportDrawerField>
 
             <SupportDrawerField label="Resumo">
               <TextInput
                 className="support-drawer-input"
                 onChange={(event) => onCreateDraftChange({ summary: event.target.value })}
-                placeholder="Resumo curto do apoio necessário"
+                placeholder="Ex.: Instabilidade no canal API"
                 value={internalActionCreateDraft.summary}
               />
             </SupportDrawerField>
@@ -408,170 +412,177 @@ export function SupportInternalActionsDrawerPanel({
               <TextareaInput
                 className="support-drawer-textarea border-[color:var(--color-support-border)]"
                 onChange={(event) => onCreateDraftChange({ context: event.target.value })}
-                placeholder="Explique o contexto interno, o que precisa ser analisado e o retorno esperado."
+                placeholder="Detalhe o impacto, ações já tomadas e o que você precisa da área..."
                 value={internalActionCreateDraft.context}
               />
+              <span className="support-internal-actions-form__counter">
+                {internalActionCreateDraft.context.length}/1000
+              </span>
             </SupportDrawerField>
 
-            {attachments.length > 0 ? (
-              <div className="space-y-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
-                  Evidências existentes
-                </p>
-                <div className="grid gap-2 md:grid-cols-2">
-                  {attachments
-                    .filter((attachment) => attachment.status === 'available')
-                    .map((attachment) => {
-                      const checked = internalActionCreateDraft.evidenceAttachmentIds.includes(
-                        attachment.attachmentId,
-                      );
-
-                      return (
-                        <label
-                          className="flex items-center gap-2 rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-[11px] font-semibold text-[color:var(--color-ink)]"
-                          key={attachment.attachmentId}
-                        >
-                          <input
-                            checked={checked}
-                            className="h-4 w-4 accent-[color:var(--color-brand-blue)]"
-                            onChange={(event) => {
-                              const nextIds = event.currentTarget.checked
-                                ? [
-                                    ...internalActionCreateDraft.evidenceAttachmentIds,
-                                    attachment.attachmentId,
-                                  ]
-                                : internalActionCreateDraft.evidenceAttachmentIds.filter(
-                                    (attachmentId) => attachmentId !== attachment.attachmentId,
-                                  );
-                              onCreateDraftChange({ evidenceAttachmentIds: nextIds });
-                            }}
-                            type="checkbox"
-                          />
-                          <span className="min-w-0 truncate">{attachment.displayName}</span>
-                        </label>
-                      );
-                    })}
-                </div>
-              </div>
-            ) : null}
-
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <AppButton
-                className="support-drawer-footer-button"
-                disabled={internalActionSubmitting}
-                type="submit"
-              >
-                {internalActionSubmitting ? 'Criando...' : 'Criar acionamento'}
-              </AppButton>
-            </div>
+            <AppButton
+              className="support-internal-actions-form__submit"
+              disabled={!canCreateInternalAction}
+              type="submit"
+            >
+              {internalActionSubmitting ? 'Criando...' : 'Criar acionamento'}
+            </AppButton>
           </form>
         )}
-        <div className="support-drawer-card support-drawer-card--compact">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="support-drawer-card__title">Handoff técnico existente</p>
-              <p className="support-drawer-card__summary">
-                O fluxo legado com Engenharia continua separado até existir bridge formal entre domínios.
-              </p>
-            </div>
-            <GhostButton className="support-drawer-footer-button" onClick={onOpenHandoff} type="button">
-              Abrir handoff
-            </GhostButton>
-          </div>
-        </div>
       </section>
 
-      <div className="support-drawer-scroll support-drawer-stack pr-1">
-        <section className="support-drawer-section">
-          <div>
-            <p className="support-drawer-section__title">Acionamentos do ticket</p>
-            <p className="support-drawer-section__helper">
-              Lista interna de acionamentos já registrados para este ticket.
-            </p>
+      <section className="support-internal-actions-panel__section">
+        <div className="support-internal-actions-panel__section-heading">
+          <p className="support-internal-actions-panel__section-title">Handoff técnico existente</p>
+          <button onClick={onOpenHandoff} type="button">Abrir</button>
+        </div>
+        {handoffAction ? (
+          <button
+            className="support-internal-actions-handoff"
+            onClick={() => onSelectInternalAction(handoffAction.internalActionId)}
+            type="button"
+          >
+            <span className="support-internal-actions-handoff__icon">
+              <SupportSurfaceIcon className="h-[13px] w-[13px]" kind="alert" />
+            </span>
+            <span className="min-w-0">
+              <span className="support-internal-actions-handoff__title">
+                {handoffAction.targetAreaLabel}
+              </span>
+              <span className="support-internal-actions-handoff__meta">
+                Responsável: {handoffAction.assignedAreaUserName ?? 'Ainda não atribuído'}
+              </span>
+              <span className="support-internal-actions-handoff__meta">
+                Atualizado em {formatDateTime(handoffAction.updatedAt)}
+              </span>
+            </span>
+            <SupportDrawerPill tone={toneForInternalActionStatus(handoffAction.status)}>
+              {humanizeInternalActionStatus(handoffAction.status)}
+            </SupportDrawerPill>
+          </button>
+        ) : (
+          <div className="support-internal-actions-empty">
+            Nenhum handoff interno apareceu para este ticket.
           </div>
+        )}
+      </section>
 
-          {internalActionsPhase === 'loading' || internalActionsPhase === 'idle' ? (
-            <LoadingState
-              title="Carregando acionamentos"
-              description="Estamos preparando o histórico interno vinculado a este ticket."
-            />
-          ) : internalActionsPhase === 'contract-unavailable' ? (
-            <InlineNotice tone="warning">
-              {internalActionsMessage ?? 'Os acionamentos internos ainda não ficaram disponíveis nesta leitura.'}
-            </InlineNotice>
-          ) : internalActionsPhase === 'error' ? (
-            <InlineNotice tone="critical">
-              {internalActionsMessage ?? 'Não foi possível carregar os acionamentos internos deste ticket.'}
-            </InlineNotice>
-          ) : internalActions.length === 0 ? (
-            <InlineNotice>Nenhum acionamento interno criado para este ticket.</InlineNotice>
-          ) : (
-            <div className="space-y-2">
-              {internalActions.map((action) => {
-                const isSelected = action.internalActionId === selectedInternalActionId;
-                const updateSummary =
-                  action.lastUpdateSummary?.trim() ||
-                  (action.lastUpdateKind
-                    ? humanizeInternalActionUpdateKind(action.lastUpdateKind)
-                    : 'Sem atualização registrada');
+      <section className="support-internal-actions-panel__section">
+        <p className="support-internal-actions-panel__section-title">Acionamentos do ticket</p>
 
-                return (
-                  <button
-                    className={cx(
-                      'support-drawer-card w-full text-left transition',
-                      isSelected
-                        ? 'border-[rgba(47,107,255,0.3)] bg-[rgba(47,107,255,0.06)]'
-                        : 'hover:border-[rgba(47,107,255,0.18)]',
-                    )}
-                    key={action.internalActionId}
-                    onClick={() => onSelectInternalAction(action.internalActionId)}
-                    type="button"
-                  >
-                    <div className="support-drawer-card__eyebrow">
-                      <SupportDrawerPill tone={toneForInternalActionStatus(action.status)}>
-                        {humanizeInternalActionStatus(action.status)}
-                      </SupportDrawerPill>
-                      <SupportDrawerPill tone={toneForPriority(action.priority)}>
-                        {humanizePriority(action.priority)}
-                      </SupportDrawerPill>
-                      {action.hasPendingReturn ? (
-                        <SupportDrawerPill tone="accent">Retorno pendente</SupportDrawerPill>
-                      ) : null}
-                    </div>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="support-drawer-card__title">{action.summary}</p>
-                        <p className="support-drawer-card__summary">
-                          {action.targetAreaLabel} · {humanizeInternalActionSupportType(action.supportType)} ·{' '}
-                          {action.assignedAreaUserName ?? 'Sem responsável da área'}
-                        </p>
-                      </div>
-                      <span className="shrink-0 text-[11px] text-[color:var(--color-muted)]">
-                        {formatDateTime(action.updatedAt)}
-                      </span>
-                    </div>
-                    <div className="mt-3 rounded-[14px] bg-[color:var(--color-surface)] px-3 py-2 text-[11px] leading-5 text-[color:var(--color-muted)]">
-                      <p className="font-semibold text-[color:var(--color-ink)]">Último update</p>
-                      <p>{updateSummary}</p>
-                      <p className="mt-1">
-                        Criado em {formatDateTime(action.createdAt)}
-                        {action.lastUpdateAt ? ` · Última movimentação ${formatDateTime(action.lastUpdateAt)}` : ''}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
+        {internalActionsPhase === 'loading' || internalActionsPhase === 'idle' ? (
+          <LoadingState
+            title="Carregando acionamentos"
+            description="Estamos preparando o histórico interno vinculado a este ticket."
+          />
+        ) : internalActionsPhase === 'contract-unavailable' ? (
+          <InlineNotice tone="warning">
+            {internalActionsMessage ?? 'Os acionamentos internos ainda não ficaram disponíveis nesta leitura.'}
+          </InlineNotice>
+        ) : internalActionsPhase === 'error' ? (
+          <InlineNotice tone="critical">
+            {internalActionsMessage ?? 'Não foi possível carregar os acionamentos internos deste ticket.'}
+          </InlineNotice>
+        ) : internalActions.length === 0 ? (
+          <InlineNotice>Nenhum acionamento interno criado para este ticket.</InlineNotice>
+        ) : (
+          <div className="support-internal-actions-list">
+            {internalActions.slice(0, 3).map((action) => {
+              const isSelected = action.internalActionId === selectedInternalActionId;
+              const updateSummary =
+                action.lastUpdateSummary?.trim() ||
+                (action.lastUpdateKind
+                  ? humanizeInternalActionUpdateKind(action.lastUpdateKind)
+                  : 'Sem atualização registrada');
+
+              return (
+                <button
+                  className={cx('support-internal-actions-list__item', isSelected && 'is-selected')}
+                  key={action.internalActionId}
+                  onClick={() => onSelectInternalAction(action.internalActionId)}
+                  type="button"
+                >
+                  <span className="support-internal-actions-list__icon">
+                    <SupportSurfaceIcon className="h-[13px] w-[13px]" kind="alert" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="support-internal-actions-list__title">
+                      {action.targetAreaLabel}
+                    </span>
+                    <span className="support-internal-actions-list__summary">{updateSummary}</span>
+                  </span>
+                  <span className="support-internal-actions-list__side">
+                    <SupportDrawerPill tone={toneForInternalActionStatus(action.status)}>
+                      {humanizeInternalActionStatus(action.status)}
+                    </SupportDrawerPill>
+                    <span>{action.lastUpdateAt ? formatDateTime(action.lastUpdateAt) : formatDateTime(action.updatedAt)}</span>
+                  </span>
+                </button>
+              );
+            })}
+            {internalActions.length > 3 ? (
+              <button
+                className="support-internal-actions-list__more"
+                onClick={() => onSelectInternalAction(internalActions[3].internalActionId)}
+                type="button"
+              >
+                Ver todos os acionamentos ({internalActions.length})
+              </button>
+            ) : null}
+          </div>
+        )}
+      </section>
+
+      <details className="support-internal-actions-panel__detail">
+        <summary>Detalhe operacional e evidências</summary>
+        <div className="support-drawer-stack">
+          {attachments.length > 0 ? (
+            <section className="support-drawer-section">
+              <p className="support-drawer-section__title">Evidências disponíveis para novo acionamento</p>
+              <div className="grid gap-2">
+                {attachments
+                  .filter((attachment) => attachment.status === 'available')
+                  .map((attachment) => {
+                    const checked = internalActionCreateDraft.evidenceAttachmentIds.includes(
+                      attachment.attachmentId,
+                    );
+
+                    return (
+                      <label
+                        className="flex items-center gap-2 rounded-[10px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-[11px] font-semibold text-[color:var(--color-ink)]"
+                        key={attachment.attachmentId}
+                      >
+                        <input
+                          checked={checked}
+                          className="h-4 w-4 accent-[color:var(--color-brand-blue)]"
+                          onChange={(event) => {
+                            const nextIds = event.currentTarget.checked
+                              ? [
+                                  ...internalActionCreateDraft.evidenceAttachmentIds,
+                                  attachment.attachmentId,
+                                ]
+                              : internalActionCreateDraft.evidenceAttachmentIds.filter(
+                                  (attachmentId) => attachmentId !== attachment.attachmentId,
+                                );
+                            onCreateDraftChange({ evidenceAttachmentIds: nextIds });
+                          }}
+                          type="checkbox"
+                        />
+                        <span className="min-w-0 truncate">{attachment.displayName}</span>
+                      </label>
+                    );
+                  })}
+              </div>
+            </section>
+          ) : null}
+
+          <section className="support-drawer-section">
+            <div>
+              <p className="support-drawer-section__title">Detalhe do acionamento</p>
+              <p className="support-drawer-section__helper">
+                Contexto, evidências internas e retorno da área vinculados ao acionamento selecionado.
+              </p>
             </div>
-          )}
-        </section>
-
-        <section className="support-drawer-section">
-          <div>
-            <p className="support-drawer-section__title">Detalhe do acionamento</p>
-            <p className="support-drawer-section__helper">
-              Contexto, evidências internas e retorno da área vinculados ao acionamento selecionado.
-            </p>
-          </div>
 
           {internalActionsPhase !== 'ready' ? null : internalActions.length === 0 ? (
             <InlineNotice>Selecione um ticket com acionamentos para ver o detalhe interno.</InlineNotice>
@@ -820,7 +831,8 @@ export function SupportInternalActionsDrawerPanel({
             </div>
           )}
         </section>
-      </div>
+        </div>
+      </details>
     </div>
   );
 }

@@ -1,0 +1,92 @@
+{
+  "route": "/support/queue",
+  "viewport": {
+    "width": 1672,
+    "height": 941
+  },
+  "page": {
+    "scrollWidth": 1672,
+    "clientWidth": 1672,
+    "scrollHeight": 941,
+    "clientHeight": 941
+  },
+  "modal": {
+    "x": 312,
+    "y": 0,
+    "width": 1344,
+    "height": 941,
+    "bottom": 941,
+    "right": 1656
+  },
+  "modalBody": {
+    "x": 312,
+    "y": 98,
+    "width": 1344,
+    "height": 776,
+    "bottom": 874,
+    "right": 1656,
+    "scrollHeight": 778,
+    "clientHeight": 776,
+    "hasInternalScroll": true
+  },
+  "modalFooter": {
+    "x": 312,
+    "y": 874,
+    "width": 1344,
+    "height": 67,
+    "bottom": 941,
+    "right": 1656
+  },
+  "evidence": {
+    "x": 355,
+    "y": 794,
+    "width": 892,
+    "height": 55,
+    "bottom": 849,
+    "right": 1247
+  },
+  "aside": {
+    "x": 1276,
+    "y": 105,
+    "width": 342,
+    "height": 757,
+    "bottom": 863,
+    "right": 1618
+  },
+  "firstSummary": {
+    "x": 1276,
+    "y": 105,
+    "width": 342,
+    "height": 283,
+    "bottom": 388,
+    "right": 1618
+  },
+  "evidenceVisibleAboveFooter": true,
+  "horizontalOverflowCount": 3,
+  "horizontalOverflowNodes": [
+    {
+      "tag": "strong",
+      "className": "",
+      "left": 1545.671875,
+      "right": 1705.21875,
+      "width": 159.546875
+    },
+    {
+      "tag": "strong",
+      "className": "",
+      "left": 1545.671875,
+      "right": 1705.21875,
+      "width": 159.546875
+    },
+    {
+      "tag": "strong",
+      "className": "",
+      "left": 1545.671875,
+      "right": 1705.21875,
+      "width": 159.546875
+    }
+  ],
+  "globalHasHorizontalOverflow": false,
+  "globalHasVerticalOverflow": false,
+  "capturedAt": "2026-06-01T00:50:56.592Z"
+}
