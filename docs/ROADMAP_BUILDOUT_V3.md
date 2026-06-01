@@ -39,9 +39,17 @@ Estado atual:
 - OCP V1-A consolidou areas internas e colaboradores por contratos backend-first, sem UI nova.
 - OCP V1-B planejou o catalogo comercial futuro e reafirmou que `customer_account_features` nao deve virar catalogo de produtos/planos/features comercializadas.
 - OCP V1-C criou a fundacao backend do catalogo comercial global com produtos, planos, modulos, features, relacao plano-feature e ownership por area, sem UI e sem assinatura cliente-produto-plano.
+- OCP V1-D planejou subscriptions e entitlements comerciais sem migration; a implementacao ficou bloqueada por decisoes de produto sobre After Sale, multiproduto, visibilidade por papel e ownership de manutencao.
 
 Proximo lote recomendado:
-- `OCP V1-D Customer Product Subscriptions Planning`: planejar o vinculo cliente-produto-plano e entitlements comerciais futuros, sem migration, sem UI e sem migrar `customer_account_features`.
+- `OCP V1-E Customer Product Subscriptions Foundation`: implementar `customer_product_subscriptions` somente depois das decisoes minimas de produto; manter sem UI e sem migrar `customer_account_features`.
+
+Backlog tecnico OCP pos-V1-D:
+1. `OCP V1-E Customer Product Subscriptions Foundation`, somente se as decisoes minimas estiverem fechadas.
+2. `OCP V1-F Admin Product Catalog UI Blueprint`, somente depois dos contratos de catalogo/subscription.
+3. `OCP V1-G Support Customer Product Context`, somente depois das subscriptions.
+4. `OCP V1-H CS Portfolio Planning`, ainda sem UI.
+5. `OCP V1-I Finance Context Planning`, ainda sem valores financeiros reais.
 
 ## Auditoria de rotas
 

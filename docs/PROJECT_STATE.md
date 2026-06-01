@@ -2273,3 +2273,29 @@ Pendência arquitetural futura já mapeada, mas fora do escopo atual:
   - assinatura cliente-produto-plano ainda depende de planejamento V1-D.
   - visibilidade por suporte, portal, CS e financeiro ainda depende de decisao de produto.
   - catalogo ainda nao tem UI administrativa; operacao futura deve usar somente views/RPCs.
+
+### OCP V1-D Customer Product Subscriptions Planning
+- data: `2026-06-01`
+- branch: `codex/project-forensic-recovery-audit`
+- resumo funcional: planejado o vinculo cliente-produto-plano e entitlements comerciais futuros sem criar migration, schema, tabela, RPC, UI ou runtime.
+- arquivo criado:
+  - `docs/reports/OCP_V1_D_CUSTOMER_PRODUCT_SUBSCRIPTIONS_PLANNING_2026-06-01.md`
+- entidades auditadas:
+  - `tenants`
+  - `customer_account_profiles`
+  - `customer_account_features`
+  - catalogo V1-C (`commercial_products`, planos, modulos, features e ownerships)
+- proposta futura:
+  - `customer_product_subscriptions` como vinculo `tenant_id` -> `product_id` -> `plan_id`.
+  - `customer_product_feature_entitlements` apenas se Produto confirmar necessidade alem de plano.
+  - read models segmentados para Admin, Support, Portal, CS e Financeiro.
+  - RPCs administrativas governadas, auditadas e sem DML direto pelo app.
+- stop condition registrado:
+  - nao implementar subscriptions antes de decisao sobre Genius Returns/After Sale, multiproduto por tenant, visibilidade por papel, owner de manutencao e diferenca entre add-on, entitlement e override operacional.
+- boundaries preservados:
+  - sem alteracao em `supabase/`;
+  - sem migration;
+  - sem schema;
+  - sem UI;
+  - sem subscriptions implementadas;
+  - sem migrar `customer_account_features`.

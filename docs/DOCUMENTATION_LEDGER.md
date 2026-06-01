@@ -5607,6 +5607,35 @@ Cada registro deve informar:
   - sem CS/Financeiro/Kanban/projeto/health score;
   - sem colunas financeiras ou preco.
 
+### OCP V1-D Customer Product Subscriptions Planning
+- data: `2026-06-01`
+- branch: `codex/project-forensic-recovery-audit`
+- objetivo: planejar o vinculo cliente-produto-plano e entitlements comerciais futuros sem implementar schema ou UI.
+- arquivos documentais atualizados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/reports/OCP_V1_D_CUSTOMER_PRODUCT_SUBSCRIPTIONS_PLANNING_2026-06-01.md`
+- entidades auditadas:
+  - `tenants`
+  - `customer_account_profiles`
+  - `customer_account_features`
+  - catalogo comercial V1-C
+- decisoes registradas:
+  - subscription futura deve referenciar `tenants`, sem duplicar cliente B2B.
+  - plano/features contratados devem referenciar o catalogo V1-C.
+  - `customer_account_features` permanece estado operacional por conta.
+  - entitlement comercial so deve existir se Produto confirmar que plano nao basta.
+- stop condition:
+  - nao implementar subscriptions enquanto estiverem pendentes decisoes sobre After Sale, multiproduto, visibilidade por papel, owner de manutencao e semantica add-on/entitlement/override.
+- boundaries:
+  - nenhuma alteracao em `supabase/`;
+  - nenhuma migration;
+  - nenhuma tabela;
+  - nenhuma RPC;
+  - nenhuma UI;
+  - nenhuma migracao de `customer_account_features`.
+
 ### Internal Area Empty State + Navigation Hardening P1-D
 - data: `2026-05-22`
 - branch: `codex/p1-d-internal-area-empty-state-navigation`
