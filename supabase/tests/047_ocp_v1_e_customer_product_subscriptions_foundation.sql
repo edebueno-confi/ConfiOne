@@ -2,7 +2,7 @@ create extension if not exists pgtap with schema extensions;
 
 begin;
 
-select plan(32);
+select plan(33);
 
 select is(
   (
@@ -331,6 +331,24 @@ from created;
 with created as (
   select *
   from public.rpc_admin_create_commercial_product_feature(
+    (select id from ocp_v1_e_created_ids where entity = 'product' and lookup_key = 'genius_returns_v1e'),
+    'priority_support',
+    'Suporte prioritario',
+    null,
+    'Feature adicional para validar agregacao sem multiplicacao.',
+    'active'::public.commercial_product_feature_status,
+    false,
+    true,
+    20
+  )
+)
+insert into ocp_v1_e_created_ids (entity, lookup_key, id)
+select 'feature', feature_key, id
+from created;
+
+with created as (
+  select *
+  from public.rpc_admin_create_commercial_product_feature(
     (select id from ocp_v1_e_created_ids where entity = 'product' and lookup_key = 'after_sale_v1e'),
     'after_sale_portal',
     'Portal After Sale',
@@ -387,6 +405,23 @@ insert into ocp_v1_e_created_ids (entity, lookup_key, id)
 select 'entitlement', 'returns_portal_plan', id
 from created;
 
+with created as (
+  select *
+  from public.rpc_admin_set_customer_product_feature_entitlement(
+    (select id from ocp_v1_e_created_ids where entity = 'subscription' and lookup_key = 'alpha_genius_returns'),
+    (select id from ocp_v1_e_created_ids where entity = 'feature' and lookup_key = 'priority_support'),
+    'addon'::public.customer_product_feature_entitlement_source,
+    'active'::public.customer_product_feature_entitlement_status,
+    'Feature adicional para validar agregacao independente.',
+    timezone('utc', now()),
+    null,
+    '{"limit":"priority"}'::jsonb
+  )
+)
+insert into ocp_v1_e_created_ids (entity, lookup_key, id)
+select 'entitlement', 'priority_support_addon', id
+from created;
+
 select ok(
   exists (select 1 from ocp_v1_e_created_ids where entity = 'entitlement' and lookup_key = 'returns_portal_plan'),
   'platform_admin cria entitlement comercial por RPC'
@@ -405,6 +440,21 @@ with created as (
 )
 insert into ocp_v1_e_created_ids (entity, lookup_key, id)
 select 'owner', 'operations_support_owner', id
+from created;
+
+with created as (
+  select *
+  from public.rpc_admin_assign_customer_product_internal_owner(
+    (select id from ocp_v1_e_created_ids where entity = 'subscription' and lookup_key = 'alpha_genius_returns'),
+    'cs_owner'::public.customer_product_internal_owner_role,
+    '47000000-0000-4000-8000-000000000002',
+    null,
+    'active'::public.customer_product_internal_owner_status,
+    'Responsavel CS para validar agregacao independente.'
+  )
+)
+insert into ocp_v1_e_created_ids (entity, lookup_key, id)
+select 'owner', 'support_user_cs_owner', id
 from created;
 
 select ok(
@@ -430,8 +480,19 @@ select is(
     where tenant_slug = 'ocp-v1-e-alpha'
       and product_key = 'genius_returns_v1e'
   ),
-  1,
-  'read model administrativo agrega entitlements ativos'
+  2,
+  'read model administrativo conta entitlements ativos sem multiplicar por owners'
+);
+
+select is(
+  (
+    select active_owner_count
+    from public.vw_admin_customer_product_subscriptions
+    where tenant_slug = 'ocp-v1-e-alpha'
+      and product_key = 'genius_returns_v1e'
+  ),
+  2,
+  'read model administrativo conta owners ativos sem multiplicar por entitlements'
 );
 
 select is(
@@ -441,8 +502,8 @@ select is(
     where tenant_slug = 'ocp-v1-e-alpha'
       and product_key = 'genius_returns_v1e'
   ),
-  1,
-  'detalhe administrativo agrega entitlements sem SELECT direto na tabela base'
+  2,
+  'detalhe administrativo agrega entitlements sem duplicar features'
 );
 
 select is(
@@ -452,8 +513,8 @@ select is(
     where tenant_slug = 'ocp-v1-e-alpha'
       and product_key = 'genius_returns_v1e'
   ),
-  1,
-  'detalhe administrativo agrega owners internos'
+  2,
+  'detalhe administrativo agrega owners internos sem duplicar responsaveis'
 );
 
 select ok(

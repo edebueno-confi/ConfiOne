@@ -1940,7 +1940,7 @@ Fase 8.2:
 ### Consumo frontend atual
 - Em 2026-06-02, `/admin/tenants` passou a consumir `vw_admin_customer_product_subscriptions` e `vw_admin_customer_product_subscription_detail` em uma aba `Subscriptions` somente leitura no detalhe do cliente.
 - A UI não chama RPC de escrita V1-E, não cria/edita/arquiva subscription, entitlement ou owner e não modela billing, preço, invoice, payment ou revenue.
-- O contador agregado da view de lista deve ser tratado com cautela até revisão backend, pois pode multiplicar entitlements/owners quando há múltiplos registros nos dois lados. A UI atual usa o detalhe da subscription como referência visual principal para features e responsáveis.
+- Em 2026-06-02, o hardening `OCP V1-E Subscriptions Read Model Hardening` corrigiu `vw_admin_customer_product_subscriptions` para calcular `active_entitlement_count` e `active_owner_count` por agregações independentes por subscription, eliminando multiplicação por join entre features e owners sem alterar o shape público da view.
 
 ### Boundary mantido
 - sem UI de mutação;

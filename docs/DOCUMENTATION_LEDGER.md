@@ -18,6 +18,41 @@ Cada registro deve informar:
 
 ## Registros
 
+### OCP V1-E Subscriptions Read Model Hardening 2026-06-02
+- fase: `OCP V1-E Subscriptions Read Model Hardening`
+- nome: `Customer Product Subscriptions Aggregate Count Fix`
+- branch: `codex/ocp-v1-e-subscriptions-readmodel-hardening`
+- data: `2026-06-02`
+- resumo funcional: correção backend do read model administrativo `vw_admin_customer_product_subscriptions` para eliminar multiplicação de `active_entitlement_count` e `active_owner_count` causada por joins simultâneos entre entitlements e owners. O shape público da view foi preservado; a UI read-only em `/admin/tenants` continua consumindo o mesmo contrato.
+- documentos alterados:
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/README.md`
+  - `docs/reports/OCP_V1_E_SUBSCRIPTIONS_READMODEL_HARDENING_2026-06-02.md`
+- arquivos técnicos alterados:
+  - `supabase/migrations/20260602170000_ocp_v1_e_subscription_readmodel_hardening.sql`
+  - `supabase/tests/047_ocp_v1_e_customer_product_subscriptions_foundation.sql`
+- views/RPCs afetadas:
+  - corrigida: `vw_admin_customer_product_subscriptions`
+  - auditada sem mudança de shape: `vw_admin_customer_product_subscription_detail`
+  - nenhuma RPC criada ou alterada.
+- telas afetadas:
+  - nenhuma tela alterada. `/admin/tenants` mantém a aba `Subscriptions` read-only existente.
+- validações:
+  - `supabase db reset --local --yes`
+  - `supabase test db --local supabase/tests/047_ocp_v1_e_customer_product_subscriptions_foundation.sql`
+  - `git diff --check`
+  - `npm run supabase:lint:db`
+  - `npm run supabase:test:db`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+- riscos restantes:
+  - sem risco conhecido no contador V1-E após cobertura pgTAP de múltiplas features e owners.
+  - CS Workspace, Finance Workspace, billing e UI de mutação continuam fora de escopo.
+- impacto para FAQ futura:
+  - permite afirmar que os contadores administrativos de features e responsáveis por subscription vêm do backend e não são corrigidos ou inferidos no frontend.
+
 ### OCP V1-E Subscriptions Read-only UI 2026-06-02
 - fase: `OCP V1-E Subscriptions Read-only UI`
 - nome: `Admin Customer Product Subscriptions Read-only Consumption`
