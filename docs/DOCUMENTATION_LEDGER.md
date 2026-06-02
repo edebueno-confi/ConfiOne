@@ -18,6 +18,26 @@ Cada registro deve informar:
 
 ## Registros
 
+### OCP V1-E Customer Product Subscriptions Decision & Execution Planning 2026-06-02
+- fase: `OCP V1-E Customer Product Subscriptions Decision & Execution Planning`
+- nome: `OCP V1-E Decision Record and Execution Plan`
+- branch: `codex/goal-mode-readiness-audit`
+- resumo funcional: fechamento documental das decisoes tecnicas recomendadas para destravar o lote backend futuro de Customer Product Subscriptions. A decisao trata `After Sale` como produto/plataforma propria, confirma multiproduto por tenant, separa subscription, entitlement comercial governado e ownership interno por subscription, e define um execution plan sem implementar migration/backend/UI.
+- documentos alterados:
+  - `docs/product/OCP_V1_E_CUSTOMER_PRODUCT_SUBSCRIPTIONS_DECISION_RECORD.md`
+  - `docs/reports/OCP_V1_E_CUSTOMER_PRODUCT_SUBSCRIPTIONS_EXECUTION_PLAN.md`
+  - `docs/README.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- views/RPCs afetadas:
+  - nenhuma view, RPC, tabela, migration, policy ou contrato novo.
+- validações:
+  - `git status --short`
+  - busca textual das decisoes principais nos documentos criados
+  - `git diff --check`
+- impacto para FAQ futura:
+  - registra o modelo canonico futuro para cliente B2B, produto, plano, subscription, entitlement comercial e responsaveis internos, preservando backend como source of truth.
+
 ### Codex Goal Mode Governance Setup 2026-06-01
 - fase: `Codex Goal Mode Governance Setup`
 - nome: `Goal Mode Controlled Autonomy Preparation`
