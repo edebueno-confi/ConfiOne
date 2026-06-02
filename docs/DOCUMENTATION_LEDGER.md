@@ -18,6 +18,27 @@ Cada registro deve informar:
 
 ## Registros
 
+### Codex Goal Mode Governance Setup 2026-06-01
+- fase: `Codex Goal Mode Governance Setup`
+- nome: `Goal Mode Controlled Autonomy Preparation`
+- branch: `codex/goal-mode-readiness-audit`
+- resumo funcional: preparação documental para uso controlado de Codex Goal Mode (`/goal`) no Genius Support OS. Foram criados `AGENTS.md` como regra permanente de entrada para agentes Codex e `docs/GOAL_EXECUTION_PLAN.md` como camada de orquestração sobre os documentos canônicos, sem criar roadmap concorrente.
+- documentos alterados:
+  - `AGENTS.md`
+  - `docs/GOAL_EXECUTION_PLAN.md`
+  - `docs/README.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/reports/CODEX_GOAL_MODE_READINESS_AUDIT.md`
+- views/RPCs afetadas:
+  - nenhuma view, RPC, tabela, migration, policy ou contrato novo.
+- validações:
+  - `git status --short`
+  - busca textual de referências canônicas, stop conditions e uso controlado de `/goal`
+  - `git diff --check`
+- impacto para FAQ futura:
+  - estabelece a regra operacional para quando usar `/goal`, quando parar e quais documentos ler antes de macro-lotes autônomos.
+
 ### Project Forensic Recovery Audit 2026-05-29
 - fase: `Project Forensic Recovery Audit`
 - nome: `Project Forensic Recovery Audit 2026-05-29`
