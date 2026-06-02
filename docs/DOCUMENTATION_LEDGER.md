@@ -18,6 +18,37 @@ Cada registro deve informar:
 
 ## Registros
 
+### OCP V1-E Subscriptions Read-only UI 2026-06-02
+- fase: `OCP V1-E Subscriptions Read-only UI`
+- nome: `Admin Customer Product Subscriptions Read-only Consumption`
+- branch: `codex/ocp-v1-e-subscriptions-readonly-ui`
+- data: `2026-06-02`
+- resumo funcional: primeiro consumo frontend read-only dos read models V1-E em `/admin/tenants`, dentro do cockpit existente de cliente B2B. A aba `Subscriptions` exibe produto, plano, status, datas, features comerciais habilitadas e responsáveis internos sem mutações, sem ação fake, sem billing/financeiro e sem criar workspace novo.
+- documentos alterados:
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/README.md`
+  - `docs/reports/OCP_V1_E_SUBSCRIPTIONS_READONLY_UI_2026-06-02.md`
+- views/RPCs afetadas:
+  - consumidas em leitura: `vw_admin_customer_product_subscriptions`
+  - consumida em leitura: `vw_admin_customer_product_subscription_detail`
+  - nenhuma RPC de escrita consumida pela UI.
+- telas afetadas:
+  - `/admin/tenants`, aba `Subscriptions` no detalhe do cliente.
+- validações:
+  - `git status --short`
+  - `git diff --check`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - smoke local autenticado com `platform_admin` em `/admin/tenants`
+- riscos restantes:
+  - contador agregado da view de lista V1-E pode multiplicar entitlements/owners quando ambos existem; a UI evita usar esses contadores como informação principal e prioriza o detalhe da subscription.
+  - dados V1-E do smoke foram criados apenas no banco local por RPCs reais para validação visual.
+- impacto para FAQ futura:
+  - permite explicar onde Admin visualiza produto/plano/features/ownership de uma conta B2B, deixando claro que ainda não há billing, financeiro ou mutação aprovada na UI.
+
 ### OCP V1-E Customer Product Subscriptions Foundation 2026-06-02
 - fase: `OCP V1-E Customer Product Subscriptions Foundation`
 - nome: `OCP V1-E Backend Foundation`

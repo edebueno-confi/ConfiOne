@@ -35,6 +35,8 @@ import type {
   AdminCustomerAccountFeature,
   AdminCustomerAccountIntegration,
   AdminCustomerAccountProfileDetail,
+  AdminCustomerProductSubscription,
+  AdminCustomerProductSubscriptionDetail,
   AdminTenantContactRecordRow,
   AdminTenantContactViewRow,
   AdminTenantDetailRow,
@@ -46,7 +48,12 @@ import type {
   CustomerIntegrationStatus,
   CustomerIntegrationType,
   CustomerOperationalStatus,
+  CustomerProductFeatureEntitlementSource,
+  CustomerProductFeatureEntitlementStatus,
+  CustomerProductInternalOwnerRole,
+  CustomerProductInternalOwnerStatus,
   CustomerProductLine,
+  CustomerProductSubscriptionStatus,
   TenantStatus,
 } from '../../contracts/admin-contracts';
 import {
@@ -70,12 +77,14 @@ import {
   archiveCustomerAccountCustomization,
   archiveCustomerAccountIntegration,
   getAdminTenantDetail,
+  getAdminCustomerProductSubscriptionDetail,
   getAdminCustomerAccountProfile,
   listAdminAuditFeed,
   listAdminCustomerAccountAlerts,
   listAdminCustomerAccountCustomizations,
   listAdminCustomerAccountFeatures,
   listAdminCustomerAccountIntegrations,
+  listAdminCustomerProductSubscriptions,
   listAdminMemberships,
   listAdminTenants,
   setCustomerAccountFeatureFlag,
@@ -90,7 +99,7 @@ import { classifyAdminError } from '../admin/admin-errors';
 
 type PagePhase = 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type DetailPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
-type TenantTab = 'summary' | 'account' | 'members' | 'status' | 'activity';
+type TenantTab = 'summary' | 'account' | 'subscriptions' | 'members' | 'status' | 'activity';
 type TenantUpdatedFilter = 'all' | '24h' | '7d' | '30d';
 type TenantMembershipFilter = 'all' | 'active' | 'invited' | 'none';
 type TenantSort = 'updated' | 'name';
@@ -432,6 +441,108 @@ function labelForAlertSeverity(value: CustomerAlertSeverity) {
   return labels[value];
 }
 
+function labelForSubscriptionStatus(value: CustomerProductSubscriptionStatus) {
+  const labels: Record<CustomerProductSubscriptionStatus, string> = {
+    active: 'Ativa',
+    cancelled: 'Cancelada',
+    expired: 'Expirada',
+    pending: 'Pendente',
+    suspended: 'Suspensa',
+  };
+
+  return labels[value];
+}
+
+function toneForSubscriptionStatus(value: CustomerProductSubscriptionStatus) {
+  if (value === 'active') {
+    return 'positive' as const;
+  }
+
+  if (value === 'pending' || value === 'suspended') {
+    return 'warning' as const;
+  }
+
+  return 'critical' as const;
+}
+
+function labelForEntitlementStatus(value: CustomerProductFeatureEntitlementStatus) {
+  const labels: Record<CustomerProductFeatureEntitlementStatus, string> = {
+    active: 'Habilitada',
+    archived: 'Arquivada',
+    inactive: 'Inativa',
+  };
+
+  return labels[value];
+}
+
+function toneForEntitlementStatus(value: CustomerProductFeatureEntitlementStatus) {
+  if (value === 'active') {
+    return 'positive' as const;
+  }
+
+  if (value === 'inactive') {
+    return 'warning' as const;
+  }
+
+  return 'critical' as const;
+}
+
+function labelForEntitlementSource(value: CustomerProductFeatureEntitlementSource) {
+  const labels: Record<CustomerProductFeatureEntitlementSource, string> = {
+    addon: 'Add-on',
+    migration: 'Migração',
+    ops_override: 'Override operacional',
+    pilot: 'Piloto',
+    plan: 'Plano',
+  };
+
+  return labels[value];
+}
+
+function labelForOwnerRole(value: CustomerProductInternalOwnerRole) {
+  const labels: Record<CustomerProductInternalOwnerRole, string> = {
+    account_owner: 'Account owner',
+    cs_owner: 'CS',
+    finance_owner: 'Financeiro operacional',
+    implementation_owner: 'Implantação',
+    support_owner: 'Suporte',
+    technical_owner: 'Técnico',
+  };
+
+  return labels[value];
+}
+
+function labelForOwnerStatus(value: CustomerProductInternalOwnerStatus) {
+  const labels: Record<CustomerProductInternalOwnerStatus, string> = {
+    active: 'Ativo',
+    archived: 'Arquivado',
+    inactive: 'Inativo',
+  };
+
+  return labels[value];
+}
+
+function toneForOwnerStatus(value: CustomerProductInternalOwnerStatus) {
+  if (value === 'active') {
+    return 'positive' as const;
+  }
+
+  if (value === 'inactive') {
+    return 'warning' as const;
+  }
+
+  return 'critical' as const;
+}
+
+function formatNullableDateTime(value: string | null | undefined) {
+  return value ? formatDateTime(value) : 'Indisponível';
+}
+
+function displayOptionalText(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : 'Indisponível';
+}
+
 function membershipPillTone(activeMembershipCount: number, membershipCount: number) {
   if (membershipCount === 0) {
     return 'critical' as const;
@@ -621,6 +732,14 @@ export function TenantsPage() {
     alerts: [],
     features: [],
   });
+  const [subscriptionsPhase, setSubscriptionsPhase] = useState<DetailPhase>('idle');
+  const [subscriptionsMessage, setSubscriptionsMessage] = useState<string | null>(null);
+  const [customerProductSubscriptions, setCustomerProductSubscriptions] = useState<
+    AdminCustomerProductSubscription[]
+  >([]);
+  const [selectedSubscriptionId, setSelectedSubscriptionId] = useState<string | null>(null);
+  const [customerProductSubscriptionDetail, setCustomerProductSubscriptionDetail] =
+    useState<AdminCustomerProductSubscriptionDetail | null>(null);
   const [activeTab, setActiveTab] = useState<TenantTab>('summary');
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | TenantStatus>('all');
@@ -786,6 +905,70 @@ export function TenantsPage() {
     }
   });
 
+  const loadCustomerProductSubscriptions = useEffectEvent(async (tenantId: string) => {
+    setSubscriptionsPhase('loading');
+    setSubscriptionsMessage(null);
+
+    try {
+      const subscriptions = await listAdminCustomerProductSubscriptions(tenantId);
+      const nextSubscriptionId = subscriptions[0]?.subscriptionId ?? null;
+      const detail = nextSubscriptionId
+        ? await getAdminCustomerProductSubscriptionDetail(nextSubscriptionId)
+        : null;
+
+      setCustomerProductSubscriptions(subscriptions);
+      setSelectedSubscriptionId(nextSubscriptionId);
+      setCustomerProductSubscriptionDetail(detail);
+      setSubscriptionsPhase('ready');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Não foi possível carregar subscriptions comerciais da conta B2B.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      setCustomerProductSubscriptions([]);
+      setSelectedSubscriptionId(null);
+      setCustomerProductSubscriptionDetail(null);
+      setSubscriptionsMessage(classified.message);
+      setSubscriptionsPhase(
+        classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
+      );
+    }
+  });
+
+  const loadCustomerProductSubscriptionDetail = useEffectEvent(async (subscriptionId: string) => {
+    setSubscriptionsPhase('loading');
+    setSubscriptionsMessage(null);
+
+    try {
+      const detail = await getAdminCustomerProductSubscriptionDetail(subscriptionId);
+      setSelectedSubscriptionId(subscriptionId);
+      setCustomerProductSubscriptionDetail(detail);
+      setSubscriptionsPhase('ready');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Não foi possível carregar o detalhe da subscription comercial.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      setCustomerProductSubscriptionDetail(null);
+      setSubscriptionsMessage(classified.message);
+      setSubscriptionsPhase(
+        classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
+      );
+    }
+  });
+
   useEffect(() => {
     if (didBootstrapRef.current) {
       return;
@@ -815,6 +998,19 @@ export function TenantsPage() {
     setAccountCustomizationForm(emptyAccountCustomizationForm());
     setAccountAlertForm(emptyAccountAlertForm());
     setAccountFeatureForm(emptyAccountFeatureForm());
+    setCustomerProductSubscriptions([]);
+    setSelectedSubscriptionId(null);
+    setCustomerProductSubscriptionDetail(null);
+    setSubscriptionsMessage(null);
+    setSubscriptionsPhase('idle');
+  }, [selectedTenantId]);
+
+  useEffect(() => {
+    if (!selectedTenantId) {
+      return;
+    }
+
+    void loadCustomerProductSubscriptions(selectedTenantId);
   }, [selectedTenantId]);
 
   const filteredTenants = useMemo(() => {
@@ -1621,6 +1817,7 @@ export function TenantsPage() {
                     {[
                       { id: 'summary', label: 'Resumo' },
                       { id: 'account', label: 'Conta B2B' },
+                      { id: 'subscriptions', label: 'Subscriptions' },
                       { id: 'members', label: 'Membros' },
                       { id: 'status', label: 'Status' },
                       { id: 'activity', label: 'Atividade' },
@@ -2306,6 +2503,263 @@ export function TenantsPage() {
                             )}
                           </div>
                         </section>
+                      </div>
+                    ) : null}
+
+                    {activeTab === 'subscriptions' ? (
+                      <div className="space-y-3">
+                        {subscriptionsPhase === 'loading' ? (
+                          <LoadingState
+                            description="Carregando produtos, planos, features e responsáveis pelo contrato real."
+                            title="Carregando subscriptions"
+                          />
+                        ) : subscriptionsPhase === 'contract-unavailable' ? (
+                          <ContractUnavailableState contractName="subscriptions comerciais V1-E" />
+                        ) : subscriptionsPhase === 'error' ? (
+                          <ErrorState
+                            description={
+                              subscriptionsMessage ??
+                              'O contexto comercial da conta B2B não ficou disponível.'
+                            }
+                          />
+                        ) : customerProductSubscriptions.length === 0 ? (
+                          <EmptyState
+                            description="Nenhuma subscription comercial foi materializada para este cliente no read model V1-E."
+                            title="Sem subscriptions comerciais"
+                          />
+                        ) : (
+                          <>
+                            <div className="grid gap-2 md:grid-cols-3">
+                              <TenantMetricTile
+                                helper="vínculos cliente-produto"
+                                label="Subscriptions"
+                                value={String(customerProductSubscriptions.length)}
+                              />
+                              <TenantMetricTile
+                                helper="features ativas"
+                                label="Entitlements"
+                                value={String(
+                                  customerProductSubscriptionDetail?.entitlements.length ?? 0,
+                                )}
+                              />
+                              <TenantMetricTile
+                                helper="ownership ativo"
+                                label="Responsáveis"
+                                value={String(customerProductSubscriptionDetail?.owners.length ?? 0)}
+                              />
+                            </div>
+
+                            <div className="grid gap-3 2xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                              <section className="space-y-2 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3.5">
+                                <div>
+                                  <p className="text-[0.92rem] font-semibold text-[color:var(--color-ink)]">
+                                    Produtos contratados
+                                  </p>
+                                  <p className="mt-1 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
+                                    Leitura administrativa do vínculo cliente-produto-plano.
+                                  </p>
+                                </div>
+
+                                <div className="space-y-2">
+                                  {customerProductSubscriptions.map((subscription) => {
+                                    const selected =
+                                      subscription.subscriptionId === selectedSubscriptionId;
+
+                                    return (
+                                      <button
+                                        className={cx(
+                                          'w-full rounded-[16px] border bg-white p-3 text-left transition',
+                                          selected
+                                            ? 'border-[color:var(--color-brand-blue)] shadow-[0_12px_28px_rgba(48,127,226,0.12)]'
+                                            : 'border-[color:var(--color-border)] hover:border-[color:var(--color-brand-blue)]/40',
+                                        )}
+                                        key={subscription.subscriptionId}
+                                        onClick={() =>
+                                          void loadCustomerProductSubscriptionDetail(
+                                            subscription.subscriptionId,
+                                          )
+                                        }
+                                        type="button"
+                                      >
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <StatusPill tone={toneForSubscriptionStatus(subscription.status)}>
+                                            {labelForSubscriptionStatus(subscription.status)}
+                                          </StatusPill>
+                                        </div>
+                                        <p className="mt-2 text-sm font-semibold text-[color:var(--color-ink)]">
+                                          {subscription.productDisplayName}
+                                        </p>
+                                        <p className="mt-1 text-[0.82rem] leading-5 text-[color:var(--color-muted)]">
+                                          Plano {subscription.planDisplayName} · Renovação{' '}
+                                          {formatNullableDateTime(subscription.renewalAt)}
+                                        </p>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </section>
+
+                              <section className="space-y-3 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3.5">
+                                {!customerProductSubscriptionDetail ? (
+                                  <EmptyState
+                                    description="Selecione uma subscription para abrir produto, plano, features e ownership."
+                                    title="Detalhe indisponível"
+                                  />
+                                ) : (
+                                  <>
+                                    <div className="rounded-[16px] border border-[color:var(--color-border)] bg-white p-3">
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <StatusPill
+                                          tone={toneForSubscriptionStatus(
+                                            customerProductSubscriptionDetail.status,
+                                          )}
+                                        >
+                                          {labelForSubscriptionStatus(
+                                            customerProductSubscriptionDetail.status,
+                                          )}
+                                        </StatusPill>
+                                        <StatusPill>
+                                          Origem{' '}
+                                          {displayOptionalText(
+                                            customerProductSubscriptionDetail.source,
+                                          )}
+                                        </StatusPill>
+                                      </div>
+                                      <p className="mt-2 text-[0.98rem] font-semibold text-[color:var(--color-ink)]">
+                                        {customerProductSubscriptionDetail.productDisplayName}
+                                      </p>
+                                      <p className="mt-1 text-[0.84rem] leading-5 text-[color:var(--color-muted)]">
+                                        Plano {customerProductSubscriptionDetail.planDisplayName} ·
+                                        Contrato{' '}
+                                        {displayOptionalText(
+                                          customerProductSubscriptionDetail.contractReference,
+                                        )}
+                                      </p>
+
+                                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                        <TenantRailInfoRow
+                                          label="Início"
+                                          value={formatNullableDateTime(
+                                            customerProductSubscriptionDetail.startedAt,
+                                          )}
+                                        />
+                                        <TenantRailInfoRow
+                                          label="Renovação"
+                                          value={formatNullableDateTime(
+                                            customerProductSubscriptionDetail.renewalAt,
+                                          )}
+                                        />
+                                        <TenantRailInfoRow
+                                          label="Fim"
+                                          value={formatNullableDateTime(
+                                            customerProductSubscriptionDetail.endedAt,
+                                          )}
+                                        />
+                                        <TenantRailInfoRow
+                                          label="Atualizado"
+                                          value={formatNullableDateTime(
+                                            customerProductSubscriptionDetail.updatedAt,
+                                          )}
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <section className="space-y-2">
+                                      <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <p className="text-[0.92rem] font-semibold text-[color:var(--color-ink)]">
+                                          Features comerciais habilitadas
+                                        </p>
+                                        <StatusPill>
+                                          {customerProductSubscriptionDetail.entitlements.length}
+                                        </StatusPill>
+                                      </div>
+                                      {customerProductSubscriptionDetail.entitlements.length === 0 ? (
+                                        <InlineNotice>
+                                          Nenhuma feature comercial foi retornada pelo read model.
+                                        </InlineNotice>
+                                      ) : (
+                                        <div className="space-y-2">
+                                          {customerProductSubscriptionDetail.entitlements.map(
+                                            (entitlement) => (
+                                              <div
+                                                className="rounded-[16px] border border-[color:var(--color-border)] bg-white p-3"
+                                                key={entitlement.entitlementId}
+                                              >
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                  <span className="text-sm font-semibold text-[color:var(--color-ink)]">
+                                                    {entitlement.displayName}
+                                                  </span>
+                                                  <StatusPill
+                                                    tone={toneForEntitlementStatus(
+                                                      entitlement.status,
+                                                    )}
+                                                  >
+                                                    {labelForEntitlementStatus(entitlement.status)}
+                                                  </StatusPill>
+                                                  <StatusPill>
+                                                    {labelForEntitlementSource(
+                                                      entitlement.entitlementSource,
+                                                    )}
+                                                  </StatusPill>
+                                                </div>
+                                                <p className="mt-1 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
+                                                  {displayOptionalText(entitlement.reason)} · Vigência{' '}
+                                                  {formatNullableDateTime(entitlement.startsAt)} até{' '}
+                                                  {formatNullableDateTime(entitlement.endsAt)}
+                                                </p>
+                                              </div>
+                                            ),
+                                          )}
+                                        </div>
+                                      )}
+                                    </section>
+
+                                    <section className="space-y-2">
+                                      <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <p className="text-[0.92rem] font-semibold text-[color:var(--color-ink)]">
+                                          Responsáveis internos
+                                        </p>
+                                        <StatusPill>
+                                          {customerProductSubscriptionDetail.owners.length}
+                                        </StatusPill>
+                                      </div>
+                                      {customerProductSubscriptionDetail.owners.length === 0 ? (
+                                        <InlineNotice>
+                                          Nenhum responsável interno foi retornado pelo read model.
+                                        </InlineNotice>
+                                      ) : (
+                                        <div className="space-y-2">
+                                          {customerProductSubscriptionDetail.owners.map((owner) => (
+                                            <div
+                                              className="rounded-[16px] border border-[color:var(--color-border)] bg-white p-3"
+                                              key={owner.ownerId}
+                                            >
+                                              <div className="flex flex-wrap items-center gap-2">
+                                                <span className="text-sm font-semibold text-[color:var(--color-ink)]">
+                                                  {displayOptionalText(owner.ownerFullName)}
+                                                </span>
+                                                <StatusPill>
+                                                  {labelForOwnerRole(owner.ownerRole)}
+                                                </StatusPill>
+                                                <StatusPill tone={toneForOwnerStatus(owner.status)}>
+                                                  {labelForOwnerStatus(owner.status)}
+                                                </StatusPill>
+                                              </div>
+                                              <p className="mt-1 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
+                                                {displayOptionalText(owner.ownerEmail)} · Área{' '}
+                                                {displayOptionalText(owner.areaDisplayName)}
+                                              </p>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </section>
+                                  </>
+                                )}
+                              </section>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ) : null}
 

@@ -9,6 +9,10 @@ import type {
   AdminCustomerAccountFeature,
   AdminCustomerAccountIntegration,
   AdminCustomerAccountProfileDetail,
+  AdminCustomerProductSubscription,
+  AdminCustomerProductSubscriptionDetail,
+  AdminCustomerProductSubscriptionEntitlement,
+  AdminCustomerProductSubscriptionOwner,
   AdminInternalActionTargetArea,
   AdminInternalAreaMembership,
   AdminCustomerPortalAccessOverviewRow,
@@ -373,6 +377,91 @@ function mapAdminCustomerAccountFeature(
   };
 }
 
+function mapAdminCustomerProductSubscription(
+  row: Record<string, unknown>,
+): AdminCustomerProductSubscription {
+  return {
+    subscriptionId: String(row.subscription_id),
+    tenantId: String(row.tenant_id),
+    tenantSlug: String(row.tenant_slug),
+    tenantDisplayName: String(row.tenant_display_name),
+    tenantLegalName: String(row.tenant_legal_name),
+    tenantStatus: String(row.tenant_status),
+    productId: String(row.product_id),
+    productKey: String(row.product_key),
+    productDisplayName: String(row.product_display_name),
+    planId: String(row.plan_id),
+    planKey: String(row.plan_key),
+    planDisplayName: String(row.plan_display_name),
+    status: row.status as AdminCustomerProductSubscription['status'],
+    startedAt: (row.started_at as string | null) ?? null,
+    endedAt: (row.ended_at as string | null) ?? null,
+    renewalAt: (row.renewal_at as string | null) ?? null,
+    contractReference: (row.contract_reference as string | null) ?? null,
+    source: String(row.source),
+    notesInternal: (row.notes_internal as string | null) ?? null,
+    metadata:
+      row.metadata && typeof row.metadata === 'object' && !Array.isArray(row.metadata)
+        ? (row.metadata as AdminCustomerProductSubscription['metadata'])
+        : {},
+    activeEntitlementCount: Number(row.active_entitlement_count ?? 0),
+    activeOwnerCount: Number(row.active_owner_count ?? 0),
+    archivedAt: (row.archived_at as string | null) ?? null,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+function mapAdminCustomerProductSubscriptionEntitlement(
+  value: unknown,
+): AdminCustomerProductSubscriptionEntitlement {
+  const row = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+
+  return {
+    entitlementId: String(row.entitlementId),
+    featureId: String(row.featureId),
+    featureKey: String(row.featureKey),
+    displayName: String(row.displayName),
+    status: row.status as AdminCustomerProductSubscriptionEntitlement['status'],
+    entitlementSource:
+      row.entitlementSource as AdminCustomerProductSubscriptionEntitlement['entitlementSource'],
+    reason: (row.reason as string | null) ?? null,
+    startsAt: (row.startsAt as string | null) ?? null,
+    endsAt: (row.endsAt as string | null) ?? null,
+  };
+}
+
+function mapAdminCustomerProductSubscriptionOwner(
+  value: unknown,
+): AdminCustomerProductSubscriptionOwner {
+  const row = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+
+  return {
+    ownerId: String(row.ownerId),
+    ownerUserId: (row.ownerUserId as string | null) ?? null,
+    ownerFullName: (row.ownerFullName as string | null) ?? null,
+    ownerEmail: (row.ownerEmail as string | null) ?? null,
+    areaKey: (row.areaKey as AdminCustomerProductSubscriptionOwner['areaKey']) ?? null,
+    areaDisplayName: (row.areaDisplayName as string | null) ?? null,
+    ownerRole: row.ownerRole as AdminCustomerProductSubscriptionOwner['ownerRole'],
+    status: row.status as AdminCustomerProductSubscriptionOwner['status'],
+  };
+}
+
+function mapAdminCustomerProductSubscriptionDetail(
+  row: Record<string, unknown>,
+): AdminCustomerProductSubscriptionDetail {
+  return {
+    ...mapAdminCustomerProductSubscription(row),
+    entitlements: Array.isArray(row.entitlements)
+      ? row.entitlements.map(mapAdminCustomerProductSubscriptionEntitlement)
+      : [],
+    owners: Array.isArray(row.owners)
+      ? row.owners.map(mapAdminCustomerProductSubscriptionOwner)
+      : [],
+  };
+}
+
 export async function getAdminCustomerAccountProfile(tenantId: string) {
   const client = requireClient();
   const { data, error } = await client
@@ -454,6 +543,40 @@ export async function listAdminCustomerAccountFeatures(tenantId: string) {
   return (data ?? []).map((row) =>
     mapAdminCustomerAccountFeature(row as Record<string, unknown>),
   );
+}
+
+export async function listAdminCustomerProductSubscriptions(tenantId: string) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_customer_product_subscriptions')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar subscriptions comerciais da conta B2B.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapAdminCustomerProductSubscription(row as Record<string, unknown>),
+  );
+}
+
+export async function getAdminCustomerProductSubscriptionDetail(subscriptionId: string) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_customer_product_subscription_detail')
+    .select('*')
+    .eq('subscription_id', subscriptionId)
+    .maybeSingle();
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar detalhe da subscription comercial.');
+  }
+
+  return data
+    ? mapAdminCustomerProductSubscriptionDetail(data as Record<string, unknown>)
+    : null;
 }
 
 export async function listAdminMemberships() {

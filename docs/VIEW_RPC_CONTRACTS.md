@@ -1937,8 +1937,13 @@ Fase 8.2:
 - Todas as RPCs novas são `SECURITY DEFINER` com `SET search_path = ''`.
 - Todas as mutações passam por audit trail via `audit.audit_logs`.
 
+### Consumo frontend atual
+- Em 2026-06-02, `/admin/tenants` passou a consumir `vw_admin_customer_product_subscriptions` e `vw_admin_customer_product_subscription_detail` em uma aba `Subscriptions` somente leitura no detalhe do cliente.
+- A UI não chama RPC de escrita V1-E, não cria/edita/arquiva subscription, entitlement ou owner e não modela billing, preço, invoice, payment ou revenue.
+- O contador agregado da view de lista deve ser tratado com cautela até revisão backend, pois pode multiplicar entitlements/owners quando há múltiplos registros nos dois lados. A UI atual usa o detalhe da subscription como referência visual principal para features e responsáveis.
+
 ### Boundary mantido
-- sem UI nova;
+- sem UI de mutação;
 - sem CS Workspace;
 - sem Finance Workspace;
 - sem cobrança, preço, invoice, payment ou revenue;
