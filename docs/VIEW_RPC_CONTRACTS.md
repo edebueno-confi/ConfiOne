@@ -1902,10 +1902,54 @@ Fase 8.2:
 - sem health score;
 - sem colunas financeiras ou preco no catalogo V1-C.
 
+## OCP V1-E - Customer Product Subscriptions Foundation
+
+### Leitura materializada no backend
+- `vw_admin_customer_product_subscriptions`
+- `vw_admin_customer_product_subscription_detail`
+- `vw_admin_customer_product_feature_entitlements`
+- `vw_admin_customer_product_internal_owners`
+- `vw_support_customer_product_context`
+
+### Escrita materializada no backend
+- `rpc_admin_create_customer_product_subscription`
+- `rpc_admin_update_customer_product_subscription`
+- `rpc_admin_archive_customer_product_subscription`
+- `rpc_admin_set_customer_product_feature_entitlement`
+- `rpc_admin_archive_customer_product_feature_entitlement`
+- `rpc_admin_assign_customer_product_internal_owner`
+- `rpc_admin_archive_customer_product_internal_owner`
+
+### Decisão semântica
+- `customer_product_subscriptions` materializa o vínculo `tenant_id` -> `product_id` -> `plan_id`.
+- Um tenant pode manter múltiplos produtos ativos, mas não múltiplas assinaturas correntes para o mesmo produto.
+- `customer_product_feature_entitlements` registra entitlement comercial por assinatura e fica separado de `customer_account_features` e dos entitlements de Knowledge.
+- `customer_product_internal_owners` registra ownership operacional interno por assinatura e não concede permissão.
+- O domínio não modela preço, cobrança, invoice, pagamento ou receita.
+
+### Regras de consumo
+- Admin/OCP deve ler assinaturas por `vw_admin_customer_product_subscriptions` e detalhe por `vw_admin_customer_product_subscription_detail`.
+- Admin/OCP deve mutar assinaturas, entitlements e owners apenas pelas RPCs administrativas do lote.
+- Suporte deve usar apenas `vw_support_customer_product_context`, filtrada por `app_private.can_access_support_workspace(tenant_id)`.
+- Views administrativas retornam zero linhas para usuário autenticado sem `platform_admin`.
+- `authenticated` não possui SELECT ou DML direto nas tabelas base.
+- `anon` não possui leitura de tabelas base, views ou execução de RPCs.
+- Todas as RPCs novas são `SECURITY DEFINER` com `SET search_path = ''`.
+- Todas as mutações passam por audit trail via `audit.audit_logs`.
+
+### Boundary mantido
+- sem UI nova;
+- sem CS Workspace;
+- sem Finance Workspace;
+- sem cobrança, preço, invoice, payment ou revenue;
+- sem migration remota;
+- sem alteração de `customer_account_features`;
+- sem dado real ou seed customer-facing.
+
 ## Próximos contratos planejados
-- OCP V1-D Customer Product Subscriptions Planning:
-  - planejar, sem migration, o vinculo `tenants` -> produto/plano e os entitlements comerciais futuros.
-  - manter `customer_account_features` como override/habilitacao operacional ate haver decisao de produto e migration explicita.
+- OCP V1-F Customer Portfolio/Workspace Planning:
+  - planejar consumo futuro dos read models V1-E por Admin, Suporte e CS sem criar UI antes de blueprint e autorização explícita.
+  - manter `customer_account_features` como override/habilitacao operacional ate haver decisão de produto e migration explicita para integração com subscription.
 - Atualização posterior - entitlement arquivado no portal cliente:
   - `knowledge_article_entitlements.archived_at is not null` remove a exposição do artigo em:
     - `vw_customer_portal_knowledge_articles`

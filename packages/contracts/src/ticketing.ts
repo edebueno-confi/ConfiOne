@@ -1889,6 +1889,307 @@ export interface RpcAdminArchiveProductAreaOwnershipPayload {
 export type RpcAdminArchiveProductAreaOwnershipResponse =
   ProductAreaOwnershipRecord;
 
+export const CUSTOMER_PRODUCT_SUBSCRIPTION_STATUSES = [
+  'pending',
+  'active',
+  'suspended',
+  'cancelled',
+  'expired',
+] as const;
+export type CustomerProductSubscriptionStatus =
+  (typeof CUSTOMER_PRODUCT_SUBSCRIPTION_STATUSES)[number];
+
+export const CUSTOMER_PRODUCT_FEATURE_ENTITLEMENT_STATUSES = [
+  'active',
+  'inactive',
+  'archived',
+] as const;
+export type CustomerProductFeatureEntitlementStatus =
+  (typeof CUSTOMER_PRODUCT_FEATURE_ENTITLEMENT_STATUSES)[number];
+
+export const CUSTOMER_PRODUCT_FEATURE_ENTITLEMENT_SOURCES = [
+  'plan',
+  'addon',
+  'pilot',
+  'ops_override',
+  'migration',
+] as const;
+export type CustomerProductFeatureEntitlementSource =
+  (typeof CUSTOMER_PRODUCT_FEATURE_ENTITLEMENT_SOURCES)[number];
+
+export const CUSTOMER_PRODUCT_INTERNAL_OWNER_ROLES = [
+  'account_owner',
+  'cs_owner',
+  'support_owner',
+  'technical_owner',
+  'finance_owner',
+  'implementation_owner',
+] as const;
+export type CustomerProductInternalOwnerRole =
+  (typeof CUSTOMER_PRODUCT_INTERNAL_OWNER_ROLES)[number];
+
+export const CUSTOMER_PRODUCT_INTERNAL_OWNER_STATUSES = [
+  'active',
+  'inactive',
+  'archived',
+] as const;
+export type CustomerProductInternalOwnerStatus =
+  (typeof CUSTOMER_PRODUCT_INTERNAL_OWNER_STATUSES)[number];
+
+export interface CustomerProductSubscriptionRecord {
+  id: Uuid;
+  tenantId: Uuid;
+  productId: Uuid;
+  planId: Uuid;
+  status: CustomerProductSubscriptionStatus;
+  startedAt: IsoTimestamp | null;
+  endedAt: IsoTimestamp | null;
+  renewalAt: IsoTimestamp | null;
+  contractReference: string | null;
+  source: string;
+  notesInternal: string | null;
+  metadata: JsonObject;
+  archivedAt: IsoTimestamp | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  createdByUserId: Uuid | null;
+  updatedByUserId: Uuid | null;
+}
+
+export interface CustomerProductFeatureEntitlementRecord {
+  id: Uuid;
+  subscriptionId: Uuid;
+  featureId: Uuid;
+  status: CustomerProductFeatureEntitlementStatus;
+  entitlementSource: CustomerProductFeatureEntitlementSource;
+  reason: string | null;
+  startsAt: IsoTimestamp | null;
+  endsAt: IsoTimestamp | null;
+  metadata: JsonObject;
+  archivedAt: IsoTimestamp | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  createdByUserId: Uuid | null;
+  updatedByUserId: Uuid | null;
+}
+
+export interface CustomerProductInternalOwnerRecord {
+  id: Uuid;
+  subscriptionId: Uuid;
+  ownerUserId: Uuid | null;
+  areaKey: InternalActionAreaKey | null;
+  ownerRole: CustomerProductInternalOwnerRole;
+  status: CustomerProductInternalOwnerStatus;
+  notesInternal: string | null;
+  archivedAt: IsoTimestamp | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  createdByUserId: Uuid | null;
+  updatedByUserId: Uuid | null;
+}
+
+export interface AdminCustomerProductSubscription {
+  subscriptionId: Uuid;
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantDisplayName: string;
+  tenantLegalName: string;
+  tenantStatus: string;
+  productId: Uuid;
+  productKey: string;
+  productDisplayName: string;
+  planId: Uuid;
+  planKey: string;
+  planDisplayName: string;
+  status: CustomerProductSubscriptionStatus;
+  startedAt: IsoTimestamp | null;
+  endedAt: IsoTimestamp | null;
+  renewalAt: IsoTimestamp | null;
+  contractReference: string | null;
+  source: string;
+  notesInternal: string | null;
+  metadata: JsonObject;
+  activeEntitlementCount: number;
+  activeOwnerCount: number;
+  archivedAt: IsoTimestamp | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+}
+
+export interface AdminCustomerProductSubscriptionEntitlement {
+  entitlementId: Uuid;
+  featureId: Uuid;
+  featureKey: string;
+  displayName: string;
+  status: CustomerProductFeatureEntitlementStatus;
+  entitlementSource: CustomerProductFeatureEntitlementSource;
+  reason: string | null;
+  startsAt: IsoTimestamp | null;
+  endsAt: IsoTimestamp | null;
+}
+
+export interface AdminCustomerProductSubscriptionOwner {
+  ownerId: Uuid;
+  ownerUserId: Uuid | null;
+  ownerFullName: string | null;
+  ownerEmail: string | null;
+  areaKey: InternalActionAreaKey | null;
+  areaDisplayName: string | null;
+  ownerRole: CustomerProductInternalOwnerRole;
+  status: CustomerProductInternalOwnerStatus;
+}
+
+export interface AdminCustomerProductSubscriptionDetail
+  extends AdminCustomerProductSubscription {
+  entitlements: AdminCustomerProductSubscriptionEntitlement[];
+  owners: AdminCustomerProductSubscriptionOwner[];
+}
+
+export interface AdminCustomerProductFeatureEntitlement {
+  entitlementId: Uuid;
+  subscriptionId: Uuid;
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantDisplayName: string;
+  productId: Uuid;
+  productKey: string;
+  productDisplayName: string;
+  featureId: Uuid;
+  featureKey: string;
+  featureDisplayName: string;
+  status: CustomerProductFeatureEntitlementStatus;
+  entitlementSource: CustomerProductFeatureEntitlementSource;
+  reason: string | null;
+  startsAt: IsoTimestamp | null;
+  endsAt: IsoTimestamp | null;
+  metadata: JsonObject;
+  archivedAt: IsoTimestamp | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+}
+
+export interface AdminCustomerProductInternalOwner {
+  ownerId: Uuid;
+  subscriptionId: Uuid;
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantDisplayName: string;
+  productId: Uuid;
+  productKey: string;
+  productDisplayName: string;
+  ownerUserId: Uuid | null;
+  ownerFullName: string | null;
+  ownerEmail: string | null;
+  areaKey: InternalActionAreaKey | null;
+  areaDisplayName: string | null;
+  ownerRole: CustomerProductInternalOwnerRole;
+  status: CustomerProductInternalOwnerStatus;
+  notesInternal: string | null;
+  archivedAt: IsoTimestamp | null;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+}
+
+export interface SupportCustomerProductContextFeature {
+  featureKey: string;
+  displayName: string;
+  entitlementSource: CustomerProductFeatureEntitlementSource;
+}
+
+export interface SupportCustomerProductContextOwner {
+  areaKey: InternalActionAreaKey | null;
+  areaDisplayName: string | null;
+  ownerRole: CustomerProductInternalOwnerRole;
+}
+
+export interface SupportCustomerProductContext {
+  subscriptionId: Uuid;
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantDisplayName: string;
+  productKey: string;
+  productDisplayName: string;
+  planKey: string;
+  planDisplayName: string;
+  status: Extract<CustomerProductSubscriptionStatus, 'active' | 'suspended'>;
+  startedAt: IsoTimestamp | null;
+  endedAt: IsoTimestamp | null;
+  renewalAt: IsoTimestamp | null;
+  activeSupportFeatures: SupportCustomerProductContextFeature[];
+  activeInternalOwners: SupportCustomerProductContextOwner[];
+}
+
+export interface RpcAdminCreateCustomerProductSubscriptionPayload {
+  tenantId: Uuid;
+  productId: Uuid;
+  planId: Uuid;
+  status?: CustomerProductSubscriptionStatus;
+  startedAt?: IsoTimestamp | null;
+  renewalAt?: IsoTimestamp | null;
+  contractReference?: string | null;
+  source?: string;
+  notesInternal?: string | null;
+  metadata?: JsonObject;
+}
+export type RpcAdminCreateCustomerProductSubscriptionResponse =
+  CustomerProductSubscriptionRecord;
+
+export interface RpcAdminUpdateCustomerProductSubscriptionPayload {
+  subscriptionId: Uuid;
+  planId?: Uuid | null;
+  status?: CustomerProductSubscriptionStatus | null;
+  startedAt?: IsoTimestamp | null;
+  endedAt?: IsoTimestamp | null;
+  renewalAt?: IsoTimestamp | null;
+  contractReference?: string | null;
+  notesInternal?: string | null;
+  metadata?: JsonObject | null;
+}
+export type RpcAdminUpdateCustomerProductSubscriptionResponse =
+  CustomerProductSubscriptionRecord;
+
+export interface RpcAdminArchiveCustomerProductSubscriptionPayload {
+  subscriptionId: Uuid;
+}
+export type RpcAdminArchiveCustomerProductSubscriptionResponse =
+  CustomerProductSubscriptionRecord;
+
+export interface RpcAdminSetCustomerProductFeatureEntitlementPayload {
+  subscriptionId: Uuid;
+  featureId: Uuid;
+  entitlementSource?: CustomerProductFeatureEntitlementSource;
+  status?: CustomerProductFeatureEntitlementStatus;
+  reason?: string | null;
+  startsAt?: IsoTimestamp | null;
+  endsAt?: IsoTimestamp | null;
+  metadata?: JsonObject;
+}
+export type RpcAdminSetCustomerProductFeatureEntitlementResponse =
+  CustomerProductFeatureEntitlementRecord;
+
+export interface RpcAdminArchiveCustomerProductFeatureEntitlementPayload {
+  entitlementId: Uuid;
+}
+export type RpcAdminArchiveCustomerProductFeatureEntitlementResponse =
+  CustomerProductFeatureEntitlementRecord;
+
+export interface RpcAdminAssignCustomerProductInternalOwnerPayload {
+  subscriptionId: Uuid;
+  ownerRole: CustomerProductInternalOwnerRole;
+  ownerUserId?: Uuid | null;
+  areaKey?: InternalActionAreaKey | null;
+  status?: CustomerProductInternalOwnerStatus;
+  notesInternal?: string | null;
+}
+export type RpcAdminAssignCustomerProductInternalOwnerResponse =
+  CustomerProductInternalOwnerRecord;
+
+export interface RpcAdminArchiveCustomerProductInternalOwnerPayload {
+  ownerId: Uuid;
+}
+export type RpcAdminArchiveCustomerProductInternalOwnerResponse =
+  CustomerProductInternalOwnerRecord;
+
 export interface AdminInternalArea {
   areaKey: InternalActionAreaKey;
   displayName: string;

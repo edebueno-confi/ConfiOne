@@ -196,6 +196,7 @@ RPCs futuras devem exigir ator ativo, motivo quando aplicavel, escopo explicito 
 
 ### Fase 3: Customer Product Subscriptions & Ownership
 
+- Estado local em 2026-06-02: fundacao backend materializada no lote `OCP V1-E Customer Product Subscriptions Foundation`, sem UI, billing, deploy remoto ou dados reais.
 - Vincular `tenant` a produto/plano/modulos.
 - Definir responsaveis internos por cliente/produto.
 - Preparar Customer Portfolio Management.

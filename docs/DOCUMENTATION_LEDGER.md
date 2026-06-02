@@ -18,6 +18,40 @@ Cada registro deve informar:
 
 ## Registros
 
+### OCP V1-E Customer Product Subscriptions Foundation 2026-06-02
+- fase: `OCP V1-E Customer Product Subscriptions Foundation`
+- nome: `OCP V1-E Backend Foundation`
+- branch: `codex/ocp-v1-e-subscriptions-foundation`
+- resumo funcional: fundação backend local para vincular tenant a produto/plano, registrar entitlements comerciais por assinatura e owners internos por subscription. O lote reaproveita o catálogo comercial V1-C, preserva `customer_account_features` como habilitação operacional separada e não implementa billing, UI, deploy remoto ou dados reais.
+- documentos alterados:
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/OPERATIONAL_CONTROL_PLANE_V1.md`
+  - `docs/README.md`
+  - `docs/reports/OCP_V1_E_CUSTOMER_PRODUCT_SUBSCRIPTIONS_FOUNDATION_2026-06-02.md`
+- views/RPCs afetadas:
+  - `vw_admin_customer_product_subscriptions`
+  - `vw_admin_customer_product_subscription_detail`
+  - `vw_admin_customer_product_feature_entitlements`
+  - `vw_admin_customer_product_internal_owners`
+  - `vw_support_customer_product_context`
+  - `rpc_admin_create_customer_product_subscription`
+  - `rpc_admin_update_customer_product_subscription`
+  - `rpc_admin_archive_customer_product_subscription`
+  - `rpc_admin_set_customer_product_feature_entitlement`
+  - `rpc_admin_archive_customer_product_feature_entitlement`
+  - `rpc_admin_assign_customer_product_internal_owner`
+  - `rpc_admin_archive_customer_product_internal_owner`
+- validações:
+  - `git status --short`
+  - `git diff --check`
+  - `npm run contracts:typecheck`
+  - `npm run supabase:lint:db`
+  - `npm run supabase:test:db`
+- impacto para FAQ futura:
+  - registra o modelo canonico de assinatura por cliente/produto/plano e a separação entre produto contratado, entitlement comercial e habilitação operacional.
+
 ### OCP V1-E Customer Product Subscriptions Decision & Execution Planning 2026-06-02
 - fase: `OCP V1-E Customer Product Subscriptions Decision & Execution Planning`
 - nome: `OCP V1-E Decision Record and Execution Plan`
