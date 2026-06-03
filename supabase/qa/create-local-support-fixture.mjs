@@ -1886,6 +1886,422 @@ function queryProfileByEmail(email) {
   return result.rows?.[0] ?? null;
 }
 
+function queryCommercialProductByKey(productKey) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id, product_key, display_name, status::text as status
+    from public.commercial_products
+    where product_key = '${sqlEscape(productKey)}'
+    order by created_at asc
+    limit 1;
+  `);
+
+  return result.rows?.[0] ?? null;
+}
+
+function queryCommercialProductPlanByKey(productId, planKey) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id, product_id::text as product_id, plan_key, display_name, status::text as status
+    from public.commercial_product_plans
+    where product_id = '${sqlEscape(productId)}'::uuid
+      and plan_key = '${sqlEscape(planKey)}'
+    order by created_at asc
+    limit 1;
+  `);
+
+  return result.rows?.[0] ?? null;
+}
+
+function queryCommercialProductFeatureByKey(productId, featureKey) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id, product_id::text as product_id, feature_key, display_name, status::text as status
+    from public.commercial_product_features
+    where product_id = '${sqlEscape(productId)}'::uuid
+      and feature_key = '${sqlEscape(featureKey)}'
+    order by created_at asc
+    limit 1;
+  `);
+
+  return result.rows?.[0] ?? null;
+}
+
+function queryCustomerProductSubscription(tenantId, productId) {
+  const result = runSupabaseDbQuery(`
+    select
+      id::text as id,
+      tenant_id::text as tenant_id,
+      product_id::text as product_id,
+      plan_id::text as plan_id,
+      status::text as status
+    from public.customer_product_subscriptions
+    where tenant_id = '${sqlEscape(tenantId)}'::uuid
+      and product_id = '${sqlEscape(productId)}'::uuid
+      and archived_at is null
+      and status in ('pending', 'active', 'suspended')
+    order by created_at asc
+    limit 1;
+  `);
+
+  return result.rows?.[0] ?? null;
+}
+
+function queryOcpV1ESubscriptionSummary({ actorUserId, tenantSlug, productKey }) {
+  const result = runSupabaseDbQuery(`
+    with auth_context as (
+      select
+        set_config('request.jwt.claim.role', 'authenticated', true),
+        set_config('request.jwt.claim.sub', '${sqlEscape(actorUserId)}', true)
+    )
+    select jsonb_build_object(
+      'subscription', (
+        select to_jsonb(subscription)
+        from public.vw_admin_customer_product_subscriptions as subscription
+        where subscription.tenant_slug = '${sqlEscape(tenantSlug)}'
+          and subscription.product_key = '${sqlEscape(productKey)}'
+        order by subscription.created_at asc
+        limit 1
+      ),
+      'detail', (
+        select jsonb_build_object(
+          'subscription_id', detail.subscription_id,
+          'tenant_slug', detail.tenant_slug,
+          'product_key', detail.product_key,
+          'product_display_name', detail.product_display_name,
+          'plan_key', detail.plan_key,
+          'plan_display_name', detail.plan_display_name,
+          'status', detail.status,
+          'entitlements_count', jsonb_array_length(coalesce(detail.entitlements, '[]'::jsonb)),
+          'owners_count', jsonb_array_length(coalesce(detail.owners, '[]'::jsonb)),
+          'entitlements', detail.entitlements,
+          'owners', detail.owners
+        )
+        from public.vw_admin_customer_product_subscription_detail as detail
+        where detail.tenant_slug = '${sqlEscape(tenantSlug)}'
+          and detail.product_key = '${sqlEscape(productKey)}'
+        order by detail.created_at asc
+        limit 1
+      )
+    ) as summary
+    from auth_context;
+  `);
+
+  return result.rows?.[0]?.summary ?? {};
+}
+
+async function ensureCommercialProduct({ adminSession, product }) {
+  const existing = queryCommercialProductByKey(product.productKey);
+  if (existing?.id) {
+    if (existing.status !== product.status) {
+      await callRpcAsUser({
+        ...adminSession,
+        rpcName: 'rpc_admin_update_commercial_product',
+        body: {
+          p_product_id: existing.id,
+          p_display_name: product.displayName,
+          p_description: product.description,
+          p_status: product.status,
+        },
+      });
+    }
+
+    return existing.id;
+  }
+
+  const created = await callRpcAsUser({
+    ...adminSession,
+    rpcName: 'rpc_admin_create_commercial_product',
+    body: {
+      p_product_key: product.productKey,
+      p_display_name: product.displayName,
+      p_description: product.description,
+      p_status: product.status,
+    },
+  });
+
+  return created?.id ?? queryCommercialProductByKey(product.productKey)?.id;
+}
+
+async function ensureCommercialProductPlan({ adminSession, productId, plan }) {
+  const existing = queryCommercialProductPlanByKey(productId, plan.planKey);
+  if (existing?.id) {
+    if (existing.status !== plan.status) {
+      await callRpcAsUser({
+        ...adminSession,
+        rpcName: 'rpc_admin_update_commercial_product_plan',
+        body: {
+          p_plan_id: existing.id,
+          p_display_name: plan.displayName,
+          p_description: plan.description,
+          p_status: plan.status,
+          p_sort_order: plan.sortOrder,
+        },
+      });
+    }
+
+    return existing.id;
+  }
+
+  const created = await callRpcAsUser({
+    ...adminSession,
+    rpcName: 'rpc_admin_create_commercial_product_plan',
+    body: {
+      p_product_id: productId,
+      p_plan_key: plan.planKey,
+      p_display_name: plan.displayName,
+      p_description: plan.description,
+      p_status: plan.status,
+      p_sort_order: plan.sortOrder,
+    },
+  });
+
+  return created?.id ?? queryCommercialProductPlanByKey(productId, plan.planKey)?.id;
+}
+
+async function ensureCommercialProductFeature({ adminSession, productId, feature }) {
+  const existing = queryCommercialProductFeatureByKey(productId, feature.featureKey);
+  if (existing?.id) {
+    if (existing.status !== feature.status) {
+      await callRpcAsUser({
+        ...adminSession,
+        rpcName: 'rpc_admin_update_commercial_product_feature',
+        body: {
+          p_feature_id: existing.id,
+          p_display_name: feature.displayName,
+          p_module_id: null,
+          p_description: feature.description,
+          p_status: feature.status,
+          p_customer_visible_default: feature.customerVisibleDefault,
+          p_support_visible_default: feature.supportVisibleDefault,
+          p_sort_order: feature.sortOrder,
+        },
+      });
+    }
+
+    return existing.id;
+  }
+
+  const created = await callRpcAsUser({
+    ...adminSession,
+    rpcName: 'rpc_admin_create_commercial_product_feature',
+    body: {
+      p_product_id: productId,
+      p_feature_key: feature.featureKey,
+      p_display_name: feature.displayName,
+      p_module_id: null,
+      p_description: feature.description,
+      p_status: feature.status,
+      p_customer_visible_default: feature.customerVisibleDefault,
+      p_support_visible_default: feature.supportVisibleDefault,
+      p_sort_order: feature.sortOrder,
+    },
+  });
+
+  return created?.id ?? queryCommercialProductFeatureByKey(productId, feature.featureKey)?.id;
+}
+
+async function ensureCustomerProductSubscription({
+  adminSession,
+  tenantId,
+  productId,
+  planId,
+}) {
+  const existing = queryCustomerProductSubscription(tenantId, productId);
+  if (existing?.id) {
+    if (existing.status !== 'active' || existing.plan_id !== planId) {
+      await callRpcAsUser({
+        ...adminSession,
+        rpcName: 'rpc_admin_update_customer_product_subscription',
+        body: {
+          p_subscription_id: existing.id,
+          p_plan_id: planId,
+          p_status: 'active',
+          p_started_at: null,
+          p_ended_at: null,
+          p_renewal_at: null,
+          p_contract_reference: 'QA-OCP-V1E-LOCAL',
+          p_notes_internal: 'Fixture local sanitizada para validacao do MVP operacional.',
+          p_metadata: {
+            fixture: 'local_support_workspace',
+            containsBilling: false,
+          },
+        },
+      });
+    }
+
+    return existing.id;
+  }
+
+  const created = await callRpcAsUser({
+    ...adminSession,
+    rpcName: 'rpc_admin_create_customer_product_subscription',
+    body: {
+      p_tenant_id: tenantId,
+      p_product_id: productId,
+      p_plan_id: planId,
+      p_status: 'active',
+      p_started_at: new Date('2026-06-01T00:00:00.000Z').toISOString(),
+      p_renewal_at: new Date('2027-06-01T00:00:00.000Z').toISOString(),
+      p_contract_reference: 'QA-OCP-V1E-LOCAL',
+      p_source: 'manual_admin',
+      p_notes_internal: 'Fixture local sanitizada para validacao do MVP operacional.',
+      p_metadata: {
+        fixture: 'local_support_workspace',
+        containsBilling: false,
+      },
+    },
+  });
+
+  return created?.id ?? queryCustomerProductSubscription(tenantId, productId)?.id;
+}
+
+async function ensureOcpV1ESubscriptionsFixture({ adminSession, tenantMap, operatorMap }) {
+  const tenantId = tenantMap.get('support-qa-a');
+  const adminUserId = operatorMap.get('qa-admin');
+  const supportManagerId = operatorMap.get('support-manager-a');
+
+  if (!tenantId) {
+    fail('Tenant support-qa-a ausente para fixture OCP V1-E.');
+  }
+
+  if (!adminUserId) {
+    fail('QA admin ausente para fixture OCP V1-E.');
+  }
+
+  if (!supportManagerId) {
+    fail('Support manager support-manager-a ausente para fixture OCP V1-E.');
+  }
+
+  const productId = await ensureCommercialProduct({
+    adminSession,
+    product: {
+      productKey: 'genius_returns_local_qa',
+      displayName: 'Genius Returns',
+      description: 'Produto operacional para validacao local de subscriptions V1-E.',
+      status: 'active',
+    },
+  });
+
+  if (!productId) {
+    fail('Produto OCP V1-E local nao foi materializado.');
+  }
+
+  const planId = await ensureCommercialProductPlan({
+    adminSession,
+    productId,
+    plan: {
+      planKey: 'enterprise',
+      displayName: 'Enterprise',
+      description: 'Plano enterprise sem preco, billing ou financeiro no fixture local.',
+      status: 'active',
+      sortOrder: 10,
+    },
+  });
+
+  if (!planId) {
+    fail('Plano OCP V1-E local nao foi materializado.');
+  }
+
+  const featureIds = [];
+  for (const feature of [
+    {
+      featureKey: 'returns_portal',
+      displayName: 'Portal de reversa',
+      description: 'Feature comercial visivel para suporte e portal autorizado.',
+      status: 'active',
+      customerVisibleDefault: true,
+      supportVisibleDefault: true,
+      sortOrder: 10,
+      entitlementSource: 'plan',
+      reason: 'Feature incluida no plano enterprise local.',
+    },
+    {
+      featureKey: 'priority_support',
+      displayName: 'Suporte prioritario',
+      description: 'Feature comercial adicional para validar agregacao sem duplicacao.',
+      status: 'active',
+      customerVisibleDefault: false,
+      supportVisibleDefault: true,
+      sortOrder: 20,
+      entitlementSource: 'addon',
+      reason: 'Addon local para validar contagens independentes.',
+    },
+  ]) {
+    const featureId = await ensureCommercialProductFeature({
+      adminSession,
+      productId,
+      feature,
+    });
+
+    if (!featureId) {
+      fail(`Feature OCP V1-E local ausente: ${feature.featureKey}.`);
+    }
+
+    featureIds.push({ ...feature, id: featureId });
+  }
+
+  const subscriptionId = await ensureCustomerProductSubscription({
+    adminSession,
+    tenantId,
+    productId,
+    planId,
+  });
+
+  if (!subscriptionId) {
+    fail('Subscription OCP V1-E local nao foi materializada.');
+  }
+
+  for (const feature of featureIds) {
+    await callRpcAsUser({
+      ...adminSession,
+      rpcName: 'rpc_admin_set_customer_product_feature_entitlement',
+      body: {
+        p_subscription_id: subscriptionId,
+        p_feature_id: feature.id,
+        p_entitlement_source: feature.entitlementSource,
+        p_status: 'active',
+        p_reason: feature.reason,
+        p_starts_at: new Date('2026-06-01T00:00:00.000Z').toISOString(),
+        p_ends_at: null,
+        p_metadata: {
+          fixture: 'local_support_workspace',
+          containsBilling: false,
+        },
+      },
+    });
+  }
+
+  await callRpcAsUser({
+    ...adminSession,
+    rpcName: 'rpc_admin_assign_customer_product_internal_owner',
+    body: {
+      p_subscription_id: subscriptionId,
+      p_owner_role: 'support_owner',
+      p_owner_user_id: null,
+      p_area_key: 'operations',
+      p_status: 'active',
+      p_notes_internal: 'Area operacional responsavel pela subscription local.',
+    },
+  });
+
+  await callRpcAsUser({
+    ...adminSession,
+    rpcName: 'rpc_admin_assign_customer_product_internal_owner',
+    body: {
+      p_subscription_id: subscriptionId,
+      p_owner_role: 'cs_owner',
+      p_owner_user_id: supportManagerId,
+      p_area_key: null,
+      p_status: 'active',
+      p_notes_internal: 'Responsavel interno para validar ownership nominal no Admin.',
+    },
+  });
+
+  return queryOcpV1ESubscriptionSummary({
+    actorUserId: adminUserId,
+    tenantSlug: 'support-qa-a',
+    productKey: 'genius_returns_local_qa',
+  });
+}
+
 function bootstrapFirstPlatformAdmin(userId) {
   const result = spawnSync(
     process.execPath,
@@ -4513,6 +4929,13 @@ async function main() {
     });
   }
 
+  logStep('hidratando subscriptions OCP V1-E para QA local');
+  const ocpV1ESubscriptions = await ensureOcpV1ESubscriptionsFixture({
+    adminSession,
+    tenantMap,
+    operatorMap,
+  });
+
   console.log(
     JSON.stringify(
       {
@@ -4575,6 +4998,7 @@ async function main() {
         engineering_handoffs: createdEngineeringHandoffs,
         engineering_operations: createdEngineeringOperations,
         attachments: createdAttachments,
+        ocp_v1_e_subscriptions: ocpV1ESubscriptions,
         public_help_center: publicHelpCenter,
         tickets: createdTickets,
         customer_portal_collaborations: createdCustomerPortalCollaborations,
