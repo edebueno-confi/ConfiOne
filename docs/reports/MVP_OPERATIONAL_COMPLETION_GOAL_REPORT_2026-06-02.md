@@ -2,7 +2,7 @@
 
 ## Resumo executivo
 
-Gate 0 de fixture local foi reforcado para validacao humana do MVP operacional. O fixture funcional existente continua sendo a base canonica de QA local e agora tambem hidrata OCP V1-E com uma subscription operacional real por RPC administrativa, duas features/entitlements e dois responsaveis internos.
+Gate 0 de fixture local foi reforcado para validacao humana do MVP operacional. O fixture funcional existente continua sendo a base canonica de QA local e agora tambem hidrata OCP V1-E com uma subscription operacional real por RPC administrativa, duas features/entitlements e dois responsaveis internos. O fixture local nao depende mais de Auth Admin/SERVICE_ROLE_KEY para materializar usuarios QA; usuarios Auth locais sao criados por SQL contra o banco local apos validacao de API_URL/DB_URL locais.
 
 Nao houve deploy remoto, migration remota, dado real, billing, preco, invoice, financeiro ou UI nova. O lote alterou apenas fixture local de QA e este relatorio.
 
@@ -17,6 +17,11 @@ Nao houve deploy remoto, migration remota, dado real, billing, preco, invoice, f
   - criar dois entitlements ativos;
   - criar dois owners internos ativos, sendo um por area `operations` e outro nominal para o support manager QA;
   - expor resumo OCP V1-E no JSON final do fixture via read models administrativos.
+- Atualizados `supabase/qa/create-local-support-fixture.mjs` e `supabase/qa/create-local-functional-fixture.mjs` para:
+  - remover chamadas Auth Admin locais com SERVICE_ROLE_KEY;
+  - criar/atualizar usuarios QA por SQL local em `auth.users` e `auth.identities`;
+  - manter bloqueio de execucao fora de Supabase local;
+  - tolerar falhas transitorias de Auth local apos reset (`502/503/504` e `JWT issued at future`) sem mascarar erro real de credencial.
 
 ## Evidencia Gate 0
 
@@ -78,6 +83,7 @@ Resumo confirmado por query local apos reset e fixture:
 - `npm run supabase:db:reset`
 - `GENIUS_QA_SUPPORT_FIXTURE_TIMEOUT_MS=1200000 npm run supabase:qa:local-functional-fixture`
 - `node --check supabase/qa/create-local-support-fixture.mjs`
+- `node --check supabase/qa/create-local-functional-fixture.mjs`
 - `npm run contracts:typecheck`
 - `npm run web:typecheck`
 - `npm run web:build`
@@ -86,13 +92,16 @@ Resumo confirmado por query local apos reset e fixture:
 - check HTTP local do app: `HTTP 200 OK` em `http://127.0.0.1:5173`
 - check de `VITE_SUPABASE_URL`: `http://127.0.0.1:54321`
 - check DB Gate 0 com contagens de tickets, Knowledge, engenharia, Customer Account e OCP V1-E
+- check REST autenticado dos read models V1-E: 1 linha em `vw_admin_customer_product_subscriptions`, 1 linha em `vw_admin_customer_product_subscription_detail`, 2 entitlements, 2 owners, produto `Genius Returns`, plano `Enterprise`
+- smoke visual autenticado em `http://127.0.0.1:5173/admin/tenants` > `Support QA Tenant A Operação Enterprise` > aba `Subscriptions`
 
 Resultado dos gates: aprovados.
 
 ## Limitacoes conhecidas
 
 - O fixture funcional e pesado em Windows local; a primeira execucao com timeout padrao de 10 minutos pode expirar. A execucao validada usou `GENIUS_QA_SUPPORT_FIXTURE_TIMEOUT_MS=1200000`.
-- O fixture canonico ainda usa Auth Admin local/SERVICE_ROLE_KEY local para criar e atualizar usuarios QA. Nao houve uso remoto, dado real ou exposicao de secrets no relatorio.
+- Apos reset local, o navegador pode manter refresh token antigo ou receber `JWT issued at future` por alguns segundos. Limpar sessao local e repetir login apos aguardar a readiness estabilizar resolveu o smoke validado.
+- O fixture nao tenta iniciar `supabase functions serve` por conta propria quando o Edge Runtime local esta indisponivel, porque isso exigiria materializar SERVICE_ROLE_KEY em arquivo temporario. A execucao validada usa `npm run supabase:start` + `npm run supabase:wait:ready`.
 - OCP V1-E esta disponivel em leitura Admin; nao ha UI nova de mutation de subscriptions.
 - Billing, preco, invoice, payment, revenue e financeiro continuam fora do escopo e ausentes.
 - Nao foi executado deploy remoto, staging, producao, provider externo ou IA real.
@@ -118,8 +127,9 @@ Antes de implementar, o lote deve declarar explicitamente:
 ## Status de fechamento
 
 - Branch: `codex/mvp-operational-completion-goal`
-- Commit base: `1ebf12d fix: corrigir agregacoes de subscriptions ocp v1-e`
+- Commit base: `cd990ab chore: reforcar fixture local do mvp operacional`
 - Arquivos alterados neste lote:
   - `supabase/qa/create-local-support-fixture.mjs`
+  - `supabase/qa/create-local-functional-fixture.mjs`
   - `docs/reports/MVP_OPERATIONAL_COMPLETION_GOAL_REPORT_2026-06-02.md`
 - Commit: pendente ate revisao final do lote.

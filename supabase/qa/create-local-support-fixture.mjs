@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -1437,10 +1437,6 @@ function logStep(message) {
   console.log(`[support-fixture] ${message}`);
 }
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 async function fetchWithTimeout(label, url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -1517,56 +1513,19 @@ async function ensureLocalEdgeRuntime() {
   const localEnv = readLocalSupabaseStatusEnv();
   const apiUrl = localEnv.API_URL;
   const anonKey = localEnv.ANON_KEY;
-  const serviceRoleKey = localEnv.SERVICE_ROLE_KEY;
 
-  if (!apiUrl || !anonKey || !serviceRoleKey) {
-    fail('API_URL, ANON_KEY ou SERVICE_ROLE_KEY ausentes no Supabase local.');
+  if (!apiUrl || !anonKey) {
+    fail('API_URL ou ANON_KEY ausentes no Supabase local.');
   }
 
   if (await isEdgeRuntimeHealthy(apiUrl)) {
     logStep('Edge Runtime local saudavel');
-    return { apiUrl, anonKey, serviceRoleKey };
+    return { apiUrl, anonKey };
   }
 
-  const tempDir = mkdtempSync(join(tmpdir(), 'genius-support-edge-runtime-'));
-  const envFile = join(tempDir, '.env.edge-runtime');
-  writeFileSync(
-    envFile,
-    [
-      `API_URL=${apiUrl}`,
-      `ANON_KEY=${anonKey}`,
-      `SERVICE_ROLE_KEY=${serviceRoleKey}`,
-      `SUPABASE_URL=${apiUrl}`,
-      `SUPABASE_ANON_KEY=${anonKey}`,
-      `SUPABASE_SERVICE_ROLE_KEY=${serviceRoleKey}`,
-    ].join('\n'),
+  fail(
+    'Edge Runtime local indisponivel. Rode npm run supabase:start e aguarde readiness; a fixture nao inicia functions serve porque isso exigiria SERVICE_ROLE_KEY local.',
   );
-
-  const serveCommand =
-    process.platform === 'win32'
-      ? `${process.env.ComSpec ?? 'cmd.exe'} /d /s /c "npx supabase functions serve --env-file \"${envFile}\""`
-      : `npx supabase functions serve --env-file "${envFile}"`;
-
-  const child = spawn(serveCommand, {
-    cwd: process.cwd(),
-    env: process.env,
-    shell: true,
-    detached: true,
-    stdio: 'ignore',
-  });
-  child.unref();
-
-  const startedAt = Date.now();
-  while (Date.now() - startedAt < 30_000) {
-    if (await isEdgeRuntimeHealthy(apiUrl)) {
-      logStep('Edge Runtime local iniciado pela fixture');
-      return { apiUrl, anonKey, serviceRoleKey };
-    }
-
-    await sleep(1_000);
-  }
-
-  fail('O runtime local de Edge Functions não respondeu após tentar subir o servidor.');
 }
 
 function localSupabaseCommandArgs(args) {
@@ -1638,7 +1597,6 @@ function runSupabaseStatusEnv() {
 function assertLocalOnly(envMap) {
   const apiUrl = envMap.get('API_URL') ?? '';
   const dbUrl = envMap.get('DB_URL') ?? '';
-  const serviceRoleKey = envMap.get('SERVICE_ROLE_KEY') ?? '';
   const anonKey = envMap.get('ANON_KEY') ?? '';
 
   const isLocalApi =
@@ -1646,15 +1604,14 @@ function assertLocalOnly(envMap) {
     apiUrl.startsWith('http://localhost:');
   const isLocalDb = dbUrl.includes('@127.0.0.1:') || dbUrl.includes('@localhost:');
 
-  if (!isLocalApi || !isLocalDb || !serviceRoleKey || !anonKey) {
+  if (!isLocalApi || !isLocalDb || !anonKey) {
     fail(
-      'Fixture de suporte bloqueada: este script so pode rodar contra o Supabase local com API_URL/DB_URL locais e chaves locais validas.',
+      'Fixture de suporte bloqueada: este script so pode rodar contra o Supabase local com API_URL/DB_URL locais e ANON_KEY local valida.',
     );
   }
 
   return {
     apiUrl,
-    serviceRoleKey,
     anonKey,
   };
 }
@@ -1742,7 +1699,17 @@ async function signInLocalUser({ apiUrl, anonKey, email, password }) {
 
       if (!response.ok) {
         const detail = await response.text();
-        fail(`Falha ao autenticar fixture local ${email}: ${response.status} ${detail}`);
+        const isTransient =
+          [502, 503, 504].includes(response.status) ||
+          /issued at future|upstream|temporar/i.test(detail);
+
+        if (!isTransient || attempt === 5) {
+          fail(`Falha ao autenticar fixture local ${email}: ${response.status} ${detail}`);
+        }
+
+        lastError = new Error(`${response.status} ${detail}`);
+        await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+        continue;
       }
 
       return response.json();
@@ -1808,69 +1775,139 @@ function queryAuthUserByEmail(email) {
   return result.rows?.[0] ?? null;
 }
 
-async function createOrUpdateAuthUser({
-  apiUrl,
-  serviceRoleKey,
-  email,
-  password,
-  fullName,
-}) {
-  const existingUser = queryAuthUserByEmail(email);
-  const payload = {
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: {
-      full_name: fullName,
-      name: fullName,
-      locale: 'pt-BR',
-      timezone: 'America/Sao_Paulo',
-    },
-  };
+async function createOrUpdateAuthUser({ email, password, fullName }) {
+  const result = runSupabaseDbQuery(`
+    with input as (
+      select
+        coalesce(
+          (select id from auth.users where email = '${sqlEscape(email)}'),
+          gen_random_uuid()
+        ) as id,
+        '${sqlEscape(email)}'::text as email,
+        '${sqlEscape(password)}'::text as password,
+        '${sqlEscape(fullName)}'::text as full_name
+    ),
+    upsert_user as (
+      insert into auth.users (
+        instance_id,
+        id,
+        aud,
+        role,
+        email,
+        encrypted_password,
+        email_confirmed_at,
+        confirmation_token,
+        recovery_token,
+        email_change_token_new,
+        email_change,
+        email_change_token_current,
+        phone,
+        phone_change,
+        phone_change_token,
+        reauthentication_token,
+        raw_app_meta_data,
+        raw_user_meta_data,
+        is_sso_user,
+        is_anonymous,
+        created_at,
+        updated_at
+      )
+      select
+        '00000000-0000-0000-0000-000000000000'::uuid,
+        input.id,
+        'authenticated',
+        'authenticated',
+        input.email,
+        crypt(input.password, gen_salt('bf')),
+        timezone('utc', now()),
+        '',
+        '',
+        '',
+        '',
+        '',
+        null,
+        '',
+        '',
+        '',
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        jsonb_build_object(
+          'full_name', input.full_name,
+          'name', input.full_name,
+          'locale', 'pt-BR',
+          'timezone', 'America/Sao_Paulo',
+          'email_verified', true
+        ),
+        false,
+        false,
+        timezone('utc', now()),
+        timezone('utc', now())
+      from input
+      on conflict (id) do update
+      set
+        email = excluded.email,
+        encrypted_password = excluded.encrypted_password,
+        email_confirmed_at = excluded.email_confirmed_at,
+        confirmation_token = '',
+        recovery_token = '',
+        email_change_token_new = '',
+        email_change = '',
+        email_change_token_current = '',
+        phone = null,
+        phone_change = '',
+        phone_change_token = '',
+        reauthentication_token = '',
+        raw_app_meta_data = excluded.raw_app_meta_data,
+        raw_user_meta_data = excluded.raw_user_meta_data,
+        is_sso_user = false,
+        is_anonymous = false,
+        deleted_at = null,
+        updated_at = timezone('utc', now())
+      returning id, email
+    ),
+    upsert_identity as (
+      insert into auth.identities (
+        provider_id,
+        user_id,
+        identity_data,
+        provider,
+        last_sign_in_at,
+        created_at,
+        updated_at
+      )
+      select
+        upsert_user.id::text,
+        upsert_user.id,
+        jsonb_build_object(
+          'sub', upsert_user.id::text,
+          'email', upsert_user.email,
+          'email_verified', true,
+          'phone_verified', false
+        ),
+        'email',
+        timezone('utc', now()),
+        timezone('utc', now()),
+        timezone('utc', now())
+      from upsert_user
+      on conflict on constraint identities_provider_id_provider_unique
+      do update
+      set
+        user_id = excluded.user_id,
+        identity_data = excluded.identity_data,
+        updated_at = timezone('utc', now())
+      returning user_id
+    )
+    select
+      (select id::text from upsert_user) as id,
+      (select email::text from upsert_user) as email,
+      (select count(*)::integer from upsert_identity) as identity_count;
+  `);
 
-  if (existingUser?.id) {
-    const updateResponse = await fetchWithTimeout(
-      `atualizacao Auth local ${email}`,
-      `${apiUrl}/auth/v1/admin/users/${existingUser.id}`,
-      {
-        method: 'PUT',
-        headers: {
-          apikey: serviceRoleKey,
-          Authorization: `Bearer ${serviceRoleKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      },
-    );
-
-    if (!updateResponse.ok) {
-      const detail = await updateResponse.text();
-      fail(`Falha ao atualizar usuario Auth local ${email}: ${updateResponse.status} ${detail}`);
-    }
-
-    return updateResponse.json();
+  const user = result.rows?.[0] ?? null;
+  if (!user?.id || user.identity_count !== 1) {
+    fail(`Falha ao materializar usuario Auth local por SQL: ${email}.`);
   }
 
-  const createResponse = await fetchWithTimeout(
-    `criacao Auth local ${email}`,
-    `${apiUrl}/auth/v1/admin/users`,
-    {
-      method: 'POST',
-      headers: {
-        apikey: serviceRoleKey,
-        Authorization: `Bearer ${serviceRoleKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    },
-  );
-
-  if (!createResponse.ok) {
-    const detail = await createResponse.text();
-    fail(`Falha ao criar usuario Auth local ${email}: ${createResponse.status} ${detail}`);
-  }
-
-  return createResponse.json();
+  return user;
 }
 
 function queryProfileByEmail(email) {
@@ -4360,13 +4397,11 @@ async function ensurePublicHelpCenterFixture(authorSession) {
 async function main() {
   logStep('iniciando fixture local de suporte');
   const envMap = runSupabaseStatusEnv();
-  const { apiUrl, serviceRoleKey, anonKey } = assertLocalOnly(envMap);
+  const { apiUrl, anonKey } = assertLocalOnly(envMap);
   await ensureLocalEdgeRuntime();
 
   logStep('criando/atualizando usuarios internos principais');
   const qaAdmin = await createOrUpdateAuthUser({
-    apiUrl,
-    serviceRoleKey,
     ...FIXTURE.qaAdmin,
   });
 
@@ -4378,8 +4413,6 @@ async function main() {
   ensurePlatformAdminRole(profile.id);
 
   const contentAuthor = await createOrUpdateAuthUser({
-    apiUrl,
-    serviceRoleKey,
     ...FIXTURE.contentAuthor,
   });
 
@@ -4438,8 +4471,6 @@ async function main() {
   logStep('hidratando agentes de suporte');
   for (const agent of FIXTURE.agents) {
     const authUser = await createOrUpdateAuthUser({
-      apiUrl,
-      serviceRoleKey,
       email: agent.email,
       password: agent.password,
       fullName: agent.fullName,
@@ -4480,8 +4511,6 @@ async function main() {
   logStep('hidratando usuarios de access');
   for (const accessUser of FIXTURE.accessUsers) {
     const authUser = await createOrUpdateAuthUser({
-      apiUrl,
-      serviceRoleKey,
       email: accessUser.email,
       password: accessUser.password,
       fullName: accessUser.fullName,
@@ -4514,8 +4543,6 @@ async function main() {
   logStep('hidratando usuarios do portal cliente');
   for (const portalUser of FIXTURE.customerPortalUsers) {
     const authUser = await createOrUpdateAuthUser({
-      apiUrl,
-      serviceRoleKey,
       email: portalUser.email,
       password: portalUser.password,
       fullName: portalUser.fullName,

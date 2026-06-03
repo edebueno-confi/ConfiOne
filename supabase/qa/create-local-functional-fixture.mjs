@@ -231,22 +231,20 @@ function runSupabaseStatusEnv() {
 function assertLocalOnly(envMap) {
   const apiUrl = envMap.get('API_URL') ?? '';
   const dbUrl = envMap.get('DB_URL') ?? '';
-  const serviceRoleKey = envMap.get('SERVICE_ROLE_KEY') ?? '';
   const anonKey = envMap.get('ANON_KEY') ?? '';
 
   const isLocalApi =
     apiUrl.startsWith('http://127.0.0.1:') || apiUrl.startsWith('http://localhost:');
   const isLocalDb = dbUrl.includes('@127.0.0.1:') || dbUrl.includes('@localhost:');
 
-  if (!isLocalApi || !isLocalDb || !serviceRoleKey || !anonKey) {
+  if (!isLocalApi || !isLocalDb || !anonKey) {
     fail(
-      'Fixture funcional bloqueada: este script so pode rodar contra Supabase local com API_URL/DB_URL locais e chaves locais validas.',
+      'Fixture funcional bloqueada: este script so pode rodar contra Supabase local com API_URL/DB_URL locais e ANON_KEY local valida.',
     );
   }
 
   return {
     apiUrl,
-    serviceRoleKey,
     anonKey,
   };
 }
@@ -312,69 +310,139 @@ function runSupabaseDbQuery(sql) {
   }
 }
 
-async function createOrUpdateAuthUser({
-  apiUrl,
-  serviceRoleKey,
-  email,
-  password,
-  fullName,
-}) {
-  const existingUser = queryAuthUserByEmail(email);
-  const payload = {
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: {
-      full_name: fullName,
-      name: fullName,
-      locale: 'pt-BR',
-      timezone: 'America/Sao_Paulo',
-    },
-  };
+async function createOrUpdateAuthUser({ email, password, fullName }) {
+  const result = runSupabaseDbQuery(`
+    with input as (
+      select
+        coalesce(
+          (select id from auth.users where email = '${sqlEscape(email)}'),
+          gen_random_uuid()
+        ) as id,
+        '${sqlEscape(email)}'::text as email,
+        '${sqlEscape(password)}'::text as password,
+        '${sqlEscape(fullName)}'::text as full_name
+    ),
+    upsert_user as (
+      insert into auth.users (
+        instance_id,
+        id,
+        aud,
+        role,
+        email,
+        encrypted_password,
+        email_confirmed_at,
+        confirmation_token,
+        recovery_token,
+        email_change_token_new,
+        email_change,
+        email_change_token_current,
+        phone,
+        phone_change,
+        phone_change_token,
+        reauthentication_token,
+        raw_app_meta_data,
+        raw_user_meta_data,
+        is_sso_user,
+        is_anonymous,
+        created_at,
+        updated_at
+      )
+      select
+        '00000000-0000-0000-0000-000000000000'::uuid,
+        input.id,
+        'authenticated',
+        'authenticated',
+        input.email,
+        crypt(input.password, gen_salt('bf')),
+        timezone('utc', now()),
+        '',
+        '',
+        '',
+        '',
+        '',
+        null,
+        '',
+        '',
+        '',
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        jsonb_build_object(
+          'full_name', input.full_name,
+          'name', input.full_name,
+          'locale', 'pt-BR',
+          'timezone', 'America/Sao_Paulo',
+          'email_verified', true
+        ),
+        false,
+        false,
+        timezone('utc', now()),
+        timezone('utc', now())
+      from input
+      on conflict (id) do update
+      set
+        email = excluded.email,
+        encrypted_password = excluded.encrypted_password,
+        email_confirmed_at = excluded.email_confirmed_at,
+        confirmation_token = '',
+        recovery_token = '',
+        email_change_token_new = '',
+        email_change = '',
+        email_change_token_current = '',
+        phone = null,
+        phone_change = '',
+        phone_change_token = '',
+        reauthentication_token = '',
+        raw_app_meta_data = excluded.raw_app_meta_data,
+        raw_user_meta_data = excluded.raw_user_meta_data,
+        is_sso_user = false,
+        is_anonymous = false,
+        deleted_at = null,
+        updated_at = timezone('utc', now())
+      returning id, email
+    ),
+    upsert_identity as (
+      insert into auth.identities (
+        provider_id,
+        user_id,
+        identity_data,
+        provider,
+        last_sign_in_at,
+        created_at,
+        updated_at
+      )
+      select
+        upsert_user.id::text,
+        upsert_user.id,
+        jsonb_build_object(
+          'sub', upsert_user.id::text,
+          'email', upsert_user.email,
+          'email_verified', true,
+          'phone_verified', false
+        ),
+        'email',
+        timezone('utc', now()),
+        timezone('utc', now()),
+        timezone('utc', now())
+      from upsert_user
+      on conflict on constraint identities_provider_id_provider_unique
+      do update
+      set
+        user_id = excluded.user_id,
+        identity_data = excluded.identity_data,
+        updated_at = timezone('utc', now())
+      returning user_id
+    )
+    select
+      (select id::text from upsert_user) as id,
+      (select email::text from upsert_user) as email,
+      (select count(*)::integer from upsert_identity) as identity_count;
+  `);
 
-  if (existingUser?.id) {
-    const updateResponse = await fetchWithTimeout(
-      `atualizacao Auth local ${email}`,
-      `${apiUrl}/auth/v1/admin/users/${existingUser.id}`,
-      {
-        method: 'PUT',
-        headers: {
-          apikey: serviceRoleKey,
-          Authorization: `Bearer ${serviceRoleKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      },
-    );
-
-    if (!updateResponse.ok) {
-      const detail = await updateResponse.text();
-      fail(`Falha ao atualizar usuario Auth local ${email}: ${updateResponse.status} ${detail}`);
-    }
-
-    return updateResponse.json();
+  const user = result.rows?.[0] ?? null;
+  if (!user?.id || user.identity_count !== 1) {
+    fail(`Falha ao materializar usuario Auth local por SQL: ${email}.`);
   }
 
-  const createResponse = await fetchWithTimeout(
-    `criacao Auth local ${email}`,
-    `${apiUrl}/auth/v1/admin/users`,
-    {
-      method: 'POST',
-      headers: {
-        apikey: serviceRoleKey,
-        Authorization: `Bearer ${serviceRoleKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    },
-  );
-
-  if (!createResponse.ok) {
-    const detail = await createResponse.text();
-    fail(`Falha ao criar usuario Auth local ${email}: ${createResponse.status} ${detail}`);
-  }
-
-  return createResponse.json();
+  return user;
 }
 
 function queryAuthUserByEmail(email) {
@@ -720,25 +788,55 @@ function ensureP2CommunicationFixture({ tenantId, supportUserId, customerUserId 
 }
 
 async function signInLocalUser({ apiUrl, anonKey, email, password }) {
-  const response = await fetchWithTimeout(
-    `login local ${email}`,
-    `${apiUrl}/auth/v1/token?grant_type=password`,
-    {
-      method: 'POST',
-      headers: {
-        apikey: anonKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    },
-  );
+  let lastError = null;
 
-  if (!response.ok) {
-    const detail = await response.text();
-    fail(`Falha ao autenticar fixture local ${email}: ${response.status} ${detail}`);
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout(
+        `login local ${email}`,
+        `${apiUrl}/auth/v1/token?grant_type=password`,
+        {
+          method: 'POST',
+          headers: {
+            apikey: anonKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        },
+      );
+
+      if (!response.ok) {
+        const detail = await response.text();
+        const isTransient =
+          [502, 503, 504].includes(response.status) ||
+          /issued at future|upstream|temporar/i.test(detail);
+
+        if (!isTransient || attempt === 5) {
+          fail(`Falha ao autenticar fixture local ${email}: ${response.status} ${detail}`);
+        }
+
+        lastError = new Error(`${response.status} ${detail}`);
+        await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+        continue;
+      }
+
+      return response.json();
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === 5) {
+        break;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+    }
   }
 
-  return response.json();
+  fail(
+    lastError instanceof Error
+      ? `Falha ao autenticar fixture local ${email}: ${lastError.message}`
+      : `Falha ao autenticar fixture local ${email}.`,
+  );
 }
 
 async function sessionFor({ apiUrl, anonKey, user }) {
@@ -1083,7 +1181,7 @@ async function main() {
 
   logStep('validando ambiente local e dados base');
   const envMap = runSupabaseStatusEnv();
-  const { apiUrl, serviceRoleKey, anonKey } = assertLocalOnly(envMap);
+  const { apiUrl, anonKey } = assertLocalOnly(envMap);
   const tenant = queryTenantBySlug(TENANT_SLUG);
 
   if (!tenant?.id) {
@@ -1113,22 +1211,16 @@ async function main() {
 
   logStep('hidratando usuarios de areas internas');
   const internalMemberAuth = await createOrUpdateAuthUser({
-    apiUrl,
-    serviceRoleKey,
     email: USERS.internalAreaMember.email,
     password: USERS.internalAreaMember.password,
     fullName: USERS.internalAreaMember.fullName,
   });
   const internalEmptyAuth = await createOrUpdateAuthUser({
-    apiUrl,
-    serviceRoleKey,
     email: USERS.internalAreaEmpty.email,
     password: USERS.internalAreaEmpty.password,
     fullName: USERS.internalAreaEmpty.fullName,
   });
   const internalNonMemberAuth = await createOrUpdateAuthUser({
-    apiUrl,
-    serviceRoleKey,
     email: USERS.internalAreaNonMember.email,
     password: USERS.internalAreaNonMember.password,
     fullName: USERS.internalAreaNonMember.fullName,
