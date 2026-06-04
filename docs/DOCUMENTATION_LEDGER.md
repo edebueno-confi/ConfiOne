@@ -18,6 +18,43 @@ Cada registro deve informar:
 
 ## Registros
 
+### CS Workspace Readiness Audit 2026-06-04
+- fase: `CS Workspace Readiness Audit`
+- nome: `CS Portfolio Contract Readiness`
+- commit: registrado no fechamento do sublote
+- branch: `codex/mvp-operational-completion-goal`
+- data: `2026-06-04`
+- resumo funcional: auditoria documental e tecnica confirmou que CS Workspace/Portfolio ainda nao possui contrato executavel proprio (`vw_cs_*`/`rpc_cs_*`), role/gate dedicado, rota `/cs` ou blueprint aprovado. O sublote bloqueia UI CS imediata e recomenda fundacao backend-first antes de runtime.
+- documentos alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/README.md`
+  - `docs/reports/CS_WORKSPACE_READINESS_AUDIT_2026-06-04.md`
+  - `docs/reports/MVP_OPERATIONAL_COMPLETION_GOAL_REPORT_2026-06-02.md`
+- arquivos técnicos alterados:
+  - nenhum.
+- views/RPCs afetadas:
+  - nenhuma view/RPC criada ou alterada.
+  - auditadas como ausentes: `vw_cs_customer_portfolio`, `vw_cs_customer_health_summary`, `rpc_cs_*`.
+- telas afetadas:
+  - nenhuma.
+- validações:
+  - `git status --short`
+  - busca textual em docs, migrations, contratos TS, router e navegacao
+  - `git diff --check`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:lint:db`
+  - `npm run supabase:test:db`
+  - `npm run documentation:validate:internal-docs`
+- riscos restantes:
+  - decisao pendente sobre role propria de CS versus membership de area `customer_success`.
+  - decisao pendente sobre health score, follow-ups, tarefas/projetos de CS e boundary com suporte.
+  - `/cs/portfolio` permanece bloqueado ate contrato backend real.
+- impacto para FAQ futura:
+  - permite explicar que CS sera workspace proprio governado por contrato, e nao uma copia da carteira de suporte ou dashboard com indicadores inventados.
+
 ### OCP V1-E Support Customer Product Context UI 2026-06-04
 - fase: `OCP V1-E Support Customer Product Context UI`
 - nome: `Support Customer Profile Read-only Product Context`

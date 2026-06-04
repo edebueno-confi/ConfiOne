@@ -8,6 +8,8 @@ No sublote seguinte, a aba `Subscriptions` em `/admin/tenants` passou a operar c
 
 No sublote `OCP V1-E Support Customer Product Context UI`, o Customer Account/Profile do suporte passou a consumir `vw_support_customer_product_context` em leitura para mostrar produto, plano, status da subscription, datas, features visiveis ao suporte e responsaveis internos. A superficie de suporte nao chama RPC administrativa de subscription, nao usa view administrativa V1-E e nao cria acao fake de editar contrato.
 
+No sublote `CS Workspace Readiness Audit`, a proxima frente foi auditada antes de runtime. A auditoria confirmou que ainda nao existem `vw_cs_*`, `rpc_cs_*`, role/gate dedicado de Customer Success, rota `/cs` ou blueprint aprovado. Por isso, `/cs/portfolio` permanece bloqueado para UI imediata; o proximo passo seguro e uma fundacao backend-first de CS Portfolio.
+
 ## Escopo executado
 
 - Reaproveitado `npm run supabase:qa:local-functional-fixture` como fixture local canonica.
@@ -40,6 +42,11 @@ No sublote `OCP V1-E Support Customer Product Context UI`, o Customer Account/Pr
   - listar features visiveis ao suporte;
   - listar responsaveis internos por role/area;
   - manter estado `Indisponível` quando nao houver dado contratual.
+- Auditado CS Workspace/Portfolio sem alterar runtime:
+  - nao foram encontrados contratos materializados `vw_cs_*` ou `rpc_cs_*`;
+  - nao existe rota `/cs`, gate CS ou redirect pos-login para Customer Success;
+  - `vw_support_customer_product_context` permanece contrato de suporte, nao contrato CS;
+  - health score, follow-ups, tarefas e projetos de CS seguem dependentes de decisao de produto e backend proprio.
 
 ## Evidencia Gate 0
 
@@ -123,6 +130,8 @@ Resumo confirmado por query local apos reset e fixture:
   - reset + fixture apos smoke para restaurar a massa canonica;
   - smoke visual pos-reset confirmando 1 subscription, 2 entitlements, 2 owners e contrato `QA-OCP-V1E-LOCAL`.
 - smoke autenticado em `/support/customers` e `/support/customers/:tenantId`, validando consumo de `vw_support_customer_product_context`.
+- auditoria textual de CS Workspace/Portfolio em docs, migrations, testes, contratos TS, router e navegacao.
+- `npm run documentation:validate:internal-docs`
 
 Resultado dos gates: aprovados.
 
@@ -134,25 +143,28 @@ Resultado dos gates: aprovados.
 - OCP V1-E agora tem UI Admin para criar, editar e arquivar subscriptions por RPCs existentes.
 - Nao ha UI de mutation para entitlement/feature ou owner interno.
 - Customer Account/Profile em suporte consome subscriptions em leitura, sem mutacao e sem view administrativa.
+- CS Workspace/Portfolio ainda nao possui contrato proprio, role/gate dedicado ou rota `/cs`.
+- Health score, follow-ups, tarefas e projetos de CS continuam bloqueados ate decisao de produto e fundacao backend.
 - Billing, preco, invoice, payment, revenue e financeiro continuam fora do escopo e ausentes.
 - Nao foi executado deploy remoto, staging, producao, provider externo ou IA real.
 
 ## Proximo lote recomendado
 
-Proximo lote mais seguro: planejamento CS Workspace ou primeiro corte CS Portfolio read-only, sem mutation e sem health score novo.
+Proximo lote mais seguro: `CS Portfolio Contract Foundation`, backend-first, sem UI no primeiro corte salvo decisao humana explicita autorizando um portfolio read-only com contrato `vw_cs_*` materializado.
 
 Justificativa:
 
 - A leitura V1-E ja aparece no Admin e no Customer Account/Profile de suporte.
-- CS e a proxima area natural para usar contexto de produto, ownership e risco sem transformar suporte em CRM.
-- O corte deve permanecer read-only ou documental ate haver decisao de produto sobre carteira, health e follow-ups.
+- A auditoria confirmou que CS ainda nao possui role/gate/read model proprio.
+- Criar UI agora exigiria reaproveitar suporte ou compor portfolio no frontend, o que violaria os gates.
 
 Antes de implementar, o lote deve declarar explicitamente:
 
-- qual cockpit CS sera apenas leitura e qual ficara para planejamento;
-- quais sinais de health podem ser exibidos sem score canonico novo;
+- se CS usa role propria ou membership de area `customer_success`;
+- qual read model CS materializa a carteira;
+- quais sinais de health podem ser exibidos sem score canonico novo, ou se health fica fora;
 - ausencia de billing/financeiro;
-- confirmacao de que a UI consome somente views/read models existentes;
+- confirmacao de que qualquer UI consome somente views/read models CS reais;
 - gates de permissao, isolamento tenant e QA visual.
 
 ## Status de fechamento
@@ -169,5 +181,7 @@ Antes de implementar, o lote deve declarar explicitamente:
   - `docs/PROJECT_STATE.md`
   - `docs/VIEW_RPC_CONTRACTS.md`
   - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/README.md`
+  - `docs/reports/CS_WORKSPACE_READINESS_AUDIT_2026-06-04.md`
   - `docs/reports/MVP_OPERATIONAL_COMPLETION_GOAL_REPORT_2026-06-02.md`
 - Commit: registrado no fechamento do sublote.
