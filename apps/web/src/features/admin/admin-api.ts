@@ -9,6 +9,12 @@ import type {
   AdminCustomerAccountFeature,
   AdminCustomerAccountIntegration,
   AdminCustomerAccountProfileDetail,
+  AdminCommercialProduct,
+  AdminCommercialProductDetail,
+  AdminCommercialProductDetailFeature,
+  AdminCommercialProductDetailModule,
+  AdminCommercialProductDetailOwnership,
+  AdminCommercialProductDetailPlan,
   AdminCustomerProductSubscription,
   AdminCustomerProductSubscriptionDetail,
   AdminCustomerProductSubscriptionEntitlement,
@@ -462,6 +468,142 @@ function mapAdminCustomerProductSubscriptionDetail(
   };
 }
 
+function mapAdminCommercialProduct(row: Record<string, unknown>): AdminCommercialProduct {
+  return {
+    productId: String(row.product_id),
+    productKey: String(row.product_key),
+    displayName: String(row.display_name),
+    description: (row.description as string | null) ?? null,
+    status: row.status as AdminCommercialProduct['status'],
+    planCount: Number(row.plan_count ?? 0),
+    activePlanCount: Number(row.active_plan_count ?? 0),
+    moduleCount: Number(row.module_count ?? 0),
+    featureCount: Number(row.feature_count ?? 0),
+    activeOwnershipCount: Number(row.active_ownership_count ?? 0),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+function mapAdminCommercialProductDetailPlan(
+  value: unknown,
+): AdminCommercialProductDetailPlan {
+  const row = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+
+  return {
+    planId: String(row.planId),
+    planKey: String(row.planKey),
+    displayName: String(row.displayName),
+    description: (row.description as string | null) ?? null,
+    status: row.status as AdminCommercialProductDetailPlan['status'],
+    sortOrder: Number(row.sortOrder ?? 0),
+  };
+}
+
+function mapAdminCommercialProductDetailModule(
+  value: unknown,
+): AdminCommercialProductDetailModule {
+  const row = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+
+  return {
+    moduleId: String(row.moduleId),
+    moduleKey: String(row.moduleKey),
+    displayName: String(row.displayName),
+    description: (row.description as string | null) ?? null,
+    status: row.status as AdminCommercialProductDetailModule['status'],
+    sortOrder: Number(row.sortOrder ?? 0),
+  };
+}
+
+function mapAdminCommercialProductDetailFeature(
+  value: unknown,
+): AdminCommercialProductDetailFeature {
+  const row = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+
+  return {
+    featureId: String(row.featureId),
+    moduleId: (row.moduleId as string | null) ?? null,
+    featureKey: String(row.featureKey),
+    displayName: String(row.displayName),
+    description: (row.description as string | null) ?? null,
+    status: row.status as AdminCommercialProductDetailFeature['status'],
+    customerVisibleDefault: Boolean(row.customerVisibleDefault),
+    supportVisibleDefault: Boolean(row.supportVisibleDefault),
+    sortOrder: Number(row.sortOrder ?? 0),
+  };
+}
+
+function mapAdminCommercialProductDetailOwnership(
+  value: unknown,
+): AdminCommercialProductDetailOwnership {
+  const row = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+
+  return {
+    ownershipId: String(row.ownershipId),
+    areaKey: row.areaKey as AdminCommercialProductDetailOwnership['areaKey'],
+    areaLabel: String(row.areaLabel),
+    ownershipRole: row.ownershipRole as AdminCommercialProductDetailOwnership['ownershipRole'],
+    status: row.status as AdminCommercialProductDetailOwnership['status'],
+    moduleId: (row.moduleId as string | null) ?? null,
+    featureId: (row.featureId as string | null) ?? null,
+  };
+}
+
+function mapAdminCommercialProductDetail(
+  row: Record<string, unknown>,
+): AdminCommercialProductDetail {
+  return {
+    productId: String(row.product_id),
+    productKey: String(row.product_key),
+    displayName: String(row.display_name),
+    description: (row.description as string | null) ?? null,
+    status: row.status as AdminCommercialProductDetail['status'],
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    plans: Array.isArray(row.plans)
+      ? row.plans.map(mapAdminCommercialProductDetailPlan)
+      : [],
+    modules: Array.isArray(row.modules)
+      ? row.modules.map(mapAdminCommercialProductDetailModule)
+      : [],
+    features: Array.isArray(row.features)
+      ? row.features.map(mapAdminCommercialProductDetailFeature)
+      : [],
+    ownerships: Array.isArray(row.ownerships)
+      ? row.ownerships.map(mapAdminCommercialProductDetailOwnership)
+      : [],
+  };
+}
+
+interface RpcAdminCreateCustomerProductSubscriptionParams {
+  p_tenant_id: string;
+  p_product_id: string;
+  p_plan_id: string;
+  p_status?: AdminCustomerProductSubscription['status'];
+  p_started_at?: string | null;
+  p_renewal_at?: string | null;
+  p_contract_reference?: string | null;
+  p_source?: string;
+  p_notes_internal?: string | null;
+  p_metadata?: Record<string, never>;
+}
+
+interface RpcAdminUpdateCustomerProductSubscriptionParams {
+  p_subscription_id: string;
+  p_plan_id?: string | null;
+  p_status?: AdminCustomerProductSubscription['status'] | null;
+  p_started_at?: string | null;
+  p_ended_at?: string | null;
+  p_renewal_at?: string | null;
+  p_contract_reference?: string | null;
+  p_notes_internal?: string | null;
+  p_metadata?: Record<string, never> | null;
+}
+
+interface RpcAdminArchiveCustomerProductSubscriptionParams {
+  p_subscription_id: string;
+}
+
 export async function getAdminCustomerAccountProfile(tenantId: string) {
   const client = requireClient();
   const { data, error } = await client
@@ -577,6 +719,37 @@ export async function getAdminCustomerProductSubscriptionDetail(subscriptionId: 
   return data
     ? mapAdminCustomerProductSubscriptionDetail(data as Record<string, unknown>)
     : null;
+}
+
+export async function listAdminCommercialProducts() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_commercial_products')
+    .select('*')
+    .order('display_name', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o catálogo comercial.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapAdminCommercialProduct(row as Record<string, unknown>),
+  );
+}
+
+export async function getAdminCommercialProductDetail(productId: string) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_commercial_product_detail')
+    .select('*')
+    .eq('product_id', productId)
+    .maybeSingle();
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o detalhe do produto comercial.');
+  }
+
+  return data ? mapAdminCommercialProductDetail(data as Record<string, unknown>) : null;
 }
 
 export async function listAdminMemberships() {
@@ -1081,6 +1254,54 @@ export async function updateTenantStatus(payload: RpcAdminUpdateTenantStatusPayl
   }
 
   return data as RpcAdminUpdateTenantStatusResponse;
+}
+
+export async function createCustomerProductSubscription(
+  payload: RpcAdminCreateCustomerProductSubscriptionParams,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_admin_create_customer_product_subscription',
+    payload,
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao criar subscription comercial da conta B2B.');
+  }
+
+  return data;
+}
+
+export async function updateCustomerProductSubscription(
+  payload: RpcAdminUpdateCustomerProductSubscriptionParams,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_admin_update_customer_product_subscription',
+    payload,
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao atualizar subscription comercial da conta B2B.');
+  }
+
+  return data;
+}
+
+export async function archiveCustomerProductSubscription(
+  payload: RpcAdminArchiveCustomerProductSubscriptionParams,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_admin_archive_customer_product_subscription',
+    payload,
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao arquivar subscription comercial da conta B2B.');
+  }
+
+  return data;
 }
 
 export async function upsertCustomerAccountProfile(

@@ -4,7 +4,7 @@
 
 Gate 0 de fixture local foi reforcado para validacao humana do MVP operacional. O fixture funcional existente continua sendo a base canonica de QA local e agora tambem hidrata OCP V1-E com uma subscription operacional real por RPC administrativa, duas features/entitlements e dois responsaveis internos. O fixture local nao depende mais de Auth Admin/SERVICE_ROLE_KEY para materializar usuarios QA; usuarios Auth locais sao criados por SQL contra o banco local apos validacao de API_URL/DB_URL locais.
 
-Nao houve deploy remoto, migration remota, dado real, billing, preco, invoice, financeiro ou UI nova. O lote alterou apenas fixture local de QA e este relatorio.
+No sublote seguinte, a aba `Subscriptions` em `/admin/tenants` passou a operar criacao, edicao governada e arquivamento de subscriptions por RPCs administrativas V1-E existentes, com leitura do catalogo comercial por read models. Nao houve deploy remoto, migration remota, dado real, backend novo, Supabase novo, billing, preco, invoice ou financeiro.
 
 ## Escopo executado
 
@@ -22,6 +22,16 @@ Nao houve deploy remoto, migration remota, dado real, billing, preco, invoice, f
   - criar/atualizar usuarios QA por SQL local em `auth.users` e `auth.identities`;
   - manter bloqueio de execucao fora de Supabase local;
   - tolerar falhas transitorias de Auth local apos reset (`502/503/504` e `JWT issued at future`) sem mascarar erro real de credencial.
+- Conectada a UI existente de `/admin/tenants` > `Subscriptions` a contratos V1-E ja materializados para:
+  - listar produtos comerciais ativos por `vw_admin_commercial_products`;
+  - carregar planos por `vw_admin_commercial_product_detail`;
+  - criar subscription por `rpc_admin_create_customer_product_subscription`;
+  - atualizar plano, status, datas, referencia de contrato e notas por `rpc_admin_update_customer_product_subscription`;
+  - arquivar subscription por `rpc_admin_archive_customer_product_subscription`.
+- Mantidos em leitura neste corte:
+  - entitlements/features comerciais;
+  - responsaveis internos;
+  - billing, preco, invoice, payment, revenue e financeiro.
 
 ## Evidencia Gate 0
 
@@ -50,7 +60,7 @@ Resumo confirmado por query local apos reset e fixture:
 ## Rotas recomendadas para validacao humana
 
 - Admin tenants: `/admin/tenants`
-- OCP V1-E read-only: `/admin/tenants` > abrir `Support QA Tenant A Operação Enterprise` > aba `Subscriptions`
+- OCP V1-E Admin: `/admin/tenants` > abrir `Support QA Tenant A Operação Enterprise` > aba `Subscriptions`
 - Support queue: `/support/queue`
 - Ticket principal: abrir `QA Support | Operação crítica com histórico extenso, anexos e retorno operacional`
 - Customer profile/context: `/support/customers`
@@ -68,7 +78,8 @@ Resumo confirmado por query local apos reset e fixture:
 - A subscription mostra 2 entitlements/features.
 - A subscription mostra 2 responsaveis internos.
 - Campos ausentes aparecem como `Indisponível`.
-- Nao ha botao fake de criar, editar ou arquivar subscription.
+- Os botoes `Nova subscription`, `Editar selecionada` e `Arquivar` chamam RPCs reais V1-E; nao ha acao fake.
+- Entitlements/features e responsaveis internos continuam sem botao de mutation neste corte.
 - Nao ha billing, preco, invoice, payment, revenue ou financeiro.
 - A navegacao Admin continua funcionando.
 - A fila de suporte mostra volume suficiente e status variados.
@@ -87,6 +98,7 @@ Resumo confirmado por query local apos reset e fixture:
 - `npm run contracts:typecheck`
 - `npm run web:typecheck`
 - `npm run web:build`
+- `npm run supabase:wait:ready`
 - `npm run supabase:lint:db`
 - `npm run supabase:test:db`
 - check HTTP local do app: `HTTP 200 OK` em `http://127.0.0.1:5173`
@@ -94,6 +106,12 @@ Resumo confirmado por query local apos reset e fixture:
 - check DB Gate 0 com contagens de tickets, Knowledge, engenharia, Customer Account e OCP V1-E
 - check REST autenticado dos read models V1-E: 1 linha em `vw_admin_customer_product_subscriptions`, 1 linha em `vw_admin_customer_product_subscription_detail`, 2 entitlements, 2 owners, produto `Genius Returns`, plano `Enterprise`
 - smoke visual autenticado em `http://127.0.0.1:5173/admin/tenants` > `Support QA Tenant A Operação Enterprise` > aba `Subscriptions`
+- smoke autenticado de mutacao governada em `Subscriptions`:
+  - edicao de contrato da subscription A por RPC e restauracao do valor original;
+  - criacao de subscription no tenant B por RPC;
+  - arquivamento da subscription criada no tenant B por RPC;
+  - reset + fixture apos smoke para restaurar a massa canonica;
+  - smoke visual pos-reset confirmando 1 subscription, 2 entitlements, 2 owners e contrato `QA-OCP-V1E-LOCAL`.
 
 Resultado dos gates: aprovados.
 
@@ -102,34 +120,39 @@ Resultado dos gates: aprovados.
 - O fixture funcional e pesado em Windows local; a primeira execucao com timeout padrao de 10 minutos pode expirar. A execucao validada usou `GENIUS_QA_SUPPORT_FIXTURE_TIMEOUT_MS=1200000`.
 - Apos reset local, o navegador pode manter refresh token antigo ou receber `JWT issued at future` por alguns segundos. Limpar sessao local e repetir login apos aguardar a readiness estabilizar resolveu o smoke validado.
 - O fixture nao tenta iniciar `supabase functions serve` por conta propria quando o Edge Runtime local esta indisponivel, porque isso exigiria materializar SERVICE_ROLE_KEY em arquivo temporario. A execucao validada usa `npm run supabase:start` + `npm run supabase:wait:ready`.
-- OCP V1-E esta disponivel em leitura Admin; nao ha UI nova de mutation de subscriptions.
+- OCP V1-E agora tem UI Admin para criar, editar e arquivar subscriptions por RPCs existentes.
+- Nao ha UI de mutation para entitlement/feature ou owner interno.
 - Billing, preco, invoice, payment, revenue e financeiro continuam fora do escopo e ausentes.
 - Nao foi executado deploy remoto, staging, producao, provider externo ou IA real.
 
 ## Proximo lote recomendado
 
-Proximo lote mais seguro: mutation governada de subscriptions no Admin, limitada a contratos V1-E ja existentes.
+Proximo lote mais seguro: integracao controlada de subscriptions no Customer Account/Profile, em modo leitura, usando read models V1-E ja existentes.
 
 Justificativa:
 
-- A leitura V1-E ja esta validada localmente.
-- O fixture agora fornece massa suficiente para testar criacao/edicao/arquivamento governados.
-- As RPCs administrativas ja existem, mas a UI ainda e read-only.
+- A leitura V1-E e a mutacao basica de subscription no Admin ja estao validadas localmente.
+- Customer Account/Profile e a proxima superficie natural para consolidar contexto operacional do cliente sem abrir CS Workspace amplo.
+- O corte pode permanecer read-only, reduzindo risco de produto e evitando billing/financeiro.
 
 Antes de implementar, o lote deve declarar explicitamente:
 
-- quais mutations entram no primeiro corte;
-- quais campos ficam indisponiveis;
+- quais read models entram no primeiro corte;
+- quais campos ficam indisponiveis ou apenas administrativos;
 - ausencia de billing/financeiro;
-- confirmacao de que a UI chama somente RPCs V1-E existentes;
-- gates de RLS, auditoria, permissao e QA visual.
+- confirmacao de que a UI consome somente views/read models V1-E existentes;
+- gates de permissao, isolamento tenant e QA visual.
 
 ## Status de fechamento
 
 - Branch: `codex/mvp-operational-completion-goal`
-- Commit base: `cd990ab chore: reforcar fixture local do mvp operacional`
+- Commit base: `cc94857 chore: remover service role do fixture local`
 - Arquivos alterados neste lote:
-  - `supabase/qa/create-local-support-fixture.mjs`
-  - `supabase/qa/create-local-functional-fixture.mjs`
+  - `apps/web/src/contracts/admin-contracts.ts`
+  - `apps/web/src/features/admin/admin-api.ts`
+  - `apps/web/src/features/tenants/TenantsPage.tsx`
+  - `docs/PROJECT_STATE.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
   - `docs/reports/MVP_OPERATIONAL_COMPLETION_GOAL_REPORT_2026-06-02.md`
-- Commit: pendente ate revisao final do lote.
+- Commit: registrado no fechamento do sublote.

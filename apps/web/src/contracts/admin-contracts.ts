@@ -8,6 +8,12 @@ import type {
   AdminCustomerAccountFeature,
   AdminCustomerAccountIntegration,
   AdminCustomerAccountProfileDetail,
+  AdminCommercialProduct,
+  AdminCommercialProductDetail,
+  AdminCommercialProductDetailFeature,
+  AdminCommercialProductDetailModule,
+  AdminCommercialProductDetailOwnership,
+  AdminCommercialProductDetailPlan,
   AdminCustomerProductSubscription,
   AdminCustomerProductSubscriptionDetail,
   AdminCustomerProductSubscriptionEntitlement,
@@ -30,6 +36,7 @@ import type {
   CustomerProductInternalOwnerStatus,
   CustomerProductLine,
   CustomerProductSubscriptionStatus,
+  CUSTOMER_PRODUCT_SUBSCRIPTION_STATUSES,
   InternalAreaMembershipRecord,
   InternalAreaMembershipRole,
   InternalAreaMembershipStatus,
@@ -61,6 +68,12 @@ export type {
   AdminCustomerAccountFeature,
   AdminCustomerAccountIntegration,
   AdminCustomerAccountProfileDetail,
+  AdminCommercialProduct,
+  AdminCommercialProductDetail,
+  AdminCommercialProductDetailFeature,
+  AdminCommercialProductDetailModule,
+  AdminCommercialProductDetailOwnership,
+  AdminCommercialProductDetailPlan,
   AdminCustomerProductSubscription,
   AdminCustomerProductSubscriptionDetail,
   AdminCustomerProductSubscriptionEntitlement,
@@ -158,6 +171,8 @@ export const CUSTOMER_ALERT_SEVERITIES = [
   'high',
   'critical',
 ] as const satisfies readonly CustomerAlertSeverity[];
+
+export { CUSTOMER_PRODUCT_SUBSCRIPTION_STATUSES };
 
 export const INTERNAL_AREA_MEMBERSHIP_ROLES = [
   'member',

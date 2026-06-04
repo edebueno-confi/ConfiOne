@@ -18,6 +18,49 @@ Cada registro deve informar:
 
 ## Registros
 
+### OCP V1-E Admin Subscriptions Governed Mutations UI 2026-06-04
+- fase: `OCP V1-E Admin Subscriptions Governed Mutations UI`
+- nome: `Admin Subscription Create Update Archive via Existing RPCs`
+- commit: registrado no fechamento do sublote
+- branch: `codex/mvp-operational-completion-goal`
+- data: `2026-06-04`
+- resumo funcional: `/admin/tenants`, aba `Subscriptions`, passou a permitir criação, edição governada e arquivamento de subscriptions usando somente RPCs administrativas V1-E existentes e catálogo comercial por read model. Features comerciais e responsáveis internos permanecem em leitura neste corte.
+- documentos alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/reports/MVP_OPERATIONAL_COMPLETION_GOAL_REPORT_2026-06-02.md`
+- arquivos técnicos alterados:
+  - `apps/web/src/contracts/admin-contracts.ts`
+  - `apps/web/src/features/admin/admin-api.ts`
+  - `apps/web/src/features/tenants/TenantsPage.tsx`
+- views/RPCs afetadas:
+  - consumidas em leitura: `vw_admin_commercial_products`
+  - consumida em leitura: `vw_admin_commercial_product_detail`
+  - consumida em leitura: `vw_admin_customer_product_subscriptions`
+  - consumida em leitura: `vw_admin_customer_product_subscription_detail`
+  - consumida em escrita: `rpc_admin_create_customer_product_subscription`
+  - consumida em escrita: `rpc_admin_update_customer_product_subscription`
+  - consumida em escrita: `rpc_admin_archive_customer_product_subscription`
+- telas afetadas:
+  - `/admin/tenants`, aba `Subscriptions` no detalhe do cliente.
+- validações:
+  - `git status --short`
+  - `git diff --check`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:wait:ready`
+  - `npm run supabase:lint:db`
+  - `npm run supabase:test:db`
+  - smoke autenticado em `/admin/tenants` > `Support QA Tenant A Operação Enterprise` > `Subscriptions`
+- riscos restantes:
+  - mutações de entitlement e owner continuam fora deste sublote.
+  - billing, preço, invoice, payment, revenue e financeiro permanecem fora do domínio V1-E atual.
+  - integração em Customer Account/Profile e CS Workspace ainda precisa de lote próprio.
+- impacto para FAQ futura:
+  - permite documentar que a administração de subscriptions ocorre por ações governadas e auditáveis no Admin, sem promessa de billing ou financeiro.
+
 ### OCP V1-E Subscriptions Read Model Hardening 2026-06-02
 - fase: `OCP V1-E Subscriptions Read Model Hardening`
 - nome: `Customer Product Subscriptions Aggregate Count Fix`

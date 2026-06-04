@@ -35,6 +35,8 @@ import type {
   AdminCustomerAccountFeature,
   AdminCustomerAccountIntegration,
   AdminCustomerAccountProfileDetail,
+  AdminCommercialProduct,
+  AdminCommercialProductDetail,
   AdminCustomerProductSubscription,
   AdminCustomerProductSubscriptionDetail,
   AdminTenantContactRecordRow,
@@ -73,13 +75,17 @@ import {
   addCustomerAccountAlert,
   addCustomerAccountCustomization,
   addCustomerAccountIntegration,
+  archiveCustomerProductSubscription,
   archiveCustomerAccountAlert,
   archiveCustomerAccountCustomization,
   archiveCustomerAccountIntegration,
+  createCustomerProductSubscription,
   getAdminTenantDetail,
+  getAdminCommercialProductDetail,
   getAdminCustomerProductSubscriptionDetail,
   getAdminCustomerAccountProfile,
   listAdminAuditFeed,
+  listAdminCommercialProducts,
   listAdminCustomerAccountAlerts,
   listAdminCustomerAccountCustomizations,
   listAdminCustomerAccountFeatures,
@@ -91,6 +97,7 @@ import {
   updateCustomerAccountAlert,
   updateCustomerAccountCustomization,
   updateCustomerAccountIntegration,
+  updateCustomerProductSubscription,
   updateTenantContact,
   updateTenantStatus,
   upsertCustomerAccountProfile,
@@ -161,6 +168,19 @@ interface AccountFeatureFormState {
   enabled: boolean;
   source: string;
   notes: string;
+}
+
+type SubscriptionActionMode = 'create' | 'update';
+
+interface SubscriptionFormState {
+  productId: string;
+  planId: string;
+  status: Extract<CustomerProductSubscriptionStatus, 'pending' | 'active' | 'suspended'>;
+  startedAt: string;
+  endedAt: string;
+  renewalAt: string;
+  contractReference: string;
+  notesInternal: string;
 }
 
 interface CustomerAccountState {
@@ -241,6 +261,19 @@ function emptyAccountFeatureForm(): AccountFeatureFormState {
     enabled: true,
     source: 'operations',
     notes: '',
+  };
+}
+
+function emptySubscriptionForm(): SubscriptionFormState {
+  return {
+    productId: '',
+    planId: '',
+    status: 'pending',
+    startedAt: '',
+    endedAt: '',
+    renewalAt: '',
+    contractReference: '',
+    notesInternal: '',
   };
 }
 
@@ -543,6 +576,52 @@ function displayOptionalText(value: string | null | undefined) {
   return trimmed && trimmed.length > 0 ? trimmed : 'Indisponível';
 }
 
+function formatDateTimeInput(value: string | null | undefined) {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  const offsetMs = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
+function normalizeOptionalDateTime(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const date = new Date(trimmed);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function buildSubscriptionForm(
+  subscription: AdminCustomerProductSubscriptionDetail,
+): SubscriptionFormState {
+  return {
+    productId: subscription.productId,
+    planId: subscription.planId,
+    status:
+      subscription.status === 'pending' ||
+      subscription.status === 'active' ||
+      subscription.status === 'suspended'
+        ? subscription.status
+        : 'suspended',
+    startedAt: formatDateTimeInput(subscription.startedAt),
+    endedAt: formatDateTimeInput(subscription.endedAt),
+    renewalAt: formatDateTimeInput(subscription.renewalAt),
+    contractReference: subscription.contractReference ?? '',
+    notesInternal: subscription.notesInternal ?? '',
+  };
+}
+
+const SUBSCRIPTION_MUTABLE_STATUSES = ['pending', 'active', 'suspended'] as const;
+
 function membershipPillTone(activeMembershipCount: number, membershipCount: number) {
   if (membershipCount === 0) {
     return 'critical' as const;
@@ -740,6 +819,16 @@ export function TenantsPage() {
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState<string | null>(null);
   const [customerProductSubscriptionDetail, setCustomerProductSubscriptionDetail] =
     useState<AdminCustomerProductSubscriptionDetail | null>(null);
+  const [commercialProducts, setCommercialProducts] = useState<AdminCommercialProduct[]>([]);
+  const [commercialProductDetails, setCommercialProductDetails] = useState<
+    AdminCommercialProductDetail[]
+  >([]);
+  const [subscriptionForm, setSubscriptionForm] =
+    useState<SubscriptionFormState>(emptySubscriptionForm);
+  const [subscriptionActionMode, setSubscriptionActionMode] =
+    useState<SubscriptionActionMode | null>(null);
+  const [subscriptionSubmitting, setSubscriptionSubmitting] = useState(false);
+  const [subscriptionActionMessage, setSubscriptionActionMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TenantTab>('summary');
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | TenantStatus>('all');
@@ -969,6 +1058,37 @@ export function TenantsPage() {
     }
   });
 
+  const loadCommercialCatalog = useEffectEvent(async () => {
+    try {
+      const products = await listAdminCommercialProducts();
+      const details = await Promise.all(
+        products.map((product) => getAdminCommercialProductDetail(product.productId)),
+      );
+
+      setCommercialProducts(products);
+      setCommercialProductDetails(
+        details.filter((detail): detail is AdminCommercialProductDetail => Boolean(detail)),
+      );
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Não foi possível carregar o catálogo comercial.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      if (classified.kind === 'permission-denied') {
+        setBackendDenied(true);
+        return;
+      }
+
+      setSubscriptionsMessage(classified.message);
+    }
+  });
+
   useEffect(() => {
     if (didBootstrapRef.current) {
       return;
@@ -976,6 +1096,7 @@ export function TenantsPage() {
 
     didBootstrapRef.current = true;
     void loadSurface();
+    void loadCommercialCatalog();
   }, []);
 
   useEffect(() => {
@@ -1003,6 +1124,9 @@ export function TenantsPage() {
     setCustomerProductSubscriptionDetail(null);
     setSubscriptionsMessage(null);
     setSubscriptionsPhase('idle');
+    setSubscriptionForm(emptySubscriptionForm());
+    setSubscriptionActionMode(null);
+    setSubscriptionActionMessage(null);
   }, [selectedTenantId]);
 
   useEffect(() => {
@@ -1102,6 +1226,16 @@ export function TenantsPage() {
     tenantDetail?.contacts.find((contact) => contact.is_primary) ??
     tenantDetail?.contacts[0] ??
     null;
+  const activeCommercialProducts = commercialProducts.filter(
+    (product) => product.status === 'active',
+  );
+  const selectedSubscriptionProductDetail =
+    commercialProductDetails.find((product) => product.productId === subscriptionForm.productId) ??
+    null;
+  const subscriptionPlanOptions =
+    selectedSubscriptionProductDetail?.plans.filter(
+      (plan) => plan.status === 'active' || plan.planId === subscriptionForm.planId,
+    ) ?? [];
 
   const totalTenants = tenants.length;
   const activeTenants = tenants.filter((tenant) => tenant.status === 'active').length;
@@ -1442,6 +1576,140 @@ export function TenantsPage() {
       });
       setAccountFeatureForm(emptyAccountFeatureForm());
     });
+  }
+
+  function openCreateSubscription() {
+    const firstProduct = activeCommercialProducts[0] ?? null;
+    const firstProductDetail = firstProduct
+      ? commercialProductDetails.find((product) => product.productId === firstProduct.productId)
+      : null;
+    const firstPlan =
+      firstProductDetail?.plans.find((plan) => plan.status === 'active') ??
+      firstProductDetail?.plans[0] ??
+      null;
+
+    setSubscriptionForm({
+      ...emptySubscriptionForm(),
+      productId: firstProduct?.productId ?? '',
+      planId: firstPlan?.planId ?? '',
+      status: 'active',
+      startedAt: formatDateTimeInput(new Date().toISOString()),
+    });
+    setSubscriptionActionMessage(null);
+    setSubscriptionActionMode('create');
+  }
+
+  function openUpdateSubscription() {
+    if (!customerProductSubscriptionDetail) {
+      setSubscriptionActionMessage('Selecione uma subscription antes de editar.');
+      return;
+    }
+
+    setSubscriptionForm(buildSubscriptionForm(customerProductSubscriptionDetail));
+    setSubscriptionActionMessage(null);
+    setSubscriptionActionMode('update');
+  }
+
+  async function handleSaveSubscription(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!selectedTenantId || !subscriptionActionMode) {
+      return;
+    }
+
+    setSubscriptionSubmitting(true);
+    setSubscriptionActionMessage(null);
+
+    try {
+      if (subscriptionActionMode === 'create') {
+        await createCustomerProductSubscription({
+          p_tenant_id: selectedTenantId,
+          p_product_id: subscriptionForm.productId,
+          p_plan_id: subscriptionForm.planId,
+          p_status: subscriptionForm.status,
+          p_started_at: normalizeOptionalDateTime(subscriptionForm.startedAt),
+          p_renewal_at: normalizeOptionalDateTime(subscriptionForm.renewalAt),
+          p_contract_reference: subscriptionForm.contractReference.trim(),
+          p_source: 'manual_admin',
+          p_notes_internal: subscriptionForm.notesInternal.trim(),
+          p_metadata: {},
+        });
+      } else if (customerProductSubscriptionDetail) {
+        await updateCustomerProductSubscription({
+          p_subscription_id: customerProductSubscriptionDetail.subscriptionId,
+          p_plan_id: subscriptionForm.planId,
+          p_status: subscriptionForm.status,
+          p_started_at: normalizeOptionalDateTime(subscriptionForm.startedAt),
+          p_ended_at: normalizeOptionalDateTime(subscriptionForm.endedAt),
+          p_renewal_at: normalizeOptionalDateTime(subscriptionForm.renewalAt),
+          p_contract_reference: subscriptionForm.contractReference.trim(),
+          p_notes_internal: subscriptionForm.notesInternal.trim(),
+          p_metadata: {},
+        });
+      }
+
+      await loadSurface(selectedTenantId);
+      await loadCustomerProductSubscriptions(selectedTenantId);
+      setSubscriptionActionMode(null);
+      setSubscriptionForm(emptySubscriptionForm());
+      setSubscriptionActionMessage('Subscription comercial sincronizada com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Não foi possível sincronizar a subscription comercial.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      if (classified.kind === 'permission-denied') {
+        setBackendDenied(true);
+        return;
+      }
+
+      setSubscriptionActionMessage(classified.message);
+    } finally {
+      setSubscriptionSubmitting(false);
+    }
+  }
+
+  async function handleArchiveSubscription() {
+    if (!selectedTenantId || !customerProductSubscriptionDetail) {
+      return;
+    }
+
+    setSubscriptionSubmitting(true);
+    setSubscriptionActionMessage(null);
+
+    try {
+      await archiveCustomerProductSubscription({
+        p_subscription_id: customerProductSubscriptionDetail.subscriptionId,
+      });
+      await loadSurface(selectedTenantId);
+      await loadCustomerProductSubscriptions(selectedTenantId);
+      setSubscriptionActionMessage('Subscription arquivada com status cancelado.');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Não foi possível arquivar a subscription comercial.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      if (classified.kind === 'permission-denied') {
+        setBackendDenied(true);
+        return;
+      }
+
+      setSubscriptionActionMessage(classified.message);
+    } finally {
+      setSubscriptionSubmitting(false);
+    }
   }
 
   function resetFilters() {
@@ -2508,6 +2776,47 @@ export function TenantsPage() {
 
                     {activeTab === 'subscriptions' ? (
                       <div className="space-y-3">
+                        <div className="rounded-[18px] border border-[color:var(--color-border)] bg-white p-3">
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-[0.92rem] font-semibold text-[color:var(--color-ink)]">
+                                Operação de subscriptions
+                              </p>
+                              <p className="mt-1 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
+                                Criação, ajuste e arquivamento passam pelas RPCs administrativas V1-E.
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <GhostButton
+                                disabled={activeCommercialProducts.length === 0 || subscriptionSubmitting}
+                                onClick={openCreateSubscription}
+                                type="button"
+                              >
+                                Nova subscription
+                              </GhostButton>
+                              <GhostButton
+                                disabled={!customerProductSubscriptionDetail || subscriptionSubmitting}
+                                onClick={openUpdateSubscription}
+                                type="button"
+                              >
+                                Editar selecionada
+                              </GhostButton>
+                              <GhostButton
+                                disabled={!customerProductSubscriptionDetail || subscriptionSubmitting}
+                                onClick={() => void handleArchiveSubscription()}
+                                type="button"
+                              >
+                                Arquivar
+                              </GhostButton>
+                            </div>
+                          </div>
+                          {subscriptionActionMessage ? (
+                            <div className="mt-3">
+                              <InlineNotice>{subscriptionActionMessage}</InlineNotice>
+                            </div>
+                          ) : null}
+                        </div>
+
                         {subscriptionsPhase === 'loading' ? (
                           <LoadingState
                             description="Carregando produtos, planos, features e responsáveis pelo contrato real."
@@ -2891,6 +3200,200 @@ export function TenantsPage() {
           </div>
         </aside>
       </div>
+
+      {subscriptionActionMode ? (
+        <GovernedActionDrawer
+          description={
+            subscriptionActionMode === 'create'
+              ? 'Crie um vínculo cliente-produto-plano usando catálogo comercial e RPC administrativa.'
+              : 'Atualize status, plano e campos operacionais da subscription selecionada.'
+          }
+          footer={
+            <>
+              <GhostButton
+                disabled={subscriptionSubmitting}
+                onClick={() => {
+                  setSubscriptionActionMode(null);
+                  setSubscriptionForm(emptySubscriptionForm());
+                }}
+                type="button"
+              >
+                Cancelar
+              </GhostButton>
+              <AppButton
+                disabled={
+                  subscriptionSubmitting ||
+                  !subscriptionForm.productId ||
+                  !subscriptionForm.planId ||
+                  subscriptionPlanOptions.length === 0
+                }
+                form="admin-subscription-form"
+                type="submit"
+              >
+                {subscriptionSubmitting ? 'Sincronizando...' : 'Salvar subscription'}
+              </AppButton>
+            </>
+          }
+          onClose={() => setSubscriptionActionMode(null)}
+          title={
+            subscriptionActionMode === 'create'
+              ? 'Nova subscription comercial'
+              : 'Editar subscription comercial'
+          }
+        >
+          <form className="grid gap-4" id="admin-subscription-form" onSubmit={handleSaveSubscription}>
+            {subscriptionActionMessage ? (
+              <InlineNotice>{subscriptionActionMessage}</InlineNotice>
+            ) : null}
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <Field label="Produto">
+                <SelectInput
+                  disabled={subscriptionActionMode === 'update'}
+                  onChange={(event) => {
+                    const productId = event.target.value;
+                    const productDetail =
+                      commercialProductDetails.find((product) => product.productId === productId) ??
+                      null;
+                    const firstPlan =
+                      productDetail?.plans.find((plan) => plan.status === 'active') ??
+                      productDetail?.plans[0] ??
+                      null;
+
+                    setSubscriptionForm((current) => ({
+                      ...current,
+                      productId,
+                      planId: firstPlan?.planId ?? '',
+                    }));
+                  }}
+                  value={subscriptionForm.productId}
+                >
+                  <option value="">Selecione um produto</option>
+                  {activeCommercialProducts.map((product) => (
+                    <option key={product.productId} value={product.productId}>
+                      {product.displayName}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Field>
+
+              <Field label="Plano">
+                <SelectInput
+                  onChange={(event) =>
+                    setSubscriptionForm((current) => ({
+                      ...current,
+                      planId: event.target.value,
+                    }))
+                  }
+                  value={subscriptionForm.planId}
+                >
+                  <option value="">Selecione um plano</option>
+                  {subscriptionPlanOptions.map((plan) => (
+                    <option key={plan.planId} value={plan.planId}>
+                      {plan.displayName}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Field>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <Field label="Status">
+                <SelectInput
+                  onChange={(event) =>
+                    setSubscriptionForm((current) => ({
+                      ...current,
+                      status: event.target.value as SubscriptionFormState['status'],
+                    }))
+                  }
+                  value={subscriptionForm.status}
+                >
+                  {SUBSCRIPTION_MUTABLE_STATUSES.map((status) => (
+                    <option key={status} value={status}>
+                      {labelForSubscriptionStatus(status)}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Field>
+
+              <Field label="Contrato">
+                <TextInput
+                  maxLength={120}
+                  onChange={(event) =>
+                    setSubscriptionForm((current) => ({
+                      ...current,
+                      contractReference: event.target.value,
+                    }))
+                  }
+                  placeholder="Contrato ou referência operacional"
+                  value={subscriptionForm.contractReference}
+                />
+              </Field>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-3">
+              <Field label="Início">
+                <TextInput
+                  onChange={(event) =>
+                    setSubscriptionForm((current) => ({
+                      ...current,
+                      startedAt: event.target.value,
+                    }))
+                  }
+                  type="datetime-local"
+                  value={subscriptionForm.startedAt}
+                />
+              </Field>
+
+              <Field label="Renovação">
+                <TextInput
+                  onChange={(event) =>
+                    setSubscriptionForm((current) => ({
+                      ...current,
+                      renewalAt: event.target.value,
+                    }))
+                  }
+                  type="datetime-local"
+                  value={subscriptionForm.renewalAt}
+                />
+              </Field>
+
+              <Field label="Fim">
+                <TextInput
+                  disabled={subscriptionActionMode === 'create'}
+                  onChange={(event) =>
+                    setSubscriptionForm((current) => ({
+                      ...current,
+                      endedAt: event.target.value,
+                    }))
+                  }
+                  type="datetime-local"
+                  value={subscriptionForm.endedAt}
+                />
+              </Field>
+            </div>
+
+            <Field label="Notas internas">
+              <TextareaInput
+                maxLength={1000}
+                onChange={(event) =>
+                  setSubscriptionForm((current) => ({
+                    ...current,
+                    notesInternal: event.target.value,
+                  }))
+                }
+                placeholder="Contexto operacional interno, sem segredo, token ou dado financeiro."
+                value={subscriptionForm.notesInternal}
+              />
+            </Field>
+
+            <InlineNotice>
+              Billing, preço, invoice e financeiro continuam fora deste corte. Features e responsáveis
+              permanecem em leitura até o próximo lote de mutation dedicado.
+            </InlineNotice>
+          </form>
+        </GovernedActionDrawer>
+      ) : null}
 
       {showCreateTenant ? (
         <GovernedActionDrawer

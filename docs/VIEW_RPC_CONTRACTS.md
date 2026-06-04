@@ -1939,11 +1939,17 @@ Fase 8.2:
 
 ### Consumo frontend atual
 - Em 2026-06-02, `/admin/tenants` passou a consumir `vw_admin_customer_product_subscriptions` e `vw_admin_customer_product_subscription_detail` em uma aba `Subscriptions` somente leitura no detalhe do cliente.
-- A UI não chama RPC de escrita V1-E, não cria/edita/arquiva subscription, entitlement ou owner e não modela billing, preço, invoice, payment ou revenue.
 - Em 2026-06-02, o hardening `OCP V1-E Subscriptions Read Model Hardening` corrigiu `vw_admin_customer_product_subscriptions` para calcular `active_entitlement_count` e `active_owner_count` por agregações independentes por subscription, eliminando multiplicação por join entre features e owners sem alterar o shape público da view.
+- Em 2026-06-04, `/admin/tenants` passou a oferecer mutação governada de subscription usando somente contratos existentes:
+  - leitura do catálogo por `vw_admin_commercial_products` e `vw_admin_commercial_product_detail`;
+  - criação por `rpc_admin_create_customer_product_subscription`;
+  - atualização por `rpc_admin_update_customer_product_subscription`;
+  - arquivamento por `rpc_admin_archive_customer_product_subscription`.
+- A UI continua sem mutation de entitlement/owner; `vw_admin_customer_product_subscription_detail` segue sendo a fonte para features comerciais e responsáveis internos exibidos em leitura.
+- A UI não modela billing, preço, invoice, payment, revenue ou financeiro.
 
 ### Boundary mantido
-- sem UI de mutação;
+- sem UI de mutação de entitlement/owner;
 - sem CS Workspace;
 - sem Finance Workspace;
 - sem cobrança, preço, invoice, payment ou revenue;
