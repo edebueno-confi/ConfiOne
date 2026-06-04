@@ -18,6 +18,51 @@ Cada registro deve informar:
 
 ## Registros
 
+### CS Portfolio Contract Foundation 2026-06-04
+- fase: `CS Portfolio Contract Foundation`
+- nome: `CS Portfolio Read Model Backend First`
+- commit: registrado no fechamento do sublote
+- branch: `codex/mvp-operational-completion-goal`
+- data: `2026-06-04`
+- resumo funcional: criado o primeiro contrato backend-first de CS Portfolio com `vw_cs_customer_portfolio` e gate `app_private.can_access_cs_customer_portfolio`, usando membership ativa por tenant na area `customer_success`. O corte nao cria rota `/cs`, UI, mutation, health score canonico, billing/financeiro ou role global nova.
+- documentos alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/README.md`
+  - `docs/reports/CS_PORTFOLIO_CONTRACT_FOUNDATION_2026-06-04.md`
+  - `docs/reports/MVP_OPERATIONAL_COMPLETION_GOAL_REPORT_2026-06-02.md`
+- arquivos técnicos alterados:
+  - `packages/contracts/src/index.ts`
+  - `packages/contracts/src/ticketing.ts`
+  - `supabase/migrations/20260604193000_cs_portfolio_contract_foundation.sql`
+  - `supabase/tests/004_phase1_2_function_audit.sql`
+  - `supabase/tests/048_cs_portfolio_contract_foundation.sql`
+- views/RPCs afetadas:
+  - criada: `vw_cs_customer_portfolio`
+  - criada: `app_private.can_access_cs_customer_portfolio`
+  - nenhuma RPC `rpc_cs_*` criada.
+- telas afetadas:
+  - nenhuma.
+- validações:
+  - `git status --short`
+  - `git diff --check`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:wait:ready`
+  - `npm run supabase:lint:db`
+  - `npm run supabase:db:reset`
+  - `supabase test db --local supabase/tests/048_cs_portfolio_contract_foundation.sql`
+  - `npm run supabase:test:db`
+  - `npm run documentation:validate:internal-docs`
+- riscos restantes:
+  - `/cs/portfolio` ainda depende de blueprint, gate de rota e UI read-only propria.
+  - health score, follow-ups, tarefas, projetos e plano de acao continuam fora do contrato.
+  - se produto exigir role global dedicada de CS, o gate atual precisara evoluir.
+- impacto para FAQ futura:
+  - permite explicar que CS Portfolio nasce por contrato backend e membership tenant-aware na area Customer Success, sem virar copia do suporte ou dashboard com health inventado.
+
 ### CS Workspace Readiness Audit 2026-06-04
 - fase: `CS Workspace Readiness Audit`
 - nome: `CS Portfolio Contract Readiness`

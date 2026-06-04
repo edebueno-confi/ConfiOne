@@ -78,6 +78,7 @@ select is(
         'can_view_internal_ticket_content',
         'can_assign_ticket',
         'can_access_support_workspace',
+        'can_access_cs_customer_portfolio',
         'can_access_ticket_engineering',
         'can_access_engineering_workspace',
         'can_assign_engineering_work_item',

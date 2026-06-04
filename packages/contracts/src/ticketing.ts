@@ -2119,6 +2119,46 @@ export interface SupportCustomerProductContext {
   activeInternalOwners: SupportCustomerProductContextOwner[];
 }
 
+export interface CsCustomerPortfolioProductContext {
+  subscriptionId: Uuid;
+  productKey: string;
+  productDisplayName: string;
+  planKey: string;
+  planDisplayName: string;
+  status: Extract<CustomerProductSubscriptionStatus, 'active' | 'suspended'>;
+  startedAt: IsoTimestamp | null;
+  endedAt: IsoTimestamp | null;
+  renewalAt: IsoTimestamp | null;
+  activeFeatureCount: number;
+  activeOwnerCount: number;
+}
+
+export interface CsCustomerPortfolio {
+  tenantId: Uuid;
+  tenantSlug: string;
+  tenantDisplayName: string;
+  tenantLegalName: string;
+  tenantStatus: string;
+  portfolioScope: 'customer_success_area';
+  csOwnerUserId: Uuid | null;
+  csOwnerFullName: string | null;
+  csOwnerEmail: string | null;
+  csOwnerAreaKey: InternalActionAreaKey | null;
+  csOwnerAreaDisplayName: string | null;
+  activeSubscriptionCount: number;
+  activeProductCount: number;
+  productContexts: CsCustomerPortfolioProductContext[];
+  openTicketCount: number;
+  totalTicketCount: number;
+  ticketStatusCounts: Partial<Record<TicketStatus, number>>;
+  customerSuccessMemberCount: number;
+  healthSummaryStatus: 'unavailable';
+  healthSummaryReason: string;
+  lastOperationalUpdateAt: IsoTimestamp;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+}
+
 export interface RpcAdminCreateCustomerProductSubscriptionPayload {
   tenantId: Uuid;
   productId: Uuid;

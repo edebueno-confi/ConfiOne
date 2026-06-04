@@ -10,6 +10,8 @@ No sublote `OCP V1-E Support Customer Product Context UI`, o Customer Account/Pr
 
 No sublote `CS Workspace Readiness Audit`, a proxima frente foi auditada antes de runtime. A auditoria confirmou que ainda nao existem `vw_cs_*`, `rpc_cs_*`, role/gate dedicado de Customer Success, rota `/cs` ou blueprint aprovado. Por isso, `/cs/portfolio` permanece bloqueado para UI imediata; o proximo passo seguro e uma fundacao backend-first de CS Portfolio.
 
+No sublote `CS Portfolio Contract Foundation`, foi criado o primeiro contrato backend-first para CS Portfolio: `vw_cs_customer_portfolio`, protegido por `app_private.can_access_cs_customer_portfolio`. O gate usa `platform_admin` ou membership ativa na area interna `customer_success` por tenant. Nao houve UI `/cs`, RPC `rpc_cs_*`, mutation, health score canonico, billing/financeiro ou deploy remoto.
+
 ## Escopo executado
 
 - Reaproveitado `npm run supabase:qa:local-functional-fixture` como fixture local canonica.
@@ -47,6 +49,12 @@ No sublote `CS Workspace Readiness Audit`, a proxima frente foi auditada antes d
   - nao existe rota `/cs`, gate CS ou redirect pos-login para Customer Success;
   - `vw_support_customer_product_context` permanece contrato de suporte, nao contrato CS;
   - health score, follow-ups, tarefas e projetos de CS seguem dependentes de decisao de produto e backend proprio.
+- Materializado contrato backend-first de CS Portfolio:
+  - `app_private.can_access_cs_customer_portfolio`;
+  - `vw_cs_customer_portfolio`;
+  - teste pgTAP `048_cs_portfolio_contract_foundation.sql`;
+  - tipos `CsCustomerPortfolio` e `CsCustomerPortfolioProductContext`;
+  - health permanece `unavailable`, sem score canonico.
 
 ## Evidencia Gate 0
 
@@ -132,6 +140,9 @@ Resumo confirmado por query local apos reset e fixture:
 - smoke autenticado em `/support/customers` e `/support/customers/:tenantId`, validando consumo de `vw_support_customer_product_context`.
 - auditoria textual de CS Workspace/Portfolio em docs, migrations, testes, contratos TS, router e navegacao.
 - `npm run documentation:validate:internal-docs`
+- `npm run supabase:db:reset`
+- `supabase test db --local supabase/tests/048_cs_portfolio_contract_foundation.sql`
+- `npm run supabase:test:db` apos inclusao do gate CS no allowlist global de funcoes privadas
 
 Resultado dos gates: aprovados.
 
@@ -143,25 +154,25 @@ Resultado dos gates: aprovados.
 - OCP V1-E agora tem UI Admin para criar, editar e arquivar subscriptions por RPCs existentes.
 - Nao ha UI de mutation para entitlement/feature ou owner interno.
 - Customer Account/Profile em suporte consome subscriptions em leitura, sem mutacao e sem view administrativa.
-- CS Workspace/Portfolio ainda nao possui contrato proprio, role/gate dedicado ou rota `/cs`.
+- CS Portfolio agora possui contrato backend read-only proprio, mas ainda nao possui UI, rota `/cs` ou shell dedicado.
 - Health score, follow-ups, tarefas e projetos de CS continuam bloqueados ate decisao de produto e fundacao backend.
 - Billing, preco, invoice, payment, revenue e financeiro continuam fora do escopo e ausentes.
 - Nao foi executado deploy remoto, staging, producao, provider externo ou IA real.
 
 ## Proximo lote recomendado
 
-Proximo lote mais seguro: `CS Portfolio Contract Foundation`, backend-first, sem UI no primeiro corte salvo decisao humana explicita autorizando um portfolio read-only com contrato `vw_cs_*` materializado.
+Proximo lote mais seguro: blueprint + UI read-only de `/cs/portfolio`, usando apenas `vw_cs_customer_portfolio`, sem mutation e mantendo health como `Indisponível`.
 
 Justificativa:
 
 - A leitura V1-E ja aparece no Admin e no Customer Account/Profile de suporte.
-- A auditoria confirmou que CS ainda nao possui role/gate/read model proprio.
-- Criar UI agora exigiria reaproveitar suporte ou compor portfolio no frontend, o que violaria os gates.
+- O read model CS ja existe e separa a carteira de suporte.
+- Ainda falta route gate/shell e desenho visual proprio para evitar CRM generico.
 
 Antes de implementar, o lote deve declarar explicitamente:
 
-- se CS usa role propria ou membership de area `customer_success`;
-- qual read model CS materializa a carteira;
+- como `/cs/portfolio` sera protegido usando o contrato CS existente;
+- que `vw_cs_customer_portfolio` e a unica fonte de carteira;
 - quais sinais de health podem ser exibidos sem score canonico novo, ou se health fica fora;
 - ausencia de billing/financeiro;
 - confirmacao de que qualquer UI consome somente views/read models CS reais;
@@ -178,10 +189,16 @@ Antes de implementar, o lote deve declarar explicitamente:
   - `apps/web/src/contracts/support-contracts.ts`
   - `apps/web/src/features/support/support-api.ts`
   - `apps/web/src/features/support/SupportWorkspacePage.tsx`
+  - `packages/contracts/src/index.ts`
+  - `packages/contracts/src/ticketing.ts`
+  - `supabase/migrations/20260604193000_cs_portfolio_contract_foundation.sql`
+  - `supabase/tests/004_phase1_2_function_audit.sql`
+  - `supabase/tests/048_cs_portfolio_contract_foundation.sql`
   - `docs/PROJECT_STATE.md`
   - `docs/VIEW_RPC_CONTRACTS.md`
   - `docs/DOCUMENTATION_LEDGER.md`
   - `docs/README.md`
+  - `docs/reports/CS_PORTFOLIO_CONTRACT_FOUNDATION_2026-06-04.md`
   - `docs/reports/CS_WORKSPACE_READINESS_AUDIT_2026-06-04.md`
   - `docs/reports/MVP_OPERATIONAL_COMPLETION_GOAL_REPORT_2026-06-02.md`
 - Commit: registrado no fechamento do sublote.

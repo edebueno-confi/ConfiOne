@@ -84,6 +84,8 @@ export type {
   CustomerPortalTicketKnowledgeLink,
   CustomerPortalTicketListItem,
   CustomerPortalTicketTimelineItem,
+  CsCustomerPortfolio,
+  CsCustomerPortfolioProductContext,
   CustomerProductLine,
   CustomerProductFeatureEntitlementRecord,
   CustomerProductFeatureEntitlementSource,

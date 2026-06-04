@@ -1964,6 +1964,35 @@ Fase 8.2:
 - sem alteração de `customer_account_features`;
 - sem dado real ou seed customer-facing.
 
+## CS Portfolio Contract Foundation - 2026-06-04
+
+### Leitura materializada no backend
+- `vw_cs_customer_portfolio`
+
+### Gate materializado no backend
+- `app_private.can_access_cs_customer_portfolio(target_tenant_id uuid)`
+
+### Regras de acesso
+- `platform_admin` le a carteira global.
+- Usuario sem `platform_admin` precisa de profile ativo, tenant membership ativa no tenant e membership ativa em `internal_area_memberships` com `area_key = 'customer_success'`.
+- Roles de area autorizadas neste corte: `viewer`, `member` e `manager`.
+
+### Regras de consumo
+- CS deve ler portfolio por `vw_cs_customer_portfolio`.
+- Frontend futuro continua proibido de montar portfolio com composicao local de views de suporte.
+- `vw_support_customer_product_context` permanece contrato de suporte, nao contrato CS.
+- Health score permanece `unavailable` ate contrato proprio.
+- Billing, preco, invoice, payment, revenue e financeiro seguem fora do contrato.
+- Nao ha RPC `rpc_cs_*` neste corte.
+
+### Boundary mantido
+- sem UI `/cs`;
+- sem mutation CS;
+- sem follow-up, tarefa, projeto, reuniao ou plano de acao;
+- sem role global nova de CS;
+- sem dado financeiro;
+- sem leitura direta de tabelas base pelo frontend.
+
 ## Próximos contratos planejados
 - OCP V1-F Customer Portfolio/Workspace Planning:
   - planejar consumo futuro dos read models V1-E por Admin, Suporte e CS sem criar UI antes de blueprint e autorização explícita.
