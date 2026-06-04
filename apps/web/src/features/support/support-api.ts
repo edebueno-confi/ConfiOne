@@ -62,6 +62,9 @@ import type {
   SupportCustomerAccountCustomization,
   SupportCustomerAccountFeature,
   SupportCustomerAccountIntegration,
+  SupportCustomerProductContext,
+  SupportCustomerProductContextFeature,
+  SupportCustomerProductContextOwner,
   SupportCustomer360,
   SupportKnowledgeArticlePickerItem,
   SupportInternalActionTargetArea,
@@ -542,6 +545,52 @@ function mapTicketKnowledgeLink(row: Record<string, unknown>): SupportTicketKnow
   };
 }
 
+function mapCustomerProductContextFeature(
+  value: unknown,
+): SupportCustomerProductContextFeature {
+  const row = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+
+  return {
+    featureKey: String(row.featureKey),
+    displayName: String(row.displayName),
+    entitlementSource:
+      row.entitlementSource as SupportCustomerProductContextFeature['entitlementSource'],
+  };
+}
+
+function mapCustomerProductContextOwner(value: unknown): SupportCustomerProductContextOwner {
+  const row = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+
+  return {
+    areaKey: (row.areaKey as SupportCustomerProductContextOwner['areaKey']) ?? null,
+    areaDisplayName: (row.areaDisplayName as string | null) ?? null,
+    ownerRole: row.ownerRole as SupportCustomerProductContextOwner['ownerRole'],
+  };
+}
+
+function mapCustomerProductContext(row: Record<string, unknown>): SupportCustomerProductContext {
+  return {
+    subscriptionId: String(row.subscription_id),
+    tenantId: String(row.tenant_id),
+    tenantSlug: String(row.tenant_slug),
+    tenantDisplayName: String(row.tenant_display_name),
+    productKey: String(row.product_key),
+    productDisplayName: String(row.product_display_name),
+    planKey: String(row.plan_key),
+    planDisplayName: String(row.plan_display_name),
+    status: row.status as SupportCustomerProductContext['status'],
+    startedAt: (row.started_at as string | null) ?? null,
+    endedAt: (row.ended_at as string | null) ?? null,
+    renewalAt: (row.renewal_at as string | null) ?? null,
+    activeSupportFeatures: Array.isArray(row.active_support_features)
+      ? row.active_support_features.map(mapCustomerProductContextFeature)
+      : [],
+    activeInternalOwners: Array.isArray(row.active_internal_owners)
+      ? row.active_internal_owners.map(mapCustomerProductContextOwner)
+      : [],
+  };
+}
+
 function mapKnowledgeArticlePickerItem(
   row: Record<string, unknown>,
 ): SupportKnowledgeArticlePickerItem {
@@ -964,6 +1013,22 @@ export async function getSupportCustomerAccountContext(tenantId: Uuid) {
   }
 
   return data ? mapCustomerAccountContext(data as Record<string, unknown>) : null;
+}
+
+export async function listSupportCustomerProductContexts(tenantId: Uuid) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_support_customer_product_context')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .order('product_display_name', { ascending: true })
+    .order('plan_display_name', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o contexto de produtos contratados.');
+  }
+
+  return (data ?? []).map((row) => mapCustomerProductContext(row as Record<string, unknown>));
 }
 
 export async function getSupportCustomerRecentTickets(

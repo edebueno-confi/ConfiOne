@@ -18,6 +18,44 @@ Cada registro deve informar:
 
 ## Registros
 
+### OCP V1-E Support Customer Product Context UI 2026-06-04
+- fase: `OCP V1-E Support Customer Product Context UI`
+- nome: `Support Customer Profile Read-only Product Context`
+- commit: registrado no fechamento do sublote
+- branch: `codex/mvp-operational-completion-goal`
+- data: `2026-06-04`
+- resumo funcional: `/support/customers` e `/support/customers/:tenantId` passaram a consumir `vw_support_customer_product_context` para mostrar produto, plano, status da subscription, datas, features visiveis ao suporte e responsaveis internos no perfil operacional do cliente. A superficie permanece read-only para subscriptions no suporte.
+- documentos alterados:
+  - `docs/PROJECT_STATE.md`
+  - `docs/VIEW_RPC_CONTRACTS.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/reports/MVP_OPERATIONAL_COMPLETION_GOAL_REPORT_2026-06-02.md`
+- arquivos técnicos alterados:
+  - `apps/web/src/contracts/support-contracts.ts`
+  - `apps/web/src/features/support/support-api.ts`
+  - `apps/web/src/features/support/SupportWorkspacePage.tsx`
+- views/RPCs afetadas:
+  - consumida em leitura: `vw_support_customer_product_context`
+  - nenhuma RPC de subscription consumida pela superficie de suporte.
+- telas afetadas:
+  - `/support/customers`
+  - `/support/customers/:tenantId`
+- validações:
+  - `git status --short`
+  - `git diff --check`
+  - `npm run contracts:typecheck`
+  - `npm run web:typecheck`
+  - `npm run web:build`
+  - `npm run supabase:lint:db`
+  - `npm run supabase:test:db`
+  - smoke autenticado em `/support/customers` e `/support/customers/:tenantId`
+- riscos restantes:
+  - Customer Account/Profile ainda nao possui fluxo de CS dedicado.
+  - suporte nao altera subscription, entitlement ou owner neste corte.
+  - billing, preco, invoice, payment, revenue e financeiro permanecem fora do dominio exposto.
+- impacto para FAQ futura:
+  - permite explicar que o suporte enxerga contexto de produto contratado por read model seguro, sem administrar contrato ou financeiro.
+
 ### OCP V1-E Admin Subscriptions Governed Mutations UI 2026-06-04
 - fase: `OCP V1-E Admin Subscriptions Governed Mutations UI`
 - nome: `Admin Subscription Create Update Archive via Existing RPCs`

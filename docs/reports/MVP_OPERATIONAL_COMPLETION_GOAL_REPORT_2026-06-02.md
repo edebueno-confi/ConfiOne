@@ -6,6 +6,8 @@ Gate 0 de fixture local foi reforcado para validacao humana do MVP operacional. 
 
 No sublote seguinte, a aba `Subscriptions` em `/admin/tenants` passou a operar criacao, edicao governada e arquivamento de subscriptions por RPCs administrativas V1-E existentes, com leitura do catalogo comercial por read models. Nao houve deploy remoto, migration remota, dado real, backend novo, Supabase novo, billing, preco, invoice ou financeiro.
 
+No sublote `OCP V1-E Support Customer Product Context UI`, o Customer Account/Profile do suporte passou a consumir `vw_support_customer_product_context` em leitura para mostrar produto, plano, status da subscription, datas, features visiveis ao suporte e responsaveis internos. A superficie de suporte nao chama RPC administrativa de subscription, nao usa view administrativa V1-E e nao cria acao fake de editar contrato.
+
 ## Escopo executado
 
 - Reaproveitado `npm run supabase:qa:local-functional-fixture` como fixture local canonica.
@@ -32,6 +34,12 @@ No sublote seguinte, a aba `Subscriptions` em `/admin/tenants` passou a operar c
   - entitlements/features comerciais;
   - responsaveis internos;
   - billing, preco, invoice, payment, revenue e financeiro.
+- Conectado `/support/customers` e `/support/customers/:tenantId` ao read model support-safe `vw_support_customer_product_context` para:
+  - substituir fallback de produto/plano por subscription real quando disponivel;
+  - exibir painel `Produtos contratados`;
+  - listar features visiveis ao suporte;
+  - listar responsaveis internos por role/area;
+  - manter estado `Indisponível` quando nao houver dado contratual.
 
 ## Evidencia Gate 0
 
@@ -64,6 +72,7 @@ Resumo confirmado por query local apos reset e fixture:
 - Support queue: `/support/queue`
 - Ticket principal: abrir `QA Support | Operação crítica com histórico extenso, anexos e retorno operacional`
 - Customer profile/context: `/support/customers`
+- Customer profile com produto contratado: `/support/customers` > abrir `Support QA Tenant A Operação Enterprise`
 - Portal cliente: `/portal`
 - Portal tickets: `/portal/tickets`
 - Portal help autenticado: `/portal/help`
@@ -84,6 +93,7 @@ Resumo confirmado por query local apos reset e fixture:
 - A navegacao Admin continua funcionando.
 - A fila de suporte mostra volume suficiente e status variados.
 - O ticket principal mostra timeline longa, nota interna, mensagem publica, evidencias, Knowledge linkado e handoff/engenharia.
+- O perfil do cliente em suporte mostra produto `Genius Returns`, plano `Enterprise`, 2 features e 2 responsaveis internos em leitura.
 - O Portal nao vaza nota interna, engenharia, internal actions, audit bruto ou storage path.
 
 ## Validacoes executadas
@@ -112,6 +122,7 @@ Resumo confirmado por query local apos reset e fixture:
   - arquivamento da subscription criada no tenant B por RPC;
   - reset + fixture apos smoke para restaurar a massa canonica;
   - smoke visual pos-reset confirmando 1 subscription, 2 entitlements, 2 owners e contrato `QA-OCP-V1E-LOCAL`.
+- smoke autenticado em `/support/customers` e `/support/customers/:tenantId`, validando consumo de `vw_support_customer_product_context`.
 
 Resultado dos gates: aprovados.
 
@@ -122,35 +133,39 @@ Resultado dos gates: aprovados.
 - O fixture nao tenta iniciar `supabase functions serve` por conta propria quando o Edge Runtime local esta indisponivel, porque isso exigiria materializar SERVICE_ROLE_KEY em arquivo temporario. A execucao validada usa `npm run supabase:start` + `npm run supabase:wait:ready`.
 - OCP V1-E agora tem UI Admin para criar, editar e arquivar subscriptions por RPCs existentes.
 - Nao ha UI de mutation para entitlement/feature ou owner interno.
+- Customer Account/Profile em suporte consome subscriptions em leitura, sem mutacao e sem view administrativa.
 - Billing, preco, invoice, payment, revenue e financeiro continuam fora do escopo e ausentes.
 - Nao foi executado deploy remoto, staging, producao, provider externo ou IA real.
 
 ## Proximo lote recomendado
 
-Proximo lote mais seguro: integracao controlada de subscriptions no Customer Account/Profile, em modo leitura, usando read models V1-E ja existentes.
+Proximo lote mais seguro: planejamento CS Workspace ou primeiro corte CS Portfolio read-only, sem mutation e sem health score novo.
 
 Justificativa:
 
-- A leitura V1-E e a mutacao basica de subscription no Admin ja estao validadas localmente.
-- Customer Account/Profile e a proxima superficie natural para consolidar contexto operacional do cliente sem abrir CS Workspace amplo.
-- O corte pode permanecer read-only, reduzindo risco de produto e evitando billing/financeiro.
+- A leitura V1-E ja aparece no Admin e no Customer Account/Profile de suporte.
+- CS e a proxima area natural para usar contexto de produto, ownership e risco sem transformar suporte em CRM.
+- O corte deve permanecer read-only ou documental ate haver decisao de produto sobre carteira, health e follow-ups.
 
 Antes de implementar, o lote deve declarar explicitamente:
 
-- quais read models entram no primeiro corte;
-- quais campos ficam indisponiveis ou apenas administrativos;
+- qual cockpit CS sera apenas leitura e qual ficara para planejamento;
+- quais sinais de health podem ser exibidos sem score canonico novo;
 - ausencia de billing/financeiro;
-- confirmacao de que a UI consome somente views/read models V1-E existentes;
+- confirmacao de que a UI consome somente views/read models existentes;
 - gates de permissao, isolamento tenant e QA visual.
 
 ## Status de fechamento
 
 - Branch: `codex/mvp-operational-completion-goal`
 - Commit base: `cc94857 chore: remover service role do fixture local`
-- Arquivos alterados neste lote:
+- Arquivos alterados nos sublotes registrados neste relatorio:
   - `apps/web/src/contracts/admin-contracts.ts`
   - `apps/web/src/features/admin/admin-api.ts`
   - `apps/web/src/features/tenants/TenantsPage.tsx`
+  - `apps/web/src/contracts/support-contracts.ts`
+  - `apps/web/src/features/support/support-api.ts`
+  - `apps/web/src/features/support/SupportWorkspacePage.tsx`
   - `docs/PROJECT_STATE.md`
   - `docs/VIEW_RPC_CONTRACTS.md`
   - `docs/DOCUMENTATION_LEDGER.md`

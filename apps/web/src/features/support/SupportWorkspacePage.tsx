@@ -52,6 +52,7 @@ import {
   getSupportInternalActionDetail,
   getSupportTicketAttachmentSignedUrl,
   getSupportCustomerAccountContext,
+  listSupportCustomerProductContexts,
   getSupportCustomer360,
   getSupportCustomerRecentEvents,
   getSupportCustomerRecentTickets,
@@ -100,6 +101,7 @@ import {
   type SupportCustomerAccountCustomization,
   type SupportCustomerAccountFeature,
   type SupportCustomerAccountIntegration,
+  type SupportCustomerProductContext,
   type SupportCustomer360,
   type SupportCustomer360Contact,
   type SupportCustomerRecentEventsWindow,
@@ -277,6 +279,7 @@ interface TicketAttachmentUploadDraft {
 interface SupportCustomerPreviewSnapshot {
   customer: SupportCustomer360;
   accountContext: SupportCustomerAccountContext | null;
+  productContexts: SupportCustomerProductContext[];
   recentTicketsWindow: SupportCustomerRecentTicketsWindow;
   recentEventsWindow: SupportCustomerRecentEventsWindow;
 }
@@ -530,6 +533,200 @@ function humanizeTenantStatus(value: string) {
   }
 
   return humanizeCustomerValue(value);
+}
+
+function labelForCustomerProductSubscriptionStatus(
+  value: SupportCustomerProductContext['status'],
+) {
+  const labels: Record<SupportCustomerProductContext['status'], string> = {
+    active: 'Ativa',
+    suspended: 'Suspensa',
+  };
+
+  return labels[value];
+}
+
+function toneForCustomerProductSubscriptionStatus(
+  value: SupportCustomerProductContext['status'],
+) {
+  return value === 'active' ? 'positive' as const : 'warning' as const;
+}
+
+function labelForCustomerProductEntitlementSource(
+  value: SupportCustomerProductContext['activeSupportFeatures'][number]['entitlementSource'],
+) {
+  const labels: Record<
+    SupportCustomerProductContext['activeSupportFeatures'][number]['entitlementSource'],
+    string
+  > = {
+    addon: 'Add-on',
+    migration: 'Migração',
+    ops_override: 'Override operacional',
+    pilot: 'Piloto',
+    plan: 'Plano',
+  };
+
+  return labels[value];
+}
+
+function labelForCustomerProductOwnerRole(
+  value: SupportCustomerProductContext['activeInternalOwners'][number]['ownerRole'],
+) {
+  const labels: Record<
+    SupportCustomerProductContext['activeInternalOwners'][number]['ownerRole'],
+    string
+  > = {
+    account_owner: 'Account owner',
+    cs_owner: 'CS',
+    finance_owner: 'Financeiro operacional',
+    implementation_owner: 'Implantação',
+    support_owner: 'Suporte',
+    technical_owner: 'Técnico',
+  };
+
+  return labels[value];
+}
+
+function primaryCustomerProductContext(productContexts: SupportCustomerProductContext[]) {
+  return (
+    productContexts.find((productContext) => productContext.status === 'active') ??
+    productContexts[0] ??
+    null
+  );
+}
+
+function displayCustomerProductLabel(
+  accountContext: SupportCustomerAccountContext | null,
+  productContexts: SupportCustomerProductContext[],
+) {
+  const primaryProduct = primaryCustomerProductContext(productContexts);
+
+  if (primaryProduct) {
+    return primaryProduct.productDisplayName;
+  }
+
+  return displayCustomerValue(
+    accountContext?.productLine ? humanizeCustomerValue(accountContext.productLine) : null,
+  );
+}
+
+function displayCustomerPlanLabel(
+  accountContext: SupportCustomerAccountContext | null,
+  productContexts: SupportCustomerProductContext[],
+) {
+  const primaryProduct = primaryCustomerProductContext(productContexts);
+
+  if (primaryProduct) {
+    return primaryProduct.planDisplayName;
+  }
+
+  return displayCustomerValue(
+    accountContext?.accountTier ? humanizeCustomerValue(accountContext.accountTier) : null,
+  );
+}
+
+function SupportCustomerProductsPanel({
+  productContexts,
+}: {
+  productContexts: SupportCustomerProductContext[];
+}) {
+  if (productContexts.length === 0) {
+    return (
+      <InlineNotice>
+        Nenhuma subscription ativa ou suspensa ficou disponível para esta conta.
+      </InlineNotice>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {productContexts.map((productContext) => (
+        <div
+          className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-4"
+          key={productContext.subscriptionId}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusPill tone={toneForCustomerProductSubscriptionStatus(productContext.status)}>
+                  {labelForCustomerProductSubscriptionStatus(productContext.status)}
+                </StatusPill>
+                <StatusPill>{productContext.planDisplayName}</StatusPill>
+              </div>
+              <h3 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                {productContext.productDisplayName}
+              </h3>
+            </div>
+            <div className="text-right text-[12px] leading-5 text-[color:var(--color-muted)]">
+              <p>Renovação</p>
+              <p className="font-semibold text-[color:var(--color-ink)]">
+                {productContext.renewalAt ? formatDateTime(productContext.renewalAt) : 'Indisponível'}
+              </p>
+            </div>
+          </div>
+
+          <dl className="mt-3 grid gap-2 text-[12px] leading-5 text-[color:var(--color-muted)] md:grid-cols-3">
+            <div>
+              <dt className="font-semibold uppercase tracking-[0.14em]">Início</dt>
+              <dd>{productContext.startedAt ? formatDateTime(productContext.startedAt) : 'Indisponível'}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold uppercase tracking-[0.14em]">Fim</dt>
+              <dd>{productContext.endedAt ? formatDateTime(productContext.endedAt) : 'Indisponível'}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold uppercase tracking-[0.14em]">Features</dt>
+              <dd>{productContext.activeSupportFeatures.length}</dd>
+            </div>
+          </dl>
+
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                Features visíveis ao suporte
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {productContext.activeSupportFeatures.length === 0 ? (
+                  <StatusPill>Indisponível</StatusPill>
+                ) : (
+                  productContext.activeSupportFeatures.map((feature) => (
+                    <StatusPill key={`${productContext.subscriptionId}-${feature.featureKey}`}>
+                      {feature.displayName} · {labelForCustomerProductEntitlementSource(feature.entitlementSource)}
+                    </StatusPill>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                Responsáveis internos
+              </p>
+              <div className="space-y-2">
+                {productContext.activeInternalOwners.length === 0 ? (
+                  <p className="text-sm text-[color:var(--color-muted)]">Indisponível</p>
+                ) : (
+                  productContext.activeInternalOwners.map((owner, index) => (
+                    <div
+                      className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-sm"
+                      key={`${productContext.subscriptionId}-${owner.ownerRole}-${owner.areaKey ?? index}`}
+                    >
+                      <p className="font-semibold text-[color:var(--color-ink)]">
+                        {labelForCustomerProductOwnerRole(owner.ownerRole)}
+                      </p>
+                      <p className="text-[color:var(--color-muted)]">
+                        {displayCustomerValue(owner.areaDisplayName)}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function extractPublicArticleBasePath(publicArticlePath: string | null | undefined) {
@@ -6506,6 +6703,9 @@ export function SupportCustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<SupportCustomer360 | null>(null);
   const [selectedAccountContext, setSelectedAccountContext] =
     useState<SupportCustomerAccountContext | null>(null);
+  const [selectedProductContexts, setSelectedProductContexts] = useState<
+    SupportCustomerProductContext[]
+  >([]);
   const [selectedRecentTicketsWindow, setSelectedRecentTicketsWindow] =
     useState<SupportCustomerRecentTicketsWindow>(emptyCustomerRecentTicketsWindow());
   const [selectedRecentEventsWindow, setSelectedRecentEventsWindow] =
@@ -6517,6 +6717,7 @@ export function SupportCustomersPage() {
   function applySelectedPreviewSnapshot(snapshot: SupportCustomerPreviewSnapshot) {
     setSelectedCustomer(snapshot.customer);
     setSelectedAccountContext(snapshot.accountContext);
+    setSelectedProductContexts(snapshot.productContexts);
     setSelectedRecentTicketsWindow(snapshot.recentTicketsWindow);
     setSelectedRecentEventsWindow(snapshot.recentEventsWindow);
   }
@@ -6558,6 +6759,7 @@ export function SupportCustomersPage() {
       setCustomers([]);
       setSelectedTenantId(null);
       setSelectedCustomer(null);
+      setSelectedProductContexts([]);
       setMessage(classified.message);
       setPhase(
         classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
@@ -6583,6 +6785,7 @@ export function SupportCustomersPage() {
       }
 
       setSelectedAccountContext(null);
+      setSelectedProductContexts([]);
       setSelectedRecentTicketsWindow(emptyCustomerRecentTicketsWindow());
       setSelectedRecentEventsWindow(emptyCustomerRecentEventsWindow());
       setSelectedMessage(null);
@@ -6590,9 +6793,10 @@ export function SupportCustomersPage() {
     }
 
     try {
-      const [detail, context, recentTickets, recentEvents] = await Promise.all([
+      const [detail, context, productContexts, recentTickets, recentEvents] = await Promise.all([
         getSupportCustomer360(tenantId),
         getSupportCustomerAccountContext(tenantId),
+        listSupportCustomerProductContexts(tenantId),
         getSupportCustomerRecentTickets(tenantId),
         getSupportCustomerRecentEvents(tenantId),
       ]);
@@ -6608,6 +6812,7 @@ export function SupportCustomersPage() {
       const snapshot = {
         customer: detail,
         accountContext: context,
+        productContexts,
         recentTicketsWindow: recentTickets,
         recentEventsWindow: recentEvents,
       } satisfies SupportCustomerPreviewSnapshot;
@@ -6633,6 +6838,7 @@ export function SupportCustomersPage() {
 
       setSelectedCustomer(null);
       setSelectedAccountContext(null);
+      setSelectedProductContexts([]);
       setSelectedRecentTicketsWindow(emptyCustomerRecentTicketsWindow());
       setSelectedRecentEventsWindow(emptyCustomerRecentEventsWindow());
       setSelectedMessage(classified.message);
@@ -6746,6 +6952,7 @@ export function SupportCustomersPage() {
     selectedCustomer && selectedPhase === 'ready'
       ? resolveSupportCustomerOwner(selectedCustomer, selectedRecentTicketsWindow)
       : null;
+  const selectedPrimaryProduct = primaryCustomerProductContext(selectedProductContexts);
   const activePreviewTabs = [
     { id: 'accounts', label: 'Contas', active: true },
     { id: 'contacts', label: 'Contatos', active: false },
@@ -6954,7 +7161,8 @@ export function SupportCustomersPage() {
                 <div className="mt-3 space-y-1.5">
                   <h3 className="text-[1.22rem] font-semibold tracking-[-0.05em]">{previewLabel}</h3>
                   <div className="space-y-1 text-[12px] leading-5 text-white/76">
-                    <p>Produto: {displayCustomerValue(selectedAccountContext?.productLine ? humanizeCustomerValue(selectedAccountContext.productLine) : null)}</p>
+                    <p>Produto: {displayCustomerProductLabel(selectedAccountContext, selectedProductContexts)}</p>
+                    <p>Plano: {displayCustomerPlanLabel(selectedAccountContext, selectedProductContexts)}</p>
                     <p>Responsável: {displayCustomerValue(selectedOwner)}</p>
                     <p>Última atividade: {formatDateTime(selectedCustomer.tenantUpdatedAt)}</p>
                   </div>
@@ -6981,6 +7189,7 @@ export function SupportCustomersPage() {
                   <p>Tickets abertos: {selectedCustomer.openTicketCount}</p>
                   <p>Total de tickets: {selectedCustomer.totalTicketCount}</p>
                   <p>Contatos ativos: {selectedCustomer.activeContactsCount}</p>
+                  <p>Subscriptions: {selectedProductContexts.length}</p>
                 </div>
               </div>
 
@@ -7003,9 +7212,12 @@ export function SupportCustomersPage() {
                     {humanizeTenantStatus(selectedCustomer.tenantStatus)}
                   </StatusPill>
                   <StatusPill>
+                    {displayCustomerPlanLabel(selectedAccountContext, selectedProductContexts)}
+                  </StatusPill>
+                  <StatusPill>
                     {displayCustomerValue(
-                      selectedAccountContext?.accountTier
-                        ? humanizeCustomerValue(selectedAccountContext.accountTier)
+                      selectedPrimaryProduct
+                        ? labelForCustomerProductSubscriptionStatus(selectedPrimaryProduct.status)
                         : null,
                     )}
                   </StatusPill>
@@ -7039,6 +7251,7 @@ export function SupportCustomerPage() {
   const [customer, setCustomer] = useState<SupportCustomer360 | null>(null);
   const [accountContext, setAccountContext] =
     useState<SupportCustomerAccountContext | null>(null);
+  const [productContexts, setProductContexts] = useState<SupportCustomerProductContext[]>([]);
   const [recentTicketsWindow, setRecentTicketsWindow] =
     useState<SupportCustomerRecentTicketsWindow>(emptyCustomerRecentTicketsWindow());
   const [recentEventsWindow, setRecentEventsWindow] =
@@ -7048,6 +7261,7 @@ export function SupportCustomerPage() {
     if (!tenantId) {
       setCustomer(null);
       setAccountContext(null);
+      setProductContexts([]);
       setRecentTicketsWindow(emptyCustomerRecentTicketsWindow());
       setRecentEventsWindow(emptyCustomerRecentEventsWindow());
       setPhase('error');
@@ -7056,9 +7270,10 @@ export function SupportCustomerPage() {
     }
 
     try {
-      const [detail, context, recentTickets, recentEvents] = await Promise.all([
+      const [detail, context, customerProductContexts, recentTickets, recentEvents] = await Promise.all([
         getSupportCustomer360(tenantId),
         getSupportCustomerAccountContext(tenantId),
+        listSupportCustomerProductContexts(tenantId),
         getSupportCustomerRecentTickets(tenantId),
         getSupportCustomerRecentEvents(tenantId),
       ]);
@@ -7066,6 +7281,7 @@ export function SupportCustomerPage() {
       setBackendDenied(false);
       setCustomer(detail);
       setAccountContext(context);
+      setProductContexts(customerProductContexts);
       setRecentTicketsWindow(recentTickets);
       setRecentEventsWindow(recentEvents);
       setMessage(null);
@@ -7088,6 +7304,7 @@ export function SupportCustomerPage() {
 
       setCustomer(null);
       setAccountContext(null);
+      setProductContexts([]);
       setRecentTicketsWindow(emptyCustomerRecentTicketsWindow());
       setRecentEventsWindow(emptyCustomerRecentEventsWindow());
       setMessage(classified.message);
@@ -7191,10 +7408,12 @@ export function SupportCustomerPage() {
   const visibleFeatures = visibleFeatureSlice(accountContext, 5);
   const visibleAlerts = visibleAlertSlice(accountContext, 3);
   const visibleIntegrations = visibleOperationalIntegrations(accountContext, 4);
+  const primaryProductContext = primaryCustomerProductContext(productContexts);
   const customerLabel =
     customer.tenantDisplayName ?? customer.tenantLegalName ?? customer.tenantSlug;
   const customerTabs = [
     { id: 'resumo', label: 'Resumo' },
+    { id: 'produtos', label: 'Produtos' },
     { id: 'contatos', label: 'Contatos' },
     { id: 'tickets', label: 'Tickets' },
     { id: 'migracao', label: 'Migração' },
@@ -7209,7 +7428,7 @@ export function SupportCustomerPage() {
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <StatusPill tone="accent">Clientes</StatusPill>
-              <StatusPill>{displayCustomerValue(accountContext?.productLine ? humanizeCustomerValue(accountContext.productLine) : null)}</StatusPill>
+              <StatusPill>{displayCustomerProductLabel(accountContext, productContexts)}</StatusPill>
               <StatusPill tone={riskProfile.tone}>{riskProfile.label}</StatusPill>
             </div>
             <div className="space-y-1">
@@ -7241,9 +7460,7 @@ export function SupportCustomerPage() {
               { label: 'Slug', value: displayCustomerValue(customer.tenantSlug) },
               {
                 label: 'Produto',
-                value: displayCustomerValue(
-                  accountContext?.productLine ? humanizeCustomerValue(accountContext.productLine) : null,
-                ),
+                value: displayCustomerProductLabel(accountContext, productContexts),
               },
               {
                 label: 'Plataforma',
@@ -7251,11 +7468,7 @@ export function SupportCustomerPage() {
               },
               {
                 label: 'Plano',
-                  value: displayCustomerValue(
-                    accountContext?.accountTier
-                      ? humanizeCustomerValue(accountContext.accountTier)
-                      : null,
-                  ),
+                  value: displayCustomerPlanLabel(accountContext, productContexts),
               },
               {
                 label: 'Responsavel',
@@ -7330,8 +7543,18 @@ export function SupportCustomerPage() {
                   },
                   {
                     label: 'Produto',
+                    value: displayCustomerProductLabel(accountContext, productContexts),
+                  },
+                  {
+                    label: 'Plano',
+                    value: displayCustomerPlanLabel(accountContext, productContexts),
+                  },
+                  {
+                    label: 'Subscription',
                     value: displayCustomerValue(
-                      accountContext?.productLine ? humanizeCustomerValue(accountContext.productLine) : null,
+                      primaryProductContext
+                        ? labelForCustomerProductSubscriptionStatus(primaryProductContext.status)
+                        : null,
                     ),
                   },
                   {
@@ -7405,11 +7628,16 @@ export function SupportCustomerPage() {
               title="Resumo operacional"
               description="Os indicadores que mais ajudam o suporte e o CS a decidir o proximo passo."
             >
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                 <SupportCustomerMetricTile
                   helper="Tickets ativos neste tenant."
                   label="Tickets abertos"
                   value={String(customer.openTicketCount)}
+                />
+                <SupportCustomerMetricTile
+                  helper="Produtos ativos ou suspensos no contrato."
+                  label="Subscriptions"
+                  value={String(productContexts.length)}
                 />
                 <SupportCustomerMetricTile
                   helper="Itens aguardando retorno ou ação."
@@ -7427,6 +7655,15 @@ export function SupportCustomerPage() {
                   value={String(criticalSignals)}
                 />
               </div>
+            </SupportCustomerDetailCard>
+          </div>
+
+          <div id="produtos">
+            <SupportCustomerDetailCard
+              description="Leitura support-safe dos produtos, planos, features e responsáveis internos deste cliente."
+              title="Produtos contratados"
+            >
+              <SupportCustomerProductsPanel productContexts={productContexts} />
             </SupportCustomerDetailCard>
           </div>
 

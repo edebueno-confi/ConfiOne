@@ -1945,7 +1945,14 @@ Fase 8.2:
   - criação por `rpc_admin_create_customer_product_subscription`;
   - atualização por `rpc_admin_update_customer_product_subscription`;
   - arquivamento por `rpc_admin_archive_customer_product_subscription`.
+- Em 2026-06-04, `/support/customers` e `/support/customers/:tenantId` passaram a consumir `vw_support_customer_product_context` para exibir contexto de produto contratado em leitura:
+  - produto e plano contratados;
+  - status ativo/suspenso;
+  - datas de inicio, fim e renovacao;
+  - features visiveis ao suporte;
+  - responsaveis internos por area/role.
 - A UI continua sem mutation de entitlement/owner; `vw_admin_customer_product_subscription_detail` segue sendo a fonte para features comerciais e responsáveis internos exibidos em leitura.
+- A UI de suporte nao consome views administrativas V1-E e nao chama RPCs administrativas de subscription.
 - A UI não modela billing, preço, invoice, payment, revenue ou financeiro.
 
 ### Boundary mantido
