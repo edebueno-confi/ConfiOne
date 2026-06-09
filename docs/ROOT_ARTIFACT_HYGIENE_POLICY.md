@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Definir uma política operacional simples para artefatos locais, evidências de QA, dumps, outputs temporários e quarentena em `C:\Trabalho`, sem misturar material transitório com a estrutura canônica do repositório.
+Definir uma política operacional simples para artefatos locais, evidências de QA, dumps, outputs temporários e quarentena em `C:\Projetos\Genius-Support-OS`, sem misturar material transitório com a estrutura canônica do repositório.
 
 Esta política nasce ancorada em duas fontes já aprovadas:
 

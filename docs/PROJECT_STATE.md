@@ -72,7 +72,8 @@ Documentos históricos:
 - Nenhum dado operacional relevante deve ser perdido.
 - Documentação deve ser viva e versionada no repositório.
 
-## Estado atual em 2026-05-29
+## Estado atual em 2026-06-09
+- Em 2026-06-09, o projeto foi recuperado e consolidado em `C:\Projetos\Genius-Support-OS`. A branch `codex/mvp-operational-completion-goal` foi publicada e o hash recuperado `0e9ff70926b21e604cd87fbbb45590ae61201327` foi preservado no remoto. O fallback literal de credencial local foi removido no commit `1902201`. Docker/WSL foram restaurados, o Supabase CLI foi atualizado para `2.105.0` e a baseline local passou com reset, lint, `51` arquivos pgTAP/`1085` testes, `supabase:verify` e fixture funcional completa. Relatorio: `docs/reports/POST_RECOVERY_BASELINE_2026-06-09.md`.
 - Em 2026-06-04, o lote `CS Portfolio Contract Foundation` materializou o primeiro read model backend-first de CS: `vw_cs_customer_portfolio`, protegido por `app_private.can_access_cs_customer_portfolio`. O gate usa `platform_admin` ou membership ativa por tenant na area interna `customer_success`, sem criar role global nova de CS. O corte nao cria UI `/cs`, RPC `rpc_cs_*`, mutation, health score canonico, billing/financeiro ou rota nova. Relatorio: `docs/reports/CS_PORTFOLIO_CONTRACT_FOUNDATION_2026-06-04.md`.
 - Em 2026-06-04, o lote `CS Workspace Readiness Audit` confirmou que ainda nao existe contrato CS materializado (`vw_cs_*`/`rpc_cs_*`), role/gate proprio de Customer Success, rota `/cs` ou blueprint aprovado para carteira. A criacao de UI CS agora ficaria bloqueada por ambiguidade de permissao e risco de compor portfolio/health no frontend. Proximo passo recomendado: `CS Portfolio Contract Foundation`, backend-first, antes de qualquer `/cs/portfolio`. Relatorio: `docs/reports/CS_WORKSPACE_READINESS_AUDIT_2026-06-04.md`.
 - Em 2026-06-04, o lote `OCP V1-E Support Customer Product Context UI` conectou `/support/customers` e `/support/customers/:tenantId` ao read model support-safe `vw_support_customer_product_context`. O perfil operacional do cliente passa a exibir produto, plano, status da subscription, datas, features visiveis ao suporte e responsaveis internos em leitura, sem mutation, sem usar views administrativas, sem billing/financeiro e sem backend/Supabase novo. Relatorio: `docs/reports/MVP_OPERATIONAL_COMPLETION_GOAL_REPORT_2026-06-02.md`.
@@ -2094,7 +2095,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Executar o proximo lote tecnico grande `Customer Portal Session Recovery And Reauthentication V3`, cobrindo sessao stale/expirada, retomada segura apos offline e comportamento previsivel quando o portal volta com credenciais invalidadas sem confundir boundary admin/customer.
+Concluir o hardening das dependencias vulneraveis e, em seguida, especificar e implementar `/cs/portfolio` somente leitura sobre `vw_cs_customer_portfolio`, sem health score inventado, billing, financeiro ou mutations.
 
 Atualização do editor de Knowledge:
 - `/admin/knowledge/new` e `/admin/knowledge/:articleId/edit` agora usam o mesmo fluxo profissional de criação/edição, com status editorial tratado por ações governadas e não por dropdown livre.

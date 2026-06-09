@@ -21,6 +21,21 @@ Este documento organiza o estado atual do produto, as lacunas reais por dominio,
 ## Mudanca de foco
 A trilha de curadoria refinada da Knowledge Base fica pausada. Os 8 artigos candidatos permanecem como corpus/documentacao inicial, sem necessidade de nova validacao humana neste momento. O foco atual passa a ser buildout funcional da plataforma: telas, contratos, fluxos operacionais, navegacao, estados e continuidade diaria entre suporte, clientes, Knowledge e Central Publica.
 
+## Checkpoint corrente 2026-06-09
+
+Os checkpoints abaixo permanecem como historico de decisao, mas nao definem o
+proximo lote. A retomada pos-formatacao preservou a branch recuperada no remoto,
+removeu o fallback literal de credencial e restaurou Docker/Supabase com reset,
+lint, `51` arquivos pgTAP/`1085` testes, `supabase:verify` e fixture funcional
+completa aprovados.
+
+Ordem corrente:
+1. corrigir dependencias vulneraveis com upgrades minimos auditados;
+2. especificar `/cs/portfolio` sobre `vw_cs_customer_portfolio`;
+3. implementar a interface CS somente leitura e validar gate, estados e QA real.
+
+Fonte: `docs/reports/POST_RECOVERY_BASELINE_2026-06-09.md`.
+
 ## Checkpoint de retomada 2026-05-29
 
 O lote forense de retomada registrou que este roadmap contém blocos historicos já concluídos e ainda úteis para rastrear decisões, mas não deve ser lido linearmente como "próximo passo" atual. A fonte de retomada corrente é `docs/reports/PROJECT_FORENSIC_RECOVERY_AUDIT_2026-05-29.md`.

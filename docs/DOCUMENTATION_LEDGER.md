@@ -18,6 +18,56 @@ Cada registro deve informar:
 
 ## Registros
 
+### Post-Recovery Baseline
+- data: `2026-06-09`
+- branch: `codex/mvp-operational-completion-goal`
+- resumo funcional: historico recuperado publicado, fallback literal de credencial removido e ambiente Docker/Supabase restaurado com baseline completa aprovada.
+- documentos:
+  - `docs/reports/POST_RECOVERY_BASELINE_2026-06-09.md`
+  - `docs/reports/PROJECT_TAKEOVER_CHECKPOINT_2026-06-09.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/GOAL_EXECUTION_PLAN.md`
+- evidencias:
+  - hash recuperado `0e9ff70926b21e604cd87fbbb45590ae61201327` preservado no remoto;
+  - hardening de credencial publicado no commit `1902201`;
+  - Supabase CLI `2.105.0`;
+  - reset, lint, `51` arquivos pgTAP/`1085` testes e `supabase:verify` aprovados;
+  - fixture funcional local aprovada em `558` segundos.
+- riscos restantes:
+  - `supabase_vector` reinicia localmente, sem bloquear os gates;
+  - dependencias npm ainda exigem hardening auditado;
+  - `/cs/portfolio` ainda nao possui screen spec nem interface.
+- proximo lote: corrigir dependencias vulneraveis; depois especificar e implementar `/cs/portfolio` read-only.
+
+### Project Takeover Checkpoint
+- data: `2026-06-09`
+- branch: `codex/mvp-operational-completion-goal`
+- objetivo: consolidar a recuperacao pos-formatacao, registrar riscos atuais e definir a ordem oficial de retomada.
+- documentos:
+  - `docs/reports/PROJECT_TAKEOVER_CHECKPOINT_2026-06-09.md`
+  - `docs/superpowers/plans/2026-06-09-project-stabilization-and-resumption.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/GOAL_EXECUTION_PLAN.md`
+  - `docs/README.md`
+- evidencias:
+  - HEAD local `0e9ff70`;
+  - 239 commits a frente de `origin/main`;
+  - branch recuperada ainda ausente no remoto;
+  - contracts typecheck, web typecheck, web build e integridade Git aprovados;
+  - Supabase local pendente por ausencia de Docker.
+- prioridade:
+  - preservar historico remoto;
+  - remover material de autenticacao local literal;
+  - restaurar baseline Supabase;
+  - reconciliar documentacao;
+  - somente depois especificar `/cs/portfolio`.
+- boundaries:
+  - sem push, deploy, migration remota ou alteracao de secrets;
+  - sem runtime de produto novo;
+  - sem UI CS neste lote documental.
+- status posterior: superado pelo baseline registrado em `docs/reports/POST_RECOVERY_BASELINE_2026-06-09.md`.
+
 ### CS Portfolio Contract Foundation 2026-06-04
 - fase: `CS Portfolio Contract Foundation`
 - nome: `CS Portfolio Read Model Backend First`

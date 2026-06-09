@@ -8,7 +8,7 @@ documentação, blueprint de backend e material legado.
 ## Estrutura atual esperada
 
 ```text
-C:\Trabalho
+C:\Projetos\Genius-Support-OS
 |   package.json
 |   README.md
 |   .gitignore

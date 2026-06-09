@@ -9,6 +9,8 @@ Este documento não é um novo roadmap. Ele referencia os documentos canônicos 
 Use como fonte prioritária:
 
 - `docs/PROJECT_STATE.md`: estado real atual.
+- `docs/reports/PROJECT_TAKEOVER_CHECKPOINT_2026-06-09.md`: checkpoint de recuperacao e posse tecnica atual.
+- `docs/superpowers/plans/2026-06-09-project-stabilization-and-resumption.md`: sequencia executavel antes de nova feature.
 - `docs/README.md`: navegação documental e regra de leitura.
 - `docs/ROADMAP_BUILDOUT_V3.md`: roadmap vivo de buildout.
 - `docs/OPERATIONAL_CONTROL_PLANE_V1.md`: plano canônico da frente OCP.

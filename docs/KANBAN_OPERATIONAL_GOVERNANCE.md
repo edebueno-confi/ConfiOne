@@ -16,7 +16,7 @@ Esta fase cria a camada operacional para trabalho contínuo:
 
 - board slug: `genius-support-os`
 - nome: `Genius Support OS`
-- workdir padrão: `C:\Trabalho`
+- workdir padrão: `C:\Projetos\Genius-Support-OS`
 - objetivo: isolar o fluxo operacional do projeto em um board próprio, separado de outros contextos Hermes.
 
 ## Perfis especializados
