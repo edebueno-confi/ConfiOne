@@ -1,12 +1,11 @@
 import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
 
+import { readLocalSupabaseConfig } from './local-supabase-config.mjs';
+
 const DEFAULT_ROOT = 'raw_knowledge/octadesk_export/latest';
-const LOCAL_URL = 'http://127.0.0.1:54321';
-const LOCAL_ANON_KEY = 'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH';
 
 function parseArgs(argv) {
   const args = {
@@ -16,8 +15,8 @@ function parseArgs(argv) {
     spaceSlug: null,
     title: null,
     allowlist: null,
-    email: process.env.KNOWLEDGE_ADMIN_EMAIL ?? 'ede.oliveira@confi.com.vc',
-    password: process.env.KNOWLEDGE_ADMIN_PASSWORD ?? 'Admin123!',
+    email: process.env.KNOWLEDGE_ADMIN_EMAIL,
+    password: process.env.KNOWLEDGE_ADMIN_PASSWORD,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -156,6 +155,11 @@ async function readAllowlist(filePath) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
+  const localSupabase = readLocalSupabaseConfig({
+    ...process.env,
+    KNOWLEDGE_ADMIN_EMAIL: args.email,
+    KNOWLEDGE_ADMIN_PASSWORD: args.password,
+  });
   const root = path.resolve(args.root);
   const index = JSON.parse(await fs.readFile(path.join(root, 'articles-index.json'), 'utf8'));
   const allowedTitles = args.allowlist ? await readAllowlist(args.allowlist) : null;
@@ -168,10 +172,10 @@ async function main() {
     throw new Error('No Octadesk articles matched the explicit selection.');
   }
 
-  const supabase = createClient(LOCAL_URL, LOCAL_ANON_KEY);
+  const supabase = createClient(localSupabase.url, localSupabase.anonKey);
   const { error: authError } = await supabase.auth.signInWithPassword({
-    email: args.email,
-    password: args.password,
+    email: localSupabase.email,
+    password: localSupabase.password,
   });
   if (authError) throw authError;
 
