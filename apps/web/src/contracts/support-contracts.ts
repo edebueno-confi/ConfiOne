@@ -36,6 +36,8 @@ export type {
   CustomerPortalTicketKnowledgeLink,
   CustomerPortalTicketListItem,
   CustomerPortalTicketTimelineItem,
+  CsCustomerPortfolio,
+  CsCustomerPortfolioProductContext,
   CustomerProductLine,
   EngineeringTicketLinkRecord,
   EngineeringWorkspaceTicketLink,

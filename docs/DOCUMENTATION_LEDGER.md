@@ -18,6 +18,46 @@ Cada registro deve informar:
 
 ## Registros
 
+### CS Portfolio Read-only UI
+- data: `2026-06-09`
+- branch: `codex/mvp-operational-completion-goal`
+- resumo funcional: entregue `/cs/portfolio` como cockpit read-only tenant-aware sobre `vw_cs_customer_portfolio`, com gate, redirect, navegação, busca, lista selecionável, detalhe operacional e estados honestos.
+- documentos:
+  - `docs/reports/CS_PORTFOLIO_READONLY_UI_2026-06-09.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/README.md`
+  - `docs/LOCAL_QA_AUTH.md`
+  - `docs/superpowers/specs/2026-06-09-cs-portfolio-readonly-design.md`
+  - `docs/superpowers/plans/2026-06-09-cs-portfolio-readonly.md`
+- contrato consumido:
+  - `vw_cs_customer_portfolio`
+- telas afetadas:
+  - `/cs`
+  - `/cs/portfolio`
+- boundaries:
+  - sem mutation;
+  - sem billing ou financeiro;
+  - sem health score calculado no frontend;
+  - sem follow-ups, tarefas ou projetos;
+  - isolamento tenant mantido pelo backend.
+- validações:
+  - testes Node focados `4/4`;
+  - contracts e web typecheck;
+  - web build;
+  - pgTAP focado `12/12`;
+  - suíte global com `51` arquivos e `1085` testes;
+  - lint de banco;
+  - fixture funcional;
+  - QA autenticado de admin, CS e usuário sem acesso;
+  - desktop e viewport estreito sem overflow horizontal;
+  - `npm audit` com zero vulnerabilidades.
+- riscos restantes:
+  - health segue indisponível até contrato canônico;
+  - comandos operacionais de CS permanecem fora do corte.
+- impacto para FAQ futura:
+  - permite explicar que a carteira CS respeita permissão por tenant, usa dados reais do backend e não apresenta indicadores ou ações ainda inexistentes.
+
 ### Dependency Hardening
 - data: `2026-06-09`
 - branch: `codex/mvp-operational-completion-goal`

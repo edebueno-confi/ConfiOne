@@ -71,6 +71,12 @@ const USERS = {
     password: 'Local-QA-Internal-NoArea-2026!',
     fullName: 'QA Local Internal Area Non Member',
   },
+  customerSuccessMember: {
+    key: 'customer_success_member',
+    email: 'qa.local.customer-success-a@genius.local',
+    password: 'Local-QA-Customer-Success-A-2026!',
+    fullName: 'QA Local Customer Success A',
+  },
   engineeringMember: {
     key: 'engineering_member',
     email: 'qa.local.engineering-member-a@genius.local',
@@ -1209,10 +1215,16 @@ async function main() {
     password: USERS.internalAreaNonMember.password,
     fullName: USERS.internalAreaNonMember.fullName,
   });
+  const customerSuccessAuth = await createOrUpdateAuthUser({
+    email: USERS.customerSuccessMember.email,
+    password: USERS.customerSuccessMember.password,
+    fullName: USERS.customerSuccessMember.fullName,
+  });
 
   const internalMemberProfile = queryProfileByEmail(USERS.internalAreaMember.email);
   const internalEmptyProfile = queryProfileByEmail(USERS.internalAreaEmpty.email);
   const internalNonMemberProfile = queryProfileByEmail(USERS.internalAreaNonMember.email);
+  const customerSuccessProfile = queryProfileByEmail(USERS.customerSuccessMember.email);
 
   if (!internalMemberProfile?.id || !internalMemberProfile.is_active) {
     fail(`Profile ativo ausente para ${USERS.internalAreaMember.email}.`);
@@ -1224,6 +1236,10 @@ async function main() {
 
   if (!internalNonMemberProfile?.id || !internalNonMemberProfile.is_active) {
     fail(`Profile ativo ausente para ${USERS.internalAreaNonMember.email}.`);
+  }
+
+  if (!customerSuccessProfile?.id || !customerSuccessProfile.is_active) {
+    fail(`Profile ativo ausente para ${USERS.customerSuccessMember.email}.`);
   }
 
   logStep('garantindo memberships e fixture de comunicacao P2');
@@ -1241,6 +1257,11 @@ async function main() {
     actorUserId: adminProfile.id,
     tenantId: tenant.id,
     userId: internalNonMemberProfile.id,
+  });
+  ensureTenantMembership({
+    actorUserId: adminProfile.id,
+    tenantId: tenant.id,
+    userId: customerSuccessProfile.id,
   });
 
   ensureP2CommunicationFixture({
@@ -1265,6 +1286,12 @@ async function main() {
     tenantId: tenant.id,
     userId: internalEmptyProfile.id,
     areaKey: 'operations',
+  });
+  const customerSuccessMembershipId = await ensureAreaMembership({
+    adminSession,
+    tenantId: tenant.id,
+    userId: customerSuccessProfile.id,
+    areaKey: 'customer_success',
   });
 
   logStep('criando acionamentos internos funcionais');
@@ -1323,6 +1350,11 @@ async function main() {
             user_id: internalNonMemberAuth.id ?? internalNonMemberProfile.id,
             profile_id: internalNonMemberProfile.id,
           },
+          customerSuccessMember: {
+            ...USERS.customerSuccessMember,
+            user_id: customerSuccessAuth.id ?? customerSuccessProfile.id,
+            profile_id: customerSuccessProfile.id,
+          },
         },
         internal_area_membership: {
           membership_id: membershipId,
@@ -1332,6 +1364,8 @@ async function main() {
           member_profile_id: internalMemberProfile.id,
           empty_profile_id: internalEmptyProfile.id,
           non_member_profile_id: internalNonMemberProfile.id,
+          customer_success_membership_id: customerSuccessMembershipId,
+          customer_success_profile_id: customerSuccessProfile.id,
         },
         ...summary,
       },

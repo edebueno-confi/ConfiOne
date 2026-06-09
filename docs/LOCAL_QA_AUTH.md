@@ -22,7 +22,7 @@ Para QA funcional autenticado ponta a ponta das rotas privadas, use:
 npm run supabase:qa:local-functional-fixture
 ```
 
-Esse comando reaproveita a fixture de suporte, valida que o Supabase é local, cria usuários estáveis de área interna, adiciona membership `finance` por RPC administrativa, adiciona um membership `operations` sem acionamentos para QA de empty state e materializa acionamentos internos persistidos para `/internal-actions` e `/support/tickets/:ticketId`.
+Esse comando reaproveita a fixture de suporte, valida que o Supabase é local, cria usuários estáveis de área interna, adiciona memberships `finance`, `operations` e `customer_success` por RPC administrativa e materializa acionamentos internos persistidos para `/internal-actions`, `/support/tickets/:ticketId` e carteira tenant-aware para `/cs/portfolio`.
 
 Desde o P3-B, a fixture funcional e a fixture de suporte possuem logs de etapa e timeouts explícitos para Supabase CLI, child process, Edge Runtime health check, Auth, RPCs e upload seguro. Se o ambiente local ficar indisponível, o comando deve falhar com etapa identificável em vez de permanecer pendurado sem saída.
 
@@ -62,6 +62,13 @@ O título legado com `handoff técnico` é reconhecido apenas para atualizar mas
 - `qa.local.internal-area-non-member@genius.local`
 - senha: `Local-QA-Internal-NoArea-2026!`
 - papel operacional: usuário ativo no tenant `support-qa-a`, sem membership de área interna
+
+### Customer Success
+
+- `qa.local.customer-success-a@genius.local`
+- senha: `Local-QA-Customer-Success-A-2026!`
+- papel operacional: membership ativa `customer_success` no tenant `support-qa-a`
+- escopo esperado: apenas clientes retornados por `vw_cs_customer_portfolio`
 
 ### Engineering
 

@@ -235,6 +235,21 @@ const SupportGate = lazyRouteModule(
   'SupportGate',
 ) as ReturnType<typeof lazy<ComponentType<{ children?: ReactNode }>>>;
 
+const CsGate = lazyRouteModule(
+  () => import('../features/cs/CsGate'),
+  'CsGate',
+) as ReturnType<typeof lazy<ComponentType<{ children?: ReactNode }>>>;
+
+const CsWorkspaceShell = lazyRouteModule(
+  () => import('../features/cs/CsWorkspaceShell'),
+  'CsWorkspaceShell',
+);
+
+const CsPortfolioPage = lazyRouteModule(
+  () => import('../features/cs/CsPortfolioPage'),
+  'CsPortfolioPage',
+);
+
 function RouteLoading() {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-6 py-12">
@@ -372,6 +387,24 @@ export const router = createBrowserRouter([
           {
             path: 'system',
             element: withSuspense(<SystemPage />),
+          },
+        ],
+      },
+      {
+        path: '/cs',
+        element: withSuspense(
+          <CsGate>
+            <CsWorkspaceShell />
+          </CsGate>,
+        ),
+        children: [
+          {
+            index: true,
+            element: <Navigate replace to="/cs/portfolio" />,
+          },
+          {
+            path: 'portfolio',
+            element: withSuspense(<CsPortfolioPage />),
           },
         ],
       },

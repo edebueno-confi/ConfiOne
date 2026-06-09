@@ -313,9 +313,13 @@ set local request.jwt.claim.role = 'authenticated';
 set local request.jwt.claim.sub = '48000000-0000-4000-8000-000000000001';
 
 select is(
-  (select count(*)::integer from public.vw_cs_customer_portfolio),
+  (
+    select count(*)::integer
+    from public.vw_cs_customer_portfolio
+    where tenant_slug in ('cs-portfolio-alpha', 'cs-portfolio-beta')
+  ),
   2,
-  'platform_admin le Portfolio CS global'
+  'platform_admin le todos os tenants criados pelo contrato CS'
 );
 
 reset role;

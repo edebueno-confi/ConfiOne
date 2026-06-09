@@ -13,6 +13,7 @@ Fonte oficial da documentação do Genius Support OS.
 ## Visão e estado
 
 - [PROJECT_STATE.md](./PROJECT_STATE.md)
+- [reports/CS_PORTFOLIO_READONLY_UI_2026-06-09.md](./reports/CS_PORTFOLIO_READONLY_UI_2026-06-09.md)
 - [reports/DEPENDENCY_HARDENING_2026-06-09.md](./reports/DEPENDENCY_HARDENING_2026-06-09.md)
 - [reports/POST_RECOVERY_BASELINE_2026-06-09.md](./reports/POST_RECOVERY_BASELINE_2026-06-09.md)
 - [reports/PROJECT_TAKEOVER_CHECKPOINT_2026-06-09.md](./reports/PROJECT_TAKEOVER_CHECKPOINT_2026-06-09.md)
@@ -139,6 +140,9 @@ Skill local versionada para tarefas de UI/UX do Genius Support OS baseadas em bl
 
 - [KANBAN_OPERATIONAL_GOVERNANCE.md](./KANBAN_OPERATIONAL_GOVERNANCE.md)
 - [GOAL_EXECUTION_PLAN.md](./GOAL_EXECUTION_PLAN.md)
+- [superpowers/specs/2026-06-09-cs-portfolio-readonly-design.md](./superpowers/specs/2026-06-09-cs-portfolio-readonly-design.md)
+- [superpowers/plans/2026-06-09-cs-portfolio-readonly.md](./superpowers/plans/2026-06-09-cs-portfolio-readonly.md)
+- [reports/CS_PORTFOLIO_READONLY_UI_2026-06-09.md](./reports/CS_PORTFOLIO_READONLY_UI_2026-06-09.md)
 - [reports/CS_PORTFOLIO_CONTRACT_FOUNDATION_2026-06-04.md](./reports/CS_PORTFOLIO_CONTRACT_FOUNDATION_2026-06-04.md)
 - [reports/CS_WORKSPACE_READINESS_AUDIT_2026-06-04.md](./reports/CS_WORKSPACE_READINESS_AUDIT_2026-06-04.md)
 - [reports/OCP_V1_E_SUBSCRIPTIONS_READMODEL_HARDENING_2026-06-02.md](./reports/OCP_V1_E_SUBSCRIPTIONS_READMODEL_HARDENING_2026-06-02.md)

@@ -1,17 +1,16 @@
 import { toAppError } from '../../app/errors';
 import { requireSupabaseBrowserClient } from '../../app/supabase-browser';
 import type { PlatformRole } from '../../contracts/admin-contracts';
+import {
+  canOpenInternalRoute,
+  getDefaultInternalLandingRoute,
+  type InternalRouteContext,
+} from './internal-route-access';
 
 export type PostLoginDenialReason =
   | 'missing-profile'
   | 'inactive-profile'
   | 'missing-authorized-workspace';
-
-interface AuthRouteContext {
-  roles: PlatformRole[];
-  hasCustomerPortalAccess: boolean;
-  hasInternalActionAreaAccess: boolean;
-}
 
 export interface PostLoginRedirectResolution {
   destination: string | null;
@@ -19,6 +18,7 @@ export interface PostLoginRedirectResolution {
   roles: PlatformRole[];
   hasCustomerPortalAccess: boolean;
   hasInternalActionAreaAccess: boolean;
+  hasCsPortfolioAccess: boolean;
 }
 
 function normalizeRedirectTo(rawValue: string | null) {
@@ -31,72 +31,6 @@ function normalizeRedirectTo(rawValue: string | null) {
   }
 
   return rawValue;
-}
-
-function matchesRoute(pathname: string, basePath: string) {
-  return pathname === basePath || pathname.startsWith(`${basePath}/`);
-}
-
-function hasAnyRole(roles: PlatformRole[], candidates: PlatformRole[]) {
-  return candidates.some((candidate) => roles.includes(candidate));
-}
-
-function canOpenRedirectTarget(redirectTo: string, context: AuthRouteContext) {
-  if (matchesRoute(redirectTo, '/admin')) {
-    return context.roles.includes('platform_admin');
-  }
-
-  if (matchesRoute(redirectTo, '/support')) {
-    return (
-      context.roles.includes('platform_admin') ||
-      hasAnyRole(context.roles, ['support_manager', 'support_agent'])
-    );
-  }
-
-  if (matchesRoute(redirectTo, '/internal-actions')) {
-    return context.roles.includes('platform_admin') || context.hasInternalActionAreaAccess;
-  }
-
-  if (matchesRoute(redirectTo, '/engineering')) {
-    return (
-      context.roles.includes('platform_admin') ||
-      hasAnyRole(context.roles, ['engineering_manager', 'engineering_member'])
-    );
-  }
-
-  if (matchesRoute(redirectTo, '/portal')) {
-    return context.hasCustomerPortalAccess;
-  }
-
-  if (matchesRoute(redirectTo, '/help')) {
-    return true;
-  }
-
-  return false;
-}
-
-function getDefaultLandingRoute(context: AuthRouteContext) {
-  if (context.roles.includes('platform_admin')) {
-    return '/admin';
-  }
-
-  if (hasAnyRole(context.roles, ['support_manager', 'support_agent'])) {
-    return '/support/queue';
-  }
-
-  if (context.hasInternalActionAreaAccess) {
-    return '/internal-actions';
-  }
-
-  if (hasAnyRole(context.roles, ['engineering_manager', 'engineering_member'])) {
-    return '/engineering';
-  }
-
-  if (context.hasCustomerPortalAccess) {
-    return '/portal';
-  }
-
-  return null;
 }
 
 async function hasCustomerPortalAccess() {
@@ -127,6 +61,20 @@ async function hasInternalActionAreaAccess() {
   return (data ?? []).length > 0;
 }
 
+async function hasCsPortfolioAccess() {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client
+    .from('vw_cs_customer_portfolio')
+    .select('tenant_id')
+    .limit(1);
+
+  if (error) {
+    throw toAppError(error, 'Falha ao validar o contexto de Customer Success.');
+  }
+
+  return (data ?? []).length > 0;
+}
+
 export async function resolvePostLoginRedirect(
   rawRedirectTo: string | null,
 ): Promise<PostLoginRedirectResolution> {
@@ -147,6 +95,7 @@ export async function resolvePostLoginRedirect(
       roles: [],
       hasCustomerPortalAccess: false,
       hasInternalActionAreaAccess: false,
+      hasCsPortfolioAccess: false,
     };
   }
 
@@ -159,23 +108,26 @@ export async function resolvePostLoginRedirect(
       roles,
       hasCustomerPortalAccess: false,
       hasInternalActionAreaAccess: false,
+      hasCsPortfolioAccess: false,
     };
   }
 
-  const [customerPortalAccess, internalActionAreaAccess] = await Promise.all([
+  const [customerPortalAccess, internalActionAreaAccess, csPortfolioAccess] = await Promise.all([
     hasCustomerPortalAccess(),
     hasInternalActionAreaAccess(),
+    hasCsPortfolioAccess(),
   ]);
-  const context: AuthRouteContext = {
+  const context: InternalRouteContext = {
     roles,
     hasCustomerPortalAccess: customerPortalAccess,
     hasInternalActionAreaAccess: internalActionAreaAccess,
+    hasCsPortfolioAccess: csPortfolioAccess,
   };
   const redirectTo = normalizeRedirectTo(rawRedirectTo);
   const destination =
-    redirectTo && canOpenRedirectTarget(redirectTo, context)
+    redirectTo && canOpenInternalRoute(redirectTo, context)
       ? redirectTo
-      : getDefaultLandingRoute(context);
+      : getDefaultInternalLandingRoute(context);
 
   return {
     destination,
@@ -183,5 +135,6 @@ export async function resolvePostLoginRedirect(
     roles,
     hasCustomerPortalAccess: customerPortalAccess,
     hasInternalActionAreaAccess: internalActionAreaAccess,
+    hasCsPortfolioAccess: csPortfolioAccess,
   };
 }

@@ -73,6 +73,7 @@ Documentos históricos:
 - Documentação deve ser viva e versionada no repositório.
 
 ## Estado atual em 2026-06-09
+- Em 2026-06-09, `/cs/portfolio` foi entregue como workspace read-only sobre `vw_cs_customer_portfolio`. O corte inclui gate e redirect por contexto CS, navegação, busca, lista e detalhe com owner, produtos/planos, subscriptions, tickets, membros, última atualização e health explicitamente indisponível. QA autenticado confirmou acesso global para `platform_admin`, isolamento tenant para membership `customer_success`, denial para usuário sem acesso e ausência de overflow horizontal em desktop e viewport estreito. Relatório: `docs/reports/CS_PORTFOLIO_READONLY_UI_2026-06-09.md`.
 - O hardening de dependencias de 2026-06-09 atualizou `react-router-dom` para `7.15.0` e `@supabase/supabase-js` para `2.108.0`, removendo os advisories de React Router e da cadeia transitiva `ws`. `npm audit` passou com zero vulnerabilidades, junto de contracts typecheck, web typecheck e build. Relatorio: `docs/reports/DEPENDENCY_HARDENING_2026-06-09.md`.
 - Em 2026-06-09, o projeto foi recuperado e consolidado em `C:\Projetos\Genius-Support-OS`. A branch `codex/mvp-operational-completion-goal` foi publicada e o hash recuperado `0e9ff70926b21e604cd87fbbb45590ae61201327` foi preservado no remoto. O fallback literal de credencial local foi removido no commit `1902201`. Docker/WSL foram restaurados, o Supabase CLI foi atualizado para `2.105.0` e a baseline local passou com reset, lint, `51` arquivos pgTAP/`1085` testes, `supabase:verify` e fixture funcional completa. Relatorio: `docs/reports/POST_RECOVERY_BASELINE_2026-06-09.md`.
 - Em 2026-06-04, o lote `CS Portfolio Contract Foundation` materializou o primeiro read model backend-first de CS: `vw_cs_customer_portfolio`, protegido por `app_private.can_access_cs_customer_portfolio`. O gate usa `platform_admin` ou membership ativa por tenant na area interna `customer_success`, sem criar role global nova de CS. O corte nao cria UI `/cs`, RPC `rpc_cs_*`, mutation, health score canonico, billing/financeiro ou rota nova. Relatorio: `docs/reports/CS_PORTFOLIO_CONTRACT_FOUNDATION_2026-06-04.md`.
@@ -2096,7 +2097,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Especificar e implementar `/cs/portfolio` somente leitura sobre `vw_cs_customer_portfolio`, sem health score inventado, billing, financeiro ou mutations.
+Definir o próximo lote do Operational Control Plane sem ampliar `/cs/portfolio` com health, follow-ups, tarefas, projetos ou mutations antes de contratos backend canônicos.
 
 Atualização do editor de Knowledge:
 - `/admin/knowledge/new` e `/admin/knowledge/:articleId/edit` agora usam o mesmo fluxo profissional de criação/edição, com status editorial tratado por ações governadas e não por dropdown livre.

@@ -48,6 +48,7 @@ export interface UnifiedNavigationDomain {
 export interface InternalNavigationPermissions {
   isPlatformAdmin: boolean;
   hasInternalActionAreaAccess?: boolean;
+  hasCsPortfolioAccess?: boolean;
 }
 
 export interface UnifiedInternalNavigation {
@@ -81,6 +82,10 @@ function isInternalActionsRoute(pathname: string) {
   return pathname === '/internal-actions' || pathname.startsWith('/internal-actions/');
 }
 
+function isCsRoute(pathname: string) {
+  return pathname === '/cs' || pathname.startsWith('/cs/');
+}
+
 function isAdminRoute(pathname: string) {
   return pathname === '/admin' || pathname.startsWith('/admin/');
 }
@@ -107,10 +112,15 @@ export function buildInternalNavigation({
   const currentSupport = isSupportRoute(pathname);
   const currentInternalActions = isInternalActionsRoute(pathname);
   const currentEngineering = isEngineeringRoute(pathname);
+  const currentCs = isCsRoute(pathname);
   const hasInternalActionAreaAccess = permissions.hasInternalActionAreaAccess === true;
+  const hasCsPortfolioAccess = permissions.hasCsPortfolioAccess === true;
   const supportEnabled = isPlatformAdmin || currentSupport;
   const internalActionsEnabled = isPlatformAdmin || currentInternalActions || hasInternalActionAreaAccess;
-  const operationEnabled = supportEnabled || internalActionsEnabled;
+  const csEnabled = isPlatformAdmin || currentCs || hasCsPortfolioAccess;
+  const csAvailability = csEnabled ? 'enabled' : 'disabled';
+  const csDisabledReason = csEnabled ? undefined : 'Sem carteira CS neste perfil';
+  const operationEnabled = supportEnabled || internalActionsEnabled || csEnabled;
   const operationAvailability = operationEnabled ? 'enabled' : 'disabled';
   const operationDisabledReason = operationEnabled ? undefined : 'Sem acesso neste perfil';
   const supportAvailability = supportEnabled ? 'enabled' : 'disabled';
@@ -132,8 +142,18 @@ export function buildInternalNavigation({
         icon: 'queue',
         availability: operationAvailability,
         disabledReason: operationDisabledReason,
-        matches: (path) => isSupportRoute(path) || isInternalActionsRoute(path),
+        matches: (path) =>
+          isSupportRoute(path) || isInternalActionsRoute(path) || isCsRoute(path),
         items: [
+          {
+            id: 'cs-portfolio',
+            label: 'Carteira CS',
+            to: csEnabled ? '/cs/portfolio' : undefined,
+            icon: 'customers',
+            availability: csAvailability,
+            disabledReason: csDisabledReason,
+            matches: isCsRoute,
+          },
           {
             id: 'support-queue',
             label: 'Fila operacional',
