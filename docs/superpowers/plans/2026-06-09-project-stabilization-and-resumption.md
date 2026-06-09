@@ -167,16 +167,16 @@ git commit -m "docs: consolidar retomada pos-recuperacao"
 - Modify: `package-lock.json`
 - Modify: `apps/web/package.json`, se a dependencia direta mudar.
 
-- [ ] Capturar advisories:
+- [x] Capturar advisories:
 
 ```powershell
 npm audit --json
 ```
 
-- [ ] Identificar as menores versoes compativeis corrigidas.
-- [ ] Nao executar `npm audit fix --force`.
-- [ ] Aplicar apenas upgrades auditados.
-- [ ] Validar:
+- [x] Identificar as menores versoes compativeis corrigidas.
+- [x] Nao executar `npm audit fix --force`.
+- [x] Aplicar apenas upgrades auditados.
+- [x] Validar:
 
 ```powershell
 npm run contracts:typecheck
@@ -185,7 +185,7 @@ npm run web:build
 npm audit
 ```
 
-- [ ] Commit sugerido:
+- [x] Commit sugerido:
 
 ```powershell
 git commit -m "chore: atualizar dependencias vulneraveis"

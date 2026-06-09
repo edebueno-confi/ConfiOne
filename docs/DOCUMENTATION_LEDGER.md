@@ -18,6 +18,25 @@ Cada registro deve informar:
 
 ## Registros
 
+### Dependency Hardening
+- data: `2026-06-09`
+- branch: `codex/mvp-operational-completion-goal`
+- resumo funcional: removidos os advisories npm de React Router e da dependencia transitiva `ws` com upgrades minimos e auditados.
+- documentos:
+  - `docs/reports/DEPENDENCY_HARDENING_2026-06-09.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+- dependencias:
+  - `react-router-dom@7.15.0`
+  - `react-router@7.15.0`
+  - `@supabase/supabase-js@2.108.0`
+- validacoes:
+  - `npm audit --json` com zero vulnerabilidades;
+  - `npm run contracts:typecheck`;
+  - `npm run web:typecheck`;
+  - `npm run web:build`.
+- proximo lote: especificar `/cs/portfolio` read-only.
+
 ### Post-Recovery Baseline
 - data: `2026-06-09`
 - branch: `codex/mvp-operational-completion-goal`

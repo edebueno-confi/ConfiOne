@@ -30,9 +30,12 @@ lint, `51` arquivos pgTAP/`1085` testes, `supabase:verify` e fixture funcional
 completa aprovados.
 
 Ordem corrente:
-1. corrigir dependencias vulneraveis com upgrades minimos auditados;
-2. especificar `/cs/portfolio` sobre `vw_cs_customer_portfolio`;
-3. implementar a interface CS somente leitura e validar gate, estados e QA real.
+1. especificar `/cs/portfolio` sobre `vw_cs_customer_portfolio`;
+2. implementar a interface CS somente leitura e validar gate, estados e QA real.
+
+O hardening de dependencias foi concluido com `npm audit` em zero
+vulnerabilidades. Evidencia:
+`docs/reports/DEPENDENCY_HARDENING_2026-06-09.md`.
 
 Fonte: `docs/reports/POST_RECOVERY_BASELINE_2026-06-09.md`.
 
