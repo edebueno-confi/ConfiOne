@@ -3,6 +3,8 @@ import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
+import { resolveSupabaseCliCommand } from '../../scripts/lib/supabase-cli-command.mjs';
+
 const SUPPORT_FIXTURE_SCRIPT = 'supabase/qa/create-local-support-fixture.mjs';
 const FETCH_TIMEOUT_MS = Number(process.env.GENIUS_QA_FETCH_TIMEOUT_MS ?? 20_000);
 const PROCESS_TIMEOUT_MS = Number(process.env.GENIUS_QA_PROCESS_TIMEOUT_MS ?? 90_000);
@@ -137,25 +139,7 @@ async function fetchWithTimeout(label, url, options = {}, timeoutMs = FETCH_TIME
 }
 
 function localSupabaseCommandArgs(args) {
-  const localSupabaseBinary = join(
-    process.cwd(),
-    'node_modules',
-    'supabase',
-    'bin',
-    process.platform === 'win32' ? 'supabase.exe' : 'supabase',
-  );
-
-  if (existsSync(localSupabaseBinary)) {
-    return {
-      command: localSupabaseBinary,
-      args,
-    };
-  }
-
-  return {
-    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    args: ['supabase', ...args],
-  };
+  return resolveSupabaseCliCommand(args);
 }
 
 function runProcess(command, args, options = {}) {

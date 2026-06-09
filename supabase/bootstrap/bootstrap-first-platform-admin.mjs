@@ -3,6 +3,8 @@ import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
+import { resolveSupabaseCliCommand } from '../../scripts/lib/supabase-cli-command.mjs';
+
 function fail(message) {
   console.error(message);
   process.exit(1);
@@ -51,17 +53,7 @@ function runSupabaseDbQuery({ local, dbUrl, sql }) {
   const tempFile = join(tempDir, 'query.sql');
   writeFileSync(tempFile, `${sql.trim()}\n`, 'utf8');
 
-  const localSupabaseBinary = join(
-    process.cwd(),
-    'node_modules',
-    'supabase',
-    'bin',
-    process.platform === 'win32' ? 'supabase.exe' : 'supabase'
-  );
-  const hasLocalBinary = existsSync(localSupabaseBinary);
-  const commandArgs = hasLocalBinary
-    ? ['db', 'query', '--file', tempFile, '--output', 'json']
-    : ['supabase', 'db', 'query', '--file', tempFile, '--output', 'json'];
+  const commandArgs = ['db', 'query', '--file', tempFile, '--output', 'json'];
 
   if (local) {
     commandArgs.push('--local');
@@ -69,13 +61,12 @@ function runSupabaseDbQuery({ local, dbUrl, sql }) {
     commandArgs.push('--db-url', dbUrl);
   }
 
-  const supabaseCommand = hasLocalBinary
-    ? localSupabaseBinary
-    : process.platform === 'win32' ? 'npx.cmd' : 'npx';
+  const { command: supabaseCommand, args: resolvedArgs } =
+    resolveSupabaseCliCommand(commandArgs);
 
   const result = spawnSync(
     supabaseCommand,
-    commandArgs,
+    resolvedArgs,
     {
       cwd: process.cwd(),
       encoding: 'utf8',

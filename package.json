@@ -38,7 +38,7 @@
     "web:build": "npm run build --workspace @genius-support-os/web"
   },
   "devDependencies": {
-    "supabase": "^2.95.6",
+    "supabase": "^2.105.0",
     "typescript": "^5.9.3"
   }
 }

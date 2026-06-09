@@ -3,6 +3,9 @@ import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
+import { runReconciledMutation } from '../../scripts/lib/reconciled-mutation.mjs';
+import { resolveSupabaseCliCommand } from '../../scripts/lib/supabase-cli-command.mjs';
+
 const LEGACY_POPULATED_QA_TICKET_TITLE =
   'QA Support | Operação crítica com histórico extenso, anexos e handoff técnico';
 const POPULATED_QA_TICKET_TITLE =
@@ -1529,25 +1532,7 @@ async function ensureLocalEdgeRuntime() {
 }
 
 function localSupabaseCommandArgs(args) {
-  const localSupabaseBinary = join(
-    process.cwd(),
-    'node_modules',
-    'supabase',
-    'bin',
-    process.platform === 'win32' ? 'supabase.exe' : 'supabase',
-  );
-
-  if (existsSync(localSupabaseBinary)) {
-    return {
-      command: localSupabaseBinary,
-      args,
-    };
-  }
-
-  return {
-    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    args: ['supabase', ...args],
-  };
+  return resolveSupabaseCliCommand(args);
 }
 
 function runProcess(command, args, options = {}) {
@@ -3914,26 +3899,30 @@ async function createSupportTicketViaRpc({
     return existingTicketId;
   }
 
-  const created = await callRpcAsUser({
-    apiUrl: actorSession.apiUrl,
-    anonKey: actorSession.anonKey,
-    accessToken: actorSession.accessToken,
-    rpcName: 'rpc_create_ticket',
-    body: {
-      p_tenant_id: tenantId,
-      p_title: ticket.title,
-      p_description: ticket.description,
-      p_source: ticket.source,
-      p_priority: ticket.priority,
-      p_severity: ticket.severity,
-      p_requester_contact_id: contactId ?? null,
-      p_category_id: ticket.categorySlug
-        ? queryTicketCategoryIdBySlug(ticket.categorySlug)
-        : null,
-      p_operational_reason_id: ticket.operationalReasonSlug
-        ? queryTicketOperationalReasonIdBySlug(ticket.operationalReasonSlug)
-        : null,
-    },
+  const created = await runReconciledMutation({
+    mutate: () =>
+      callRpcAsUser({
+        apiUrl: actorSession.apiUrl,
+        anonKey: actorSession.anonKey,
+        accessToken: actorSession.accessToken,
+        rpcName: 'rpc_create_ticket',
+        body: {
+          p_tenant_id: tenantId,
+          p_title: ticket.title,
+          p_description: ticket.description,
+          p_source: ticket.source,
+          p_priority: ticket.priority,
+          p_severity: ticket.severity,
+          p_requester_contact_id: contactId ?? null,
+          p_category_id: ticket.categorySlug
+            ? queryTicketCategoryIdBySlug(ticket.categorySlug)
+            : null,
+          p_operational_reason_id: ticket.operationalReasonSlug
+            ? queryTicketOperationalReasonIdBySlug(ticket.operationalReasonSlug)
+            : null,
+        },
+      }),
+    reconcile: () => queryExistingSupportTicket(tenantId, ticket.title),
   });
 
   const ticketId = created?.id ?? queryExistingSupportTicket(tenantId, ticket.title);

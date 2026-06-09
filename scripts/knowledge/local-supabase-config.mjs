@@ -1,6 +1,6 @@
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
+
+import { resolveSupabaseCliCommand } from '../lib/supabase-cli-command.mjs';
 
 function required(value, name) {
   const normalized = String(value ?? '').trim();
@@ -29,19 +29,8 @@ export function resolveLocalSupabaseConfig({ url, anonKey, email, password }) {
   };
 }
 
-function localSupabaseCommand(args) {
-  if (process.platform === 'win32') {
-    const binary = join(process.cwd(), 'node_modules', 'supabase', 'bin', 'supabase.exe');
-    if (existsSync(binary)) {
-      return { command: binary, args };
-    }
-  }
-
-  return { command: 'npx', args: ['supabase', ...args] };
-}
-
 function readSupabaseStatusEnv() {
-  const { command, args } = localSupabaseCommand(['status', '-o', 'env']);
+  const { command, args } = resolveSupabaseCliCommand(['status', '-o', 'env']);
   const result = spawnSync(command, args, {
     cwd: process.cwd(),
     encoding: 'utf8',

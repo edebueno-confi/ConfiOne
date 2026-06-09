@@ -3,6 +3,8 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, dirname, relative, basename, resolve } from 'node:path';
 
+import { resolveSupabaseCliCommand } from '../lib/supabase-cli-command.mjs';
+
 const ZERO_UUID = '00000000-0000-0000-0000-000000000000';
 
 function fail(message) {
@@ -136,24 +138,7 @@ function run(command, args, options = {}) {
 }
 
 function localSupabaseBinary(args) {
-  if (process.platform === 'win32') {
-    const localBinary = join(
-      process.cwd(),
-      'node_modules',
-      'supabase',
-      'bin',
-      'supabase.exe',
-    );
-
-    if (existsSync(localBinary)) {
-      return { command: localBinary, args };
-    }
-  }
-
-  return {
-    command: 'npx',
-    args: ['supabase', ...args],
-  };
+  return resolveSupabaseCliCommand(args);
 }
 
 function createWorkspaceTempDir(prefix) {

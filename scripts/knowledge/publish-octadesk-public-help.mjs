@@ -2,6 +2,8 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { resolveSupabaseCliCommand } from '../lib/supabase-cli-command.mjs';
+
 const DEFAULT_REPORT_PATH = join(
   process.cwd(),
   'docs',
@@ -123,24 +125,7 @@ function run(command, args, options = {}) {
 }
 
 function localSupabaseBinary(args) {
-  if (process.platform === 'win32') {
-    const localBinary = join(
-      process.cwd(),
-      'node_modules',
-      'supabase',
-      'bin',
-      'supabase.exe',
-    );
-
-    if (existsSync(localBinary)) {
-      return { command: localBinary, args };
-    }
-  }
-
-  return {
-    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    args: ['supabase', ...args],
-  };
+  return resolveSupabaseCliCommand(args);
 }
 
 function createWorkspaceTempDir(prefix) {
