@@ -13,6 +13,10 @@ Fonte oficial da documentação do Genius Support OS.
 ## Visão e estado
 
 - [PROJECT_STATE.md](./PROJECT_STATE.md)
+- [reports/FINAL_RECOVERY_HANDOFF_AND_NEXT_STEPS_2026-06-09.md](./reports/FINAL_RECOVERY_HANDOFF_AND_NEXT_STEPS_2026-06-09.md)
+- [reports/MINIMAL_OPERATIONAL_REDESIGN_VALIDATION_2026-06-09.md](./reports/MINIMAL_OPERATIONAL_REDESIGN_VALIDATION_2026-06-09.md)
+- [superpowers/specs/2026-06-09-minimal-operational-redesign-design.md](./superpowers/specs/2026-06-09-minimal-operational-redesign-design.md)
+- [superpowers/plans/2026-06-09-minimal-operational-redesign.md](./superpowers/plans/2026-06-09-minimal-operational-redesign.md)
 - [reports/CS_PORTFOLIO_READONLY_UI_2026-06-09.md](./reports/CS_PORTFOLIO_READONLY_UI_2026-06-09.md)
 - [reports/DEPENDENCY_HARDENING_2026-06-09.md](./reports/DEPENDENCY_HARDENING_2026-06-09.md)
 - [reports/POST_RECOVERY_BASELINE_2026-06-09.md](./reports/POST_RECOVERY_BASELINE_2026-06-09.md)
@@ -107,9 +111,9 @@ Direção já registrada para a próxima rodada: conectar a narrativa do Diário
 - [PRODUCT.md](../PRODUCT.md)
 - [DESIGN.md](../DESIGN.md)
 
-Área interna em `/admin/product-docs` para consulta controlada dos documentos estratégicos whitelisted que definem visão, arquitetura, segurança, operação, design, governança e construção do Genius Support OS. A experiência atual continua estática e sanitizada no frontend, agora com `Por onde começar` e trilhas de leitura por tema, sem backend novo, parser de filesystem, contrato novo ou leitura arbitrária de arquivos.
+Área interna em `/admin/product-docs` para consulta controlada dos documentos estratégicos whitelisted que definem visão, arquitetura, segurança, operação, design, governança e construção do Genius Support OS. A experiência atual consome o catálogo e o detalhe oficiais por contratos reais de documentos internos, com `Por onde começar`, trilhas de leitura, rail de governança e índice interno derivado do markdown sanitizado, sem parser de filesystem ou leitura arbitrária de arquivos.
 
-Direção já registrada para a próxima rodada: evoluir a biblioteca para leitura mais profunda dos markdowns originais aprovados, mantendo whitelist explícita, curadoria e ausência de leitura arbitrária do repositório.
+Direção já registrada para a próxima rodada: evoluir a biblioteca para leitura mais profunda e navegação documental mais rica, mantendo whitelist explícita, curadoria, sanitização e ausência de leitura arbitrária do repositório.
 
 ## Áreas internas de documentação
 
@@ -140,6 +144,7 @@ Skill local versionada para tarefas de UI/UX do Genius Support OS baseadas em bl
 
 - [KANBAN_OPERATIONAL_GOVERNANCE.md](./KANBAN_OPERATIONAL_GOVERNANCE.md)
 - [GOAL_EXECUTION_PLAN.md](./GOAL_EXECUTION_PLAN.md)
+- [reports/FINAL_RECOVERY_HANDOFF_AND_NEXT_STEPS_2026-06-09.md](./reports/FINAL_RECOVERY_HANDOFF_AND_NEXT_STEPS_2026-06-09.md)
 - [superpowers/specs/2026-06-09-cs-portfolio-readonly-design.md](./superpowers/specs/2026-06-09-cs-portfolio-readonly-design.md)
 - [superpowers/plans/2026-06-09-cs-portfolio-readonly.md](./superpowers/plans/2026-06-09-cs-portfolio-readonly.md)
 - [reports/CS_PORTFOLIO_READONLY_UI_2026-06-09.md](./reports/CS_PORTFOLIO_READONLY_UI_2026-06-09.md)

@@ -73,7 +73,9 @@ Documentos históricos:
 - Documentação deve ser viva e versionada no repositório.
 
 ## Estado atual em 2026-06-09
+- Em 2026-06-17, `/admin/product-docs` foi recuperado no ambiente local e polido como leitor governado de documentos internos. A causa raiz da tela vazia era ausencia de registros em `internal_documents` e `internal_document_versions` apos reset local, apesar da whitelist possuir 12 documentos autorizados. Foi criado `documentation:sync:internal-docs:local`, os 12 documentos foram sincronizados localmente por contrato real, a UI passou a abrir o primeiro documento autorizado, ganhou cockpit em tres zonas, rail de governanca e indice interno derivado do markdown sanitizado. Relatorio: `docs/reports/PRODUCT_DOCS_GOVERNED_READER_POLISH_2026-06-17.md`.
 - Em 2026-06-09, `/cs/portfolio` foi entregue como workspace read-only sobre `vw_cs_customer_portfolio`. O corte inclui gate e redirect por contexto CS, navegação, busca, lista e detalhe com owner, produtos/planos, subscriptions, tickets, membros, última atualização e health explicitamente indisponível. QA autenticado confirmou acesso global para `platform_admin`, isolamento tenant para membership `customer_success`, denial para usuário sem acesso e ausência de overflow horizontal em desktop e viewport estreito. Relatório: `docs/reports/CS_PORTFOLIO_READONLY_UI_2026-06-09.md`.
+- Em 2026-06-09, o handoff final da retomada foi registrado com entregas consolidadas, validações, rotas locais, usuários locais de referência e próximos passos sugeridos. Relatório: `docs/reports/FINAL_RECOVERY_HANDOFF_AND_NEXT_STEPS_2026-06-09.md`.
 - O hardening de dependencias de 2026-06-09 atualizou `react-router-dom` para `7.15.0` e `@supabase/supabase-js` para `2.108.0`, removendo os advisories de React Router e da cadeia transitiva `ws`. `npm audit` passou com zero vulnerabilidades, junto de contracts typecheck, web typecheck e build. Relatorio: `docs/reports/DEPENDENCY_HARDENING_2026-06-09.md`.
 - Em 2026-06-09, o projeto foi recuperado e consolidado em `C:\Projetos\Genius-Support-OS`. A branch `codex/mvp-operational-completion-goal` foi publicada e o hash recuperado `0e9ff70926b21e604cd87fbbb45590ae61201327` foi preservado no remoto. O fallback literal de credencial local foi removido no commit `1902201`. Docker/WSL foram restaurados, o Supabase CLI foi atualizado para `2.105.0` e a baseline local passou com reset, lint, `51` arquivos pgTAP/`1085` testes, `supabase:verify` e fixture funcional completa. Relatorio: `docs/reports/POST_RECOVERY_BASELINE_2026-06-09.md`.
 - Em 2026-06-04, o lote `CS Portfolio Contract Foundation` materializou o primeiro read model backend-first de CS: `vw_cs_customer_portfolio`, protegido por `app_private.can_access_cs_customer_portfolio`. O gate usa `platform_admin` ou membership ativa por tenant na area interna `customer_success`, sem criar role global nova de CS. O corte nao cria UI `/cs`, RPC `rpc_cs_*`, mutation, health score canonico, billing/financeiro ou rota nova. Relatorio: `docs/reports/CS_PORTFOLIO_CONTRACT_FOUNDATION_2026-06-04.md`.
@@ -2097,7 +2099,7 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Definir o próximo lote do Operational Control Plane sem ampliar `/cs/portfolio` com health, follow-ups, tarefas, projetos ou mutations antes de contratos backend canônicos.
+Definir o próximo lote do Operational Control Plane sem ampliar `/cs/portfolio` com health, follow-ups, tarefas, projetos ou mutations antes de contratos backend canônicos. Prioridade técnica imediata: manter app local pronto para QA, estabilizar ruídos de infraestrutura local se afetarem produtividade e preparar apenas piloto local/staging com autorização explícita.
 
 Atualização do editor de Knowledge:
 - `/admin/knowledge/new` e `/admin/knowledge/:articleId/edit` agora usam o mesmo fluxo profissional de criação/edição, com status editorial tratado por ações governadas e não por dropdown livre.
@@ -2311,3 +2313,35 @@ Pendência arquitetural futura já mapeada, mas fora do escopo atual:
   - sem UI;
   - sem subscriptions implementadas;
   - sem migrar `customer_account_features`.
+
+### Redesign Minimalista Operacional
+- fechamento: `2026-06-10`
+- status: concluído nas superfícies internas prioritárias.
+- direção aplicada:
+  - shell único para Admin, Support e CS;
+  - composição inspirada em Linear, Stripe UI Components, Atlassian e Primer;
+  - superfícies planas, densidade operacional e uma ação primária por contexto;
+  - listas e tabelas como estrutura dominante;
+  - Focus Surface para mutações e contexto.
+- rotas migradas:
+  - login e acesso negado;
+  - CS Portfolio;
+  - fila e workspace de tickets;
+  - Clientes B2B;
+  - Acessos;
+  - Sistema;
+  - Knowledge e editor.
+- consolidação:
+  - primitives canônicos atualizados;
+  - estados globais sem mascote ou gradiente decorativo;
+  - shell legado e componentes sem consumidores removidos.
+- validação:
+  - 17 testes Node aprovados;
+  - contratos e web typecheck aprovados;
+  - build Vite aprovado;
+  - QA desktop `1440x900` e mobile `390x844` sem overflow global nas rotas verificadas.
+- relatório:
+  - `docs/reports/MINIMAL_OPERATIONAL_REDESIGN_VALIDATION_2026-06-09.md`
+- boundaries:
+  - sem alteração de banco, RPC, view, RLS ou autorização;
+  - sem deploy, push ou commit.

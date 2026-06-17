@@ -1,114 +1,20 @@
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import mascotUrl from '../../../assets/brand/genius-mascot.svg';
 import {
   ErrorState,
   LoadingState,
   StateFrame,
 } from '../../components/states';
-import { AppButton, GhostButton, StatusPill, cx } from '../../components/ui';
+import { AppButton, GhostButton } from '../../components/ui';
 import { useAuthContext } from '../auth/auth-context';
-import { UNIFIED_INTERNAL_SIDEBAR_WIDTH_CLASS } from '../navigation/UnifiedEnvironmentNavigation';
 
 function SupportGateBootShell() {
-  const navItems = ['Fila', 'Tickets', 'Clientes', 'Engenharia'];
-
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#eef4ff_0%,#f7faff_42%,#f3f6fb_100%)] text-[color:var(--color-ink)]">
-      <div className="mx-auto flex max-w-[1800px] gap-4 px-3 py-3 sm:px-4 lg:px-5">
-        <aside className={`hidden shrink-0 rounded-[24px] bg-[linear-gradient(180deg,#06173f_0%,#0a1e53_52%,#10265f_100%)] px-3 py-4 text-white shadow-[0_26px_58px_rgba(9,20,56,0.24)] lg:flex lg:flex-col ${UNIFIED_INTERNAL_SIDEBAR_WIDTH_CLASS}`}>
-          <div className="flex items-center gap-3 px-1">
-            <img alt="Mascote Genius" className="w-9 shrink-0" src={mascotUrl} />
-            <div className="min-w-0">
-              <h1 className="truncate text-[0.92rem] font-semibold leading-tight tracking-[-0.03em] text-white">
-                Genius Support OS
-              </h1>
-              <p className="mt-1 truncate text-[0.68rem] leading-4 text-white/62">
-                Suporte operacional
-              </p>
-            </div>
-          </div>
-
-          <nav className="mt-8 grid gap-2">
-            {navItems.map((item, index) => (
-              <div
-                className={cx(
-                  'flex min-h-[46px] items-center gap-2 rounded-[14px] px-2.5 py-1.5 text-[0.84rem] font-medium',
-                  index === 0
-                    ? 'bg-[linear-gradient(135deg,#1f67ff,#2f7eff)] text-white shadow-[0_16px_30px_rgba(18,81,213,0.35)]'
-                    : 'text-white/78',
-                )}
-                key={item}
-              >
-                <span
-                  className={cx(
-                    'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[12px] border text-[0.68rem] font-semibold uppercase tracking-[0.14em]',
-                    index === 0
-                      ? 'border-white/14 bg-white/12 text-white'
-                      : 'border-white/12 bg-white/6 text-white/88',
-                  )}
-                >
-                  {item[0]}
-                </span>
-                <span>{item}</span>
-                {index === 0 ? (
-                  <span className="ml-auto inline-flex min-h-7 min-w-7 items-center justify-center rounded-full bg-white/14 px-2 text-xs font-semibold text-white">
-                    8
-                  </span>
-                ) : item === 'Tickets' ? (
-                  <span className="ml-auto inline-flex min-h-7 min-w-7 items-center justify-center rounded-full bg-white/10 px-2 text-xs font-semibold text-white/88">
-                    12
-                  </span>
-                ) : null}
-              </div>
-            ))}
-          </nav>
-
-          <div className="mt-auto px-1">
-            <div className="flex items-center gap-2 rounded-[16px] border border-white/10 bg-white/7 px-2 py-2">
-              <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#f4b1c8,#ffffff)] text-[11px] font-semibold text-[color:var(--color-brand-navy)]">
-                QA
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-[0.76rem] font-semibold text-white">Sessão local</p>
-                <p className="truncate text-[0.64rem] text-white/62">Aguardando validação</p>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        <div className="min-w-0 flex-1 space-y-4">
-          <header className="rounded-[22px] border border-[color:var(--color-border)] bg-white/92 px-4 py-3 shadow-[0_14px_28px_rgba(19,33,79,0.08)] backdrop-blur sm:px-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusPill tone="accent">Acesso interno</StatusPill>
-                <StatusPill>Suporte</StatusPill>
-              </div>
-              <GhostButton className="min-h-10 border-[rgba(48,127,226,0.18)] px-4 text-[color:var(--color-brand-blue)]">
-                  Encerrar sessão
-              </GhostButton>
-            </div>
-          </header>
-
-          <div className="grid gap-4 xl:grid-cols-[292px_minmax(0,1fr)]">
-            <section className="rounded-[26px] border border-[color:var(--color-border)] bg-white/92 px-5 py-5 shadow-[0_18px_36px_rgba(19,33,79,0.08)]">
-              <div className="space-y-3">
-                <div className="h-4 w-32 animate-pulse rounded-full bg-slate-200" />
-                <div className="h-12 animate-pulse rounded-[22px] bg-slate-200" />
-                <div className="h-12 animate-pulse rounded-[22px] bg-slate-200" />
-                <div className="h-12 animate-pulse rounded-[22px] bg-slate-200" />
-              </div>
-            </section>
-
-            <section className="rounded-[28px] border border-[color:var(--color-border)] bg-white/92 px-5 py-5 shadow-[0_18px_36px_rgba(19,33,79,0.08)]">
-              <LoadingState
-                title="Preparando o suporte"
-          description="Estamos liberando a fila, os tickets e o contexto do suporte para continuar a operação."
-              />
-            </section>
-          </div>
-        </div>
-      </div>
+    <div className="flex min-h-screen items-center justify-center bg-[color:var(--minimal-canvas)] px-5 py-10">
+      <LoadingState
+        title="Preparando o suporte"
+        description="Estamos validando a sessão e liberando as áreas autorizadas."
+      />
     </div>
   );
 }

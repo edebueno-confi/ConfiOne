@@ -1,12 +1,6 @@
 import { useRef } from 'react';
 import type { FormEventHandler, ReactNode } from 'react';
 import { cx } from '../../../components/ui';
-import {
-  SupportComposer,
-  SupportComposerTextarea,
-  SupportPrimaryActionButton,
-  SupportSecondaryActionButton,
-} from './SupportWorkspacePrimitives';
 
 export function SupportTicketComposerSection({
   composerMode,
@@ -43,7 +37,7 @@ export function SupportTicketComposerSection({
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  function applyComposerToken(kind: 'paragraph' | 'bold' | 'italic' | 'underline' | 'list' | 'link' | 'image' | 'code') {
+  function applyComposerToken(kind: 'bold' | 'italic' | 'list' | 'link') {
     if (composerDisabled) {
       return;
     }
@@ -54,13 +48,10 @@ export function SupportTicketComposerSection({
     const selected = composerDraft.slice(selectionStart, selectionEnd);
     const before = composerDraft.slice(0, selectionStart);
     const after = composerDraft.slice(selectionEnd);
-
-    const fallback = selected || (kind === 'link' ? 'texto do link' : kind === 'image' ? 'descricao da imagem' : 'texto');
+    const fallback = selected || (kind === 'link' ? 'texto do link' : 'texto');
     const replacements: Record<typeof kind, string> = {
-      paragraph: `${selected || ''}`,
       bold: `**${fallback}**`,
       italic: `_${fallback}_`,
-      underline: `<u>${fallback}</u>`,
       list: selected
         ? selected
             .split('\n')
@@ -68,30 +59,35 @@ export function SupportTicketComposerSection({
             .join('\n')
         : '- ',
       link: `[${fallback}](https://)`,
-      image: `![${fallback}](url-da-imagem)`,
-      code: `\`${fallback}\``,
     };
 
-    const nextValue = `${before}${replacements[kind]}${after}`;
-    onComposerDraftChange(nextValue);
-
+    const replacement = replacements[kind];
+    onComposerDraftChange(`${before}${replacement}${after}`);
     window.setTimeout(() => {
       textarea?.focus();
-      const cursor = before.length + replacements[kind].length;
+      const cursor = before.length + replacement.length;
       textarea?.setSelectionRange(cursor, cursor);
     }, 0);
   }
 
+  const availabilityLabel =
+    composerMode === 'public'
+      ? publicReplyUnavailableReason ?? publicReplyLabel
+      : 'Visível apenas para a operação interna';
+
   return (
-    <SupportComposer>
-      <form className="space-y-3" onSubmit={onSubmit}>
-        <div className="flex flex-wrap gap-5 border-b border-[color:var(--color-border)] pb-2">
+    <div
+      className="shrink-0 border-t border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-4 py-3 sm:px-5"
+      data-ticket-composer
+    >
+      <form onSubmit={onSubmit}>
+        <div className="flex flex-wrap items-center gap-1 border-b border-[color:var(--minimal-border)]">
           <button
             className={cx(
-              'inline-flex min-h-7 items-center gap-1 text-[12px] font-semibold transition',
+              'min-h-9 border-b-2 px-2 text-sm',
               composerMode === 'public'
-                ? 'text-[color:var(--color-brand-blue)]'
-                : 'text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
+                ? 'border-[color:var(--minimal-action)] font-medium text-[color:var(--minimal-text)]'
+                : 'border-transparent text-[color:var(--minimal-text-secondary)]',
             )}
             disabled={!canUsePublicComposer}
             onClick={onSelectPublicMode}
@@ -101,10 +97,10 @@ export function SupportTicketComposerSection({
           </button>
           <button
             className={cx(
-              'inline-flex min-h-7 items-center gap-1 text-[12px] font-semibold transition',
+              'min-h-9 border-b-2 px-2 text-sm',
               composerMode === 'internal'
-                ? 'text-[color:var(--color-warning-text)]'
-                : 'text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
+                ? 'border-[color:var(--minimal-warning-text)] font-medium text-[color:var(--minimal-text)]'
+                : 'border-transparent text-[color:var(--minimal-text-secondary)]',
             )}
             disabled={!canUseInternalComposer}
             onClick={onSelectInternalMode}
@@ -112,25 +108,28 @@ export function SupportTicketComposerSection({
           >
             Nota interna
           </button>
-          <span className="ml-auto inline-flex min-h-7 items-center text-[11px] font-medium text-[color:var(--color-muted)]">
-            {composerMode === 'public'
-              ? publicReplyUnavailableReason ?? publicReplyLabel
-              : 'Visível apenas para operação interna'}
+          <span className="ml-auto hidden text-xs text-[color:var(--minimal-text-tertiary)] md:block">
+            {availabilityLabel}
           </span>
         </div>
-        <div className="rounded-[16px] border border-[color:var(--color-support-border)] bg-white px-3 py-3">
-          <div className="support-composer-toolbar" aria-label="Ferramentas de edição">
+
+        <div
+          className={cx(
+            'mt-3 overflow-hidden rounded-lg border bg-[color:var(--minimal-surface)]',
+            composerMode === 'internal'
+              ? 'border-[color:var(--minimal-warning-border)]'
+              : 'border-[color:var(--minimal-border-strong)]',
+          )}
+        >
+          <div className="flex items-center gap-1 border-b border-[color:var(--minimal-border)] px-2 py-1" aria-label="Ferramentas de edição">
             {[
-              ['Parágrafo', 'Parágrafo', 'paragraph'],
               ['B', 'Negrito', 'bold'],
               ['I', 'Itálico', 'italic'],
-              ['U', 'Sublinhado', 'underline'],
               ['•', 'Lista', 'list'],
               ['↗', 'Link', 'link'],
-              ['▧', 'Imagem', 'image'],
-              ['<>', 'Código', 'code'],
             ].map(([label, title, kind]) => (
               <button
+                className="inline-flex h-8 min-w-8 items-center justify-center rounded text-xs font-medium text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)]"
                 disabled={composerDisabled}
                 key={title}
                 onClick={() => applyComposerToken(kind as Parameters<typeof applyComposerToken>[0])}
@@ -141,81 +140,64 @@ export function SupportTicketComposerSection({
               </button>
             ))}
           </div>
-          <SupportComposerTextarea
-            internal={composerMode === 'internal'}
-            onChange={onComposerDraftChange}
+          <textarea
+            className={cx(
+              'min-h-24 w-full resize-none bg-transparent px-3 py-3 text-sm leading-6 text-[color:var(--minimal-text)] outline-none placeholder:text-[color:var(--minimal-text-tertiary)]',
+              composerMode === 'internal' && 'bg-[color:var(--minimal-warning-surface)]',
+            )}
+            disabled={composerDisabled}
+            onChange={(event) => onComposerDraftChange(event.target.value)}
             placeholder={
               composerMode === 'public'
-                ? 'Digite sua resposta para o cliente...'
-                : 'Registre a nota interna da tratativa...'
+                ? 'Escreva uma resposta para o cliente...'
+                : 'Registre uma nota interna...'
             }
-            textareaRef={textareaRef}
+            ref={textareaRef}
             value={composerDraft}
           />
-          <div
-            className={cx(
-              'mt-3 flex flex-wrap items-center justify-between gap-3 border-t pt-3',
-              composerMode === 'internal' ? 'border-amber-200/80' : 'border-[color:var(--color-border)]',
-            )}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="mr-auto text-xs text-[color:var(--minimal-text-tertiary)] md:hidden">
+            {availabilityLabel}
+          </span>
+          <button
+            className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)]"
+            onClick={onOpenEvidenceSurface}
+            type="button"
           >
-            <div className="flex min-w-0 flex-wrap items-center gap-2 text-[11px] font-medium text-[color:var(--color-muted)]">
-              <span>
-                {composerMode === 'public'
-                  ? 'Resposta customer-facing via Portal'
-                  : 'Nota interna protegida'}
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <SupportSecondaryActionButton
-                onClick={onOpenEvidenceSurface}
-              >
-                <span className="inline-flex items-center gap-1.5">
-                  {attachmentIcon}
-                  Anexar evidência
-                </span>
-              </SupportSecondaryActionButton>
-              <div className="support-composer-submit-group">
-                <SupportPrimaryActionButton
-                  className={cx(
-                    composerMode === 'internal'
-                      ? 'support-primary-action-button--internal'
-                      : 'support-primary-action-button--public',
-                  )}
-                  disabled={composerDisabled}
-                  type="submit"
-                >
-                  {submitting
-                    ? composerMode === 'public'
-                      ? 'Enviando...'
-                      : 'Salvando...'
-                    : composerMode === 'public'
-                      ? 'Enviar resposta'
-                      : 'Salvar nota'}
-                </SupportPrimaryActionButton>
-                {composerMode === 'public' ? (
-                  <details className="support-composer-send-menu">
-                    <summary aria-label="Opções de envio">⌄</summary>
-                    <div className="support-composer-send-menu__panel">
-                      <button disabled={composerDisabled} type="submit">
-                        Enviar resposta
-                      </button>
-                      <button disabled={composerDisabled} onClick={onOpenStatusSurface} type="button">
-                        Enviar e alterar status
-                      </button>
-                      <button disabled type="button">
-                        Enviar e fechar requer motivo
-                      </button>
-                      <button disabled type="button">
-                        Enviar e aguardar cliente requer motivo
-                      </button>
-                    </div>
-                  </details>
-                ) : null}
-              </div>
-            </div>
-          </div>
+            {attachmentIcon}
+            Anexar
+          </button>
+          {composerMode === 'public' ? (
+            <button
+              className="h-9 rounded-md px-2.5 text-sm text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)]"
+              onClick={onOpenStatusSurface}
+              type="button"
+            >
+              Alterar status
+            </button>
+          ) : null}
+          <button
+            className={cx(
+              'h-9 rounded-md px-4 text-sm font-medium',
+              composerMode === 'internal'
+                ? 'bg-[color:var(--minimal-warning-text)] text-[color:var(--minimal-action-ink)]'
+                : 'bg-[color:var(--minimal-action)] text-[color:var(--minimal-action-ink)]',
+            )}
+            disabled={composerDisabled}
+            type="submit"
+          >
+            {submitting
+              ? composerMode === 'public'
+                ? 'Enviando...'
+                : 'Salvando...'
+              : composerMode === 'public'
+                ? 'Enviar resposta'
+                : 'Salvar nota'}
+          </button>
         </div>
       </form>
-    </SupportComposer>
+    </div>
   );
 }

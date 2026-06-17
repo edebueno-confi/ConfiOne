@@ -5,7 +5,9 @@ Definir a V1 da área interna `Documentos do Produto`, disponível em `/admin/pr
 
 A tela expõe uma seleção controlada de documentos estratégicos do Genius Support OS para consulta interna. Ela complementa o `Diário de Construção`: o Diário explica como o produto foi construído; Documentos do Produto apresenta a fonte oficial controlada que orienta visão, arquitetura, segurança, operação, design e governança.
 
-Atualização de 2026-05-16: a fase `Build Journal Experience Upgrade V1` fez ajustes leves na UX de `/admin/product-docs` sem alterar o modelo da superfície. A rota continua estática, protegida pelo gate administrativo existente e limitada pela mesma whitelist explícita. Foram adicionados `Por onde começar`, trilhas de leitura por tema e copy mais clara para reforçar que a tela é fonte oficial controlada, não explorador de arquivos.
+Atualização de 2026-05-16: a fase `Build Journal Experience Upgrade V1` fez ajustes leves na UX de `/admin/product-docs` sem alterar o modelo da superfície. A rota continuou protegida pelo gate administrativo existente e limitada pela mesma whitelist explícita. Foram adicionados `Por onde começar`, trilhas de leitura por tema e copy mais clara para reforçar que a tela é fonte oficial controlada, não explorador de arquivos.
+
+Atualização de 2026-06-17: a fase `Product Docs Governed Reader Polish` recuperou a superfície local após reset de banco e consolidou o consumo por contratos reais de documentos internos. A tela consome `vw_internal_documents_catalog` e `vw_internal_document_detail`, abre o primeiro documento autorizado, exibe cockpit de três zonas, rail de governança e índice interno derivado do markdown sanitizado. A recuperação local usa `npm run documentation:sync:internal-docs:local`, restrito ao Supabase local e sem gravar secrets.
 
 Adendo de direção para a próxima rodada: `Product Docs` deve evoluir de reader estático simples para biblioteca documental curada por trilhas, ainda baseada apenas em markdowns explicitamente aprovados. A direção aprovada inclui aprofundamento por:
 
@@ -21,7 +23,7 @@ Adendo de direção para a próxima rodada: `Product Docs` deve evoluir de reade
 Essa expansão deve permitir leitura do conteúdo original dos markdowns aprovados, sem backend novo, sem parser dinâmico, sem busca backend e sem leitura arbitrária do repositório.
 
 ## Lista permitida
-A V1 usa whitelist explícita e versionada no frontend. Apenas estes documentos podem aparecer:
+A V1 usa whitelist explícita e versionada. Apenas estes documentos podem aparecer:
 
 - `PRODUCT.md`
 - `DESIGN.md`
@@ -36,7 +38,7 @@ A V1 usa whitelist explícita e versionada no frontend. Apenas estes documentos 
 - `docs/BUILD_JOURNAL_STRATEGY.md`
 - `docs/BUILD_JOURNAL_SCREEN_SPEC.md`
 
-Não há explorador genérico de arquivos, parser dinâmico de filesystem, indexação de docs ou leitura arbitrária de markdown.
+Não há explorador genérico de arquivos, parser dinâmico de filesystem, indexação livre de docs ou leitura arbitrária de markdown. O runtime lê somente documentos sincronizados e autorizados pelos contratos de documentos internos.
 
 ## Acesso
 A rota fica dentro do bloco `/admin` e usa o `AdminGate` administrativo existente.
@@ -44,7 +46,7 @@ A rota fica dentro do bloco `/admin` e usa o `AdminGate` administrativo existent
 Limitação da V1: ainda não existe permissão granular dedicada para `product-docs`. Até existir contrato backend específico, o acesso fica limitado ao gate administrativo consolidado do Admin Console.
 
 ## Política de sanitização
-O conteúdo exibido é estático, editorial, sanitizado e versionado no frontend. Ele pode resumir ou omitir trechos do markdown original quando a exposição ampla dentro da UI administrativa não for necessária.
+O conteúdo exibido é oficial, editorial, sanitizado e versionado. O frontend renderiza apenas o markdown sanitizado retornado pelo contrato de detalhe e pode receber omissões quando a exposição ampla dentro da UI administrativa não for necessária.
 
 Quando houver omissão, usar:
 
@@ -71,14 +73,13 @@ A tela não pode expor:
 - instruções de bypass de RLS, policy ou grants.
 
 ## Limites da V1
-- Sem backend novo.
-- Sem migration.
-- Sem tabela.
-- Sem RPC.
-- Sem RLS nova.
-- Sem fixture.
-- Sem Supabase.
-- Sem contrato novo.
+- Sem backend novo nesta fase de polish.
+- Sem migration nova nesta fase de polish.
+- Sem tabela nova nesta fase de polish.
+- Sem RPC nova nesta fase de polish.
+- Sem RLS nova nesta fase de polish.
+- Sem fixture nova nesta fase de polish.
+- Sem contrato novo nesta fase de polish.
 - Sem busca backend.
 - Sem busca semântica.
 - Sem IA.

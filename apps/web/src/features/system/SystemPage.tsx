@@ -294,7 +294,7 @@ function SystemSurfaceCard({
   return (
     <section
       className={cx(
-        'rounded-[28px] border border-[color:var(--color-border)] bg-white/94 px-5 py-5 shadow-[0_16px_34px_rgba(16,30,74,0.08)]',
+        'h-full border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4',
         className,
       )}
     >
@@ -583,24 +583,24 @@ export function SystemPage() {
   }
 
   return (
-    <div className="space-y-3 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
-      <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white/96 px-5 py-3.5 shadow-[0_18px_40px_rgba(16,30,74,0.08)]">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
+      <section className="shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-[1.76rem] font-semibold tracking-[-0.055em] text-[color:var(--color-ink)]">
+            <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
               Sistema
             </h1>
-            <p className="text-[0.84rem] leading-5 text-[color:var(--color-muted)]">
+            <p className="text-sm text-[color:var(--minimal-text-secondary)]">
               Auditoria, saúde do sistema e eventos operacionais.
             </p>
           </div>
 
-          <GhostButton className="min-h-10 rounded-full px-4 text-[13px]" onClick={() => void loadSurface()}>
+          <GhostButton className="min-h-9 rounded-md px-3 text-sm" onClick={() => void loadSurface()}>
             Recarregar
           </GhostButton>
         </div>
 
-        <nav className="mt-4 flex flex-wrap gap-5 border-b border-[color:var(--color-border)] pb-2">
+        <nav className="mt-3 flex flex-wrap gap-1">
           {[
             { id: 'health', label: 'Saúde' },
             { id: 'audit', label: 'Auditoria' },
@@ -609,10 +609,10 @@ export function SystemPage() {
           ].map((tab) => (
             <button
               className={cx(
-                'inline-flex min-h-10 items-center border-b-2 border-transparent px-1 pb-2.5 text-[0.92rem] font-semibold transition',
+                'inline-flex min-h-9 items-center border-b-2 border-transparent px-2 text-sm transition',
                 activeTab === tab.id
-                  ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
-                  : 'text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
+                  ? 'border-[color:var(--minimal-action)] font-medium text-[color:var(--minimal-text)]'
+                  : 'text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)]',
               )}
               key={tab.id}
               onClick={() => setActiveTab(tab.id as SystemTab)}
@@ -624,8 +624,8 @@ export function SystemPage() {
         </nav>
       </section>
 
-      <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[252px_minmax(0,1fr)_388px] xl:overflow-hidden 2xl:grid-cols-[260px_minmax(0,1fr)_396px]">
-        <aside className="rounded-[20px] border border-[color:var(--color-border)] bg-white/96 p-3.5 shadow-[0_16px_34px_rgba(16,30,74,0.08)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+      <div className="grid min-h-0 flex-1 overflow-hidden xl:grid-cols-[220px_minmax(0,1fr)_360px]">
+        <aside className="hidden border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] p-3 xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
           <div className="space-y-3">
             <div className="space-y-1">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
@@ -642,10 +642,10 @@ export function SystemPage() {
               ].map((item) => (
                 <button
                   className={cx(
-                    'flex w-full items-center justify-between rounded-[15px] border px-3 py-2.25 text-left transition',
+                    'flex w-full items-center justify-between border-b border-[color:var(--minimal-border)] px-1 py-2.5 text-left transition-colors',
                     activeTab === item.id
-                      ? 'border-[rgba(48,127,226,0.3)] bg-[rgba(48,127,226,0.08)]'
-                      : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] hover:bg-white',
+                      ? 'bg-[color:var(--minimal-selection)]'
+                      : 'hover:bg-[color:var(--minimal-surface-muted)]',
                   )}
                   key={item.id}
                   onClick={() => setActiveTab(item.id as SystemTab)}
@@ -735,7 +735,7 @@ export function SystemPage() {
             className="xl:flex xl:min-h-0 xl:flex-1 xl:flex-col"
             title="Feed operacional"
           >
-            <div className="mb-4 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
+            <div className="hidden">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="space-y-1">
                   <h3 className="text-[0.98rem] font-semibold text-[color:var(--color-ink)]">
@@ -787,7 +787,7 @@ export function SystemPage() {
                 </div>
               )}
             </div>
-            <div className="mb-4 rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+            <div className="hidden">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="space-y-1">
                   <h3 className="text-[0.98rem] font-semibold text-[color:var(--color-ink)]">
@@ -942,7 +942,7 @@ export function SystemPage() {
           </SystemSurfaceCard>
         </div>
 
-        <aside className="rounded-[22px] border border-[color:var(--color-border)] bg-white/96 p-4 shadow-[0_16px_34px_rgba(16,30,74,0.08)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+        <aside className="hidden border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] p-4 xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
           <div className="space-y-4 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
             <div className="space-y-1">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
@@ -953,7 +953,7 @@ export function SystemPage() {
               <InlineNotice>Nenhum evento ficou disponível para abrir detalhes neste recorte.</InlineNotice>
             ) : (
               <div className="space-y-4">
-                <section className="rounded-[22px] bg-[linear-gradient(180deg,#081d4a_0%,#102c6d_100%)] px-4 py-4 text-white shadow-[0_18px_34px_rgba(12,25,66,0.28)]">
+                <section className="border-b border-[color:var(--minimal-border)] pb-4 text-[color:var(--minimal-text)]">
                   <div className="space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusPill tone={toneForSystemSeverity(selectedSeverity)}>
@@ -965,7 +965,7 @@ export function SystemPage() {
                       <h3 className="text-lg font-semibold tracking-[-0.04em]">
                         {selectedEntry.action_label}
                       </h3>
-                      <p className="text-sm leading-6 text-white/78">
+                      <p className="text-sm leading-6 text-[color:var(--minimal-text-secondary)]">
                         {buildSystemEventMessage(selectedEntry)}
                       </p>
                     </div>

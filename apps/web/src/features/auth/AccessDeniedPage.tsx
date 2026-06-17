@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { AccessDeniedState } from '../../components/states';
-import { AppButton, GhostButton } from '../../components/ui';
+import { MinimalState } from '../../components/minimal-states';
+import { MinimalButton, MinimalPage } from '../../components/minimal-ui';
 import { useAuthContext } from './auth-context';
 
 function describeReason(reason: unknown) {
@@ -32,16 +32,25 @@ export function AccessDeniedPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-6 py-12">
-      <AccessDeniedState
+    <MinimalPage>
+      <MinimalState
         description={describeReason((location.state as { reason?: unknown } | null)?.reason)}
-        action={
+        title="Acesso não autorizado"
+        tone="critical"
+        actions={
           <>
-            <AppButton onClick={() => void signOut()}>Encerrar sessão</AppButton>
-            <GhostButton onClick={() => window.history.back()}>Voltar ao início</GhostButton>
+            <MinimalButton onClick={() => void signOut()}>
+              Encerrar sessão
+            </MinimalButton>
+            <MinimalButton
+              onClick={() => window.history.back()}
+              variant="secondary"
+            >
+              Voltar
+            </MinimalButton>
           </>
         }
       />
-    </div>
+    </MinimalPage>
   );
 }

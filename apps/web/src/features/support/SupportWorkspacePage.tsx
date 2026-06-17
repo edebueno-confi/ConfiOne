@@ -1552,10 +1552,14 @@ function SupportConversation({
 
   if (conversationEntries.length === 0 && eventEntries.length === 0) {
     return (
-      <EmptyState
-        title="Conversa vazia"
-                description="Este ticket ainda não recebeu mensagens, notas internas nem eventos adicionais."
-      />
+      <div className="flex min-h-48 items-center justify-center px-4 py-10 text-center">
+        <div className="max-w-sm">
+          <h3 className="text-sm font-medium text-[color:var(--minimal-text)]">Conversa vazia</h3>
+          <p className="mt-2 text-sm leading-6 text-[color:var(--minimal-text-secondary)]">
+            Este ticket ainda não recebeu mensagens, notas internas nem eventos adicionais.
+          </p>
+        </div>
+      </div>
     );
   }
 
@@ -1638,45 +1642,24 @@ function SupportQueueItem({
   onSelect: () => void;
   onToggleBulk: () => void;
 }) {
-  const statusTone =
-    ticket.status === 'waiting_engineering'
-      ? 'violet'
-      : ticket.status === 'waiting_customer'
-        ? 'warning'
-        : ticket.priority === 'urgent' || ticket.severity === 'critical'
-          ? 'critical'
-          : ticket.status === 'resolved' || ticket.status === 'closed'
-            ? 'positive'
-            : 'blue';
   const slaTone =
     ticket.slaStatus === 'breached'
       ? 'critical'
       : ticket.slaStatus === 'at_risk'
         ? 'warning'
-        : ticket.slaStatus === 'on_track' || ticket.slaStatus === 'complete'
-          ? 'positive'
-          : 'default';
-
-  const priorityTone =
-    ticket.priority === 'urgent' || ticket.severity === 'critical'
-      ? 'critical'
-      : ticket.priority === 'high'
-        ? 'warning'
-        : ticket.priority === 'low'
-          ? 'positive'
-          : 'default';
-  const assigneeInitials = ticket.assignedToFullName
-    ? initialsFromSupportLabel(ticket.assignedToFullName)
-    : 'QL';
+        : 'default';
   const assigneeLabel = ticket.assignedToFullName ?? 'Sem responsável';
   const slaLabel = ticket.slaStatusLabel ?? 'Indisponível';
 
   return (
     <article
       className={cx(
-        'support-true-queue-row',
-        isSelected && 'support-true-queue-row--selected',
-        isBulkSelected && 'support-true-queue-row--bulk-selected',
+        'grid min-h-[84px] cursor-pointer grid-cols-[44px_minmax(0,1fr)_96px] items-center gap-3 border-b border-[color:var(--minimal-border)] px-3 py-3 text-left transition-colors duration-150 lg:min-h-[76px] lg:grid-cols-[28px_minmax(220px,1.45fr)_minmax(150px,0.8fr)_minmax(130px,0.65fr)_minmax(150px,0.75fr)_120px] lg:gap-4 lg:px-4',
+        'focus-within:ring-2 focus-within:ring-inset focus-within:ring-[color:var(--minimal-focus)]',
+        isSelected
+          ? 'bg-[color:var(--minimal-selection)]'
+          : 'bg-[color:var(--minimal-surface)] hover:bg-[color:var(--minimal-surface-muted)]',
+        isBulkSelected && 'bg-[color:var(--minimal-selection)]',
       )}
       onClick={onSelect}
       onKeyDown={(event) => {
@@ -1691,7 +1674,13 @@ function SupportQueueItem({
       <button
         aria-label={`${isBulkSelected ? 'Remover' : 'Selecionar'} ${supportTicketCode(ticket.id)} para ação em massa`}
         aria-pressed={isBulkSelected}
-        className="support-true-queue-row__check"
+        className={cx(
+          'inline-flex h-10 w-10 items-center justify-center rounded border text-[10px] lg:h-4 lg:w-4',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]',
+          isBulkSelected
+            ? 'border-[color:var(--minimal-action)] bg-[color:var(--minimal-action)] text-[color:var(--minimal-action-ink)]'
+            : 'border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] text-transparent',
+        )}
         onClick={(event) => {
           event.stopPropagation();
           onToggleBulk();
@@ -1701,47 +1690,63 @@ function SupportQueueItem({
         {isBulkSelected ? '✓' : ''}
       </button>
 
-      <div className="support-true-queue-row__body">
-        <span className="support-true-queue-row__id">
-          <strong>{supportTicketCode(ticket.id)}</strong>
-          <span>{formatSupportShortTime(ticket.createdAt ?? ticket.updatedAt)}</span>
-        </span>
-        <span className="support-true-queue-row__customer">
-          <strong>{ticketTenantLabel(ticket)}</strong>
-          <span>{ticket.tenantSlug ?? 'Plano indisponível'}</span>
-        </span>
-        <span className="support-true-queue-row__subject">
-          <strong>{ticket.title}</strong>
-          <span>{ticket.categoryName ?? 'Sem categoria operacional'}</span>
-        </span>
-        <span className="support-true-queue-row__policy">
-          <OperationalQueueBadge tone={statusTone}>
-            {compactTicketStatusLabel(ticket.status)}
-          </OperationalQueueBadge>
-        </span>
-        <span className="support-true-queue-row__priority">
-          <OperationalQueueBadge tone={priorityTone}>
-            {humanizePriority(ticket.priority)}
-          </OperationalQueueBadge>
-        </span>
-        <span className="support-true-queue-row__source">
-          <SupportSurfaceIcon className="h-[15px] w-[15px]" kind={ticket.channelKey === 'api' ? 'code' : 'open'} />
-          <span>
-            <strong>{ticket.originLabel ?? ticket.channelLabel ?? 'Indisponível'}</strong>
-            <small>{ticket.channelLabel ?? 'Canal indisponível'}</small>
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-medium text-[color:var(--minimal-text-tertiary)]">
+            {supportTicketCode(ticket.id)}
           </span>
-        </span>
-        <span className="support-true-queue-row__owner">
-          <span className="support-true-avatar">{assigneeInitials}</span>
-          <span>
-            <strong>{assigneeLabel}</strong>
-            <small>{ticket.assignedToFullName ? 'Operação CX' : 'Precisa de dono'}</small>
+          <span className="text-[11px] text-[color:var(--minimal-text-tertiary)]">
+            {formatSupportShortTime(ticket.createdAt ?? ticket.updatedAt)}
           </span>
-        </span>
-        <span className={cx('support-true-queue-row__sla', `support-true-queue-row__sla--${slaTone}`)}>
-          <strong>{slaLabel}</strong>
-          <span>{ticket.slaStatus === 'breached' ? 'vencido' : 'dentro'}</span>
-        </span>
+        </div>
+        <h3 className="mt-1 truncate text-sm font-medium text-[color:var(--minimal-text)]">
+          {ticket.title}
+        </h3>
+        <p className="mt-1 truncate text-xs text-[color:var(--minimal-text-secondary)]">
+          {ticket.categoryName ?? 'Sem categoria'} · {ticket.channelLabel ?? 'Canal indisponível'}
+        </p>
+        <p className="mt-1 truncate text-xs text-[color:var(--minimal-text-tertiary)] lg:hidden">
+          {compactTicketStatusLabel(ticket.status)} · {humanizePriority(ticket.priority)}
+        </p>
+      </div>
+
+      <div className="hidden min-w-0 lg:block">
+        <p className="truncate text-sm text-[color:var(--minimal-text)]">
+          {ticketTenantLabel(ticket)}
+        </p>
+        <p className="mt-1 truncate text-xs text-[color:var(--minimal-text-tertiary)]">
+          {ticket.requesterContactFullName ?? ticket.tenantSlug ?? 'Contato indisponível'}
+        </p>
+      </div>
+
+      <div className="hidden min-w-0 lg:block">
+        <p className="text-sm text-[color:var(--minimal-text)]">
+          {compactTicketStatusLabel(ticket.status)}
+        </p>
+        <p className="mt-1 text-xs text-[color:var(--minimal-text-tertiary)]">
+          {humanizePriority(ticket.priority)}
+        </p>
+      </div>
+
+      <div className="hidden min-w-0 lg:block">
+        <p className="truncate text-sm text-[color:var(--minimal-text)]">{assigneeLabel}</p>
+        <p className="mt-1 text-xs text-[color:var(--minimal-text-tertiary)]">
+          {ticket.assignedToFullName ? 'Operação CX' : 'Precisa de dono'}
+        </p>
+      </div>
+
+      <div
+        className={cx(
+          'min-w-0 text-right',
+          slaTone === 'critical' && 'text-[color:var(--minimal-danger-text)]',
+          slaTone === 'warning' && 'text-[color:var(--minimal-warning-text)]',
+          slaTone === 'default' && 'text-[color:var(--minimal-text-secondary)]',
+        )}
+      >
+        <p className="truncate text-sm font-medium">{slaLabel}</p>
+        <p className="mt-1 text-xs">
+          {ticket.slaStatus === 'breached' ? 'Vencido' : 'Dentro do prazo'}
+        </p>
       </div>
     </article>
   );
@@ -1757,30 +1762,37 @@ function SupportTicketInboxItem({
   onSelect: () => void;
 }) {
   return (
-    <QueueTicketItem
-      categoryLabel={ticket.categoryName ?? 'Indisponível'}
-      channelLabel={ticket.channelLabel ?? 'Canal indisponível'}
-      code={supportTicketCode(ticket.id)}
-      isSelected={isSelected}
-      onSelect={onSelect}
-      slaLabel={ticket.slaStatusLabel ?? 'Indisponível'}
-      slaTone={
-        ticket.slaStatus === 'breached'
-          ? 'critical'
-          : ticket.slaStatus === 'at_risk'
-            ? 'warning'
-            : 'positive'
-      }
-      statusBadge={
-        <CompactSupportPill tone={toneForTicketStatus(ticket.status)}>
-          {compactTicketStatusLabel(ticket.status)}
-        </CompactSupportPill>
-      }
-      tenantLabel={ticketTenantLabel(ticket)}
-      timestampLabel={formatSupportShortTime(ticket.lastMessageAt ?? ticket.updatedAt)}
-      title={ticket.title}
-      variant="inbox"
-    />
+    <button
+      aria-pressed={isSelected}
+      className={cx(
+        'block w-full rounded-md border px-3 py-2.5 text-left transition-colors',
+        isSelected
+          ? 'border-[color:var(--minimal-action)] bg-[color:var(--minimal-selection)]'
+          : 'border-transparent bg-transparent hover:bg-[color:var(--minimal-surface-muted)]',
+      )}
+      onClick={onSelect}
+      type="button"
+    >
+      <div className="flex items-center justify-between gap-2 text-[11px] text-[color:var(--minimal-text-tertiary)]">
+        <span>{supportTicketCode(ticket.id)}</span>
+        <span>{formatSupportShortTime(ticket.lastMessageAt ?? ticket.updatedAt)}</span>
+      </div>
+      <p className="mt-1 truncate text-sm font-medium text-[color:var(--minimal-text)]">{ticket.title}</p>
+      <p className="mt-1 truncate text-xs text-[color:var(--minimal-text-secondary)]">
+        {ticketTenantLabel(ticket)}
+      </p>
+      <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-[color:var(--minimal-text-tertiary)]">
+        <span>{compactTicketStatusLabel(ticket.status)}</span>
+        <span
+          className={cx(
+            ticket.slaStatus === 'breached' && 'text-[color:var(--minimal-danger-text)]',
+            ticket.slaStatus === 'at_risk' && 'text-[color:var(--minimal-warning-text)]',
+          )}
+        >
+          {ticket.slaStatusLabel ?? 'SLA indisponível'}
+        </span>
+      </div>
+    </button>
   );
 }
 
@@ -5899,12 +5911,6 @@ function SupportWorkspaceView({
                       <CompactSupportPill tone={toneForPriority(detail.priority)}>
                         {humanizePriority(detail.priority)}
                       </CompactSupportPill>
-                      <CompactSupportPill tone={toneForSeverity(detail.severity)}>
-                        {humanizeSeverity(detail.severity)}
-                      </CompactSupportPill>
-                      <CompactSupportPill>{detail.categoryName ?? 'Indisponível'}</CompactSupportPill>
-                      <CompactSupportPill>{detail.originLabel ?? 'Origem indisponível'}</CompactSupportPill>
-                      <CompactSupportPill>{detail.channelLabel ?? 'Canal indisponível'}</CompactSupportPill>
                     </>
                   }
                   menuAction={
@@ -5922,13 +5928,15 @@ function SupportWorkspaceView({
                 />
               }
               tabs={
-                <div className="support-ticket-workspace-tabs__list" role="tablist" aria-label="Seções da tratativa">
+                <div className="flex flex-wrap items-center gap-x-1 px-3 pt-1 sm:px-5" role="tablist" aria-label="Seções da tratativa">
                   {workspaceTabs.map((tab) => (
                     <button
                       aria-selected={workspaceTab === tab.key}
                       className={cx(
-                        'support-ticket-workspace-tabs__button',
-                        workspaceTab === tab.key && 'support-ticket-workspace-tabs__button--active',
+                        'inline-flex min-h-9 items-center gap-1.5 border-b-2 px-2 text-xs',
+                        workspaceTab === tab.key
+                          ? 'border-[color:var(--minimal-action)] font-medium text-[color:var(--minimal-text)]'
+                          : 'border-transparent text-[color:var(--minimal-text-secondary)]',
                       )}
                       key={tab.key}
                       onClick={() => setWorkspaceTab(tab.key)}
@@ -5936,7 +5944,9 @@ function SupportWorkspaceView({
                       type="button"
                     >
                       <span>{tab.label}</span>
-                      {tab.count !== null ? <small>{tab.count}</small> : null}
+                      {tab.count !== null ? (
+                        <small className="text-[10px] text-[color:var(--minimal-text-tertiary)]">{tab.count}</small>
+                      ) : null}
                     </button>
                   ))}
                 </div>
@@ -6007,58 +6017,86 @@ function SupportWorkspaceView({
     <div
       className={cx(
         variant === 'tickets'
-          ? 'flex h-full min-h-0 flex-col gap-[var(--workspace-panel-gap)] overflow-hidden'
+          ? 'flex h-full min-h-0 flex-col overflow-hidden'
           : 'flex h-full min-h-0 flex-col gap-[var(--workspace-panel-gap)] overflow-hidden',
       )}
     >
       {variant === 'tickets' ? (
-        <section className="support-true-ticket-topbar">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0 space-y-1">
-              <h1 className="support-true-ticket-topbar__title">
-                Tickets e conversas
-              </h1>
-              <p className="support-true-ticket-topbar__description">
-                Tratativa operacional com contexto, histórico e comunicação centralizados.
-              </p>
-            </div>
+        <section className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-4 py-2 sm:px-5">
+          <div className="min-w-0">
+            <h1 className="text-sm font-semibold text-[color:var(--minimal-text)]">
+              Tickets
+            </h1>
+          </div>
 
-            <div className="flex flex-wrap gap-2">
-              <SupportSecondaryActionButton
+            <div className="flex items-center gap-1">
+              <button
+                className="h-8 rounded-md px-2.5 text-xs text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)]"
                 disabled={!ticketDetail}
                 onClick={() => {
                   if (ticketDetail) {
                     window.open(`/portal/tickets/${ticketDetail.id}`, '_blank', 'noopener,noreferrer');
                   }
                 }}
+                type="button"
               >
-                Ver no portal do cliente
-              </SupportSecondaryActionButton>
-              <SupportSecondaryActionButton
+                Ver no portal
+              </button>
+              <button
+                className="h-8 rounded-md px-2.5 text-xs text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)]"
                 disabled={!ticketDetail}
                 onClick={openRelatedSurface}
+                type="button"
               >
                 Mais ações
-              </SupportSecondaryActionButton>
+              </button>
             </div>
-          </div>
         </section>
       ) : null}
 
       {variant === 'queue' ? (
-        <section className="support-true-queue-header">
-          <div className="support-true-queue-header__main">
-            <div className="min-w-0 space-y-1">
-              <h1 className="support-true-queue-header__title">
-                Fila operacional
-              </h1>
-              <p className="support-true-queue-header__description">
-                Triagem diária de suporte B2B. Priorize, atribua e atue nos tickets com foco operacional.
-              </p>
+        <section className="flex shrink-0 items-center justify-between gap-4 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4 sm:px-6">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <h1 className="text-lg font-semibold tracking-[-0.02em]">Fila operacional</h1>
+              <span className="text-xs text-[color:var(--minimal-text-secondary)]">
+                {tickets.length} ticket(s)
+              </span>
             </div>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[color:var(--minimal-text-secondary)]">
+              {queueSummaryItems.slice(0, 4).map((item) => (
+                <span key={`queue-summary:${item.key}`}>
+                  <strong className="font-medium text-[color:var(--minimal-text)]">
+                    {item.value}
+                  </strong>{' '}
+                  {item.label}
+                </span>
+              ))}
+            </div>
+          </div>
 
-            <div className="support-true-queue-header__actions">
-              <SupportPrimaryActionButton
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              aria-label="Recarregar fila"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]"
+              onClick={() => void loadQueue(focusTicketId ?? null)}
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+                viewBox="0 0 24 24"
+              >
+                <path d="M19 8a7 7 0 1 0 1 5M19 4v4h-4" />
+              </svg>
+            </button>
+            <button
+              className="inline-flex min-h-9 items-center justify-center rounded-md border border-[color:var(--minimal-action)] bg-[color:var(--minimal-action)] px-3.5 text-sm font-medium text-[color:var(--minimal-action-ink)] hover:bg-[color:var(--minimal-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] disabled:cursor-not-allowed disabled:opacity-55"
                 disabled={!canOpenIntake}
                 onClick={() => {
                   setBulkSelectedTicketIds([]);
@@ -6072,35 +6110,10 @@ function SupportWorkspaceView({
                     }));
                   }
                 }}
+              type="button"
               >
                 {intakeActionLabel}
-              </SupportPrimaryActionButton>
-              <SupportSecondaryActionButton
-                onClick={() => void loadQueue(focusTicketId ?? null)}
-              >
-                Recarregar
-              </SupportSecondaryActionButton>
-            </div>
-          </div>
-          <div className="support-true-queue-metrics" aria-label="Indicadores da fila">
-            {queueSummaryItems.map((item) => (
-              <article
-                className={cx(
-                  'support-true-queue-metric',
-                  item.tone && `support-true-queue-metric--${item.tone}`,
-                )}
-                key={`queue-metric:${item.key}`}
-              >
-                <span className="support-true-queue-metric__icon">
-                  {queueMetricIcon(item.key as Parameters<typeof queueMetricIcon>[0])}
-                </span>
-                <span className="support-true-queue-metric__content">
-                  <strong>{item.value}</strong>
-                  <span>{item.label}</span>
-                  <small>{item.helper}</small>
-                </span>
-              </article>
-            ))}
+            </button>
           </div>
         </section>
       ) : null}
@@ -6108,17 +6121,21 @@ function SupportWorkspaceView({
       {variant === 'queue' ? (
         <div
           className={cx(
-            'support-true-queue-layout',
-            (selectedQueueContextTicket || isQueueBulkMode) && 'support-true-queue-layout--with-panel',
+            'grid min-h-0 flex-1 overflow-hidden bg-[color:var(--minimal-surface)]',
+            selectedQueueContextTicket || isQueueBulkMode
+              ? 'xl:grid-cols-[minmax(720px,1fr)_320px]'
+              : 'grid-cols-1',
           )}
         >
-          <section className="support-true-queue-surface">
-            <div className="support-true-queue-tabs" role="tablist" aria-label="Recortes da fila">
+          <section className="flex min-h-0 min-w-0 flex-col overflow-hidden border-r border-[color:var(--minimal-border)]">
+            <div className="flex shrink-0 flex-wrap items-center gap-x-1 border-b border-[color:var(--minimal-border)] px-3 pt-2 sm:px-4" role="tablist" aria-label="Recortes da fila">
               <button
                 aria-selected={!queueShortcuts.some((shortcut) => shortcut.active)}
                 className={cx(
-                  'support-true-queue-tab',
-                  !queueShortcuts.some((shortcut) => shortcut.active) && 'support-true-queue-tab--active',
+                  'inline-flex min-h-9 shrink-0 items-center gap-1.5 border-b-2 px-2.5 text-sm transition-colors',
+                  !queueShortcuts.some((shortcut) => shortcut.active)
+                    ? 'border-[color:var(--minimal-action)] font-medium text-[color:var(--minimal-text)]'
+                    : 'border-transparent text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)]',
                 )}
                 onClick={() => setFilters(emptyFilters())}
                 role="tab"
@@ -6130,8 +6147,10 @@ function SupportWorkspaceView({
                 <button
                   aria-selected={shortcut.active}
                   className={cx(
-                    'support-true-queue-tab',
-                    shortcut.active && 'support-true-queue-tab--active',
+                    'inline-flex min-h-9 shrink-0 items-center gap-1.5 border-b-2 px-2.5 text-sm transition-colors disabled:opacity-45',
+                    shortcut.active
+                      ? 'border-[color:var(--minimal-action)] font-medium text-[color:var(--minimal-text)]'
+                      : 'border-transparent text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)]',
                   )}
                   disabled={shortcut.disabled}
                   key={`queue-tab:${shortcut.key}`}
@@ -6145,9 +6164,9 @@ function SupportWorkspaceView({
               ))}
             </div>
 
-            <div className="support-true-queue-toolbar">
+            <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[color:var(--minimal-border)] px-4 py-3">
               <SupportSearchInput
-                className="support-true-queue-search"
+                className="min-w-[240px] max-w-md"
                 icon={<SupportSurfaceIcon className="h-[15px] w-[15px]" kind="search" />}
                 onChange={setTicketInboxSearch}
                 placeholder="Buscar por ID, cliente, assunto ou contato..."
@@ -6155,7 +6174,13 @@ function SupportWorkspaceView({
               />
               <button
                 aria-expanded={showQueueFilters}
-                className="support-true-filter-button"
+                className={cx(
+                  'inline-flex h-10 items-center gap-2 rounded-lg border px-3 text-sm',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]',
+                  showQueueFilters
+                    ? 'border-[color:var(--minimal-action)] bg-[color:var(--minimal-selection)] text-[color:var(--minimal-selection-text)]'
+                    : 'border-[color:var(--minimal-border-strong)] text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)]',
+                )}
                 onClick={() => setShowQueueFilters((current) => !current)}
                 type="button"
               >
@@ -6164,7 +6189,7 @@ function SupportWorkspaceView({
               </button>
               {filters.status !== 'all' ? (
                 <button
-                  className="support-true-filter-chip"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[color:var(--minimal-surface-muted)] px-2.5 text-xs text-[color:var(--minimal-text-secondary)]"
                   onClick={() => setFilters({ ...filters, status: 'all' })}
                   type="button"
                 >
@@ -6174,7 +6199,7 @@ function SupportWorkspaceView({
               ) : null}
               {filters.priority !== 'all' ? (
                 <button
-                  className="support-true-filter-chip"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[color:var(--minimal-surface-muted)] px-2.5 text-xs text-[color:var(--minimal-text-secondary)]"
                   onClick={() => setFilters({ ...filters, priority: 'all' })}
                   type="button"
                 >
@@ -6183,7 +6208,7 @@ function SupportWorkspaceView({
                 </button>
               ) : null}
               <button
-                className="support-true-filter-clear"
+                className="ml-auto text-xs text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)]"
                 onClick={() => {
                   setFilters(emptyFilters());
                   setTicketInboxSearch('');
@@ -6195,9 +6220,9 @@ function SupportWorkspaceView({
             </div>
 
             {showQueueFilters ? (
-              <div className="support-true-queue-filter-grid">
+              <div className="grid shrink-0 gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] px-4 py-3 sm:grid-cols-2 xl:grid-cols-5">
                 <label>
-                  <span>Status</span>
+                  <span className="mb-1 block text-xs text-[color:var(--minimal-text-secondary)]">Status</span>
                   <SelectInput
                     onChange={(event) => setFilters({ ...filters, status: event.target.value as QueueFilters['status'] })}
                     value={filters.status}
@@ -6211,7 +6236,7 @@ function SupportWorkspaceView({
                   </SelectInput>
                 </label>
                 <label>
-                  <span>Prioridade</span>
+                  <span className="mb-1 block text-xs text-[color:var(--minimal-text-secondary)]">Prioridade</span>
                   <SelectInput
                     onChange={(event) => setFilters({ ...filters, priority: event.target.value as QueueFilters['priority'] })}
                     value={filters.priority}
@@ -6225,7 +6250,7 @@ function SupportWorkspaceView({
                   </SelectInput>
                 </label>
                 <label>
-                  <span>Severidade</span>
+                  <span className="mb-1 block text-xs text-[color:var(--minimal-text-secondary)]">Severidade</span>
                   <SelectInput
                     onChange={(event) => setFilters({ ...filters, severity: event.target.value as QueueFilters['severity'] })}
                     value={filters.severity}
@@ -6239,7 +6264,7 @@ function SupportWorkspaceView({
                   </SelectInput>
                 </label>
                 <label>
-                  <span>Responsável</span>
+                  <span className="mb-1 block text-xs text-[color:var(--minimal-text-secondary)]">Responsável</span>
                   <SelectInput
                     onChange={(event) => setFilters({ ...filters, assignedToUserId: event.target.value as QueueFilters['assignedToUserId'] })}
                     value={filters.assignedToUserId}
@@ -6254,7 +6279,7 @@ function SupportWorkspaceView({
                   </SelectInput>
                 </label>
                 <label>
-                  <span>Cliente</span>
+                  <span className="mb-1 block text-xs text-[color:var(--minimal-text-secondary)]">Cliente</span>
                   <SelectInput
                     onChange={(event) => setFilters({ ...filters, tenantId: event.target.value as QueueFilters['tenantId'] })}
                     value={filters.tenantId}
@@ -6271,7 +6296,7 @@ function SupportWorkspaceView({
             ) : null}
 
             {bulkSelectedTicketIds.length > 0 ? (
-              <div className="support-true-queue-bulkbar">
+              <div className="flex shrink-0 items-center justify-between border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-selection)] px-4 py-2 text-xs">
                 <span>{bulkSelectedTicketIds.length} ticket(s) selecionado(s)</span>
                 <button onClick={handleClearQueueBulkSelection} type="button">
                   Limpar seleção
@@ -6279,23 +6304,20 @@ function SupportWorkspaceView({
               </div>
             ) : null}
 
-            <div className="support-true-queue-table" role="table" aria-label="Fila operacional de tickets">
-              <div className="support-true-queue-table__head" role="row">
+            <div className="min-h-0 flex-1 overflow-auto" role="table" aria-label="Fila operacional de tickets">
+              <div className="sticky top-0 z-10 hidden grid-cols-[28px_minmax(220px,1.45fr)_minmax(150px,0.8fr)_minmax(130px,0.65fr)_minmax(150px,0.75fr)_120px] items-center gap-4 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] px-4 py-2 text-xs text-[color:var(--minimal-text-tertiary)] lg:grid" role="row">
                 <button
                   aria-label="Selecionar todos os tickets visíveis para ações em massa"
-                  className="support-true-queue-row__check"
+                  className="inline-flex h-4 w-4 items-center justify-center rounded border border-[color:var(--minimal-border-strong)]"
                   disabled={queueVisibleTickets.length === 0}
                   onClick={handleSelectAllQueueVisibleTickets}
                   type="button"
                 >
                   {bulkSelectedTicketIds.length > 1 ? '✓' : ''}
                 </button>
-                <span>ID / Data</span>
+                <span>Ticket</span>
                 <span>Cliente</span>
-                <span>Assunto / Resumo</span>
-                <span>Política / Status</span>
-                <span>Prioridade</span>
-                <span>Origem / Canal</span>
+                <span>Estado</span>
                 <span>Responsável</span>
                 <span>SLA</span>
               </div>
@@ -6306,7 +6328,7 @@ function SupportWorkspaceView({
                   description="Nenhum ticket apareceu com esse recorte. Ajuste filtros, busca ou recarregue a fila."
                 />
               ) : (
-                <div className="support-true-queue-table__body">
+                <div>
                   {queueVisibleTickets.map((ticket) => (
                     <SupportQueueItem
                       isBulkSelected={bulkSelectedTicketIds.includes(ticket.id)}
@@ -6321,7 +6343,7 @@ function SupportWorkspaceView({
               )}
             </div>
 
-            <footer className="support-true-queue-footer">
+            <footer className="flex shrink-0 items-center justify-between border-t border-[color:var(--minimal-border)] px-4 py-2 text-xs text-[color:var(--minimal-text-secondary)]">
               <span>
                 Mostrando {queueVisibleTickets.length === 0 ? 0 : 1}-{queueVisibleTickets.length} de {tickets.length} tickets
               </span>

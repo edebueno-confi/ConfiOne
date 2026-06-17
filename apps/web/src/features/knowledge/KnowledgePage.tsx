@@ -2256,48 +2256,34 @@ export function KnowledgePage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--color-surface)]">
-      <section className="shrink-0 border-b border-[color:var(--color-border)] bg-white/96 px-6 py-5">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
+      <section className="shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-[2rem] font-semibold tracking-[-0.055em] text-[color:var(--color-ink)]">
-              Governança de conhecimento
+            <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
+              Conhecimento
             </h1>
-            <p className="max-w-3xl text-[0.9rem] leading-6 text-[color:var(--color-muted)]">
-              Cockpit operacional para gestão, manutenção e qualidade dos conteúdos do Help Center.
+            <p className="text-sm text-[color:var(--minimal-text-secondary)]">
+              Artigos, revisão e publicação.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <GhostButton
-              className="min-h-11 gap-2 rounded-[14px] px-4 text-[0.84rem] font-semibold"
-              disabled
-              title="O import legado permanece disponível por script governado, sem fluxo visual nesta tela."
-            >
-              <span aria-hidden="true">⇧</span>
-              Importar legado
-            </GhostButton>
             <AppButton
-              className="min-h-11 gap-2 rounded-[14px] px-5 text-[0.84rem] font-semibold shadow-[0_12px_24px_rgba(47,107,255,0.24)]"
+              className="min-h-9 gap-2 rounded-md px-4 text-sm"
               disabled={!selectedSpace}
               onClick={openCreateArticle}
             >
               <span aria-hidden="true">+</span>
               Novo artigo
             </AppButton>
-            <GhostButton
-              className="h-11 w-11 rounded-full px-0 text-[0.9rem] font-semibold"
-              title="Ações de publicação continuam bloqueadas por gates editoriais do backend."
-            >
-              ?
-            </GhostButton>
           </div>
         </div>
       </section>
 
-      <div className="min-h-0 flex-1 overflow-hidden px-6 py-4">
-        <div className="grid h-full min-h-0 gap-4 xl:grid-cols-[minmax(0,1fr)_292px] 2xl:grid-cols-[minmax(0,1fr)_320px]">
-          <main className="flex min-h-0 flex-col gap-4 overflow-hidden">
-            <section className="grid shrink-0 gap-3 rounded-[18px] border border-[color:var(--color-border)] bg-white/95 px-4 py-3 shadow-[0_18px_48px_rgba(19,33,79,0.06)] md:grid-cols-3 xl:grid-cols-[minmax(0,1fr)_168px_168px_168px] 2xl:grid-cols-[minmax(620px,1fr)_180px_180px_180px]">
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <div className="grid h-full min-h-0 xl:grid-cols-[minmax(0,1fr)_300px]">
+          <main className="flex min-h-0 flex-col overflow-hidden">
+            <section className="grid shrink-0 gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] px-4 py-3 md:grid-cols-3 xl:grid-cols-[minmax(0,1fr)_168px_168px_168px]">
               <div className="md:col-span-3 xl:col-span-1">
                 <Field label="Busca global de conhecimento">
                   <div className="relative">
@@ -2305,7 +2291,7 @@ export function KnowledgePage() {
                       ⌕
                     </span>
                     <TextInput
-                      className="h-10 w-full rounded-[14px] border-[rgba(47,107,255,0.22)] bg-[rgba(234,242,255,0.5)] pl-10 pr-4 text-[0.88rem] shadow-[0_0_0_1px_rgba(47,107,255,0.04)]"
+                      className="h-10 w-full rounded-md border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] pl-10 pr-4 text-sm"
                       onChange={(event) => setSearchQuery(event.target.value)}
                       placeholder="Buscar por artigo, dúvida, processo, categoria ou palavra-chave..."
                       value={searchQuery}
@@ -2361,7 +2347,7 @@ export function KnowledgePage() {
               </Field>
             </section>
 
-            <section className="grid shrink-0 gap-3 lg:grid-cols-2 2xl:grid-cols-4">
+            <section className="hidden">
               <article className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-5 py-3.5 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -2464,7 +2450,7 @@ export function KnowledgePage() {
               </article>
             </section>
 
-            <section className="min-h-0 flex-1 overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/97 shadow-[0_18px_48px_rgba(19,33,79,0.07)]">
+            <section className="min-h-0 flex-1 overflow-hidden bg-[color:var(--minimal-surface)]">
               <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-4 py-3">
                 <div>
                   <h2 className="text-[1.05rem] font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
@@ -2529,22 +2515,22 @@ export function KnowledgePage() {
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col">
                   <div className="min-h-0 flex-1 overflow-auto">
-                    <table className="min-w-[760px] w-full border-separate border-spacing-0">
+                    <table className="w-full table-fixed border-separate border-spacing-0">
                       <colgroup>
-                        <col className="w-[38%]" />
-                        <col className="w-[19%]" />
-                        <col className="w-[19%]" />
-                        <col className="w-[12%]" />
-                        <col className="w-[8%]" />
-                        <col className="w-[4%]" />
+                        <col />
+                        <col className="hidden w-[19%] md:table-column" />
+                        <col className="hidden w-[19%] lg:table-column" />
+                        <col className="hidden w-[12%] xl:table-column" />
+                        <col className="hidden w-[8%] xl:table-column" />
+                        <col className="w-[76px]" />
                       </colgroup>
                       <thead className="sticky top-0 z-10 bg-[color:var(--color-surface)]">
                         <tr className="text-left text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
                           <th className="border-b border-[color:var(--color-border)] px-4 py-2.5">Título</th>
-                          <th className="border-b border-[color:var(--color-border)] px-3 py-2.5">Categoria</th>
-                          <th className="border-b border-[color:var(--color-border)] px-3 py-2.5">Status de governança</th>
-                          <th className="border-b border-[color:var(--color-border)] px-3 py-2.5">Visibilidade</th>
-                          <th className="border-b border-[color:var(--color-border)] px-3 py-2.5">Consumo</th>
+                          <th className="hidden border-b border-[color:var(--color-border)] px-3 py-2.5 md:table-cell">Categoria</th>
+                          <th className="hidden border-b border-[color:var(--color-border)] px-3 py-2.5 lg:table-cell">Status de governança</th>
+                          <th className="hidden border-b border-[color:var(--color-border)] px-3 py-2.5 xl:table-cell">Visibilidade</th>
+                          <th className="hidden border-b border-[color:var(--color-border)] px-3 py-2.5 xl:table-cell">Consumo</th>
                           <th className="border-b border-[color:var(--color-border)] px-4 py-2.5 text-right">Ação</th>
                         </tr>
                       </thead>
@@ -2574,6 +2560,9 @@ export function KnowledgePage() {
                                     <p className="mt-0.5 line-clamp-1 text-[0.72rem] leading-4 text-[color:var(--color-muted)]">
                                       {article.summary?.trim() || 'Resumo indisponível'}
                                     </p>
+                                    <p className="mt-1 truncate text-[0.68rem] text-[color:var(--minimal-text-tertiary)] md:hidden">
+                                      {compactStatusBadgeLabel(article.status)} · {shortVisibilityLabel(article.visibility)}
+                                    </p>
                                     {duplicateCount > 1 ? (
                                       <p className="mt-0.5 text-[0.68rem] font-medium text-[color:var(--color-warning-ink)]">
                                         Possível duplicidade
@@ -2582,7 +2571,7 @@ export function KnowledgePage() {
                                   </div>
                                 </div>
                               </td>
-                              <td className="border-b border-[color:var(--color-border)] px-3 py-2.5 align-top">
+                              <td className="hidden border-b border-[color:var(--color-border)] px-3 py-2.5 align-top md:table-cell">
                                 <span
                                   className={cx(
                                     'inline-flex max-w-[190px] items-center rounded-[9px] border px-2.5 py-0.5 text-[0.7rem] font-semibold',
@@ -2594,7 +2583,7 @@ export function KnowledgePage() {
                                   </span>
                                 </span>
                               </td>
-                              <td className="border-b border-[color:var(--color-border)] px-3 py-2.5 align-top">
+                              <td className="hidden border-b border-[color:var(--color-border)] px-3 py-2.5 align-top lg:table-cell">
                                 <div className="space-y-0.5">
                                   <span
                                     className={cx(
@@ -2615,19 +2604,19 @@ export function KnowledgePage() {
                                   )}
                                 </div>
                               </td>
-                              <td className="border-b border-[color:var(--color-border)] px-3 py-2.5 align-top">
+                              <td className="hidden border-b border-[color:var(--color-border)] px-3 py-2.5 align-top xl:table-cell">
                                 <StatusPill tone={toneForVisibility(article.visibility)}>
                                   {shortVisibilityLabel(article.visibility)}
                                 </StatusPill>
                               </td>
-                              <td className="border-b border-[color:var(--color-border)] px-3 py-2.5 align-top">
+                              <td className="hidden border-b border-[color:var(--color-border)] px-3 py-2.5 align-top xl:table-cell">
                                 <span className="text-[0.72rem] text-[color:var(--color-muted)]">
                                   Sem métrica
                                 </span>
                               </td>
                               <td className="border-b border-[color:var(--color-border)] px-4 py-2.5 text-right align-top">
                                 <GhostButton
-                                  className="h-8 rounded-[12px] px-3 text-[0.76rem] font-semibold"
+                                  className="h-8 rounded-md px-2.5 text-xs font-medium"
                                   disabled={articleActionSubmitting}
                                   onClick={() => void openArticleEditorFromCockpit(article.id)}
                                 >
@@ -2672,8 +2661,8 @@ export function KnowledgePage() {
             </section>
           </main>
 
-          <aside className="flex min-h-0 flex-col gap-4 overflow-y-auto overflow-x-hidden pr-1">
-            <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-4 py-4 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+          <aside className="hidden min-h-0 flex-col overflow-y-auto overflow-x-hidden border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] xl:flex">
+            <section className="border-b border-[color:var(--minimal-border)] px-4 py-4">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-[0.9rem] font-semibold text-[color:var(--color-ink)]">
                   Categorias
@@ -2690,10 +2679,10 @@ export function KnowledgePage() {
                 {(showAllCategories ? sortedCategories : categoryRailItems).map((category, index) => (
                   <button
                     className={cx(
-                      'flex w-full items-center justify-between gap-3 rounded-[12px] px-2.5 py-2 text-left transition',
+                      'flex w-full items-center justify-between gap-3 rounded-md px-2.5 py-2 text-left transition',
                       selectedCategoryId === category.id
-                        ? 'bg-[rgba(47,107,255,0.1)] text-[color:var(--color-brand-blue)]'
-                        : 'hover:bg-[color:var(--color-surface)]',
+                        ? 'bg-[color:var(--minimal-selection)] text-[color:var(--minimal-text)]'
+                        : 'hover:bg-[color:var(--minimal-surface-muted)]',
                     )}
                     key={category.id}
                     onClick={() => setSelectedCategoryId(category.id)}
@@ -2721,7 +2710,7 @@ export function KnowledgePage() {
               </GhostButton>
             </section>
 
-            <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-4 py-4 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+            <section className="hidden">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-[0.9rem] font-semibold text-[color:var(--color-ink)]">
                   Conteúdos com maior consumo
@@ -2737,7 +2726,7 @@ export function KnowledgePage() {
               </div>
             </section>
 
-            <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-4 py-4 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+            <section className="hidden">
               <h2 className="text-[0.9rem] font-semibold text-[color:var(--color-ink)]">
                 Resumo operacional
               </h2>
@@ -2761,7 +2750,7 @@ export function KnowledgePage() {
               </div>
             </section>
 
-            <section className="min-h-0 flex-1 overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-4 py-4 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+            <section className="min-h-0 flex-1 overflow-hidden px-4 py-4">
               <h2 className="text-[0.9rem] font-semibold text-[color:var(--color-ink)]">
                 Alertas editoriais
               </h2>

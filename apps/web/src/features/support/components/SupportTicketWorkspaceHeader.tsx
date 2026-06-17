@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { SupportTicketHeader } from './SupportWorkspacePrimitives';
 
 export function SupportTicketWorkspaceHeader({
   ticketCode,
@@ -17,27 +16,24 @@ export function SupportTicketWorkspaceHeader({
   assignedLabel: string;
 }) {
   return (
-    <SupportTicketHeader
-      badgeRow={<div className="support-true-ticket-header__badges">{badges}</div>}
-      topRow={
-        <div className="support-true-ticket-header__top">
-          <div className="support-true-ticket-header__identity">
-            <span>{ticketCode}</span>
-            <h3>{title}</h3>
-          </div>
-          <div className="support-true-ticket-header__meta" aria-label="Resumo do ticket">
-            <span>
-              <small>Solicitante</small>
-              <strong>{requesterLabel}</strong>
+    <header className="shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-4 py-3 sm:px-5">
+      <div className="flex min-w-0 items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="text-xs font-medium text-[color:var(--minimal-text-tertiary)]">
+              {ticketCode}
             </span>
-            <span>
-              <small>Responsável</small>
-              <strong>{assignedLabel}</strong>
-            </span>
+            <div className="flex flex-wrap items-center gap-1.5">{badges}</div>
           </div>
-          {menuAction}
+          <h2 className="mt-1 truncate text-base font-semibold text-[color:var(--minimal-text)] sm:text-lg">
+            {title}
+          </h2>
+          <p className="mt-1 truncate text-xs text-[color:var(--minimal-text-secondary)]">
+            {requesterLabel} · Responsável: {assignedLabel}
+          </p>
         </div>
-      }
-    />
+        {menuAction}
+      </div>
+    </header>
   );
 }

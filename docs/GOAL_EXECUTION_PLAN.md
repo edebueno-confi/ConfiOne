@@ -9,6 +9,7 @@ Este documento não é um novo roadmap. Ele referencia os documentos canônicos 
 Use como fonte prioritária:
 
 - `docs/PROJECT_STATE.md`: estado real atual.
+- `docs/reports/FINAL_RECOVERY_HANDOFF_AND_NEXT_STEPS_2026-06-09.md`: handoff final da retomada, proximos passos e dados locais de QA.
 - `docs/reports/PROJECT_TAKEOVER_CHECKPOINT_2026-06-09.md`: checkpoint de recuperacao e posse tecnica atual.
 - `docs/superpowers/plans/2026-06-09-project-stabilization-and-resumption.md`: sequencia executavel antes de nova feature.
 - `docs/README.md`: navegação documental e regra de leitura.
@@ -224,6 +225,15 @@ Ao finalizar qualquer lote, reporte:
 - recomendação de próximo passo;
 - `git status --short`;
 - se houve commit ou não.
+
+## Execução concluída: Redesign Minimalista Operacional
+
+- fechamento: `2026-06-10`
+- objetivo: reset visual total das superfícies internas prioritárias, preservando contratos e autorização.
+- resultado: concluído.
+- evidência: `docs/reports/MINIMAL_OPERATIONAL_REDESIGN_VALIDATION_2026-06-09.md`.
+- validações: 17 testes, contracts typecheck, web typecheck, build e QA Browser.
+- operações não realizadas: banco, deploy, push e commit.
 
 ## Quando usar `/goal`
 

@@ -453,7 +453,7 @@ export function SupportWorkspaceGrid({
   return (
     <div
       className={cx(
-        'support-workspace-grid',
+        'support-workspace-grid minimal-ticket-workspace-grid',
         collapseRightRail
           ? 'support-workspace-grid--collapsed'
           : rightPaneWidth === 'drawer-wide'

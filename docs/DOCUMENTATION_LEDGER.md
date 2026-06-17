@@ -18,6 +18,68 @@ Cada registro deve informar:
 
 ## Registros
 
+### Product Docs Governed Reader Polish
+- data: `2026-06-17`
+- branch: `codex/mvp-operational-completion-goal`
+- resumo funcional: recuperado `/admin/product-docs` no ambiente local e polido o leitor governado de documentos internos. A causa raiz da tela vazia era a ausencia de registros em `internal_documents` e `internal_document_versions` apos reset local. O lote adicionou sync local seguro, abriu automaticamente o primeiro documento autorizado, consolidou layout em tres zonas e adicionou indice interno derivado do markdown sanitizado.
+- documentos:
+  - `docs/reports/PRODUCT_DOCS_GOVERNED_READER_POLISH_2026-06-17.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/README.md`
+  - `docs/PRODUCT_DOCS_INTERNAL_READER_V1.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/superpowers/plans/2026-06-17-product-docs-governed-reader-polish.md`
+- contratos consumidos:
+  - `vw_internal_documents_catalog`
+  - `vw_internal_document_detail`
+- telas afetadas:
+  - `/admin/product-docs`
+- boundaries:
+  - sem migration;
+  - sem tabela nova;
+  - sem view ou RPC nova;
+  - sem leitura arbitraria de arquivos pelo frontend;
+  - sem service role no browser;
+  - sem deploy remoto.
+- validacoes:
+  - `node --test tests/scripts/internal-docs-local-sync.test.mjs tests/scripts/product-docs-ui-contract.test.mjs`;
+  - `npm run documentation:validate:internal-docs`;
+  - `npm run documentation:sync:internal-docs:local`;
+  - `npm run contracts:typecheck`;
+  - `npm run web:typecheck`;
+  - `node --test tests/scripts/*.test.mjs`;
+  - `npm run web:build`;
+  - QA browser autenticado local.
+- riscos restantes:
+  - permissao granular dedicada para `product-docs` segue futura;
+  - alertas de validacao documental ainda exigem revisao editorial propria;
+  - script local depende do Supabase local estar iniciado.
+- impacto para FAQ futura:
+  - permite explicar que Documentos do Produto e uma biblioteca interna governada por whitelist, sync e markdown sanitizado, nao um explorador de arquivos do repositorio.
+
+### Final Recovery Handoff and Next Steps
+- data: `2026-06-09`
+- branch: `codex/mvp-operational-completion-goal`
+- resumo funcional: consolidado o fechamento da retomada pos-formatacao, com estado local/remoto, entregas, validacoes, rotas, usuarios locais de referencia, proximos passos e condicoes de parada.
+- documentos:
+  - `docs/reports/FINAL_RECOVERY_HANDOFF_AND_NEXT_STEPS_2026-06-09.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+  - `docs/README.md`
+  - `docs/ROADMAP_BUILDOUT_V3.md`
+  - `docs/GOAL_EXECUTION_PLAN.md`
+- telas afetadas:
+  - nenhuma tela nova neste lote documental.
+- validacoes:
+  - revisao de estado Git;
+  - leitura dos relatorios de retomada, baseline, hardening e CS;
+  - reconciliacao do roadmap corrente com a entrega ja concluida.
+- riscos restantes:
+  - piloto staging/producao ainda depende de autorizacao explicita;
+  - health, tarefas e comandos de CS continuam bloqueados ate contratos backend.
+- impacto para FAQ futura:
+  - define o estado oficial de handoff e evita leitura do roadmap antigo como fila linear de tarefas.
+
 ### CS Portfolio Read-only UI
 - data: `2026-06-09`
 - branch: `codex/mvp-operational-completion-goal`
@@ -6092,3 +6154,34 @@ Cada registro deve informar:
 - riscos restantes:
   - QA browser autenticado depende de runtime local estável após reidratar fixture
   - warning `DEP0190` permanece no script legado de suporte
+
+### Redesign Minimalista Operacional
+- fechamento: `2026-06-10`
+- especificação:
+  - `docs/superpowers/specs/2026-06-09-minimal-operational-redesign-design.md`
+- plano:
+  - `docs/superpowers/plans/2026-06-09-minimal-operational-redesign.md`
+- relatório:
+  - `docs/reports/MINIMAL_OPERATIONAL_REDESIGN_VALIDATION_2026-06-09.md`
+- escopo:
+  - Login, acesso negado, shell, CS Portfolio, Support Queue, Ticket Workspace, Tenants, Access, System, Knowledge e editor.
+- componentes consolidados:
+  - `apps/web/src/components/ui.tsx`
+  - `apps/web/src/components/states.tsx`
+  - `apps/web/src/components/minimal-ui.tsx`
+  - `apps/web/src/components/minimal-states.tsx`
+  - `apps/web/src/features/navigation/MinimalAppShell.tsx`
+  - `apps/web/src/features/navigation/minimal-navigation.ts`
+- código morto removido:
+  - `AdminSidebar.tsx`
+  - `AdminTopbar.tsx`
+  - `UnifiedEnvironmentNavigation.tsx`
+- validações:
+  - 17 testes Node;
+  - contracts typecheck;
+  - web typecheck;
+  - web build;
+  - QA Browser desktop e mobile;
+  - `git diff --check` sem erro de whitespace.
+- boundaries:
+  - sem banco, migration, RPC, RLS, deploy, push ou commit.

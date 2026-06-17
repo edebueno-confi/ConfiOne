@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { cx } from '../../../components/ui';
 import { SupportActionDrawer, SupportContextRailSlot } from './SupportWorkspacePrimitives';
 
 export function SupportTicketContextRail({
@@ -19,7 +20,13 @@ export function SupportTicketContextRail({
   defaultRail: ReactNode;
 }) {
   return (
-    <SupportContextRailSlot className="h-full">
+    <SupportContextRailSlot
+      className={cx(
+        title && panel
+          ? 'fixed inset-x-0 bottom-0 top-24 z-40 flex bg-[color:var(--minimal-surface)] xl:static xl:h-full'
+          : 'hidden h-full xl:flex',
+      )}
+    >
       {panel && title ? (
         <SupportActionDrawer
           className="h-full"

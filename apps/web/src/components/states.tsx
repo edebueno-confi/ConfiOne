@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import mascotUrl from '../../assets/brand/genius-mascot.svg';
 
 interface StateFrameProps {
   title: string;
@@ -19,7 +18,7 @@ function toneClasses(tone: StateFrameProps['tone']) {
     return 'border-[color:var(--color-success-border)] bg-[color:var(--color-success-surface)]';
   }
 
-  return 'border-[color:var(--color-border)] bg-white/88';
+  return 'border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)]';
 }
 
 export function StateFrame({
@@ -32,21 +31,12 @@ export function StateFrame({
 }: StateFrameProps) {
   return (
     <section
-      className={`relative overflow-hidden rounded-[28px] border p-6 shadow-[var(--shadow-panel)] backdrop-blur sm:p-8 ${toneClasses(
+      className={`w-full border p-6 sm:p-7 ${toneClasses(
         tone,
       )}`}
+      role={tone === 'critical' ? 'alert' : 'status'}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(48,127,226,0.16),transparent_45%),radial-gradient(circle_at_bottom_left,rgba(225,0,152,0.12),transparent_40%)]" />
-      <div
-        className={`relative grid gap-5 ${compact ? 'md:grid-cols-[80px_minmax(0,1fr)]' : 'md:grid-cols-[116px_minmax(0,1fr)]'}`}
-      >
-        <div className="flex items-start justify-center rounded-[24px] bg-[linear-gradient(180deg,rgba(20,31,71,0.96),rgba(48,127,226,0.92))] p-3 shadow-[0_16px_40px_rgba(20,31,71,0.18)]">
-          <img
-            alt="Mascote Genius"
-            className={`${compact ? 'w-14' : 'w-20'} h-auto`}
-            src={mascotUrl}
-          />
-        </div>
+      <div className={compact ? 'max-w-xl' : 'max-w-2xl'}>
         <div className="space-y-4">
           {eyebrow ? (
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-[color:var(--color-muted)]">
@@ -54,14 +44,14 @@ export function StateFrame({
             </p>
           ) : null}
           <div className="space-y-2">
-            <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+            <h2 className="text-xl font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
               {title}
             </h2>
-            <p className="max-w-2xl text-sm leading-6 text-[color:var(--color-muted)]">
+            <p className="max-w-2xl text-sm leading-6 text-[color:var(--minimal-text-secondary)]">
               {description}
             </p>
           </div>
-          {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
+          {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
         </div>
       </div>
     </section>

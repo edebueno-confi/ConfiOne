@@ -85,6 +85,31 @@
   --support-gap-section: 0.75rem;
   --shadow-panel: 0 18px 44px rgba(22, 36, 67, 0.08);
   --shadow-support-panel: 0 8px 18px rgba(22, 36, 67, 0.06);
+  --minimal-canvas: oklch(0.975 0.006 255);
+  --minimal-surface: oklch(0.995 0.003 255);
+  --minimal-sidebar: oklch(0.985 0.005 255);
+  --minimal-surface-muted: oklch(0.96 0.007 255);
+  --minimal-text: oklch(0.28 0.035 255);
+  --minimal-text-secondary: oklch(0.49 0.022 255);
+  --minimal-text-tertiary: oklch(0.64 0.018 255);
+  --minimal-border: oklch(0.89 0.012 255);
+  --minimal-border-strong: oklch(0.82 0.018 255);
+  --minimal-border-hover: oklch(0.68 0.04 255);
+  --minimal-action: oklch(0.55 0.2 258);
+  --minimal-action-hover: oklch(0.49 0.19 258);
+  --minimal-action-ink: oklch(0.99 0.004 255);
+  --minimal-selection: oklch(0.93 0.035 258);
+  --minimal-selection-text: oklch(0.42 0.15 258);
+  --minimal-focus: oklch(0.72 0.12 258 / 0.42);
+  --minimal-overlay: oklch(0.18 0.025 255 / 0.34);
+  --minimal-danger-surface: oklch(0.96 0.025 25);
+  --minimal-danger-border: oklch(0.84 0.07 25);
+  --minimal-danger-text: oklch(0.45 0.16 25);
+  --minimal-warning-surface: oklch(0.96 0.035 82);
+  --minimal-warning-border: oklch(0.85 0.08 82);
+  --minimal-warning-text: oklch(0.44 0.1 70);
+  --minimal-shadow: 0 10px 28px rgba(23, 37, 61, 0.06);
+  --minimal-drawer-shadow: 16px 0 40px rgba(23, 37, 61, 0.12);
   background-color: var(--color-app-bg);
 }
 
@@ -3254,6 +3279,21 @@
 
   .support-workspace-grid--collapsed {
     grid-template-columns: var(--support-workspace-queue-width) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1279px) {
+  [data-ticket-context-rail].fixed {
+    width: auto;
+    height: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .minimal-access-table col:nth-child(n + 3),
+  .minimal-access-table th:nth-child(n + 3),
+  .minimal-access-table td:nth-child(n + 3) {
+    display: none;
   }
 }
 

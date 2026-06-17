@@ -8,7 +8,10 @@ import type {
   InternalDocumentStatus,
   InternalDocumentValidationStatus,
 } from '../../contracts/admin-contracts';
-import { ProductDocMarkdownPreview } from './ProductDocMarkdownPreview';
+import {
+  ProductDocMarkdownPreview,
+  getProductDocOutline,
+} from './ProductDocMarkdownPreview';
 
 function statusTone(status: InternalDocumentStatus) {
   if (status === 'published') {
@@ -129,6 +132,8 @@ export function ProductDocReaderPanel({
   const sourcePath = document.source_path;
   const sourceLabel = basename(sourcePath);
   const validationWarningsCount = getValidationWarnings(document);
+  const outline = getProductDocOutline(document.body_md_sanitized);
+  const headingIds = new Map(outline.map((item) => [item.lineIndex, item.id]));
 
   return (
     <article
@@ -188,9 +193,9 @@ export function ProductDocReaderPanel({
           </div>
           <div className="min-w-0 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
             <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-              Fonte
+              Markdown sanitizado
             </dt>
-            <dd className="mt-1 font-medium text-[color:var(--color-ink)]">Contrato backend</dd>
+            <dd className="mt-1 font-medium text-[color:var(--color-ink)]">Versão oficial</dd>
           </div>
           <div className="min-w-0 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
             <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
@@ -204,9 +209,8 @@ export function ProductDocReaderPanel({
 
         <div className="mt-4 space-y-3">
           <InlineNotice>
-            Leitura interna controlada por contrato real. O frontend apenas renderiza o
-            markdown sanitizado retornado pelo backend e não lê arquivos arbitrários do
-            repositório.
+            Leitura interna controlada pela fonte governada. A tela renderiza apenas o
+            markdown sanitizado autorizado e não lê arquivos arbitrários do repositório.
           </InlineNotice>
           {document.sensitivity === 'restricted' ? (
             <InlineNotice tone="warning">
@@ -240,8 +244,36 @@ export function ProductDocReaderPanel({
         ) : null}
       </header>
 
-      <div className="mt-6">
-        <ProductDocMarkdownPreview source={document.body_md_sanitized} />
+      {outline.length > 1 ? (
+        <nav
+          aria-label="Seções deste documento"
+          className="mt-5 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3"
+        >
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+            Neste documento
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {outline.slice(0, 8).map((item) => (
+              <a
+                className={cx(
+                  'rounded-full border border-[color:var(--color-border)] bg-white px-3 py-1 text-xs font-semibold text-[color:var(--color-ink)] transition hover:border-[rgba(48,127,226,0.35)] hover:text-[color:var(--color-brand-blue)]',
+                  item.level === 3 && 'text-[color:var(--color-muted)]',
+                )}
+                href={`#${item.id}`}
+                key={item.id}
+              >
+                {item.title}
+              </a>
+            ))}
+          </div>
+        </nav>
+      ) : null}
+
+      <div className="mt-6 max-w-[78ch] scroll-smooth">
+        <ProductDocMarkdownPreview
+          headingIds={headingIds}
+          source={document.body_md_sanitized}
+        />
       </div>
     </article>
   );

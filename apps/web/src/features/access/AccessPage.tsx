@@ -692,34 +692,34 @@ export function AccessPage() {
 
   return (
     <>
-    <div className="space-y-3 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
-      <header className="rounded-[22px] border border-[color:var(--color-border)] bg-white/96 px-5 py-3.5 shadow-[0_18px_40px_rgba(16,30,74,0.08)]">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
+      <header className="shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-[1.76rem] font-semibold tracking-[-0.055em] text-[color:var(--color-ink)]">
+            <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
               Acessos
             </h1>
-            <p className="text-[0.84rem] leading-5 text-[color:var(--color-muted)]">
+            <p className="text-sm text-[color:var(--minimal-text-secondary)]">
               Gerencie usuários, papéis, permissões e convites da plataforma.
             </p>
           </div>
 
-          <AppButton className="min-h-10 gap-2 rounded-full px-5 text-[13px]" onClick={() => setActiveDrawer('invite')}>
+          <AppButton className="min-h-9 gap-2 rounded-md px-4 text-sm" onClick={() => setActiveDrawer('invite')}>
             + Convidar usuário
           </AppButton>
         </div>
       </header>
 
-      <div className="shrink-0 border-b border-[color:var(--color-border)]">
-        <div className="flex flex-wrap gap-5 px-1">
+      <div className="shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)]">
+        <div className="flex flex-wrap gap-1 px-5 pt-1">
           {TABS.map((tab) => (
             <button
               key={tab.key}
               className={cx(
-                'border-b-2 px-1 pb-2.5 text-[0.92rem] font-semibold transition',
+                'min-h-9 border-b-2 px-2 text-sm transition',
                 activeTab === tab.key
-                  ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
-                  : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
+                  ? 'border-[color:var(--minimal-action)] font-medium text-[color:var(--minimal-text)]'
+                  : 'border-transparent text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)]',
               )}
               onClick={() => {
                 setActiveTab(tab.key);
@@ -732,8 +732,8 @@ export function AccessPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[248px_minmax(0,1fr)_388px] xl:overflow-hidden 2xl:grid-cols-[256px_minmax(0,1fr)_396px]">
-        <section className="rounded-[20px] border border-[color:var(--color-border)] bg-white/96 p-3.5 shadow-[0_16px_34px_rgba(16,30,74,0.08)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+      <div className="grid min-h-0 flex-1 overflow-hidden xl:grid-cols-[220px_minmax(0,1fr)_360px]">
+        <section className="hidden border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] p-3 xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
           <div className="space-y-3">
             <div className="space-y-1">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
@@ -819,10 +819,10 @@ export function AccessPage() {
           </div>
         </section>
 
-        <section className="min-w-0 rounded-[22px] border border-[color:var(--color-border)] bg-white/96 shadow-[0_16px_34px_rgba(16,30,74,0.08)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+        <section className="min-w-0 bg-[color:var(--minimal-surface)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
           <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-5 py-4">
             <div>
-              <h2 className="text-[1.65rem] font-semibold tracking-[-0.045em] text-[color:var(--color-ink)]">
+              <h2 className="text-base font-semibold text-[color:var(--minimal-text)]">
                 {activeTab === 'users'
                   ? `Usuários (${filteredMemberships.length})`
                   : activeTab === 'roles'
@@ -865,7 +865,7 @@ export function AccessPage() {
           ) : (
             <>
               <div className="overflow-hidden xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
-                <table className="min-w-full table-fixed border-collapse text-left">
+                <table className="minimal-access-table w-full table-fixed border-collapse text-left">
                   {activeTab === 'users' ? (
                     <colgroup>
                       <col className="w-[32%]" />
@@ -1140,7 +1140,7 @@ export function AccessPage() {
           )}
         </section>
 
-        <aside className="rounded-[22px] border border-[color:var(--color-border)] bg-white/96 p-4 shadow-[0_16px_34px_rgba(16,30,74,0.08)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+        <aside className="hidden border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] p-4 xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
           {activeTab === 'roles' ? (
             <div className="space-y-4 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
@@ -1153,10 +1153,7 @@ export function AccessPage() {
                 />
               ) : (
                 <div className="space-y-4">
-                  <div className="flex flex-col items-center gap-3 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-5 text-center">
-                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--color-brand-blue),var(--color-brand-navy))] text-2xl font-semibold text-white">
-                      {selectedRoleSummary.label.slice(0, 1)}
-                    </div>
+                  <div className="border-b border-[color:var(--minimal-border)] pb-4">
                     <div className="space-y-1">
                       <h2 className="text-2xl font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
                         {selectedRoleSummary.label}

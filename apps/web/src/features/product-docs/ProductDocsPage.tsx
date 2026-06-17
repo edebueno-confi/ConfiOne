@@ -118,34 +118,112 @@ function CategoryCount({
   );
 }
 
-function ReadingTrackCard({
-  documents,
+function validationTone(status: AdminInternalDocumentCatalogRow['current_validation_status']) {
+  if (status === 'valid') {
+    return 'positive' as const;
+  }
+
+  if (status === 'warning') {
+    return 'accent' as const;
+  }
+
+  return 'warning' as const;
+}
+
+function ProductDocsGovernanceRail({
+  catalog,
   onOpenDocument,
-  track,
+  readingTracks,
+  selectedDocument,
 }: {
-  documents: AdminInternalDocumentCatalogRow[];
+  catalog: AdminInternalDocumentCatalogRow[];
   onOpenDocument: (documentSlug: string) => void;
-  track: ProductDocsReadingTrack;
+  readingTracks: Array<ProductDocsReadingTrack & { documents: AdminInternalDocumentCatalogRow[] }>;
+  selectedDocument: AdminInternalDocumentCatalogRow | null;
 }) {
+  const validCount = catalog.filter((document) => document.current_validation_status === 'valid').length;
+  const warningCount = catalog.filter((document) => document.current_validation_status === 'warning').length;
+  const restrictedCount = catalog.filter((document) => document.sensitivity === 'restricted').length;
+
   return (
-    <article className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
-      <h3 className="text-sm font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
-        {track.title}
-      </h3>
-      <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">{track.summary}</p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {documents.map((document) => (
-          <button
-            className="rounded-full border border-[rgba(48,127,226,0.22)] bg-[rgba(48,127,226,0.08)] px-3 py-1 text-xs font-semibold text-[color:var(--color-brand-blue)] transition hover:bg-[rgba(48,127,226,0.14)]"
-            key={`${track.title}:${document.slug}`}
-            onClick={() => onOpenDocument(document.slug)}
-            type="button"
-          >
-            {document.title}
-          </button>
-        ))}
-      </div>
-    </article>
+    <aside className="min-w-0 space-y-3 xl:min-h-0 xl:overflow-y-auto">
+      <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+          Fonte governada
+        </p>
+        <h2 className="mt-2 text-base font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+          Documentos sincronizados
+        </h2>
+        <dl className="mt-4 grid gap-2 text-sm">
+          <div className="flex items-center justify-between gap-3">
+            <dt className="text-[color:var(--color-muted)]">Catálogo</dt>
+            <dd className="font-semibold text-[color:var(--color-ink)]">{catalog.length}</dd>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <dt className="text-[color:var(--color-muted)]">Sanitização ok</dt>
+            <dd className="font-semibold text-[color:var(--color-ink)]">{validCount}</dd>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <dt className="text-[color:var(--color-muted)]">Com alerta</dt>
+            <dd className="font-semibold text-[color:var(--color-ink)]">{warningCount}</dd>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <dt className="text-[color:var(--color-muted)]">Restritos</dt>
+            <dd className="font-semibold text-[color:var(--color-ink)]">{restrictedCount}</dd>
+          </div>
+        </dl>
+      </section>
+
+      {selectedDocument ? (
+        <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+            Documento aberto
+          </p>
+          <h2 className="mt-2 text-base font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+            {selectedDocument.title}
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
+            {selectedDocument.description ?? 'Documento oficial controlado.'}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <StatusPill tone={validationTone(selectedDocument.current_validation_status)}>
+              {selectedDocument.current_validation_status === 'valid'
+                ? 'Sanitização ok'
+                : selectedDocument.current_validation_status === 'warning'
+                  ? 'Com alerta'
+                  : 'Bloqueado'}
+            </StatusPill>
+            <StatusPill>{formatSensitivityLabel(selectedDocument.sensitivity)}</StatusPill>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+          Trilhas sugeridas
+        </p>
+        <div className="mt-3 space-y-3">
+          {readingTracks.map((track) => (
+            <div className="border-t border-[color:var(--color-border)] pt-3 first:border-t-0 first:pt-0" key={track.title}>
+              <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">{track.title}</h3>
+              <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">{track.summary}</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {track.documents.slice(0, 3).map((document) => (
+                  <button
+                    className="rounded-full border border-[color:var(--color-border)] px-2 py-1 text-[0.68rem] font-semibold text-[color:var(--color-ink)] transition hover:border-[rgba(48,127,226,0.35)] hover:text-[color:var(--color-brand-blue)]"
+                    key={`${track.title}:${document.slug}`}
+                    onClick={() => onOpenDocument(document.slug)}
+                    type="button"
+                  >
+                    {document.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </aside>
   );
 }
 
@@ -227,7 +305,7 @@ export function ProductDocsPage() {
     [catalog, normalizedQuery],
   );
 
-  const selectedSlug = requestedSlug ?? filteredDocs[0]?.slug ?? null;
+  const selectedSlug = requestedSlug ?? catalog[0]?.slug ?? null;
   const selectedCatalogItem = selectedSlug ? catalogBySlug.get(selectedSlug) ?? null : null;
 
   useEffect(() => {
@@ -235,12 +313,12 @@ export function ProductDocsPage() {
       return;
     }
 
-    if (!requestedSlug && filteredDocs.length > 0) {
+    if (!requestedSlug && catalog.length > 0) {
       setDetailMessage('');
       setDetailPhase('idle');
       setSelectedDetail(null);
     }
-  }, [filteredDocs.length, phase, requestedSlug]);
+  }, [catalog.length, phase, requestedSlug]);
 
   useEffect(() => {
     if (phase !== 'ready' || !selectedSlug) {
@@ -388,13 +466,13 @@ export function ProductDocsPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <StatusPill tone="positive">Contrato real</StatusPill>
+            <StatusPill tone="positive">Fonte oficial</StatusPill>
             <StatusPill>{catalog.length} documentos</StatusPill>
           </div>
         </div>
       </header>
 
-      <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[340px_minmax(0,1fr)] xl:overflow-hidden">
+      <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[320px_minmax(0,1fr)_280px] xl:overflow-hidden">
         <aside className="min-w-0 space-y-4 xl:min-h-0 xl:overflow-y-auto">
           <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white/94 px-4 py-4 shadow-[0_16px_34px_rgba(16,30,74,0.08)]">
             <div className="rounded-[20px] border border-[rgba(48,127,226,0.14)] bg-[rgba(48,127,226,0.06)] px-4 py-4">
@@ -425,15 +503,14 @@ export function ProductDocsPage() {
                   Índice
                 </h2>
                 <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-                  Apenas documentos sincronizados e autorizados pela superfície `product-docs`
-                  aparecem aqui. Esta área não é explorador de arquivos, nem leitura arbitrária
-                  do repositório.
+                  Somente documentos sincronizados e autorizados para esta superfície aparecem
+                  aqui. Esta área não é explorador de arquivos.
                 </p>
               </div>
               <TextInput
                 aria-label="Buscar documentos"
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Buscar por título, categoria ou origem"
+                placeholder="Buscar documento"
                 value={query}
               />
             </div>
@@ -502,27 +579,6 @@ export function ProductDocsPage() {
             )}
           </nav>
 
-          <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white/94 px-4 py-4 shadow-[0_16px_34px_rgba(16,30,74,0.08)]">
-            <header className="space-y-1">
-              <h2 className="text-base font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                Trilhas de leitura
-              </h2>
-              <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-                Use estas trilhas para entrar pelo ângulo certo, mantendo Product Docs como
-                leitor oficial controlado.
-              </p>
-            </header>
-            <div className="mt-4 space-y-3">
-              {readingTracks.map((track) => (
-                <ReadingTrackCard
-                  documents={track.documents}
-                  key={track.title}
-                  onOpenDocument={openDocument}
-                  track={track}
-                />
-              ))}
-            </div>
-          </section>
         </aside>
 
         <main className="min-w-0 xl:min-h-0 xl:overflow-y-auto">
@@ -563,6 +619,13 @@ export function ProductDocsPage() {
             />
           )}
         </main>
+
+        <ProductDocsGovernanceRail
+          catalog={catalog}
+          onOpenDocument={openDocument}
+          readingTracks={readingTracks}
+          selectedDocument={selectedCatalogItem}
+        />
       </div>
     </div>
   );

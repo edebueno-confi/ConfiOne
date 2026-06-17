@@ -12,8 +12,7 @@ export function AppButton({
   return (
     <button
       className={cx(
-        'inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-[color:var(--color-brand-blue)]/35 disabled:cursor-not-allowed disabled:opacity-50',
-        'bg-[linear-gradient(135deg,var(--color-brand-navy),var(--color-brand-blue))] text-white shadow-[0_12px_30px_rgba(20,31,71,0.22)] hover:translate-y-[-1px]',
+        'inline-flex min-h-10 items-center justify-center rounded-lg border border-[color:var(--minimal-action)] bg-[color:var(--minimal-action)] px-4 py-2 text-sm font-medium text-[color:var(--minimal-action-ink)] transition-colors hover:bg-[color:var(--minimal-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
       type="button"
@@ -32,7 +31,7 @@ export function GhostButton({
   return (
     <button
       className={cx(
-        'inline-flex items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white/90 px-4 py-2 text-sm font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/40 hover:bg-[color:var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-brand-blue)]/25 disabled:cursor-not-allowed disabled:opacity-50',
+        'inline-flex min-h-10 items-center justify-center rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-4 py-2 text-sm font-medium text-[color:var(--minimal-text)] transition-colors hover:bg-[color:var(--minimal-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
       type="button"
@@ -59,17 +58,17 @@ export function Panel({
   return (
     <section
       className={cx(
-        'rounded-[26px] border border-[color:var(--color-border)] bg-white/92 p-5 shadow-[var(--shadow-panel)] backdrop-blur sm:p-6',
+        'border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-5 sm:p-6',
         className,
       )}
     >
       <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
-          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+          <h2 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
             {title}
           </h2>
           {description ? (
-            <p className="max-w-2xl text-sm leading-6 text-[color:var(--color-muted)]">
+            <p className="max-w-2xl text-sm leading-6 text-[color:var(--minimal-text-secondary)]">
               {description}
             </p>
           ) : null}
@@ -127,13 +126,13 @@ export function StatusPill({
         : tone === 'critical'
           ? 'border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] text-[color:var(--color-danger-ink)]'
           : tone === 'accent'
-            ? 'border-[rgba(225,0,152,0.18)] bg-[rgba(225,0,152,0.1)] text-[color:var(--color-brand-magenta)]'
-            : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-ink)]';
+            ? 'border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-selection)] text-[color:var(--minimal-selection-text)]'
+            : 'border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] text-[color:var(--minimal-text-secondary)]';
 
   return (
     <span
       className={cx(
-        'inline-flex items-center rounded-full border px-2.5 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.16em]',
+        'inline-flex items-center rounded-md border px-2 py-0.5 text-[0.68rem] font-medium uppercase tracking-[0.08em]',
         toneClass,
       )}
     >
@@ -152,15 +151,15 @@ export function MetricCard({
   helper?: string;
 }) {
   return (
-    <div className="rounded-[24px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4">
-      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
+    <div className="border-b border-[color:var(--minimal-border)] py-3">
+      <p className="text-xs text-[color:var(--minimal-text-tertiary)]">
         {label}
       </p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
+      <p className="mt-1 text-lg font-semibold text-[color:var(--minimal-text)]">
         {value}
       </p>
       {helper ? (
-        <p className="mt-2 text-xs leading-5 text-[color:var(--color-muted)]">{helper}</p>
+        <p className="mt-1 text-xs leading-5 text-[color:var(--minimal-text-secondary)]">{helper}</p>
       ) : null}
     </div>
   );
@@ -421,7 +420,7 @@ export function TextInput({
   return (
     <input
       className={cx(
-        'h-11 rounded-2xl border border-[color:var(--color-border)] bg-white px-4 text-sm text-[color:var(--color-ink)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand-blue)]/60 focus:ring-2 focus:ring-[color:var(--color-brand-blue)]/20',
+        'h-10 rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-3.5 text-sm text-[color:var(--minimal-text)] outline-none transition-colors placeholder:text-[color:var(--minimal-text-tertiary)] focus:border-[color:var(--minimal-action)] focus:ring-2 focus:ring-[color:var(--minimal-focus)]',
         className,
       )}
       {...props}
@@ -436,7 +435,7 @@ export function SelectInput({
   return (
     <select
       className={cx(
-        'h-11 min-w-0 w-full rounded-2xl border border-[color:var(--color-border)] bg-white px-4 text-sm text-[color:var(--color-ink)] outline-none transition focus:border-[color:var(--color-brand-blue)]/60 focus:ring-2 focus:ring-[color:var(--color-brand-blue)]/20',
+        'h-10 min-w-0 w-full rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-3.5 text-sm text-[color:var(--minimal-text)] outline-none transition-colors focus:border-[color:var(--minimal-action)] focus:ring-2 focus:ring-[color:var(--minimal-focus)]',
         className,
       )}
       {...props}
@@ -451,7 +450,7 @@ export function TextareaInput({
   return (
     <textarea
       className={cx(
-        'min-h-28 rounded-[24px] border border-[color:var(--color-border)] bg-white px-4 py-3 text-sm text-[color:var(--color-ink)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand-blue)]/60 focus:ring-2 focus:ring-[color:var(--color-brand-blue)]/20',
+        'min-h-28 rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-3.5 py-3 text-sm text-[color:var(--minimal-text)] outline-none transition-colors placeholder:text-[color:var(--minimal-text-tertiary)] focus:border-[color:var(--minimal-action)] focus:ring-2 focus:ring-[color:var(--minimal-focus)]',
         className,
       )}
       {...props}

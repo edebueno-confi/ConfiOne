@@ -1744,20 +1744,20 @@ export function TenantsPage() {
   }
 
   return (
-    <div className="space-y-3 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
-      <section className="rounded-[30px] border border-[color:var(--color-border)] bg-white/96 px-6 py-[var(--workspace-header-y)] shadow-[0_18px_40px_rgba(16,30,74,0.08)]">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
+      <section className="shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-[1.92rem] font-semibold tracking-[-0.055em] text-[color:var(--color-ink)]">
+            <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
               Clientes B2B
             </h1>
-            <p className="max-w-3xl text-[0.92rem] leading-5 text-[color:var(--color-muted)]">
+            <p className="text-sm text-[color:var(--minimal-text-secondary)]">
               Revise status e contexto de cada cliente.
             </p>
           </div>
 
           <AppButton
-            className="min-h-9 gap-2 rounded-full px-5 text-[0.92rem]"
+            className="min-h-9 gap-2 rounded-md px-4 text-sm"
             onClick={() => setShowCreateTenant((current) => !current)}
           >
             + Novo cliente
@@ -1765,15 +1765,15 @@ export function TenantsPage() {
         </div>
       </section>
 
-      <div className="grid gap-[var(--workspace-panel-gap)] xl:min-h-0 xl:flex-1 xl:grid-cols-[292px_minmax(0,1fr)_minmax(360px,424px)] 2xl:grid-cols-[300px_minmax(0,1fr)_minmax(372px,436px)]">
-        <aside className="space-y-4 xl:min-h-0 xl:overflow-hidden">
-          <section className="rounded-[28px] border border-[color:var(--color-border)] bg-white/96 p-3 shadow-[0_16px_34px_rgba(16,30,74,0.08)] xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-y-auto">
+      <div className="grid min-h-0 flex-1 overflow-hidden xl:grid-cols-[220px_minmax(0,1fr)_360px]">
+        <aside className="hidden space-y-4 xl:block xl:min-h-0 xl:overflow-hidden">
+          <section className="h-full border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] p-3 xl:flex xl:min-h-0 xl:flex-col xl:overflow-y-auto">
             <div className="space-y-2 xl:flex xl:h-full xl:flex-col">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
                 Ferramentas
               </p>
 
-              <div className="space-y-1.5 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-2.5">
+              <div className="hidden">
                 <p className="text-[0.84rem] font-semibold text-[color:var(--color-ink)]">Resumo da base</p>
                 <div className="grid grid-cols-2 gap-1.5">
                   <TenantMetricTile helper="base atual" label="Clientes" value={String(totalTenants)} />
@@ -1797,7 +1797,7 @@ export function TenantsPage() {
                 </div>
               </div>
 
-              <div className="space-y-1.5 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-2.5">
+              <div className="hidden">
                 <p className="text-[0.84rem] font-semibold text-[color:var(--color-ink)]">Ações rápidas</p>
                 <div className="grid gap-1.5">
                   <AppButton
@@ -1820,7 +1820,7 @@ export function TenantsPage() {
                 </div>
               </div>
 
-              <div className="space-y-1.5 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-2.5 xl:flex-1">
+              <div className="space-y-3 border-t border-[color:var(--minimal-border)] pt-3 xl:flex-1">
                 <p className="text-[0.84rem] font-semibold text-[color:var(--color-ink)]">Filtros</p>
 
                 <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
@@ -1889,10 +1889,10 @@ export function TenantsPage() {
           </section>
         </aside>
 
-        <section className="min-w-0 rounded-[28px] border border-[color:var(--color-border)] bg-white/96 shadow-[0_16px_34px_rgba(16,30,74,0.08)] xl:flex xl:h-full xl:flex-col xl:overflow-hidden">
+        <section className="min-w-0 bg-[color:var(--minimal-surface)] xl:flex xl:h-full xl:flex-col xl:overflow-hidden">
           <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-5 py-3.5">
             <div className="space-y-1">
-              <h2 className="text-[1.48rem] font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
+              <h2 className="text-base font-semibold text-[color:var(--minimal-text)]">
                 Base de clientes
               </h2>
               <p className="text-[0.92rem] text-[color:var(--color-muted)]">
@@ -1932,17 +1932,17 @@ export function TenantsPage() {
               />
             ) : (
               <>
-                <div className="space-y-2.5 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
+                <div className="xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
                   {filteredTenants.map((tenant) => {
                     const isSelected = tenant.id === selectedTenantId;
 
                     return (
                       <button
                         className={cx(
-                          'w-full rounded-[22px] border px-4 py-3.5 text-left transition',
+                          'w-full border-b border-[color:var(--minimal-border)] px-4 py-3 text-left transition-colors',
                           isSelected
-                            ? 'border-[rgba(48,127,226,0.42)] bg-[rgba(48,127,226,0.08)] shadow-[0_14px_30px_rgba(19,33,79,0.08)]'
-                            : 'border-[color:var(--color-border)] bg-white hover:border-[rgba(48,127,226,0.26)]',
+                            ? 'bg-[color:var(--minimal-selection)]'
+                            : 'bg-[color:var(--minimal-surface)] hover:bg-[color:var(--minimal-surface-muted)]',
                         )}
                         key={tenant.id}
                         onClick={() => setSelectedTenantId(tenant.id)}
@@ -2005,7 +2005,7 @@ export function TenantsPage() {
           </div>
         </section>
 
-        <aside className="min-w-0 rounded-[28px] border border-[color:var(--color-border)] bg-white/96 p-3.5 shadow-[0_16px_34px_rgba(16,30,74,0.08)] xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
+        <aside className="hidden min-w-0 border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] p-4 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
           <div className="space-y-3 xl:flex xl:min-h-0 xl:flex-1 xl:flex-col">
             <div className="space-y-1">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
@@ -2034,7 +2034,7 @@ export function TenantsPage() {
               />
             ) : (
               <div className="space-y-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
-                <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white p-3.5">
+                <section>
                   <div className="flex items-start gap-3.5">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] bg-[rgba(48,127,226,0.08)] text-[1.12rem] font-semibold text-[color:var(--color-brand-blue)]">
                       {initialsFromName(tenantDetail.display_name)}

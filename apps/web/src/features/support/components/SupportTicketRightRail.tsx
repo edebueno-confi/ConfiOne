@@ -1,18 +1,44 @@
 import type { ReactNode } from 'react';
-import {
-  SupportQuickActionButton,
-  SupportQuickActionGrid,
-  SupportRailCard,
-  SupportRightRail,
-  SupportSummaryRow,
-  SupportTicketSummaryCard,
-} from './SupportWorkspacePrimitives';
 
 export interface SupportTicketRightRailAction {
   key: string;
   icon: ReactNode;
   label: string;
   onClick: () => void;
+}
+
+function RailSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="border-b border-[color:var(--minimal-border)] px-4 py-4 last:border-b-0">
+      <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-[color:var(--minimal-text-tertiary)]">
+        {title}
+      </h3>
+      <div className="mt-3">{children}</div>
+    </section>
+  );
+}
+
+function RailRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: ReactNode;
+}) {
+  return (
+    <div className="grid grid-cols-[92px_minmax(0,1fr)] gap-3 py-1.5 text-xs">
+      <dt className="text-[color:var(--minimal-text-tertiary)]">{label}</dt>
+      <dd className="min-w-0 truncate text-right font-medium text-[color:var(--minimal-text)]">
+        {value}
+      </dd>
+    </div>
+  );
 }
 
 export function SupportTicketRightRail({
@@ -59,98 +85,84 @@ export function SupportTicketRightRail({
   }>;
 }) {
   return (
-    <SupportRightRail>
-      <SupportRailCard title="Resumo do ticket">
-        <SupportTicketSummaryCard>
-          <SupportSummaryRow
-            label="Cliente"
-            value={
-              <div className="flex items-center justify-between gap-2">
-                <span className="truncate">{tenantLabel}</span>
-                {sourceBadge}
-              </div>
-            }
-          />
-          <SupportSummaryRow
+    <aside
+      className="flex h-full min-h-0 min-w-0 flex-col overflow-y-auto border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)]"
+      data-ticket-rail
+    >
+      <RailSection title="Contexto">
+        <dl>
+          <RailRow label="Cliente" value={tenantLabel} />
+          <RailRow label="Status" value={statusLabel} />
+          <RailRow
             label="Prioridade"
             value={
-              <div className="flex items-center justify-between gap-2">
-                <span>{priorityLabel}</span>
+              <span className="inline-flex items-center justify-end gap-1">
                 {priorityIndicator}
-              </div>
+                {priorityLabel}
+              </span>
             }
           />
-          <SupportSummaryRow label="Status" value={statusLabel} />
-          <SupportSummaryRow label="Categoria" value={categoryLabel} />
-          <SupportSummaryRow label="Responsável" value={assignedLabel} />
-          <SupportSummaryRow label="Solicitante" value={requesterLabel} />
-          <SupportSummaryRow label="Documento" value={customerDocumentLabel} />
-        </SupportTicketSummaryCard>
-      </SupportRailCard>
+          <RailRow label="Categoria" value={categoryLabel} />
+          <RailRow label="Responsável" value={assignedLabel} />
+          <RailRow label="Solicitante" value={requesterLabel} />
+          <RailRow label="Documento" value={customerDocumentLabel} />
+        </dl>
+        <div className="mt-2 flex justify-end">{sourceBadge}</div>
+      </RailSection>
 
-      <SupportRailCard title="Ações rápidas">
-        <p className="support-true-rail-helper">
-          Use apenas ações operacionais da tratativa. Resposta e nota ficam no composer.
-        </p>
-        <SupportQuickActionGrid>
+      <RailSection title="Ações">
+        <div className="grid">
           {quickActions.map((action) => (
-            <SupportQuickActionButton
-              className="min-h-[52px] gap-1 px-2 py-2 text-[10.5px]"
-              icon={action.icon}
+            <button
+              className="flex min-h-10 items-center gap-2 border-b border-[color:var(--minimal-border)] px-1 text-left text-sm text-[color:var(--minimal-text-secondary)] last:border-b-0 hover:text-[color:var(--minimal-text)]"
               key={action.key}
-              label={action.label}
               onClick={action.onClick}
-            />
+              type="button"
+            >
+              <span className="text-[color:var(--minimal-text-tertiary)]">{action.icon}</span>
+              {action.label}
+            </button>
           ))}
-        </SupportQuickActionGrid>
-      </SupportRailCard>
-
-      <SupportRailCard title="SLA interno">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-[12px] font-semibold text-[color:var(--color-ink)]">{slaReference}</p>
-              <p className="mt-0.5 text-[10.5px] text-[color:var(--color-muted)]">{slaPolicyName}</p>
-            </div>
-            {slaPriorityBadge}
-          </div>
-          <div className="space-y-1.5">
-            <p className="text-[11px] font-semibold text-[color:var(--color-ink)]">Prazo total: {resolutionDueLabel}</p>
-            <p className="text-[11px] text-[color:var(--color-muted)]">Vencimento: {slaDueLabel}</p>
-            <p className="text-[11px] text-[color:var(--color-muted)]">{slaRemainingLabel}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <meter className="support-sla-meter" max={100} min={0} value={slaProgress} />
-            <span className="text-[10.5px] font-semibold text-[color:var(--color-muted)]">{slaProgress}%</span>
-          </div>
         </div>
-      </SupportRailCard>
+      </RailSection>
+
+      <RailSection title="SLA">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-[color:var(--minimal-text)]">{slaReference}</p>
+            <p className="mt-1 text-xs text-[color:var(--minimal-text-tertiary)]">{slaPolicyName}</p>
+          </div>
+          {slaPriorityBadge}
+        </div>
+        <dl className="mt-3">
+          <RailRow label="Resolução" value={resolutionDueLabel} />
+          <RailRow label="Vencimento" value={slaDueLabel} />
+        </dl>
+        <div className="mt-3 flex items-center gap-2">
+          <meter className="h-1.5 min-w-0 flex-1" max={100} min={0} value={slaProgress} />
+          <span className="text-xs text-[color:var(--minimal-text-tertiary)]">{slaProgress}%</span>
+        </div>
+        <p className="mt-2 text-xs text-[color:var(--minimal-text-secondary)]">{slaRemainingLabel}</p>
+      </RailSection>
 
       {relatedArticles.length > 0 ? (
-        <SupportRailCard
-          headerAction={<span className="support-true-rail-link">Ver todos</span>}
-          title="Artigos relacionados"
-        >
-          <div className="space-y-3">
+        <RailSection title="Conhecimento relacionado">
+          <div className="grid gap-3">
             {relatedArticles.slice(0, 3).map((article) => (
-              <article
-                className="rounded-[12px] border border-[color:var(--color-support-border)] bg-[color:var(--color-support-surface)] px-3 py-2.5"
-                key={article.id}
-              >
-                <p className="line-clamp-2 text-[11.5px] font-semibold leading-4 text-[color:var(--color-ink)]">
+              <article key={article.id}>
+                <p className="line-clamp-2 text-sm font-medium leading-5 text-[color:var(--minimal-text)]">
                   {article.title}
                 </p>
                 {article.summary ? (
-                  <p className="mt-1 line-clamp-2 text-[10.5px] leading-4 text-[color:var(--color-muted)]">
+                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--minimal-text-tertiary)]">
                     {article.summary}
                   </p>
                 ) : null}
               </article>
             ))}
           </div>
-        </SupportRailCard>
+        </RailSection>
       ) : null}
-
-    </SupportRightRail>
+    </aside>
   );
 }

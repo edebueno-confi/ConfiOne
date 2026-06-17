@@ -330,7 +330,7 @@ function RailCard({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-[20px] border border-[#DCE4F2] bg-white p-3 shadow-[0_18px_50px_rgba(22,36,67,0.06)]">
+    <section className="border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] px-1 py-3">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-[0.82rem] font-extrabold tracking-[-0.015em] text-[#162443]">
           {title}
@@ -4151,11 +4151,11 @@ export function KnowledgeArticleEditorPage() {
 
   return (
     <form
-      className="h-full min-h-screen overflow-y-auto bg-[#F4F7FC] font-[Inter,Geist,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe_UI',sans-serif]"
+      className="h-full min-h-screen overflow-y-auto bg-[color:var(--minimal-surface)]"
       onSubmit={handleSaveDraft}
     >
-      <div className="px-5 py-4 xl:px-6">
-        <header className="sticky top-0 z-20 flex items-start justify-between gap-5 bg-[#F4F7FC]/95 pb-3 backdrop-blur">
+      <div>
+        <header className="sticky top-0 z-20 flex items-start justify-between gap-5 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-3">
           <div className="min-w-0 space-y-2">
             <nav className="flex items-center gap-2 text-xs font-semibold text-[color:var(--color-muted)]">
               <Link className="hover:text-[color:var(--color-brand-blue)]" to="/admin/knowledge">
@@ -4172,11 +4172,10 @@ export function KnowledgeArticleEditorPage() {
             </nav>
             <div>
               <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-[1.75rem] font-extrabold leading-[1.1] tracking-[-0.02em] text-[#162443]">
+                <h1 className="text-lg font-semibold leading-tight tracking-[-0.02em] text-[color:var(--minimal-text)]">
                   {isEditMode ? 'Editar artigo' : 'Novo artigo'}
                 </h1>
-                <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[0.72rem] font-bold text-emerald-700">
-                  ✓{' '}
+                <span className="text-xs text-[color:var(--minimal-text-tertiary)]">
                   {saveState === 'saved'
                     ? 'Rascunho salvo agora'
                     : 'Alterações salvas automaticamente'}
@@ -4196,26 +4195,12 @@ export function KnowledgeArticleEditorPage() {
           ) : null}
           <div className="flex shrink-0 flex-wrap justify-end gap-3">
             <AppButton
-              className="h-11 rounded-[14px] px-5 text-[0.82rem] shadow-[0_14px_32px_rgba(47,107,255,0.24)]"
+              className="h-9 rounded-md px-4 text-sm"
               disabled={saveState === 'saving' || isReadOnly}
               type="submit"
             >
               {saveState === 'saving' ? 'Salvando...' : saveButtonLabel}
             </AppButton>
-            <GhostButton
-              className="h-11 rounded-[12px] px-5 text-[0.82rem] text-[color:var(--color-brand-navy)]"
-              title="Use o status editorial para enviar, revisar e publicar."
-              type="button"
-            >
-              Ações ▾
-            </GhostButton>
-            <GhostButton
-              className="h-11 w-11 rounded-full px-0 text-[color:var(--color-brand-blue)]"
-              title="Mais opções"
-              type="button"
-            >
-              ⋮
-            </GhostButton>
           </div>
         </header>
 
@@ -4251,13 +4236,13 @@ export function KnowledgeArticleEditorPage() {
 
         <div
           className={cx(
-            'grid items-start gap-4',
+            'grid items-start',
             metadataCollapsed
-              ? 'xl:grid-cols-[64px_minmax(0,1fr)]'
-              : 'xl:grid-cols-[360px_minmax(0,1fr)]',
+              ? 'xl:grid-cols-[minmax(0,1fr)_64px]'
+              : 'xl:grid-cols-[minmax(0,1fr)_320px]',
           )}
         >
-          <aside className="sticky top-[92px] max-h-[calc(100vh-112px)] overflow-hidden">
+          <aside className="sticky top-[84px] order-2 max-h-[calc(100vh-84px)] overflow-hidden border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)]">
             {metadataCollapsed ? (
               <div className="flex h-full flex-col items-center gap-3 rounded-[22px] border border-[color:var(--color-border)] bg-white px-2 py-3 shadow-[0_18px_42px_rgba(20,31,71,0.06)]">
                 <button
@@ -4617,7 +4602,7 @@ export function KnowledgeArticleEditorPage() {
               </div>
             )}
           </aside>
-          <main className="min-w-0">
+          <main className="order-1 min-w-0 p-5">
             <section className="min-w-0">
               <input
                 accept="image/png,image/jpeg,image/webp,image/gif"

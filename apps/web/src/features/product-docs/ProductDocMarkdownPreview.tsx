@@ -1,6 +1,57 @@
 import type { ReactNode } from 'react';
 import { cx } from '../../components/ui';
 
+export interface ProductDocOutlineItem {
+  id: string;
+  level: 2 | 3;
+  lineIndex: number;
+  title: string;
+}
+
+function slugifyHeading(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'secao';
+}
+
+function toUniqueHeadingId(title: string, usedIds: Map<string, number>) {
+  const baseId = slugifyHeading(title);
+  const count = usedIds.get(baseId) ?? 0;
+  usedIds.set(baseId, count + 1);
+
+  return count === 0 ? baseId : `${baseId}-${count + 1}`;
+}
+
+export function getProductDocOutline(source: string): ProductDocOutlineItem[] {
+  const usedIds = new Map<string, number>();
+
+  return source
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((rawLine, lineIndex): ProductDocOutlineItem | null => {
+      const line = rawLine.trim();
+      const level = line.startsWith('## ') ? 3 : line.startsWith('# ') ? 2 : null;
+
+      if (!level) {
+        return null;
+      }
+
+      const title = line.replace(/^#{1,2}\s+/, '').trim();
+      return {
+        id: toUniqueHeadingId(title, usedIds),
+        level,
+        lineIndex,
+        title,
+      };
+    })
+    .filter((item): item is ProductDocOutlineItem => Boolean(item));
+}
+
 function parseInline(text: string): ReactNode[] {
   const parts: ReactNode[] = [];
   const pattern = /(`([^`]+)`|\*\*([^*]+)\*\*)/g;
@@ -35,8 +86,16 @@ function parseInline(text: string): ReactNode[] {
   return parts.length > 0 ? parts : [text];
 }
 
-export function ProductDocMarkdownPreview({ source }: { source: string }) {
+export function ProductDocMarkdownPreview({
+  headingIds,
+  source,
+}: {
+  headingIds?: Map<number, string>;
+  source: string;
+}) {
   const lines = source.replace(/\r\n/g, '\n').split('\n');
+  const resolvedHeadingIds =
+    headingIds ?? new Map(getProductDocOutline(source).map((item) => [item.lineIndex, item.id]));
   const blocks: ReactNode[] = [];
 
   for (let index = 0; index < lines.length; index += 1) {
@@ -48,9 +107,11 @@ export function ProductDocMarkdownPreview({ source }: { source: string }) {
     }
 
     if (line.startsWith('# ')) {
+      const headingId = resolvedHeadingIds.get(index);
       blocks.push(
         <h2
           className="text-[1.35rem] font-semibold tracking-[-0.035em] text-[color:var(--color-ink)]"
+          id={headingId}
           key={`h1-${index}`}
         >
           {parseInline(line.replace(/^#\s+/, ''))}
@@ -60,9 +121,11 @@ export function ProductDocMarkdownPreview({ source }: { source: string }) {
     }
 
     if (line.startsWith('## ')) {
+      const headingId = resolvedHeadingIds.get(index);
       blocks.push(
         <h3
           className="pt-2 text-base font-semibold tracking-[-0.025em] text-[color:var(--color-ink)]"
+          id={headingId}
           key={`h2-${index}`}
         >
           {parseInline(line.replace(/^##\s+/, ''))}

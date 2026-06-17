@@ -1,10 +1,5 @@
 import type { ReactNode } from 'react';
 import { cx } from '../../../components/ui';
-import {
-  SupportIconActionButton,
-  SupportQueuePanel,
-  SupportSearchInput,
-} from './SupportWorkspacePrimitives';
 
 export interface SupportTicketQueueTab {
   key: string;
@@ -57,110 +52,99 @@ export function SupportTicketQueue({
   filterIcon: ReactNode;
 }) {
   return (
-    <SupportQueuePanel
-      content={ticketsContent}
-      footer={
-        <div className="flex items-center justify-between gap-2 text-[10.5px] text-[color:var(--color-muted)]">
-          <span>{pageLabel}</span>
-          <div className="flex items-center gap-1.5">
-            <SupportIconActionButton
-              ariaLabel="Página anterior da fila"
-              className="h-7 w-7 rounded-[10px]"
-              disabled={!canGoPrevious}
-              onClick={onPreviousPage}
-            >
-              ‹
-            </SupportIconActionButton>
-            <span className="min-w-[3ch] text-center font-semibold text-[color:var(--color-ink)]">
-              {currentPageLabel}
-            </span>
-            <SupportIconActionButton
-              ariaLabel="Próxima página da fila"
-              className="h-7 w-7 rounded-[10px]"
-              disabled={!canGoNext}
-              onClick={onNextPage}
-            >
-              ›
-            </SupportIconActionButton>
-          </div>
+    <aside className="hidden min-h-0 min-w-0 flex-col border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] xl:flex">
+      <header className="shrink-0 border-b border-[color:var(--minimal-border)] px-3 py-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-[color:var(--minimal-text)]">Caixa de entrada</h2>
+          <span className="text-xs text-[color:var(--minimal-text-tertiary)]">{totalCount}</span>
         </div>
-      }
-      header={
-        <>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <h2 className="text-[16px] font-bold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                Caixa de entrada
-              </h2>
-              <span className="inline-flex h-5 items-center rounded-full bg-[rgba(47,107,255,0.08)] px-2 text-[10px] font-semibold text-[color:var(--color-brand-blue)]">
-                {totalCount}
-              </span>
-            </div>
-          </div>
-          <div className="support-queue-search-row mt-3">
-            <SupportSearchInput
-              icon={searchIcon}
-              onChange={onSearchChange}
-              placeholder="Buscar tickets, cliente ou contato..."
+        <div className="mt-3 flex gap-2">
+          <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-2.5">
+            <span className="text-[color:var(--minimal-text-tertiary)]">{searchIcon}</span>
+            <input
+              className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--minimal-text)] outline-none placeholder:text-[color:var(--minimal-text-tertiary)]"
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder="Buscar tickets..."
               value={search}
             />
-            <SupportIconActionButton
-              ariaLabel="Limpar busca e filtros rápidos"
-              className="h-10 w-10"
-              onClick={onReset}
-              title="Limpar busca e filtros rápidos"
-            >
-              {filterIcon}
-            </SupportIconActionButton>
-          </div>
-          <div className="support-queue-segmented mt-3" role="tablist" aria-label="Escopo da fila">
+          </label>
+          <button
+            aria-label="Limpar busca e filtros rápidos"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--minimal-border-strong)] text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)]"
+            onClick={onReset}
+            title="Limpar busca e filtros rápidos"
+            type="button"
+          >
+            {filterIcon}
+          </button>
+        </div>
+        <div className="mt-3 flex border-b border-[color:var(--minimal-border)]" role="tablist" aria-label="Escopo da fila">
+          {([
+            ['open', 'Abertos', scopeCounts.open],
+            ['closed', 'Fechados', scopeCounts.closed],
+          ] as const).map(([key, label, count]) => (
             <button
-              aria-selected={scope === 'open'}
+              aria-selected={scope === key}
               className={cx(
-                'support-queue-segmented__button',
-                scope === 'open' && 'support-queue-segmented__button--active',
+                'min-h-9 flex-1 border-b-2 px-2 text-xs',
+                scope === key
+                  ? 'border-[color:var(--minimal-action)] font-medium text-[color:var(--minimal-text)]'
+                  : 'border-transparent text-[color:var(--minimal-text-secondary)]',
               )}
-              onClick={() => onScopeChange('open')}
+              key={key}
+              onClick={() => onScopeChange(key)}
               role="tab"
               type="button"
             >
-              <span>Abertos</span>
-              <span className="support-queue-segmented__count">{scopeCounts.open}</span>
+              {label} {count}
             </button>
+          ))}
+        </div>
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+          {tabs.map((tab) => (
             <button
-              aria-selected={scope === 'closed'}
               className={cx(
-                'support-queue-segmented__button',
-                scope === 'closed' && 'support-queue-segmented__button--active',
+                'min-h-8 text-xs',
+                activeTab === tab.key
+                  ? 'font-medium text-[color:var(--minimal-action)]'
+                  : 'text-[color:var(--minimal-text-secondary)]',
               )}
-              onClick={() => onScopeChange('closed')}
-              role="tab"
+              key={tab.key}
+              onClick={() => onTabChange(tab.key)}
               type="button"
             >
-              <span>Fechados</span>
-              <span className="support-queue-segmented__count">{scopeCounts.closed}</span>
+              {tab.label} {tab.count}
             </button>
-          </div>
-          <div className="support-queue-filter-row mt-3">
-            {tabs.map((tab) => (
-              <button
-                className={cx(
-                  'support-queue-filter-chip',
-                  activeTab === tab.key
-                    ? 'support-queue-filter-chip--active'
-                    : 'support-queue-filter-chip--idle',
-                )}
-                key={tab.key}
-                onClick={() => onTabChange(tab.key)}
-                type="button"
-              >
-                <span>{tab.label}</span>
-                <span className="support-queue-filter-chip__count">{tab.count}</span>
-              </button>
-            ))}
-          </div>
-        </>
-      }
-    />
+          ))}
+        </div>
+      </header>
+
+      <div className="min-h-0 flex-1 overflow-y-auto p-2">{ticketsContent}</div>
+
+      <footer className="flex shrink-0 items-center justify-between border-t border-[color:var(--minimal-border)] px-3 py-2 text-xs text-[color:var(--minimal-text-tertiary)]">
+        <span>{pageLabel}</span>
+        <div className="flex items-center gap-1">
+          <button
+            aria-label="Página anterior da fila"
+            className="h-8 w-8 rounded hover:bg-[color:var(--minimal-surface-muted)] disabled:opacity-40"
+            disabled={!canGoPrevious}
+            onClick={onPreviousPage}
+            type="button"
+          >
+            ‹
+          </button>
+          <span className="min-w-6 text-center">{currentPageLabel}</span>
+          <button
+            aria-label="Próxima página da fila"
+            className="h-8 w-8 rounded hover:bg-[color:var(--minimal-surface-muted)] disabled:opacity-40"
+            disabled={!canGoNext}
+            onClick={onNextPage}
+            type="button"
+          >
+            ›
+          </button>
+        </div>
+      </footer>
+    </aside>
   );
 }

@@ -29,15 +29,19 @@ removeu o fallback literal de credencial e restaurou Docker/Supabase com reset,
 lint, `51` arquivos pgTAP/`1085` testes, `supabase:verify` e fixture funcional
 completa aprovados.
 
-Ordem corrente:
-1. especificar `/cs/portfolio` sobre `vw_cs_customer_portfolio`;
-2. implementar a interface CS somente leitura e validar gate, estados e QA real.
+Ordem corrente apos a retomada:
+1. manter `/cs/portfolio` como leitura segura sobre `vw_cs_customer_portfolio`, sem health score, follow-ups, tarefas, projetos ou mutations ate novos contratos backend;
+2. definir o proximo lote do Operational Control Plane com escopo pequeno, backend-first e validavel;
+3. preparar apenas piloto local/staging controlado quando houver autorizacao explicita para o ambiente alvo.
 
 O hardening de dependencias foi concluido com `npm audit` em zero
 vulnerabilidades. Evidencia:
 `docs/reports/DEPENDENCY_HARDENING_2026-06-09.md`.
 
-Fonte: `docs/reports/POST_RECOVERY_BASELINE_2026-06-09.md`.
+O `/cs/portfolio` read-only foi especificado, implementado e validado. Evidencia:
+`docs/reports/CS_PORTFOLIO_READONLY_UI_2026-06-09.md`.
+
+Fonte de handoff: `docs/reports/FINAL_RECOVERY_HANDOFF_AND_NEXT_STEPS_2026-06-09.md`.
 
 ## Checkpoint de retomada 2026-05-29
 
@@ -401,7 +405,7 @@ Status:
 Objetivo: documentar e endurecer diagnostico operacional de indisponibilidade do host local/Supabase para o portal cliente, com runbook claro de recuperacao, sinais minimos de observabilidade e validacao de retomada, sem criar infraestrutura realtime nem alterar boundary de auth.
 
 ## Decisoes que ainda dependem de Produto
-- Se Support e Admin devem convergir em um App Shell unico.
+- Support, Admin e CS convergiram em App Shell único no redesign fechado em `2026-06-10`.
 - Quais roles podem criar ticket manualmente.
 - Quais status devem aparecer para Suporte e quais sao internos de engenharia.
 - Como definir saude operacional da conta sem virar score generico.
@@ -410,3 +414,19 @@ Objetivo: documentar e endurecer diagnostico operacional de indisponibilidade do
 
 ## Criterio de parada desta etapa
 Esta etapa nao tenta fechar produto inteiro. Ela encerra a fragmentacao editorial, cria o backlog faseado e aplica apenas quick win seguro que remove comportamento falso de UI.
+
+## Redesign Minimalista Operacional
+
+Status: concluído em `2026-06-10`.
+
+Fechado:
+1. Reset visual das superfícies internas prioritárias.
+2. Shell único e navegação governada por permissões.
+3. Fila, ticket, CS, Tenants, Access, System e Knowledge migrados.
+4. Primitives e estados consolidados no vocabulário minimalista.
+5. Componentes de shell legado sem consumidores removidos.
+6. QA desktop e mobile, typechecks, build e 17 testes aprovados.
+
+Próximo lote recomendado:
+- hardening visual das superfícies internas não nomeadas neste lote, preservando o mesmo sistema canônico;
+- redução do bundle do editor de Knowledge sem trocar contratos ou comportamento.
