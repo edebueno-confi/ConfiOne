@@ -104,7 +104,11 @@ function currentPath(page) {
 function assertRouteLoaded(page, route) {
   if (route.public) return;
   const actual = currentPath(page);
-  if (actual !== route.path) {
+  const matchesExpectedPath =
+    actual === route.path ||
+    (route.acceptsPathPattern && route.acceptsPathPattern.test(actual));
+
+  if (!matchesExpectedPath) {
     throw new Error(`route ${route.name} expected ${route.path} but loaded ${actual}`);
   }
 }
@@ -153,7 +157,12 @@ async function discoverRoutes(browser) {
     { name: 'support-tickets', role: 'support', path: '/support/tickets' },
     { name: 'support-customers', role: 'support', path: '/support/customers' },
     { name: 'engineering', role: 'engineering', path: '/engineering' },
-    { name: 'internal-actions', role: 'admin', path: '/internal-actions' },
+    {
+      name: 'internal-actions',
+      role: 'admin',
+      path: '/internal-actions',
+      acceptsPathPattern: /^\/internal-actions\/[0-9a-f-]{20,}$/i,
+    },
     { name: 'portal', role: 'customer', path: '/portal' },
     { name: 'portal-tickets', role: 'customer', path: '/portal/tickets' },
     { name: 'portal-help', role: 'customer', path: '/portal/help' },

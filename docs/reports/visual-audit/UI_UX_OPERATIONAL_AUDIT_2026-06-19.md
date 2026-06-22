@@ -319,7 +319,7 @@ P3:
 - `git diff --check`: passou; apenas avisos esperados de LF/CRLF no Windows.
 - O runner reprodutivel da auditoria final fica em `docs/reports/visual-audit/run-final-audit-r11.cjs`.
 - Os artefatos volumosos de metricas e screenshots das rodadas intermediarias nao foram versionados nesta limpeza de worktree.
-- Em 22/06/2026, a reexecucao local autenticada foi bloqueada antes da fixture porque o Docker Desktop/Supabase local nao estava disponivel na maquina; o runner foi endurecido para falhar quando login ou navegacao autenticada redirecionarem para `/login`.
+- Em 22/06/2026, apos reativar Docker Desktop, Supabase local e Edge Runtime, a fixture funcional local passou e o runner final foi reexecutado: 28 rotas, 84 medicoes e 0 falhas. O runner tambem foi endurecido para falhar quando login ou navegacao autenticada redirecionarem para `/login`, preservando a excecao intencional de selecao automatica em `/internal-actions`.
 
 ## Limites honestos
 
