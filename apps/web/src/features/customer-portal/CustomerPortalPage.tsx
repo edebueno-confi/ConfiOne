@@ -125,6 +125,19 @@ function buildPortalKnowledgePath(slug: string) {
   return `/portal/help/${slug}`;
 }
 
+function sanitizeCustomerFacingText(value: string | null | undefined) {
+  return (value ?? 'IndisponÃ­vel')
+    .replace(/\bfixture local sanitizada\b/gi, 'Registro operacional')
+    .replace(/\bfixture\b/gi, 'registro operacional')
+    .replace(/\btenant\b/gi, 'cliente')
+    .replace(/\bbackend\b/gi, 'operaÃ§Ã£o')
+    .replace(/\bprovider\b/gi, 'serviÃ§o externo')
+    .replace(/\bcontratos?\b/gi, 'acordos operacionais')
+    .replace(/\bRPCs?\b/g, 'rotina operacional')
+    .replace(/\bRLS\b/g, 'regra de acesso')
+    .replace(/\bpayload\b/gi, 'conteÃºdo tÃ©cnico');
+}
+
 function buildPortalHelpSearchPath(params: {
   query?: string;
   category?: string;
@@ -269,10 +282,10 @@ function PortalShell({ children }: { children: ReactNode }) {
 
           <div className="mt-6 rounded-[20px] border border-white/10 bg-white/7 p-3">
             <p className="text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-white/48">
-              Tenant ativo
+              Conta ativa
             </p>
             <p className="mt-2 truncate text-sm font-semibold text-white">
-              {displayContext?.tenantDisplayName ?? 'Indisponível'}
+              {sanitizeCustomerFacingText(displayContext?.tenantDisplayName ?? 'Indisponível')}
             </p>
             <p className="mt-1 text-xs text-white/58">
               {displayContext
@@ -282,7 +295,7 @@ function PortalShell({ children }: { children: ReactNode }) {
             {availableTenants.length > 1 ? (
               <div className="mt-3">
                 <label className="mb-1 block text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-white/48">
-                  Trocar tenant
+                  Trocar conta
                 </label>
                 <select
                   className="h-11 w-full rounded-[16px] border border-white/12 bg-white/10 px-3 text-sm text-white outline-none transition focus:border-white/28"
@@ -292,12 +305,12 @@ function PortalShell({ children }: { children: ReactNode }) {
                 >
                   {availableTenants.map((tenant) => (
                     <option className="text-[color:var(--color-ink)]" key={tenant.tenantId} value={tenant.tenantId}>
-                      {tenant.tenantDisplayName}
+                      {sanitizeCustomerFacingText(tenant.tenantDisplayName)}
                     </option>
                   ))}
                 </select>
                 <p className="mt-2 text-xs leading-5 text-white/58">
-                  O contexto do portal é validado a cada troca. Dados do tenant anterior são descartados com segurança.
+                  O portal revalida seu acesso a cada troca. Dados da conta anterior são descartados com segurança.
                 </p>
               </div>
             ) : null}
@@ -469,10 +482,10 @@ export function CustomerPortalLayout() {
     return (
       <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
         <LoadingState
-          title={isSwitching ? 'Trocando tenant' : 'Carregando contexto do portal'}
+          title={isSwitching ? 'Trocando conta' : 'Carregando contexto do portal'}
           description={
             isSwitching
-              ? 'Limpando o contexto anterior e validando o próximo tenant ativo.'
+              ? 'Limpando o contexto anterior e validando a próxima conta ativa.'
               : 'Validando os clientes disponíveis para esta sessão no portal.'
           }
         />
@@ -487,9 +500,9 @@ export function CustomerPortalLayout() {
           title="Contexto alterado em outra aba"
           description={
             pendingContext
-              ? `${staleMessage ?? 'O contexto do portal mudou em outra aba. Atualize para continuar.'} O tenant ativo agora é ${pendingContext.tenantDisplayName}.`
+              ? `${staleMessage ?? 'O contexto do portal mudou em outra aba. Atualize para continuar.'} A conta ativa agora é ${sanitizeCustomerFacingText(pendingContext.tenantDisplayName)}.`
               : staleMessage ??
-                'O contexto do portal mudou e o tenant anterior não está mais disponível para esta sessão.'
+                'O contexto do portal mudou e a conta anterior não está mais disponível para esta sessão.'
           }
           eyebrow="portal"
           tone="default"
@@ -542,10 +555,10 @@ export function CustomerPortalLayout() {
     return (
       <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
         <StateFrame
-          title="Tenant indisponível"
+          title="Conta indisponível"
           description={
             phaseMessage ??
-            'Nenhum tenant habilitado no portal está disponível para esta sessão agora.'
+            'Nenhuma conta habilitada no portal está disponível para esta sessão agora.'
           }
           eyebrow="portal"
           tone="default"
@@ -634,11 +647,11 @@ function ContextRail({
                 Cliente
               </p>
               <p className="mt-1 font-semibold text-[color:var(--color-ink)]">
-                {activeContext.tenantDisplayName}
+                {sanitizeCustomerFacingText(activeContext.tenantDisplayName)}
               </p>
             </div>
             <div className="grid gap-2">
-              <InfoLine label="Contato" value={activeContext.contactFullName} />
+              <InfoLine label="Contato" value={sanitizeCustomerFacingText(activeContext.contactFullName)} />
               <InfoLine label="Papel" value={portalRoleLabel(activeContext.portalRole)} />
               <InfoLine label="Produto" value={activeContext.productLine} />
               <InfoLine label="Status operacional" value={activeContext.operationalStatus} />
@@ -820,7 +833,7 @@ export function CustomerPortalHomePage() {
 
         <Panel
           title="Central de ajuda autorizada"
-          description="Conteúdo público ou autenticado já liberado para este tenant."
+          description="Conteúdo público ou autenticado já liberado para esta conta."
           className="mt-5"
         >
           <form className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]" onSubmit={handleKnowledgeDiscoverSubmit}>
@@ -870,13 +883,13 @@ export function CustomerPortalHomePage() {
 function TicketListRow({ ticket }: { ticket: CustomerPortalTicketListItem }) {
   return (
     <Link
-      className="block rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 transition hover:border-[color:var(--color-brand-blue)]/35 hover:bg-white"
+      className="block w-full min-w-0 overflow-hidden rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 transition hover:border-[color:var(--color-brand-blue)]/35 hover:bg-white"
       to={`/portal/tickets/${ticket.ticketId}`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="truncate text-base font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-            {ticket.title}
+            {sanitizeCustomerFacingText(ticket.title)}
           </p>
           <p className="mt-1 text-sm text-[color:var(--color-muted)]">
             Atualizado em {formatDate(ticket.updatedAt)}
@@ -885,7 +898,7 @@ function TicketListRow({ ticket }: { ticket: CustomerPortalTicketListItem }) {
         <StatusPill tone="accent">{ticket.customerStatusLabel}</StatusPill>
       </div>
       <div className="mt-3 flex flex-wrap gap-2 text-xs text-[color:var(--color-muted)]">
-        <span>{ticket.customerOriginLabel}</span>
+        <span>{sanitizeCustomerFacingText(ticket.customerOriginLabel)}</span>
         <span>{ticket.customerMessageCount} mensagens</span>
         <span>{ticket.customerAttachmentCount} evidências</span>
         <span>Artigos autorizados: Indisponível</span>
@@ -903,32 +916,32 @@ function KnowledgeArticleCard({
 }) {
   return (
     <Link
-      className="block rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 transition hover:border-[color:var(--color-brand-blue)]/35 hover:bg-white"
+      className="block w-full min-w-0 overflow-hidden rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 transition hover:border-[color:var(--color-brand-blue)]/35 hover:bg-white"
       to={buildPortalKnowledgePath(article.slug)}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="truncate text-base font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-            {article.title}
+            {sanitizeCustomerFacingText(article.title)}
           </p>
           <p className="mt-1 text-sm text-[color:var(--color-muted)]">
-            {article.categoryName ?? 'Categoria indisponível'}
+            {sanitizeCustomerFacingText(article.categoryName ?? 'Categoria indisponível')}
           </p>
         </div>
         <StatusPill tone={toneForKnowledgeSource(article.source)}>
-          {article.sourceLabel || humanizeKnowledgeSourceLabel(article.source)}
+          {sanitizeCustomerFacingText(article.sourceLabel || humanizeKnowledgeSourceLabel(article.source))}
         </StatusPill>
       </div>
       <p className="mt-3 text-sm leading-6 text-[color:var(--color-muted)]">
-        {article.summary ?? 'Resumo indisponível.'}
+        {sanitizeCustomerFacingText(article.summary ?? 'Resumo indisponível.')}
       </p>
       {!compact && article.relationReason ? (
         <p className="mt-3 rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-2 text-xs leading-5 text-[color:var(--color-muted)]">
-          {article.relationReason}
+          {sanitizeCustomerFacingText(article.relationReason)}
         </p>
       ) : null}
       {article.matchReason ? (
-        <p className="mt-3 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-brand-blue)]">
+        <p className="mt-3 break-words text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-brand-blue)]">
           Encontrado por: {article.matchReason}
         </p>
       ) : null}
@@ -1207,7 +1220,7 @@ export function CustomerPortalHelpPage() {
       <section className="min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-5 shadow-[var(--shadow-panel)]">
         <PortalKnowledgeHeader
           eyebrow="Central autorizada"
-          title="Knowledge liberada para o seu tenant"
+          title="Knowledge liberada para sua conta"
           description="A busca e a descoberta desta área respeitam liberações aprovadas, publicação concluída e vínculos reais com tickets permitidos."
         />
 
@@ -1225,7 +1238,7 @@ export function CustomerPortalHelpPage() {
 
         <Panel
           title="Buscar e navegar"
-          description="Os filtros abaixo usam apenas dados reais desta conta. A busca nunca expõe conteúdo não liberado para o seu tenant."
+          description="Os filtros abaixo usam apenas dados reais desta conta. A busca nunca expõe conteúdo não liberado para você."
           className="mt-5"
         >
           <form className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_220px_auto]" onSubmit={handleSearchSubmit}>
@@ -1249,7 +1262,7 @@ export function CustomerPortalHelpPage() {
                 <option value="">Todas</option>
                 {categoryOptions.map((category) => (
                   <option key={category} value={category}>
-                    {category}
+                    {sanitizeCustomerFacingText(category)}
                   </option>
                 ))}
               </select>
@@ -1284,7 +1297,7 @@ export function CustomerPortalHelpPage() {
             </StatusPill>
             {activeQuery ? <StatusPill tone="accent">busca: {activeQuery}</StatusPill> : null}
             {selectedCategory ? (
-              <StatusPill tone="default">categoria: {selectedCategory}</StatusPill>
+              <StatusPill tone="default">categoria: {sanitizeCustomerFacingText(selectedCategory)}</StatusPill>
             ) : null}
             {selectedSource !== 'all' ? (
               <StatusPill tone="default">
@@ -1471,17 +1484,17 @@ export function CustomerPortalHelpArticlePage() {
         </Link>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <StatusPill tone={toneForKnowledgeSource(article.source)}>
-            {article.sourceLabel || humanizeKnowledgeSourceLabel(article.source)}
+            {sanitizeCustomerFacingText(article.sourceLabel || humanizeKnowledgeSourceLabel(article.source))}
           </StatusPill>
           <StatusPill tone="default">
-            {article.categoryName ?? 'Categoria indisponível'}
+            {sanitizeCustomerFacingText(article.categoryName ?? 'Categoria indisponível')}
           </StatusPill>
         </div>
         <h1 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-[color:var(--color-ink)]">
-          {article.title}
+          {sanitizeCustomerFacingText(article.title)}
         </h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-[color:var(--color-muted)]">
-          {article.summary ?? 'Resumo indisponível.'}
+          {sanitizeCustomerFacingText(article.summary ?? 'Resumo indisponível.')}
         </p>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -1489,7 +1502,7 @@ export function CustomerPortalHelpArticlePage() {
           <PortalKnowledgeInfoLine label="Atualização" value={formatDate(article.updatedAt)} />
           <PortalKnowledgeInfoLine
             label="Origem do acesso"
-            value={article.sourceLabel || humanizeKnowledgeSourceLabel(article.source)}
+            value={sanitizeCustomerFacingText(article.sourceLabel || humanizeKnowledgeSourceLabel(article.source))}
           />
         </div>
 
@@ -1499,13 +1512,13 @@ export function CustomerPortalHelpArticlePage() {
               Motivo da liberação
             </p>
             <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
-              {article.relationReason}
+              {sanitizeCustomerFacingText(article.relationReason)}
             </p>
           </div>
         ) : null}
 
         <div className="mt-6 rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-5 py-5">
-          <MarkdownDocument source={article.bodyMd} />
+          <MarkdownDocument source={sanitizeCustomerFacingText(article.bodyMd)} />
         </div>
       </section>
 
@@ -1586,7 +1599,7 @@ export function CustomerPortalTicketsPage() {
     try {
       const isFreshContext = await ensureFreshContext();
       if (!isFreshContext) {
-        setErrorMessage('O contexto do portal mudou em outra aba. Atualize para criar o ticket no tenant correto.');
+        setErrorMessage('O contexto do portal mudou em outra aba. Atualize para criar o ticket na conta correta.');
         return;
       }
 
@@ -1612,7 +1625,7 @@ export function CustomerPortalTicketsPage() {
   if (loading) {
     return (
       <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
-        <LoadingState title="Carregando tickets" description="Buscando tickets autorizados do seu tenant." />
+        <LoadingState title="Carregando tickets" description="Buscando tickets autorizados da sua conta." />
       </div>
     );
   }
@@ -1629,7 +1642,7 @@ export function CustomerPortalTicketsPage() {
               Seus tickets
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--color-muted)]">
-              A lista já chega limitada ao seu tenant e ao seu papel no portal.
+              A lista já chega limitada à sua conta e ao seu papel no portal.
             </p>
           </div>
           <GhostButton onClick={() => void load()}>Atualizar</GhostButton>
@@ -1988,7 +2001,7 @@ export function CustomerPortalTicketPage() {
       }
 
       await confirmCustomerPortalTicketResolved({ ticketId });
-      setSuccessMessage('Resolução confirmada. O ticket foi encerrado pelo contrato do portal.');
+      setSuccessMessage('Resolução confirmada. O ticket foi encerrado pelo fluxo do portal.');
       await load();
     } catch (error) {
       const nextMessage = mapError(error, 'Falha ao confirmar resolução.');
@@ -2089,10 +2102,10 @@ export function CustomerPortalTicketPage() {
               )}
             </div>
             <h1 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[color:var(--color-ink)]">
-              {detail.title}
+              {sanitizeCustomerFacingText(detail.title)}
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[color:var(--color-muted)]">
-              {detail.description}
+              {sanitizeCustomerFacingText(detail.description)}
             </p>
           </div>
           <GhostButton
@@ -2104,8 +2117,8 @@ export function CustomerPortalTicketPage() {
         </header>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <InfoLine label="Cliente" value={detail.tenantDisplayName} />
-          <InfoLine label="Solicitante" value={detail.requesterContactFullName} />
+          <InfoLine label="Cliente" value={sanitizeCustomerFacingText(detail.tenantDisplayName)} />
+          <InfoLine label="Solicitante" value={sanitizeCustomerFacingText(detail.requesterContactFullName)} />
           <InfoLine label="Origem" value={detail.customerOriginLabel} />
           <InfoLine label="Atualizado" value={formatDate(detail.updatedAt)} />
           <InfoLine
@@ -2149,16 +2162,16 @@ export function CustomerPortalTicketPage() {
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-[color:var(--color-ink)]">
-                      {item.entryType === 'message' ? item.actorLabel : item.eventLabel}
+                      {sanitizeCustomerFacingText(item.entryType === 'message' ? item.actorLabel : item.eventLabel)}
                     </p>
                     <div className="flex flex-wrap items-center gap-2 text-xs text-[color:var(--color-muted)]">
-                      <span>{item.customerEntryLabel}</span>
+                      <span>{sanitizeCustomerFacingText(item.customerEntryLabel)}</span>
                       <span>{formatDate(item.occurredAt)}</span>
                     </div>
                   </div>
                   {item.body ? (
                     <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[color:var(--color-muted)]">
-                      {item.body}
+                      {sanitizeCustomerFacingText(item.body)}
                     </p>
                   ) : (
                     <p className="mt-3 text-sm leading-6 text-[color:var(--color-muted)]">
@@ -2247,7 +2260,7 @@ export function CustomerPortalTicketPage() {
 
         <Panel
           title="Evidências"
-          description="Uploads e downloads usam contratos seguros. Endereços internos nunca são exibidos."
+          description="Uploads e downloads seguem acesso seguro. Endereços internos nunca são exibidos."
           className="p-4"
         >
           {(collaborationState?.canReply ?? detail.canAddMessage) ? (
@@ -2322,7 +2335,7 @@ export function CustomerPortalTicketPage() {
 
         <Panel
           title="Buscar na central autorizada"
-          description="Descoberta contextual segura, sem expor conteúdo fora do seu ticket ou do seu tenant."
+          description="Descoberta contextual segura, sem expor conteúdo fora do seu ticket ou da sua conta."
           className="p-4"
         >
           <Field

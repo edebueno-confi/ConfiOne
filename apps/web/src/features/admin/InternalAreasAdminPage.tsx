@@ -141,7 +141,7 @@ function MembershipRow({
   return (
     <button
       className={cx(
-        'grid min-h-[58px] w-full grid-cols-[minmax(210px,1.5fr)_minmax(150px,1fr)_110px_96px_110px] items-center gap-2 border-b border-[color:var(--color-border)] px-3 py-2 text-left transition last:border-b-0',
+        'flex min-h-[64px] w-full flex-col gap-2 border-b border-[color:var(--color-border)] px-3 py-3 text-left transition last:border-b-0 md:grid md:grid-cols-[minmax(220px,1.2fr)_minmax(190px,1fr)_minmax(210px,auto)] md:items-center',
         active
           ? 'rounded-[12px] border border-[rgba(48,127,226,0.55)] bg-[rgba(48,127,226,0.08)]'
           : 'hover:bg-[color:var(--color-surface)]',
@@ -165,13 +165,15 @@ function MembershipRow({
           {membership.tenantDisplayName}
         </p>
       </div>
-      <StatusPill>{humanizeRole(membership.role)}</StatusPill>
-      <StatusPill tone={toneForMembershipStatus(membership.status)}>
-        {humanizeStatus(membership.status)}
-      </StatusPill>
-      <p className="text-right text-[11px] text-[color:var(--color-muted)]">
-        {formatDateTime(membership.updatedAt)}
-      </p>
+      <div className="flex min-w-0 flex-wrap items-center gap-2 md:justify-end">
+        <StatusPill>{humanizeRole(membership.role)}</StatusPill>
+        <StatusPill tone={toneForMembershipStatus(membership.status)}>
+          {humanizeStatus(membership.status)}
+        </StatusPill>
+        <span className="text-[11px] text-[color:var(--color-muted)]">
+          {formatDateTime(membership.updatedAt)}
+        </span>
+      </div>
     </button>
   );
 }
@@ -294,7 +296,7 @@ export function InternalAreasAdminPage() {
   function handleAddSubmit(event: FormEvent) {
     event.preventDefault();
     if (!addDraft.tenantId || !addDraft.areaKey || !addDraft.selectedUserId) {
-      setActionMessage('Selecione tenant, área e usuário antes de adicionar.');
+      setActionMessage('Selecione cliente, área e usuário antes de adicionar.');
       return;
     }
 
@@ -307,7 +309,7 @@ export function InternalAreasAdminPage() {
           tenantId: addDraft.tenantId,
           userId: addDraft.selectedUserId,
         }),
-      'Membership de área interna adicionado.',
+      'Vínculo de área interna adicionado.',
     );
   }
 
@@ -324,7 +326,7 @@ export function InternalAreasAdminPage() {
           role: editDraft.role,
           status: editDraft.status,
         }),
-      'Membership de área interna atualizado.',
+      'Vínculo de área interna atualizado.',
     );
   }
 
@@ -335,7 +337,7 @@ export function InternalAreasAdminPage() {
 
     void runAction(
       () => archiveInternalAreaMembership({ membershipId: selectedMembership.membershipId }),
-      'Membership de área interna arquivado.',
+      'Vínculo de área interna arquivado.',
     );
   }
 
@@ -343,7 +345,7 @@ export function InternalAreasAdminPage() {
     return (
       <LoadingState
         title="Carregando áreas internas"
-        description="Estamos carregando áreas acionáveis e memberships governados."
+        description="Estamos carregando áreas acionáveis e vínculos operacionais."
       />
     );
   }
@@ -376,7 +378,7 @@ export function InternalAreasAdminPage() {
                 Áreas internas
               </h1>
               <p className="mt-1 text-[13px] text-[color:var(--color-muted)]">
-                Governança de quem pode receber e operar acionamentos internos por tenant.
+                Governança de quem pode receber e operar acionamentos internos por cliente.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -392,8 +394,8 @@ export function InternalAreasAdminPage() {
 
         {actionMessage ? <InlineNotice>{actionMessage}</InlineNotice> : null}
 
-        <div className="grid min-h-0 flex-1 gap-[var(--workspace-panel-gap)] overflow-hidden xl:grid-cols-[minmax(260px,310px)_minmax(0,1fr)_minmax(300px,340px)]">
-          <aside className="min-h-0 overflow-y-auto rounded-[18px] border border-[color:var(--color-border)] bg-white/93 p-3 shadow-[0_12px_24px_rgba(19,33,79,0.05)]">
+        <div className="grid min-h-0 flex-1 gap-[var(--workspace-panel-gap)] overflow-y-auto lg:grid-cols-[minmax(250px,300px)_minmax(0,1fr)] lg:overflow-hidden">
+          <aside className="min-h-0 rounded-[18px] border border-[color:var(--color-border)] bg-white/93 p-3 lg:overflow-y-auto">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
               Áreas acionáveis
             </p>
@@ -404,29 +406,26 @@ export function InternalAreasAdminPage() {
             </div>
           </aside>
 
-          <main className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/95 shadow-[0_12px_24px_rgba(19,33,79,0.05)]">
+          <main className="flex min-h-[560px] min-w-0 flex-col overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/95 lg:min-h-0">
             <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-4 py-2.5">
               <div>
                 <h2 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                  Memberships
+                  Vínculos
                 </h2>
                 <p className="mt-0.5 text-[12px] text-[color:var(--color-muted)]">
-                  {memberships.length} vínculo(s) governados por RPC.
+                  {memberships.length} vínculo(s) ativos na governança.
                 </p>
               </div>
               <StatusPill>{memberships.filter((item) => item.status === 'active').length} ativos</StatusPill>
             </div>
-            <div className="grid grid-cols-[minmax(210px,1.5fr)_minmax(150px,1fr)_110px_96px_110px] gap-2 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-1.5 text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
-              <span>Usuário</span>
-              <span>Área/Tenant</span>
-              <span>Role</span>
-              <span>Status</span>
-              <span className="text-right">Atualizado</span>
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
+              <span>Usuário, área e cliente</span>
+              <span>Papel, status e atualização</span>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
               {memberships.length === 0 ? (
                 <EmptyState
-                  title="Nenhum membership criado"
+                  title="Nenhum vínculo criado"
                   description="Adicione membros ativos para que áreas internas vejam a fila operacional."
                 />
               ) : (
@@ -442,55 +441,52 @@ export function InternalAreasAdminPage() {
                 </div>
               )}
             </div>
-          </main>
-
-          <aside className="min-h-0 overflow-y-auto rounded-[18px] border border-[color:var(--color-border)] bg-white/93 p-3 shadow-[0_12px_24px_rgba(19,33,79,0.05)]">
-            {selectedMembership ? (
-              <div className="grid gap-3">
-                <section className="rounded-[16px] border border-[rgba(48,127,226,0.22)] bg-[linear-gradient(180deg,rgba(8,24,61,1),rgba(13,36,92,0.98))] px-4 py-3 text-white">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/58">
-                    Membership selecionado
-                  </p>
-                  <h2 className="mt-1 text-[1.05rem] font-semibold tracking-[-0.035em]">
-                    {selectedMembership.userFullName ?? selectedMembership.userEmail}
-                  </h2>
-                  <p className="mt-1 text-[12px] text-white/72">
-                    {selectedMembership.areaLabel} · {selectedMembership.tenantDisplayName}
-                  </p>
-                </section>
-                <section className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-4 py-3 text-[12px]">
-                  <p className="font-semibold text-[color:var(--color-ink)]">Permissão operacional</p>
-                  <p className="mt-1 leading-5 text-[color:var(--color-muted)]">
-                    Usuários ativos neste vínculo podem ver acionamentos da área no tenant
-                    correspondente. A permissão real é aplicada no backend por view/RPC.
-                  </p>
-                </section>
-                <div className="grid gap-2">
-                  <AppButton disabled={submitting} onClick={openEditDrawer} type="button">
-                    Alterar role/status
-                  </AppButton>
-                  <GhostButton
-                    disabled={submitting || !selectedMembership.canArchive}
-                    onClick={handleArchive}
-                    type="button"
-                  >
-                    Arquivar membership
-                  </GhostButton>
+            <section className="shrink-0 border-t border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
+              {selectedMembership ? (
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+                      Vínculo selecionado
+                    </p>
+                    <h2 className="mt-1 truncate text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                      {selectedMembership.userFullName ?? selectedMembership.userEmail}
+                    </h2>
+                    <p className="mt-1 truncate text-[12px] text-[color:var(--color-muted)]">
+                      {selectedMembership.areaLabel} · {selectedMembership.tenantDisplayName}
+                    </p>
+                  </div>
+                  <div className="flex min-w-0 flex-col gap-2 lg:max-w-[360px]">
+                    <p className="line-clamp-2 text-[12px] leading-5 text-[color:var(--color-muted)]">
+                      Usuários ativos neste vínculo podem ver acionamentos da área no cliente correspondente.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <AppButton disabled={submitting} onClick={openEditDrawer} type="button">
+                        Alterar papel/status
+                      </AppButton>
+                      <GhostButton
+                        disabled={submitting || !selectedMembership.canArchive}
+                        onClick={handleArchive}
+                        type="button"
+                      >
+                        Arquivar vínculo
+                      </GhostButton>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <EmptyState
-                title="Nenhum membership selecionado"
-                description="Selecione um vínculo para revisar permissões e ações administrativas."
-              />
-            )}
-          </aside>
+              ) : (
+                <EmptyState
+                  title="Nenhum vínculo selecionado"
+                  description="Selecione um vínculo para revisar permissões e ações administrativas."
+                />
+              )}
+            </section>
+          </main>
         </div>
       </div>
 
       {drawer === 'add' ? (
         <GovernedActionDrawer
-          description="Adicione um usuário existente a uma área acionável para um tenant."
+          description="Adicione um usuário existente a uma área acionável para um cliente."
           footer={
             <>
               <GhostButton onClick={() => setDrawer(null)} type="button">
@@ -502,10 +498,10 @@ export function InternalAreasAdminPage() {
             </>
           }
           onClose={() => setDrawer(null)}
-          title="Adicionar membership"
+          title="Adicionar vínculo"
         >
           <form className="space-y-5" id="internal-area-add-form" onSubmit={handleAddSubmit}>
-            <Field label="Tenant">
+            <Field label="Cliente">
               <SelectInput
                 onChange={(event) =>
                   setAddDraft((current) => ({ ...current, tenantId: event.target.value }))
@@ -576,7 +572,7 @@ export function InternalAreasAdminPage() {
               </div>
             ) : null}
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Role">
+              <Field label="Papel">
                 <SelectInput
                   onChange={(event) =>
                     setAddDraft((current) => ({
@@ -617,19 +613,19 @@ export function InternalAreasAdminPage() {
 
       {drawer === 'edit' && selectedMembership ? (
         <GovernedActionDrawer
-          description="Atualize role/status do vínculo. Arquivamento remove acesso operacional da área."
+          description="Atualize papel e status do vínculo. Arquivamento remove acesso operacional da área."
           footer={
             <>
               <GhostButton onClick={() => setDrawer(null)} type="button">
                 Cancelar
               </GhostButton>
               <AppButton disabled={submitting} form="internal-area-edit-form" type="submit">
-                Atualizar membership
+                Atualizar vínculo
               </AppButton>
             </>
           }
           onClose={() => setDrawer(null)}
-          title="Alterar membership"
+          title="Alterar vínculo"
         >
           <form className="space-y-5" id="internal-area-edit-form" onSubmit={handleEditSubmit}>
             <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
@@ -641,7 +637,7 @@ export function InternalAreasAdminPage() {
               </p>
             </section>
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Role">
+              <Field label="Papel">
                 <SelectInput
                   onChange={(event) =>
                     setEditDraft((current) => ({

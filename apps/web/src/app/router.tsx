@@ -59,10 +59,8 @@ function lazyRouteModule<TModule, TKey extends keyof TModule>(
 function RouteErrorBoundary() {
   const error = useRouteError();
   const description = isChunkLoadError(error)
-    ? 'A aplicação tentou abrir uma área com um arquivo de interface que ficou desatualizado no navegador. Recarregue a página para sincronizar os assets do build atual.'
-    : error instanceof Error
-      ? error.message
-      : 'Ocorreu uma falha inesperada ao abrir esta área.';
+    ? 'Esta área precisa ser recarregada para sincronizar a versão mais recente da interface.'
+    : 'Não foi possível concluir a abertura desta área. Recarregue a página ou tente novamente.';
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-6 py-12">

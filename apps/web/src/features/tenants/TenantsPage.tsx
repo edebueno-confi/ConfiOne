@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { formatDateTime } from '../../app/format';
+import { sanitizeOperationalVisibleText } from '../../lib/operational-copy';
 import {
   ContractUnavailableState,
   EmptyState,
@@ -705,14 +706,14 @@ function activityLabel(entry: AdminAuditFeedRow) {
   }
 
   if (entry.action === 'insert') {
-    return 'Membership criada';
+    return 'Vínculo criado';
   }
 
   if (entry.action === 'update') {
-    return 'Membership atualizada';
+    return 'Vínculo atualizado';
   }
 
-  return 'Membership removida';
+  return 'Vínculo removido';
 }
 
 function activityDescription(entry: AdminAuditFeedRow) {
@@ -1012,7 +1013,7 @@ export function TenantsPage() {
     } catch (error) {
       const classified = classifyAdminError(
         error,
-        'Não foi possível carregar subscriptions comerciais da conta B2B.',
+        'Não foi possível carregar as assinaturas comerciais da conta B2B.',
       );
 
       if (classified.kind === 'session-expired') {
@@ -1042,7 +1043,7 @@ export function TenantsPage() {
     } catch (error) {
       const classified = classifyAdminError(
         error,
-        'Não foi possível carregar o detalhe da subscription comercial.',
+        'Não foi possível carregar o detalhe da assinatura comercial.',
       );
 
       if (classified.kind === 'session-expired') {
@@ -1601,7 +1602,7 @@ export function TenantsPage() {
 
   function openUpdateSubscription() {
     if (!customerProductSubscriptionDetail) {
-      setSubscriptionActionMessage('Selecione uma subscription antes de editar.');
+      setSubscriptionActionMessage('Selecione uma assinatura antes de editar.');
       return;
     }
 
@@ -1652,11 +1653,11 @@ export function TenantsPage() {
       await loadCustomerProductSubscriptions(selectedTenantId);
       setSubscriptionActionMode(null);
       setSubscriptionForm(emptySubscriptionForm());
-      setSubscriptionActionMessage('Subscription comercial sincronizada com sucesso.');
+      setSubscriptionActionMessage('Assinatura comercial salva com sucesso.');
     } catch (error) {
       const classified = classifyAdminError(
         error,
-        'Não foi possível sincronizar a subscription comercial.',
+        'Não foi possível salvar a assinatura comercial.',
       );
 
       if (classified.kind === 'session-expired') {
@@ -1689,11 +1690,11 @@ export function TenantsPage() {
       });
       await loadSurface(selectedTenantId);
       await loadCustomerProductSubscriptions(selectedTenantId);
-      setSubscriptionActionMessage('Subscription arquivada com status cancelado.');
+      setSubscriptionActionMessage('Assinatura arquivada com status cancelado.');
     } catch (error) {
       const classified = classifyAdminError(
         error,
-        'Não foi possível arquivar a subscription comercial.',
+        'Não foi possível arquivar a assinatura comercial.',
       );
 
       if (classified.kind === 'session-expired') {
@@ -1721,7 +1722,7 @@ export function TenantsPage() {
   }
 
   if (backendDenied) {
-    return <Navigate replace state={{ reason: 'backend-permission' }} to="/access-denied" />;
+    return <Navigate replace state={{ reason: 'missing-authorized-workspace' }} to="/access-denied" />;
   }
 
   if (phase === 'loading') {
@@ -1846,7 +1847,7 @@ export function TenantsPage() {
 
                   <div className="space-y-1">
                     <label className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                      Memberships
+                      Vínculos
                     </label>
                     <SelectInput
                       className="min-h-8 text-[0.78rem]"
@@ -1856,9 +1857,9 @@ export function TenantsPage() {
                       value={membershipFilter}
                     >
                       <option value="all">Todas</option>
-                      <option value="active">Com memberships ativas</option>
+                      <option value="active">Com vínculos ativos</option>
                       <option value="invited">Com convites pendentes</option>
-                      <option value="none">Sem memberships</option>
+                      <option value="none">Sem vínculos</option>
                     </SelectInput>
                   </div>
 
@@ -1904,7 +1905,7 @@ export function TenantsPage() {
               <TextInput
                 className="min-h-9 w-[288px] text-[0.92rem]"
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Buscar cliente, slug ou contato"
+                placeholder="Buscar cliente, empresa ou contato"
                 value={query}
               />
               <SelectInput
@@ -1960,16 +1961,16 @@ export function TenantsPage() {
                                   tenant.membership_count,
                                 )}
                               >
-                                {tenant.active_membership_count}/{tenant.membership_count} memberships
+                                {tenant.active_membership_count}/{tenant.membership_count} vínculos
                               </StatusPill>
                             </div>
 
                             <div className="space-y-1">
                               <p className="text-[0.98rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                                {tenant.display_name}
+                                {sanitizeOperationalVisibleText(tenant.display_name)}
                               </p>
                               <p className="text-[0.84rem] text-[color:var(--color-muted)]">
-                                {tenant.slug} · {tenant.legal_name}
+                                {sanitizeOperationalVisibleText(tenant.legal_name)}
                               </p>
                             </div>
 
@@ -1979,7 +1980,7 @@ export function TenantsPage() {
                               </span>
                               <span>
                                 Contato principal:{' '}
-                                {tenant.primary_contact_full_name ?? 'Indisponível'}
+                                {sanitizeOperationalVisibleText(tenant.primary_contact_full_name)}
                               </span>
                               <span>Plano: Indisponível</span>
                               <span>
@@ -2045,15 +2046,15 @@ export function TenantsPage() {
                           {labelForTenantStatus(tenantDetail.status)}
                         </StatusPill>
                         <StatusPill>
-                          {tenantDetail.active_membership_count}/{tenantDetail.membership_count} memberships
+                          {tenantDetail.active_membership_count}/{tenantDetail.membership_count} vínculos
                         </StatusPill>
                       </div>
                       <div className="space-y-1">
                         <h3 className="text-[0.98rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                          {tenantDetail.display_name}
+                          {sanitizeOperationalVisibleText(tenantDetail.display_name)}
                         </h3>
                         <p className="text-[0.86rem] leading-5 text-[color:var(--color-muted)]">
-                          {tenantDetail.slug} · {tenantDetail.legal_name}
+                          {sanitizeOperationalVisibleText(tenantDetail.legal_name)}
                         </p>
                       </div>
                     </div>
@@ -2065,7 +2066,7 @@ export function TenantsPage() {
                         Contato principal
                       </p>
                       <p className="text-[0.92rem] font-medium text-[color:var(--color-ink)]">
-                        {primaryContact?.full_name ?? 'Indisponível'}
+                        {sanitizeOperationalVisibleText(primaryContact?.full_name)}
                       </p>
                     </div>
 
@@ -2085,7 +2086,7 @@ export function TenantsPage() {
                     {[
                       { id: 'summary', label: 'Resumo' },
                       { id: 'account', label: 'Conta B2B' },
-                      { id: 'subscriptions', label: 'Subscriptions' },
+                      { id: 'subscriptions', label: 'Assinaturas' },
                       { id: 'members', label: 'Membros' },
                       { id: 'status', label: 'Status' },
                       { id: 'activity', label: 'Atividade' },
@@ -2112,7 +2113,7 @@ export function TenantsPage() {
                         <div className="grid grid-cols-2 gap-2">
                           <TenantMetricTile
                             helper="vínculos ativos"
-                            label="Memberships"
+                            label="Vínculos"
                             value={String(tenantDetail.active_membership_count)}
                           />
                           <TenantMetricTile
@@ -2129,8 +2130,7 @@ export function TenantsPage() {
                             Informações do cliente
                           </p>
                           <TenantRailInfoRow label="Grupo" value="Indisponível" />
-                          <TenantRailInfoRow label="Slug" value={tenantDetail.slug} />
-                          <TenantRailInfoRow label="Empresa" value={tenantDetail.legal_name} />
+                          <TenantRailInfoRow label="Empresa" value={sanitizeOperationalVisibleText(tenantDetail.legal_name)} />
                           <TenantRailInfoRow
                             label="Plano"
                             value={customerAccount.profile?.accountTier ?? 'Indisponível'}
@@ -2161,7 +2161,7 @@ export function TenantsPage() {
                               onClick={() => setActiveTab('members')}
                               type="button"
                             >
-                              Gerenciar memberships
+                              Gerenciar vínculos
                             </button>
                             <button
                               className="inline-flex min-h-9 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white px-4 text-[0.88rem] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/40 hover:bg-[color:var(--color-surface)]"
@@ -2205,7 +2205,7 @@ export function TenantsPage() {
                                 >
                                   <div className="flex flex-wrap items-center gap-2">
                                     <span className="text-[0.92rem] font-medium text-[color:var(--color-ink)]">
-                                      {contact.full_name}
+                                      {sanitizeOperationalVisibleText(contact.full_name)}
                                     </span>
                                     {contact.is_primary ? (
                                       <StatusPill tone="accent">Principal</StatusPill>
@@ -2236,7 +2236,7 @@ export function TenantsPage() {
                                 Perfil operacional
                               </p>
                               <p className="mt-1 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
-                                Mantido por RPC administrativa, com auditoria e sanitização de conteúdo sensível.
+                                Mantido por ação administrativa auditada, com conteúdo sensível protegido.
                               </p>
                             </div>
                             <AppButton
@@ -2506,7 +2506,7 @@ export function TenantsPage() {
                           <form className="grid gap-2" onSubmit={handleSaveAccountCustomization}>
                             {editingCustomizationId ? (
                               <InlineNotice>
-                                Editando customização existente por contrato administrativo auditado.
+                                Editando customização existente por ação administrativa auditada.
                               </InlineNotice>
                             ) : null}
                             <Field label="Customização">
@@ -2727,10 +2727,10 @@ export function TenantsPage() {
 
                         <section className="space-y-2 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3.5">
                           <p className="text-[0.92rem] font-semibold text-[color:var(--color-ink)]">
-                            Features e módulos
+                            Recursos e módulos
                           </p>
                           <form className="grid gap-2" onSubmit={handleSetAccountFeature}>
-                            <Field label="Feature key">
+                            <Field label="Chave do recurso">
                               <TextInput
                                 onChange={(event) =>
                                   setAccountFeatureForm((current) => ({
@@ -2756,16 +2756,16 @@ export function TenantsPage() {
                               Habilitada
                             </label>
                             <AppButton disabled={accountSubmittingKey === 'feature:set'} type="submit">
-                              Atualizar feature
+                              Atualizar recurso
                             </AppButton>
                           </form>
                           <div className="flex flex-wrap gap-2">
                             {customerAccount.features.length === 0 ? (
-                              <InlineNotice>Nenhuma feature registrada.</InlineNotice>
+                              <InlineNotice>Nenhum recurso registrado.</InlineNotice>
                             ) : (
                               customerAccount.features.map((feature) => (
                                 <StatusPill key={feature.id} tone={feature.enabled ? 'positive' : 'default'}>
-                                  {feature.featureKey}: {feature.enabled ? 'on' : 'off'}
+                                  {feature.featureKey}: {feature.enabled ? 'ativo' : 'inativo'}
                                 </StatusPill>
                               ))
                             )}
@@ -2780,10 +2780,10 @@ export function TenantsPage() {
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div className="min-w-0">
                               <p className="text-[0.92rem] font-semibold text-[color:var(--color-ink)]">
-                                Operação de subscriptions
+                                Operação de assinaturas
                               </p>
                               <p className="mt-1 text-[0.78rem] leading-5 text-[color:var(--color-muted)]">
-                                Criação, ajuste e arquivamento passam pelas RPCs administrativas V1-E.
+                                Criação, ajuste e arquivamento seguem os acessos administrativos da plataforma.
                               </p>
                             </div>
                             <div className="flex flex-wrap gap-2">
@@ -2792,7 +2792,7 @@ export function TenantsPage() {
                                 onClick={openCreateSubscription}
                                 type="button"
                               >
-                                Nova subscription
+                                Nova assinatura
                               </GhostButton>
                               <GhostButton
                                 disabled={!customerProductSubscriptionDetail || subscriptionSubmitting}
@@ -2819,11 +2819,11 @@ export function TenantsPage() {
 
                         {subscriptionsPhase === 'loading' ? (
                           <LoadingState
-                            description="Carregando produtos, planos, features e responsáveis pelo contrato real."
-                            title="Carregando subscriptions"
+                            description="Carregando produtos, planos, recursos e responsáveis comerciais."
+                            title="Carregando assinaturas"
                           />
                         ) : subscriptionsPhase === 'contract-unavailable' ? (
-                          <ContractUnavailableState contractName="subscriptions comerciais V1-E" />
+                          <ContractUnavailableState resourceName="as assinaturas comerciais" />
                         ) : subscriptionsPhase === 'error' ? (
                           <ErrorState
                             description={
@@ -2833,26 +2833,26 @@ export function TenantsPage() {
                           />
                         ) : customerProductSubscriptions.length === 0 ? (
                           <EmptyState
-                            description="Nenhuma subscription comercial foi materializada para este cliente no read model V1-E."
-                            title="Sem subscriptions comerciais"
+                            description="Nenhuma assinatura comercial foi registrada para este cliente."
+                            title="Sem assinaturas comerciais"
                           />
                         ) : (
                           <>
                             <div className="grid gap-2 md:grid-cols-3">
                               <TenantMetricTile
                                 helper="vínculos cliente-produto"
-                                label="Subscriptions"
+                                label="Assinaturas"
                                 value={String(customerProductSubscriptions.length)}
                               />
                               <TenantMetricTile
-                                helper="features ativas"
-                                label="Entitlements"
+                                helper="recursos ativos"
+                                label="Recursos"
                                 value={String(
                                   customerProductSubscriptionDetail?.entitlements.length ?? 0,
                                 )}
                               />
                               <TenantMetricTile
-                                helper="ownership ativo"
+                                helper="responsáveis ativos"
                                 label="Responsáveis"
                                 value={String(customerProductSubscriptionDetail?.owners.length ?? 0)}
                               />
@@ -2911,7 +2911,7 @@ export function TenantsPage() {
                               <section className="space-y-3 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3.5">
                                 {!customerProductSubscriptionDetail ? (
                                   <EmptyState
-                                    description="Selecione uma subscription para abrir produto, plano, features e ownership."
+                                    description="Selecione uma assinatura para abrir produto, plano, recursos e responsáveis."
                                     title="Detalhe indisponível"
                                   />
                                 ) : (
@@ -2939,7 +2939,7 @@ export function TenantsPage() {
                                       </p>
                                       <p className="mt-1 text-[0.84rem] leading-5 text-[color:var(--color-muted)]">
                                         Plano {customerProductSubscriptionDetail.planDisplayName} ·
-                                        Contrato{' '}
+                                        Referência comercial{' '}
                                         {displayOptionalText(
                                           customerProductSubscriptionDetail.contractReference,
                                         )}
@@ -2976,7 +2976,7 @@ export function TenantsPage() {
                                     <section className="space-y-2">
                                       <div className="flex flex-wrap items-center justify-between gap-2">
                                         <p className="text-[0.92rem] font-semibold text-[color:var(--color-ink)]">
-                                          Features comerciais habilitadas
+                                          Recursos comerciais habilitados
                                         </p>
                                         <StatusPill>
                                           {customerProductSubscriptionDetail.entitlements.length}
@@ -2984,7 +2984,7 @@ export function TenantsPage() {
                                       </div>
                                       {customerProductSubscriptionDetail.entitlements.length === 0 ? (
                                         <InlineNotice>
-                                          Nenhuma feature comercial foi retornada pelo read model.
+                                          Nenhum recurso comercial ficou disponível para esta assinatura.
                                         </InlineNotice>
                                       ) : (
                                         <div className="space-y-2">
@@ -3034,7 +3034,7 @@ export function TenantsPage() {
                                       </div>
                                       {customerProductSubscriptionDetail.owners.length === 0 ? (
                                         <InlineNotice>
-                                          Nenhum responsável interno foi retornado pelo read model.
+                                          Nenhum responsável interno ficou disponível para esta assinatura.
                                         </InlineNotice>
                                       ) : (
                                         <div className="space-y-2">
@@ -3076,8 +3076,8 @@ export function TenantsPage() {
                       <div className="space-y-3">
                         {selectedTenantMemberships.length === 0 ? (
                           <EmptyState
-                            description="Nenhuma membership foi vinculada a este cliente."
-                            title="Sem memberships"
+                            description="Nenhum vínculo foi registrado para este cliente."
+                            title="Sem vínculos"
                           />
                         ) : (
                           selectedTenantMemberships.map((membership) => (
@@ -3087,7 +3087,7 @@ export function TenantsPage() {
                             >
                               <div className="flex flex-wrap items-center gap-2">
                                 <span className="text-[0.92rem] font-semibold text-[color:var(--color-ink)]">
-                                  {membership.user_full_name ?? 'Usuário sem nome'}
+                                  {sanitizeOperationalVisibleText(membership.user_full_name, 'Usuario sem nome')}
                                 </span>
                                 <StatusPill>
                                   {membership.role.replace('tenant_', '').replace('_', ' ')}
@@ -3205,8 +3205,8 @@ export function TenantsPage() {
         <GovernedActionDrawer
           description={
             subscriptionActionMode === 'create'
-              ? 'Crie um vínculo cliente-produto-plano usando catálogo comercial e RPC administrativa.'
-              : 'Atualize status, plano e campos operacionais da subscription selecionada.'
+              ? 'Crie um vínculo cliente-produto-plano usando o catálogo comercial disponível.'
+              : 'Atualize status, plano e campos operacionais da assinatura selecionada.'
           }
           footer={
             <>
@@ -3230,15 +3230,15 @@ export function TenantsPage() {
                 form="admin-subscription-form"
                 type="submit"
               >
-                {subscriptionSubmitting ? 'Sincronizando...' : 'Salvar subscription'}
+                {subscriptionSubmitting ? 'Salvando...' : 'Salvar assinatura'}
               </AppButton>
             </>
           }
           onClose={() => setSubscriptionActionMode(null)}
           title={
             subscriptionActionMode === 'create'
-              ? 'Nova subscription comercial'
-              : 'Editar subscription comercial'
+              ? 'Nova assinatura comercial'
+              : 'Editar assinatura comercial'
           }
         >
           <form className="grid gap-4" id="admin-subscription-form" onSubmit={handleSaveSubscription}>
@@ -3316,7 +3316,7 @@ export function TenantsPage() {
                 </SelectInput>
               </Field>
 
-              <Field label="Contrato">
+              <Field label="Referência comercial">
                 <TextInput
                   maxLength={120}
                   onChange={(event) =>
@@ -3325,7 +3325,7 @@ export function TenantsPage() {
                       contractReference: event.target.value,
                     }))
                   }
-                  placeholder="Contrato ou referência operacional"
+                  placeholder="Referência operacional ou comercial"
                   value={subscriptionForm.contractReference}
                 />
               </Field>
@@ -3388,8 +3388,8 @@ export function TenantsPage() {
             </Field>
 
             <InlineNotice>
-              Billing, preço, invoice e financeiro continuam fora deste corte. Features e responsáveis
-              permanecem em leitura até o próximo lote de mutation dedicado.
+              Cobrança, preço, nota fiscal e financeiro continuam fora deste corte. Recursos e responsáveis
+              permanecem em leitura até o próximo lote de edição dedicada.
             </InlineNotice>
           </form>
         </GovernedActionDrawer>
@@ -3423,7 +3423,7 @@ export function TenantsPage() {
           title="Novo cliente"
         >
           <form className="grid gap-4 md:grid-cols-2" id="admin-tenant-create-form" onSubmit={handleCreateTenant}>
-            <Field label="Slug">
+            <Field label="Identificador público">
               <TextInput
                 onChange={(event) =>
                   setTenantForm((current) => ({
@@ -3518,7 +3518,7 @@ export function TenantsPage() {
                   >
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-medium text-[color:var(--color-ink)]">
-                        {contact.full_name}
+                        {sanitizeOperationalVisibleText(contact.full_name)}
                       </span>
                       {contact.is_primary ? <StatusPill tone="accent">Principal</StatusPill> : null}
                       <StatusPill tone={contact.is_active ? 'positive' : 'critical'}>
@@ -3699,10 +3699,10 @@ export function TenantsPage() {
               <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_180px_180px] md:items-center">
                 <div className="min-w-0">
                   <p className="truncate text-lg font-semibold tracking-[-0.035em] text-[color:var(--color-ink)]">
-                    {tenantDetail.display_name}
+                    {sanitizeOperationalVisibleText(tenantDetail.display_name)}
                   </p>
                   <p className="truncate text-sm text-[color:var(--color-muted)]">
-                    {tenantDetail.slug}
+                    {sanitizeOperationalVisibleText(tenantDetail.legal_name)}
                   </p>
                 </div>
                 <TenantMetricTile
@@ -3733,7 +3733,7 @@ export function TenantsPage() {
                   </SelectInput>
                 </Field>
                 <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 text-sm leading-6 text-[color:var(--color-muted)]">
-                  A mudança afeta apenas o status operacional permitido pelo contrato administrativo.
+                  A mudança afeta apenas o status operacional permitido para este cliente.
                 </div>
               </div>
             </section>

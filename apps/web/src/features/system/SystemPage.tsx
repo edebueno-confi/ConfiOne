@@ -7,6 +7,7 @@ import {
   useState,
 } from 'react';
 import { Navigate } from 'react-router-dom';
+import { sanitizeOperationalVisibleText } from '../../lib/operational-copy';
 import {
   getAdminAiOperationalContextReadiness,
   getAdminSystemOperationalSummary,
@@ -147,20 +148,27 @@ function formatSanitizedContext(value: unknown) {
     .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
     .filter((item, index, all) => all.indexOf(item) === index);
 
-  return keys.length > 0 ? keys.join(', ') : 'Indisponível';
+  if (keys.length === 0) {
+    return 'Indisponível';
+  }
+
+  return `${keys.length} campo${keys.length === 1 ? '' : 's'} protegido${keys.length === 1 ? '' : 's'}`;
 }
 
 function buildSystemEventMessage(entry: AdminAuditFeedRow) {
-  const actor = entry.actor_display_name || entry.actor_email || 'Operador interno';
-  const service = entry.service_label || 'Sistema';
-  const action = entry.action_label || 'Evento';
-  const scope = entry.scope_label || 'escopo global';
+  const actor = sanitizeOperationalVisibleText(entry.actor_display_name || entry.actor_email, 'Operador interno');
+  const service = sanitizeOperationalVisibleText(entry.service_label || 'Sistema');
+  const action = sanitizeOperationalVisibleText(entry.action_label || 'Evento');
+  const scope = sanitizeOperationalVisibleText(entry.scope_label || 'escopo global');
 
   return `${actor} registrou ${action.toLowerCase()} em ${service.toLowerCase()} dentro de ${scope}.`;
 }
 
 function buildSystemImpact(entry: AdminAuditFeedRow) {
-  return entry.impact_label || 'Registro informativo para manter contexto do control plane.';
+  return sanitizeOperationalVisibleText(
+    entry.impact_label,
+    'Registro informativo para manter contexto operacional.',
+  );
 }
 
 function buildSystemActions(entry: AdminAuditFeedRow) {
@@ -509,7 +517,7 @@ export function SystemPage() {
         canSendCount,
         reason:
           referenceRow.reason_if_unavailable ??
-          (activeCount === rows.length ? 'Canal disponível conforme contrato atual.' : 'Indisponível'),
+          (activeCount === rows.length ? 'Canal disponível para a operação atual.' : 'Indisponível'),
         setup: referenceRow.required_setup_summary || 'Indisponível',
       };
     });
@@ -560,7 +568,7 @@ export function SystemPage() {
   const selectedSeverity = selectedEntry ? selectedEntry.severity : 'ok';
 
   if (backendDenied) {
-    return <Navigate replace state={{ reason: 'backend-permission' }} to="/access-denied" />;
+    return <Navigate replace state={{ reason: 'missing-authorized-workspace' }} to="/access-denied" />;
   }
 
   if (phase === 'loading') {
@@ -651,15 +659,15 @@ export function SystemPage() {
                   onClick={() => setActiveTab(item.id as SystemTab)}
                   type="button"
                 >
-                  <span className="text-[0.8rem] font-semibold text-[color:var(--color-ink)]">{item.label}</span>
-                  <span className="text-[0.72rem] text-[color:var(--color-muted)]">{item.count}</span>
+                  <span className="min-w-0 truncate text-[0.8rem] font-semibold text-[color:var(--color-ink)]">{item.label}</span>
+                  <span className="shrink-0 text-[0.72rem] text-[color:var(--color-muted)]">{item.count}</span>
                 </button>
               ))}
             </div>
 
             <label className="grid gap-1.5">
               <span className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">Tipo</span>
-              <SelectInput className="h-9 rounded-[14px] px-3.5 text-[13px]" onChange={(event) => setActionFilter(event.target.value)} value={actionFilter}>
+              <SelectInput className="h-9 min-w-0 rounded-[14px] px-3.5 text-[13px]" onChange={(event) => setActionFilter(event.target.value)} value={actionFilter}>
                 <option value="all">Todos</option>
                 {distinctActions.map((action) => (
                   <option key={action} value={action}>
@@ -672,7 +680,7 @@ export function SystemPage() {
             <label className="grid gap-1.5">
               <span className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">Severidade</span>
               <SelectInput
-                className="h-9 rounded-[14px] px-3.5 text-[13px]"
+                className="h-9 min-w-0 rounded-[14px] px-3.5 text-[13px]"
                 onChange={(event) => setSeverityFilter(event.target.value as 'all' | SystemSeverity)}
                 value={severityFilter}
               >
@@ -686,7 +694,7 @@ export function SystemPage() {
             <label className="grid gap-1.5">
               <span className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">Período</span>
               <SelectInput
-                className="h-9 rounded-[14px] px-3.5 text-[13px]"
+                className="h-9 min-w-0 rounded-[14px] px-3.5 text-[13px]"
                 onChange={(event) => setPeriodFilter(event.target.value as SystemPeriodFilter)}
                 value={periodFilter}
               >
@@ -699,7 +707,7 @@ export function SystemPage() {
 
             <label className="grid gap-1.5">
               <span className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">Serviço</span>
-              <SelectInput className="h-9 rounded-[14px] px-3.5 text-[13px]" onChange={(event) => setServiceFilter(event.target.value)} value={serviceFilter}>
+              <SelectInput className="h-9 min-w-0 rounded-[14px] px-3.5 text-[13px]" onChange={(event) => setServiceFilter(event.target.value)} value={serviceFilter}>
                 <option value="all">Todos</option>
                 {distinctServices.map((service) => (
                   <option key={service} value={service}>
@@ -712,7 +720,7 @@ export function SystemPage() {
             <label className="grid gap-1.5">
               <span className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">Buscar</span>
               <TextInput
-                className="h-9 rounded-[14px] px-3.5 text-[13px]"
+                className="h-9 min-w-0 rounded-[14px] px-3.5 text-[13px]"
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Pessoa, cliente ou serviço"
                 value={query}
@@ -776,9 +784,9 @@ export function SystemPage() {
                       </div>
                       <div className="mt-3 grid gap-1 text-xs leading-5 text-[color:var(--color-muted)]">
                         <p>
-                          Tenants ativos: {channel.activeCount}/{channel.tenantCount}
+                          Clientes ativos: {channel.activeCount}/{channel.tenantCount}
                         </p>
-                        <p>Envio permitido: {channel.canSendCount > 0 ? 'Sim, via contrato atual' : 'Não'}</p>
+                        <p>Envio permitido: {channel.canSendCount > 0 ? 'Sim, conforme operação atual' : 'Não'}</p>
                         <p>{channel.reason}</p>
                         <p>Próximo requisito: {channel.setup}</p>
                       </div>
@@ -831,13 +839,13 @@ export function SystemPage() {
                     </div>
                     <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3.5 py-3">
                       <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                        Provider/modelo
+                        Motor de resposta
                       </p>
                       <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
                         Não configurado
                       </p>
                       <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
-                        Sem LLM, embedding, job ou credencial externa nesta versão
+                        Nenhuma automação externa ativa nesta versão
                       </p>
                     </div>
                     <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3.5 py-3">
@@ -848,7 +856,7 @@ export function SystemPage() {
                         {aiPolicySummary.updatedAt ? formatDateTime(aiPolicySummary.updatedAt) : 'Indisponível'}
                       </p>
                       <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
-                        Fonte: policies AI-native governadas pelo backend
+                        Governança configurada para revisão humana
                       </p>
                     </div>
                   </div>
@@ -857,16 +865,16 @@ export function SystemPage() {
                     <StatusPill>{aiReadiness.audit_required ? 'Auditoria obrigatória' : 'Auditoria indisponível'}</StatusPill>
                     <StatusPill tone={aiReadiness.auto_send_enabled ? 'critical' : 'default'}>Resposta automática bloqueada</StatusPill>
                     <StatusPill tone={aiReadiness.auto_publish_enabled ? 'critical' : 'default'}>Publicação automática bloqueada</StatusPill>
-                    <StatusPill tone={aiReadiness.embeddings_enabled ? 'critical' : 'default'}>Embeddings inativos</StatusPill>
+                    <StatusPill tone={aiReadiness.embeddings_enabled ? 'critical' : 'default'}>Busca assistida inativa</StatusPill>
                   </div>
                 </>
               )}
             </div>
             <div className="mb-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
               <SystemMetricCard helper="Em leitura estável." label="Checks verdes" value={String(checksOkCount)} />
-              <SystemMetricCard helper="Eventos classificados pelo backend." label="Alertas" value={String(alertCount)} />
+              <SystemMetricCard helper="Eventos que pedem atenção da operação." label="Alertas" value={String(alertCount)} />
               <SystemMetricCard helper="Nas últimas 24h." label="Eventos recentes" value={String(recentCount)} />
-              <SystemMetricCard helper="Eventos críticos do backend." label="Críticos" value={String(failureCount)} />
+              <SystemMetricCard helper="Eventos críticos em acompanhamento." label="Críticos" value={String(failureCount)} />
             </div>
             {auditFeed.length === 0 ? (
               <EmptyState
@@ -880,13 +888,10 @@ export function SystemPage() {
               />
             ) : (
               <div className="overflow-hidden rounded-[20px] border border-[color:var(--color-border)] xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
-                <div className="hidden grid-cols-[136px_112px_150px_minmax(0,1fr)_144px_114px] gap-3 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)] lg:grid">
-                  <span>Tipo</span>
-                  <span>Severidade</span>
-                  <span>Origem</span>
-                  <span>Resumo</span>
-                  <span>Data</span>
-                  <span>Situação</span>
+                <div className="hidden grid-cols-[minmax(128px,0.8fr)_minmax(0,1.6fr)_minmax(112px,0.7fr)] gap-3 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)] lg:grid">
+                  <span>Evento</span>
+                  <span>Resumo operacional</span>
+                  <span>Status</span>
                 </div>
                 <div className="divide-y divide-[color:var(--color-border)]">
                   {filteredFeed.map((entry) => {
@@ -896,7 +901,7 @@ export function SystemPage() {
                     return (
                       <button
                         className={cx(
-                          'grid w-full gap-3 px-4 py-4 text-left transition lg:grid-cols-[136px_112px_150px_minmax(0,1fr)_144px_114px]',
+                          'grid w-full gap-3 px-4 py-4 text-left transition lg:grid-cols-[minmax(128px,0.8fr)_minmax(0,1.6fr)_minmax(112px,0.7fr)]',
                           selected
                             ? 'bg-[rgba(48,127,226,0.08)]'
                             : 'bg-white hover:bg-[color:var(--color-surface)]',
@@ -905,33 +910,33 @@ export function SystemPage() {
                         onClick={() => setSelectedEventId(entry.id)}
                         type="button"
                       >
-                        <div className="min-w-0">
+                        <div className="min-w-0 space-y-2">
                           <p className="line-clamp-1 text-sm font-semibold text-[color:var(--color-ink)]">
-                            {entry.action_label}
+                            {sanitizeOperationalVisibleText(entry.action_label)}
                           </p>
-                        </div>
-                        <div className="min-w-0">
-                          <StatusPill tone={toneForSystemSeverity(severity)}>
-                            {humanizeSystemSeverity(severity)}
-                          </StatusPill>
-                        </div>
-                        <div className="min-w-0 text-sm text-[color:var(--color-muted)]">
-                          {entry.service_label}
+                          <div className="flex flex-wrap gap-2">
+                            <StatusPill tone={toneForSystemSeverity(severity)}>
+                              {humanizeSystemSeverity(severity)}
+                            </StatusPill>
+                            <StatusPill>{sanitizeOperationalVisibleText(entry.service_label)}</StatusPill>
+                          </div>
                         </div>
                         <div className="min-w-0">
                           <p className="line-clamp-2 text-sm leading-6 text-[color:var(--color-ink)]">
                             {buildSystemEventMessage(entry)}
                           </p>
                         </div>
-                        <div className="text-sm text-[color:var(--color-muted)]">
-                          {formatDateTime(entry.occurred_at)}
-                        </div>
-                        <div className="text-sm font-medium text-[color:var(--color-ink)]">
-                          {severity === 'ok'
-                            ? 'Monitorado'
-                            : severity === 'attention'
-                              ? 'Em observação'
-                              : 'Escalar'}
+                        <div className="min-w-0 space-y-1 text-sm">
+                          <p className="font-medium text-[color:var(--color-ink)]">
+                            {severity === 'ok'
+                              ? 'Monitorado'
+                              : severity === 'attention'
+                                ? 'Em observação'
+                                : 'Escalar'}
+                          </p>
+                          <p className="text-[color:var(--color-muted)]">
+                            {formatDateTime(entry.occurred_at)}
+                          </p>
                         </div>
                       </button>
                     );
@@ -959,20 +964,20 @@ export function SystemPage() {
                       <StatusPill tone={toneForSystemSeverity(selectedSeverity)}>
                         {humanizeSystemSeverity(selectedSeverity)}
                       </StatusPill>
-                      <StatusPill>{selectedEntry.service_label}</StatusPill>
+                      <StatusPill>{sanitizeOperationalVisibleText(selectedEntry.service_label)}</StatusPill>
                     </div>
                     <div className="space-y-1">
                       <h3 className="text-lg font-semibold tracking-[-0.04em]">
-                        {selectedEntry.action_label}
+                        {sanitizeOperationalVisibleText(selectedEntry.action_label)}
                       </h3>
                       <p className="text-sm leading-6 text-[color:var(--minimal-text-secondary)]">
                         {buildSystemEventMessage(selectedEntry)}
                       </p>
                     </div>
                     <div className="grid gap-2 text-sm leading-6 text-white/78">
-                      <p>Serviço: {selectedEntry.service_label}</p>
-                      <p>Severidade: {humanizeSystemSeverity(selectedSeverity)}</p>
-                      <p>Timestamp: {formatDateTime(selectedEntry.occurred_at)}</p>
+                      <p>Área: {sanitizeOperationalVisibleText(selectedEntry.service_label)}</p>
+                      <p>Prioridade: {humanizeSystemSeverity(selectedSeverity)}</p>
+                      <p>Registrado em: {formatDateTime(selectedEntry.occurred_at)}</p>
                     </div>
                   </div>
                 </section>
@@ -980,9 +985,8 @@ export function SystemPage() {
                 <section className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
                   <h3 className="text-[0.98rem] font-semibold text-[color:var(--color-ink)]">Contexto</h3>
                   <div className="mt-3 grid gap-2 text-sm leading-6 text-[color:var(--color-muted)]">
-                    <p>Escopo: {selectedEntry.scope_label ?? 'Indisponível'}</p>
-                    <p>Slug: {selectedEntry.tenant_slug ?? 'Indisponível'}</p>
-                    <p>Operador: {selectedEntry.actor_display_name ?? selectedEntry.actor_email ?? 'Indisponível'}</p>
+                    <p>Escopo: {sanitizeOperationalVisibleText(selectedEntry.scope_label)}</p>
+                    <p>Operador: {sanitizeOperationalVisibleText(selectedEntry.actor_display_name ?? selectedEntry.actor_email)}</p>
                   </div>
                 </section>
 
@@ -1033,11 +1037,11 @@ export function SystemPage() {
                 </section>
 
                 <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-4">
-                  <h3 className="text-[0.98rem] font-semibold text-[color:var(--color-ink)]">Contexto sanitizado</h3>
+                  <h3 className="text-[0.98rem] font-semibold text-[color:var(--color-ink)]">Dados protegidos</h3>
                   <div className="mt-3 space-y-3 text-sm leading-6 text-[color:var(--color-muted)]">
                     <p>Referência interna: {selectedEntry.entity_id ?? 'Indisponível'}</p>
-                    <p>Chaves disponíveis: {formatSanitizedContext(selectedEntry.sanitized_context)}</p>
-                    <p>Valores brutos e payloads sensíveis não são expostos nesta tela.</p>
+                    <p>Campos protegidos: {formatSanitizedContext(selectedEntry.sanitized_context)}</p>
+                    <p>Informações sensíveis não são expostas nesta tela.</p>
                   </div>
                 </section>
               </div>

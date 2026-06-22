@@ -11,7 +11,6 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import {
   formatDateTime,
   humanizeToken,
-  stringifyJsonPreview,
 } from '../../app/format';
 import {
   ContractUnavailableState,
@@ -430,7 +429,12 @@ function attachmentKind(attachment: SupportTicketAttachment) {
 function sanitizeSupportVisibleText(value: string | null | undefined) {
   const sanitized = (value ?? 'Indisponível')
     .replace(/\bpayload\b/gi, 'conteúdo técnico')
-    .replace(/\bRPCs?\b/g, 'contrato operacional')
+    .replace(/\bbackend\b/gi, 'operaÃ§Ã£o')
+    .replace(/\bprovider\b/gi, 'serviÃ§o externo')
+    .replace(/\bcontratos?\b/gi, 'acordos operacionais')
+    .replace(/\btenant\b/gi, 'cliente')
+    .replace(/\bfixture\b/gi, 'registro de validaÃ§Ã£o')
+    .replace(/\bRPCs?\b/g, 'processo operacional')
     .replace(/\bRLS\b/g, 'regra de acesso')
     .replace(/\bSupabase\b/g, 'plataforma')
     .replace(/\bschema\b/gi, 'estrutura');
@@ -950,7 +954,13 @@ function formatAssignedAgentSummary(agent: SupportAssignableAgent | null) {
 function intakeTenantLabel(
   tenant: Pick<SupportTicketIntakeTenant, 'tenantDisplayName' | 'tenantLegalName' | 'tenantSlug'>,
 ) {
-  return tenant.tenantDisplayName ?? tenant.tenantLegalName ?? tenant.tenantSlug;
+  return tenant.tenantDisplayName ?? tenant.tenantLegalName ?? 'Cliente indisponível';
+}
+
+function displaySupportCustomerName(
+  customer: Pick<SupportCustomer360, 'tenantDisplayName' | 'tenantLegalName'>,
+) {
+  return customer.tenantDisplayName ?? customer.tenantLegalName ?? 'Cliente indisponível';
 }
 
 function emptyFilters(): QueueFilters {
@@ -1700,7 +1710,7 @@ function SupportQueueItem({
           </span>
         </div>
         <h3 className="mt-1 truncate text-sm font-medium text-[color:var(--minimal-text)]">
-          {ticket.title}
+          {sanitizeSupportVisibleText(ticket.title)}
         </h3>
         <p className="mt-1 truncate text-xs text-[color:var(--minimal-text-secondary)]">
           {ticket.categoryName ?? 'Sem categoria'} · {ticket.channelLabel ?? 'Canal indisponível'}
@@ -1715,7 +1725,7 @@ function SupportQueueItem({
           {ticketTenantLabel(ticket)}
         </p>
         <p className="mt-1 truncate text-xs text-[color:var(--minimal-text-tertiary)]">
-          {ticket.requesterContactFullName ?? ticket.tenantSlug ?? 'Contato indisponível'}
+          {sanitizeSupportVisibleText(ticket.requesterContactFullName)}
         </p>
       </div>
 
@@ -1777,7 +1787,7 @@ function SupportTicketInboxItem({
         <span>{supportTicketCode(ticket.id)}</span>
         <span>{formatSupportShortTime(ticket.lastMessageAt ?? ticket.updatedAt)}</span>
       </div>
-      <p className="mt-1 truncate text-sm font-medium text-[color:var(--minimal-text)]">{ticket.title}</p>
+      <p className="mt-1 truncate text-sm font-medium text-[color:var(--minimal-text)]">{sanitizeSupportVisibleText(ticket.title)}</p>
       <p className="mt-1 truncate text-xs text-[color:var(--minimal-text-secondary)]">
         {ticketTenantLabel(ticket)}
       </p>
@@ -1830,10 +1840,9 @@ function SupportCustomerRail({
           <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <StatusPill>{humanizeTenantStatus(customer.tenantStatus)}</StatusPill>
-              <StatusPill tone="accent">{customer.tenantSlug}</StatusPill>
             </div>
             <h3 className="text-base font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-              {customer.tenantDisplayName ?? customer.tenantLegalName ?? customer.tenantSlug}
+              {displaySupportCustomerName(customer)}
             </h3>
             <p className="text-sm leading-6 text-[color:var(--color-muted)]">
               {customer.activeContactsCount} contatos ativos · {customer.openTicketCount} tickets abertos
@@ -1857,7 +1866,7 @@ function SupportCustomerRail({
             {primaryContact ? (
               <div className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-medium text-[color:var(--color-ink)]">{primaryContact.fullName}</p>
+                  <p className="font-medium text-[color:var(--color-ink)]">{sanitizeSupportVisibleText(primaryContact.fullName)}</p>
                   {primaryContact.isPrimary ? <StatusPill tone="accent">principal</StatusPill> : null}
                 </div>
                 <p className="mt-1 text-sm text-[color:var(--color-muted)]">{primaryContact.email}</p>
@@ -1911,10 +1920,9 @@ function SupportCustomerRail({
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <StatusPill>{humanizeTenantStatus(customer.tenantStatus)}</StatusPill>
-              <StatusPill tone="accent">{customer.tenantSlug}</StatusPill>
             </div>
             <h3 className="text-base font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-              {customer.tenantDisplayName ?? customer.tenantLegalName ?? customer.tenantSlug}
+              {displaySupportCustomerName(customer)}
             </h3>
           </div>
           <Link
@@ -1996,7 +2004,7 @@ function SupportContactCard({
   return (
     <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="font-medium text-[color:var(--color-ink)]">{contact.fullName}</p>
+        <p className="font-medium text-[color:var(--color-ink)]">{sanitizeSupportVisibleText(contact.fullName)}</p>
         {contact.isPrimary ? <StatusPill tone="accent">principal</StatusPill> : null}
       </div>
       <p className="mt-1 text-sm text-[color:var(--color-muted)]">{contact.email}</p>
@@ -2020,7 +2028,7 @@ function SupportRecentTicketCard({
                             {humanizePriority(ticket.priority)}
         </span>
       </div>
-      <p className="mt-2 line-clamp-2 font-medium text-[color:var(--color-ink)]">{ticket.title}</p>
+      <p className="mt-2 line-clamp-2 font-medium text-[color:var(--color-ink)]">{sanitizeSupportVisibleText(ticket.title)}</p>
       <p className="mt-1 text-xs text-[color:var(--color-muted)]">
         Atualizado em {formatDateTime(ticket.updatedAt)}
       </p>
@@ -2222,7 +2230,7 @@ function SupportAccountContextCompact({
           <div className="flex flex-wrap items-start justify-between gap-3 border-t border-[color:var(--color-border)] pt-3">
             <dt className="font-medium text-[color:var(--color-ink)]">Contato operacional</dt>
             <dd className="text-right">
-                {primaryContact ? `${primaryContact.fullName} · ${primaryContact.email}` : 'Indisponível'}
+                {primaryContact ? `${sanitizeSupportVisibleText(primaryContact.fullName)} · ${primaryContact.email}` : 'Indisponível'}
             </dd>
           </div>
         </dl>
@@ -2351,10 +2359,10 @@ function SupportTicketCustomerSnapshot({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">
             <p className="text-sm font-semibold text-[color:var(--color-ink)]">
-              {customer.tenantDisplayName ?? customer.tenantLegalName ?? customer.tenantSlug}
+              {displaySupportCustomerName(customer)}
             </p>
             <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-                {primaryContact ? `${primaryContact.fullName} · ${primaryContact.email}` : 'Contato principal não identificado'}
+                {primaryContact ? `${sanitizeSupportVisibleText(primaryContact.fullName)} · ${primaryContact.email}` : 'Contato principal não identificado'}
             </p>
           </div>
           <Link
@@ -2378,7 +2386,7 @@ function SupportTicketCustomerSnapshot({
       <div className="space-y-1">
         <div className="min-w-0 space-y-1">
           <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-            {customer.tenantDisplayName ?? customer.tenantLegalName ?? customer.tenantSlug}
+            {displaySupportCustomerName(customer)}
           </p>
           <div className="flex flex-wrap gap-1">
             {accountContext.productLine ? (
@@ -2427,7 +2435,7 @@ function SupportTicketCustomerSnapshot({
           <div className="flex items-start justify-between gap-3 border-t border-[color:var(--color-border)] pt-0.5">
             <dt className="font-medium text-[color:var(--color-ink)]">Contato principal</dt>
             <dd className="text-right">
-                {primaryContact ? primaryContact.fullName : 'Indisponível'}
+                {sanitizeSupportVisibleText(primaryContact?.fullName)}
             </dd>
           </div>
           <div className="flex items-start justify-between gap-3 border-t border-[color:var(--color-border)] pt-0.5">
@@ -2490,7 +2498,7 @@ function SupportAccountContextOverview({
         <div className="space-y-4 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-              Plataforma e stack
+              Plataforma e ambiente
             </p>
             <p className="text-sm font-medium text-[color:var(--color-ink)]">
                 {primaryPlatform ? primaryPlatform.provider : 'Indisponível'}
@@ -2585,7 +2593,7 @@ function SupportAccountContextOverview({
                 Contato principal
               </p>
               <p className="mt-1 text-sm font-medium text-[color:var(--color-ink)]">
-                {primaryContact.fullName}
+                {sanitizeSupportVisibleText(primaryContact.fullName)}
               </p>
               <p className="text-sm leading-6 text-[color:var(--color-muted)]">
                 {primaryContact.email}
@@ -2615,9 +2623,9 @@ function SupportAccountContextOverview({
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
               Flags operacionais
             </p>
-            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words text-xs leading-6 text-[color:var(--color-muted)]">
-              {stringifyJsonPreview(accountContext.operationalFlags)}
-            </pre>
+            <p className="mt-2 text-xs leading-6 text-[color:var(--color-muted)]">
+              {summarizeOperationalFlags(accountContext.operationalFlags)}
+            </p>
           </div>
         </div>
       </details>
@@ -3734,7 +3742,7 @@ function SupportWorkspaceView({
         } catch (error) {
           const classified = classifyAdminError(
             error,
-            'Falha ao enviar a evidência para o storage governado.',
+            'Falha ao enviar a evidência para o ticket.',
           );
           if (classified.kind === 'session-expired') {
             markSessionExpired();
@@ -4220,7 +4228,7 @@ function SupportWorkspaceView({
       const article = knowledgeArticlePicker.find((item) => item.articleId === articleId);
       const blockReason = article
         ? getKnowledgeCustomerSendBlockReason(article)
-        : 'Artigo indisponível no contrato seguro deste ticket.';
+        : 'Artigo indisponível no contexto autorizado deste ticket.';
 
       if (blockReason) {
         applyFailure(blockReason);
@@ -4824,7 +4832,7 @@ function SupportWorkspaceView({
   }, [navigate, selectedTicketId, ticketInboxFilteredTickets, variant]);
 
   if (backendDenied) {
-    return <Navigate replace state={{ reason: 'backend-permission' }} to="/access-denied" />;
+    return <Navigate replace state={{ reason: 'missing-authorized-workspace' }} to="/access-denied" />;
   }
 
   if (phase === 'loading') {
@@ -5023,7 +5031,7 @@ function SupportWorkspaceView({
     !ticketDetail?.assignedToUserId ? 'Atribuir responsável pela tratativa.' : null,
     ticketDetail?.status === 'waiting_customer' ? 'Aguardar retorno do cliente antes do encerramento.' : null,
     ticketDetail?.status === 'waiting_engineering' ? 'Consolidar retorno da engenharia antes do encerramento.' : null,
-    ticketDetail && !ticketDetail.canClose ? 'O contrato ainda não liberou o encerramento deste ticket.' : null,
+    ticketDetail && !ticketDetail.canClose ? 'Encerramento indisponível para este ticket no momento.' : null,
   ].filter((item): item is string => Boolean(item));
   const slaProgress = ticketDetail ? approximateSlaPercent(ticketDetail) : 0;
   const slaDueAt = ticketDetail?.resolutionDueAt ?? ticketDetail?.firstResponseDueAt ?? null;
@@ -5181,7 +5189,7 @@ function SupportWorkspaceView({
                       </option>
                       {intakeContacts.map((contact) => (
                         <option key={contact.id} value={contact.id}>
-                          {contact.fullName} · {contact.email}
+                          {sanitizeSupportVisibleText(contact.fullName)} · {contact.email}
                         </option>
                       ))}
                     </SelectInput>
@@ -5389,7 +5397,7 @@ function SupportWorkspaceView({
                   </div>
                   <div>
                     <dt>Solicitante</dt>
-                    <dd>{selectedIntakeContact?.fullName ?? 'Indisponível'}</dd>
+                    <dd>{sanitizeSupportVisibleText(selectedIntakeContact?.fullName)}</dd>
                   </div>
                   <div>
                     <dt>Origem</dt>
@@ -5423,7 +5431,7 @@ function SupportWorkspaceView({
                   <span>Previsão de resposta</span>
                   <strong>Indisponível</strong>
                 </div>
-                <p>O prazo será calculado após criação, conforme política retornada pelo backend.</p>
+                <p>O prazo será calculado após a criação, conforme a política operacional configurada.</p>
               </section>
             </aside>
           </form>
@@ -5625,7 +5633,7 @@ function SupportWorkspaceView({
           </CompactSupportPill>
         }
         statusLabel={compactTicketStatusLabel(detail.status)}
-        tenantLabel={detail.tenantDisplayName ?? detail.tenantLegalName ?? detail.tenantSlug}
+        tenantLabel={sanitizeSupportVisibleText(detail.tenantDisplayName ?? detail.tenantLegalName)}
       />
     );
 
@@ -5880,7 +5888,11 @@ function SupportWorkspaceView({
                       ? 'Resposta pública via Portal'
                       : 'Resposta pública registrada no ticket'
                   }
-                  publicReplyUnavailableReason={detail.reasonIfUnavailable}
+                  publicReplyUnavailableReason={
+                    detail.reasonIfUnavailable
+                      ? sanitizeSupportVisibleText(detail.reasonIfUnavailable)
+                      : null
+                  }
                   onComposerDraftChange={(value) =>
                     composerMode === 'public' ? setMessageDraft(value) : setNoteDraft(value)
                   }
@@ -6409,7 +6421,7 @@ function SupportWorkspaceView({
                 <>
                   <div className="support-true-context-customer">
                     <strong>{ticketTenantLabel(selectedQueueContextTicket)}</strong>
-                    <span>{selectedQueueContextTicket.requesterContactFullName ?? 'Contato indisponível'}</span>
+                    <span>{sanitizeSupportVisibleText(selectedQueueContextTicket.requesterContactFullName)}</span>
                     <span>{selectedQueueContextTicket.requesterContactEmail ?? 'E-mail indisponível'}</span>
                   </div>
                   <div className="support-true-context-tiles">
@@ -6424,7 +6436,7 @@ function SupportWorkspaceView({
                   </div>
                   <div className="support-true-context-summary">
                     <strong>Resumo operacional</strong>
-                    <p>{previewTicket?.description ?? selectedQueueContextTicket.title}</p>
+                    <p>{sanitizeSupportVisibleText(previewTicket?.description ?? selectedQueueContextTicket.title)}</p>
                   </div>
                   <div className="support-true-context-timeline">
                     <strong>Linha do tempo</strong>
@@ -6524,7 +6536,29 @@ function displayCustomerValue(value: string | null | undefined) {
     return 'Indisponível';
   }
 
-  return value;
+  return sanitizeSupportVisibleText(value);
+}
+
+function summarizeOperationalFlags(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return 'Nenhum sinal operacional registrado.';
+  }
+
+  const availableSignals = Object.values(value).filter((entry) => {
+    if (entry === null || entry === undefined || entry === false) {
+      return false;
+    }
+
+    if (typeof entry === 'string') {
+      return entry.trim().length > 0;
+    }
+
+    return true;
+  }).length;
+
+  return availableSignals > 0
+    ? `${availableSignals} sinal(is) operacional(is) registrado(s).`
+    : 'Nenhum sinal operacional registrado.';
 }
 
 function resolveSupportCustomerOwner(
@@ -6828,7 +6862,7 @@ export function SupportCustomersPage() {
       }
 
       if (!detail) {
-        throw new Error('O cliente selecionado não ficou disponível para o preview.');
+        throw new Error('O cliente selecionado não ficou disponível para a visão rápida.');
       }
 
       const snapshot = {
@@ -6846,7 +6880,7 @@ export function SupportCustomersPage() {
     } catch (error) {
       const classified = classifyAdminError(
         error,
-        'Falha ao carregar o preview operacional do cliente.',
+        'Falha ao carregar a visão rápida operacional do cliente.',
       );
 
       if (classified.kind === 'session-expired') {
@@ -6923,7 +6957,7 @@ export function SupportCustomersPage() {
   }, [phase, selectedTenantId]);
 
   if (backendDenied) {
-    return <Navigate replace state={{ reason: 'backend-permission' }} to="/access-denied" />;
+    return <Navigate replace state={{ reason: 'missing-authorized-workspace' }} to="/access-denied" />;
   }
 
   if (phase === 'loading') {
@@ -6966,8 +7000,7 @@ export function SupportCustomersPage() {
   const previewLabel =
     selectedCustomer?.tenantDisplayName ??
     selectedCustomer?.tenantLegalName ??
-    selectedCustomer?.tenantSlug ??
-    'Indisponível';
+    'Cliente indisponível';
   const selectedRiskProfile = resolveCustomerRiskProfile(selectedAccountContext);
   const selectedMigrationCard = resolveMigrationCard(selectedAccountContext);
   const selectedOwner =
@@ -7107,8 +7140,7 @@ export function SupportCustomersPage() {
                 <div className="space-y-2.5">
                   {filteredCustomers.map((customer) => {
                     const selected = customer.tenantId === selectedTenantId;
-                    const customerLabel =
-                      customer.tenantDisplayName ?? customer.tenantLegalName ?? customer.tenantSlug;
+                    const customerLabel = displaySupportCustomerName(customer);
 
                     return (
                       <button
@@ -7128,7 +7160,6 @@ export function SupportCustomersPage() {
                               <StatusPill tone={customer.tenantStatus === 'active' ? 'positive' : 'warning'}>
                                 {humanizeTenantStatus(customer.tenantStatus)}
                               </StatusPill>
-                              <StatusPill>{displayCustomerValue(customer.tenantSlug)}</StatusPill>
                             </div>
                             <h3 className="truncate text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
                               {customerLabel}
@@ -7157,7 +7188,7 @@ export function SupportCustomersPage() {
         <aside className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
           <div className="mb-3 space-y-1">
             <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-              Preview do cliente
+              Visão rápida do cliente
             </h2>
             <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
               Contexto operacional da conta antes de abrir o perfil completo.
@@ -7166,13 +7197,13 @@ export function SupportCustomersPage() {
 
           {selectedPhase === 'loading' ? (
             <LoadingState
-              title="Carregando preview"
+              title="Carregando visão rápida"
               description="Estamos preparando o contexto operacional desta conta."
             />
           ) : selectedPhase === 'contract-unavailable' ? (
-            <ContractUnavailableState contractName="preview operacional do cliente" />
+            <ContractUnavailableState resourceName="a visão rápida do cliente" />
           ) : selectedPhase === 'error' ? (
-            <ErrorState description={selectedMessage ?? 'O preview deste cliente não ficou disponível.'} />
+            <ErrorState description={selectedMessage ?? 'A visão rápida deste cliente não ficou disponível.'} />
           ) : selectedCustomer ? (
             <div className="space-y-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
               <div className="rounded-[20px] border border-[rgba(48,127,226,0.22)] bg-[linear-gradient(180deg,rgba(17,28,66,1),rgba(24,42,97,0.98))] px-4 py-4 text-white">
@@ -7219,7 +7250,7 @@ export function SupportCustomersPage() {
                 <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">Contato principal</p>
                 <div className="mt-2 space-y-1.5 text-[12px] leading-5 text-[color:var(--color-muted)]">
                   <p>
-                    {primaryContactFromCustomer(selectedCustomer)?.fullName ?? 'Indisponível'}
+                    {sanitizeSupportVisibleText(primaryContactFromCustomer(selectedCustomer)?.fullName)}
                   </p>
                   <p className="break-all">
                     {displayCustomerValue(primaryContactFromCustomer(selectedCustomer)?.email)}
@@ -7254,7 +7285,7 @@ export function SupportCustomersPage() {
           ) : (
             <EmptyState
               title="Nenhum cliente selecionado"
-              description="Escolha uma conta da lista para abrir o preview operacional."
+              description="Escolha uma conta da lista para abrir a visão rápida operacional."
             />
           )}
         </aside>
@@ -7341,7 +7372,7 @@ export function SupportCustomerPage() {
   }, [tenantId]);
 
   if (backendDenied) {
-    return <Navigate replace state={{ reason: 'backend-permission' }} to="/access-denied" />;
+    return <Navigate replace state={{ reason: 'missing-authorized-workspace' }} to="/access-denied" />;
   }
 
   if (phase === 'loading') {
@@ -7431,8 +7462,7 @@ export function SupportCustomerPage() {
   const visibleAlerts = visibleAlertSlice(accountContext, 3);
   const visibleIntegrations = visibleOperationalIntegrations(accountContext, 4);
   const primaryProductContext = primaryCustomerProductContext(productContexts);
-  const customerLabel =
-    customer.tenantDisplayName ?? customer.tenantLegalName ?? customer.tenantSlug;
+  const customerLabel = displaySupportCustomerName(customer);
   const customerTabs = [
     { id: 'resumo', label: 'Resumo' },
     { id: 'produtos', label: 'Produtos' },
@@ -7479,7 +7509,7 @@ export function SupportCustomerPage() {
         <div className="mt-4 rounded-[18px] border border-[color:var(--color-border)] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-3.5 py-3.5">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             {[
-              { label: 'Slug', value: displayCustomerValue(customer.tenantSlug) },
+              { label: 'Cliente', value: customerLabel },
               {
                 label: 'Produto',
                 value: displayCustomerProductLabel(accountContext, productContexts),
@@ -7624,7 +7654,7 @@ export function SupportCustomerPage() {
             {primaryContact ? (
               <div className="space-y-3">
                 <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
-                  <p className="font-semibold text-[color:var(--color-ink)]">{primaryContact.fullName}</p>
+                  <p className="font-semibold text-[color:var(--color-ink)]">{sanitizeSupportVisibleText(primaryContact.fullName)}</p>
                   <p className="mt-1 break-all text-sm text-[color:var(--color-muted)]">
                     {displayCustomerValue(primaryContact.email)}
                   </p>
@@ -7652,12 +7682,12 @@ export function SupportCustomerPage() {
             >
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                 <SupportCustomerMetricTile
-                  helper="Tickets ativos neste tenant."
+                  helper="Tickets ativos desta conta."
                   label="Tickets abertos"
                   value={String(customer.openTicketCount)}
                 />
                 <SupportCustomerMetricTile
-                  helper="Produtos ativos ou suspensos no contrato."
+                  helper="Produtos ativos ou suspensos desta conta."
                   label="Subscriptions"
                   value={String(productContexts.length)}
                 />
@@ -7726,7 +7756,7 @@ export function SupportCustomerPage() {
                         </div>
                         <div className="min-w-0 space-y-1">
                           <p className="line-clamp-2 text-sm font-semibold text-[color:var(--color-ink)]">
-                            {ticket.title}
+                            {sanitizeSupportVisibleText(ticket.title)}
                           </p>
                           <p className="text-xs uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
                             {humanizePriority(ticket.priority)} · {humanizeSeverity(ticket.severity)}
@@ -7881,7 +7911,7 @@ export function SupportCustomerPage() {
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-medium text-[color:var(--color-ink)]">
-                          {contact.fullName}
+                          {sanitizeSupportVisibleText(contact.fullName)}
                         </p>
                         {contact.isPrimary ? <StatusPill tone="accent">principal</StatusPill> : null}
                       </div>

@@ -85,7 +85,7 @@ export const productDocsReadingTracks: ProductDocsReadingTrack[] = [
   {
     title: 'Design',
     summary:
-      'Use esta trilha para entender o contrato visual do cockpit e como ele conversa com a narrativa do build journal.',
+      'Use esta trilha para entender o acordo visual do cockpit e como ele conversa com a narrativa do diário.',
     documentIds: ['design', 'build-journal-strategy', 'build-journal-screen-spec'],
   },
 ];

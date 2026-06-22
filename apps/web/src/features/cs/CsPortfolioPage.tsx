@@ -45,6 +45,15 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
+function sanitizeCsOperationalText(value: string | null | undefined) {
+  return (value ?? 'IndisponÃ­vel')
+    .replace(/Health score\s+n[aã]o materializado neste contrato\./gi, 'Health ainda indisponÃ­vel nesta visÃ£o.')
+    .replace(/\bcontratos?\b/gi, 'acordos operacionais')
+    .replace(/\bbackend\b/gi, 'operaÃ§Ã£o')
+    .replace(/\bRPCs?\b/g, 'rotina operacional')
+    .replace(/\btenant\b/gi, 'cliente');
+}
+
 function CustomerListItem({
   customer,
   onSelect,
@@ -168,7 +177,7 @@ function CustomerDetail({ customer }: { customer: CsCustomerPortfolio }) {
               />
             </dl>
             <p className="mt-3 text-xs leading-5 text-[color:var(--minimal-text-secondary)]">
-              {customer.healthSummaryReason}
+              {sanitizeCsOperationalText(customer.healthSummaryReason)}
             </p>
           </div>
         </section>
@@ -274,7 +283,7 @@ export function CsPortfolioPage() {
     return (
       <div className="flex h-full items-center justify-center p-5">
         <MinimalState
-          description="Nenhum tenant foi materializado no contrato de carteira CS."
+          description="Nenhuma conta foi disponibilizada para a carteira CS."
           title="Carteira sem clientes"
         />
       </div>

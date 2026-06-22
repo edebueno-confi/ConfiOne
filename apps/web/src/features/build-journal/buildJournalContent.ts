@@ -78,7 +78,7 @@ export const buildJournalTimelinePhases: TimelinePhase[] = [
     period: 'Abr 2026',
     area: 'Segurança',
     description:
-      'Identidade, tenancy, permissões e auditoria estabelecidas com RLS, multi-tenant e trilhas de segurança.',
+      'Identidade, escopos de cliente, permissões e auditoria estabelecidas com controle de acesso e trilhas de segurança.',
     status: 'done',
     document: 'AUTH_CONTEXT_STRATEGY.md',
     extraDocuments: 3,
@@ -92,9 +92,9 @@ export const buildJournalTimelinePhases: TimelinePhase[] = [
     period: 'Mai 2026',
     area: 'Suporte',
     description:
-      'Domínio de tickets, mensagens, eventos e anexos com contratos de leitura e escrita.',
+      'Domínio de tickets, mensagens, eventos e anexos com leitura e ação controladas.',
     status: 'done',
-    document: 'VIEW_RPC_CONTRACTS.md',
+    document: 'OPERATIONAL_CONTRACTS.md',
     extraDocuments: 4,
     icon: 'database',
     accent: 'blue',
@@ -206,11 +206,11 @@ export const buildJournalDocumentCategories: BuildJournalDocumentCategory[] = [
     ],
   },
   {
-    title: 'Arquitetura e contratos',
+    title: 'Arquitetura operacional',
     eyebrow: 'Como o sistema se sustenta',
     description:
-      'Explica camadas, boundaries e a separação entre frontend, leitura controlada, escrita transacional e backend como fonte da verdade.',
-    role: 'Evita decisões soltas na UI e preserva contratos reais como base de evolução.',
+      'Explica camadas, limites e a separação entre interface, leitura controlada, ação transacional e fonte oficial.',
+    role: 'Evita decisões soltas na UI e preserva acordos reais como base de evolução.',
     tone: 'blue',
     icon: 'layers',
     documents: [
@@ -220,8 +220,8 @@ export const buildJournalDocumentCategories: BuildJournalDocumentCategory[] = [
         productDocId: 'architecture-rules',
       },
       {
-        title: 'Contratos de Views e RPCs',
-        purpose: 'Inventário operacional de leitura e escrita por contrato.',
+        title: 'Leituras e ações governadas',
+        purpose: 'Inventário operacional de leitura e ação por acordo de produto.',
         pendingReason: 'Ainda não está exposto na whitelist atual do Product Docs.',
       },
     ],
@@ -300,7 +300,7 @@ export const buildJournalDocumentCategories: BuildJournalDocumentCategory[] = [
       },
       {
         title: 'Customer Portal Specs',
-        purpose: 'Contratos e decisões específicas do portal cliente B2B.',
+        purpose: 'Acordos e decisões específicas do portal cliente B2B.',
         pendingReason: 'Specs existem no projeto, mas não estão expostas nesta whitelist do Product Docs.',
       },
     ],
@@ -323,7 +323,7 @@ export const buildJournalDocumentCategories: BuildJournalDocumentCategory[] = [
   },
   {
     title: 'Design e experiência',
-    eyebrow: 'Contrato visual',
+    eyebrow: 'Diretriz visual',
     description:
       'Registra a linguagem visual, os princípios de cockpit interno e os limites contra dashboard genérico.',
     role: 'Mantém consistência entre blueprint aprovado, UI implementada e leitura operacional.',
@@ -337,7 +337,7 @@ export const buildJournalDocumentCategories: BuildJournalDocumentCategory[] = [
       },
       {
         title: 'Spec da Tela Diário de Construção',
-        purpose: 'Contrato específico da tela e evolução do próprio Diário.',
+        purpose: 'Diretriz específica da tela e evolução do próprio Diário.',
         productDocId: 'build-journal-screen-spec',
       },
     ],
@@ -347,7 +347,7 @@ export const buildJournalDocumentCategories: BuildJournalDocumentCategory[] = [
     eyebrow: 'Memória controlada',
     description:
       'Define como a documentação permanece viva, versionada e segura sem abrir o repositório como file explorer.',
-    role: 'Dá continuidade ao produto e evita drift entre tela, documentação e contratos reais.',
+    role: 'Dá continuidade ao produto e evita drift entre tela, documentação e acordos reais.',
     tone: 'green',
     icon: 'clipboard',
     documents: [
@@ -374,7 +374,7 @@ export const buildJournalPlaceholderPanels: Record<'next', BuildJournalPlacehold
   next: {
     title: 'Próximos passos',
     description:
-      'Frentes ainda em evolução, registradas sem prometer entrega concluída antes de contrato real.',
+      'Frentes ainda em evolução, registradas sem prometer entrega concluída antes de acordo real.',
     items: [
       'Omni Work e histórico de conversas.',
       'Chat com cliente B2B e IA assistente citável.',

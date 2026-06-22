@@ -53,25 +53,25 @@ const tones: Record<Tone, ToneClasses> = {
 const principleCards = [
   {
     title: 'Plataforma modular',
-    text: 'Domínios independentes com contratos claros e evolução segura.',
+    text: 'Domínios independentes com acordos claros e evolução segura.',
     icon: 'cube',
     tone: 'blue',
   },
   {
-    title: 'Backend é verdade',
-    text: 'Regras, permissões e dados vivem no backend, não no frontend.',
+    title: 'Fonte oficial',
+    text: 'Regras, permissões e dados vivem na plataforma, não na interface.',
     icon: 'shield',
     tone: 'green',
   },
   {
     title: 'Segurança por design',
-    text: 'RLS, Auth e auditoria desde o início em todas as camadas.',
+    text: 'Controle de acesso, identidade e auditoria desde o início em todas as camadas.',
     icon: 'lock',
     tone: 'pink',
   },
   {
-    title: 'Contrato em primeiro',
-    text: 'Views para leitura, RPCs para escrita. Sem acesso direto.',
+    title: 'Acordo em primeiro',
+    text: 'Leituras governadas e ações controladas. Sem acesso direto.',
     icon: 'contract',
     tone: 'violet',
   },
@@ -92,32 +92,32 @@ const architectureLayers = [
     items: ['Pages & Layouts', 'Componentes', 'Estado & Dados', 'UI Components', 'Navegação'],
   },
   {
-    title: '2. Views / Read Models (Leitura)',
-    subtitle: 'Superfície contratual para leitura',
+    title: '2. Leituras governadas',
+    subtitle: 'Superfície autorizada para consulta',
     icon: 'table',
     tone: 'green',
-    items: ['vw_tickets_queue', 'vw_ticket_detail', 'vw_timeline', 'vw_customer_360', 'Outras Views'],
+    items: ['Fila de tickets', 'Detalhe do ticket', 'Linha do tempo', 'Cliente 360', 'Outras leituras'],
   },
   {
-    title: '3. RPCs (Escrita Transacional)',
-    subtitle: 'Operações controladas e validadas no backend',
+    title: '3. Ações controladas',
+    subtitle: 'Operações validadas pela plataforma',
     icon: 'code',
     tone: 'violet',
-    items: ['rpc_create_ticket', 'rpc_update_status', 'rpc_add_message', 'rpc_assign_ticket', 'Outras RPCs'],
+    items: ['Criar ticket', 'Atualizar status', 'Adicionar mensagem', 'Atribuir ticket', 'Outras ações'],
   },
   {
-    title: '4. Supabase / PostgreSQL',
-    subtitle: 'Banco de dados + lógica de negócio',
+    title: '4. Plataforma de dados',
+    subtitle: 'Base transacional e lógica de operação',
     icon: 'database',
     tone: 'blue',
     items: ['Tabelas', 'Funções', 'Triggers', 'Enums', 'Índices'],
   },
   {
-    title: '5. RLS / Auth / Permissões',
+    title: '5. Identidade e permissões',
     subtitle: 'Segurança, identidades e controle de acesso',
     icon: 'lock',
     tone: 'pink',
-    items: ['Auth Supabase', 'RLS Policies', 'Roles Globais', 'Roles Tenant', 'Memberships'],
+    items: ['Identidade', 'Regras de acesso', 'Papéis globais', 'Papéis por cliente', 'Vínculos'],
   },
   {
     title: '6. Auditoria & Observabilidade',
@@ -136,15 +136,15 @@ const architectureLayers = [
 ] as const;
 
 const architecturePrinciples = [
-  'Backend é source of truth',
-  'Views para leitura, RPCs para escrita',
+  'Plataforma como fonte oficial',
+  'Leituras governadas e ações controladas',
   'Sem acesso direto às tabelas',
-  'RLS em todas as camadas',
+  'Controle de acesso em todas as camadas',
   'Auditoria ponta a ponta',
-  'Multi-tenant desde o início',
+  'Escopo de cliente desde o início',
   'Modular, evolutivo e seguro',
   'Documentação como código',
-  'IA como assistente, nunca source',
+  'IA como assistente, nunca fonte oficial',
   'Operação CX B2B técnica',
 ];
 
@@ -153,23 +153,23 @@ const boundaries = [
   ['Engenharia', 'Demandas técnicas, work items e devolutivas estruturadas.', 'code', 'violet'],
   ['Knowledge', 'Base editorial, artigos, categorias e governança de conteúdo.', 'book', 'green'],
   ['Portal do Cliente', 'Acesso autenticado do cliente B2B ao seu contexto.', 'users', 'orange'],
-  ['Administração', 'Gestão de tenants, acessos, sistema e observabilidade.', 'shield', 'pink'],
+  ['Administração', 'Gestão de clientes, acessos, sistema e observabilidade.', 'shield', 'pink'],
 ] as const;
 
 const dataFlow = [
-  ['Usuário interage no frontend', 'monitor'],
-  ['Frontend consome Views (leitura)', 'table'],
-  ['Frontend executa RPCs (escrita)', 'code'],
-  ['Backend aplica regras e persistência', 'database'],
+  ['Usuário interage na interface', 'monitor'],
+  ['Interface consulta leituras governadas', 'table'],
+  ['Interface aciona operações controladas', 'code'],
+  ['Plataforma aplica regras e persistência', 'database'],
   ['Eventos são registrados na auditoria', 'contract'],
-  ['Dados são expostos novamente via Views', 'table'],
+  ['Dados retornam por leituras governadas', 'table'],
 ] as const;
 
 const securityItems = [
-  ['Auth Seguro', 'Sessão e identidade com Supabase Auth', 'lock'],
-  ['RLS Ativo', 'Políticas aplicadas em todas as tabelas', 'shield'],
+  ['Identidade segura', 'Sessão e identidade controladas', 'lock'],
+  ['Acesso ativo', 'Regras aplicadas em todas as áreas', 'shield'],
   ['Least Privilege', 'Acesso mínimo necessário', 'shield'],
-  ['Isolamento Tenant', 'Dados isolados por tenant', 'shield'],
+  ['Isolamento por cliente', 'Dados isolados por cliente', 'shield'],
   ['Auditoria Completa', 'Todas as ações rastreadas', 'contract'],
 ] as const;
 
@@ -177,7 +177,7 @@ const techItems = [
   ['React', 'UI Library', 'atom'],
   ['TypeScript', 'Linguagem', 'ts'],
   ['Vite', 'Build Tool', 'vite'],
-  ['Supabase', 'Backend as a Service', 'supabase'],
+  ['Dados governados', 'Plataforma de dados', 'database'],
   ['PostgreSQL', 'Banco de Dados', 'database'],
 ] as const;
 
@@ -407,10 +407,10 @@ function ArchitectureLayerStack() {
       </div>
 
       <div className="mt-5 flex flex-wrap gap-5 border-t border-[#E3EBF6] pt-4 text-sm font-black text-[#20375F]">
-        <span><span className="mr-2 text-[#21B889]">↑</span>Leitura (Views)</span>
-        <span><span className="mr-2 text-[#6D3BDD]">↓</span>Escrita (RPCs)</span>
+        <span><span className="mr-2 text-[#21B889]">↑</span>Leitura governada</span>
+        <span><span className="mr-2 text-[#6D3BDD]">↓</span>Ação controlada</span>
         <span><span className="mr-2 text-[#FF8A16]">↑</span>Eventos / Auditoria</span>
-        <span><span className="mr-2 text-[#F83D90]">↓</span>Autenticação / RLS</span>
+        <span><span className="mr-2 text-[#F83D90]">↓</span>Identidade / acesso</span>
       </div>
     </SectionCard>
   );
@@ -437,7 +437,7 @@ function ArchitectureBoundaryPanel() {
   return (
     <SectionCard className="p-6">
       <h2 className="text-xl font-black text-[#071641]">Boundaries entre domínios</h2>
-      <p className="mt-1 text-sm font-semibold text-[#31476C]">Domínios separados com contratos próprios</p>
+          <p className="mt-1 text-sm font-semibold text-[#31476C]">Domínios separados com acordos próprios</p>
       <div className="mt-5 space-y-3">
         {boundaries.map(([title, description, icon, toneName]) => {
           const tone = tones[toneName as Tone];
@@ -511,7 +511,7 @@ function ArchitectureSecurityAndTechFooter() {
       </section>
 
       <BuildJournalQuoteFooter
-        author="Cada camada tem responsabilidade clara, contrato definido e controle de segurança. Assim garantimos evolutividade, qualidade e confiança em cada entrega."
+        author="Cada camada tem responsabilidade clara, acordo definido e controle de segurança. Assim garantimos evolutividade, qualidade e confiança em cada entrega."
         quote="Arquitetura feita para escalar com segurança"
         variant="architecture"
       />

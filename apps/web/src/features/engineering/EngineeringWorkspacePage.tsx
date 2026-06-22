@@ -192,6 +192,11 @@ function humanizeOperationalText(value: string | null | undefined, fallback = 'I
   return value
     .replace(/\bpayload sensível\b/gi, 'conteúdo sensível')
     .replace(/\bpayload\b/gi, 'conteúdo sensível')
+    .replace(/\bstack trace\b/gi, 'registro técnico')
+    .replace(/\bbackend\b/gi, 'serviço')
+    .replace(/\bRPCs?\b/g, 'processo operacional')
+    .replace(/\bviews?\b/gi, 'visão operacional')
+    .replace(/\btenant\b/gi, 'cliente')
     .replace(/\bendpoint\b/gi, 'serviço de integração');
 }
 
@@ -294,7 +299,7 @@ function EngineeringSummaryStrip({
     <div className="grid shrink-0 gap-[var(--workspace-panel-gap)] lg:grid-cols-5">
       {items.map((item) => (
         <div
-          className="flex min-h-[var(--workspace-kpi-min-height)] items-center gap-3 rounded-[16px] border border-[color:var(--color-border)] bg-white/95 px-4 py-[var(--workspace-card-y)] shadow-[0_8px_16px_rgba(19,33,79,0.04)]"
+          className="flex min-h-[var(--workspace-kpi-min-height)] items-center gap-3 rounded-[16px] border border-[color:var(--color-border)] bg-white/95 px-4 py-[var(--workspace-card-y)]"
           key={item.label}
         >
           <MetricIcon tone={item.tone} />
@@ -322,9 +327,9 @@ function WorkItemRow({
   return (
     <Link
       className={cx(
-        'grid min-h-[55px] grid-cols-[minmax(230px,1.75fr)_78px_94px_minmax(96px,0.78fr)_78px_minmax(98px,0.78fr)_74px_82px] items-center gap-1.5 border-b border-[color:var(--color-border)] px-3 py-1.5 text-left transition last:border-b-0',
+        'flex min-h-[68px] min-w-0 flex-col gap-2 border-b border-[color:var(--color-border)] px-3 py-3 text-left transition last:border-b-0 lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)_minmax(0,1fr)_94px] lg:items-center',
         active
-          ? 'rounded-[12px] border border-[rgba(48,127,226,0.55)] bg-[linear-gradient(90deg,rgba(48,127,226,0.11),rgba(255,255,255,0.96))] shadow-[0_10px_22px_rgba(19,33,79,0.08)]'
+          ? 'border border-[rgba(48,127,226,0.55)] bg-[rgba(48,127,226,0.08)]'
           : 'hover:bg-[color:var(--color-surface)]',
       )}
       to={`/engineering/work-items/${item.engineeringWorkItemId}`}
@@ -334,49 +339,56 @@ function WorkItemRow({
           {compactWorkItemCode(item)}
         </p>
         <p className="mt-0.5 line-clamp-1 text-[12.5px] font-semibold text-[color:var(--color-ink)]">
-          {item.title}
+          {humanizeOperationalText(item.title)}
         </p>
         <p className="mt-0.5 line-clamp-1 text-[10.5px] text-[color:var(--color-muted)]">
           {humanizeOperationalText(item.description)}
         </p>
       </div>
-      <div className="min-w-0 truncate">
+
+      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
         <CompactPill tone={toneForWorkItemType(item.workItemType)}>
           {humanizeWorkItemType(item.workItemType)}
         </CompactPill>
-      </div>
-      <div className="min-w-0 truncate">
         <CompactPill tone={toneForEngineeringStatus(item.status)}>
           {humanizeEngineeringStatus(item.status)}
         </CompactPill>
-      </div>
-      <div className="min-w-0">
-        <p className="truncate text-[12px] font-semibold text-[color:var(--color-ink)]">
-          {item.tenantName ?? 'Indisponível'}
-        </p>
-        <p className="text-[10px] text-[color:var(--color-muted)]">{item.tenantSlug}</p>
-      </div>
-      <div className="min-w-0">
-        {item.originTicketId ? (
-          <span className="truncate text-[12px] font-semibold text-[color:var(--color-brand-blue)]">
-            #{item.originTicketId.slice(0, 8)}
-          </span>
-        ) : (
-          <span className="text-[12px] text-[color:var(--color-muted)]">Indisponível</span>
-        )}
-      </div>
-      <div className="flex min-w-0 items-center gap-2">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[10px] font-semibold text-[color:var(--color-brand-navy)]">
-          {initialsFromName(item.assignedToFullName)}
-        </span>
-        <span className="truncate text-[12px] font-semibold text-[color:var(--color-ink)]">
-          {item.assignedToFullName ?? 'Indisponível'}
-        </span>
-      </div>
-      <div className="min-w-0 truncate">
         <CompactPill tone={toneForPriority(item.priority)}>{humanizePriority(item.priority)}</CompactPill>
       </div>
-      <p className="text-right text-[11px] leading-4 text-[color:var(--color-muted)]">
+
+      <div className="grid min-w-0 gap-2 sm:grid-cols-3">
+        <span className="min-w-0">
+          <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-muted)]">
+            Cliente
+          </span>
+          <span className="mt-0.5 block truncate text-[12px] font-semibold text-[color:var(--color-ink)]">
+            {humanizeOperationalText(item.tenantName)}
+          </span>
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-muted)]">
+            Ticket
+          </span>
+          <span className="mt-0.5 block truncate text-[12px] font-semibold text-[color:var(--color-brand-blue)]">
+            {item.originTicketId ? `#${item.originTicketId.slice(0, 8)}` : 'Indisponível'}
+          </span>
+        </span>
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[10px] font-semibold text-[color:var(--color-brand-navy)]">
+            {initialsFromName(item.assignedToFullName)}
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-muted)]">
+              Responsável
+            </span>
+            <span className="mt-0.5 block truncate text-[12px] font-semibold text-[color:var(--color-ink)]">
+              {item.assignedToFullName ?? 'Indisponível'}
+            </span>
+          </span>
+        </span>
+      </div>
+
+      <p className="text-left text-[11px] leading-4 text-[color:var(--color-muted)] lg:text-right">
         {formatDateTime(item.updatedAt)}
       </p>
     </Link>
@@ -434,7 +446,7 @@ function CenterContextCard({
   return (
     <section
       className={cx(
-        'min-h-[118px] rounded-[16px] border px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.04)]',
+        'min-h-[118px] rounded-[16px] border px-4 py-3',
         tone === 'default' && 'border-[color:var(--color-border)] bg-white',
         tone === 'blue' && 'border-[rgba(48,127,226,0.24)] bg-[rgba(48,127,226,0.06)]',
         tone === 'warning' && 'border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-surface)]',
@@ -513,8 +525,8 @@ function WorkItemRail({
   const originTicketTitle = originLink?.ticketTitle ?? selected.originTicketTitle ?? null;
 
   return (
-    <div className="grid min-h-0 gap-1.5">
-      <section className="rounded-[16px] border border-[rgba(48,127,226,0.22)] bg-[linear-gradient(180deg,rgba(8,24,61,1),rgba(13,36,92,0.98))] px-4 py-3 text-white shadow-[0_14px_28px_rgba(8,22,61,0.22)]">
+    <div className="grid min-h-0 gap-2 xl:grid-cols-[minmax(260px,1.2fr)_minmax(210px,0.85fr)_minmax(210px,0.9fr)_minmax(210px,0.95fr)_minmax(170px,0.65fr)]">
+      <section className="rounded-[16px] border border-[rgba(48,127,226,0.22)] bg-[linear-gradient(180deg,rgba(8,24,61,1),rgba(13,36,92,0.98))] px-4 py-3 text-white">
         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/58">
           Item selecionado
         </p>
@@ -533,7 +545,7 @@ function WorkItemRail({
           {humanizePriority(selected.priority)}
         </StatusPill>
         <h3 className="mt-2 line-clamp-2 text-[0.98rem] font-semibold leading-tight tracking-[-0.035em]">
-          {selected.title}
+          {humanizeOperationalText(selected.title)}
         </h3>
         <p className="mt-1 line-clamp-2 text-[11.5px] leading-[1.125rem] text-white/74">
           {humanizeOperationalText(selected.description)}
@@ -541,7 +553,7 @@ function WorkItemRail({
       </section>
 
       <section className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2">
-        <RailDetailLine label="Cliente" value={selected.tenantName ?? 'Indisponível'} />
+        <RailDetailLine label="Cliente" value={humanizeOperationalText(selected.tenantName)} />
         <RailDetailLine
           href={originTicketId ? `/support/tickets/${originTicketId}` : undefined}
           label="Ticket de origem"
@@ -698,7 +710,7 @@ export function EngineeringWorkspacePage() {
   const clientOptions = useMemo(() => (
     Array.from(new Map(items.map((item) => [
       item.tenantId,
-      item.tenantName ?? item.tenantSlug ?? 'Indisponível',
+      humanizeOperationalText(item.tenantName, 'Cliente indisponivel'),
     ])).entries())
   ), [items]);
 
@@ -886,7 +898,7 @@ export function EngineeringWorkspacePage() {
   return (
     <>
       <div className="flex h-full min-h-0 flex-col gap-[var(--workspace-panel-gap)] overflow-hidden">
-        <header className="shrink-0 rounded-[18px] border border-[color:var(--color-border)] bg-white/95 px-4 py-[var(--workspace-header-y)] shadow-[0_10px_22px_rgba(19,33,79,0.05)]">
+        <header className="shrink-0 rounded-[18px] border border-[color:var(--color-border)] bg-white/95 px-4 py-[var(--workspace-header-y)]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-[1.55rem] font-semibold leading-tight tracking-[-0.045em] text-[color:var(--color-ink)]">
@@ -912,8 +924,8 @@ export function EngineeringWorkspacePage() {
 
         {actionMessage ? <InlineNotice>{actionMessage}</InlineNotice> : null}
 
-        <div className="grid min-h-0 flex-1 gap-[var(--workspace-panel-gap)] overflow-hidden xl:grid-cols-[minmax(250px,286px)_minmax(0,1fr)_minmax(318px,352px)] 2xl:grid-cols-[minmax(260px,292px)_minmax(0,1fr)_minmax(326px,360px)]">
-          <aside className="grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-[var(--workspace-panel-gap)] overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/93 p-3 shadow-[0_12px_24px_rgba(19,33,79,0.05)]">
+        <div className="grid min-h-0 flex-1 gap-[var(--workspace-panel-gap)] overflow-y-auto lg:grid-cols-[minmax(250px,286px)_minmax(0,1fr)] lg:overflow-hidden 2xl:grid-cols-[minmax(260px,292px)_minmax(0,1fr)]">
+          <aside className="grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-[var(--workspace-panel-gap)] overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/93 p-3">
             <section className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5">
               <h2 className="text-[0.98rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
                 Triagem técnica
@@ -1010,7 +1022,7 @@ export function EngineeringWorkspacePage() {
                     <option value="all">Todos</option>
                     {clientOptions.map(([tenantId, tenantName]) => (
                       <option key={tenantId} value={tenantId}>
-                        {tenantName}
+                        {humanizeOperationalText(tenantName)}
                       </option>
                     ))}
                   </SelectInput>
@@ -1035,7 +1047,7 @@ export function EngineeringWorkspacePage() {
             </section>
           </aside>
 
-          <main className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/95 shadow-[0_12px_24px_rgba(19,33,79,0.05)]">
+          <main className="flex min-h-[620px] min-w-0 flex-col overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/95 lg:min-h-0">
             <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-4 py-2.5">
               <div>
                 <h2 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
@@ -1047,17 +1059,11 @@ export function EngineeringWorkspacePage() {
               </div>
               <StatusPill>{counts.open} em aberto</StatusPill>
             </div>
-            <div className="grid grid-cols-[minmax(230px,1.75fr)_78px_94px_minmax(96px,0.78fr)_78px_minmax(98px,0.78fr)_74px_82px] gap-1.5 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-1.5 text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
-              <span>Item</span>
-              <span>Tipo</span>
-              <span>Status</span>
-              <span>Cliente</span>
-              <span>Ticket origem</span>
-              <span>Responsável</span>
-              <span>Prioridade</span>
-              <span className="text-right">Atualizado</span>
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
+              <span>Item, status e prioridade</span>
+              <span>Cliente, ticket e responsável</span>
             </div>
-            <div className="shrink-0 overflow-hidden px-3 py-2">
+            <div className="max-h-[34vh] min-h-[172px] shrink-0 overflow-y-auto px-3 py-2">
               {visibleItems.length === 0 ? (
                 <EmptyState
                   title="Nenhum item técnico neste recorte"
@@ -1083,7 +1089,7 @@ export function EngineeringWorkspacePage() {
                       Contexto técnico
                     </p>
                     <h3 className="mt-0.5 text-[15px] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                      {selected.title}
+                      {humanizeOperationalText(selected.title)}
                     </h3>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
@@ -1122,6 +1128,19 @@ export function EngineeringWorkspacePage() {
                     </p>
                   </CenterContextCard>
                 </div>
+                <section className="mt-2 rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-3">
+                  <WorkItemRail
+                    links={links}
+                    onAssignToMe={handleAssignToMe}
+                    onOpenReturn={() => setActiveActionDrawer('return')}
+                    onOpenStatus={() => setActiveActionDrawer('status')}
+                    onOpenUpdate={() => setActiveActionDrawer('update')}
+                    onUnassign={handleUnassign}
+                    selected={selected}
+                    submitting={submitting}
+                    updates={updates}
+                  />
+                </section>
               </section>
             ) : null}
             <footer className="flex shrink-0 items-center justify-between border-t border-[color:var(--color-border)] px-4 py-2 text-[11.5px] text-[color:var(--color-muted)]">
@@ -1130,20 +1149,6 @@ export function EngineeringWorkspacePage() {
               </span>
             </footer>
           </main>
-
-          <aside className="min-h-0 overflow-y-auto rounded-[18px] border border-[color:var(--color-border)] bg-white/93 p-3 shadow-[0_12px_24px_rgba(19,33,79,0.05)]">
-            <WorkItemRail
-              links={links}
-              onAssignToMe={handleAssignToMe}
-              onOpenReturn={() => setActiveActionDrawer('return')}
-              onOpenStatus={() => setActiveActionDrawer('status')}
-              onOpenUpdate={() => setActiveActionDrawer('update')}
-              onUnassign={handleUnassign}
-              selected={selected}
-              submitting={submitting}
-              updates={updates}
-            />
-          </aside>
         </div>
       </div>
 
@@ -1166,10 +1171,10 @@ export function EngineeringWorkspacePage() {
           <form className="space-y-5" id="engineering-status-form" onSubmit={handleStatusSubmit}>
             <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5">
               <p className="text-lg font-semibold tracking-[-0.035em] text-[color:var(--color-ink)]">
-                {selected.title}
+                {humanizeOperationalText(selected.title)}
               </p>
               <p className="mt-1 text-sm text-[color:var(--color-muted)]">
-                {selected.tenantName ?? 'Cliente indisponível'}
+                {humanizeOperationalText(selected.tenantName)}
               </p>
             </section>
             <div className="grid gap-4 md:grid-cols-2">

@@ -11,6 +11,7 @@ import type {
 import {
   ProductDocMarkdownPreview,
   getProductDocOutline,
+  toOperationalDocumentText,
 } from './ProductDocMarkdownPreview';
 
 function statusTone(status: InternalDocumentStatus) {
@@ -179,7 +180,7 @@ export function ProductDocReaderPanel({
         <dl className="mt-4 grid gap-3 text-sm md:grid-cols-4">
           <div className="min-w-0 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
             <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-              Origem versionada
+              Origem
             </dt>
             <dd className="mt-1 truncate font-medium text-[color:var(--color-ink)]" title={sourcePath}>
               {sourceLabel}
@@ -193,13 +194,13 @@ export function ProductDocReaderPanel({
           </div>
           <div className="min-w-0 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
             <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-              Markdown sanitizado
+              Conteudo revisado
             </dt>
-            <dd className="mt-1 font-medium text-[color:var(--color-ink)]">Versão oficial</dd>
+            <dd className="mt-1 font-medium text-[color:var(--color-ink)]">Versao oficial</dd>
           </div>
           <div className="min-w-0 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
             <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-              Atualização
+              Data
             </dt>
             <dd className="mt-1 font-medium text-[color:var(--color-ink)]">
               {formatDateTime(document.published_at ?? document.updated_at)}
@@ -209,8 +210,8 @@ export function ProductDocReaderPanel({
 
         <div className="mt-4 space-y-3">
           <InlineNotice>
-            Leitura interna controlada pela fonte governada. A tela renderiza apenas o
-            markdown sanitizado autorizado e não lê arquivos arbitrários do repositório.
+            Leitura interna controlada pela biblioteca autorizada. Esta tela exibe apenas o
+            conteudo revisado para consulta operacional.
           </InlineNotice>
           {document.sensitivity === 'restricted' ? (
             <InlineNotice tone="warning">
@@ -262,7 +263,7 @@ export function ProductDocReaderPanel({
                 href={`#${item.id}`}
                 key={item.id}
               >
-                {item.title}
+                {toOperationalDocumentText(item.title)}
               </a>
             ))}
           </div>

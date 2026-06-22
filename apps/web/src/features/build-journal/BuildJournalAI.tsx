@@ -53,7 +53,7 @@ const collaborationSteps = [
     subtitle: 'Executa a construção',
     tone: 'blue',
     icon: 'cube',
-    items: ['Implementa código e mudanças técnicas', 'Cria ou ajusta telas, fluxos e contratos', 'Executa tarefas de construção', 'Retorna resultado técnico'],
+    items: ['Implementa código e mudanças técnicas', 'Cria ou ajusta telas, fluxos e acordos', 'Executa tarefas de construção', 'Retorna resultado técnico'],
   },
   {
     number: '4',
@@ -100,7 +100,7 @@ const capabilityCards = [
       'Inventar resposta ou informação',
       'Responder sem fonte ou sem citação',
       'Usar conteúdo draft sem aprovação',
-      'Acessar conteúdo fora de tenant/permissão',
+      'Acessar conteúdo fora do cliente ou da permissão',
       'Expor playbook interno como se fosse público',
       'Publicar artigo automaticamente',
       'Misturar conteúdo público com operação interna',
@@ -111,7 +111,7 @@ const capabilityCards = [
 
 const governanceItems = [
   ['Base oficial', 'Só usa conteúdo versionado, classificado e auditável.', 'shield'],
-  ['Escopo e permissão', 'Respeita tenant, role e visibilidade.', 'lock'],
+  ['Escopo e permissão', 'Respeita cliente, papel e visibilidade.', 'lock'],
   ['Citação obrigatória', 'Toda resposta da IA deve citar a fonte aprovada.', 'search'],
   ['Auditoria', 'Prompt, contexto e fontes precisam ser rastreáveis.', 'clipboard'],
   ['Controle humano', 'Publicação, decisão editorial e mudanças sensíveis continuam humanas.', 'user'],

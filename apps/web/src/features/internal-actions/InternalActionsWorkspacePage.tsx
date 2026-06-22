@@ -184,9 +184,9 @@ function QueueRow({
   return (
     <Link
       className={cx(
-        'grid min-h-[62px] grid-cols-[minmax(260px,1.8fr)_110px_120px_minmax(130px,0.9fr)_94px] items-center gap-2 border-b border-[color:var(--color-border)] px-3 py-2 text-left transition last:border-b-0',
+        'flex min-h-[70px] flex-col gap-2 border-b border-[color:var(--color-border)] px-3 py-2 text-left transition last:border-b-0 lg:grid lg:grid-cols-[minmax(280px,1.35fr)_minmax(260px,1fr)_116px] lg:items-center',
         active
-          ? 'rounded-[12px] border border-[rgba(48,127,226,0.55)] bg-[linear-gradient(90deg,rgba(48,127,226,0.11),rgba(255,255,255,0.96))]'
+          ? 'rounded-[12px] border border-[rgba(48,127,226,0.55)] bg-[rgba(48,127,226,0.08)]'
           : 'hover:bg-[color:var(--color-surface)]',
       )}
       to={`/internal-actions/${item.internalActionId}`}
@@ -202,17 +202,17 @@ function QueueRow({
           {item.ticketTitle}
         </p>
       </div>
-      <div className="min-w-0">
+      <div className="grid min-w-0 gap-1 sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)] sm:items-center">
         <CompactPill tone={toneForStatus(item.status)}>
           {humanizeStatus(item.status)}
         </CompactPill>
+        <p className="truncate text-[12px] font-semibold text-[color:var(--color-ink)]">
+          {item.targetAreaLabel}
+        </p>
+        <p className="truncate text-[12px] text-[color:var(--color-muted)]">
+          {item.assignedAreaUserName ?? 'Sem responsável'}
+        </p>
       </div>
-      <p className="truncate text-[12px] font-semibold text-[color:var(--color-ink)]">
-        {item.targetAreaLabel}
-      </p>
-      <p className="truncate text-[12px] text-[color:var(--color-muted)]">
-        {item.assignedAreaUserName ?? 'Sem responsável'}
-      </p>
       <p className="text-right text-[11px] leading-4 text-[color:var(--color-muted)]">
         {formatDateTime(item.updatedAt)}
       </p>
@@ -282,8 +282,8 @@ function DetailPanel({
   const canAssign = !terminal && !detail.assignedAreaUserId;
 
   return (
-    <div className="grid min-h-0 gap-3">
-      <section className="rounded-[18px] border border-[rgba(48,127,226,0.22)] bg-[linear-gradient(180deg,rgba(8,24,61,1),rgba(13,36,92,0.98))] px-4 py-3 text-white shadow-[0_14px_28px_rgba(8,22,61,0.22)]">
+    <div className="grid min-h-0 gap-3 xl:grid-cols-[minmax(280px,1.1fr)_minmax(230px,0.9fr)_minmax(250px,1fr)]">
+      <section className="rounded-[16px] border border-[rgba(48,127,226,0.22)] bg-[linear-gradient(180deg,rgba(8,24,61,1),rgba(13,36,92,0.98))] px-4 py-3 text-white xl:col-span-3">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="mr-auto text-[1.25rem] font-semibold tracking-[-0.045em]">
             {compactActionCode(detail.internalActionId)}
@@ -303,13 +303,15 @@ function DetailPanel({
         </p>
       </section>
 
-      <InlineNotice>
-        Este workspace opera apenas o acionamento interno. O ticket permanece com o suporte,
-        sem mudança automática de status e sem exposição no Portal Cliente.
-      </InlineNotice>
+      <div className="xl:col-span-3">
+        <InlineNotice>
+          Este workspace opera apenas o acionamento interno. O ticket permanece com o suporte,
+          sem mudança automática de status e sem exposição no Portal Cliente.
+        </InlineNotice>
+      </div>
 
       <section className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-4 py-3">
-        <DetailLine label="Cliente" value={detail.tenantDisplayName ?? detail.tenantSlug} />
+        <DetailLine label="Cliente" value={detail.tenantDisplayName ?? 'Cliente indisponível'} />
         <DetailLine
           href={`/support/tickets/${detail.ticketId}`}
           label="Ticket de origem"
@@ -492,7 +494,7 @@ export function InternalActionsWorkspacePage() {
   const emptyQueueDescription =
     filtersAreBroad && hasInternalAreaContext
       ? `Quando o suporte acionar ${visibleAreaLabels || 'sua área'}, os itens aparecerão aqui.`
-      : 'Ajuste os filtros ou atualize a fila para consultar novamente os acionamentos autorizados pelo backend.';
+      : 'Ajuste os filtros ou atualize a fila para consultar novamente os acionamentos autorizados para sua área.';
 
   async function runAction(action: () => Promise<unknown>, successMessage: string) {
     setSubmitting(true);
@@ -583,7 +585,7 @@ export function InternalActionsWorkspacePage() {
     return (
       <LoadingState
         title="Carregando acionamentos"
-        description="Estamos carregando a fila por membership de área interna."
+        description="Estamos carregando os acionamentos autorizados para sua área."
       />
     );
   }
@@ -591,7 +593,8 @@ export function InternalActionsWorkspacePage() {
   if (phase === 'contract-unavailable') {
     return (
       <ContractUnavailableState
-        contractName={message ?? 'contrato operacional de acionamentos internos'}
+        contractName={message ?? undefined}
+        resourceName="os acionamentos internos"
         action={<GhostButton onClick={() => void loadWorkspace()}>Tentar novamente</GhostButton>}
       />
     );
@@ -625,14 +628,14 @@ export function InternalActionsWorkspacePage() {
   return (
     <>
       <div className="flex h-full min-h-0 flex-col gap-[var(--workspace-panel-gap)] overflow-hidden">
-        <header className="shrink-0 rounded-[18px] border border-[color:var(--color-border)] bg-white/95 px-4 py-[var(--workspace-header-y)] shadow-[0_10px_22px_rgba(19,33,79,0.05)]">
+        <header className="shrink-0 rounded-[18px] border border-[color:var(--color-border)] bg-white/95 px-4 py-[var(--workspace-header-y)]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-[1.55rem] font-semibold leading-tight tracking-[-0.045em] text-[color:var(--color-ink)]">
                 Acionamentos internos
               </h1>
               <p className="mt-1 text-[13px] text-[color:var(--color-muted)]">
-                Fila operacional para áreas acionadas pelo suporte, sem alterar ownership do ticket.
+                Fila operacional para áreas acionadas pelo suporte, mantendo o ticket com o time de atendimento.
               </p>
             </div>
             <GhostButton className="min-h-9 rounded-[12px] px-4 text-[12px]" onClick={() => void loadWorkspace()} type="button">
@@ -658,8 +661,8 @@ export function InternalActionsWorkspacePage() {
 
         {actionMessage ? <InlineNotice>{actionMessage}</InlineNotice> : null}
 
-        <div className="grid min-h-0 flex-1 gap-[var(--workspace-panel-gap)] overflow-hidden xl:grid-cols-[minmax(250px,286px)_minmax(0,1.35fr)_minmax(330px,380px)]">
-          <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-[var(--workspace-panel-gap)] overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/93 p-3 shadow-[0_12px_24px_rgba(19,33,79,0.05)]">
+        <div className="grid min-h-0 flex-1 gap-[var(--workspace-panel-gap)] overflow-y-auto lg:grid-cols-[minmax(250px,286px)_minmax(0,1fr)] lg:overflow-hidden">
+          <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-[var(--workspace-panel-gap)] overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/93 p-3">
             <section className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2.5">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
                 Filtros
@@ -720,26 +723,24 @@ export function InternalActionsWorkspacePage() {
             </section>
           </aside>
 
-          <main className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/95 shadow-[0_12px_24px_rgba(19,33,79,0.05)]">
+          <main className="flex min-h-[620px] min-w-0 flex-col overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/95 lg:min-h-0">
             <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-4 py-2.5">
               <div>
                 <h2 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
                   Fila da área
                 </h2>
                 <p className="mt-0.5 text-[12px] text-[color:var(--color-muted)]">
-                  Apenas acionamentos autorizados pelo membership ativo.
+                  Apenas acionamentos autorizados para sua área.
                 </p>
               </div>
               <StatusPill>{items.length} itens</StatusPill>
             </div>
-            <div className="grid grid-cols-[minmax(260px,1.8fr)_110px_120px_minmax(130px,0.9fr)_94px] gap-2 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-1.5 text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
+            <div className="hidden grid-cols-[minmax(280px,1.35fr)_minmax(260px,1fr)_116px] gap-2 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-1.5 text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)] lg:grid">
               <span>Acionamento</span>
-              <span>Status</span>
-              <span>Área</span>
-              <span>Responsável</span>
+              <span>Status, área e responsável</span>
               <span className="text-right">Atualizado</span>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
+            <div className="min-h-0 flex-[0.9] overflow-y-auto px-3 py-2">
               {items.length === 0 ? (
                 <EmptyState
                   title={emptyQueueTitle}
@@ -762,29 +763,28 @@ export function InternalActionsWorkspacePage() {
                 </div>
               )}
             </div>
+            <section className="min-h-0 flex-1 overflow-y-auto border-t border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3">
+              <DetailPanel
+                currentUserId={user?.id ?? null}
+                detail={detail}
+                onAssign={handleAssign}
+                onOpenComment={() => setDrawer('comment')}
+                onOpenReturn={() => setDrawer('return')}
+                onOpenStatus={() => {
+                  setStatusDraft({
+                    status:
+                      detail?.status && AREA_UPDATE_STATUSES.includes(detail.status)
+                        ? detail.status
+                        : 'in_progress',
+                    body: '',
+                  });
+                  setDrawer('status');
+                }}
+                submitting={submitting}
+                timeline={timeline}
+              />
+            </section>
           </main>
-
-          <aside className="min-h-0 overflow-y-auto rounded-[18px] border border-[color:var(--color-border)] bg-white/93 p-3 shadow-[0_12px_24px_rgba(19,33,79,0.05)]">
-            <DetailPanel
-              currentUserId={user?.id ?? null}
-              detail={detail}
-              onAssign={handleAssign}
-              onOpenComment={() => setDrawer('comment')}
-              onOpenReturn={() => setDrawer('return')}
-              onOpenStatus={() => {
-                setStatusDraft({
-                  status:
-                    detail?.status && AREA_UPDATE_STATUSES.includes(detail.status)
-                      ? detail.status
-                      : 'in_progress',
-                  body: '',
-                });
-                setDrawer('status');
-              }}
-              submitting={submitting}
-              timeline={timeline}
-            />
-          </aside>
         </div>
       </div>
 

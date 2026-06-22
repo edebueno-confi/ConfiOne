@@ -8,8 +8,31 @@ export interface ProductDocOutlineItem {
   title: string;
 }
 
+const OPERATIONAL_TEXT_REPLACEMENTS: Array<[RegExp, string]> = [
+  [/\bsource of truth\b/gi, 'fonte oficial'],
+  [/\bread models?\b/gi, 'leituras governadas'],
+  [/\bviews?\b/gi, 'leituras governadas'],
+  [/\brpcs?\b/gi, 'acoes governadas'],
+  [/\bbackend\b/gi, 'plataforma'],
+  [/\bsupabase\b/gi, 'plataforma de dados'],
+  [/\brls\b/gi, 'controle de acesso'],
+  [/\bpayloads?\b/gi, 'dados protegidos'],
+  [/\bmetadata\b/gi, 'contexto protegido'],
+  [/\bmemberships?\b/gi, 'vinculos de acesso'],
+  [/\bcontratos?\b/gi, 'acordos'],
+  [/\btenant_id\b/gi, 'escopo do cliente'],
+  [/\btenants?\b/gi, 'clientes'],
+];
+
+export function toOperationalDocumentText(value: string) {
+  return OPERATIONAL_TEXT_REPLACEMENTS.reduce(
+    (current, [pattern, replacement]) => current.replace(pattern, replacement),
+    value,
+  );
+}
+
 function slugifyHeading(value: string) {
-  return value
+  return toOperationalDocumentText(value)
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
@@ -41,7 +64,7 @@ export function getProductDocOutline(source: string): ProductDocOutlineItem[] {
         return null;
       }
 
-      const title = line.replace(/^#{1,2}\s+/, '').trim();
+      const title = toOperationalDocumentText(line.replace(/^#{1,2}\s+/, '').trim());
       return {
         id: toUniqueHeadingId(title, usedIds),
         level,
@@ -53,14 +76,15 @@ export function getProductDocOutline(source: string): ProductDocOutlineItem[] {
 }
 
 function parseInline(text: string): ReactNode[] {
+  const displayText = toOperationalDocumentText(text);
   const parts: ReactNode[] = [];
   const pattern = /(`([^`]+)`|\*\*([^*]+)\*\*)/g;
   let lastIndex = 0;
 
-  for (const match of text.matchAll(pattern)) {
+  for (const match of displayText.matchAll(pattern)) {
     const index = match.index ?? 0;
     if (index > lastIndex) {
-      parts.push(text.slice(lastIndex, index));
+      parts.push(displayText.slice(lastIndex, index));
     }
 
     if (match[2]) {
@@ -79,11 +103,11 @@ function parseInline(text: string): ReactNode[] {
     lastIndex = index + match[0].length;
   }
 
-  if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
+  if (lastIndex < displayText.length) {
+    parts.push(displayText.slice(lastIndex));
   }
 
-  return parts.length > 0 ? parts : [text];
+  return parts.length > 0 ? parts : [displayText];
 }
 
 export function ProductDocMarkdownPreview({
@@ -145,11 +169,11 @@ export function ProductDocMarkdownPreview({
 
       blocks.push(
         <ul
-          className="grid max-w-[74ch] gap-2 pl-5 text-sm leading-7 text-[color:var(--color-muted)]"
+          className="grid min-w-0 max-w-[74ch] gap-2 break-words pl-5 text-sm leading-7 text-[color:var(--color-muted)] [overflow-wrap:anywhere]"
           key={`list-${index}`}
         >
           {items.map((item) => (
-            <li className="list-disc" key={item}>
+            <li className="min-w-0 list-disc" key={item}>
               {parseInline(item)}
             </li>
           ))}
@@ -162,6 +186,7 @@ export function ProductDocMarkdownPreview({
       <p
         className={cx(
           'max-w-[74ch] text-sm leading-7 text-[color:var(--color-muted)]',
+          'min-w-0 break-words [overflow-wrap:anywhere]',
           line.includes('[conteúdo interno restrito omitido]') &&
             'rounded-2xl border border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-surface)] px-4 py-3 font-medium text-[color:var(--color-warning-ink)]',
         )}

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { formatDateTime, humanizeToken } from '../../../app/format';
 import { EmptyState, LoadingState } from '../../../components/states';
+import { sanitizeOperationalVisibleText } from '../../../lib/operational-copy';
 import {
   AppButton,
   GhostButton,
@@ -330,8 +331,7 @@ export function SupportTicketPreview({
   const tenant =
     detail?.tenantDisplayName ??
     detail?.tenantLegalName ??
-    detail?.tenantSlug ??
-    (ticket ? ticketTenantLabel(ticket) : 'Cliente nao identificado');
+    (ticket ? ticketTenantLabel(ticket) : 'Cliente não identificado');
   const assigned = detail?.assignedToFullName ?? ticket?.assignedToFullName ?? 'Nao atribuido';
   const category = detail?.categoryName ?? ticket?.categoryName ?? 'Indisponivel';
   const slaLabel = detail?.slaStatusLabel ?? ticket?.slaStatusLabel ?? 'Sem politica definida';
@@ -435,7 +435,7 @@ export function SupportTicketPreview({
           <div className="border-t border-[color:var(--color-border)] pt-3">
             <p className="font-semibold text-[color:var(--color-ink)]">Contato do cliente</p>
             <div className="mt-1.5 space-y-1">
-              <p>{requester?.fullName ?? 'Indisponivel'}</p>
+              <p>{sanitizeOperationalVisibleText(requester?.fullName)}</p>
               <p>{requester ? 'Contato principal' : 'Indisponivel'}</p>
               <p>{requester?.email ?? 'Indisponivel'}</p>
               <p>{customer ? `${customer.activeContacts.length} contato(s) ativo(s)` : 'Indisponivel'}</p>

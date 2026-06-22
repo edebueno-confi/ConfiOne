@@ -16,7 +16,7 @@ function describeReason(reason: unknown) {
     return 'Sua conta não tem permissão para abrir esta área.';
   }
 
-  if (reason === 'backend-permission') {
+  if (reason === 'missing-authorized-workspace') {
     return 'Esta área não está liberada para a sua conta agora. Se você acredita que deveria entrar, revise seu acesso com a equipe responsável.';
   }
 

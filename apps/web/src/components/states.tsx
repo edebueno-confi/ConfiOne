@@ -145,18 +145,45 @@ export function AccessDeniedState({
 }
 
 interface ContractUnavailableStateProps {
-  contractName: string;
+  contractName?: string;
+  resourceName?: string;
+  description?: string;
   action?: ReactNode;
+}
+
+function safeUnavailableResourceName(contractName?: string, resourceName?: string) {
+  if (resourceName) {
+    return resourceName;
+  }
+
+  if (!contractName) {
+    return 'as informações desta área';
+  }
+
+  const internalTerms = /\b(rpc|view|backend|contrato|tenant|bucket|storage|supabase|rls|stack|payload)\b/i;
+
+  if (internalTerms.test(contractName)) {
+    return 'as informações desta área';
+  }
+
+  return contractName;
 }
 
 export function ContractUnavailableState({
   contractName,
+  resourceName,
+  description,
   action,
 }: ContractUnavailableStateProps) {
+  const safeResourceName = safeUnavailableResourceName(contractName, resourceName);
+
   return (
     <StateFrame
       title="Recurso indisponível"
-      description={`Este recurso não está disponível agora: ${contractName}.`}
+      description={
+        description ??
+        `Não foi possível abrir ${safeResourceName} agora. Tente novamente ou revise suas permissões.`
+      }
       eyebrow="Indisponível"
       actions={action}
     />

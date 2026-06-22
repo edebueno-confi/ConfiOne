@@ -254,7 +254,7 @@ export function toneForKnowledgeLinkType(linkType: TicketKnowledgeLinkType) {
 export function ticketTenantLabel(
   ticket: Pick<SupportTicketQueueItem, 'tenantDisplayName' | 'tenantLegalName' | 'tenantSlug'>,
 ) {
-  return ticket.tenantDisplayName ?? ticket.tenantLegalName ?? ticket.tenantSlug ?? 'Cliente indisponível';
+  return ticket.tenantDisplayName ?? ticket.tenantLegalName ?? 'Cliente indisponível';
 }
 
 export function primaryContactFromCustomer(customer: SupportCustomer360) {

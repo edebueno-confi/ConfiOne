@@ -389,7 +389,7 @@ function SummaryCards({ onShowOverview }: { onShowOverview: () => void }) {
           </div>
         </div>
         <p className="mt-5 rounded-[10px] bg-[#F4F7FF] p-4 text-sm font-semibold leading-6 text-[#1F3A75]">
-          Foco atual: finalizar contratos operacionais e avançar no portal e workspace técnico.
+          Foco atual: finalizar acordos operacionais e avançar no portal e workspace técnico.
         </p>
       </article>
 
@@ -410,7 +410,7 @@ function SummaryCards({ onShowOverview }: { onShowOverview: () => void }) {
           aria-disabled="true"
           disabled
           className="mt-6 flex h-11 w-full cursor-not-allowed items-center justify-center gap-3 rounded-[8px] border border-[#D9E6F7] bg-[#F8FBFF] text-sm font-black text-[#1458E8]"
-          title="Sem contrato específico para listagem completa nesta fase"
+          title="Sem listagem completa nesta fase"
           type="button"
         >
           Ver todas as entregas
@@ -455,9 +455,9 @@ function OverviewPanel({
       icon: 'shield',
       accent: 'text-[#0B8C62] bg-[#EFFDF7]',
       list: [
-        'Backend é a fonte da verdade',
-        'Multi-tenant desde o início',
-        'Segurança, auditoria e RLS primeiro',
+        'Plataforma como fonte oficial',
+        'Escopo de cliente desde o início',
+        'Segurança, auditoria e acesso primeiro',
         'IA assiste, não decide',
         'Processos claros e documentação viva',
       ],
@@ -466,17 +466,17 @@ function OverviewPanel({
 
   const architectureLayers = [
     ['Frontend', 'Renderiza informação e envia comandos', 'monitor', 'violet'],
-    ['Views', 'Leitura segura através de read models', 'spark', 'cyan'],
-    ['RPCs', 'Escrita controlada com regras de negócio', 'code', 'violet'],
+    ['Leituras', 'Consulta segura por leituras governadas', 'spark', 'cyan'],
+    ['Ações', 'Operações controladas com regras de negócio', 'code', 'violet'],
     ['PostgreSQL', 'Banco relacional transacional e confiável', 'database', 'blue'],
-    ['RLS', 'Segurança por linha e tenant', 'shield', 'teal'],
+    ['Acesso', 'Segurança por cliente e permissão', 'shield', 'teal'],
     ['Audit Logs', 'Rastreabilidade e trilha de auditoria', 'clipboard', 'blue'],
     ['Documentos', 'Governança, políticas e fonte da verdade', 'book', 'violet'],
   ] as const;
 
   const documentCards = [
     ['Produto e Visão', 'Visão, roadmap e estado do produto.', '3 documentos', 'pink', 'spark'],
-    ['Arquitetura e Contratos', 'Regras arquiteturais, contratos e contexto.', '3 documentos', 'violet', 'code'],
+    ['Arquitetura operacional', 'Regras arquiteturais, acordos e contexto.', '3 documentos', 'violet', 'code'],
     ['Segurança e IA', 'Governança de IA, segurança e runbooks.', '2 documentos', 'teal', 'shield'],
     ['Suporte e Operação', 'Fluxos, workspace, perfil de cliente e anexos.', '4 documentos', 'orange', 'headset'],
     ['Knowledge e Docs', 'Estratégia, governança editorial e checkpoint.', '3 documentos', 'violet', 'book'],
@@ -603,7 +603,7 @@ function OverviewPanel({
       <section className="rounded-[16px] border border-[#D9E6F7] bg-white p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
         <h2 className="text-xl font-black text-[#071641]">Linha do tempo da construção</h2>
         <p className="mt-1 text-sm font-semibold text-[#31476C]">Principais marcos e entregas por fase</p>
-        <div className="mt-7 grid gap-4 xl:grid-cols-8">
+        <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
           {buildJournalTimelinePhases.map((phaseItem, index) => {
             const accent = accentClasses[phaseItem.accent];
             return (
@@ -614,7 +614,7 @@ function OverviewPanel({
                 type="button"
               >
                 {index < buildJournalTimelinePhases.length - 1 ? (
-                  <span aria-hidden="true" className="absolute left-1/2 top-8 hidden h-[2px] w-full bg-[#1458E8]/50 xl:block" />
+                  <span aria-hidden="true" className="absolute left-1/2 top-8 hidden h-[2px] w-full bg-[#1458E8]/50 2xl:block" />
                 ) : null}
                 <span className={cx('relative z-10 flex h-16 w-16 items-center justify-center rounded-full text-white ring-8 ring-[#F1F6FF]', accent.bg)}>
                   <Icon className="h-8 w-8" name={phaseItem.icon} />
@@ -632,12 +632,12 @@ function OverviewPanel({
         <article className="rounded-[16px] border border-[#D9E6F7] bg-white p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
           <h2 className="text-xl font-black text-[#071641]">Arquitetura em camadas</h2>
           <p className="mt-1 text-sm font-semibold text-[#31476C]">Como os componentes se conectam para entregar valor</p>
-          <div className="mt-6 grid gap-3 md:grid-cols-4 xl:grid-cols-7">
+          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
             {architectureLayers.map(([name, text, icon, accent], index) => {
               const color = accentClasses[accent as TimelineAccent];
               return (
                 <div className="relative rounded-[13px] border border-[#D9E6F7] bg-[#FBFDFF] p-4 text-center" key={name}>
-                  {index > 0 ? <span className="absolute -left-3 top-10 hidden text-[#1458E8] xl:block">→</span> : null}
+                  {index > 0 ? <span className="absolute -left-3 top-10 hidden text-[#1458E8] 2xl:block">→</span> : null}
                   <span className={cx('mx-auto flex h-12 w-12 items-center justify-center rounded-[12px]', color.soft, color.text)}>
                     <Icon className="h-7 w-7" name={icon} />
                   </span>
@@ -667,7 +667,7 @@ function OverviewPanel({
         <p className="mt-1 text-sm font-semibold text-[#31476C]">Como ChatGPT e Codex aceleram a construção com responsabilidade</p>
         <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_1fr_1fr_1.05fr]">
           {[
-            ['ChatGPT', 'Raciocínio e estratégia', ['Visão do produto, arquitetura e decisões', 'Especificações, contratos e revisão crítica', 'Documentação, prompts e raciocínio'], 'teal', 'spark'],
+            ['ChatGPT', 'Raciocínio e estratégia', ['Visão do produto, arquitetura e decisões', 'Especificações, acordos e revisão crítica', 'Documentação, prompts e raciocínio'], 'teal', 'spark'],
             ['Codex', 'Execução e entrega', ['Implementação de código e refatoração', 'Testes automatizados e validação', 'Scripts, migrations e documentação técnica'], 'blue', 'code'],
             ['IA futura', 'Assistente operacional', ['Respostas com base oficial e citável', 'Contexto operacional e histórico seguro', 'Assistência que não substitui pessoas'], 'pink', 'spark'],
           ].map(([title, subtitle, items, accent, icon]) => {
@@ -690,7 +690,7 @@ function OverviewPanel({
           <article className="rounded-[14px] border border-[#BFD4F3] bg-[linear-gradient(135deg,#F5F8FF,#FFFFFF)] p-6">
             <h3 className="text-lg font-black leading-7 text-[#071641]">IA assiste. Pessoas decidem. Documentação governa.</h3>
             <p className="mt-5 text-sm font-semibold leading-7 text-[#31476C]">
-              Backend, contratos e documentação versionada continuam sendo a fonte da verdade.
+              Plataforma, acordos e documentação versionada continuam sendo a fonte oficial.
             </p>
           </article>
         </div>
@@ -830,7 +830,7 @@ export function BuildJournalPage() {
                   aria-disabled="true"
                   disabled
                   className="inline-flex min-h-12 cursor-not-allowed items-center gap-3 rounded-[10px] border border-[#D9E6F7] bg-white px-5 text-sm font-black text-[#071641] shadow-[0_10px_24px_rgba(31,67,125,0.05)]"
-                  title="Exportação ainda sem contrato frontend/backend"
+                  title="Exportação ainda indisponível nesta fase"
                   type="button"
                 >
                   <Icon className="h-4 w-4 text-[#1458E8]" name="download" />
@@ -856,9 +856,9 @@ export function BuildJournalPage() {
                   {isTimelineTab
                     ? 'Principais marcos e entregas por fase'
                     : isArchitectureTab
-                      ? 'Como o sistema funciona por camadas, contratos e boundaries'
+                      ? 'Como o sistema funciona por camadas, acordos e limites'
                       : isAITab
-                        ? 'Usamos IA para acelerar raciocínio, execução e documentação sem abrir mão de governança, contratos reais e decisão humana.'
+                        ? 'Usamos IA para acelerar raciocínio, execução e documentação sem abrir mão de governança, acordos reais e decisão humana.'
                         : isDocsTab
                           ? 'Fontes versionadas, sanitizadas e controladas que sustentam a construção do Genius Support OS.'
                           : 'Conteúdo documental interno conectado à evolução do produto'}

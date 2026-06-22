@@ -3464,7 +3464,7 @@ export function KnowledgeArticleEditorPage() {
 
         const classified = classifyAdminError(
           error,
-          'Falha ao carregar contratos administrativos da base de conhecimento.',
+          'Falha ao carregar as configurações da base de conhecimento.',
         );
         setErrorMessage(classified.message);
         setPhase(classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error');
@@ -3506,7 +3506,7 @@ export function KnowledgeArticleEditorPage() {
     } catch (error) {
       const classified = classifyAdminError(
         error,
-        'Falha ao trocar o espaço publico da base de conhecimento.',
+        'Falha ao trocar o espaço público da base de conhecimento.',
       );
       setFeedback(classified.message);
     }
@@ -3606,7 +3606,7 @@ export function KnowledgeArticleEditorPage() {
     } catch (error) {
       const classified = classifyAdminError(
         error,
-        'Falha ao carregar assets vinculados ao artigo.',
+        'Falha ao carregar anexos vinculados ao artigo.',
       );
       setFeedback(classified.message);
     }
@@ -3686,7 +3686,7 @@ export function KnowledgeArticleEditorPage() {
       });
       setAssetState('saved');
       setFeedback(
-        'Imagem enviada para o bucket governado e inserida no corpo como referência segura.',
+        'Imagem enviada para o repositório seguro e inserida no corpo do artigo.',
       );
     } catch (error) {
       const classified = classifyAdminError(error, 'Falha ao anexar a imagem ao artigo.');
@@ -3701,7 +3701,7 @@ export function KnowledgeArticleEditorPage() {
     if (files.length === 0) {
       setAssetState('error');
       setFeedback(
-        'Use imagens PNG, JPG, WEBP ou GIF. PDFs ainda não têm contrato de asset nesta V1.',
+        'Use imagens PNG, JPG, WEBP ou GIF. PDFs ainda não estão disponíveis como anexo nesta versão.',
       );
       return;
     }
@@ -3887,7 +3887,7 @@ export function KnowledgeArticleEditorPage() {
       await saveDraft();
       setSubmitState('error');
       setFeedback(
-        'A revisão de artigo publicado foi salva. Este contrato não possui submissão separada para review; a publicação segue pelo gate editorial existente.',
+        'A revisão de artigo publicado foi salva. A publicação seguirá pelo fluxo editorial existente.',
       );
       return;
     }
@@ -4122,7 +4122,7 @@ export function KnowledgeArticleEditorPage() {
     return (
       <LoadingState
         title="Carregando editor"
-        description="Estamos preparando categorias, espaços e contratos do Knowledge."
+        description="Estamos preparando categorias, espaços e configurações da base de conhecimento."
       />
     );
   }
@@ -4130,7 +4130,8 @@ export function KnowledgeArticleEditorPage() {
   if (phase === 'contract-unavailable') {
     return (
       <ContractUnavailableState
-        contractName={errorMessage ?? 'views e RPCs administrativas de Knowledge'}
+        contractName={errorMessage ?? undefined}
+        resourceName="as configurações da base de conhecimento"
         action={
           <Link to="/admin/knowledge">
             <GhostButton>Voltar ao cockpit</GhostButton>
@@ -4365,7 +4366,7 @@ export function KnowledgeArticleEditorPage() {
                           </button>
                         </div>
                         <div className="mt-1 flex justify-between text-[0.65rem] text-[#6B7892]">
-                          <span>Tags normalizadas e persistidas por RPC ao salvar.</span>
+                          <span>As tags serão salvas junto com o artigo.</span>
                           <span>{form.keywords.length}/10</span>
                         </div>
                       </div>
@@ -4421,12 +4422,12 @@ export function KnowledgeArticleEditorPage() {
                                     : 'bg-amber-50 text-amber-700',
                             )}
                           >
-                            RPC
+                            Governado
                           </span>
                         </div>
                         <p className="mt-2 text-[0.68rem] leading-4 text-[color:var(--color-muted)]">
-                          Status não é editado livremente. Cada avanço chama a RPC governada e
-                          respeita o gate editorial.
+                          Status não é editado livremente. Cada avanço respeita a governança
+                          editorial.
                         </p>
                         <div className="mt-3 grid gap-2">
                           {status === 'draft' && !isEditorialRevision ? (
@@ -4448,8 +4449,8 @@ export function KnowledgeArticleEditorPage() {
                             </AppButton>
                           ) : (
                             <p className="rounded-xl bg-slate-50 px-3 py-2 text-[0.68rem] leading-4 text-slate-600">
-                              Artigo arquivado fica somente leitura até existir contrato de
-                              reativação.
+                              Artigo arquivado fica somente leitura até que a reativação esteja
+                              disponível.
                             </p>
                           )}
                         </div>
@@ -4516,8 +4517,8 @@ export function KnowledgeArticleEditorPage() {
                           Confirmação editorial para publicação pública
                         </h3>
                         <p className="mt-1 text-[0.68rem] leading-4 text-amber-800">
-                          Marque apenas após revisão humana real. Isso será persistido por RPC
-                          antes da tentativa de publicação.
+                          Marque apenas após revisão humana real. Isso será registrado com
+                          segurança antes da tentativa de publicação.
                         </p>
                         <div className="mt-3 space-y-2">
                           {PUBLIC_PUBLISH_CONFIRMATION_FIELDS.map((field) => (

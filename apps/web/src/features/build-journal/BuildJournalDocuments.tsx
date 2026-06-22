@@ -361,12 +361,12 @@ export function BuildJournalDocuments() {
             </p>
           </div>
           <div className="rounded-[16px] border border-[#CFE0FF] bg-[#F5F8FF] p-5">
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-[#1458E8]">Contrato de segurança</p>
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-[#1458E8]">Guarda de segurança</p>
             <ul className="mt-4 space-y-3">
               {[
                 'Não abre arquivos arbitrários do repositório.',
                 'Reutiliza o leitor oficial de Product Docs.',
-                'Consome as mesmas views governadas do Product Docs.',
+                'Usa as mesmas leituras autorizadas do Documentos do Produto.',
                 'Só abre documentos presentes na whitelist sincronizada.',
               ].map((item) => (
                 <li className="flex gap-3 text-sm font-bold leading-6 text-[#20375F]" key={item}>
@@ -417,12 +417,12 @@ export function BuildJournalDocuments() {
           ) : catalog.length === 0 ? (
             <EmptyState
               title="Nenhum documento disponível"
-              description="Nenhum documento autorizado para o Diário foi retornado pelo contrato backend."
+              description="Nenhum documento autorizado para o Diário ficou disponível agora."
             />
           ) : detailPhase === 'loading' ? (
             <LoadingState
               title="Carregando documento"
-              description="Estamos abrindo a versão sanitizada retornada pelo backend."
+              description="Estamos abrindo a versão revisada disponível para consulta."
             />
           ) : detailPhase === 'error' ? (
             <ErrorState description={message || 'Falha ao abrir o documento solicitado.'} />

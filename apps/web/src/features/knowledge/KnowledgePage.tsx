@@ -591,7 +591,7 @@ function buildPersistedHumanChecklist(
       label: field.label,
       tone: checked ? 'positive' : 'warning',
       description: checked
-        ? 'Confirmacao humana persistida para este item.'
+        ? 'Confirmação humana registrada para este item.'
         : field.help,
     } satisfies EditorialChecklistItem;
   });
@@ -672,7 +672,7 @@ function buildEditorialChecklist(
         'Confirmação humana obrigatória para garantir que nenhum dado sensível apareça no artigo.',
     },
     {
-      label: 'Pronto para review',
+      label: 'Pronto para revisão',
       tone:
         automatedReady && article.status === 'draft'
           ? 'positive'
@@ -687,7 +687,7 @@ function buildEditorialChecklist(
             : 'O artigo já saiu de rascunho; confirme o contexto editorial antes de repetir a ação.',
     },
     {
-      label: 'Pronto para publish',
+      label: 'Pronto para publicação',
       tone:
         automatedReady && article.status === 'review'
           ? 'positive'
@@ -698,7 +698,7 @@ function buildEditorialChecklist(
         automatedReady && article.status === 'review'
           ? 'Sinais objetivos completos; falta apenas a aprovação humana final.'
           : article.status === 'review'
-            ? 'O artigo esta em review, mas ainda precisa de ajuste antes de publish.'
+            ? 'O artigo está em revisão, mas ainda precisa de ajuste antes da publicação.'
             : 'A publicação continua bloqueada até o artigo chegar à revisão com revisão humana concluída.',
     },
   ];
@@ -1094,8 +1094,8 @@ export function KnowledgePage() {
       : null,
     withoutAdvisoryCount > 0
       ? {
-          label: 'Sem advisory persistido',
-          description: `${withoutAdvisoryCount} artigo(s) ainda não possuem sinal editorial persistido.`,
+          label: 'Sem análise editorial',
+          description: `${withoutAdvisoryCount} artigo(s) ainda não possuem sinal editorial registrado.`,
           tone: 'accent' as const,
         }
       : null,
@@ -1445,7 +1445,7 @@ export function KnowledgePage() {
       });
 
       await refreshSelectedSpace(selectedArticleId);
-      setReviewAdvisoryMessage('Status editorial persistido com sucesso.');
+      setReviewAdvisoryMessage('Status editorial salvo com sucesso.');
     } catch (error) {
       const classified = classifyAdminError(
         error,
@@ -1917,7 +1917,7 @@ export function KnowledgePage() {
     } catch (error) {
       const classified = classifyAdminError(
         error,
-        'Falha ao atualizar o asset do artigo.',
+        'Falha ao atualizar o anexo do artigo.',
       );
 
       if (classified.kind === 'session-expired') {
@@ -2204,7 +2204,7 @@ export function KnowledgePage() {
   }
 
   if (backendDenied) {
-    return <Navigate replace state={{ reason: 'backend-permission' }} to="/access-denied" />;
+    return <Navigate replace state={{ reason: 'missing-authorized-workspace' }} to="/access-denied" />;
   }
 
   if (pagePhase === 'loading') {
@@ -2439,7 +2439,7 @@ export function KnowledgePage() {
                       Indisponível
                     </p>
                     <p className="mt-2 text-[0.8rem] text-[color:var(--color-muted)]">
-                      Sem contrato real de consumo
+                      Métrica indisponível
                     </p>
                   </div>
                   <span className="grid h-10 w-10 place-items-center rounded-[14px] bg-[rgba(16,185,129,0.12)] text-[1.15rem] text-[color:var(--color-success-ink)]">
@@ -2599,7 +2599,7 @@ export function KnowledgePage() {
                                     </p>
                                   ) : (
                                     <p className="text-[0.68rem] leading-4 text-[color:var(--color-muted)]">
-                                      Sem advisory
+                                      Sem análise
                                     </p>
                                   )}
                                 </div>
@@ -2721,7 +2721,7 @@ export function KnowledgePage() {
                   Métrica ainda indisponível
                 </p>
                 <p className="mt-1 text-[0.76rem] leading-5 text-[color:var(--color-muted)]">
-                  Não há contrato real de visualizações por artigo para alimentar ranking de consumo.
+                  A medição de visualizações por artigo ainda não está disponível nesta área.
                 </p>
               </div>
             </section>

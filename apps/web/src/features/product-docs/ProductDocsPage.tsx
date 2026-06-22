@@ -574,7 +574,7 @@ export function ProductDocsPage() {
             ) : (
               <EmptyState
                 title="Nenhum documento encontrado"
-                description="A busca local não encontrou documentos dentro do catálogo autorizado retornado pelo backend."
+                description="A busca local não encontrou documentos dentro do catálogo autorizado."
               />
             )}
           </nav>

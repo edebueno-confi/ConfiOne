@@ -8,6 +8,7 @@ import {
 } from 'react';
 import type { Uuid } from '@genius-support-os/contracts';
 import { formatDateTime } from '../../app/format';
+import { sanitizeOperationalVisibleText } from '../../lib/operational-copy';
 import {
   ContractUnavailableState,
   EmptyState,
@@ -94,8 +95,8 @@ function roleLabel(role: CustomerPortalRole) {
 
 function roleHelper(role: CustomerPortalRole) {
   return role === 'customer_manager'
-    ? 'Escopo amplo no tenant, inclusive tickets customer-facing permitidos.'
-    : 'Escopo operacional vinculado ao contato customer-facing.';
+    ? 'Acesso amplo ao portal da conta, incluindo tickets permitidos.'
+    : 'Acesso operacional vinculado ao contato do cliente.';
 }
 
 function accessLabel(status: CustomerPortalAccessStatus) {
@@ -151,7 +152,7 @@ function entitlementStatusLabel(status: CustomerPortalEntitlementStatus) {
 }
 
 function scopeLabel(scope: CustomerPortalEntitlementScope) {
-  return scope === 'tenant' ? 'Tenant inteiro' : 'Portal autenticado';
+  return scope === 'tenant' ? 'Conta inteira' : 'Portal autenticado';
 }
 
 function membershipStatusLabel(status: MembershipStatus) {
@@ -247,7 +248,7 @@ function SurfaceCard({
   return (
     <section
       className={cx(
-        'rounded-[24px] border border-[color:var(--color-border)] bg-white/94 px-4 py-4 shadow-[0_16px_34px_rgba(19,33,79,0.08)]',
+        'rounded-[18px] border border-[color:var(--color-border)] bg-white/95 px-4 py-4',
         className,
       )}
       id={id}
@@ -367,10 +368,10 @@ function TenantFilterCard({
     >
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
-          {tenant.tenant_display_name}
+          {sanitizeOperationalVisibleText(tenant.tenant_display_name)}
         </p>
         <p className="mt-1.5 truncate text-[0.76rem] text-[color:var(--color-muted)]">
-          {tenant.portal_user_count} usuários customer-facing
+          {tenant.portal_user_count} usuários com acesso
         </p>
       </div>
 
@@ -407,7 +408,7 @@ function TenantFilterCard({
       </div>
       {tenant.risk_summary ? (
         <p className="mt-2 line-clamp-2 text-[0.72rem] leading-5 text-[color:var(--color-muted)]">
-          {tenant.risk_summary}
+          {sanitizeOperationalVisibleText(tenant.risk_summary)}
         </p>
       ) : null}
     </button>
@@ -440,7 +441,7 @@ function UserTableRow({
         </span>
         <span className="min-w-0">
           <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
-            {user.user_full_name ?? 'Indisponível'}
+            {sanitizeOperationalVisibleText(user.user_full_name)}
           </p>
           <p className="mt-1 truncate text-[0.78rem] text-[color:var(--color-muted)]">
             {user.user_email ?? 'Indisponível'}
@@ -449,10 +450,10 @@ function UserTableRow({
       </div>
       <div className="min-w-0">
         <p className="truncate text-sm font-medium text-[color:var(--color-ink)]">
-          {user.tenant_display_name}
+          {sanitizeOperationalVisibleText(user.tenant_display_name)}
         </p>
         <p className="mt-1 truncate text-[0.78rem] text-[color:var(--color-muted)]">
-          {user.linked_contact_full_name ?? 'Contato indisponível'}
+          {sanitizeOperationalVisibleText(user.linked_contact_full_name, 'Contato indisponivel')}
         </p>
       </div>
       <div className="min-w-0">
@@ -487,9 +488,9 @@ function TenantTableRow({
   return (
     <button
       className={cx(
-        'grid w-full grid-cols-[minmax(0,1.85fr)_minmax(0,0.95fr)_0.58fr_0.58fr_0.68fr_0.5fr_0.82fr_22px] items-center gap-3 border-b border-[color:var(--color-border)] px-4 py-4 text-left transition last:border-b-0',
+        'flex w-full min-w-0 flex-col gap-3 border-b border-[color:var(--color-border)] px-4 py-4 text-left transition last:border-b-0 lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,1fr)_18px] lg:items-center',
         selected
-          ? 'rounded-[16px] border border-[color:var(--color-brand-blue)]/38 bg-[rgba(68,110,255,0.08)] shadow-[0_14px_28px_rgba(40,75,174,0.08)]'
+          ? 'border border-[color:var(--color-brand-blue)]/38 bg-[rgba(68,110,255,0.08)]'
           : 'bg-white hover:bg-[color:var(--color-surface)]',
       )}
       onClick={() => onSelect(tenant.tenant_id)}
@@ -501,59 +502,64 @@ function TenantTableRow({
         </span>
         <span className="min-w-0">
           <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
-            {tenant.tenant_display_name}
+            {sanitizeOperationalVisibleText(tenant.tenant_display_name)}
           </p>
           <p className="mt-1 truncate text-[0.76rem] text-[color:var(--color-muted)]">
-            {tenant.tenant_slug || 'Indisponível'}
+            {tenant.tenant_slug || 'Conta sem identificador público'}
           </p>
         </span>
       </div>
 
-      <div className="min-w-0">
-        <TinyBadge tone={tenant.has_active_manager ? 'positive' : 'warning'}>
-          {tenant.has_active_manager ? 'Com gestão' : 'Sem gestão'}
-        </TinyBadge>
-        <p className="mt-1 truncate text-[0.76rem] text-[color:var(--color-muted)]">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <TinyBadge tone={tenantStatusTone(tenant.tenant_status)}>
           {tenantStatusLabel(tenant.tenant_status)}
-        </p>
+        </TinyBadge>
+        <TinyBadge tone={tenant.has_active_manager ? 'positive' : 'warning'}>
+          {tenant.has_active_manager ? 'Com responsável' : 'Sem responsável'}
+        </TinyBadge>
       </div>
 
-      <TenantMetric helper="+0" value={tenant.portal_user_count} />
-      <TenantMetric helper="+0" value={tenant.visible_ticket_count} />
-      <TenantMetric helper="+0" value={tenant.authorized_article_count} />
-      <TenantMetric tone={hasPending ? 'warning' : 'default'} value={hasPending ? 1 : 0} />
-      <p className="min-w-0 text-sm font-semibold leading-5 text-[color:var(--color-ink)]">
-        {formatOptionalDate(tenant.last_access_at)}
-      </p>
-      <span className="text-lg text-[color:var(--color-brand-blue)]">›</span>
+      <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-5 lg:justify-items-end">
+        <TenantRowMetric label="Usuários" value={tenant.portal_user_count} />
+        <TenantRowMetric label="Tickets" value={tenant.visible_ticket_count} />
+        <TenantRowMetric label="Artigos" value={tenant.authorized_article_count} />
+        <TenantRowMetric label="Pendências" tone={hasPending ? 'warning' : 'default'} value={hasPending ? 1 : 0} />
+        <span className="min-w-0 sm:col-span-1">
+          <span className="block truncate text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-muted)]">
+            Último acesso
+          </span>
+          <span className="mt-1 block truncate text-sm font-semibold leading-5 text-[color:var(--color-ink)]">
+            {formatOptionalDate(tenant.last_access_at)}
+          </span>
+        </span>
+      </div>
+      <span className="hidden text-lg text-[color:var(--color-brand-blue)] lg:block">›</span>
     </button>
   );
 }
 
-function TenantMetric({
+function TenantRowMetric({
   value,
-  helper,
+  label,
   tone = 'default',
 }: {
   value: number;
-  helper?: string;
+  label: string;
   tone?: 'default' | 'warning';
 }) {
   return (
     <span className="min-w-0">
+      <span className="block truncate text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-muted)]">
+        {label}
+      </span>
       <span
         className={cx(
-          'block text-sm font-semibold text-[color:var(--color-ink)]',
+          'mt-1 block text-sm font-semibold text-[color:var(--color-ink)]',
           tone === 'warning' && value > 0 && 'text-[color:var(--color-warning-ink)]',
         )}
       >
         {value}
       </span>
-      {helper ? (
-        <span className="mt-1 block text-[0.72rem] font-semibold text-[color:var(--color-success-ink)]">
-          {helper}
-        </span>
-      ) : null}
     </span>
   );
 }
@@ -859,7 +865,7 @@ export function CustomerPortalAdminPage() {
         const detail = await withTimeout(
           getAdminCustomerPortalUserDetail(membershipId),
           CUSTOMER_PORTAL_ADMIN_DETAIL_TIMEOUT_MS,
-          'O detalhe do usuário customer-facing demorou mais do que o esperado para responder.',
+          'Os detalhes do usuário demoraram mais do que o esperado para carregar.',
         );
 
         if (!cancelled) {
@@ -900,7 +906,7 @@ export function CustomerPortalAdminPage() {
         const detail = await withTimeout(
           getAdminKnowledgeEntitlementDetail(entitlementId),
           CUSTOMER_PORTAL_ADMIN_DETAIL_TIMEOUT_MS,
-          'O detalhe do entitlement demorou mais do que o esperado para responder.',
+          'Os detalhes do acesso ao artigo demoraram mais do que o esperado para carregar.',
         );
 
         if (!cancelled) {
@@ -910,7 +916,7 @@ export function CustomerPortalAdminPage() {
         if (!cancelled) {
           setActionTone('critical');
           setActionMessage(
-            classifyAdminError(error, 'Falha ao carregar o detalhe do entitlement.').message,
+            classifyAdminError(error, 'Falha ao carregar os detalhes do acesso ao artigo.').message,
           );
         }
       }
@@ -1253,7 +1259,7 @@ export function CustomerPortalAdminPage() {
           p_membership_id: selectedUserMembershipId,
           p_role: roleDraft,
         }),
-      'Papel customer-facing atualizado.',
+      'Papel de acesso atualizado.',
     );
   }
 
@@ -1271,7 +1277,7 @@ export function CustomerPortalAdminPage() {
           p_membership_id: selectedUserMembershipId,
           p_status: statusDraft,
         }),
-      'Status do vínculo customer-facing atualizado.',
+      'Status do acesso do cliente atualizado.',
     );
   }
 
@@ -1294,7 +1300,7 @@ export function CustomerPortalAdminPage() {
           p_status: statusDraft,
         });
       },
-      'Acesso do tenant atualizado.',
+      'Acesso do cliente atualizado.',
     );
   }
 
@@ -1303,7 +1309,7 @@ export function CustomerPortalAdminPage() {
 
     if (!grantForm.tenantId || !grantForm.articleId) {
       setActionTone('warning');
-      setActionMessage('Selecione tenant e artigo antes de conceder o acesso.');
+      setActionMessage('Selecione cliente e artigo antes de conceder o acesso.');
       return;
     }
 
@@ -1331,7 +1337,7 @@ export function CustomerPortalAdminPage() {
         archiveKnowledgeArticleEntitlement({
           p_entitlement_id: entitlementDetail.entitlement_id,
         }),
-      'Entitlement arquivado e retirado da exposição customer-facing.',
+      'Acesso ao artigo arquivado e retirado do portal do cliente.',
     );
   }
 
@@ -1340,7 +1346,7 @@ export function CustomerPortalAdminPage() {
 
     if (!linkForm.tenantId || !linkForm.ticketId || !linkForm.articleId) {
       setActionTone('warning');
-      setActionMessage('Selecione tenant, ticket e artigo antes de registrar o vínculo.');
+      setActionMessage('Selecione cliente, ticket e artigo antes de registrar o vínculo.');
       return;
     }
 
@@ -1353,7 +1359,7 @@ export function CustomerPortalAdminPage() {
           p_article_id: linkForm.articleId,
           p_relation_reason: linkForm.relationReason.trim() || null,
         }),
-      'Artigo vinculado ao ticket com governança customer-facing.',
+      'Artigo vinculado ao ticket com governança de acesso.',
     );
   }
 
@@ -1368,7 +1374,7 @@ export function CustomerPortalAdminPage() {
         unlinkKnowledgeArticleFromTicket({
           p_ticket_knowledge_link_id: selectedTicketLink.ticket_knowledge_link_id,
         }),
-      'Vínculo entre ticket e artigo removido da exposição customer-facing.',
+      'Vínculo entre ticket e artigo removido do portal do cliente.',
     );
   }
 
@@ -1395,7 +1401,7 @@ export function CustomerPortalAdminPage() {
       <div className="flex h-full min-h-0 items-center justify-center rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
         <LoadingState
           title="Carregando administração do portal"
-          description="Buscando usuários customer-facing, tenants governados e acessos autorizados."
+          description="Buscando usuários, clientes e acessos autorizados."
         />
       </div>
     );
@@ -1422,10 +1428,10 @@ export function CustomerPortalAdminPage() {
 
   return (
     <>
-      <div className="grid h-full min-h-0 gap-4 overflow-hidden xl:grid-cols-[210px_minmax(0,1fr)_310px] 2xl:grid-cols-[210px_minmax(0,1fr)_310px]">
+      <div className="grid h-full min-h-0 gap-4 overflow-hidden xl:grid-cols-[250px_minmax(0,1fr)_300px] 2xl:grid-cols-[250px_minmax(0,1fr)_300px]">
       <aside className="min-h-0 overflow-hidden" data-portal-admin-left>
         <SurfaceCard
-          className="h-full !px-3.5 !py-4"
+          className="h-full overflow-hidden !px-3.5 !py-4"
           description="Refine a lista de clientes e o status do portal."
           title="Filtros"
         >
@@ -1443,7 +1449,7 @@ export function CustomerPortalAdminPage() {
               </SelectInput>
             </Field>
 
-            <Field label="Entitlements">
+            <Field label="Acesso a artigos">
               <SelectInput
                 className="h-9 rounded-[14px] text-sm"
                 onChange={(event) => setEntitlementFilter(event.target.value as EntitlementFilter)}
@@ -1471,7 +1477,7 @@ export function CustomerPortalAdminPage() {
               <TextInput
                 className="h-9 rounded-[14px] text-sm"
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Nome, email ou tenant"
+                placeholder="Nome, email ou cliente"
                 value={searchTerm}
               />
             </Field>
@@ -1493,7 +1499,7 @@ export function CustomerPortalAdminPage() {
                 Portal do cliente
               </h1>
               <p className="max-w-[680px] text-[0.84rem] leading-6 text-[color:var(--color-muted)]">
-                Governança dos acessos customer-facing, artigos autorizados e vínculos com tickets.
+                Acessos, artigos autorizados e vínculos com tickets em um fluxo claro para operação.
               </p>
             </div>
           </div>
@@ -1538,7 +1544,7 @@ export function CustomerPortalAdminPage() {
 
         <SurfaceCard
           className="mt-4 min-h-[430px]"
-          description="Clientes B2B com Portal Cliente governado por acesso, Knowledge e tickets visíveis."
+          description="Clientes B2B com portal habilitado, acessos e conteúdo autorizado."
           title="Clientes com portal"
           actions={
             <span className="text-[0.76rem] font-medium text-[color:var(--color-muted)]">
@@ -1553,15 +1559,9 @@ export function CustomerPortalAdminPage() {
             />
           ) : (
             <div className="overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white">
-              <div className="grid grid-cols-[minmax(0,1.85fr)_minmax(0,0.95fr)_0.58fr_0.58fr_0.68fr_0.5fr_0.82fr_22px] gap-3 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-muted)]">
-                <span className="min-w-0 truncate">Cliente / Tenant</span>
-                <span className="min-w-0 truncate">Status do portal</span>
-                <span className="min-w-0 truncate">Usuários com acesso</span>
-                <span className="min-w-0 truncate">Tickets visíveis</span>
-                <span className="min-w-0 truncate">Artigos autorizados</span>
-                <span className="min-w-0 truncate">Pendências</span>
-                <span className="min-w-0 truncate">Último acesso</span>
-                <span aria-hidden="true" />
+              <div className="flex items-center justify-between gap-3 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-muted)]">
+                <span className="min-w-0 truncate">Cliente, status e responsáveis</span>
+                <span className="hidden min-w-0 truncate lg:block">Usuários, tickets, artigos e pendências</span>
               </div>
 
               <div className="grid">
@@ -1590,7 +1590,7 @@ export function CustomerPortalAdminPage() {
           title="Contexto selecionado"
         >
           <div className="space-y-3">
-            <RailSection sectionKey="tenant" title="Tenant em foco">
+            <RailSection sectionKey="tenant" title="Cliente em foco">
               {selectedTenant ? (
                 <div className="space-y-2">
                   <div className="mb-1.5 flex min-w-0 items-center gap-3">
@@ -1599,7 +1599,7 @@ export function CustomerPortalAdminPage() {
                     </span>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
-                        {selectedTenant.tenant_display_name}
+                        {sanitizeOperationalVisibleText(selectedTenant.tenant_display_name)}
                       </p>
                       <p className="mt-1 truncate text-[0.76rem] text-[color:var(--color-muted)]">
                         {selectedTenant.tenant_slug || 'Indisponível'}
@@ -1627,11 +1627,11 @@ export function CustomerPortalAdminPage() {
                   <DetailLine
                     label="Pendências"
                     tone={selectedTenant.risk_summary ? 'warning' : 'positive'}
-                    value={selectedTenant.risk_summary ?? 'Nenhuma pendência operacional.'}
+                    value={sanitizeOperationalVisibleText(selectedTenant.risk_summary ?? 'Nenhuma pendencia operacional.')}
                   />
                 </div>
               ) : (
-                <InlineNotice>Nenhum tenant selecionado.</InlineNotice>
+                <InlineNotice>Nenhum cliente selecionado.</InlineNotice>
               )}
             </RailSection>
 
@@ -1650,7 +1650,7 @@ export function CustomerPortalAdminPage() {
                       </span>
                       <span className="min-w-0 flex-1">
                         <p className="truncate text-[0.8rem] font-semibold text-[color:var(--color-ink)]">
-                          {user.user_full_name ?? 'Indisponível'}
+                          {sanitizeOperationalVisibleText(user.user_full_name)}
                         </p>
                         <p className="truncate text-[0.68rem] text-[color:var(--color-muted)]">
                           {user.user_email ?? 'Indisponível'}
@@ -1720,7 +1720,7 @@ export function CustomerPortalAdminPage() {
     </div>
       {activeDrawer === 'access' ? (
         <GovernedActionDrawer
-          description="Governança dos usuários customer-facing do cliente selecionado."
+          description="Ajuste os usuários que podem acessar o portal do cliente selecionado."
           footer={
             <>
               <GhostButton className="h-10 rounded-full px-6 text-sm" onClick={() => setActiveDrawer(null)}>
@@ -1736,7 +1736,7 @@ export function CustomerPortalAdminPage() {
             </>
           }
           onClose={() => setActiveDrawer(null)}
-          title="Gerenciar acesso do tenant"
+          title="Gerenciar acesso do cliente"
         >
           <div className="space-y-6">
             <div className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5">
@@ -1746,7 +1746,7 @@ export function CustomerPortalAdminPage() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-base font-semibold leading-6 text-[color:var(--color-ink)]">
-                    {selectedTenant?.tenant_display_name ?? 'Indisponível'}
+                    {sanitizeOperationalVisibleText(selectedTenant?.tenant_display_name)}
                   </p>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     <TinyBadge tone={selectedTenant?.has_active_manager ? 'positive' : 'warning'}>
@@ -1812,7 +1812,7 @@ export function CustomerPortalAdminPage() {
                       </span>
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-semibold text-[color:var(--color-ink)]">
-                          {user.user_full_name ?? 'Indisponível'}
+                          {sanitizeOperationalVisibleText(user.user_full_name)}
                         </span>
                         <span className="block truncate text-[0.74rem] text-[color:var(--color-muted)]">
                           {user.user_email ?? 'Indisponível'}
@@ -1873,7 +1873,7 @@ export function CustomerPortalAdminPage() {
                   >
                     <span>
                       <span className="block text-sm font-semibold text-[color:var(--color-ink)]">{item}</span>
-                      <span className="text-[0.76rem] text-[color:var(--color-muted)]">Governado pelo acesso customer-facing.</span>
+                      <span className="text-[0.76rem] text-[color:var(--color-muted)]">Governado pelas permissões do portal.</span>
                     </span>
                     <span className="h-6 w-11 rounded-full bg-[color:var(--color-brand-blue)] p-1">
                       <span className="block h-4 w-4 translate-x-5 rounded-full bg-white" />
@@ -1910,9 +1910,9 @@ export function CustomerPortalAdminPage() {
           <form className="space-y-6" id="grant-article-form" onSubmit={handleGrantEntitlement}>
               <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-[16px] border border-[color:var(--color-border)] p-4">
-                  <p className="text-[0.72rem] text-[color:var(--color-muted)]">Tenant</p>
+                  <p className="text-[0.72rem] text-[color:var(--color-muted)]">Cliente</p>
                   <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
-                    {selectedTenant?.tenant_display_name ?? 'Indisponível'}
+                    {sanitizeOperationalVisibleText(selectedTenant?.tenant_display_name)}
                   </p>
                 </div>
               <div className="rounded-[16px] border border-[color:var(--color-border)] p-4">
@@ -2036,7 +2036,7 @@ export function CustomerPortalAdminPage() {
           <form className="space-y-6" id="link-ticket-article-form" onSubmit={handleLinkArticleToTicket}>
             <div className="rounded-[16px] border border-[color:var(--color-border)] p-4">
               <p className="text-sm font-semibold text-[color:var(--color-ink)]">
-                {selectedTenant?.tenant_display_name ?? 'Indisponível'}
+                {sanitizeOperationalVisibleText(selectedTenant?.tenant_display_name)}
               </p>
               <p className="mt-1 text-[0.78rem] text-[color:var(--color-muted)]">
                 O vínculo será visível no portal de acordo com as permissões do cliente.

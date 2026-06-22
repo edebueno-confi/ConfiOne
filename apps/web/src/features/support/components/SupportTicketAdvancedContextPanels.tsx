@@ -1901,7 +1901,7 @@ function SupportMoreActionsPanel({
             <div className="min-w-0 px-1 xl:px-2">
               <p className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">Cliente</p>
               <p className="truncate font-semibold leading-4 text-[color:var(--color-ink)]">
-                {ticketDetail.tenantDisplayName ?? ticketDetail.tenantLegalName ?? ticketDetail.tenantSlug}
+                {ticketDetail.tenantDisplayName ?? ticketDetail.tenantLegalName ?? 'Cliente indisponível'}
               </p>
             </div>
             <div className="min-w-0 px-1 xl:px-2">
@@ -2206,7 +2206,7 @@ function SupportMoreActionsPanel({
             <div className="flex items-start justify-between gap-3">
               <span className="text-[color:var(--color-muted)]">Cliente</span>
               <span className="text-right font-semibold text-[color:var(--color-ink)]">
-                {ticketDetail.tenantDisplayName ?? ticketDetail.tenantLegalName ?? ticketDetail.tenantSlug}
+                {ticketDetail.tenantDisplayName ?? ticketDetail.tenantLegalName ?? 'Cliente indisponível'}
               </span>
             </div>
             <div className="flex items-start justify-between gap-3">

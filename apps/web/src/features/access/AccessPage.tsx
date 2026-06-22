@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { Navigate } from 'react-router-dom';
 import { formatDateTime } from '../../app/format';
+import { sanitizeOperationalVisibleText } from '../../lib/operational-copy';
 import {
   ContractUnavailableState,
   EmptyState,
@@ -134,9 +135,9 @@ function tenantRoleHelper(role: TenantRole | 'customer_user' | 'customer_manager
     case 'tenant_viewer':
       return 'Consulta contexto e histórico sem operar mudanças.';
     case 'customer_manager':
-      return 'Coordena o acesso customer-facing do tenant no portal autenticado.';
+      return 'Coordena o acesso do cliente no portal autenticado.';
     case 'customer_user':
-      return 'Opera apenas o escopo customer-facing liberado para o contato.';
+      return 'Opera apenas o acesso liberado para o contato no portal.';
     default:
       return 'Indisponível';
   }
@@ -219,7 +220,7 @@ function formatOptionalDate(value: string | null) {
 }
 
 function getDisplayName(membership: AdminTenantMembershipRow) {
-  return membership.user_full_name?.trim() || 'Indisponível';
+  return sanitizeOperationalVisibleText(membership.user_full_name?.trim(), 'Indisponivel');
 }
 
 function getDisplayEmail(membership: AdminTenantMembershipRow) {
@@ -445,7 +446,7 @@ export function AccessPage() {
     }
 
     if (!selectedMembership.can_update_role || !selectedMembership.can_update_status) {
-      setUpdateMessage('Esta ação está bloqueada pelo contrato de acesso.');
+      setUpdateMessage('Esta ação não está disponível para este acesso.');
       return;
     }
 
@@ -670,7 +671,7 @@ export function AccessPage() {
   );
 
   if (backendDenied) {
-    return <Navigate replace state={{ reason: 'backend-permission' }} to="/access-denied" />;
+    return <Navigate replace state={{ reason: 'missing-authorized-workspace' }} to="/access-denied" />;
   }
 
   if (phase === 'loading') {
@@ -798,7 +799,7 @@ export function AccessPage() {
               ))}
             </div>
 
-            <Field label="Tenant">
+            <Field label="Cliente">
               <SelectInput
                 className="h-9 rounded-[14px] px-3.5 text-[13px]"
                 onChange={(event) => setSelectedTenantFilter(event.target.value)}
@@ -807,7 +808,7 @@ export function AccessPage() {
                 <option value="all">Todos</option>
                 {tenants.map((tenant) => (
                   <option key={tenant.id} value={tenant.id}>
-                    {tenant.display_name}
+                    {sanitizeOperationalVisibleText(tenant.display_name)}
                   </option>
                 ))}
               </SelectInput>
@@ -904,7 +905,7 @@ export function AccessPage() {
                         <>
                           <th className="px-4 py-3 font-semibold">Usuário</th>
                           <th className="px-4 py-3 font-semibold">Papel</th>
-                          <th className="px-4 py-3 font-semibold">Tenant</th>
+                          <th className="px-4 py-3 font-semibold">Cliente</th>
                           <th className="px-4 py-3 font-semibold">Situação</th>
                           <th className="px-4 py-3 font-semibold">Último acesso</th>
                         </>
@@ -919,7 +920,7 @@ export function AccessPage() {
                       ) : activeTab === 'invites' ? (
                         <>
                           <th className="px-4 py-3 font-semibold">Usuário</th>
-                          <th className="px-4 py-3 font-semibold">Tenant</th>
+                          <th className="px-4 py-3 font-semibold">Cliente</th>
                           <th className="px-4 py-3 font-semibold">Situação</th>
                           <th className="px-4 py-3 font-semibold">Convite</th>
                           <th className="px-4 py-3 font-semibold">Convidado por</th>
@@ -966,7 +967,7 @@ export function AccessPage() {
                                 {tenantRoleLabel(membership.role)}
                               </td>
                               <td className="px-4 py-3 text-[color:var(--color-ink)]">
-                                {membership.tenant_display_name || 'Indisponível'}
+                                {sanitizeOperationalVisibleText(membership.tenant_display_name)}
                               </td>
                               <td className="px-4 py-3">
                                 <StatusPill tone={membershipStateTone(membership)}>
@@ -1039,7 +1040,7 @@ export function AccessPage() {
                                 </div>
                               </td>
                                   <td className="px-4 py-3 text-[color:var(--color-ink)]">
-                                {membership.tenant_display_name || 'Indisponível'}
+                                {sanitizeOperationalVisibleText(membership.tenant_display_name)}
                                   </td>
                                   <td className="px-4 py-3">
                                     <StatusPill tone={membershipStateTone(membership)}>
@@ -1050,7 +1051,7 @@ export function AccessPage() {
                                     {formatOptionalDate(membership.created_at)}
                                   </td>
                                   <td className="px-4 py-3 text-[color:var(--color-ink)]">
-                                {membership.invited_by_full_name || 'Indisponível'}
+                                {sanitizeOperationalVisibleText(membership.invited_by_full_name)}
                                   </td>
                                 </tr>
                               );
@@ -1198,7 +1199,7 @@ export function AccessPage() {
                     <div className="mt-3 flex flex-wrap gap-2">
                       {selectedRoleSummary.tenants.length > 0 ? (
                         selectedRoleSummary.tenants.map((tenant) => (
-                          <StatusPill key={tenant}>{tenant || 'Indisponível'}</StatusPill>
+                          <StatusPill key={tenant}>{sanitizeOperationalVisibleText(tenant)}</StatusPill>
                         ))
                       ) : (
                         <p className="text-sm text-[color:var(--color-muted)]">Indisponível</p>
@@ -1292,10 +1293,10 @@ export function AccessPage() {
                 </div>
                 <div className="border-t border-[color:var(--color-border)] pt-4">
                   <dt className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                    Tenant
+                    Cliente
                   </dt>
                   <dd className="mt-1 text-[color:var(--color-ink)]">
-                    {selectedMembership.tenant_display_name || 'Indisponível'}
+                    {sanitizeOperationalVisibleText(selectedMembership.tenant_display_name)}
                   </dd>
                 </div>
                 <div className="border-t border-[color:var(--color-border)] pt-4">
@@ -1334,7 +1335,7 @@ export function AccessPage() {
     </div>
     {activeDrawer === 'invite' ? (
       <GovernedActionDrawer
-        description="Registre um novo vínculo de acesso usando contratos administrativos reais."
+        description="Registre um novo vínculo de acesso para uma conta B2B."
         footer={
           <>
             <GhostButton onClick={() => setActiveDrawer(null)} type="button">
@@ -1419,7 +1420,7 @@ export function AccessPage() {
                       type="button"
                     >
                       <p className="truncate font-medium text-[color:var(--color-ink)]">
-                        {user.full_name ?? 'Indisponível'}
+                        {sanitizeOperationalVisibleText(user.full_name)}
                       </p>
                       <p className="truncate text-sm text-[color:var(--color-muted)]">
                         {user.email ?? 'Indisponível'}
@@ -1436,7 +1437,7 @@ export function AccessPage() {
               Dados do acesso
             </h3>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <Field label="Tenant">
+              <Field label="Cliente">
                 <SelectInput
                   onChange={(event) =>
                     setAddForm((current) => ({
@@ -1447,10 +1448,10 @@ export function AccessPage() {
                   required
                   value={addForm.tenantId}
                 >
-                  <option value="">Selecione um tenant</option>
+                  <option value="">Selecione um cliente</option>
                   {tenants.map((tenant) => (
                     <option key={tenant.id} value={tenant.id}>
-                      {tenant.display_name}
+                      {sanitizeOperationalVisibleText(tenant.display_name)}
                     </option>
                   ))}
                 </SelectInput>
@@ -1493,7 +1494,7 @@ export function AccessPage() {
               </Field>
 
               <Field
-                label="Identificador manual"
+                label="Referência manual"
                 description="Use apenas quando a pessoa não aparecer na busca."
               >
                 <TextInput
