@@ -8,6 +8,7 @@ Ponto de entrada curto do repositório. A documentação canônica fica em `docs
 - [docs/PROJECT_STATE.md](./docs/PROJECT_STATE.md)
 - [PRODUCT.md](./PRODUCT.md)
 - [DESIGN.md](./DESIGN.md)
+- [docs/ANALYTICS_HUBSPOT.md](./docs/ANALYTICS_HUBSPOT.md) — módulo Analytics/Dashboard Gerencial (integração HubSpot)
 
 ## Estrutura principal
 

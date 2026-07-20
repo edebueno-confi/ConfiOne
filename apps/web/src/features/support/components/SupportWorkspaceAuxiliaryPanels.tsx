@@ -90,7 +90,7 @@ export function SupportHelpCenterPanel({
 }) {
   if (phase === 'loading' || phase === 'idle') {
     return (
-      <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-3">
+      <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3">
         <LoadingState
           title="Carregando central de ajuda"
           description="Estamos preparando os artigos públicos permitidos para esta tratativa."
@@ -127,7 +127,7 @@ export function SupportHelpCenterPanel({
         </InlineNotice>
       ) : (
         <>
-          <div className="shrink-0 rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+          <div className="shrink-0 rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative min-w-0 flex-1">
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--color-muted)]">
@@ -157,7 +157,7 @@ export function SupportHelpCenterPanel({
 
                   return (
                 <article
-                  className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.04)]"
+                  className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.04)]"
                   key={`help-center:${article.articleId}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
@@ -259,7 +259,7 @@ export function SupportSummaryStrip({
     >
       {items.map((item) => (
         <div
-          className="flex min-h-[88px] items-center gap-3 rounded-[18px] border border-[rgba(220,228,242,0.96)] bg-white px-4.5 py-3 shadow-[0_10px_22px_rgba(19,33,79,0.05)]"
+          className="flex min-h-[88px] items-center gap-3 rounded-[18px] border border-[rgba(220,228,242,0.96)] bg-[color:var(--color-surface-strong)] px-4.5 py-3 shadow-[0_10px_22px_rgba(19,33,79,0.05)]"
           key={item.label}
         >
           <div className="flex min-w-0 flex-1 items-center gap-3.5">

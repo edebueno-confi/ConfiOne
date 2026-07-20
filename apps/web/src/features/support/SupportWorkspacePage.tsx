@@ -646,7 +646,7 @@ function SupportCustomerProductsPanel({
     <div className="space-y-3">
       {productContexts.map((productContext) => (
         <div
-          className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-4"
+          className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4"
           key={productContext.subscriptionId}
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1451,7 +1451,7 @@ function ConversationEntry({
       }
       attachment={
         attachment ? (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-[color:var(--color-support-border)] bg-white/92 px-3 py-2 text-[11px]">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-[color:var(--color-support-border)] bg-[color:var(--color-surface-strong)]/92 px-3 py-2 text-[11px]">
             <div className="flex min-w-0 items-center gap-2">
               <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[9px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-brand-blue)]">
                 <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="attachment" />
@@ -1864,7 +1864,7 @@ function SupportCustomerRail({
           </summary>
           <div className="mt-3 space-y-3">
             {primaryContact ? (
-              <div className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-3">
+              <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-medium text-[color:var(--color-ink)]">{sanitizeSupportVisibleText(primaryContact.fullName)}</p>
                   {primaryContact.isPrimary ? <StatusPill tone="accent">principal</StatusPill> : null}
@@ -1915,7 +1915,7 @@ function SupportCustomerRail({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+      <div className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -1937,11 +1937,11 @@ function SupportCustomerRail({
         </p>
       </div>
 
-      <div className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+      <div className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4">
         <SupportAccountContextCompact accountContext={accountContext} customer={customer} />
       </div>
 
-      <div className="space-y-2 rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+      <div className="space-y-2 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4">
         <div className="space-y-1">
           <h4 className="text-sm font-semibold text-[color:var(--color-ink)]">Tickets recentes</h4>
             <p className="text-xs leading-5 text-[color:var(--color-muted)]">
@@ -1957,7 +1957,7 @@ function SupportCustomerRail({
         )}
       </div>
 
-      <details className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+      <details className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4">
         <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-ink)]">
           Contatos e eventos recentes
         </summary>
@@ -2019,7 +2019,7 @@ function SupportRecentTicketCard({
 }) {
   return (
     <Link
-      className="block rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3 transition hover:bg-white"
+      className="block rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3 transition hover:bg-[color:var(--color-surface-strong)]"
       to={`/support/tickets/${ticket.id}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2043,7 +2043,7 @@ function SupportRecentEventCard({
 }) {
   return (
     <Link
-      className="block rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3 transition hover:bg-white"
+      className="block rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3 transition hover:bg-[color:var(--color-surface-strong)]"
       to={`/support/tickets/${event.ticketId}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2285,7 +2285,7 @@ function SupportAccountContextCompact({
         </div>
       ) : null}
 
-      <details className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
+      <details className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3">
         <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-ink)]">
           Detalhes operacionais recolhidos
         </summary>
@@ -2519,7 +2519,7 @@ function SupportAccountContextOverview({
               accountContext.integrations.map((integration) => (
                 <div
                   key={integration.id}
-                  className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-3"
+                  className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-3"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-sm font-medium text-[color:var(--color-ink)]">
@@ -2569,7 +2569,7 @@ function SupportAccountContextOverview({
               {accountContext.activeCustomizations.map((customization) => (
                 <div
                   key={customization.id}
-                  className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-3"
+                  className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-3"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-sm font-medium text-[color:var(--color-ink)]">
@@ -2588,7 +2588,7 @@ function SupportAccountContextOverview({
           ) : null}
 
           {primaryContact ? (
-            <div className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-3">
+            <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-3">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
                 Contato principal
               </p>
@@ -2603,7 +2603,7 @@ function SupportAccountContextOverview({
         </div>
       </div>
 
-      <details className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+      <details className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4">
         <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-ink)]">
           Observações internas e flags controladas
         </summary>
@@ -6458,7 +6458,7 @@ function SupportWorkspaceView({
         </div>
       ) : detailPhase === 'idle' ? (
         <Panel
-          className="bg-white"
+          className="bg-[color:var(--color-surface-strong)]"
           title="Nenhum ticket em tratativa"
           description="Abra um ticket pela fila para entrar no fluxo de atendimento."
         >
@@ -6476,7 +6476,7 @@ function SupportWorkspaceView({
         <ContractUnavailableState contractName="detalhe do ticket, conversa recente e contexto do cliente" />
       ) : detailPhase === 'error' || !ticketDetail || !selectedTicketSummary ? (
         focusTicketId ? (
-          <section className="rounded-[28px] border border-[color:var(--color-border)] bg-white/95 px-6 py-6 shadow-[0_18px_34px_rgba(19,33,79,0.08)]">
+          <section className="rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-6 py-6 shadow-[0_18px_34px_rgba(19,33,79,0.08)]">
             <EmptyState
               title="Ticket não encontrado"
               description={detailMessage ?? 'O ticket solicitado não apareceu na leitura operacional disponível.'}
@@ -6596,7 +6596,7 @@ function resolveCustomerRiskProfile(accountContext: SupportCustomerAccountContex
       label: 'Sem contexto',
       tone: 'default' as const,
       healthLabel: 'Contexto em aberto',
-      accentClassName: 'bg-slate-200',
+      accentClassName: 'bg-[color:var(--color-divider)]',
     };
   }
 
@@ -6613,7 +6613,7 @@ function resolveCustomerRiskProfile(accountContext: SupportCustomerAccountContex
       label: 'Risco alto',
       tone: 'critical' as const,
       healthLabel: 'Atenção imediata',
-      accentClassName: 'bg-rose-500',
+      accentClassName: 'bg-[color:var(--color-danger-text)]',
     };
   }
 
@@ -6622,7 +6622,7 @@ function resolveCustomerRiskProfile(accountContext: SupportCustomerAccountContex
       label: 'Em atenção',
       tone: 'warning' as const,
       healthLabel: 'Monitoramento ativo',
-      accentClassName: 'bg-amber-500',
+      accentClassName: 'bg-[color:var(--color-warning-text)]',
     };
   }
 
@@ -6630,7 +6630,7 @@ function resolveCustomerRiskProfile(accountContext: SupportCustomerAccountContex
         label: 'Operação estável',
     tone: 'positive' as const,
         healthLabel: 'Saúde controlada',
-    accentClassName: 'bg-emerald-500',
+    accentClassName: 'bg-[color:var(--color-success-text)]',
   };
 }
 
@@ -6702,7 +6702,7 @@ function SupportCustomerDetailCard({
   return (
     <section
       className={cx(
-        'rounded-[26px] border border-[color:var(--color-border)] bg-white/94 px-5 py-5 shadow-[0_16px_34px_rgba(16,30,74,0.08)]',
+        'rounded-[26px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/94 px-5 py-5 shadow-[0_16px_34px_rgba(16,30,74,0.08)]',
         className,
       )}
     >
@@ -6963,9 +6963,9 @@ export function SupportCustomersPage() {
   if (phase === 'loading') {
     return (
       <div className="space-y-5">
-        <section className="rounded-[26px] border border-[color:var(--color-border)] bg-white/95 px-5 py-5 shadow-[0_16px_30px_rgba(19,33,79,0.08)]">
-          <div className="h-6 w-44 animate-pulse rounded-full bg-slate-200" />
-          <div className="mt-3 h-10 w-[420px] max-w-full animate-pulse rounded-[22px] bg-slate-200" />
+        <section className="rounded-[26px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-5 py-5 shadow-[0_16px_30px_rgba(19,33,79,0.08)]">
+          <div className="h-6 w-44 animate-pulse rounded-full bg-[color:var(--color-divider)]" />
+          <div className="mt-3 h-10 w-[420px] max-w-full animate-pulse rounded-[22px] bg-[color:var(--color-divider)]" />
         </section>
         <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
           <LoadingBlock className="h-[520px] rounded-[26px]" />
@@ -7017,7 +7017,7 @@ export function SupportCustomersPage() {
 
   return (
     <div className="space-y-4 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
-      <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white/96 px-4 py-4 shadow-[0_14px_26px_rgba(19,33,79,0.08)]">
+      <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/96 px-4 py-4 shadow-[0_14px_26px_rgba(19,33,79,0.08)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -7041,7 +7041,7 @@ export function SupportCustomersPage() {
                   'inline-flex min-h-9 items-center rounded-full border px-3.5 text-[12px] font-semibold',
                   tab.active
                     ? 'border-[rgba(48,127,226,0.28)] bg-[rgba(48,127,226,0.1)] text-[color:var(--color-brand-blue)]'
-                    : 'border-[color:var(--color-border)] bg-white text-[color:var(--color-muted)]',
+                    : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] text-[color:var(--color-muted)]',
                 )}
                 key={tab.id}
               >
@@ -7053,7 +7053,7 @@ export function SupportCustomersPage() {
       </section>
 
       <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[276px_minmax(0,1fr)_360px]">
-        <aside className="space-y-3 rounded-[20px] border border-[color:var(--color-border)] bg-white/96 px-3.5 py-3 shadow-[0_12px_22px_rgba(19,33,79,0.07)]">
+        <aside className="space-y-3 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/96 px-3.5 py-3 shadow-[0_12px_22px_rgba(19,33,79,0.07)]">
           <div className="space-y-2">
             <div className="space-y-1">
               <h2 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
@@ -7083,7 +7083,7 @@ export function SupportCustomersPage() {
               { label: 'Sem responsável', value: customers.filter((customer) => customer.openTicketCount === 0).length, helper: 'sem fila recente' },
             ].map((item) => (
               <div
-                className="flex items-center justify-between rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2.5"
+                className="flex items-center justify-between rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-2.5"
                 key={item.label}
               >
                 <div>
@@ -7115,7 +7115,7 @@ export function SupportCustomersPage() {
             waitingCustomer={customers.filter((customer) => customer.activeContactsCount === 0).length}
           />
 
-          <section className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-1 xl:flex-col xl:overflow-hidden">
+          <section className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-1 xl:flex-col xl:overflow-hidden">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <div className="space-y-1">
                 <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
@@ -7148,7 +7148,7 @@ export function SupportCustomersPage() {
                           'w-full rounded-[18px] border px-4 py-3 text-left transition',
                           selected
                             ? 'border-[rgba(48,127,226,0.42)] bg-[rgba(48,127,226,0.08)] shadow-[0_8px_18px_rgba(19,33,79,0.06)]'
-                            : 'border-[color:var(--color-border)] bg-white hover:border-[rgba(48,127,226,0.24)] hover:bg-[color:var(--color-surface)]',
+                            : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] hover:border-[rgba(48,127,226,0.24)] hover:bg-[color:var(--color-surface)]',
                         )}
                         key={customer.tenantId}
                         onClick={() => setSelectedTenantId(customer.tenantId)}
@@ -7185,7 +7185,7 @@ export function SupportCustomersPage() {
           </section>
         </div>
 
-        <aside className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+        <aside className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
           <div className="mb-3 space-y-1">
             <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
               Visão rápida do cliente
@@ -7222,7 +7222,7 @@ export function SupportCustomersPage() {
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2.5">
                   <Link
-                    className="inline-flex min-h-11 items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-[color:var(--color-brand-navy)]"
+                    className="inline-flex min-h-11 items-center justify-center rounded-full bg-[color:var(--color-surface-strong)] px-4 py-2 text-sm font-semibold text-[color:var(--color-brand-navy)]"
                     to={`/support/customers/${selectedCustomer.tenantId}`}
                   >
                     Abrir cliente
@@ -7246,7 +7246,7 @@ export function SupportCustomersPage() {
                 </div>
               </div>
 
-              <div className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
+              <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3">
                 <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">Contato principal</p>
                 <div className="mt-2 space-y-1.5 text-[12px] leading-5 text-[color:var(--color-muted)]">
                   <p>
@@ -7258,7 +7258,7 @@ export function SupportCustomersPage() {
                 </div>
               </div>
 
-              <div className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
+              <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3">
                 <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">Sinais da conta</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <StatusPill tone={selectedCustomer.tenantStatus === 'active' ? 'positive' : 'warning'}>
@@ -7378,7 +7378,7 @@ export function SupportCustomerPage() {
   if (phase === 'loading') {
     return (
       <div className="space-y-5">
-        <div className="space-y-3 rounded-[28px] border border-[color:var(--color-border)] bg-white/94 px-6 py-6 shadow-[0_16px_34px_rgba(16,30,74,0.08)]">
+        <div className="space-y-3 rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/94 px-6 py-6 shadow-[0_16px_34px_rgba(16,30,74,0.08)]">
           <div className="flex flex-wrap items-center gap-2">
             <StatusPill tone="accent">Clientes</StatusPill>
             <StatusPill>Resumo</StatusPill>
@@ -7475,7 +7475,7 @@ export function SupportCustomerPage() {
 
   return (
     <div className="space-y-4 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
-      <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white/96 px-4 py-4 shadow-[0_14px_26px_rgba(16,30,74,0.08)]">
+      <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/96 px-4 py-4 shadow-[0_14px_26px_rgba(16,30,74,0.08)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -7498,7 +7498,7 @@ export function SupportCustomerPage() {
               Voltar
             </GhostButton>
             <Link
-              className="inline-flex min-h-10 items-center justify-center rounded-[12px] border border-[color:var(--color-border)] bg-white px-4 py-2 text-[12px] font-semibold text-[color:var(--color-brand-blue)]"
+              className="inline-flex min-h-10 items-center justify-center rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-2 text-[12px] font-semibold text-[color:var(--color-brand-blue)]"
               to="/support/queue"
             >
               Abrir fila
@@ -7529,7 +7529,7 @@ export function SupportCustomerPage() {
             ].map((item) => (
               <div
                 key={item.label}
-                className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-2.5"
+                className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-2.5"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
                   {item.label}
@@ -7566,7 +7566,7 @@ export function SupportCustomerPage() {
             <div className="space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-3">
-                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/92 text-base font-semibold text-[color:var(--color-brand-blue)]">
+                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--color-surface-strong)]/92 text-base font-semibold text-[color:var(--color-brand-blue)]">
                     {customerLabel
                       .split(' ')
                       .slice(0, 2)
@@ -7636,7 +7636,7 @@ export function SupportCustomerPage() {
                   Abrir tickets
                 </Link>
                 <button
-                  className="inline-flex min-h-10 w-full items-center justify-center rounded-[14px] border border-white/18 bg-transparent px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-white/8"
+                  className="inline-flex min-h-10 w-full items-center justify-center rounded-[14px] border border-white/18 bg-transparent px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-[color:var(--color-surface-strong)]/8"
                   onClick={() => window.history.back()}
                   type="button"
                 >
@@ -7829,7 +7829,7 @@ export function SupportCustomerPage() {
               <p className="text-sm font-medium text-[color:var(--color-ink)]">Saúde geral</p>
                 <StatusPill tone={riskProfile.tone}>{riskProfile.healthLabel}</StatusPill>
               </div>
-              <div className="h-3 overflow-hidden rounded-full bg-slate-200">
+              <div className="h-3 overflow-hidden rounded-full bg-[color:var(--color-divider)]">
                 <div
                   className={cx(
                     'h-full rounded-full',
@@ -7865,9 +7865,9 @@ export function SupportCustomerPage() {
                     <span
                       className={cx(
                         'inline-flex h-4 w-4 rounded-full border',
-                        step.state === 'done' && 'border-emerald-500 bg-emerald-500',
+                        step.state === 'done' && 'border-[color:var(--color-success-border)] bg-[color:var(--color-success-text)]',
                         step.state === 'active' && 'border-[color:var(--color-brand-blue)] bg-[color:var(--color-brand-blue)]',
-                        step.state === 'pending' && 'border-slate-300 bg-white',
+                        step.state === 'pending' && 'border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]',
                       )}
                     />
                     <p

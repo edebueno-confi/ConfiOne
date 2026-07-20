@@ -237,7 +237,7 @@ function CheckItem({ children, negative = false }: { children: string; negative?
 function WorkflowCard({ step }: { step: (typeof collaborationSteps)[number] }) {
   const tone = tones[step.tone];
   return (
-    <article className={cx('relative rounded-[16px] border bg-white p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]', tone.border)}>
+    <article className={cx('relative rounded-[16px] border bg-[color:var(--color-surface-strong)] p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]', tone.border)}>
       <span className={cx('mx-auto flex h-20 w-20 items-center justify-center rounded-full', tone.soft, tone.icon)}>
         <AIIcon className="h-11 w-11" name={step.icon} />
       </span>
@@ -258,7 +258,7 @@ function CapabilityCard({ card }: { card: (typeof capabilityCards)[number] }) {
   const tone = tones[card.tone];
   const negative = card.tone === 'pink';
   return (
-    <article className={cx('rounded-[16px] border bg-white p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]', tone.border)}>
+    <article className={cx('rounded-[16px] border bg-[color:var(--color-surface-strong)] p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]', tone.border)}>
       <h2 className="text-xl font-black text-[#071641]">{card.title}</h2>
       <p className="mt-2 text-sm font-semibold text-[#31476C]">{card.subtitle}</p>
       <ul className="mt-7 space-y-4">
@@ -277,7 +277,7 @@ function CapabilityCard({ card }: { card: (typeof capabilityCards)[number] }) {
 export function BuildJournalAI() {
   return (
     <section className="space-y-6">
-      <section className="rounded-[18px] border border-[#D9E6F7] bg-white p-6 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
+      <section className="rounded-[18px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
         <h2 className="text-2xl font-black text-[#071641]">Como funciona: Humano + GPT + Codex</h2>
         <p className="mt-2 text-sm font-semibold text-[#31476C]">Fluxo colaborativo com papéis claros, governança e responsabilidade humana.</p>
         <div className="mt-8 grid gap-8 xl:grid-cols-4">
@@ -302,7 +302,7 @@ export function BuildJournalAI() {
         ))}
       </section>
 
-      <section className="rounded-[18px] border border-[#D9E6F7] bg-white p-6 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
+      <section className="rounded-[18px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
         <h2 className="text-2xl font-black text-[#071641]">Governança da IA na construção e na operação</h2>
         <p className="mt-2 text-sm font-semibold text-[#31476C]">Princípios que guiam como usamos IA com segurança, ética e auditabilidade.</p>
         <div className="mt-7 grid gap-5 md:grid-cols-3 xl:grid-cols-6">
@@ -321,7 +321,7 @@ export function BuildJournalAI() {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-2">
-        <article className="rounded-[18px] border border-[#D9E6F7] bg-white p-6 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
+        <article className="rounded-[18px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
           <h2 className="text-xl font-black text-[#071641]">Estado atual</h2>
           <p className="mt-2 text-sm font-semibold text-[#31476C]">Onde estamos agora em relação à IA.</p>
           <ul className="mt-6 space-y-3">
@@ -335,7 +335,7 @@ export function BuildJournalAI() {
           </div>
         </article>
 
-        <article className="rounded-[18px] border border-[#D9E6F7] bg-white p-6 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
+        <article className="rounded-[18px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
           <h2 className="text-xl font-black text-[#071641]">Pré-condições para abrir IA sobre a Knowledge Base</h2>
           <p className="mt-2 text-sm font-semibold text-[#31476C]">Requisitos que precisam estar maduros antes de qualquer ativação.</p>
           <ol className="mt-6 space-y-4">

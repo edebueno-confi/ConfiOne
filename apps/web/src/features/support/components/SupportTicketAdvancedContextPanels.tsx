@@ -1014,7 +1014,7 @@ function SupportClassificationPanel({
           <InlineNotice tone="warning">{classificationOptionsMessage}</InlineNotice>
         ) : null}
 
-        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
           <div className="space-y-1">
             <h3 className="text-[14px] font-semibold text-[color:var(--color-ink)]">
               Classificação operacional
@@ -1113,7 +1113,7 @@ function SupportClassificationPanel({
           </form>
         </section>
 
-        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
           <div className="space-y-1">
             <h3 className="text-[14px] font-semibold text-[color:var(--color-ink)]">
               Prioridade e severidade
@@ -1192,7 +1192,7 @@ function SupportClassificationPanel({
           </form>
         </section>
 
-        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
           <div className="space-y-1">
             <h3 className="text-[14px] font-semibold text-[color:var(--color-ink)]">
               Andamento atual
@@ -1267,7 +1267,7 @@ function SupportClassificationPanel({
       </div>
 
       <aside className="min-h-0 space-y-3 overflow-y-auto pr-1">
-        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
           <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">Resumo operacional</h4>
           <div className="mt-3 space-y-2 text-[12px] leading-5">
             <div className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2">
@@ -1296,7 +1296,7 @@ function SupportClassificationPanel({
           </div>
         </section>
 
-        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
           <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">
             Pendências para encerramento
           </h4>
@@ -1316,7 +1316,7 @@ function SupportClassificationPanel({
           </div>
         </section>
 
-        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
           <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">
             Histórico recente
           </h4>
@@ -1439,7 +1439,7 @@ function SupportTicketAttachmentsPanel({
 
   if (phase === 'loading' || phase === 'idle') {
     return (
-      <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-3">
+      <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3">
         <LoadingState
           title="Carregando evidências"
           description="Estamos preparando os arquivos vinculados a este ticket."
@@ -1450,7 +1450,7 @@ function SupportTicketAttachmentsPanel({
 
   return (
     <section className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-      <div className="shrink-0 rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+      <div className="shrink-0 rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1">
             <h3 className="text-[15px] font-bold tracking-[-0.025em] text-[color:var(--color-ink)]">
@@ -1488,7 +1488,7 @@ function SupportTicketAttachmentsPanel({
       ) : (
         <div className="grid min-h-0 flex-1 gap-3 overflow-hidden xl:grid-cols-[minmax(0,1fr)_320px]">
           <div className="min-h-0 space-y-3 overflow-y-auto pr-1">
-            <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+            <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-4 py-3">
                 <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                   <div className="relative min-w-[220px] flex-1">
@@ -1594,7 +1594,7 @@ function SupportTicketAttachmentsPanel({
           </div>
 
           <aside className="min-h-0 space-y-3 overflow-y-auto pr-1">
-            <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+            <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
               <div className="flex items-center justify-between gap-2">
                 <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">Detalhes da evidência</h4>
                 <button className="text-[color:var(--color-muted)]" onClick={onBack} type="button">
@@ -1696,7 +1696,7 @@ function SupportTicketAttachmentsPanel({
               )}
             </section>
 
-            <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+            <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
               <div className="space-y-1">
                 <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">Resumo do ticket</h4>
                 <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
@@ -1767,7 +1767,7 @@ function SupportEngineeringLinkCard({
         {sanitizeSupportVisibleText(link.workItemDescription)}
       </p>
       {link.handoffNote ? (
-        <div className="mt-2 rounded-[14px] border border-dashed border-[rgba(48,127,226,0.24)] bg-white px-3 py-2">
+        <div className="mt-2 rounded-[14px] border border-dashed border-[rgba(48,127,226,0.24)] bg-[color:var(--color-surface-strong)] px-3 py-2">
           <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
             Contexto do handoff
           </p>
@@ -1775,7 +1775,7 @@ function SupportEngineeringLinkCard({
         </div>
       ) : null}
       {link.lastUpdateSummary ? (
-        <div className="mt-2 rounded-[14px] border border-[rgba(48,127,226,0.18)] bg-white px-3 py-2">
+        <div className="mt-2 rounded-[14px] border border-[rgba(48,127,226,0.18)] bg-[color:var(--color-surface-strong)] px-3 py-2">
           <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
             Último retorno técnico
           </p>
@@ -1853,7 +1853,7 @@ function SupportMoreActionsPanel({
   return (
     <section className="grid min-h-0 flex-1 gap-3 overflow-hidden xl:grid-cols-[minmax(0,1fr)_292px]">
       <div className="min-h-0 space-y-3 overflow-y-auto pr-1">
-        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-1">
               <h3 className="text-[1.12rem] font-bold tracking-[-0.03em] text-[color:var(--color-ink)]">
@@ -1884,7 +1884,7 @@ function SupportMoreActionsPanel({
           </div>
         </section>
 
-        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[1.02rem] font-extrabold tracking-[-0.04em] text-[color:var(--color-brand-navy)]">
               {supportTicketCode(ticketDetail.id)}
@@ -2132,7 +2132,7 @@ function SupportMoreActionsPanel({
             {engineeringMessage ?? 'Não foi possível carregar o handoff técnico deste ticket.'}
           </InlineNotice>
         ) : engineeringLinks.length > 0 ? (
-          <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+          <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
             <div className="space-y-1">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
                 Demandas de engenharia vinculadas
@@ -2166,7 +2166,7 @@ function SupportMoreActionsPanel({
           </p>
           <div className="mt-4 space-y-4">
             <div className="flex items-start gap-3">
-              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border border-white/12 bg-white/6 text-white/90">
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border border-white/12 bg-[color:var(--color-surface-strong)]/6 text-white/90">
                 <SupportSurfaceIcon className="h-[15px] w-[15px]" kind="ticket" />
               </span>
               <div className="min-w-0">
@@ -2176,7 +2176,7 @@ function SupportMoreActionsPanel({
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border border-white/12 bg-white/6 text-white/90">
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border border-white/12 bg-[color:var(--color-surface-strong)]/6 text-white/90">
                 <SupportSurfaceIcon className="h-[15px] w-[15px]" kind="code" />
               </span>
               <div className="min-w-0">
@@ -2187,7 +2187,7 @@ function SupportMoreActionsPanel({
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border border-white/12 bg-white/6 text-white/90">
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border border-white/12 bg-[color:var(--color-surface-strong)]/6 text-white/90">
                 <SupportSurfaceIcon className="h-[15px] w-[15px]" kind="open" />
               </span>
               <div className="min-w-0">
@@ -2200,7 +2200,7 @@ function SupportMoreActionsPanel({
           </div>
         </section>
 
-        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
           <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">Informações do ticket</h4>
           <div className="mt-3 space-y-2 text-[12px] leading-5">
             <div className="flex items-start justify-between gap-3">
@@ -2248,7 +2248,7 @@ function SupportMoreActionsPanel({
           </Link>
         </section>
 
-        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+        <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
           <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">Boas práticas</h4>
           <ul className="mt-3 space-y-2 text-[11.5px] leading-5 text-[color:var(--color-muted)]">
             <li>Inclua o máximo de evidências possível.</li>
@@ -2399,7 +2399,7 @@ export function SupportOperationalWorkbenchPanel({
   return (
     <section className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
       {activeSurface === 'classification' ? (
-        <div className="shrink-0 rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
+        <div className="shrink-0 rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 shadow-[0_8px_18px_rgba(19,33,79,0.05)]">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="space-y-0.5">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">

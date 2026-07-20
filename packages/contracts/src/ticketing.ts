@@ -1515,7 +1515,8 @@ export type PlatformRole =
   | 'engineering_member'
   | 'engineering_manager'
   | 'knowledge_manager'
-  | 'audit_reviewer';
+  | 'audit_reviewer'
+  | 'dashboard_viewer';
 
 export const COMMERCIAL_PRODUCT_STATUSES = [
   'draft',

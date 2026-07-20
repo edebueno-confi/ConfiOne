@@ -340,7 +340,7 @@ function SectionCard({
   className?: string;
 }) {
   return (
-    <section className={cx('rounded-[18px] border border-[#D9E6F7] bg-white shadow-[0_14px_36px_rgba(31,67,125,0.06)]', className)}>
+    <section className={cx('rounded-[18px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] shadow-[0_14px_36px_rgba(31,67,125,0.06)]', className)}>
       {children}
     </section>
   );
@@ -352,7 +352,7 @@ function ArchitecturePrincipleCards() {
       {principleCards.map((card) => {
         const tone = tones[card.tone];
         return (
-          <article className={cx('rounded-[16px] border bg-white p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]', tone.border)} key={card.title}>
+          <article className={cx('rounded-[16px] border bg-[color:var(--color-surface-strong)] p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]', tone.border)} key={card.title}>
             <span className={cx('mx-auto flex h-16 w-16 items-center justify-center rounded-full', tone.soft, tone.icon)}>
               <ArchitectureIcon className="h-9 w-9" name={card.icon} />
             </span>
@@ -443,7 +443,7 @@ function ArchitectureBoundaryPanel() {
           const tone = tones[toneName as Tone];
           return (
             <article className={cx('grid grid-cols-[52px_1fr] gap-4 rounded-[14px] border p-4', tone.border, tone.soft)} key={title}>
-              <span className={cx('flex h-12 w-12 items-center justify-center rounded-full bg-white', tone.icon)}>
+              <span className={cx('flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--color-surface-strong)]', tone.icon)}>
                 <ArchitectureIcon className="h-7 w-7" name={icon} />
               </span>
               <div>
@@ -523,7 +523,7 @@ export function BuildJournalArchitecture() {
   return (
     <section className="space-y-6">
       <div className="flex justify-end">
-        <div className="grid w-full max-w-[390px] grid-cols-2 rounded-[9px] border border-[#D9E6F7] bg-white p-1 shadow-[0_10px_24px_rgba(31,67,125,0.05)]">
+        <div className="grid w-full max-w-[390px] grid-cols-2 rounded-[9px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-1 shadow-[0_10px_24px_rgba(31,67,125,0.05)]">
           <button aria-pressed="true" className="min-h-11 rounded-[7px] bg-[#1458E8] px-4 text-sm font-black text-white shadow-[0_12px_24px_rgba(20,88,232,0.20)]" type="button">
             Visão geral
           </button>

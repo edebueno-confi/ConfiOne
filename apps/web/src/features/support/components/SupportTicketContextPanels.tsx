@@ -158,7 +158,7 @@ function SupportPriorityOptionCard({
               : tone === 'positive'
                 ? 'border-[color:var(--color-success-border)] bg-[color:var(--color-success-surface)]'
                 : 'border-[rgba(47,107,255,0.28)] bg-[rgba(47,107,255,0.08)]'
-          : 'border-[color:var(--color-support-border)] bg-white hover:border-[rgba(47,107,255,0.22)]',
+          : 'border-[color:var(--color-support-border)] bg-[color:var(--color-surface-strong)] hover:border-[rgba(47,107,255,0.22)]',
       )}
       onClick={onClick}
       type="button"
@@ -1068,7 +1068,7 @@ export function SupportAttachmentsReadPanel({
 }) {
   if (attachmentPhase === 'loading' || attachmentPhase === 'idle') {
     return (
-      <div className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-4 text-[12px] text-[color:var(--color-muted)]">
+      <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4 text-[12px] text-[color:var(--color-muted)]">
         Estamos preparando os arquivos já vinculados ao ticket.
       </div>
     );

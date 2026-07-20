@@ -379,14 +379,14 @@ function renderInline(text: string): ReactNode[] {
     if (part.textTone) {
       const colorClass =
         part.textTone === 'blue'
-          ? 'text-blue-700'
+          ? 'text-[color:var(--color-info-text)]'
           : part.textTone === 'green'
-            ? 'text-emerald-700'
+            ? 'text-[color:var(--color-success-ink)]'
             : part.textTone === 'yellow'
-              ? 'text-amber-700'
+              ? 'text-[color:var(--color-warning-ink)]'
               : part.textTone === 'red'
-                ? 'text-red-700'
-                : 'text-slate-500';
+                ? 'text-[color:var(--color-danger-ink)]'
+                : 'text-[color:var(--color-text-secondary)]';
       return (
         <span key={key} className={colorClass}>
           {part.text}
@@ -397,16 +397,16 @@ function renderInline(text: string): ReactNode[] {
     if (part.markTone) {
       const markClass =
         part.markTone === 'blue'
-          ? 'bg-blue-50'
+          ? 'bg-[color:var(--color-info-surface)]'
           : part.markTone === 'green'
-            ? 'bg-emerald-50'
+            ? 'bg-[color:var(--color-success-surface)]'
             : part.markTone === 'yellow'
-              ? 'bg-amber-50'
+              ? 'bg-[color:var(--color-warning-surface)]'
               : part.markTone === 'pink'
                 ? 'bg-pink-50'
                 : part.markTone === 'purple'
                   ? 'bg-violet-50'
-                  : 'bg-slate-100';
+                  : 'bg-[color:var(--color-app-bg)]';
       return (
         <span key={key} className={`rounded-md px-1 ${markClass}`}>
           {part.text}
@@ -499,19 +499,19 @@ export function MarkdownDocument({
           const tone = block.tone ?? 'info';
           const toneClass =
             tone === 'warning'
-              ? 'border-amber-300 bg-amber-50 text-amber-900'
+              ? 'border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-surface)] text-[color:var(--color-warning-ink)]'
               : tone === 'success'
-                ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                ? 'border-[color:var(--color-success-border)] bg-[color:var(--color-success-surface)] text-[color:var(--color-success-ink)]'
                 : tone === 'danger'
-                  ? 'border-red-300 bg-red-50 text-red-900'
-                  : 'border-blue-300 bg-blue-50 text-blue-950';
+                  ? 'border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] text-[color:var(--color-danger-ink)]'
+                  : 'border-[color:var(--color-info-border)] bg-[color:var(--color-info-surface)] text-[color:var(--color-info-text)]';
           const iconClass =
             tone === 'warning'
-              ? 'bg-amber-500 text-white'
+              ? 'bg-[color:var(--color-warning-text)] text-white'
               : tone === 'success'
-                ? 'bg-emerald-500 text-white'
+                ? 'bg-[color:var(--color-success-text)] text-white'
                 : tone === 'danger'
-                  ? 'bg-red-600 text-white'
+                  ? 'bg-[color:var(--color-danger-text)] text-white'
                   : 'bg-[color:var(--help-link)] text-white';
           const title =
             tone === 'warning'
@@ -577,7 +577,7 @@ export function MarkdownDocument({
               <span className="col-span-2 text-sm font-extrabold text-violet-700">Leia também</span>
               <strong className="text-base font-extrabold">{related.title}</strong>
               <span className="text-xl text-violet-600">→</span>
-              <span className="text-sm leading-6 text-slate-600">
+              <span className="text-sm leading-6 text-[color:var(--color-text-secondary)]">
                 {related.summary || 'Abra este artigo relacionado na Central.'}
               </span>
             </a>
@@ -623,7 +623,7 @@ export function MarkdownDocument({
           return (
             <figure
               key={key}
-              className={`${imageSizeClass(block.imageSize)} overflow-hidden rounded-[24px] border border-[rgba(20,31,71,0.1)] bg-white shadow-[0_14px_34px_rgba(20,31,71,0.08)]`}
+              className={`${imageSizeClass(block.imageSize)} overflow-hidden rounded-[24px] border border-[rgba(20,31,71,0.1)] bg-[color:var(--color-surface-strong)] shadow-[0_14px_34px_rgba(20,31,71,0.08)]`}
             >
               <img
                 alt={asset.alt_text ?? block.alt ?? ''}

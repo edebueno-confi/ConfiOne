@@ -222,6 +222,7 @@ export const PLATFORM_ROLES = [
   'engineering_manager',
   'knowledge_manager',
   'audit_reviewer',
+  'dashboard_viewer',
 ] as const;
 export type PlatformRole = (typeof PLATFORM_ROLES)[number];
 

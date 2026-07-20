@@ -218,7 +218,7 @@ function BuildJournalSectionTabs({
               'min-h-12 min-w-0 rounded-[9px] border px-4 text-sm font-black transition-colors',
               isActive
                 ? 'border-[#1458E8] bg-[#1458E8] text-white shadow-[0_12px_24px_rgba(20,88,232,0.20)]'
-                : 'border-transparent text-[#33486B] hover:border-[#D9E6F7] hover:bg-white',
+                : 'border-transparent text-[#33486B] hover:border-[#D9E6F7] hover:bg-[color:var(--color-surface-strong)]',
             )}
             key={tab.key}
             onClick={() => onTabChange(tab.key)}
@@ -252,7 +252,7 @@ function FilterBar({
   status: string;
 }) {
   const selectClass =
-    'h-12 rounded-[9px] border border-[#D9E6F7] bg-white px-4 text-sm font-semibold text-[#263B62] outline-none transition focus:border-[#1458E8] focus:ring-2 focus:ring-[#1458E8]/10';
+    'h-12 rounded-[9px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] px-4 text-sm font-semibold text-[#263B62] outline-none transition focus:border-[#1458E8] focus:ring-2 focus:ring-[#1458E8]/10';
 
   return (
     <section className="grid gap-4 xl:grid-cols-[1fr_1fr_1fr_2fr]">
@@ -282,7 +282,7 @@ function FilterBar({
         <Icon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#7C8BA7]" name="search" />
         <input
           aria-label="Buscar marco, entrega ou documento"
-          className="h-12 w-full rounded-[9px] border border-[#D9E6F7] bg-white pl-12 pr-4 text-sm font-semibold text-[#263B62] outline-none transition placeholder:text-[#8B9AB4] focus:border-[#1458E8] focus:ring-2 focus:ring-[#1458E8]/10"
+          className="h-12 w-full rounded-[9px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] pl-12 pr-4 text-sm font-semibold text-[#263B62] outline-none transition placeholder:text-[#8B9AB4] focus:border-[#1458E8] focus:ring-2 focus:ring-[#1458E8]/10"
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="Buscar marco, entrega ou documento..."
           value={query}
@@ -296,7 +296,7 @@ function TimelineCard({ phase }: { phase: TimelinePhase }) {
   const accent = accentClasses[phase.accent];
 
   return (
-    <article className="relative grid min-h-[156px] gap-5 rounded-[18px] border border-[#D9E6F7] bg-white p-5 shadow-[0_14px_36px_rgba(31,67,125,0.06)] lg:grid-cols-[132px_1fr_170px_290px]">
+    <article className="relative grid min-h-[156px] gap-5 rounded-[18px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-5 shadow-[0_14px_36px_rgba(31,67,125,0.06)] lg:grid-cols-[132px_1fr_170px_290px]">
       <div className="flex items-center gap-4 lg:justify-center">
         <span className={cx('absolute left-[32px] top-7 z-20 flex h-12 w-12 items-center justify-center rounded-full text-xl font-black text-white lg:left-[22px]', accent.bg)}>
           {phase.number}
@@ -319,7 +319,7 @@ function TimelineCard({ phase }: { phase: TimelinePhase }) {
       <aside className="border-[#E3EBF6] lg:border-l lg:pl-6">
         <p className="text-sm font-black text-[#071641]">Documentos relacionados</p>
         <Link
-          className="mt-3 flex min-h-10 items-center gap-3 rounded-[8px] border border-[#D9E6F7] bg-white px-3 text-xs font-black text-[#33486B] transition hover:border-[#1458E8]/35 hover:bg-[#F7FAFF]"
+          className="mt-3 flex min-h-10 items-center gap-3 rounded-[8px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] px-3 text-xs font-black text-[#33486B] transition hover:border-[#1458E8]/35 hover:bg-[#F7FAFF]"
           to={`/admin/product-docs?doc=${encodeURIComponent(phase.document)}`}
         >
           <Icon className="h-4 w-4 shrink-0 text-[#5F74A0]" name="doc" />
@@ -335,7 +335,7 @@ function TimelineCard({ phase }: { phase: TimelinePhase }) {
 function SummaryCards({ onShowOverview }: { onShowOverview: () => void }) {
   return (
     <section className="grid gap-5 lg:grid-cols-[1fr_1.25fr_1.25fr]">
-      <article className="rounded-[16px] border border-[#D9E6F7] bg-white p-6 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
+      <article className="rounded-[16px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
         <h2 className="text-lg font-black text-[#071641]">Resumo da construção</h2>
         <dl className="mt-6 space-y-4">
           {[
@@ -361,7 +361,7 @@ function SummaryCards({ onShowOverview }: { onShowOverview: () => void }) {
         </button>
       </article>
 
-      <article className="rounded-[16px] border border-[#D9E6F7] bg-white p-6 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
+      <article className="rounded-[16px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
         <h2 className="text-lg font-black text-[#071641]">Progresso geral</h2>
         <div className="mt-6 grid gap-5 sm:grid-cols-[132px_1fr]">
           <div className="relative h-[132px] w-[132px]">
@@ -393,7 +393,7 @@ function SummaryCards({ onShowOverview }: { onShowOverview: () => void }) {
         </p>
       </article>
 
-      <article className="rounded-[16px] border border-[#D9E6F7] bg-white p-6 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
+      <article className="rounded-[16px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
         <h2 className="text-lg font-black text-[#071641]">Entregas recentes</h2>
         <ul className="mt-6 space-y-4">
           {buildJournalRecentDeliveries.map(([title, date]) => (
@@ -531,7 +531,7 @@ function OverviewPanel({
               Começar leitura guiada <span className="ml-2">→</span>
             </button>
             <Link
-              className="inline-flex min-h-12 items-center justify-center gap-3 rounded-[9px] border border-[#BFD4F3] bg-white px-6 text-sm font-black text-[#1458E8]"
+              className="inline-flex min-h-12 items-center justify-center gap-3 rounded-[9px] border border-[#BFD4F3] bg-[color:var(--color-surface-strong)] px-6 text-sm font-black text-[#1458E8]"
               to="/admin/product-docs"
             >
               Abrir documentos do produto <Icon className="h-4 w-4" name="doc" />
@@ -546,7 +546,7 @@ function OverviewPanel({
           ['Impacto', 'right-[45%] top-[84%]'],
         ].map(([label, position]) => (
           <span
-            className={cx('absolute z-10 rounded-[8px] bg-white px-4 py-2 text-xs font-black text-[#20375F] shadow-[0_10px_24px_rgba(31,67,125,0.12)]', position)}
+            className={cx('absolute z-10 rounded-[8px] bg-[color:var(--color-surface-strong)] px-4 py-2 text-xs font-black text-[#20375F] shadow-[0_10px_24px_rgba(31,67,125,0.12)]', position)}
             key={label}
           >
             {label}
@@ -554,19 +554,19 @@ function OverviewPanel({
         ))}
         <div className="absolute bottom-10 right-12 z-10 hidden h-28 w-40 rounded-[16px] bg-[#1D6BFF]/80 shadow-[0_20px_40px_rgba(20,88,232,0.30)] xl:block">
           <div className="mx-5 mt-5 flex gap-2">
-            <span className="h-2 w-2 rounded-full bg-white/70" />
-            <span className="h-2 w-2 rounded-full bg-white/70" />
-            <span className="h-2 w-2 rounded-full bg-white/70" />
+            <span className="h-2 w-2 rounded-full bg-[color:var(--color-surface-strong)]/70" />
+            <span className="h-2 w-2 rounded-full bg-[color:var(--color-surface-strong)]/70" />
+            <span className="h-2 w-2 rounded-full bg-[color:var(--color-surface-strong)]/70" />
           </div>
-          <div className="mx-5 mt-5 h-3 rounded-full bg-white/35" />
-          <div className="mx-5 mt-4 h-3 w-24 rounded-full bg-white/25" />
+          <div className="mx-5 mt-5 h-3 rounded-full bg-[color:var(--color-surface-strong)]/35" />
+          <div className="mx-5 mt-4 h-3 w-24 rounded-full bg-[color:var(--color-surface-strong)]/25" />
         </div>
         <div className="absolute bottom-8 right-5 z-20 hidden h-24 w-36 rotate-[-2deg] items-center justify-center rounded-[12px] border border-white/30 bg-[#236EFF] text-3xl font-black text-white shadow-[0_16px_30px_rgba(20,88,232,0.28)] xl:flex">
           {'</>'}
         </div>
       </section>
 
-      <div className="rounded-[14px] border border-[#D9E6F7] bg-white shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
+      <div className="rounded-[14px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
         <div className="flex flex-wrap justify-between gap-1 px-4 py-0">
           <BuildJournalSectionTabs activeTab={activeTab} onTabChange={onTabChange} />
         </div>
@@ -574,7 +574,7 @@ function OverviewPanel({
 
       <section className="grid gap-5 lg:grid-cols-3">
         {overviewCards.map((card) => (
-          <article className="grid grid-cols-[42px_1fr] gap-4 rounded-[16px] border border-[#D9E6F7] bg-white p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]" key={card.title}>
+          <article className="grid grid-cols-[42px_1fr] gap-4 rounded-[16px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]" key={card.title}>
             <span className={cx('flex h-10 w-10 items-center justify-center rounded-full', card.accent)}>
               <Icon className="h-5 w-5" name={card.icon} />
             </span>
@@ -600,7 +600,7 @@ function OverviewPanel({
         ))}
       </section>
 
-      <section className="rounded-[16px] border border-[#D9E6F7] bg-white p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
+      <section className="rounded-[16px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
         <h2 className="text-xl font-black text-[#071641]">Linha do tempo da construção</h2>
         <p className="mt-1 text-sm font-semibold text-[#31476C]">Principais marcos e entregas por fase</p>
         <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
@@ -629,7 +629,7 @@ function OverviewPanel({
       </section>
 
       <section className="grid gap-5 lg:grid-cols-[1.4fr_0.8fr]">
-        <article className="rounded-[16px] border border-[#D9E6F7] bg-white p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
+        <article className="rounded-[16px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
           <h2 className="text-xl font-black text-[#071641]">Arquitetura em camadas</h2>
           <p className="mt-1 text-sm font-semibold text-[#31476C]">Como os componentes se conectam para entregar valor</p>
           <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
@@ -649,7 +649,7 @@ function OverviewPanel({
           </div>
         </article>
 
-        <article className="rounded-[16px] border border-[#D9E6F7] bg-white p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
+        <article className="rounded-[16px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
           <h2 className="text-lg font-black text-[#071641]">Benefícios dessa arquitetura</h2>
           <ul className="mt-6 space-y-4">
             {['Segregação clara de responsabilidades', 'Segurança aplicada em todas as camadas', 'Escalabilidade com governança', 'Rastreabilidade ponta a ponta', 'Base sólida para IA no futuro'].map((item) => (
@@ -662,7 +662,7 @@ function OverviewPanel({
         </article>
       </section>
 
-      <section className="rounded-[16px] border border-[#D9E6F7] bg-white p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
+      <section className="rounded-[16px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
         <h2 className="text-xl font-black text-[#071641]">IA na construção</h2>
         <p className="mt-1 text-sm font-semibold text-[#31476C]">Como ChatGPT e Codex aceleram a construção com responsabilidade</p>
         <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_1fr_1fr_1.05fr]">
@@ -696,7 +696,7 @@ function OverviewPanel({
         </div>
       </section>
 
-      <section className="rounded-[16px] border border-[#D9E6F7] bg-white p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
+      <section className="rounded-[16px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-black text-[#071641]">Documentos oficiais</h2>
@@ -719,14 +719,14 @@ function OverviewPanel({
                   <span className="mt-1 block text-xs font-black text-[#1458E8]">{count}</span>
                   <span className="mt-1 block text-xs font-semibold leading-5 text-[#41567A]">{text}</span>
                 </span>
-                <span className="self-center rounded-[8px] border border-[#D9E6F7] bg-white py-2 text-center text-[#1458E8]">→</span>
+                <span className="self-center rounded-[8px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] py-2 text-center text-[#1458E8]">→</span>
               </Link>
             );
           })}
         </div>
       </section>
 
-      <section className="rounded-[16px] border border-[#D9E6F7] bg-white p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
+      <section className="rounded-[16px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
         <h2 className="text-xl font-black text-[#071641]">Próximos passos</h2>
         <p className="mt-1 text-sm font-semibold text-[#31476C]">O que vem pela frente no Genius Support OS</p>
         <div className="mt-6 grid gap-4 md:grid-cols-3 xl:grid-cols-6">
@@ -752,7 +752,7 @@ function SimpleDocumentPanel({
   const content = buildJournalPlaceholderPanels[activeTab];
 
   return (
-    <section className="rounded-[18px] border border-[#D9E6F7] bg-white p-7 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
+    <section className="rounded-[18px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-7 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
       <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
         <div>
           <span className="text-xs font-black uppercase tracking-[0.22em] text-[#1458E8]">Diário de Construção</span>
@@ -829,7 +829,7 @@ export function BuildJournalPage() {
                 <button
                   aria-disabled="true"
                   disabled
-                  className="inline-flex min-h-12 cursor-not-allowed items-center gap-3 rounded-[10px] border border-[#D9E6F7] bg-white px-5 text-sm font-black text-[#071641] shadow-[0_10px_24px_rgba(31,67,125,0.05)]"
+                  className="inline-flex min-h-12 cursor-not-allowed items-center gap-3 rounded-[10px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] px-5 text-sm font-black text-[#071641] shadow-[0_10px_24px_rgba(31,67,125,0.05)]"
                   title="Exportação ainda indisponível nesta fase"
                   type="button"
                 >
@@ -864,7 +864,7 @@ export function BuildJournalPage() {
                           : 'Conteúdo documental interno conectado à evolução do produto'}
                 </p>
               </div>
-              <div className="rounded-[14px] border border-[#D9E6F7] bg-white p-1 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
+              <div className="rounded-[14px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-1 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
                 <BuildJournalSectionTabs activeTab={activeTab} onTabChange={setActiveTab} />
               </div>
             </div>
@@ -893,7 +893,7 @@ export function BuildJournalPage() {
                   ))}
                 </div>
               ) : (
-                <div className="rounded-[18px] border border-[#D9E6F7] bg-white p-10 text-center shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
+                <div className="rounded-[18px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-10 text-center shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
                   <p className="text-lg font-black text-[#071641]">Nenhum marco encontrado</p>
                   <p className="mt-2 text-sm font-semibold text-[#5B6D8E]">Ajuste os filtros para visualizar outras fases da construção.</p>
                 </div>

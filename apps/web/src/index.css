@@ -30,6 +30,12 @@
   --color-brand-cyan: #74d2e7;
   --color-brand-magenta: #e10098;
   --color-brand-pink: #f04aae;
+  /* Aliases observados no CSS atual de geniusreturns.com.br. */
+  --genius-site-blue: #1c326f;
+  --genius-site-pink: #e10098;
+  --genius-site-cyan: #6ad1e7;
+  --genius-site-soft: #ebeffb;
+  --genius-site-peach: #ffbc7d;
   --color-surface: #f4f7fc;
   --color-surface-strong: #ffffff;
   --color-border: #dce4f2;
@@ -111,6 +117,91 @@
   --minimal-shadow: 0 10px 28px rgba(23, 37, 61, 0.06);
   --minimal-drawer-shadow: 16px 0 40px rgba(23, 37, 61, 0.12);
   background-color: var(--color-app-bg);
+}
+
+/*
+ * Tema escuro - Design System V3 (secao 7).
+ * Mesma hierarquia, spacing e comportamento do light; apenas os tokens mudam.
+ * Ativado por [data-theme='dark'] no <html>, definido pelo ThemeProvider
+ * e pelo script anti-flash em index.html.
+ */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-app-bg: #071126;
+  --color-surface-elevated: #0f1d3a;
+  --color-divider: #1e3157;
+  --color-text-primary: #f5f8ff;
+  --color-text-secondary: #b7c3dd;
+  --color-text-muted: #7f8ead;
+  --color-text-label: #b7c3dd;
+  --color-text-caption: #7f8ead;
+  --color-info-surface: rgba(91, 134, 255, 0.16);
+  --color-info-border: rgba(91, 134, 255, 0.34);
+  --color-info-text: #5b86ff;
+  --color-disabled-surface: #132445;
+  --color-disabled-border: #263a63;
+  --color-disabled-text: #7f8ead;
+  --color-brand-navy: #04133d;
+  --color-brand-blue: #2f6bff;
+  --color-brand-cyan: #74d2e7;
+  --color-brand-magenta: #ff6cbe;
+  --color-brand-pink: #ff6cbe;
+  --genius-site-blue: #22326e;
+  --genius-site-pink: #ff6cbe;
+  --genius-site-cyan: #6ad1e7;
+  --genius-site-soft: #172445;
+  --genius-site-peach: #ffbc7d;
+  --color-surface: #071126;
+  --color-surface-strong: #0f1d3a;
+  --color-border: #263a63;
+  --color-ink: #f5f8ff;
+  --color-muted: #b7c3dd;
+  --color-success-surface: rgba(74, 222, 128, 0.14);
+  --color-success-border: rgba(74, 222, 128, 0.28);
+  --color-success-ink: #4ade80;
+  --color-success-text: #4ade80;
+  --color-warning-surface: rgba(250, 204, 21, 0.14);
+  --color-warning-border: rgba(250, 204, 21, 0.28);
+  --color-warning-ink: #facc15;
+  --color-warning-text: #facc15;
+  --color-danger-surface: rgba(248, 113, 113, 0.14);
+  --color-danger-border: rgba(248, 113, 113, 0.3);
+  --color-danger-ink: #f87171;
+  --color-danger-text: #f87171;
+  --color-support-border: #263a63;
+  --color-support-surface: rgba(15, 29, 58, 0.92);
+  --color-support-muted: rgba(11, 23, 51, 0.82);
+  --color-support-selected: rgba(91, 134, 255, 0.16);
+  --color-support-rail: #0f1d3a;
+  --color-support-drawer: #0f1d3a;
+  --color-support-note: #3a2d10;
+  --shadow-panel: 0 18px 44px rgba(2, 8, 24, 0.55);
+  --shadow-support-panel: 0 8px 18px rgba(2, 8, 24, 0.5);
+  --minimal-canvas: oklch(0.19 0.045 264);
+  --minimal-surface: oklch(0.25 0.05 264);
+  --minimal-sidebar: oklch(0.2 0.055 266);
+  --minimal-surface-muted: oklch(0.29 0.05 264);
+  --minimal-text: oklch(0.97 0.008 264);
+  --minimal-text-secondary: oklch(0.8 0.028 264);
+  --minimal-text-tertiary: oklch(0.64 0.03 264);
+  --minimal-border: oklch(0.36 0.05 264);
+  --minimal-border-strong: oklch(0.44 0.055 264);
+  --minimal-border-hover: oklch(0.56 0.08 264);
+  --minimal-action: oklch(0.62 0.19 262);
+  --minimal-action-hover: oklch(0.56 0.19 262);
+  --minimal-action-ink: oklch(0.98 0.006 264);
+  --minimal-selection: oklch(0.34 0.09 262);
+  --minimal-selection-text: oklch(0.82 0.11 262);
+  --minimal-focus: oklch(0.72 0.12 258 / 0.5);
+  --minimal-overlay: oklch(0.1 0.02 264 / 0.62);
+  --minimal-danger-surface: oklch(0.3 0.08 25);
+  --minimal-danger-border: oklch(0.44 0.12 25);
+  --minimal-danger-text: oklch(0.78 0.14 25);
+  --minimal-warning-surface: oklch(0.32 0.06 80);
+  --minimal-warning-border: oklch(0.46 0.09 82);
+  --minimal-warning-text: oklch(0.84 0.12 85);
+  --minimal-shadow: 0 10px 28px rgba(2, 8, 24, 0.5);
+  --minimal-drawer-shadow: 16px 0 40px rgba(2, 8, 24, 0.55);
 }
 
 * {
@@ -3337,6 +3428,69 @@ textarea {
 
 table {
   border-collapse: collapse;
+}
+
+/* Mascote original do GSO: animação leve, sem depender de uma biblioteca. */
+.genius-mascot {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.genius-mascot--sm { width: 1.5rem; height: 1.5rem; }
+.genius-mascot--md { width: 2.25rem; height: 2.25rem; }
+.genius-mascot--lg { width: 3rem; height: 3rem; }
+
+.genius-mascot::before {
+  position: absolute;
+  inset: 12%;
+  content: '';
+  border-radius: 999px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--genius-site-cyan) 42%, transparent), transparent 68%);
+  opacity: 0;
+}
+
+.genius-mascot img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.genius-mascot--animated::before { animation: genius-mascot-glow 3.8s ease-in-out infinite; }
+.genius-mascot--animated img { animation: genius-mascot-float 4s ease-in-out infinite; }
+
+.genius-mascot__spark {
+  position: absolute;
+  z-index: 2;
+  color: var(--genius-site-pink);
+  font-size: 0.62rem;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.genius-mascot__spark--one { top: 0; right: -0.08rem; animation: genius-mascot-spark 3.2s ease-in-out 0.4s infinite; }
+.genius-mascot__spark--two { bottom: 0.08rem; left: -0.08rem; color: var(--genius-site-cyan); animation: genius-mascot-spark 3.2s ease-in-out 1.6s infinite; }
+
+@keyframes genius-mascot-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-0.14rem) rotate(-1deg); }
+}
+
+@keyframes genius-mascot-glow {
+  0%, 100% { opacity: 0.12; transform: scale(0.92); }
+  50% { opacity: 0.42; transform: scale(1.12); }
+}
+
+@keyframes genius-mascot-spark {
+  0%, 100% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+  35%, 65% { opacity: 0.95; transform: scale(1) rotate(18deg); }
 }
 
 @media (max-height: 900px) {

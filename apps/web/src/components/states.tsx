@@ -73,7 +73,7 @@ export function LoadingState({
       description={description}
       eyebrow="Carregando"
       actions={
-        <div className="inline-flex items-center gap-3 rounded-full border border-[color:var(--color-border)] bg-white/90 px-4 py-2 text-sm text-[color:var(--color-ink)]">
+        <div className="inline-flex items-center gap-3 rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/90 px-4 py-2 text-sm text-[color:var(--color-ink)]">
           <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[color:var(--color-brand-blue)]" />
           Aguarde alguns instantes.
         </div>

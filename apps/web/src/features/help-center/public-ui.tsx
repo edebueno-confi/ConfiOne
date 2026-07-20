@@ -324,7 +324,7 @@ export function PublicSearchStateCard({
           };
 
   return (
-    <div className={cx('rounded-[26px] border bg-white px-5 py-5 shadow-[0_16px_36px_rgba(20,31,71,0.05)]', toneMap.border)}>
+    <div className={cx('rounded-[26px] border bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_16px_36px_rgba(20,31,71,0.05)]', toneMap.border)}>
       <div className="flex items-start gap-4">
         <PublicIconBadge className="h-11 w-11 rounded-[16px]" icon={toneMap.icon} tone={toneMap.iconTone} />
         <div className="space-y-2">
@@ -382,7 +382,7 @@ export function PublicHelpHeader({
   );
 
   return (
-    <header className="border-b border-[rgba(20,31,71,0.08)] bg-white">
+    <header className="border-b border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)]">
       <div className="mx-auto flex max-w-[1520px] items-center justify-between gap-5 px-4 py-4 sm:px-6 lg:px-8 xl:px-10">
         <div className="flex min-w-0 items-center gap-3.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--help-accent-strong)] text-sm font-semibold text-white">
@@ -438,10 +438,10 @@ export function PublicHelpHeader({
         </div>
 
         <details className="relative md:hidden">
-          <summary className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-[14px] border border-[var(--help-border)] bg-white text-[var(--help-ink)]">
+          <summary className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-[14px] border border-[var(--help-border)] bg-[color:var(--color-surface-strong)] text-[var(--help-ink)]">
             <HelpIcon kind="menu" />
           </summary>
-          <div className="absolute right-0 top-[calc(100%+10px)] z-30 grid min-w-[210px] gap-1 rounded-[18px] border border-[var(--help-border)] bg-white p-2 shadow-[0_16px_36px_rgba(20,31,71,0.08)]">
+          <div className="absolute right-0 top-[calc(100%+10px)] z-30 grid min-w-[210px] gap-1 rounded-[18px] border border-[var(--help-border)] bg-[color:var(--color-surface-strong)] p-2 shadow-[0_16px_36px_rgba(20,31,71,0.08)]">
             <Link
               className={cx(
                 'rounded-[12px] px-3 py-2 text-sm font-medium no-underline',

@@ -50,7 +50,7 @@ export function SupportQueueLoadingScaffold() {
             </SummaryStrip>
 
             <div className="grid gap-5 xl:grid-cols-[minmax(0,0.72fr)_minmax(320px,0.28fr)]">
-              <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white px-5 py-5 shadow-[0_14px_28px_rgba(19,33,79,0.08)]">
+              <section className="rounded-[24px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_14px_28px_rgba(19,33,79,0.08)]">
                 <div className="mb-4 space-y-2">
                   <LoadingBlock className="h-6 w-40" />
                   <LoadingBlock className="h-4 w-80 max-w-full" />
@@ -62,7 +62,7 @@ export function SupportQueueLoadingScaffold() {
                 </div>
               </section>
 
-              <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white px-5 py-5 shadow-[0_14px_28px_rgba(19,33,79,0.08)] xl:sticky xl:top-4">
+              <section className="rounded-[24px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_14px_28px_rgba(19,33,79,0.08)] xl:sticky xl:top-4">
                 <div className="mb-4 space-y-2">
                   <LoadingBlock className="h-6 w-36" />
                   <LoadingBlock className="h-4 w-52 max-w-full" />
@@ -80,7 +80,7 @@ export function SupportQueueLoadingScaffold() {
 export function SupportTicketLoadingScaffold() {
   return (
     <div className="space-y-4">
-      <div className="space-y-3 rounded-[28px] border border-[color:var(--color-border)] bg-white px-5 py-5 shadow-[0_16px_30px_rgba(19,33,79,0.08)]">
+      <div className="space-y-3 rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_16px_30px_rgba(19,33,79,0.08)]">
         <div className="flex flex-wrap items-center gap-3">
           <LoadingBlock className="h-9 w-40 rounded-full" />
           <LoadingBlock className="h-9 w-24 rounded-full" />
@@ -102,7 +102,7 @@ export function SupportTicketLoadingScaffold() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,0.74fr)_minmax(318px,0.26fr)]">
-        <section className="overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white shadow-[0_16px_30px_rgba(19,33,79,0.08)]">
+        <section className="overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] shadow-[0_16px_30px_rgba(19,33,79,0.08)]">
           <div className="px-5 py-4">
             <div className="flex justify-center">
               <LoadingBlock className="h-7 w-20 rounded-full" />

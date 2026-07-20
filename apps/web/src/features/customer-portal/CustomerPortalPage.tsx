@@ -23,6 +23,7 @@ import {
   SessionExpiredState,
   StateFrame,
 } from '../../components/states';
+import { GeniusMascot } from '../../components/GeniusMascot';
 import {
   AppButton,
   Field,
@@ -245,10 +246,13 @@ function PortalShell({ children }: { children: ReactNode }) {
       <div className="mx-auto flex h-full max-w-[1600px] gap-4 px-4 py-4">
         <aside className="hidden h-full w-[230px] shrink-0 flex-col rounded-[28px] bg-[linear-gradient(180deg,#06173f_0%,#082058_54%,#0b2a68_100%)] p-3 text-white shadow-[0_24px_50px_rgba(9,20,56,0.22)] lg:flex">
           <div className="px-2 pt-2">
-              <p className="text-[0.62rem] font-semibold uppercase tracking-[0.24em] text-white/48">
-                Genius Support OS
-              </p>
-              <h1 className="mt-1 text-lg font-semibold tracking-[-0.05em]">
+              <div className="flex items-center gap-2">
+                <GeniusMascot size="sm" />
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/70">
+                  Genius<span className="text-[color:var(--genius-site-pink)]">OS</span>
+                </p>
+              </div>
+              <h1 className="mt-2 text-lg font-semibold tracking-[-0.05em]">
                 Portal do cliente
               </h1>
             <p className="mt-2 text-xs leading-5 text-white/58">
@@ -268,7 +272,7 @@ function PortalShell({ children }: { children: ReactNode }) {
                     'rounded-[16px] px-3 py-3 text-sm font-medium transition',
                     isActive
                       ? 'bg-[linear-gradient(135deg,#1f67ff,#2f7eff)] text-white shadow-[0_12px_22px_rgba(18,81,213,0.25)]'
-                      : 'text-white/72 hover:bg-white/9 hover:text-white',
+                      : 'text-white/72 hover:bg-[color:var(--color-surface-strong)]/9 hover:text-white',
                   )
                 }
                 end={item.to === '/portal'}
@@ -280,7 +284,7 @@ function PortalShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          <div className="mt-6 rounded-[20px] border border-white/10 bg-white/7 p-3">
+          <div className="mt-6 rounded-[20px] border border-white/10 bg-[color:var(--color-surface-strong)]/7 p-3">
             <p className="text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-white/48">
               Conta ativa
             </p>
@@ -298,7 +302,7 @@ function PortalShell({ children }: { children: ReactNode }) {
                   Trocar conta
                 </label>
                 <select
-                  className="h-11 w-full rounded-[16px] border border-white/12 bg-white/10 px-3 text-sm text-white outline-none transition focus:border-white/28"
+                  className="h-11 w-full rounded-[16px] border border-white/12 bg-[color:var(--color-surface-strong)]/10 px-3 text-sm text-white outline-none transition focus:border-white/28"
                   disabled={isLoading || isSwitching || isRefreshing}
                   onChange={handleTenantChange}
                   value={displayContext?.tenantId ?? ''}
@@ -321,7 +325,7 @@ function PortalShell({ children }: { children: ReactNode }) {
                 </p>
                 <p className="mt-2 text-xs leading-5 text-white/78">{staleMessage}</p>
                 <GhostButton
-                  className="mt-3 border-white/12 bg-white/10 text-white hover:bg-white/16"
+                  className="mt-3 border-white/12 bg-[color:var(--color-surface-strong)]/10 text-white hover:bg-[color:var(--color-surface-strong)]/16"
                   disabled={isRefreshing || isSwitching}
                   onClick={() => void refresh()}
                 >
@@ -336,7 +340,7 @@ function PortalShell({ children }: { children: ReactNode }) {
                 </p>
                 <p className="mt-2 text-xs leading-5 text-white/78">{sidebarNotice}</p>
                 <GhostButton
-                  className="mt-3 border-white/12 bg-white/10 text-white hover:bg-white/16"
+                  className="mt-3 border-white/12 bg-[color:var(--color-surface-strong)]/10 text-white hover:bg-[color:var(--color-surface-strong)]/16"
                   disabled={isRefreshing || isSwitching}
                   onClick={() => void refresh()}
                 >
@@ -374,13 +378,13 @@ function PortalShell({ children }: { children: ReactNode }) {
             ) : null}
           </div>
 
-          <div className="mt-auto rounded-[20px] border border-white/10 bg-white/7 p-3">
+          <div className="mt-auto rounded-[20px] border border-white/10 bg-[color:var(--color-surface-strong)]/7 p-3">
             <p className="truncate text-sm font-semibold text-white">
               {user?.email ?? 'Sessão autenticada'}
             </p>
               <p className="mt-1 text-xs text-white/58">Ambiente do cliente</p>
             <GhostButton
-              className="mt-3 w-full border-white/12 bg-white/10 text-white hover:bg-white/16"
+              className="mt-3 w-full border-white/12 bg-[color:var(--color-surface-strong)]/10 text-white hover:bg-[color:var(--color-surface-strong)]/16"
               onClick={() => void signOut()}
             >
               Sair
@@ -480,7 +484,7 @@ export function CustomerPortalLayout() {
 
   if (isLoading || isSwitching) {
     return (
-      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         <LoadingState
           title={isSwitching ? 'Trocando conta' : 'Carregando contexto do portal'}
           description={
@@ -495,7 +499,7 @@ export function CustomerPortalLayout() {
 
   if (isContextStale) {
     return (
-      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         <StateFrame
           title="Contexto alterado em outra aba"
           description={
@@ -518,7 +522,7 @@ export function CustomerPortalLayout() {
 
   if (phase === 'session_expired') {
     return (
-      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         <SessionExpiredState
           action={
             <AppButton
@@ -537,7 +541,7 @@ export function CustomerPortalLayout() {
 
   if (phase === 'access_revoked') {
     return (
-      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         <StateFrame
           title="Acesso revogado"
           description={
@@ -553,7 +557,7 @@ export function CustomerPortalLayout() {
 
   if (phase === 'tenant_unavailable') {
     return (
-      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         <StateFrame
           title="Conta indisponível"
           description={
@@ -574,7 +578,7 @@ export function CustomerPortalLayout() {
 
   if (phase === 'network_retryable') {
     return (
-      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         <ErrorState
           title="Conexão temporariamente indisponível"
           description={
@@ -593,7 +597,7 @@ export function CustomerPortalLayout() {
 
   if (phase === 'fatal_error') {
     return (
-      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         <ErrorState
           title="Contexto do portal indisponível"
           description={
@@ -612,7 +616,7 @@ export function CustomerPortalLayout() {
 
   if (!activeContext) {
     return (
-      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         <LoadingState
           title="Revalidando contexto do portal"
           description="Estamos confirmando o cliente ativo e a sessão do portal."
@@ -750,7 +754,7 @@ export function CustomerPortalHomePage() {
 
   if (loading) {
     return (
-      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         <LoadingState title="Carregando portal" description="Buscando seu contexto e tickets autorizados." />
       </div>
     );
@@ -758,7 +762,7 @@ export function CustomerPortalHomePage() {
 
   if (errorMessage) {
     return (
-      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="h-full overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         {isContractUnavailableMessage(errorMessage) ? (
           <ContractUnavailableState contractName="portal cliente" />
         ) : (
@@ -784,7 +788,7 @@ export function CustomerPortalHomePage() {
 
   return (
     <div className="grid h-full min-h-0 gap-4 overflow-hidden xl:grid-cols-[minmax(0,1fr)_320px]">
-      <section className="min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-5 shadow-[var(--shadow-panel)]">
+      <section className="min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-5 shadow-[var(--shadow-panel)]">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.26em] text-[color:var(--color-muted)]">
@@ -883,7 +887,7 @@ export function CustomerPortalHomePage() {
 function TicketListRow({ ticket }: { ticket: CustomerPortalTicketListItem }) {
   return (
     <Link
-      className="block w-full min-w-0 overflow-hidden rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 transition hover:border-[color:var(--color-brand-blue)]/35 hover:bg-white"
+      className="block w-full min-w-0 overflow-hidden rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 transition hover:border-[color:var(--color-brand-blue)]/35 hover:bg-[color:var(--color-surface-strong)]"
       to={`/portal/tickets/${ticket.ticketId}`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -916,7 +920,7 @@ function KnowledgeArticleCard({
 }) {
   return (
     <Link
-      className="block w-full min-w-0 overflow-hidden rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 transition hover:border-[color:var(--color-brand-blue)]/35 hover:bg-white"
+      className="block w-full min-w-0 overflow-hidden rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 transition hover:border-[color:var(--color-brand-blue)]/35 hover:bg-[color:var(--color-surface-strong)]"
       to={buildPortalKnowledgePath(article.slug)}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -936,7 +940,7 @@ function KnowledgeArticleCard({
         {sanitizeCustomerFacingText(article.summary ?? 'Resumo indisponível.')}
       </p>
       {!compact && article.relationReason ? (
-        <p className="mt-3 rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-2 text-xs leading-5 text-[color:var(--color-muted)]">
+        <p className="mt-3 rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-2 text-xs leading-5 text-[color:var(--color-muted)]">
           {sanitizeCustomerFacingText(article.relationReason)}
         </p>
       ) : null}
@@ -1180,7 +1184,7 @@ export function CustomerPortalHelpPage() {
 
   if (loading) {
     return (
-      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         <LoadingState
           title="Carregando central autorizada"
           description="Buscando artigos públicos e autenticados liberados para esta sessão."
@@ -1191,7 +1195,7 @@ export function CustomerPortalHelpPage() {
 
   if (errorMessage) {
     return (
-      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         {isContractUnavailableMessage(errorMessage) ? (
           <ContractUnavailableState contractName="central autorizada do portal" />
         ) : (
@@ -1217,7 +1221,7 @@ export function CustomerPortalHelpPage() {
 
   return (
     <div className="grid h-full min-h-0 gap-4 overflow-hidden xl:grid-cols-[minmax(0,1fr)_320px]">
-      <section className="min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-5 shadow-[var(--shadow-panel)]">
+      <section className="min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-5 shadow-[var(--shadow-panel)]">
         <PortalKnowledgeHeader
           eyebrow="Central autorizada"
           title="Knowledge liberada para sua conta"
@@ -1255,7 +1259,7 @@ export function CustomerPortalHelpPage() {
             </Field>
             <Field label="Categoria">
               <select
-                className="h-11 rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 text-sm text-[color:var(--color-ink)]"
+                className="h-11 rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 text-sm text-[color:var(--color-ink)]"
                 onChange={(event) => updateSearchParams({ category: event.target.value })}
                 value={selectedCategory}
               >
@@ -1269,7 +1273,7 @@ export function CustomerPortalHelpPage() {
             </Field>
             <Field label="Origem">
               <select
-                className="h-11 rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 text-sm text-[color:var(--color-ink)]"
+                className="h-11 rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 text-sm text-[color:var(--color-ink)]"
                 onChange={(event) => updateSearchParams({ source: event.target.value })}
                 value={selectedSource}
               >
@@ -1426,7 +1430,7 @@ export function CustomerPortalHelpArticlePage() {
 
   if (loading) {
     return (
-      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         <LoadingState
           title="Carregando artigo"
           description="Buscando o detalhe autorizado deste conteúdo."
@@ -1437,7 +1441,7 @@ export function CustomerPortalHelpArticlePage() {
 
   if (errorMessage) {
     return (
-      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         {isContractUnavailableMessage(errorMessage) ? (
           <ContractUnavailableState contractName="artigo autorizado do portal" />
         ) : (
@@ -1463,7 +1467,7 @@ export function CustomerPortalHelpArticlePage() {
 
   if (!article) {
     return (
-      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         <ErrorState
           title="Artigo indisponível"
           description="Este conteúdo não está autorizado para a sua sessão no portal."
@@ -1478,7 +1482,7 @@ export function CustomerPortalHelpArticlePage() {
 
   return (
     <div className="grid h-full min-h-0 gap-4 overflow-hidden xl:grid-cols-[minmax(0,1fr)_320px]">
-      <section className="min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-5 shadow-[var(--shadow-panel)]">
+      <section className="min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-5 shadow-[var(--shadow-panel)]">
         <Link className="text-sm font-medium text-[color:var(--color-brand-blue)]" to="/portal/help">
           Voltar para a central autorizada
         </Link>
@@ -1624,7 +1628,7 @@ export function CustomerPortalTicketsPage() {
 
   if (loading) {
     return (
-      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         <LoadingState title="Carregando tickets" description="Buscando tickets autorizados da sua conta." />
       </div>
     );
@@ -1632,7 +1636,7 @@ export function CustomerPortalTicketsPage() {
 
   return (
     <div className="grid h-full min-h-0 gap-4 overflow-hidden xl:grid-cols-[minmax(0,1fr)_360px]">
-      <section className="min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-5 shadow-[var(--shadow-panel)]">
+      <section className="min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-5 shadow-[var(--shadow-panel)]">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.26em] text-[color:var(--color-muted)]">
@@ -1663,7 +1667,7 @@ export function CustomerPortalTicketsPage() {
         </div>
       </section>
 
-      <aside className="min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-5 shadow-[var(--shadow-panel)]">
+      <aside className="min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-5 shadow-[var(--shadow-panel)]">
         <h2 className="text-lg font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
           Abrir ticket
         </h2>
@@ -2053,7 +2057,7 @@ export function CustomerPortalTicketPage() {
 
   if (loading) {
     return (
-      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         <LoadingState title="Carregando ticket" description="Buscando detalhe, timeline e evidências autorizadas." />
       </div>
     );
@@ -2061,7 +2065,7 @@ export function CustomerPortalTicketPage() {
 
   if (!detail) {
     return (
-      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="h-full rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         <ErrorState
           title={
             isNetworkRetryableMessage(errorMessage)
@@ -2083,7 +2087,7 @@ export function CustomerPortalTicketPage() {
 
   return (
     <div className="grid h-full min-h-0 gap-4 overflow-hidden xl:grid-cols-[minmax(0,1fr)_360px]">
-      <section className="min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-5 shadow-[var(--shadow-panel)]">
+      <section className="min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-5 shadow-[var(--shadow-panel)]">
         <Link className="text-sm font-medium text-[color:var(--color-brand-blue)]" to="/portal/tickets">
           Voltar para tickets
         </Link>
@@ -2271,7 +2275,7 @@ export function CustomerPortalTicketPage() {
               >
                 <input
                   accept={CUSTOMER_PORTAL_ATTACHMENT_ALLOWED_TYPES.join(',')}
-                  className="block w-full rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-2 text-sm text-[color:var(--color-ink)] file:mr-3 file:rounded-full file:border-0 file:bg-[color:var(--color-brand-blue)]/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[color:var(--color-brand-blue)]"
+                  className="block w-full rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-2 text-sm text-[color:var(--color-ink)] file:mr-3 file:rounded-full file:border-0 file:bg-[color:var(--color-brand-blue)]/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[color:var(--color-brand-blue)]"
                   disabled={uploadingAttachment}
                   name="evidence"
                   type="file"

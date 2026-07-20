@@ -19,6 +19,13 @@ export function canOpenInternalRoute(
   redirectTo: string,
   context: InternalRouteContext,
 ) {
+  if (matchesRoute(redirectTo, '/inicio')) {
+    return (
+      context.roles.includes('platform_admin') ||
+      hasAnyRole(context.roles, ['support_manager', 'support_agent'])
+    );
+  }
+
   if (matchesRoute(redirectTo, '/admin')) {
     return context.roles.includes('platform_admin');
   }
@@ -54,11 +61,11 @@ export function canOpenInternalRoute(
 
 export function getDefaultInternalLandingRoute(context: InternalRouteContext) {
   if (context.roles.includes('platform_admin')) {
-    return '/admin';
+    return '/inicio';
   }
 
   if (hasAnyRole(context.roles, ['support_manager', 'support_agent'])) {
-    return '/support/queue';
+    return '/inicio';
   }
 
   if (context.hasCsPortfolioAccess) {

@@ -1,4 +1,100 @@
+# Importacao CS Ops resiliente e preparacao da API OMIE - 2026-07-19
+
+- O HTTP 546 foi reproduzido localmente como limite de CPU/memoria do parser
+  XLSX ao carregar todas as abas.
+- O importador agora le somente `BD_Clientes` com parser XML enxuto e gravou
+  o arquivo real de CS Ops em staging: 606 linhas aceitas, nenhuma rejeitada.
+- A API OMIE agora possui sync read-only preparado para persistir titulos no
+  mesmo read model, com execucao auditavel e status de fonte/fallback na tela.
+- A chave OMIE continua pendente; nenhuma credencial foi criada ou exposta.
+
 # PROJECT_STATE.md
+
+# Status e responsaveis CS consolidados - 2026-07-19
+
+- O RPC `rpc_analytics_cs_snapshot` consolida categorias iguais entre pipelines
+  e devolve `pipeline_breakdown` para explicar a contagem.
+- O gráfico de status agora evita barras duplicadas; responsáveis também não
+  se repetem por pipeline e possuem detalhamento operacional na tela.
+- Evidência: `docs/reports/ANALYTICS_CS_CONSOLIDATED_BREAKDOWNS_2026-07-19.md`.
+
+# Nome oficial de pipeline versus alias interno - 2026-07-19
+
+- `analytics_source_config` agora preserva `hubspot_pipeline_label`, preenchido
+  pela definição oficial do pipeline durante a sincronização.
+- O campo `label` continua sendo o alias operacional editável no Dashboard
+  Gerencial. Configuração e CS / Suporte mostram nome HubSpot, alias e ID.
+- A migration `20260719180000_analytics_source_pipeline_names_v1.sql` foi
+  aplicada somente no banco local, sem reset, deploy ou escrita no HubSpot.
+
+## Densidade visual da Visao Executiva - 2026-07-19
+
+- As filas extensas de qualidade de dados e clientes com saldo vencido agora
+  ficam recolhidas por padrao e podem ser expandidas pelo usuario.
+- Os cabecalhos preservam contagens e alertas financeiros para decisao rapida;
+  a evidencia esta em
+  `docs/reports/ANALYTICS_EXECUTIVE_COLLAPSIBLE_SECTIONS_2026-07-19.md`.
+
+## CS Support multi-pipeline e fila de reconciliação — 2026-07-19
+
+- O diagnóstico do volume de suporte confirmou que o cache local estava lendo
+  o pipeline legado `1429283`, responsável pelos 12 tickets observados, enquanto
+  a atividade live de Rodolfo Turra está no pipeline `5034314`.
+- A configuração agora suporta múltiplos pipelines de CS, com WhatsApp,
+  Suporte B2B, Fale Conosco e Atendimento Analytics separados e administráveis
+  dentro do Dashboard Gerencial.
+- A visão de CS/CEO expõe tickets criados, origem, pipeline e responsável. O
+  sincronizador grava `hubspot_owner_id` no cache local.
+- A qualidade financeira agora possui fila detalhada de títulos reconciliados,
+  sem correspondência e ambíguos, com busca, links HubSpot e unificação somente
+  após confirmação humana.
+- O cache de tickets local ainda precisa de uma nova sincronização para trazer
+  os registros atuais dos pipelines ativos. Evidência detalhada:
+  `docs/reports/ANALYTICS_CS_PIPELINES_RECONCILIATION_QUEUE_2026-07-19.md`.
+
+## Cache de empresas apos merge HubSpot - 2026-07-19
+
+- O cache `hubspot_companies` representa somente o snapshot completo mais
+  recente retornado pelo HubSpot; IDs ausentes por merge/arquivamento sao
+  removidos apos a carga terminar com sucesso.
+- Snapshot vazio nao altera o cache anterior.
+- O caso Gloss foi corrigido: os dois IDs antigos foram removidos e o novo ID
+  `56708181165` permaneceu como unico registro correspondente.
+- Auditoria e historico continuam em `audit_log`,
+  `analytics_hubspot_merge_runs` e `hubspot_sync_runs`.
+- Evidencia: `docs/reports/HUBSPOT_COMPANY_MERGE_FLOW_2026-07-19.md`.
+
+## Continuidade confirmada — visão CEO com risco financeiro — 2026-07-18
+
+- O cache read-only `hubspot_companies` reconcilia títulos OMIE com empresa, CSM, MRR e contrato do HubSpot.
+- `rpc_analytics_ceo_snapshot` retorna alertas financeiros por cliente, confiança/ambiguidade e qualidade da cobertura.
+- A tela executiva exibe clientes com saldo vencido sem alterar o pipeline atual de Suporte.
+- O XLSX é fonte temporária; a API OMIE será validada e promovida somente após credenciais server-side e reconciliação.
+- Relatório: `docs/reports/CEO_DASHBOARD_IMPLEMENTATION_2026-07-18.md`.
+
+## Continuidade confirmada — transparência executiva — 2026-07-18
+
+- Alertas financeiros agora resolvem o nome do CSM quando o owner está presente.
+- A visão CEO mostra o frescor da última carga OMIE e da última sincronização HubSpot.
+
+## Continuidade Codex - ciclo de integrações gerenciais 2026-07-18
+
+- GSO Old permanece o ambiente canônico local; o worktree misto foi preservado.
+- Configuração de integrações foi materializada em `managed_integrations` com
+  Vault, RLS e view administrativa sanitizada.
+- Settings agora tem a superfície de configuração em `/admin/settings`.
+- HubSpot usa segredo gerenciado server-side; Omie está preparado em modo
+  read-only, mas sem credencial real até segunda-feira.
+- Gates do lote: banco, contratos, typecheck, build e testes de parsers verdes.
+- Próximo foco: read model financeiro, ingestão manual de planilhas e seleção
+  de pipes oficiais.
+
+## Continuidade confirmada — Analytics Financeiro 2026-07-18
+
+- O read model `analytics_finance_receivables` e o RPC `rpc_analytics_finance_snapshot` foram materializados com RLS, grants, auditoria e filtros server-side.
+- A exportação real `financas_554753004352157 (1).xlsx` foi carregada localmente com 3.077 títulos e provenance de importação.
+- `/admin/analytics` agora possui a área Financeiro; a API Omie permanece preparada como fonte read-only futura, sem credenciais usadas neste ciclo.
+- Evidência: `docs/reports/ANALYTICS_FINANCE_READMODEL_2026-07-18.md`.
 
 ## Produto
 Genius Support OS
@@ -11,6 +107,18 @@ A empresa opera o Genius Returns e o After Sale, SaaS B2B de automação de log�
 
 ## Decisão central
 O sistema deve ser construído como SaaS profissional desde o início, mesmo sendo inicialmente interno.
+
+## Checkpoint de continuidade — 2026-07-17
+- O Codex assumiu a continuidade no checkout `C:\Projetos\GSO-old`; o takeover está registrado em `docs/reports/CODEX_CONTINUATION_HANDOFF_2026-07-17.md`.
+- `/admin/analytics` já possui fundação HubSpot server-side, tabelas locais, views SQL, RLS e UI para Comercial e CS/Suporte.
+- A prioridade desta retomada é construir o painel gerencial dentro do produto, com HubSpot e planilha como fontes, sem depender do Looker.
+- Ainda não existe adapter, staging, import run ou contrato de planilha. O próximo lote é fechar matriz de métricas, fontes, frescor e qualidade; depois implementar importação controlada de CSV/XLSX.
+- O Ciclo A0 criou `docs/ANALYTICS_METRIC_CATALOG_V1.md`, com definições reais das views Analytics e requisitos de provenance para a futura ingestão de planilhas.
+- O Ciclo A1 criou a fundação de staging em `supabase/migrations/20260718014903_analytics_spreadsheet_ingestion_foundation_v1.sql` e o teste pgTAP correspondente; a migration ainda não foi aplicada porque o banco local está inconsistente.
+- O banco Supabase local está inconsistente com as migrations atuais (`public.profiles.is_active` ausente); reset local não foi executado.
+- Em 2026-07-18, as planilhas CS e Comercial foram auditadas em modo somente leitura. A CS possui views consolidadas; a Comercial possui 44 abas diárias variáveis. O servidor web local responde em `http://127.0.0.1:4173/`, mas a fixture administrativa não foi aplicada porque o banco também não possui `public.profiles.email`.
+- O parser inicial das abas diárias Comerciais foi criado em `scripts/analytics/commercial-daily-sheet-parser.mjs`, com testes unitários verdes em `tests/scripts/commercial-daily-sheet-parser.test.mjs`.
+- Fonte detalhada: `docs/reports/CODEX_CONTINUATION_HANDOFF_2026-07-17.md`.
 
 ## Fonte de verdade documental
 
@@ -2345,3 +2453,16 @@ Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - boundaries:
   - sem alteração de banco, RPC, view, RLS ou autorização;
   - sem deploy, push ou commit.
+## Continuidade confirmada — importação manual financeira — 2026-07-18
+
+- A camada administrativa de importação agora possui uma Edge Function `analytics-spreadsheet-import` com autorização `platform_admin`, hash SHA-256 e idempotência por fonte/arquivo/versão.
+- XLSX/CSV Omie é registrado em staging, auditado e aplicado ao read model `analytics_finance_receivables` sem apagar execuções anteriores.
+- O Dashboard Gerencial > Financeiro permite escolher o arquivo, disparar o lote e navegar pelo histórico recente.
+- Validações executadas: `npm run web:typecheck`, `npm run web:build` e `git diff --check`.
+- Atenção: ainda falta a validação E2E com sessão administrativa ativa e o mapeamento operacional das fontes CS/Comercial.
+# Continuidade — visão executiva e filtros — 2026-07-18
+
+- O dashboard recebeu presets de período: semana, mês, trimestre atual, trimestre passado, ano atual, ano passado e todo o período.
+- A nova aba `Visão executiva` usa `rpc_analytics_ceo_snapshot` para consolidar HubSpot Comercial, HubSpot CS/Suporte e OMIE Financeiro.
+- KPIs agora podem exibir hint de fonte e fórmula no ícone `i`, com explicação contextual para o usuário.
+- O endpoint local da Edge Function de importação foi iniciado e responde HTTP 200 em `OPTIONS`; o 404 observado era ausência do servidor local de Functions.

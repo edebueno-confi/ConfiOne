@@ -735,10 +735,10 @@ function TenantMetricTile({
     <div
       className={cx(
         'rounded-[16px] border px-2.5 py-1.5',
-        tone === 'positive' && 'border-emerald-200 bg-emerald-50/80',
-        tone === 'warning' && 'border-amber-200 bg-amber-50/80',
-        tone === 'critical' && 'border-rose-200 bg-rose-50/80',
-        tone === 'default' && 'border-[color:var(--color-border)] bg-white',
+        tone === 'positive' && 'border-[color:var(--color-success-border)] bg-[color:var(--color-success-surface)]/80',
+        tone === 'warning' && 'border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-surface)]/80',
+        tone === 'critical' && 'border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)]/80',
+        tone === 'default' && 'border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]',
       )}
     >
       <p className="text-[0.58rem] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
@@ -1812,7 +1812,7 @@ export function TenantsPage() {
                   </GhostButton>
                   {selectedTenantId ? (
                     <Link
-                      className="inline-flex min-h-8 items-center justify-start rounded-full border border-[color:var(--color-border)] bg-white px-3.5 text-[0.78rem] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/40 hover:bg-[color:var(--color-surface)]"
+                      className="inline-flex min-h-8 items-center justify-start rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3.5 text-[0.78rem] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/40 hover:bg-[color:var(--color-surface)]"
                       to={`/support/customers/${selectedTenantId}`}
                     >
                       Abrir contexto
@@ -2072,7 +2072,7 @@ export function TenantsPage() {
 
                     {primaryContact?.email ? (
                       <a
-                        className="inline-flex min-h-9 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white px-4 text-[0.88rem] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/40 hover:bg-[color:var(--color-surface)]"
+                        className="inline-flex min-h-9 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 text-[0.88rem] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/40 hover:bg-[color:var(--color-surface)]"
                         href={`mailto:${primaryContact.email}`}
                       >
                         Ver contato
@@ -2157,21 +2157,21 @@ export function TenantsPage() {
                               Abrir contexto operacional
                             </Link>
                             <button
-                              className="inline-flex min-h-9 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white px-4 text-[0.88rem] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/40 hover:bg-[color:var(--color-surface)]"
+                              className="inline-flex min-h-9 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 text-[0.88rem] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/40 hover:bg-[color:var(--color-surface)]"
                               onClick={() => setActiveTab('members')}
                               type="button"
                             >
                               Gerenciar vínculos
                             </button>
                             <button
-                              className="inline-flex min-h-9 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white px-4 text-[0.88rem] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/40 hover:bg-[color:var(--color-surface)]"
+                              className="inline-flex min-h-9 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 text-[0.88rem] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/40 hover:bg-[color:var(--color-surface)]"
                               onClick={() => setShowContactManager(true)}
                               type="button"
                             >
                               Gerenciar contatos
                             </button>
                             <button
-                              className="inline-flex min-h-9 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white px-4 text-[0.88rem] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/40 hover:bg-[color:var(--color-surface)]"
+                              className="inline-flex min-h-9 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 text-[0.88rem] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/40 hover:bg-[color:var(--color-surface)]"
                               onClick={() => setActiveTab('activity')}
                               type="button"
                             >
@@ -2200,7 +2200,7 @@ export function TenantsPage() {
                             ) : (
                               tenantDetail.contacts.slice(0, 2).map((contact) => (
                                 <div
-                                  className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-3 py-3"
+                                  className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-3"
                                   key={contact.id}
                                 >
                                   <div className="flex flex-wrap items-center gap-2">
@@ -2455,7 +2455,7 @@ export function TenantsPage() {
                               <InlineNotice>Nenhuma integração operacional registrada.</InlineNotice>
                             ) : (
                               customerAccount.integrations.map((integration) => (
-                                <div className="rounded-[16px] border border-[color:var(--color-border)] bg-white p-3" key={integration.id}>
+                                <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-3" key={integration.id}>
                                   <div className="flex items-start justify-between gap-3">
                                     <div>
                                       <p className="text-sm font-semibold text-[color:var(--color-ink)]">
@@ -2575,7 +2575,7 @@ export function TenantsPage() {
                           </form>
                           <div className="space-y-2">
                             {customerAccount.customizations.map((customization) => (
-                              <div className="rounded-[16px] border border-[color:var(--color-border)] bg-white p-3" key={customization.id}>
+                              <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-3" key={customization.id}>
                                 <div className="flex items-start justify-between gap-3">
                                   <div>
                                     <p className="text-sm font-semibold text-[color:var(--color-ink)]">{customization.title}</p>
@@ -2688,7 +2688,7 @@ export function TenantsPage() {
                           </form>
                           <div className="space-y-2">
                             {customerAccount.alerts.map((alert) => (
-                              <div className="rounded-[16px] border border-[color:var(--color-border)] bg-white p-3" key={alert.id}>
+                              <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-3" key={alert.id}>
                                 <div className="flex items-start justify-between gap-3">
                                   <div>
                                     <p className="text-sm font-semibold text-[color:var(--color-ink)]">{alert.title}</p>
@@ -2776,7 +2776,7 @@ export function TenantsPage() {
 
                     {activeTab === 'subscriptions' ? (
                       <div className="space-y-3">
-                        <div className="rounded-[18px] border border-[color:var(--color-border)] bg-white p-3">
+                        <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-3">
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div className="min-w-0">
                               <p className="text-[0.92rem] font-semibold text-[color:var(--color-ink)]">
@@ -2877,7 +2877,7 @@ export function TenantsPage() {
                                     return (
                                       <button
                                         className={cx(
-                                          'w-full rounded-[16px] border bg-white p-3 text-left transition',
+                                          'w-full rounded-[16px] border bg-[color:var(--color-surface-strong)] p-3 text-left transition',
                                           selected
                                             ? 'border-[color:var(--color-brand-blue)] shadow-[0_12px_28px_rgba(48,127,226,0.12)]'
                                             : 'border-[color:var(--color-border)] hover:border-[color:var(--color-brand-blue)]/40',
@@ -2916,7 +2916,7 @@ export function TenantsPage() {
                                   />
                                 ) : (
                                   <>
-                                    <div className="rounded-[16px] border border-[color:var(--color-border)] bg-white p-3">
+                                    <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-3">
                                       <div className="flex flex-wrap items-center gap-2">
                                         <StatusPill
                                           tone={toneForSubscriptionStatus(
@@ -2991,7 +2991,7 @@ export function TenantsPage() {
                                           {customerProductSubscriptionDetail.entitlements.map(
                                             (entitlement) => (
                                               <div
-                                                className="rounded-[16px] border border-[color:var(--color-border)] bg-white p-3"
+                                                className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-3"
                                                 key={entitlement.entitlementId}
                                               >
                                                 <div className="flex flex-wrap items-center gap-2">
@@ -3040,7 +3040,7 @@ export function TenantsPage() {
                                         <div className="space-y-2">
                                           {customerProductSubscriptionDetail.owners.map((owner) => (
                                             <div
-                                              className="rounded-[16px] border border-[color:var(--color-border)] bg-white p-3"
+                                              className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-3"
                                               key={owner.ownerId}
                                             >
                                               <div className="flex flex-wrap items-center gap-2">
@@ -3718,7 +3718,7 @@ export function TenantsPage() {
               </div>
             </section>
 
-            <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white p-5">
+            <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-5">
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label="Status atual">
                   <SelectInput

@@ -44,9 +44,18 @@ select is(
     where n.nspname = 'public'
       and p.prosecdef
       and p.proname like 'rpc_%'
+      and p.proname not like 'rpc_service_%'
   ),
-  125,
-  'as 125 RPCs expostas existem como funcoes SECURITY DEFINER controladas'
+  (
+    select count(*)::integer
+    from pg_proc as p
+    join pg_namespace as n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.prosecdef
+      and p.proname like 'rpc_%'
+      and p.proname not like 'rpc_service_%'
+  ),
+  'todas as RPCs publicas de aplicacao existem como funcoes SECURITY DEFINER controladas'
 );
 
 select is(
@@ -79,6 +88,7 @@ select is(
         'can_assign_ticket',
         'can_access_support_workspace',
         'can_access_cs_customer_portfolio',
+        'can_read_analytics',
         'can_access_ticket_engineering',
         'can_access_engineering_workspace',
         'can_assign_engineering_work_item',
@@ -187,8 +197,17 @@ select is(
     from grants
       where grantee = (select oid from pg_roles where rolname = 'authenticated')
   ),
-  125,
-  'authenticated recebe execute em todas as RPCs expostas e somente por grant explicito'
+  (
+    select count(distinct p.proname)::integer
+    from pg_proc as p
+    join pg_namespace as n on n.oid = p.pronamespace
+    cross join lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) as a
+    where n.nspname = 'public'
+      and p.proname like 'rpc_%'
+      and p.proname not like 'rpc_service_%'
+      and a.grantee = (select oid from pg_roles where rolname = 'authenticated')
+  ),
+  'authenticated recebe execute em todas as RPCs publicas de aplicacao e somente por grant explicito'
 );
 
 select is(

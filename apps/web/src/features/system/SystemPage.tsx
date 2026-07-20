@@ -766,7 +766,7 @@ export function SystemPage() {
                 <div className="mt-4 grid gap-2 lg:grid-cols-2">
                   {channelSummaries.map((channel) => (
                     <div
-                      className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-3.5 py-3"
+                      className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3.5 py-3"
                       key={channel.channelKey}
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -904,7 +904,7 @@ export function SystemPage() {
                           'grid w-full gap-3 px-4 py-4 text-left transition lg:grid-cols-[minmax(128px,0.8fr)_minmax(0,1.6fr)_minmax(112px,0.7fr)]',
                           selected
                             ? 'bg-[rgba(48,127,226,0.08)]'
-                            : 'bg-white hover:bg-[color:var(--color-surface)]',
+                            : 'bg-[color:var(--color-surface-strong)] hover:bg-[color:var(--color-surface)]',
                         )}
                         key={entry.id}
                         onClick={() => setSelectedEventId(entry.id)}
@@ -1016,7 +1016,7 @@ export function SystemPage() {
                     <div className="mt-3 space-y-2">
                       {relatedEntries.map((entry) => (
                         <div
-                          className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-3"
+                          className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-3"
                           key={entry.id}
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1036,7 +1036,7 @@ export function SystemPage() {
                   )}
                 </section>
 
-                <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+                <section className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4">
                   <h3 className="text-[0.98rem] font-semibold text-[color:var(--color-ink)]">Dados protegidos</h3>
                   <div className="mt-3 space-y-3 text-sm leading-6 text-[color:var(--color-muted)]">
                     <p>Referência interna: {selectedEntry.entity_id ?? 'Indisponível'}</p>

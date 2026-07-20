@@ -1968,7 +1968,7 @@ export function KnowledgePage() {
 
     return (
       <div className="space-y-3 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
-        <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white/95 px-6 py-4 shadow-[var(--shadow-panel)]">
+        <section className="rounded-[24px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-6 py-4 shadow-[var(--shadow-panel)]">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-1.5">
               <h1 className="text-[1.9rem] font-semibold tracking-[-0.05em] text-[color:var(--color-ink)]">
@@ -2013,7 +2013,7 @@ export function KnowledgePage() {
           id="knowledge-article-editor-form"
           onSubmit={handleSaveArticle}
         >
-          <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white/95 px-6 py-5 shadow-[var(--shadow-panel)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+          <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-6 py-5 shadow-[var(--shadow-panel)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
             <div className="space-y-5 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
               <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
                 <Field label="Título">
@@ -2091,7 +2091,7 @@ export function KnowledgePage() {
           </section>
 
           <aside className="space-y-4 xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
-            <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white/95 px-5 py-5 shadow-[var(--shadow-panel)] xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
+            <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-5 py-5 shadow-[var(--shadow-panel)] xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
               <div className="space-y-4">
                 <div className="space-y-1">
                   <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
@@ -2176,7 +2176,7 @@ export function KnowledgePage() {
               </div>
             </section>
 
-            <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white/95 px-5 py-5 shadow-[var(--shadow-panel)]">
+            <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-5 py-5 shadow-[var(--shadow-panel)]">
               <div className="space-y-3">
                 <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
                   Ações
@@ -2230,7 +2230,7 @@ export function KnowledgePage() {
   if (spaces.length === 0) {
     return (
       <div className="space-y-5">
-        <section className="rounded-[28px] border border-[color:var(--color-border)] bg-white/94 px-6 py-6 shadow-[var(--shadow-panel)]">
+        <section className="rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/94 px-6 py-6 shadow-[var(--shadow-panel)]">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="space-y-1">
               <h1 className="text-[2rem] font-semibold tracking-[-0.05em] text-[color:var(--color-ink)]">
@@ -2348,7 +2348,7 @@ export function KnowledgePage() {
             </section>
 
             <section className="hidden">
-              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-5 py-3.5 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/96 px-5 py-3.5 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-[0.76rem] font-semibold text-[color:var(--color-ink)]">
@@ -2375,7 +2375,7 @@ export function KnowledgePage() {
                 </div>
               </article>
 
-              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-5 py-3.5 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/96 px-5 py-3.5 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-[0.76rem] font-semibold text-[color:var(--color-ink)]">
@@ -2402,7 +2402,7 @@ export function KnowledgePage() {
                 </div>
               </article>
 
-              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-5 py-3.5 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/96 px-5 py-3.5 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-[0.76rem] font-semibold text-[color:var(--color-ink)]">
@@ -2429,7 +2429,7 @@ export function KnowledgePage() {
                 </div>
               </article>
 
-              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-white/96 px-5 py-3.5 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
+              <article className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/96 px-5 py-3.5 shadow-[0_18px_44px_rgba(19,33,79,0.06)]">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-[0.76rem] font-semibold text-[color:var(--color-ink)]">

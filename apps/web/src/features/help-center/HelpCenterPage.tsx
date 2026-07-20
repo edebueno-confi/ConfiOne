@@ -90,7 +90,7 @@ export function HelpCenterPage() {
   const [spaces, setSpaces] = useState<HelpCenterSpaceSummary[]>([]);
 
   useHelpCenterDocumentMeta({
-    title: 'Genius Support OS | Central de Ajuda B2B',
+    title: 'GeniusOS | Central de Ajuda B2B',
     description:
       'Documentação oficial para clientes B2B, com centrais públicas de configuração, operação e resolução de dúvidas.',
   });
@@ -183,7 +183,7 @@ export function HelpCenterPage() {
       />
 
       <main className="mx-auto grid max-w-[1520px] gap-6 px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
-        <section className="rounded-[28px] border border-[rgba(20,31,71,0.1)] bg-white px-6 py-6 shadow-[0_18px_40px_rgba(20,31,71,0.05)] sm:px-8">
+        <section className="rounded-[28px] border border-[rgba(20,31,71,0.1)] bg-[color:var(--color-surface-strong)] px-6 py-6 shadow-[0_18px_40px_rgba(20,31,71,0.05)] sm:px-8">
           <div className="space-y-4">
             <PublicBreadcrumb items={[{ label: 'Central de Ajuda' }, { label: 'Outras centrais' }]} />
             <div className="flex flex-wrap items-end justify-between gap-4">
@@ -323,11 +323,11 @@ export function HelpCenterSpaceLayout() {
   );
   const helpCenterTitle = space
     ? buildHelpCenterSeoTitle(space)
-    : 'Help Center B2B | Genius Support OS';
+    : 'Central de Ajuda B2B | GeniusOS';
   const helpCenterDescription = space
     ? seoDefaults?.description ??
       `${space.brand_name} publica guias oficiais de configuração, operação e resolução de dúvidas para clientes B2B.`
-    : 'Guias públicos B2B da plataforma Genius Support OS.';
+    : 'Guias públicos B2B da plataforma GeniusOS.';
   const supportContacts = sanitizePublicSupportContacts(space?.support_contacts);
   const portalHref = supportContacts.websiteUrl ?? supportContacts.docsUrl ?? null;
 

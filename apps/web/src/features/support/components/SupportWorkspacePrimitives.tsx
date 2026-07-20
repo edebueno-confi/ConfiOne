@@ -558,7 +558,7 @@ export function QueueTicketItem({
     return (
       <button
         className={cx(
-          'relative w-full rounded-[12px] border bg-white px-3 py-3 text-left transition',
+          'relative w-full rounded-[12px] border bg-[color:var(--color-surface-strong)] px-3 py-3 text-left transition',
           isSelected
             ? 'border-[rgba(47,107,255,0.48)] shadow-[0_8px_20px_rgba(22,36,67,0.06)]'
             : 'border-[color:var(--color-support-border)] hover:border-[rgba(47,107,255,0.28)] hover:bg-[color:var(--color-support-surface)]',
@@ -623,7 +623,7 @@ export function QueueTicketItem({
           'flex h-4 w-4 items-center justify-center rounded-[4px] border text-[8px] font-bold',
           isSelected
             ? 'border-[color:var(--color-brand-blue)] bg-[color:var(--color-brand-blue)] text-white'
-            : 'border-[rgba(148,163,184,0.42)] bg-white text-transparent',
+            : 'border-[rgba(148,163,184,0.42)] bg-[color:var(--color-surface-strong)] text-transparent',
         )}
       >
         ✓
@@ -715,7 +715,7 @@ export function SupportToolsPanel({
   children: ReactNode;
 }) {
   return (
-    <aside className="min-w-0 min-h-0 rounded-[16px] border border-[color:var(--color-support-border)] bg-white px-4 py-4 shadow-[var(--shadow-support-panel)] xl:w-[var(--support-workspace-tools-width)] xl:shrink-0">
+    <aside className="min-w-0 min-h-0 rounded-[16px] border border-[color:var(--color-support-border)] bg-[color:var(--color-surface-strong)] px-4 py-4 shadow-[var(--shadow-support-panel)] xl:w-[var(--support-workspace-tools-width)] xl:shrink-0">
       <div className="flex items-center justify-between gap-2">
         <h4 className="text-[15px] font-bold tracking-[-0.03em] text-[color:var(--color-ink)]">{title}</h4>
         {headerAction}
@@ -879,7 +879,7 @@ export function SupportConversationMessage({
             'support-true-message-bubble min-w-0 rounded-[14px] border px-4 py-3 shadow-[0_4px_10px_rgba(19,33,79,0.03)]',
             lane === 'agent'
               ? 'support-true-message-bubble--agent border-[rgba(47,107,255,0.2)] bg-[rgba(244,248,255,0.92)]'
-              : 'support-true-message-bubble--customer border-[rgba(220,228,242,0.92)] bg-white',
+              : 'support-true-message-bubble--customer border-[rgba(220,228,242,0.92)] bg-[color:var(--color-surface-strong)]',
           )}
         >
           <div className="space-y-1.5">
@@ -905,7 +905,7 @@ export function SupportInternalNote({
   return (
     <article className="support-true-internal-note mx-auto max-w-[86%] rounded-[14px] border border-[rgba(245,184,61,0.34)] bg-[color:var(--color-support-note)] px-4 py-3 shadow-[0_4px_10px_rgba(180,120,34,0.03)]">
       <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-        <span className="inline-flex min-h-[18px] items-center rounded-full border border-[rgba(245,184,61,0.32)] bg-white/70 px-2 text-[8.5px] font-semibold uppercase tracking-[0.1em] text-[rgb(146,64,14)]">
+        <span className="inline-flex min-h-[18px] items-center rounded-full border border-[rgba(245,184,61,0.32)] bg-[color:var(--color-surface-strong)]/70 px-2 text-[8.5px] font-semibold uppercase tracking-[0.1em] text-[rgb(146,64,14)]">
           NOTA INTERNA
         </span>
         <span className="font-medium text-[rgb(146,64,14)]">Visível apenas para equipe interna</span>
@@ -933,7 +933,7 @@ export function SupportSystemEvent({
     <div className="support-true-system-event flex items-center gap-2 py-1.5">
       <div className="h-px flex-1 bg-[rgba(220,228,242,0.92)]" />
       <div className="inline-flex max-w-[78%] items-center gap-2 rounded-full border border-[color:var(--color-support-border)] bg-[color:var(--color-support-surface)] px-3 py-1.5 text-[10px] text-[color:var(--color-muted)]">
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[color:var(--color-brand-blue)]">
+        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[color:var(--color-surface-strong)] text-[color:var(--color-brand-blue)]">
           {icon}
         </span>
         <span className="truncate font-semibold text-[color:var(--color-ink)]">{label}</span>
@@ -1191,7 +1191,7 @@ export function SupportRecentActivityItem({
 }) {
   return (
     <div className="flex items-start gap-2 rounded-[12px] border border-[color:var(--color-support-border)] bg-[color:var(--color-support-surface)] px-3 py-2.5">
-      <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-[color:var(--color-brand-blue)]">
+      <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-surface-strong)] text-[color:var(--color-brand-blue)]">
         {icon}
       </span>
       <div className="min-w-0 flex-1">

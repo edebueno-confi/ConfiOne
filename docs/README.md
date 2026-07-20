@@ -13,6 +13,9 @@ Fonte oficial da documentação do Genius Support OS.
 ## Visão e estado
 
 - [PROJECT_STATE.md](./PROJECT_STATE.md)
+- [reports/CODEX_CONTINUATION_HANDOFF_2026-07-17.md](./reports/CODEX_CONTINUATION_HANDOFF_2026-07-17.md)
+- [ANALYTICS_METRIC_CATALOG_V1.md](./ANALYTICS_METRIC_CATALOG_V1.md)
+- [reports/PROJECT_RESTART_DOCUMENTATION_PLAYBOOK_2026-06-22.md](./reports/PROJECT_RESTART_DOCUMENTATION_PLAYBOOK_2026-06-22.md)
 - [reports/FINAL_RECOVERY_HANDOFF_AND_NEXT_STEPS_2026-06-09.md](./reports/FINAL_RECOVERY_HANDOFF_AND_NEXT_STEPS_2026-06-09.md)
 - [reports/MINIMAL_OPERATIONAL_REDESIGN_VALIDATION_2026-06-09.md](./reports/MINIMAL_OPERATIONAL_REDESIGN_VALIDATION_2026-06-09.md)
 - [superpowers/specs/2026-06-09-minimal-operational-redesign-design.md](./superpowers/specs/2026-06-09-minimal-operational-redesign-design.md)

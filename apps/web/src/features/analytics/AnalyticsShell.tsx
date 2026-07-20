@@ -1,0 +1,144 @@
+import { useCallback, useEffect, useState } from 'react';
+import { formatDateTime } from '../../app/format';
+import { getLatestSyncRun, triggerHubspotSync } from './analytics-api';
+import { listEnabledAnalyticsDomains } from './analytics-domains';
+import type { SyncRun } from './analytics-model';
+import { useAuthContext } from '../auth/auth-context';
+import type { AnalyticsSharedPeriod } from './analytics-model';
+import { resolveAnalyticsPeriod } from './analytics-periods';
+import { AnalyticsReportExport } from './AnalyticsReportExport';
+
+const DOMAINS = listEnabledAnalyticsDomains();
+
+function SyncStatusLabel({ run }: { run: SyncRun | null }) {
+  if (!run) {
+    return (
+      <span className="text-xs text-[color:var(--minimal-text-tertiary)]">
+        Nenhuma sincronizacao registrada ainda.
+      </span>
+    );
+  }
+
+  const toneClass =
+    run.status === 'error'
+      ? 'text-[color:var(--color-brand-blue)]'
+      : 'text-[color:var(--minimal-text-tertiary)]';
+
+  const statusLabel =
+    run.status === 'success' ? 'concluida' : run.status === 'error' ? 'com erro' : 'em andamento';
+
+  return (
+    <span className={`text-xs ${toneClass}`}>
+      Ultima sincronizacao {statusLabel} em {formatDateTime(run.finishedAt ?? run.startedAt)}
+      {run.status === 'success'
+        ? ` (${run.companiesSynced} empresas, ${run.dealsSynced} deals, ${run.ticketsSynced} tickets)`
+        : ''}
+      {run.status === 'error' && run.errorMessage ? `: ${run.errorMessage}` : ''}
+    </span>
+  );
+}
+
+export function AnalyticsShell() {
+  const { gate } = useAuthContext();
+  const isPlatformAdmin = gate.actor?.is_platform_admin === true;
+  const isDashboardViewer = !isPlatformAdmin && gate.actor?.roles.includes('dashboard_viewer') === true;
+  const visibleDomains = isDashboardViewer ? DOMAINS.filter((domain) => ['ceo', 'commercial', 'cs', 'finance'].includes(domain.key)) : DOMAINS;
+  const [activeKey, setActiveKey] = useState(visibleDomains[0]?.key ?? 'commercial');
+  const [reloadKey, setReloadKey] = useState(0);
+  const [latestRun, setLatestRun] = useState<SyncRun | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [sharedPeriod, setSharedPeriod] = useState<AnalyticsSharedPeriod>(() => resolveAnalyticsPeriod('month'));
+  const [reportOpen, setReportOpen] = useState(false);
+
+  const activeDomain = visibleDomains.find((domain) => domain.key === activeKey) ?? visibleDomains[0];
+
+  const refreshLatestRun = useCallback(() => {
+    getLatestSyncRun()
+      .then(setLatestRun)
+      .catch(() => setLatestRun(null));
+  }, []);
+
+  useEffect(() => {
+    refreshLatestRun();
+  }, [refreshLatestRun]);
+
+  const handleSync = useCallback(async () => {
+    setSyncing(true);
+    setSyncError(null);
+    try {
+      await triggerHubspotSync();
+      refreshLatestRun();
+      setReloadKey((current) => current + 1);
+    } catch (error) {
+      setSyncError(
+        error instanceof Error ? error.message : 'Falha ao sincronizar com o HubSpot.',
+      );
+    } finally {
+      setSyncing(false);
+    }
+  }, [refreshLatestRun]);
+
+  const ActiveComponent = activeDomain?.Component;
+
+  return (
+    <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-[color:var(--minimal-surface)]">
+      <header className="border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
+              Dashboard Gerencial
+            </h1>
+            <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">
+              Visão executiva integrada a HubSpot, OMIE e fontes operacionais.
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            <button type="button" onClick={() => setReportOpen(true)} className="inline-flex items-center rounded-lg border border-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action)] transition hover:bg-[color:var(--minimal-surface-muted)]">
+              Exportar relatório
+            </button>
+            {isPlatformAdmin ? <button
+              type="button"
+              onClick={() => void handleSync()}
+              disabled={syncing}
+              className="inline-flex items-center rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-text)] transition hover:border-[color:var(--minimal-border-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {syncing ? 'Sincronizando...' : 'Sincronizar HubSpot'}
+            </button> : null}
+            <SyncStatusLabel run={latestRun} />
+            {syncError ? (
+              <span className="text-xs text-[color:var(--color-brand-blue)]">{syncError}</span>
+            ) : null}
+          </div>
+        </div>
+
+        <nav className="mt-4 flex flex-wrap gap-1" aria-label="Areas do dashboard">
+          {visibleDomains.map((domain) => {
+            const isActive = domain.key === activeKey;
+            return (
+              <button
+                key={domain.key}
+                type="button"
+                onClick={() => setActiveKey(domain.key)}
+                aria-current={isActive ? 'page' : undefined}
+                title={domain.description}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                  isActive
+                    ? 'bg-[color:var(--minimal-surface-muted)] text-[color:var(--minimal-text)]'
+                    : 'text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)]'
+                }`}
+              >
+                {domain.label}
+              </button>
+            );
+          })}
+        </nav>
+      </header>
+
+      <div className="px-5 py-5 sm:px-6">
+        {ActiveComponent ? <ActiveComponent key={`${activeKey}-${reloadKey}`} sharedPeriod={sharedPeriod} onSharedPeriodChange={setSharedPeriod} /> : null}
+      </div>
+      <AnalyticsReportExport open={reportOpen} period={sharedPeriod} onClose={() => setReportOpen(false)} />
+    </div>
+  );
+}

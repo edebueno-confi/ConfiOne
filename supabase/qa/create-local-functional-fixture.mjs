@@ -278,7 +278,11 @@ function runSupabaseDbQuery(sql) {
 
     if (Array.isArray(parsed)) {
       const rowsEntry = [...parsed].reverse().find((entry) => Array.isArray(entry?.rows));
-      return rowsEntry ?? { rows: [] };
+      if (rowsEntry) {
+        return rowsEntry;
+      }
+      // CLI nova (>=2.105): `db query --output json` retorna as linhas como array direto.
+      return { rows: parsed };
     }
 
     if (parsed && typeof parsed === 'object' && Array.isArray(parsed.results)) {

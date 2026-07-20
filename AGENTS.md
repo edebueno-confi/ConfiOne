@@ -54,3 +54,5 @@ Ao encerrar, reporte objetivamente:
 - o que ainda exige atenção;
 - status git;
 - se houve commit ou não.
+
+## Imported Claude Cowork project instructions

@@ -1,4 +1,28 @@
+# Ciclo A3 — Importacao CS Ops resiliente e API financeira OMIE
+
+- data: `2026-07-19`
+- resumo: corrigido HTTP 546 por limite de CPU/memoria no parser XLSX; criada
+  leitura enxuta de `BD_Clientes`, preparada persistencia API OMIE e status de
+  fonte/fallback no Dashboard Financeiro.
+- documentos: `docs/reports/ANALYTICS_FINANCE_SOURCE_AND_CS_OPS_IMPORT_2026-07-19.md`, `docs/PROJECT_STATE.md`
+- validacao: importacao real CS Ops concluida com 606/606 linhas; typecheck,
+  build, testes Omie/navegacao e lint local aprovados.
+- pendencias: cadastrar a chave Omie no Vault e executar a primeira sincronizacao.
+
 # DOCUMENTATION_LEDGER.md
+
+## 2026-07-18 - Configuração de integrações e dashboard gerencial
+
+- especificação: `docs/spec.md`
+- plano vivo: `docs/plan.md`
+- plano executável: `docs/superpowers/plans/2026-07-18-integrations-configuration-and-management-dashboard.md`
+- auditoria financeira: `docs/reports/OMIE_FINANCE_SOURCE_AUDIT_2026-07-18.md`
+- implementação: `managed_integrations`, Vault, Settings, HubSpot token resolver,
+  normalizador e cliente/Edge Function Omie read-only.
+- validação: `npm run supabase:verify`, `npm run contracts:typecheck`,
+  `npm run web:typecheck`, `npm run web:build` e testes Node.
+- pendências: credenciais Omie, read model financeiro, importadores de planilhas,
+  pipes oficiais e integração GitHub do Produto.
 
 ## Objetivo
 Registrar, por fase aprovada, o rastro documental minimo necessario para sustentar auditoria interna, continuidade de execucao e geracao futura da FAQ oficial da plataforma.
@@ -17,6 +41,120 @@ Cada registro deve informar:
 - impacto na FAQ futura
 
 ## Registros
+
+### Codex Continuation Handoff — Analytics multi-source
+- data: `2026-07-17`
+- branch: `codex/ux-ui-rebuild-v2-discovery`
+- resumo funcional: registrada a retomada pelo Codex, com inventário documental, auditoria do módulo Analytics/HubSpot, ausência de integração de planilhas e plano para painel interno com fontes normalizadas, frescor, provenance e qualidade verificável.
+- documentos:
+  - `docs/reports/CODEX_CONTINUATION_HANDOFF_2026-07-17.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/README.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - `/admin/analytics` — planejamento e auditoria; nenhuma nova funcionalidade de produto implementada neste lote.
+- contratos afetados:
+  - nenhum contrato novo.
+- validações:
+  - inventário de 326 documentos;
+  - auditoria estrutural do módulo Analytics/HubSpot;
+  - verificação da ausência de arquivos/adapter de planilha;
+  - estado Git preservado.
+- riscos restantes:
+  - banco local inconsistente com as migrations;
+  - ausência de fonte real de planilha e definição final de colunas/métricas;
+  - HubSpot real e secrets não configurados.
+
+### Ciclo A0 — Catálogo de métricas do Analytics
+- data: `2026-07-17`
+- branch: `codex/ux-ui-rebuild-v2-discovery`
+- resumo funcional: consolidado o brief do painel gerencial e o contrato observado das métricas Comercial e CS/Suporte existentes, com definições, grão, denominadores, caveats de período/moeda/status e requisitos de provenance para a futura fonte planilha.
+- documentos:
+  - `docs/ANALYTICS_METRIC_CATALOG_V1.md`
+  - `docs/reports/CODEX_CONTINUATION_HANDOFF_2026-07-17.md`
+  - `docs/README.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - `/admin/analytics` — nenhuma alteração de runtime neste ciclo.
+- contratos afetados:
+  - nenhum contrato novo; catálogo derivado de `vw_analytics_commercial_*` e `vw_analytics_cs_*`.
+- validações:
+  - métricas conferidas diretamente nas migrations `20260717160000_analytics_metrics_views_v1.sql` e no frontend Analytics;
+  - `git diff --check`.
+- riscos restantes:
+  - não há fonte planilha nem dados reais disponíveis;
+  - filtros temporais e reconciliação multi-fonte ainda não existem no runtime.
+
+### Ciclo A1 — Fundação de ingestão de planilhas
+- data: `2026-07-17`
+- branch: `codex/ux-ui-rebuild-v2-discovery`
+- resumo funcional: materializada a fundação de staging para fontes CSV/XLSX, preservando hash do arquivo, versão de mapeamento, execução idempotente, linhas brutas, provenance, qualidade, RLS, grants mínimos e auditoria. O contrato não expõe linhas brutas ao cliente autenticado.
+- documentos:
+  - `docs/ANALYTICS_METRIC_CATALOG_V1.md`
+  - `docs/reports/CODEX_CONTINUATION_HANDOFF_2026-07-17.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- migrations/tests:
+  - `supabase/migrations/20260718014903_analytics_spreadsheet_ingestion_foundation_v1.sql`
+  - `supabase/tests/050_analytics_spreadsheet_ingestion_foundation.sql`
+- telas afetadas:
+  - `/admin/analytics` — sem alteração de runtime neste ciclo.
+- contratos afetados:
+  - novo contrato interno de staging; nenhum read model unificado ou contrato frontend ainda.
+- validações:
+  - migration gerada pelo CLI oficial do Supabase;
+  - teste pgTAP criado com 12 asserções de estrutura, RLS, políticas, idempotência e provenance;
+  - aplicação e execução dos testes de banco pendentes por inconsistência do banco local.
+- riscos restantes:
+  - parser/validação de CSV/XLSX ainda não implementado;
+  - schema canônico e precedência com HubSpot ainda precisam de fixture e reconciliação;
+  - não executar reset local, migration remota ou uso de dados reais sem autorização explícita.
+
+### Ciclo A1 — Parser de abas diárias do Comercial
+- data: `2026-07-18`
+- branch: `codex/ux-ui-rebuild-v2-discovery`
+- resumo funcional: criado parser puro para transformar linhas extraídas das abas diárias do Comercial em fatos métricos normalizados, com aliases de métricas, datas, observações, provenance, chave idempotente e rejeições honestas.
+- documentos:
+  - `docs/ANALYTICS_METRIC_CATALOG_V1.md`
+  - `docs/reports/CODEX_CONTINUATION_HANDOFF_2026-07-17.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- código/testes:
+  - `scripts/analytics/commercial-daily-sheet-parser.mjs`
+  - `tests/scripts/commercial-daily-sheet-parser.test.mjs`
+- telas afetadas:
+  - nenhuma.
+- contratos afetados:
+  - contrato interno de fatos comerciais diários; sem alteração de Supabase ou frontend.
+- validações:
+  - RED confirmado por módulo ausente;
+  - GREEN com 2 testes passando via `node --test`;
+  - `git diff --check`.
+- riscos restantes:
+  - adaptador de extração Google Sheets e parser CS ainda pendentes;
+  - seed/login local continuam bloqueados pelo schema divergente do banco.
+
+### Project Restart Documentation Playbook
+- data: `2026-06-22`
+- branch: `codex/mvp-operational-completion-goal`
+- resumo funcional: criado playbook documental reutilizavel para orientar agentes em projetos legados/em andamento antes de destruir implementacoes e recomecar. O documento adapta as boas praticas do Genius Support OS para takeover, auditoria, documentacao canonica, plano de limpeza controlada e rebuild em lotes pequenos.
+- documentos:
+  - `docs/reports/PROJECT_RESTART_DOCUMENTATION_PLAYBOOK_2026-06-22.md`
+  - `docs/README.md`
+  - `docs/DOCUMENTATION_LEDGER.md`
+- telas afetadas:
+  - nenhuma.
+- contratos afetados:
+  - nenhum.
+- validacoes:
+  - `git diff --check` sem erros de whitespace, apenas avisos LF/CRLF do Windows.
+  - busca textual no novo playbook para secoes obrigatorias.
+  - `npm run documentation:validate:internal-docs` sem documentos bloqueados; alertas existentes em documentos whitelisted permanecem como revisao editorial separada.
+  - `git status --short --branch`.
+- riscos restantes:
+  - o playbook deve ser adaptado por projeto alvo; nomes de dominio, stack e contratos do Genius Support OS nao devem ser copiados automaticamente.
+- impacto para FAQ futura:
+  - registra a metodologia de documentacao e retomada que pode ser reaproveitada em outros projetos antes de um rebuild governado.
 
 ### Product Docs Governed Reader Polish
 - data: `2026-06-17`
@@ -6185,3 +6323,18 @@ Cada registro deve informar:
   - `git diff --check` sem erro de whitespace.
 - boundaries:
   - sem banco, migration, RPC, RLS, deploy, push ou commit.
+- Revisao de qualidade do Dashboard Gerencial - 2026-07-20
+  - relatorio: `docs/reports/CODE_QUALITY_REVIEW_2026-07-20.md`
+  - migration: `supabase/migrations/20260720043252_analytics_ceo_history_v1.sql`
+  - teste: `supabase/tests/059_analytics_ceo_history.sql`
+  - escopo: historico executivo, comparacao de periodos, seguranca do contrato,
+    validacao local, limites de exportacao e gates externos.
+- Exportacao visual do Dashboard Gerencial - 2026-07-20
+  - relatorio: `docs/reports/ANALYTICS_VISUAL_EXPORT_2026-07-20.md`
+  - componentes: `apps/web/src/features/analytics/AnalyticsReportExport.tsx`,
+    `apps/web/src/features/analytics/analytics-export.ts`
+  - comportamento: selecao de abas e PDF/PNG dedicado, sem shell global.
+- Handoff tecnico colaborativo Codex/Claude - 2026-07-20
+  - relatorio: `docs/reports/TECHNICAL_HANDOFF_CLAUDE_2026-07-20.md`
+  - escopo: estado tecnico, entregas, validacoes, gates de seguranca e
+    continuidade executavel pelo Claude sem depender do historico da conversa.

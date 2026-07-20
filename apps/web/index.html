@@ -1,12 +1,47 @@
 <!doctype html>
 <html lang="pt-BR">
   <head>
+    <script type="module">
+      // @vitejs/plugin-react@6 com Vite 8 pode transformar componentes com
+      // Fast Refresh sem inserir o preambulo no HTML durante o dev server.
+      // Instale o runtime antes dos modulos React transformados.
+      if (import.meta.env.DEV) {
+        const RefreshRuntime = await import('/@react-refresh');
+        RefreshRuntime.default.injectIntoGlobalHook(window);
+        window.$RefreshReg$ = () => {};
+        window.$RefreshSig$ = () => (type) => type;
+        window.__vite_plugin_react_preamble_installed__ = true;
+      }
+    </script>
     <meta charset="UTF-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0"
     />
-    <title>Genius Support OS</title>
+    <script>
+      // Aplica o tema antes da primeira pintura para evitar flash de tema.
+      // Mantido em sincronia com src/lib/theme.ts (mesma chave e marcacao).
+      (function () {
+        try {
+          var stored = window.localStorage.getItem('genius.theme-preference');
+          var prefersDark =
+            window.matchMedia &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var resolved =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : prefersDark
+                ? 'dark'
+                : 'light';
+          var root = document.documentElement;
+          root.setAttribute('data-theme', resolved);
+          root.style.colorScheme = resolved;
+        } catch (error) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
+    <title>GeniusOS — atendimento Genius e After Sale</title>
     <meta
       name="description"
       content="Operacao B2B tecnica do Genius Support OS para suporte, conhecimento e documentacao publica controlada."
@@ -17,7 +52,7 @@
     />
     <meta
       property="og:title"
-      content="Genius Support OS"
+      content="GeniusOS"
     />
     <meta
       property="og:description"

@@ -303,7 +303,7 @@ export function HelpCenterHomePage() {
           {searchResults.map((article) => (
             <Link
               key={article.article_id}
-              className="rounded-[20px] border border-[var(--help-border)] bg-white px-4 py-4 no-underline transition hover:border-[rgba(48,127,226,0.22)]"
+              className="rounded-[20px] border border-[var(--help-border)] bg-[color:var(--color-surface-strong)] px-4 py-4 no-underline transition hover:border-[rgba(48,127,226,0.22)]"
               to={`/help/${context.primaryRoute.knowledge_space_slug}/articles/${article.slug}`}
             >
               <div className="flex items-start justify-between gap-4">
@@ -349,7 +349,7 @@ export function HelpCenterHomePage() {
               className="relative z-10 flex max-w-[840px] min-w-0 flex-col gap-3 sm:flex-row sm:items-center"
               onSubmit={handleSearchSubmit}
             >
-              <div className="flex min-w-0 flex-1 flex-col gap-2 rounded-[16px] border border-white/35 bg-white p-1.5 shadow-[0_10px_22px_rgba(7,24,89,0.12)] sm:flex-row sm:items-center sm:gap-0">
+              <div className="flex min-w-0 flex-1 flex-col gap-2 rounded-[16px] border border-white/35 bg-[color:var(--color-surface-strong)] p-1.5 shadow-[0_10px_22px_rgba(7,24,89,0.12)] sm:flex-row sm:items-center sm:gap-0">
                 <label className="relative min-w-0 flex-1">
                   <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--help-muted)]">
                     <HelpIcon kind="search" />
@@ -404,7 +404,7 @@ export function HelpCenterHomePage() {
           </div>
 
           <div className="hidden lg:absolute lg:right-8 lg:top-6 lg:block lg:w-[362px] xl:right-10 xl:w-[376px]">
-            <div className="rounded-[26px] border border-[rgba(20,31,71,0.08)] bg-white px-5 py-5 shadow-[0_20px_42px_rgba(0,14,72,0.2)]">
+            <div className="rounded-[26px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_20px_42px_rgba(0,14,72,0.2)]">
               <div className="space-y-4">
                 <div className="grid grid-cols-[92px_minmax(0,1fr)] items-center gap-4">
                   <div className="flex h-[92px] w-[92px] items-center justify-center rounded-[28px] bg-[radial-gradient(circle_at_top_left,rgba(48,127,226,0.18),transparent_58%),linear-gradient(180deg,rgba(237,244,255,0.96),rgba(223,236,255,0.88))]">
@@ -455,7 +455,7 @@ export function HelpCenterHomePage() {
           </div>
         </div>
 
-        <div className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-white px-5 py-5 shadow-[0_18px_36px_rgba(20,31,71,0.05)] lg:hidden">
+        <div className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_18px_36px_rgba(20,31,71,0.05)] lg:hidden">
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="flex h-[78px] w-[78px] shrink-0 items-center justify-center rounded-[24px] bg-[radial-gradient(circle_at_top_left,rgba(48,127,226,0.18),transparent_58%),linear-gradient(180deg,rgba(237,244,255,0.96),rgba(223,236,255,0.88))]">
@@ -504,7 +504,7 @@ export function HelpCenterHomePage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-3">
-        <article className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-white px-5 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]">
+        <article className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]">
           <div className="flex items-start gap-4">
             <PublicIconBadge className="h-12 w-12 rounded-[18px]" icon="search" tone="blue" />
             <div className="min-w-0 flex-1 space-y-1.5">
@@ -526,7 +526,7 @@ export function HelpCenterHomePage() {
           </div>
         </article>
 
-        <article className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-white px-5 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]">
+        <article className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]">
           <div className="flex items-start gap-4">
             <PublicIconBadge className="h-12 w-12 rounded-[18px]" icon="support" tone="blue" />
             <div className="min-w-0 flex-1 space-y-1.5">
@@ -548,7 +548,7 @@ export function HelpCenterHomePage() {
           </div>
         </article>
 
-        <article className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-white px-5 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]">
+        <article className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]">
           <div className="flex items-start gap-4">
             <PublicIconBadge className="h-12 w-12 rounded-[18px]" icon="support" tone="pink" />
             <div className="min-w-0 flex-1 space-y-1.5">
@@ -598,7 +598,7 @@ export function HelpCenterHomePage() {
           {categoryCards.map((card) => (
             <article
               key={`mobile-${card.id}`}
-              className="rounded-[20px] border border-[rgba(20,31,71,0.08)] bg-white px-4 py-4 shadow-[0_14px_30px_rgba(20,31,71,0.04)]"
+              className="rounded-[20px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-4 py-4 shadow-[0_14px_30px_rgba(20,31,71,0.04)]"
             >
               <div className="flex items-start gap-3">
                 <PublicIconBadge className="h-11 w-11 rounded-[16px]" icon={card.icon} tone={card.tone} />
@@ -642,7 +642,7 @@ export function HelpCenterHomePage() {
           {categoryCards.map((card) => (
             <article
               key={card.id}
-              className="flex min-h-[248px] flex-col rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-white px-4 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]"
+              className="flex min-h-[248px] flex-col rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-4 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]"
             >
               <div className="space-y-4">
                 <PublicIconBadge icon={card.icon} tone={card.tone} />
@@ -678,7 +678,7 @@ export function HelpCenterHomePage() {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_348px]">
-        <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-white px-4 py-5 shadow-[0_18px_40px_rgba(20,31,71,0.05)] sm:px-6">
+        <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-4 py-5 shadow-[0_18px_40px_rgba(20,31,71,0.05)] sm:px-6">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="space-y-1">
               <h2 className="text-[1.65rem] font-semibold tracking-[-0.05em] text-[var(--help-ink-strong)]">
@@ -712,7 +712,7 @@ export function HelpCenterHomePage() {
                   to={`/help/${context.primaryRoute.knowledge_space_slug}/articles/${article.slug}`}
                 >
                   <div className="flex min-w-0 items-start gap-3">
-                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[12px] border border-[rgba(20,31,71,0.08)] bg-white text-[var(--help-muted)]">
+                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[12px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] text-[var(--help-muted)]">
                       <HelpIcon kind="doc" />
                     </span>
                     <p className="min-w-0 text-sm font-medium text-[var(--help-ink)]">
@@ -741,7 +741,7 @@ export function HelpCenterHomePage() {
         </div>
 
         <aside className="grid gap-4">
-          <section className="rounded-[24px] border border-[rgba(20,31,71,0.08)] bg-white px-5 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]">
+          <section className="rounded-[24px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]">
             <div className="space-y-4">
               <h2 className="text-[1.55rem] font-semibold tracking-[-0.05em] text-[var(--help-ink-strong)]">
                 Acesso rápido
@@ -769,7 +769,7 @@ export function HelpCenterHomePage() {
             </div>
           </section>
 
-          <section className="rounded-[24px] border border-[rgba(20,31,71,0.08)] bg-white px-5 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]">
+          <section className="rounded-[24px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]">
             <div className="space-y-4">
               <h2 className="text-[1.55rem] font-semibold tracking-[-0.05em] text-[var(--help-ink-strong)]">
                 Como esta central ajuda você

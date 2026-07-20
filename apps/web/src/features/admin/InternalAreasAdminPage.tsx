@@ -107,7 +107,7 @@ function emptyAddDraft(
 
 function AreaCard({ area }: { area: AdminInternalActionTargetArea }) {
   return (
-    <article className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2">
+    <article className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-2">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-[13px] font-semibold text-[color:var(--color-ink)]">
@@ -371,7 +371,7 @@ export function InternalAreasAdminPage() {
   return (
     <>
       <div className="flex h-full min-h-0 flex-col gap-[var(--workspace-panel-gap)] overflow-hidden">
-        <header className="shrink-0 rounded-[18px] border border-[color:var(--color-border)] bg-white/95 px-4 py-[var(--workspace-header-y)] shadow-[0_10px_22px_rgba(19,33,79,0.05)]">
+        <header className="shrink-0 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-4 py-[var(--workspace-header-y)] shadow-[0_10px_22px_rgba(19,33,79,0.05)]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-[1.55rem] font-semibold leading-tight tracking-[-0.045em] text-[color:var(--color-ink)]">
@@ -395,7 +395,7 @@ export function InternalAreasAdminPage() {
         {actionMessage ? <InlineNotice>{actionMessage}</InlineNotice> : null}
 
         <div className="grid min-h-0 flex-1 gap-[var(--workspace-panel-gap)] overflow-y-auto lg:grid-cols-[minmax(250px,300px)_minmax(0,1fr)] lg:overflow-hidden">
-          <aside className="min-h-0 rounded-[18px] border border-[color:var(--color-border)] bg-white/93 p-3 lg:overflow-y-auto">
+          <aside className="min-h-0 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/93 p-3 lg:overflow-y-auto">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
               Áreas acionáveis
             </p>
@@ -406,7 +406,7 @@ export function InternalAreasAdminPage() {
             </div>
           </aside>
 
-          <main className="flex min-h-[560px] min-w-0 flex-col overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/95 lg:min-h-0">
+          <main className="flex min-h-[560px] min-w-0 flex-col overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 lg:min-h-0">
             <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-4 py-2.5">
               <div>
                 <h2 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
@@ -429,7 +429,7 @@ export function InternalAreasAdminPage() {
                   description="Adicione membros ativos para que áreas internas vejam a fila operacional."
                 />
               ) : (
-                <div className="overflow-hidden rounded-[14px] border border-[color:var(--color-border)] bg-white">
+                <div className="overflow-hidden rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]">
                   {memberships.map((membership) => (
                     <MembershipRow
                       active={membership.membershipId === selectedId}
@@ -553,7 +553,7 @@ export function InternalAreasAdminPage() {
                       'rounded-[12px] border px-3 py-2 text-left text-sm',
                       addDraft.selectedUserId === user.user_id
                         ? 'border-[rgba(48,127,226,0.42)] bg-[rgba(48,127,226,0.08)]'
-                        : 'border-[color:var(--color-border)] bg-white',
+                        : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]',
                     )}
                     key={user.user_id}
                     onClick={() =>

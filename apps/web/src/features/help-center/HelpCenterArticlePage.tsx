@@ -127,7 +127,7 @@ function extractArticleSections(source: string, fallbackTitle: string) {
 function ArticlePageSkeleton() {
   return (
     <div className="grid gap-5 lg:grid-cols-[196px_minmax(0,1fr)_220px] xl:grid-cols-[210px_minmax(0,1fr)_232px]">
-      <div className="hidden rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-white p-4 lg:block">
+      <div className="hidden rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] p-4 lg:block">
         <div className="h-5 w-28 rounded-full bg-[var(--help-surface)]" />
         <div className="mt-4 grid gap-2">
           {Array.from({ length: 5 }).map((_, index) => (
@@ -135,7 +135,7 @@ function ArticlePageSkeleton() {
           ))}
         </div>
       </div>
-      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-white px-6 py-6 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
+      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-6 py-6 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
         <div className="h-5 w-48 rounded-full bg-[var(--help-surface)]" />
         <div className="mt-5 h-12 w-3/4 rounded-[16px] bg-[var(--help-surface)]" />
         <div className="mt-4 h-6 w-56 rounded-full bg-[var(--help-surface)]" />
@@ -149,7 +149,7 @@ function ArticlePageSkeleton() {
           ))}
         </div>
       </div>
-      <div className="hidden rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-white p-4 lg:block">
+      <div className="hidden rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] p-4 lg:block">
         <div className="h-5 w-24 rounded-full bg-[var(--help-surface)]" />
         <div className="mt-4 grid gap-2">
           {Array.from({ length: 6 }).map((_, index) => (
@@ -291,7 +291,7 @@ export function HelpCenterArticlePage() {
 
   if (!spaceSlug || !articleSlug) {
     return (
-      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-white px-6 py-8 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
+      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-6 py-8 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
         <EmptyState
           title="Artigo não encontrado"
           description="A rota informada não tem os dados necessários para abrir este artigo."
@@ -306,7 +306,7 @@ export function HelpCenterArticlePage() {
 
   if (phase === 'contract-unavailable') {
     return (
-      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-white px-6 py-8 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
+      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-6 py-8 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
         <ContractUnavailableState contractName="leitura pública do artigo" />
       </div>
     );
@@ -314,7 +314,7 @@ export function HelpCenterArticlePage() {
 
   if (phase === 'error') {
     return (
-      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-white px-6 py-8 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
+      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-6 py-8 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
         <ErrorState
           title="Falha ao carregar o artigo"
           description={
@@ -333,7 +333,7 @@ export function HelpCenterArticlePage() {
 
   if (phase === 'empty' || !article) {
     return (
-      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-white px-6 py-8 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
+      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-6 py-8 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
         <EmptyState
           title="Artigo não encontrado"
           description="O artigo solicitado não está disponível nesta central pública. Volte para a lista de artigos ou siga pela navegação principal."
@@ -349,7 +349,7 @@ export function HelpCenterArticlePage() {
 
   return (
     <div className="grid gap-5 lg:grid-cols-[196px_minmax(0,1fr)_220px] xl:grid-cols-[210px_minmax(0,1fr)_232px]">
-      <aside className="order-2 rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-white px-4 py-4 lg:order-1 lg:sticky lg:top-24 lg:h-fit">
+      <aside className="order-2 rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-4 py-4 lg:order-1 lg:sticky lg:top-24 lg:h-fit">
         <div className="space-y-4">
           <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Nesta categoria</p>
           <div className="grid gap-1.5">
@@ -380,7 +380,7 @@ export function HelpCenterArticlePage() {
         </div>
       </aside>
 
-      <article className="order-1 rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-white px-5 py-5 shadow-[0_18px_40px_rgba(20,31,71,0.05)] sm:px-8 sm:py-6 lg:order-2 lg:px-11 xl:px-12">
+      <article className="order-1 rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_18px_40px_rgba(20,31,71,0.05)] sm:px-8 sm:py-6 lg:order-2 lg:px-11 xl:px-12">
         <div className="space-y-5">
           <PublicBreadcrumb
             items={[
@@ -448,7 +448,7 @@ export function HelpCenterArticlePage() {
       </article>
 
       <aside className="order-3 grid gap-4 lg:sticky lg:top-24 lg:h-fit">
-        <section className="hidden rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-white px-4 py-4 lg:block">
+        <section className="hidden rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-4 py-4 lg:block">
           <div className="space-y-4">
             <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Neste artigo</p>
             <div className="grid gap-2">
@@ -466,7 +466,7 @@ export function HelpCenterArticlePage() {
         </section>
 
         {relatedArticles.length > 0 ? (
-          <section className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-white px-4 py-4">
+          <section className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-4 py-4">
             <div className="space-y-4">
               <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Artigos relacionados</p>
               <div className="grid gap-3">

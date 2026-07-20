@@ -158,7 +158,7 @@ function CategoryCard({
   const tone = toneClasses[category.tone];
 
   return (
-    <article className="relative overflow-hidden rounded-[18px] border border-[#D9E6F7] bg-white p-5 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
+    <article className="relative overflow-hidden rounded-[18px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-5 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
       <span aria-hidden="true" className={cx('absolute inset-x-0 top-0 h-1', tone.line)} />
       <div className="grid gap-5 xl:grid-cols-[56px_1fr]">
         <div className={cx('flex h-16 w-16 items-center justify-center rounded-[18px] border', tone.bg, tone.border, tone.icon)}>
@@ -183,7 +183,7 @@ function CategoryCard({
 
                 if (!productDocId || !catalogDocument) {
                   return (
-                    <div className="rounded-[10px] border border-dashed border-[#D9E6F7] bg-white/70 p-3" key={document.title}>
+                    <div className="rounded-[10px] border border-dashed border-[#D9E6F7] bg-[color:var(--color-surface-strong)]/70 p-3" key={document.title}>
                       <strong className="block text-sm font-black text-[#071641]">{document.title}</strong>
                       <span className="mt-1 block text-xs font-semibold leading-5 text-[#496186]">{document.purpose}</span>
                       <span className="mt-3 inline-flex rounded-full border border-[#FFD9B5] bg-[#FFF6EC] px-3 py-1 text-[11px] font-black text-[#C85C00]">
@@ -196,7 +196,7 @@ function CategoryCard({
                 return (
                   <button
                     className={cx(
-                      'group block w-full rounded-[10px] border bg-white p-3 text-left transition focus:outline-none focus:ring-2 focus:ring-[#1458E8]/20',
+                      'group block w-full rounded-[10px] border bg-[color:var(--color-surface-strong)] p-3 text-left transition focus:outline-none focus:ring-2 focus:ring-[#1458E8]/20',
                       isActive
                         ? 'border-[#1458E8]/45 bg-[#F5F8FF]'
                         : 'border-[#D9E6F7] hover:border-[#1458E8]/40 hover:bg-[#F7FAFF]',
@@ -209,7 +209,7 @@ function CategoryCard({
                       <span>
                         <strong className="block text-sm font-black text-[#071641]">{document.title}</strong>
                         <span className="mt-1 block text-xs font-semibold leading-5 text-[#496186]">{document.purpose}</span>
-                        <span className={cx('mt-3 inline-flex rounded-full border px-3 py-1 text-[11px] font-black', isActive ? 'border-[#CFE0FF] bg-white text-[#1458E8]' : 'border-[#D9E6F7] bg-[#F8FBFF] text-[#31476C]')}>
+                        <span className={cx('mt-3 inline-flex rounded-full border px-3 py-1 text-[11px] font-black', isActive ? 'border-[#CFE0FF] bg-[color:var(--color-surface-strong)] text-[#1458E8]' : 'border-[#D9E6F7] bg-[#F8FBFF] text-[#31476C]')}>
                           {isActive ? 'Aberto no Diário' : 'Ler no Diário'}
                         </span>
                       </span>
@@ -349,7 +349,7 @@ export function BuildJournalDocuments() {
 
   return (
     <section className="space-y-6">
-      <section className="overflow-hidden rounded-[18px] border border-[#D9E6F7] bg-white shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
+      <section className="overflow-hidden rounded-[18px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
         <div className="grid gap-6 p-7 lg:grid-cols-[1fr_380px]">
           <div>
             <span className="text-xs font-black uppercase tracking-[0.24em] text-[#1458E8]">Camada narrativa, não explorador</span>
@@ -379,7 +379,7 @@ export function BuildJournalDocuments() {
         </div>
       </section>
 
-      <section className="grid gap-4 rounded-[18px] border border-[#D9E6F7] bg-white p-5 shadow-[0_14px_36px_rgba(31,67,125,0.06)] lg:grid-cols-3">
+      <section className="grid gap-4 rounded-[18px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-5 shadow-[0_14px_36px_rgba(31,67,125,0.06)] lg:grid-cols-3">
         {[
           ['Diário de Construção', 'Organiza a história, o porquê e a sequência das decisões.'],
           ['Documentos oficiais', 'Explica quais fontes sustentam cada parte da construção.'],
@@ -448,7 +448,7 @@ export function BuildJournalDocuments() {
       </section>
 
       <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
-        <article className="rounded-[18px] border border-[#D9E6F7] bg-white p-6 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
+        <article className="rounded-[18px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
           <h2 className="text-xl font-black text-[#071641]">Como usar esta leitura</h2>
           <p className="mt-2 text-sm font-semibold leading-7 text-[#31476C]">
             Comece pela categoria ligada à dúvida do momento. Se precisar da versão detalhada, abra o documento no Product Docs. Se o item estiver pendente, ele não foi exposto nesta whitelist e não deve ser tratado como link disponível.

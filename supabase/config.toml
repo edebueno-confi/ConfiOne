@@ -380,6 +380,12 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Modulo Analytics/Dashboard Gerencial: sincronizacao HubSpot -> tabelas locais.
+# verify_jwt=false porque a propria funcao autoriza (JWT de platform_admin OU
+# segredo de agendamento). O token do HubSpot fica em segredo de ambiente.
+[functions.hubspot-sync]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

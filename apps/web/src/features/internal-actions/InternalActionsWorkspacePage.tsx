@@ -310,7 +310,7 @@ function DetailPanel({
         </InlineNotice>
       </div>
 
-      <section className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-4 py-3">
+      <section className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3">
         <DetailLine label="Cliente" value={detail.tenantDisplayName ?? 'Cliente indisponível'} />
         <DetailLine
           href={`/support/tickets/${detail.ticketId}`}
@@ -325,7 +325,7 @@ function DetailPanel({
         <DetailLine label="Última atualização" value={formatDateTime(detail.updatedAt)} />
       </section>
 
-      <section className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-4 py-3">
+      <section className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3">
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
           Ações da área
         </p>
@@ -354,7 +354,7 @@ function DetailPanel({
         ) : null}
       </section>
 
-      <section className="min-h-0 rounded-[14px] border border-[color:var(--color-border)] bg-white px-4 py-3">
+      <section className="min-h-0 rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3">
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
           Timeline interna
         </p>
@@ -628,7 +628,7 @@ export function InternalActionsWorkspacePage() {
   return (
     <>
       <div className="flex h-full min-h-0 flex-col gap-[var(--workspace-panel-gap)] overflow-hidden">
-        <header className="shrink-0 rounded-[18px] border border-[color:var(--color-border)] bg-white/95 px-4 py-[var(--workspace-header-y)]">
+        <header className="shrink-0 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-4 py-[var(--workspace-header-y)]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-[1.55rem] font-semibold leading-tight tracking-[-0.045em] text-[color:var(--color-ink)]">
@@ -645,15 +645,15 @@ export function InternalActionsWorkspacePage() {
         </header>
 
         <div className="grid shrink-0 gap-[var(--workspace-panel-gap)] lg:grid-cols-3">
-          <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white/95 px-4 py-3">
+          <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-4 py-3">
             <p className="text-[11px] font-semibold text-[color:var(--color-muted)]">Em aberto</p>
             <p className="mt-1 text-[1.25rem] font-semibold text-[color:var(--color-ink)]">{counts.open}</p>
           </section>
-          <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white/95 px-4 py-3">
+          <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-4 py-3">
             <p className="text-[11px] font-semibold text-[color:var(--color-muted)]">Aguardando suporte</p>
             <p className="mt-1 text-[1.25rem] font-semibold text-[color:var(--color-ink)]">{counts.waitingSupport}</p>
           </section>
-          <section className="rounded-[16px] border border-[color:var(--color-border)] bg-white/95 px-4 py-3">
+          <section className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-4 py-3">
             <p className="text-[11px] font-semibold text-[color:var(--color-muted)]">Devolvidos</p>
             <p className="mt-1 text-[1.25rem] font-semibold text-[color:var(--color-ink)]">{counts.returned}</p>
           </section>
@@ -662,8 +662,8 @@ export function InternalActionsWorkspacePage() {
         {actionMessage ? <InlineNotice>{actionMessage}</InlineNotice> : null}
 
         <div className="grid min-h-0 flex-1 gap-[var(--workspace-panel-gap)] overflow-y-auto lg:grid-cols-[minmax(250px,286px)_minmax(0,1fr)] lg:overflow-hidden">
-          <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-[var(--workspace-panel-gap)] overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/93 p-3">
-            <section className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2.5">
+          <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-[var(--workspace-panel-gap)] overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/93 p-3">
+            <section className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-2.5">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
                 Filtros
               </p>
@@ -713,7 +713,7 @@ export function InternalActionsWorkspacePage() {
               </div>
             </section>
 
-            <section className="min-h-0 overflow-y-auto rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2.5">
+            <section className="min-h-0 overflow-y-auto rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-2.5">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
                 Recorte atual
               </p>
@@ -723,7 +723,7 @@ export function InternalActionsWorkspacePage() {
             </section>
           </aside>
 
-          <main className="flex min-h-[620px] min-w-0 flex-col overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/95 lg:min-h-0">
+          <main className="flex min-h-[620px] min-w-0 flex-col overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 lg:min-h-0">
             <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-4 py-2.5">
               <div>
                 <h2 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
@@ -752,7 +752,7 @@ export function InternalActionsWorkspacePage() {
                   }
                 />
               ) : (
-                <div className="overflow-hidden rounded-[14px] border border-[color:var(--color-border)] bg-white">
+                <div className="overflow-hidden rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]">
                   {items.map((item) => (
                     <QueueRow
                       active={item.internalActionId === selectedId}

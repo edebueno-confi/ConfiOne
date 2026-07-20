@@ -127,6 +127,16 @@ const CustomerPortalHelpArticlePage = lazyRouteModule(
   'CustomerPortalHelpArticlePage',
 );
 
+const AdminOverviewPage = lazyRouteModule(
+  () => import('../features/admin/AdminOverviewPage'),
+  'AdminOverviewPage',
+);
+
+const AnalyticsShell = lazyRouteModule(
+  () => import('../features/analytics/AnalyticsShell'),
+  'AnalyticsShell',
+);
+
 const TenantsPage = lazyRouteModule(() => import('../features/tenants/TenantsPage'), 'TenantsPage');
 
 const KnowledgePage = lazyRouteModule(
@@ -188,9 +198,29 @@ const AccessPage = lazyRouteModule(() => import('../features/access/AccessPage')
 
 const SystemPage = lazyRouteModule(() => import('../features/system/SystemPage'), 'SystemPage');
 
+const SettingsPage = lazyRouteModule(
+  () => import('../features/settings/SettingsPage'),
+  'SettingsPage',
+);
+
 const SupportWorkspaceShell = lazyRouteModule(
   () => import('../features/support/SupportWorkspaceShell'),
   'SupportWorkspaceShell',
+);
+
+const CustomersPage = lazyRouteModule(
+  () => import('../features/customers/CustomersPage'),
+  'CustomersPage',
+);
+
+const HomePage = lazyRouteModule(
+  () => import('../features/home/HomePage'),
+  'HomePage',
+);
+
+const InboxPage = lazyRouteModule(
+  () => import('../features/inbox/InboxPage'),
+  'InboxPage',
 );
 
 const SupportQueuePage = lazyRouteModule(
@@ -347,6 +377,14 @@ export const router = createBrowserRouter([
             element: <Navigate replace to="/admin/tenants" />,
           },
           {
+            path: 'visao-geral',
+            element: withSuspense(<AdminOverviewPage />),
+          },
+          {
+            path: 'analytics',
+            element: withSuspense(<AnalyticsShell />),
+          },
+          {
             path: 'tenants',
             element: withSuspense(<TenantsPage />),
           },
@@ -386,6 +424,10 @@ export const router = createBrowserRouter([
             path: 'system',
             element: withSuspense(<SystemPage />),
           },
+          {
+            path: 'settings',
+            element: withSuspense(<SettingsPage />),
+          },
         ],
       },
       {
@@ -419,6 +461,10 @@ export const router = createBrowserRouter([
             element: <Navigate replace to="/support/queue" />,
           },
           {
+            path: 'inbox',
+            element: withSuspense(<InboxPage />),
+          },
+          {
             path: 'queue',
             element: withSuspense(<SupportQueuePage />),
           },
@@ -431,12 +477,30 @@ export const router = createBrowserRouter([
             element: withSuspense(<SupportTicketPage />),
           },
           {
+            path: 'clientes',
+            element: withSuspense(<CustomersPage />),
+          },
+          {
             path: 'customers',
             element: withSuspense(<SupportCustomersPage />),
           },
           {
             path: 'customers/:tenantId',
             element: withSuspense(<SupportCustomerPage />),
+          },
+        ],
+      },
+      {
+        path: '/inicio',
+        element: withSuspense(
+          <SupportGate>
+            <SupportWorkspaceShell />
+          </SupportGate>,
+        ),
+        children: [
+          {
+            index: true,
+            element: withSuspense(<HomePage />),
           },
         ],
       },

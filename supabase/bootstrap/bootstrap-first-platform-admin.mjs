@@ -94,11 +94,21 @@ function runSupabaseDbQuery({ local, dbUrl, sql }) {
     fail('Resposta vazia do supabase db query.');
   }
 
+  let parsed;
   try {
-    return JSON.parse(stdout);
+    parsed = JSON.parse(stdout);
   } catch (error) {
     fail(`Nao foi possivel interpretar a resposta JSON do Supabase CLI: ${error.message}`);
   }
+
+  // CLI nova (>=2.105): `db query --output json` retorna as linhas como array direto.
+  if (Array.isArray(parsed)) {
+    return { rows: parsed };
+  }
+  if (parsed && typeof parsed === 'object' && Array.isArray(parsed.rows)) {
+    return parsed;
+  }
+  return { rows: [] };
 }
 
 const args = parseArgs(process.argv.slice(2));

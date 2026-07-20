@@ -336,7 +336,7 @@ function RailCard({
           {title}
         </h2>
         {badge ? (
-          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[0.68rem] font-extrabold text-emerald-700">
+          <span className="rounded-full bg-[color:var(--color-success-surface)] px-2.5 py-1 text-[0.68rem] font-extrabold text-[color:var(--color-success-ink)]">
             {badge}
           </span>
         ) : null}
@@ -374,7 +374,7 @@ function ToolbarMenu({ children, className = '' }: { children: ReactNode; classN
   return (
     <div
       className={cx(
-        'absolute z-30 rounded-2xl border border-[#DCE4F2] bg-white p-2 shadow-[0_18px_50px_rgba(22,36,67,0.16)]',
+        'absolute z-30 rounded-2xl border border-[#DCE4F2] bg-[color:var(--color-surface-strong)] p-2 shadow-[0_18px_50px_rgba(22,36,67,0.16)]',
         className,
       )}
     >
@@ -402,8 +402,8 @@ function ChecklistItem({
         className={cx(
           'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[0.56rem]',
           done
-            ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-            : 'border-[#C8D4EA] bg-white text-[#98A3B8]',
+            ? 'border-[color:var(--color-success-border)] bg-[color:var(--color-success-surface)] text-[color:var(--color-success-ink)]'
+            : 'border-[#C8D4EA] bg-[color:var(--color-surface-strong)] text-[#98A3B8]',
         )}
       >
         {done ? '✓' : ''}
@@ -2619,10 +2619,10 @@ function LegacyRichTextArticleEditor({
         assetState === 'saving' && 'bg-[rgba(234,242,255,0.2)]',
       )}
     >
-      <div className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-1.5 overflow-x-auto border-b border-[#E8EEF7] bg-white px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-1.5 overflow-x-auto border-b border-[#E8EEF7] bg-[color:var(--color-surface-strong)] px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="relative">
           <button
-            className="mr-1 inline-flex h-8 min-w-[112px] items-center justify-between gap-2 rounded-xl border border-[color:var(--color-border)] bg-white px-3 text-[0.76rem] font-bold text-[color:var(--color-brand-navy)] shadow-sm"
+            className="mr-1 inline-flex h-8 min-w-[112px] items-center justify-between gap-2 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 text-[0.76rem] font-bold text-[color:var(--color-brand-navy)] shadow-sm"
             onClick={() => setOpenToolbarMenu(openToolbarMenu === 'block' ? null : 'block')}
             type="button"
           >
@@ -2810,7 +2810,7 @@ function LegacyRichTextArticleEditor({
       </div>
 
       {selectedFigure ? (
-        <div className="absolute left-1/2 top-[58px] z-20 flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-[color:var(--color-border)] bg-white px-2 py-2 shadow-[0_18px_42px_rgba(20,31,71,0.14)]">
+        <div className="absolute left-1/2 top-[58px] z-20 flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-2 py-2 shadow-[0_18px_42px_rgba(20,31,71,0.14)]">
           {(['small', 'medium', 'large', 'full'] as const).map((size) => (
             <button
               className={cx(
@@ -2848,7 +2848,7 @@ function LegacyRichTextArticleEditor({
             Mover abaixo
           </button>
           <button
-            className="rounded-xl px-3 py-2 text-[0.72rem] font-bold text-red-600 hover:bg-red-50"
+            className="rounded-xl px-3 py-2 text-[0.72rem] font-bold text-[color:var(--color-danger-ink)] hover:bg-[color:var(--color-danger-surface)]"
             onClick={removeSelectedImage}
             type="button"
           >
@@ -2857,7 +2857,7 @@ function LegacyRichTextArticleEditor({
         </div>
       ) : null}
 
-      <div className="bg-white">
+      <div className="bg-[color:var(--color-surface-strong)]">
         <style>
           {`
             .knowledge-rich-editor:empty::before {
@@ -4225,7 +4225,7 @@ export function KnowledgeArticleEditorPage() {
               <span>{feedback}</span>
               {feedbackActionHref ? (
                 <Link
-                  className="ml-3 inline-flex rounded-full bg-white px-3 py-1 text-[0.72rem] font-extrabold text-[#2F6BFF] underline-offset-2 hover:underline"
+                  className="ml-3 inline-flex rounded-full bg-[color:var(--color-surface-strong)] px-3 py-1 text-[0.72rem] font-extrabold text-[#2F6BFF] underline-offset-2 hover:underline"
                   to={feedbackActionHref}
                 >
                   Ver na Central de Ajuda
@@ -4245,7 +4245,7 @@ export function KnowledgeArticleEditorPage() {
         >
           <aside className="sticky top-[84px] order-2 max-h-[calc(100vh-84px)] overflow-hidden border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)]">
             {metadataCollapsed ? (
-              <div className="flex h-full flex-col items-center gap-3 rounded-[22px] border border-[color:var(--color-border)] bg-white px-2 py-3 shadow-[0_18px_42px_rgba(20,31,71,0.06)]">
+              <div className="flex h-full flex-col items-center gap-3 rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-2 py-3 shadow-[0_18px_42px_rgba(20,31,71,0.06)]">
                 <button
                   className="grid h-10 w-10 place-items-center rounded-2xl bg-[color:var(--color-brand-blue)] text-white shadow-[0_12px_28px_rgba(47,107,255,0.24)]"
                   onClick={() => setMetadataCollapsed(false)}
@@ -4322,7 +4322,7 @@ export function KnowledgeArticleEditorPage() {
                       </SelectInput>
                     </Field>
                     <Field label="Tags">
-                      <div className="rounded-[16px] border border-[#DCE4F2] bg-white p-2">
+                      <div className="rounded-[16px] border border-[#DCE4F2] bg-[color:var(--color-surface-strong)] p-2">
                         {form.keywords.length > 0 ? (
                           <div className="mb-2 flex flex-wrap gap-1.5">
                             {form.keywords.map((tag) => (
@@ -4332,7 +4332,7 @@ export function KnowledgeArticleEditorPage() {
                               >
                                 {tag}
                                 <button
-                                  className="text-[#6B7892] hover:text-red-600"
+                                  className="text-[#6B7892] hover:text-[color:var(--color-danger-ink)]"
                                   onClick={() => removeTag(tag)}
                                   type="button"
                                 >
@@ -4414,12 +4414,12 @@ export function KnowledgeArticleEditorPage() {
                             className={cx(
                               'rounded-full px-2.5 py-1 text-[0.66rem] font-extrabold',
                               status === 'published'
-                                ? 'bg-emerald-50 text-emerald-700'
+                                ? 'bg-[color:var(--color-success-surface)] text-[color:var(--color-success-ink)]'
                                 : status === 'review'
-                                  ? 'bg-blue-50 text-[#2F6BFF]'
+                                  ? 'bg-[color:var(--color-info-surface)] text-[#2F6BFF]'
                                   : status === 'archived'
-                                    ? 'bg-slate-100 text-slate-600'
-                                    : 'bg-amber-50 text-amber-700',
+                                    ? 'bg-[color:var(--color-app-bg)] text-[color:var(--color-text-secondary)]'
+                                    : 'bg-[color:var(--color-warning-surface)] text-[color:var(--color-warning-ink)]',
                             )}
                           >
                             Governado
@@ -4448,7 +4448,7 @@ export function KnowledgeArticleEditorPage() {
                               {publishState === 'saving' ? 'Publicando...' : publishButtonLabel}
                             </AppButton>
                           ) : (
-                            <p className="rounded-xl bg-slate-50 px-3 py-2 text-[0.68rem] leading-4 text-slate-600">
+                            <p className="rounded-xl bg-[color:var(--color-app-bg)] px-3 py-2 text-[0.68rem] leading-4 text-[color:var(--color-text-secondary)]">
                               Artigo arquivado fica somente leitura até que a reativação esteja
                               disponível.
                             </p>
@@ -4507,16 +4507,16 @@ export function KnowledgeArticleEditorPage() {
                       ))}
                     </ul>
                     {needsPublicEvidence && publishBlocker ? (
-                      <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[0.7rem] leading-5 text-amber-700">
+                      <p className="rounded-2xl bg-[color:var(--color-warning-surface)] px-3 py-2 text-[0.7rem] leading-5 text-[color:var(--color-warning-ink)]">
                         {publishBlocker}
                       </p>
                     ) : null}
                     {needsPublicEvidence && publicConfirmationOpen ? (
-                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
+                      <div className="rounded-2xl border border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-surface)] p-3">
                         <h3 className="text-[0.76rem] font-extrabold text-[#162443]">
                           Confirmação editorial para publicação pública
                         </h3>
-                        <p className="mt-1 text-[0.68rem] leading-4 text-amber-800">
+                        <p className="mt-1 text-[0.68rem] leading-4 text-[color:var(--color-warning-ink)]">
                           Marque apenas após revisão humana real. Isso será registrado com
                           segurança antes da tentativa de publicação.
                         </p>

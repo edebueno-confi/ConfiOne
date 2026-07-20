@@ -1105,7 +1105,7 @@ export function AccessPage() {
                 </p>
                 <div className="flex items-center gap-2">
                   <button
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[color:var(--color-border)] bg-white text-[color:var(--color-ink)] disabled:opacity-40"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] text-[color:var(--color-ink)] disabled:opacity-40"
                     disabled={safePageIndex === 1}
                     onClick={() => setPageIndex((current) => Math.max(1, current - 1))}
                     type="button"
@@ -1118,7 +1118,7 @@ export function AccessPage() {
                         'inline-flex h-10 w-10 items-center justify-center rounded-xl border text-sm font-medium transition',
                         page === safePageIndex
                           ? 'border-[color:var(--color-brand-blue)] bg-[rgba(48,127,226,0.08)] text-[color:var(--color-brand-blue)]'
-                          : 'border-[color:var(--color-border)] bg-white text-[color:var(--color-ink)]',
+                          : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] text-[color:var(--color-ink)]',
                       )}
                       key={page}
                       onClick={() => setPageIndex(page)}
@@ -1128,7 +1128,7 @@ export function AccessPage() {
                     </button>
                   ))}
                   <button
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[color:var(--color-border)] bg-white text-[color:var(--color-ink)] disabled:opacity-40"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] text-[color:var(--color-ink)] disabled:opacity-40"
                     disabled={safePageIndex === totalPages}
                     onClick={() => setPageIndex((current) => Math.min(totalPages, current + 1))}
                     type="button"
@@ -1414,7 +1414,7 @@ export function AccessPage() {
                         'min-w-0 rounded-[18px] border px-4 py-3 text-left transition',
                         isSelected
                           ? 'border-[color:var(--color-brand-blue)] bg-[rgba(48,127,226,0.08)]'
-                          : 'border-[color:var(--color-border)] bg-white hover:border-[rgba(48,127,226,0.35)]',
+                          : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] hover:border-[rgba(48,127,226,0.35)]',
                       )}
                       onClick={() => applyLookupSelection(user)}
                       type="button"
@@ -1432,7 +1432,7 @@ export function AccessPage() {
             ) : null}
           </section>
 
-          <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white p-5">
+          <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-5">
             <h3 className="text-base font-semibold text-[color:var(--color-ink)]">
               Dados do acesso
             </h3>
@@ -1565,7 +1565,7 @@ export function AccessPage() {
             </div>
           </section>
 
-          <section className="rounded-[22px] border border-[color:var(--color-border)] bg-white p-5">
+          <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-5">
             <h3 className="text-base font-semibold text-[color:var(--color-ink)]">
               Permissões do vínculo
             </h3>

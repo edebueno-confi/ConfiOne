@@ -248,7 +248,7 @@ function SurfaceCard({
   return (
     <section
       className={cx(
-        'rounded-[18px] border border-[color:var(--color-border)] bg-white/95 px-4 py-4',
+        'rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-4 py-4',
         className,
       )}
       id={id}
@@ -361,7 +361,7 @@ function TenantFilterCard({
         'w-full min-w-0 overflow-hidden rounded-[18px] border px-3.5 py-3.5 text-left transition',
         selected
           ? 'border-[color:var(--color-brand-blue)]/35 bg-[rgba(68,110,255,0.08)] shadow-[0_12px_24px_rgba(44,79,182,0.08)]'
-          : 'border-[color:var(--color-border)] bg-white hover:border-[color:var(--color-brand-blue)]/22',
+          : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] hover:border-[color:var(--color-brand-blue)]/22',
       )}
       onClick={() => onSelect(tenant.tenant_id)}
       type="button"
@@ -430,7 +430,7 @@ function UserTableRow({
         'grid w-full grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)_104px_92px_minmax(0,1.25fr)] gap-3 border-b border-[color:var(--color-border)] px-4 py-3.5 text-left transition last:border-b-0',
         selected
           ? 'rounded-[16px] border border-[color:var(--color-brand-blue)]/36 bg-[rgba(68,110,255,0.08)] shadow-[0_14px_28px_rgba(40,75,174,0.08)]'
-          : 'bg-white hover:bg-[color:var(--color-surface)]',
+          : 'bg-[color:var(--color-surface-strong)] hover:bg-[color:var(--color-surface)]',
       )}
       onClick={() => onSelect(user.membership_id)}
       type="button"
@@ -491,7 +491,7 @@ function TenantTableRow({
         'flex w-full min-w-0 flex-col gap-3 border-b border-[color:var(--color-border)] px-4 py-4 text-left transition last:border-b-0 lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,1fr)_18px] lg:items-center',
         selected
           ? 'border border-[color:var(--color-brand-blue)]/38 bg-[rgba(68,110,255,0.08)]'
-          : 'bg-white hover:bg-[color:var(--color-surface)]',
+          : 'bg-[color:var(--color-surface-strong)] hover:bg-[color:var(--color-surface)]',
       )}
       onClick={() => onSelect(tenant.tenant_id)}
       type="button"
@@ -578,7 +578,7 @@ function ActionBlock({
   return (
     <section
       className={cx(
-        'rounded-[12px] border border-[color:var(--color-border)] bg-white px-3 py-2.5',
+        'rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-2.5',
         disabled && 'opacity-65',
       )}
     >
@@ -609,7 +609,7 @@ function RailSection({
 }) {
   return (
     <section
-      className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-3 py-2.5"
+      className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-2.5"
       data-rail-section={sectionKey}
     >
       <div className="mb-2 flex items-center gap-2">
@@ -644,7 +644,7 @@ function GovernedActionDrawer({
       />
       <aside
         aria-modal="true"
-        className="relative z-10 flex h-full w-[clamp(720px,50vw,860px)] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-l-[26px] border-l border-[color:var(--color-border)] bg-white shadow-[0_28px_72px_rgba(15,23,42,0.22)]"
+        className="relative z-10 flex h-full w-[clamp(720px,50vw,860px)] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-l-[26px] border-l border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] shadow-[0_28px_72px_rgba(15,23,42,0.22)]"
         role="dialog"
       >
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[color:var(--color-border)] px-7 py-6">
@@ -667,7 +667,7 @@ function GovernedActionDrawer({
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-7 py-5" data-governed-drawer-body>
           {children}
         </div>
-        <footer className="shrink-0 border-t border-[color:var(--color-border)] bg-white px-7 py-5">
+        <footer className="shrink-0 border-t border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-7 py-5">
           <div className="flex items-center justify-end gap-3">{footer}</div>
         </footer>
       </aside>
@@ -1398,7 +1398,7 @@ export function CustomerPortalAdminPage() {
 
   if (phase === 'loading') {
     return (
-      <div className="flex h-full min-h-0 items-center justify-center rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="flex h-full min-h-0 items-center justify-center rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         <LoadingState
           title="Carregando administração do portal"
           description="Buscando usuários, clientes e acessos autorizados."
@@ -1409,7 +1409,7 @@ export function CustomerPortalAdminPage() {
 
   if (phase === 'contract-unavailable') {
     return (
-      <div className="rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         <ContractUnavailableState contractName="administração do portal cliente" />
       </div>
     );
@@ -1417,7 +1417,7 @@ export function CustomerPortalAdminPage() {
 
   if (phase === 'error') {
     return (
-      <div className="rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-6">
+      <div className="rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 p-6">
         <ErrorState
           title="Portal do cliente indisponível na administração"
           description={errorMessage ?? 'Falha ao carregar a administração do portal cliente.'}
@@ -1486,7 +1486,7 @@ export function CustomerPortalAdminPage() {
       </aside>
 
       <section
-        className="min-h-0 overflow-x-hidden overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-white/94 p-5 shadow-[0_18px_40px_rgba(18,31,72,0.08)]"
+        className="min-h-0 overflow-x-hidden overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/94 p-5 shadow-[0_18px_40px_rgba(18,31,72,0.08)]"
         data-portal-admin-center
       >
         <header className="relative">
@@ -1558,7 +1558,7 @@ export function CustomerPortalAdminPage() {
               description="Ajuste os filtros para localizar clientes com portal."
             />
           ) : (
-            <div className="overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white">
+            <div className="overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]">
               <div className="flex items-center justify-between gap-3 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-muted)]">
                 <span className="min-w-0 truncate">Cliente, status e responsáveis</span>
                 <span className="hidden min-w-0 truncate lg:block">Usuários, tickets, artigos e pendências</span>
@@ -1574,7 +1574,7 @@ export function CustomerPortalAdminPage() {
                   />
                 ))}
               </div>
-              <div className="flex items-center justify-between border-t border-[color:var(--color-border)] bg-white px-4 py-3 text-[0.78rem] text-[color:var(--color-muted)]">
+              <div className="flex items-center justify-between border-t border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3 text-[0.78rem] text-[color:var(--color-muted)]">
                 <span>Exibindo {orderedVisibleTenants.length} cliente(s)</span>
                 <span>Governança do portal</span>
               </div>
@@ -1876,7 +1876,7 @@ export function CustomerPortalAdminPage() {
                       <span className="text-[0.76rem] text-[color:var(--color-muted)]">Governado pelas permissões do portal.</span>
                     </span>
                     <span className="h-6 w-11 rounded-full bg-[color:var(--color-brand-blue)] p-1">
-                      <span className="block h-4 w-4 translate-x-5 rounded-full bg-white" />
+                      <span className="block h-4 w-4 translate-x-5 rounded-full bg-[color:var(--color-surface-strong)]" />
                     </span>
                   </div>
                 ))}
@@ -1986,7 +1986,7 @@ export function CustomerPortalAdminPage() {
                       </span>
                     </span>
                     <TinyBadge>{article.article_visibility === 'public' ? 'Público' : 'Autenticado'}</TinyBadge>
-                      <span className="flex h-5 w-5 items-center justify-center justify-self-end rounded-[6px] border border-[color:var(--color-border)] bg-white text-[0.72rem] font-semibold text-[color:var(--color-brand-blue)]">
+                      <span className="flex h-5 w-5 items-center justify-center justify-self-end rounded-[6px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] text-[0.72rem] font-semibold text-[color:var(--color-brand-blue)]">
                         {grantForm.articleId === article.article_id ? '✓' : ''}
                       </span>
                   </button>

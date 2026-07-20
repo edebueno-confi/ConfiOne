@@ -31,6 +31,8 @@ test('keeps support routes available inside an authorized support workspace', ()
   });
 
   assert.deepEqual(itemIds(navigation), [
+    'home',
+    'support-inbox',
     'support-queue',
     'support-tickets',
     'support-customers',

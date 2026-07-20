@@ -1,5 +1,6 @@
 export interface MinimalNavigationPermissions {
   isPlatformAdmin: boolean;
+  hasDashboardViewerAccess?: boolean;
   hasInternalActionAreaAccess?: boolean;
   hasCsPortfolioAccess?: boolean;
 }
@@ -24,7 +25,7 @@ export interface MinimalNavigationItem {
 }
 
 export interface MinimalNavigationSection {
-  id: 'work' | 'engineering' | 'administration';
+  id: 'work' | 'engineering' | 'administration' | 'operations';
   label: string;
   items: MinimalNavigationItem[];
 }
@@ -41,7 +42,21 @@ export function buildMinimalNavigation({
   permissions: MinimalNavigationPermissions;
 }): MinimalNavigationSection[] {
   const isPlatformAdmin = permissions.isPlatformAdmin;
-  const hasSupportAccess = isPlatformAdmin || matchesBase(pathname, '/support');
+  const isDashboardViewer = !isPlatformAdmin && permissions.hasDashboardViewerAccess === true;
+
+  if (isDashboardViewer) {
+    return [{
+      id: 'operations',
+      label: 'Operação',
+      items: [
+        { id: 'dashboard-operational', label: 'Dashboard operacional', to: '/admin/analytics', icon: 'workflow', matches: (path) => matchesBase(path, '/admin/analytics') },
+        { id: 'customer-area-config', label: 'Área do cliente', to: '/admin/customer-portal', icon: 'users', matches: (path) => matchesBase(path, '/admin/customer-portal') },
+        { id: 'help-center', label: 'Central de ajuda', to: '/help', icon: 'book', matches: (path) => matchesBase(path, '/help') },
+      ],
+    }];
+  }
+  const hasSupportAccess =
+    isPlatformAdmin || matchesBase(pathname, '/support') || matchesBase(pathname, '/inicio');
   const hasEngineeringAccess = isPlatformAdmin || matchesBase(pathname, '/engineering');
   const hasInternalActionAccess =
     isPlatformAdmin ||
@@ -69,6 +84,20 @@ export function buildMinimalNavigation({
   if (hasSupportAccess) {
     workItems.push(
       {
+        id: 'home',
+        label: 'Início',
+        to: '/inicio',
+        icon: 'inbox',
+        matches: (path) => matchesBase(path, '/inicio'),
+      },
+      {
+        id: 'support-inbox',
+        label: 'Atendimento',
+        to: '/support/inbox',
+        icon: 'inbox',
+        matches: (path) => matchesBase(path, '/support/inbox'),
+      },
+      {
         id: 'support-queue',
         label: 'Fila operacional',
         to: '/support/queue',
@@ -85,9 +114,9 @@ export function buildMinimalNavigation({
       {
         id: 'support-customers',
         label: 'Clientes B2B',
-        to: '/support/customers',
+        to: '/support/clientes',
         icon: 'users',
-        matches: (path) => matchesBase(path, '/support/customers'),
+        matches: (path) => matchesBase(path, '/support/clientes') || matchesBase(path, '/support/customers'),
       },
     );
   }
@@ -114,6 +143,27 @@ export function buildMinimalNavigation({
 
   if (isPlatformAdmin) {
     administrationItems.push(
+      {
+        id: 'admin-overview',
+        label: 'Visão geral',
+        to: '/admin/visao-geral',
+        icon: 'inbox',
+        matches: (path) => matchesBase(path, '/admin/visao-geral'),
+      },
+      {
+        id: 'admin-analytics',
+        label: 'Dashboard gerencial',
+        to: '/admin/analytics',
+        icon: 'workflow',
+        matches: (path) => matchesBase(path, '/admin/analytics'),
+      },
+      {
+        id: 'admin-settings',
+        label: 'Configurações',
+        to: '/admin/settings',
+        icon: 'settings',
+        matches: (path) => matchesBase(path, '/admin/settings'),
+      },
       {
         id: 'admin-tenants',
         label: 'Contas B2B',
@@ -186,13 +236,19 @@ export function resolveMinimalRouteLabel(pathname: string) {
   }
 
   const routes: Array<[string, string]> = [
+    ['/inicio', 'Início'],
+    ['/support/inbox', 'Atendimento'],
     ['/support/queue', 'Fila operacional'],
     ['/support/tickets', 'Tickets'],
+    ['/support/clientes', 'Clientes B2B'],
     ['/support/customers', 'Clientes B2B'],
     ['/cs/portfolio', 'Carteira CS'],
     ['/internal-actions', 'Acionamentos'],
     ['/engineering', 'Engenharia'],
+    ['/admin/visao-geral', 'Visão geral'],
+    ['/admin/analytics', 'Dashboard gerencial'],
     ['/admin/tenants', 'Contas B2B'],
+    ['/admin/settings', 'Configurações'],
     ['/admin/customer-portal', 'Portal do cliente'],
     ['/admin/internal-areas', 'Áreas internas'],
     ['/admin/access', 'Acessos'],
@@ -202,5 +258,5 @@ export function resolveMinimalRouteLabel(pathname: string) {
     ['/admin/product-docs', 'Documentos'],
   ];
 
-  return routes.find(([basePath]) => matchesBase(pathname, basePath))?.[1] ?? 'Genius';
+  return routes.find(([basePath]) => matchesBase(pathname, basePath))?.[1] ?? 'GeniusOS';
 }

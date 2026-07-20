@@ -175,7 +175,7 @@ export function SummaryStrip({
   return (
     <section
       className={cx(
-        'rounded-[24px] border border-[color:var(--color-border)] bg-white/92 px-4 py-4 shadow-[var(--shadow-panel)]',
+        'rounded-[24px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 px-4 py-4 shadow-[var(--shadow-panel)]',
         className,
       )}
     >
@@ -199,10 +199,10 @@ export function SummaryStripItem({
     <div
       className={cx(
         'min-w-[140px] flex-1 rounded-[18px] border px-4 py-3',
-        tone === 'positive' && 'border-emerald-200 bg-emerald-50/80',
-        tone === 'warning' && 'border-amber-200 bg-amber-50/80',
-        tone === 'critical' && 'border-rose-200 bg-rose-50/80',
-        tone === 'accent' && 'border-sky-200 bg-sky-50/80',
+        tone === 'positive' && 'border-[color:var(--color-success-border)] bg-[color:var(--color-success-surface)]/80',
+        tone === 'warning' && 'border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-surface)]/80',
+        tone === 'critical' && 'border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)]/80',
+        tone === 'accent' && 'border-[color:var(--color-info-border)] bg-[color:var(--color-info-surface)]/80',
         tone === 'default' && 'border-[color:var(--color-border)] bg-[color:var(--color-surface)]',
       )}
     >
@@ -264,7 +264,7 @@ export function ContextSubsidebar({
         className,
       )}
     >
-      <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white/94 px-4 py-4 shadow-[0_14px_28px_rgba(19,33,79,0.08)]">
+      <section className="rounded-[24px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/94 px-4 py-4 shadow-[0_14px_28px_rgba(19,33,79,0.08)]">
         <header className="space-y-3">
           <div className="space-y-1">
             <h2 className="text-base font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
@@ -361,7 +361,7 @@ export function GovernedActionDrawer({
       <section
         aria-modal="true"
         className={cx(
-          'flex h-dvh w-[clamp(720px,50vw,860px)] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-l-[30px] border-l border-[color:var(--color-border)] bg-white shadow-[0_32px_90px_rgba(10,22,50,0.28)]',
+          'flex h-dvh w-[clamp(720px,50vw,860px)] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-l-[30px] border-l border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] shadow-[0_32px_90px_rgba(10,22,50,0.28)]',
           className,
         )}
         role="dialog"
@@ -375,7 +375,7 @@ export function GovernedActionDrawer({
           </div>
           <button
             aria-label="Fechar painel"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white text-xl leading-none text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/40 hover:bg-[color:var(--color-surface)]"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] text-xl leading-none text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/40 hover:bg-[color:var(--color-surface)]"
             onClick={onClose}
             type="button"
           >
@@ -384,7 +384,7 @@ export function GovernedActionDrawer({
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-8 py-6">{children}</div>
         {footer ? (
-          <footer className="flex shrink-0 justify-end gap-3 border-t border-[color:var(--color-border)] bg-white px-8 py-5">
+          <footer className="flex shrink-0 justify-end gap-3 border-t border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-8 py-5">
             {footer}
           </footer>
         ) : null}

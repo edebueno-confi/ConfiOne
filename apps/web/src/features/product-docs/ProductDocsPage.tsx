@@ -147,7 +147,7 @@ function ProductDocsGovernanceRail({
 
   return (
     <aside className="min-w-0 space-y-3 xl:min-h-0 xl:overflow-y-auto">
-      <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+      <section className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4">
         <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
           Fonte governada
         </p>
@@ -175,7 +175,7 @@ function ProductDocsGovernanceRail({
       </section>
 
       {selectedDocument ? (
-        <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+        <section className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4">
           <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
             Documento aberto
           </p>
@@ -198,7 +198,7 @@ function ProductDocsGovernanceRail({
         </section>
       ) : null}
 
-      <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+      <section className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4">
         <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
           Trilhas sugeridas
         </p>
@@ -449,7 +449,7 @@ export function ProductDocsPage() {
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4 overflow-x-hidden xl:overflow-hidden">
-      <header className="shrink-0 rounded-[28px] border border-[color:var(--color-border)] bg-white/94 px-5 py-5 shadow-[0_18px_38px_rgba(16,30,74,0.08)]">
+      <header className="shrink-0 rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/94 px-5 py-5 shadow-[0_18px_38px_rgba(16,30,74,0.08)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-4xl space-y-2">
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[color:var(--color-muted)]">
@@ -474,7 +474,7 @@ export function ProductDocsPage() {
 
       <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[320px_minmax(0,1fr)_280px] xl:overflow-hidden">
         <aside className="min-w-0 space-y-4 xl:min-h-0 xl:overflow-y-auto">
-          <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white/94 px-4 py-4 shadow-[0_16px_34px_rgba(16,30,74,0.08)]">
+          <section className="rounded-[24px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/94 px-4 py-4 shadow-[0_16px_34px_rgba(16,30,74,0.08)]">
             <div className="rounded-[20px] border border-[rgba(48,127,226,0.14)] bg-[rgba(48,127,226,0.06)] px-4 py-4">
               <h2 className="text-base font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
                 Por onde começar
@@ -486,7 +486,7 @@ export function ProductDocsPage() {
               <div className="mt-3 flex flex-wrap gap-2">
                 {starterDocs.map((document) => (
                   <button
-                    className="rounded-full border border-[rgba(48,127,226,0.22)] bg-white/88 px-3 py-1 text-xs font-semibold text-[color:var(--color-brand-blue)] transition hover:bg-white"
+                    className="rounded-full border border-[rgba(48,127,226,0.22)] bg-[color:var(--color-surface-strong)]/88 px-3 py-1 text-xs font-semibold text-[color:var(--color-brand-blue)] transition hover:bg-[color:var(--color-surface-strong)]"
                     key={document.slug}
                     onClick={() => openDocument(document.slug)}
                     type="button"
@@ -524,7 +524,7 @@ export function ProductDocsPage() {
 
           <nav
             aria-label="Documentos permitidos"
-            className="rounded-[24px] border border-[color:var(--color-border)] bg-white/94 px-3 py-3 shadow-[0_16px_34px_rgba(16,30,74,0.08)]"
+            className="rounded-[24px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/94 px-3 py-3 shadow-[0_16px_34px_rgba(16,30,74,0.08)]"
           >
             {filteredDocs.length > 0 ? (
               <div className="space-y-4">
@@ -557,10 +557,10 @@ export function ProductDocsPage() {
                                 {document.title}
                               </span>
                               <span className="mt-1 flex flex-wrap gap-1.5">
-                                <span className="rounded-full border border-[color:var(--color-border)] bg-white/80 px-2 py-0.5 text-[0.64rem] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-muted)]">
+                                <span className="rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/80 px-2 py-0.5 text-[0.64rem] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-muted)]">
                                   {formatStatusLabel(document.status)}
                                 </span>
-                                <span className="rounded-full border border-[color:var(--color-border)] bg-white/80 px-2 py-0.5 text-[0.64rem] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-muted)]">
+                                <span className="rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/80 px-2 py-0.5 text-[0.64rem] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-muted)]">
                                   {formatSensitivityLabel(document.sensitivity)}
                                 </span>
                               </span>

@@ -299,7 +299,7 @@ function EngineeringSummaryStrip({
     <div className="grid shrink-0 gap-[var(--workspace-panel-gap)] lg:grid-cols-5">
       {items.map((item) => (
         <div
-          className="flex min-h-[var(--workspace-kpi-min-height)] items-center gap-3 rounded-[16px] border border-[color:var(--color-border)] bg-white/95 px-4 py-[var(--workspace-card-y)]"
+          className="flex min-h-[var(--workspace-kpi-min-height)] items-center gap-3 rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-4 py-[var(--workspace-card-y)]"
           key={item.label}
         >
           <MetricIcon tone={item.tone} />
@@ -416,8 +416,8 @@ function QuickFilterButton({
         'flex min-h-[34px] items-center justify-between gap-2 rounded-[12px] border px-3 py-1.5 text-left transition',
         active
           ? 'border-[rgba(48,127,226,0.34)] bg-[rgba(48,127,226,0.1)] text-[color:var(--color-brand-blue)]'
-          : 'border-[color:var(--color-border)] bg-white text-[color:var(--color-ink)] hover:border-[rgba(48,127,226,0.24)] hover:bg-[color:var(--color-surface)]',
-        disabled ? 'cursor-not-allowed opacity-55 hover:bg-white' : '',
+          : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] text-[color:var(--color-ink)] hover:border-[rgba(48,127,226,0.24)] hover:bg-[color:var(--color-surface)]',
+        disabled ? 'cursor-not-allowed opacity-55 hover:bg-[color:var(--color-surface-strong)]' : '',
       )}
       disabled={disabled}
       onClick={onClick}
@@ -447,7 +447,7 @@ function CenterContextCard({
     <section
       className={cx(
         'min-h-[118px] rounded-[16px] border px-4 py-3',
-        tone === 'default' && 'border-[color:var(--color-border)] bg-white',
+        tone === 'default' && 'border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]',
         tone === 'blue' && 'border-[rgba(48,127,226,0.24)] bg-[rgba(48,127,226,0.06)]',
         tone === 'warning' && 'border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-surface)]',
         tone === 'critical' && 'border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)]',
@@ -552,7 +552,7 @@ function WorkItemRail({
         </p>
       </section>
 
-      <section className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2">
+      <section className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-2">
         <RailDetailLine label="Cliente" value={humanizeOperationalText(selected.tenantName)} />
         <RailDetailLine
           href={originTicketId ? `/support/tickets/${originTicketId}` : undefined}
@@ -564,13 +564,13 @@ function WorkItemRail({
         <RailDetailLine label="Última atualização" value={formatDateTime(selected.updatedAt)} />
       </section>
 
-      <section className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2">
+      <section className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-2">
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
           Vínculo com suporte
         </p>
         {originTicketId ? (
           <Link
-            className="mt-1.5 block rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-1.5 transition hover:border-[rgba(48,127,226,0.28)] hover:bg-white"
+            className="mt-1.5 block rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-1.5 transition hover:border-[rgba(48,127,226,0.28)] hover:bg-[color:var(--color-surface-strong)]"
             to={`/support/tickets/${originTicketId}`}
           >
             <p className="text-[12px] font-semibold text-[color:var(--color-brand-blue)]">
@@ -585,7 +585,7 @@ function WorkItemRail({
         )}
       </section>
 
-      <section className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2">
+      <section className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-2">
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
           Última devolutiva
         </p>
@@ -597,7 +597,7 @@ function WorkItemRail({
         </p>
       </section>
 
-      <section className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2">
+      <section className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-2">
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
           Ações
         </p>
@@ -898,7 +898,7 @@ export function EngineeringWorkspacePage() {
   return (
     <>
       <div className="flex h-full min-h-0 flex-col gap-[var(--workspace-panel-gap)] overflow-hidden">
-        <header className="shrink-0 rounded-[18px] border border-[color:var(--color-border)] bg-white/95 px-4 py-[var(--workspace-header-y)]">
+        <header className="shrink-0 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-4 py-[var(--workspace-header-y)]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-[1.55rem] font-semibold leading-tight tracking-[-0.045em] text-[color:var(--color-ink)]">
@@ -925,7 +925,7 @@ export function EngineeringWorkspacePage() {
         {actionMessage ? <InlineNotice>{actionMessage}</InlineNotice> : null}
 
         <div className="grid min-h-0 flex-1 gap-[var(--workspace-panel-gap)] overflow-y-auto lg:grid-cols-[minmax(250px,286px)_minmax(0,1fr)] lg:overflow-hidden 2xl:grid-cols-[minmax(260px,292px)_minmax(0,1fr)]">
-          <aside className="grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-[var(--workspace-panel-gap)] overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/93 p-3">
+          <aside className="grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-[var(--workspace-panel-gap)] overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/93 p-3">
             <section className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5">
               <h2 className="text-[0.98rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
                 Triagem técnica
@@ -935,7 +935,7 @@ export function EngineeringWorkspacePage() {
               </p>
             </section>
 
-            <section className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2.5">
+            <section className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-2.5">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
                 Fila rápida
               </p>
@@ -954,7 +954,7 @@ export function EngineeringWorkspacePage() {
               </div>
             </section>
 
-            <section className="min-h-0 overflow-y-auto rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2.5">
+            <section className="min-h-0 overflow-y-auto rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-2.5">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
                   Filtros
@@ -1047,7 +1047,7 @@ export function EngineeringWorkspacePage() {
             </section>
           </aside>
 
-          <main className="flex min-h-[620px] min-w-0 flex-col overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-white/95 lg:min-h-0">
+          <main className="flex min-h-[620px] min-w-0 flex-col overflow-hidden rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 lg:min-h-0">
             <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-4 py-2.5">
               <div>
                 <h2 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
@@ -1070,7 +1070,7 @@ export function EngineeringWorkspacePage() {
                   description="Ajuste a fila rápida ou os filtros operacionais para ampliar a visão."
                 />
               ) : (
-                <div className="overflow-hidden rounded-[14px] border border-[color:var(--color-border)] bg-white">
+                <div className="overflow-hidden rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]">
                   {visibleItems.map((item) => (
                     <WorkItemRow
                       active={item.engineeringWorkItemId === selectedId}
@@ -1128,7 +1128,7 @@ export function EngineeringWorkspacePage() {
                     </p>
                   </CenterContextCard>
                 </div>
-                <section className="mt-2 rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-3">
+                <section className="mt-2 rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-3">
                   <WorkItemRail
                     links={links}
                     onAssignToMe={handleAssignToMe}

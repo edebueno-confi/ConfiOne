@@ -76,8 +76,9 @@ export async function fetchAdminActorContext() {
   };
   const typedRoles = authContext.roles ?? [];
   const isPlatformAdmin = typedRoles.includes('platform_admin');
+  const isDashboardViewer = typedRoles.includes('dashboard_viewer');
 
-  if (!isPlatformAdmin) {
+  if (!isPlatformAdmin && !isDashboardViewer) {
     return {
       status: 'denied' as const,
       reason: 'missing-platform-admin' as const,
@@ -91,7 +92,7 @@ export async function fetchAdminActorContext() {
     actor: {
       profile: typedProfile,
       roles: typedRoles,
-      is_platform_admin: true,
+      is_platform_admin: isPlatformAdmin,
     } satisfies AdminActorContext,
   };
 }
