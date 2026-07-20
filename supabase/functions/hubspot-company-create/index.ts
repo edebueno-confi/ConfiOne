@@ -64,47 +64,43 @@ Deno.serve(async (req) => {
     if (!name) { results.push({ name, cnpj, action: 'skipped_invalid', reason: 'Nome obrigatório.' }); continue; }
 
     const digits = digitsOnly(cnpj);
-    // Dedupe por CNPJ no cache local (tax_id normalizado em digitos).
-    let cacheHit: { company_id: string; name: string | null } | null = null;
-    if (digits) {
-      const { data } = await client.from('hubspot_companies').select('company_id,name').eq('tax_id', digits).limit(1).maybeSingle();
-      if (data) cacheHit = data as { company_id: string; name: string | null };
-    }
-    // Pista por nome (razao social e nome fantasia).
-    const cores = [nameCore(name), nameCore(tradeName)].filter((c) => c.length >= 4);
-    let nameMatchCount = 0;
-    if (cores.length > 0) {
-      const orFilter = cores.map((c) => `name.ilike.%${c.replace(/[,%]/g, ' ')}%`).join(',');
-      const { count } = await client.from('hubspot_companies').select('company_id', { count: 'exact', head: true }).or(orFilter);
-      nameMatchCount = count ?? 0;
-    }
+    // Deduplicacao robusta via RPC: CNPJ exato/raiz + nome por palavra inteira +
+    // similaridade trigram (razao social e nome fantasia). Nunca cria quando ha
+    // qualquer candidato plausivel (salvo force explicito).
+    const { data: candData } = await client.rpc('rpc_analytics_company_candidates', { p_tax_id: cnpj || null, p_name: name || null, p_trade_name: tradeName || null });
+    const candidates = (Array.isArray(candData) ? candData : []) as Array<{ company_id: string; name: string | null; reason: string; score: number }>;
+    const topCandidate = candidates[0] ?? null;
+    const nameMatchCount = candidates.length;
 
     let action: string;
-    if (cacheHit) action = 'skipped_cnpj_exists';
-    else if (nameMatchCount > 0 && !force) action = 'skipped_name_conflict';
-    else action = 'create';
+    if (candidates.length > 0 && !force) {
+      action = topCandidate && /cnpj/.test(topCandidate.reason) ? 'skipped_cnpj_exists' : 'skipped_name_conflict';
+    } else {
+      action = 'create';
+    }
 
     if (dryRun) {
-      results.push({ name, cnpj, action: action === 'create' ? 'would_create' : action, nameMatchCount, existingCompanyId: cacheHit?.company_id ?? null, existingName: cacheHit?.name ?? null });
+      results.push({ name, cnpj, action: action === 'create' ? 'would_create' : action, nameMatchCount, topCandidate: topCandidate ? { companyId: topCandidate.company_id, name: topCandidate.name, reason: topCandidate.reason, score: topCandidate.score } : null, candidates });
       continue;
     }
 
     // Execução real (confirmada).
     if (action !== 'create') {
-      await client.from('analytics_hubspot_company_create_runs').insert({ requested_by_user_id: actorId, source_client_name: name, source_tax_id: cnpj || null, action, hubspot_company_id: cacheHit?.company_id ?? null, name_match_count: nameMatchCount, finished_at: new Date().toISOString() });
-      results.push({ name, cnpj, action, existingCompanyId: cacheHit?.company_id ?? null, nameMatchCount });
+      await client.from('analytics_hubspot_company_create_runs').insert({ requested_by_user_id: actorId, source_client_name: name, source_tax_id: cnpj || null, action, hubspot_company_id: topCandidate?.company_id ?? null, name_match_count: nameMatchCount, finished_at: new Date().toISOString() });
+      results.push({ name, cnpj, action, existingCompanyId: topCandidate?.company_id ?? null, topCandidate: topCandidate ? { companyId: topCandidate.company_id, name: topCandidate.name, reason: topCandidate.reason, score: topCandidate.score } : null, nameMatchCount });
       continue;
     }
     try {
       // Guarda final ao vivo: se o CNPJ ja existir no HubSpot, nao duplica.
-      const live = digits ? await searchCompaniesByCnpj(cnpj, token!) : [];
+      // A propriedade cnpj do HubSpot e numerica: enviar somente digitos.
+      const live = digits ? await searchCompaniesByCnpj(digits, token!) : [];
       if (live.length > 0) {
         const existingId = String((live[0] as { id?: unknown }).id ?? '');
         await client.from('analytics_hubspot_company_create_runs').insert({ requested_by_user_id: actorId, source_client_name: name, source_tax_id: cnpj || null, action: 'skipped_cnpj_exists', hubspot_company_id: existingId || null, name_match_count: nameMatchCount, finished_at: new Date().toISOString() });
         results.push({ name, cnpj, action: 'skipped_cnpj_exists', existingCompanyId: existingId, source: 'live' });
         continue;
       }
-      const created = await createCompany({ name, cnpj }, token!);
+      const created = await createCompany(digits ? { name, cnpj: digits } : { name }, token!);
       const newId = String((created as { id?: unknown }).id ?? '');
       await client.from('analytics_hubspot_company_create_runs').insert({ requested_by_user_id: actorId, source_client_name: name, source_tax_id: cnpj || null, action: 'created', hubspot_company_id: newId || null, name_match_count: nameMatchCount, finished_at: new Date().toISOString() });
       results.push({ name, cnpj, action: 'created', companyId: newId });
