@@ -371,6 +371,30 @@ export async function createCompany(
   return await response.json() as HubSpotRecord;
 }
 
+// Busca best-effort por CNPJ para dedupe antes de criar empresa. Requer
+// crm.objects.companies.read. Nunca lanca: retorna [] em qualquer falha.
+export async function searchCompaniesByCnpj(
+  cnpj: string,
+  tokenOverride?: string,
+): Promise<HubSpotRecord[]> {
+  const raw = (cnpj ?? '').trim();
+  if (!raw) return [];
+  try {
+    const response = await hubspotFetch('/crm/v3/objects/companies/search', {
+      method: 'POST',
+      body: JSON.stringify({
+        filterGroups: [{ filters: [{ propertyName: 'cnpj', operator: 'EQ', value: raw }] }],
+        properties: ['name', 'cnpj'],
+        limit: 5,
+      }),
+    }, 0, tokenOverride);
+    const data = await response.json().catch(() => ({})) as { results?: HubSpotRecord[] };
+    return Array.isArray(data.results) ? data.results : [];
+  } catch {
+    return [];
+  }
+}
+
 export function toTimestamp(value: string | null | undefined): string | null {
   if (!value) return null;
   const parsed = new Date(value);

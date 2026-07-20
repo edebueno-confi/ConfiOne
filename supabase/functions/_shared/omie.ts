@@ -102,6 +102,7 @@ export function normalizeOmieApiReceivables(rows: unknown[], syncRunId: string) 
       aging_bucket: agingBucket(status, dueDate),
       document_number: String(valueAt(details, 'cNumDocFiscal', 'numero_documento_fiscal', 'numero_documento', 'cNumDoc') ?? '').trim() || null,
       client_name: clientName,
+      client_trade_name: null as string | null,
       client_tax_id: clientTaxId,
       net_amount: netAmount,
       received_amount: receivedAmount,
@@ -180,7 +181,7 @@ export async function fetchOmieReceivables(
 
 const OMIE_CLIENTS_URL = 'https://app.omie.com.br/api/v1/geral/clientes/';
 
-export interface OmieClientInfo { name: string | null; taxId: string | null }
+export interface OmieClientInfo { name: string | null; taxId: string | null; tradeName: string | null }
 
 export function buildOmieClientsRequest(credentials: OmieCredentials, page: number, pageSize: number) {
   return { call: 'ListarClientesResumido', app_key: credentials.appKey, app_secret: credentials.appSecret, param: [{ pagina: page, registros_por_pagina: pageSize }] };
@@ -238,15 +239,16 @@ export async function fetchOmieClientsIndex(
       const code = normalizeOmieClientCode(row);
       if (!code) continue;
       const name = String(valueAt(row, 'razao_social', 'nome_fantasia', 'razaoSocial') ?? '').trim() || null;
+      const tradeName = String(valueAt(row, 'nome_fantasia', 'nomeFantasia') ?? '').trim() || null;
       const taxId = String(valueAt(row, 'cnpj_cpf', 'cnpjCpf', 'cnpj') ?? '').trim() || null;
-      index.set(code, { name, taxId });
+      index.set(code, { name, taxId, tradeName });
     }
     if (parsed.page >= parsed.totalPages || parsed.rows.length === 0) break;
   }
   return index;
 }
 
-export function enrichReceivablesWithClients<T extends { client_name: string | null; client_tax_id: string | null; raw_payload: unknown }>(
+export function enrichReceivablesWithClients<T extends { client_name: string | null; client_tax_id: string | null; client_trade_name?: string | null; raw_payload: unknown }>(
   rows: T[],
   clients: Map<string, OmieClientInfo>,
 ): T[] {
@@ -260,6 +262,7 @@ export function enrichReceivablesWithClients<T extends { client_name: string | n
     if (!info) continue;
     if (!row.client_name && info.name) row.client_name = info.name;
     if (!row.client_tax_id && info.taxId) row.client_tax_id = info.taxId;
+    if (!row.client_trade_name && info.tradeName) row.client_trade_name = info.tradeName;
   }
   return rows;
 }
