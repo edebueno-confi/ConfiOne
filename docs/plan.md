@@ -1,5 +1,31 @@
 # Genius Support OS — Plano operacional vivo
 
+## Ciclo Central de integração OMIE↔HubSpot (Claude) — 2026-07-20
+
+### Feito
+
+- Deduplicação robusta de empresas (`rpc_analytics_company_candidates`): CNPJ
+  exato/raiz + nome por palavra + trigram (razão social e nome fantasia).
+- Criação governada de empresas (`hubspot-company-create`) com dry-run, dedup,
+  ledger; drill-down de empresas sem cadastro; caso Malwee corrigido por merge.
+- Propriedades `omie_*` criadas no HubSpot (`hubspot-property-setup`).
+- Sincronização de saída (`hubspot-omie-property-sync` + rollup): 196/196
+  empresas atualizadas, 0 falhas.
+- Agendamento configurável (`analytics_integration_schedule`) + orquestração
+  (`analytics-integration-run`) admin/secret + UI em Configuração; validado
+  ponta a ponta (3.433 títulos, 196/196 empresas).
+- Copy do dashboard humanizada (Comercial/CS), sem jargão, acentuação corrigida.
+
+### Validado
+
+- Dry-runs e execuções reais auditadas; `web:typecheck`/`web:build` verdes.
+
+### Pendente
+
+- Ativar cron com `ANALYTICS_SYNC_SECRET` (produção) conforme runbook em
+  `docs/reports/OMIE_HUBSPOT_INTEGRATION_HUB_2026-07-20.md`.
+- Rollout visual das abas restantes (Fase 2 da SPEC) e suíte pgTAP dos novos RPCs.
+
 ## Ciclo OMIE API-first + cockpit financeiro (Claude) — 2026-07-20
 
 ### Feito

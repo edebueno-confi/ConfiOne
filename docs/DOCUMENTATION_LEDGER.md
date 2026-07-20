@@ -6354,3 +6354,12 @@ Cada registro deve informar:
     financeiro API-first com previsibilidade/aging/devedores/cruzamento CS,
     cockpit financeiro na UI, mascote Genio no carregamento, SPEC do upgrade do
     dashboard. Validado local (sync 3.433 titulos, typecheck/build verdes).
+- Central de integracao OMIE<->HubSpot (Claude) - 2026-07-20
+  - relatorio: `docs/reports/OMIE_HUBSPOT_INTEGRATION_HUB_2026-07-20.md`
+  - migrations: `20260720150000` a `20260720200000` (unmatched clients, matching,
+    rollup, agendamento) + `_shared/hubspot.ts` helpers
+  - functions: `hubspot-company-create`, `hubspot-property-setup`,
+    `hubspot-omie-property-sync`, `analytics-integration-run`
+  - escopo: dedup robusta, criacao governada de empresas, propriedades omie_*
+    criadas, sync de saida (196/196 empresas), agendamento configuravel + UI.
+    Copy do dashboard humanizada. Cron de producao pendente (secret gated).
