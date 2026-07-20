@@ -29,7 +29,9 @@ storybook-static/
 test-results/
 playwright-report/
 .playwright-mcp/
+.playwright-cli/
 .nyc_output/
+output/playwright/
 
 # Local tooling
 .tmp/
@@ -53,10 +55,12 @@ pnpm-debug.log*
 
 # Local reports and runtime dumps
 /.tmp-*/
+/.tmp-*.txt
 /*.out
 /*.err
 /*-backup.patch
 /untracked-files-inventory.txt
+/seed-functional-log.txt
 
 # Editor and OS
 .DS_Store

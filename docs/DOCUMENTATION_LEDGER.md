@@ -6338,3 +6338,10 @@ Cada registro deve informar:
   - relatorio: `docs/reports/TECHNICAL_HANDOFF_CLAUDE_2026-07-20.md`
   - escopo: estado tecnico, entregas, validacoes, gates de seguranca e
     continuidade executavel pelo Claude sem depender do historico da conversa.
+- Normalizacao do indice Git e relatorio de continuidade (Claude) - 2026-07-20
+  - relatorios: `docs/reports/CLAUDE_CONTINUITY_ASSESSMENT_2026-07-20.md`,
+    `docs/reports/HANDOFF_CLAUDE_GIT_NORMALIZATION_2026-07-20.md`
+  - escopo: indice congelado de 17/07 e lock obsoleto neutralizados via
+    `git reset --mixed HEAD` no host; confirmado que `b7ce25e` contem Analytics,
+    47 migrations e 11 testes pgTAP; `.gitignore` higienizado; working tree
+    preservado sem apagar arquivos.

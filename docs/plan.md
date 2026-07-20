@@ -1,5 +1,32 @@
 # Genius Support OS — Plano operacional vivo
 
+## Ciclo de normalização do índice Git (Claude) — 2026-07-20
+
+### Feito
+
+- Diagnóstico: índice congelado em 17/07 + `index.lock` obsoleto produziam
+  staging fantasma de 232 arquivos e falso "untracked" das migrations/testes.
+- Confirmado por `git ls-tree b7ce25e`: o commit contém os 16 arquivos de
+  Analytics, as 47 migrations (20260716–20260720) e os 11 testes pgTAP (049–059).
+- No host (Desktop Commander): removido o lock obsoleto (sem processo git ativo)
+  e executado `git reset --mixed HEAD`; working tree preservado.
+- `.gitignore` recebeu `.playwright-cli/`, `output/playwright/`, `/.tmp-*.txt`,
+  `/seed-functional-log.txt`.
+
+### Validado
+
+- Pós-reset no host: staging 0, modificados 0, `git diff --shortstat` vazio
+  (árvore idêntica a `b7ce25e`), 27 untracked só de artefatos/temporários + docs.
+- Diff de 919 arquivos visto no sandbox era artefato de fim de linha/filemode via
+  mount; git nativo do Windows confirma árvore limpa.
+
+### Pendente
+
+- Baseline no host: `web:typecheck`, `web:build`, `supabase:test:db`.
+- QA autenticado do Dashboard; sincronização HubSpot; API OMIE; ledger CS Ops.
+- Decidir versionamento de `CLAUDE.md` e commit local (sem push) do lote de
+  normalização.
+
 ## Ciclo de fila financeira agrupada por cliente — 2026-07-19
 
 ### Feito
