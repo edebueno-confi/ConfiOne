@@ -6345,3 +6345,12 @@ Cada registro deve informar:
     `git reset --mixed HEAD` no host; confirmado que `b7ce25e` contem Analytics,
     47 migrations e 11 testes pgTAP; `.gitignore` higienizado; working tree
     preservado sem apagar arquivos.
+- Integracao API OMIE + cockpit financeiro (Claude) - 2026-07-20
+  - relatorio: `docs/reports/OMIE_API_INTEGRATION_2026-07-20.md`
+  - spec: `docs/DASHBOARD_GERENCIAL_UX_SPEC_V1.md`
+  - migrations: `20260720130000_analytics_finance_cockpit_v1.sql`,
+    `20260720140000_analytics_finance_cs_reconciliation_v1.sql`
+  - escopo: contrato real OMIE corrigido, enriquecimento de clientes, RPC
+    financeiro API-first com previsibilidade/aging/devedores/cruzamento CS,
+    cockpit financeiro na UI, mascote Genio no carregamento, SPEC do upgrade do
+    dashboard. Validado local (sync 3.433 titulos, typecheck/build verdes).

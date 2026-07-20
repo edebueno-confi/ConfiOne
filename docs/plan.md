@@ -1,5 +1,35 @@
 # Genius Support OS — Plano operacional vivo
 
+## Ciclo OMIE API-first + cockpit financeiro (Claude) — 2026-07-20
+
+### Feito
+
+- Contrato real da API OMIE corrigido (o anterior era fictício):
+  `ListarContasReceber` com `pagina/registros_por_pagina/apenas_importado_api` e
+  lista `conta_receber_cadastro`; erro expõe `faultstring`; retry não re-tenta 500.
+- Enriquecimento de clientes via `ListarClientesResumido` (join
+  `codigo_cliente_fornecedor=codigo_cliente`): nome/CNPJ em 3.433/3.433 títulos.
+- `rpc_analytics_finance_snapshot` reescrito API-first (fonte ativa = API,
+  planilha fallback, sem dupla contagem) com posição da carteira, previsibilidade,
+  aging por faixa de dias, categorias, maiores devedores e cruzamento
+  financeiro × CS/HubSpot por CNPJ.
+- Painel Financeiro reescrito como cockpit (KPIs coloridos, tags, cabeçalhos,
+  formato BR, responsivo, sem jargão, sem histórico de arquivos).
+- Estado de carregamento com o mascote Gênio animado, flutuante, centralizado.
+- SPEC de upgrade do dashboard: `docs/DASHBOARD_GERENCIAL_UX_SPEC_V1.md`.
+
+### Validado
+
+- Sync real 3.433 títulos; saldo aberto R$ 750.553,79; vencido 49,1%; atraso
+  médio 221 dias; cruzamento CS reconciliado R$ 636.615,80.
+- `node --test` adapter 8/8; `web:typecheck` e `web:build` verdes.
+
+### Pendente
+
+- Rollout visual das abas Comercial/CS (Fase 2 da SPEC) e consolidação de Logs.
+- Teste pgTAP do RPC do cockpit + suíte `supabase test db`.
+- QA visual autenticado claro/escuro e responsivo; ativação remota (gates).
+
 ## Ciclo de normalização do índice Git (Claude) — 2026-07-20
 
 ### Feito
