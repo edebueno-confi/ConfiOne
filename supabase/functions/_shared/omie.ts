@@ -19,12 +19,17 @@ export function parseOmieCredentials(secret: string): OmieCredentials {
 }
 
 export function buildOmieReceivablesRequest(credentials: OmieCredentials, page: number, pageSize: number) {
-  return { call: 'ListarContasReceber', app_key: credentials.appKey, app_secret: credentials.appSecret, param: [{ nPagina: page, nRegPorPagina: pageSize }] };
+  // Estrutura oficial de lcrListarRequest (ListarContasReceber): pagina,
+  // registros_por_pagina e apenas_importado_api.
+  return { call: 'ListarContasReceber', app_key: credentials.appKey, app_secret: credentials.appSecret, param: [{ pagina: page, registros_por_pagina: pageSize, apenas_importado_api: 'N' }] };
 }
 
 export function extractOmieReceivablesPage(payload: unknown) {
-  const value = (payload ?? {}) as { pagina?: number; total_de_paginas?: number; lista_contas_receber?: unknown[] };
-  return { rows: Array.isArray(value.lista_contas_receber) ? value.lista_contas_receber : [], page: Number(value.pagina ?? 1), totalPages: Number(value.total_de_paginas ?? 1) };
+  const value = (payload ?? {}) as { pagina?: number; total_de_paginas?: number; conta_receber_cadastro?: unknown[]; lista_contas_receber?: unknown[] };
+  const rows = Array.isArray(value.conta_receber_cadastro)
+    ? value.conta_receber_cadastro
+    : Array.isArray(value.lista_contas_receber) ? value.lista_contas_receber : [];
+  return { rows, page: Number(value.pagina ?? 1), totalPages: Number(value.total_de_paginas ?? 1) };
 }
 
 function valueAt(row: Record<string, unknown>, ...keys: string[]) {
@@ -76,18 +81,26 @@ export function normalizeOmieApiReceivables(rows: unknown[], syncRunId: string) 
     const dueDate = excelOrOmieDate(valueAt(details, 'dDtVenc', 'data_vencimento', 'vencimento'));
     const issuedDate = excelOrOmieDate(valueAt(details, 'dDtEmissao', 'data_emissao', 'emissao'));
     const netAmount = numberValue(valueAt(details, 'nValorTitulo', 'valor_documento', 'valor', 'nValor'));
-    const receivedAmount = numberValue(valueAt(details, 'nValorPago', 'valor_pago', 'valor_recebido')) ?? 0;
+    // O ListarContasReceber nao retorna valor pago nem saldo; a liquidacao e
+    // derivada do status. RECEBIDO conta como recebido integral; CANCELADO sai
+    // do saldo; ATRASADO/VENCE HOJE/A VENCER permanecem em aberto pelo valor.
+    const statusLower = status.toLowerCase();
+    const isReceived = /receb/.test(statusLower) && !/parcial/.test(statusLower);
+    const isCancelledStatus = /cancel/.test(statusLower);
+    const net = netAmount ?? 0;
+    const explicitReceived = numberValue(valueAt(details, 'nValorPago', 'valor_pago', 'valor_recebido'));
+    const receivedAmount = explicitReceived ?? (isReceived ? net : 0);
     const sourceRecordId = String(valueAt(details, 'nCodTitulo', 'codigo_lancamento_omie', 'codigo_lancamento_integracao', 'id') ?? '').trim();
     const clientName = String(valueAt(details, 'cNomeCliente', 'nome_cliente', 'cliente', 'cliente_nome') ?? '').trim() || null;
     const clientTaxId = String(valueAt(details, 'cCPFCNPJ', 'cpf_cnpj', 'cliente_cnpj') ?? '').trim() || null;
-    const balance = netAmount === null ? 0 : Math.max(netAmount - receivedAmount, 0);
+    const balance = (isReceived || isCancelledStatus) ? 0 : Math.max(net - receivedAmount, 0);
     return {
       sync_run_id: syncRunId,
       source_key: 'omie_receivables_api',
       source_record_id: sourceRecordId || `omie-row:${index + 1}`,
       status_original: status,
       aging_bucket: agingBucket(status, dueDate),
-      document_number: String(valueAt(details, 'cNumDocFiscal', 'numero_documento_fiscal', 'cNumDoc') ?? '').trim() || null,
+      document_number: String(valueAt(details, 'cNumDocFiscal', 'numero_documento_fiscal', 'numero_documento', 'cNumDoc') ?? '').trim() || null,
       client_name: clientName,
       client_tax_id: clientTaxId,
       net_amount: netAmount,
@@ -117,6 +130,10 @@ export async function fetchOmieReceivables(
   for (let page = 1; page <= 100; page += 1) {
     let response: Response | null = null;
     let lastError: unknown = null;
+    // Somente status realmente transitorios sao re-tentados. O Omie usa HTTP 500
+    // para faults de negocio (ex.: SOAP-ENV:Client-6 REDUNDANT); re-tentar o mesmo
+    // payload imediatamente provocaria o proprio "consumo redundante".
+    const retriableStatus = new Set([429, 502, 503, 504]);
     for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -126,16 +143,30 @@ export async function fetchOmieReceivables(
           body: JSON.stringify(buildOmieReceivablesRequest(credentials, page, pageSize)),
           signal: controller.signal,
         });
-        if (response.ok || ![408, 425, 429, 500, 502, 503, 504].includes(response.status) || attempt === maxRetries) break;
       } catch (error) {
         lastError = error;
+        response = null;
         if (attempt === maxRetries) throw new Error(`Falha de rede na API Omie: ${error instanceof Error ? error.message : String(error)}`);
       } finally {
         clearTimeout(timer);
       }
+      if (response && (response.ok || !retriableStatus.has(response.status) || attempt === maxRetries)) break;
+      // Backoff progressivo antes de nova tentativa de status transitorio.
+      await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
     }
     if (!response) throw new Error(`Falha de rede na API Omie: ${lastError instanceof Error ? lastError.message : 'resposta ausente'}.`);
-    if (!response.ok) throw new Error(`Omie Contas a Receber falhou (${response.status}).`);
+    if (!response.ok) {
+      // A resposta de erro do Omie traz faultstring/faultcode e nao inclui o app_secret.
+      let detail = '';
+      try {
+        const body = await response.text();
+        try {
+          const fault = JSON.parse(body) as { faultstring?: string; faultcode?: string };
+          detail = fault.faultstring ? `${fault.faultcode ?? ''} ${fault.faultstring}`.trim() : body.slice(0, 300);
+        } catch { detail = body.slice(0, 300); }
+      } catch { /* corpo indisponivel */ }
+      throw new Error(`Omie Contas a Receber falhou (${response.status})${detail ? `: ${detail}` : ''}.`);
+    }
     const parsed = extractOmieReceivablesPage(await response.json());
     rows.push(...parsed.rows);
     if (parsed.page >= parsed.totalPages || parsed.rows.length === 0) return rows;

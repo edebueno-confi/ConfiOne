@@ -24,10 +24,10 @@ export function IntegrationSettingsPanel({
   mutating: boolean;
   error: string | null;
 }) {
-  const [drafts, setDrafts] = useState<Record<string, { isEnabled: boolean; secret: string }>>({});
+  const [drafts, setDrafts] = useState<Record<string, { isEnabled: boolean; secret: string; appKey: string; appSecret: string }>>({});
 
   function draftFor(item: ManagedIntegration) {
-    return drafts[item.integrationKey] ?? { isEnabled: item.isEnabled, secret: '' };
+    return drafts[item.integrationKey] ?? { isEnabled: item.isEnabled, secret: '', appKey: '', appSecret: '' };
   }
 
   return (
@@ -53,17 +53,47 @@ export function IntegrationSettingsPanel({
               </label>
             </div>
             {item.mode !== 'manual' ? (
-              <label className="mt-4 block text-xs font-medium text-[color:var(--minimal-text-secondary)]">
-                Nova credencial (opcional)
-                <input
-                  aria-label={`Nova credencial ${item.label}`}
-                  className={cx(inputClass, 'mt-1')}
-                  onChange={(event) => setDrafts((current) => ({ ...current, [item.integrationKey]: { ...draft, secret: event.target.value } }))}
-                  placeholder={item.provider === 'omie' ? '{"app_key":"...","app_secret":"..."}' : item.hasCredentials ? 'Credencial configurada — deixe vazio para preservar' : 'Cole a credencial quando disponível'}
-                  type="password"
-                  value={draft.secret}
-                />
-              </label>
+              item.provider === 'omie' ? (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <label className="block text-xs font-medium text-[color:var(--minimal-text-secondary)]">
+                    App Key
+                    <input
+                      aria-label="Omie App Key"
+                      autoComplete="off"
+                      className={cx(inputClass, 'mt-1')}
+                      onChange={(event) => setDrafts((current) => ({ ...current, [item.integrationKey]: { ...draft, appKey: event.target.value } }))}
+                      placeholder={item.hasCredentials ? 'Configurada — preencha os dois para substituir' : 'Cole o App Key do Omie'}
+                      type="password"
+                      value={draft.appKey}
+                    />
+                  </label>
+                  <label className="block text-xs font-medium text-[color:var(--minimal-text-secondary)]">
+                    App Secret
+                    <input
+                      aria-label="Omie App Secret"
+                      autoComplete="off"
+                      className={cx(inputClass, 'mt-1')}
+                      onChange={(event) => setDrafts((current) => ({ ...current, [item.integrationKey]: { ...draft, appSecret: event.target.value } }))}
+                      placeholder={item.hasCredentials ? 'Configurada — preencha os dois para substituir' : 'Cole o App Secret do Omie'}
+                      type="password"
+                      value={draft.appSecret}
+                    />
+                  </label>
+                  <p className="text-[11px] text-[color:var(--minimal-text-tertiary)] sm:col-span-2">Preencha App Key e App Secret juntos para gravar. Deixe ambos vazios para preservar a credencial atual. Os valores vão direto para o Vault e não são exibidos novamente.</p>
+                </div>
+              ) : (
+                <label className="mt-4 block text-xs font-medium text-[color:var(--minimal-text-secondary)]">
+                  Nova credencial (opcional)
+                  <input
+                    aria-label={`Nova credencial ${item.label}`}
+                    className={cx(inputClass, 'mt-1')}
+                    onChange={(event) => setDrafts((current) => ({ ...current, [item.integrationKey]: { ...draft, secret: event.target.value } }))}
+                    placeholder={item.hasCredentials ? 'Credencial configurada — deixe vazio para preservar' : 'Cole a credencial quando disponível'}
+                    type="password"
+                    value={draft.secret}
+                  />
+                </label>
+              )
             ) : null}
             <div className="mt-4 flex items-center justify-between gap-3">
               <p className="text-xs text-[color:var(--minimal-text-tertiary)]">
@@ -79,7 +109,9 @@ export function IntegrationSettingsPanel({
                   mode: item.mode,
                   isEnabled: draft.isEnabled,
                   config: item.config,
-                  secret: draft.secret,
+                  secret: item.provider === 'omie'
+                    ? (draft.appKey.trim() && draft.appSecret.trim() ? JSON.stringify({ app_key: draft.appKey.trim(), app_secret: draft.appSecret.trim() }) : '')
+                    : draft.secret,
                 })}
                 type="button"
               >
