@@ -78,7 +78,7 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange }: Analytic
   }
 
   if (state.phase === 'error') {
-    return <MinimalState tone="critical" title="Nao foi possivel carregar" description={state.message} />;
+    return <MinimalState tone="critical" title="Não foi possível carregar" description={state.message} />;
   }
 
   const { kpis, byStatus, monthly, bySource, byPipeline, byOwner, latestTicketCreatedAt } = state;
@@ -95,10 +95,10 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange }: Analytic
       {pipelineOptions.length > 0 ? <PipelineScopeFilter pipelines={pipelineOptions} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null}
       {kpis.totalTickets === 0 ? <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." /> : null}
       {kpis.totalTickets > 0 ? <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label="Tickets totais" value={kpis.totalTickets.toLocaleString('pt-BR')} hint="No pipeline de suporte" source="Fonte: HubSpot Tickets. Contagem dos tickets sincronizados no pipeline de suporte ativo, respeitando período e filtros." />
-        <KpiCard label="Abertos" value={kpis.openTickets.toLocaleString('pt-BR')} hint="Fora de estágio fechado" source="Fonte: HubSpot Tickets + estágios. Ticket aberto é aquele cujo estágio não foi marcado como fechado pela API." />
-        <KpiCard label="Encerrados" value={kpis.closedTickets.toLocaleString('pt-BR')} hint="Estágio fechado" source="Fonte: HubSpot Tickets + pipeline_stages. Conta tickets em estágios com is_closed=true." />
-        <KpiCard label="% Encerrados" value={formatPercent(kpis.closedRate)} hint="Encerrados / total" source="Cálculo no Postgres: tickets encerrados divididos pelo total de tickets do recorte." />
+        <KpiCard label="Tickets totais" value={kpis.totalTickets.toLocaleString('pt-BR')} hint="Nos pipelines de suporte" source="Total de tickets nos pipelines de suporte ativos, considerando o período e os filtros selecionados." />
+        <KpiCard label="Abertos" value={kpis.openTickets.toLocaleString('pt-BR')} hint="Ainda não encerrados" source="Tickets que ainda não estão em um estágio de encerrado." />
+        <KpiCard label="Encerrados" value={kpis.closedTickets.toLocaleString('pt-BR')} hint="Em estágio de encerrado" source="Tickets que já estão em um estágio de encerrado." />
+        <KpiCard label="% Encerrados" value={formatPercent(kpis.closedRate)} hint="Encerrados sobre o total" source="Tickets encerrados divididos pelo total de tickets do período." />
       </div> : null}
 
       {kpis.totalTickets > 0 ? <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
@@ -106,15 +106,15 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange }: Analytic
           {byStatus.length > 0 ? (
             <TicketStatusChart data={byStatus} />
           ) : (
-            <MinimalState title="Sem estagios" description="Rode a sincronizacao para carregar os estagios." />
+            <MinimalState title="Sem estágios" description="Execute uma sincronização para carregar os estágios." />
           )}
         </ChartCard>
 
-        <ChartCard title="Tendencia mensal" description="Tickets criados e encerrados por mes">
+        <ChartCard title="Tendência mensal" description="Tickets criados e encerrados por mês.">
           {monthly.length > 0 ? (
             <TicketMonthlyChart data={monthly} />
           ) : (
-            <MinimalState title="Sem historico" description="Ainda nao ha tickets sincronizados." />
+            <MinimalState title="Sem histórico" description="Ainda não há tickets sincronizados no período." />
           )}
         </ChartCard>
       </div> : null}
@@ -176,14 +176,14 @@ function PipelineOriginHint({ pipeline }: { pipeline: PipelineFilterOption }) {
     </div>
 
     <InfoRow label="Evidência usada">
-      HubSpot Tickets → campo <code className="rounded bg-[color:var(--minimal-surface-muted)] px-1 py-0.5 font-mono text-[11px]">source_type</code>, no recorte atual.
+      Origem do ticket informada pelo HubSpot, no recorte atual.
     </InfoRow>
 
     <InfoRow label={`Distribuição observada · ${total.toLocaleString('pt-BR')} ticket(s)`}>
       {known.length ? <ul className="space-y-1">
         {known.slice(0, 5).map((source) => <li key={source.label} className="flex items-center justify-between gap-3"><span>{formatTicketSource(source.label)}</span><span className="font-semibold tabular-nums text-[color:var(--minimal-text)]">{source.ticketCount.toLocaleString('pt-BR')} <span className="font-normal text-[color:var(--minimal-text-tertiary)]">({formatShare(source.ticketCount, total)})</span></span></li>)}
         {known.length > 5 ? <li className="text-[color:var(--minimal-text-tertiary)]">+ {known.length - 5} outras classificações.</li> : null}
-      </ul> : <span>Nenhum ticket veio com <code className="rounded bg-[color:var(--minimal-surface-muted)] px-1 py-0.5 font-mono text-[11px]">source_type</code> preenchido.</span>}
+      </ul> : <span>Nenhum ticket veio com a origem preenchida.</span>}
     </InfoRow>
 
     <InfoRow label="Cobertura da evidência">

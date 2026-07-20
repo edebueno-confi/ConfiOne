@@ -69,7 +69,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange }: 
   }
 
   if (state.phase === 'error') {
-    return <MinimalState tone="critical" title="Nao foi possivel carregar" description={state.message} />;
+    return <MinimalState tone="critical" title="Não foi possível carregar" description={state.message} />;
   }
 
   const { kpis, funnel, byOwner, monthly } = state;
@@ -83,42 +83,42 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange }: 
         <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." />
       ) : null}
       {kpis.totalDeals > 0 ? <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label="Deals totais" value={kpis.totalDeals.toLocaleString('pt-BR')} hint="No pipeline configurado" source="Fonte: HubSpot Deals. Contagem dos registros sincronizados no pipeline comercial ativo, respeitando período e filtros." />
-        <KpiCard label="Deals abertos" value={kpis.openDeals.toLocaleString('pt-BR')} hint="Fora de estágio fechado" source="Fonte: HubSpot Deals + estágios. Deal aberto é aquele cujo estágio não está marcado como fechado na configuração sincronizada." />
-        <KpiCard label="Deals ganhos" value={kpis.wonDeals.toLocaleString('pt-BR')} hint={`${kpis.lostDeals} perdidos`} source="Fonte: HubSpot Deals + pipeline_stages. Ganho usa o estágio cujo is_won veio marcado pela API do HubSpot." />
-        <KpiCard label="Receita ganha" value={formatCurrencyBRL(kpis.wonRevenue)} hint="amount_in_home_currency" source="Fonte: HubSpot Deals, propriedade amount_in_home_currency. Soma apenas dos deals em estágio ganho." />
-        <KpiCard label="Conversão" value={formatPercent(kpis.conversionRate)} hint="Ganho / (Ganho + Perdido)" source="Cálculo no Postgres: deals ganhos divididos pelos deals em estágios fechados. Deals abertos ficam fora do denominador." />
-        <KpiCard label="Ticket médio" value={formatCurrencyBRL(kpis.avgTicket)} hint="Receita ganha / deals ganhos" source="Cálculo no Postgres: receita ganha dividida pela quantidade de deals ganhos no recorte." />
+        <KpiCard label="Negócios totais" value={kpis.totalDeals.toLocaleString('pt-BR')} hint="No funil comercial" source="Total de negócios no funil comercial, considerando o período e os filtros selecionados." />
+        <KpiCard label="Em aberto" value={kpis.openDeals.toLocaleString('pt-BR')} hint="Ainda não fechados" source="Negócios que ainda não chegaram a um estágio de fechado (nem ganho, nem perdido)." />
+        <KpiCard label="Ganhos" value={kpis.wonDeals.toLocaleString('pt-BR')} hint={`${kpis.lostDeals.toLocaleString('pt-BR')} perdidos`} source="Negócios fechados como ganhos no período." />
+        <KpiCard label="Receita ganha" value={formatCurrencyBRL(kpis.wonRevenue)} hint="Negócios ganhos" source="Soma do valor dos negócios ganhos no período." />
+        <KpiCard label="Conversão" value={formatPercent(kpis.conversionRate)} hint="Ganhos sobre fechados" source="Negócios ganhos divididos pelo total de negócios fechados (ganhos mais perdidos). Os em aberto não entram na conta." tone={kpis.conversionRate >= 0.3 ? 'neutral' : 'warning'} />
+        <KpiCard label="Ticket médio" value={formatCurrencyBRL(kpis.avgTicket)} hint="Por negócio ganho" source="Receita ganha dividida pela quantidade de negócios ganhos no período." />
       </div> : null}
 
       {kpis.totalDeals > 0 ? <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <ChartCard title="Funil por estagio" description="Contagem de deals em cada estagio do pipeline">
+        <ChartCard title="Funil por estágio" description="Quantidade de negócios em cada estágio do funil comercial.">
           {funnel.length > 0 ? (
             <CommercialFunnelChart data={funnel} />
           ) : (
-            <MinimalState title="Sem estagios" description="Rode a sincronizacao para carregar os estagios." />
+            <MinimalState title="Sem estágios" description="Execute uma sincronização para carregar os estágios do funil." />
           )}
         </ChartCard>
 
-        <ChartCard title="Tendencia mensal" description="Deals criados e ganhos por mes de criacao">
+        <ChartCard title="Tendência mensal" description="Negócios criados e ganhos por mês.">
           {monthly.length > 0 ? (
             <CommercialMonthlyChart data={monthly} />
           ) : (
-            <MinimalState title="Sem historico" description="Ainda nao ha deals sincronizados." />
+            <MinimalState title="Sem histórico" description="Ainda não há negócios sincronizados no período." />
           )}
         </ChartCard>
       </div> : null}
 
-      {kpis.totalDeals > 0 ? <ChartCard title="Deals por responsavel" description="Dono geral do deal (hubspot_owner_id)">
+      {kpis.totalDeals > 0 ? <ChartCard title="Negócios por responsável" description="Responsável pelo negócio no HubSpot.">
         {byOwner.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[520px] text-sm">
               <thead>
-                <tr className="border-b border-[color:var(--minimal-border)] text-left text-xs text-[color:var(--minimal-text-tertiary)]">
-                  <th className="py-2 pr-4 font-medium">Responsavel</th>
-                  <th className="py-2 pr-4 text-right font-medium">Deals</th>
-                  <th className="py-2 pr-4 text-right font-medium">Ganhos</th>
-                  <th className="py-2 text-right font-medium">Receita ganha</th>
+                <tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]">
+                  <th className="py-2 pr-4">Responsável</th>
+                  <th className="py-2 pr-4 text-right">Negócios</th>
+                  <th className="py-2 pr-4 text-right">Ganhos</th>
+                  <th className="py-2 text-right">Receita ganha</th>
                 </tr>
               </thead>
               <tbody>
@@ -143,7 +143,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange }: 
             </table>
           </div>
         ) : (
-          <MinimalState title="Sem responsaveis" description="Nenhum deal atribuido no periodo." />
+          <MinimalState title="Sem responsáveis" description="Nenhum negócio atribuído no período." />
         )}
       </ChartCard> : null}
     </div>
