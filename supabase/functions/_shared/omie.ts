@@ -173,3 +173,93 @@ export async function fetchOmieReceivables(
   }
   throw new Error('Omie excedeu o limite de 100 páginas por execução.');
 }
+
+// --- Enriquecimento de clientes (read-only) ---------------------------------
+// ListarClientesResumido devolve codigo_cliente_omie + razao_social + cnpj_cpf.
+// Cruzamos por codigo_cliente_fornecedor dos titulos para preencher nome/CNPJ.
+
+const OMIE_CLIENTS_URL = 'https://app.omie.com.br/api/v1/geral/clientes/';
+
+export interface OmieClientInfo { name: string | null; taxId: string | null }
+
+export function buildOmieClientsRequest(credentials: OmieCredentials, page: number, pageSize: number) {
+  return { call: 'ListarClientesResumido', app_key: credentials.appKey, app_secret: credentials.appSecret, param: [{ pagina: page, registros_por_pagina: pageSize }] };
+}
+
+export function extractOmieClientsPage(payload: unknown) {
+  const value = (payload ?? {}) as { pagina?: number; total_de_paginas?: number; clientes_cadastro_resumido?: unknown[]; clientes_cadastro?: unknown[] };
+  const rows = Array.isArray(value.clientes_cadastro_resumido)
+    ? value.clientes_cadastro_resumido
+    : Array.isArray(value.clientes_cadastro) ? value.clientes_cadastro : [];
+  return { rows, page: Number(value.pagina ?? 1), totalPages: Number(value.total_de_paginas ?? 1) };
+}
+
+export function normalizeOmieClientCode(row: Record<string, unknown>): string | null {
+  const code = valueAt(row, 'codigo_cliente_omie', 'nCod', 'codigo_cliente');
+  const value = code === null ? '' : String(code).trim();
+  return value || null;
+}
+
+// Best-effort: em caso de falha o enriquecimento e ignorado sem quebrar o sync.
+export async function fetchOmieClientsIndex(
+  credentials: OmieCredentials,
+  fetchImpl: typeof fetch = fetch,
+  options: { timeoutMs?: number; maxRetries?: number; maxPages?: number } = {},
+): Promise<Map<string, OmieClientInfo>> {
+  const index = new Map<string, OmieClientInfo>();
+  const pageSize = 500;
+  const timeoutMs = Math.max(options.timeoutMs ?? 15000, 1000);
+  const maxRetries = Math.min(Math.max(options.maxRetries ?? 2, 0), 3);
+  const maxPages = Math.min(Math.max(options.maxPages ?? 60, 1), 200);
+  const retriableStatus = new Set([429, 502, 503, 504]);
+  for (let page = 1; page <= maxPages; page += 1) {
+    let response: Response | null = null;
+    for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        response = await fetchImpl(OMIE_CLIENTS_URL, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(buildOmieClientsRequest(credentials, page, pageSize)),
+          signal: controller.signal,
+        });
+      } catch {
+        response = null;
+      } finally {
+        clearTimeout(timer);
+      }
+      if (response && (response.ok || !retriableStatus.has(response.status) || attempt === maxRetries)) break;
+      await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
+    }
+    if (!response || !response.ok) return index;
+    const parsed = extractOmieClientsPage(await response.json());
+    for (const entry of parsed.rows) {
+      const row = (entry && typeof entry === 'object' ? entry : {}) as Record<string, unknown>;
+      const code = normalizeOmieClientCode(row);
+      if (!code) continue;
+      const name = String(valueAt(row, 'razao_social', 'nome_fantasia', 'razaoSocial') ?? '').trim() || null;
+      const taxId = String(valueAt(row, 'cnpj_cpf', 'cnpjCpf', 'cnpj') ?? '').trim() || null;
+      index.set(code, { name, taxId });
+    }
+    if (parsed.page >= parsed.totalPages || parsed.rows.length === 0) break;
+  }
+  return index;
+}
+
+export function enrichReceivablesWithClients<T extends { client_name: string | null; client_tax_id: string | null; raw_payload: unknown }>(
+  rows: T[],
+  clients: Map<string, OmieClientInfo>,
+): T[] {
+  if (clients.size === 0) return rows;
+  for (const row of rows) {
+    const raw = (row.raw_payload && typeof row.raw_payload === 'object' ? row.raw_payload : {}) as Record<string, unknown>;
+    const code = valueAt(raw, 'codigo_cliente_fornecedor', 'codigo_cliente_omie');
+    const key = code === null ? '' : String(code).trim();
+    if (!key) continue;
+    const info = clients.get(key);
+    if (!info) continue;
+    if (!row.client_name && info.name) row.client_name = info.name;
+    if (!row.client_tax_id && info.taxId) row.client_tax_id = info.taxId;
+  }
+  return rows;
+}

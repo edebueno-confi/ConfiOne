@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildOmieReceivablesRequest, parseOmieCredentials, extractOmieReceivablesPage, fetchOmieReceivables, normalizeOmieApiReceivables } from '../../supabase/functions/_shared/omie.ts';
+import { buildOmieReceivablesRequest, parseOmieCredentials, extractOmieReceivablesPage, fetchOmieReceivables, normalizeOmieApiReceivables, buildOmieClientsRequest, extractOmieClientsPage, enrichReceivablesWithClients } from '../../supabase/functions/_shared/omie.ts';
 
 test('monta requisição paginada da API Omie sem expor segredo', () => {
   const request = buildOmieReceivablesRequest({ appKey: 'key', appSecret: 'secret' }, 2, 500);
@@ -41,4 +41,24 @@ test('faz retry apenas para falhas transitórias da API Omie', async () => {
   }, { timeoutMs: 1000, maxRetries: 1 });
   assert.equal(calls, 2);
   assert.deepEqual(rows, [{ codigo_lancamento_omie: 10 }]);
+});
+
+test('monta requisição de clientes sem tag apenas_importados_api (clientes_list_request)', () => {
+  const request = buildOmieClientsRequest({ appKey: 'k', appSecret: 's' }, 3, 500);
+  assert.equal(request.call, 'ListarClientesResumido');
+  assert.deepEqual(request.param, [{ pagina: 3, registros_por_pagina: 500 }]);
+});
+
+test('extrai clientes de clientes_cadastro_resumido', () => {
+  const page = extractOmieClientsPage({ pagina: 1, total_de_paginas: 2, clientes_cadastro_resumido: [{ codigo_cliente: 99, razao_social: 'ACME LTDA', cnpj_cpf: '12345678000199' }] });
+  assert.equal(page.rows.length, 1);
+  assert.equal(page.totalPages, 2);
+});
+
+test('enriquece títulos com nome/CNPJ do cliente por codigo_cliente_fornecedor', () => {
+  const rows = [{ client_name: null, client_tax_id: null, raw_payload: { codigo_cliente_fornecedor: 99 } }];
+  const clients = new Map([['99', { name: 'ACME LTDA', taxId: '12345678000199' }]]);
+  enrichReceivablesWithClients(rows, clients);
+  assert.equal(rows[0].client_name, 'ACME LTDA');
+  assert.equal(rows[0].client_tax_id, '12345678000199');
 });
