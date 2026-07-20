@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { MinimalState } from '../../components/minimal-states';
-import { getFinanceSnapshot, getFinanceSourceStatus, triggerOmieSync } from './analytics-api';
-import { ChartCard, KpiCard } from './analytics-ui';
+import { getFinanceSnapshot, getFinanceSourceStatus, getFinanceUnmatchedClients, triggerOmieSync, type FinanceUnmatchedClient } from './analytics-api';
+import { ChartCard, KpiCard, MetricInfo } from './analytics-ui';
 import { formatCurrencyBRL, formatMonthLabel, formatPercent, type AnalyticsFilters, DEFAULT_ANALYTICS_FILTERS, type FinanceBreakdown, type FinanceSnapshot, type FinanceSourceStatus } from './analytics-model';
 import { ANALYTICS_PERIOD_OPTIONS, resolveAnalyticsPeriod, type AnalyticsPeriodPreset } from './analytics-periods';
 import type { AnalyticsPageProps } from './analytics-model';
@@ -64,6 +64,16 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange }: Ana
   const [syncingOmie, setSyncingOmie] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [preset, setPreset] = useState<AnalyticsPeriodPreset | ''>('month');
+  const [unmatched, setUnmatched] = useState<FinanceUnmatchedClient[] | null>(null);
+  const [loadingUnmatched, setLoadingUnmatched] = useState(false);
+
+  const toggleUnmatched = async () => {
+    if (unmatched) { setUnmatched(null); return; }
+    setLoadingUnmatched(true);
+    try { setUnmatched(await getFinanceUnmatchedClients(filters.clientQuery, 200)); }
+    catch { setUnmatched([]); }
+    finally { setLoadingUnmatched(false); }
+  };
 
   useEffect(() => { setFilters((current) => ({ ...current, ...period })); setDraft((current) => ({ ...current, ...period })); }, [period.from, period.to]);
 
@@ -165,12 +175,22 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange }: Ana
         <ChartCard title="Maiores devedores" description="Clientes com maior saldo em aberto (nome e CNPJ da base OMIE).">
           {snapshot.topDebtors.length === 0 ? <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Sem devedores em aberto.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[480px] text-sm"><thead><tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]"><th className="py-2">Cliente</th><th className="py-2">CNPJ/CPF</th><th className="py-2 text-right">Títulos</th><th className="py-2 text-right">Saldo em aberto</th></tr></thead><tbody>{snapshot.topDebtors.map((row, index) => <tr key={`${row.client}-${index}`} className="border-b border-[color:var(--minimal-border)] last:border-0"><td className="py-2 text-[color:var(--minimal-text)]">{row.client}</td><td className="py-2 tabular-nums text-[color:var(--minimal-text-tertiary)]">{row.taxId ?? '—'}</td><td className="py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.titles.toLocaleString('pt-BR')}</td><td className="py-2 text-right tabular-nums font-medium text-[color:var(--minimal-text)]">{formatCurrencyBRL(row.balance)}</td></tr>)}</tbody></table></div>}
         </ChartCard>
-        <ChartCard title="Financeiro × CS (HubSpot)" description="Carteira em aberto cruzada com o cadastro de clientes do HubSpot por CNPJ.">
-          <div className="mb-3 flex flex-wrap gap-2">
+        <ChartCard title="Financeiro × CS (HubSpot)" description="Carteira em aberto cruzada com o cadastro de clientes do HubSpot. Critério: CNPJ (somente dígitos). O nome não reconcilia, só serve de pista.">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
             <Tag label={`Reconciliado: ${formatCurrencyBRL(snapshot.csReconciliation.matchedBalance)}`} tone="positive" />
+            <MetricInfo text="Saldo em aberto de títulos cujo CNPJ foi encontrado no cadastro de empresas do HubSpot." />
             <Tag label={`Sem empresa no HubSpot: ${formatCurrencyBRL(snapshot.csReconciliation.unmatchedBalance)}`} tone={snapshot.csReconciliation.unmatchedBalance > 0 ? 'warning' : 'neutral'} />
+            <MetricInfo text="Saldo de títulos cujo CNPJ não existe em nenhuma empresa do HubSpot. São clientes candidatos a cadastro." />
           </div>
           {snapshot.csReconciliation.byClientStatus.length === 0 ? <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Sem cruzamento disponível{sourceIsApi ? '' : ' (disponível via API OMIE)'}.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[440px] text-sm"><thead><tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]"><th className="py-2">Status do cliente (CS)</th><th className="py-2 text-right">Títulos</th><th className="py-2 text-right">Saldo</th><th className="py-2 text-right">Vencido</th></tr></thead><tbody>{snapshot.csReconciliation.byClientStatus.map((row) => <tr key={row.key} className="border-b border-[color:var(--minimal-border)] last:border-0"><td className="py-2 text-[color:var(--minimal-text)]">{row.key}</td><td className="py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.titles.toLocaleString('pt-BR')}</td><td className="py-2 text-right tabular-nums text-[color:var(--minimal-text)]">{formatCurrencyBRL(row.balance)}</td><td className="py-2 text-right tabular-nums font-medium text-[color:var(--minimal-danger-text)]">{formatCurrencyBRL(row.overdueBalance)}</td></tr>)}</tbody></table></div>}
+          <p className="mt-3 text-[11px] leading-4 text-[color:var(--minimal-text-tertiary)]"><strong>Sem status CS</strong>: empresa existe no HubSpot (CNPJ bateu), mas sem o campo de status de cliente preenchido. <strong>Sem empresa no HubSpot</strong>: CNPJ não encontrado em nenhuma empresa do CRM. <strong>Grupo de Empresas</strong> e demais: status vindo do HubSpot.</p>
+          <div className="mt-3">
+            <button type="button" onClick={() => void toggleUnmatched()} disabled={loadingUnmatched} className="rounded-lg border border-[color:var(--minimal-border-strong)] px-3 py-1.5 text-xs font-medium text-[color:var(--minimal-text)] hover:bg-[color:var(--minimal-surface-muted)] disabled:opacity-60">{loadingUnmatched ? 'Carregando...' : unmatched ? 'Ocultar empresas sem cadastro' : 'Ver empresas do OMIE sem cadastro no HubSpot'}</button>
+          </div>
+          {unmatched ? (unmatched.length === 0 ? <p className="mt-3 text-xs text-[color:var(--minimal-text-tertiary)]">Nenhuma empresa sem cadastro neste recorte.</p> : <>
+            <p className="mt-3 mb-2 text-[11px] leading-4 text-[color:var(--minimal-text-tertiary)]">Busca feita por CNPJ normalizado (somente dígitos) contra <code>hubspot_companies</code>. A coluna Motivo indica quando há uma empresa de nome parecido no HubSpot (provável CNPJ divergente ou ausente).</p>
+            <div className="overflow-x-auto"><table className="w-full min-w-[560px] text-sm"><thead><tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]"><th className="py-2">Empresa (OMIE)</th><th className="py-2">CNPJ</th><th className="py-2 text-right">Títulos</th><th className="py-2 text-right">Saldo</th><th className="py-2 text-right">Vencido</th><th className="py-2">Motivo</th></tr></thead><tbody>{unmatched.map((row, index) => <tr key={`${row.taxId ?? row.client}-${index}`} className="border-b border-[color:var(--minimal-border)] last:border-0"><td className="py-2 text-[color:var(--minimal-text)]">{row.client}</td><td className="py-2 tabular-nums text-[color:var(--minimal-text-tertiary)]">{row.taxId ?? '—'}</td><td className="py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.titles.toLocaleString('pt-BR')}</td><td className="py-2 text-right tabular-nums font-medium text-[color:var(--minimal-text)]">{formatCurrencyBRL(row.balance)}</td><td className="py-2 text-right tabular-nums text-[color:var(--minimal-danger-text)]">{formatCurrencyBRL(row.overdueBalance)}</td><td className="py-2">{row.nameMatches > 0 ? <Tag label="Nome parecido no HubSpot" tone="warning" /> : <Tag label="Não encontrada" tone="neutral" />}</td></tr>)}</tbody></table></div>
+          </> ) : null}
         </ChartCard>
       </div>
 
