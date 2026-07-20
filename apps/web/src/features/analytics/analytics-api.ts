@@ -225,6 +225,35 @@ export async function triggerOmieSync(): Promise<{ totalRows: number; acceptedRo
   return { totalRows: Number(payload?.totalRows ?? 0), acceptedRows: Number(payload?.acceptedRows ?? 0) };
 }
 
+export interface IntegrationSchedule { enabled: boolean; frequency: 'hourly' | 'daily' | 'off'; lastRunAt: string | null; lastStatus: string | null; lastMessage: string | null }
+
+export async function getIntegrationSchedule(): Promise<IntegrationSchedule | null> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.from('analytics_integration_schedule').select('enabled,frequency,last_run_at,last_status,last_message').eq('id', true).maybeSingle();
+  if (error) throw toAppError(error, 'Falha ao carregar o agendamento da integração.');
+  if (!data) return null;
+  const row = data as Record<string, unknown>;
+  return { enabled: row.enabled === true, frequency: (['hourly', 'daily', 'off'].includes(String(row.frequency)) ? String(row.frequency) : 'off') as IntegrationSchedule['frequency'], lastRunAt: (row.last_run_at as string | null) ?? null, lastStatus: (row.last_status as string | null) ?? null, lastMessage: (row.last_message as string | null) ?? null };
+}
+
+export async function setIntegrationSchedule(enabled: boolean, frequency: IntegrationSchedule['frequency']): Promise<void> {
+  const client = requireSupabaseBrowserClient();
+  const { error } = await client.rpc('rpc_admin_set_integration_schedule', { p_enabled: enabled, p_frequency: frequency });
+  if (error) throw toAppError(error, 'Falha ao salvar o agendamento.');
+}
+
+export async function runIntegrationNow(): Promise<{ updated: number; companies: number; omieTitles: number; message?: string }> {
+  const config = readRuntimeConfig();
+  if (!config.ok) throw new Error('As funções seguras do Supabase não estão disponíveis neste ambiente.');
+  const client = requireSupabaseBrowserClient();
+  const { data: { session }, error: sessionError } = await client.auth.getSession();
+  if (sessionError || !session?.access_token) throw new Error('Sessão ativa indisponível para sincronizar.');
+  const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/analytics-integration-run`, { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}`, apikey: config.config.supabaseAnonKey } });
+  const payload = await response.json().catch(() => null) as { error?: string; updated?: number; companies?: number; omieTitles?: number; message?: string } | null;
+  if (!response.ok) throw new Error(payload?.error ?? `Sincronização recusada pelo servidor (HTTP ${response.status}).`);
+  return { updated: Number(payload?.updated ?? 0), companies: Number(payload?.companies ?? 0), omieTitles: Number(payload?.omieTitles ?? 0), message: payload?.message };
+}
+
 export async function getCeoSnapshot(filters: AnalyticsFilters): Promise<CeoSnapshot> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client.rpc('rpc_analytics_ceo_snapshot', { ...rpcFilters(filters) });
