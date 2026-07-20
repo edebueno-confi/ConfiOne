@@ -140,10 +140,24 @@ export interface FinanceKpis {
   overdueTitles: number;
   overdueBalance: number;
   receivedRate: number;
+  openTitles: number;
+  openBalance: number;
+  overdueRate: number;
+  avgDaysOverdue: number;
+  due30: number;
+  due60: number;
+  due90: number;
 }
 
 export interface FinanceBreakdown {
   key: string;
+  titles: number;
+  balance: number;
+}
+
+export interface FinanceDebtor {
+  client: string;
+  taxId: string | null;
   titles: number;
   balance: number;
 }
@@ -154,11 +168,24 @@ export interface FinanceMonthlyPoint {
   balance: number;
 }
 
+export interface FinanceCsBucket {
+  key: string;
+  titles: number;
+  balance: number;
+  overdueBalance: number;
+}
+
 export interface FinanceSnapshot {
+  source: 'api' | 'spreadsheet' | 'none';
   kpis: FinanceKpis;
   byStatus: FinanceBreakdown[];
   byAging: FinanceBreakdown[];
+  agingDays: FinanceBreakdown[];
   monthly: FinanceMonthlyPoint[];
+  projection: FinanceMonthlyPoint[];
+  byCategory: FinanceBreakdown[];
+  topDebtors: FinanceDebtor[];
+  csReconciliation: { matchedBalance: number; unmatchedBalance: number; byClientStatus: FinanceCsBucket[] };
 }
 
 export interface FinanceSourceStatus {
@@ -356,11 +383,24 @@ export function mapCsSnapshot(value: unknown): CsSnapshot {
 export function mapFinanceSnapshot(value: unknown): FinanceSnapshot {
   const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
   const rows = (key: string) => (Array.isArray(data[key]) ? data[key] : []) as Record<string, unknown>[];
+  const recon = (data.cs_reconciliation && typeof data.cs_reconciliation === 'object' ? data.cs_reconciliation : {}) as Record<string, unknown>;
+  const reconRows = (Array.isArray(recon.by_client_status) ? recon.by_client_status : []) as Record<string, unknown>[];
+  const sourceValue = data.source === 'api' || data.source === 'spreadsheet' ? data.source : 'none';
   return {
+    source: sourceValue as FinanceSnapshot['source'],
     kpis: mapFinanceKpis((data.kpis as Record<string, unknown> | undefined) ?? null),
     byStatus: rows('by_status').map((row) => mapFinanceBreakdown(row, 'status')),
     byAging: rows('by_aging').map((row) => mapFinanceBreakdown(row, 'bucket')),
+    agingDays: rows('aging_days').map((row) => mapFinanceBreakdown(row, 'bucket')),
     monthly: rows('monthly').map((row) => ({ month: toText(row.month), titles: toNumber(row.titles), balance: toNumber(row.balance) })),
+    projection: rows('projection').map((row) => ({ month: toText(row.month), titles: toNumber(row.titles), balance: toNumber(row.balance) })),
+    byCategory: rows('by_category').map((row) => mapFinanceBreakdown(row, 'key')),
+    topDebtors: rows('top_debtors').map((row) => ({ client: toText(row.client) || 'Indisponível', taxId: toText(row.tax_id) || null, titles: toNumber(row.titles), balance: toNumber(row.balance) })),
+    csReconciliation: {
+      matchedBalance: toNumber(recon.matched_balance),
+      unmatchedBalance: toNumber(recon.unmatched_balance),
+      byClientStatus: reconRows.map((row) => ({ key: toText(row.key) || 'Indisponível', titles: toNumber(row.titles), balance: toNumber(row.balance), overdueBalance: toNumber(row.overdue_balance) })),
+    },
   };
 }
 
@@ -453,7 +493,7 @@ export function mapAmbiguousOverdueTitles(value: unknown): AmbiguousOverdueTitle
 }
 
 export function mapFinanceKpis(row: Record<string, unknown> | null): FinanceKpis {
-  if (!row) return { totalTitles: 0, netAmount: 0, receivedAmount: 0, balance: 0, overdueTitles: 0, overdueBalance: 0, receivedRate: 0 };
+  if (!row) return { totalTitles: 0, netAmount: 0, receivedAmount: 0, balance: 0, overdueTitles: 0, overdueBalance: 0, receivedRate: 0, openTitles: 0, openBalance: 0, overdueRate: 0, avgDaysOverdue: 0, due30: 0, due60: 0, due90: 0 };
   return {
     totalTitles: toNumber(row.total_titles),
     netAmount: toNumber(row.net_amount),
@@ -462,6 +502,13 @@ export function mapFinanceKpis(row: Record<string, unknown> | null): FinanceKpis
     overdueTitles: toNumber(row.overdue_titles),
     overdueBalance: toNumber(row.overdue_balance),
     receivedRate: toNumber(row.received_rate) / 100,
+    openTitles: toNumber(row.open_titles),
+    openBalance: toNumber(row.open_balance),
+    overdueRate: toNumber(row.overdue_rate) / 100,
+    avgDaysOverdue: toNumber(row.avg_days_overdue),
+    due30: toNumber(row.due_30),
+    due60: toNumber(row.due_60),
+    due90: toNumber(row.due_90),
   };
 }
 

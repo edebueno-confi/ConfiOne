@@ -70,8 +70,9 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange }: Analytic
   if (state.phase === 'loading') {
     return (
       <MinimalState
+        loading
         title="Carregando suporte"
-        description="Consultando os tickets sincronizados do HubSpot."
+        description="O Gênio está consultando os tickets sincronizados do HubSpot."
       />
     );
   }

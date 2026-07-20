@@ -61,8 +61,9 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange }: 
   if (state.phase === 'loading') {
     return (
       <MinimalState
+        loading
         title="Carregando comercial"
-        description="Consultando os deals sincronizados do HubSpot."
+        description="O Gênio está consultando os deals sincronizados do HubSpot."
       />
     );
   }

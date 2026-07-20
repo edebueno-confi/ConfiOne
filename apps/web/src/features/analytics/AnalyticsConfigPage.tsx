@@ -46,7 +46,7 @@ export function AnalyticsConfigPage() {
     }
   };
   const edit = (row: AnalyticsSourceConfig) => setDraft({ id: row.id, domainKey: row.domainKey, objectType: row.objectType, pipelineId: row.pipelineId, alias: row.alias ?? '', isActive: row.isActive });
-  if (state.loading && rows.length === 0) return <MinimalState title="Carregando configuração" description="Consultando os pipelines ativos do Dashboard Gerencial." />;
+  if (state.loading && rows.length === 0) return <MinimalState loading title="Carregando configuração" description="O Gênio está consultando os pipelines ativos do Dashboard Gerencial." />;
   if (state.error && rows.length === 0) return <MinimalState tone="critical" title="Não foi possível carregar" description={state.error} />;
   return <div className="space-y-5">
     <ChartCard title="Fontes de dados do Dashboard" description="Selecione quais pipelines do HubSpot compõem cada área e dê um alias interno legível. O alias aparece no dashboard e não altera o nome nem os tickets no HubSpot.">

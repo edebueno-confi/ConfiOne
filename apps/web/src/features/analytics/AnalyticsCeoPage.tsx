@@ -59,7 +59,7 @@ export function AnalyticsCeoPage({ sharedPeriod, onSharedPeriodChange }: Analyti
     });
   }, [alertSort, clientQuery, overdueRange, state.ambiguousTitles]);
   const visibleQualityGroups = useMemo(() => (state.quality?.groups ?? []).filter((group) => qualityGroupFilter === 'all' || (qualityGroupFilter === 'economic_group' ? group.resolutionType === 'economic_group' : !group.resolutionType)), [qualityGroupFilter, state.quality?.groups]);
-  if (state.loading) return <MinimalState title="Carregando visão executiva" description="Consolidando Comercial, Suporte e Financeiro a partir das fontes locais." />;
+  if (state.loading) return <MinimalState loading title="Carregando visão executiva" description="O Gênio está consolidando Comercial, Suporte e Financeiro a partir das fontes." />;
   if (state.error || !state.data) return <MinimalState tone="critical" title="Não foi possível carregar" description={state.error ?? 'Dados indisponíveis.'} />;
   const { commercial: c, support: s, finance: f } = state.data;
   const handleMerge = async (confirmation: string) => {
