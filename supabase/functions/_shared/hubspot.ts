@@ -395,6 +395,29 @@ export async function searchCompaniesByCnpj(
   }
 }
 
+// --- Propriedades de empresa (schema) para a central de integracao ----------
+export async function listCompanyPropertyNames(tokenOverride?: string): Promise<Set<string>> {
+  const response = await hubspotFetch('/crm/v3/properties/companies', {}, 0, tokenOverride);
+  const data = await response.json() as { results?: Array<{ name?: string }> };
+  return new Set((data.results ?? []).map((r) => String(r.name ?? '')));
+}
+
+export async function listCompanyPropertyGroupNames(tokenOverride?: string): Promise<Set<string>> {
+  const response = await hubspotFetch('/crm/v3/properties/companies/groups', {}, 0, tokenOverride);
+  const data = await response.json() as { results?: Array<{ name?: string }> };
+  return new Set((data.results ?? []).map((r) => String(r.name ?? '')));
+}
+
+export async function createCompanyPropertyGroup(name: string, label: string, tokenOverride?: string): Promise<unknown> {
+  const response = await hubspotFetch('/crm/v3/properties/companies/groups', { method: 'POST', body: JSON.stringify({ name, label }) }, 0, tokenOverride);
+  return await response.json();
+}
+
+export async function createCompanyProperty(def: Record<string, unknown>, tokenOverride?: string): Promise<unknown> {
+  const response = await hubspotFetch('/crm/v3/properties/companies', { method: 'POST', body: JSON.stringify(def) }, 0, tokenOverride);
+  return await response.json();
+}
+
 export function toTimestamp(value: string | null | undefined): string | null {
   if (!value) return null;
   const parsed = new Date(value);
