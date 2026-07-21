@@ -9,7 +9,24 @@
   build, testes Omie/navegacao e lint local aprovados.
 - pendencias: cadastrar a chave Omie no Vault e executar a primeira sincronizacao.
 
+# 2026-07-21 - Integração do handoff visual do mascote Genius
+
+- runtime: `apps/web/src/components/GeniusMascot.tsx` e `apps/web/src/index.css`
+- referência: `Recreação do mascote Genius-handoff/` (ignorada pelo Git)
+- decisão: manter o SVG versionado como fonte de runtime e mapear superfícies
+  para poses `magic`, `shrug`, `celebrate` e `welcome`
+- validação: contracts/web typecheck, build, 7 testes Node, validação documental,
+  lint Supabase, 1.192 testes pgTAP e smoke visual Playwright aprovados
+
 # DOCUMENTATION_LEDGER.md
+
+## Governança Git e release — 2026-07-21
+
+- Política: `docs/GIT_BRANCHING_AND_RELEASE_POLICY.md`.
+- Consolidação: commit `31604b4` na branch local
+  `codex/repository-cleanup-consolidation-20260721`.
+- Estado: worktree limpo; branch anterior preservada; nenhum push, merge ou
+  deploy executado.
 
 ## 2026-07-18 - Configuração de integrações e dashboard gerencial
 
@@ -6338,6 +6355,10 @@ Cada registro deve informar:
   - relatorio: `docs/reports/TECHNICAL_HANDOFF_CLAUDE_2026-07-20.md`
   - escopo: estado tecnico, entregas, validacoes, gates de seguranca e
     continuidade executavel pelo Claude sem depender do historico da conversa.
+- Continuidade OMIE, CS Ops e acesso restrito - 2026-07-20
+  - relatorio: `docs/reports/OMIE_CSOPS_TIMEOUT_ACCESS_CONTINUATION_2026-07-20.md`
+  - escopo: HubSpot como fonte operacional de CS, timeout do upstream, acesso
+    dashboard_viewer e preservacao do staging historico CS Ops.
 - Normalizacao do indice Git e relatorio de continuidade (Claude) - 2026-07-20
   - relatorios: `docs/reports/CLAUDE_CONTINUITY_ASSESSMENT_2026-07-20.md`,
     `docs/reports/HANDOFF_CLAUDE_GIT_NORMALIZATION_2026-07-20.md`
@@ -6363,3 +6384,29 @@ Cada registro deve informar:
   - escopo: dedup robusta, criacao governada de empresas, propriedades omie_*
     criadas, sync de saida (196/196 empresas), agendamento configuravel + UI.
     Copy do dashboard humanizada. Cron de producao pendente (secret gated).
+- Revisao de finalizacao do Dashboard Gerencial - 2026-07-20
+  - relatorio: `docs/reports/DASHBOARD_FINALIZATION_REVIEW_2026-07-20.md`
+  - escopo: QA autenticado, periodo compartilhado, viewer restrito, sem overflow
+    horizontal, abas financeiras/logs, ACL e correcoes de testes.
+- Central de Ajuda, conteudo e acesso gerencial - 2026-07-20
+  - relatorio: `docs/reports/HELP_CENTER_CONTENT_VIEWER_ACCESS_2026-07-20.md`
+  - migrations: `20260720220000_dashboard_viewer_content_settings_access_v1.sql`
+    e `20260720221000_access_dashboard_viewer_management_v1.sql`
+  - testes: `supabase/tests/063_dashboard_viewer_content_settings_access.sql` e
+    `supabase/tests/064_access_dashboard_viewer_management.sql`
+  - escopo: acesso editorial e de integracoes por dashboard_viewer, concessao
+    administravel na area de Acessos, importacao local de 58 drafts e QA das
+    superficies de Central de Ajuda/Knowledge.
+- Publicacao da Central de Ajuda e retomada CS Ops - 2026-07-20
+  - relatorios: `docs/reports/HELP_CENTER_PUBLICATION_2026-07-20.md` e
+    `docs/reports/CS_HUBSPOT_MIGRATION_CONTINUATION_PLAN_2026-07-20.md`
+  - escopo: publicacao local controlada de 44 artigos, preservacao de 12
+    bloqueios tecnicos e plano de conclusao da migracao CS Ops para HubSpot.
+| 2026-07-20 | Central de Ajuda / Octadesk | Reprocessamento de imagens e formatação | 54 artigos selecionados, 129 PNGs auditados, 97 assets públicos governados e QA público/editor concluído | `docs/reports/HELP_CENTER_ASSETS_FORMATTING_2026-07-20.md` |
+| 2026-07-20 | Central de Ajuda / contatos | Contatos no rodapé e artigo em revisão | Contatos removidos dos artigos e configurados por espaço; artigo desatualizado retirado do público | `docs/reports/HELP_CENTER_CONTACTS_AND_ARTICLE_REVIEW_2026-07-20.md` |
+| 2026-07-21 | CS Ops / HubSpot | Importação e dry-run auditado | 606/606 linhas aceitas; correção do contrato de contagens do ledger; nenhum write externo aplicado | `docs/reports/CS_OPS_MIGRATION_DRY_RUN_2026-07-21.md` |
+| 2026-07-21 | OMIE / Financeiro | Sincronização confirmada | Usuário confirmou credencial e sync bem-sucedido; remoto/scheduler continuam gates separados | `docs/reports/OMIE_SYNC_CONFIRMATION_2026-07-21.md` |
+| 2026-07-21 | Design system / Mascote Gênio | Correção do avatar de sincronização | Removida transformação SVG que desprendia o braço; loading, vazio, sucesso e avatar preservados; typecheck/build aprovados | `docs/reports/GENIUS_MASCOT_ARM_FIX_2026-07-21.md` |
+| 2026-07-21 | Integrações / HubSpot + OMIE | Hardening de sincronização e timeout | HubSpot incremental para empresas/tickets, Deals em carga completa segura, bloqueio de concorrência, status parcial OMIE e observabilidade no Dashboard | `docs/reports/HUBSPOT_OMIE_SYNC_HARDENING_2026-07-21.md` |
+| 2026-07-21 | CS Ops / Segurança de migração | Preflight e bloqueio de catálogo vazio | Origem do catálogo, contagens de empresas/responsáveis e bloqueio server-side de aplicação quando o HubSpot retorna zero empresas | `docs/reports/CS_OPS_PREFLIGHT_GUARD_2026-07-21.md` |
+| 2026-07-21 | Segurança / Handoff | Revisão de segurança e integridade local | Auditoria de funções privilegiadas, RLS/grants, dashboard_viewer, secrets, CORS e scheduler; grants defensivos explícitos e pgTAP 063 ampliado | `docs/reports/SECURITY_AND_DIFF_REVIEW_2026-07-21.md` |

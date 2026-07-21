@@ -915,8 +915,9 @@
   antes da paginação, preservando o contrato legado de seis parâmetros.
 - Evidência adicional: teste `058_analytics_reconciliation_group_filter.sql`, com
   5 asserções aprovadas.
-- Analytics agora oferece exportação CSV do recorte executivo e impressão/PDF pelo
-  navegador; a tela de logs ganhou filtro por status e atualização manual.
+- Analytics oferece exportação visual do recorte gerencial em PDF/PNG, com seleção
+  de abas e relatório dedicado sem shell; CSV e impressão bruta do navegador foram
+  removidos. A tela de logs ganhou filtro por status e atualização manual.
 - ExecuÃ§Ã£o adicional 2026-07-20: criado o read model histÃ³rico `rpc_analytics_ceo_history`, que compara o recorte atual com o perÃ­odo anterior de mesma duraÃ§Ã£o sem duplicar regras no frontend. A VisÃ£o Executiva exibe Receita ganha, ConversÃ£o e Saldo vencido com variaÃ§Ã£o semÃ¢ntica e base comparativa.
 - Validado: teste de banco passou com 62 arquivos e 1.164 testes; `npm run web:typecheck` e `npm run web:build` passaram. O build emite apenas o alerta conhecido de chunks acima de 500 kB.
 - AtenÃ§Ã£o: PNG/PDF renderizado, ledger de escrita CS Ops, seed da carteira local, origem operacional detalhada de tickets e adapter GitHub permanecem dependentes de contratos/fontes externos nÃ£o confirmados; nÃ£o foram simulados.
@@ -925,3 +926,173 @@
   dedicada ou PNG renderizado localmente. O antigo print do shell e o botao CSV
   da Visao Executiva foram removidos.
 - Evidencia: `docs/reports/ANALYTICS_VISUAL_EXPORT_2026-07-20.md`.
+- Continuidade OMIE, CS Ops e acesso restrito: HubSpot permanece como fonte
+  operacional de CS; a importação CS Ops foi removida da Configuração e o
+  backend de staging foi preservado para auditoria e migração futura.
+- A orquestração OMIE-HubSpot usa concorrência limitada e timeout individual por
+  chamada, reduzindo o risco de timeout do upstream sem perder contagem de falhas.
+- O papel `dashboard_viewer` e a concessão por e-mail de Maurício permanecem
+  preparados; a conta Auth real e senha dependem do fluxo seguro de convite.
+- Evidência: `docs/reports/OMIE_CSOPS_TIMEOUT_ACCESS_CONTINUATION_2026-07-20.md`.
+
+## Revisão de finalização do Dashboard — 2026-07-20
+
+- Corrigido o bloqueio do papel `dashboard_viewer`: o resolvedor de rota agora
+  permite somente o Dashboard Gerencial e a configuração da Área do cliente;
+  o menu restrito mantém a Central de ajuda como terceiro destino.
+- Validado no navegador local com fixture QA: login, redirecionamento,
+  restrição de `/admin/settings`, acesso a `/admin/customer-portal`, abas do
+  dashboard, período compartilhado, Financeiro, Logs e viewport móvel.
+- Corrigida ACL explícita de `app_private.normalize_company_name(text)` e
+  ajustado o teste da integração OMIE para aceitar estado habilitado somente
+  quando a credencial gerenciada existe.
+- Evidência: `docs/reports/DASHBOARD_FINALIZATION_REVIEW_2026-07-20.md`.
+- Pendências de encerramento: convite real do usuário Maurício, publicação
+  remota das migrations/functions, cron protegido por secret e confirmação de
+  campos de origem específicos dos tickets.
+- Atenção operacional: `supabase:verify` recria o banco local por desenho;
+  o cache sincronizado local foi removido e os fixtures QA foram recriados.
+  Repopular dados de HubSpot exige nova sincronização autorizada.
+
+## Central de Ajuda, conteúdo e acesso gerencial — 2026-07-20
+
+- Feito: o `dashboard_viewer` agora pode abrir Dashboard, Área do cliente,
+  Central de Ajuda, Conteúdo e Configurações.
+- Feito: a tela de Configurações fica restrita ao grupo Integrações para esse
+  perfil; os demais parâmetros administrativos continuam ocultos.
+- Feito: Knowledge Base passou a aceitar o papel para leitura operacional,
+  criação/edição de artigos e fluxo editorial; a fonte permanece backend/RLS.
+- Feito: os 58 artigos locais do corpus legado foram importados como drafts,
+  preservando origem e hash; nenhum artigo foi publicado automaticamente.
+- Feito: Acessos ganhou concessão/revogação governada de `dashboard_viewer`.
+- Validado: `npm run web:typecheck`, `npm run supabase:verify` e QA navegador
+  autenticado. Evidência em
+  `docs/reports/HELP_CENTER_CONTENT_VIEWER_ACCESS_2026-07-20.md`.
+- Atenção: a ativação local do space `genius` foi feita somente para QA;
+  publicação pública exige revisão humana conforme o runbook.
+
+## Publicação da Central de Ajuda e retomada da migração CS Ops — 2026-07-20
+
+- Feito: publicação local controlada do corpus Octadesk aprovado, com 44
+  artigos publicados nesta execução e 12 bloqueados por risco
+  técnico/administrativo.
+- Feito: `source_path` e `source_hash` foram preservados; os bloqueios não foram
+  contornados.
+- Validado: dry-run e apply do script oficial
+  `publish-octadesk-public-help.mjs` no space `genius`.
+- Próximo ciclo: fechar o contrato das propriedades de CS, expor o dry-run e a
+  aplicação da migração no Dashboard e executar a carga auditada da planilha.
+- Evidências: `docs/reports/HELP_CENTER_PUBLICATION_2026-07-20.md` e
+  `docs/reports/CS_HUBSPOT_MIGRATION_CONTINUATION_PLAN_2026-07-20.md`.
+- Atenção: a publicação foi local; o ambiente remoto exige publicação de
+  migrations/functions e execução controlada no projeto-alvo.
+### Assets e formatação da Central de Ajuda — 2026-07-20
+
+- Decidido: tratar `https://o205658-f7a.octadesk.com/kb/` como fonte canônica e usar a exportação local para reprocessamento auditável.
+- Executado: 54 artigos selecionados; 129 PNGs detectados no corpus; 97 assets aprovados movidos para `knowledge-public-assets`; artigos publicados atualizados pela revisão editorial; rascunhos/restritos permaneceram protegidos.
+- Executado: corrigida ACL da view pública e criado bucket público dedicado, sem abrir o bucket privado de curadoria.
+- Validado: leitor público exibiu 6/6 imagens do artigo de teste; editor exibiu 6/6 nós de mídia; imagens retornaram HTTP 200 e dimensões naturais; console sem erros da aplicação.
+- Pendente: inserir vídeos somente quando a equipe fornecer IDs oficiais; revisar manualmente os 12 artigos bloqueados pela curadoria pública.
+- Evidência: `docs/reports/HELP_CENTER_ASSETS_FORMATTING_2026-07-20.md`.
+
+### Contatos centralizados e artigo em revisão — 2026-07-20
+
+- Feito: contatos operacionais removidos do conteúdo derivado dos artigos e
+  centralizados em `Configurações → Central de ajuda`.
+- Feito: rodapé público passou a renderizar e-mail, WhatsApp e site a partir do
+  contrato sanitizado do espaço, sem duplicar a informação em cada artigo.
+- Feito: `Como alterar ou aprovar os produtos de uma solicitação?` foi marcado
+  como revisão interna e retirado do público por estar desatualizado; nenhum
+  procedimento foi inventado.
+- Validado: 67 arquivos/1.192 testes pgTAP, `npm run web:typecheck`, resolver
+  público local e ausência dos contatos antigos no artigo em revisão.
+- Pendente: receber a versão oficial revisada do procedimento antes de
+  republicar o artigo.
+- Evidência: `docs/reports/HELP_CENTER_CONTACTS_AND_ARTICLE_REVIEW_2026-07-20.md`.
+
+## CS Ops — importação controlada e correção do ledger — 2026-07-21
+
+- Feito: a importação local da aba `BD_Clientes` recebeu 606/606 linhas, sem
+  rejeições, com hash, origem e versão de mapeamento preservados.
+- Corrigido: a Edge Function `hubspot-cs-migration` agora grava as contagens com
+  os nomes snake_case do ledger Postgres; o contrato foi coberto por teste
+  unitário no helper compartilhado.
+- Feito: Configuração voltou a expor o fluxo controlado de CS Ops: importação,
+  dry-run e aplicação com confirmação explícita. O fluxo não altera tickets.
+- Validado: dry-run local concluído com ledger e zero alterações externas.
+- Atenção: o cache local de empresas está vazio após a reconstrução do banco;
+  o dry-run local classificou 606 linhas como criação. É necessário reidratar
+  o cache HubSpot antes de aplicar qualquer lote, para evitar duplicidades.
+- Evidência: `docs/reports/CS_OPS_MIGRATION_DRY_RUN_2026-07-21.md`.
+
+## Confirmação OMIE e continuidade dos lotes — 2026-07-21
+
+- Atualizado pelo usuário: credencial OMIE configurada e sincronização real
+  concluída com sucesso.
+- Observado localmente: referência gerenciada para OMIE e 3.433 títulos no
+  snapshot financeiro, sem exposição de credenciais.
+- Pendentes: publicar funções/migrations no ambiente remoto, ativar scheduler
+  protegido e repetir a reconciliação no ambiente alvo.
+- Evidência: `docs/reports/OMIE_SYNC_CONFIRMATION_2026-07-21.md`.
+
+## Mascote Gênio e estados de sincronização — 2026-07-21
+
+- Corrigido: o braço desprendido no avatar do overlay de sincronização; a causa
+  era uma transformação CSS aplicada a um grupo SVG com origem incompatível.
+- Feito: mantidos loading, vazio, sucesso e avatar como superfícies do
+  componente; sucesso usa expressão `wink` e carregamento mantém a magia com o
+  olhar direcionado para baixo.
+- Validado: `npm run web:typecheck` e `npm run web:build` aprovados.
+- Evidência: `docs/reports/GENIUS_MASCOT_ARM_FIX_2026-07-21.md`.
+- Atenção: a confirmação visual autenticada do overlay depende de uma sessão
+  local válida; a tela pública/login foi verificada após a compilação.
+
+## Hardening das sincronizações HubSpot e OMIE — 2026-07-21
+
+- Feito: empresas e tickets do HubSpot passaram a usar atualização incremental
+  com janela de segurança de cinco minutos; tickets evitam a varredura de
+  partições históricas nessa janela; Deals continuam em carga completa por
+  pipeline porque `hs_lastmodifieddate` não foi confirmado nesse objeto.
+- Feito: execuções concorrentes recentes são recusadas com conflito controlado;
+  execuções antigas presas em `running` são encerradas como interrompidas pelo
+  runtime e permanecem auditáveis.
+- Feito: a interface informa modo e contadores da sincronização.
+- Feito: OMIE salvo no read model não é mascarado por falha posterior de
+  atualização de propriedades no HubSpot; o resultado passa a ser `partial`.
+- Validado: typecheck/build web, lint do banco, 1.192 testes pgTAP e carga local
+  das duas Edge Functions sem autenticação (403 esperado).
+- Evidência: `docs/reports/HUBSPOT_OMIE_SYNC_HARDENING_2026-07-21.md`.
+- Pendente: primeira carga completa autenticada, publicação remota e scheduler
+  protegido.
+
+## Preflight seguro da migração CS Ops — 2026-07-21
+
+- Feito: o ledger agora retorna a quantidade de linhas de origem, linhas válidas,
+  empresas e responsáveis carregados, além da origem do catálogo usado no
+  preflight.
+- Feito: `apply` é bloqueado server-side quando a consulta ao HubSpot retorna
+  zero empresas (`409 HUBSPOT_COMPANY_CATALOG_EMPTY`).
+- Feito: a Configuração explica ao administrador que criações em massa durante
+  dry-run com cache vazia são artificiais e exige reidratação antes da aplicação.
+- Validado: 7 testes unitários CS Ops, typecheck/build web, lint do banco,
+  1.192 testes pgTAP e `git diff --check`.
+- Evidência: `docs/reports/CS_OPS_PREFLIGHT_GUARD_2026-07-21.md`.
+- Pendente: reidratar o cache por sincronização HubSpot autenticada e só então
+  revisar/aplicar o ledger; nenhum write externo foi executado neste lote.
+
+## Revisão de segurança e integridade do handoff — 2026-07-21
+
+- Feito: revisão local das funções `security definer`, views administrativas,
+  RLS/grants, acesso `dashboard_viewer`, secrets server-side, CORS e scheduler.
+- Corrigido: a migration de acesso do `dashboard_viewer` reafirma grants
+  explícitos da função privada, da view `vw_admin_knowledge_spaces` e da RPC de
+  configuração; o teste pgTAP 063 cobre leitura autenticada e bloqueio anônimo.
+- Validado: nenhum segredo exposto no frontend, nenhum bypass de papel ou função
+  recente sem `search_path` vazio foi identificado no escopo revisado; a suíte
+  local fechou com 67 arquivos e 1.194 testes.
+- Atenção: CORS curinga compartilhado e comparação direta do segredo de scheduler
+  permanecem observações de hardening futuro; não foram alterados sem inventário
+  de consumidores e procedimento de rotação.
+- Evidência: `docs/reports/SECURITY_AND_DIFF_REVIEW_2026-07-21.md`.
+- Pendente: fazer QA autenticado das superfícies alteradas e separar o diff
+  herdado por domínio antes de qualquer commit/publicação.

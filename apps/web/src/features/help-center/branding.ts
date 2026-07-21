@@ -232,6 +232,10 @@ export function sanitizePublicSupportContacts(
 ) {
   return {
     email: isSafeEmail(contacts?.email) ? contacts!.email!.trim().toLowerCase() : null,
+    whatsapp:
+      contacts?.whatsapp && contacts.whatsapp.trim() && contacts.whatsapp.trim().length <= 40
+        ? contacts.whatsapp.trim()
+        : null,
     websiteUrl: isSafeUrl(contacts?.websiteUrl) ? contacts!.websiteUrl!.trim() : null,
     statusPageUrl: isSafeUrl(contacts?.statusPageUrl)
       ? contacts!.statusPageUrl!.trim()

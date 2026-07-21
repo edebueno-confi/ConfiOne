@@ -7,6 +7,7 @@ import { useAuthContext } from '../auth/auth-context';
 import type { AnalyticsSharedPeriod } from './analytics-model';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import { AnalyticsReportExport } from './AnalyticsReportExport';
+import { GeniusSyncOverlay } from '../../components/GeniusSyncOverlay';
 
 const DOMAINS = listEnabledAnalyticsDomains();
 
@@ -42,12 +43,13 @@ export function AnalyticsShell() {
   const { gate } = useAuthContext();
   const isPlatformAdmin = gate.actor?.is_platform_admin === true;
   const isDashboardViewer = !isPlatformAdmin && gate.actor?.roles.includes('dashboard_viewer') === true;
-  const visibleDomains = isDashboardViewer ? DOMAINS.filter((domain) => ['ceo', 'commercial', 'cs', 'finance'].includes(domain.key)) : DOMAINS;
+  const visibleDomains = isDashboardViewer ? DOMAINS.filter((domain) => ['ceo', 'commercial', 'cs', 'finance', 'config'].includes(domain.key)) : DOMAINS;
   const [activeKey, setActiveKey] = useState(visibleDomains[0]?.key ?? 'commercial');
   const [reloadKey, setReloadKey] = useState(0);
   const [latestRun, setLatestRun] = useState<SyncRun | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [sharedPeriod, setSharedPeriod] = useState<AnalyticsSharedPeriod>(() => resolveAnalyticsPeriod('month'));
   const [reportOpen, setReportOpen] = useState(false);
 
@@ -66,8 +68,12 @@ export function AnalyticsShell() {
   const handleSync = useCallback(async () => {
     setSyncing(true);
     setSyncError(null);
+    setSyncMessage(null);
     try {
-      await triggerHubspotSync();
+      const result = await triggerHubspotSync();
+      setSyncMessage(
+        `${result.mode === 'incremental' ? 'Atualização incremental' : 'Carga completa'} concluída: ${result.companies.toLocaleString('pt-BR')} empresas, ${result.deals.toLocaleString('pt-BR')} deals e ${result.tickets.toLocaleString('pt-BR')} tickets processados.`,
+      );
       refreshLatestRun();
       setReloadKey((current) => current + 1);
     } catch (error) {
@@ -97,17 +103,12 @@ export function AnalyticsShell() {
             <button type="button" onClick={() => setReportOpen(true)} className="inline-flex items-center rounded-lg border border-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action)] transition hover:bg-[color:var(--minimal-surface-muted)]">
               Exportar relatório
             </button>
-            {isPlatformAdmin ? <button
-              type="button"
-              onClick={() => void handleSync()}
-              disabled={syncing}
-              className="inline-flex items-center rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-text)] transition hover:border-[color:var(--minimal-border-hover)] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {syncing ? 'Sincronizando...' : 'Sincronizar HubSpot'}
-            </button> : null}
             <SyncStatusLabel run={latestRun} />
             {syncError ? (
               <span className="text-xs text-[color:var(--color-brand-blue)]">{syncError}</span>
+            ) : null}
+            {syncMessage ? (
+              <span role="status" className="max-w-[38rem] text-right text-xs text-[color:var(--minimal-text-tertiary)]">{syncMessage}</span>
             ) : null}
           </div>
         </div>
@@ -135,10 +136,27 @@ export function AnalyticsShell() {
         </nav>
       </header>
 
+      {isPlatformAdmin ? (
+        <div className="flex flex-wrap items-center justify-end gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-5 py-2.5 sm:px-6">
+          <span className="mr-auto text-xs text-[color:var(--minimal-text-tertiary)]">
+            Atualize o cache do Dashboard Gerencial quando precisar consultar dados recentes.
+          </span>
+          <button
+            type="button"
+            onClick={() => void handleSync()}
+            disabled={syncing}
+            className="inline-flex items-center rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-text)] transition hover:border-[color:var(--minimal-border-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {syncing ? 'Sincronizando...' : 'Sincronizar HubSpot'}
+          </button>
+        </div>
+      ) : null}
+
       <div className="px-5 py-5 sm:px-6">
         {ActiveComponent ? <ActiveComponent key={`${activeKey}-${reloadKey}`} sharedPeriod={sharedPeriod} onSharedPeriodChange={setSharedPeriod} /> : null}
       </div>
       <AnalyticsReportExport open={reportOpen} period={sharedPeriod} onClose={() => setReportOpen(false)} />
+      {syncing ? <GeniusSyncOverlay source="HubSpot" detail="Empresas, negócios, tickets e responsáveis serão recarregados ao final." /> : null}
     </div>
   );
 }

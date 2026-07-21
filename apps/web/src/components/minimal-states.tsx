@@ -30,20 +30,18 @@ export function MinimalState({
       >
         <style>{MAGIC_KEYFRAMES}</style>
         <div className="relative flex h-40 w-40 items-center justify-center">
-          {/* Aura magica */}
           <span
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 rounded-full blur-2xl"
-            style={{ background: 'radial-gradient(closest-side, var(--minimal-action), transparent)', animation: 'geniusGlow 2.6s ease-in-out infinite' }}
+            style={{ backgroundColor: 'var(--minimal-action)', animation: 'geniusGlow 2.6s ease-in-out infinite' }}
           />
-          {/* Sombra flutuante */}
           <span
             aria-hidden="true"
             className="pointer-events-none absolute -bottom-2 h-3 w-24 rounded-[50%]"
             style={{ background: 'var(--minimal-text)', animation: 'geniusShadow 3s ease-in-out infinite', filter: 'blur(6px)' }}
           />
           <div className="relative origin-center scale-[3]" style={{ animation: 'geniusFloat 3s ease-in-out infinite' }}>
-            <GeniusMascot size="lg" animated alt="Gênio preparando os dados" />
+            <GeniusMascot size="lg" animated interactive surface="loading" alt="Gênio preparando os dados" />
           </div>
         </div>
         <div className="max-w-md">
@@ -64,12 +62,13 @@ export function MinimalState({
       )}
       role={tone === 'critical' ? 'alert' : 'status'}
     >
-      <h1 className="text-xl font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
-        {title}
-      </h1>
-      <p className="mt-2 max-w-[60ch] text-sm leading-6 text-[color:var(--minimal-text-secondary)]">
-        {description}
-      </p>
+      <div className="flex items-start gap-4">
+        <GeniusMascot size="lg" surface="empty" alt="Gênio mostrando que não há dados" />
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">{title}</h1>
+          <p className="mt-2 max-w-[60ch] text-sm leading-6 text-[color:var(--minimal-text-secondary)]">{description}</p>
+        </div>
+      </div>
       {actions ? <div className="mt-6 flex flex-wrap gap-2">{actions}</div> : null}
     </section>
   );

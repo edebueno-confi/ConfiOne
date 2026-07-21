@@ -95,6 +95,7 @@ select is(
         'can_read_customer_account_context',
         'can_read_customer_account_admin',
         'can_manage_knowledge_base',
+        'can_read_knowledge_article_asset',
         'can_manage_multi_brand_foundation',
         'can_read_knowledge_article',
         'ticket_attachment_max_bytes',

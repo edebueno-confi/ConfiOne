@@ -37,6 +37,32 @@ function isDue(frequency: string, lastRunAt: string | null): boolean {
   return false;
 }
 
+async function updateCompaniesWithBoundedConcurrency(
+  rows: RollupRow[],
+  token: string,
+  nowDate: string,
+  concurrency = 6,
+) {
+  let updated = 0;
+  let failed = 0;
+  for (let index = 0; index < rows.length; index += concurrency) {
+    const batch = rows.slice(index, index + concurrency);
+    const results = await Promise.allSettled(batch.map((r) => updateCompany(String(r.company_id), {
+      omie_saldo_aberto: String(r.saldo_aberto ?? 0),
+      omie_saldo_vencido: String(r.saldo_vencido ?? 0),
+      omie_titulos_abertos: String(r.titulos_abertos ?? 0),
+      omie_atraso_medio_dias: String(r.atraso_medio_dias ?? 0),
+      omie_situacao_financeira: String(r.situacao ?? ''),
+      omie_ultima_sincronizacao: nowDate,
+    }, token)));
+    for (const result of results) {
+      if (result.status === 'fulfilled') updated += 1;
+      else failed += 1;
+    }
+  }
+  return { updated, failed };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return optionsResponse();
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed.' }, { status: 405 });
@@ -71,31 +97,29 @@ Deno.serve(async (req) => {
     if (upsertError) throw new Error(`Persistência OMIE falhou: ${upsertError.message}`);
     if (syncRun?.id) await client.from('analytics_finance_sync_runs').update({ status: 'completed', total_rows: omieRows.length, accepted_rows: normalized.length, finished_at: new Date().toISOString() }).eq('id', syncRun.id);
 
-    // 2) read model -> propriedades HubSpot (fill dos campos omie_*)
-    const { data: rollupData, error: rollupError } = await client.rpc('rpc_analytics_finance_company_rollup');
-    if (rollupError) throw new Error(`Rollup falhou: ${rollupError.message}`);
-    const rows = (Array.isArray(rollupData) ? rollupData : []) as RollupRow[];
-    const hubToken = await getSecret(client, 'hubspot');
-    const nowDate = new Date().toISOString().slice(0, 10);
-    let updated = 0; let failed = 0;
-    for (const r of rows) {
-      try {
-        await updateCompany(String(r.company_id), {
-          omie_saldo_aberto: String(r.saldo_aberto ?? 0),
-          omie_saldo_vencido: String(r.saldo_vencido ?? 0),
-          omie_titulos_abertos: String(r.titulos_abertos ?? 0),
-          omie_atraso_medio_dias: String(r.atraso_medio_dias ?? 0),
-          omie_situacao_financeira: String(r.situacao ?? ''),
-          omie_ultima_sincronizacao: nowDate,
-        }, hubToken);
-        updated += 1;
-      } catch (_e) { failed += 1; }
-    }
+    // 2) read model -> propriedades HubSpot (fill dos campos omie_*).
+    // A persistência OMIE já foi concluída acima. Se o enriquecimento de
+    // propriedades do HubSpot falhar/estourar o limite do worker, o financeiro
+    // continua disponível no read model e a execução é reportada como parcial,
+    // em vez de mascarar uma carga financeira concluída como erro total.
+    try {
+      const { data: rollupData, error: rollupError } = await client.rpc('rpc_analytics_finance_company_rollup');
+      if (rollupError) throw new Error(`Rollup falhou: ${rollupError.message}`);
+      const rows = (Array.isArray(rollupData) ? rollupData : []) as RollupRow[];
+      const hubToken = await getSecret(client, 'hubspot');
+      const nowDate = new Date().toISOString().slice(0, 10);
+      const { updated, failed } = await updateCompaniesWithBoundedConcurrency(rows, hubToken, nowDate);
 
-    const status = failed === 0 ? 'success' : (updated > 0 ? 'partial' : 'error');
-    const message = `OMIE ${normalized.length} títulos; HubSpot ${updated}/${rows.length} empresas (${failed} falhas).`;
-    await client.rpc('rpc_service_mark_integration_run', { p_status: status, p_message: message });
-    return jsonResponse({ ok: true, mode, omieTitles: normalized.length, companies: rows.length, updated, failed, message });
+      const status = failed === 0 ? 'success' : 'partial';
+      const message = `OMIE ${normalized.length} títulos; HubSpot ${updated}/${rows.length} empresas (${failed} falhas).`;
+      await client.rpc('rpc_service_mark_integration_run', { p_status: status, p_message: message });
+      return jsonResponse({ ok: true, status, mode, omieTitles: normalized.length, companies: rows.length, updated, failed, message });
+    } catch (hubspotError) {
+      const detail = hubspotError instanceof Error ? hubspotError.message : String(hubspotError);
+      const message = `OMIE ${normalized.length} títulos salvos; atualização das propriedades HubSpot pendente: ${detail.slice(0, 260)}`;
+      await client.rpc('rpc_service_mark_integration_run', { p_status: 'partial', p_message: message });
+      return jsonResponse({ ok: true, status: 'partial', mode, omieTitles: normalized.length, companies: 0, updated: 0, failed: 0, message });
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Falha na orquestração de integração.';
     await client.rpc('rpc_service_mark_integration_run', { p_status: 'error', p_message: message });

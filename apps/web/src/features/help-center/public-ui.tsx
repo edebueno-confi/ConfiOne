@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { AppButton, GhostButton, cx } from '../../components/ui';
+import type { PublicHelpSupportContacts } from '../../contracts/public-contracts';
 
 export type HelpIconKind =
   | 'search'
@@ -502,6 +503,59 @@ export function PublicHelpHeader({
         </details>
       </div>
     </header>
+  );
+}
+
+function whatsappHref(value: string | null | undefined) {
+  const digits = value?.replace(/\D/g, '') ?? '';
+  return digits.length >= 10 ? `https://wa.me/${digits}` : null;
+}
+
+export function PublicHelpFooter({
+  brandName,
+  supportContacts,
+}: {
+  brandName: string;
+  supportContacts: PublicHelpSupportContacts;
+}) {
+  const whatsapp = whatsappHref(supportContacts.whatsapp);
+  const hasContact = Boolean(supportContacts.email || whatsapp);
+
+  return (
+    <footer className="mt-10 border-t border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)]">
+      <div className="mx-auto flex max-w-[1520px] flex-col gap-5 px-4 py-7 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8 xl:px-10">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Precisa de ajuda?</p>
+          <p className="text-sm leading-6 text-[var(--help-muted)]">
+            Fale com o suporte {brandName} pelos canais oficiais.
+          </p>
+        </div>
+        {hasContact ? (
+          <div className="flex flex-wrap gap-2.5 text-sm">
+            {supportContacts.email ? (
+              <a
+                className="inline-flex min-h-10 items-center rounded-[12px] border border-[var(--help-border)] px-3.5 font-semibold text-[var(--help-link)] no-underline transition hover:border-[var(--help-link)]"
+                href={`mailto:${supportContacts.email}`}
+              >
+                E-mail: {supportContacts.email}
+              </a>
+            ) : null}
+            {whatsapp ? (
+              <a
+                className="inline-flex min-h-10 items-center rounded-[12px] bg-[var(--help-link)] px-3.5 font-semibold text-white no-underline transition hover:bg-[var(--help-link-hover)]"
+                href={whatsapp}
+                rel="noreferrer"
+                target="_blank"
+              >
+                WhatsApp: {supportContacts.whatsapp}
+              </a>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-sm text-[var(--help-muted)]">Canais de contato indisponíveis no momento.</p>
+        )}
+      </div>
+    </footer>
   );
 }
 

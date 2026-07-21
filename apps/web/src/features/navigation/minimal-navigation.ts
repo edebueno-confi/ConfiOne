@@ -52,6 +52,8 @@ export function buildMinimalNavigation({
         { id: 'dashboard-operational', label: 'Dashboard operacional', to: '/admin/analytics', icon: 'workflow', matches: (path) => matchesBase(path, '/admin/analytics') },
         { id: 'customer-area-config', label: 'Área do cliente', to: '/admin/customer-portal', icon: 'users', matches: (path) => matchesBase(path, '/admin/customer-portal') },
         { id: 'help-center', label: 'Central de ajuda', to: '/help', icon: 'book', matches: (path) => matchesBase(path, '/help') },
+        { id: 'knowledge-content', label: 'Conteúdo', to: '/admin/knowledge', icon: 'document', matches: (path) => matchesBase(path, '/admin/knowledge') },
+        { id: 'dashboard-settings', label: 'Configurações', to: '/admin/settings', icon: 'settings', matches: (path) => matchesBase(path, '/admin/settings') },
       ],
     }];
   }

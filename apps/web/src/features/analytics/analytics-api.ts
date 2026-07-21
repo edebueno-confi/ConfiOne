@@ -242,16 +242,16 @@ export async function setIntegrationSchedule(enabled: boolean, frequency: Integr
   if (error) throw toAppError(error, 'Falha ao salvar o agendamento.');
 }
 
-export async function runIntegrationNow(): Promise<{ updated: number; companies: number; omieTitles: number; message?: string }> {
+export async function runIntegrationNow(): Promise<{ status: 'success' | 'partial'; updated: number; companies: number; omieTitles: number; message?: string }> {
   const config = readRuntimeConfig();
   if (!config.ok) throw new Error('As funções seguras do Supabase não estão disponíveis neste ambiente.');
   const client = requireSupabaseBrowserClient();
   const { data: { session }, error: sessionError } = await client.auth.getSession();
   if (sessionError || !session?.access_token) throw new Error('Sessão ativa indisponível para sincronizar.');
   const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/analytics-integration-run`, { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}`, apikey: config.config.supabaseAnonKey } });
-  const payload = await response.json().catch(() => null) as { error?: string; updated?: number; companies?: number; omieTitles?: number; message?: string } | null;
+  const payload = await response.json().catch(() => null) as { error?: string; status?: 'success' | 'partial'; updated?: number; companies?: number; omieTitles?: number; message?: string } | null;
   if (!response.ok) throw new Error(payload?.error ?? `Sincronização recusada pelo servidor (HTTP ${response.status}).`);
-  return { updated: Number(payload?.updated ?? 0), companies: Number(payload?.companies ?? 0), omieTitles: Number(payload?.omieTitles ?? 0), message: payload?.message };
+  return { status: payload?.status === 'partial' ? 'partial' : 'success', updated: Number(payload?.updated ?? 0), companies: Number(payload?.companies ?? 0), omieTitles: Number(payload?.omieTitles ?? 0), message: payload?.message };
 }
 
 export async function getCeoSnapshot(filters: AnalyticsFilters): Promise<CeoSnapshot> {
@@ -432,7 +432,18 @@ export async function listCsOpsImportRuns(): Promise<CsOpsImportRun[]> {
   }));
 }
 
-export async function runCsOpsMigration(sourceImportRunId: string, mode: 'dry_run' | 'apply' = 'dry_run', maxRows = 1000): Promise<{ migrationRunId: string; status: string; counts: Record<string, number>; message: string }> {
+export interface CsOpsMigrationPreflight {
+  mode: 'dry_run' | 'apply';
+  sourceRows: number;
+  validSourceRows: number;
+  hubspotCompaniesLoaded: number;
+  hubspotOwnersLoaded: number;
+  companyCatalog: 'local_cache' | 'hubspot_live';
+  requiresRehydrate: boolean;
+  canApply: boolean;
+}
+
+export async function runCsOpsMigration(sourceImportRunId: string, mode: 'dry_run' | 'apply' = 'dry_run', maxRows = 1000): Promise<{ migrationRunId: string; sourceImportRunId: string; status: string; counts: Record<string, number>; preflight?: CsOpsMigrationPreflight; message: string }> {
   const config = readRuntimeConfig();
   if (!config.ok) throw new Error('As funcoes seguras do Supabase nao estao disponiveis neste ambiente.');
   const client = requireSupabaseBrowserClient();
@@ -444,13 +455,25 @@ export async function runCsOpsMigration(sourceImportRunId: string, mode: 'dry_ru
     headers: { Authorization: `Bearer ${session.access_token}`, apikey: config.config.supabaseAnonKey, 'Content-Type': 'application/json' },
     body: JSON.stringify({ sourceImportRunId, mode, maxRows, ...(mode === 'apply' ? { confirmation: 'MIGRAR_CS_OPS' } : {}) }),
   });
-  const payload = await response.json().catch(() => null) as { error?: string; migrationRunId?: string; status?: string; counts?: Record<string, number>; message?: string } | null;
+  const payload = await response.json().catch(() => null) as { error?: string; migrationRunId?: string; sourceImportRunId?: string; status?: string; counts?: Record<string, number>; preflight?: CsOpsMigrationPreflight; message?: string } | null;
   if (!response.ok) throw new Error(payload?.error ?? `Migracao CS Ops recusada pelo servidor (HTTP ${response.status}).`);
-  return { migrationRunId: String(payload?.migrationRunId ?? ''), status: String(payload?.status ?? 'unknown'), counts: payload?.counts ?? {}, message: String(payload?.message ?? 'Simulacao concluida.') };
+  return { migrationRunId: String(payload?.migrationRunId ?? ''), sourceImportRunId: String(payload?.sourceImportRunId ?? sourceImportRunId), status: String(payload?.status ?? 'unknown'), counts: payload?.counts ?? {}, preflight: payload?.preflight, message: String(payload?.message ?? 'Simulacao concluida.') };
 }
 
 // Dispara a Edge Function hubspot-sync com o JWT da sessao ativa (platform_admin).
-export async function triggerHubspotSync(domain?: 'commercial' | 'cs'): Promise<void> {
+export interface HubspotSyncResult {
+  mode: 'full' | 'incremental';
+  deals: number;
+  tickets: number;
+  owners: number;
+  stages: number;
+  companies: number;
+}
+
+export async function triggerHubspotSync(
+  domain?: 'commercial' | 'cs',
+  options: { full?: boolean } = {},
+): Promise<HubspotSyncResult> {
   const config = readRuntimeConfig();
   if (!config.ok) {
     throw new Error('As funcoes seguras do Supabase nao estao disponiveis neste ambiente.');
@@ -473,11 +496,19 @@ export async function triggerHubspotSync(domain?: 'commercial' | 'cs'): Promise<
       apikey: config.config.supabaseAnonKey,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(domain ? { domain } : {}),
+    body: JSON.stringify({ ...(domain ? { domain } : {}), ...(options.full ? { full: true } : {}) }),
   });
 
-  const payload = (await response.json().catch(() => null)) as { error?: string; message?: string } | null;
+  const payload = (await response.json().catch(() => null)) as ({ error?: string; message?: string } & Partial<HubspotSyncResult>) | null;
   if (!response.ok) {
     throw new Error(payload?.error ?? payload?.message ?? `Sincronizacao recusada pelo servidor (HTTP ${response.status}).`);
   }
+  return {
+    mode: payload?.mode === 'full' ? 'full' : 'incremental',
+    deals: Number(payload?.deals ?? 0),
+    tickets: Number(payload?.tickets ?? 0),
+    owners: Number(payload?.owners ?? 0),
+    stages: Number(payload?.stages ?? 0),
+    companies: Number(payload?.companies ?? 0),
+  };
 }

@@ -7,7 +7,8 @@ export function AdminConsoleShell() {
   const location = useLocation();
   const isPlatformAdmin = gate.actor?.is_platform_admin === true;
   const isDashboardViewer = gate.actor?.roles.includes('dashboard_viewer') === true;
-  const viewerAllowed = ['/admin/analytics', '/admin/customer-portal'].some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
+  const viewerAllowed = ['/admin/analytics', '/admin/customer-portal', '/admin/knowledge', '/admin/settings']
+    .some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
 
   if (!isPlatformAdmin && isDashboardViewer && !viewerAllowed) {
     return <Navigate replace to="/admin/analytics" />;

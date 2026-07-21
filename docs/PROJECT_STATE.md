@@ -8,7 +8,25 @@
   mesmo read model, com execucao auditavel e status de fonte/fallback na tela.
 - A chave OMIE continua pendente; nenhuma credencial foi criada ou exposta.
 
+# Mascote Genius e estados operacionais - 2026-07-21
+
+- O handoff visual foi auditado e não introduz uma segunda fonte de asset: o
+  `genius.svg` extraído é idêntico ao SVG já versionado.
+- `GeniusMascot` agora mapeia as superfícies operacionais para poses distintas:
+  magia durante loading, shrug no vazio, celebração no sucesso e welcome em
+  avatar/default.
+- O bundle de exportação permanece como referência local ignorada pelo Git;
+  o runtime usa somente componentes React e CSS do produto.
+
 # PROJECT_STATE.md
+
+# Central de Ajuda e acesso operacional - 2026-07-20
+
+- O papel `dashboard_viewer` agora é administrável na tela `/admin/access` e
+  cobre Dashboard, Área do cliente, Central de Ajuda, Conteúdo e Integrações.
+- A Knowledge Base local recebeu 58 artigos do corpus legado como rascunhos,
+  com origem/hash preservados; publicação continua humana e governada.
+- Evidência: `docs/reports/HELP_CENTER_CONTENT_VIEWER_ACCESS_2026-07-20.md`.
 
 # Status e responsaveis CS consolidados - 2026-07-19
 
@@ -2466,3 +2484,40 @@ Pendência arquitetural futura já mapeada, mas fora do escopo atual:
 - A nova aba `Visão executiva` usa `rpc_analytics_ceo_snapshot` para consolidar HubSpot Comercial, HubSpot CS/Suporte e OMIE Financeiro.
 - KPIs agora podem exibir hint de fonte e fórmula no ícone `i`, com explicação contextual para o usuário.
 - O endpoint local da Edge Function de importação foi iniciado e responde HTTP 200 em `OPTIONS`; o 404 observado era ausência do servidor local de Functions.
+
+## Hardening de sincronização HubSpot/OMIE — 2026-07-21
+
+- O sincronizador HubSpot agora diferencia carga incremental e completa:
+  empresas e tickets usam `hs_lastmodifieddate` com sobreposição de cinco
+  minutos; Deals seguem carga completa por pipeline porque essa propriedade não
+  foi confirmada no catálogo do portal para esse objeto.
+- Execuções concorrentes recentes são bloqueadas; registros antigos presos em
+  `running` são encerrados com erro auditável de interrupção do runtime.
+- O dashboard informa o modo e os contadores processados.
+- A integração OMIE reporta `partial` quando os títulos foram persistidos, mas a
+  atualização posterior das propriedades HubSpot falhou; o financeiro não é
+  apresentado como indisponível nesse caso.
+- Evidência: `docs/reports/HUBSPOT_OMIE_SYNC_HARDENING_2026-07-21.md`.
+
+## CS Ops: preflight seguro da migração — 2026-07-21
+
+- O fluxo informa a origem e o tamanho do catálogo HubSpot usado no dry-run ou
+  na aplicação.
+- Aplicações são bloqueadas quando a consulta live retorna zero empresas, para
+  evitar criação em massa causada por cache local vazia.
+- Nenhuma empresa ou ticket foi alterado neste lote.
+- Evidência: `docs/reports/CS_OPS_PREFLIGHT_GUARD_2026-07-21.md`.
+
+## Revisão de segurança e integridade — 2026-07-21
+
+- A revisão local do lote recente confirmou gates de papel, RLS/grants,
+  `security definer` com `search_path` vazio e segredos de integração somente no
+  servidor.
+- A migration de acesso do `dashboard_viewer` reafirma os grants da view de
+  espaços, da RPC de fontes e do gate privado; o teste 063 valida a superfície
+  autenticada e o bloqueio anônimo.
+- CORS curinga no helper compartilhado e comparação direta do segredo de
+  scheduler permanecem observações de hardening, sem evidência de bypass no
+  escopo local.
+- Evidência: `docs/reports/SECURITY_AND_DIFF_REVIEW_2026-07-21.md`.
+- Nenhum commit, push, deploy ou write remoto foi realizado.

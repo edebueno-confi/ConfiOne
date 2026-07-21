@@ -72,21 +72,28 @@ Deno.serve(async (req) => {
   let updated = 0;
   let failed = 0;
   const failures: Array<Record<string, unknown>> = [];
-  for (const r of targets) {
-    try {
-      await updateCompany(String(r.company_id), {
-        omie_saldo_aberto: String(r.saldo_aberto ?? 0),
-        omie_saldo_vencido: String(r.saldo_vencido ?? 0),
-        omie_titulos_abertos: String(r.titulos_abertos ?? 0),
-        omie_atraso_medio_dias: String(r.atraso_medio_dias ?? 0),
-        omie_situacao_financeira: String(r.situacao ?? ''),
-        omie_ultima_sincronizacao: nowDate,
-      }, token);
-      updated += 1;
-    } catch (error) {
-      failed += 1;
-      if (failures.length < 20) failures.push({ companyId: r.company_id, error: error instanceof Error ? error.message.slice(0, 200) : 'erro' });
-    }
+  const concurrency = 6;
+  for (let index = 0; index < targets.length; index += concurrency) {
+    const batch = targets.slice(index, index + concurrency);
+    const results = await Promise.allSettled(batch.map((r) => updateCompany(String(r.company_id), {
+      omie_saldo_aberto: String(r.saldo_aberto ?? 0),
+      omie_saldo_vencido: String(r.saldo_vencido ?? 0),
+      omie_titulos_abertos: String(r.titulos_abertos ?? 0),
+      omie_atraso_medio_dias: String(r.atraso_medio_dias ?? 0),
+      omie_situacao_financeira: String(r.situacao ?? ''),
+      omie_ultima_sincronizacao: nowDate,
+    }, token)));
+    results.forEach((result, offset) => {
+      if (result.status === 'fulfilled') {
+        updated += 1;
+      } else {
+        failed += 1;
+        if (failures.length < 20) {
+          const row = batch[offset];
+          failures.push({ companyId: row.company_id, error: result.reason instanceof Error ? result.reason.message.slice(0, 200) : 'erro' });
+        }
+      }
+    });
   }
 
   return jsonResponse({ ok: true, dryRun: false, totalCompanies: rows.length, updated, failed, failures });

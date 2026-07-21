@@ -27,6 +27,10 @@ const COMPLETE_PUBLIC_CONFIRMATIONS = {
 const MIGRATION_REVIEW_NOTE =
   'Publicacao migrada da Central de Ajuda Octadesk existente para a Central Genius.';
 
+const MANUAL_REVIEW_TITLES = new Set([
+  'como alterar ou aprovar os produtos de uma solicitacao?',
+]);
+
 function fail(message) {
   console.error(message);
   process.exit(1);
@@ -265,6 +269,13 @@ function detectCriticalBlocks(row, duplicateHashCounts) {
   }
 
   const title = String(row.title ?? '').toLowerCase();
+  const normalizedTitle = normalizeTextForPublic(row.title ?? '').value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
+  if (MANUAL_REVIEW_TITLES.has(normalizedTitle)) {
+    reasons.push('manual_review_required');
+  }
   const technicalTitlePatterns = [
     ['permissao_tecnica', /\bpermiss[oõ]es?\b/i],
     ['erro_autorizacao', /\bunauthorized|n[aã]o autorizado|autoriza[cç][aã]o\b/i],

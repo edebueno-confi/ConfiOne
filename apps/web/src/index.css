@@ -3432,38 +3432,58 @@ table {
 
 /* Mascote original do GSO: animação leve, sem depender de uma biblioteca. */
 .genius-mascot {
+  --genius-mascot-size: 2.25rem;
   position: relative;
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: var(--genius-mascot-size);
+  height: var(--genius-mascot-size);
+  isolation: isolate;
+  cursor: default;
 }
 
-.genius-mascot--sm { width: 1.5rem; height: 1.5rem; }
-.genius-mascot--md { width: 2.25rem; height: 2.25rem; }
-.genius-mascot--lg { width: 3rem; height: 3rem; }
+.genius-mascot--sm { --genius-mascot-size: 1.5rem; }
+.genius-mascot--md { --genius-mascot-size: 2.25rem; }
+.genius-mascot--lg { --genius-mascot-size: 3rem; }
+.genius-mascot--xl { --genius-mascot-size: 14rem; }
 
-.genius-mascot::before {
+.genius-mascot[data-surface='success'] { --genius-mascot-accent: var(--color-success-text); }
+.genius-mascot[data-surface='empty'] { --genius-mascot-accent: var(--genius-site-pink); }
+.genius-mascot[data-surface='loading'] { --genius-mascot-accent: var(--genius-site-cyan); }
+
+.genius-mascot__aura {
   position: absolute;
   inset: 12%;
-  content: '';
   border-radius: 999px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--genius-site-cyan) 42%, transparent), transparent 68%);
-  opacity: 0;
+  background: radial-gradient(circle, color-mix(in srgb, var(--genius-mascot-accent, var(--genius-site-cyan)) 42%, transparent), transparent 68%);
+  opacity: 0.12;
+  pointer-events: none;
 }
 
-.genius-mascot img {
+.genius-mascot__svg {
   position: relative;
   z-index: 1;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  display: block;
+  overflow: visible;
+  transform-origin: 50% 60%;
 }
 
-.genius-mascot--animated::before { animation: genius-mascot-glow 3.8s ease-in-out infinite; }
-.genius-mascot--animated img { animation: genius-mascot-float 4s ease-in-out infinite; }
+.genius-mascot--animated .genius-mascot__aura { animation: genius-mascot-glow 3.8s ease-in-out infinite; }
+.genius-mascot--animated .genius-mascot__svg { animation: genius-mascot-float 4s ease-in-out infinite; }
+.genius-mascot--animated .genius-mascot__lamp { transform-box: fill-box; transform-origin: 176px 432px; animation: genius-mascot-bob 6s ease-in-out infinite; }
+.genius-mascot--animated .genius-mascot__genie { transform-box: fill-box; transform-origin: 180px 250px; animation: genius-mascot-float 5s ease-in-out infinite; }
+.genius-mascot--animated .genius-mascot__head { transform-box: fill-box; transform-origin: 180px 140px; animation: genius-mascot-bob 5s ease-in-out 0.3s infinite; }
+.genius-mascot--animated .genius-mascot__sparkles { animation: genius-mascot-twinkle 3s ease-in-out infinite; }
+.genius-mascot--animated .genius-mascot__pose-arm--wave { transform-box: fill-box; transform-origin: 224px 210px; animation: genius-mascot-arm-wave 1.4s ease-in-out infinite; }
+.genius-mascot--animated .genius-mascot__pose-arm--magic { transform-box: fill-box; transform-origin: 226px 212px; animation: genius-mascot-arm-magic 3.2s ease-in-out infinite; }
+.genius-mascot--animated .genius-mascot__pose-spark { transform-box: fill-box; transform-origin: center; animation: genius-mascot-tip-spark 1.8s ease-in-out infinite; }
+.genius-mascot--animated .genius-mascot__pose-confetti { transform-box: fill-box; transform-origin: center; animation: genius-mascot-confetti 1.9s ease-in infinite; }
+.genius-mascot[data-surface='loading'] .genius-mascot__head { animation-name: genius-mascot-loading-head; }
+.genius-mascot[data-surface='loading'] .genius-mascot__magic { animation: genius-mascot-magic 2.2s ease-in-out infinite; transform-origin: 176px 370px; }
 
 .genius-mascot__spark {
   position: absolute;
@@ -3481,6 +3501,46 @@ table {
 @keyframes genius-mascot-float {
   0%, 100% { transform: translateY(0) rotate(0deg); }
   50% { transform: translateY(-0.14rem) rotate(-1deg); }
+}
+
+@keyframes genius-mascot-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-0.06rem); }
+}
+
+@keyframes genius-mascot-arm-wave {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(4deg); }
+}
+
+@keyframes genius-mascot-arm-magic {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(3deg); }
+}
+
+@keyframes genius-mascot-tip-spark {
+  0%, 100% { opacity: 0.35; transform: scale(0.75) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.1) rotate(18deg); }
+}
+
+@keyframes genius-mascot-confetti {
+  0%, 100% { opacity: 0.5; transform: translateY(-2px) rotate(0deg); }
+  50% { opacity: 1; transform: translateY(8px) rotate(18deg); }
+}
+
+@keyframes genius-mascot-loading-head {
+  0%, 100% { transform: translateY(2px) rotate(5deg); }
+  50% { transform: translateY(5px) rotate(8deg); }
+}
+
+@keyframes genius-mascot-magic {
+  0%, 100% { opacity: 0.38; transform: scale(0.9) translateY(3px); }
+  50% { opacity: 1; transform: scale(1.08) translateY(-3px); }
+}
+
+@keyframes genius-mascot-twinkle {
+  0%, 100% { opacity: 0.38; }
+  50% { opacity: 1; }
 }
 
 @keyframes genius-mascot-glow {

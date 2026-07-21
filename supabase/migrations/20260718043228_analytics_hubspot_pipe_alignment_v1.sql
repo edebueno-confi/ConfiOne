@@ -1,9 +1,9 @@
 -- Alinhamento do pipe de CS com o pipe operacional ativo observado na conta.
--- O pipe legado Criadouro de Tíquetes | Aftersale permanece fora do dashboard
--- gerencial por misturar atendimento amplo e volume histórico.
+-- O pipe legado Criadouro de Tíquetes | Aftersale permanece no catálogo para
+-- auditoria e seleção explícita, sem ser substituído pelo pipe legado 1429283.
 
 update public.analytics_source_config
-set hubspot_pipeline_id = '1429283'
+set label = 'Criadouro de Tíquetes | Aftersale'
 where domain_key = 'cs'
   and object_type = 'ticket'
   and hubspot_pipeline_id = '5034314';

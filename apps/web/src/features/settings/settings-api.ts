@@ -301,6 +301,61 @@ export async function archiveBrand(id: string): Promise<void> {
   }
 }
 
+export interface HelpCenterSupportContacts {
+  knowledgeSpaceId: string;
+  knowledgeSpaceSlug: string;
+  knowledgeSpaceDisplayName: string;
+  brandName: string;
+  email: string | null;
+  whatsapp: string | null;
+  websiteUrl: string | null;
+  statusPageUrl: string | null;
+  docsUrl: string | null;
+  updatedAt: string;
+}
+
+export async function listHelpCenterSupportContacts(): Promise<HelpCenterSupportContacts[]> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client
+    .from('vw_admin_knowledge_space_support_contacts')
+    .select('*')
+    .order('knowledge_space_display_name', { ascending: true });
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []).map((row: Record<string, unknown>) => {
+    const contacts = (row.support_contacts as Record<string, unknown> | null) ?? {};
+    return {
+      knowledgeSpaceId: String(row.knowledge_space_id),
+      knowledgeSpaceSlug: String(row.knowledge_space_slug),
+      knowledgeSpaceDisplayName: String(row.knowledge_space_display_name),
+      brandName: String(row.brand_name),
+      email: typeof contacts.email === 'string' ? contacts.email : null,
+      whatsapp: typeof contacts.whatsapp === 'string' ? contacts.whatsapp : null,
+      websiteUrl: typeof contacts.websiteUrl === 'string' ? contacts.websiteUrl : null,
+      statusPageUrl: typeof contacts.statusPageUrl === 'string' ? contacts.statusPageUrl : null,
+      docsUrl: typeof contacts.docsUrl === 'string' ? contacts.docsUrl : null,
+      updatedAt: String(row.updated_at),
+    };
+  });
+}
+
+export async function saveHelpCenterSupportContacts(input: HelpCenterSupportContacts): Promise<void> {
+  const client = requireSupabaseBrowserClient();
+  const { error } = await client.rpc('rpc_admin_update_knowledge_space_support_contacts', {
+    p_knowledge_space_id: input.knowledgeSpaceId,
+    p_email: input.email?.trim() || null,
+    p_whatsapp: input.whatsapp?.trim() || null,
+    p_website_url: input.websiteUrl?.trim() || null,
+    p_status_page_url: input.statusPageUrl?.trim() || null,
+    p_docs_url: input.docsUrl?.trim() || null,
+  });
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
 
 export interface TicketCategory {
   id: string;

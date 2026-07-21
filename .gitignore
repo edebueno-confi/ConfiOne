@@ -72,3 +72,6 @@ Thumbs.db
 *.swp
 *.swo
 .worktrees/
+
+# Design handoff bundle kept locally as reference; runtime assets live in apps/web/assets.
+/Recreação do mascote Genius-handoff/

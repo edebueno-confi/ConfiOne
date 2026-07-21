@@ -115,6 +115,17 @@ export async function listPublicKnowledgeArticleAssets(articleId: string) {
   const rows = (data ?? []) as PublicKnowledgeArticleAssetRow[];
   const enriched = await Promise.all(
     rows.map(async (row) => {
+      if (row.storage_bucket === 'knowledge-public-assets') {
+        const { data: publicData } = client.storage
+          .from(row.storage_bucket)
+          .getPublicUrl(row.storage_object_path);
+
+        return {
+          ...row,
+          signed_url: publicData.publicUrl,
+        } satisfies PublicKnowledgeArticleAssetRow;
+      }
+
       const { data: signedData } = await client.storage
         .from(row.storage_bucket)
         .createSignedUrl(row.storage_object_path, 60 * 10);

@@ -20,6 +20,14 @@ as $$
     '\s+', ' ', 'g')), '');
 $$;
 
+-- A normalização é um helper interno usado pelas RPCs de matching. Não deve
+-- ser executável por clientes; a ACL explícita também evita depender de
+-- privilégios padrão do schema durante auditorias de segurança.
+revoke all on function app_private.normalize_company_name(text)
+from public, anon, authenticated;
+grant execute on function app_private.normalize_company_name(text)
+to service_role;
+
 -- Candidatos de empresa no HubSpot para um cliente OMIE (razao social + nome
 -- fantasia + CNPJ). Retorna motivo e score para decisao humana. Read-only.
 create or replace function public.rpc_analytics_company_candidates(

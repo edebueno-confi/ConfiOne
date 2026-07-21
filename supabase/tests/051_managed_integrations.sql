@@ -66,8 +66,16 @@ select ok(
 );
 
 select ok(
-  exists (select 1 from public.managed_integrations where integration_key = 'omie' and is_enabled = false),
-  'Omie começa desabilitado até receber credencial'
+  exists (
+    select 1
+    from public.managed_integrations
+    where integration_key = 'omie'
+      and (
+        (credential_secret_id is null and is_enabled = false)
+        or (credential_secret_id is not null and is_enabled = true)
+      )
+  ),
+  'Omie só fica habilitado quando possui credencial gerenciada'
 );
 
 select ok(

@@ -148,6 +148,9 @@ async function syncStages(
 }
 
 async function syncDeals(client: SupabaseClient, pipelineId: string, token: string): Promise<number> {
+  // O catálogo deste portal não expôs hs_lastmodifieddate para Deals. Mantemos
+  // a carga completa desse objeto (volume pequeno) para não enviar um filtro
+  // inválido e deixar mudanças de etapa/valor sem atualização.
   const records = await fetchDealsByPipeline(pipelineId, DEAL_PROPERTIES, token);
   const now = new Date().toISOString();
   const rows = records.map((record: HubSpotRecord) => ({
@@ -167,8 +170,8 @@ async function syncDeals(client: SupabaseClient, pipelineId: string, token: stri
   return rows.length;
 }
 
-async function syncTickets(client: SupabaseClient, pipelineId: string, token: string): Promise<number> {
-  const records = await fetchTicketsByPipeline(pipelineId, TICKET_PROPERTIES, token);
+async function syncTickets(client: SupabaseClient, pipelineId: string, token: string, updatedAfterMs?: number): Promise<number> {
+  const records = await fetchTicketsByPipeline(pipelineId, TICKET_PROPERTIES, token, updatedAfterMs);
   const now = new Date().toISOString();
   const rows = records.map((record: HubSpotRecord) => ({
     ticket_id: record.id,
@@ -211,11 +214,12 @@ function normalizeTaxId(value: string | null | undefined): string | null {
   return normalized || null;
 }
 
-async function syncCompanies(client: SupabaseClient, token: string): Promise<number> {
-  const records = await fetchCompanies(COMPANY_PROPERTIES, token);
-  if (records.length === 0) {
+async function syncCompanies(client: SupabaseClient, token: string, updatedAfterMs?: number): Promise<number> {
+  const records = await fetchCompanies(COMPANY_PROPERTIES, token, updatedAfterMs);
+  if (records.length === 0 && updatedAfterMs === undefined) {
     throw new Error('O HubSpot retornou zero empresas; o cache anterior foi preservado por segurança.');
   }
+  if (records.length === 0) return 0;
   const now = new Date().toISOString();
   const rows = records.map((record: HubSpotRecord) => ({
     company_id: record.id,
@@ -235,12 +239,14 @@ async function syncCompanies(client: SupabaseClient, token: string): Promise<num
   // Depois que todos os lotes foram gravados, removemos somente os IDs que
   // ficaram fora deste snapshot. O corte por timestamp evita que uma execução
   // concorrente mais antiga remova dados gravados por uma execução mais nova.
-  const { error: staleError } = await client
-    .from('hubspot_companies')
-    .delete()
-    .lt('synced_at', now);
-  if (staleError) {
-    throw new Error(`Falha ao remover empresas ausentes do snapshot HubSpot: ${staleError.message}`);
+  if (updatedAfterMs === undefined) {
+    const { error: staleError } = await client
+      .from('hubspot_companies')
+      .delete()
+      .lt('synced_at', now);
+    if (staleError) {
+      throw new Error(`Falha ao remover empresas ausentes do snapshot HubSpot: ${staleError.message}`);
+    }
   }
   return rows.length;
 }
@@ -262,9 +268,11 @@ Deno.serve(async (req) => {
 
   // Escopo opcional: { "domain": "commercial" | "cs" }.
   let requestedDomain: string | null = null;
+  let fullRefresh = false;
   try {
-    const body = (await req.json().catch(() => null)) as { domain?: string } | null;
+    const body = (await req.json().catch(() => null)) as { domain?: string; full?: boolean } | null;
     requestedDomain = body?.domain?.trim() || null;
+    fullRefresh = body?.full === true;
   } catch {
     requestedDomain = null;
   }
@@ -281,9 +289,44 @@ Deno.serve(async (req) => {
   const configs = (configRows ?? []).filter(
     (row: SourceConfigRow) => !requestedDomain || row.domain_key === requestedDomain,
   ) as SourceConfigRow[];
+  const uniqueConfigs = Array.from(
+    new Map(configs.map((config) => [`${config.domain_key}:${config.object_type}:${config.hubspot_pipeline_id}`, config])).values(),
+  );
 
-  if (configs.length === 0) {
+  if (uniqueConfigs.length === 0) {
     return jsonResponse({ error: 'Nenhuma fonte ativa para o escopo solicitado.' }, { status: 400 });
+  }
+
+  const staleRunningCutoff = Date.now() - 15 * 60 * 1000;
+  const { data: runningRuns, error: runningRunsError } = await client
+    .from('hubspot_sync_runs')
+    .select('id,started_at')
+    .eq('status', 'running')
+    .order('started_at', { ascending: false })
+    .limit(10);
+  if (runningRunsError) {
+    return jsonResponse({ error: `Falha ao verificar execucoes em andamento: ${runningRunsError.message}` }, { status: 500 });
+  }
+  const activeRun = (runningRuns ?? []).find((run) => {
+    const startedAt = Date.parse(String(run.started_at ?? ''));
+    return Number.isFinite(startedAt) && startedAt > staleRunningCutoff;
+  });
+  if (activeRun) {
+    return jsonResponse({ error: 'Já existe uma sincronização do HubSpot em andamento. Aguarde a conclusão antes de iniciar outra.' }, { status: 409 });
+  }
+  const staleRuns = (runningRuns ?? []).filter((run) => {
+    const startedAt = Date.parse(String(run.started_at ?? ''));
+    return String(run.id ?? '') !== String(activeRun?.id ?? '') && Number.isFinite(startedAt) && startedAt <= staleRunningCutoff;
+  });
+  if (staleRuns.length > 0) {
+    await client
+      .from('hubspot_sync_runs')
+      .update({
+        status: 'error',
+        finished_at: new Date().toISOString(),
+        error_message: 'Execução concorrente interrompida pelo runtime; nenhum snapshot novo foi confirmado.',
+      })
+      .in('id', staleRuns.map((run) => run.id));
   }
 
   const { data: runRow, error: runError } = await client
@@ -304,12 +347,24 @@ Deno.serve(async (req) => {
   const counters = { deals: 0, tickets: 0, owners: 0, stages: 0, companies: 0 };
 
   try {
+    const { data: previousSuccess } = await client
+      .from('hubspot_sync_runs')
+      .select('finished_at')
+      .eq('status', 'success')
+      .not('finished_at', 'is', null)
+      .order('finished_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const previousFinishedAt = previousSuccess?.finished_at ? Date.parse(String(previousSuccess.finished_at)) : Number.NaN;
+    const updatedAfterMs = !fullRefresh && Number.isFinite(previousFinishedAt)
+      ? Math.max(0, previousFinishedAt - 5 * 60 * 1000)
+      : undefined;
     const hubspotToken = await resolveHubSpotToken(client);
     if (!hubspotToken) throw new Error('Credencial do HubSpot não configurada. Cadastre-a em Admin > Configurações > Integrações.');
     counters.owners = await syncOwners(client, hubspotToken);
-    counters.companies = await syncCompanies(client, hubspotToken);
+    counters.companies = await syncCompanies(client, hubspotToken, updatedAfterMs);
 
-    for (const config of configs) {
+    for (const config of uniqueConfigs) {
       const pipelineLabel = await fetchPipelineLabel(
         config.object_type === 'deal' ? 'deals' : 'tickets',
         config.hubspot_pipeline_id,
@@ -327,7 +382,7 @@ Deno.serve(async (req) => {
       if (config.object_type === 'deal') {
         counters.deals += await syncDeals(client, config.hubspot_pipeline_id, hubspotToken);
       } else {
-        counters.tickets += await syncTickets(client, config.hubspot_pipeline_id, hubspotToken);
+        counters.tickets += await syncTickets(client, config.hubspot_pipeline_id, hubspotToken, updatedAfterMs);
       }
     }
 
@@ -344,7 +399,7 @@ Deno.serve(async (req) => {
       })
       .eq('id', runId);
 
-    return jsonResponse({ ok: true, runId, ...counters });
+    return jsonResponse({ ok: true, runId, mode: updatedAfterMs === undefined ? 'full' : 'incremental', ...counters });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     await client

@@ -395,6 +395,13 @@ export interface AdminAccessUserRow {
   memberships: JsonValue;
 }
 
+export interface RpcAdminSetGlobalRoleResponse {
+  user_id: Uuid;
+  role: PlatformRole;
+  enabled: boolean;
+  updated_at: IsoTimestamp;
+}
+
 export type AdminAccessMembershipRow = AdminTenantMembershipRow & {
   access_state: 'active' | 'pending' | 'blocked';
   created_by_full_name: string | null;

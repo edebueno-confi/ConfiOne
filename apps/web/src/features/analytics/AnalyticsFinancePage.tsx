@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MinimalState } from '../../components/minimal-states';
+import { GeniusSyncOverlay } from '../../components/GeniusSyncOverlay';
 import { getFinanceSnapshot, getFinanceSourceStatus, getFinanceUnmatchedClients, triggerOmieSync, type FinanceUnmatchedClient } from './analytics-api';
 import { ChartCard, KpiCard, MetricInfo } from './analytics-ui';
 import { formatCurrencyBRL, formatMonthLabel, formatPercent, type AnalyticsFilters, DEFAULT_ANALYTICS_FILTERS, type FinanceBreakdown, type FinanceSnapshot, type FinanceSourceStatus } from './analytics-model';
@@ -114,7 +115,8 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange }: Ana
   const sourceIsApi = snapshot.source === 'api';
   const controlClass = 'mt-1 block w-full rounded-lg border border-[color:var(--minimal-border-strong)] bg-transparent px-2 py-1.5 text-sm text-[color:var(--minimal-text)]';
 
-  return <div className="space-y-5">
+  return <>
+    <div className="space-y-5">
     {/* Toolbar de fonte e sincronização */}
     <section className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -209,5 +211,7 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange }: Ana
         {snapshot.monthly.length === 0 ? <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Sem histórico no recorte.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[420px] text-sm"><thead><tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]"><th className="py-2">Mês</th><th className="py-2 text-right">Títulos</th><th className="py-2 text-right">Saldo</th></tr></thead><tbody>{snapshot.monthly.map((row) => <tr key={row.month} className="border-b border-[color:var(--minimal-border)] last:border-0"><td className="py-2 text-[color:var(--minimal-text)]">{formatMonthLabel(row.month)}</td><td className="py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.titles.toLocaleString('pt-BR')}</td><td className="py-2 text-right tabular-nums font-medium text-[color:var(--minimal-text)]">{formatCurrencyBRL(row.balance)}</td></tr>)}</tbody></table></div>}
       </ChartCard>
     </>}
-  </div>;
+    </div>
+    {syncingOmie ? <GeniusSyncOverlay source="OMIE" detail="Os títulos financeiros e o cruzamento com o HubSpot serão recalculados ao final." /> : null}
+  </>;
 }

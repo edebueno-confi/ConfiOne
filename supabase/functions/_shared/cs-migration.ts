@@ -17,6 +17,54 @@ export interface CsCompanyMatch {
   candidates: HubSpotRecord[];
 }
 
+export interface CsMigrationPlanItemSummary {
+  status: string;
+  operation: 'update' | 'create' | null;
+}
+
+export interface CsMigrationPreflight {
+  mode: 'dry_run' | 'apply';
+  sourceRows: number;
+  validSourceRows: number;
+  hubspotCompaniesLoaded: number;
+  hubspotOwnersLoaded: number;
+  companyCatalog: 'local_cache' | 'hubspot_live';
+  requiresRehydrate: boolean;
+  canApply: boolean;
+}
+
+export function buildCsMigrationPreflight(
+  mode: 'dry_run' | 'apply',
+  sourceRows: number,
+  validSourceRows: number,
+  hubspotCompaniesLoaded: number,
+  hubspotOwnersLoaded: number,
+): CsMigrationPreflight {
+  const companiesLoaded = Math.max(0, hubspotCompaniesLoaded);
+  return {
+    mode,
+    sourceRows: Math.max(0, sourceRows),
+    validSourceRows: Math.max(0, validSourceRows),
+    hubspotCompaniesLoaded: companiesLoaded,
+    hubspotOwnersLoaded: Math.max(0, hubspotOwnersLoaded),
+    companyCatalog: mode === 'apply' ? 'hubspot_live' : 'local_cache',
+    requiresRehydrate: mode === 'dry_run' && companiesLoaded === 0,
+    canApply: companiesLoaded > 0,
+  };
+}
+
+export function countCsMigrationPlan(items: ReadonlyArray<CsMigrationPlanItemSummary>) {
+  return {
+    total_rows: items.length,
+    planned_rows: items.filter((item) => item.operation && ['planned', 'updated', 'created'].includes(item.status)).length,
+    ambiguous_rows: items.filter((item) => item.status === 'ambiguous').length,
+    create_rows: items.filter((item) => item.operation === 'create' && ['planned', 'created'].includes(item.status)).length,
+    update_rows: items.filter((item) => item.operation === 'update' && ['planned', 'updated'].includes(item.status)).length,
+    skipped_rows: items.filter((item) => item.status === 'skipped').length,
+    failed_rows: items.filter((item) => item.status === 'failed').length,
+  };
+}
+
 function text(value: unknown): string {
   return value === null || value === undefined ? '' : String(value).trim();
 }

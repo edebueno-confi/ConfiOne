@@ -10,7 +10,7 @@ function required(value, name) {
   return normalized;
 }
 
-export function resolveLocalSupabaseConfig({ url, anonKey, email, password }) {
+export function resolveLocalSupabaseConfig({ url, anonKey, serviceRoleKey, email, password }) {
   const normalizedUrl = required(url, 'Supabase URL');
   const parsedUrl = new URL(normalizedUrl);
   const isLoopback =
@@ -21,11 +21,14 @@ export function resolveLocalSupabaseConfig({ url, anonKey, email, password }) {
     throw new Error('Only local Supabase loopback URLs are allowed.');
   }
 
+  const normalizedServiceRoleKey = String(serviceRoleKey ?? '').trim();
+
   return {
     url: parsedUrl.origin,
     anonKey: required(anonKey, 'Supabase anon key'),
     email: required(email, 'Knowledge admin email'),
     password: required(password, 'Knowledge admin password'),
+    ...(normalizedServiceRoleKey ? { serviceRoleKey: normalizedServiceRoleKey } : {}),
   };
 }
 
@@ -65,6 +68,8 @@ export function readLocalSupabaseConfig(env = process.env) {
       env.SUPABASE_ANON_KEY ??
       env.VITE_SUPABASE_ANON_KEY ??
       status.get('ANON_KEY'),
+    serviceRoleKey:
+      env.SUPABASE_SERVICE_ROLE_KEY ?? status.get('SERVICE_ROLE_KEY'),
     email: env.KNOWLEDGE_ADMIN_EMAIL,
     password: env.KNOWLEDGE_ADMIN_PASSWORD,
   });

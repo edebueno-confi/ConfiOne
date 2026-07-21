@@ -1,5 +1,9 @@
 # Docs
 
+## Branches e release
+
+- [GIT_BRANCHING_AND_RELEASE_POLICY.md](./GIT_BRANCHING_AND_RELEASE_POLICY.md)
+
 Fonte oficial da documentação do Genius Support OS.
 
 ## Regra de leitura
@@ -13,6 +17,7 @@ Fonte oficial da documentação do Genius Support OS.
 ## Visão e estado
 
 - [PROJECT_STATE.md](./PROJECT_STATE.md)
+- [reports/HUBSPOT_OMIE_SYNC_HARDENING_2026-07-21.md](./reports/HUBSPOT_OMIE_SYNC_HARDENING_2026-07-21.md)
 - [reports/CODEX_CONTINUATION_HANDOFF_2026-07-17.md](./reports/CODEX_CONTINUATION_HANDOFF_2026-07-17.md)
 - [ANALYTICS_METRIC_CATALOG_V1.md](./ANALYTICS_METRIC_CATALOG_V1.md)
 - [reports/PROJECT_RESTART_DOCUMENTATION_PLAYBOOK_2026-06-22.md](./reports/PROJECT_RESTART_DOCUMENTATION_PLAYBOOK_2026-06-22.md)

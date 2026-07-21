@@ -28,6 +28,7 @@ export interface PublicHelpSeoDefaults {
 
 export interface PublicHelpSupportContacts {
   email?: string | null;
+  whatsapp?: string | null;
   websiteUrl?: string | null;
   statusPageUrl?: string | null;
   docsUrl?: string | null;

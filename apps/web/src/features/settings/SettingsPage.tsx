@@ -24,10 +24,14 @@ import {
   type PriorityLevel,
   type QuickReply,
   type ManagedIntegration,
+  type HelpCenterSupportContacts,
+  listHelpCenterSupportContacts,
   listManagedIntegrations,
+  saveHelpCenterSupportContacts,
   saveManagedIntegration,
 } from './settings-api';
 import { IntegrationSettingsPanel } from './IntegrationSettingsPanel';
+import { useAuthContext } from '../auth/auth-context';
 
 type GroupStatus = 'ativo' | 'existe_hoje' | 'em_breve';
 
@@ -45,6 +49,7 @@ type LoadState<T> = { phase: 'idle' | 'loading' } | { phase: 'ready'; items: T[]
 
 const GROUPS: SettingsGroup[] = [
   { id: 'marcas', label: 'Marcas', description: 'As marcas atendidas na plataforma e sua identidade.', controls: ['Nome da marca', 'Central de ajuda (slug)', 'Ordem'], usadoEm: 'Central de ajuda, portal do cliente e atendimento', status: 'ativo', nota: 'Genius e After Sale na mesma plataforma; gerenciável aqui.' },
+  { id: 'central-ajuda', label: 'Central de ajuda', description: 'Contatos exibidos no rodapé público, fora do conteúdo dos artigos.', controls: ['E-mail de suporte', 'WhatsApp de suporte', 'Site e links auxiliares', 'Por central de ajuda'], usadoEm: 'Rodapé da Central de Ajuda pública', status: 'ativo', nota: 'Os artigos não armazenam mais contatos operacionais; esta configuração é a fonte única para o público.' },
   { id: 'areas', label: 'Áreas e equipes', description: 'Áreas internas que podem ser acionadas e seus membros.', controls: ['Nome da área', 'Membros', 'Responsável'], usadoEm: 'Acionamentos internos e filas por área', status: 'existe_hoje' },
   { id: 'papeis', label: 'Papéis e permissões', description: 'O que cada perfil pode ver e fazer, por marca e por conta.', controls: ['Papel', 'Permissões', 'Escopo por marca/conta'], usadoEm: 'Todo o sistema (contexto por permissão)', status: 'existe_hoje' },
   { id: 'tipos-conversa', label: 'Tipos de conversa', description: 'Os tipos de conversa que o atendimento pode registrar.', controls: ['Nome do tipo', 'Área sugerida', 'Ordem'], usadoEm: 'Atendimento (inbox)', status: 'ativo', nota: 'Parâmetro totalmente gerenciável pela tela.' },
@@ -546,6 +551,90 @@ function BrandsPanel({
   );
 }
 
+function HelpCenterSupportContactsPanel({
+  state,
+  onSave,
+  mutating,
+  mutationError,
+}: {
+  state: LoadState<HelpCenterSupportContacts>;
+  onSave: (input: HelpCenterSupportContacts) => Promise<void>;
+  mutating: boolean;
+  mutationError: string | null;
+}) {
+  if (state.phase === 'loading' || state.phase === 'idle') {
+    return <p className="text-sm text-[color:var(--minimal-text-secondary)]">Carregando configurações da Central de Ajuda…</p>;
+  }
+  if (state.phase === 'error') {
+    return <div className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] px-4 py-3 text-sm text-[color:var(--color-danger-text)]">Não foi possível carregar os contatos da Central agora.</div>;
+  }
+  const items = state.phase === 'ready' ? state.items : [];
+  if (items.length === 0) {
+    return <p className="text-sm text-[color:var(--minimal-text-secondary)]">Nenhuma Central de Ajuda ativa foi encontrada.</p>;
+  }
+
+  return (
+    <div className="grid gap-4">
+      <div className="rounded-lg border border-[color:var(--color-info-border)] bg-[color:var(--color-info-surface)] px-4 py-3 text-sm leading-6 text-[color:var(--color-info-text)]">
+        Estes dados aparecem no rodapé público da Central. Alterações aqui não exigem editar artigo por artigo.
+      </div>
+      {items.map((item: HelpCenterSupportContacts) => (
+        <HelpCenterSupportContactForm item={item} key={item.knowledgeSpaceId} mutating={mutating} mutationError={mutationError} onSave={onSave} />
+      ))}
+    </div>
+  );
+}
+
+function HelpCenterSupportContactForm({
+  item,
+  onSave,
+  mutating,
+  mutationError,
+}: {
+  item: HelpCenterSupportContacts;
+  onSave: (input: HelpCenterSupportContacts) => Promise<void>;
+  mutating: boolean;
+  mutationError: string | null;
+}) {
+  const [form, setForm] = useState(item);
+  const update = (key: keyof HelpCenterSupportContacts, value: string) => {
+    setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  return (
+    <div className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">{item.brandName}</h3>
+          <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">/{item.knowledgeSpaceSlug} · {item.knowledgeSpaceDisplayName}</p>
+        </div>
+        <span className="rounded-full border border-[color:var(--minimal-border)] px-2 py-1 text-[11px] text-[color:var(--minimal-text-tertiary)]">Fonte única pública</span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {([
+          ['email', 'E-mail de suporte', 'ede.oliveira@confi.com.vc', 'email'],
+          ['whatsapp', 'WhatsApp de suporte', '(41) 98765-2115', 'text'],
+          ['websiteUrl', 'Site/portal', 'https://www.geniusreturns.com.br/', 'url'],
+          ['statusPageUrl', 'Página de status', 'https://status.exemplo.com', 'url'],
+          ['docsUrl', 'Link alternativo da Central', 'https://...', 'url'],
+        ] as const).map(([key, label, placeholder, type]) => (
+          <label className="text-xs font-medium text-[color:var(--minimal-text-secondary)]" key={key}>
+            {label}
+            <input className={cx(inputClass, 'mt-1')} onChange={(event) => update(key, event.target.value)} placeholder={placeholder} type={type} value={form[key] ?? ''} />
+          </label>
+        ))}
+      </div>
+      {mutationError ? <p className="mt-3 text-xs text-[color:var(--color-danger-text)]">{mutationError}</p> : null}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Salvo por RPC auditada; o conteúdo original dos artigos permanece como proveniência.</p>
+        <button className="inline-flex items-center rounded-lg border border-transparent bg-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action-ink)] disabled:opacity-60" disabled={mutating} onClick={() => void onSave(form)} type="button">
+          {mutating ? 'Salvando…' : 'Salvar contatos'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function TicketCategoriesPanel({ state }: { state: LoadState<TicketCategory> }) {
   const items = state.phase === 'ready' ? state.items : [];
   if (state.phase === 'loading' || state.phase === 'idle') {
@@ -602,6 +691,8 @@ function GroupDetail({
   brands,
   onCreateBrand,
   onArchiveBrand,
+  helpCenterSupportContacts,
+  onSaveHelpCenterSupportContacts,
   ticketCategories,
   mutating,
   mutationError,
@@ -624,6 +715,8 @@ function GroupDetail({
   brands: LoadState<Brand>;
   onCreateBrand: (input: { label: string; helpCenterSlug: string; sortOrder: number }) => Promise<boolean>;
   onArchiveBrand: (id: string) => Promise<void>;
+  helpCenterSupportContacts: LoadState<HelpCenterSupportContacts>;
+  onSaveHelpCenterSupportContacts: (input: HelpCenterSupportContacts) => Promise<void>;
   ticketCategories: LoadState<TicketCategory>;
   mutating: boolean;
   mutationError: string | null;
@@ -635,6 +728,7 @@ function GroupDetail({
   const isQuickReplies = group.id === 'respostas-rapidas';
   const isSegments = group.id === 'segmentos';
   const isBrands = group.id === 'marcas';
+  const isHelpCenter = group.id === 'central-ajuda';
   const isCategorias = group.id === 'categorias';
   const isIntegrations = group.id === 'integracoes';
 
@@ -677,6 +771,8 @@ function GroupDetail({
             <CustomerSegmentsPanel mutating={mutating} mutationError={mutationError} onArchive={onArchiveSegment} onCreate={onCreateSegment} state={customerSegments} />
           ) : isBrands ? (
             <BrandsPanel mutating={mutating} mutationError={mutationError} onArchive={onArchiveBrand} onCreate={onCreateBrand} state={brands} />
+          ) : isHelpCenter ? (
+            <HelpCenterSupportContactsPanel mutating={mutating} mutationError={mutationError} onSave={onSaveHelpCenterSupportContacts} state={helpCenterSupportContacts} />
           ) : isCategorias ? (
             <TicketCategoriesPanel state={ticketCategories} />
           ) : isIntegrations ? (
@@ -699,17 +795,21 @@ function GroupDetail({
 }
 
 export function SettingsPage() {
-  const [selectedId, setSelectedId] = useState<string>(GROUPS[0].id);
+  const { gate } = useAuthContext();
+  const isDashboardViewer = gate.actor?.roles.includes('dashboard_viewer') === true && gate.actor?.is_platform_admin !== true;
+  const visibleGroups = isDashboardViewer ? GROUPS.filter((group) => group.id === 'integracoes') : GROUPS;
+  const [selectedId, setSelectedId] = useState<string>(isDashboardViewer ? 'integracoes' : GROUPS[0].id);
   const [conversationTypes, setConversationTypes] = useState<LoadState<ConversationType>>({ phase: 'idle' });
   const [priorityLevels, setPriorityLevels] = useState<LoadState<PriorityLevel>>({ phase: 'idle' });
   const [quickReplies, setQuickReplies] = useState<LoadState<QuickReply>>({ phase: 'idle' });
   const [customerSegments, setCustomerSegments] = useState<LoadState<CustomerSegment>>({ phase: 'idle' });
   const [brands, setBrands] = useState<LoadState<Brand>>({ phase: 'idle' });
+  const [helpCenterSupportContacts, setHelpCenterSupportContacts] = useState<LoadState<HelpCenterSupportContacts>>({ phase: 'idle' });
   const [ticketCategories, setTicketCategories] = useState<LoadState<TicketCategory>>({ phase: 'idle' });
   const [integrations, setIntegrations] = useState<LoadState<ManagedIntegration>>({ phase: 'idle' });
   const [mutating, setMutating] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
-  const selected = GROUPS.find((group: SettingsGroup) => group.id === selectedId) ?? GROUPS[0];
+  const selected = visibleGroups.find((group: SettingsGroup) => group.id === selectedId) ?? visibleGroups[0];
 
   const loadTypes = useCallback(async () => {
     setConversationTypes({ phase: 'loading' });
@@ -761,6 +861,16 @@ export function SettingsPage() {
     }
   }, []);
 
+  const loadHelpCenterSupportContacts = useCallback(async () => {
+    setHelpCenterSupportContacts({ phase: 'loading' });
+    try {
+      const items = await listHelpCenterSupportContacts();
+      setHelpCenterSupportContacts({ phase: 'ready', items });
+    } catch {
+      setHelpCenterSupportContacts({ phase: 'error' });
+    }
+  }, []);
+
   const loadCategories = useCallback(async () => {
     setTicketCategories({ phase: 'loading' });
     try {
@@ -782,14 +892,20 @@ export function SettingsPage() {
   }, []);
 
   useEffect(() => {
+    if (isDashboardViewer) {
+      void loadIntegrations();
+      return;
+    }
+
     void loadTypes();
     void loadPriorities();
     void loadQuickReplies();
     void loadSegments();
     void loadBrands();
+    void loadHelpCenterSupportContacts();
     void loadCategories();
     void loadIntegrations();
-  }, [loadTypes, loadPriorities, loadQuickReplies, loadSegments, loadBrands, loadCategories, loadIntegrations]);
+  }, [isDashboardViewer, loadTypes, loadPriorities, loadQuickReplies, loadSegments, loadBrands, loadHelpCenterSupportContacts, loadCategories, loadIntegrations]);
 
   const handleSaveIntegration = useCallback(
     async (input: Parameters<typeof saveManagedIntegration>[0]) => {
@@ -805,6 +921,22 @@ export function SettingsPage() {
       }
     },
     [loadIntegrations],
+  );
+
+  const handleSaveHelpCenterSupportContacts = useCallback(
+    async (input: HelpCenterSupportContacts) => {
+      setMutating(true);
+      setMutationError(null);
+      try {
+        await saveHelpCenterSupportContacts(input);
+        await loadHelpCenterSupportContacts();
+      } catch {
+        setMutationError('Não foi possível salvar os contatos da Central agora. Verifique os formatos informados.');
+      } finally {
+        setMutating(false);
+      }
+    },
+    [loadHelpCenterSupportContacts],
   );
 
   const handleCreate = useCallback(
@@ -981,12 +1113,16 @@ export function SettingsPage() {
     <div className="flex h-full min-h-0 flex-col bg-[color:var(--minimal-surface)]">
       <header className="shrink-0 border-b border-[color:var(--minimal-border)] px-5 py-4 sm:px-6">
         <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">Configurações</h1>
-        <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">O centro de parâmetros do sistema — tudo que aparece nas outras telas nasce aqui.</p>
+        <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">
+          {isDashboardViewer
+            ? 'Credenciais e fontes usadas pelo Dashboard Gerencial.'
+            : 'O centro de parâmetros do sistema — tudo que aparece nas outras telas nasce aqui.'}
+        </p>
       </header>
 
       <div className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="min-h-0 overflow-y-auto border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)]">
-          {GROUPS.map((group: SettingsGroup) => {
+          {visibleGroups.map((group: SettingsGroup) => {
             const active = group.id === selectedId;
             return (
               <button
@@ -1023,6 +1159,8 @@ export function SettingsPage() {
           onArchiveBrand={handleArchiveBrand}
           onCreateBrand={handleCreateBrand}
           brands={brands}
+          helpCenterSupportContacts={helpCenterSupportContacts}
+          onSaveHelpCenterSupportContacts={handleSaveHelpCenterSupportContacts}
           ticketCategories={ticketCategories}
           customerSegments={customerSegments}
           priorityLevels={priorityLevels}

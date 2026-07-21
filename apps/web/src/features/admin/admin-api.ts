@@ -1493,6 +1493,25 @@ export async function updateTenantMemberStatus(
   return data as RpcAdminUpdateTenantMemberStatusResponse;
 }
 
+export async function setGlobalRole(input: {
+  userId: string;
+  role: 'dashboard_viewer';
+  enabled: boolean;
+}) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_set_global_role', {
+    p_user_id: input.userId,
+    p_role: input.role,
+    p_is_enabled: input.enabled,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao atualizar o papel global do usuário.');
+  }
+
+  return data;
+}
+
 export async function addInternalAreaMembership(
   payload: RpcAdminAddInternalAreaMembershipPayload,
 ) {
@@ -1562,6 +1581,17 @@ export async function listAdminKnowledgeArticleAssets(articleId: string) {
   const rows = (data ?? []) as AdminKnowledgeArticleAssetRow[];
   const enriched = await Promise.all(
     rows.map(async (row) => {
+      if (row.storage_bucket === 'knowledge-public-assets') {
+        const { data: publicData } = client.storage
+          .from(row.storage_bucket)
+          .getPublicUrl(row.storage_object_path);
+
+        return {
+          ...row,
+          signed_url: publicData.publicUrl,
+        } satisfies AdminKnowledgeArticleAssetRow;
+      }
+
       const { data: signedData } = await client.storage
         .from(row.storage_bucket)
         .createSignedUrl(row.storage_object_path, 60 * 10);

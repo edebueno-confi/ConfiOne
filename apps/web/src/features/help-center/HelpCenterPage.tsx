@@ -25,6 +25,7 @@ import {
 } from './public-api';
 import {
   PublicBreadcrumb,
+  PublicHelpFooter,
   PublicHelpHeader,
 } from './public-ui';
 
@@ -417,6 +418,8 @@ export function HelpCenterSpaceLayout() {
       <main className="mx-auto max-w-[1520px] px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
         <Outlet context={context} />
       </main>
+
+      <PublicHelpFooter brandName={space.brand_name} supportContacts={supportContacts} />
     </div>
   );
 }

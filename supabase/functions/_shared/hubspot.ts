@@ -4,6 +4,7 @@
 // crm.objects.owners.read, crm.schemas.deals.read, crm.schemas.tickets.read.
 
 const HUBSPOT_BASE_URL = 'https://api.hubapi.com';
+const HUBSPOT_REQUEST_TIMEOUT_MS = 20_000;
 
 export interface HubSpotStage {
   stageId: string;
@@ -60,14 +61,27 @@ async function hubspotFetch(
   tokenOverride?: string,
 ): Promise<Response> {
   const token = readToken(tokenOverride);
-  const response = await fetch(`${HUBSPOT_BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      ...(init.headers ?? {}),
-    },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), HUBSPOT_REQUEST_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch(`${HUBSPOT_BASE_URL}${path}`, {
+      ...init,
+      signal: init.signal ?? controller.signal,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...(init.headers ?? {}),
+      },
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error(`HubSpot ${init.method ?? 'GET'} ${path} excedeu o tempo limite de ${HUBSPOT_REQUEST_TIMEOUT_MS / 1000}s.`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if ((response.status === 429 || response.status >= 500) && attempt < 6) {
     const retryAfterHeader = response.headers.get('Retry-After');
@@ -192,10 +206,13 @@ export async function fetchDealsByPipeline(
   let after: string | undefined;
 
   do {
+    const filters: Array<Record<string, string>> = [
+      { propertyName: 'pipeline', operator: 'EQ', value: pipelineId },
+    ];
     const body: Record<string, unknown> = {
       filterGroups: [
         {
-          filters: [{ propertyName: 'pipeline', operator: 'EQ', value: pipelineId }],
+          filters,
         },
       ],
       properties,
@@ -228,6 +245,7 @@ export async function fetchTicketsByPipeline(
   pipelineId: string,
   properties: string[],
   tokenOverride?: string,
+  updatedAfterMs?: number,
 ): Promise<HubSpotRecord[]> {
   // A Search API query cannot paginate beyond 10,000 matching records. The
   // main support pipeline currently exceeds that limit, so partition by the
@@ -250,14 +268,18 @@ export async function fetchTicketsByPipeline(
     let total: number | null = null;
 
     do {
+      const filters: Array<Record<string, string>> = [
+        { propertyName: 'hs_pipeline', operator: 'EQ', value: pipelineId },
+        { propertyName: 'createdate', operator: 'GTE', value: String(rangeStartMs) },
+        { propertyName: 'createdate', operator: 'LT', value: String(rangeEndMs) },
+      ];
+      if (updatedAfterMs !== undefined) {
+        filters.push({ propertyName: 'hs_lastmodifieddate', operator: 'GTE', value: String(updatedAfterMs) });
+      }
       const body: Record<string, unknown> = {
         filterGroups: [
           {
-            filters: [
-              { propertyName: 'hs_pipeline', operator: 'EQ', value: pipelineId },
-              { propertyName: 'createdate', operator: 'GTE', value: String(rangeStartMs) },
-              { propertyName: 'createdate', operator: 'LT', value: String(rangeEndMs) },
-            ],
+            filters,
           },
         ],
         properties,
@@ -306,7 +328,38 @@ export async function fetchTicketsByPipeline(
     return records;
   }
 
-  return fetchRange(startMs, endMs);
+  if (updatedAfterMs === undefined) return fetchRange(startMs, endMs);
+
+  // Na janela incremental, o filtro de última alteração já reduz o conjunto
+  // e torna desnecessária a varredura das partições históricas por createdate.
+  // Mantemos fallback para a estratégia particionada caso a janela ainda
+  // ultrapasse o limite de 10 mil resultados da Search API.
+  const recent: HubSpotRecord[] = [];
+  let after: string | undefined;
+  let total: number | null = null;
+  do {
+    const body: Record<string, unknown> = {
+      filterGroups: [{ filters: [
+        { propertyName: 'hs_pipeline', operator: 'EQ', value: pipelineId },
+        { propertyName: 'hs_lastmodifieddate', operator: 'GTE', value: String(updatedAfterMs) },
+      ] }],
+      properties,
+      limit: 100,
+      sorts: [{ propertyName: 'hs_lastmodifieddate', direction: 'ASCENDING' }],
+    };
+    if (after) body.after = after;
+    const response = await hubspotFetch('/crm/v3/objects/tickets/search', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }, 0, tokenOverride);
+    const payload = await response.json() as TicketSearchPayload;
+    total = total ?? (Number.isFinite(Number(payload.total)) ? Number(payload.total) : null);
+    if (total !== null && total > searchMaxResults) return fetchRange(startMs, endMs);
+    recent.push(...(payload.results ?? []));
+    after = payload.paging?.next?.after;
+    await sleep(150);
+  } while (after);
+  return recent;
 }
 
 // Empresas: cache completo para reconciliação read-only com fontes financeiras.
@@ -314,9 +367,35 @@ export async function fetchTicketsByPipeline(
 export async function fetchCompanies(
   properties: string[],
   tokenOverride?: string,
+  updatedAfterMs?: number,
 ): Promise<HubSpotRecord[]> {
   const records: HubSpotRecord[] = [];
   let after: string | undefined;
+
+  if (updatedAfterMs !== undefined) {
+    do {
+      const body: Record<string, unknown> = {
+        filterGroups: [{ filters: [{ propertyName: 'hs_lastmodifieddate', operator: 'GTE', value: String(updatedAfterMs) }] }],
+        properties,
+        limit: 100,
+        sorts: [{ propertyName: 'hs_lastmodifieddate', direction: 'ASCENDING' }],
+      };
+      if (after) body.after = after;
+      const response = await hubspotFetch('/crm/v3/objects/companies/search', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }, 0, tokenOverride);
+      const payload = (await response.json()) as {
+        results?: HubSpotRecord[];
+        paging?: { next?: { after?: string } };
+      };
+      records.push(...(payload.results ?? []));
+      after = payload.paging?.next?.after;
+      await sleep(120);
+    } while (after);
+
+    return records;
+  }
 
   do {
     const query = new URLSearchParams({ limit: '100', properties: properties.join(',') });

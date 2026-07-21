@@ -37,9 +37,12 @@ import {
   listAdminAccessMemberships,
   listAdminTenants,
   lookupAdminUsers,
+  listAdminAccessUsers,
+  setGlobalRole,
   updateTenantMemberRole,
   updateTenantMemberStatus,
   type AdminAccessMembershipRow,
+  type AdminAccessUserRow,
   type AdminTenantsListItemRow,
   type AdminUserLookupRow,
 } from '../admin/admin-api';
@@ -312,6 +315,7 @@ export function AccessPage() {
   const [phase, setPhase] = useState<PagePhase>('loading');
   const [pageMessage, setPageMessage] = useState<string | null>(null);
   const [memberships, setMemberships] = useState<AdminTenantMembershipRow[]>([]);
+  const [accessUsers, setAccessUsers] = useState<AdminAccessUserRow[]>([]);
   const [tenants, setTenants] = useState<AdminTenantsListItemRow[]>([]);
   const [activeTab, setActiveTab] = useState<AccessTab>('users');
   const [activeDrawer, setActiveDrawer] = useState<AccessDrawer>(null);
@@ -342,14 +346,16 @@ export function AccessPage() {
 
   const loadSurface = useEffectEvent(async () => {
     try {
-      const [tenantRows, membershipRows] = await Promise.all([
+      const [tenantRows, membershipRows, userRows] = await Promise.all([
         listAdminTenants(),
         listAdminAccessMemberships(),
+        listAdminAccessUsers(),
       ]);
 
       setBackendDenied(false);
       setTenants(tenantRows);
       setMemberships(membershipRows);
+      setAccessUsers(userRows);
       setPhase('ready');
       setPageMessage(null);
       setAddForm((current) => ({
@@ -382,6 +388,36 @@ export function AccessPage() {
       );
     }
   });
+
+  const dashboardUsers = accessUsers.filter((user) => {
+    if (!deferredQuery.trim()) return true;
+    return [user.full_name, user.email, user.user_id]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+      .includes(deferredQuery.trim().toLowerCase());
+  });
+
+  const [globalRoleSubmitting, setGlobalRoleSubmitting] = useState<string | null>(null);
+  const [globalRoleMessage, setGlobalRoleMessage] = useState<string | null>(null);
+
+  async function toggleDashboardViewer(user: AdminAccessUserRow) {
+    setGlobalRoleSubmitting(user.user_id);
+    setGlobalRoleMessage(null);
+    try {
+      await setGlobalRole({
+        userId: user.user_id,
+        role: 'dashboard_viewer',
+        enabled: !user.platform_roles.includes('dashboard_viewer'),
+      });
+      setAccessUsers(await listAdminAccessUsers());
+      setGlobalRoleMessage('Acesso do Dashboard atualizado com sucesso.');
+    } catch (error) {
+      setGlobalRoleMessage(error instanceof Error ? error.message : 'Não foi possível atualizar o acesso do Dashboard.');
+    } finally {
+      setGlobalRoleSubmitting(null);
+    }
+  }
 
   useEffect(() => {
     if (didBootstrapRef.current) {
@@ -732,6 +768,58 @@ export function AccessPage() {
           ))}
         </div>
       </div>
+
+      {activeTab === 'users' ? (
+        <section className="shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-5 py-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-[color:var(--minimal-text)]">Acesso ao Dashboard Gerencial</h2>
+              <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">
+                Conceda o perfil operacional sem liberar o console administrativo completo. Ele inclui Dashboard, Portal do cliente, Conteúdo e Integrações.
+              </p>
+            </div>
+            {globalRoleMessage ? <p role="status" className="text-xs text-[color:var(--minimal-text-secondary)]">{globalRoleMessage}</p> : null}
+          </div>
+          <div className="mt-3 overflow-x-auto rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)]">
+            <table className="w-full min-w-[680px] text-xs">
+              <thead className="border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]">
+                <tr>
+                  <th className="px-3 py-2">Usuário</th>
+                  <th className="px-3 py-2">Perfil global</th>
+                  <th className="px-3 py-2 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dashboardUsers.slice(0, 12).map((user) => {
+                  const enabled = user.platform_roles.includes('dashboard_viewer');
+                  const busy = globalRoleSubmitting === user.user_id;
+                  return (
+                    <tr className="border-b border-[color:var(--minimal-border)] last:border-0" key={user.user_id}>
+                      <td className="px-3 py-2">
+                        <p className="font-medium text-[color:var(--minimal-text)]">{user.full_name || 'Usuário sem nome'}</p>
+                        <p className="mt-0.5 text-[color:var(--minimal-text-tertiary)]">{user.email || 'E-mail indisponível'}</p>
+                      </td>
+                      <td className="px-3 py-2">
+                        <StatusPill tone={enabled ? 'positive' : 'default'}>{enabled ? 'Dashboard liberado' : 'Sem acesso'}</StatusPill>
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <button
+                          className="rounded-md border border-[color:var(--minimal-border-strong)] px-2.5 py-1.5 font-medium text-[color:var(--minimal-text)] hover:bg-[color:var(--minimal-surface-muted)] disabled:cursor-not-allowed disabled:opacity-60"
+                          disabled={busy}
+                          onClick={() => void toggleDashboardViewer(user)}
+                          type="button"
+                        >
+                          {busy ? 'Salvando...' : enabled ? 'Revogar' : 'Liberar Dashboard'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
 
       <div className="grid min-h-0 flex-1 overflow-hidden xl:grid-cols-[220px_minmax(0,1fr)_360px]">
         <section className="hidden border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] p-3 xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">

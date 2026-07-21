@@ -1,11 +1,12 @@
-import type { ComponentType } from 'react';
+import { lazy, type ComponentType } from 'react';
 import type { AnalyticsPageProps } from './analytics-model';
-import { AnalyticsCommercialPage } from './AnalyticsCommercialPage';
-import { AnalyticsCsPage } from './AnalyticsCsPage';
-import { AnalyticsFinancePage } from './AnalyticsFinancePage';
-import { AnalyticsCeoPage } from './AnalyticsCeoPage';
-import { AnalyticsLogsPage } from './AnalyticsLogsPage';
-import { AnalyticsConfigPage } from './AnalyticsConfigPage';
+
+const AnalyticsCommercialPage = lazy(() => import('./AnalyticsCommercialPage').then((module) => ({ default: module.AnalyticsCommercialPage })));
+const AnalyticsCsPage = lazy(() => import('./AnalyticsCsPage').then((module) => ({ default: module.AnalyticsCsPage })));
+const AnalyticsFinancePage = lazy(() => import('./AnalyticsFinancePage').then((module) => ({ default: module.AnalyticsFinancePage })));
+const AnalyticsCeoPage = lazy(() => import('./AnalyticsCeoPage').then((module) => ({ default: module.AnalyticsCeoPage })));
+const AnalyticsLogsPage = lazy(() => import('./AnalyticsLogsPage').then((module) => ({ default: module.AnalyticsLogsPage })));
+const AnalyticsConfigPage = lazy(() => import('./AnalyticsConfigPage').then((module) => ({ default: module.AnalyticsConfigPage })));
 
 // Registry/adapter por dominio de dados. Adicionar uma nova area (Financeiro,
 // Produto, Migracao, Onboarding, Juridico, Clientes) = registrar um item aqui

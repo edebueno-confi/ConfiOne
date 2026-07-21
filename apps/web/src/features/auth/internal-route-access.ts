@@ -27,7 +27,16 @@ export function canOpenInternalRoute(
   }
 
   if (matchesRoute(redirectTo, '/admin')) {
-    return context.roles.includes('platform_admin');
+    if (context.roles.includes('platform_admin')) {
+      return true;
+    }
+
+    return (
+      matchesRoute(redirectTo, '/admin/analytics') ||
+      matchesRoute(redirectTo, '/admin/customer-portal') ||
+      matchesRoute(redirectTo, '/admin/knowledge') ||
+      matchesRoute(redirectTo, '/admin/settings')
+    ) && context.roles.includes('dashboard_viewer');
   }
 
   if (matchesRoute(redirectTo, '/cs')) {
@@ -62,6 +71,10 @@ export function canOpenInternalRoute(
 export function getDefaultInternalLandingRoute(context: InternalRouteContext) {
   if (context.roles.includes('platform_admin')) {
     return '/inicio';
+  }
+
+  if (context.roles.includes('dashboard_viewer')) {
+    return '/admin/analytics';
   }
 
   if (hasAnyRole(context.roles, ['support_manager', 'support_agent'])) {

@@ -16,6 +16,8 @@ import {
 } from '../_shared/hubspot.ts';
 import {
   buildCompanyProperties,
+  buildCsMigrationPreflight,
+  countCsMigrationPlan,
   matchCsCompany,
   resolveOwnerId,
   toHubSpotRecord,
@@ -129,18 +131,6 @@ async function loadOwners(client: SupabaseClient, token: string | null): Promise
   }));
 }
 
-function countPlan(items: PlannedItem[]) {
-  return {
-    totalRows: items.length,
-    plannedRows: items.filter((item) => item.operation && ['planned', 'updated', 'created'].includes(item.status)).length,
-    ambiguousRows: items.filter((item) => item.status === 'ambiguous').length,
-    createRows: items.filter((item) => item.operation === 'create' && ['planned', 'created'].includes(item.status)).length,
-    updateRows: items.filter((item) => item.operation === 'update' && ['planned', 'updated'].includes(item.status)).length,
-    skippedRows: items.filter((item) => item.status === 'skipped').length,
-    failedRows: items.filter((item) => item.status === 'failed').length,
-  };
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return optionsResponse();
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed.' }, { status: 405 });
@@ -189,6 +179,20 @@ Deno.serve(async (req) => {
     const token = mode === 'apply' ? await resolveHubSpotToken(client) : null;
     const companies = await loadCompanies(client, token);
     const owners = await loadOwners(client, token);
+    const preflight = buildCsMigrationPreflight(
+      mode,
+      rows.length,
+      rows.filter((row) => row.quality_status === 'valid').length,
+      companies.length,
+      owners.length,
+    );
+    if (mode === 'apply' && !preflight.canApply) {
+      return jsonResponse({
+        error: 'Aplicação bloqueada: a consulta ao HubSpot retornou zero empresas. Reidrate o cache ou valide a credencial antes de aplicar o lote.',
+        code: 'HUBSPOT_COMPANY_CATALOG_EMPTY',
+        preflight,
+      }, { status: 409 });
+    }
     const { data: priorItems, error: priorError } = await client
       .from('analytics_hubspot_cs_migration_items')
       .select('source_record_id,status,hubspot_company_id')
@@ -210,7 +214,7 @@ Deno.serve(async (req) => {
       if (!properties.name) return { row, match, status: 'failed', operation: null, ownerId, properties, errorMessage: 'Empresa sem nome para atualização/criação.', priorCompanyId: match.company?.id ?? null, itemId: null };
       return { row, match, status: 'planned', operation: match.status === 'unique' ? 'update' : 'create', ownerId, properties, errorMessage: null, priorCompanyId: match.company?.id ?? null, itemId: null };
     });
-    const counts = countPlan(plan);
+    const counts = countCsMigrationPlan(plan);
     const { data: migrationRun, error: migrationError } = await client.from('analytics_hubspot_cs_migration_runs').insert({
       source_import_run_id: sourceImportRunId,
       mode,
@@ -257,11 +261,21 @@ Deno.serve(async (req) => {
       }
     }
 
-    const finalCounts = countPlan(plan);
-    const finalStatus = finalCounts.failedRows > 0 ? 'partial' : 'completed';
+    const finalCounts = countCsMigrationPlan(plan);
+    const finalStatus = finalCounts.failed_rows > 0 ? 'partial' : 'completed';
     const { error: finishError } = await client.from('analytics_hubspot_cs_migration_runs').update({ status: finalStatus, ...finalCounts, finished_at: new Date().toISOString() }).eq('id', migrationRun.id);
     if (finishError) throw new Error(`Falha ao finalizar ledger de migração: ${finishError.message}`);
-    return jsonResponse({ ok: true, migrationRunId: migrationRun.id, sourceImportRunId: sourceRun.id, mode, status: finalStatus, counts: finalCounts, syncRecommended: mode === 'apply', message: mode === 'dry_run' ? 'Simulação concluída; nenhuma empresa foi alterada.' : 'Migração aplicada com auditoria por linha. Execute uma sincronização HubSpot para atualizar o cache local.' });
+    return jsonResponse({
+      ok: true,
+      migrationRunId: migrationRun.id,
+      sourceImportRunId: sourceRun.id,
+      mode,
+      status: finalStatus,
+      counts: finalCounts,
+      preflight,
+      syncRecommended: mode === 'apply',
+      message: mode === 'dry_run' ? 'Simulação concluída; nenhuma empresa foi alterada.' : 'Migração aplicada com auditoria por linha. Execute uma sincronização HubSpot para atualizar o cache local.',
+    });
   } catch (error) {
     return jsonResponse({ error: error instanceof Error ? error.message : 'Falha na migração CS Ops.' }, { status: 502 });
   }

@@ -66,7 +66,7 @@ function sha256(buffer) {
   return createHash('sha256').update(buffer).digest('hex');
 }
 
-function detectPngDimensions(buffer) {
+function detectImageDimensions(buffer) {
   if (
     buffer.length >= 24 &&
     buffer[0] === 0x89 &&
@@ -81,7 +81,82 @@ function detectPngDimensions(buffer) {
     };
   }
 
+  if (buffer.length >= 24 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    let offset = 2;
+    while (offset + 9 < buffer.length) {
+      if (buffer[offset] !== 0xff) {
+        offset += 1;
+        continue;
+      }
+
+      const marker = buffer[offset + 1];
+      const segmentLength = buffer.readUInt16BE(offset + 2);
+      const isSofMarker =
+        marker >= 0xc0 &&
+        marker <= 0xc3 ||
+        marker >= 0xc5 &&
+        marker <= 0xc7 ||
+        marker >= 0xc9 &&
+        marker <= 0xcb ||
+        marker >= 0xcd &&
+        marker <= 0xcf;
+
+      if (isSofMarker && offset + 8 < buffer.length) {
+        return {
+          mime: 'image/jpeg',
+          width: buffer.readUInt16BE(offset + 7),
+          height: buffer.readUInt16BE(offset + 5),
+        };
+      }
+
+      offset += Math.max(segmentLength + 2, 2);
+    }
+
+    return { mime: 'image/jpeg', width: null, height: null };
+  }
+
+  if (
+    buffer.length >= 12 &&
+    buffer.toString('ascii', 0, 4) === 'RIFF' &&
+    buffer.toString('ascii', 8, 12) === 'WEBP'
+  ) {
+    return { mime: 'image/webp', width: null, height: null };
+  }
+
+  if (
+    buffer.length >= 6 &&
+    ['GIF87a', 'GIF89a'].includes(buffer.toString('ascii', 0, 6))
+  ) {
+    return {
+      mime: 'image/gif',
+      width: buffer.readUInt16LE(6),
+      height: buffer.readUInt16LE(8),
+    };
+  }
+
   return { mime: 'application/octet-stream', width: null, height: null };
+}
+
+function repairMojibake(value) {
+  const source = String(value ?? '');
+  const markerCount = (source.match(/[ÃÂâð]/g) ?? []).length;
+  if (markerCount === 0) return source;
+
+  try {
+    const repaired = Buffer.from(source, 'latin1').toString('utf8');
+    const repairedMarkerCount = (repaired.match(/[ÃÂâð]/g) ?? []).length;
+    return repairedMarkerCount < markerCount ? repaired : source;
+  } catch {
+    return source;
+  }
+}
+
+function stripEmbeddedSupportContacts(value) {
+  return String(value ?? '')
+    .replace(/(^|\n)[ \t]*em caso de d(?:ú|u)vidas[^\n]*(?:\n[ \t]*(?:whatsapp|e-?mail)\s*:\s*[^\n]*){0,2}/gim, '$1')
+    .replace(/(^|\n)[ \t]*\*{0,2}[ \t]*(?:whatsapp|e-?mail)\s*:\s*\*{0,2}[^\n]*/gim, '$1')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 function stripTags(value) {
@@ -108,7 +183,7 @@ function normalizeLocalSrc(src) {
 }
 
 function buildMarkdownFromHtml(html, assetBySrc, articleTitle) {
-  let source = html;
+  let source = repairMojibake(html);
 
   source = source.replace(/<img\b([^>]*?)>/gi, (_match, attrs) => {
     const src = /src="([^"]+)"/i.exec(attrs)?.[1] ?? '';
@@ -137,14 +212,15 @@ function buildMarkdownFromHtml(html, assetBySrc, articleTitle) {
       return `[${stripTags(text)}](${href})`;
     });
 
-  const markdown = stripTags(source)
+  const markdown = stripEmbeddedSupportContacts(repairMojibake(stripTags(source)))
     .split('\n')
     .map((line) => line.trimEnd())
     .join('\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  return markdown.startsWith('# ') ? markdown : `# ${articleTitle}\n\n${markdown}`;
+  const normalizedTitle = repairMojibake(articleTitle);
+  return markdown.startsWith('# ') ? markdown : `# ${normalizedTitle}\n\n${markdown}`;
 }
 
 async function readAllowlist(filePath) {
@@ -173,6 +249,14 @@ async function main() {
   }
 
   const supabase = createClient(localSupabase.url, localSupabase.anonKey);
+  // O service role fica restrito ao processo local de carga de binários no
+  // bucket público. RPCs e dados editoriais continuam passando pela sessão
+  // autenticada do administrador, preservando os gates e a auditoria.
+  const storageClient = localSupabase.serviceRoleKey
+    ? createClient(localSupabase.url, localSupabase.serviceRoleKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+    : supabase;
   const { error: authError } = await supabase.auth.signInWithPassword({
     email: localSupabase.email,
     password: localSupabase.password,
@@ -207,25 +291,31 @@ async function main() {
 
     const assetBySrc = new Map();
     const upsertedAssets = [];
+    const isPublished = runtimeArticle.status === 'published';
+    const isPublic = runtimeArticle.visibility === 'public';
+    const assetReviewStatus = isPublished && isPublic ? 'approved' : 'pending';
+    const assetVisibility = isPublished ? runtimeArticle.visibility : 'internal';
+    const storageBucket = isPublished && isPublic ? 'knowledge-public-assets' : 'knowledge-assets';
+    const articleTitle = repairMojibake(runtimeArticle.title);
+    const articleSummary = repairMojibake(runtimeArticle.summary ?? '');
 
     for (const asset of article.assets ?? []) {
       const relativeAssetPath = String(asset.localPath ?? '').replace(/\\/g, '/');
       const absoluteAssetPath = path.join(root, relativeAssetPath);
       const buffer = await fs.readFile(absoluteAssetPath);
       const fileHash = sha256(buffer);
-      const detected = detectPngDimensions(buffer);
-      const storageObjectPath = `octadesk/${runtimeArticle.id}/${fileHash}.png`;
-      const altText = `Imagem do artigo ${runtimeArticle.title}`;
+      const detected = detectImageDimensions(buffer);
+      const storageExtension = detected.mime === 'image/jpeg'
+        ? 'jpg'
+        : detected.mime === 'image/webp'
+          ? 'webp'
+          : detected.mime === 'image/gif'
+            ? 'gif'
+            : 'png';
+      const storageObjectPath = `octadesk/${runtimeArticle.id}/${fileHash}.${storageExtension}`;
+      const altText = `Imagem do artigo ${articleTitle}`;
 
       if (args.apply) {
-        const upload = await supabase.storage
-          .from('knowledge-assets')
-          .upload(storageObjectPath, buffer, {
-            contentType: detected.mime,
-            upsert: true,
-          });
-        if (upload.error) throw upload.error;
-
         const { data: assetRow, error: assetError } = await supabase.rpc(
           'rpc_admin_upsert_knowledge_article_asset_v1',
           {
@@ -241,13 +331,45 @@ async function main() {
             p_height: detected.height,
             p_alt_text: altText,
             p_caption: null,
-            p_review_status: 'pending',
-            p_visibility: 'internal',
+            p_review_status: assetReviewStatus,
+            p_visibility: assetVisibility,
             p_is_blocked: false,
           },
         );
         if (assetError) throw assetError;
+
+        const upload = await storageClient.storage
+          .from(storageBucket)
+          .upload(storageObjectPath, buffer, {
+            contentType: detected.mime,
+            upsert: true,
+          });
+        if (upload.error) throw upload.error;
+
+        const { error: storageError } = await supabase.rpc(
+          'rpc_admin_set_knowledge_article_asset_storage_v1',
+          {
+            p_asset_id: assetRow.id,
+            p_storage_bucket: storageBucket,
+            p_storage_object_path: storageObjectPath,
+          },
+        );
+        if (storageError) throw storageError;
         upsertedAssets.push(assetRow);
+        if (isPublished && isPublic) {
+          const { error: reviewError } = await supabase.rpc(
+            'rpc_admin_update_knowledge_article_asset_review_v1',
+            {
+              p_asset_id: assetRow.id,
+              p_review_status: assetReviewStatus,
+              p_visibility: assetVisibility,
+              p_is_blocked: false,
+              p_alt_text: altText,
+              p_caption: null,
+            },
+          );
+          if (reviewError) throw reviewError;
+        }
         assetBySrc.set(relativeAssetPath.replace(/^assets\//, ''), {
           id: assetRow.id,
           altText,
@@ -260,25 +382,62 @@ async function main() {
       }
     }
 
-    const markdown = buildMarkdownFromHtml(localHtml, assetBySrc, runtimeArticle.title);
+    const markdown = buildMarkdownFromHtml(localHtml, assetBySrc, articleTitle);
 
     if (args.apply) {
-      const { error: updateError } = await supabase.rpc(
-        'rpc_admin_update_knowledge_article_draft_v2',
-        {
-          p_article_id: runtimeArticle.id,
-          p_knowledge_space_id: space.id,
-          p_title: runtimeArticle.title,
-          p_slug: runtimeArticle.slug,
-          p_summary: runtimeArticle.summary,
-          p_body_md: markdown,
-          p_category_id: runtimeArticle.category_id,
-          p_visibility: runtimeArticle.visibility,
-          p_source_path: runtimeArticle.source_path,
-          p_source_hash: runtimeArticle.source_hash,
-        },
-      );
-      if (updateError) throw updateError;
+      if (isPublished) {
+        const { error: beginError } = await supabase.rpc(
+          'rpc_admin_begin_knowledge_article_editorial_revision_v2',
+          {
+            p_article_id: runtimeArticle.id,
+            p_knowledge_space_id: space.id,
+          },
+        );
+        if (beginError) throw beginError;
+
+        const { error: revisionError } = await supabase.rpc(
+          'rpc_admin_update_knowledge_article_editorial_revision_v2',
+          {
+            p_article_id: runtimeArticle.id,
+            p_knowledge_space_id: space.id,
+            p_title: articleTitle,
+            p_slug: runtimeArticle.slug,
+            p_summary: articleSummary,
+            p_body_md: markdown,
+            p_category_id: runtimeArticle.category_id,
+            p_visibility: runtimeArticle.visibility,
+            p_source_path: runtimeArticle.source_path,
+            p_source_hash: runtimeArticle.source_hash,
+          },
+        );
+        if (revisionError) throw revisionError;
+
+        const { error: publishError } = await supabase.rpc(
+          'rpc_admin_publish_knowledge_article_editorial_revision_v2',
+          {
+            p_article_id: runtimeArticle.id,
+            p_knowledge_space_id: space.id,
+          },
+        );
+        if (publishError) throw publishError;
+      } else {
+        const { error: updateError } = await supabase.rpc(
+          'rpc_admin_update_knowledge_article_draft_v2',
+          {
+            p_article_id: runtimeArticle.id,
+            p_knowledge_space_id: space.id,
+            p_title: articleTitle,
+            p_slug: runtimeArticle.slug,
+            p_summary: articleSummary,
+            p_body_md: markdown,
+            p_category_id: runtimeArticle.category_id,
+            p_visibility: runtimeArticle.visibility,
+            p_source_path: runtimeArticle.source_path,
+            p_source_hash: runtimeArticle.source_hash,
+          },
+        );
+        if (updateError) throw updateError;
+      }
     }
 
     results.push({
@@ -289,6 +448,8 @@ async function main() {
       markdownBytes: Buffer.byteLength(markdown, 'utf8'),
       applied: args.apply,
       upsertedAssets: upsertedAssets.length,
+      articleUpdate: args.apply ? (isPublished ? 'editorial_revision_published' : 'draft_updated') : 'dry_run',
+      publicAssets: isPublished && isPublic,
     });
   }
 
