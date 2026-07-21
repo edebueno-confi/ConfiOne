@@ -28,6 +28,15 @@
 - Estado: worktree limpo; branch anterior preservada; nenhum push, merge ou
   deploy executado.
 
+## Limpeza e sanitização do repositório — 2026-07-21
+
+- removido `DIAGNOSTICO.bat`, sem consumidores e com risco de registrar env
+  local em log;
+- removidos três screenshots históricos sem referência da raiz;
+- preservados scripts de QA, migrations, testes, contratos e documentos com
+  função de continuidade;
+- evidência: `docs/reports/REPOSITORY_CLEANUP_AUDIT_2026-07-21.md`.
+
 ## 2026-07-18 - Configuração de integrações e dashboard gerencial
 
 - especificação: `docs/spec.md`

@@ -3,6 +3,7 @@
 ## Branches e release
 
 - [GIT_BRANCHING_AND_RELEASE_POLICY.md](./GIT_BRANCHING_AND_RELEASE_POLICY.md)
+- [reports/REPOSITORY_CLEANUP_AUDIT_2026-07-21.md](./reports/REPOSITORY_CLEANUP_AUDIT_2026-07-21.md)
 
 Fonte oficial da documentação do Genius Support OS.
 

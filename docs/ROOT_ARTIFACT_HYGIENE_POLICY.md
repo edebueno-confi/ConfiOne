@@ -203,6 +203,15 @@ Esta política complementa o runbook documental da seguinte forma:
 - `docs/README.md` indexa a política para uso recorrente;
 - tasks futuras de saneamento devem nascer como cards explícitos no Kanban, não como comentário solto.
 
+## Execução do saneamento — 2026-07-21
+
+- removido `DIAGNOSTICO.bat`, que não tinha consumidores e gravava conteúdo de
+  `.env.local` em log;
+- removidos três screenshots históricos sem referência da raiz;
+- preservados os scripts locais de inicialização/QA e os documentos auxiliares
+  que ainda têm referências ou função de continuidade;
+- evidência: `docs/reports/REPOSITORY_CLEANUP_AUDIT_2026-07-21.md`.
+
 ## Critério de pronto
 
 A política estará operando corretamente quando:
