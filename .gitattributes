@@ -1,0 +1,27 @@
+* text=auto eol=lf
+
+# Scripts Windows mantêm CRLF para execução nativa.
+*.bat text eol=crlf
+
+# Arquivos binários não devem sofrer normalização de linha.
+*.7z binary
+*.bin binary
+*.gif binary
+*.ico binary
+*.jpeg binary
+*.jpg binary
+*.mp3 binary
+*.mp4 binary
+*.pdf binary
+*.png binary
+*.svg binary
+*.ttf binary
+*.wav binary
+*.webm binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.xlsx binary
+*.xls binary
+*.zip binary
+*.wasm binary
