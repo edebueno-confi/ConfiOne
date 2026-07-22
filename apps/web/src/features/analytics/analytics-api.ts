@@ -38,6 +38,8 @@ import {
   type ReconciliationQualityResult,
   type AnalyticsSourceConfig,
 } from './analytics-model';
+import { aggregateLatestHubspotSyncRuns } from './analytics-sync-runs.mjs';
+import { formatAnalyticsSyncError } from './analytics-sync-errors.mjs';
 
 type Row = Record<string, unknown>;
 
@@ -122,7 +124,7 @@ export async function getLatestSyncRun(): Promise<SyncRun | null> {
   const runs = (data ?? [])
     .map((row) => mapSyncRun(row as Row))
     .filter((run): run is SyncRun => run !== null);
-  const latest = runs[0] ?? null;
+  const latest = aggregateLatestHubspotSyncRuns(runs);
 
   // A supervisão do runtime pode cancelar uma execução concorrente depois que
   // outra execução já concluiu o snapshot. Essa execução sem qualquer contador
@@ -220,25 +222,57 @@ export async function triggerOmieSync(): Promise<{ totalRows: number; acceptedRo
   const { data: { session }, error: sessionError } = await client.auth.getSession();
   if (sessionError || !session?.access_token) throw new Error('Sessao ativa indisponivel para sincronizar o Omie.');
   const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/omie-sync`, { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}`, apikey: config.config.supabaseAnonKey } });
-  const payload = await response.json().catch(() => null) as { error?: string; totalRows?: number; acceptedRows?: number } | null;
-  if (!response.ok) throw new Error(payload?.error ?? `Sincronizacao Omie recusada pelo servidor (HTTP ${response.status}).`);
+  const payload = await response.json().catch(() => null) as { error?: string; code?: string; message?: string; totalRows?: number; acceptedRows?: number } | null;
+  if (!response.ok) throw new Error(formatAnalyticsSyncError({ operation: 'OMIE', status: response.status, payload }));
   return { totalRows: Number(payload?.totalRows ?? 0), acceptedRows: Number(payload?.acceptedRows ?? 0) };
 }
 
-export interface IntegrationSchedule { enabled: boolean; frequency: 'hourly' | 'daily' | 'off'; lastRunAt: string | null; lastStatus: string | null; lastMessage: string | null }
+export interface IntegrationSchedule {
+  enabled: boolean;
+  frequency: 'hourly' | 'daily' | 'off';
+  lastRunAt: string | null;
+  lastStatus: string | null;
+  lastMessage: string | null;
+  hubspotEnabled: boolean;
+  hubspotFrequency: 'hourly' | 'daily' | 'off';
+  hubspotLastRunAt: string | null;
+  hubspotLastStatus: string | null;
+  hubspotLastMessage: string | null;
+}
 
 export async function getIntegrationSchedule(): Promise<IntegrationSchedule | null> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.from('analytics_integration_schedule').select('enabled,frequency,last_run_at,last_status,last_message').eq('id', true).maybeSingle();
+  const { data, error } = await client.from('analytics_integration_schedule').select('enabled,frequency,last_run_at,last_status,last_message,hubspot_enabled,hubspot_frequency,hubspot_last_run_at,hubspot_last_status,hubspot_last_message').eq('id', true).maybeSingle();
   if (error) throw toAppError(error, 'Falha ao carregar o agendamento da integração.');
   if (!data) return null;
   const row = data as Record<string, unknown>;
-  return { enabled: row.enabled === true, frequency: (['hourly', 'daily', 'off'].includes(String(row.frequency)) ? String(row.frequency) : 'off') as IntegrationSchedule['frequency'], lastRunAt: (row.last_run_at as string | null) ?? null, lastStatus: (row.last_status as string | null) ?? null, lastMessage: (row.last_message as string | null) ?? null };
+  return {
+    enabled: row.enabled === true,
+    frequency: (['hourly', 'daily', 'off'].includes(String(row.frequency)) ? String(row.frequency) : 'off') as IntegrationSchedule['frequency'],
+    lastRunAt: (row.last_run_at as string | null) ?? null,
+    lastStatus: (row.last_status as string | null) ?? null,
+    lastMessage: (row.last_message as string | null) ?? null,
+    hubspotEnabled: row.hubspot_enabled === true,
+    hubspotFrequency: (['hourly', 'daily', 'off'].includes(String(row.hubspot_frequency)) ? String(row.hubspot_frequency) : 'off') as IntegrationSchedule['hubspotFrequency'],
+    hubspotLastRunAt: (row.hubspot_last_run_at as string | null) ?? null,
+    hubspotLastStatus: (row.hubspot_last_status as string | null) ?? null,
+    hubspotLastMessage: (row.hubspot_last_message as string | null) ?? null,
+  };
 }
 
-export async function setIntegrationSchedule(enabled: boolean, frequency: IntegrationSchedule['frequency']): Promise<void> {
+export async function setIntegrationSchedule(
+  enabled: boolean,
+  frequency: IntegrationSchedule['frequency'],
+  hubspotEnabled = false,
+  hubspotFrequency: IntegrationSchedule['hubspotFrequency'] = 'off',
+): Promise<void> {
   const client = requireSupabaseBrowserClient();
-  const { error } = await client.rpc('rpc_admin_set_integration_schedule', { p_enabled: enabled, p_frequency: frequency });
+  const { error } = await client.rpc('rpc_admin_set_sync_schedules', {
+    p_omie_enabled: enabled,
+    p_omie_frequency: frequency,
+    p_hubspot_enabled: hubspotEnabled,
+    p_hubspot_frequency: hubspotFrequency,
+  });
   if (error) throw toAppError(error, 'Falha ao salvar o agendamento.');
 }
 
@@ -249,8 +283,8 @@ export async function runIntegrationNow(): Promise<{ status: 'success' | 'partia
   const { data: { session }, error: sessionError } = await client.auth.getSession();
   if (sessionError || !session?.access_token) throw new Error('Sessão ativa indisponível para sincronizar.');
   const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/analytics-integration-run`, { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}`, apikey: config.config.supabaseAnonKey } });
-  const payload = await response.json().catch(() => null) as { error?: string; status?: 'success' | 'partial'; updated?: number; companies?: number; omieTitles?: number; message?: string } | null;
-  if (!response.ok) throw new Error(payload?.error ?? `Sincronização recusada pelo servidor (HTTP ${response.status}).`);
+  const payload = await response.json().catch(() => null) as { error?: string; code?: string; status?: 'success' | 'partial'; updated?: number; companies?: number; omieTitles?: number; message?: string } | null;
+  if (!response.ok) throw new Error(formatAnalyticsSyncError({ operation: 'OMIE ↔ HubSpot', status: response.status, payload }));
   return { status: payload?.status === 'partial' ? 'partial' : 'success', updated: Number(payload?.updated ?? 0), companies: Number(payload?.companies ?? 0), omieTitles: Number(payload?.omieTitles ?? 0), message: payload?.message };
 }
 
@@ -472,7 +506,7 @@ export interface HubspotSyncResult {
 
 export async function triggerHubspotSync(
   domain?: 'commercial' | 'cs',
-  options: { full?: boolean } = {},
+  options: { full?: boolean; phased?: boolean } = {},
 ): Promise<HubspotSyncResult> {
   const config = readRuntimeConfig();
   if (!config.ok) {
@@ -489,26 +523,37 @@ export async function triggerHubspotSync(
   }
 
   const baseUrl = config.config.supabaseUrl.replace(/\/$/, '');
-  const response = await fetch(`${baseUrl}/functions/v1/hubspot-sync`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-      apikey: config.config.supabaseAnonKey,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ ...(domain ? { domain } : {}), ...(options.full ? { full: true } : {}) }),
-  });
+  const scopes: Array<'companies' | 'commercial' | 'cs' | undefined> =
+    options.phased === false || domain ? [undefined] : ['companies', 'commercial', 'cs'];
+  const aggregate: HubspotSyncResult = { mode: 'incremental', deals: 0, tickets: 0, owners: 0, stages: 0, companies: 0 };
 
-  const payload = (await response.json().catch(() => null)) as ({ error?: string; message?: string } & Partial<HubspotSyncResult>) | null;
-  if (!response.ok) {
-    throw new Error(payload?.error ?? payload?.message ?? `Sincronizacao recusada pelo servidor (HTTP ${response.status}).`);
+  for (const scope of scopes) {
+    const response = await fetch(`${baseUrl}/functions/v1/hubspot-sync`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: config.config.supabaseAnonKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...(domain ? { domain } : {}),
+        ...(scope ? { scope } : {}),
+        ...(options.full ? { full: true } : {}),
+      }),
+    });
+
+    const payload = (await response.json().catch(() => null)) as ({ error?: string; code?: string; message?: string } & Partial<HubspotSyncResult>) | null;
+    if (!response.ok) {
+      const label = scope ? ` na etapa ${scope}` : '';
+      throw new Error(formatAnalyticsSyncError({ operation: `HubSpot${label}`, status: response.status, payload }));
+    }
+    aggregate.mode = payload?.mode === 'full' ? 'full' : aggregate.mode;
+    aggregate.deals += Number(payload?.deals ?? 0);
+    aggregate.tickets += Number(payload?.tickets ?? 0);
+    aggregate.owners += Number(payload?.owners ?? 0);
+    aggregate.stages += Number(payload?.stages ?? 0);
+    aggregate.companies += Number(payload?.companies ?? 0);
   }
-  return {
-    mode: payload?.mode === 'full' ? 'full' : 'incremental',
-    deals: Number(payload?.deals ?? 0),
-    tickets: Number(payload?.tickets ?? 0),
-    owners: Number(payload?.owners ?? 0),
-    stages: Number(payload?.stages ?? 0),
-    companies: Number(payload?.companies ?? 0),
-  };
+
+  return aggregate;
 }

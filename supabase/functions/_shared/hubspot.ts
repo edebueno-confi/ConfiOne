@@ -3,6 +3,8 @@
 // Escopos minimos esperados: crm.objects.deals.read, crm.objects.tickets.read,
 // crm.objects.owners.read, crm.schemas.deals.read, crm.schemas.tickets.read.
 
+import { buildHubSpotCompanyBatchUpdatePayload, chunkCompanyUpdates } from './hubspot-company-batch.mjs';
+
 const HUBSPOT_BASE_URL = 'https://api.hubapi.com';
 const HUBSPOT_REQUEST_TIMEOUT_MS = 20_000;
 
@@ -437,6 +439,22 @@ export async function updateCompany(
     body: JSON.stringify({ properties }),
   }, 0, tokenOverride);
   return await response.json() as HubSpotRecord;
+}
+
+export async function updateCompaniesBatch(
+  updates: Array<{ id: string; properties: Record<string, string> }>,
+  tokenOverride?: string,
+): Promise<number> {
+  let updated = 0;
+  for (const batch of chunkCompanyUpdates(updates)) {
+    const response = await hubspotFetch('/crm/v3/objects/companies/batch/update', {
+      method: 'POST',
+      body: JSON.stringify(buildHubSpotCompanyBatchUpdatePayload(batch)),
+    }, 0, tokenOverride);
+    const payload = await response.json().catch(() => null) as { results?: unknown[] } | null;
+    updated += Array.isArray(payload?.results) ? payload.results.length : batch.length;
+  }
+  return updated;
 }
 
 export async function createCompany(

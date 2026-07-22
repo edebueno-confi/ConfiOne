@@ -28,6 +28,12 @@ import {
   toTimestamp,
   type HubSpotRecord,
 } from '../_shared/hubspot.ts';
+import {
+  normalizeHubspotSyncScope,
+  scopeObjectType,
+  syncsCompanies,
+  syncsPipelines,
+} from '../_shared/hubspot-sync-scope.mjs';
 
 const DEAL_PROPERTIES = [
   'pipeline',
@@ -112,6 +118,15 @@ async function authorize(req: Request, client: SupabaseClient): Promise<string |
 
   if (roleError || !roleRow) return null;
   return userId;
+}
+
+function isDue(frequency: string, lastRunAt: string | null): boolean {
+  if (!lastRunAt) return true;
+  const last = Date.parse(lastRunAt);
+  if (!Number.isFinite(last)) return true;
+  if (frequency === 'hourly') return Date.now() - last >= 55 * 60 * 1000;
+  if (frequency === 'daily') return new Date(last).toISOString().slice(0, 10) !== new Date().toISOString().slice(0, 10);
+  return false;
 }
 
 async function resolveHubSpotToken(client: SupabaseClient): Promise<string | undefined> {
@@ -266,12 +281,27 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Acesso negado. Requer platform_admin.' }, { status: 403 });
   }
 
+  const { data: syncSchedule } = await client
+    .from('analytics_integration_schedule')
+    .select('hubspot_enabled,hubspot_frequency,hubspot_last_run_at')
+    .eq('id', true)
+    .maybeSingle();
+  if (actor === 'scheduler') {
+    const enabled = syncSchedule?.hubspot_enabled === true;
+    const frequency = String(syncSchedule?.hubspot_frequency ?? 'off');
+    if (!enabled || frequency === 'off' || !isDue(frequency, syncSchedule?.hubspot_last_run_at ?? null)) {
+      return jsonResponse({ ok: true, skipped: true, reason: !enabled || frequency === 'off' ? 'desativado' : 'ainda não vencido' });
+    }
+  }
+
   // Escopo opcional: { "domain": "commercial" | "cs" }.
   let requestedDomain: string | null = null;
+  let scope = 'all';
   let fullRefresh = false;
   try {
-    const body = (await req.json().catch(() => null)) as { domain?: string; full?: boolean } | null;
+    const body = (await req.json().catch(() => null)) as { domain?: string; scope?: string; full?: boolean } | null;
     requestedDomain = body?.domain?.trim() || null;
+    scope = normalizeHubspotSyncScope(body?.scope);
     fullRefresh = body?.full === true;
   } catch {
     requestedDomain = null;
@@ -286,14 +316,19 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: `Falha ao ler configuracao: ${configError.message}` }, { status: 500 });
   }
 
-  const configs = (configRows ?? []).filter(
-    (row: SourceConfigRow) => !requestedDomain || row.domain_key === requestedDomain,
-  ) as SourceConfigRow[];
+  const scopeDomain = scope === 'commercial' ? 'commercial' : scope === 'cs' ? 'cs' : null;
+  const effectiveDomain = requestedDomain ?? scopeDomain;
+  const scopeType = scopeObjectType(scope);
+  const configs = (configRows ?? []).filter((row: SourceConfigRow) => {
+    if (effectiveDomain && row.domain_key !== effectiveDomain) return false;
+    if (scopeType && row.object_type !== scopeType) return false;
+    return true;
+  }) as SourceConfigRow[];
   const uniqueConfigs = Array.from(
     new Map(configs.map((config) => [`${config.domain_key}:${config.object_type}:${config.hubspot_pipeline_id}`, config])).values(),
   );
 
-  if (uniqueConfigs.length === 0) {
+  if (syncsPipelines(scope) && uniqueConfigs.length === 0) {
     return jsonResponse({ error: 'Nenhuma fonte ativa para o escopo solicitado.' }, { status: 400 });
   }
 
@@ -332,7 +367,7 @@ Deno.serve(async (req) => {
   const { data: runRow, error: runError } = await client
     .from('hubspot_sync_runs')
     .insert({
-      domain_key: requestedDomain,
+      domain_key: scope === 'all' ? requestedDomain : scope,
       status: 'running',
       triggered_by: actor === 'scheduler' ? null : actor,
     })
@@ -347,42 +382,48 @@ Deno.serve(async (req) => {
   const counters = { deals: 0, tickets: 0, owners: 0, stages: 0, companies: 0 };
 
   try {
-    const { data: previousSuccess } = await client
+    let previousSuccessQuery = client
       .from('hubspot_sync_runs')
       .select('finished_at')
       .eq('status', 'success')
       .not('finished_at', 'is', null)
-      .order('finished_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order('finished_at', { ascending: false });
+    // O primeiro lote após uma execução legada pode não ter `domain_key`
+    // preenchido por escopo. Um snapshot global bem-sucedido ainda é uma
+    // fronteira válida para a janela incremental de empresas/tickets.
+    const { data: previousSuccess } = await previousSuccessQuery.limit(1).maybeSingle();
     const previousFinishedAt = previousSuccess?.finished_at ? Date.parse(String(previousSuccess.finished_at)) : Number.NaN;
     const updatedAfterMs = !fullRefresh && Number.isFinite(previousFinishedAt)
       ? Math.max(0, previousFinishedAt - 5 * 60 * 1000)
       : undefined;
     const hubspotToken = await resolveHubSpotToken(client);
     if (!hubspotToken) throw new Error('Credencial do HubSpot não configurada. Cadastre-a em Admin > Configurações > Integrações.');
-    counters.owners = await syncOwners(client, hubspotToken);
-    counters.companies = await syncCompanies(client, hubspotToken, updatedAfterMs);
+    if (syncsCompanies(scope)) {
+      counters.owners = await syncOwners(client, hubspotToken);
+      counters.companies = await syncCompanies(client, hubspotToken, updatedAfterMs);
+    }
 
-    for (const config of uniqueConfigs) {
-      const pipelineLabel = await fetchPipelineLabel(
-        config.object_type === 'deal' ? 'deals' : 'tickets',
-        config.hubspot_pipeline_id,
-        hubspotToken,
-      );
-      if (pipelineLabel) {
-        await client
-          .from('analytics_source_config')
-          .update({ hubspot_pipeline_label: pipelineLabel })
-          .eq('domain_key', config.domain_key)
-          .eq('object_type', config.object_type)
-          .eq('hubspot_pipeline_id', config.hubspot_pipeline_id);
-      }
-      counters.stages += await syncStages(client, config.object_type, config.hubspot_pipeline_id, hubspotToken);
-      if (config.object_type === 'deal') {
-        counters.deals += await syncDeals(client, config.hubspot_pipeline_id, hubspotToken);
-      } else {
-        counters.tickets += await syncTickets(client, config.hubspot_pipeline_id, hubspotToken, updatedAfterMs);
+    if (syncsPipelines(scope)) {
+      for (const config of uniqueConfigs) {
+        const pipelineLabel = await fetchPipelineLabel(
+          config.object_type === 'deal' ? 'deals' : 'tickets',
+          config.hubspot_pipeline_id,
+          hubspotToken,
+        );
+        if (pipelineLabel) {
+          await client
+            .from('analytics_source_config')
+            .update({ hubspot_pipeline_label: pipelineLabel })
+            .eq('domain_key', config.domain_key)
+            .eq('object_type', config.object_type)
+            .eq('hubspot_pipeline_id', config.hubspot_pipeline_id);
+        }
+        counters.stages += await syncStages(client, config.object_type, config.hubspot_pipeline_id, hubspotToken);
+        if (config.object_type === 'deal') {
+          counters.deals += await syncDeals(client, config.hubspot_pipeline_id, hubspotToken);
+        } else {
+          counters.tickets += await syncTickets(client, config.hubspot_pipeline_id, hubspotToken, updatedAfterMs);
+        }
       }
     }
 
@@ -398,6 +439,14 @@ Deno.serve(async (req) => {
         companies_synced: counters.companies,
       })
       .eq('id', runId);
+
+    if (actor === 'scheduler') {
+      await client.from('analytics_integration_schedule').update({
+        hubspot_last_run_at: new Date().toISOString(),
+        hubspot_last_status: 'success',
+        hubspot_last_message: `HubSpot ${counters.companies} empresas, ${counters.deals} deals, ${counters.tickets} tickets, ${counters.owners} responsÃ¡veis e ${counters.stages} estÃ¡gios.`,
+      }).eq('id', true);
+    }
 
     return jsonResponse({ ok: true, runId, mode: updatedAfterMs === undefined ? 'full' : 'incremental', ...counters });
   } catch (error) {
@@ -415,6 +464,14 @@ Deno.serve(async (req) => {
         error_message: message.slice(0, 1000),
       })
       .eq('id', runId);
+
+    if (actor === 'scheduler') {
+      await client.from('analytics_integration_schedule').update({
+        hubspot_last_run_at: new Date().toISOString(),
+        hubspot_last_status: 'error',
+        hubspot_last_message: message.slice(0, 500),
+      }).eq('id', true);
+    }
 
     return jsonResponse({ error: message }, { status: 502 });
   }

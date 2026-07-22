@@ -1,0 +1,41 @@
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
+import { jsonResponse, optionsResponse } from '../_shared/ticket-evidence.ts';
+
+const SYNC_FUNCTIONS = ['hubspot-sync', 'analytics-integration-run'] as const;
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return optionsResponse();
+  if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed.' }, { status: 405 });
+
+  const configuredSecret = Deno.env.get('ANALYTICS_SYNC_SECRET')?.trim();
+  const providedSecret = req.headers.get('x-analytics-sync-secret')?.trim();
+  if (!configuredSecret || !providedSecret || providedSecret !== configuredSecret) {
+    return jsonResponse({ error: 'Acesso negado.' }, { status: 403 });
+  }
+
+  const baseUrl = Deno.env.get('SUPABASE_URL')?.replace(/\/$/, '');
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')?.trim();
+  if (!baseUrl || !anonKey) return jsonResponse({ error: 'Runtime Supabase sem URL ou chave publica configurada.' }, { status: 503 });
+
+  const results: Array<{ function: string; status: number; payload: unknown }> = [];
+  for (const functionName of SYNC_FUNCTIONS) {
+    try {
+      const response = await fetch(`${baseUrl}/functions/v1/${functionName}`, {
+        method: 'POST',
+        headers: {
+          apikey: anonKey,
+          'Content-Type': 'application/json',
+          'x-analytics-sync-secret': configuredSecret,
+        },
+        body: '{}',
+      });
+      const payload = await response.json().catch(() => null);
+      results.push({ function: functionName, status: response.status, payload });
+    } catch (error) {
+      results.push({ function: functionName, status: 503, payload: { error: error instanceof Error ? error.message : String(error) } });
+    }
+  }
+
+  const failed = results.filter((result) => result.status >= 400);
+  return jsonResponse({ ok: failed.length === 0, results }, { status: failed.length === 0 ? 200 : 502 });
+});

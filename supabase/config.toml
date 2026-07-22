@@ -386,6 +386,19 @@ deno_version = 2
 [functions.hubspot-sync]
 verify_jwt = false
 
+# Essas funcoes possuem autorizacao interna por JWT de platform_admin ou pelo
+# segredo dedicado do scheduler. O gateway nao deve bloquear o segundo fluxo.
+[functions.omie-sync]
+verify_jwt = false
+
+[functions.analytics-integration-run]
+verify_jwt = false
+
+# Heartbeat unico do scheduler: dispara os dois fluxos configuraveis em ordem,
+# cada funcao decide internamente se sua cadencia esta vencida.
+[functions.analytics-scheduled-run]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

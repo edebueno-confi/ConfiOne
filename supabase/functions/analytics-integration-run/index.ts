@@ -1,8 +1,8 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { createServiceClient, getAuthorizationHeader, jsonResponse, optionsResponse } from '../_shared/ticket-evidence.ts';
-import { enrichReceivablesWithClients, fetchOmieClientsIndex, fetchOmieReceivables, normalizeOmieApiReceivables, parseOmieCredentials } from '../_shared/omie.ts';
-import { updateCompany } from '../_shared/hubspot.ts';
+import { fetchOmieReceivables, normalizeOmieApiReceivables, parseOmieCredentials } from '../_shared/omie.ts';
+import { updateCompaniesBatch } from '../_shared/hubspot.ts';
 
 interface RollupRow {
   company_id: string; saldo_aberto: number; saldo_vencido: number; titulos_abertos: number; atraso_medio_dias: number; situacao: string;
@@ -37,37 +37,35 @@ function isDue(frequency: string, lastRunAt: string | null): boolean {
   return false;
 }
 
-async function updateCompaniesWithBoundedConcurrency(
+async function updateCompaniesInBatches(
   rows: RollupRow[],
   token: string,
   nowDate: string,
-  concurrency = 6,
 ) {
-  let updated = 0;
-  let failed = 0;
-  for (let index = 0; index < rows.length; index += concurrency) {
-    const batch = rows.slice(index, index + concurrency);
-    const results = await Promise.allSettled(batch.map((r) => updateCompany(String(r.company_id), {
+  const updates = rows.map((r) => ({ id: String(r.company_id), properties: {
       omie_saldo_aberto: String(r.saldo_aberto ?? 0),
       omie_saldo_vencido: String(r.saldo_vencido ?? 0),
       omie_titulos_abertos: String(r.titulos_abertos ?? 0),
       omie_atraso_medio_dias: String(r.atraso_medio_dias ?? 0),
       omie_situacao_financeira: String(r.situacao ?? ''),
       omie_ultima_sincronizacao: nowDate,
-    }, token)));
-    for (const result of results) {
-      if (result.status === 'fulfilled') updated += 1;
-      else failed += 1;
-    }
+    } }));
+  try {
+    const updated = await updateCompaniesBatch(updates, token);
+    return { updated, failed: rows.length - updated };
+  } catch (error) {
+    throw new Error(`Atualizacao HubSpot em lote falhou: ${error instanceof Error ? error.message : String(error)}`);
   }
-  return { updated, failed };
 }
 
 Deno.serve(async (req) => {
+  const startedAt = Date.now();
+  const phase = (label: string) => console.info(`[analytics-integration-run] ${label} +${Date.now() - startedAt}ms`);
   if (req.method === 'OPTIONS') return optionsResponse();
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed.' }, { status: 405 });
 
   const client = createServiceClient();
+  phase('request accepted');
   const mode = await authorize(req, client);
   if (!mode) return jsonResponse({ error: 'Acesso negado.' }, { status: 403 });
 
@@ -78,6 +76,8 @@ Deno.serve(async (req) => {
     if (!enabled || frequency === 'off' || !isDue(frequency, schedule?.last_run_at ?? null)) {
       return jsonResponse({ ok: true, skipped: true, reason: !enabled || frequency === 'off' ? 'desativado' : 'ainda não vencido' });
     }
+    const { data: activeRun } = await client.from('analytics_finance_sync_runs').select('id').eq('status', 'processing').order('started_at', { ascending: false }).limit(1).maybeSingle();
+    if (activeRun) return jsonResponse({ ok: true, skipped: true, reason: 'execucao financeira ja em andamento' });
   }
 
   await client.rpc('rpc_service_mark_integration_run', { p_status: 'running', p_message: `Iniciado (${mode})` });
@@ -85,16 +85,31 @@ Deno.serve(async (req) => {
     // 1) OMIE -> read model (read-only na OMIE)
     const omieSecret = await getSecret(client, 'omie');
     const credentials = parseOmieCredentials(omieSecret);
+    phase('omie credentials loaded');
     const { data: syncRun } = await client.from('analytics_finance_sync_runs').insert({ status: 'processing', triggered_by_user_id: null }).select('id').single();
     const syncRunId = String(syncRun?.id ?? crypto.randomUUID());
     const omieRows = await fetchOmieReceivables(credentials);
+    phase(`omie receivables fetched: ${omieRows.length}`);
     const normalized = normalizeOmieApiReceivables(omieRows, syncRunId);
-    try {
-      const clients = await fetchOmieClientsIndex(credentials);
-      enrichReceivablesWithClients(normalized, clients);
-    } catch (_e) { /* enriquecimento opcional */ }
+    phase(`omie receivables normalized: ${normalized.length}`);
+    // O enriquecimento por ListarClientesResumido e deliberadamente excluido
+    // deste caminho combinado: ele pode paginar milhares de clientes e estourar
+    // o limite do worker. O payload de Contas a Receber ja traz nome/CNPJ quando
+    // disponiveis; o enriquecimento completo permanece no omie-sync dedicado.
     const { error: upsertError } = await client.from('analytics_finance_receivables').upsert(normalized, { onConflict: 'source_key,source_record_id' });
     if (upsertError) throw new Error(`Persistência OMIE falhou: ${upsertError.message}`);
+    const { error: expireError } = await client.from('analytics_finance_receivables')
+      .update({ is_current: false, balance: 0, aging_bucket: 'recebido' })
+      .eq('source_key', 'omie_receivables_api').neq('sync_run_id', syncRunId);
+    if (expireError) throw new Error(`Reconciliação OMIE falhou: ${expireError.message}`);
+    const { error: legacyExpireError } = await client.from('analytics_finance_receivables')
+      .update({ is_current: false, balance: 0, aging_bucket: 'recebido' })
+      .eq('source_key', 'omie_receivables_api').is('sync_run_id', null);
+    if (legacyExpireError) throw new Error(`Reconciliação OMIE legada falhou: ${legacyExpireError.message}`);
+    if (normalized.length) {
+      const { error: currentError } = await client.from('analytics_finance_receivables').update({ is_current: true }).eq('sync_run_id', syncRunId);
+      if (currentError) throw new Error(`Marcação de títulos atuais falhou: ${currentError.message}`);
+    }
     if (syncRun?.id) await client.from('analytics_finance_sync_runs').update({ status: 'completed', total_rows: omieRows.length, accepted_rows: normalized.length, finished_at: new Date().toISOString() }).eq('id', syncRun.id);
 
     // 2) read model -> propriedades HubSpot (fill dos campos omie_*).
@@ -106,9 +121,11 @@ Deno.serve(async (req) => {
       const { data: rollupData, error: rollupError } = await client.rpc('rpc_analytics_finance_company_rollup');
       if (rollupError) throw new Error(`Rollup falhou: ${rollupError.message}`);
       const rows = (Array.isArray(rollupData) ? rollupData : []) as RollupRow[];
+      phase(`finance rollup loaded: ${rows.length}`);
       const hubToken = await getSecret(client, 'hubspot');
       const nowDate = new Date().toISOString().slice(0, 10);
-      const { updated, failed } = await updateCompaniesWithBoundedConcurrency(rows, hubToken, nowDate);
+      const { updated, failed } = await updateCompaniesInBatches(rows, hubToken, nowDate);
+      phase(`hubspot batch update completed: ${updated}/${rows.length}`);
 
       const status = failed === 0 ? 'success' : 'partial';
       const message = `OMIE ${normalized.length} títulos; HubSpot ${updated}/${rows.length} empresas (${failed} falhas).`;
