@@ -1,3 +1,28 @@
+
+## Estado atual e fechamento do lote OMIE↔HubSpot — 2026-07-22
+
+- Baseline versionado: branch `codex/repository-cleanup-consolidation-20260721`,
+  HEAD `5cb4eea` (`feat(analytics): configure dual integration schedules`).
+- Concluído localmente: agenda independente de OMIE e HubSpot, sincronização
+  global do HubSpot, atualização de empresas em lote, eliminação de chamadas
+  OMIE repetidas no fluxo combinado, bloqueio de concorrência e observabilidade
+  de fases/erros.
+- Validado localmente: OMIE dedicado com 3.433/3.433 títulos; runner combinado
+  com HTTP 200; `web:typecheck`, `web:build`, suíte pgTAP (70 arquivos/1.207
+  testes) e testes Node direcionados aprovados antes do commit.
+- Estado de agenda: OMIE local ativo em frequência diária; HubSpot global
+  configurável, desligado por padrão para não consumir a API sem decisão
+  explícita. O heartbeat agendado está implementado, mas o runtime Edge local
+  precisa ser recarregado para reconhecer a nova função; o `OPTIONS` 404 atual
+  é uma limitação do inventário congelado do runtime local.
+- Restam somente gates externos: publicar migrations/functions, configurar o
+  scheduler remoto protegido e executar deploy/push quando houver autorização.
+  Nenhum write remoto foi realizado neste lote.
+- As seções históricas abaixo permanecem para auditoria. Elas não são a fila
+  corrente quando mencionam credencial OMIE, implementação do cockpit ou
+  sincronização inicial como pendências; esses pontos foram superados pela
+  configuração e validação registradas em 2026-07-22.
+
 # Genius Support OS — Plano operacional vivo
 
 ## Ciclo Central de integração OMIE↔HubSpot (Claude) — 2026-07-20

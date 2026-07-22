@@ -1,3 +1,33 @@
+## Estado atual — 2026-07-22
+
+- **Comercial e CS/Suporte:** continuam lendo o snapshot local alimentado pelo
+  HubSpot, com sincronização global (`scope: all`) e escopos por domínio apenas
+  para diagnóstico/execução faseada.
+- **Financeiro:** usa o read model API-first do OMIE, com a planilha como
+  fallback controlado. O sync dedicado validado localmente processou 3.433/3.433
+  títulos.
+- **Agendamento:** OMIE financeiro e HubSpot global possuem configurações
+  independentes na tela de Configuração e no backend. O HubSpot fica desligado
+  por padrão para evitar consumo involuntário da API.
+- **Orquestração:** `analytics-scheduled-run` coordena as agendas protegidas;
+  após atualizar o runtime Edge local, ele deve ser validado novamente porque o
+  inventário congelado usado no último teste ainda não carregava essa função.
+- **Estado de entrega:** a implementação local foi fechada no commit `5cb4eea`.
+  Publicação remota, scheduler protegido e deploy continuam gates externos e
+  não foram executados.
+
+## Limites de API e estratégia de atualização
+
+- Empresas e tickets usam a fronteira incremental disponível; Deals permanecem
+  em carga completa por exigência do contrato atual do dashboard.
+- Atualizações de empresas do HubSpot usam lotes de até 100 registros, reduzindo
+  chamadas repetidas e o tempo de worker.
+- O fluxo combinado não repete o enriquecimento do índice de clientes OMIE;
+  títulos e clientes são lidos uma vez por execução financeira.
+- Há guarda de sobreposição para impedir duas execuções financeiras simultâneas.
+- Falhas de uma fase são registradas com etapa e mensagem, sem fabricar
+  números parciais como se fossem sucesso.
+
 # Analytics / Dashboard Gerencial (integração HubSpot)
 
 Módulo de dashboards gerenciais integrado ao HubSpot, com duas seções na v1:

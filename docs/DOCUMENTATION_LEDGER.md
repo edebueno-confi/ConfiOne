@@ -6419,3 +6419,17 @@ Cada registro deve informar:
 | 2026-07-21 | Integrações / HubSpot + OMIE | Hardening de sincronização e timeout | HubSpot incremental para empresas/tickets, Deals em carga completa segura, bloqueio de concorrência, status parcial OMIE e observabilidade no Dashboard | `docs/reports/HUBSPOT_OMIE_SYNC_HARDENING_2026-07-21.md` |
 | 2026-07-21 | CS Ops / Segurança de migração | Preflight e bloqueio de catálogo vazio | Origem do catálogo, contagens de empresas/responsáveis e bloqueio server-side de aplicação quando o HubSpot retorna zero empresas | `docs/reports/CS_OPS_PREFLIGHT_GUARD_2026-07-21.md` |
 | 2026-07-21 | Segurança / Handoff | Revisão de segurança e integridade local | Auditoria de funções privilegiadas, RLS/grants, dashboard_viewer, secrets, CORS e scheduler; grants defensivos explícitos e pgTAP 063 ampliado | `docs/reports/SECURITY_AND_DIFF_REVIEW_2026-07-21.md` |
+## Sincronizacao dual e limite de API - 2026-07-22
+
+- Relatorio: `docs/reports/DUAL_SYNC_SCHEDULE_AND_WORKER_HARDENING_2026-07-22.md`.
+- Causa do HTTP 546: limite de CPU do worker durante o fluxo combinado; corrigido com batch update HubSpot e remocao do enriquecimento OMIE duplicado.
+- Agenda configuravel separada: OMIE financeiro e HubSpot global.
+- Validacao local: OMIE dedicado 3.433/3.433; runner combinado HTTP 200; nenhum write remoto ou deploy.
+- Fechamento versionado: commit `5cb4eea` na branch
+  `codex/repository-cleanup-consolidation-20260721`.
+- Estado atual: OMIE local diario ativo; HubSpot global implementado e desligado
+  por padrao para preservar limite de API. O heartbeat agendado precisa apenas
+  de reload do inventario do runtime Edge local para ser reconhecido; a
+  publicacao remota continua gate externo.
+- Os registros anteriores que citam credencial OMIE pendente permanecem como
+  historico datado e nao representam o estado atual.

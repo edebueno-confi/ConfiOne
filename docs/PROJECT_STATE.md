@@ -1,3 +1,32 @@
+# Estado canônico atual — 2026-07-22
+
+- Checkout canônico: `C:\Projetos\GSO-old`.
+- Branch ativa: `codex/repository-cleanup-consolidation-20260721`.
+- HEAD atual: `5cb4eea` — `feat(analytics): configure dual integration schedules`.
+- O lote OMIE↔HubSpot está fechado localmente: agenda configurável separada para
+  OMIE financeiro e HubSpot global, sincronização global HubSpot com escopo
+  `all`, atualizações HubSpot em lote, remoção de enriquecimento OMIE repetido e
+  proteção contra concorrência/timeout no fluxo financeiro.
+- Evidências locais: sincronização dedicada OMIE com 3.433/3.433 títulos e
+  execução combinada HTTP 200. O estado local mantém 10.163 empresas e 136
+  grupos financeiros reconciliáveis.
+- A agenda automática do HubSpot está implementada, mas permanece desligada por
+  padrão para evitar consumo inesperado da API; a agenda OMIE local está ativa
+  em frequência diária. A ativação remota depende de secret, scheduler e deploy
+  aprovados separadamente.
+- O heartbeat `analytics-scheduled-run` está versionado, mas o runtime Edge
+  local usado neste checkout ainda precisa ser recarregado para reconhecer a
+  nova função; um `OPTIONS` 404 nesse runtime congelado não representa falha
+  do código versionado.
+- Nenhum push, deploy remoto, publicação de migration/function, alteração de
+  secret ou write externo foi executado neste fechamento.
+- O worktree ainda contém alterações paralelas da auditoria e de outros lotes;
+  elas foram preservadas e não fazem parte do commit `5cb4eea`.
+
+As seções datadas abaixo são histórico de execução. Quando houver conflito com
+este bloco, este estado canônico atual prevalece; pendências antigas sobre
+“credencial OMIE pendente” não devem ser tratadas como pendências atuais.
+
 # Importacao CS Ops resiliente e preparacao da API OMIE - 2026-07-19
 
 - O HTTP 546 foi reproduzido localmente como limite de CPU/memoria do parser
