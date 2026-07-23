@@ -1,5 +1,118 @@
 # Genius Support OS - Plano operacional vivo
 
+## Smoke autenticado de release - 2026-07-23
+
+### Executado
+
+- Criado `tests/scripts/release-smoke-playwright.mjs` para QA local autenticado
+  de release, lendo credenciais do fixture local sem gravar senha no script.
+- Restaurado o usuario admin local pelo fixture `supabase:qa:local-admin-fixture`.
+- Validado o fluxo em navegador real nas rotas:
+  - `/admin/analytics`;
+  - `/help/genius`;
+  - `/help/genius/articles`;
+  - primeiro artigo publico encontrado em `/help/genius/articles/:slug`.
+- Ajustado `AnalyticsShell` para conter o lazy loading dos dominios do Dashboard
+  em uma `Suspense` interna. Assim, a shell do Dashboard permanece visivel
+  enquanto a aba ativa carrega os indicadores.
+
+### Validado
+
+- Smoke Playwright local: sem erros de console, sem falhas de request e sem
+  overflow horizontal nas quatro rotas verificadas.
+- RPCs executivas medidos diretamente no PostgREST autenticado:
+  `rpc_analytics_ceo_snapshot`, `rpc_analytics_ceo_history`,
+  `rpc_analytics_ceo_reconciliation_quality_grouped` e
+  `rpc_analytics_ceo_ambiguous_overdue` retornaram HTTP 200.
+- `npm run web:typecheck`: aprovado.
+- `npm run contracts:typecheck`: aprovado.
+- Testes focados de scripts: 5/5 aprovados.
+- `npm run web:build`: aprovado.
+
+### Atencao
+
+- `npm run supabase:qa:local-support-fixture` ainda ficou lento/preso na etapa
+  de Knowledge/Public Help e foi encerrado localmente pelo PID especifico. Isso
+  deve virar um lote separado de performance/idempotencia do fixture; nao
+  bloqueia o smoke autenticado do release porque a Central ja esta hidratada.
+
+## Plano revisado de publicação e evolução contínua — 2026-07-23
+
+### Progresso do release urgente
+
+- Central de Ajuda local reidratada a partir do corpus Octadesk versionado:
+  57 artigos importados, 7 categorias, 44 publicados e 13 bloqueados pelo
+  gate editorial.
+- Links dos cards de categoria corrigidos para não duplicar o caminho da rota;
+  teste focado e QA browser aprovados sem erros de console.
+- A fixture completa de suporte excedeu 244 segundos sem alterar o espaço
+  público; a preparação específica de Knowledge foi executada pelo fluxo
+  editorial oficial, sem publicar dados remotamente.
+
+### Resultado da validacao local deste ciclo - 2026-07-23
+
+- O Dashboard Gerencial inicializa o seletor de periodo a partir do intervalo
+  recebido, evitando o primeiro paint inconsistente entre datas do mes atual e
+  a opcao "Todo o periodo".
+- A regressao de navegacao dos cards de categoria foi coberta por teste focado;
+  os testes de scripts agora fecham em 76/76.
+- `npm run web:build`: aprovado.
+- `npm run contracts:typecheck`: aprovado.
+- `node --test tests/scripts/*.test.mjs`: 76/76 aprovados.
+- `npm run repository:check-root`: aprovado; nenhuma entrada fora da allowlist.
+- `npm run documentation:validate:internal-docs`: concluido sem bloqueios; os
+  alertas existentes sao mencoes documentais de tokens/segredos e nao foram
+  alterados neste lote.
+- `git diff --check`: aprovado; apenas avisos de normalizacao CRLF/LF.
+- O timeout da fila foi reproduzido como SQLSTATE `57014` no RPC autenticado e
+  corrigido com um read model de passagem unica. O RPC agora responde em cerca
+  de 433 ms, com 50 itens na pagina 1 e 50 na pagina 2 de um total de 628.
+- Evidencia tecnica: `docs/reports/SUPPORT_QUEUE_TIMEOUT_ROOT_CAUSE_2026-07-23.md`.
+
+### Decidido
+
+- Não reiniciar nem apagar o projeto.
+- O release urgente até o fim de 2026-07-24 concentra Dashboard Gerencial e
+  Central de Ajuda pública, com o mínimo de administração necessário.
+- Os demais módulos estão incompletos funcionalmente e visualmente, mas não
+  serão abandonados: permanecem no roadmap e continuarão sendo desenvolvidos
+  em lotes separados.
+- A allowlist/feature flag controla somente a superfície publicada; não remove
+  código, dados, migrations ou contratos existentes.
+- Áreas internas definem contexto e defaults; papéis definem grants; membros
+  vinculam identidade, área e função; carteiras são entidades editáveis com
+  vínculos e histórico próprios.
+- O frontend não é fonte de verdade: tokens, catálogo de navegação,
+  dependências, papéis, carteiras e status devem ser tipados/configuráveis.
+
+### Pendente prioritário para publicação até 2026-07-24
+
+1. Confirmar que o Dashboard carrega com os dados locais disponíveis e sem
+   bloqueadores de autenticação, integração, timeout ou estado vazio.
+2. Confirmar Central de Ajuda pública, busca, artigos, mídia e responsividade.
+3. Validar light/dark, loading, erro, vazio, sincronização e navegação móvel.
+4. Executar typecheck, testes, build e smoke test autenticado de release.
+
+### Próximos lotes pós-publicação
+
+1. Diagnosticar a causa raiz dos HTTP 500 em `vw_support_tickets_queue` e
+   `rpc_support_ticket_queue_page`, adicionando teste de contrato.
+2. Consolidar primitives do design system e tokens sem hardcode de negócio nas
+   páginas.
+3. Implementar contratos de áreas, memberships, papéis, grants e carteiras
+   com RLS, RPC, auditoria e histórico.
+4. Redesenhar Acessos e Áreas internas como workspaces contextuais, sem rail
+   permanente comprimindo a lista.
+5. Executar QA de manutenção: typecheck, testes, build, acessibilidade,
+   responsividade, light/dark, estados de erro/vazio/loading e revisão de
+   legibilidade do código.
+
+### Critério de qualidade
+
+Cada lote deve registrar arquivos, decisões, validações e atenção. Código novo
+deve ser tipado, componentizado, formatado, sem regras duplicadas, sem código
+morto e sem hardcode de regras de negócio ou de configuração visual.
+
 ## Lote de contexto HubSpot no cockpit B2B — 2026-07-23
 
 ### Feito
@@ -1618,3 +1731,56 @@ O relatório completo, incluindo evidências locais, contratos existentes, lacun
 - Reaplicados os grants: CS Gestor (4), CS Operador (6), Financeiro Gestor (2), Produto Operador (3) e QA Dashboard/conhecimento (4).
 - Migration idempotente; não remove grants existentes e respeita as dependências declaradas.
 - Validado no banco local com rollback, aplicação efetiva e consulta de contagem por perfil.
+# Context Pack V2 - correção documental e evidências - 2026-07-23
+
+## Decidido
+
+- O Context Pack V1 foi parcialmente aceito; o macro-lote permanece aberto.
+- O único próximo lote autorizado foi correção documental/evidências, sem
+  implementação, redesign, deploy, migration ou normalização Git.
+
+## Executado
+
+- Gerado `genius-support-os-context-pack-v2.zip` por staging explícito.
+- Criados `22_UI_EVIDENCE_MATRIX.md` e `23_GIT_PROVENANCE.md`.
+- Enriquecidos documentos ausentes no upload individual com rotas, métricas,
+  testes, duplicidades e arquitetura principal.
+- Capturadas evidências visuais V2 e movidas capturas V1 ambíguas para legado.
+
+## Validado
+
+- Conteúdo interno do ZIP V2: 24 Markdown, 23 screenshots e 1 JSON.
+- Captura visual V2: 22 rotas capturadas, 0 falhas, 0 overflow horizontal
+  detectado pelo script; 1 rota de settings registrou HTTP 403 no console.
+
+## Pendente
+
+- Upload do ZIP V2 e dos oito documentos individuais ausentes no chat oficial.
+- Aguardar avaliação do chat oficial antes de qualquer próximo macro-lote.
+
+# Context Pack de direção assistida - 2026-07-23
+
+## Decidido
+
+- O novo protocolo operacional entra como regra de condução: Codex executa
+  tecnicamente; a direção de produto será validada no chat oficial indicado.
+- O primeiro macro-lote é documental/read-only quanto ao produto: auditar estado
+  real e produzir `docs/context-handoff/`, sem novas funcionalidades.
+
+## Executado
+
+- Criado Context Pack local com 22 documentos Markdown.
+- Copiadas 8 evidências visuais recentes para `docs/context-handoff/screenshots/`.
+- Atualizados `docs/README.md`, `docs/DOCUMENTATION_LEDGER.md` e
+  `docs/PROJECT_STATE.md` para apontar o pacote.
+
+## Validado
+
+- Validação documental e higiene de diff serão executadas antes do fechamento
+  deste macro-lote.
+
+## Pendente
+
+- Avaliação do Context Pack pelo chat oficial de direção.
+- Autorização explícita do próximo macro-lote.
+- Upload no chat oficial, caso a navegação/autenticação permita.

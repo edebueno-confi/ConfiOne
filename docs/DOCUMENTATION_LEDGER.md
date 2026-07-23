@@ -1,3 +1,83 @@
+# Context Pack V2 - correção documental e evidências - 2026-07-23
+
+- escopo: correção do Context Pack parcialmente aceito, sem implementação
+  funcional.
+- correções: `genius-support-os-context-pack-v2.zip` gerado por staging
+  explícito, validado por listagem interna e preservado fora do repositório em
+  `C:\Projetos\GSO-artifacts\context-pack-20260723\`.
+- conteúdo validado: 24 Markdown, 23 screenshots e 1 metadata JSON dentro do
+  ZIP V2.
+- novos documentos: `22_UI_EVIDENCE_MATRIX.md` e `23_GIT_PROVENANCE.md`.
+- evidências: capturas desktop, intermediária e mobile para Central,
+  Dashboard e principais rotas internas; capturas V1 ambíguas foram movidas
+  para o diretório externo de artefatos do macro-lote.
+- limite: nenhuma correção de produto, UX, banco, migration, deploy, push,
+  reset, clean, stash ou commit foi executada.
+
+# Context Pack de direção assistida - 2026-07-23
+
+- escopo: primeiro macro-lote do novo protocolo de direção assistida.
+- entrega: `docs/context-handoff/` com índice, visão executiva, inventários,
+  estado de implementação, rotas, workflows, permissões, tenancy, integrações,
+  UX, arquitetura, qualidade, riscos, decisões e backlog proposto.
+- evidências visuais: `docs/context-handoff/screenshots/` com 8 imagens de QA
+  local reaproveitadas do smoke autenticado recente.
+- restrição: nenhuma funcionalidade nova, migration, deploy, push, secret,
+  reset, clean ou escrita externa foi executada.
+- próximo gate: avaliação do Context Pack pelo chat oficial de direção antes de
+  autorizar o próximo macro-lote.
+
+# Smoke autenticado Dashboard e Central - 2026-07-23
+
+- escopo: release local do Dashboard Gerencial e Central de Ajuda publica.
+- runtime: `http://127.0.0.1:4173` com Supabase local.
+- implementacao: `AnalyticsShell` recebeu `Suspense` interna para o dominio
+  ativo, evitando fallback global durante lazy loading das abas.
+- QA: `tests/scripts/release-smoke-playwright.mjs` validou `/admin/analytics`,
+  `/help/genius`, `/help/genius/articles` e um artigo publico.
+- evidencias: `output/playwright/release-smoke-dashboard.png`,
+  `release-smoke-help-home.png`, `release-smoke-help-articles.png` e
+  `release-smoke-help-article.png`.
+- validacao: smoke sem console errors, sem request failures, sem overflow
+  horizontal; web/contracts typecheck, testes focados e build aprovados.
+- atencao: `supabase:qa:local-support-fixture` ainda precisa de hardening
+  separado por lentidao/travamento na etapa Knowledge/Public Help.
+
+# Release urgente — hidratação local da Central de Ajuda — 2026-07-23
+
+- origem: `raw_knowledge/octadesk_export/latest`;
+- resultado: 57 artigos importados, 7 categorias, 44 publicados e 13
+  bloqueados pelo gate editorial;
+- código: `apps/web/src/features/help-center/help-center-navigation.ts` e
+  `HelpCenterHomePage.tsx` corrigem a geração de links de categoria;
+- validação: `tests/scripts/help-center-navigation.test.mjs` 2/2 e QA browser
+  em `/help/genius` sem erros de console;
+- limite: apenas banco local, sem publicação remota.
+
+# Revisão de prioridade de release — 2026-07-23
+
+- prazo: Dashboard Gerencial + Central de Ajuda pública até o fim de
+  2026-07-24;
+- decisão: módulos restantes estão incompletos em funcionalidade e UX, mas
+  continuam no roadmap e não serão apagados;
+- estratégia: allowlist/feature flag controla a superfície publicada sem
+  remover código, dados, migrations ou contratos;
+- sequência: fechar o release urgente, executar QA, depois retomar tickets,
+  áreas, acessos, carteiras, Clientes B2B, Carteira CS e Produto em lotes
+  funcionais e auditáveis.
+
+# Spec de áreas, acessos e carteiras — 2026-07-23
+
+- documento canônico: `docs/ACCESS_AREAS_ROLES_PORTFOLIOS_SPEC_V1.md`;
+- decisão: preservar o repositório e reduzir a superfície do Release 1 para
+  Dashboard Gerencial + Central de Ajuda pública, sem apagar módulos;
+- domínio: áreas definem contexto/defaults, papéis definem grants, memberships
+  vinculam pessoas e carteiras são entidades editáveis com histórico;
+- engenharia: tokens, catálogos tipados, primitives reutilizáveis, RLS/RPC,
+  auditoria e revisão crítica de legibilidade são requisitos de aceite;
+- diagnóstico registrado: HTTP 500 em `vw_support_tickets_queue` e
+  `rpc_support_ticket_queue_page` ainda exige captura da exceção SQL raiz.
+
 # Contexto read-only do relacionamento HubSpot no cockpit B2B — 2026-07-23
 
 - frontend: `apps/web/src/features/customers/customer-relationship-api.ts`, `customer-relationship-model.ts` e `CustomersPage.tsx`;
@@ -45,6 +125,31 @@
   para poses `magic`, `shrug`, `celebrate` e `welcome`
 - validação: contracts/web typecheck, build, 7 testes Node, validação documental,
   lint Supabase, 1.192 testes pgTAP e smoke visual Playwright aprovados
+
+# Correcoes de release no Dashboard e Central de Ajuda - 2026-07-23
+
+- Dashboard: `matchAnalyticsPeriodPreset` elimina a divergencia da primeira
+  renderizacao entre o intervalo do mes atual e a opcao exibida no seletor.
+- Central de Ajuda: `buildHelpCenterCategoryHref` evita duplicacao do caminho
+  nas URLs dos cards e preserva busca/categoria como query params.
+- Testes novos: `tests/scripts/analytics-periods.test.mjs` e
+  `tests/scripts/help-center-navigation.test.mjs`.
+- Evidencia: build web, contracts typecheck, testes Node (76/76), higiene da
+  raiz e diff check aprovados neste lote.
+- O HTTP 500 da fila foi diagnosticado e corrigido localmente; a migration e a
+  evidencia de performance estao registradas no relatorio especifico abaixo.
+
+# Correcao do timeout da fila de suporte - 2026-07-23
+
+- migration: `20260723183054_support_ticket_queue_single_pass_hardening.sql`;
+- causa: duas releituras de `support_visible` em CTEs independentes induziam
+  nested loops com muitas linhas removidas por filtro de join;
+- resultado local: RPC autenticado HTTP 200, aproximadamente 433 ms, paginas 1
+  e 2 com 50 itens e total de 628;
+- teste: `tests/scripts/support-queue-view-architecture.test.mjs`;
+- relatorio: `docs/reports/SUPPORT_QUEUE_TIMEOUT_ROOT_CAUSE_2026-07-23.md`;
+- limite: validacao local apenas; ainda nao houve reset controlado completo,
+  migration remota, deploy ou push.
 
 # DOCUMENTATION_LEDGER.md
 

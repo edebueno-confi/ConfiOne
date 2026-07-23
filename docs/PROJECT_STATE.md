@@ -1,3 +1,24 @@
+# Release urgente Dashboard + Central de Ajuda — 2026-07-23
+
+- O espaço público `genius` local está ativo com 57 artigos importados da
+  exportação Octadesk, 7 categorias, 44 artigos `published/public` e 13
+  bloqueados por regras editoriais/técnicas.
+- O fluxo usado foi importação local como draft seguida da publicação editorial
+  versionada; nenhuma publicação remota foi executada.
+- `HelpCenterHomePage` agora usa `buildHelpCenterCategoryHref`, evitando links
+  de categoria duplicados. Teste focado e QA browser sem erros de console.
+- Validacao final local do release: o Dashboard inicializa o preset de periodo
+  a partir das datas recebidas, mantendo "Este mes" coerente no primeiro paint.
+- Build web, contracts typecheck, 76/76 testes Node, higiene da raiz e diff
+  check foram executados neste ciclo sem bloqueio.
+- O timeout HTTP 500 da fila foi reproduzido no RPC autenticado como SQLSTATE
+  57014 e corrigido localmente pela migration de passagem unica; paginas 1 e 2
+  retornaram 50 itens em HTTP 200. O relatorio esta em
+  `docs/reports/SUPPORT_QUEUE_TIMEOUT_ROOT_CAUSE_2026-07-23.md`.
+- A fixture completa `supabase:qa:local-support-fixture` excedeu o timeout de
+  244s sem concluir e deve ser diagnosticada separadamente; não é bloqueio da
+  Central de Ajuda já reidratada.
+
 # Estado do contexto HubSpot no cockpit B2B — 2026-07-23
 
 - `CustomersPage` agora consome `rpc_analytics_customer_relationship_contract` com paginação limitada e mostra entidades legais, negócios e grupos econômicos resolvidos como contexto global.
@@ -2827,3 +2848,54 @@ O catálogo de telas agora possui recomendações por área e dependências decl
 # Correção da seed de perfis de acesso - 2026-07-22
 
 Os perfis nomeados foram normalizados e receberam novamente seus grants de telas de forma idempotente. A falha visual de `0 telas` vinha da seed inicial não encontrar os nomes persistidos com a codificação esperada; a migration de reparo usa identificadores estáveis por padrão de nome, normaliza a apresentação e preserva vínculos existentes.
+
+## Validacao final do release local - 2026-07-23
+
+- O Dashboard inicializa o preset de periodo a partir das datas recebidas,
+  mantendo "Este mes" coerente no primeiro paint e nas trocas de aba.
+- Build web, contracts typecheck, 75/75 testes Node, higiene da raiz e diff
+  check foram executados neste ciclo sem bloqueio.
+- A fixture completa de suporte continua pendente de diagnostico separado por
+  timeout; a Central de Ajuda ja foi reidratada localmente pelo fluxo oficial.
+# Smoke autenticado de release - 2026-07-23
+
+- Smoke Playwright autenticado validou localmente `/admin/analytics`,
+  `/help/genius`, `/help/genius/articles` e um artigo publico publicado.
+- Evidencias visuais foram salvas em `output/playwright/release-smoke-*.png`.
+- O Dashboard carregou a shell e a Visao executiva com KPIs reais, sem erros de
+  console, sem falhas de request e sem overflow horizontal em 1440x900.
+- `AnalyticsShell` agora isola o lazy loading da aba ativa com `Suspense`
+  interna, evitando que o fallback global substitua toda a superficie do
+  Dashboard enquanto os dominios carregam.
+- O fixture `supabase:qa:local-support-fixture` ainda exige hardening separado:
+  nesta retomada ele ficou preso/lento na etapa de Knowledge/Public Help e foi
+  encerrado pelo PID especifico. Para smoke do release, o admin local foi
+  restaurado pelo fixture menor `supabase:qa:local-admin-fixture`.
+# Context Pack V2 - correção documental e evidências - 2026-07-23
+
+- O Context Pack V1 foi parcialmente aceito, mas o ZIP enviado estava
+  incompleto e faltavam documentos individuais e evidências visuais.
+- O V2 criou `docs/context-handoff/22_UI_EVIDENCE_MATRIX.md` e
+  `docs/context-handoff/23_GIT_PROVENANCE.md`.
+- O pacote `genius-support-os-context-pack-v2.zip` foi gerado por staging
+  explícito, validado com 24 Markdown, 23 screenshots e 1 JSON de metadata, e
+  preservado em `C:\Projetos\GSO-artifacts\context-pack-20260723\`.
+- As capturas V1 com nomes ambíguos/incorretos foram movidas para o diretório
+  externo de artefatos; a pasta versionada `screenshots/` mantém somente as
+  evidências V2 nomeadas.
+- Não houve alteração funcional, reset, clean, stash, commit, push, deploy,
+  migration remota ou alteração de secret.
+
+# Context Pack de direção assistida - 2026-07-23
+
+- Novo protocolo de trabalho recebido: Codex atua como executor técnico; direção
+  de produto passa a ser conduzida no chat oficial indicado pelo Product Owner.
+- Primeiro macro-lote obrigatório: auditoria read-only e documentação canônica
+  do estado atual, sem novas funcionalidades.
+- Entrega local criada em `docs/context-handoff/` com 22 documentos Markdown e
+  8 screenshots em `docs/context-handoff/screenshots/`.
+- O pacote registra branch, HEAD, worktree sujo preservado, módulos, rotas,
+  contratos, integrações HubSpot/OMIE, tenancy, RLS, UX, riscos, conflitos e
+  decisões pendentes.
+- Não houve reset, clean, commit, push, deploy, migration remota, alteração de
+  secret ou escrita externa.
