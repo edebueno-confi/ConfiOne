@@ -28,6 +28,12 @@ test('implementa present e think como poses explícitas do SVG', () => {
   assert.match(component, /data-pose/);
 });
 
+test('não duplica o braço base em poses com dois braços explícitos', () => {
+  assert.match(component, /showBaseArm/);
+  assert.match(component, /genius-mascot__base-arm/);
+  assert.match(component, /!\['celebrate', 'shrug'\]\.includes\(resolvedPose\)/);
+});
+
 test('mantém acessibilidade sem animar indefinidamente quando reduced motion está ativo', () => {
   assert.match(component, /aria-hidden/);
   assert.match(component, /aria-label/);

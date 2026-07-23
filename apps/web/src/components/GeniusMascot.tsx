@@ -89,6 +89,7 @@ export function GeniusMascot({
   const isLoading = surface === 'loading';
   const posePresent = resolvedPose === 'present';
   const poseThink = resolvedPose === 'think';
+  const showBaseArm = !['celebrate', 'shrug'].includes(resolvedPose);
   const renderedPupilOffset = isLoading ? { x: 0, y: 5.5 } : pupilOffset;
 
   return (
@@ -142,9 +143,13 @@ export function GeniusMascot({
           <path d="M150 302c-30-4-34-52-20-88 8-7 20-13 50-13s42 6 50 13c14 36 10 84-20 88Z" fill="#307fe2" />
           <path d="m180 206-15 86h30Z" fill="#2a6fd0" />
           <path d="M180 210v80" stroke="#1f5fc0" strokeWidth="2" opacity="0.7" />
-          <path d="M138 212c-30 4-46 40-38 76l20 0c-4-30 6-56 30-68Z" fill="#307fe2" />
-          <path d="m96 284 26 4-2 12-22-2Z" fill="#e10098" />
-          <path d="M96 298c-10 2-14 16-6 28-4 6 2 12 8 8 2 6 10 6 12 0 6 4 12-2 10-8 6-4 6-14 0-20-4-6-14-10-24-8Z" fill="#307fe2" />
+          {showBaseArm ? (
+            <g className="genius-mascot__base-arm">
+              <path d="M138 212c-30 4-46 40-38 76l20 0c-4-30 6-56 30-68Z" fill="#307fe2" />
+              <path d="m96 284 26 4-2 12-22-2Z" fill="#e10098" />
+              <path d="M96 298c-10 2-14 16-6 28-4 6 2 12 8 8 2 6 10 6 12 0 6 4 12-2 10-8 6-4 6-14 0-20-4-6-14-10-24-8Z" fill="#307fe2" />
+            </g>
+          ) : null}
           {resolvedPose === 'magic' ? (
             <g className="genius-mascot__pose-arm genius-mascot__pose-arm--magic">
               <path d="M224 214c28-12 48-38 40-66-4-16-8-26-10-36h-18c2 12 6 22 8 38 4 22-12 44-32 54Z" fill="#307fe2" />
