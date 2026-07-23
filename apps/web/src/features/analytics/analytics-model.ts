@@ -343,6 +343,7 @@ export interface AnalyticsSharedPeriod {
 export interface AnalyticsPageProps {
   sharedPeriod?: AnalyticsSharedPeriod;
   onSharedPeriodChange?: (period: AnalyticsSharedPeriod) => void;
+  onRetry?: () => void;
 }
 
 export const EMPTY_COMMERCIAL_KPIS: CommercialKpis = {

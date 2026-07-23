@@ -14,7 +14,7 @@ import {
   type AnalyticsSourceConfig,
   DEFAULT_ANALYTICS_FILTERS,
 } from './analytics-model';
-import { ChartCard, KpiCard, MetricInfo } from './analytics-ui';
+import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, KpiCard, MetricInfo } from './analytics-ui';
 import { AnalyticsFilters as AnalyticsFiltersBar } from './AnalyticsFilters';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import type { AnalyticsPageProps } from './analytics-model';
@@ -32,7 +32,7 @@ type State =
     }
   | { phase: 'error'; message: string };
 
-export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange }: AnalyticsPageProps) {
+export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, onRetry }: AnalyticsPageProps) {
   const [state, setState] = useState<State>({ phase: 'loading' });
   const period = sharedPeriod ?? resolveAnalyticsPeriod('month');
   const [filters, setFilters] = useState<AnalyticsFilters>({ ...DEFAULT_ANALYTICS_FILTERS, ...period });
@@ -70,16 +70,12 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange }: 
 
   if (state.phase === 'loading') {
     return (
-      <MinimalState
-        loading
-        title="Carregando comercial"
-        description="O Gênio está consultando os deals sincronizados do HubSpot."
-      />
+      <AnalyticsLoadingState title="Carregando comercial" description="O Gênio está consultando os negócios sincronizados do HubSpot." />
     );
   }
 
   if (state.phase === 'error') {
-    return <MinimalState tone="critical" title="Não foi possível carregar" description={state.message} />;
+    return <MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores comerciais estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
   }
 
   const { kpis, funnel, byPipeline, byOwner, monthly } = state;

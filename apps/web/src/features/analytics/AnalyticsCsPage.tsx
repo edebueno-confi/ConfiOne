@@ -16,7 +16,7 @@ import {
   DEFAULT_ANALYTICS_FILTERS,
   type AnalyticsSourceConfig,
 } from './analytics-model';
-import { ChartCard, KpiCard, MetricInfo } from './analytics-ui';
+import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, KpiCard, MetricInfo } from './analytics-ui';
 import { AnalyticsFilters as AnalyticsFiltersBar } from './AnalyticsFilters';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import { TicketMonthlyChart, TicketStatusChart } from './charts/AnalyticsCharts';
@@ -30,7 +30,7 @@ type State =
 
 type PipelineFilterOption = AnalyticsSourceConfig & Pick<CsPipelinePoint, 'ticketCount' | 'sourceSummary'>;
 
-export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange }: AnalyticsPageProps) {
+export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }: AnalyticsPageProps) {
   const [state, setState] = useState<State>({ phase: 'loading' });
   const period = sharedPeriod ?? resolveAnalyticsPeriod('month');
   const [filters, setFilters] = useState<AnalyticsFilters>({ ...DEFAULT_ANALYTICS_FILTERS, ...period });
@@ -69,16 +69,12 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange }: Analytic
 
   if (state.phase === 'loading') {
     return (
-      <MinimalState
-        loading
-        title="Carregando suporte"
-        description="O Gênio está consultando os tickets sincronizados do HubSpot."
-      />
+      <AnalyticsLoadingState title="Carregando suporte" description="O Gênio está consultando os tickets sincronizados do HubSpot." />
     );
   }
 
   if (state.phase === 'error') {
-    return <MinimalState tone="critical" title="Não foi possível carregar" description={state.message} />;
+    return <MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores de suporte estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
   }
 
   const { kpis, byStatus, monthly, bySource, byPipeline, byOwner, latestTicketCreatedAt } = state;

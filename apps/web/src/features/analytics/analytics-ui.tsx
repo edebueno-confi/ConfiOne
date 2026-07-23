@@ -1,5 +1,23 @@
 import type { ReactNode } from 'react';
 
+export function AnalyticsLoadingState({ title, description }: { title: string; description: string }) {
+  return (
+    <section aria-busy="true" aria-label={title} className="space-y-4" role="status">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {Array.from({ length: 4 }, (_, index) => <div aria-hidden="true" className="h-24 animate-pulse rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)]" key={index} />)}
+      </div>
+      <div className="grid gap-4 xl:grid-cols-2">
+        {Array.from({ length: 2 }, (_, index) => <div aria-hidden="true" className="h-56 animate-pulse rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)]" key={index} />)}
+      </div>
+      <p className="text-center text-sm text-[color:var(--minimal-text-secondary)]">{description}</p>
+    </section>
+  );
+}
+
+export function AnalyticsRetryAction({ onRetry }: { onRetry?: () => void }) {
+  return onRetry ? <button type="button" onClick={onRetry} className="rounded-lg bg-[color:var(--minimal-text)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-surface)]">Tentar novamente</button> : null;
+}
+
 export function KpiCard({ label, value, hint, source, tone = 'neutral' }: { label: string; value: string; hint?: string; source?: string; tone?: 'neutral' | 'warning' | 'critical' }) {
   const toneClass = tone === 'critical' ? 'border-[color:var(--minimal-danger-border)] bg-[color:var(--minimal-danger-surface)]' : tone === 'warning' ? 'border-[color:var(--minimal-warning-border)] bg-[color:var(--minimal-warning-surface)]' : 'border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)]';
   const valueClass = tone === 'critical' ? 'text-[color:var(--minimal-danger-text)]' : tone === 'warning' ? 'text-[color:var(--minimal-warning-text)]' : 'text-[color:var(--minimal-text)]';

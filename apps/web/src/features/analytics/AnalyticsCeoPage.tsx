@@ -3,7 +3,7 @@ import { MinimalState } from '../../components/minimal-states';
 import { getAmbiguousOverdueTitles, getCeoHistory, getCeoSnapshot, getReconciliationQuality, mergeHubSpotCompanies } from './analytics-api';
 import { formatCurrencyBRL, formatPercent, type AnalyticsFilters, DEFAULT_ANALYTICS_FILTERS, type AmbiguousOverdueTitle, type CeoHistory, type CeoSnapshot, type FinancialAlert, type ReconciliationQualityGroup, type ReconciliationQualityResult } from './analytics-model';
 import { AnalyticsFilters as Filters } from './AnalyticsFilters';
-import { ChartCard, CollapsibleChartCard, KpiCard, MetricInfo } from './analytics-ui';
+import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, CollapsibleChartCard, KpiCard, MetricInfo } from './analytics-ui';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import type { AnalyticsPageProps } from './analytics-model';
 
@@ -15,7 +15,7 @@ const OVERDUE_RANGE_OPTIONS: Array<{ value: OverdueRange; label: string }> = [
   { value: '31_60', label: '31 a 60 dias' }, { value: '61_90', label: '61 a 90 dias' }, { value: '90_plus', label: 'Mais de 90 dias' },
 ];
 
-export function AnalyticsCeoPage({ sharedPeriod, onSharedPeriodChange }: AnalyticsPageProps) {
+export function AnalyticsCeoPage({ sharedPeriod, onSharedPeriodChange, onRetry }: AnalyticsPageProps) {
   const period = sharedPeriod ?? resolveAnalyticsPeriod('month');
   const [filters, setFilters] = useState<AnalyticsFilters>({ ...DEFAULT_ANALYTICS_FILTERS, ...period });
   const [overdueRange, setOverdueRange] = useState<OverdueRange>('all');
@@ -59,8 +59,8 @@ export function AnalyticsCeoPage({ sharedPeriod, onSharedPeriodChange }: Analyti
     });
   }, [alertSort, clientQuery, overdueRange, state.ambiguousTitles]);
   const visibleQualityGroups = useMemo(() => (state.quality?.groups ?? []).filter((group) => qualityGroupFilter === 'all' || (qualityGroupFilter === 'economic_group' ? group.resolutionType === 'economic_group' : !group.resolutionType)), [qualityGroupFilter, state.quality?.groups]);
-  if (state.loading) return <MinimalState loading title="Carregando visão executiva" description="O Gênio está consolidando Comercial, Suporte e Financeiro a partir das fontes." />;
-  if (state.error || !state.data) return <MinimalState tone="critical" title="Não foi possível carregar" description={state.error ?? 'Dados indisponíveis.'} />;
+  if (state.loading) return <AnalyticsLoadingState title="Carregando visão executiva" description="O Gênio está consolidando Comercial, Suporte e Financeiro a partir das fontes." />;
+  if (state.error || !state.data) return <MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
   const { commercial: c, support: s, finance: f } = state.data;
   const handleMerge = async (confirmation: string) => {
     if (!mergeTarget) return;
@@ -74,7 +74,7 @@ export function AnalyticsCeoPage({ sharedPeriod, onSharedPeriodChange }: Analyti
   };
   return <div className="space-y-5">
     <Filters value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={[]} />
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
       <KpiCard label="Pipeline aberto" value={formatCurrencyBRL(c.openPipelineValue)} hint={`${c.openDeals.toLocaleString('pt-BR')} deals abertos`} source="HubSpot Deals: soma dos valores em estágios não fechados." />
       <KpiCard label="Receita ganha" value={formatCurrencyBRL(c.wonRevenue)} hint={`${c.wonDeals.toLocaleString('pt-BR')} ganhos`} source="HubSpot Deals: soma dos deals em estágio marcado como ganho." />
       <KpiCard label="Conversão comercial" value={formatPercent(c.conversionRate)} hint={`${c.lostDeals.toLocaleString('pt-BR')} perdidos`} source="Backend: ganhos divididos por ganhos mais perdidos." />

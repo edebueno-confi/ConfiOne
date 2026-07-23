@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { MinimalState } from '../../components/minimal-states';
 import { GeniusSyncOverlay } from '../../components/GeniusSyncOverlay';
 import { getFinanceSnapshot, getFinanceSourceStatus, getFinanceUnmatchedClients, triggerOmieSync, type FinanceUnmatchedClient } from './analytics-api';
-import { ChartCard, KpiCard, MetricInfo } from './analytics-ui';
+import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, KpiCard, MetricInfo } from './analytics-ui';
 import { formatCurrencyBRL, formatMonthLabel, formatPercent, type AnalyticsFilters, DEFAULT_ANALYTICS_FILTERS, type FinanceBreakdown, type FinanceSnapshot, type FinanceSourceStatus } from './analytics-model';
 import { ANALYTICS_PERIOD_OPTIONS, resolveAnalyticsPeriod, type AnalyticsPeriodPreset } from './analytics-periods';
 import type { AnalyticsPageProps } from './analytics-model';
@@ -56,7 +56,7 @@ function BreakdownTable({ rows, valueHeader, labelHeader, humanize, toneFor }: {
   </div>;
 }
 
-export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange }: AnalyticsPageProps) {
+export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRetry }: AnalyticsPageProps) {
   const period = sharedPeriod ?? resolveAnalyticsPeriod('month');
   const [filters, setFilters] = useState<FinanceFilters>({ ...DEFAULT_ANALYTICS_FILTERS, ...period, clientQuery: '' });
   const [draft, setDraft] = useState(filters);
@@ -108,8 +108,8 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange }: Ana
   };
   const apply = () => { if (draft.from && draft.to && draft.from > draft.to) return; setFilters(draft); onSharedPeriodChange?.({ from: draft.from, to: draft.to }); };
 
-  if (state.phase === 'loading') return <MinimalState loading title="Carregando financeiro" description="O Gênio está consultando as Contas a Receber do OMIE." />;
-  if (state.phase === 'error') return <MinimalState tone="critical" title="Não foi possível carregar" description={state.message} />;
+  if (state.phase === 'loading') return <AnalyticsLoadingState title="Carregando financeiro" description="O Gênio está consultando as Contas a Receber do OMIE." />;
+  if (state.phase === 'error') return <MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores financeiros estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
   const { snapshot } = state;
   const { kpis } = snapshot;
   const sourceIsApi = snapshot.source === 'api';

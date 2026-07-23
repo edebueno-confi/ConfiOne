@@ -16,7 +16,7 @@ function SyncStatusLabel({ run }: { run: SyncRun | null }) {
   if (!run) {
     return (
       <span className="text-xs text-[color:var(--minimal-text-tertiary)]">
-        Nenhuma sincronizacao registrada ainda.
+        Nenhuma sincronização registrada ainda.
       </span>
     );
   }
@@ -27,15 +27,17 @@ function SyncStatusLabel({ run }: { run: SyncRun | null }) {
       : 'text-[color:var(--minimal-text-tertiary)]';
 
   const statusLabel =
-    run.status === 'success' ? 'concluida' : run.status === 'error' ? 'com erro' : 'em andamento';
+    run.status === 'success' ? 'concluída' : run.status === 'error' ? 'com erro' : 'em andamento';
 
   return (
     <span className={`text-xs ${toneClass}`}>
-      Ultima sincronizacao {statusLabel} em {formatDateTime(run.finishedAt ?? run.startedAt)}
+      Última sincronização {statusLabel} em {formatDateTime(run.finishedAt ?? run.startedAt)}
       {run.status === 'success'
-        ? ` (${run.companiesSynced} empresas, ${run.dealsSynced} deals, ${run.ticketsSynced} tickets)`
+        ? run.ticketsSynced === 0
+          ? ` (${run.companiesSynced} empresas, ${run.dealsSynced} negócios; nenhum ticket foi alterado nesta execução; o Dashboard usa o snapshot acumulado)`
+          : ` (${run.companiesSynced} empresas, ${run.dealsSynced} negócios, ${run.ticketsSynced} tickets atualizados nesta execução)`
         : ''}
-      {run.status === 'error' && run.errorMessage ? `: ${run.errorMessage}` : ''}
+      {run.status === 'error' ? ': A sincronização terminou com erro.' : ''}
     </span>
   );
 }
@@ -44,7 +46,7 @@ export function AnalyticsShell() {
   const { gate } = useAuthContext();
   const isPlatformAdmin = gate.actor?.is_platform_admin === true;
   const isDashboardViewer = !isPlatformAdmin && gate.actor?.roles.includes('dashboard_viewer') === true;
-  const visibleDomains = isDashboardViewer ? DOMAINS.filter((domain) => ['ceo', 'commercial', 'cs', 'finance', 'config'].includes(domain.key)) : DOMAINS;
+  const visibleDomains = isDashboardViewer ? DOMAINS.filter((domain) => !['logs', 'config'].includes(domain.key)) : DOMAINS;
   const [activeKey, setActiveKey] = useState(visibleDomains[0]?.key ?? 'commercial');
   const [reloadKey, setReloadKey] = useState(0);
   const [latestRun, setLatestRun] = useState<SyncRun | null>(null);
@@ -73,13 +75,13 @@ export function AnalyticsShell() {
     try {
       const result = await triggerHubspotSync();
       setSyncMessage(
-        `${result.mode === 'incremental' ? 'Atualização incremental' : 'Carga completa'} concluída: ${result.companies.toLocaleString('pt-BR')} empresas, ${result.deals.toLocaleString('pt-BR')} deals e ${result.tickets.toLocaleString('pt-BR')} tickets processados.`,
+        `${result.mode === 'incremental' ? 'Atualização incremental' : 'Carga completa'} concluída: ${result.companies.toLocaleString('pt-BR')} empresas, ${result.deals.toLocaleString('pt-BR')} negócios e ${result.tickets.toLocaleString('pt-BR')} tickets processados.`,
       );
       refreshLatestRun();
       setReloadKey((current) => current + 1);
     } catch (error) {
       setSyncError(
-        error instanceof Error ? error.message : 'Falha ao sincronizar com o HubSpot.',
+        'Não foi possível concluir a sincronização com o HubSpot. Tente novamente mais tarde.',
       );
     } finally {
       setSyncing(false);
@@ -101,9 +103,9 @@ export function AnalyticsShell() {
             </p>
           </div>
           <div className="flex flex-col items-end gap-1">
-            <button type="button" onClick={() => setReportOpen(true)} className="inline-flex items-center rounded-lg border border-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action)] transition hover:bg-[color:var(--minimal-surface-muted)]">
-              Exportar relatório
-            </button>
+              {isPlatformAdmin ? <button type="button" onClick={() => setReportOpen(true)} className="inline-flex items-center rounded-lg border border-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action)] transition hover:bg-[color:var(--minimal-surface-muted)]">
+                Exportar relatório
+              </button> : null}
             <SyncStatusLabel run={latestRun} />
             {syncError ? (
               <span className="text-xs text-[color:var(--minimal-danger-text)]">{syncError}</span>
@@ -114,7 +116,7 @@ export function AnalyticsShell() {
           </div>
         </div>
 
-        <nav className="gso-workspace-tabs mt-4 flex flex-wrap gap-1" aria-label="Areas do dashboard">
+        <nav className="gso-workspace-tabs mt-4 flex flex-wrap gap-1" aria-label="Áreas do dashboard">
           {visibleDomains.map((domain) => {
             const isActive = domain.key === activeKey;
             return (
@@ -158,7 +160,7 @@ export function AnalyticsShell() {
           fallback={
             <MinimalState
               loading
-              title="Carregando area do dashboard"
+              title="Carregando área do dashboard"
               description="Estamos preparando os indicadores deste recorte."
             />
           }
@@ -166,9 +168,10 @@ export function AnalyticsShell() {
           {ActiveComponent ? (
             <ActiveComponent
               key={`${activeKey}-${reloadKey}`}
-              sharedPeriod={sharedPeriod}
-              onSharedPeriodChange={setSharedPeriod}
-            />
+                  sharedPeriod={sharedPeriod}
+                  onSharedPeriodChange={setSharedPeriod}
+                  onRetry={() => setReloadKey((current) => current + 1)}
+                />
           ) : null}
         </Suspense>
       </div>
