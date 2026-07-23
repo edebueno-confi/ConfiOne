@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { ErrorState, ContractUnavailableState, LoadingState, SessionExpiredState } from '../../components/states';
 import { AppButton, GhostButton } from '../../components/ui';
 import { useAuthContext } from './auth-context';
+import { canOpenInternalRoute } from './internal-route-access';
 
 export function AdminGate({ children }: { children: ReactNode }) {
   const location = useLocation();
@@ -117,6 +118,19 @@ export function AdminGate({ children }: { children: ReactNode }) {
   }
 
   if (phase === 'authenticated' && gate.phase === 'ready') {
+    const isDashboardViewer = gate.actor?.is_platform_admin !== true && gate.actor?.roles.includes('dashboard_viewer') === true;
+    const canOpenRoute = !isDashboardViewer || location.pathname === '/admin' || canOpenInternalRoute(location.pathname, {
+        roles: gate.actor?.roles ?? [],
+        screenKeys: gate.actor?.screen_keys ?? [],
+        hasCustomerPortalAccess: false,
+        hasInternalActionAreaAccess: false,
+        hasCsPortfolioAccess: false,
+      });
+
+    if (!canOpenRoute) {
+      return <Navigate replace to="/access-denied" state={{ reason: 'route-not-authorized' }} />;
+    }
+
     return <>{children}</>;
   }
 

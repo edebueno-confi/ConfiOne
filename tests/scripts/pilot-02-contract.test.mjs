@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import test from 'node:test';
+
+import { canOpenInternalRoute } from '../../apps/web/src/features/auth/internal-route-access.ts';
+
+const analyticsShell = fs.readFileSync('apps/web/src/features/analytics/AnalyticsShell.tsx', 'utf8');
+const ceoPage = fs.readFileSync('apps/web/src/features/analytics/AnalyticsCeoPage.tsx', 'utf8');
+const adminShell = fs.readFileSync('apps/web/src/features/admin-shell/AdminConsoleShell.tsx', 'utf8');
+const adminGate = fs.readFileSync('apps/web/src/features/auth/AdminGate.tsx', 'utf8');
+
+const viewerContext = {
+  roles: ['dashboard_viewer'],
+  screenKeys: [],
+  hasCustomerPortalAccess: false,
+  hasInternalActionAreaAccess: false,
+  hasCsPortfolioAccess: false,
+};
+
+test('dashboard_viewer abre somente o Dashboard Gerencial dentro do Admin', () => {
+  assert.equal(canOpenInternalRoute('/admin/analytics', viewerContext), true);
+  for (const route of ['/admin/customer-portal', '/admin/knowledge', '/admin/settings', '/admin/system', '/admin/logs']) {
+    assert.equal(canOpenInternalRoute(route, viewerContext), false, `rota indevidamente liberada: ${route}`);
+  }
+});
+
+test('shell do dashboard viewer não expõe configuração, logs, sincronização ou exportação administrativa', () => {
+  assert.match(analyticsShell, /DOMAINS\.filter/);
+  assert.match(analyticsShell, /logs|config/);
+  assert.match(analyticsShell, /isPlatformAdmin/);
+  assert.match(analyticsShell, /onRetry|retry|Tentar novamente/);
+  assert.match(analyticsShell, /!\['logs', 'config'\]\.includes\(domain\.key\)/);
+  assert.match(adminGate, /canOpenInternalRoute/);
+});
+
+test('Dashboard Gerencial distribui cinco KPIs em grade 3 + 2 a partir de 1024px', () => {
+  assert.match(ceoPage, /grid-cols-2 gap-3 lg:grid-cols-3/);
+  assert.doesNotMatch(ceoPage, /lg:grid-cols-5/);
+});
+
+test('status de sincronização distingue delta processado do snapshot acumulado', () => {
+  assert.match(analyticsShell, /atualizados nesta execução|snapshot acumulado/);
+});

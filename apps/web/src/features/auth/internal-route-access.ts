@@ -48,12 +48,7 @@ export function canOpenInternalRoute(
     }
 
     if (context.roles.includes('dashboard_viewer')) {
-      return (
-        matchesRoute(redirectTo, '/admin/analytics') ||
-        matchesRoute(redirectTo, '/admin/customer-portal') ||
-        matchesRoute(redirectTo, '/admin/knowledge') ||
-        matchesRoute(redirectTo, '/admin/settings')
-      );
+      return matchesRoute(redirectTo, '/admin/analytics');
     }
 
     const adminScreenByRoute: Array<[string, InternalScreenKey]> = [
