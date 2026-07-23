@@ -154,7 +154,7 @@ export function GeniusMascot({
             <g className="genius-mascot__pose-arm genius-mascot__pose-arm--magic">
               <path d="M224 214c28-12 48-38 40-66-4-16-8-26-10-36h-18c2 12 6 22 8 38 4 22-12 44-32 54Z" fill="#307fe2" />
               <path d="M234 112h22V98h-22Z" fill="#e10098" />
-              <path d="M236 98c-4-8-2-18 8-18h4V56c0-7 11-7 11 0v26c5 2 7 8 5 16Z" fill="#307fe2" />
+              <path d="M234 98c-2-8 2-14 9-16V70c0-4 6-4 6 0v10h3V62c0-4 6-4 6 0v18h3V68c0-4 6-4 6 0v19c4 1 6 5 5 9l-3 8Z" fill="#307fe2" />
               <path d="M248 60v26" stroke="#1f5fc0" strokeWidth="2" opacity="0.6" />
               <path className="genius-mascot__pose-spark" d="M254 32c1.6 8 4 10.4 12 12-8 1.6-10.4 4-12 12-1.6-8-4-10.4-12-12 8-1.6 10.4-4 12-12Z" fill="#e10098" />
             </g>

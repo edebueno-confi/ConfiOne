@@ -34,6 +34,11 @@ test('não duplica o braço base em poses com dois braços explícitos', () => {
   assert.match(component, /!\['celebrate', 'shrug'\]\.includes\(resolvedPose\)/);
 });
 
+test('pose magic usa mão aberta sem silhueta de dedo isolado', () => {
+  assert.match(component, /M234 98c-2-8/);
+  assert.doesNotMatch(component, /M236 98c-4-8-2-18 8-18h4V56/);
+});
+
 test('mantém acessibilidade sem animar indefinidamente quando reduced motion está ativo', () => {
   assert.match(component, /aria-hidden/);
   assert.match(component, /aria-label/);
