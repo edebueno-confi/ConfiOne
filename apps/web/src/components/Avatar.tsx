@@ -1,5 +1,5 @@
 import { useMemo, type ButtonHTMLAttributes } from 'react';
-import { GeniusMascot } from './GeniusMascot';
+import { GeniusMascot, type GeniusAvatarVariant } from './GeniusMascot';
 import { cx } from './ui';
 
 type AvatarSize = 'sm' | 'md' | 'lg';
@@ -10,6 +10,7 @@ interface AvatarProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'chi
   src?: string | null;
   size?: AvatarSize;
   fallbackMascot?: boolean;
+  mascotVariant?: GeniusAvatarVariant;
   label?: string;
 }
 
@@ -42,6 +43,7 @@ export function Avatar({
   email,
   fallbackMascot = false,
   label,
+  mascotVariant = 'default',
   name,
   onClick,
   size = 'md',
@@ -55,7 +57,7 @@ export function Avatar({
   const content = src ? (
     <img alt={displayName} className="h-full w-full object-cover" loading="lazy" src={src} />
   ) : fallbackMascot ? (
-    <GeniusMascot alt={displayName} animated={false} size={size === 'lg' ? 'md' : 'sm'} surface="avatar" />
+    <GeniusMascot alt={displayName} animated={false} avatarVariant={mascotVariant} size={size === 'lg' ? 'md' : 'sm'} surface="avatar" />
   ) : initials(name, email);
   const classes = cx(
     'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold ring-1 ring-inset ring-[color:var(--minimal-border)]',

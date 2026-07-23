@@ -1,16 +1,20 @@
 import { useEffect, useState, type KeyboardEvent, type PointerEvent } from 'react';
 
-export type GeniusMascotExpression = 'happy' | 'wink' | 'wow';
-export type GeniusMascotPose = 'welcome' | 'magic' | 'celebrate' | 'shrug';
+export type GeniusPose = 'welcome' | 'present' | 'think' | 'celebrate' | 'magic' | 'shrug';
+export type GeniusExpression = 'happy' | 'wink' | 'wow';
+export type GeniusMascotExpression = GeniusExpression;
+export type GeniusAvatarVariant = 'default' | 'attention' | 'success';
+export type GeniusMascotPose = GeniusPose;
 export type GeniusMascotSurface = 'default' | 'loading' | 'empty' | 'success' | 'avatar';
 
 type GeniusMascotProps = {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   alt?: string;
   animated?: boolean;
-  expression?: GeniusMascotExpression;
+  expression?: GeniusExpression;
+  avatarVariant?: GeniusAvatarVariant;
   interactive?: boolean;
-  pose?: GeniusMascotPose;
+  pose?: GeniusPose;
   surface?: GeniusMascotSurface;
 };
 
@@ -22,12 +26,18 @@ const defaultExpressionBySurface: Record<GeniusMascotSurface, GeniusMascotExpres
   success: 'wink',
   avatar: 'happy',
 };
-const defaultPoseBySurface: Record<GeniusMascotSurface, GeniusMascotPose> = {
+const defaultPoseBySurface: Record<GeniusMascotSurface, GeniusPose> = {
   default: 'welcome',
   loading: 'magic',
   empty: 'shrug',
   success: 'celebrate',
   avatar: 'welcome',
+};
+
+const avatarVariantMap: Record<GeniusAvatarVariant, { pose: GeniusPose; expression: GeniusExpression }> = {
+  default: { pose: 'welcome', expression: 'happy' },
+  attention: { pose: 'magic', expression: 'wink' },
+  success: { pose: 'celebrate', expression: 'wow' },
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -39,12 +49,14 @@ export function GeniusMascot({
   alt = '',
   animated = true,
   expression,
+  avatarVariant,
   interactive = false,
   pose,
   surface = 'default',
 }: GeniusMascotProps) {
-  const resolvedExpression = expression ?? defaultExpressionBySurface[surface];
-  const resolvedPose = pose ?? defaultPoseBySurface[surface];
+  const avatarPreset = avatarVariant ? avatarVariantMap[avatarVariant] : undefined;
+  const resolvedExpression = expression ?? avatarPreset?.expression ?? defaultExpressionBySurface[surface];
+  const resolvedPose = pose ?? avatarPreset?.pose ?? defaultPoseBySurface[surface];
   const [activeExpression, setActiveExpression] = useState<GeniusMascotExpression>(resolvedExpression);
   const [pupilOffset, setPupilOffset] = useState({ x: 0, y: 0 });
 
@@ -75,6 +87,8 @@ export function GeniusMascot({
   const isWink = activeExpression === 'wink';
   const isWow = activeExpression === 'wow';
   const isLoading = surface === 'loading';
+  const posePresent = resolvedPose === 'present';
+  const poseThink = resolvedPose === 'think';
   const renderedPupilOffset = isLoading ? { x: 0, y: 5.5 } : pupilOffset;
 
   return (
@@ -82,6 +96,9 @@ export function GeniusMascot({
       aria-hidden={alt ? undefined : true}
       aria-label={alt || undefined}
       className={`genius-mascot genius-mascot--${size}${animated ? ' genius-mascot--animated' : ''}`}
+      data-avatar-variant={avatarVariant}
+      data-expression={activeExpression}
+      data-pose={resolvedPose}
       data-surface={surface}
       onClick={cycleExpression}
       onKeyDown={handleKeyDown}
@@ -131,7 +148,7 @@ export function GeniusMascot({
           {resolvedPose === 'magic' ? (
             <g className="genius-mascot__pose-arm genius-mascot__pose-arm--magic">
               <path d="M224 214c28-12 48-38 40-66-4-16-8-26-10-36h-18c2 12 6 22 8 38 4 22-12 44-32 54Z" fill="#307fe2" />
-              <path d="m234 112h22V98h-22Z" fill="#e10098" />
+              <path d="M234 112h22V98h-22Z" fill="#e10098" />
               <path d="M236 98c-4-8-2-18 8-18h4V56c0-7 11-7 11 0v26c5 2 7 8 5 16Z" fill="#307fe2" />
               <path d="M248 60v26" stroke="#1f5fc0" strokeWidth="2" opacity="0.6" />
               <path className="genius-mascot__pose-spark" d="M254 32c1.6 8 4 10.4 12 12-8 1.6-10.4 4-12 12-1.6-8-4-10.4-12-12 8-1.6 10.4-4 12-12Z" fill="#e10098" />
@@ -140,20 +157,52 @@ export function GeniusMascot({
           {resolvedPose === 'welcome' ? (
             <g className="genius-mascot__pose-arm genius-mascot__pose-arm--wave">
               <path d="M224 214c26-8 44-28 46-54 1-14-2-24-4-32h-18c2 10 4 20 2 34-2 20-14 34-36 42Z" fill="#307fe2" />
-              <path d="m248 128 22 0 2-16-22 0Z" fill="#e10098" />
+              <path d="M248 128h22l2-16h-22Z" fill="#e10098" />
               <ellipse cx="264" cy="104" rx="13" ry="12" fill="#307fe2" />
               <path d="m254 102-6-9m11 5-2-11m8 10 1-12m5 14 5-9" stroke="#307fe2" strokeWidth="6.5" strokeLinecap="round" />
             </g>
           ) : null}
+          {posePresent ? (
+            <>
+              <g className="genius-mascot__pose-arm genius-mascot__pose-arm--present">
+                <path d="M222 222c30-6 62-6 84 0-22 10-54 12-84 18Z" fill="#307fe2" />
+                <path d="m298 216 18 2v16l-18 2Z" fill="#e10098" />
+                <path d="M312 216c16-3 28 3 28 11s-10 13-24 11l-4-2Z" fill="#307fe2" />
+                <path d="M320 220 332 219m-12 8 16 0m-16 7 12 1" stroke="#1f5fc0" strokeWidth="1.6" opacity="0.45" />
+              </g>
+              <g className="genius-mascot__present-card">
+                <rect x="286" y="150" width="62" height="46" rx="7" fill="#fff" stroke="#d5e6fd" strokeWidth="2" />
+                <rect x="294" y="176" width="8" height="12" rx="2" fill="#307fe2" />
+                <rect x="306" y="170" width="8" height="18" rx="2" fill="#e10098" />
+                <rect x="318" y="164" width="8" height="24" rx="2" fill="#307fe2" />
+                <rect x="330" y="158" width="8" height="30" rx="2" fill="#74d1e0" />
+              </g>
+            </>
+          ) : null}
+          {poseThink ? (
+            <>
+              <g className="genius-mascot__pose-arm genius-mascot__pose-arm--think">
+                <path d="M226 220c14 0 10-20-2-30-8-7-18-6-24 0l6 12c8-2 14 6 14 14Z" fill="#307fe2" />
+                <path d="m198 188 16-6-6-14-16 6Z" fill="#e10098" />
+                <ellipse cx="196" cy="178" rx="13" ry="11" fill="#307fe2" />
+                <path d="M186 176c2-4 16-5 20-2" stroke="#1f5fc0" strokeWidth="1.8" fill="none" opacity="0.5" />
+              </g>
+              <g className="genius-mascot__think-dots" fill="#bcd4f7">
+                <circle cx="250" cy="120" r="4" />
+                <circle cx="264" cy="104" r="6" />
+                <circle cx="282" cy="84" r="9" />
+              </g>
+            </>
+          ) : null}
           {resolvedPose === 'celebrate' ? (
             <g className="genius-mascot__pose-celebrate">
               <path d="M136 214c-26-10-46-36-40-64 3-14 6-24 8-32h18c-2 10-4 20-6 34-2 22 10 44 32 52Z" fill="#307fe2" />
-              <path d="m104 118 18 0 0-16-20 0Z" fill="#e10098" />
+              <path d="M104 118h18v-16h-20Z" fill="#e10098" />
               <ellipse cx="98" cy="94" rx="13" ry="12" fill="#307fe2" />
               <path d="m90 84-4-10m10 8V71m6 12 3-11m3 15 6-9" stroke="#307fe2" strokeWidth="6.5" strokeLinecap="round" />
               <g className="genius-mascot__pose-arm genius-mascot__pose-arm--wave">
                 <path d="M224 214c26-10 46-36 40-64-3-14-6-24-8-32h-18c2 10 4 20 6 34 2 22-10 44-32 52Z" fill="#307fe2" />
-                <path d="m238 118 18 0 2-16-20 0Z" fill="#e10098" />
+                <path d="M238 118h18l2-16h-20Z" fill="#e10098" />
                 <ellipse cx="262" cy="94" rx="13" ry="12" fill="#307fe2" />
                 <path d="m252 84-4-10m10 8V71m6 12 3-11m3 15 6-9" stroke="#307fe2" strokeWidth="6.5" strokeLinecap="round" />
               </g>
@@ -168,10 +217,10 @@ export function GeniusMascot({
           {resolvedPose === 'shrug' ? (
             <g className="genius-mascot__pose-shrug">
               <path d="M140 214c-28 6-46 30-48 58l18 2c2-22 14-40 40-50Z" fill="#307fe2" />
-              <path d="m92 268 18 2-2 16-18-2Z" fill="#e10098" />
+              <path d="M92 268l18 2-2 16-18-2Z" fill="#e10098" />
               <path d="M92 282c-14 0-24 6-24 14s12 12 26 10l4-22Z" fill="#307fe2" />
               <path d="M220 214c28 6 46 30 48 58l-18 2c-2-22-14-40-40-50Z" fill="#307fe2" />
-              <path d="m268 268-18 2 2 16 18-2Z" fill="#e10098" />
+              <path d="M268 268l-18 2 2 16 18-2Z" fill="#e10098" />
               <path d="M268 282c14 0 24 6 24 14s-12 12-26 10l-4-22Z" fill="#307fe2" />
             </g>
           ) : null}
