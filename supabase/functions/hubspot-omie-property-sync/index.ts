@@ -1,7 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { createServiceClient, getAuthorizationHeader, jsonResponse, optionsResponse } from '../_shared/ticket-evidence.ts';
-import { updateCompany } from '../_shared/hubspot.ts';
+import { updateCompaniesBatch } from '../_shared/hubspot.ts';
 
 interface RollupRow {
   company_id: string;
@@ -54,13 +54,25 @@ Deno.serve(async (req) => {
   const rows = (Array.isArray(rollupData) ? rollupData : []) as RollupRow[];
   const targets = rows.slice(0, limit);
   const nowDate = new Date().toISOString().slice(0, 10);
+  const { data: run, error: runError } = await client.from('analytics_hubspot_omie_property_sync_runs')
+    .insert({ mode: dryRun ? 'dry_run' : 'apply', status: 'running', requested_by_user_id: actorId, total_rows: targets.length })
+    .select('id').single();
+  if (runError || !run) return jsonResponse({ error: `Falha ao registrar ledger do property-sync: ${runError?.message ?? 'run indisponivel'}` }, { status: 500 });
+  const runId = String(run.id);
+  const plannedItems = targets.map((row) => ({ run_id: runId, company_id: String(row.company_id), status: 'planned', after_payload: { omie_saldo_aberto: String(row.saldo_aberto ?? 0), omie_saldo_vencido: String(row.saldo_vencido ?? 0), omie_titulos_abertos: String(row.titulos_abertos ?? 0), omie_atraso_medio_dias: String(row.atraso_medio_dias ?? 0), omie_situacao_financeira: String(row.situacao ?? ''), omie_ultima_sincronizacao: nowDate } }));
+  if (plannedItems.length) {
+    const { error: itemError } = await client.from('analytics_hubspot_omie_property_sync_items').insert(plannedItems);
+    if (itemError) return jsonResponse({ error: `Falha ao registrar itens do property-sync: ${itemError.message}` }, { status: 500 });
+  }
 
   if (dryRun) {
+    await client.from('analytics_hubspot_omie_property_sync_runs').update({ status: 'completed', finished_at: new Date().toISOString() }).eq('id', runId);
     return jsonResponse({
       ok: true,
       dryRun: true,
       totalCompanies: rows.length,
       wouldUpdate: targets.length,
+      ledgerRunId: runId,
       sample: targets.slice(0, 10).map((r) => ({ companyId: r.company_id, name: r.company_name ?? null, saldoAberto: r.saldo_aberto, saldoVencido: r.saldo_vencido, titulos: r.titulos_abertos, atrasoMedioDias: r.atraso_medio_dias, situacao: r.situacao })),
     });
   }
@@ -72,29 +84,32 @@ Deno.serve(async (req) => {
   let updated = 0;
   let failed = 0;
   const failures: Array<Record<string, unknown>> = [];
-  const concurrency = 6;
-  for (let index = 0; index < targets.length; index += concurrency) {
-    const batch = targets.slice(index, index + concurrency);
-    const results = await Promise.allSettled(batch.map((r) => updateCompany(String(r.company_id), {
+  const batchSize = 100;
+  for (let index = 0; index < targets.length; index += batchSize) {
+    const batch = targets.slice(index, index + batchSize);
+    const updates = batch.map((r) => ({ id: String(r.company_id), properties: {
       omie_saldo_aberto: String(r.saldo_aberto ?? 0),
       omie_saldo_vencido: String(r.saldo_vencido ?? 0),
       omie_titulos_abertos: String(r.titulos_abertos ?? 0),
       omie_atraso_medio_dias: String(r.atraso_medio_dias ?? 0),
       omie_situacao_financeira: String(r.situacao ?? ''),
       omie_ultima_sincronizacao: nowDate,
-    }, token)));
-    results.forEach((result, offset) => {
-      if (result.status === 'fulfilled') {
-        updated += 1;
-      } else {
-        failed += 1;
-        if (failures.length < 20) {
-          const row = batch[offset];
-          failures.push({ companyId: row.company_id, error: result.reason instanceof Error ? result.reason.message.slice(0, 200) : 'erro' });
-        }
-      }
-    });
+    }}));
+    try {
+      const batchUpdated = await updateCompaniesBatch(updates, token);
+      updated += batchUpdated;
+      await Promise.all(batch.map((row) => client.from('analytics_hubspot_omie_property_sync_items')
+        .update({ status: 'updated' }).eq('run_id', runId).eq('company_id', String(row.company_id))));
+    } catch (error) {
+      const message = error instanceof Error ? error.message.slice(0, 200) : 'erro';
+      failed += batch.length;
+      if (failures.length < 20) failures.push({ companyId: batch[0]?.company_id, error: message });
+      await Promise.all(batch.map((row) => client.from('analytics_hubspot_omie_property_sync_items')
+        .update({ status: 'failed', error_message: message })
+      .eq('run_id', runId).eq('company_id', String(row.company_id))));
+    }
   }
 
-  return jsonResponse({ ok: true, dryRun: false, totalCompanies: rows.length, updated, failed, failures });
+  await client.from('analytics_hubspot_omie_property_sync_runs').update({ status: failed === 0 ? 'completed' : 'partial', updated_rows: updated, failed_rows: failed, finished_at: new Date().toISOString() }).eq('id', runId);
+  return jsonResponse({ ok: true, dryRun: false, ledgerRunId: runId, totalCompanies: rows.length, updated, failed, failures });
 });

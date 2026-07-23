@@ -79,6 +79,7 @@ import type {
   SupportTicketInternalAction,
   SupportTicketKnowledgeLink,
   SupportTicketQueueItem,
+  SupportTicketQueuePage,
   SupportTicketTimelineItem,
   SupportTicketTimelineRecentWindow,
   TicketPriority,
@@ -618,57 +619,61 @@ function mapRecentWindowMeta(row: Record<string, unknown> | null | undefined) {
   };
 }
 
-interface ListSupportTicketsQueueOptions {
+export interface ListSupportTicketsQueueOptions {
   status?: TicketStatus | 'all';
   priority?: TicketPriority | 'all';
   severity?: TicketSeverity | 'all';
   tenantId?: Uuid | 'all';
   assignedToUserId?: Uuid | 'all' | 'unassigned';
   categoryId?: Uuid | 'all';
+  scope?: 'open' | 'closed' | 'all';
+  inboxFilter?: string;
+  search?: string;
+  page?: number;
+  pageSize?: number;
 }
+
+export const SUPPORT_QUEUE_PAGE_SIZE = 50;
 
 export async function listSupportTicketsQueue(
   options: ListSupportTicketsQueueOptions = {},
-) {
+): Promise<SupportTicketQueuePage> {
   const client = requireClient();
-  let query = client
-    .from('vw_support_tickets_queue')
-    .select('*')
-    .order('updated_at', { ascending: false });
-
-  if (options.status && options.status !== 'all') {
-    query = query.eq('status', options.status);
-  }
-
-  if (options.priority && options.priority !== 'all') {
-    query = query.eq('priority', options.priority);
-  }
-
-  if (options.severity && options.severity !== 'all') {
-    query = query.eq('severity', options.severity);
-  }
-
-  if (options.tenantId && options.tenantId !== 'all') {
-    query = query.eq('tenant_id', options.tenantId);
-  }
-
-  if (options.assignedToUserId === 'unassigned') {
-    query = query.is('assigned_to_user_id', null);
-  } else if (options.assignedToUserId && options.assignedToUserId !== 'all') {
-    query = query.eq('assigned_to_user_id', options.assignedToUserId);
-  }
-
-  if (options.categoryId && options.categoryId !== 'all') {
-    query = query.eq('category_id', options.categoryId);
-  }
-
-  const { data, error } = await query;
+  const pageSize = Math.max(1, Math.min(options.pageSize ?? SUPPORT_QUEUE_PAGE_SIZE, SUPPORT_QUEUE_PAGE_SIZE));
+  const page = Math.max(1, options.page ?? 1);
+  const { data, error } = await client.rpc('rpc_support_ticket_queue_page', {
+    p_status: options.status ?? 'all',
+    p_priority: options.priority ?? 'all',
+    p_severity: options.severity ?? 'all',
+    p_tenant_id: options.tenantId && options.tenantId !== 'all' ? options.tenantId : null,
+    p_assigned_to_user_id: options.assignedToUserId ?? 'all',
+    p_category_id: options.categoryId ?? 'all',
+    p_scope: options.scope ?? 'open',
+    p_inbox_filter: options.inboxFilter ?? 'all',
+    p_search: options.search?.trim() || null,
+    p_limit: pageSize,
+    p_offset: (page - 1) * pageSize,
+  });
 
   if (error) {
     throw toAppError(error, 'Falha ao carregar a fila oficial do Support Workspace.');
   }
 
-  return (data ?? []).map((row) => mapQueueItem(row as Record<string, unknown>));
+  const payload = (data ?? {}) as Record<string, unknown>;
+  const scopeCounts = (payload.scope_counts ?? {}) as Record<string, unknown>;
+  const filterCounts = (payload.filter_counts ?? {}) as Record<string, unknown>;
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  return {
+    items: items.map((row) => mapQueueItem(row as Record<string, unknown>)),
+    totalCount: Number(payload.total_count ?? 0),
+    scopeCounts: {
+      open: Number(scopeCounts.open ?? 0),
+      closed: Number(scopeCounts.closed ?? 0),
+    },
+    filterCounts: Object.fromEntries(
+      Object.entries(filterCounts).map(([key, value]) => [key, Number(value ?? 0)]),
+    ),
+  } satisfies SupportTicketQueuePage;
 }
 
 export async function getSupportTicketDetail(ticketId: Uuid) {

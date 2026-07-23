@@ -4,6 +4,7 @@ import {
   type ReactNode,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -23,6 +24,7 @@ import {
   SessionExpiredState,
   StateFrame,
 } from '../../components/states';
+import { Avatar } from '../../components/Avatar';
 import { GeniusMascot } from '../../components/GeniusMascot';
 import {
   AppButton,
@@ -207,6 +209,10 @@ function portalRoleLabel(role: CustomerPortalAvailableTenant['portalRole']) {
 
 function PortalShell({ children }: { children: ReactNode }) {
   const { signOut, user } = useAuthContext();
+  const location = useLocation();
+  const mobileCloseButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const {
     activeContext,
     availableTenants,
@@ -231,6 +237,30 @@ function PortalShell({ children }: { children: ReactNode }) {
       : phase !== 'ready' && phase !== 'initializing'
         ? getCustomerPortalBlockedActionMessage(phase, phaseMessage)
         : errorMessage;
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) {
+      return;
+    }
+
+    mobileCloseButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+
+      setMobileMenuOpen(false);
+      window.setTimeout(() => mobileMenuButtonRef.current?.focus(), 0);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileMenuOpen]);
 
   function handleTenantChange(event: ChangeEvent<HTMLSelectElement>) {
     const nextTenantId = event.target.value.trim();
@@ -392,8 +422,124 @@ function PortalShell({ children }: { children: ReactNode }) {
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1 overflow-hidden">{children}</main>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+          <header className="flex shrink-0 items-center justify-between rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 px-3 py-2 shadow-[0_14px_32px_rgba(9,20,56,0.08)] lg:hidden">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <GeniusMascot size="sm" surface="avatar" animated={false} />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">Portal do cliente</p>
+                <p className="truncate text-xs text-[color:var(--color-muted)]">
+                  {sanitizeCustomerFacingText(displayContext?.tenantDisplayName ?? 'Conta ativa')}
+                </p>
+              </div>
+            </div>
+            <button
+              ref={mobileMenuButtonRef}
+              aria-controls="gso-customer-portal-mobile-navigation"
+              aria-expanded={mobileMenuOpen}
+              aria-label="Abrir menu do portal"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-[color:var(--color-border)] text-[color:var(--color-ink)] transition hover:bg-[color:var(--minimal-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-brand-blue)]"
+              onClick={() => setMobileMenuOpen(true)}
+              type="button"
+            >
+              <span aria-hidden="true" className="grid gap-1">
+                <span className="block h-0.5 w-4 rounded-full bg-current" />
+                <span className="block h-0.5 w-4 rounded-full bg-current" />
+                <span className="block h-0.5 w-4 rounded-full bg-current" />
+              </span>
+            </button>
+          </header>
+
+          <main className="min-h-0 min-w-0 flex-1 overflow-hidden">{children}</main>
+        </div>
       </div>
+
+      {mobileMenuOpen ? (
+        <div
+          aria-label="Fechar menu do portal"
+          className="fixed inset-0 z-50 bg-[rgba(4,13,39,0.46)] backdrop-blur-[2px] lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+          role="presentation"
+        >
+          <aside
+            aria-label="Menu do portal do cliente"
+            aria-modal="true"
+            className="flex h-full w-[min(88vw,320px)] flex-col bg-[linear-gradient(180deg,#06173f_0%,#082058_54%,#0b2a68_100%)] p-4 text-white shadow-[16px_0_40px_rgba(2,8,24,0.35)]"
+            id="gso-customer-portal-mobile-navigation"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <GeniusMascot size="sm" surface="avatar" animated={false} />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">Genius<span className="text-[color:var(--genius-site-pink)]">OS</span></p>
+                  <p className="truncate text-xs text-white/60">Portal do cliente</p>
+                </div>
+              </div>
+              <button
+                ref={mobileCloseButtonRef}
+                aria-label="Fechar menu do portal"
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-white/15 text-xl text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  window.setTimeout(() => mobileMenuButtonRef.current?.focus(), 0);
+                }}
+                type="button"
+              >
+                <span aria-hidden="true">×</span>
+              </button>
+            </div>
+
+            <nav aria-label="Navegação do portal" className="mt-8 grid gap-2">
+              {[
+                { label: 'Visão operacional', to: '/portal' },
+                { label: 'Tickets', to: '/portal/tickets' },
+                { label: 'Central autorizada', to: '/portal/help' },
+              ].map((item) => (
+                <NavLink
+                  className={({ isActive }) =>
+                    cx(
+                      'inline-flex min-h-11 items-center rounded-[16px] px-3 text-sm font-medium transition',
+                      isActive
+                        ? 'bg-[linear-gradient(135deg,#1f67ff,#2f7eff)] text-white shadow-[0_12px_22px_rgba(18,81,213,0.25)]'
+                        : 'text-white/72 hover:bg-white/10 hover:text-white',
+                    )
+                  }
+                  end={item.to === '/portal'}
+                  key={item.to}
+                  onClick={() => setMobileMenuOpen(false)}
+                  to={item.to}
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </nav>
+
+            <div className="mt-auto space-y-3 border-t border-white/10 pt-4">
+              <div className="flex items-center gap-2.5">
+                <Avatar
+                  email={user?.email}
+                  fallbackMascot
+                  name={user?.user_metadata?.full_name ?? user?.email ?? 'Usuário do portal'}
+                  size="md"
+                  className="border-white/15 bg-white/10 text-white"
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{user?.email ?? 'Sessão autenticada'}</p>
+                  <p className="text-xs text-white/60">Ambiente do cliente</p>
+                </div>
+              </div>
+              <GhostButton
+                className="min-h-11 w-full border-white/12 bg-white/10 text-white hover:bg-white/16"
+                onClick={() => void signOut()}
+              >
+                Sair
+              </GhostButton>
+            </div>
+          </aside>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -7,6 +7,12 @@ function toNumber(value: unknown): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function normalizePercentage(value: unknown): number {
+  const parsed = toNumber(value);
+  const ratio = parsed > 1 ? parsed / 100 : parsed;
+  return Math.max(0, Math.min(1, ratio));
+}
+
 function toText(value: unknown): string {
   return value === null || value === undefined ? '' : String(value);
 }
@@ -34,6 +40,14 @@ export interface CommercialFunnelStage {
 export interface CommercialByOwner {
   ownerId: string | null;
   ownerName: string;
+  dealCount: number;
+  wonCount: number;
+  wonRevenue: number;
+}
+
+export interface CommercialByPipeline {
+  pipelineId: string;
+  label: string;
   dealCount: number;
   wonCount: number;
   wonRevenue: number;
@@ -118,6 +132,7 @@ export interface AnalyticsFilters {
 export interface CommercialSnapshot {
   kpis: CommercialKpis;
   funnel: CommercialFunnelStage[];
+  byPipeline: CommercialByPipeline[];
   byOwner: CommercialByOwner[];
   monthly: CommercialMonthlyPoint[];
 }
@@ -361,6 +376,7 @@ export function mapCommercialSnapshot(value: unknown): CommercialSnapshot {
   return {
     kpis: mapCommercialKpis((data.kpis as Record<string, unknown> | undefined) ?? null),
     funnel: rows('funnel').map(mapCommercialFunnel),
+    byPipeline: rows('by_pipeline').map(mapCommercialByPipeline),
     byOwner: rows('by_owner').map(mapCommercialByOwner),
     monthly: rows('monthly').map(mapCommercialMonthly),
   };
@@ -501,10 +517,10 @@ export function mapFinanceKpis(row: Record<string, unknown> | null): FinanceKpis
     balance: toNumber(row.balance),
     overdueTitles: toNumber(row.overdue_titles),
     overdueBalance: toNumber(row.overdue_balance),
-    receivedRate: toNumber(row.received_rate) / 100,
+    receivedRate: normalizePercentage(row.received_rate),
     openTitles: toNumber(row.open_titles),
     openBalance: toNumber(row.open_balance),
-    overdueRate: toNumber(row.overdue_rate) / 100,
+    overdueRate: normalizePercentage(row.overdue_rate),
     avgDaysOverdue: toNumber(row.avg_days_overdue),
     due30: toNumber(row.due_30),
     due60: toNumber(row.due_60),
@@ -545,6 +561,16 @@ export function mapCommercialByOwner(row: Record<string, unknown>): CommercialBy
   return {
     ownerId: row.owner_id ? toText(row.owner_id) : null,
     ownerName: toText(row.owner_name) || 'Sem responsavel',
+    dealCount: toNumber(row.deal_count),
+    wonCount: toNumber(row.won_count),
+    wonRevenue: toNumber(row.won_revenue),
+  };
+}
+
+export function mapCommercialByPipeline(row: Record<string, unknown>): CommercialByPipeline {
+  return {
+    pipelineId: toText(row.pipeline_id),
+    label: toText(row.label) || 'Pipeline sem nome',
     dealCount: toNumber(row.deal_count),
     wonCount: toNumber(row.won_count),
     wonRevenue: toNumber(row.won_revenue),

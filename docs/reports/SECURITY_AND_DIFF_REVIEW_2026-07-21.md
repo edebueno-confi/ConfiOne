@@ -82,7 +82,7 @@ reduzindo dependência implícita da ordem histórica.
   normativos pré-existentes sobre menções a tokens/service role.
 - `npm run supabase:lint:db`: aprovado; permanecem 12 warnings históricos de
   `v_actor` não utilizado em RPCs antigas.
-- `npm run supabase:test:db`: aprovado com 67 arquivos e 1.194
+- `npm run supabase:test:db`: aprovado com 69 arquivos e 1.199
   testes; o teste 063 foi ampliado neste lote e deve ser reexecutado no próximo
   comando de validação.
 
@@ -95,6 +95,17 @@ reduzindo dependência implícita da ordem histórica.
    commit.
 4. Só depois de revisão humana decidir commit, push, publicação de migrations e
    deploy remoto.
+
+## Correcoes aplicadas apos a auditoria — 2026-07-21
+
+- A RPC legada `rpc_analytics_ceo_snapshot_legacy` foi fechada para
+  `anon`/`authenticated`, preservando somente `service_role` para chamadas
+  internas do wrapper protegido.
+- `omie-sync` e `analytics-integration-run` passaram a declarar
+  `verify_jwt = false`, pois ambos ja implementam autorizacao interna por
+  segredo de scheduler ou JWT de `platform_admin`.
+- O teste pgTAP 069 cobre a ACL; nenhuma credencial foi lida, alterada ou
+  publicada e o scheduler remoto nao foi acionado.
 
 ## Status Git
 

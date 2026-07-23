@@ -1,4 +1,44 @@
-## Estado atual — 2026-07-22
+# Analytics / Dashboard Gerencial (integração HubSpot)
+
+Módulo de dashboards gerenciais multi-fonte. **Comercial (Aftersale)** usa Deals,
+**CS/Suporte** usa Tickets e **Financeiro** usa o read model do OMIE com fallback
+de planilha. A arquitetura é por adapter de domínio: adicionar uma nova área
+(Produto, Migração, Onboarding, Jurídico, Clientes) é registrar um novo item,
+não reescrever a tela.
+
+## Estado atual — 2026-07-23
+
+### Comercial multi-pipeline
+
+O portal HubSpot `20108050` foi auditado em modo somente leitura. A atividade
+observada está concentrada em `Piloto Aftersale` (1.150 negócios), `Pipe de
+Vendas` (865) e `Renovação Contratual` (1). O Dashboard não deve assumir que o
+primeiro pipeline configurado representa todo o Comercial.
+
+O `hubspot-sync` consulta `/crm/v3/pipelines/deals` e
+`/crm/v3/pipelines/tickets`, preserva os pipelines não arquivados no catálogo
+local e insere novos candidatos como inativos. O administrador escolhe o
+recorte em Configuração; o nome oficial do HubSpot é somente leitura e o alias
+interno é opcional.
+
+A aba Comercial usa `rpc_analytics_commercial_snapshot` com uma lista de
+exclusões temporárias aplicada no Postgres. A resposta também possui
+`by_pipeline`, permitindo conferir volume por pipeline sem duplicar o funil.
+
+Relatório da auditoria: `docs/reports/COMMERCIAL_PIPELINE_AUDIT_2026-07-23.md`.
+
+### Hardening forense — lote Codex
+
+- As RPCs administrativas de configuração exigem `platform_admin`; a leitura
+  de Analytics continua separada da escrita administrativa.
+- O read model financeiro reconcilia por `sync_run_id`, inclui empresas que
+  zeraram e mascara PII/segredos em `raw_payload`.
+- Writes externos de empresas e propriedades possuem ledger de execução e
+  itens; o property-sync usa batch e a criação falha fechada quando a guarda
+  CNPJ ao vivo não consegue consultar o HubSpot.
+- Duplicidades dentro da mesma requisição são ignoradas; CNPJ raiz é somente
+  sinal de possível grupo/filial e não bloqueia a criação nem força merge.
+- O portal HubSpot usado nos links da UI vem de `VITE_HUBSPOT_PORTAL_ID`.
 
 - **Comercial e CS/Suporte:** continuam lendo o snapshot local alimentado pelo
   HubSpot, com sincronização global (`scope: all`) e escopos por domínio apenas
@@ -27,13 +67,6 @@
 - Há guarda de sobreposição para impedir duas execuções financeiras simultâneas.
 - Falhas de uma fase são registradas com etapa e mensagem, sem fabricar
   números parciais como se fossem sucesso.
-
-# Analytics / Dashboard Gerencial (integração HubSpot)
-
-Módulo de dashboards gerenciais integrado ao HubSpot, com duas seções na v1:
-**Comercial (Aftersale)** via Deals e **CS/Suporte** via Tickets. A arquitetura é
-por adapter de domínio: adicionar uma nova área (Financeiro, Produto, Migração,
-Onboarding, Jurídico, Clientes) é registrar um novo item, não reescrever a tela.
 
 ## Arquitetura
 
@@ -89,6 +122,7 @@ Definir como **segredos server-side** (nunca no frontend):
 | Variável | Onde | Descrição |
 |----------|------|-----------|
 | `HUBSPOT_PRIVATE_APP_TOKEN` | segredo da Edge Function | Private App Token do HubSpot |
+| `OMIE_APP_KEY` / `OMIE_APP_SECRET` | segredo gerenciado da integração OMIE | Credenciais server-side para `ListarContasReceber` e `ListarClientesResumido` |
 | `ANALYTICS_SYNC_SECRET` | segredo da Edge Function (opcional) | Habilita disparo agendado (cron) sem JWT, via header `x-analytics-sync-secret` |
 
 Escopos mínimos do Private App: `crm.objects.deals.read`,
@@ -111,24 +145,47 @@ npm run supabase:db:reset        # ambiente local
 ```bash
 # local: exportar antes de servir as functions
 export HUBSPOT_PRIVATE_APP_TOKEN="pat-xxxx"
-supabase functions serve hubspot-sync
+npm run supabase:functions:serve
 
 # produção
 supabase secrets set HUBSPOT_PRIVATE_APP_TOKEN="pat-xxxx"
 supabase functions deploy hubspot-sync
 ```
 
+Em um checkout local que já possui o container criado pelo Supabase CLI, o
+runtime precisa estar em execução antes do teste. Se o gateway responder 503
+inclusive a `OPTIONS`, verifique `docker ps -a` e reative o container local;
+este checkout usa política `unless-stopped` para que ele não permaneça parado
+após uma reinicialização do Docker.
+
 ### 3. Sincronizar
 
 - **Pela UI:** `/admin/analytics` → botão "Sincronizar HubSpot" (requer
-  platform_admin). Sincroniza owners, estágios, deals e tickets.
+  platform_admin). A ação dispara uma sincronização global, agregando empresas,
+  comercial e CS; os escopos individuais continuam disponíveis para diagnóstico
+  e execução faseada quando necessário. O endpoint ainda aceita a chamada
+  legada sem `scope`.
+
 - **Por HTTP (cron/manual):**
+
+Para cargas grandes, chamar sequencialmente `{"scope":"companies"}`,
+`{"scope":"commercial"}` e `{"scope":"cs"}`. O parâmetro `full:true` força
+uma carga completa no escopo solicitado; sem ele, empresas e tickets usam a
+janela incremental disponível.
 
 ```bash
 curl -X POST "$SUPABASE_URL/functions/v1/hubspot-sync" \
   -H "x-analytics-sync-secret: $ANALYTICS_SYNC_SECRET" \
   -H "Content-Type: application/json" \
-  -d '{}'                      # {"domain":"commercial"} ou {"domain":"cs"} para escopo parcial
+  -d '{"scope":"companies"}'
+curl -X POST "$SUPABASE_URL/functions/v1/hubspot-sync" \
+  -H "x-analytics-sync-secret: $ANALYTICS_SYNC_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"scope":"commercial"}'
+curl -X POST "$SUPABASE_URL/functions/v1/hubspot-sync" \
+  -H "x-analytics-sync-secret: $ANALYTICS_SYNC_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"scope":"cs"}'
 ```
 
 O status da última execução aparece no cabeçalho do dashboard

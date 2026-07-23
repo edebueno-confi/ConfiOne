@@ -1,7 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { createServiceClient, getAuthorizationHeader, jsonResponse, optionsResponse } from '../_shared/ticket-evidence.ts';
-import { createCompany, searchCompaniesByCnpj } from '../_shared/hubspot.ts';
+import { createCompany, searchCompaniesByCnpjStrict } from '../_shared/hubspot.ts';
 
 interface CreateItem { name?: unknown; cnpj?: unknown; tradeName?: unknown; force?: unknown }
 interface CreateRequest { dryRun?: unknown; confirmation?: unknown; items?: unknown }
@@ -56,6 +56,7 @@ Deno.serve(async (req) => {
   }
 
   const results: Array<Record<string, unknown>> = [];
+  const seenRequestKeys = new Set<string>();
   for (const item of rawItems) {
     const name = text(item.name);
     const cnpj = text(item.cnpj);
@@ -64,6 +65,12 @@ Deno.serve(async (req) => {
     if (!name) { results.push({ name, cnpj, action: 'skipped_invalid', reason: 'Nome obrigatório.' }); continue; }
 
     const digits = digitsOnly(cnpj);
+    const requestKey = digits ? `cnpj:${digits}` : `name:${name.toLocaleLowerCase().replace(/\s+/g, ' ')}`;
+    if (seenRequestKeys.has(requestKey)) {
+      results.push({ name, cnpj, action: 'skipped_duplicate_request', reason: 'Item duplicado na mesma requisição.' });
+      continue;
+    }
+    seenRequestKeys.add(requestKey);
     // Deduplicacao robusta via RPC: CNPJ exato/raiz + nome por palavra inteira +
     // similaridade trigram (razao social e nome fantasia). Nunca cria quando ha
     // qualquer candidato plausivel (salvo force explicito).
@@ -74,13 +81,15 @@ Deno.serve(async (req) => {
 
     let action: string;
     if (candidates.length > 0 && !force) {
-      action = topCandidate && /cnpj/.test(topCandidate.reason) ? 'skipped_cnpj_exists' : 'skipped_name_conflict';
+      action = topCandidate?.reason === 'cnpj_exato' ? 'skipped_cnpj_exists'
+        : topCandidate?.reason === 'possivel_grupo_filial' ? 'create'
+        : 'skipped_name_conflict';
     } else {
       action = 'create';
     }
 
     if (dryRun) {
-      results.push({ name, cnpj, action: action === 'create' ? 'would_create' : action, nameMatchCount, topCandidate: topCandidate ? { companyId: topCandidate.company_id, name: topCandidate.name, reason: topCandidate.reason, score: topCandidate.score } : null, candidates });
+      results.push({ name, cnpj, action: action === 'create' ? 'would_create' : action, review: topCandidate?.reason === 'possivel_grupo_filial' ? 'possivel_grupo_filial' : undefined, nameMatchCount, topCandidate: topCandidate ? { companyId: topCandidate.company_id, name: topCandidate.name, reason: topCandidate.reason, score: topCandidate.score } : null, candidates });
       continue;
     }
 
@@ -93,7 +102,7 @@ Deno.serve(async (req) => {
     try {
       // Guarda final ao vivo: se o CNPJ ja existir no HubSpot, nao duplica.
       // A propriedade cnpj do HubSpot e numerica: enviar somente digitos.
-      const live = digits ? await searchCompaniesByCnpj(digits, token!) : [];
+      const live = digits ? await searchCompaniesByCnpjStrict(digits, token!) : [];
       if (live.length > 0) {
         const existingId = String((live[0] as { id?: unknown }).id ?? '');
         await client.from('analytics_hubspot_company_create_runs').insert({ requested_by_user_id: actorId, source_client_name: name, source_tax_id: cnpj || null, action: 'skipped_cnpj_exists', hubspot_company_id: existingId || null, name_match_count: nameMatchCount, finished_at: new Date().toISOString() });

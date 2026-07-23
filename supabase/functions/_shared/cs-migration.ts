@@ -65,6 +65,19 @@ export function countCsMigrationPlan(items: ReadonlyArray<CsMigrationPlanItemSum
   };
 }
 
+export function findDuplicateSourceRecordIds(rows: ReadonlyArray<Pick<CsMigrationRow, 'source_record_id'>>): string[] {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    const sourceRecordId = text(row.source_record_id);
+    if (!sourceRecordId) continue;
+    counts.set(sourceRecordId, (counts.get(sourceRecordId) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .filter(([, count]) => count > 1)
+    .map(([sourceRecordId]) => sourceRecordId)
+    .sort();
+}
+
 function text(value: unknown): string {
   return value === null || value === undefined ? '' : String(value).trim();
 }

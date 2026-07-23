@@ -10,6 +10,7 @@ import {
   createCompany,
   fetchCompanies,
   fetchOwners,
+  searchCompaniesByCnpjStrict,
   updateCompany,
   type HubSpotOwner,
   type HubSpotRecord,
@@ -18,6 +19,7 @@ import {
   buildCompanyProperties,
   buildCsMigrationPreflight,
   countCsMigrationPlan,
+  findDuplicateSourceRecordIds,
   matchCsCompany,
   resolveOwnerId,
   toHubSpotRecord,
@@ -176,6 +178,15 @@ Deno.serve(async (req) => {
     const rows = (sourceRows ?? []) as CsMigrationRow[];
     if (!rows.length) return jsonResponse({ error: 'O lote CS Ops não possui linhas para migrar.' }, { status: 422 });
 
+    const duplicateSourceRecordIds = findDuplicateSourceRecordIds(rows);
+    if (duplicateSourceRecordIds.length > 0) {
+      return jsonResponse({
+        error: 'O lote CS Ops possui source_record_id duplicado; corrija a origem antes de migrar.',
+        code: 'DUPLICATE_SOURCE_RECORD_IDS',
+        duplicateSourceRecordIds: duplicateSourceRecordIds.slice(0, 50),
+      }, { status: 422 });
+    }
+
     const token = mode === 'apply' ? await resolveHubSpotToken(client) : null;
     const companies = await loadCompanies(client, token);
     const owners = await loadOwners(client, token);
@@ -248,7 +259,15 @@ Deno.serve(async (req) => {
         try {
           const result = item.operation === 'update' && item.match.company
             ? await updateCompany(item.match.company.id, item.properties, token ?? undefined)
-            : await createCompany(item.properties, token ?? undefined);
+            : await (async () => {
+              const existing = item.properties.cnpj
+                ? await searchCompaniesByCnpjStrict(item.properties.cnpj, token ?? undefined)
+                : [];
+              if (existing.length > 0) {
+                throw new Error('Rechecagem de CNPJ encontrou empresa no HubSpot antes da criação; execute novo dry-run.');
+              }
+              return createCompany(item.properties, token ?? undefined);
+            })();
           const finalStatus = item.operation === 'update' ? 'updated' : 'created';
           item.status = finalStatus;
           item.priorCompanyId = result.id;

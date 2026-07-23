@@ -7,6 +7,7 @@ import {
   optionsResponse,
 } from '../_shared/ticket-evidence.ts';
 import { CS_OPS_MAPPING_VERSION, CS_OPS_SHEET_NAME, CS_OPS_SOURCE_KEY, isCsOpsHeaderRow, mapCsOpsRows } from '../_shared/cs-ops.ts';
+import { redactSensitivePayload } from '../_shared/omie.ts';
 
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
 const OMIE_SOURCE = 'omie_receivables_xlsx_20260622';
@@ -234,7 +235,7 @@ Deno.serve(async (req) => {
         netAmount === null ? 'valor liquido ausente ou invalido' : null,
         status === 'indisponivel' ? 'situacao ausente' : null,
       ].filter((reason): reason is string => Boolean(reason));
-      const base = { import_run_id: run.id, source_key: sourceKey, source_record_id: sourceRecordId, status_original: status, aging_bucket: agingBucket(status, dueDate), document_number: text(find(row, 'nota fiscal', 'documento')) || null, client_name: clientName, client_tax_id: text(find(row, 'cnpj', 'cpf/cnpj')) || null, net_amount: netAmount, received_amount: receivedAmount, balance, due_date: dueDate, issued_date: dateValue(find(row, 'emissao', 'data de emissao', 'issued_date')), last_received_date: dateValue(find(row, 'ultimo recebimento', 'last_received_date')), boleto_generated: /boleto/i.test(status), is_cancelled: /cancel/i.test(status), is_partial: /parcial/i.test(status), effective_at: dueDate ? `${dueDate}T00:00:00Z` : null, raw_payload: row };
+      const base = { import_run_id: run.id, source_key: sourceKey, source_record_id: sourceRecordId, status_original: status, aging_bucket: agingBucket(status, dueDate), document_number: text(find(row, 'nota fiscal', 'documento')) || null, client_name: clientName, client_tax_id: text(find(row, 'cnpj', 'cpf/cnpj')) || null, net_amount: netAmount, received_amount: receivedAmount, balance, due_date: dueDate, issued_date: dateValue(find(row, 'emissao', 'data de emissao', 'issued_date')), last_received_date: dateValue(find(row, 'ultimo recebimento', 'last_received_date')), boleto_generated: /boleto/i.test(status), is_cancelled: /cancel/i.test(status), is_partial: /parcial/i.test(status), effective_at: dueDate ? `${dueDate}T00:00:00Z` : null, raw_payload: redactSensitivePayload(row) };
       return { base, qualityStatus: rejectionReasons.length ? 'rejected' : 'valid', rejectionReason: rejectionReasons.join('; ') || null };
     });
     const financeRows = mappedRows.filter((row) => row.qualityStatus === 'valid').map((row) => row.base);

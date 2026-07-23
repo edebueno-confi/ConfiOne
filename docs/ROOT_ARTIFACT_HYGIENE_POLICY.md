@@ -212,6 +212,19 @@ Esta política complementa o runbook documental da seguinte forma:
   que ainda têm referências ou função de continuidade;
 - evidência: `docs/reports/REPOSITORY_CLEANUP_AUDIT_2026-07-21.md`.
 
+## Verificação automatizada e triagem incremental — 2026-07-21
+
+- criado `scripts/ci/check-root-artifacts.mjs`, somente leitura, com allowlist
+  explícita de arquivos/diretórios canônicos;
+- criado `tests/scripts/root-artifacts-hygiene.test.mjs`, com três cenários de
+  allowlist, detecção e exceção explícita;
+- adicionado o comando `npm run repository:check-root`;
+- 10 logs/dumps transitórios da execução local foram movidos de forma reversível
+  para `.tmp/logs/2026-07-21--local-environment/`;
+- a verificação atual ainda aponta `output/` e
+  `Recreação do mascote Genius-handoff/`; ambos foram preservados para triagem,
+  sem exclusão automática.
+
 ## Critério de pronto
 
 A política estará operando corretamente quando:

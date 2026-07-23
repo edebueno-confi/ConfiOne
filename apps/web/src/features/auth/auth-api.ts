@@ -3,6 +3,7 @@ import { requireSupabaseBrowserClient } from '../../app/supabase-browser';
 import type {
   AdminAuthContextRow,
   AdminGateProfileRow,
+  InternalScreenKey,
   PlatformRole,
 } from '../../contracts/admin-contracts';
 
@@ -10,6 +11,7 @@ export interface AdminActorContext {
   profile: AdminGateProfileRow;
   roles: PlatformRole[];
   is_platform_admin: boolean;
+  screen_keys: InternalScreenKey[];
 }
 
 export async function signInWithPassword(email: string, password: string) {
@@ -42,13 +44,23 @@ export async function signOutAdminSession() {
 export async function fetchAdminActorContext() {
   const client = requireSupabaseBrowserClient();
 
-  const { data, error } = await client
+  const [{ data, error }, { data: workspaceData, error: workspaceError }] = await Promise.all([
+    client
     .from('vw_admin_auth_context')
     .select('*')
-    .maybeSingle();
+    .maybeSingle(),
+    client
+      .from('vw_internal_actor_workspace_context')
+      .select('screen_key')
+      .order('sort_order', { ascending: true }),
+  ]);
 
   if (error) {
     throw toAppError(error, 'Falha ao carregar o contexto autenticado do Admin Console.');
+  }
+
+  if (workspaceError) {
+    throw toAppError(workspaceError, 'Falha ao carregar as telas autorizadas do usuário.');
   }
 
   const authContext = data as AdminAuthContextRow | null;
@@ -77,8 +89,15 @@ export async function fetchAdminActorContext() {
   const typedRoles = authContext.roles ?? [];
   const isPlatformAdmin = typedRoles.includes('platform_admin');
   const isDashboardViewer = typedRoles.includes('dashboard_viewer');
+  const screenKeys = Array.from(
+    new Set(
+      (workspaceData ?? [])
+        .map((row) => row.screen_key as InternalScreenKey)
+        .filter(Boolean),
+    ),
+  );
 
-  if (!isPlatformAdmin && !isDashboardViewer) {
+  if (!isPlatformAdmin && !isDashboardViewer && screenKeys.length === 0) {
     return {
       status: 'denied' as const,
       reason: 'missing-platform-admin' as const,
@@ -93,6 +112,7 @@ export async function fetchAdminActorContext() {
       profile: typedProfile,
       roles: typedRoles,
       is_platform_admin: isPlatformAdmin,
+      screen_keys: screenKeys,
     } satisfies AdminActorContext,
   };
 }

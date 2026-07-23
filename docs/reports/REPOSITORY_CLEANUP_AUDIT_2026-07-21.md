@@ -67,9 +67,33 @@ não são motivo para alterar o histórico Git.
 3. Revisar duplicações em `docs/GPT/` somente com decisão documental explícita.
 4. Adicionar uma verificação automatizada de higiene da raiz ao CI local.
 
+## Execução incremental — 2026-07-21
+
+- criado o verificador read-only `scripts/ci/check-root-artifacts.mjs`;
+- criado o teste `tests/scripts/root-artifacts-hygiene.test.mjs` com 3 casos
+  aprovados;
+- adicionada a rotina `npm run repository:check-root`;
+- movidos 10 logs/dumps transitórios para
+  `.tmp/logs/2026-07-21--local-environment/`, sem perda de conteúdo;
+- as duas entradas locais que permanecem na raiz foram classificadas pelo
+  verificador: `output/` contém evidências geradas e ignoradas de QA; `Recreação
+  do mascote Genius-handoff/` é o pacote de referência ignorado, enquanto os
+  assets de runtime vivem em `apps/web`;
+- nenhum arquivo foi excluído nesta etapa.
+
 ## Validação do lote
 
-- `git diff --check` deve ser executado antes do commit desta limpeza.
-- Typecheck, testes e build devem ser repetidos após a consolidação das remoções.
+- `node --test tests/scripts/root-artifacts-hygiene.test.mjs`: 3/3 aprovados.
+- `npm run contracts:typecheck` e `npm run web:typecheck`: aprovados.
+- `npm run web:build`: aprovado; o bundle compilou sem falha fatal.
+- `npm run supabase:lint:db` e `npm run supabase:test:db`: aprovados; o lint
+  mantém 12 alertas conhecidos de `v_actor` não utilizado em RPCs legadas.
+- `npm run documentation:validate:internal-docs`: aprovado, 0 bloqueios e 9
+  alertas documentais já conhecidos.
+- `git diff --check`: aprovado.
+- smoke HTTP em `http://127.0.0.1:4173/`: HTTP 200.
+- O verificador `npm run repository:check-root` agora classifica explicitamente
+  as duas entradas locais ignoradas e deve fechar verde; ele não altera
+  arquivos.
 - Nenhum push, merge em `main`, deploy, migration remota ou alteração de secret
   foi executado.

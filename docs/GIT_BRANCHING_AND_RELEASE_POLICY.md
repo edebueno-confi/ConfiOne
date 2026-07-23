@@ -49,8 +49,10 @@ sem misturar trabalho experimental com publicação e sem perder alterações lo
 
 - Checkout: `C:\Projetos\GSO-old`.
 - Branch ativa: `codex/repository-cleanup-consolidation-20260721`.
-- Commit de consolidação: `31604b4`.
+- Commit de consolidação: `0f86cab`.
+- Commit de limpeza subsequente: `7c7d291`.
 - Branch anterior preservada: `codex/ux-ui-rebuild-v2-discovery`.
 - Worktree após a consolidação: limpo; nenhum push ou deploy foi executado.
-- Próximo lote: auditoria e limpeza sanitizada por classificação, seguida de
-  validação completa e revisão do time de tecnologia.
+- Próximo lote: executar a spec SDD de prontidão em
+  `docs/superpowers/specs/2026-07-21-gso-release-readiness-and-next-cycles.md`,
+  começando pela higiene documental e seguindo para a validação do Dashboard.

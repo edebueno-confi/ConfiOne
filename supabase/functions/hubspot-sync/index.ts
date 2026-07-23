@@ -23,6 +23,7 @@ import {
   fetchOwners,
   fetchPipelineStages,
   fetchPipelineLabel,
+  fetchPipelineDefinitions,
   fetchTicketsByPipeline,
   toNumeric,
   toTimestamp,
@@ -160,6 +161,45 @@ async function syncStages(
   }));
   await chunkedUpsert(client, 'hubspot_pipeline_stages', rows, 'object_type,pipeline_id,stage_id');
   return rows.length;
+}
+
+async function syncPipelineCatalog(
+  client: SupabaseClient,
+  domainKey: 'commercial' | 'cs',
+  objectType: 'deal' | 'ticket',
+  token: string,
+): Promise<number> {
+  const definitions = await fetchPipelineDefinitions(objectType === 'deal' ? 'deals' : 'tickets', token);
+  const activeDefinitions = definitions.filter((definition) => !definition.archived);
+  if (activeDefinitions.length === 0) return 0;
+
+  // Insere apenas pipelines descobertos. O estado e o alias de uma fonte
+  // existente pertencem ao administrador e nao podem ser sobrescritos pelo
+  // catalogo do HubSpot.
+  const { error: catalogError } = await client.from('analytics_source_config').upsert(
+    activeDefinitions.map((definition) => ({
+      domain_key: domainKey,
+      object_type: objectType,
+      hubspot_pipeline_id: definition.pipelineId,
+      hubspot_pipeline_label: definition.label,
+      label: null,
+      is_active: false,
+    })),
+    { onConflict: 'domain_key,object_type,hubspot_pipeline_id', ignoreDuplicates: true },
+  );
+  if (catalogError) throw new Error(`Falha ao atualizar catalogo de pipelines: ${catalogError.message}`);
+
+  for (const definition of activeDefinitions) {
+    const { error: labelError } = await client
+      .from('analytics_source_config')
+      .update({ hubspot_pipeline_label: definition.label })
+      .eq('domain_key', domainKey)
+      .eq('object_type', objectType)
+      .eq('hubspot_pipeline_id', definition.pipelineId);
+    if (labelError) throw new Error(`Falha ao atualizar nome de pipeline: ${labelError.message}`);
+  }
+
+  return activeDefinitions.length;
 }
 
 async function syncDeals(client: SupabaseClient, pipelineId: string, token: string): Promise<number> {
@@ -404,6 +444,24 @@ Deno.serve(async (req) => {
     }
 
     if (syncsPipelines(scope)) {
+      // Descobre novos pipelines sem ativá-los automaticamente. Assim o
+      // administrador pode avaliar a atividade real e habilitar somente o
+      // recorte comercial desejado na tela de Configuração.
+      if (!scopeType || scopeType === 'deal') {
+        try {
+          await syncPipelineCatalog(client, 'commercial', 'deal', hubspotToken);
+        } catch {
+          // O catalogo e complementar; a sincronizacao das fontes ja
+          // configuradas continua mesmo se a descoberta nao estiver disponivel.
+        }
+      }
+      if (!scopeType || scopeType === 'ticket') {
+        try {
+          await syncPipelineCatalog(client, 'cs', 'ticket', hubspotToken);
+        } catch {
+          // Ver comentario acima: descoberta nao deve derrubar o sync.
+        }
+      }
       for (const config of uniqueConfigs) {
         const pipelineLabel = await fetchPipelineLabel(
           config.object_type === 'deal' ? 'deals' : 'tickets',

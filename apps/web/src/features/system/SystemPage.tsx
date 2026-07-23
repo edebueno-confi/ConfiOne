@@ -591,8 +591,8 @@ export function SystemPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
-      <section className="shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4">
+    <div className="gso-screen-frame flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
+      <section className="gso-screen-header shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">

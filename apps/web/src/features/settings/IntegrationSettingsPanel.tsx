@@ -40,10 +40,13 @@ export function IntegrationSettingsPanel({
         const draft = draftFor(item);
         const pipelineConfig = Array.isArray(item.config.domains) ? `Domínios: ${(item.config.domains as string[]).join(', ')}` : null;
         return (
-          <section className="rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4" key={item.integrationKey}>
+          <section className="integration-card rounded-[18px] border border-[color:var(--minimal-border)] p-4 sm:p-5" key={item.integrationKey}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">{item.label}</h3>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">{item.label}</h3>
+                  <span className="integration-card__badge">Integração gerenciada</span>
+                </div>
                 <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">{item.provider} · modo {item.mode} · {statusLabel(item)}</p>
                 {pipelineConfig ? <p className="mt-1 text-xs text-[color:var(--minimal-text-tertiary)]">{pipelineConfig}</p> : null}
               </div>

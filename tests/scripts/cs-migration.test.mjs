@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildCompanyProperties, buildCsMigrationPreflight, countCsMigrationPlan, matchCsCompany, normalizeDigits, resolveOwnerId } from '../../supabase/functions/_shared/cs-migration.ts';
+import { buildCompanyProperties, buildCsMigrationPreflight, countCsMigrationPlan, findDuplicateSourceRecordIds, matchCsCompany, normalizeDigits, resolveOwnerId } from '../../supabase/functions/_shared/cs-migration.ts';
 
 test('normaliza IDs decimais vindos do Sheets sem alterar o identificador', () => {
   assert.equal(normalizeDigits('4147148759.0'), '4147148759');
@@ -71,4 +71,14 @@ test('considera aplicação elegível somente quando o catálogo HubSpot tem emp
   assert.equal(preflight.companyCatalog, 'hubspot_live');
   assert.equal(preflight.requiresRehydrate, false);
   assert.equal(preflight.canApply, true);
+});
+
+test('detecta source_record_id duplicado antes de criar o ledger', () => {
+  assert.deepEqual(findDuplicateSourceRecordIds([
+    { source_record_id: 'a' },
+    { source_record_id: 'b' },
+    { source_record_id: 'a' },
+    { source_record_id: '' },
+    { source_record_id: 'b' },
+  ]), ['a', 'b']);
 });

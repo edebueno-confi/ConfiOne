@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cx } from '../../../components/ui';
+import { FilterTabs } from '../../../components/FilterTabs';
 
 export interface SupportTicketQueueTab {
   key: string;
@@ -62,6 +62,7 @@ export function SupportTicketQueue({
           <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-2.5">
             <span className="text-[color:var(--minimal-text-tertiary)]">{searchIcon}</span>
             <input
+              aria-label="Buscar tickets"
               className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--minimal-text)] outline-none placeholder:text-[color:var(--minimal-text-tertiary)]"
               onChange={(event) => onSearchChange(event.target.value)}
               placeholder="Buscar tickets..."
@@ -70,53 +71,29 @@ export function SupportTicketQueue({
           </label>
           <button
             aria-label="Limpar busca e filtros rápidos"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--minimal-border-strong)] text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)]"
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-[color:var(--minimal-border-strong)] px-2.5 text-xs text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)] sm:px-3"
             onClick={onReset}
             title="Limpar busca e filtros rápidos"
             type="button"
           >
             {filterIcon}
+            <span className="hidden sm:inline">Limpar filtros</span>
           </button>
         </div>
-        <div className="mt-3 flex border-b border-[color:var(--minimal-border)]" role="tablist" aria-label="Escopo da fila">
-          {([
-            ['open', 'Abertos', scopeCounts.open],
-            ['closed', 'Fechados', scopeCounts.closed],
-          ] as const).map(([key, label, count]) => (
-            <button
-              aria-selected={scope === key}
-              className={cx(
-                'min-h-9 flex-1 border-b-2 px-2 text-xs',
-                scope === key
-                  ? 'border-[color:var(--minimal-action)] font-medium text-[color:var(--minimal-text)]'
-                  : 'border-transparent text-[color:var(--minimal-text-secondary)]',
-              )}
-              key={key}
-              onClick={() => onScopeChange(key)}
-              role="tab"
-              type="button"
-            >
-              {label} {count}
-            </button>
-          ))}
-        </div>
-        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
-          {tabs.map((tab) => (
-            <button
-              className={cx(
-                'min-h-8 text-xs',
-                activeTab === tab.key
-                  ? 'font-medium text-[color:var(--minimal-action)]'
-                  : 'text-[color:var(--minimal-text-secondary)]',
-              )}
-              key={tab.key}
-              onClick={() => onTabChange(tab.key)}
-              type="button"
-            >
-              {tab.label} {tab.count}
-            </button>
-          ))}
-        </div>
+        <FilterTabs
+          ariaLabel="Escopo da fila"
+          className="mt-3"
+          activeId={scope}
+          items={[{ id: 'open', label: 'Abertos', count: scopeCounts.open }, { id: 'closed', label: 'Fechados', count: scopeCounts.closed }]}
+          onChange={(id) => onScopeChange(id as 'open' | 'closed')}
+        />
+        <FilterTabs
+          ariaLabel="Filtros da fila"
+          className="mt-2"
+          activeId={activeTab}
+          items={tabs.map((tab) => ({ id: tab.key, label: tab.label, count: tab.count }))}
+          onChange={onTabChange}
+        />
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-2">{ticketsContent}</div>

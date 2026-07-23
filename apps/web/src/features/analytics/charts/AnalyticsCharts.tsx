@@ -20,13 +20,14 @@ import type {
 import { formatCurrencyBRL, formatMonthLabel } from '../analytics-model';
 
 const PALETTE = {
-  primary: '#2f6bff',
-  won: '#1f9d64',
-  lost: '#e2574c',
-  waiting: '#d59b22',
-  neutral: '#8b93a7',
-  grid: 'rgba(139, 147, 167, 0.22)',
-  axis: '#8b93a7',
+  primary: 'var(--color-brand-blue)',
+  won: 'var(--color-success-ink)',
+  lost: 'var(--color-danger-ink)',
+  waiting: 'var(--color-warning-ink)',
+  neutral: 'var(--minimal-text-tertiary)',
+  grid: 'var(--analytics-chart-grid)',
+  axis: 'var(--analytics-chart-axis)',
+  cursor: 'var(--analytics-chart-cursor)',
 };
 
 function ticketStatusColor(label: string, isClosed: boolean) {
@@ -65,7 +66,7 @@ export function CommercialFunnelChart({ data }: { data: CommercialFunnelStage[] 
         <YAxis type="category" dataKey="name" width={150} tick={AXIS_STYLE} />
         <Tooltip
           formatter={(value: number) => [`${value} deals`, 'Deals']}
-          cursor={{ fill: 'rgba(47, 107, 255, 0.08)' }}
+          cursor={{ fill: PALETTE.cursor }}
         />
         <Bar dataKey="deals" radius={[0, 4, 4, 0]}>
           {rows.map((row, index) => (
@@ -123,7 +124,7 @@ export function TicketStatusChart({ data }: { data: CsByStatus[] }) {
             if (!active || !row) return null;
             return <div style={{ border: `1px solid ${PALETTE.grid}`, borderRadius: 8, background: 'var(--minimal-surface)', padding: '8px 10px', color: 'var(--minimal-text)', fontSize: 12 }}><strong>{row.name}</strong><div style={{ marginTop: 4 }}>{row.tickets.toLocaleString('pt-BR')} tickets consolidados</div>{row.pipelineBreakdown.length ? <div style={{ marginTop: 6, color: 'var(--minimal-text-secondary)' }}>{row.pipelineBreakdown.map((item) => <div key={`${item.pipelineId}-${item.pipelineLabel}`}>{item.pipelineLabel}: {item.ticketCount.toLocaleString('pt-BR')}</div>)}</div> : null}</div>;
           }}
-          cursor={{ fill: 'rgba(47, 107, 255, 0.08)' }}
+          cursor={{ fill: PALETTE.cursor }}
         />
         <Bar dataKey="tickets" radius={[0, 4, 4, 0]}>
           {rows.map((row, index) => (

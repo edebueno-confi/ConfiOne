@@ -62,15 +62,15 @@ export function AdminOverviewPage() {
   }, [state]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-[color:var(--minimal-surface)]">
-      <header className="border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6">
+    <div className="gso-screen-frame flex h-full min-h-0 flex-col overflow-y-auto bg-[color:var(--minimal-surface)]">
+      <header className="gso-screen-header border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6">
         <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">Visão geral</h1>
         <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">
           Governança do GeniusOS num relance. Escolha uma área para administrar.
         </p>
       </header>
 
-      <div className="px-5 py-5 sm:px-6">
+      <div className="gso-screen-body px-5 py-5 sm:px-6">
         {state.phase === 'loading' ? (
           <p className="text-sm text-[color:var(--minimal-text-secondary)]">Carregando visão geral…</p>
         ) : state.phase === 'error' ? (

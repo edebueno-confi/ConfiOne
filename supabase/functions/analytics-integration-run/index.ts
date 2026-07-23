@@ -58,6 +58,31 @@ async function updateCompaniesInBatches(
   }
 }
 
+async function claimFinanceSyncRun(client: SupabaseClient) {
+  const staleBefore = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  await client.from('analytics_finance_sync_runs')
+    .update({ status: 'failed', error_message: 'Execucao abandonada pelo worker e encerrada automaticamente.', finished_at: new Date().toISOString() })
+    .eq('status', 'processing')
+    .lt('started_at', staleBefore);
+  const { data: activeRun } = await client.from('analytics_finance_sync_runs')
+    .select('id, started_at')
+    .eq('status', 'processing')
+    .order('started_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (activeRun) {
+    return { activeRun };
+  }
+
+  const { data: syncRun, error: syncRunError } = await client.from('analytics_finance_sync_runs')
+    .insert({ status: 'processing', triggered_by_user_id: null })
+    .select('id')
+    .single();
+  if (syncRunError?.code === '23505') return { activeRun: { id: null, started_at: null } };
+  if (syncRunError || !syncRun) throw new Error(syncRunError?.message ?? 'Nao foi possivel criar a execucao financeira.');
+  return { syncRun };
+}
+
 Deno.serve(async (req) => {
   const startedAt = Date.now();
   const phase = (label: string) => console.info(`[analytics-integration-run] ${label} +${Date.now() - startedAt}ms`);
@@ -81,13 +106,22 @@ Deno.serve(async (req) => {
   }
 
   await client.rpc('rpc_service_mark_integration_run', { p_status: 'running', p_message: `Iniciado (${mode})` });
+  let syncRunId: string | null = null;
   try {
     // 1) OMIE -> read model (read-only na OMIE)
     const omieSecret = await getSecret(client, 'omie');
     const credentials = parseOmieCredentials(omieSecret);
     phase('omie credentials loaded');
-    const { data: syncRun } = await client.from('analytics_finance_sync_runs').insert({ status: 'processing', triggered_by_user_id: null }).select('id').single();
-    const syncRunId = String(syncRun?.id ?? crypto.randomUUID());
+    const claimed = await claimFinanceSyncRun(client);
+    if ('activeRun' in claimed && claimed.activeRun) {
+      await client.rpc('rpc_service_mark_integration_run', { p_status: 'partial', p_message: 'Sincronizacao OMIE ignorada: outra execucao esta em andamento.' });
+      return jsonResponse(
+        { ok: false, status: 'blocked', code: 'OMIE_SYNC_IN_PROGRESS', error: 'Já existe uma sincronização OMIE em andamento. Aguarde a conclusão antes de tentar novamente.' },
+        { status: 409, headers: { 'retry-after': '30' } },
+      );
+    }
+    const syncRun = claimed.syncRun;
+    syncRunId = String(syncRun.id);
     const omieRows = await fetchOmieReceivables(credentials);
     phase(`omie receivables fetched: ${omieRows.length}`);
     const normalized = normalizeOmieApiReceivables(omieRows, syncRunId);
@@ -110,7 +144,7 @@ Deno.serve(async (req) => {
       const { error: currentError } = await client.from('analytics_finance_receivables').update({ is_current: true }).eq('sync_run_id', syncRunId);
       if (currentError) throw new Error(`Marcação de títulos atuais falhou: ${currentError.message}`);
     }
-    if (syncRun?.id) await client.from('analytics_finance_sync_runs').update({ status: 'completed', total_rows: omieRows.length, accepted_rows: normalized.length, finished_at: new Date().toISOString() }).eq('id', syncRun.id);
+    await client.from('analytics_finance_sync_runs').update({ status: 'completed', total_rows: omieRows.length, accepted_rows: normalized.length, finished_at: new Date().toISOString() }).eq('id', syncRun.id);
 
     // 2) read model -> propriedades HubSpot (fill dos campos omie_*).
     // A persistência OMIE já foi concluída acima. Se o enriquecimento de
@@ -139,7 +173,13 @@ Deno.serve(async (req) => {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Falha na orquestração de integração.';
+    if (syncRunId) {
+      await client.from('analytics_finance_sync_runs').update({ status: 'failed', error_message: message.slice(0, 500), finished_at: new Date().toISOString() }).eq('id', syncRunId);
+    }
     await client.rpc('rpc_service_mark_integration_run', { p_status: 'error', p_message: message });
+    if (/REDUNDANT|8020/i.test(message)) {
+      return jsonResponse({ error: 'A API OMIE ainda está concluindo uma requisição anterior. Aguarde alguns segundos e tente novamente.', code: 'OMIE_PROVIDER_BUSY' }, { status: 409, headers: { 'retry-after': '46' } });
+    }
     return jsonResponse({ error: message.slice(0, 500) }, { status: 502 });
   }
 });

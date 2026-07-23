@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { GeniusMascot, type GeniusMascotSurface } from './GeniusMascot';
 
 interface StateFrameProps {
   title: string;
@@ -7,6 +8,7 @@ interface StateFrameProps {
   actions?: ReactNode;
   tone?: 'default' | 'critical' | 'positive';
   compact?: boolean;
+  mascotSurface?: GeniusMascotSurface;
 }
 
 function toneClasses(tone: StateFrameProps['tone']) {
@@ -28,6 +30,7 @@ export function StateFrame({
   actions,
   tone = 'default',
   compact = false,
+  mascotSurface,
 }: StateFrameProps) {
   return (
     <section
@@ -36,8 +39,13 @@ export function StateFrame({
       )}`}
       role={tone === 'critical' ? 'alert' : 'status'}
     >
-      <div className={compact ? 'max-w-xl' : 'max-w-2xl'}>
-        <div className="space-y-4">
+      <div className={`flex ${compact ? 'max-w-xl' : 'max-w-2xl'} flex-col gap-4 sm:flex-row sm:items-start`}>
+        <GeniusMascot
+          alt={tone === 'critical' ? 'Gênio indicando que há uma pendência' : 'Gênio acompanhando a operação'}
+          size="lg"
+          surface={mascotSurface ?? (tone === 'critical' ? 'empty' : 'default')}
+        />
+        <div className="min-w-0 flex-1 space-y-4">
           {eyebrow ? (
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-[color:var(--color-muted)]">
               {eyebrow}
@@ -72,6 +80,7 @@ export function LoadingState({
       title={title}
       description={description}
       eyebrow="Carregando"
+      mascotSurface="loading"
       actions={
         <div className="inline-flex items-center gap-3 rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/90 px-4 py-2 text-sm text-[color:var(--color-ink)]">
           <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[color:var(--color-brand-blue)]" />
@@ -94,6 +103,7 @@ export function EmptyState({ title, description, action }: EmptyStateProps) {
       title={title}
       description={description}
       eyebrow="Sem dados"
+      mascotSurface="empty"
       compact
       actions={action}
     />
@@ -117,6 +127,7 @@ export function ErrorState({
       description={description}
       eyebrow="Erro"
       tone="critical"
+      mascotSurface="empty"
       actions={action}
     />
   );
@@ -139,6 +150,7 @@ export function AccessDeniedState({
       description={description}
       eyebrow="Permissão"
       tone="critical"
+      mascotSurface="empty"
       actions={action}
     />
   );
@@ -185,6 +197,7 @@ export function ContractUnavailableState({
         `Não foi possível abrir ${safeResourceName} agora. Tente novamente ou revise suas permissões.`
       }
       eyebrow="Indisponível"
+      mascotSurface="empty"
       actions={action}
     />
   );
@@ -201,6 +214,7 @@ export function SessionExpiredState({ action }: SessionExpiredStateProps) {
       description="Sua sessão expirou. Entre novamente para continuar."
       eyebrow="Sessão"
       tone="critical"
+      mascotSurface="empty"
       actions={action}
     />
   );

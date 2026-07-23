@@ -889,7 +889,9 @@ export function TenantsPage() {
         preferredTenantId ??
         (tenantRows.some((tenant) => tenant.id === selectedTenantId) ? selectedTenantId : null);
 
-      setSelectedTenantId(preservedTenantId ?? tenantRows[0]?.id ?? null);
+      // A conta só deve abrir quando o usuário solicitar. Manter a lista livre
+      // evita transformar o drawer contextual em uma terceira coluna permanente.
+      setSelectedTenantId(preservedTenantId ?? null);
     } catch (error) {
       const classified = classifyAdminError(
         error,
@@ -1197,8 +1199,8 @@ export function TenantsPage() {
       return;
     }
 
-    if (!selectedTenantId || !filteredTenants.some((tenant) => tenant.id === selectedTenantId)) {
-      setSelectedTenantId(filteredTenants[0]?.id ?? null);
+    if (selectedTenantId && !filteredTenants.some((tenant) => tenant.id === selectedTenantId)) {
+      setSelectedTenantId(null);
     }
   }, [filteredTenants, selectedTenantId]);
 
@@ -1745,15 +1747,15 @@ export function TenantsPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
-      <section className="shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4">
+    <div className="gso-screen-frame flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
+      <section className="gso-screen-header shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
-              Clientes B2B
+              Contas B2B
             </h1>
             <p className="text-sm text-[color:var(--minimal-text-secondary)]">
-              Revise status e contexto de cada cliente.
+              Administre contas, vínculos e contexto operacional dos clientes B2B.
             </p>
           </div>
 
@@ -1766,8 +1768,8 @@ export function TenantsPage() {
         </div>
       </section>
 
-      <div className="grid min-h-0 flex-1 overflow-hidden xl:grid-cols-[220px_minmax(0,1fr)_360px]">
-        <aside className="hidden space-y-4 xl:block xl:min-h-0 xl:overflow-hidden">
+      <div className="relative grid min-h-0 flex-1 overflow-hidden xl:grid-cols-[minmax(0,1fr)]">
+        <aside className="hidden">
           <section className="h-full border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] p-3 xl:flex xl:min-h-0 xl:flex-col xl:overflow-y-auto">
             <div className="space-y-2 xl:flex xl:h-full xl:flex-col">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
@@ -1917,6 +1919,26 @@ export function TenantsPage() {
                 <option value="name">Ordem alfabética</option>
               </SelectInput>
             </div>
+            <div className="flex w-full flex-wrap items-center gap-2 border-t border-[color:var(--minimal-border)] pt-3">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[color:var(--minimal-text-tertiary)]">Filtrar</span>
+              <SelectInput className="min-h-8 w-[150px] text-xs" onChange={(event) => setStatusFilter(event.target.value as 'all' | TenantStatus)} value={statusFilter}>
+                <option value="all">Todos os status</option>
+                {TENANT_STATUSES.map((status) => <option key={status} value={status}>{labelForTenantStatus(status)}</option>)}
+              </SelectInput>
+              <SelectInput className="min-h-8 w-[180px] text-xs" onChange={(event) => setMembershipFilter(event.target.value as TenantMembershipFilter)} value={membershipFilter}>
+                <option value="all">Todos os vínculos</option>
+                <option value="active">Com vínculos ativos</option>
+                <option value="invited">Com convites pendentes</option>
+                <option value="none">Sem vínculos</option>
+              </SelectInput>
+              <SelectInput className="min-h-8 w-[160px] text-xs" onChange={(event) => setUpdatedFilter(event.target.value as TenantUpdatedFilter)} value={updatedFilter}>
+                <option value="all">Qualquer atualização</option>
+                <option value="24h">Últimas 24 horas</option>
+                <option value="7d">Últimos 7 dias</option>
+                <option value="30d">Últimos 30 dias</option>
+              </SelectInput>
+              <GhostButton className="min-h-8 px-3 text-xs" onClick={resetFilters}>Limpar</GhostButton>
+            </div>
           </header>
 
           <div className="space-y-3 p-4 xl:flex xl:min-h-0 xl:flex-1 xl:flex-col">
@@ -2006,15 +2028,21 @@ export function TenantsPage() {
           </div>
         </section>
 
-        <aside className="hidden min-w-0 border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] p-4 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
+        <aside className={cx(
+          'absolute inset-y-0 right-0 z-20 min-w-0 w-full max-w-2xl border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] p-4 shadow-2xl',
+          selectedTenantId ? 'flex h-full min-h-0 flex-col overflow-hidden' : 'hidden',
+        )}>
           <div className="space-y-3 xl:flex xl:min-h-0 xl:flex-1 xl:flex-col">
             <div className="space-y-1">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
                 Cliente selecionado
               </p>
-              <h2 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                Contexto operacional
-              </h2>
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                  Detalhes da conta
+                </h2>
+                <button aria-label="Fechar detalhes da conta" className="rounded-lg border border-[color:var(--minimal-border)] px-3 py-1.5 text-xs text-[color:var(--color-muted)]" onClick={() => setSelectedTenantId(null)} type="button">Fechar</button>
+              </div>
             </div>
 
             {detailPhase === 'idle' ? (
@@ -2087,7 +2115,7 @@ export function TenantsPage() {
                       { id: 'summary', label: 'Resumo' },
                       { id: 'account', label: 'Conta B2B' },
                       { id: 'subscriptions', label: 'Assinaturas' },
-                      { id: 'members', label: 'Membros' },
+                      { id: 'members', label: 'Usuários da conta' },
                       { id: 'status', label: 'Status' },
                       { id: 'activity', label: 'Atividade' },
                     ].map((tab) => (
@@ -3149,7 +3177,7 @@ export function TenantsPage() {
                         <div className="grid grid-cols-2 gap-3">
                           <TenantMetricTile
                             helper="com vínculo ativo"
-                            label="Membros"
+                            label="Usuários da conta"
                             value={String(tenantDetail.active_membership_count)}
                           />
                           <TenantMetricTile
@@ -3707,7 +3735,7 @@ export function TenantsPage() {
                 </div>
                 <TenantMetricTile
                   helper="com vínculo ativo"
-                  label="Membros"
+                  label="Usuários da conta"
                   value={String(tenantDetail.active_membership_count)}
                 />
                 <TenantMetricTile

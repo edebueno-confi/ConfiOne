@@ -36,6 +36,25 @@ O relatório detalhado por artigo está em
 `published/public` em um space ativo. A validação no navegador encontrou 44
 links de artigos únicos em `/help/genius/articles`.
 
+## Revalidação local no checkout GSO-old — 2026-07-21
+
+Após a reconstrução local do banco, a Central `genius` estava em `draft` e o
+corpus não estava reidratado. A migration idempotente
+`20260721240000_activate_genius_public_help_space_v1.sql` corrigiu o estado do
+espaço sem publicar conteúdo por conta própria. Em seguida, o pipeline oficial
+foi executado somente no Supabase local:
+
+| Item | Quantidade |
+| --- | ---: |
+| Artigos importados | 58 |
+| Artigos publicados | 44 |
+| Artigos bloqueados para revisão | 13 |
+
+QA autenticado verificou `/help/genius/articles`, com título da Central,
+categorias e links de artigos disponíveis; não houve erro de aplicação no
+console. Nenhuma publicação remota, alteração de secret ou write externo foi
+realizado.
+
 ## Limite
 
 Esta publicação foi aplicada no ambiente local. Publicação em ambiente remoto

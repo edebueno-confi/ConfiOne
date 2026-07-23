@@ -16,6 +16,9 @@
   --color-info-surface: #eaf2ff;
   --color-info-border: #d9e9ff;
   --color-info-text: #2f6bff;
+  --analytics-chart-grid: rgba(139, 147, 167, 0.22);
+  --analytics-chart-axis: #61708b;
+  --analytics-chart-cursor: rgba(47, 107, 255, 0.08);
   --color-disabled-surface: #eef2f8;
   --color-disabled-border: #dce4f2;
   --color-disabled-text: #98a3b8;
@@ -138,6 +141,9 @@
   --color-info-surface: rgba(91, 134, 255, 0.16);
   --color-info-border: rgba(91, 134, 255, 0.34);
   --color-info-text: #5b86ff;
+  --analytics-chart-grid: rgba(183, 195, 221, 0.24);
+  --analytics-chart-axis: #b7c3dd;
+  --analytics-chart-cursor: rgba(91, 134, 255, 0.18);
   --color-disabled-surface: #132445;
   --color-disabled-border: #263a63;
   --color-disabled-text: #7f8ead;
@@ -3448,6 +3454,361 @@ table {
 .genius-mascot--md { --genius-mascot-size: 2.25rem; }
 .genius-mascot--lg { --genius-mascot-size: 3rem; }
 .genius-mascot--xl { --genius-mascot-size: 14rem; }
+
+.avatar-palette-0 { background: var(--minimal-selection); color: var(--minimal-selection-text); }
+.avatar-palette-1 { background: var(--color-success-surface); color: var(--color-success-ink); }
+.avatar-palette-2 { background: var(--color-warning-surface); color: var(--color-warning-ink); }
+.avatar-palette-3 { background: var(--color-info-surface); color: var(--color-info-text); }
+.avatar-palette-4 { background: var(--genius-site-soft); color: var(--genius-site-blue); }
+
+.integration-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--minimal-surface) 92%, var(--genius-site-soft)) 0%, var(--minimal-surface) 62%),
+    var(--minimal-surface);
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--genius-site-blue) 8%, transparent);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.integration-card::before {
+  position: absolute;
+  top: -4rem;
+  right: -3rem;
+  width: 12rem;
+  height: 12rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--genius-site-cyan) 30%, transparent) 0%, transparent 68%);
+  content: '';
+  pointer-events: none;
+  z-index: 0;
+}
+
+.integration-card::after {
+  position: absolute;
+  right: 1rem;
+  bottom: 0.75rem;
+  color: color-mix(in srgb, var(--genius-site-pink) 52%, transparent);
+  content: '✦';
+  font-size: 1.25rem;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.integration-card:hover {
+  border-color: color-mix(in srgb, var(--genius-site-cyan) 48%, var(--minimal-border));
+  box-shadow: 0 20px 42px color-mix(in srgb, var(--genius-site-blue) 13%, transparent);
+  transform: translateY(-1px);
+}
+
+.integration-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.integration-card__badge {
+  display: inline-flex;
+  min-height: 1.75rem;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--genius-site-cyan) 28%, var(--minimal-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--genius-site-cyan) 9%, var(--minimal-surface));
+  color: var(--minimal-text-secondary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 0 0.65rem;
+}
+
+.integration-card__badge::before {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--genius-site-pink);
+  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--genius-site-pink) 15%, transparent);
+  content: '';
+}
+
+.genius-tech-card {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--minimal-surface) 96%, var(--genius-site-soft)) 0%, var(--minimal-surface) 70%),
+    var(--minimal-surface);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--genius-site-blue) 6%, transparent);
+}
+
+.genius-tech-card::before {
+  position: absolute;
+  top: 0;
+  right: 1.5rem;
+  left: 1.5rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--genius-site-cyan) 74%, transparent), color-mix(in srgb, var(--genius-site-pink) 62%, transparent), transparent);
+  content: '';
+  pointer-events: none;
+}
+
+/*
+ * Identidade transversal do produto: tecnologia discreta, sem transformar
+ * superficies operacionais em cenarios decorativos. O contraste continua
+ * vindo dos tokens do Design System; estes detalhes apenas criam um contexto
+ * visual comum entre Atendimento, Admin, CS e Dashboard.
+ */
+.gso-app-shell {
+  position: relative;
+  isolation: isolate;
+  background-image:
+    radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--genius-site-cyan) 9%, transparent), transparent 24rem),
+    linear-gradient(135deg, color-mix(in srgb, var(--genius-site-blue) 2%, transparent), transparent 36%);
+}
+
+.gso-sidebar {
+  position: relative;
+  isolation: isolate;
+  background-image: linear-gradient(180deg, color-mix(in srgb, var(--genius-site-soft) 18%, transparent), transparent 18rem);
+}
+
+.gso-sidebar::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--genius-site-cyan) 44%, transparent), transparent 32%, color-mix(in srgb, var(--genius-site-pink) 28%, transparent));
+  content: '';
+  pointer-events: none;
+}
+
+.gso-topbar {
+  position: relative;
+  isolation: isolate;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--genius-site-cyan) 11%, transparent);
+}
+
+.gso-topbar::before {
+  position: absolute;
+  top: 0;
+  right: 1rem;
+  left: 1rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--genius-site-cyan) 56%, transparent), color-mix(in srgb, var(--genius-site-pink) 42%, transparent), transparent);
+  content: '';
+  pointer-events: none;
+}
+
+.gso-brand-lockup .genius-mascot {
+  filter: drop-shadow(0 4px 10px color-mix(in srgb, var(--genius-site-cyan) 20%, transparent));
+}
+
+.gso-nav-link {
+  position: relative;
+}
+
+.gso-nav-link--active::after {
+  position: absolute;
+  right: 0.55rem;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: var(--genius-site-pink);
+  box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--genius-site-pink) 12%, transparent);
+  content: '';
+}
+
+.gso-main-canvas {
+  position: relative;
+  background-image: radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--genius-site-cyan) 5%, transparent), transparent 22rem);
+}
+
+.gso-panel,
+.gso-surface,
+.gso-summary-strip {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.gso-panel::before,
+.gso-surface::before,
+.gso-summary-strip::before {
+  position: absolute;
+  top: 0;
+  right: 1.5rem;
+  left: 1.5rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--genius-site-cyan) 42%, transparent), transparent);
+  content: '';
+  pointer-events: none;
+}
+
+.gso-action-button,
+.gso-ghost-button,
+.gso-minimal-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.gso-action-button::after,
+.gso-ghost-button::after,
+.gso-minimal-button::after {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2.5rem;
+  height: 1px;
+  background: color-mix(in srgb, var(--genius-site-cyan) 55%, transparent);
+  content: '';
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.gso-input:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--genius-site-cyan) 16%, transparent);
+}
+
+.gso-workspace-header {
+  position: relative;
+  isolation: isolate;
+  background-image: linear-gradient(135deg, color-mix(in srgb, var(--genius-site-soft) 16%, transparent), transparent 48%);
+}
+
+.gso-workspace-tabs {
+  border-top: 1px solid color-mix(in srgb, var(--genius-site-cyan) 12%, transparent);
+  padding-top: 0.65rem;
+}
+
+.gso-workspace-tab {
+  position: relative;
+}
+
+.gso-workspace-tab[aria-current='page']::after {
+  position: absolute;
+  right: 0.65rem;
+  bottom: 0.25rem;
+  left: 0.65rem;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--genius-site-cyan), var(--genius-site-pink));
+  content: '';
+}
+
+.gso-command-strip {
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--genius-site-cyan) 5%, transparent), transparent 46%);
+}
+
+/* V3: contrato visual compartilhado entre workspace, inteligência e administração. */
+.gso-screen-frame {
+  --gso-screen-radius: 1rem;
+  --gso-screen-gap: var(--workspace-panel-gap);
+  color: var(--minimal-text);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--minimal-canvas) 92%, var(--genius-site-soft)) 0%, var(--minimal-canvas) 42%),
+    var(--minimal-canvas);
+}
+
+.gso-screen-frame :where(input, select, textarea) {
+  border-radius: 0.75rem;
+}
+
+.gso-screen-header {
+  position: relative;
+  border-bottom: 1px solid var(--minimal-border);
+  background: color-mix(in srgb, var(--minimal-surface) 94%, var(--genius-site-soft));
+  padding: 1rem 1.25rem;
+}
+
+.gso-screen-header::after {
+  position: absolute;
+  inset-inline: 1.25rem;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--genius-site-blue), transparent 72%);
+  content: '';
+  opacity: 0.5;
+}
+
+.gso-screen-header h1 {
+  letter-spacing: -0.025em;
+}
+
+.gso-screen-tabs {
+  border-bottom: 1px solid var(--minimal-border);
+  background: color-mix(in srgb, var(--minimal-sidebar) 82%, var(--minimal-surface));
+  padding-inline: 1.25rem;
+}
+
+.gso-screen-body {
+  min-width: 0;
+  padding: 1rem 1.25rem;
+}
+
+.gso-standard-panel {
+  border: 1px solid var(--minimal-border);
+  border-radius: var(--gso-screen-radius);
+  background: color-mix(in srgb, var(--minimal-surface) 96%, var(--genius-site-soft));
+  box-shadow: var(--minimal-shadow);
+}
+
+.gso-standard-rail {
+  border-right: 1px solid var(--minimal-border);
+  background: color-mix(in srgb, var(--minimal-sidebar) 94%, var(--genius-site-soft));
+}
+
+@media (max-width: 767px) {
+  .gso-screen-header,
+  .gso-screen-body {
+    padding-inline: 0.75rem;
+  }
+
+  .gso-screen-header::after {
+    inset-inline: 0.75rem;
+  }
+}
+
+.gso-help-header {
+  position: relative;
+  isolation: isolate;
+}
+
+.gso-help-header::before {
+  position: absolute;
+  top: 0;
+  right: 2rem;
+  left: 2rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--genius-site-cyan) 52%, transparent), color-mix(in srgb, var(--genius-site-pink) 38%, transparent), transparent);
+  content: '';
+  pointer-events: none;
+}
+
+.gso-help-hero {
+  position: relative;
+  isolation: isolate;
+}
+
+.gso-help-hero::after {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.75rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--genius-site-pink);
+  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--genius-site-pink) 14%, transparent);
+  content: '';
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gso-nav-link,
+  .gso-brand-lockup .genius-mascot {
+    transition: none;
+    filter: none;
+  }
+}
 
 .genius-mascot[data-surface='success'] { --genius-mascot-accent: var(--color-success-text); }
 .genius-mascot[data-surface='empty'] { --genius-mascot-accent: var(--genius-site-pink); }

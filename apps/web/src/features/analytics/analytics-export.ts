@@ -50,16 +50,28 @@ function reportSections(data: AnalyticsReportData) {
 }
 
 function reportHtml(data: AnalyticsReportData) {
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Genius Support OS — Relatório Gerencial</title><style>*{box-sizing:border-box}body{margin:0;background:#fff;color:#102347;font:14px Arial,sans-serif}main{max-width:1100px;margin:0 auto;padding:34px}header{border-bottom:2px solid #2f6bff;padding-bottom:18px;margin-bottom:20px}h1{font-size:26px;margin:0 0 8px}h2{font-size:17px;margin:0 0 14px;color:#183b72}.muted{color:#60708f;font-size:12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}section{border:1px solid #d7deeb;border-radius:12px;padding:16px;margin-bottom:14px;break-inside:avoid}section div{background:#f5f8fc;border-radius:8px;padding:11px}section b{display:block;color:#60708f;font-size:11px;margin-bottom:7px}section strong{display:block;font-size:18px}.danger strong{color:#b42318}@media print{main{padding:0}section{break-inside:avoid}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><main><header><h1>Genius Support OS — Relatório Gerencial</h1><div class="muted">Período: ${escapeHtml(periodLabel(data))} · Gerado em ${escapeHtml(new Date().toLocaleString('pt-BR'))}</div><div class="muted">Fontes: HubSpot, OMIE e dados financeiros importados. O relatório contém apenas as abas selecionadas.</div></header>${reportSections(data) || '<p>Nenhuma aba selecionada.</p>'}</main><script>window.addEventListener('load',()=>setTimeout(()=>{window.print();window.addEventListener('afterprint',()=>window.close(),{once:true})},120))</script></body></html>`;
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Genius Support OS — Relatório Gerencial</title><style>*{box-sizing:border-box}body{margin:0;background:#fff;color:#102347;font:14px Arial,sans-serif}main{max-width:1100px;margin:0 auto;padding:34px}header{border-bottom:2px solid #2f6bff;padding-bottom:18px;margin-bottom:20px}h1{font-size:26px;margin:0 0 8px}h2{font-size:17px;margin:0 0 14px;color:#183b72}.muted{color:#60708f;font-size:12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}section{border:1px solid #d7deeb;border-radius:12px;padding:16px;margin-bottom:14px;break-inside:avoid}section div{background:#f5f8fc;border-radius:8px;padding:11px}section b{display:block;color:#60708f;font-size:11px;margin-bottom:7px}section strong{display:block;font-size:18px}.danger strong{color:#b42318}@media print{main{padding:0}section{break-inside:avoid}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><main><header><h1>Genius Support OS — Relatório Gerencial</h1><div class="muted">Período: ${escapeHtml(periodLabel(data))} · Gerado em ${escapeHtml(new Date().toLocaleString('pt-BR'))}</div><div class="muted">Fontes: HubSpot, OMIE e dados financeiros importados. O relatório contém apenas as abas selecionadas.</div></header>${reportSections(data) || '<p>Nenhuma aba selecionada.</p>'}</main></body></html>`;
 }
 
 export function printAnalyticsReport(data: AnalyticsReportData) {
   const reportWindow = window.open('', '_blank', 'width=1200,height=900');
   if (!reportWindow) return false;
   reportWindow.opener = null;
-  reportWindow.document.open();
-  reportWindow.document.write(reportHtml(data));
-  reportWindow.document.close();
+  const reportUrl = URL.createObjectURL(
+    new Blob([reportHtml(data)], { type: 'text/html;charset=utf-8' }),
+  );
+  reportWindow.addEventListener(
+    'load',
+    () => {
+      window.setTimeout(() => {
+        reportWindow.print();
+        reportWindow.addEventListener('afterprint', () => reportWindow.close(), { once: true });
+      }, 120);
+    },
+    { once: true },
+  );
+  reportWindow.location.replace(reportUrl);
+  window.setTimeout(() => URL.revokeObjectURL(reportUrl), 60_000);
   return true;
 }
 

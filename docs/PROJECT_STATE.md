@@ -1,4 +1,52 @@
-# Estado canônico atual — 2026-07-22
+# Estado do contexto HubSpot no cockpit B2B — 2026-07-23
+
+- `CustomersPage` agora consome `rpc_analytics_customer_relationship_contract` com paginação limitada e mostra entidades legais, negócios e grupos econômicos resolvidos como contexto global.
+- A UI informa a proveniência (`hubspot_cache`) e bloqueia qualquer interpretação de que os totais estejam associados a uma conta individual.
+- O vínculo `tenant_id` ↔ `hubspot_company_id` continua ausente e é o próximo contrato de domínio; não foi criado vínculo heurístico.
+
+# Estado consolidado pós-lote CS/B2B — 2026-07-23
+
+- O contrato real de carteira CS está implementado localmente em `20260723203000_cs_real_portfolio_contract_v1.sql`, com RLS, RPC de escrita, histórico e pgTAP 12/12.
+- Clientes B2B, Carteira CS e Contas B2B usam lista dominante, busca/filtros e detalhe contextual; Contas B2B não abre mais a primeira conta automaticamente.
+- Smoke test autenticado em `http://127.0.0.1:4173` foi concluído nas três rotas com dados locais; typecheck, build e 68 testes Node passaram.
+- Atenção de dados: alguns nomes do seed local já persistem com `�`. A correção deve ser feita contra a fonte original em migração auditável, não por substituição heurística.
+- As pendências de produção continuam sendo: mapear owners reais, associar grupo econômico/entidade legal/deals ao cockpit, remover legado oculto e concluir a matriz responsiva light/dark.
+
+# Atualização canônica mais recente: 2026-07-23 — auditoria de dados reais de CS e redesign de Clientes B2B/Carteira CS.
+
+## Implementação do contrato real e cockpit B2B/CS — 2026-07-23
+
+- Migration local: `supabase/migrations/20260723203000_cs_real_portfolio_contract_v1.sql`.
+- Teste: `supabase/tests/074_cs_real_portfolio_contract.sql` — 12/12.
+- O domínio agora possui atribuição de carteira CS editável, origem, status, cluster, modelo, cadência, saúde, prioridade, owner e histórico.
+- A escrita passa por `rpc_admin_upsert_cs_customer_portfolio`; o backend valida ator autorizado e owner com profile/membership CS ativos.
+- `vw_cs_customer_portfolio` expõe a atribuição estruturada, sem acesso direto às tabelas base.
+- `CsPortfolioPage.tsx` e `CustomersPage.tsx` usam tabela dominante e drawer contextual, sem detalhe permanente comprimindo a operação.
+- `TenantsPage.tsx` removeu as colunas visuais de ferramentas/detalhe permanente e moveu filtros para a toolbar; o detalhe é contextual.
+- Validação atual: contracts/web typecheck, build web e 68 testes Node aprovados.
+- Limite: aplicação somente local; owners QA não foram promovidos; ainda falta QA visual autenticado e carga segura de colaboradores produtivos.
+
+## Estado canônico do lote atual — 2026-07-23
+
+- Checkout canônico: `C:\Projetos\GSO-old`.
+- Branch ativa: `codex/repository-cleanup-consolidation-20260721`.
+- HEAD observado antes deste lote: `38b6311` — `docs(analytics): document PostgREST cache fix`.
+- O worktree possui alterações herdadas staged, unstaged e untracked de diversos lotes; elas foram preservadas. Este lote não executou reset, clean, commit, push ou descarte amplo.
+- A auditoria local da planilha CS Ops confirmou 606 clientes e 42 campos na aba `BD_Clientes`. O seed local é adequado para QA, mas não deve ser tratado como carga produtiva nem como identidade real dos responsáveis.
+- O backend já possui tenants, perfis, assinaturas, segments e owners; ainda falta um contrato de carteira CS editável e a estruturação dos campos CS que hoje estão em notas/JSON. Owners só devem operar como responsáveis de CS quando houver profile ativo e membership de área válida.
+- A direção visual corrente substitui layouts de quatro zonas por no máximo duas zonas de trabalho. A lista principal deve dominar a viewport; ferramentas ficam na toolbar/menu contextual; detalhes abrem em rota/workspace/drawer, não em rail permanente.
+
+### Próxima sequência obrigatória
+
+1. Contrato backend de carteira/atribuição CS, com RLS, RPCs, auditoria, histórico e pgTAP.
+2. Modelo estruturado dos campos CS da planilha, com proveniência e edição segura.
+3. Memberships de área/função para colaboradores reais; owners QA continuam isolados como fixture.
+4. Cockpit Clientes B2B e cockpit Carteira CS, com filtros globais, atenção semântica, busca e detalhe dedicado.
+5. Simplificação de Contas B2B e unificação visual/responsiva do sistema.
+
+Evidência completa: `docs/reports/CS_B2B_PORTFOLIO_UX_DATA_AUDIT_2026-07-23.md`.
+
+# Histórico canônico anterior — 2026-07-22
 
 - Checkout canônico: `C:\Projetos\GSO-old`.
 - Branch ativa: `codex/repository-cleanup-consolidation-20260721`.
@@ -27,6 +75,72 @@ As seções datadas abaixo são histórico de execução. Quando houver conflito
 este bloco, este estado canônico atual prevalece; pendências antigas sobre
 “credencial OMIE pendente” não devem ser tratadas como pendências atuais.
 
+## Auditoria do recorte Comercial — 2026-07-23
+
+- O portal HubSpot `20108050` foi consultado em modo somente leitura. A
+  atividade comercial não está concentrada em um único pipeline: `Piloto
+  Aftersale` tem 1.150 negócios, `Pipe de Vendas` 865 e `Renovação Contratual`
+  1 na consulta atual.
+- O sincronizador agora descobre o catálogo de pipelines não arquivados do
+  HubSpot e registra candidatos localmente como inativos, sem sobrescrever
+  alias ou estado configurado pelo administrador.
+- O snapshot comercial recebeu exclusão temporária de pipelines server-side e
+  a aba Comercial mostra nome oficial, alias, ID e volume observado. O bloco de
+  seleção não altera a configuração persistida.
+- A decisão de ativar `Pipe de Vendas` e/ou `Renovação Contratual` permanece
+  administrativa e exige sincronização posterior para carregar os negócios no
+  cache local. Evidência detalhada: `docs/reports/COMMERCIAL_PIPELINE_AUDIT_2026-07-23.md`.
+
+# Checkpoint corrente — SDD de prontidão e continuidade — 2026-07-21
+
+- Checkout canônico confirmado: `C:\Projetos\GSO-old`.
+- Branch ativa: `codex/repository-cleanup-consolidation-20260721`.
+- HEAD atual: `7c7d291`, com consolidação anterior em `0f86cab`.
+- Worktree contém o lote W1 ainda não commitado (scanner, teste, package e
+  documentação); branch anterior `codex/ux-ui-rebuild-v2-discovery` preservada;
+  nenhum push, deploy, migration remota, alteração de secret ou write externo
+  foi executado neste checkpoint.
+- A spec guarda-chuva e o plano executável dos próximos ciclos são,
+  respectivamente, `docs/superpowers/specs/2026-07-21-gso-release-readiness-and-next-cycles.md`
+  e `docs/superpowers/plans/2026-07-21-gso-release-readiness-and-next-cycles.md`.
+- Auditorias paralelas confirmaram que o próximo gate local é reconciliar
+  contratos/status documental e concluir higiene; depois vêm QA autenticado do
+  Dashboard, baseline único de testes, reidratação do cache HubSpot e validação
+  de frescor/semântica OMIE.
+- Conflitos históricos relevantes ficam registrados para correção: relatórios
+  antigos citam branch/commit diferentes, a contagem da suíte varia, o escopo
+  de `dashboard_viewer` precisa de uma matriz única e o status de OMIE/cache
+  depende do ambiente e da data da evidência.
+- Próximo passo recomendado: revisar as duas violações restantes da raiz (`output/`
+  e o bundle do mascote) e só pedir decisão humana antes de arquivar/remover
+  conteúdo ainda referenciado.
+
+## W1 — verificador de higiene da raiz — 2026-07-21
+
+- criado scanner read-only com allowlist e teste TDD;
+- 10 logs/dumps transitórios foram preservados em `.tmp/logs/2026-07-21--local-environment/`;
+- a verificação atual encontrou somente `output/` e o bundle local do mascote,
+  ambos preservados para triagem e sem exclusão automática;
+- nenhum código de runtime, schema, integração externa ou secret foi alterado;
+- web local responde em `http://127.0.0.1:4173`; API/DB/Studio Supabase respondem
+  em `54321`/`54322`/`54323`; Edge Runtime, imgproxy e pooler continuam parados;
+- typecheck, build, lint/teste do banco, teste do scanner, validação documental,
+  `git diff --check` e smoke HTTP passaram.
+
+## Integrações locais — runtime e HubSpot faseado — 2026-07-21
+
+- O Edge Runtime local foi iniciado com `supabase functions serve`; os endpoints
+  de HubSpot e OMIE passaram a responder em vez de HTTP 503.
+- OMIE autenticado localmente concluiu 3.433/3.433 títulos.
+- A carga HubSpot monolítica chegou a concluir no servidor após o cliente receber
+  504, confirmando timeout do request; o snapshot persistido contém 10.162
+  empresas, 1.147 deals e 34.131 tickets.
+- A correção faseada foi validada em `companies`, `commercial` e `cs`, todos com
+  HTTP 200 e sem nova execução órfã; o frontend agora agrega as etapas.
+- Contracts/web typecheck, build, lint Supabase, pgTAP (67 arquivos, 1.194
+  testes), validação documental e `git diff --check` passaram.
+- Evidência: `docs/reports/HUBSPOT_SYNC_PHASED_EXECUTION_2026-07-21.md`.
+
 # Importacao CS Ops resiliente e preparacao da API OMIE - 2026-07-19
 
 - O HTTP 546 foi reproduzido localmente como limite de CPU/memoria do parser
@@ -48,6 +162,75 @@ este bloco, este estado canônico atual prevalece; pendências antigas sobre
   o runtime usa somente componentes React e CSS do produto.
 
 # PROJECT_STATE.md
+
+## Estado do lote 2026-07-23
+
+- O catálogo comercial local inicia com os 11 pipelines conhecidos ativos e a
+  tela de Configuração permite habilitar/desabilitar cada fonte, preservando o
+  nome oficial e o alias interno.
+- `rpc_support_ticket_queue_page` aplica filtros, busca, contagem e paginação
+  no banco, com limite de 50 tickets por página.
+- `rpc_analytics_customer_relationship_contract` expõe grupo econômico com
+  resolução humana, entidade legal do HubSpot e deals paginados. Associações
+  ausentes permanecem vazias.
+- Validação local: pgTAP 73 arquivos/1.230 testes, typecheck, build e diff
+  check aprovados. Nenhuma migration remota ou publicação foi executada.
+
+## Seed local CS Ops e carteira de clientes - 2026-07-22
+
+- A planilha `CS Ops _ Carteiras e Clusters -v2.xlsx` foi extraída diretamente do caminho local, sem upload pela UI.
+- O fixture `supabase/qa/create-local-cs-ops-fixture.mjs` materializa 606 clientes, perfis operacionais, clusters, assinaturas, 575 responsáveis, tickets e ações de CS no banco local.
+- O seed é idempotente, preserva proveniência em `operational_flags`, notas e metadata, e exige Supabase local com chave local.
+- Evidência: `docs/reports/CS_OPS_LOCAL_SEED_2026-07-22.md`.
+- O modelo atual foi usado sem escrita externa; a separação futura entre grupo econômico, entidades legais e negócios HubSpot permanece contrato de domínio a fechar antes de uma carga produtiva.
+
+## Otimização da fila de suporte após seed CS Ops - 2026-07-23
+
+- A fila passou a reutilizar um único conjunto materializado de tickets visíveis,
+  evitando a reexecução de `vw_tickets_list` dentro do contexto de canal.
+- O contexto de SLA e canal agora parte do mesmo recorte autorizado. A view
+  `vw_support_tickets_queue` mantém os campos e permissões existentes.
+- O frontend limita o carregamento inicial aos 50 tickets mais recentes e
+  mantém a paginação visual local, evitando timeout quando o seed contém 607
+  tickets. Filtros server-side continuam aplicáveis antes do limite.
+- A migration local `20260723151602_optimize_support_ticket_queue_read_model.sql`
+  foi aplicada apenas no Supabase local e deve acompanhar qualquer reset local.
+- QA autenticado confirmou `/support/tickets`, `/support/queue`,
+  `/support/clientes`, `/cs/portfolio` e `/internal-actions` com os dados do
+  seed; nenhuma escrita remota foi executada.
+
+## Hardening de ACL do contrato de telas - 2026-07-23
+
+- As três funções auxiliares usadas exclusivamente por triggers de dependência
+  e atualização de telas tinham ACL implícita do PostgreSQL.
+- A migration local `20260723162000_harden_screen_dependency_function_acl.sql`
+  revoga execução de `public`, `anon`, `authenticated` e `service_role`,
+  mantendo somente o owner `postgres` explicitamente autorizado.
+- A suíte pgTAP foi reexecutada com 71 arquivos e 1.219 testes aprovados.
+- A migration foi aplicada somente no Supabase local; nenhum banco remoto,
+  secret ou integração externa foi alterado.
+
+## Contrato de identidade, area e acesso por tela - 2026-07-22
+
+- O modelo canonico de colaborador agora separa `profiles` (identidade),
+  `internal_area_memberships` (tenant, area, funcao operacional e status) e
+  `internal_screen_catalog`/grants (telas efetivamente autorizadas).
+- A migration local `20260722221746_internal_profile_screen_access_contract_v1.sql`
+  adiciona matriz por vinculo, contexto autenticado para o shell e perfis
+  nomeados reutilizaveis (`internal_access_profiles`) para casos como CS Gestor,
+  CS Operador, Financeiro e QA. Perfil global legado permanece somente como
+  compatibilidade; nao foi criado um papel global artificial por area.
+- `/admin/internal-areas` passou a configurar funcao na area, perfil de acesso
+  ou conjunto personalizado de telas, exigindo ao menos uma tela para vinculo
+  ativo. A tela continua sem inventar autorizacao local: somente envia chaves
+  do catalogo para RPCs auditadas.
+- A migration foi executada em transacao local com rollback para validar DDL,
+  views, RLS, grants e RPCs; nenhum banco remoto foi alterado. O deploy da
+  migration ainda e um gate externo.
+- Proximo hardening: tornar `vw_internal_actor_workspace_context` a fonte do
+  redirect e do shell, fechar a tela administrativa de CRUD de perfis nomeados,
+  e revisar a fronteira entre Acessos (identidade/papeis globais) e Areas
+  internas (funcao/perfil/telas por vinculo).
 
 # Central de Ajuda e acesso operacional - 2026-07-20
 
@@ -2549,4 +2732,98 @@ Pendência arquitetural futura já mapeada, mas fora do escopo atual:
   scheduler permanecem observações de hardening, sem evidência de bypass no
   escopo local.
 - Evidência: `docs/reports/SECURITY_AND_DIFF_REVIEW_2026-07-21.md`.
+
+## QA autenticado do Dashboard e sincronização faseada — 2026-07-21
+
+- O cabeçalho agora agrega as últimas etapas bem-sucedidas de empresas,
+  Comercial e CS/Suporte quando formam um lote faseado coerente; a etapa CS
+  isolada não aparece mais como `0 empresas, 0 deals, 0 tickets`.
+- O preset `Mês passado` foi validado com `2026-06-01` a `2026-06-30` e o
+  recorte permaneceu ao alternar para Comercial.
+- Evidência: `docs/reports/HUBSPOT_SYNC_PHASED_EXECUTION_2026-07-21.md` e
+  snapshots autenticados em `output/playwright/`.
+- O runtime Edge local permanece iniciado para os testes deste checkout;
+  isso não representa publicação ou alteração do ambiente remoto.
+
+## Help Center — estado da Central Genius — 2026-07-21
+
+- QA autenticado encontrou `/help` sem central pública porque o espaço `genius`
+  estava em `draft`, apesar do contrato de artigos públicos estar implementado.
+- Adicionada migration idempotente para manter o espaço `genius` em `active`;
+  ela não publica artigo nem executa write remoto.
+- Próximo passo local: reidratar o corpus Octadesk pelo importador oficial,
+  executar a publicação com allowlist e validar `/help/genius/articles`.
+- Execução local posterior: 58 artigos foram importados, 44 publicados e 13
+  bloqueados pelo classificador editorial; a rota pública foi validada no
+  navegador sem erro de console.
+
+## Segurança e scheduler — 2026-07-21
+
+- A ACL da RPC legada do snapshot executivo foi fechada para `anon` e
+  `authenticated`; o wrapper protegido continua sendo o contrato do Dashboard.
+- A configuração local do Supabase agora permite que OMIE e o runner de
+  integração recebam chamadas secret-only do scheduler para que a própria
+  função faça a autorização interna.
+- Nenhuma alteração remota, rotação de segredo ou execução de scheduler foi
+  realizada.
+
+## CS Ops — proteção contra duplicidade na aplicação — 2026-07-21
+
+- O backend rejeita lotes com `source_record_id` repetido antes de criar o
+  ledger de migração.
+- Antes de criar uma empresa, o backend reconsulta o CNPJ no HubSpot usando o
+  token fornecido; qualquer resultado ou falha impede a criação e exige novo
+  dry-run.
+- A lógica não altera tickets nem executa writes nesta etapa.
 - Nenhum commit, push, deploy ou write remoto foi realizado.
+# Auditoria de UX, navegação e higiene — 2026-07-22
+
+- Corrigida a exportação visual do Dashboard Gerencial para montar o relatório
+  em uma janela HTML isolada por `Blob` URL, sem `document.write`.
+- Adicionado teste de regressão `analytics-export-security.test.mjs` para impedir
+  o retorno do sink na exportação.
+- QA atual da Central pública `/help/genius/articles` e do redirecionamento
+  administrativo para login documentado em
+  `docs/reports/UX_NAVIGATION_SECURITY_AUDIT_2026-07-22.md`.
+- Varredura local não encontrou assinaturas de secrets rastreadas; usos de
+  `innerHTML` permanecem apenas no editor rico com renderer próprio e escape
+  defensivo, exigindo cobertura de payload malicioso no próximo ciclo.
+- Nenhuma ação remota, publicação, alteração de credencial ou exclusão de
+  artefato foi executada.
+# Sincronização local: recuperação do Edge Runtime — 2026-07-22
+
+- Os HTTP 503 de HubSpot e OMIE foram reproduzidos sem autenticação: o gateway
+  estava ativo, mas o container local `supabase_edge_runtime` estava encerrado
+  com código 255 e sem política de reinício.
+- O runtime foi reativado e passou a usar `unless-stopped`. `OPTIONS` dos três
+  endpoints retornou 200 e `POST` sem credencial retornou 403, confirmando o
+  roteamento e a autorização interna.
+- A UI agora diferencia 503/boot, 546/limite de worker e erro funcional do
+  provedor. Evidência: `docs/reports/SYNC_503_RUNTIME_RECOVERY_2026-07-22.md`.
+- Nenhuma sincronização externa, credencial ou banco remoto foi alterado neste
+  ciclo. A carga automática OMIE ↔ HubSpot ainda deve ser particionada caso
+  volte a exceder o limite de execução.
+## Configuracao Analytics somente leitura para dashboard_viewer - 2026-07-22
+
+- O backend continua exigindo `platform_admin` para salvar o agendamento OMIE/HubSpot ou iniciar sincronizacao manual.
+- A tela agora respeita o mesmo contrato: `dashboard_viewer` consulta status e historico, mas nao recebe controles de escrita.
+- Editor de fontes, aliases, estado de pipelines e migracao CS Ops tambem ficam restritos ao administrador na tela de configuracao.
+- Evidencia: `docs/reports/ANALYTICS_CONFIG_VIEWER_PERMISSION_FIX_2026-07-22.md`.
+## Sincronizacao dual OMIE e HubSpot - 2026-07-22
+
+- O HTTP 546 foi rastreado ao limite de CPU do Edge Runtime no fluxo combinado, nao a permissao ou credencial OMIE.
+- Atualizacoes financeiras HubSpot agora usam batch de ate 100 empresas; o caminho combinado nao repete o enriquecimento completo de clientes OMIE.
+- A agenda foi estendida para configurar separadamente OMIE financeiro e HubSpot global (empresas, Comercial, CS / Suporte, owners e estagios).
+- Migration local: `supabase/migrations/20260722162254_analytics_dual_sync_schedule_v1.sql`.
+- Evidencia: `docs/reports/DUAL_SYNC_SCHEDULE_AND_WORKER_HARDENING_2026-07-22.md`.
+# Autorização contextual aplicada ao shell - 2026-07-22
+
+O contrato de identidade, área, função, perfil e telas autorizadas agora também é consumido pela autenticação do frontend. O `vw_internal_actor_workspace_context` participa do gate, do redirecionamento pós-login e da navegação global. Assim, um colaborador sem papel global pode operar somente as telas concedidas por seu vínculo de área, enquanto `platform_admin` e os papéis legados continuam compatíveis.
+
+Perfis como `CS · Gestor`, `CS · Operador`, `Financeiro · Gestor`, `Produto · Operador` e `QA · Dashboard e conhecimento` permanecem templates reutilizáveis; o modo personalizado continua permitindo uma matriz específica por colaborador. Nenhum usuário real foi criado ou alterado neste ciclo.
+# Recomendações inteligentes de telas - 2026-07-22
+
+O catálogo de telas agora possui recomendações por área e dependências declarativas. Ao iniciar ou trocar a área de um vínculo, a UI sugere as telas adequadas à rotina; ao escolher uma tela, a seleção é expandida com suas dependências. As mesmas dependências são garantidas por triggers no banco para grants de vínculo e de perfil, evitando que uma concessão via RPC produza um contexto incompleto.
+# Correção da seed de perfis de acesso - 2026-07-22
+
+Os perfis nomeados foram normalizados e receberam novamente seus grants de telas de forma idempotente. A falha visual de `0 telas` vinha da seed inicial não encontrar os nomes persistidos com a codificação esperada; a migration de reparo usa identificadores estáveis por padrão de nome, normaliza a apresentação e preserva vínculos existentes.

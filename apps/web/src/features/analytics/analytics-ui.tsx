@@ -16,7 +16,7 @@ export function MetricInfo({ text, content, ariaLabel = 'Como esta métrica é c
 }
 
 export function ChartCard({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
-  return <section className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4">
+  return <section className="genius-tech-card rounded-xl border border-[color:var(--minimal-border)] px-5 py-4">
     <header className="mb-4"><h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">{title}</h3>{description ? <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">{description}</p> : null}</header>
     {children}
   </section>;
@@ -28,7 +28,7 @@ export function CollapsibleChartCard({ title, description, summary, children, to
     : tone === 'warning'
       ? 'border-[color:var(--minimal-warning-border)]'
       : 'border-[color:var(--minimal-border)]';
-  return <details className={`group rounded-xl border bg-[color:var(--minimal-surface)] ${toneClass}`}>
+  return <details className={`genius-tech-card group rounded-xl border ${toneClass}`}>
     <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 transition hover:bg-[color:var(--minimal-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--minimal-focus)] [&::-webkit-details-marker]:hidden">
       <span className="flex min-w-0 items-start gap-3">
         <span aria-hidden="true" className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[color:var(--minimal-border-strong)] text-xs text-[color:var(--minimal-text-secondary)] transition-transform group-open:rotate-90">›</span>

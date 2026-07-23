@@ -25,7 +25,7 @@ export function AnalyticsFilters({ value, onApply, stageOptions, ownerOptions = 
       <div className="flex items-center gap-2"><button type="button" onClick={apply} className="h-9 rounded-md bg-[color:var(--minimal-text)] px-3 text-sm font-medium text-[color:var(--minimal-surface)] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-border-strong)]">Aplicar</button><button type="button" onClick={clear} className="h-9 rounded-md border border-[color:var(--minimal-border-strong)] px-3 text-sm text-[color:var(--minimal-text)] transition hover:bg-[color:var(--minimal-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-border-strong)]">Limpar</button></div>
     </div>
     <p className="mt-2.5 text-xs text-[color:var(--minimal-text-tertiary)]">O histórico permanece armazenado; os filtros alteram apenas a leitura desta análise.</p>
-    {validation ? <p role="alert" className="mt-1 text-xs text-[color:var(--color-brand-blue)]">{validation}</p> : null}
+    {validation ? <p role="alert" className="mt-1 text-xs text-[color:var(--minimal-danger-text)]">{validation}</p> : null}
   </section>;
 }
 

@@ -10,6 +10,12 @@ test('identifica worker indisponivel quando a Edge Function responde 503', () =>
   );
 });
 
+test('orienta aguardar quando a API OMIE esta ocupada', () => {
+  const message = formatAnalyticsSyncError({ operation: 'OMIE', status: 409, payload: { code: 'OMIE_PROVIDER_BUSY' } });
+  assert.match(message, /OMIE/);
+  assert.match(message, /Aguarde/);
+});
+
 test('explica limite de worker quando a Edge Function responde 546', () => {
   assert.equal(
     formatAnalyticsSyncError({ operation: 'HubSpot', status: 546, payload: { code: 'WORKER_LIMIT' } }),

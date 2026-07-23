@@ -12,7 +12,7 @@ export function AppButton({
   return (
     <button
       className={cx(
-        'inline-flex min-h-10 items-center justify-center rounded-lg border border-[color:var(--minimal-action)] bg-[color:var(--minimal-action)] px-4 py-2 text-sm font-medium text-[color:var(--minimal-action-ink)] transition-colors hover:bg-[color:var(--minimal-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] disabled:cursor-not-allowed disabled:opacity-50',
+        'gso-action-button inline-flex min-h-10 items-center justify-center rounded-lg border border-[color:var(--minimal-action)] bg-[color:var(--minimal-action)] px-4 py-2 text-sm font-medium text-[color:var(--minimal-action-ink)] transition-colors hover:bg-[color:var(--minimal-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
       type="button"
@@ -31,7 +31,7 @@ export function GhostButton({
   return (
     <button
       className={cx(
-        'inline-flex min-h-10 items-center justify-center rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-4 py-2 text-sm font-medium text-[color:var(--minimal-text)] transition-colors hover:bg-[color:var(--minimal-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] disabled:cursor-not-allowed disabled:opacity-50',
+        'gso-ghost-button inline-flex min-h-10 items-center justify-center rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-4 py-2 text-sm font-medium text-[color:var(--minimal-text)] transition-colors hover:bg-[color:var(--minimal-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
       type="button"
@@ -58,7 +58,7 @@ export function Panel({
   return (
     <section
       className={cx(
-        'border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-5 sm:p-6',
+        'gso-panel border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-5 sm:p-6',
         className,
       )}
     >
@@ -92,7 +92,7 @@ export function PageHeader({
   eyebrow?: string;
 }) {
   return (
-    <header className="flex flex-wrap items-start justify-between gap-4">
+    <header className="gso-page-header flex flex-wrap items-start justify-between gap-4">
       <div className="space-y-2">
         <p className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-[color:var(--color-muted)]">
           {eyebrow}
@@ -175,7 +175,7 @@ export function SummaryStrip({
   return (
     <section
       className={cx(
-        'rounded-[24px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 px-4 py-4 shadow-[var(--shadow-panel)]',
+        'gso-summary-strip rounded-[24px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 px-4 py-4 shadow-[var(--shadow-panel)]',
         className,
       )}
     >

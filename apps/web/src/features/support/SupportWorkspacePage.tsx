@@ -18,6 +18,8 @@ import {
   ErrorState,
   LoadingState,
 } from '../../components/states';
+import { Avatar } from '../../components/Avatar';
+import { FilterTabs } from '../../components/FilterTabs';
 import {
   AppButton,
   ContextSubsidebar,
@@ -74,6 +76,7 @@ import {
   markSupportArticleNeedsUpdate,
   markSupportDocumentationGap,
   listSupportTicketsQueue,
+  SUPPORT_QUEUE_PAGE_SIZE,
   reopenTicket,
   requestSupportInternalActionFollowup,
   uploadSupportTicketAttachment,
@@ -1237,18 +1240,6 @@ type ConversationAttachment = {
   sizeLabel: string | null;
 };
 
-function initialsFromLabel(value: string | null | undefined) {
-  const normalized = String(value ?? '')
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((chunk) => chunk[0]?.toUpperCase() ?? '')
-    .join('');
-
-  return normalized || 'GS';
-}
-
 function readTimelineMetadata(entry: SupportTicketTimelineItem) {
   if (!entry.metadata || typeof entry.metadata !== 'object' || Array.isArray(entry.metadata)) {
     return null;
@@ -1424,8 +1415,6 @@ function ConversationEntry({
         ? 'Agente'
         : 'Cliente';
   const timestamp = formatDateTime(entry.occurredAt);
-  const avatar = initialsFromLabel(author);
-
   if (lane === 'internal') {
     return (
       <SupportInternalNote timestamp={timestamp}>
@@ -1438,16 +1427,19 @@ function ConversationEntry({
     <SupportConversationMessage
       author={author}
       avatar={
-        <div
+        <Avatar
+          email={entry.actorEmail}
+          fallbackMascot
+          label={`Avatar de ${author}`}
+          name={author}
+          size="md"
           className={cx(
-            'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-[12px] font-semibold',
+            'border text-[12px] font-semibold',
             lane === 'agent'
               ? 'border-[rgba(240,74,174,0.22)] bg-[rgba(240,74,174,0.08)] text-[color:var(--color-brand-pink)]'
               : 'border-[rgba(47,107,255,0.14)] bg-[rgba(47,107,255,0.08)] text-[color:var(--color-brand-blue)]',
           )}
-        >
-          {avatar}
-        </div>
+        />
       }
       attachment={
         attachment ? (
@@ -2647,6 +2639,9 @@ function SupportWorkspaceView({
   const [phase, setPhase] = useState<PagePhase>('loading');
   const [pageMessage, setPageMessage] = useState<string | null>(null);
   const [tickets, setTickets] = useState<SupportTicketQueueItem[]>([]);
+  const [queueTotalCount, setQueueTotalCount] = useState(0);
+  const [queueScopeCounts, setQueueScopeCounts] = useState({ open: 0, closed: 0 });
+  const [queueFilterCounts, setQueueFilterCounts] = useState<Record<string, number>>({});
   const [filters, setFilters] = useState<QueueFilters>(emptyFilters);
   const [ticketInboxScope, setTicketInboxScope] = useState<TicketInboxScope>('open');
   const [ticketInboxFilter, setTicketInboxFilter] = useState<TicketInboxFilter>('all');
@@ -2759,21 +2754,31 @@ function SupportWorkspaceView({
 
   const loadQueue = useEffectEvent(async (preferredTicketId?: string | null) => {
     try {
-      const data = await listSupportTicketsQueue(filters);
+      const data = await listSupportTicketsQueue({
+        ...filters,
+        scope: ticketInboxScope,
+        inboxFilter: ticketInboxFilter,
+        search: ticketInboxSearch,
+        page: ticketInboxPage,
+        pageSize: SUPPORT_QUEUE_PAGE_SIZE,
+      });
       setBackendDenied(false);
-      setTickets(data);
+      setTickets(data.items);
+      setQueueTotalCount(data.totalCount);
+      setQueueScopeCounts(data.scopeCounts);
+      setQueueFilterCounts(data.filterCounts);
       setPhase('ready');
       setPageMessage(null);
       setSelectedTicketId((current) => {
         if (variant === 'queue' && !preferredTicketId && !focusTicketId) {
-          return data.some((ticket) => ticket.id === current) ? current : null;
+          return data.items.some((ticket) => ticket.id === current) ? current : null;
         }
 
         const nextSelected =
           preferredTicketId ??
           focusTicketId ??
-          (data.some((ticket) => ticket.id === current) ? current : null) ??
-          data[0]?.id ??
+          (data.items.some((ticket) => ticket.id === current) ? current : null) ??
+          data.items[0]?.id ??
           null;
         return nextSelected;
       });
@@ -2794,6 +2799,9 @@ function SupportWorkspaceView({
       }
 
       setTickets([]);
+      setQueueTotalCount(0);
+      setQueueScopeCounts({ open: 0, closed: 0 });
+      setQueueFilterCounts({});
       setSelectedTicketId(null);
       setPageMessage(classified.message);
       setPhase(
@@ -3252,6 +3260,10 @@ function SupportWorkspaceView({
     filters.status,
     filters.categoryId,
     filters.tenantId,
+    ticketInboxScope,
+    ticketInboxFilter,
+    ticketInboxSearch,
+    ticketInboxPage,
     focusTicketId,
   ]);
 
@@ -3455,77 +3467,60 @@ function SupportWorkspaceView({
       : null;
   const currentUserAssignableAgent =
     user?.id ? assignableAgents.find((agent) => agent.userId === user.id) ?? null : null;
-  const queueOpenTickets = useMemo(
-    () => tickets.filter((ticket) => ticketMatchesInboxScope(ticket, 'open')),
-    [tickets],
-  );
-  const queueClosedTickets = useMemo(
-    () => tickets.filter((ticket) => ticketMatchesInboxScope(ticket, 'closed')),
-    [tickets],
-  );
-  const ticketInboxScopeTickets = ticketInboxScope === 'open' ? queueOpenTickets : queueClosedTickets;
-  const ticketInboxScopeCounts = {
-    open: queueOpenTickets.length,
-    closed: queueClosedTickets.length,
-  };
-  const totalOpen = queueOpenTickets.length;
-  const waitingCustomer = tickets.filter((ticket) => ticket.isWaitingCustomer).length;
-  const highAttention = tickets.filter(
-    (ticket) =>
-      ticket.priority === 'urgent' ||
-      ticket.severity === 'critical' ||
-      ticket.slaStatus === 'breached' ||
-      ticket.slaStatus === 'at_risk',
-  ).length;
-  const unassigned = tickets.filter((ticket) => ticket.isUnassigned).length;
-  const waitingEngineering = tickets.filter((ticket) => ticket.isWaitingEngineering).length;
+  const ticketInboxScopeTickets = tickets;
+  const ticketInboxScopeCounts = queueScopeCounts;
+  const totalOpen = queueScopeCounts.open;
+  const waitingCustomer = queueFilterCounts.waiting_customer ?? 0;
+  const highAttention = queueFilterCounts.high_attention ?? 0;
+  const unassigned = queueFilterCounts.unassigned ?? 0;
+  const waitingEngineering = queueFilterCounts.waiting_engineering ?? 0;
   const ticketInboxTabs = useMemo(
     () =>
       ticketInboxScope === 'open'
         ? [
-            { key: 'all' as const, label: 'Todos', count: ticketInboxScopeTickets.length },
+            { key: 'all' as const, label: 'Todos', count: queueFilterCounts.all ?? 0 },
             {
               key: 'in_progress' as const,
               label: 'Em tratativa',
-              count: ticketInboxScopeTickets.filter((ticket) => ticketMatchesInboxFilter(ticket, 'in_progress')).length,
+              count: queueFilterCounts.in_progress ?? 0,
             },
             {
               key: 'awaiting' as const,
               label: 'Aguardando',
-              count: ticketInboxScopeTickets.filter((ticket) => ticketMatchesInboxFilter(ticket, 'awaiting')).length,
+              count: queueFilterCounts.awaiting ?? 0,
             },
             {
               key: 'urgent' as const,
               label: 'Urgentes',
-              count: ticketInboxScopeTickets.filter((ticket) => ticketMatchesInboxFilter(ticket, 'urgent')).length,
+              count: queueFilterCounts.urgent ?? 0,
             },
             {
               key: 'operations' as const,
               label: 'Operações',
-              count: ticketInboxScopeTickets.filter((ticket) => ticketMatchesInboxFilter(ticket, 'operations')).length,
+              count: queueFilterCounts.operations ?? 0,
             },
             {
               key: 'engineering' as const,
               label: 'Dependências',
-              count: ticketInboxScopeTickets.filter((ticket) => ticketMatchesInboxFilter(ticket, 'engineering')).length,
+              count: queueFilterCounts.engineering ?? 0,
             },
           ]
         : [
-            { key: 'all_closed' as const, label: 'Todos fechados', count: ticketInboxScopeTickets.length },
+            { key: 'all_closed' as const, label: 'Todos fechados', count: queueFilterCounts.all_closed ?? 0 },
             {
               key: 'resolved' as const,
               label: 'Resolvidos',
-              count: ticketInboxScopeTickets.filter((ticket) => ticketMatchesInboxFilter(ticket, 'resolved')).length,
+              count: queueFilterCounts.resolved ?? 0,
             },
             {
               key: 'closed' as const,
               label: 'Fechados',
-              count: ticketInboxScopeTickets.filter((ticket) => ticketMatchesInboxFilter(ticket, 'closed')).length,
+              count: queueFilterCounts.closed ?? 0,
             },
             {
               key: 'cancelled' as const,
               label: 'Cancelados',
-              count: ticketInboxScopeTickets.filter((ticket) => ticketMatchesInboxFilter(ticket, 'cancelled')).length,
+              count: queueFilterCounts.cancelled ?? 0,
             },
           ],
     [ticketInboxScope, ticketInboxScopeTickets],
@@ -3557,20 +3552,17 @@ function SupportWorkspaceView({
       return haystack.includes(search);
     });
   }, [ticketInboxFilter, ticketInboxScopeTickets, ticketInboxSearch]);
-  const ticketInboxPageSize = 8;
+  const ticketInboxPageSize = SUPPORT_QUEUE_PAGE_SIZE;
   const ticketInboxTotalPages = Math.max(
     1,
-    Math.ceil(ticketInboxFilteredTickets.length / ticketInboxPageSize),
+    Math.ceil(queueTotalCount / ticketInboxPageSize),
   );
   const safeTicketInboxPage = Math.min(ticketInboxPage, ticketInboxTotalPages);
-  const ticketInboxVisibleTickets = ticketInboxFilteredTickets.slice(
-    (safeTicketInboxPage - 1) * ticketInboxPageSize,
-    safeTicketInboxPage * ticketInboxPageSize,
-  );
+  const ticketInboxVisibleTickets = ticketInboxFilteredTickets;
   const ticketInboxStart =
-    ticketInboxFilteredTickets.length === 0 ? 0 : (safeTicketInboxPage - 1) * ticketInboxPageSize + 1;
+    queueTotalCount === 0 ? 0 : (safeTicketInboxPage - 1) * ticketInboxPageSize + 1;
   const ticketInboxEnd = Math.min(
-    ticketInboxFilteredTickets.length,
+    queueTotalCount,
     safeTicketInboxPage * ticketInboxPageSize,
   );
 
@@ -4778,25 +4770,6 @@ function SupportWorkspaceView({
   }, [activeDrawer, selectedInternalActionId]);
 
   useEffect(() => {
-    if (!selectedTicketId) {
-      return;
-    }
-
-    const selectedIndex = ticketInboxFilteredTickets.findIndex(
-      (ticket) => ticket.id === selectedTicketId,
-    );
-
-    if (selectedIndex < 0) {
-      return;
-    }
-
-    const expectedPage = Math.floor(selectedIndex / ticketInboxPageSize) + 1;
-    if (expectedPage !== ticketInboxPage) {
-      setTicketInboxPage(expectedPage);
-    }
-  }, [selectedTicketId, ticketInboxFilteredTickets, ticketInboxPage]);
-
-  useEffect(() => {
     if (ticketInboxFilteredTickets.length === 0) {
       return;
     }
@@ -4957,6 +4930,7 @@ function SupportWorkspaceView({
       disabled: false,
     },
   ] as const;
+  const activeQueueShortcut = queueShortcuts.find((shortcut) => shortcut.active)?.key ?? 'all';
   const queueSummaryItems = [
     {
       key: 'open',
@@ -6029,8 +6003,8 @@ function SupportWorkspaceView({
     <div
       className={cx(
         variant === 'tickets'
-          ? 'flex h-full min-h-0 flex-col overflow-hidden'
-          : 'flex h-full min-h-0 flex-col gap-[var(--workspace-panel-gap)] overflow-hidden',
+          ? 'gso-screen-frame flex h-full min-h-0 flex-col overflow-hidden'
+          : 'gso-screen-frame flex h-full min-h-0 flex-col gap-[var(--workspace-panel-gap)] overflow-hidden',
       )}
     >
       {variant === 'tickets' ? (
@@ -6072,7 +6046,7 @@ function SupportWorkspaceView({
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <h1 className="text-lg font-semibold tracking-[-0.02em]">Fila operacional</h1>
               <span className="text-xs text-[color:var(--minimal-text-secondary)]">
-                {tickets.length} ticket(s)
+                {queueTotalCount.toLocaleString('pt-BR')} ticket(s) no recorte
               </span>
             </div>
             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[color:var(--minimal-text-secondary)]">
@@ -6140,40 +6114,27 @@ function SupportWorkspaceView({
           )}
         >
           <section className="flex min-h-0 min-w-0 flex-col overflow-hidden border-r border-[color:var(--minimal-border)]">
-            <div className="flex shrink-0 flex-wrap items-center gap-x-1 border-b border-[color:var(--minimal-border)] px-3 pt-2 sm:px-4" role="tablist" aria-label="Recortes da fila">
-              <button
-                aria-selected={!queueShortcuts.some((shortcut) => shortcut.active)}
-                className={cx(
-                  'inline-flex min-h-9 shrink-0 items-center gap-1.5 border-b-2 px-2.5 text-sm transition-colors',
-                  !queueShortcuts.some((shortcut) => shortcut.active)
-                    ? 'border-[color:var(--minimal-action)] font-medium text-[color:var(--minimal-text)]'
-                    : 'border-transparent text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)]',
-                )}
-                onClick={() => setFilters(emptyFilters())}
-                role="tab"
-                type="button"
-              >
-                Todos <span>{tickets.length}</span>
-              </button>
-              {queueShortcuts.map((shortcut) => (
-                <button
-                  aria-selected={shortcut.active}
-                  className={cx(
-                    'inline-flex min-h-9 shrink-0 items-center gap-1.5 border-b-2 px-2.5 text-sm transition-colors disabled:opacity-45',
-                    shortcut.active
-                      ? 'border-[color:var(--minimal-action)] font-medium text-[color:var(--minimal-text)]'
-                      : 'border-transparent text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)]',
-                  )}
-                  disabled={shortcut.disabled}
-                  key={`queue-tab:${shortcut.key}`}
-                  onClick={shortcut.apply}
-                  role="tab"
-                  type="button"
-                >
-                  {shortcut.label.replace('Meus tickets', 'Meus')}
-                  <span>{shortcut.value ?? 0}</span>
-                </button>
-              ))}
+            <div className="shrink-0 border-b border-[color:var(--minimal-border)] px-3 py-2 sm:px-4">
+              <FilterTabs
+                ariaLabel="Recortes da fila"
+                activeId={activeQueueShortcut}
+                items={[
+                  { id: 'all', label: 'Todos', count: queueTotalCount },
+                  ...queueShortcuts.map((shortcut) => ({
+                    id: shortcut.key,
+                    label: shortcut.label.replace('Meus tickets', 'Meus'),
+                    count: shortcut.value ?? 0,
+                    disabled: shortcut.disabled,
+                  })),
+                ]}
+                onChange={(id) => {
+                  if (id === 'all') {
+                    setFilters(emptyFilters());
+                    return;
+                  }
+                  queueShortcuts.find((shortcut) => shortcut.key === id)?.apply();
+                }}
+              />
             </div>
 
             <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[color:var(--minimal-border)] px-4 py-3">

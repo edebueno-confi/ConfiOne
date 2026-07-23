@@ -1,6 +1,6 @@
 import { toAppError } from '../../app/errors';
 import { requireSupabaseBrowserClient } from '../../app/supabase-browser';
-import type { PlatformRole } from '../../contracts/admin-contracts';
+import type { InternalScreenKey, PlatformRole } from '../../contracts/admin-contracts';
 import {
   canOpenInternalRoute,
   getDefaultInternalLandingRoute,
@@ -16,6 +16,7 @@ export interface PostLoginRedirectResolution {
   destination: string | null;
   denialReason: PostLoginDenialReason | null;
   roles: PlatformRole[];
+  screenKeys: InternalScreenKey[];
   hasCustomerPortalAccess: boolean;
   hasInternalActionAreaAccess: boolean;
   hasCsPortfolioAccess: boolean;
@@ -75,6 +76,22 @@ async function hasCsPortfolioAccess() {
   return (data ?? []).length > 0;
 }
 
+async function loadWorkspaceScreenKeys() {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client
+    .from('vw_internal_actor_workspace_context')
+    .select('screen_key')
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao validar as telas autorizadas do usuário.');
+  }
+
+  return Array.from(
+    new Set((data ?? []).map((row) => row.screen_key as InternalScreenKey).filter(Boolean)),
+  );
+}
+
 export async function resolvePostLoginRedirect(
   rawRedirectTo: string | null,
 ): Promise<PostLoginRedirectResolution> {
@@ -93,6 +110,7 @@ export async function resolvePostLoginRedirect(
       destination: null,
       denialReason: 'missing-profile',
       roles: [],
+      screenKeys: [],
       hasCustomerPortalAccess: false,
       hasInternalActionAreaAccess: false,
       hasCsPortfolioAccess: false,
@@ -106,19 +124,22 @@ export async function resolvePostLoginRedirect(
       destination: null,
       denialReason: 'inactive-profile',
       roles,
+      screenKeys: [],
       hasCustomerPortalAccess: false,
       hasInternalActionAreaAccess: false,
       hasCsPortfolioAccess: false,
     };
   }
 
-  const [customerPortalAccess, internalActionAreaAccess, csPortfolioAccess] = await Promise.all([
+  const [customerPortalAccess, internalActionAreaAccess, csPortfolioAccess, screenKeys] = await Promise.all([
     hasCustomerPortalAccess(),
     hasInternalActionAreaAccess(),
     hasCsPortfolioAccess(),
+    loadWorkspaceScreenKeys(),
   ]);
   const context: InternalRouteContext = {
     roles,
+    screenKeys,
     hasCustomerPortalAccess: customerPortalAccess,
     hasInternalActionAreaAccess: internalActionAreaAccess,
     hasCsPortfolioAccess: csPortfolioAccess,
@@ -133,6 +154,7 @@ export async function resolvePostLoginRedirect(
     destination,
     denialReason: destination ? null : 'missing-authorized-workspace',
     roles,
+    screenKeys,
     hasCustomerPortalAccess: customerPortalAccess,
     hasInternalActionAreaAccess: internalActionAreaAccess,
     hasCsPortfolioAccess: csPortfolioAccess,

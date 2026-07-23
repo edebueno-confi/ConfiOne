@@ -1,5 +1,20 @@
 # ROADMAP_BUILDOUT_V3.md
 
+## Checkpoint corrente de continuidade — 2026-07-21
+
+O roadmap histórico continua sendo referência arquitetural, mas o próximo
+trabalho operacional do checkout é governado pela spec SDD de prontidão:
+`docs/superpowers/specs/2026-07-21-gso-release-readiness-and-next-cycles.md` e
+`docs/superpowers/plans/2026-07-21-gso-release-readiness-and-next-cycles.md`.
+
+Ordem corrente: higiene e reconciliação documental; qualificação do Dashboard e
+integrações; ledger CS Ops e carteira; Help Center/Portal; segurança,
+performance e pacote de release. O Operational Control Plane não deve ser
+misturado com Analytics e não bloqueia o encerramento deste módulo.
+
+Gates externos permanecem separados: push/merge, deploy, migration remota,
+scheduler, secrets e writes HubSpot/OMIE dependem de aprovação humana.
+
 ## Objetivo
 Consolidar a virada de foco do Genius Support OS: pausar a curadoria editorial refinada da Knowledge Base e priorizar a construcao funcional da plataforma interna CX B2B tecnica.
 

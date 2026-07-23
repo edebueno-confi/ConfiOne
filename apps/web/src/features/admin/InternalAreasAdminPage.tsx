@@ -22,18 +22,28 @@ import {
   INTERNAL_AREA_MEMBERSHIP_STATUSES,
   type AdminInternalActionTargetArea,
   type AdminInternalAreaMembership,
+  type AdminInternalMembershipScreenGrantRow,
+  type AdminInternalAccessProfile,
+  type AdminInternalScreenCatalogRow,
   type AdminTenantsListItemRow,
   type AdminUserLookupRow,
   type InternalAreaMembershipRole,
   type InternalAreaMembershipStatus,
+  type InternalScreenCategory,
+  type InternalScreenKey,
 } from '../../contracts/admin-contracts';
 import {
   addInternalAreaMembership,
+  assignInternalAccessProfile,
   archiveInternalAreaMembership,
   listAdminInternalActionTargetAreas,
   listAdminInternalAreaMemberships,
+  listAdminInternalMembershipScreenGrants,
+  listAdminInternalAccessProfiles,
+  listAdminInternalScreenCatalog,
   listAdminTenants,
   lookupAdminUsers,
+  replaceInternalMembershipScreens,
   updateInternalAreaMembership,
 } from './admin-api';
 import { classifyAdminError } from './admin-errors';
@@ -47,11 +57,15 @@ interface AddDraft {
   userQuery: string;
   selectedUserId: string;
   role: InternalAreaMembershipRole;
+  accessProfileId: string;
+  screenKeys: InternalScreenKey[];
   status: InternalAreaMembershipStatus;
 }
 
 interface EditDraft {
+  accessProfileId: string;
   role: InternalAreaMembershipRole;
+  screenKeys: InternalScreenKey[];
   status: InternalAreaMembershipStatus;
 }
 
@@ -91,18 +105,187 @@ function toneForMembershipStatus(status: InternalAreaMembershipStatus) {
   return 'warning' as const;
 }
 
+function profileMatchesArea(profile: AdminInternalAccessProfile, areaKey: string) {
+  return profile.areaKey === null || profile.areaKey === areaKey;
+}
+
+function expandScreenSelection(
+  catalog: AdminInternalScreenCatalogRow[],
+  initialKeys: InternalScreenKey[],
+) {
+  const byKey = new Map(catalog.map((screen) => [screen.screen_key, screen]));
+  const expanded = new Set(initialKeys);
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+    for (const screenKey of Array.from(expanded)) {
+      for (const dependencyKey of byKey.get(screenKey)?.dependency_screen_keys ?? []) {
+        if (!expanded.has(dependencyKey)) {
+          expanded.add(dependencyKey);
+          changed = true;
+        }
+      }
+    }
+  }
+
+  return catalog
+    .filter((screen) => expanded.has(screen.screen_key))
+    .map((screen) => screen.screen_key);
+}
+
+function recommendedScreensForArea(
+  catalog: AdminInternalScreenCatalogRow[],
+  areaKey: string,
+) {
+  return expandScreenSelection(
+    catalog,
+    catalog
+      .filter((screen) => screen.default_area_keys.includes(areaKey))
+      .map((screen) => screen.screen_key),
+  );
+}
+
 function emptyAddDraft(
   tenants: AdminTenantsListItemRow[],
   areas: AdminInternalActionTargetArea[],
 ): AddDraft {
   return {
     areaKey: areas[0]?.areaKey ?? '',
+    accessProfileId: '',
     role: 'member',
+    screenKeys: [],
     selectedUserId: '',
     status: 'active',
     tenantId: tenants[0]?.id ?? '',
     userQuery: '',
   };
+}
+
+const SCREEN_CATEGORY_LABELS: Record<InternalScreenCategory, string> = {
+  administration: 'Administração e configuração',
+  intelligence: 'Inteligência e gestão',
+  workspace: 'Rotina operacional',
+};
+
+function ScreenGrantPicker({
+  catalog,
+  areaKey,
+  selectedKeys,
+  onChange,
+}: {
+  catalog: AdminInternalScreenCatalogRow[];
+  areaKey?: string;
+  selectedKeys: InternalScreenKey[];
+  onChange: (nextKeys: InternalScreenKey[]) => void;
+}) {
+  const selected = new Set(selectedKeys);
+  const recommended = new Set(
+    areaKey
+      ? catalog.filter((screen) => screen.default_area_keys.includes(areaKey)).map((screen) => screen.screen_key)
+      : [],
+  );
+  const grouped = catalog.reduce<Record<InternalScreenCategory, AdminInternalScreenCatalogRow[]>>(
+    (accumulator, screen) => {
+      accumulator[screen.category].push(screen);
+      return accumulator;
+    },
+    { administration: [], intelligence: [], workspace: [] },
+  );
+
+  function toggle(screenKey: InternalScreenKey) {
+    const next = new Set(selected);
+    if (next.has(screenKey)) {
+      const requiredBy = catalog.filter(
+        (screen) => selected.has(screen.screen_key) && screen.dependency_screen_keys.includes(screenKey),
+      );
+      if (requiredBy.length > 0) {
+        return;
+      }
+      next.delete(screenKey);
+    } else {
+      for (const key of expandScreenSelection(catalog, [screenKey])) {
+        next.add(key);
+      }
+    }
+    onChange(catalog.filter((screen) => next.has(screen.screen_key)).map((screen) => screen.screen_key));
+  }
+
+  if (catalog.length === 0) {
+    return (
+      <InlineNotice>
+        O catálogo de telas ainda não está disponível. A configuração não pode ser concluída sem um
+        contrato de telas carregado pelo backend.
+      </InlineNotice>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <p className="text-sm font-semibold text-[color:var(--color-ink)]">Telas liberadas</p>
+        <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
+          O acesso é definido por vínculo. O papel descreve a função na área; esta lista define o que
+          a pessoa realmente pode abrir.
+          Ao escolher uma área, as telas recomendadas já ficam marcadas; ao selecionar uma tela, suas dependências entram automaticamente.
+        </p>
+      </div>
+      {(Object.keys(SCREEN_CATEGORY_LABELS) as InternalScreenCategory[]).map((category) => (
+        <fieldset
+          className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3"
+          key={category}
+        >
+          <legend className="px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
+            {SCREEN_CATEGORY_LABELS[category]}
+          </legend>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {grouped[category].map((screen) => (
+              <label
+                className={cx(
+                  'flex cursor-pointer items-start gap-2 rounded-[10px] border px-3 py-2 text-left transition',
+                  selected.has(screen.screen_key)
+                    ? 'border-[rgba(48,127,226,0.48)] bg-[rgba(48,127,226,0.08)]'
+                    : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] hover:bg-[color:var(--color-surface)]',
+                )}
+                key={screen.screen_key}
+              >
+                <input
+                  checked={selected.has(screen.screen_key)}
+                  className="mt-0.5 accent-[var(--genius-site-blue)]"
+                  disabled={
+                    selected.has(screen.screen_key) &&
+                    catalog.some(
+                      (candidate) =>
+                        selected.has(candidate.screen_key) &&
+                        candidate.dependency_screen_keys.includes(screen.screen_key),
+                    )
+                  }
+                  onChange={() => toggle(screen.screen_key)}
+                  type="checkbox"
+                />
+                <span className="min-w-0">
+                  <span className="block text-[12px] font-semibold text-[color:var(--color-ink)]">
+                    {screen.display_name}
+                  </span>
+                  <span className="mt-0.5 block truncate text-[10px] text-[color:var(--color-muted)]">
+                    {screen.route_path}
+                  </span>
+                  {recommended.has(screen.screen_key) ? (
+                    <span className="mt-1 block text-[10px] font-medium text-[color:var(--genius-site-blue)]">
+                      Recomendada para esta Ã¡rea
+                    </span>
+                  ) : null}
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      ))}
+      <p className="text-[11px] text-[color:var(--color-muted)]">
+        {selectedKeys.length} tela(s) selecionada(s). Um vínculo ativo precisa de pelo menos uma tela.
+      </p>
+    </div>
+  );
 }
 
 function AreaCard({ area }: { area: AdminInternalActionTargetArea }) {
@@ -167,6 +350,7 @@ function MembershipRow({
       </div>
       <div className="flex min-w-0 flex-wrap items-center gap-2 md:justify-end">
         <StatusPill>{humanizeRole(membership.role)}</StatusPill>
+        <StatusPill>{membership.accessProfileName ?? 'Personalizado'}</StatusPill>
         <StatusPill tone={toneForMembershipStatus(membership.status)}>
           {humanizeStatus(membership.status)}
         </StatusPill>
@@ -183,12 +367,17 @@ export function InternalAreasAdminPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [areas, setAreas] = useState<AdminInternalActionTargetArea[]>([]);
   const [memberships, setMemberships] = useState<AdminInternalAreaMembership[]>([]);
+  const [screenCatalog, setScreenCatalog] = useState<AdminInternalScreenCatalogRow[]>([]);
+  const [screenGrants, setScreenGrants] = useState<AdminInternalMembershipScreenGrantRow[]>([]);
+  const [accessProfiles, setAccessProfiles] = useState<AdminInternalAccessProfile[]>([]);
   const [tenants, setTenants] = useState<AdminTenantsListItemRow[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<Drawer>(null);
   const [addDraft, setAddDraft] = useState<AddDraft>(() => emptyAddDraft([], []));
   const [editDraft, setEditDraft] = useState<EditDraft>({
+    accessProfileId: '',
     role: 'member',
+    screenKeys: [],
     status: 'active',
   });
   const [userResults, setUserResults] = useState<AdminUserLookupRow[]>([]);
@@ -200,21 +389,39 @@ export function InternalAreasAdminPage() {
     [memberships, selectedId],
   );
 
+  const screenKeysByMembershipId = useMemo(() => {
+    const map = new Map<string, InternalScreenKey[]>();
+    for (const grant of screenGrants) {
+      const current = map.get(grant.membership_id) ?? [];
+      current.push(grant.screen_key);
+      map.set(grant.membership_id, current);
+    }
+    return map;
+  }, [screenGrants]);
+
   const loadPage = useCallback(async () => {
     setPhase('loading');
     setMessage(null);
     try {
-      const [nextAreas, nextMemberships, nextTenants] = await Promise.all([
+      const [nextAreas, nextMemberships, nextTenants, nextScreenCatalog, nextScreenGrants, nextAccessProfiles] = await Promise.all([
         listAdminInternalActionTargetAreas(),
         listAdminInternalAreaMemberships(),
         listAdminTenants(),
+        listAdminInternalScreenCatalog(),
+        listAdminInternalMembershipScreenGrants(),
+        listAdminInternalAccessProfiles(),
       ]);
       setAreas(nextAreas);
       setMemberships(nextMemberships);
+      setScreenCatalog(nextScreenCatalog);
+      setScreenGrants(nextScreenGrants);
+      setAccessProfiles(nextAccessProfiles);
       setTenants(nextTenants);
       setSelectedId((current) => current ?? nextMemberships[0]?.membershipId ?? null);
+      const initialDraft = emptyAddDraft(nextTenants, nextAreas);
       setAddDraft((current) => ({
-        ...emptyAddDraft(nextTenants, nextAreas),
+        ...initialDraft,
+        screenKeys: recommendedScreensForArea(nextScreenCatalog, initialDraft.areaKey),
         userQuery: current.userQuery,
       }));
       setPhase('ready');
@@ -260,7 +467,11 @@ export function InternalAreasAdminPage() {
   }, [addDraft.userQuery]);
 
   function openAddDrawer() {
-    setAddDraft(emptyAddDraft(tenants, areas));
+    const draft = emptyAddDraft(tenants, areas);
+    setAddDraft({
+      ...draft,
+      screenKeys: recommendedScreensForArea(screenCatalog, draft.areaKey),
+    });
     setUserResults([]);
     setDrawer('add');
   }
@@ -271,7 +482,9 @@ export function InternalAreasAdminPage() {
     }
 
     setEditDraft({
+      accessProfileId: selectedMembership.accessProfileId ?? '',
       role: selectedMembership.role,
+      screenKeys: screenKeysByMembershipId.get(selectedMembership.membershipId) ?? [],
       status: selectedMembership.status,
     });
     setDrawer('edit');
@@ -300,15 +513,32 @@ export function InternalAreasAdminPage() {
       return;
     }
 
+    if (addDraft.status === 'active' && !addDraft.accessProfileId && addDraft.screenKeys.length === 0) {
+      setActionMessage('Selecione pelo menos uma tela para ativar o vínculo.');
+      return;
+    }
+
     void runAction(
-      () =>
-        addInternalAreaMembership({
+      async () => {
+        const membership = await addInternalAreaMembership({
           areaKey: addDraft.areaKey,
           role: addDraft.role,
           status: addDraft.status,
           tenantId: addDraft.tenantId,
           userId: addDraft.selectedUserId,
-        }),
+        });
+        if (addDraft.accessProfileId) {
+          await assignInternalAccessProfile({
+            membershipId: membership.id,
+            accessProfileId: addDraft.accessProfileId,
+          });
+        } else {
+          await replaceInternalMembershipScreens({
+            membershipId: membership.id,
+            screenKeys: addDraft.screenKeys,
+          });
+        }
+      },
       'Vínculo de área interna adicionado.',
     );
   }
@@ -319,13 +549,30 @@ export function InternalAreasAdminPage() {
       return;
     }
 
+    if (editDraft.status === 'active' && !editDraft.accessProfileId && editDraft.screenKeys.length === 0) {
+      setActionMessage('Selecione pelo menos uma tela para manter o vínculo ativo.');
+      return;
+    }
+
     void runAction(
-      () =>
-        updateInternalAreaMembership({
+      async () => {
+        await updateInternalAreaMembership({
           membershipId: selectedMembership.membershipId,
           role: editDraft.role,
           status: editDraft.status,
-        }),
+        });
+        if (editDraft.accessProfileId) {
+          await assignInternalAccessProfile({
+            membershipId: selectedMembership.membershipId,
+            accessProfileId: editDraft.accessProfileId,
+          });
+        } else {
+          await replaceInternalMembershipScreens({
+            membershipId: selectedMembership.membershipId,
+            screenKeys: editDraft.screenKeys,
+          });
+        }
+      },
       'Vínculo de área interna atualizado.',
     );
   }
@@ -370,7 +617,7 @@ export function InternalAreasAdminPage() {
 
   return (
     <>
-      <div className="flex h-full min-h-0 flex-col gap-[var(--workspace-panel-gap)] overflow-hidden">
+      <div className="gso-screen-frame flex h-full min-h-0 flex-col gap-[var(--workspace-panel-gap)] overflow-hidden">
         <header className="shrink-0 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-4 py-[var(--workspace-header-y)] shadow-[0_10px_22px_rgba(19,33,79,0.05)]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -518,9 +765,17 @@ export function InternalAreasAdminPage() {
             </Field>
             <Field label="Área">
               <SelectInput
-                onChange={(event) =>
-                  setAddDraft((current) => ({ ...current, areaKey: event.target.value }))
-                }
+                onChange={(event) => {
+                  const areaKey = event.target.value;
+                  setAddDraft((current) => ({
+                    ...current,
+                    areaKey,
+                    accessProfileId: current.accessProfileId && accessProfiles.some(
+                      (profile) => profile.accessProfileId === current.accessProfileId && profileMatchesArea(profile, areaKey),
+                    ) ? current.accessProfileId : '',
+                    screenKeys: recommendedScreensForArea(screenCatalog, areaKey),
+                  }));
+                }}
                 required
                 value={addDraft.areaKey}
               >
@@ -529,6 +784,29 @@ export function InternalAreasAdminPage() {
                     {area.displayName}
                   </option>
                 ))}
+              </SelectInput>
+            </Field>
+            <Field label="Perfil de acesso">
+              <SelectInput
+                onChange={(event) =>
+                  setAddDraft((current) => ({
+                    ...current,
+                    accessProfileId: event.target.value,
+                    screenKeys: event.target.value
+                      ? []
+                      : recommendedScreensForArea(screenCatalog, current.areaKey),
+                  }))
+                }
+                value={addDraft.accessProfileId}
+              >
+                <option value="">Personalizado — escolher telas</option>
+                {accessProfiles
+                  .filter((profile) => profileMatchesArea(profile, addDraft.areaKey))
+                  .map((profile) => (
+                    <option key={profile.accessProfileId} value={profile.accessProfileId}>
+                      {profile.name} ({profile.screenCount} telas)
+                    </option>
+                  ))}
               </SelectInput>
             </Field>
             <Field label="Buscar usuário">
@@ -572,7 +850,7 @@ export function InternalAreasAdminPage() {
               </div>
             ) : null}
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Papel">
+              <Field label="Função na área">
                 <SelectInput
                   onChange={(event) =>
                     setAddDraft((current) => ({
@@ -607,6 +885,19 @@ export function InternalAreasAdminPage() {
                 </SelectInput>
               </Field>
             </div>
+            {addDraft.accessProfileId ? (
+              <InlineNotice>
+                O perfil selecionado aplica um conjunto nomeado de telas. A alteração do perfil passa a
+                valer para este vínculo sem criar uma nova permissão global.
+              </InlineNotice>
+            ) : (
+              <ScreenGrantPicker
+                areaKey={addDraft.areaKey}
+                catalog={screenCatalog}
+                onChange={(screenKeys) => setAddDraft((current) => ({ ...current, screenKeys }))}
+                selectedKeys={addDraft.screenKeys}
+              />
+            )}
           </form>
         </GovernedActionDrawer>
       ) : null}
@@ -637,7 +928,30 @@ export function InternalAreasAdminPage() {
               </p>
             </section>
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Papel">
+              <Field label="Perfil de acesso">
+                <SelectInput
+                  onChange={(event) =>
+                    setEditDraft((current) => ({
+                      ...current,
+                      accessProfileId: event.target.value,
+                      screenKeys: event.target.value
+                        ? []
+                        : recommendedScreensForArea(screenCatalog, selectedMembership.areaKey),
+                    }))
+                  }
+                  value={editDraft.accessProfileId}
+                >
+                  <option value="">Personalizado — escolher telas</option>
+                  {accessProfiles
+                    .filter((profile) => profileMatchesArea(profile, selectedMembership.areaKey))
+                    .map((profile) => (
+                      <option key={profile.accessProfileId} value={profile.accessProfileId}>
+                        {profile.name} ({profile.screenCount} telas)
+                      </option>
+                    ))}
+                </SelectInput>
+              </Field>
+              <Field label="Função na área">
                 <SelectInput
                   onChange={(event) =>
                     setEditDraft((current) => ({
@@ -672,6 +986,19 @@ export function InternalAreasAdminPage() {
                 </SelectInput>
               </Field>
             </div>
+            {editDraft.accessProfileId ? (
+              <InlineNotice>
+                Este vínculo está usando um perfil nomeado. Para uma exceção individual, selecione
+                “Personalizado — escolher telas” e defina o conjunto explícito abaixo.
+              </InlineNotice>
+            ) : (
+              <ScreenGrantPicker
+                areaKey={selectedMembership.areaKey}
+                catalog={screenCatalog}
+                onChange={(screenKeys) => setEditDraft((current) => ({ ...current, screenKeys }))}
+                selectedKeys={editDraft.screenKeys}
+              />
+            )}
           </form>
         </GovernedActionDrawer>
       ) : null}

@@ -1,5 +1,21 @@
 # Genius Support OS — Especificação viva
 
+## Protocolo SDD vigente — 2026-07-21
+
+- A especificação guarda-chuva dos próximos ciclos está em
+  `docs/superpowers/specs/2026-07-21-gso-release-readiness-and-next-cycles.md`.
+- O plano executável correspondente está em
+  `docs/superpowers/plans/2026-07-21-gso-release-readiness-and-next-cycles.md`.
+- Cada lote relevante deve atualizar esta especificação viva, `docs/plan.md`,
+  `docs/PROJECT_STATE.md`, `docs/DOCUMENTATION_LEDGER.md` e o documento
+  específico da área afetada.
+- Subagentes podem auditar ou implementar escopos disjuntos, mas o coordenador
+  mantém os arquivos centrais, revisa todos os diffs e executa a validação
+  integrada.
+- Cada retorno operacional deve informar Feito, Validado, Atenção, Git e
+  Próximo passo. Push, deploy, migration remota, secrets e writes externos
+  continuam gates humanos explícitos.
+
 ## Visão do produto
 
 O Genius Support OS é um SaaS interno B2B para operar atendimento, Customer
@@ -20,8 +36,10 @@ produto, não um dashboard paralelo no Looker.
   `hubspot_*`, views `vw_analytics_*` e configuração de pipes em
   `analytics_source_config`.
 - Fontes financeiras e operacionais adicionais: planilhas CSV/XLSX importadas
-  manualmente; Omie será adapter read-only configurável quando as credenciais
-  forem disponibilizadas.
+  manualmente; OMIE possui adapter read-only API-first e fallback de planilha.
+  A evidência local registra credencial gerenciada e sincronização confirmada;
+  publicação remota, scheduler e reconciliação no ambiente-alvo continuam
+  gates separados.
 
 ## Multi-tenancy e autorização
 

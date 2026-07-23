@@ -222,7 +222,6 @@ export function HomePage() {
                 <Link className="rounded-lg border border-[color:var(--minimal-border)] px-3 py-2 text-sm font-medium text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]" to="/support/inbox">Atendimento</Link>
                 <Link className="rounded-lg border border-[color:var(--minimal-border)] px-3 py-2 text-sm font-medium text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]" to="/support/customers">Clientes B2B</Link>
                 <Link className="rounded-lg border border-[color:var(--minimal-border)] px-3 py-2 text-sm font-medium text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]" to="/internal-actions">Acionamentos</Link>
-                <Link className="rounded-lg border border-[color:var(--minimal-border)] px-3 py-2 text-sm font-medium text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]" to="/admin/settings">Configurações</Link>
               </div>
             </section>
           </>

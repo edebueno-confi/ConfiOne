@@ -35,3 +35,18 @@ test('allows CS routes only for platform admins or users with portfolio access',
 test('uses CS portfolio before generic internal actions for CS members', () => {
   assert.equal(getDefaultInternalLandingRoute(csContext), '/cs/portfolio');
 });
+
+test('authorizes contextual screen grants without requiring a global role', () => {
+  const contextualContext = {
+    roles: [],
+    screenKeys: ['analytics', 'knowledge'],
+    hasCustomerPortalAccess: false,
+    hasInternalActionAreaAccess: false,
+    hasCsPortfolioAccess: false,
+  };
+
+  assert.equal(canOpenInternalRoute('/admin/analytics', contextualContext), true);
+  assert.equal(canOpenInternalRoute('/admin/knowledge', contextualContext), true);
+  assert.equal(canOpenInternalRoute('/admin/access', contextualContext), false);
+  assert.equal(getDefaultInternalLandingRoute(contextualContext), '/admin/analytics');
+});

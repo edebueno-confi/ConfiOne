@@ -15,8 +15,8 @@ select ok(
 );
 
 select ok(
-  position('can_read_analytics' in pg_get_functiondef('public.rpc_admin_upsert_analytics_source_config(uuid,text,text,text,text,boolean)'::regprocedure)) > 0,
-  'RPC de fontes do Dashboard usa o gate de leitura autorizado'
+  position('has_global_role(''platform_admin''::public.platform_role)' in pg_get_functiondef('public.rpc_admin_upsert_analytics_source_config(uuid,text,text,text,text,boolean)'::regprocedure)) > 0,
+  'RPC de fontes do Dashboard usa o gate de escrita administrativa'
 );
 
 select ok(

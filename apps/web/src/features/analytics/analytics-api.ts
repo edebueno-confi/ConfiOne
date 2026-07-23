@@ -163,12 +163,13 @@ function rpcFilters(filters: AnalyticsFilters) {
   };
 }
 
-export async function getCommercialSnapshot(filters: AnalyticsFilters): Promise<CommercialSnapshot> {
+export async function getCommercialSnapshot(filters: AnalyticsFilters, excludedPipelineIds: string[] = []): Promise<CommercialSnapshot> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client.rpc('rpc_analytics_commercial_snapshot', {
     ...rpcFilters(filters),
     p_owner_id: filters.ownerId || null,
     p_stage_id: filters.stageId || null,
+    p_excluded_pipeline_ids: excludedPipelineIds,
   });
   if (error) throw toAppError(error, 'Falha ao carregar a analise comercial filtrada.');
   return mapCommercialSnapshot(data);

@@ -10,6 +10,10 @@ export function formatAnalyticsSyncError({ operation, status, payload }) {
     return `O serviço de sincronização do ${label} está indisponível (HTTP 503). Verifique se a Edge Function está ativa e tente novamente.`;
   }
 
+  if (status === 409 && ['OMIE_SYNC_IN_PROGRESS', 'OMIE_PROVIDER_BUSY'].includes(code)) {
+    return 'JÃ¡ existe uma sincronizaÃ§Ã£o OMIE em andamento ou o provedor estÃ¡ concluindo uma requisiÃ§Ã£o anterior. Aguarde alguns segundos e tente novamente.';
+  }
+
   const detail = typeof payload?.error === 'string' ? payload.error.trim() : '';
   if (detail) return detail;
 

@@ -432,6 +432,9 @@ export const INTERNAL_AREA_MEMBERSHIP_STATUSES = [
 export type InternalAreaMembershipStatus =
   (typeof INTERNAL_AREA_MEMBERSHIP_STATUSES)[number];
 
+export const INTERNAL_PERMISSION_MODES = ['custom', 'profile'] as const;
+export type InternalPermissionMode = (typeof INTERNAL_PERMISSION_MODES)[number];
+
 export type InternalActionAreaKey = string;
 
 export const INTERNAL_ACTION_STATUSES = [
@@ -700,6 +703,16 @@ export interface SupportTicketQueueItem extends TicketViewPermissionFlags {
   isWaitingCustomer: boolean;
   isWaitingSupport: boolean;
   isWaitingEngineering: boolean;
+}
+
+export interface SupportTicketQueuePage {
+  items: SupportTicketQueueItem[];
+  totalCount: number;
+  scopeCounts: {
+    open: number;
+    closed: number;
+  };
+  filterCounts: Record<string, number>;
 }
 
 export interface SupportTicketDetail extends TicketViewPermissionFlags {
@@ -2134,6 +2147,24 @@ export interface CsCustomerPortfolioProductContext {
   activeOwnerCount: number;
 }
 
+export type CsPortfolioAssignmentStatus = 'active' | 'paused' | 'archived' | 'unconfigured';
+
+export interface CsCustomerPortfolioAssignment {
+  assignmentId: Uuid | null;
+  name: string;
+  status: CsPortfolioAssignmentStatus;
+  ownerUserId: Uuid | null;
+  ownerFullName: string | null;
+  ownerEmail: string | null;
+  clusterKey: string | null;
+  serviceModel: string | null;
+  contactFrequency: string | null;
+  healthStatus: string | null;
+  priority: string | null;
+  source: string | null;
+  updatedAt: IsoTimestamp | null;
+}
+
 export interface CsCustomerPortfolio {
   tenantId: Uuid;
   tenantSlug: string;
@@ -2155,6 +2186,7 @@ export interface CsCustomerPortfolio {
   customerSuccessMemberCount: number;
   healthSummaryStatus: 'unavailable';
   healthSummaryReason: string;
+  portfolioAssignment: CsCustomerPortfolioAssignment;
   lastOperationalUpdateAt: IsoTimestamp;
   createdAt: IsoTimestamp;
   updatedAt: IsoTimestamp;
@@ -2655,6 +2687,23 @@ export interface AdminInternalAreaMembership {
   canUpdateRole: boolean;
   canUpdateStatus: boolean;
   canArchive: boolean;
+  accessProfileId: Uuid | null;
+  accessProfileName: string | null;
+  permissionMode: InternalPermissionMode;
+}
+
+export interface AdminInternalAccessProfile {
+  accessProfileId: Uuid;
+  areaKey: InternalActionAreaKey | null;
+  areaLabel: string | null;
+  name: string;
+  description: string | null;
+  isSystem: boolean;
+  isActive: boolean;
+  screenCount: number;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+  canManage: boolean;
 }
 
 export interface RpcAdminAddInternalAreaMembershipPayload {

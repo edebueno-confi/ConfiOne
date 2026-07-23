@@ -4,6 +4,9 @@
 
 - [GIT_BRANCHING_AND_RELEASE_POLICY.md](./GIT_BRANCHING_AND_RELEASE_POLICY.md)
 - [reports/REPOSITORY_CLEANUP_AUDIT_2026-07-21.md](./reports/REPOSITORY_CLEANUP_AUDIT_2026-07-21.md)
+- [reports/SDD_CONTINUITY_AUDIT_2026-07-21.md](./reports/SDD_CONTINUITY_AUDIT_2026-07-21.md)
+- [superpowers/specs/2026-07-21-gso-release-readiness-and-next-cycles.md](./superpowers/specs/2026-07-21-gso-release-readiness-and-next-cycles.md)
+- [superpowers/plans/2026-07-21-gso-release-readiness-and-next-cycles.md](./superpowers/plans/2026-07-21-gso-release-readiness-and-next-cycles.md)
 
 Fonte oficial da documentação do Genius Support OS.
 

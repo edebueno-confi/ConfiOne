@@ -29,7 +29,7 @@ export function MinimalButton({
     <button
       aria-busy={loading}
       className={cx(
-        'inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-semibold transition-colors duration-150',
+        'gso-minimal-button inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-semibold transition-colors duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] focus-visible:ring-offset-2',
         'disabled:cursor-not-allowed disabled:opacity-55',
         variantClass,
@@ -79,7 +79,7 @@ export function MinimalSurface({
   return (
     <section
       className={cx(
-        'w-full rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-6 shadow-[var(--minimal-shadow)] sm:p-7',
+        'gso-surface w-full rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-6 shadow-[var(--minimal-shadow)] sm:p-7',
         className,
       )}
     >
@@ -112,7 +112,7 @@ export function MinimalTextInput({
   return (
     <input
       className={cx(
-        'h-11 w-full rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-3.5 text-sm text-[color:var(--minimal-text)] outline-none transition-colors duration-150',
+        'gso-input h-11 w-full rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-3.5 text-sm text-[color:var(--minimal-text)] outline-none transition-colors duration-150',
         'placeholder:text-[color:var(--minimal-text-tertiary)] hover:border-[color:var(--minimal-border-hover)]',
         'focus-visible:border-[color:var(--minimal-action)] focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]',
         'disabled:cursor-not-allowed disabled:bg-[color:var(--minimal-surface-muted)] disabled:text-[color:var(--minimal-text-tertiary)]',

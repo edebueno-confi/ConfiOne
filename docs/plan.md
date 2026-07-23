@@ -1,3 +1,284 @@
+# Genius Support OS - Plano operacional vivo
+
+## Lote de contexto HubSpot no cockpit B2B — 2026-07-23
+
+### Feito
+
+- Criado `customer-relationship-model.ts` para normalizar o contrato read-only de relacionamento HubSpot.
+- Criado `customer-relationship-api.ts`, com chamada paginada limitada a 100 registros e sem escrita externa.
+- Clientes B2B passou a exibir um resumo compacto da fonte HubSpot: entidades legais, negócios e grupos econômicos resolvidos.
+- O texto da tela deixa explícito que esses totais são globais e que nenhuma associação cliente–empresa foi inferida.
+
+### Validado
+
+- Teste focado do normalizador: 3/3.
+- QA autenticado em `/support/clientes`: contrato carregado do cache local e resumo exibido sem duplicar os KPIs da conta.
+
+### Atenção
+
+- O contrato ainda não fornece o vínculo interno `tenant_id` ↔ `hubspot_company_id`; a tela não exibe deals dentro do detalhe individual até esse vínculo ser criado com fonte e auditoria.
+
+### Próximo lote
+
+1. Criar contrato explícito e auditável de vínculo entre conta B2B e empresa HubSpot.
+2. Consumir entidades legais e negócios dentro do detalhe somente para vínculos confirmados.
+3. Repetir QA em light/dark e larguras móveis.
+
+## Lote de implementação CS/B2B — 2026-07-23
+
+### Feito
+
+- Criado `cs_customer_portfolio_assignments`, uma atribuição editável por cliente com carteira, status, cluster, modelo de atendimento, cadência, saúde, prioridade, origem e observações.
+- Criado `cs_customer_portfolio_assignment_history`, com histórico imutável de alterações e auditoria de linha.
+- Criado `rpc_admin_upsert_cs_customer_portfolio`, protegido por contexto de gestor de Customer Success ou `platform_admin`; owner só pode ser perfil ativo com membership CS ativa no cliente.
+- Ampliado `vw_cs_customer_portfolio` com os campos estruturados da carteira, sem remover o read model anterior.
+- O frontend passou a consumir e editar o contrato real da carteira, mantendo o seed CS Ops como QA e sem promover os owners `qa.local.*`.
+- Clientes B2B passou a usar tabela operacional dominante com KPIs, busca e detalhe em drawer contextual.
+- Carteira CS passou a usar cockpit tabular com atenção semântica, filtros, busca e drawer de detalhe/edição.
+- Contas B2B deixou de exibir a coluna de ferramentas e o detalhe passou a ocupar drawer; filtros foram movidos para o cabeçalho; `Membros` foi normalizado para `Usuários da conta`.
+
+### Validado
+
+- Teste pgTAP do contrato novo: 12/12.
+- `npm run contracts:typecheck`, `npm run web:typecheck` e `npm run web:build` aprovados.
+- Testes Node: 68/68 aprovados.
+- QA autenticado local em `http://127.0.0.1:4173`: Carteira CS, Clientes B2B e Contas B2B carregaram com dados do banco; o detalhe administrativo só abre por ação explícita.
+- Capturas QA salvas em `output/playwright/cs-portfolio-final.png`, `output/playwright/customers-final.png` e `output/playwright/tenants-final-no-selection.png`.
+
+### Atenção
+
+- O contrato novo foi aplicado somente no banco local; publicação remota permanece bloqueada por segurança.
+- A tela permite editar atributos da carteira, mas a seleção de owner real depende de colaboradores produtivos com identidade e membership validadas.
+- A administração de Contas B2B ainda contém blocos históricos ocultos no arquivo; eles não são renderizados, mas devem ser removidos numa rodada posterior.
+- Há registros legados do seed local com `�` no texto persistido. Não foi feita substituição automática: a correção deve usar a fonte original e uma migração auditável para não alterar nomes reais por suposição.
+
+### Próximo lote
+
+1. Materializar o mapeamento seguro dos responsáveis da planilha para perfis/memberships internas.
+2. Expor na carteira os contratos de grupo econômico, entidade legal e negócios já criados.
+3. Completar o detalhe dedicado de conta, contatos e usuários da conta.
+4. Executar matriz visual autenticada em light/dark e 390/768/1024/1440; o smoke test desktop autenticado já foi concluído.
+
+## Auditoria 2026-07-23 - dados reais de CS, carteira B2B e redesign de navegação
+
+### Executado
+
+- A planilha `CS Ops _ Carteiras e Clusters -v2.xlsx` foi auditada em modo somente leitura: a aba `BD_Clientes` possui 42 colunas e 606 registros; os campos foram separados em identidade, contrato/produto, operação, risco/saúde, roteamento e scores.
+- O backend local foi confrontado com a planilha: clientes, assinaturas, segmentos e owners existem, mas parte dos campos CS permanece comprimida em `internal_notes`, `operational_flags` e `metadata`.
+- Foi confirmado que a atribuição de CSM está no nível da assinatura e que os owners QA ainda não possuem memberships de área internas. A carga atual é fixture local de QA, não carga produtiva.
+- Foi criado o relatório canônico de de/para, lacunas e direção visual em `docs/reports/CS_B2B_PORTFOLIO_UX_DATA_AUDIT_2026-07-23.md`.
+- Foi definida a direção UX: máximo de duas zonas de trabalho; Clientes B2B como cockpit de contas; Carteira CS como cockpit de relacionamento; detalhes em workspace/rota/drawer, sem coluna fixa de ferramentas ou rail permanente.
+
+### Estado consolidado
+
+- Concluído/validado: integrações HubSpot/OMIE, dashboard gerencial, catálogo comercial, fila de suporte paginada no backend, contrato analítico de relacionamento, central de ajuda/editor, perfis de acesso e mascote/estados compartilhados.
+- Parcial: seed CS Ops local, cadastro B2B editável, Carteira CS, vínculo de colaboradores/áreas, consumo do relacionamento econômico/legal/deals e unificação visual do sistema.
+- Pendente de implementação: contrato real de carteira CS, campos CS estruturados, memberships seguras dos responsáveis, área organizacional de Suporte quando necessária, redesign de Clientes B2B/Carteira CS/Contas B2B, kit visual único, copy PT-BR e QA responsivo/autenticado.
+- Bloqueado/gated: correspondência dos owners QA com identidades reais, carga produtiva, migrations/deploy remotos, scheduler remoto e integração GitHub.
+
+### Próximo ciclo ordenado
+
+1. Criar contrato backend de carteira/atribuição CS com RLS, RPCs, auditoria, histórico e testes pgTAP.
+2. Estruturar campos da planilha em modelo editável e versionado, mantendo proveniência; não promover automaticamente e-mails QA a identidades reais.
+3. Materializar memberships internas apenas para identidades seguras e definir o catálogo de áreas/funções, incluindo Suporte se o roteamento exigir.
+4. Refatorar o cockpit Clientes B2B para busca global, filtros, tabela densa, atenção semântica, avatar/logo e detalhe dedicado.
+5. Refatorar Carteira CS para escopo por permissão, ownership, health, cadência, prioridade, grupo econômico e ações de relacionamento.
+6. Simplificar Contas B2B/Administração: toolbar de ações, lista dominante, detalhe dedicado e nomenclatura `Usuários da conta`.
+7. Executar a rodada visual e comportamental em light/dark e 390/768/1024/1440, com typecheck, build e pgTAP.
+
+### Fonte detalhada
+
+O relatório completo, incluindo evidências locais, contratos existentes, lacunas e critérios de aceite, está em `docs/reports/CS_B2B_PORTFOLIO_UX_DATA_AUDIT_2026-07-23.md`.
+
+## Lote 2026-07-23 - pipelines comerciais ativos, fila paginada e relacionamento B2B
+
+### Executado
+
+- Os 11 pipelines comerciais conhecidos foram ativados no seed local e podem
+  ser habilitados ou desabilitados na tela de Configuracao pelo administrador.
+- A fila de suporte usa `rpc_support_ticket_queue_page`: filtros, busca,
+  contagem e paginação são calculados no backend, além dos 50 primeiros itens.
+- `rpc_analytics_customer_relationship_contract` formaliza grupo econômico
+  resolvido manualmente, entidade legal HubSpot e deals paginados; associações
+  ausentes não são inferidas.
+
+### Validado
+
+- pgTAP: 73 arquivos e 1.230 testes aprovados.
+- Contracts/web typecheck, build web e `git diff --check` aprovados.
+- Migrations aplicadas somente no banco local; não houve write remoto, deploy,
+  push ou alteração de segredo.
+
+### Pendente
+
+- QA autenticado navegando para a página 2+ da fila com dados reais.
+- Consumir o contrato nas telas B2B/Carteira CS depois de definir associações
+  operacionais dos deals.
+
+### Worktree
+
+- O worktree herdado foi preservado: ele mistura lotes de UX, acesso,
+  integrações, documentação e migrations anteriores. Não foram executados
+  `git reset --hard`, `git clean` ou descarte amplo.
+- O próximo fechamento deve separar os lotes por escopo antes de commits
+  objetivos; arquivos gerados e bundles permanecem em triagem.
+
+## Lote Comercial — catálogo e seleção de pipelines — 2026-07-23
+
+### Feito
+
+- Auditado o portal HubSpot `20108050` em modo somente leitura: `Piloto
+  Aftersale` (1.150 negócios), `Pipe de Vendas` (865) e `Renovação Contratual`
+  (1) são os pipelines com atividade observada.
+- Implementada descoberta dinâmica de pipelines não arquivados no
+  `hubspot-sync`; candidatos novos entram inativos e não alteram a seleção
+  administrativa existente.
+- Implementado filtro temporário de pipelines na aba Comercial e agregação
+  `by_pipeline` no RPC comercial, mantendo a regra no Postgres.
+- Preservado o contrato RPC comercial legado de quatro argumentos.
+
+### Validado
+
+- pgTAP: 72 arquivos, 1.223 testes, todos aprovados.
+- `npm run contracts:typecheck`, `npm run web:typecheck` e `npm run web:build`
+  aprovados.
+- Testes Node: 68 aprovados.
+- Nenhuma escrita foi feita no HubSpot.
+
+### Próximo passo
+
+- Executar uma sincronização HubSpot concluída, revisar os candidatos em
+  `Dashboard Gerencial > Configuração` e ativar explicitamente os pipelines que
+  devem compor o painel. Depois comparar os KPIs do recorte combinado com a
+  visão nativa do HubSpot.
+
+### Atenção
+
+- O catálogo inicial do portal foi semeado apenas para navegação local; a
+  sincronização dinâmica deve prevalecer em cada ambiente.
+- Deals continuam em carga completa por pipeline até que uma fronteira
+  incremental segura seja confirmada.
+
+## Lote CS Ops - seed local baseado na planilha - 2026-07-22
+
+### Feito
+
+- Criado `supabase/qa/create-local-cs-ops-fixture.mjs` para extrair diretamente a aba `BD_Clientes` da planilha local.
+- Criado o comando `npm run supabase:qa:local-cs-ops-fixture`.
+- Materializados localmente clientes, perfis operacionais, clusters, assinaturas, responsáveis, tickets, histórico e ações de CS.
+
+### Validado
+
+- 606 registros extraídos e materializados.
+- 575 vínculos de responsáveis identificados.
+- Reexecução concluída sem duplicação.
+- Nenhuma escrita no HubSpot, OMIE ou ambiente remoto.
+
+### Pendente
+
+- QA autenticado das telas Clientes B2B, Carteira CS, Tickets e Acionamentos usando o seed.
+- Definir o contrato futuro de grupo econômico, entidades legais e negócios antes da carga produtiva.
+
+### Bloqueado
+
+- Nenhum bloqueio local. Migração remota e sincronização externa continuam gates humanos.
+
+## Lote de performance da fila de suporte - 2026-07-23
+
+### Feito
+
+- Corrigido o custo duplicado de `vw_support_tickets_queue`: o conjunto de
+  tickets visíveis agora é materializado uma vez e reutilizado nos contextos de
+  SLA e canal.
+- O carregamento do frontend passou a solicitar explicitamente apenas as
+  colunas da fila e limita o primeiro recorte a 50 tickets mais recentes.
+- Criada e aplicada localmente a migration
+  `20260723151602_optimize_support_ticket_queue_read_model.sql`.
+
+### Validado
+
+- A consulta autenticada de 607 tickets deixou de exceder o timeout local.
+- `/support/tickets` e `/support/queue` carregam com 50 tickets recentes.
+- `/support/clientes` e `/cs/portfolio` exibem 607 clientes.
+- `/internal-actions` exibe 606 acionamentos derivados da planilha.
+
+### Pendente
+
+- Adicionar paginação server-side completa para navegar além do primeiro
+  recorte de 50 tickets sem depender somente de filtros.
+- Fechar o contrato de grupo econômico, entidade legal e negócios antes de
+  qualquer carga produtiva.
+
+### Bloqueado
+
+- Nenhum bloqueio local. A migration ainda não foi publicada em banco remoto.
+
+## Lote de ACL e suíte de banco - 2026-07-23
+
+### Feito
+
+- Criada `20260723162000_harden_screen_dependency_function_acl.sql` para
+  tornar explícita a proteção das funções de trigger do catálogo de telas.
+- Revogada a execução para papéis de API e mantida apenas a ACL do owner do
+  banco.
+
+### Validado
+
+- `npm run supabase:test:db`: 71 arquivos, 1.219 testes, PASS.
+- O teste de auditoria de funções deixou de reportar as três funções internas.
+
+### Pendente
+
+- Publicação da migration continua dependente do gate de deploy/migration
+  remota aprovado pelo responsável.
+
+### Bloqueado
+
+- Nenhum bloqueio local.
+
+## Lote atual - governanca de identidade e acesso por contexto - 2026-07-22
+
+### Decidido
+
+- Uma pessoa pode pertencer a varias areas e clientes; area, funcao e tela
+  autorizada sao dimensoes diferentes e nao devem ser comprimidas em um papel
+  global.
+- `internal_area_memberships` continua sendo o vinculo canonico. O novo
+  catalogo backend de telas e os grants por vinculo definem o acesso efetivo.
+- Perfis nomeados reutilizaveis podem servir de preset; excecoes usam o modo
+  personalizado por telas. Financeiro e Produto entram pelo mesmo contrato.
+
+### Executado
+
+- Criada a migration `20260722221746_internal_profile_screen_access_contract_v1.sql`
+  com catalogo de telas, grants por vinculo, perfis nomeados, grants de perfil,
+  contexto autenticado do ator, RLS, auditoria e RPCs administrativas.
+- A pagina `/admin/internal-areas` agora configura cliente, colaborador, area,
+  funcao, status, perfil nomeado ou telas personalizadas.
+- Contratos TypeScript e `admin-api` foram atualizados para carregar perfil,
+  modo de permissao e catalogo de telas.
+
+### Validado
+
+- DDL completo executado em transacao no Postgres local com `ROLLBACK`.
+- `npx supabase db lint --local` sem erro novo; permanecem apenas avisos
+  preexistentes de variaveis `v_actor` em RPCs legadas.
+- `npm run web:typecheck`, `npm run web:build`, teste de navegacao e
+  `git diff --check` passaram.
+
+### Pendente
+
+- Aplicar a migration no ambiente alvo mediante gate de deploy/migration remota.
+- Fazer CRUD visual dos perfis nomeados em Acessos/Configuracoes.
+- Migrar `post-login-redirect` e o shell para consumir o contexto backend de
+  telas, preservando a compatibilidade dos papeis globais legados.
+- Validar QA autenticado de operador, gestor, financeiro, produto e QA com
+  combinações distintas de telas, incluindo viewport mobile.
+
+### Bloqueado
+
+- Nenhuma alteracao remota foi executada. Deploy, push e migration remota
+  continuam dependentes de autorizacao explicita.
 
 ## Estado atual e fechamento do lote OMIE↔HubSpot — 2026-07-22
 
@@ -23,7 +304,63 @@
   sincronização inicial como pendências; esses pontos foram superados pela
   configuração e validação registradas em 2026-07-22.
 
-# Genius Support OS — Plano operacional vivo
+## Protocolo SDD de continuidade — 2026-07-21
+
+- Spec guarda-chuva: `docs/superpowers/specs/2026-07-21-gso-release-readiness-and-next-cycles.md`.
+- Plano executável: `docs/superpowers/plans/2026-07-21-gso-release-readiness-and-next-cycles.md`.
+- Ordem corrente: W0 governança e baseline; W1 higiene documental; W2/W3
+  Dashboard e integrações em paralelo; W4 CS Ops/carteira; W5 Help Center e
+  Portal; W6 segurança/performance; W7 release pack e handoff.
+- O baseline versionado permanece no HEAD `7c7d291`; o worktree agora contém
+  somente o lote W1 ainda não commitado (scanner, teste, package e documentação).
+  O próximo baseline deve corrigir o drift documental antes de qualquer decisão
+  de release.
+- Pendências P0: baseline único atual, QA autenticado da exportação PDF/PNG,
+  reidratação e sync verificável do cache HubSpot, reconciliação do ledger CS Ops
+  e confirmação da semântica financeira derivada do OMIE.
+- Pendências externas: push/merge/deploy, publicação remota de migrations e
+  functions, scheduler protegido e qualquer write externo; permanecem bloqueadas
+  sem aprovação humana explícita.
+- Regra de retorno: todo lote reporta Feito, Validado, Atenção, Git e Próximo
+  passo, com critérios de aceite para o lote seguinte.
+
+## Execução W1 — higiene read-only — 2026-07-21
+
+- Feito: criado `scripts/ci/check-root-artifacts.mjs` e seu teste TDD em
+  `tests/scripts/root-artifacts-hygiene.test.mjs`.
+- Feito: adicionado `npm run repository:check-root`.
+- Feito: movidos 10 logs/dumps transitórios para `.tmp/logs/2026-07-21--local-environment/`.
+- Validado: teste TDD 3/3; `contracts:typecheck`, `web:typecheck`, `web:build`,
+  `supabase:lint:db`, `supabase:test:db`, `documentation:validate:internal-docs`,
+  `git diff --check` e smoke HTTP local passaram. O verificador atual reporta
+  somente `output/` e o bundle local `Recreação do mascote Genius-handoff/`.
+- Atenção: esses dois itens permanecem preservados até decisão de classificação;
+  nenhum documento histórico foi arquivado ou removido. O lint do banco ainda
+  emite 12 alertas conhecidos sobre `v_actor` não utilizado em RPCs legadas; a
+  validação não encontrou falha.
+- Ambiente local: web em `http://127.0.0.1:4173`, API/DB/Studio Supabase em
+  `http://127.0.0.1:54321`, `postgresql://postgres:postgres@127.0.0.1:54322/postgres`
+  e `http://127.0.0.1:54323`. O runtime local de Edge Functions, imgproxy e
+  pooler permanecem parados no status do CLI; não foram iniciados neste lote.
+- Próximo passo: revisar o conteúdo de `output/` e decidir se o bundle do
+  mascote deve permanecer como referência local ignorada ou ser movido para
+  `.tmp/quarantine/`, sem excluir nada automaticamente.
+
+## Execução W3 — HubSpot faseado e runtime local — 2026-07-21
+
+- Diagnóstico: HTTP 503 era Edge Runtime local parado; HTTP 504 era o cliente
+  desistindo de uma carga HubSpot monolítica que excedia o limite do worker.
+- Feito: endpoint faseado por empresas, comercial e CS; a UI chama as etapas
+  sequencialmente e agrega os contadores. O snapshot legado de sucesso também
+  virou fronteira incremental para evitar uma nova carga completa artificial.
+- Validado: OMIE autenticado localmente com 3.433/3.433 títulos; HubSpot faseado
+  com HTTP 200 nas três etapas, aproximadamente 20 segundos no lote incremental
+  e contadores separados (2 empresas, 1.147 deals, 0 tickets na etapa CS por
+  não haver alteração na janela incremental). Contracts/web typecheck, build e
+  pgTAP (67 arquivos, 1.194 testes) também passaram.
+- Atenção: o endpoint legado sem `scope` ainda é monolítico; scheduler remoto
+  precisa ser migrado para as três chamadas, sem publicação remota neste lote.
+- Evidência: `docs/reports/HUBSPOT_SYNC_PHASED_EXECUTION_2026-07-21.md`.
 
 ## Ciclo Central de integração OMIE↔HubSpot (Claude) — 2026-07-20
 
@@ -1121,3 +1458,163 @@
 - Evidência: `docs/reports/SECURITY_AND_DIFF_REVIEW_2026-07-21.md`.
 - Pendente: fazer QA autenticado das superfícies alteradas e separar o diff
   herdado por domínio antes de qualquer commit/publicação.
+
+## QA autenticado do Dashboard e agregação de sincronização faseada — 2026-07-21
+
+- Corrigido: o cabeçalho do Dashboard não exibe mais somente a última etapa
+  `cs` como se fosse o lote inteiro; as etapas `companies`, `commercial` e `cs`
+  são agregadas quando pertencem à mesma janela faseada concluída.
+- Feito: criado helper puro `aggregateLatestHubspotSyncRuns`, com janela de
+  coerência de dois minutos e fallback para a execução mais recente quando o
+  lote está incompleto, stale ou não é faseado.
+- Validado: testes unitários do agrupamento (2/2), typecheck web e QA
+  autenticado no navegador. O cabeçalho exibiu `2 empresas, 1147 deals,
+  0 tickets`; o preset `Mês passado` selecionou `2026-06-01` a `2026-06-30`
+  no Financeiro e permaneceu aplicado ao navegar para Comercial.
+- Evidências: `output/playwright/gso-qa-analytics-after-grouping.md`,
+  `output/playwright/gso-qa-finance-month-previous-final.md` e
+  `output/playwright/gso-qa-commercial-month-previous-final.md`.
+- Atenção: os testes foram locais e autenticados; scheduler remoto e publicação
+  continuam gates separados. Nenhum write externo foi realizado.
+
+## Higiene final da raiz — 2026-07-21
+
+- Corrigido: `output/` e `Recreação do mascote Genius-handoff/` foram
+  classificados na allowlist do verificador como artefatos locais ignorados,
+  sem apagar evidências ou o pacote de referência do mascote.
+- Validado: `npm run repository:check-root` deve reportar zero violações após a
+  classificação; o teste de higiene continua cobrindo entradas não autorizadas.
+
+## Help Center — ativação idempotente da Central Genius — 2026-07-21
+
+- Corrigido: a central `genius` criada pelo bootstrap permanecia em `draft`,
+  impedindo qualquer artigo público mesmo após o pipeline editorial; a
+  migration `20260721240000_activate_genius_public_help_space_v1.sql` a torna
+  `active` de forma idempotente.
+- Limite: a migration não publica artigos nem altera conteúdo; publicação segue
+  dependente do pipeline Octadesk com allowlist e revisão editorial.
+- Teste: `supabase/tests/068_genius_public_help_space_status.sql` cobre a
+  existência da tabela e o estado ativo da central.
+- Execução local concluída: corpus Octadesk importado com 58 artigos; pipeline
+  editorial publicou 44 artigos públicos e manteve 13 bloqueios para revisão.
+- QA: `/help/genius/articles` carregou a Central Genius ativa com navegação,
+  categorias e artigos; console sem erro de aplicação.
+
+## Segurança — ACL do snapshot executivo legado e scheduler declarativo — 2026-07-21
+
+- Corrigido: a RPC `rpc_analytics_ceo_snapshot_legacy` deixou de ser executável
+  por `anon`/`authenticated`; permanece disponível apenas para
+  `service_role`, como dependência interna do wrapper protegido.
+- Corrigido: `omie-sync` e `analytics-integration-run` agora declaram
+  `verify_jwt = false`, alinhando o gateway ao contrato interno de autorização
+  por JWT administrativo ou segredo do scheduler.
+- Teste: pgTAP 069 cobre a ACL da RPC legada; o smoke do segredo remoto ainda é
+  gate separado e não foi executado neste lote.
+- Auditorias read-only concluídas: CS Ops permanece bloqueado até reimportação
+  e fingerprint do catálogo; integração/performance tem riscos priorizados em
+  `docs/reports/INTEGRATION_SECURITY_PERFORMANCE_AUDIT_2026-07-21.md`.
+- Hardening local: `source_record_id` duplicado agora bloqueia o lote antes do
+  ledger e criações reconsultam CNPJ com falha fechada antes do POST.
+## Auditoria de UX, navegação, segurança e higiene — 2026-07-22
+
+- Feito: auditoria read-only do shell, rotas, gates de acesso, superfície
+  pública de Knowledge, sinks de DOM, armazenamento local e assinaturas de
+  secrets.
+- Corrigido: exportação do relatório gerencial deixou de usar `document.write`;
+  a impressão agora navega para um Blob HTML isolado e revoga a URL temporária.
+- Validado: teste de regressão `analytics-export-security.test.mjs`, screenshots
+  atuais da Central pública e do redirecionamento sem sessão para login, além
+  de métricas de viewport/overflow.
+- Atenção: o fixture local de `dashboard_viewer` não foi reprovisionado porque
+  o binário do Supabase CLI retornou `spawnSync ... UNKNOWN`; isso é um bloqueio
+  de ambiente local, não uma alteração de produto.
+- Próximos ciclos: configurar contatos públicos pelo painel, cobrir payloads
+  maliciosos do editor rico, implementar lease/cursor por escopo das integrações
+  e repetir QA autenticado do shell depois de reparar o fixture local.
+- Evidência: `docs/reports/UX_NAVIGATION_SECURITY_AUDIT_2026-07-22.md`.
+# Ciclo de recuperação das sincronizações — 2026-07-22
+
+- **Executado:** reproduzido o HTTP 503 nos endpoints locais de OMIE, HubSpot e
+  orquestração; identificado Edge Runtime encerrado com código 255.
+- **Executado:** runtime local reativado e configurado com reinício
+  `unless-stopped`; camada de erro do frontend classifica 503, 546 e falhas
+  funcionais.
+- **Validado:** `OPTIONS` retornou 200 e `POST` sem credencial retornou 403 nos
+  três endpoints; teste de mensagens passou 3/3.
+- **Pendente:** executar uma sincronização autenticada acompanhada; dividir a
+  orquestração automática OMIE ↔ HubSpot em etapas persistidas se o limite do
+  worker voltar a ser atingido.
+## Correcao de autorizacao da configuracao Analytics - 2026-07-22
+
+- Feito: alinhada a UI ao contrato server-side de `platform_admin` para operacoes de escrita e sincronizacao.
+- Feito: perfil `dashboard_viewer` passou a ter configuracao Analytics em modo somente leitura, mantendo ultimo status e historico visiveis.
+- Validado: teste de permissao, typecheck web, build web e `git diff --check` aprovados.
+- Atencao: QA autenticado visual permanece pendente por `JWT issued at future` no login local; nao e falha da autorizacao desta tela.
+- Proximo passo: corrigir a divergencia de relogio do ambiente de autenticacao local e executar QA com os perfis `platform_admin` e `dashboard_viewer`.
+## Hardening de sincronizacao e agenda dual - 2026-07-22
+
+- Feito: reduzidas chamadas HubSpot financeiras com API batch e removida repeticao do enriquecimento opcional OMIE no runner combinado.
+- Feito: criada configuracao independente para agenda OMIE e agenda HubSpot global.
+- Feito: UI passou a expor duas cadencias e duas execucoes manuais separadas para `platform_admin`.
+- Validado: OMIE dedicado 3.433/3.433; runner combinado HTTP 200 apos a correcao; migration aplicada somente localmente.
+- Atencao: o primeiro teste combinado retornou 0/0 no rollup naquele instante; a consulta posterior confirmou 10.163 empresas e 136 grupos financeiros reconciliaveis no cache local.
+- Pendente externo: ativar o scheduler remoto protegido por secret e publicar migrations/functions somente com aprovacao.
+# Lote concluído — autorização contextual no shell — 2026-07-22
+
+## Decidido
+
+- A autorização efetiva de rotina deve vir das telas concedidas no vínculo de área ou no perfil reutilizável, não apenas de papéis globais.
+- Papéis globais permanecem como compatibilidade e governança administrativa; não substituem a matriz contextual.
+
+## Executado
+
+- `fetchAdminActorContext` passou a carregar as telas do `vw_internal_actor_workspace_context`.
+- Gate e redirecionamento pós-login aceitam usuários com vínculo contextual ativo, sem exigir `platform_admin` ou `dashboard_viewer`.
+- Shell global monta a navegação operacional, de inteligência e administração a partir dos `screen_keys` autorizados.
+- Rotas de suporte, CS, produto e console administrativo consultam a mesma matriz contextual, preservando os fallbacks de papéis existentes.
+- Testes de rota e navegação foram ampliados para cobrir usuário sem papel global com acesso a Dashboard, Conhecimento e Documentos.
+
+## Validado
+
+- `npm run web:typecheck`: aprovado.
+- `node --test tests/scripts/cs-route-access.test.mjs tests/scripts/minimal-navigation.test.mjs`: 9/9 aprovados.
+- `npm run web:build`: aprovado.
+- Navegação local em `/admin/internal-areas`: contrato carregado, sem estado de indisponibilidade e sem overflow horizontal.
+
+## Pendente
+
+- Expor CRUD de perfis nomeados na tela de Acessos, mantendo a matriz detalhada em Áreas internas.
+- Migrar gradualmente telas que ainda consultam somente papéis antigos para os comandos/contextos canônicos.
+- Criar usuários de QA/produção somente mediante solicitação explícita e credenciais fornecidas fora do repositório.
+
+## Bloqueado
+
+- Nenhum bloqueio local neste lote.
+- Aplicação da migration equivalente em ambiente remoto, deploy e criação de usuários continuam fora deste ciclo por exigirem autorização operacional explícita.
+# Lote concluído — recomendações e dependências de telas — 2026-07-22
+
+## Executado
+
+- Criadas as relações `internal_screen_area_defaults` e `internal_screen_dependencies`.
+- Catálogo administrativo passou a expor `default_area_keys` e `dependency_screen_keys`.
+- Áreas Customer Success, Engenharia, Financeiro, Operações, Produto e outras receberam recomendações iniciais.
+- A tela de seleção pré-marca recomendações por área e expande dependências recursivamente.
+- Dependências necessárias não podem ser desmarcadas enquanto outra tela selecionada depender delas.
+- Triggers garantem dependências em grants de vínculo e em grants de perfil.
+
+## Validado
+
+- Migration executada em transação com rollback e aplicada no banco local.
+- Trigger validado em transação: `analytics` adicionou `home` automaticamente.
+- Catálogo local confirmou recomendações de Financeiro, Produto e Operações e dependências de `support_queue`, `support_tickets`, `analytics` e `product`.
+- Typecheck, build, testes de rota/navegação e lint local aprovados.
+
+## Pendente
+
+- Expor edição administrativa das recomendações e dependências no CRUD de perfis/configurações, caso a governança precise alterar o catálogo sem migration.
+# Lote concluído — reparo dos perfis nomeados — 2026-07-22
+
+- Corrigidos os nomes exibidos dos cinco perfis de sistema.
+- Reaplicados os grants: CS Gestor (4), CS Operador (6), Financeiro Gestor (2), Produto Operador (3) e QA Dashboard/conhecimento (4).
+- Migration idempotente; não remove grants existentes e respeita as dependências declaradas.
+- Validado no banco local com rollback, aplicação efetiva e consulta de contagem por perfil.

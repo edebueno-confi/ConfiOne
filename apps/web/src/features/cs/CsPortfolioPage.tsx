@@ -7,7 +7,7 @@ import type {
 import { MinimalState } from '../../components/minimal-states';
 import { MinimalButton, MinimalTextInput } from '../../components/minimal-ui';
 import { cx } from '../../components/ui';
-import { filterCsCustomerPortfolio } from './cs-api';
+import { filterCsCustomerPortfolio, upsertCsCustomerPortfolio } from './cs-api';
 import { useCsPortfolio } from './CsGate';
 import { getSegmentAssignments, type SegmentAssignment } from '../customers/customers-api';
 
@@ -391,8 +391,112 @@ function CustomerDetail({ customer, segment }: { customer: CsCustomerPortfolio; 
   );
 }
 
+function PortfolioEditor({
+  customer,
+  onSaved,
+}: {
+  customer: CsCustomerPortfolio;
+  onSaved: () => Promise<void>;
+}) {
+  const assignment = customer.portfolioAssignment;
+  const [name, setName] = useState(assignment.name === 'Sem carteira definida' ? 'Carteira principal' : assignment.name);
+  const [serviceModel, setServiceModel] = useState(assignment.serviceModel ?? '');
+  const [contactFrequency, setContactFrequency] = useState(assignment.contactFrequency ?? '');
+  const [healthStatus, setHealthStatus] = useState(assignment.healthStatus ?? '');
+  const [priority, setPriority] = useState(assignment.priority ?? '');
+  const [notes, setNotes] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  return (
+    <section className="border-t border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-5 py-5 sm:px-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">Editar carteira</h3>
+          <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">
+            Alterações ficam registradas com origem e histórico no banco.
+          </p>
+        </div>
+        {saved ? <Pill tone="success">Salvo</Pill> : null}
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <label className="text-xs text-[color:var(--minimal-text-secondary)]">
+          Nome da carteira
+          <input className="mt-1 w-full rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-3 py-2 text-sm text-[color:var(--minimal-text)]" onChange={(event) => setName(event.target.value)} value={name} />
+        </label>
+        <label className="text-xs text-[color:var(--minimal-text-secondary)]">
+          Modelo de atendimento
+          <input className="mt-1 w-full rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-3 py-2 text-sm text-[color:var(--minimal-text)]" onChange={(event) => setServiceModel(event.target.value)} placeholder="Ex.: high_touch" value={serviceModel} />
+        </label>
+        <label className="text-xs text-[color:var(--minimal-text-secondary)]">
+          Frequência de contato
+          <input className="mt-1 w-full rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-3 py-2 text-sm text-[color:var(--minimal-text)]" onChange={(event) => setContactFrequency(event.target.value)} placeholder="Ex.: mensal" value={contactFrequency} />
+        </label>
+        <label className="text-xs text-[color:var(--minimal-text-secondary)]">
+          Saúde
+          <select className="mt-1 w-full rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-3 py-2 text-sm text-[color:var(--minimal-text)]" onChange={(event) => setHealthStatus(event.target.value)} value={healthStatus}>
+            <option value="">Não informado</option>
+            <option value="healthy">Saudável</option>
+            <option value="attention">Atenção</option>
+            <option value="risk">Risco</option>
+          </select>
+        </label>
+        <label className="text-xs text-[color:var(--minimal-text-secondary)]">
+          Prioridade
+          <select className="mt-1 w-full rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-3 py-2 text-sm text-[color:var(--minimal-text)]" onChange={(event) => setPriority(event.target.value)} value={priority}>
+            <option value="">Não informado</option>
+            <option value="low">Baixa</option>
+            <option value="normal">Normal</option>
+            <option value="high">Alta</option>
+          </select>
+        </label>
+        <label className="text-xs text-[color:var(--minimal-text-secondary)] sm:col-span-2">
+          Observações da operação
+          <textarea className="mt-1 min-h-20 w-full rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-3 py-2 text-sm text-[color:var(--minimal-text)]" onChange={(event) => setNotes(event.target.value)} placeholder="Registre apenas contexto operacional, sem credenciais." value={notes} />
+        </label>
+      </div>
+      {error ? <p className="mt-3 text-xs text-[color:var(--color-danger-text)]">{error}</p> : null}
+      <div className="mt-4 flex justify-end">
+        <MinimalButton
+          disabled={busy || !name.trim()}
+          onClick={() => {
+            setBusy(true);
+            setError(null);
+            setSaved(false);
+            void upsertCsCustomerPortfolio({
+              tenantId: customer.tenantId,
+              portfolioName: name.trim(),
+              assignmentStatus: assignment.status === 'unconfigured' ? 'active' : assignment.status,
+              ownerUserId: assignment.ownerUserId,
+              clusterKey: assignment.clusterKey,
+              serviceModel: serviceModel.trim() || null,
+              contactFrequency: contactFrequency.trim() || null,
+              healthStatus: healthStatus || null,
+              priority: priority || null,
+              notes: notes.trim() || null,
+              source: assignment.source ?? 'manual',
+            })
+              .then(async () => {
+                setSaved(true);
+                await onSaved();
+              })
+              .catch((cause: unknown) => {
+                setError(cause instanceof Error ? cause.message : 'Não foi possível salvar a carteira.');
+              })
+              .finally(() => setBusy(false));
+          }}
+          variant="primary"
+        >
+          {busy ? 'Salvando…' : 'Salvar carteira'}
+        </MinimalButton>
+      </div>
+    </section>
+  );
+}
+
 export function CsPortfolioPage() {
-  const { portfolio } = useCsPortfolio();
+  const { portfolio, refreshPortfolio } = useCsPortfolio();
   const [segments, setSegments] = useState<Record<string, SegmentAssignment>>({});
 
   useEffect(() => {
@@ -425,19 +529,7 @@ export function CsPortfolioPage() {
     return searched.filter((customer: CsCustomerPortfolio) => matchesSegment(customer, segment));
   }, [portfolio, searchTerm, segment]);
 
-  const [selectedTenantId, setSelectedTenantId] = useState<string | null>(
-    portfolio[0]?.tenantId ?? null,
-  );
-
-  useEffect(() => {
-    if (!filteredPortfolio.some((item: CsCustomerPortfolio) => item.tenantId === selectedTenantId)) {
-      setSelectedTenantId(filteredPortfolio[0]?.tenantId ?? null);
-    }
-  }, [filteredPortfolio, selectedTenantId]);
-
-  const selectedCustomer =
-    filteredPortfolio.find((item: CsCustomerPortfolio) => item.tenantId === selectedTenantId) ??
-    null;
+  const [selectedCustomer, setSelectedCustomer] = useState<CsCustomerPortfolio | null>(null);
 
   if (portfolio.length === 0) {
     return (
@@ -451,22 +543,22 @@ export function CsPortfolioPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[color:var(--minimal-surface)]">
+    <div className="relative flex h-full min-h-0 flex-col bg-[color:var(--minimal-surface)]">
       <header className="flex shrink-0 flex-col gap-3 border-b border-[color:var(--minimal-border)] px-5 py-4 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
-              Carteira de clientes
+              Carteira CS
             </h1>
             <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">
               {portfolio.length} cliente(s) no escopo autorizado
             </p>
           </div>
-          <MinimalTextInput
+            <MinimalTextInput
             aria-label="Buscar na carteira"
             className="w-full sm:w-72"
             onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Cliente, owner, produto ou plano"
+            placeholder="Cliente, CNPJ, grupo, owner ou produto"
             type="search"
             value={searchTerm}
           />
@@ -504,8 +596,7 @@ export function CsPortfolioPage() {
         </div>
       </header>
 
-      <div className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="min-h-0 overflow-y-auto border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)]">
+      <div className="min-h-0 flex-1 overflow-auto px-5 py-5 sm:px-6">
           {filteredPortfolio.length === 0 ? (
             <div className="p-5">
               <p className="text-sm font-medium text-[color:var(--minimal-text)]">
@@ -526,29 +617,67 @@ export function CsPortfolioPage() {
               </MinimalButton>
             </div>
           ) : (
-            filteredPortfolio.map((customer: CsCustomerPortfolio) => (
-              <CustomerListItem
-                segment={segments[customer.tenantId] ?? null}
-                customer={customer}
-                key={customer.tenantId}
-                onSelect={() => setSelectedTenantId(customer.tenantId)}
-                selected={customer.tenantId === selectedTenantId}
-              />
-            ))
+            <div className="overflow-x-auto rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)]">
+              <table className="w-full min-w-[850px] text-left text-sm">
+                <thead className="border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] text-[11px] font-medium text-[color:var(--minimal-text-tertiary)]">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Cliente</th>
+                    <th className="px-4 py-3 font-medium">Carteira / cluster</th>
+                    <th className="px-4 py-3 font-medium">Responsável</th>
+                    <th className="px-4 py-3 font-medium">Saúde</th>
+                    <th className="px-4 py-3 text-right font-medium">Tickets</th>
+                    <th className="px-4 py-3 text-right font-medium">Ação</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[color:var(--minimal-border)]">
+                  {filteredPortfolio.map((customer: CsCustomerPortfolio) => {
+                    const assignment = customer.portfolioAssignment;
+                    const attention = customer.openTicketCount > 0 || assignment.healthStatus === 'risk' || !customer.csOwnerFullName;
+                    return (
+                      <tr className="group hover:bg-[color:var(--minimal-surface-muted)]" key={customer.tenantId}>
+                        <td className="px-4 py-3">
+                          <button className="text-left" onClick={() => setSelectedCustomer(customer)} type="button">
+                            <span className="block max-w-[280px] truncate font-medium text-[color:var(--minimal-text)]">{customer.tenantDisplayName}</span>
+                            <span className="mt-0.5 block max-w-[280px] truncate text-xs text-[color:var(--minimal-text-secondary)]">{customer.tenantLegalName}</span>
+                          </button>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="block text-[color:var(--minimal-text)]">{assignment.name}</span>
+                          <span className="mt-0.5 block text-xs text-[color:var(--minimal-text-secondary)]">{assignment.clusterKey ?? 'Cluster não definido'}</span>
+                        </td>
+                        <td className="px-4 py-3 text-[color:var(--minimal-text-secondary)]">{customer.csOwnerFullName ?? 'Sem responsável'}</td>
+                        <td className="px-4 py-3">
+                          <Pill tone={attention ? 'warning' : 'success'}>{attention ? 'Atenção' : 'Estável'}</Pill>
+                        </td>
+                        <td className="px-4 py-3 text-right tabular-nums text-[color:var(--minimal-text)]">
+                          {customer.openTicketCount} / {customer.totalTicketCount}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <MinimalButton onClick={() => setSelectedCustomer(customer)} variant="secondary">Abrir</MinimalButton>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
-        </aside>
-
-        {selectedCustomer ? (
-          <CustomerDetail customer={selectedCustomer} segment={segments[selectedCustomer.tenantId] ?? null} />
-        ) : (
-          <div className="flex items-center justify-center p-5">
-            <MinimalState
-              description="Selecione um cliente para consultar o contexto operacional."
-              title="Nenhum cliente selecionado"
-            />
-          </div>
-        )}
       </div>
+
+      {selectedCustomer ? (
+        <div className="absolute inset-0 z-20 flex justify-end bg-black/20 p-0 sm:p-4" role="dialog" aria-modal="true" aria-label={`Detalhes de ${selectedCustomer.tenantDisplayName}`}>
+          <div className="flex h-full w-full max-w-2xl flex-col overflow-hidden border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] shadow-2xl sm:rounded-2xl">
+            <div className="flex shrink-0 items-center justify-between border-b border-[color:var(--minimal-border)] px-5 py-3">
+              <span className="text-xs font-medium text-[color:var(--minimal-text-tertiary)]">Detalhes da conta</span>
+              <button aria-label="Fechar detalhes" className="rounded-lg border border-[color:var(--minimal-border)] px-3 py-1.5 text-xs text-[color:var(--minimal-text-secondary)]" onClick={() => setSelectedCustomer(null)} type="button">Fechar</button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <CustomerDetail customer={selectedCustomer} segment={segments[selectedCustomer.tenantId] ?? null} />
+              <PortfolioEditor customer={selectedCustomer} onSaved={async () => { await refreshPortfolio(); setSelectedCustomer(null); }} />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

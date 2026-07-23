@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { GeniusMascot } from '../../components/GeniusMascot';
 import { AppButton, GhostButton, cx } from '../../components/ui';
 import type { PublicHelpSupportContacts } from '../../contracts/public-contracts';
 
@@ -383,11 +384,16 @@ export function PublicHelpHeader({
   );
 
   return (
-    <header className="border-b border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)]">
+    <header className="gso-help-header border-b border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)]">
       <div className="mx-auto flex max-w-[1520px] items-center justify-between gap-5 px-4 py-4 sm:px-6 lg:px-8 xl:px-10">
         <div className="flex min-w-0 items-center gap-3.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--help-accent-strong)] text-sm font-semibold text-white">
-            G
+            <GeniusMascot
+              alt="Gênio da Central de Ajuda"
+              animated={false}
+              size="sm"
+              surface="avatar"
+            />
           </div>
           <div className="min-w-0 sm:flex sm:items-center sm:gap-3">
             <p className="truncate text-sm font-semibold text-[var(--help-ink-strong)] sm:text-[1rem]">

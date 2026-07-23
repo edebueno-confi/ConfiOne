@@ -1,5 +1,94 @@
 # VIEW_RPC_CONTRACTS.md
 
+## Contrato CS Portfolio V1 — atribuição operacional por cliente — 2026-07-23
+
+### Entidades
+
+- `cs_customer_portfolio_assignments`: uma atribuição corrente por `tenant_id`, com nome da carteira, status, owner, cluster, modelo de atendimento, cadência, saúde, prioridade, origem e observações operacionais.
+- `cs_customer_portfolio_assignment_history`: histórico append-only da atribuição; não é exposto diretamente ao frontend autenticado.
+
+### Read model
+
+- `vw_cs_customer_portfolio`: read model existente, agora acrescido de `portfolio_assignment_id`, `portfolio_name`, `portfolio_assignment_status`, `portfolio_owner_*`, `portfolio_cluster_key`, `portfolio_service_model`, `portfolio_contact_frequency`, `portfolio_health_status`, `portfolio_priority`, `portfolio_source` e `portfolio_updated_at`.
+- `vw_cs_customer_portfolio_base`: cópia interna do read model anterior; acesso restrito a `service_role` durante a evolução.
+
+### Command
+
+- `rpc_admin_upsert_cs_customer_portfolio(p_tenant_id, p_portfolio_name, p_assignment_status, p_owner_user_id, p_cluster_key, p_service_model, p_contact_frequency, p_health_status, p_priority, p_notes, p_source, p_source_record_id)`.
+
+### Regras
+
+- A escrita exige `platform_admin` ou membership ativa de gestor em `customer_success` no tenant.
+- O owner informado deve ser profile ativo com membership ativa em `customer_success` no mesmo tenant; e-mails QA não são promovidos automaticamente.
+- O app não possui DML direto nas tabelas; leitura passa pelo read model e escrita pela RPC.
+- Toda alteração é auditada por `audit.capture_row_change()` e também registrada no histórico do domínio.
+- Origem e identificador de origem são preservados para futura carga CS Ops.
+
+## Contrato V1-B - identidade, area, funcao, perfil e telas - 2026-07-22
+
+### Entidades canonicas
+
+- `profiles`: identidade autenticada do colaborador.
+- `user_global_roles`: papeis de plataforma legados e de governanca ampla;
+  nao deve receber um papel artificial para cada departamento.
+- `tenant_memberships`: pertencimento do usuario ao cliente/tenant.
+- `internal_area_memberships`: pertencimento operacional do colaborador a uma
+  area e cliente, com `role` (`member`, `manager`, `viewer`), `status`,
+  `permission_mode` e, opcionalmente, `access_profile_id`.
+- `internal_screen_catalog`: catalogo governado de rotas/telas. Nome, rota,
+  categoria e ordem pertencem ao backend.
+- `internal_area_membership_screen_grants`: telas explicitas de um vinculo;
+  e o modo `custom` para excecoes individuais.
+- `internal_access_profiles` e `internal_access_profile_screen_grants`:
+  presets nomeados por area ou globais, como CS Gestor, CS Operador, Financeiro
+  Gestor, Produto Operador e QA.
+
+### Read models
+
+- `vw_admin_internal_screen_catalog`: catalogo de telas para administracao.
+- `vw_admin_internal_membership_screen_grants`: grants efetivos por vinculo.
+- `vw_admin_internal_access_profiles`: perfis ativos e quantidade de telas.
+- `vw_admin_internal_access_profile_screen_grants`: telas de cada preset.
+- `vw_internal_actor_workspace_context`: contexto autenticado do usuario,
+  unindo papel global legado e vinculos de area por perfil ou customizacao.
+
+### Commands
+
+- `rpc_admin_replace_internal_membership_screens(membership_id, screen_keys)`:
+  substitui atomicamente o conjunto individual e muda o vinculo para modo
+  `custom`, removendo eventual preset.
+- `rpc_admin_create_internal_access_profile(area_key, name, description)` e
+  `rpc_admin_update_internal_access_profile(...)`: governam presets nomeados.
+- `rpc_admin_replace_internal_access_profile_screens(profile_id, screen_keys)`:
+  substitui as telas de um preset por chaves ativas do catalogo.
+- `rpc_admin_assign_internal_access_profile(membership_id, profile_id)`:
+  aplica preset compativel com a area ao colaborador.
+- `rpc_admin_clear_internal_access_profile(membership_id)`: retorna o vinculo
+  ao modo custom para permitir uma excecao individual.
+
+### Regras de seguranca e consumo
+
+- Todas as escritas exigem ator ativo, `platform_admin`, RLS e auditoria de
+  linha; tabelas de suporte nao sao expostas diretamente ao frontend.
+- Vinculo ativo sem tela nao e aceito pela UI; o backend continua permitindo a
+  transicao intermediaria para preservar administracao de dados existentes.
+- O frontend nao decide acesso por nome de rota: deve consumir o read model
+  autenticado no proximo ciclo de shell/redirect.
+
+## Índice de contratos Analytics — checkpoint 2026-07-21
+
+O Dashboard Gerencial deve consumir views/read models e RPCs server-side; este
+documento não deve ser interpretado como autorização para o frontend ler tabelas
+base ou decidir regras. A matriz detalhada de fontes, período, fórmula, frescor,
+qualidade e caveats está em `docs/spec.md`,
+`docs/ANALYTICS_METRIC_CATALOG_V1.md` e nos relatórios do Dashboard Gerencial.
+
+Durante o ciclo SDD de prontidão será consolidado aqui o inventário nominal de
+views/RPCs, caller autorizado, shape de erro, idempotência, tenant scope e
+auditoria das funções HubSpot/OMIE/CS Ops. Até essa consolidação, qualquer
+contrato novo deve ser auditado nas migrations e no código antes da UI; não se
+deve inventar um nome de view ou RPC a partir da documentação histórica.
+
 ## Regra canônica
 - Leitura do app deve passar por views/read models contratuais.
 - Escrita do app deve passar por RPCs transacionais.
@@ -2040,3 +2129,11 @@ Fase 8.2:
 - Frontend usando HTML legado de Octadesk como corpo/UI de artigo.
 - Escrita direta em tabelas críticas sem RPC.
 - Uso do blueprint histórico como contrato executável.
+# Atualização V1-C — autorização efetiva no frontend — 2026-07-22
+
+O read model `vw_internal_actor_workspace_context` deixou de ser apenas um catálogo administrativo: ele agora é carregado pelo contexto autenticado e alimenta o gate, o redirecionamento pós-login e o shell global. A lista de `screen_key` é deduplicada no cliente apenas para composição da navegação; a concessão permanece no banco, com RLS, funções `security definer`, auditoria e escopo de usuário/tenant.
+
+Para usuários sem papel global, uma rota só é considerada autorizada quando seu `screen_key` estiver no contexto efetivo. Os papéis globais continuam funcionando como fallback de compatibilidade e como acesso administrativo amplo para `platform_admin`.
+# Atualização V1-D — catálogo inteligente de telas — 2026-07-22
+
+`vw_admin_internal_screen_catalog` passa a expor, além da tela e rota, `default_area_keys` e `dependency_screen_keys`. Esses metadados são apenas orientação governada: a autorização continua nos grants de vínculo/perfil. Triggers de banco mantêm o fechamento transitivo das dependências quando uma tela é concedida por RPC ou inserção controlada.

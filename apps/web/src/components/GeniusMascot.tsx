@@ -1,4 +1,4 @@
-import { useEffect, useState, type PointerEvent } from 'react';
+import { useEffect, useState, type KeyboardEvent, type PointerEvent } from 'react';
 
 export type GeniusMascotExpression = 'happy' | 'wink' | 'wow';
 export type GeniusMascotPose = 'welcome' | 'magic' | 'celebrate' | 'shrug';
@@ -66,6 +66,12 @@ export function GeniusMascot({
     setActiveExpression(expressionOrder[(index + 1) % expressionOrder.length]);
   }
 
+  function handleKeyDown(event: KeyboardEvent<HTMLSpanElement>) {
+    if (!interactive || (event.key !== 'Enter' && event.key !== ' ')) return;
+    event.preventDefault();
+    cycleExpression();
+  }
+
   const isWink = activeExpression === 'wink';
   const isWow = activeExpression === 'wow';
   const isLoading = surface === 'loading';
@@ -78,9 +84,11 @@ export function GeniusMascot({
       className={`genius-mascot genius-mascot--${size}${animated ? ' genius-mascot--animated' : ''}`}
       data-surface={surface}
       onClick={cycleExpression}
+      onKeyDown={handleKeyDown}
       onPointerLeave={() => setPupilOffset({ x: 0, y: 0 })}
       onPointerMove={handlePointerMove}
-      role="img"
+      role={interactive ? 'button' : 'img'}
+      tabIndex={interactive ? 0 : undefined}
     >
       <span aria-hidden="true" className="genius-mascot__aura" />
       <svg aria-hidden="true" className="genius-mascot__svg" viewBox="0 0 360 470" xmlns="http://www.w3.org/2000/svg">

@@ -1428,7 +1428,7 @@ export function CustomerPortalAdminPage() {
 
   return (
     <>
-      <div className="grid h-full min-h-0 gap-4 overflow-hidden xl:grid-cols-[250px_minmax(0,1fr)_300px] 2xl:grid-cols-[250px_minmax(0,1fr)_300px]">
+      <div className="gso-screen-frame grid h-full min-h-0 gap-4 overflow-hidden xl:grid-cols-[250px_minmax(0,1fr)_300px] 2xl:grid-cols-[250px_minmax(0,1fr)_300px]">
       <aside className="min-h-0 overflow-hidden" data-portal-admin-left>
         <SurfaceCard
           className="h-full overflow-hidden !px-3.5 !py-4"

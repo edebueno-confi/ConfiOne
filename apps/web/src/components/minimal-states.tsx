@@ -41,7 +41,7 @@ export function MinimalState({
             style={{ background: 'var(--minimal-text)', animation: 'geniusShadow 3s ease-in-out infinite', filter: 'blur(6px)' }}
           />
           <div className="relative origin-center scale-[3]" style={{ animation: 'geniusFloat 3s ease-in-out infinite' }}>
-            <GeniusMascot size="lg" animated interactive surface="loading" alt="Gênio preparando os dados" />
+            <GeniusMascot size="lg" surface="loading" alt="Gênio preparando os dados" />
           </div>
         </div>
         <div className="max-w-md">

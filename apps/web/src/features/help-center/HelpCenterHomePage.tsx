@@ -329,7 +329,7 @@ export function HelpCenterHomePage() {
   return (
     <div className="grid gap-5 pb-8">
       <section className="grid gap-4">
-        <div className="relative overflow-hidden rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[linear-gradient(180deg,#071859_0%,#09154a_100%)] px-6 py-6 shadow-[0_24px_50px_rgba(7,24,89,0.18)] sm:px-8 sm:py-7 lg:min-h-[430px] lg:px-10 lg:py-8 xl:min-h-[442px] xl:px-12">
+        <div className="gso-help-hero relative overflow-hidden rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[linear-gradient(180deg,#071859_0%,#09154a_100%)] px-6 py-6 shadow-[0_24px_50px_rgba(7,24,89,0.18)] sm:px-8 sm:py-7 lg:min-h-[430px] lg:px-10 lg:py-8 xl:min-h-[442px] xl:px-12">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(106,160,255,0.16),transparent_28%),linear-gradient(165deg,transparent_12%,rgba(255,255,255,0.06)_46%,transparent_68%)]" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[44%] bg-[linear-gradient(135deg,transparent_0%,rgba(120,155,255,0.12)_46%,transparent_74%)]" />
 

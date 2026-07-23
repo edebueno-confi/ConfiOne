@@ -1,5 +1,6 @@
 import type {
   CsCustomerPortfolio,
+  CsCustomerPortfolioAssignment,
   CsCustomerPortfolioProductContext,
   TicketStatus,
 } from '../../contracts/support-contracts';
@@ -68,6 +69,26 @@ export function mapCsCustomerPortfolio(row: PortfolioRow): CsCustomerPortfolio {
     customerSuccessMemberCount: Number(row.customer_success_member_count ?? 0),
     healthSummaryStatus: 'unavailable',
     healthSummaryReason: String(row.health_summary_reason ?? ''),
+    portfolioAssignment: {
+      assignmentId: (row.portfolio_assignment_id as string | null) ?? null,
+      name: String(row.portfolio_name ?? 'Sem carteira definida'),
+      status:
+        row.portfolio_assignment_status === 'active' ||
+        row.portfolio_assignment_status === 'paused' ||
+        row.portfolio_assignment_status === 'archived'
+          ? row.portfolio_assignment_status
+          : 'unconfigured',
+      ownerUserId: (row.portfolio_owner_user_id as string | null) ?? null,
+      ownerFullName: (row.portfolio_owner_full_name as string | null) ?? null,
+      ownerEmail: (row.portfolio_owner_email as string | null) ?? null,
+      clusterKey: (row.portfolio_cluster_key as string | null) ?? null,
+      serviceModel: (row.portfolio_service_model as string | null) ?? null,
+      contactFrequency: (row.portfolio_contact_frequency as string | null) ?? null,
+      healthStatus: (row.portfolio_health_status as string | null) ?? null,
+      priority: (row.portfolio_priority as string | null) ?? null,
+      source: (row.portfolio_source as string | null) ?? null,
+      updatedAt: (row.portfolio_updated_at as string | null) ?? null,
+    } satisfies CsCustomerPortfolioAssignment,
     lastOperationalUpdateAt: String(row.last_operational_update_at),
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),

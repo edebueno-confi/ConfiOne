@@ -1110,8 +1110,8 @@ export function SettingsPage() {
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[color:var(--minimal-surface)]">
-      <header className="shrink-0 border-b border-[color:var(--minimal-border)] px-5 py-4 sm:px-6">
+    <div className="gso-settings-shell flex h-full min-h-0 flex-col bg-[color:var(--minimal-surface)]">
+      <header className="gso-workspace-header shrink-0 border-b border-[color:var(--minimal-border)] px-5 py-4 sm:px-6">
         <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">Configurações</h1>
         <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">
           {isDashboardViewer
@@ -1121,16 +1121,16 @@ export function SettingsPage() {
       </header>
 
       <div className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="min-h-0 overflow-y-auto border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)]">
+        <aside className="gso-settings-nav min-h-0 overflow-y-auto border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)]">
           {visibleGroups.map((group: SettingsGroup) => {
             const active = group.id === selectedId;
             return (
               <button
                 aria-pressed={active}
                 className={cx(
-                  'flex w-full items-center justify-between gap-2 border-b border-[color:var(--minimal-border)] px-4 py-3 text-left transition-colors duration-150',
+                  'gso-nav-link flex w-full items-center justify-between gap-2 border-b border-[color:var(--minimal-border)] px-4 py-3 text-left transition-colors duration-150',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--minimal-focus)]',
-                  active ? 'bg-[color:var(--minimal-selection)]' : 'bg-transparent hover:bg-[color:var(--minimal-surface-muted)]',
+                  active ? 'gso-nav-link--active bg-[color:var(--minimal-selection)]' : 'bg-transparent hover:bg-[color:var(--minimal-surface-muted)]',
                 )}
                 key={group.id}
                 onClick={() => setSelectedId(group.id)}

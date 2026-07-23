@@ -22,7 +22,7 @@ function SyncStatusLabel({ run }: { run: SyncRun | null }) {
 
   const toneClass =
     run.status === 'error'
-      ? 'text-[color:var(--color-brand-blue)]'
+      ? 'text-[color:var(--minimal-danger-text)]'
       : 'text-[color:var(--minimal-text-tertiary)]';
 
   const statusLabel =
@@ -88,8 +88,8 @@ export function AnalyticsShell() {
   const ActiveComponent = activeDomain?.Component;
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-[color:var(--minimal-surface)]">
-      <header className="border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6">
+    <div className="gso-screen-frame gso-analytics-shell flex h-full min-h-0 flex-col overflow-y-auto bg-[color:var(--minimal-surface)]">
+      <header className="gso-screen-header gso-workspace-header border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
@@ -105,7 +105,7 @@ export function AnalyticsShell() {
             </button>
             <SyncStatusLabel run={latestRun} />
             {syncError ? (
-              <span className="text-xs text-[color:var(--color-brand-blue)]">{syncError}</span>
+              <span className="text-xs text-[color:var(--minimal-danger-text)]">{syncError}</span>
             ) : null}
             {syncMessage ? (
               <span role="status" className="max-w-[38rem] text-right text-xs text-[color:var(--minimal-text-tertiary)]">{syncMessage}</span>
@@ -113,7 +113,7 @@ export function AnalyticsShell() {
           </div>
         </div>
 
-        <nav className="mt-4 flex flex-wrap gap-1" aria-label="Areas do dashboard">
+        <nav className="gso-workspace-tabs mt-4 flex flex-wrap gap-1" aria-label="Areas do dashboard">
           {visibleDomains.map((domain) => {
             const isActive = domain.key === activeKey;
             return (
@@ -123,7 +123,7 @@ export function AnalyticsShell() {
                 onClick={() => setActiveKey(domain.key)}
                 aria-current={isActive ? 'page' : undefined}
                 title={domain.description}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                className={`gso-workspace-tab rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                   isActive
                     ? 'bg-[color:var(--minimal-surface-muted)] text-[color:var(--minimal-text)]'
                     : 'text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)]'
@@ -137,7 +137,7 @@ export function AnalyticsShell() {
       </header>
 
       {isPlatformAdmin ? (
-        <div className="flex flex-wrap items-center justify-end gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-5 py-2.5 sm:px-6">
+        <div className="gso-command-strip flex flex-wrap items-center justify-end gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-5 py-2.5 sm:px-6">
           <span className="mr-auto text-xs text-[color:var(--minimal-text-tertiary)]">
             Atualize o cache do Dashboard Gerencial quando precisar consultar dados recentes.
           </span>

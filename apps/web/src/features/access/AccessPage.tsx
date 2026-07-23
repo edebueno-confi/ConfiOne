@@ -729,8 +729,8 @@ export function AccessPage() {
 
   return (
     <>
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
-      <header className="shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4">
+    <div className="gso-screen-frame flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
+      <header className="gso-screen-header shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
@@ -747,7 +747,7 @@ export function AccessPage() {
         </div>
       </header>
 
-      <div className="shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)]">
+      <div className="gso-screen-tabs shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)]">
         <div className="flex flex-wrap gap-1 px-5 pt-1">
           {TABS.map((tab) => (
             <button

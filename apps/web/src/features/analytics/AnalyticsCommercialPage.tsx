@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MinimalState } from '../../components/minimal-states';
-import { getCommercialSnapshot } from './analytics-api';
+import { getCommercialSnapshot, listAnalyticsSourceConfig } from './analytics-api';
 import {
   formatCurrencyBRL,
   formatPercent,
@@ -8,10 +8,13 @@ import {
   type CommercialFunnelStage,
   type CommercialKpis,
   type CommercialMonthlyPoint,
+  type CommercialByPipeline,
+  type CommercialSnapshot,
   type AnalyticsFilters,
+  type AnalyticsSourceConfig,
   DEFAULT_ANALYTICS_FILTERS,
 } from './analytics-model';
-import { ChartCard, KpiCard } from './analytics-ui';
+import { ChartCard, KpiCard, MetricInfo } from './analytics-ui';
 import { AnalyticsFilters as AnalyticsFiltersBar } from './AnalyticsFilters';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import type { AnalyticsPageProps } from './analytics-model';
@@ -23,6 +26,7 @@ type State =
       phase: 'ready';
       kpis: CommercialKpis;
       funnel: CommercialFunnelStage[];
+      byPipeline: CommercialByPipeline[];
       byOwner: CommercialByOwner[];
       monthly: CommercialMonthlyPoint[];
     }
@@ -32,6 +36,8 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange }: 
   const [state, setState] = useState<State>({ phase: 'loading' });
   const period = sharedPeriod ?? resolveAnalyticsPeriod('month');
   const [filters, setFilters] = useState<AnalyticsFilters>({ ...DEFAULT_ANALYTICS_FILTERS, ...period });
+  const [configuredPipelines, setConfiguredPipelines] = useState<AnalyticsSourceConfig[]>([]);
+  const [excludedPipelineIds, setExcludedPipelineIds] = useState<string[]>([]);
 
   useEffect(() => { setFilters((current) => ({ ...current, ...period })); }, [period.from, period.to]);
 
@@ -39,9 +45,13 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange }: 
     let cancelled = false;
     setState({ phase: 'loading' });
 
-    getCommercialSnapshot(filters)
-      .then((snapshot) => {
-        if (!cancelled) setState({ phase: 'ready', ...snapshot });
+    Promise.all([getCommercialSnapshot(filters, excludedPipelineIds), listAnalyticsSourceConfig()])
+      .then(([snapshot, configs]) => {
+        if (!cancelled) {
+          const activeConfigs = configs.filter((config) => config.domainKey === 'commercial' && config.objectType === 'deal' && config.isActive);
+          setConfiguredPipelines(activeConfigs);
+          setState({ phase: 'ready', ...applyConfiguredPipelineLabels(snapshot, activeConfigs) });
+        }
       })
       .catch((error) => {
         if (!cancelled) {
@@ -56,7 +66,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange }: 
     return () => {
       cancelled = true;
     };
-  }, [filters]);
+  }, [filters, excludedPipelineIds]);
 
   if (state.phase === 'loading') {
     return (
@@ -72,13 +82,18 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange }: 
     return <MinimalState tone="critical" title="Não foi possível carregar" description={state.message} />;
   }
 
-  const { kpis, funnel, byOwner, monthly } = state;
+  const { kpis, funnel, byPipeline, byOwner, monthly } = state;
   const stageOptions = funnel.map((stage) => ({ value: stage.stageId, label: stage.label }));
   const ownerOptions = byOwner.filter((owner) => owner.ownerId).map((owner) => ({ value: owner.ownerId as string, label: owner.ownerName }));
+  const pipelineOptions = configuredPipelines.map((pipeline) => {
+    const observed = byPipeline.find((item) => item.pipelineId === pipeline.pipelineId);
+    return { ...pipeline, dealCount: observed?.dealCount ?? 0 };
+  });
 
   return (
     <div className="space-y-5">
       <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} ownerOptions={ownerOptions} />
+      {pipelineOptions.length > 0 ? <CommercialPipelineScopeFilter pipelines={pipelineOptions} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null}
       {kpis.totalDeals === 0 ? (
         <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." />
       ) : null}
@@ -148,4 +163,48 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange }: 
       </ChartCard> : null}
     </div>
   );
+}
+
+function applyConfiguredPipelineLabels(snapshot: CommercialSnapshot, configs: AnalyticsSourceConfig[]): CommercialSnapshot {
+  const labels = new Map(configs.map((config) => [config.pipelineId, config.label]));
+  return {
+    ...snapshot,
+    byPipeline: snapshot.byPipeline.map((pipeline) => ({
+      ...pipeline,
+      label: labels.get(pipeline.pipelineId) || pipeline.label,
+    })),
+  };
+}
+
+function CommercialPipelineScopeFilter({
+  pipelines,
+  excludedPipelineIds,
+  onChange,
+}: {
+  pipelines: Array<AnalyticsSourceConfig & { dealCount: number }>;
+  excludedPipelineIds: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const toggle = (pipelineId: string) => {
+    onChange(excludedPipelineIds.includes(pipelineId)
+      ? excludedPipelineIds.filter((id) => id !== pipelineId)
+      : [...excludedPipelineIds, pipelineId]);
+  };
+
+  return <ChartCard title="Pipelines incluídos no recorte" description="Todos os pipelines comerciais ativos começam selecionados. Desmarque um para analisar somente os negócios desejados; a configuração persistida não é alterada.">
+    <div className="flex flex-wrap gap-2">
+      {pipelines.map((pipeline) => {
+        const included = !excludedPipelineIds.includes(pipeline.pipelineId);
+        return <label key={pipeline.id} className={`flex min-h-9 cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-xs transition-colors ${included ? 'border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface-muted)] text-[color:var(--minimal-text)]' : 'border-[color:var(--minimal-border)] text-[color:var(--minimal-text-tertiary)]'}`}>
+          <input type="checkbox" checked={included} onChange={() => toggle(pipeline.pipelineId)} className="accent-[color:var(--minimal-text)]" />
+          <span className="min-w-0"><span className="block truncate font-medium" title={pipeline.label}>{pipeline.label}</span><span className="block truncate text-[10px] opacity-60" title={pipeline.hubspotLabel || undefined}>HubSpot: {pipeline.hubspotLabel || 'nome ainda não sincronizado'}</span></span>
+          <span className="shrink-0 font-mono text-[10px] opacity-60">{pipeline.pipelineId}</span>
+          <span className="shrink-0 tabular-nums opacity-70">{pipeline.dealCount.toLocaleString('pt-BR')}</span>
+          <MetricInfo ariaLabel={`Origem do pipeline ${pipeline.label}`} content={<div className="space-y-2 text-left"><p className="font-semibold">Origem do pipeline</p><p>Objeto: Deal (Comercial).</p><p>Nome oficial: {pipeline.hubspotLabel || 'aguardando sincronização'}.</p><p>Alias exibido no painel: {pipeline.alias || 'usa o nome oficial do HubSpot'}.</p><p>ID imutável: {pipeline.pipelineId}.</p></div>} />
+        </label>;
+      })}
+      {excludedPipelineIds.length > 0 ? <button type="button" onClick={() => onChange([])} className="rounded-md border border-[color:var(--minimal-border-strong)] px-3 py-2 text-xs font-medium text-[color:var(--minimal-text)] hover:bg-[color:var(--minimal-surface-muted)]">Incluir todos</button> : null}
+    </div>
+    <p className="mt-3 text-xs text-[color:var(--minimal-text-tertiary)]">{excludedPipelineIds.length ? `${excludedPipelineIds.length} pipeline(s) excluído(s) somente deste recorte.` : 'O recorte atual considera todos os pipelines comerciais ativos configurados.'}</p>
+  </ChartCard>;
 }

@@ -17,6 +17,15 @@ export interface HubSpotStage {
   metadata: Record<string, unknown>;
 }
 
+export interface HubSpotPipelineDefinition {
+  pipelineId: string;
+  label: string;
+  displayOrder: number;
+  archived: boolean;
+  stages: HubSpotStage[];
+  metadata: Record<string, unknown>;
+}
+
 export interface HubSpotOwner {
   ownerId: string;
   email: string | null;
@@ -142,6 +151,56 @@ export async function fetchPipelineStages(
       metadata,
     };
   });
+}
+
+// GET /crm/v3/pipelines/{objectType} -> catalogo oficial de pipelines.
+// O catalogo e somente leitura no HubSpot; o sincronizador o espelha localmente
+// para que o administrador possa escolher o recorte do Dashboard.
+export async function fetchPipelineDefinitions(
+  objectType: 'deals' | 'tickets',
+  tokenOverride?: string,
+): Promise<HubSpotPipelineDefinition[]> {
+  const response = await hubspotFetch(`/crm/v3/pipelines/${objectType}`, {}, 0, tokenOverride);
+  const payload = (await response.json()) as {
+    results?: Array<{
+      id?: string;
+      label?: string;
+      displayOrder?: number;
+      archived?: boolean;
+      stages?: Array<{
+        id: string;
+        label: string;
+        displayOrder?: number;
+        metadata?: Record<string, unknown>;
+      }>;
+      metadata?: Record<string, unknown>;
+    }>;
+  };
+
+  return (payload.results ?? [])
+    .map((pipeline) => ({
+      pipelineId: String(pipeline.id ?? ''),
+      label: String(pipeline.label ?? '').trim(),
+      displayOrder: Number(pipeline.displayOrder ?? 0),
+      archived: Boolean(pipeline.archived ?? false),
+      stages: (pipeline.stages ?? []).map((stage) => {
+        const metadata = stage.metadata ?? {};
+        const isClosed = objectType === 'deals'
+          ? String(metadata.isClosed ?? 'false') === 'true'
+          : String(metadata.ticketState ?? 'OPEN').toUpperCase() === 'CLOSED';
+        const probability = Number(metadata.probability ?? '0');
+        return {
+          stageId: stage.id,
+          label: stage.label,
+          displayOrder: stage.displayOrder ?? 0,
+          isClosed,
+          isWon: objectType === 'deals' && isClosed && probability >= 1,
+          metadata,
+        };
+      }),
+      metadata: pipeline.metadata ?? {},
+    }))
+    .filter((pipeline) => /^\d+$/.test(pipeline.pipelineId) && pipeline.label.length > 0);
 }
 
 // O label do pipeline vem da mesma definicao usada para resolver os estagios.
@@ -474,22 +533,31 @@ export async function searchCompaniesByCnpj(
   cnpj: string,
   tokenOverride?: string,
 ): Promise<HubSpotRecord[]> {
-  const raw = (cnpj ?? '').trim();
-  if (!raw) return [];
   try {
-    const response = await hubspotFetch('/crm/v3/objects/companies/search', {
-      method: 'POST',
-      body: JSON.stringify({
-        filterGroups: [{ filters: [{ propertyName: 'cnpj', operator: 'EQ', value: raw }] }],
-        properties: ['name', 'cnpj'],
-        limit: 5,
-      }),
-    }, 0, tokenOverride);
-    const data = await response.json().catch(() => ({})) as { results?: HubSpotRecord[] };
-    return Array.isArray(data.results) ? data.results : [];
+    return await searchCompaniesByCnpjStrict(cnpj, tokenOverride);
   } catch {
     return [];
   }
+}
+
+export async function searchCompaniesByCnpjStrict(
+  cnpj: string,
+  tokenOverride?: string,
+): Promise<HubSpotRecord[]> {
+  const raw = (cnpj ?? '').trim();
+  if (!raw) return [];
+  const digits = raw.replace(/\D/g, '');
+  const variants = [digits, raw, digits.length === 14 ? `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}` : ''].filter((value, index, values) => value && values.indexOf(value) === index);
+  const records = new Map<string, HubSpotRecord>();
+  for (const value of variants) {
+    const response = await hubspotFetch('/crm/v3/objects/companies/search', {
+    method: 'POST',
+      body: JSON.stringify({ filterGroups: [{ filters: [{ propertyName: 'cnpj', operator: 'EQ', value }] }], properties: ['name', 'cnpj'], limit: 5 }),
+    }, 0, tokenOverride);
+    const data = await response.json().catch(() => ({})) as { results?: HubSpotRecord[] };
+    for (const record of Array.isArray(data.results) ? data.results : []) if (record.id) records.set(String(record.id), record);
+  }
+  return [...records.values()];
 }
 
 // --- Propriedades de empresa (schema) para a central de integracao ----------

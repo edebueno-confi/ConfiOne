@@ -66,6 +66,13 @@ Deno.serve(async (req) => {
     const existingGroups = await listCompanyPropertyGroupNames(token);
     const groupExists = existingGroups.has(GROUP.name);
     const results: Array<Record<string, unknown>> = [];
+    const { data: run, error: runError } = await client.from('analytics_hubspot_property_setup_runs')
+      .insert({ mode: dryRun ? 'dry_run' : 'apply', status: 'running', requested_by_user_id: actorId, total_rows: PROPERTIES.length + (groupExists ? 0 : 1) })
+      .select('id').single();
+    if (runError || !run) throw new Error(`Falha ao registrar ledger do property-setup: ${runError?.message ?? 'run indisponivel'}`);
+    const runId = String(run.id);
+    const { error: itemError } = await client.from('analytics_hubspot_property_setup_items').insert(PROPERTIES.map((prop) => ({ run_id: runId, property_name: String(prop.name), status: 'planned', after_payload: prop })));
+    if (itemError) throw new Error(`Falha ao registrar itens do property-setup: ${itemError.message}`);
 
     if (!dryRun && !groupExists) {
       await createCompanyPropertyGroup(GROUP.name, GROUP.label, token);
@@ -74,16 +81,19 @@ Deno.serve(async (req) => {
     for (const prop of PROPERTIES) {
       const name = String(prop.name);
       const exists = existingProps.has(name);
-      if (exists) { results.push({ name, action: 'exists' }); continue; }
+      if (exists) { results.push({ name, action: 'exists' }); await client.from('analytics_hubspot_property_setup_items').update({ status: 'exists' }).eq('run_id', runId).eq('property_name', name); continue; }
       if (dryRun) { results.push({ name, action: 'would_create' }); continue; }
       try {
         await createCompanyProperty(prop, token);
         results.push({ name, action: 'created' });
+        await client.from('analytics_hubspot_property_setup_items').update({ status: 'created' }).eq('run_id', runId).eq('property_name', name);
       } catch (error) {
         results.push({ name, action: 'failed', error: error instanceof Error ? error.message.slice(0, 300) : 'erro' });
+        await client.from('analytics_hubspot_property_setup_items').update({ status: 'failed', error_message: error instanceof Error ? error.message.slice(0, 500) : 'erro' }).eq('run_id', runId).eq('property_name', name);
       }
     }
 
+    await client.from('analytics_hubspot_property_setup_runs').update({ status: results.some((r) => r.action === 'failed') ? 'partial' : 'completed', created_rows: results.filter((r) => r.action === 'created').length, failed_rows: results.filter((r) => r.action === 'failed').length, finished_at: new Date().toISOString() }).eq('id', runId);
     return jsonResponse({
       ok: true,
       dryRun,
@@ -94,6 +104,7 @@ Deno.serve(async (req) => {
         created: results.filter((r) => r.action === 'created').length,
         failed: results.filter((r) => r.action === 'failed').length,
       },
+      ledgerRunId: runId,
       results,
     });
   } catch (error) {

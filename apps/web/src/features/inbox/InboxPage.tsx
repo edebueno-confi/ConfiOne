@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MinimalState } from '../../components/minimal-states';
 import { MinimalTextInput } from '../../components/minimal-ui';
+import { FilterTabs } from '../../components/FilterTabs';
 import { cx } from '../../components/ui';
 import { useAuthContext } from '../auth/auth-context';
 import {
@@ -888,29 +889,12 @@ export function InboxPage() {
           />
         </div>
         <div aria-label="Visões da fila" className="flex flex-wrap gap-1.5" role="group">
-          {VIEWS.map((entry) => {
-            const active = view === entry.id;
-            return (
-              <button
-                aria-pressed={active}
-                className={cx(
-                  'inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-150',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]',
-                  active
-                    ? 'border-transparent bg-[color:var(--minimal-action)] text-[color:var(--minimal-action-ink)]'
-                    : 'border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)]',
-                )}
-                key={entry.id}
-                onClick={() => setView(entry.id)}
-                type="button"
-              >
-                {entry.label}
-                <span className={cx('tabular-nums', active ? '' : 'text-[color:var(--minimal-text-tertiary)]')}>
-                  {viewCounts[entry.id]}
-                </span>
-              </button>
-            );
-          })}
+          <FilterTabs
+            ariaLabel="Visões da fila"
+            activeId={view}
+            items={VIEWS.map((entry) => ({ ...entry, count: viewCounts[entry.id] }))}
+            onChange={(id) => setView(id as ViewId)}
+          />
         </div>
       </header>
 

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildOmieReceivablesRequest, parseOmieCredentials, extractOmieReceivablesPage, fetchOmieReceivables, normalizeOmieApiReceivables, buildOmieClientsRequest, extractOmieClientsPage, enrichReceivablesWithClients } from '../../supabase/functions/_shared/omie.ts';
+import { buildOmieReceivablesRequest, parseOmieCredentials, extractOmieReceivablesPage, fetchOmieReceivables, normalizeOmieApiReceivables, buildOmieClientsRequest, extractOmieClientsPage, fetchOmieClientsIndex, enrichReceivablesWithClients } from '../../supabase/functions/_shared/omie.ts';
 
 test('monta requisição paginada da API Omie sem expor segredo', () => {
   const request = buildOmieReceivablesRequest({ appKey: 'key', appSecret: 'secret' }, 2, 500);
@@ -43,6 +43,27 @@ test('faz retry apenas para falhas transitórias da API Omie', async () => {
   assert.deepEqual(rows, [{ codigo_lancamento_omie: 10 }]);
 });
 
+test('busca páginas de contas a receber em série e preserva a ordem', async () => {
+  let active = 0;
+  let maxActive = 0;
+  const rows = await fetchOmieReceivables({ appKey: 'a', appSecret: 'b' }, async (_url, init) => {
+    active += 1;
+    maxActive = Math.max(maxActive, active);
+    const body = JSON.parse(String(init?.body ?? '{}'));
+    const page = body.param[0].pagina;
+    await new Promise((resolve) => setTimeout(resolve, page === 1 ? 1 : 10));
+    active -= 1;
+    return new Response(JSON.stringify({
+      pagina: page,
+      total_de_paginas: 4,
+      conta_receber_cadastro: [{ codigo_lancamento_omie: page }],
+    }), { status: 200 });
+  }, { timeoutMs: 1000, maxRetries: 0 });
+
+  assert.equal(maxActive, 1);
+  assert.deepEqual(rows.map((row) => row.codigo_lancamento_omie), [1, 2, 3, 4]);
+});
+
 test('monta requisição de clientes sem tag apenas_importados_api (clientes_list_request)', () => {
   const request = buildOmieClientsRequest({ appKey: 'k', appSecret: 's' }, 3, 500);
   assert.equal(request.call, 'ListarClientesResumido');
@@ -53,6 +74,27 @@ test('extrai clientes de clientes_cadastro_resumido', () => {
   const page = extractOmieClientsPage({ pagina: 1, total_de_paginas: 2, clientes_cadastro_resumido: [{ codigo_cliente: 99, razao_social: 'ACME LTDA', cnpj_cpf: '12345678000199' }] });
   assert.equal(page.rows.length, 1);
   assert.equal(page.totalPages, 2);
+});
+
+test('busca páginas de clientes em série', async () => {
+  let active = 0;
+  let maxActive = 0;
+  const clients = await fetchOmieClientsIndex({ appKey: 'a', appSecret: 'b' }, async (_url, init) => {
+    active += 1;
+    maxActive = Math.max(maxActive, active);
+    const body = JSON.parse(String(init?.body ?? '{}'));
+    const page = body.param[0].pagina;
+    await new Promise((resolve) => setTimeout(resolve, page === 1 ? 1 : 10));
+    active -= 1;
+    return new Response(JSON.stringify({
+      pagina: page,
+      total_de_paginas: 4,
+      clientes_cadastro_resumido: [{ codigo_cliente: page, razao_social: `Cliente ${page}` }],
+    }), { status: 200 });
+  }, { timeoutMs: 1000, maxRetries: 0, maxPages: 10 });
+
+  assert.equal(maxActive, 1);
+  assert.deepEqual([...clients.keys()], ['1', '2', '3', '4']);
 });
 
 test('enriquece títulos com nome/CNPJ do cliente por codigo_cliente_fornecedor', () => {

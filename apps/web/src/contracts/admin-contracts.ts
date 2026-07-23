@@ -2,6 +2,7 @@ import type {
   AdminInternalActionTargetArea,
   AdminInternalArea,
   AdminInternalAreaMembership,
+  AdminInternalAccessProfile,
   AdminInternalCollaborator,
   AdminCustomerAccountAlert,
   AdminCustomerAccountCustomization,
@@ -63,6 +64,7 @@ import type {
 } from '@genius-support-os/contracts';
 
 export type {
+  AdminInternalAccessProfile,
   AdminCustomerAccountAlert,
   AdminCustomerAccountCustomization,
   AdminCustomerAccountFeature,
@@ -225,6 +227,97 @@ export const PLATFORM_ROLES = [
   'dashboard_viewer',
 ] as const;
 export type PlatformRole = (typeof PLATFORM_ROLES)[number];
+
+export const INTERNAL_SCREEN_CATEGORIES = [
+  'workspace',
+  'intelligence',
+  'administration',
+] as const;
+export type InternalScreenCategory = (typeof INTERNAL_SCREEN_CATEGORIES)[number];
+
+export const INTERNAL_SCREEN_KEYS = [
+  'home',
+  'support_inbox',
+  'support_queue',
+  'support_tickets',
+  'customers_b2b',
+  'cs_portfolio',
+  'internal_actions',
+  'product',
+  'admin_overview',
+  'analytics',
+  'tenants',
+  'customer_portal_admin',
+  'internal_areas',
+  'access',
+  'system',
+  'settings',
+  'knowledge',
+  'product_docs',
+] as const;
+export type InternalScreenKey = (typeof INTERNAL_SCREEN_KEYS)[number];
+
+export interface AdminInternalScreenCatalogRow {
+  screen_key: InternalScreenKey;
+  display_name: string;
+  route_path: string;
+  category: InternalScreenCategory;
+  sort_order: number;
+  is_system: boolean;
+  is_active: boolean;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+  default_area_keys: string[];
+  dependency_screen_keys: InternalScreenKey[];
+  can_manage: boolean;
+}
+
+export interface AdminInternalMembershipScreenGrantRow {
+  grant_id: Uuid;
+  membership_id: Uuid;
+  tenant_id: Uuid;
+  tenant_display_name: string;
+  user_id: Uuid;
+  user_full_name: string | null;
+  user_email: string | null;
+  area_key: string;
+  area_label: string;
+  area_role: InternalAreaMembershipRole;
+  membership_status: InternalAreaMembershipStatus;
+  screen_key: InternalScreenKey;
+  screen_display_name: string;
+  route_path: string;
+  category: InternalScreenCategory;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+  can_revoke: boolean;
+}
+
+export interface InternalActorWorkspaceContextRow {
+  actor_user_id: Uuid;
+  tenant_id: Uuid | null;
+  area_key: string | null;
+  area_role: InternalAreaMembershipRole | null;
+  permission_source: 'global_role' | 'area_membership';
+  screen_key: InternalScreenKey;
+  display_name: string;
+  route_path: string;
+  category: InternalScreenCategory;
+  sort_order: number;
+}
+
+export interface RpcAdminReplaceInternalMembershipScreensPayload {
+  membershipId: Uuid;
+  screenKeys: InternalScreenKey[];
+}
+
+export interface RpcAdminReplaceInternalMembershipScreensResponse {
+  membership_id: Uuid;
+  user_id: Uuid;
+  tenant_id: Uuid;
+  area_key: string;
+  screen_keys: InternalScreenKey[];
+}
 
 export interface AdminGateProfileRow {
   id: Uuid;

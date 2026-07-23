@@ -23,7 +23,6 @@ export function GeniusSyncOverlay({
           <GeniusMascot
             alt={`Gênio sincronizando dados do ${source}`}
             animated
-            interactive
             size="xl"
             surface="loading"
           />

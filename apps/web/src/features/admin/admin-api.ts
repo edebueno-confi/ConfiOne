@@ -21,6 +21,10 @@ import type {
   AdminCustomerProductSubscriptionOwner,
   AdminInternalActionTargetArea,
   AdminInternalAreaMembership,
+  AdminInternalAccessProfile,
+  AdminInternalMembershipScreenGrantRow,
+  AdminInternalScreenCatalogRow,
+  InternalActorWorkspaceContextRow,
   AdminCustomerPortalAccessOverviewRow,
   AdminCustomerPortalArticleCandidateRow,
   AdminCustomerPortalTicketCandidateRow,
@@ -124,6 +128,8 @@ import type {
   RpcAdminUpdateCustomerIntegrationPayload,
   RpcAdminUpdateInternalAreaMembershipPayload,
   RpcAdminUpdateInternalAreaMembershipResponse,
+  RpcAdminReplaceInternalMembershipScreensPayload,
+  RpcAdminReplaceInternalMembershipScreensResponse,
   RpcAdminUpsertCustomerAccountProfilePayload,
 } from '../../contracts/admin-contracts';
 
@@ -156,6 +162,9 @@ function mapAdminInternalAreaMembership(
     canArchive: Boolean(row.can_archive),
     canUpdateRole: Boolean(row.can_update_role),
     canUpdateStatus: Boolean(row.can_update_status),
+    accessProfileId: (row.access_profile_id as string | null) ?? null,
+    accessProfileName: (row.access_profile_name as string | null) ?? null,
+    permissionMode: row.permission_mode === 'profile' ? 'profile' : 'custom',
     createdAt: String(row.created_at),
     createdByFullName: (row.created_by_full_name as string | null) ?? null,
     createdByUserId: (row.created_by_user_id as string | null) ?? null,
@@ -1493,6 +1502,88 @@ export async function updateTenantMemberStatus(
   return data as RpcAdminUpdateTenantMemberStatusResponse;
 }
 
+export async function listAdminInternalScreenCatalog() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_internal_screen_catalog')
+    .select('*')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o catálogo de telas internas.');
+  }
+
+  return (data ?? []).map((row) => ({
+    ...(row as AdminInternalScreenCatalogRow),
+    default_area_keys: Array.isArray(row.default_area_keys)
+      ? row.default_area_keys.map(String)
+      : [],
+    dependency_screen_keys: Array.isArray(row.dependency_screen_keys)
+      ? row.dependency_screen_keys
+      : [],
+  })) as AdminInternalScreenCatalogRow[];
+}
+
+export async function listAdminInternalAccessProfiles() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_internal_access_profiles')
+    .select('*')
+    .eq('is_active', true)
+    .order('area_label', { ascending: true, nullsFirst: true })
+    .order('name', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar os perfis de acesso internos.');
+  }
+
+  return (data ?? []).map((row) => ({
+    accessProfileId: String(row.access_profile_id),
+    areaKey: (row.area_key as string | null) ?? null,
+    areaLabel: (row.area_label as string | null) ?? null,
+    name: String(row.name),
+    description: (row.description as string | null) ?? null,
+    isSystem: Boolean(row.is_system),
+    isActive: Boolean(row.is_active),
+    screenCount: Number(row.screen_count ?? 0),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    canManage: Boolean(row.can_manage),
+  })) as AdminInternalAccessProfile[];
+}
+
+export async function listAdminInternalMembershipScreenGrants() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_internal_membership_screen_grants')
+    .select('*')
+    .order('tenant_display_name', { ascending: true })
+    .order('area_label', { ascending: true })
+    .order('user_full_name', { ascending: true, nullsFirst: false })
+    .order('screen_display_name', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar as telas dos vínculos internos.');
+  }
+
+  return (data ?? []) as AdminInternalMembershipScreenGrantRow[];
+}
+
+export async function listInternalActorWorkspaceContext() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_internal_actor_workspace_context')
+    .select('*')
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o contexto de telas do usuário.');
+  }
+
+  return (data ?? []) as InternalActorWorkspaceContextRow[];
+}
+
 export async function setGlobalRole(input: {
   userId: string;
   role: 'dashboard_viewer';
@@ -1561,6 +1652,42 @@ export async function archiveInternalAreaMembership(
   }
 
   return data as RpcAdminArchiveInternalAreaMembershipResponse;
+}
+
+export async function replaceInternalMembershipScreens(
+  payload: RpcAdminReplaceInternalMembershipScreensPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_admin_replace_internal_membership_screens',
+    {
+      p_membership_id: payload.membershipId,
+      p_screen_keys: payload.screenKeys,
+    },
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao atualizar as telas do vínculo interno.');
+  }
+
+  return data as RpcAdminReplaceInternalMembershipScreensResponse;
+}
+
+export async function assignInternalAccessProfile(input: {
+  membershipId: string;
+  accessProfileId: string;
+}) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_assign_internal_access_profile', {
+    p_membership_id: input.membershipId,
+    p_access_profile_id: input.accessProfileId,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao atribuir o perfil de acesso interno.');
+  }
+
+  return data;
 }
 
 export async function listAdminKnowledgeArticleAssets(articleId: string) {
@@ -2071,8 +2198,12 @@ export type {
   AdminAccessMembershipRow,
   AdminAccessUserRow,
   AdminAuditFeedRow,
+  AdminInternalAccessProfile,
   AdminInternalActionTargetArea,
   AdminInternalAreaMembership,
+  AdminInternalMembershipScreenGrantRow,
+  AdminInternalScreenCatalogRow,
+  InternalActorWorkspaceContextRow,
   AdminCustomerPortalAccessOverviewRow,
   AdminCustomerPortalArticleCandidateRow,
   AdminCustomerPortalTicketCandidateRow,

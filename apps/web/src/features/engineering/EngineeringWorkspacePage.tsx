@@ -897,7 +897,7 @@ export function EngineeringWorkspacePage() {
 
   return (
     <>
-      <div className="flex h-full min-h-0 flex-col gap-[var(--workspace-panel-gap)] overflow-hidden">
+      <div className="gso-screen-frame flex h-full min-h-0 flex-col gap-[var(--workspace-panel-gap)] overflow-hidden">
         <header className="shrink-0 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-4 py-[var(--workspace-header-y)]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">

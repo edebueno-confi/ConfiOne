@@ -40,6 +40,17 @@ function valueAt(row: Record<string, unknown>, ...keys: string[]) {
   return null;
 }
 
+const SENSITIVE_PAYLOAD_KEY = /cpf|cnpj|tax.?id|documento|app.?key|app.?secret|token|password/i;
+
+export function redactSensitivePayload(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(redactSensitivePayload);
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([key, child]) => [
+    key,
+    SENSITIVE_PAYLOAD_KEY.test(key) ? '[REDACTED_PII]' : redactSensitivePayload(child),
+  ]));
+}
+
 function excelOrOmieDate(value: unknown) {
   if (typeof value === 'number' && Number.isFinite(value) && value > 20000 && value < 60000) {
     return new Date(Date.UTC(1899, 11, 30) + value * 86400000).toISOString().slice(0, 10);
@@ -114,7 +125,7 @@ export function normalizeOmieApiReceivables(rows: unknown[], syncRunId: string) 
       is_cancelled: /cancel/i.test(status),
       is_partial: /parcial/i.test(status),
       effective_at: dueDate ? `${dueDate}T00:00:00Z` : null,
-      raw_payload: raw,
+      raw_payload: redactSensitivePayload(raw),
     };
   });
 }
@@ -124,17 +135,14 @@ export async function fetchOmieReceivables(
   fetchImpl: typeof fetch = fetch,
   options: { timeoutMs?: number; maxRetries?: number } = {},
 ) {
-  const rows: unknown[] = [];
   const pageSize = 500;
   const timeoutMs = Math.max(options.timeoutMs ?? 15000, 1000);
   const maxRetries = Math.min(Math.max(options.maxRetries ?? 2, 0), 3);
-  for (let page = 1; page <= 100; page += 1) {
+  const retriableStatus = new Set([429, 502, 503, 504]);
+
+  async function fetchPage(page: number) {
     let response: Response | null = null;
     let lastError: unknown = null;
-    // Somente status realmente transitorios sao re-tentados. O Omie usa HTTP 500
-    // para faults de negocio (ex.: SOAP-ENV:Client-6 REDUNDANT); re-tentar o mesmo
-    // payload imediatamente provocaria o proprio "consumo redundante".
-    const retriableStatus = new Set([429, 502, 503, 504]);
     for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -147,7 +155,9 @@ export async function fetchOmieReceivables(
       } catch (error) {
         lastError = error;
         response = null;
-        if (attempt === maxRetries) throw new Error(`Falha de rede na API Omie: ${error instanceof Error ? error.message : String(error)}`);
+        if (attempt === maxRetries) {
+          throw new Error(`Falha de rede na API Omie: ${error instanceof Error ? error.message : String(error)}`);
+        }
       } finally {
         clearTimeout(timer);
       }
@@ -168,7 +178,14 @@ export async function fetchOmieReceivables(
       } catch { /* corpo indisponivel */ }
       throw new Error(`Omie Contas a Receber falhou (${response.status})${detail ? `: ${detail}` : ''}.`);
     }
-    const parsed = extractOmieReceivablesPage(await response.json());
+    return extractOmieReceivablesPage(await response.json());
+  }
+
+  // A paginação é serializada: o OMIE rejeita chamadas simultâneas do mesmo
+  // método com 8020/REDUNDANT.
+  const rows: unknown[] = [];
+  for (let page = 1; page <= 100; page += 1) {
+    const parsed = await fetchPage(page);
     rows.push(...parsed.rows);
     if (parsed.page >= parsed.totalPages || parsed.rows.length === 0) return rows;
   }
@@ -213,7 +230,8 @@ export async function fetchOmieClientsIndex(
   const maxRetries = Math.min(Math.max(options.maxRetries ?? 2, 0), 3);
   const maxPages = Math.min(Math.max(options.maxPages ?? 60, 1), 200);
   const retriableStatus = new Set([429, 502, 503, 504]);
-  for (let page = 1; page <= maxPages; page += 1) {
+
+  async function fetchPage(page: number) {
     let response: Response | null = null;
     for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
       const controller = new AbortController();
@@ -232,9 +250,12 @@ export async function fetchOmieClientsIndex(
       if (response && (response.ok || !retriableStatus.has(response.status) || attempt === maxRetries)) break;
       await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
     }
-    if (!response || !response.ok) return index;
-    const parsed = extractOmieClientsPage(await response.json());
-    for (const entry of parsed.rows) {
+    if (!response || !response.ok) return null;
+    return extractOmieClientsPage(await response.json());
+  }
+
+  function addPageRows(rows: unknown[]) {
+    for (const entry of rows) {
       const row = (entry && typeof entry === 'object' ? entry : {}) as Record<string, unknown>;
       const code = normalizeOmieClientCode(row);
       if (!code) continue;
@@ -243,8 +264,21 @@ export async function fetchOmieClientsIndex(
       const taxId = String(valueAt(row, 'cnpj_cpf', 'cnpjCpf', 'cnpj') ?? '').trim() || null;
       index.set(code, { name, taxId, tradeName });
     }
-    if (parsed.page >= parsed.totalPages || parsed.rows.length === 0) break;
   }
+
+  const firstPage = await fetchPage(1);
+  if (!firstPage) return index;
+  addPageRows(firstPage.rows);
+  if (firstPage.page >= firstPage.totalPages || firstPage.rows.length === 0) return index;
+
+  const totalPages = Math.min(Math.max(firstPage.totalPages, firstPage.page), maxPages);
+  for (let page = 2; page <= totalPages; page += 1) {
+    const result = await fetchPage(page);
+    if (!result) return index;
+    addPageRows(result.rows);
+    if (result.rows.length === 0) break;
+  }
+
   return index;
 }
 
