@@ -1,14 +1,14 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import type { AnalyticsFilters } from './analytics-model';
-import { ANALYTICS_PERIOD_OPTIONS, resolveAnalyticsPeriod, type AnalyticsPeriodPreset } from './analytics-periods';
+import { ANALYTICS_PERIOD_OPTIONS, matchAnalyticsPeriodPreset, resolveAnalyticsPeriod, type AnalyticsPeriodPreset } from './analytics-periods';
 
 interface Option { value: string; label: string }
 
 export function AnalyticsFilters({ value, onApply, stageOptions, ownerOptions = [], priorityOptions = [], stageLabel = 'Estágio' }: { value: AnalyticsFilters; onApply: (next: AnalyticsFilters) => void; stageOptions: Option[]; ownerOptions?: Option[]; priorityOptions?: Option[]; stageLabel?: string }) {
   const [draft, setDraft] = useState(value);
   const [validation, setValidation] = useState<string | null>(null);
-  const [preset, setPreset] = useState<AnalyticsPeriodPreset | ''>('all');
-  useEffect(() => { setDraft(value); const matchingPreset = ANALYTICS_PERIOD_OPTIONS.find((option) => { const period = resolveAnalyticsPeriod(option.value); return period.from === value.from && period.to === value.to; }); setPreset(matchingPreset?.value ?? ''); }, [value]);
+  const [preset, setPreset] = useState<AnalyticsPeriodPreset | ''>(() => matchAnalyticsPeriodPreset(value));
+  useEffect(() => { setDraft(value); setPreset(matchAnalyticsPeriodPreset(value)); }, [value]);
   const update = (key: keyof AnalyticsFilters, next: string) => setDraft((current) => ({ ...current, [key]: next }));
   const apply = () => { if (draft.from && draft.to && draft.from > draft.to) { setValidation('A data inicial precisa ser anterior ou igual à data final.'); return; } setValidation(null); onApply(draft); };
   const clear = () => { const next = { from: '', to: '', ownerId: '', stageId: '', priority: '' }; setDraft(next); setValidation(null); onApply(next); };

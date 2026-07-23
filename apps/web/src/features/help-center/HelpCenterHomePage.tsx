@@ -11,6 +11,7 @@ import { classifyAdminError } from '../admin/admin-errors';
 import type { HelpCenterSpaceContext } from './context';
 import { sanitizePublicSupportContacts } from './branding';
 import { searchPublicKnowledgeArticles } from './public-api';
+import { buildHelpCenterCategoryHref } from './help-center-navigation';
 import {
   HelpIcon,
   PublicIconBadge,
@@ -85,9 +86,7 @@ function buildCategoryCards(
       count,
       icon,
       tone,
-      to: matchedCategory
-        ? `/help/${spaceSlug}/articles?category=${matchedCategory.category_id}`
-        : `/help/${spaceSlug}/articles?q=${encodeURIComponent(query)}`,
+      to: buildHelpCenterCategoryHref(spaceSlug, matchedCategory?.category_id, query),
       isSupport: false,
       external: false,
     };
@@ -625,7 +624,7 @@ export function HelpCenterHomePage() {
                     ) : (
                       <Link
                         className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--help-link)] no-underline"
-                        to={`/help/${context.primaryRoute.knowledge_space_slug}/articles?category=${card.to}`}
+                        to={card.to ?? `/help/${context.primaryRoute.knowledge_space_slug}/articles`}
                       >
                         Ver artigos
                         <HelpIcon kind="chevron-right" />
@@ -662,7 +661,7 @@ export function HelpCenterHomePage() {
                 ) : (
                   <Link
                     className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--help-link)] no-underline"
-                    to={`/help/${context.primaryRoute.knowledge_space_slug}/articles?category=${card.to}`}
+                    to={card.to ?? `/help/${context.primaryRoute.knowledge_space_slug}/articles`}
                   >
                     Ver artigos
                     <HelpIcon kind="chevron-right" />

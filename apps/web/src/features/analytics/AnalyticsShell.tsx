@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { formatDateTime } from '../../app/format';
 import { getLatestSyncRun, triggerHubspotSync } from './analytics-api';
 import { listEnabledAnalyticsDomains } from './analytics-domains';
@@ -8,6 +8,7 @@ import type { AnalyticsSharedPeriod } from './analytics-model';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import { AnalyticsReportExport } from './AnalyticsReportExport';
 import { GeniusSyncOverlay } from '../../components/GeniusSyncOverlay';
+import { MinimalState } from '../../components/minimal-states';
 
 const DOMAINS = listEnabledAnalyticsDomains();
 
@@ -153,7 +154,23 @@ export function AnalyticsShell() {
       ) : null}
 
       <div className="px-5 py-5 sm:px-6">
-        {ActiveComponent ? <ActiveComponent key={`${activeKey}-${reloadKey}`} sharedPeriod={sharedPeriod} onSharedPeriodChange={setSharedPeriod} /> : null}
+        <Suspense
+          fallback={
+            <MinimalState
+              loading
+              title="Carregando area do dashboard"
+              description="Estamos preparando os indicadores deste recorte."
+            />
+          }
+        >
+          {ActiveComponent ? (
+            <ActiveComponent
+              key={`${activeKey}-${reloadKey}`}
+              sharedPeriod={sharedPeriod}
+              onSharedPeriodChange={setSharedPeriod}
+            />
+          ) : null}
+        </Suspense>
       </div>
       <AnalyticsReportExport open={reportOpen} period={sharedPeriod} onClose={() => setReportOpen(false)} />
       {syncing ? <GeniusSyncOverlay source="HubSpot" detail="Empresas, negócios, tickets e responsáveis serão recarregados ao final." /> : null}

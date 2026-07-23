@@ -30,3 +30,13 @@ export const ANALYTICS_PERIOD_OPTIONS: { value: AnalyticsPeriodPreset; label: st
   { value: 'previous_year', label: 'Ano passado' },
   { value: 'all', label: 'Todo o período' },
 ];
+
+export function matchAnalyticsPeriodPreset(
+  value: { from: string; to: string },
+  now = new Date(),
+): AnalyticsPeriodPreset | '' {
+  return ANALYTICS_PERIOD_OPTIONS.find((option) => {
+    const period = resolveAnalyticsPeriod(option.value, now);
+    return period.from === value.from && period.to === value.to;
+  })?.value ?? '';
+}
