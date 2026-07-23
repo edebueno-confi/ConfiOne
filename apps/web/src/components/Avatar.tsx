@@ -57,7 +57,7 @@ export function Avatar({
   const content = src ? (
     <img alt={displayName} className="h-full w-full object-cover" loading="lazy" src={src} />
   ) : fallbackMascot ? (
-    <GeniusMascot alt={displayName} animated={false} avatarVariant={mascotVariant} size={size === 'lg' ? 'md' : 'sm'} surface="avatar" />
+    <GeniusMascot alt={displayName} animated={false} avatarVariant={mascotVariant} size={size} surface="avatar" />
   ) : initials(name, email);
   const classes = cx(
     'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold ring-1 ring-inset ring-[color:var(--minimal-border)]',

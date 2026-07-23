@@ -3455,6 +3455,13 @@ table {
 .genius-mascot--lg { --genius-mascot-size: 3rem; }
 .genius-mascot--xl { --genius-mascot-size: 14rem; }
 
+/* Avatares usam o círculo como janela semântica, não como moldura para o mascote inteiro. */
+.genius-mascot[data-surface='avatar'] { width: 100%; height: 100%; overflow: hidden; border-radius: inherit; }
+.genius-mascot[data-surface='avatar'] .genius-mascot__svg { transform-origin: 50% 32%; }
+.genius-mascot[data-surface='avatar'].genius-mascot--sm .genius-mascot__svg { transform: scale(2.05) translateY(9%); }
+.genius-mascot[data-surface='avatar'].genius-mascot--md .genius-mascot__svg { transform: scale(1.52) translateY(4%); transform-origin: 50% 38%; }
+.genius-mascot[data-surface='avatar'].genius-mascot--lg .genius-mascot__svg { transform: scale(1.18) translateY(1%); transform-origin: 50% 46%; }
+
 .avatar-palette-0 { background: var(--minimal-selection); color: var(--minimal-selection-text); }
 .avatar-palette-1 { background: var(--color-success-surface); color: var(--color-success-ink); }
 .avatar-palette-2 { background: var(--color-warning-surface); color: var(--color-warning-ink); }

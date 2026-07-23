@@ -34,3 +34,10 @@ test('mantém acessibilidade sem animar indefinidamente quando reduced motion es
   assert.match(styles, /prefers-reduced-motion/);
   assert.match(styles, /genius-mascot--animated/);
 });
+
+test('define enquadramento de avatar por tamanho sem remover a moldura circular', () => {
+  assert.match(styles, /data-surface=['"]avatar['"][^}]*genius-mascot--sm|genius-mascot--sm[^}]*data-surface=['"]avatar['"]/s);
+  assert.match(styles, /data-surface=['"]avatar['"][^}]*genius-mascot--md|genius-mascot--md[^}]*data-surface=['"]avatar['"]/s);
+  assert.match(styles, /data-surface=['"]avatar['"][^}]*genius-mascot--lg|genius-mascot--lg[^}]*data-surface=['"]avatar['"]/s);
+  assert.match(styles, /avatar.*overflow|overflow.*avatar/s);
+});
