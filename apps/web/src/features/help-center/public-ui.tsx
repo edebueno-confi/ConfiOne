@@ -448,9 +448,9 @@ export function PublicHelpHeader({
           )}
           </nav>
           {portalHref ? (
-            <a href={portalHref} rel="noreferrer" target="_blank">
+            <Link to={portalHref}>
               <AppButton className="min-h-11 rounded-[14px] px-5">Entrar no portal</AppButton>
-            </a>
+            </Link>
           ) : null}
         </div>
 
@@ -506,14 +506,12 @@ export function PublicHelpHeader({
               </span>
             )}
             {portalHref ? (
-              <a
+              <Link
                 className="rounded-[12px] bg-[var(--help-link)] px-3 py-2 text-sm font-semibold text-white no-underline"
-                href={portalHref}
-                rel="noreferrer"
-                target="_blank"
+                to={portalHref}
               >
                 Entrar no portal
-              </a>
+              </Link>
             ) : null}
           </div>
         </details>

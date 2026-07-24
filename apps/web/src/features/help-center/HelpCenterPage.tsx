@@ -330,7 +330,7 @@ export function HelpCenterSpaceLayout() {
       `${space.brand_name} publica guias oficiais de configuração, operação e resolução de dúvidas para clientes B2B.`
     : 'Guias públicos B2B da plataforma GeniusOS.';
   const supportContacts = sanitizePublicSupportContacts(space?.support_contacts);
-  const portalHref = supportContacts.websiteUrl ?? supportContacts.docsUrl ?? null;
+  const portalHref = '/portal';
 
   useHelpCenterDocumentMeta({
     title: helpCenterTitle,
