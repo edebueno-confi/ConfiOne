@@ -46,3 +46,14 @@ test('sugestões ficam no bloco do Gênio, não junto ao campo de busca', () => 
   assert.ok(mascotIndex > -1 && suggestionsIndex > mascotIndex);
   assert.match(home, /data-testid="hero-companion"/);
 });
+
+test('home segue a composição visual aprovada para a consulta assistida', () => {
+  assert.match(home, /Bem-vindo à Central de Ajuda/);
+  assert.match(home, /data-testid="hero-title-highlight"/);
+  assert.match(home, /Consulta assistida por IA/);
+  assert.match(home, /Estou pronto para ajudar com sua consulta\./);
+  assert.match(home, /Gênio disponível/);
+  assert.match(home, /Sugestões do Gênio/);
+  assert.match(home, /Explorar/);
+  assert.match(home, /data-testid="featured-article-card"/);
+});

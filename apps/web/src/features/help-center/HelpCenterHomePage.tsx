@@ -54,7 +54,7 @@ const heroMascotByState: Record<HeroAssistantState, {
   expression: 'happy' | 'wink' | 'wow';
 }> = {
   waiting: {
-    message: 'Pergunte ao Gênio',
+    message: 'Estou pronto para ajudar com sua consulta.',
     pose: 'shrug',
     expression: 'happy',
   },
@@ -368,58 +368,64 @@ export function HelpCenterHomePage() {
   return (
     <div className="grid gap-8 pb-8">
       <section className="grid gap-4" aria-labelledby="help-home-title">
-        <div className="gso-help-hero relative overflow-hidden rounded-[28px] border border-[var(--help-hero-border)] bg-[var(--help-hero)] px-5 py-6 shadow-[var(--help-shadow)] sm:px-8 sm:py-8 lg:grid lg:min-h-[390px] lg:grid-cols-[minmax(0,1.12fr)_minmax(340px,0.88fr)] lg:gap-x-8 lg:px-10 lg:py-9 xl:px-12" data-testid="help-home-hero">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,var(--help-orb-a),transparent_28%)]" />
-
-          <div className="relative z-10 order-1 flex flex-col justify-center gap-5 lg:col-start-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--help-hero-muted)]">Central de Ajuda</p>
-            <h1 className="max-w-[680px] text-[2.5rem] font-semibold leading-[0.98] tracking-[-0.07em] text-[var(--help-hero-text)] sm:text-[3rem] lg:text-[3.65rem]" id="help-home-title">
+        <div className="relative overflow-hidden rounded-[28px] border border-[var(--help-consultation-border)] bg-[var(--help-consultation-canvas)] shadow-[var(--help-consultation-shadow)] lg:grid lg:min-h-[440px] lg:grid-cols-[minmax(0,1fr)_minmax(390px,0.92fr)]" data-testid="help-home-hero">
+          <div className="relative flex flex-col justify-center gap-5 px-6 py-9 sm:px-10 sm:py-12 lg:px-12 lg:py-14">
+            <p className="flex items-center gap-2 text-sm font-semibold text-[var(--help-consultation-ink)]"><span aria-hidden="true" className="text-lg text-[var(--color-brand-magenta)]">✦</span> Bem-vindo à Central de Ajuda</p>
+            <h1 className="max-w-[620px] text-[2.8rem] font-semibold leading-[0.98] tracking-[-0.07em] text-[var(--help-consultation-ink)] sm:text-[3.6rem] lg:text-[4.1rem]" id="help-home-title">
               <span className="block">Seu desejo é uma</span>
-              <span className="block">consulta.</span>
+              <span className="block"><span data-testid="hero-title-highlight" className="text-[var(--help-consultation-accent)]">consulta.</span></span>
             </h1>
-            <p className="max-w-[35rem] text-[0.98rem] leading-7 text-[var(--help-hero-muted)]">Pergunte ao Gênio e encontre orientações para configurar, operar e resolver dúvidas no Genius Returns.</p>
+            <p className="max-w-[35rem] text-base leading-7 text-[var(--help-consultation-muted)]">Pergunte ao Gênio e encontre respostas para configurar, operar e resolver dúvidas no Genius Returns.</p>
 
-            <form className="flex min-w-0 max-w-[720px] flex-col gap-3 sm:flex-row sm:items-center" onSubmit={handleSearchSubmit} role="search">
+            <form className="flex min-w-0 max-w-[620px] flex-col gap-3 sm:flex-row sm:items-center" onSubmit={handleSearchSubmit} role="search">
               <label className="relative min-w-0 flex-1">
                 <span className="sr-only">Buscar na Central de Ajuda</span>
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--help-muted)]"><HelpIcon kind="search" /></span>
                 <input
                   aria-label="Buscar na Central de Ajuda"
                   autoComplete="off"
-                  className="h-12 w-full rounded-[14px] border border-[var(--help-hero-border)] bg-[var(--help-surface-strong)] pl-11 pr-4 text-sm text-[var(--help-ink-strong)] outline-none placeholder:text-[var(--help-muted)] focus:ring-2 focus:ring-[var(--help-focus)]"
+                  className="h-14 w-full rounded-[16px] border border-[var(--help-border)] bg-[var(--help-consultation-surface)] pl-11 pr-4 text-base text-[var(--help-consultation-ink)] outline-none placeholder:text-[var(--help-muted)] focus:ring-2 focus:ring-[var(--help-focus)]"
                   onChange={(event) => setSearchInput(event.target.value)}
                   placeholder="Digite sua dúvida..."
                   type="search"
                   value={searchInput}
                 />
               </label>
-              <AppButton className="h-12 w-full shrink-0 rounded-[14px] px-7 text-base sm:w-auto" type="submit">Buscar</AppButton>
+              <AppButton className="h-14 w-full shrink-0 rounded-[16px] px-8 text-base sm:w-auto" type="submit">Buscar</AppButton>
             </form>
 
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3" data-testid="hero-ai-guidance">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-[var(--help-consultation-accent-soft)] px-3 py-2 text-xs font-semibold text-[var(--help-consultation-accent)]"><span aria-hidden="true" className="text-base text-[var(--color-brand-magenta)]">✦</span> Consulta assistida por IA</span>
+              <span className="text-xs leading-5 text-[var(--help-consultation-muted)]">O Gênio ajuda a encontrar o artigo certo.</span>
+            </div>
           </div>
 
-          <div className="relative order-2 flex min-h-[250px] items-center justify-center lg:col-start-2 lg:min-h-0" data-testid="hero-companion">
-            <div className="pointer-events-none absolute inset-x-0 bottom-[16%] h-32 rounded-full bg-[radial-gradient(ellipse,var(--help-hero-soft),transparent_68%)]" />
-            <div className="relative flex w-full flex-col items-center gap-2">
-              <div aria-live="polite" className="rounded-full border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-4 py-2 text-center text-xs font-semibold text-[var(--help-hero-muted)] shadow-[var(--help-shadow)]" data-testid="hero-assistant-message">
+          <div className="relative flex items-center justify-center border-t border-[var(--help-consultation-border)] px-5 py-8 sm:px-8 lg:border-l lg:border-t-0 lg:px-8" data-testid="hero-companion">
+            <div className="pointer-events-none absolute inset-5 rounded-[24px] bg-[var(--help-consultation-soft)] opacity-70" />
+            <div className="relative flex w-full max-w-[440px] flex-col items-center gap-3">
+              <div aria-live="polite" className="max-w-[230px] rounded-[16px] border border-[var(--help-consultation-border)] bg-[var(--help-consultation-surface)] px-4 py-3 text-center text-xs font-semibold leading-5 text-[var(--help-consultation-ink)] shadow-[var(--help-consultation-shadow)]" data-testid="hero-assistant-message">
                 {heroMascot.message}
               </div>
-              <div className="flex items-center justify-center" data-testid="hero-mascot">
+              <div className="flex min-h-[190px] items-center justify-center sm:min-h-[220px]" data-testid="hero-mascot">
                 <GeniusMascot alt="Gênio acompanhando a consulta na Central de Ajuda" expression={heroMascot.expression} pose={heroMascot.pose} size="xl" surface={heroAssistantState === 'processing' ? 'loading' : 'default'} />
               </div>
-              <div className="mt-1 w-full max-w-[25rem] space-y-2" data-testid="hero-suggestions">
-                <p className="text-center text-xs font-semibold uppercase tracking-[0.16em] text-[var(--help-hero-muted)]">Sugestões do Gênio</p>
-                <div className="flex flex-wrap justify-center gap-2">
+              <div className="w-full space-y-3" data-testid="hero-suggestions">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-[var(--help-consultation-ink)]"><span aria-hidden="true" className="text-base text-[var(--color-brand-magenta)]">✦</span> Sugestões do Gênio</p>
+                  <span className="inline-flex items-center gap-1 text-xs text-[var(--color-success-ink)]"><span aria-hidden="true" className="h-2 w-2 rounded-full bg-[var(--color-success-text)]" /> Gênio disponível</span>
+                </div>
+                <div className="grid gap-2">
                   {suggestedArticles.map(({ id, title, to }) => (
                     <Link
                       aria-label={`Abrir artigo: ${title}`}
-                      className="inline-flex min-h-9 max-w-full items-center gap-2 rounded-[12px] border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-3 text-sm text-[var(--help-hero-muted)] no-underline transition hover:border-[var(--help-accent)] hover:bg-[var(--help-accent-soft)]"
+                      className="group flex min-h-14 items-center gap-3 rounded-[14px] border border-[var(--help-consultation-border)] bg-[var(--help-consultation-surface)] px-3 py-2.5 text-sm font-medium leading-5 text-[var(--help-consultation-ink)] no-underline transition hover:border-[var(--help-consultation-accent)] hover:bg-[var(--help-consultation-accent-soft)]"
                       data-suggestion-id={id}
                       key={id}
                       to={to}
                     >
-                      <HelpIcon className="h-4 w-4 shrink-0" kind="search" />
-                      <span className="truncate">{title}</span>
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--help-consultation-soft)] text-[var(--help-consultation-accent)]"><HelpIcon className="h-4 w-4" kind="search" /></span>
+                      <span className="min-w-0 flex-1">{title}</span>
+                      <HelpIcon className="shrink-0 text-[var(--help-consultation-muted)] transition group-hover:translate-x-0.5 group-hover:text-[var(--help-consultation-accent)]" kind="chevron-right" />
                     </Link>
                   ))}
                 </div>
@@ -474,7 +480,7 @@ function CategoryCard({ card, mobile = false }: { card: CategoryCard; mobile?: b
       <p className="mt-2 text-sm leading-6 text-[var(--help-muted)]">{card.description}</p>
       <span className="mt-auto flex items-center justify-between gap-3 pt-5 text-sm font-semibold text-[var(--help-link)]">
         <span>{card.count} {card.count === 1 ? 'artigo' : 'artigos'}</span>
-        <span>Ver artigos <HelpIcon className="ml-1 inline-block transition group-hover:translate-x-0.5" kind="chevron-right" /></span>
+        <span>Explorar <HelpIcon className="ml-1 inline-block transition group-hover:translate-x-0.5" kind="chevron-right" /></span>
       </span>
   </Link>
   );
@@ -482,7 +488,7 @@ function CategoryCard({ card, mobile = false }: { card: CategoryCard; mobile?: b
 
 function FeaturedArticleCard({ article, spaceSlug }: { article: PublicKnowledgeArticleListRow; spaceSlug: string }) {
   return (
-    <Link className="group flex min-h-[210px] flex-col rounded-[20px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] p-5 no-underline shadow-[var(--help-shadow)] transition hover:-translate-y-0.5 hover:border-[var(--help-accent)]" to={`/help/${spaceSlug}/articles/${article.slug}`}>
+    <Link className="group flex min-h-[210px] flex-col rounded-[20px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] p-5 no-underline shadow-[var(--help-shadow)] transition hover:-translate-y-0.5 hover:border-[var(--help-accent)]" data-testid="featured-article-card" to={`/help/${spaceSlug}/articles/${article.slug}`}>
       <div className="flex items-center justify-between gap-3">
         <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--help-link)]">{article.category_name ?? 'Central de Ajuda'}</span>
         <HelpIcon className="text-[var(--help-muted)] transition group-hover:text-[var(--help-link)]" kind="chevron-right" />

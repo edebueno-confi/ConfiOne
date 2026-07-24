@@ -76,6 +76,15 @@
   --help-hero-muted: rgba(235, 241, 255, 0.9);
   --help-hero-border: rgba(255, 255, 255, 0.16);
   --help-shadow: 0 18px 40px rgba(20, 31, 71, 0.08);
+  --help-consultation-canvas: #f7faff;
+  --help-consultation-surface: #ffffff;
+  --help-consultation-soft: #edf5ff;
+  --help-consultation-ink: var(--help-ink-strong);
+  --help-consultation-muted: var(--help-muted);
+  --help-consultation-border: rgba(48, 127, 226, 0.16);
+  --help-consultation-accent: var(--help-accent);
+  --help-consultation-accent-soft: var(--help-accent-soft);
+  --help-consultation-shadow: 0 18px 40px rgba(20, 31, 71, 0.08);
   --help-content-code: rgba(20, 31, 71, 0.08);
   --help-content-rule: rgba(20, 31, 71, 0.12);
   --help-content-media: #090f2d;
@@ -240,6 +249,15 @@
   --help-hero-muted: rgba(235, 241, 255, 0.88);
   --help-hero-border: rgba(255, 255, 255, 0.2);
   --help-shadow: 0 18px 40px rgba(2, 8, 24, 0.42);
+  --help-consultation-canvas: #0b1733;
+  --help-consultation-surface: #0f1d3a;
+  --help-consultation-soft: #172d58;
+  --help-consultation-ink: var(--help-ink-strong);
+  --help-consultation-muted: var(--help-muted);
+  --help-consultation-border: #29436f;
+  --help-consultation-accent: var(--help-accent);
+  --help-consultation-accent-soft: var(--help-accent-soft);
+  --help-consultation-shadow: 0 18px 40px rgba(2, 8, 24, 0.42);
   --help-content-code: rgba(255, 255, 255, 0.1);
   --help-content-rule: rgba(183, 195, 221, 0.22);
   --help-content-media: #050b21;
@@ -328,6 +346,15 @@
   --help-hero-muted: rgba(235, 241, 255, 0.9);
   --help-hero-border: rgba(255, 255, 255, 0.16);
   --help-shadow: 0 18px 40px rgba(20, 31, 71, 0.08);
+  --help-consultation-canvas: #f7faff;
+  --help-consultation-surface: #ffffff;
+  --help-consultation-soft: #edf5ff;
+  --help-consultation-ink: var(--help-ink-strong);
+  --help-consultation-muted: var(--help-muted);
+  --help-consultation-border: rgba(48, 127, 226, 0.16);
+  --help-consultation-accent: var(--help-accent);
+  --help-consultation-accent-soft: var(--help-accent-soft);
+  --help-consultation-shadow: 0 18px 40px rgba(20, 31, 71, 0.08);
 }
 
 * {
