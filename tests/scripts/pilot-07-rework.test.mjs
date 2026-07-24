@@ -57,3 +57,11 @@ test('home segue a composição visual aprovada para a consulta assistida', () =
   assert.match(home, /Explorar/);
   assert.match(home, /data-testid="featured-article-card"/);
 });
+
+test('home controla a linguagem de IA por feature flag e oculta categorias vazias', () => {
+  assert.match(home, /VITE_HELP_CENTER_AI_ENABLED/);
+  assert.match(home, /Busca guiada pelo Gênio/);
+  assert.match(home, /Pronto para ajudar/);
+  assert.match(home, /Consulta assistida por IA/);
+  assert.match(home, /filter\(\(card\) => card\.count > 0\)/);
+});

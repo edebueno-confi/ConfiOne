@@ -21,6 +21,17 @@ import {
 
 type SearchPhase = 'idle' | 'loading' | 'ready' | 'empty' | 'contract-unavailable' | 'error';
 
+const HELP_CENTER_AI_ENABLED = String(import.meta.env.VITE_HELP_CENTER_AI_ENABLED ?? '').toLowerCase() === 'true';
+const heroGuidanceCopy = HELP_CENTER_AI_ENABLED
+  ? {
+      label: 'Consulta assistida por IA',
+      message: 'Estou pronto para ajudar com sua consulta.',
+    }
+  : {
+      label: 'Busca guiada pelo Gênio',
+      message: 'Pronto para ajudar',
+    };
+
 const suggestedArticleDefinitions = [
   {
     id: 'calculo-do-estorno',
@@ -54,7 +65,7 @@ const heroMascotByState: Record<HeroAssistantState, {
   expression: 'happy' | 'wink' | 'wow';
 }> = {
   waiting: {
-    message: 'Estou pronto para ajudar com sua consulta.',
+    message: heroGuidanceCopy.message,
     pose: 'shrug',
     expression: 'happy',
   },
@@ -204,7 +215,7 @@ function buildCategoryCards(
       count,
       to: buildHelpCenterCategoryHref(spaceSlug, category?.category_id, query),
     } satisfies CategoryCard;
-  });
+  }).filter((card) => card.count > 0);
 }
 
 export function HelpCenterHomePage() {
@@ -394,8 +405,8 @@ export function HelpCenterHomePage() {
               <AppButton className="h-14 w-full shrink-0 rounded-[16px] px-8 text-base sm:w-auto" type="submit">Buscar</AppButton>
             </form>
 
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3" data-testid="hero-ai-guidance">
-              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-[var(--help-consultation-accent-soft)] px-3 py-2 text-xs font-semibold text-[var(--help-consultation-accent)]"><span aria-hidden="true" className="text-base text-[var(--color-brand-magenta)]">✦</span> Consulta assistida por IA</span>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3" data-ai-enabled={HELP_CENTER_AI_ENABLED} data-testid="hero-ai-guidance">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-[var(--help-consultation-accent-soft)] px-3 py-2 text-xs font-semibold text-[var(--help-consultation-accent)]"><span aria-hidden="true" className="text-base text-[var(--color-brand-magenta)]">✦</span> {heroGuidanceCopy.label}</span>
               <span className="text-xs leading-5 text-[var(--help-consultation-muted)]">O Gênio ajuda a encontrar o artigo certo.</span>
             </div>
           </div>
