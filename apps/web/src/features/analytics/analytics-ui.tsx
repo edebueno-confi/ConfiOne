@@ -1,15 +1,19 @@
 import type { ReactNode } from 'react';
+import { GeniusMascot } from '../../components/GeniusMascot';
 
 export function AnalyticsLoadingState({ title, description }: { title: string; description: string }) {
   return (
     <section aria-busy="true" aria-label={title} className="space-y-4" role="status">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        {Array.from({ length: 5 }, (_, index) => <div aria-hidden="true" className={`h-24 animate-pulse rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] ${index === 3 ? 'lg:col-start-1' : ''}`} key={index} />)}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-6 xl:grid-cols-5">
+        {Array.from({ length: 5 }, (_, index) => <div aria-hidden="true" className={`h-24 animate-pulse rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] ${index < 3 ? 'lg:col-span-2 xl:col-span-1' : 'lg:col-span-3 xl:col-span-1'}`} key={index} />)}
       </div>
       <div className="grid gap-4 xl:grid-cols-2">
         {Array.from({ length: 2 }, (_, index) => <div aria-hidden="true" className="h-56 animate-pulse rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)]" key={index} />)}
       </div>
-      <p className="text-center text-sm text-[color:var(--minimal-text-secondary)]">{description}</p>
+      <div className="flex items-center justify-center gap-3 rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-4 py-3">
+        <GeniusMascot alt="Gênio processando os dados do Dashboard" expression="happy" pose="magic" size="sm" surface="loading" />
+        <p className="text-sm text-[color:var(--minimal-text-secondary)]">{description}</p>
+      </div>
     </section>
   );
 }
@@ -18,10 +22,10 @@ export function AnalyticsRetryAction({ onRetry }: { onRetry?: () => void }) {
   return onRetry ? <button type="button" onClick={onRetry} className="rounded-lg bg-[color:var(--minimal-text)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-surface)]">Tentar novamente</button> : null;
 }
 
-export function KpiCard({ label, value, hint, source, tone = 'neutral' }: { label: string; value: string; hint?: string; source?: string; tone?: 'neutral' | 'warning' | 'critical' }) {
+export function KpiCard({ label, value, hint, source, tone = 'neutral', className = '' }: { label: string; value: string; hint?: string; source?: string; tone?: 'neutral' | 'warning' | 'critical'; className?: string }) {
   const toneClass = tone === 'critical' ? 'border-[color:var(--minimal-danger-border)] bg-[color:var(--minimal-danger-surface)]' : tone === 'warning' ? 'border-[color:var(--minimal-warning-border)] bg-[color:var(--minimal-warning-surface)]' : 'border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)]';
   const valueClass = tone === 'critical' ? 'text-[color:var(--minimal-danger-text)]' : tone === 'warning' ? 'text-[color:var(--minimal-warning-text)]' : 'text-[color:var(--minimal-text)]';
-  return <div className={`rounded-xl border px-4 py-3.5 ${toneClass}`}>
+  return <div className={`rounded-xl border px-4 py-3.5 ${toneClass} ${className}`}>
     <p className={`text-2xl font-semibold tabular-nums leading-none ${valueClass}`}>{value}</p>
     <div className="mt-2.5 flex items-center gap-1.5"><p className={`text-sm font-medium ${valueClass}`}>{label}</p>{source ? <MetricInfo text={source} /> : null}</div>
     {hint ? <p className="mt-0.5 text-xs text-[color:var(--minimal-text-tertiary)]">{hint}</p> : null}

@@ -14,29 +14,15 @@ const DOMAINS = listEnabledAnalyticsDomains();
 
 function SyncStatusLabel({ run }: { run: SyncRun | null }) {
   if (!run) {
-    return (
-      <span className="text-xs text-[color:var(--minimal-text-tertiary)]">
-        Nenhuma sincronização registrada ainda.
-      </span>
-    );
+    return <span className="text-xs text-[color:var(--minimal-text-tertiary)]">Nenhuma sincronização registrada ainda.</span>;
   }
 
-  const toneClass =
-    run.status === 'error'
-      ? 'text-[color:var(--minimal-danger-text)]'
-      : 'text-[color:var(--minimal-text-tertiary)]';
-
-  const statusLabel =
-    run.status === 'success' ? 'concluída' : run.status === 'error' ? 'com erro' : 'em andamento';
+  const statusLabel = run.status === 'success' ? 'concluída' : run.status === 'error' ? 'com erro' : 'em andamento';
+  const toneClass = run.status === 'error' ? 'text-[color:var(--minimal-danger-text)]' : 'text-[color:var(--minimal-text-tertiary)]';
 
   return (
     <span className={`text-xs ${toneClass}`}>
-      Última sincronização {statusLabel} em {formatDateTime(run.finishedAt ?? run.startedAt)}
-      {run.status === 'success'
-        ? run.ticketsSynced === 0
-          ? ` (${run.companiesSynced} empresas, ${run.dealsSynced} negócios; nenhum ticket foi alterado nesta execução; o Dashboard usa o snapshot acumulado)`
-          : ` (${run.companiesSynced} empresas, ${run.dealsSynced} negócios, ${run.ticketsSynced} tickets atualizados nesta execução)`
-        : ''}
+      Última sincronização {statusLabel} · {formatDateTime(run.finishedAt ?? run.startedAt)}
       {run.status === 'error' ? ': A sincronização terminou com erro.' : ''}
     </span>
   );
@@ -75,7 +61,7 @@ export function AnalyticsShell() {
     try {
       const result = await triggerHubspotSync();
       setSyncMessage(
-        `${result.mode === 'incremental' ? 'Atualização incremental' : 'Carga completa'} concluída: ${result.companies.toLocaleString('pt-BR')} empresas, ${result.deals.toLocaleString('pt-BR')} negócios e ${result.tickets.toLocaleString('pt-BR')} tickets processados.`,
+        `${result.mode === 'incremental' ? 'Atualização incremental' : 'Carga completa'} concluída: ${result.companies.toLocaleString('pt-BR')} ${result.companies === 1 ? 'empresa' : 'empresas'}, ${result.deals.toLocaleString('pt-BR')} ${result.deals === 1 ? 'negócio' : 'negócios'} e ${result.tickets.toLocaleString('pt-BR')} ${result.tickets === 1 ? 'ticket' : 'tickets'} processados.`,
       );
       refreshLatestRun();
       setReloadKey((current) => current + 1);

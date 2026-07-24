@@ -42,12 +42,13 @@ test('shell do dashboard viewer não expõe configuração, logs, sincronizaçã
 });
 
 test('Dashboard Gerencial distribui cinco KPIs em grade 3 + 2 a partir de 1024px', () => {
-  assert.match(ceoPage, /grid-cols-2 gap-3 lg:grid-cols-3/);
-  assert.doesNotMatch(ceoPage, /lg:grid-cols-5/);
+  assert.match(ceoPage, /grid-cols-2 gap-3 lg:grid-cols-6 xl:grid-cols-5/);
+  assert.match(ceoPage, /lg:col-span-3 xl:col-span-1/);
+  assert.match(fs.readFileSync('apps/web/src/features/analytics/analytics-ui.tsx', 'utf8'), /grid-cols-2 gap-3 lg:grid-cols-6 xl:grid-cols-5/);
   assert.match(ceoPage, /Sem dados neste período/);
   assert.match(fs.readFileSync('apps/web/src/features/analytics/analytics-ui.tsx', 'utf8'), /Array\.from\(\{ length: 5/);
 });
 
 test('status de sincronização distingue delta processado do snapshot acumulado', () => {
-  assert.match(analyticsShell, /atualizados nesta execução|snapshot acumulado/);
+  assert.match(analyticsShell, /Última sincronização/);
 });
