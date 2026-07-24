@@ -334,6 +334,15 @@ payload produtivo.
 
 ## Estado do Git
 
+## Implementação DASHBOARD-02.1
+
+O contrato de estados, a matriz temporal, o inventário de pipelines, as
+restrições do `dashboard_viewer`, as fixtures locais e o blueprint de UX/UI
+foram consolidados nos relatórios `DASHBOARD_02_FOUNDATION_2026-07-24.md`,
+`DASHBOARD_02_PIPELINE_INVENTORY_2026-07-24.md` e
+`DASHBOARD_02_UX_BLUEPRINT_2026-07-24.md`. Esta atualização não reabre o
+discovery nem altera a Central de Ajuda, Knowledge ou Taxonomia.
+
 - Branch: `codex/dashboard-02-discovery`.
 - Base: `main` em `e9f59162a84d85ffdbc10a0efb020769cd6a74fa`.
 - HEAD final: preenchido após o commit documental.
