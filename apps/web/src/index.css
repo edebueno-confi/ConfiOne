@@ -3849,6 +3849,9 @@ table {
 .genius-mascot--animated .genius-mascot__pose-arm--wave { transform-box: fill-box; transform-origin: 224px 210px; animation: genius-mascot-arm-wave 1.4s ease-in-out infinite; }
 .genius-mascot--animated .genius-mascot__pose-arm--magic { transform-box: fill-box; transform-origin: 226px 212px; animation: genius-mascot-arm-magic 3.2s ease-in-out infinite; }
 .genius-mascot--animated .genius-mascot__pose-spark { transform-box: fill-box; transform-origin: center; animation: genius-mascot-tip-spark 1.8s ease-in-out infinite; }
+.genius-mascot--animated[data-pose='magic'] .genius-mascot__lamp-smoke,
+.genius-mascot--animated[data-surface='loading'] .genius-mascot__lamp-smoke { transform-box: fill-box; transform-origin: 176px 420px; animation: genius-mascot-smoke 3.8s ease-out infinite; }
+.genius-mascot--animated[data-pose='magic'] .genius-mascot__lamp { animation-duration: 2.8s; }
 .genius-mascot--animated .genius-mascot__pose-confetti { transform-box: fill-box; transform-origin: center; animation: genius-mascot-confetti 1.9s ease-in infinite; }
 .genius-mascot--animated .genius-mascot__present-card { transform-box: fill-box; transform-origin: 316px 176px; animation: genius-mascot-card-bob 3.4s ease-in-out infinite; }
 .genius-mascot--animated .genius-mascot__think-dots { transform-box: fill-box; transform-origin: center; animation: genius-mascot-thought-pulse 2s ease-in-out infinite; }
@@ -3916,6 +3919,13 @@ table {
 @keyframes genius-mascot-magic {
   0%, 100% { opacity: 0.38; transform: scale(0.9) translateY(3px); }
   50% { opacity: 1; transform: scale(1.08) translateY(-3px); }
+}
+
+@keyframes genius-mascot-smoke {
+  0% { opacity: 0.05; transform: translateY(0) scale(0.78); }
+  25% { opacity: 0.72; }
+  70% { opacity: 0.3; transform: translateY(-0.25rem) scale(1); }
+  100% { opacity: 0; transform: translateY(-0.45rem) scale(1.08); }
 }
 
 @keyframes genius-mascot-twinkle {

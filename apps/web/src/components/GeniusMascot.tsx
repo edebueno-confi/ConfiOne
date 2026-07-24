@@ -90,6 +90,7 @@ export function GeniusMascot({
   const posePresent = resolvedPose === 'present';
   const poseThink = resolvedPose === 'think';
   const showBaseArm = !['celebrate', 'shrug'].includes(resolvedPose);
+  const showMagicEffect = resolvedPose === 'magic' || isLoading;
   const renderedPupilOffset = isLoading ? { x: 0, y: 5.5 } : pupilOffset;
 
   return (
@@ -263,6 +264,16 @@ export function GeniusMascot({
             {isWow ? <ellipse cx="181" cy="187" rx="8" ry="10" fill="#1b2a63" /> : isWink ? <path d="M164 181c12 15 24 15 34 0-10 6-24 6-34 0Z" fill="#1b2a63" /> : <path d="M168 182c8 8 16 8 24 0" stroke="#1b2a63" strokeWidth="3.5" fill="none" strokeLinecap="round" />}
           </g>
         </g>
+        {showMagicEffect ? (
+          <g aria-hidden="true" className="genius-mascot__lamp-smoke" fill="none" strokeLinecap="round">
+            <path d="M154 402c-10-10-6-19 4-27 9-8 8-17 1-25" stroke="#bff0f7" strokeWidth="3.5" />
+            <path d="M178 398c8-9 8-18 1-25-7-8-6-17 3-25" stroke="#ff69cf" strokeWidth="3" />
+            <path d="M200 405c8-8 5-17-2-23-7-6-7-14-1-21" stroke="#bff0f7" strokeWidth="2.5" />
+            <circle cx="151" cy="345" r="3" fill="#ff69cf" stroke="none" />
+            <circle cx="184" cy="342" r="2.5" fill="#bff0f7" stroke="none" />
+            <circle cx="203" cy="359" r="2" fill="#ff69cf" stroke="none" />
+          </g>
+        ) : null}
       </svg>
       {animated ? <><span aria-hidden="true" className="genius-mascot__spark genius-mascot__spark--one">✦</span><span aria-hidden="true" className="genius-mascot__spark genius-mascot__spark--two">✦</span></> : null}
     </span>

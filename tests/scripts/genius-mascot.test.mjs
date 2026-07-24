@@ -39,6 +39,14 @@ test('pose magic usa mão aberta sem silhueta de dedo isolado', () => {
   assert.doesNotMatch(component, /M236 98c-4-8-2-18 8-18h4V56/);
 });
 
+test('movimento mágico inclui fumaça vetorial da lâmpada e preserva reduced motion', () => {
+  assert.match(component, /showMagicEffect/);
+  assert.match(component, /genius-mascot__lamp-smoke/);
+  assert.match(styles, /genius-mascot-smoke/);
+  assert.match(styles, /data-pose=['"]magic['"][^}]*lamp-smoke|lamp-smoke[^}]*data-pose=['"]magic['"]/s);
+  assert.match(styles, /prefers-reduced-motion[\s\S]*genius-mascot--animated/);
+});
+
 test('mantém acessibilidade sem animar indefinidamente quando reduced motion está ativo', () => {
   assert.match(component, /aria-hidden/);
   assert.match(component, /aria-label/);
