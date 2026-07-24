@@ -102,7 +102,7 @@ export function AnalyticsShell() {
           </div>
         </div>
 
-        <nav className="gso-workspace-tabs mt-4 flex flex-wrap gap-1" aria-label="Áreas do dashboard">
+        <nav className="gso-workspace-tabs mt-4 flex max-w-full flex-nowrap gap-1 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0" aria-label="Áreas do dashboard">
           {visibleDomains.map((domain) => {
             const isActive = domain.key === activeKey;
             return (
