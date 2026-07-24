@@ -1,7 +1,7 @@
 # KNOWLEDGE-01 — Fechamento consolidado da migração
 
-Data da auditoria: 2026-07-24  
-Espaço auditado: `genius`  
+Data da auditoria: 2026-07-24
+Espaço auditado: `genius`
 Escopo: base antiga Octadesk, conteúdo público, assets, editorial, links, contratos e publicação local.
 
 ## Resultado executivo
