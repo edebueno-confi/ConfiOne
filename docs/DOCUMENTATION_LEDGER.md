@@ -1,3 +1,13 @@
+# Encerramento formal da RELEASE-01 — 2026-07-24
+
+- desenvolvimento concluído: Central Pública de Ajuda, Dashboard Gerencial do piloto, migração Octadesk, Hub de Integrações e API, taxonomia, assets, normalização editorial, busca, navegação, responsividade, acessibilidade e CTA `/portal`;
+- estado: `PR criado — aguardando revisão, merge e deploy`; sem merge, deploy ou smoke de produção;
+- estado Git: branch `codex/release-pilot-dashboard-help-center-v1`, HEAD `dc10e66`, worktree limpo, remoto sincronizado;
+- números finais: 75 artigos, 62 públicos, 13 não públicos; 128 assets, 99 aprovados/públicos e 29 pendentes;
+- evidências e validações: `docs/reports/RELEASE_01_DEVELOPMENT_CLOSURE_2026-07-24.md` e `docs/reports/TAXONOMY_01_1_FINAL_2026-07-24.md`;
+- backlog independente: KNOWLEDGE-02, restritos, 29 assets pendentes, drift de migration, erro remoto UUID/`true`, merge, deploy e smoke de produção;
+- próxima frente: `DASHBOARD-02 — Evolução do Dashboard Gerencial`.
+
 # Context Pack V2 - correção documental e evidências - 2026-07-23
 
 - escopo: correção do Context Pack parcialmente aceito, sem implementação

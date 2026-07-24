@@ -1,5 +1,9 @@
 # Octadesk Public Help Release Status
 
+## Snapshot final da RELEASE-01 — 2026-07-24
+
+O corpus migrado foi encerrado no desenvolvimento dentro da Central pública: 75 artigos no espaço `genius`, 62 `published/public` e 13 não públicos. A taxonomia e os assets foram reconciliados no relatório `docs/reports/RELEASE_01_DEVELOPMENT_CLOSURE_2026-07-24.md`. Este documento mantém os números históricos abaixo como evidência de fases anteriores; o snapshot final prevalece para o gate da RELEASE-01.
+
 Data: `2026-05-21`
 
 ## Resultado

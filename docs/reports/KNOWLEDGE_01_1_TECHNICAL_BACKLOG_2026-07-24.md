@@ -1,5 +1,9 @@
 # Pendências técnicas pós-publicação — KNOWLEDGE-01.1
 
+## Estado de encerramento
+
+KNOWLEDGE-01.1 está concluído no escopo de desenvolvimento e não reabre com estas pendências. O estado final da Central é 75 artigos, 62 públicos, 13 não públicos e 128 assets, dos quais 29 permanecem pendentes de revisão.
+
 Registro separado do gate de publicação da Central de Ajuda.
 
 ## Itens

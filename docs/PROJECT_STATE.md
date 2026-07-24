@@ -1,5 +1,16 @@
 # Release urgente Dashboard + Central de Ajuda — 2026-07-23
 
+## Encerramento formal da RELEASE-01 — 2026-07-24
+
+- Escopo de desenvolvimento concluído: PILOT da Central Pública de Ajuda; KNOWLEDGE-01; KNOWLEDGE-01.1; TAXONOMY-01; TAXONOMY-01.1; recuperação/associação de assets; normalização editorial; busca, categorias, subcategorias, navegação pública; responsividade; acessibilidade; CTA para `/portal`; e gate técnico de preparação da RELEASE-01.
+- Estado da RELEASE-01: `PR criado — aguardando revisão, merge e deploy` quando o PR for criado. Não considerar implantada antes de aprovação, merge, deploy e smoke em produção.
+- Estado atual deste checkout: branch `codex/release-pilot-dashboard-help-center-v1`, HEAD `dc10e66`, worktree limpo, ahead/behind `0/0` contra o remoto.
+- Central `genius`: 75 artigos; 62 `published/public`; 13 não públicos. Assets: 128 registros, 99 aprovados/públicos e 29 pendentes de revisão.
+- Taxonomia final: Configuração da operação, Integrações e API, Trocas e devoluções, Sellers e lojas, Solução de problemas e Suporte técnico; `Primeiros passos` permanece apenas como artigo preservado fora da navegação principal. Profundidade máxima: 2 níveis.
+- Evidências e validações: typechecks, build, pgTAP, smoke dos 62 artigos públicos, console/rede/overflow e `repository:check-root` aprovados. Relatórios: `docs/reports/RELEASE_01_DEVELOPMENT_CLOSURE_2026-07-24.md` e `docs/reports/TAXONOMY_01_1_FINAL_2026-07-24.md`.
+- Pendências transferidas sem reabrir os lotes: KNOWLEDGE-02/editor rico, revisão dos restritos, 29 assets pendentes, drift de migration, erro remoto UUID/`true`, merge, deploy e smoke em produção.
+- Próxima frente oficial: `DASHBOARD-02 — Evolução do Dashboard Gerencial`, somente em discovery próprio e fora desta branch.
+
 - O espaço público `genius` local está ativo com 57 artigos importados da
   exportação Octadesk, 7 categorias, 44 artigos `published/public` e 13
   bloqueados por regras editoriais/técnicas.

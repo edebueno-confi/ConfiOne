@@ -1,5 +1,12 @@
 # Buildout Status Checkpoint V3
 
+## RELEASE-01 — encerramento do desenvolvimento — 2026-07-24
+
+- concluídos no escopo de desenvolvimento: PILOT da Central, KNOWLEDGE-01, KNOWLEDGE-01.1, TAXONOMY-01, TAXONOMY-01.1, assets, editorial, busca, navegação, responsividade, acessibilidade, CTA `/portal` e preparação técnica da release;
+- estado da release: `PR criado — aguardando revisão, merge e deploy`; produção ainda não validada;
+- próxima frente: `DASHBOARD-02 — Evolução do Dashboard Gerencial`, sem implementação neste ciclo;
+- pendências independentes: KNOWLEDGE-02, restritos, 29 assets, drift de migration, erro UUID/`true`, merge, deploy e smoke de produção.
+
 ## Objetivo
 Registrar o estado atual do Genius Support OS apos os blocos recentes de tickets, SLA, evidencias, handoff, engenharia, governanca e readiness do portal cliente B2B.
 
