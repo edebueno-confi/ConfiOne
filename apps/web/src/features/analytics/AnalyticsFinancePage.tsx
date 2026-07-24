@@ -112,6 +112,9 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
   if (state.phase === 'error') return <MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores financeiros estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
   const { snapshot } = state;
   const { kpis } = snapshot;
+  const dataState = snapshot.state;
+  if (dataState?.status === 'error' || dataState?.status === 'unavailable') return <MinimalState tone="critical" title="Dados financeiros indisponíveis" description="A fonte financeira não respondeu. Tente novamente mais tarde." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
+  if (dataState?.status === 'not_configured') return <MinimalState title="Fonte financeira não configurada" description="Configure a fonte OMIE ou o fallback aprovado para consultar estes indicadores." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
   const sourceIsApi = snapshot.source === 'api';
   const controlClass = 'mt-1 block w-full rounded-lg border border-[color:var(--minimal-border-strong)] bg-transparent px-2 py-1.5 text-sm text-[color:var(--minimal-text)]';
 
@@ -147,7 +150,7 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
       <div className="mt-3 flex gap-2"><button type="button" onClick={apply} className="rounded-lg bg-[color:var(--minimal-text)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-surface)]">Aplicar</button><button type="button" onClick={() => { const next = { ...DEFAULT_ANALYTICS_FILTERS, ...resolveAnalyticsPeriod('month'), clientQuery: '' }; setPreset('month'); setDraft(next); setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} className="rounded-lg border border-[color:var(--minimal-border-strong)] px-3 py-1.5 text-sm text-[color:var(--minimal-text)]">Limpar</button></div>
     </section>
 
-    {kpis.totalTitles === 0 ? <MinimalState title="Nenhum dado financeiro" description="Configure a API OMIE em Configurações → Integrações e sincronize para preencher o cockpit." /> : <>
+    {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado financeiro" description="A fonte respondeu, mas não encontrou registros para este recorte." /> : <>
       {/* KPIs coloridos: conduzem o olho ao que importa */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard label="Saldo em aberto" value={formatCurrencyBRL(kpis.openBalance)} hint={`${kpis.openTitles.toLocaleString('pt-BR')} títulos a receber`} />

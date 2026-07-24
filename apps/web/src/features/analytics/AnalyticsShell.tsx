@@ -12,7 +12,10 @@ import { MinimalState } from '../../components/minimal-states';
 
 const DOMAINS = listEnabledAnalyticsDomains();
 
-function SyncStatusLabel({ run }: { run: SyncRun | null }) {
+function SyncStatusLabel({ run, error }: { run: SyncRun | null; error?: string | null }) {
+  if (error) {
+    return <span className="text-xs text-[color:var(--minimal-danger-text)]">Status da sincronização indisponível. Tente novamente mais tarde.</span>;
+  }
   if (!run) {
     return <span className="text-xs text-[color:var(--minimal-text-tertiary)]">Nenhuma sincronização registrada ainda.</span>;
   }
@@ -36,6 +39,7 @@ export function AnalyticsShell() {
   const [activeKey, setActiveKey] = useState(visibleDomains[0]?.key ?? 'commercial');
   const [reloadKey, setReloadKey] = useState(0);
   const [latestRun, setLatestRun] = useState<SyncRun | null>(null);
+  const [syncStatusError, setSyncStatusError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
@@ -45,9 +49,13 @@ export function AnalyticsShell() {
   const activeDomain = visibleDomains.find((domain) => domain.key === activeKey) ?? visibleDomains[0];
 
   const refreshLatestRun = useCallback(() => {
+    setSyncStatusError(null);
     getLatestSyncRun()
       .then(setLatestRun)
-      .catch(() => setLatestRun(null));
+      .catch(() => {
+        setLatestRun(null);
+        setSyncStatusError('unavailable');
+      });
   }, []);
 
   useEffect(() => {
@@ -92,7 +100,7 @@ export function AnalyticsShell() {
               {isPlatformAdmin ? <button type="button" onClick={() => setReportOpen(true)} className="inline-flex items-center rounded-lg border border-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action)] transition hover:bg-[color:var(--minimal-surface-muted)]">
                 Exportar relatório
               </button> : null}
-            <SyncStatusLabel run={latestRun} />
+              <SyncStatusLabel run={latestRun} error={syncStatusError} />
             {syncError ? (
               <span className="text-xs text-[color:var(--minimal-danger-text)]">{syncError}</span>
             ) : null}

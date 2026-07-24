@@ -64,6 +64,10 @@ export function AnalyticsCeoPage({ sharedPeriod, onSharedPeriodChange, onRetry }
   if (state.loading) return <AnalyticsLoadingState title="Conjurando seus dados" description="Estamos preparando sua visão executiva." />;
   if (state.error || !state.data) return <MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
   const { commercial: c, support: s, finance: f } = state.data;
+  const dataState = state.data.state;
+  if (dataState?.status === 'error' || dataState?.status === 'unavailable') return <MinimalState tone="critical" title="Dados indisponíveis" description="A fonte dos indicadores não respondeu. Tente novamente mais tarde." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
+  if (dataState?.status === 'not_configured') return <MinimalState title="Fontes não configuradas" description="Configure as fontes de dados do Dashboard para consultar os indicadores." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
+  if (dataState?.status === 'empty') return <MinimalState title="Sem dados neste período" description="A fonte respondeu, mas não encontrou registros para este recorte. Ajuste o período ou tente novamente." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
   const hasPeriodData = [
     c.openDeals,
     c.wonDeals,
