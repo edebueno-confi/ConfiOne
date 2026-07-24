@@ -60,6 +60,30 @@ function hasKnowledgeAssetReferences(source: string) {
   return /!\[[^\]]*]\(knowledge-asset:[^)]+\)/i.test(source);
 }
 
+function normalizeEditorialText(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('pt-BR')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function isAllCapsLead(value: string) {
+  return /^\p{Lu}[\p{Lu}\p{N}\s:?!-]{8,}$/u.test(value.trim());
+}
+
+function isLikelyDuplicateLead(line: string, title: string) {
+  const lineWords = new Set(normalizeEditorialText(line).split(' ').filter((word) => word.length > 2));
+  const titleWords = new Set(normalizeEditorialText(title).split(' ').filter((word) => word.length > 2));
+  if (lineWords.size === 0 || titleWords.size === 0) {
+    return false;
+  }
+
+  const overlap = [...lineWords].filter((word) => titleWords.has(word)).length;
+  return normalizeEditorialText(line) === normalizeEditorialText(title) || overlap >= 2 && overlap / Math.min(lineWords.size, titleWords.size) >= 0.5;
+}
+
 function stripDuplicateLeadHeading(source: string, title: string) {
   const normalizedTitle = title.trim().toLowerCase();
   const lines = source.replace(/\r\n/g, '\n').split('\n');
@@ -74,7 +98,13 @@ function stripDuplicateLeadHeading(source: string, title: string) {
   }
 
   const firstLine = lines[firstMeaningfulIndex].trim();
-  if (/^[A-ZÀ-Ú0-9][A-ZÀ-Ú0-9\s:?!-]{8,}\s+Passo a passo\b/.test(firstLine)) {
+  const combinedLead = /^(?<lead>[\s\S]+?)\s+(?<steps>Passo a passo\b.+)$/i.exec(firstLine);
+  if (combinedLead && isAllCapsLead(combinedLead.groups?.lead ?? '') && isLikelyDuplicateLead(combinedLead.groups?.lead ?? '', title)) {
+    lines[firstMeaningfulIndex] = combinedLead.groups?.steps ?? firstLine;
+    return lines.join('\n');
+  }
+
+  if (isLikelyDuplicateLead(firstLine, title) && firstLine.length <= 140) {
     lines.splice(firstMeaningfulIndex, 1);
     if (lines[firstMeaningfulIndex]?.trim() === '') {
       lines.splice(firstMeaningfulIndex, 1);
@@ -104,7 +134,7 @@ function isRawConfigurationSummary(summary: string | null, categoryName: string 
     return false;
   }
 
-  return summary.length > 140 && /passo a passo|acesse o painel|no menu/i.test(summary);
+  return summary.length > 80 && /passo a passo|acesse (o painel|a área)|no menu/i.test(summary);
 }
 
 function extractArticleSections(source: string, fallbackTitle: string) {

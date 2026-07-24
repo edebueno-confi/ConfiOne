@@ -3,7 +3,7 @@ import { MinimalState } from '../../components/minimal-states';
 import { getAmbiguousOverdueTitles, getCeoHistory, getCeoSnapshot, getReconciliationQuality, mergeHubSpotCompanies } from './analytics-api';
 import { formatCurrencyBRL, formatPercent, type AnalyticsFilters, DEFAULT_ANALYTICS_FILTERS, type AmbiguousOverdueTitle, type CeoHistory, type CeoSnapshot, type FinancialAlert, type ReconciliationQualityGroup, type ReconciliationQualityResult } from './analytics-model';
 import { AnalyticsFilters as Filters } from './AnalyticsFilters';
-import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, CollapsibleChartCard, KpiCard, MetricInfo } from './analytics-ui';
+import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, CollapsibleChartCard, KpiCard, MetricInfo, formatCountLabel } from './analytics-ui';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import type { AnalyticsPageProps } from './analytics-model';
 
@@ -96,9 +96,9 @@ export function AnalyticsCeoPage({ sharedPeriod, onSharedPeriodChange, onRetry }
           <p className="mt-1 text-xs text-[color:var(--minimal-text-tertiary)]">Indicadores afetados pelo recorte selecionado.</p>
         </div>
         <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 lg:grid-cols-3">
-          <KpiCard label="Pipeline aberto" value={formatCurrencyBRL(c.openPipelineValue)} hint={`${c.openDeals.toLocaleString('pt-BR')} deals abertos`} source="HubSpot Deals: soma dos valores em estágios não fechados." />
-          <KpiCard label="Receita ganha" value={formatCurrencyBRL(c.wonRevenue)} hint={`${c.wonDeals.toLocaleString('pt-BR')} ganhos`} source="HubSpot Deals: soma dos deals em estágio marcado como ganho." />
-          <KpiCard label="Conversão comercial" value={formatPercent(c.conversionRate)} hint={`${c.lostDeals.toLocaleString('pt-BR')} perdidos`} source="Backend: ganhos divididos por ganhos mais perdidos." />
+          <KpiCard label="Pipeline aberto" value={formatCurrencyBRL(c.openPipelineValue)} hint={formatCountLabel(c.openDeals, 'deal aberto', 'deals abertos')} source="HubSpot Deals: soma dos valores em estágios não fechados." />
+          <KpiCard label="Receita ganha" value={formatCurrencyBRL(c.wonRevenue)} hint={formatCountLabel(c.wonDeals, 'ganho', 'ganhos')} source="HubSpot Deals: soma dos deals em estágio marcado como ganho." />
+          <KpiCard label="Conversão comercial" value={formatPercent(c.conversionRate)} hint={formatCountLabel(c.lostDeals, 'perdido', 'perdidos')} source="Backend: ganhos divididos por ganhos mais perdidos." />
         </div>
       </section>
       <section className="space-y-2 lg:col-span-6 xl:col-span-2" aria-labelledby="analytics-current-risk">

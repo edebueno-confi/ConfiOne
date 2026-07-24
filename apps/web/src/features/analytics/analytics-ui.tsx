@@ -1,6 +1,14 @@
 import type { ReactNode } from 'react';
 import { GeniusMascot } from '../../components/GeniusMascot';
 
+export function formatCountLabel(
+  count: number,
+  singular: string,
+  plural = `${singular}s`,
+) {
+  return `${count.toLocaleString('pt-BR')} ${count === 1 ? singular : plural}`;
+}
+
 export function AnalyticsLoadingState({ title, description }: { title: string; description: string }) {
   return (
     <section aria-busy="true" aria-label={title} className="flex min-h-[170px] flex-col items-center justify-center gap-3 px-4 py-5 text-center sm:min-h-[240px]" role="status">

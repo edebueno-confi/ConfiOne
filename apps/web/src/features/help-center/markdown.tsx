@@ -180,28 +180,39 @@ function normalizeConfigurationSource(source: string) {
       continue;
     }
 
-    if (meaningfulLine && normalized.every((entry) => !entry.trim()) && /^[A-ZÀ-Ú0-9][A-ZÀ-Ú0-9\s:?!-]{8,100}$/.test(line)) {
-      normalized.push(`# ${line}`);
+    if (meaningfulLine && normalized.every((entry) => !entry.trim()) && /^\p{Lu}[\p{Lu}\p{N}\s:?!-]{8,100}$/u.test(line)) {
+      const sentenceCase = line.toLocaleLowerCase('pt-BR').replace(/^./u, (character) => character.toLocaleUpperCase('pt-BR'));
+      normalized.push(`# ${sentenceCase}`);
       meaningfulLine = false;
       continue;
     }
 
     if (/^passo a passo\b/i.test(line)) {
-      normalized.push(`## ${line.replace(/:$/, '')}`);
+      const sentenceCase = line.replace(/:$/, '').replace(/^./u, (character) => character.toLocaleUpperCase('pt-BR'));
+      normalized.push(`### ${sentenceCase}`);
       meaningfulLine = false;
       continue;
     }
 
-    if (/^dica\s*:/i.test(line)) {
+    if (/^(dica|nota|observa[cç][aã]o)\s*:/i.test(line)) {
       normalized.push(':::callout info');
-      normalized.push(line.replace(/^dica\s*:\s*/i, ''));
+      normalized.push(line.replace(/^(dica|nota|observa[cç][aã]o)\s*:\s*/i, ''));
       normalized.push(':::');
       normalized.push('');
       meaningfulLine = true;
       continue;
     }
 
-    if (/^(acesse|abra|no menu|selecione|escolha|clique|caso precise|ao clicar|insira|inserir|escolher|configure|defina|informe|revise)\b/i.test(line)) {
+    if (/^cálculo (padrão|proporcional)\s*:/i.test(line)) {
+      while (normalized.at(-1) === '') {
+        normalized.pop();
+      }
+      normalized.push(`- ${line}`);
+      meaningfulLine = false;
+      continue;
+    }
+
+    if (/^(acesse|abra|no menu|selecione|escolha|clique|caso precise|ao clicar|insira|inserir|escolher|configure|defina|informe|revise|procure|localize|marque|navegue)\b/i.test(line)) {
       while (normalized.at(-1) === '') {
         normalized.pop();
       }
