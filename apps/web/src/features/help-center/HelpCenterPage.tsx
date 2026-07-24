@@ -26,6 +26,7 @@ import {
   PublicBreadcrumb,
   PublicHelpFooter,
   PublicHelpHeader,
+  isPublicNavigationCategory,
 } from './public-ui';
 
 type LoadPhase = 'loading' | 'ready' | 'empty' | 'contract-unavailable' | 'error';
@@ -285,10 +286,21 @@ export function HelpCenterSpaceLayout() {
         routes.find((row) => row.is_canonical) ??
         routes[0];
 
+      const hiddenCategoryIds = new Set(
+        navigation
+          .filter((entry) => !isPublicNavigationCategory(entry.category_name))
+          .map((entry) => entry.category_id),
+      );
+      const publicNavigation = navigation.filter(
+        (entry) =>
+          isPublicNavigationCategory(entry.category_name) &&
+          (!entry.parent_category_id || !hiddenCategoryIds.has(entry.parent_category_id)),
+      );
+
       setContext({
         routes,
         primaryRoute,
-        navigation,
+        navigation: publicNavigation,
         articles,
       });
       setMessage(null);

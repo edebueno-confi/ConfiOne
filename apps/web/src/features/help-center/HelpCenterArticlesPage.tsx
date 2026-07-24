@@ -8,11 +8,12 @@ import {
   PublicBreadcrumb,
   PublicSearchStateCard,
   formatRelativePublicDate,
+  getPublicCategoryLabel,
 } from './public-ui';
 
 function buildCategoryMap(navigation: PublicKnowledgeNavigationRow[]) {
   return new Map(
-    navigation.map((entry) => [entry.category_id, entry.category_name] as const),
+    navigation.map((entry) => [entry.category_id, getPublicCategoryLabel(entry.category_name)] as const),
   );
 }
 
@@ -155,7 +156,7 @@ export function HelpCenterArticlesPage() {
                 <option value="">Todas as categorias</option>
                 {rootCategories.map((category) => (
                   <option key={category.category_id} value={category.category_id}>
-                    {category.category_name}
+                    {getPublicCategoryLabel(category.category_name)}
                   </option>
                 ))}
               </select>
@@ -196,7 +197,7 @@ export function HelpCenterArticlesPage() {
                     onClick={() => handleCategorySelect(category.category_id)}
                     type="button"
                   >
-                    {category.category_name}
+                    {getPublicCategoryLabel(category.category_name)}
                   </button>
                 ))}
               </div>
@@ -224,7 +225,7 @@ export function HelpCenterArticlesPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       {searchQuery ? <GhostButton onClick={() => { const next = new URLSearchParams(searchParams); next.delete('q'); next.delete('page'); setSearchInput(''); setSearchParams(next, { replace: true }); }}>Limpar busca</GhostButton> : null}
                       <Link className="text-sm font-semibold text-[var(--help-link)] no-underline" to={`/help/${context.primaryRoute.knowledge_space_slug}/articles`}>Ver todos os artigos</Link>
-                      {rootCategories.slice(0, 3).map((category) => <Link className="text-sm text-[var(--help-link)] no-underline" key={`empty-${category.category_id}`} to={`/help/${context.primaryRoute.knowledge_space_slug}/articles?category=${category.category_id}`}>{category.category_name}</Link>)}
+                      {rootCategories.slice(0, 3).map((category) => <Link className="text-sm text-[var(--help-link)] no-underline" key={`empty-${category.category_id}`} to={`/help/${context.primaryRoute.knowledge_space_slug}/articles?category=${category.category_id}`}>{getPublicCategoryLabel(category.category_name)}</Link>)}
                     </div>
                   }
                   title="Nenhum artigo publicado"
@@ -246,7 +247,7 @@ export function HelpCenterArticlesPage() {
                     <div className="text-sm">
                       {article.category_id ? (
                         <span className="inline-flex rounded-full bg-[var(--help-accent-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--help-link)]">
-                          {categoryMap.get(article.category_id) ?? article.category_name ?? 'Categoria pública'}
+                          {categoryMap.get(article.category_id) ?? getPublicCategoryLabel(article.category_name)}
                         </span>
                       ) : (
                         <span className="text-xs text-[var(--help-muted)]">Categoria pública</span>

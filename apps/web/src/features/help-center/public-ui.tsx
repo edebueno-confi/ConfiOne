@@ -245,15 +245,15 @@ export function getCategoryVisuals(name: string | null | undefined) {
     return { icon: 'gear' as const, tone: 'pink' as const };
   }
 
-  if (normalized.includes('oper') || normalized.includes('reversa')) {
+  if (normalized.includes('oper') || normalized.includes('reversa') || normalized.includes('troca')) {
     return { icon: 'truck' as const, tone: 'blue' as const };
   }
 
-  if (normalized.includes('relat')) {
+  if (normalized.includes('relat') || normalized.includes('solu') || normalized.includes('problem')) {
     return { icon: 'chart' as const, tone: 'pink' as const };
   }
 
-  if (normalized.includes('boa')) {
+  if (normalized.includes('boa') || normalized.includes('seller') || normalized.includes('loja')) {
     return { icon: 'cap' as const, tone: 'blue' as const };
   }
 
@@ -293,6 +293,15 @@ export function formatRelativePublicDate(value: string | null | undefined) {
   }
 
   return `Atualizado ${formatter.format(Math.round(diffDays / 365), 'year')}`;
+}
+
+export function getPublicCategoryLabel(value: string | null | undefined) {
+  if (value === 'Operação de trocas e devoluções') return 'Trocas e devoluções';
+  return value ?? 'Categoria pública';
+}
+
+export function isPublicNavigationCategory(value: string | null | undefined) {
+  return value !== 'Primeiros passos';
 }
 
 export function PublicSearchStateCard({

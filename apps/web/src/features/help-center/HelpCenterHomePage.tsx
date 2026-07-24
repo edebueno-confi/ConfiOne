@@ -13,6 +13,7 @@ import { searchPublicKnowledgeArticles } from './public-api';
 import { buildHelpCenterCategoryHref } from './help-center-navigation';
 import {
   formatRelativePublicDate,
+  getPublicCategoryLabel,
   getCategoryVisuals,
   HelpIcon,
   PublicIconBadge,
@@ -386,7 +387,7 @@ export function HelpCenterHomePage() {
               >
                 <div className="flex h-full flex-col gap-3">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--help-link)]">{article.category_name ?? 'Central de Ajuda'}</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--help-link)]">{getPublicCategoryLabel(article.category_name ?? 'Central de Ajuda')}</span>
                     <HelpIcon className="shrink-0 text-[var(--help-muted)] transition group-hover:text-[var(--help-link)]" kind="chevron-right" />
                   </div>
                   <h3 className="text-base font-semibold text-[var(--help-ink-strong)]">{article.title}</h3>
@@ -527,12 +528,12 @@ function FeaturedArticleCard({ article, spaceSlug }: { article: PublicKnowledgeA
   return (
     <Link className="group flex min-h-[210px] flex-col rounded-[20px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] p-5 no-underline shadow-[var(--help-shadow)] transition hover:-translate-y-0.5 hover:border-[var(--help-accent)]" data-testid="featured-article-card" to={`/help/${spaceSlug}/articles/${article.slug}`}>
       <div className="flex items-center justify-between gap-3">
-        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--help-link)]">{article.category_name ?? 'Central de Ajuda'}</span>
+        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--help-link)]">{getPublicCategoryLabel(article.category_name ?? 'Central de Ajuda')}</span>
         <HelpIcon className="text-[var(--help-muted)] transition group-hover:text-[var(--help-link)]" kind="chevron-right" />
       </div>
       <h3 className="mt-4 text-lg font-semibold leading-7 tracking-[-0.03em] text-[var(--help-ink-strong)]">{article.title}</h3>
       <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--help-muted)]">{article.summary ?? 'Orientação pública disponível para consulta.'}</p>
-      <span className="mt-auto pt-4 text-xs text-[var(--help-muted)]">{formatRelativePublicDate(article.updated_at)}</span>
+      <span className="mt-auto pt-4 text-xs text-[var(--help-muted)]">{formatRelativePublicDate(article.published_at)}</span>
     </Link>
   );
 }

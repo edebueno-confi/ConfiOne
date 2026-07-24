@@ -16,11 +16,11 @@ A categoria `Configuração de ambiente` concentrava 38 artigos públicos de int
 | Primeiros passos | — | 1 |
 | Suporte técnico | — | 2 |
 
-A profundidade máxima é de dois níveis. A home mantém cinco cards principais para não poluir a composição; Primeiros passos, Suporte técnico e as subcategorias permanecem acessíveis pela lista e pelos filtros.
+A profundidade máxima é de dois níveis. A home mantém cinco cards principais para não poluir a composição; `Primeiros passos` preserva seu artigo público, mas foi removida da taxonomia principal, filtros e sidebar públicos.
 
 ## Matriz artigo por artigo
 
-A matriz completa, com ID, título, status, visibilidade, categoria, subcategoria, intenção e confiança, está em [TAXONOMY_01_ARTICLE_MATRIX_2026-07-24.md](TAXONOMY_01_ARTICLE_MATRIX_2026-07-24.md). Contém os 75 artigos do espaço `genius`: 62 públicos e 13 restritos/internos.
+A matriz completa, com ID, título, status, visibilidade, categoria, subcategoria, intenção e confiança, está em [TAXONOMY_01_ARTICLE_MATRIX_2026-07-24.md](TAXONOMY_01_ARTICLE_MATRIX_2026-07-24.md). Contém os 75 artigos do espaço `genius`: 62 públicos e 13 restritos/internos após a reconciliação de visibilidade do artigo legado de integração.
 
 ## Categorias criadas
 
@@ -58,15 +58,15 @@ Os 13 artigos restritos/internos permanecem preservados no banco, fora da home, 
 
 ## Artigos com classificação incerta
 
-Quatro artigos foram marcados com confiança média na matriz por cruzarem configuração e operação: alteração de vale-compra pendente, filtros de solicitações, notificação de análise e regras visuais de estágio. A classificação atual usa a intenção predominante do conteúdo e pode ser revisada editorialmente sem alterar URLs.
+Três artigos foram marcados com confiança média na matriz por cruzarem configuração e operação: alteração de vale-compra pendente, filtros de solicitações e notificação de análise. A referência anterior a um quarto artigo de regras visuais de estágio não corresponde a nenhum artigo distinto da base e não foi inventada.
 
 ## Contagens antes e depois
 
 | Métrica | Antes | Depois |
 |---|---:|---:|
 | Artigos no espaço | 75 | 75 |
-| Artigos públicos | 62 | 62 |
-| Artigos restritos/internos | 13 | 13 |
+| Artigos públicos | 62 | 63 |
+| Artigos restritos/internos | 13 | 12 |
 | Artigos públicos sem categoria | 0 | 0 |
 | Profundidade máxima | existente/inconsistente | 2 níveis |
 | Categoria pública dominante | Configuração de ambiente: 38 | Configuração da operação: 32 no subtree |
@@ -74,7 +74,7 @@ Quatro artigos foram marcados com confiança média na matriz por cruzarem confi
 
 ## Busca e navegação
 
-Foram validados filtros por subcategoria, breadcrumbs, URL direta de artigo, busca por `estorno`, `sellers` e `API`, estado sem resultado e navegação mobile. Os slugs dos artigos não foram alterados.
+Foram validados filtros por subcategoria, breadcrumbs, URL direta de artigo, busca por `estorno`, `logística`, `sellers` e `API`, estado sem resultado e navegação mobile. Os slugs dos artigos não foram alterados.
 
 ## Segurança e permissões
 
@@ -100,4 +100,4 @@ Nenhum bloqueio estrutural foi encontrado. Não houve migration remota, alteraç
 
 ## Recomendação para RELEASE-01
 
-Prosseguir para validação visual do RELEASE-01 após revisão humana das quatro classificações de confiança média e aprovação da nomenclatura pública.
+Prosseguir para validação visual do RELEASE-01 após revisão humana das três classificações de confiança média e aprovação da nomenclatura pública.

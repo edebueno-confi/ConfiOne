@@ -24,6 +24,7 @@ import {
   PublicBreadcrumb,
   PublicSearchStateCard,
   formatRelativePublicDate,
+  getPublicCategoryLabel,
 } from './public-ui';
 
 type DetailPhase = 'loading' | 'ready' | 'empty' | 'contract-unavailable' | 'error';
@@ -393,7 +394,7 @@ export function HelpCenterArticlePage() {
               <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
                 <Link className="font-semibold text-[var(--help-link)] no-underline" to={`/help/${spaceSlug}`}>Voltar para a visão geral</Link>
                 <Link className="font-semibold text-[var(--help-link)] no-underline" to={`/help/${spaceSlug}/articles`}>Ver todos os artigos</Link>
-                {context.navigation.filter((entry) => entry.parent_category_id === null).slice(0, 3).map((category) => <Link className="text-[var(--help-link)] no-underline" key={category.category_id} to={`/help/${spaceSlug}/articles?category=${category.category_id}`}>{category.category_name}</Link>)}
+                {context.navigation.filter((entry) => entry.parent_category_id === null).slice(0, 3).map((category) => <Link className="text-[var(--help-link)] no-underline" key={category.category_id} to={`/help/${spaceSlug}/articles?category=${category.category_id}`}>{getPublicCategoryLabel(category.category_name)}</Link>)}
               </div>
             </div>
           }
@@ -414,7 +415,7 @@ export function HelpCenterArticlePage() {
             items={[
               { label: 'Central de Ajuda', to: `/help/${spaceSlug}` },
               ...(article.category_name
-                ? [{ label: article.category_name, to: `/help/${spaceSlug}/articles?category=${article.category_id}` }]
+                ? [{ label: getPublicCategoryLabel(article.category_name), to: `/help/${spaceSlug}/articles?category=${article.category_id}` }]
                 : []),
               { label: article.title },
             ]}
@@ -423,7 +424,7 @@ export function HelpCenterArticlePage() {
           <div className="space-y-3">
             {article.category_name ? (
               <span className="inline-flex rounded-full bg-[var(--help-accent-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--help-link)]">
-                {article.category_name}
+                {getPublicCategoryLabel(article.category_name)}
               </span>
             ) : null}
 
@@ -434,7 +435,7 @@ export function HelpCenterArticlePage() {
             <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--help-muted)] sm:text-sm">
               <span className="inline-flex items-center gap-1.5">
                 <HelpIcon kind="calendar" />
-                {formatRelativePublicDate(article.updated_at)}
+                {formatRelativePublicDate(article.published_at)}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <HelpIcon kind="clock" />
