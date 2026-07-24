@@ -17,7 +17,7 @@ PILOT da Central Pública, KNOWLEDGE-01, KNOWLEDGE-01.1, TAXONOMY-01, TAXONOMY-0
 
 ## Situação da RELEASE-01
 
-`PR criado — aguardando revisão, merge e deploy`.
+PR ainda não criado: o GitHub CLI está sem autenticação neste ambiente. Após a autenticação e criação, o estado correto será `PR criado — aguardando revisão, merge e deploy`.
 
 A release não está implantada nem totalmente encerrada: ainda depende de aprovação do PR, merge, deploy e smoke em produção. Essas pendências não reabrem KNOWLEDGE-01 ou TAXONOMY-01.
 
@@ -27,7 +27,7 @@ A release não está implantada nem totalmente encerrada: ainda depende de aprov
 |---|---|
 | Branch | `codex/release-pilot-dashboard-help-center-v1` |
 | HEAD | `dc10e66` |
-| PR | pendente de criação neste registro inicial |
+| PR | não criado; bloqueado por autenticação do GitHub CLI |
 | Artigos | 75 |
 | Visibilidade | 62 `published/public`; 13 não públicos |
 | Assets | 128 total; 99 aprovados/públicos; 29 pendentes |

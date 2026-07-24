@@ -3,7 +3,7 @@
 ## Encerramento formal da RELEASE-01 — 2026-07-24
 
 - Escopo de desenvolvimento concluído: PILOT da Central Pública de Ajuda; KNOWLEDGE-01; KNOWLEDGE-01.1; TAXONOMY-01; TAXONOMY-01.1; recuperação/associação de assets; normalização editorial; busca, categorias, subcategorias, navegação pública; responsividade; acessibilidade; CTA para `/portal`; e gate técnico de preparação da RELEASE-01.
-- Estado da RELEASE-01: `PR criado — aguardando revisão, merge e deploy` quando o PR for criado. Não considerar implantada antes de aprovação, merge, deploy e smoke em produção.
+- Estado da RELEASE-01: PR ainda não criado por falta de autenticação local do GitHub CLI; após criação, registrar `PR criado — aguardando revisão, merge e deploy`. Não considerar implantada antes de aprovação, merge, deploy e smoke em produção.
 - Estado atual deste checkout: branch `codex/release-pilot-dashboard-help-center-v1`, HEAD `dc10e66`, worktree limpo, ahead/behind `0/0` contra o remoto.
 - Central `genius`: 75 artigos; 62 `published/public`; 13 não públicos. Assets: 128 registros, 99 aprovados/públicos e 29 pendentes de revisão.
 - Taxonomia final: Configuração da operação, Integrações e API, Trocas e devoluções, Sellers e lojas, Solução de problemas e Suporte técnico; `Primeiros passos` permanece apenas como artigo preservado fora da navegação principal. Profundidade máxima: 2 níveis.

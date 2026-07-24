@@ -1,7 +1,7 @@
 # Encerramento formal da RELEASE-01 — 2026-07-24
 
 - desenvolvimento concluído: Central Pública de Ajuda, Dashboard Gerencial do piloto, migração Octadesk, Hub de Integrações e API, taxonomia, assets, normalização editorial, busca, navegação, responsividade, acessibilidade e CTA `/portal`;
-- estado: `PR criado — aguardando revisão, merge e deploy`; sem merge, deploy ou smoke de produção;
+- estado: PR ainda não criado por autenticação ausente no GitHub CLI; após criação, ficará `PR criado — aguardando revisão, merge e deploy`; sem merge, deploy ou smoke de produção;
 - estado Git: branch `codex/release-pilot-dashboard-help-center-v1`, HEAD `dc10e66`, worktree limpo, remoto sincronizado;
 - números finais: 75 artigos, 62 públicos, 13 não públicos; 128 assets, 99 aprovados/públicos e 29 pendentes;
 - evidências e validações: `docs/reports/RELEASE_01_DEVELOPMENT_CLOSURE_2026-07-24.md` e `docs/reports/TAXONOMY_01_1_FINAL_2026-07-24.md`;
