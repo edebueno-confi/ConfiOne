@@ -29,13 +29,15 @@ export function AnalyticsCeoPage({ sharedPeriod, onSharedPeriodChange, onRetry }
   const [qualitySearchQuery, setQualitySearchQuery] = useState('');
   const [qualityGroupFilter, setQualityGroupFilter] = useState<'all' | 'economic_group' | 'without_group'>('all');
   const [state, setState] = useState<{ loading: boolean; data?: CeoSnapshot; ambiguousTitles?: AmbiguousOverdueTitle[]; quality?: ReconciliationQualityResult; error?: string }>({ loading: true });
+  const [refreshing, setRefreshing] = useState(false);
   const [history, setHistory] = useState<CeoHistory | null>(null);
   useEffect(() => { setFilters((current) => ({ ...current, ...period })); }, [period.from, period.to]);
   useEffect(() => { const timer = window.setTimeout(() => setQualitySearchQuery(qualityQuery.trim()), 300); return () => window.clearTimeout(timer); }, [qualityQuery]);
   useEffect(() => {
     let cancelled = false;
+    setRefreshing(true);
     setState((current) => current.data ? { ...current, loading: false, error: undefined } : { loading: true });
-    Promise.all([getCeoSnapshot(filters), getAmbiguousOverdueTitles(filters.to), getReconciliationQuality({ to: filters.to, status: qualityStatus, clientQuery: qualitySearchQuery, groupResolution: qualityGroupFilter })]).then(([data, ambiguousTitles, quality]) => { if (!cancelled) setState({ loading: false, data, ambiguousTitles, quality }); }).catch((error) => { if (!cancelled) setState((current) => ({ ...current, loading: false, error: error instanceof Error ? error.message : 'Falha ao carregar a visão executiva.' })); });
+    Promise.all([getCeoSnapshot(filters), getAmbiguousOverdueTitles(filters.to), getReconciliationQuality({ to: filters.to, status: qualityStatus, clientQuery: qualitySearchQuery, groupResolution: qualityGroupFilter })]).then(([data, ambiguousTitles, quality]) => { if (!cancelled) { setState({ loading: false, data, ambiguousTitles, quality }); setRefreshing(false); } }).catch((error) => { if (!cancelled) { setState((current) => ({ ...current, loading: false, error: error instanceof Error ? error.message : 'Falha ao carregar a visão executiva.' })); setRefreshing(false); } });
     return () => { cancelled = true; };
   }, [filters, qualityGroupFilter, qualitySearchQuery, qualityStatus]);
   useEffect(() => {
@@ -59,7 +61,7 @@ export function AnalyticsCeoPage({ sharedPeriod, onSharedPeriodChange, onRetry }
     });
   }, [alertSort, clientQuery, overdueRange, state.ambiguousTitles]);
   const visibleQualityGroups = useMemo(() => (state.quality?.groups ?? []).filter((group) => qualityGroupFilter === 'all' || (qualityGroupFilter === 'economic_group' ? group.resolutionType === 'economic_group' : !group.resolutionType)), [qualityGroupFilter, state.quality?.groups]);
-  if (state.loading) return <AnalyticsLoadingState title="Carregando visão executiva" description="O Gênio está consolidando Comercial, Suporte e Financeiro a partir das fontes." />;
+  if (state.loading) return <AnalyticsLoadingState title="Conjurando seus dados" description="Estamos preparando sua visão executiva." />;
   if (state.error || !state.data) return <MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
   const { commercial: c, support: s, finance: f } = state.data;
   const hasPeriodData = [
@@ -83,7 +85,10 @@ export function AnalyticsCeoPage({ sharedPeriod, onSharedPeriodChange, onRetry }
     }
   };
   return <div className="space-y-5">
-    <Filters value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={[]} />
+    <div className="relative">
+      <Filters value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={[]} />
+      {refreshing ? <p aria-live="polite" className="mt-2 text-xs text-[color:var(--minimal-text-secondary)]">Atualizando o período selecionado...</p> : null}
+    </div>
     <div className="grid gap-4 lg:grid-cols-6 xl:grid-cols-5">
       <section className="space-y-2 lg:col-span-6 xl:col-span-3" aria-labelledby="analytics-period-performance">
         <div>

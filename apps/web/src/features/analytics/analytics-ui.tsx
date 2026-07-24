@@ -3,16 +3,15 @@ import { GeniusMascot } from '../../components/GeniusMascot';
 
 export function AnalyticsLoadingState({ title, description }: { title: string; description: string }) {
   return (
-    <section aria-busy="true" aria-label={title} className="space-y-4" role="status">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-6 xl:grid-cols-5">
-        {Array.from({ length: 5 }, (_, index) => <div aria-hidden="true" className={`h-24 animate-pulse rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] ${index < 3 ? 'lg:col-span-2 xl:col-span-1' : 'lg:col-span-3 xl:col-span-1'}`} key={index} />)}
+    <section aria-busy="true" aria-label={title} className="flex min-h-[170px] flex-col items-center justify-center gap-3 px-4 py-5 text-center sm:min-h-[240px]" role="status">
+      <div className="flex h-36 w-36 items-center justify-center sm:h-44 sm:w-44">
+        <div className="scale-[0.7] sm:scale-[0.9]">
+          <GeniusMascot alt="Gênio consultando os dados do Dashboard" expression="happy" pose="magic" size="xl" surface="loading" />
+        </div>
       </div>
-      <div className="grid gap-4 xl:grid-cols-2">
-        {Array.from({ length: 2 }, (_, index) => <div aria-hidden="true" className="h-56 animate-pulse rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)]" key={index} />)}
-      </div>
-      <div className="flex items-center justify-center gap-3 rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-4 py-3">
-        <GeniusMascot alt="Gênio processando os dados do Dashboard" expression="happy" pose="magic" size="sm" surface="loading" />
-        <p className="text-sm text-[color:var(--minimal-text-secondary)]">{description}</p>
+      <div className="max-w-md">
+        <h2 className="text-base font-semibold text-[color:var(--minimal-text)]">{title}</h2>
+        <p className="mt-1 text-sm leading-6 text-[color:var(--minimal-text-secondary)]">{description}</p>
       </div>
     </section>
   );

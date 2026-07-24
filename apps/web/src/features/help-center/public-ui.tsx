@@ -302,6 +302,7 @@ export function PublicSearchStateCard({
   action,
   mascotPose,
   mascotExpression,
+  showMascot = true,
 }: {
   tone: 'loading' | 'empty' | 'error';
   title: string;
@@ -309,6 +310,7 @@ export function PublicSearchStateCard({
   action?: ReactNode;
   mascotPose?: 'magic' | 'shrug';
   mascotExpression?: 'happy' | 'wink';
+  showMascot?: boolean;
 }) {
   const toneMap =
     tone === 'error'
@@ -334,9 +336,9 @@ export function PublicSearchStateCard({
   return (
     <div className={cx('rounded-[26px] border bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_16px_36px_rgba(20,31,71,0.05)]', toneMap.border)}>
       <div className="flex items-start gap-4">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] bg-[var(--help-accent-soft)]">
-          <GeniusMascot alt="Gênio orientando a consulta" expression={resolvedMascotExpression} pose={resolvedMascotPose} size="sm" surface={tone === 'loading' ? 'loading' : 'empty'} />
-        </div>
+            {showMascot ? <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] bg-[var(--help-accent-soft)]">
+              <GeniusMascot alt="Gênio orientando a consulta" expression={resolvedMascotExpression} pose={resolvedMascotPose} size="sm" surface={tone === 'loading' ? 'loading' : 'empty'} />
+            </div> : null}
         <div className="space-y-2">
           <p className="text-base font-semibold text-[var(--help-ink-strong)]">{title}</p>
           <p className="max-w-xl text-sm leading-7 text-[var(--help-muted)]">{description}</p>

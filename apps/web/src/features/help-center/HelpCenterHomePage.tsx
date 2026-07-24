@@ -259,6 +259,7 @@ export function HelpCenterHomePage() {
       return (
         <PublicSearchStateCard
           description="Estamos buscando os melhores conteúdos para você."
+          showMascot={false}
           title="Buscando..."
           tone="loading"
         />

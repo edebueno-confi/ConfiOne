@@ -45,9 +45,9 @@ test('Dashboard Gerencial distribui cinco KPIs em grade 3 + 2 a partir de 1024px
   assert.match(ceoPage, /Desempenho no período/);
   assert.match(ceoPage, /Risco financeiro atual/);
   assert.match(ceoPage, /Posição atual, não afetada pelo período selecionado/);
-  assert.match(fs.readFileSync('apps/web/src/features/analytics/analytics-ui.tsx', 'utf8'), /grid-cols-2 gap-3 lg:grid-cols-6 xl:grid-cols-5/);
+  assert.match(fs.readFileSync('apps/web/src/features/analytics/analytics-ui.tsx', 'utf8'), /min-h-\[170px\].*sm:min-h-\[240px\]/s);
+  assert.match(fs.readFileSync('apps/web/src/features/analytics/analytics-ui.tsx', 'utf8'), /size="xl" surface="loading"/);
   assert.match(ceoPage, /Sem dados neste período/);
-  assert.match(fs.readFileSync('apps/web/src/features/analytics/analytics-ui.tsx', 'utf8'), /Array\.from\(\{ length: 5/);
 });
 
 test('status de sincronização distingue delta processado do snapshot acumulado', () => {

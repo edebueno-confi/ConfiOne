@@ -1,6 +1,7 @@
 import { lazy, type ComponentType, type ReactNode, Suspense } from 'react';
 import { createBrowserRouter, Navigate, useRouteError } from 'react-router-dom';
 import { ErrorState, LoadingState } from '../components/states';
+import { GeniusMascot } from '../components/GeniusMascot';
 import { AppButton, GhostButton } from '../components/ui';
 import { AuthBootstrap } from '../features/auth/AuthBootstrap';
 import { AdminGate } from '../features/auth/AdminGate';
@@ -280,11 +281,14 @@ const CsPortfolioPage = lazyRouteModule(
 
 function RouteLoading() {
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-6 py-12">
-      <LoadingState
-        title="Carregando superficie"
-        description="Estamos preparando a proxima area antes de abrir a tela solicitada."
-      />
+    <div className="flex min-h-screen w-full items-center justify-center bg-[color:var(--color-background)] px-4 py-8" role="status" aria-busy="true" aria-label="Consultando a superfície solicitada">
+      <section className="flex min-h-[170px] w-full max-w-3xl flex-col items-center justify-center gap-3 px-4 text-center sm:min-h-[240px]">
+        <div className="flex h-36 w-36 items-center justify-center sm:h-44 sm:w-44">
+          <div className="scale-[0.7] sm:scale-[0.9]"><GeniusMascot alt="Gênio preparando a próxima superfície" expression="happy" pose="magic" size="xl" surface="loading" /></div>
+        </div>
+        <h1 className="text-base font-semibold text-[color:var(--color-ink)]">Consultando a superfície</h1>
+        <p className="text-sm leading-6 text-[color:var(--color-muted)]">Estamos preparando a próxima área.</p>
+      </section>
     </div>
   );
 }
