@@ -110,7 +110,7 @@ export function HelpCenterArticlesPage() {
   }
 
   return (
-    <section className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-4 py-5 shadow-[0_18px_40px_rgba(20,31,71,0.05)] sm:px-6 lg:px-8">
+    <section className="rounded-[28px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-4 py-5 shadow-[var(--help-shadow)] sm:px-6 lg:px-8">
       <div className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-2">
@@ -138,7 +138,7 @@ export function HelpCenterArticlesPage() {
               />
               <input
                 autoComplete="off"
-                className="h-11 w-full rounded-[14px] border border-[var(--help-border)] bg-[color:var(--color-surface-strong)] pl-10 pr-4 text-sm text-[var(--help-ink-strong)] outline-none placeholder:text-[var(--help-muted)] focus:border-[var(--help-accent)] focus:ring-2 focus:ring-[rgba(48,127,226,0.18)]"
+                className="h-11 w-full rounded-[14px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] pl-10 pr-4 text-sm text-[var(--help-ink-strong)] outline-none placeholder:text-[var(--help-muted)] focus:border-[var(--help-accent)] focus:ring-2 focus:ring-[var(--help-focus)]"
                 onChange={(event) => setSearchInput(event.target.value)}
                 placeholder="Buscar artigos nesta lista..."
                 type="search"
@@ -148,7 +148,7 @@ export function HelpCenterArticlesPage() {
 
             <label className="relative">
               <select
-                className="h-11 w-full appearance-none rounded-[14px] border border-[var(--help-border)] bg-[color:var(--color-surface-strong)] px-4 pr-10 text-sm text-[var(--help-ink)] outline-none focus:border-[var(--help-accent)] focus:ring-2 focus:ring-[rgba(48,127,226,0.18)]"
+                className="h-11 w-full appearance-none rounded-[14px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-4 pr-10 text-sm text-[var(--help-ink)] outline-none focus:border-[var(--help-accent)] focus:ring-2 focus:ring-[var(--help-focus)]"
                 onChange={(event) => handleCategorySelect(event.target.value)}
                 value={selectedCategoryId}
               >
@@ -168,7 +168,7 @@ export function HelpCenterArticlesPage() {
         </div>
 
         <div className="grid items-start gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
-          <aside className="hidden rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[#fbfcff] px-4 py-4 lg:block">
+          <aside className="hidden rounded-[22px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-4 lg:block">
             <div className="space-y-3">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--help-muted)]">
                 Categorias
@@ -210,14 +210,14 @@ export function HelpCenterArticlesPage() {
             </div>
           </aside>
 
-          <div className="min-w-0 self-start overflow-hidden rounded-[22px] border border-[rgba(20,31,71,0.08)]">
-            <div className="hidden grid-cols-[minmax(0,1fr)_220px_180px] gap-4 bg-[#fbfcff] px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--help-muted)] md:grid">
+          <div className="min-w-0 self-start overflow-hidden rounded-[22px] border border-[var(--help-border)]">
+            <div className="hidden grid-cols-[minmax(0,1fr)_220px_180px] gap-4 bg-[var(--help-surface)] px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--help-muted)] md:grid">
               <span>Artigo</span>
               <span>Categoria</span>
               <span>Atualizado em</span>
             </div>
             {filteredArticles.length === 0 ? (
-              <div className="bg-[color:var(--color-surface-strong)] px-4 py-5 sm:px-6">
+              <div className="bg-[var(--help-surface-strong)] px-4 py-5 sm:px-6">
                 <PublicSearchStateCard
                   description={selectedCategory || searchQuery ? 'Não encontramos artigos públicos para este filtro. Revise os termos ou volte para a lista completa.' : 'Esta central ainda não possui artigos públicos publicados para a lista geral.'}
                   action={
@@ -233,11 +233,11 @@ export function HelpCenterArticlesPage() {
                 />
               </div>
             ) : (
-              <div className="divide-y divide-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)]">
+              <div className="divide-y divide-[var(--help-border)] bg-[var(--help-surface-strong)]">
                 {visibleArticles.map((article) => (
                   <Link
                     key={article.id}
-                    className="grid gap-2 px-5 py-4 no-underline transition hover:bg-[#fbfcff] md:grid-cols-[minmax(0,1fr)_220px_180px] md:items-center md:gap-4"
+                    className="grid gap-2 px-5 py-4 no-underline transition hover:bg-[var(--help-surface)] md:grid-cols-[minmax(0,1fr)_220px_180px] md:items-center md:gap-4"
                     to={`/help/${context.primaryRoute.knowledge_space_slug}/articles/${article.slug}`}
                   >
                     <div className="min-w-0 text-sm font-medium text-[var(--help-ink)]">
@@ -260,7 +260,7 @@ export function HelpCenterArticlesPage() {
               </div>
             )}
             {filteredArticles.length > 0 ? (
-              <nav aria-label="Paginação de artigos" className="flex flex-wrap items-center justify-between gap-3 border-t border-[rgba(20,31,71,0.08)] bg-[#fbfcff] px-5 py-4">
+              <nav aria-label="Paginação de artigos" className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--help-border)] bg-[var(--help-surface)] px-5 py-4">
                 <p className="text-xs text-[var(--help-muted)]">Página {currentPage} de {pageCount} · {filteredArticles.length} artigos</p>
                 <div className="flex items-center gap-2">
                   <button className="rounded-[12px] border border-[var(--help-border)] px-3 py-2 text-sm font-semibold text-[var(--help-link)] disabled:cursor-not-allowed disabled:opacity-45" disabled={currentPage === 1} onClick={() => { const next = new URLSearchParams(searchParams); next.set('page', String(currentPage - 1)); setSearchParams(next, { replace: true }); }} type="button">Anterior</button>

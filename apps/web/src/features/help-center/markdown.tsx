@@ -347,7 +347,7 @@ function renderInline(text: string): ReactNode[] {
       return (
         <a
           key={key}
-          className="font-medium text-[color:var(--help-link)] underline decoration-[rgba(20,31,71,0.18)] underline-offset-4 hover:text-[color:var(--help-link-hover)]"
+          className="font-medium text-[color:var(--help-link)] underline decoration-[var(--help-content-rule)] underline-offset-4 hover:text-[color:var(--help-link-hover)]"
           href={part.href}
           rel="noreferrer"
           target="_blank"
@@ -361,7 +361,7 @@ function renderInline(text: string): ReactNode[] {
       return (
         <code
           key={key}
-          className="rounded-lg bg-[rgba(20,31,71,0.08)] px-1.5 py-0.5 font-mono text-[0.92em] text-[color:var(--help-ink-strong)]"
+          className="rounded-lg bg-[var(--help-content-code)] px-1.5 py-0.5 font-mono text-[0.92em] text-[color:var(--help-ink-strong)]"
         >
           {part.text}
         </code>
@@ -449,7 +449,7 @@ export function MarkdownDocument({
         const key = `${block.type}-${index}`;
 
         if (block.type === 'rule') {
-          return <hr key={key} className="border-0 border-t border-[rgba(20,31,71,0.12)]" />;
+          return <hr key={key} className="border-0 border-t border-[var(--help-content-rule)]" />;
         }
 
         if (block.type === 'heading') {
@@ -552,7 +552,7 @@ export function MarkdownDocument({
           return (
             <hr
               key={key}
-              className={`my-8 max-w-[78ch] border-0 border-t-2 border-[#DCE4F2] ${
+              className={`my-8 max-w-[78ch] border-0 border-t-2 border-[var(--help-border)] ${
                 block.dividerStyle === 'solid' ? 'border-solid' : 'border-dashed'
               }`}
             />
@@ -571,7 +571,7 @@ export function MarkdownDocument({
           return (
             <a
               key={key}
-              className="grid max-w-[78ch] grid-cols-[minmax(0,1fr)_auto] gap-1 rounded-[18px] border border-violet-200 bg-violet-50 px-5 py-4 text-violet-950 no-underline shadow-[0_14px_34px_rgba(124,58,237,0.08)]"
+              className="grid max-w-[78ch] grid-cols-[minmax(0,1fr)_auto] gap-1 rounded-[18px] border border-[var(--help-content-callout-border)] bg-[var(--help-content-callout)] px-5 py-4 text-[color:var(--help-ink-strong)] no-underline shadow-[var(--help-content-shadow)]"
               href={`/help/genius/articles/${related.slug}`}
             >
               <span className="col-span-2 text-sm font-extrabold text-violet-700">Leia também</span>
@@ -588,7 +588,7 @@ export function MarkdownDocument({
           return (
             <figure
               key={key}
-              className={`${mediaSizeClass(block.mediaSize)} overflow-hidden rounded-[22px] border border-[rgba(20,31,71,0.12)] bg-[#090f2d] shadow-[0_18px_42px_rgba(20,31,71,0.12)]`}
+              className={`${mediaSizeClass(block.mediaSize)} overflow-hidden rounded-[22px] border border-[var(--help-content-rule)] bg-[var(--help-content-media)] shadow-[var(--help-content-shadow)]`}
             >
               <div className="aspect-video w-full">
                 <iframe
@@ -613,7 +613,7 @@ export function MarkdownDocument({
             return (
               <div
                 key={key}
-                className="max-w-[78ch] rounded-[18px] border border-dashed border-[rgba(20,31,71,0.16)] bg-[#fbfcff] px-4 py-4 text-sm leading-6 text-[color:var(--help-muted)]"
+              className="max-w-[78ch] rounded-[18px] border border-dashed border-[var(--help-content-note-border)] bg-[var(--help-content-note)] px-4 py-4 text-sm leading-6 text-[color:var(--help-muted)]"
               >
                 Imagem indisponível para publicação. Revise o asset antes de liberar este conteúdo.
               </div>
@@ -623,7 +623,7 @@ export function MarkdownDocument({
           return (
             <figure
               key={key}
-              className={`${imageSizeClass(block.imageSize)} overflow-hidden rounded-[24px] border border-[rgba(20,31,71,0.1)] bg-[color:var(--color-surface-strong)] shadow-[0_14px_34px_rgba(20,31,71,0.08)]`}
+              className={`${imageSizeClass(block.imageSize)} overflow-hidden rounded-[24px] border border-[var(--help-content-rule)] bg-[color:var(--help-surface-strong)] shadow-[var(--help-content-shadow)]`}
             >
               <img
                 alt={asset.alt_text ?? block.alt ?? ''}
@@ -634,7 +634,7 @@ export function MarkdownDocument({
                 width={asset.width ?? undefined}
               />
               {asset.caption ? (
-                <figcaption className="border-t border-[rgba(20,31,71,0.08)] bg-[#fbfcff] px-4 py-3 text-sm leading-6 text-[color:var(--help-muted)]">
+                <figcaption className="border-t border-[var(--help-content-rule)] bg-[var(--help-content-note)] px-4 py-3 text-sm leading-6 text-[color:var(--help-muted)]">
                   {asset.caption}
                 </figcaption>
               ) : null}
@@ -646,7 +646,7 @@ export function MarkdownDocument({
           return (
             <blockquote
               key={key}
-              className="max-w-[72ch] rounded-[18px] border border-[rgba(48,127,226,0.18)] bg-[rgba(48,127,226,0.06)] px-5 py-4 text-base leading-8 text-[color:var(--help-ink)]"
+              className="max-w-[72ch] rounded-[18px] border border-[var(--help-content-callout-border)] bg-[var(--help-content-callout)] px-5 py-4 text-base leading-8 text-[color:var(--help-ink)]"
             >
               {block.lines?.map((line, lineIndex) => (
                 <p key={`${key}-${lineIndex}`}>{renderInline(line)}</p>

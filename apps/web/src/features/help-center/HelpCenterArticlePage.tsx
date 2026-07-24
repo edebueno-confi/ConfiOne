@@ -129,8 +129,8 @@ function extractArticleSections(source: string, fallbackTitle: string) {
 function ArticlePageSkeleton() {
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px] xl:grid-cols-[minmax(0,1fr)_232px]">
-      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-6 py-6 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
-        <div className="mb-5 flex items-center gap-3 border-b border-[rgba(20,31,71,0.08)] pb-4">
+      <div className="rounded-[28px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-6 py-6 shadow-[var(--help-shadow)]">
+        <div className="mb-5 flex items-center gap-3 border-b border-[var(--help-border)] pb-4">
           <GeniusMascot alt="Gênio preparando o artigo" expression="happy" pose="magic" size="sm" surface="loading" />
           <div className="h-4 w-48 animate-pulse rounded-full bg-[var(--help-surface)]" />
         </div>
@@ -147,7 +147,7 @@ function ArticlePageSkeleton() {
           ))}
         </div>
       </div>
-      <div className="hidden rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] p-4 lg:block">
+      <div className="hidden rounded-[22px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] p-4 lg:block">
         <div className="h-5 w-24 rounded-full bg-[var(--help-surface)]" />
         <div className="mt-4 grid gap-2">
           {Array.from({ length: 6 }).map((_, index) => (
@@ -290,7 +290,7 @@ export function HelpCenterArticlePage() {
 
   if (!spaceSlug || !articleSlug) {
     return (
-      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-6 py-8 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
+      <div className="rounded-[28px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-6 py-8 shadow-[var(--help-shadow)]">
         <EmptyState
           title="Artigo não encontrado"
           description="A rota informada não tem os dados necessários para abrir este artigo."
@@ -305,7 +305,7 @@ export function HelpCenterArticlePage() {
 
   if (phase === 'contract-unavailable') {
     return (
-      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-6 py-8 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
+      <div className="rounded-[28px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-6 py-8 shadow-[var(--help-shadow)]">
         <ContractUnavailableState contractName="leitura pública do artigo" />
       </div>
     );
@@ -313,7 +313,7 @@ export function HelpCenterArticlePage() {
 
   if (phase === 'error') {
     return (
-      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-6 py-8 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
+      <div className="rounded-[28px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-6 py-8 shadow-[var(--help-shadow)]">
         <ErrorState
           title="Falha ao carregar o artigo"
           description={
@@ -332,7 +332,7 @@ export function HelpCenterArticlePage() {
 
   if (phase === 'empty' || !article) {
     return (
-      <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-6 py-8 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
+      <div className="rounded-[28px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-6 py-8 shadow-[var(--help-shadow)]">
         <PublicSearchStateCard
           action={
             <div className="grid gap-3">
@@ -358,7 +358,7 @@ export function HelpCenterArticlePage() {
 
   return (
     <div className={articleSections.length >= 3 ? 'grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px] xl:grid-cols-[minmax(0,1fr)_232px]' : 'grid gap-5'}>
-      <article className="mx-auto w-full max-w-[1080px] rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_18px_40px_rgba(20,31,71,0.05)] sm:px-8 sm:py-6 lg:px-11 xl:px-12">
+      <article className="mx-auto w-full max-w-[1080px] rounded-[28px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-5 py-5 shadow-[var(--help-shadow)] sm:px-8 sm:py-6 lg:px-11 xl:px-12">
         <div className="space-y-5">
           <PublicBreadcrumb
             items={[
@@ -398,7 +398,7 @@ export function HelpCenterArticlePage() {
             </p>
           </div>
 
-          {articleSections.length >= 3 ? <details className="rounded-[18px] border border-[rgba(20,31,71,0.08)] bg-[#fbfcff] px-4 py-3 lg:hidden">
+          {articleSections.length >= 3 ? <details className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-3 lg:hidden">
             <summary className="cursor-pointer list-none text-sm font-semibold text-[var(--help-ink-strong)]">
               Neste artigo
             </summary>
@@ -422,7 +422,7 @@ export function HelpCenterArticlePage() {
               source={articleBody}
             />
           </div>
-          <section className="grid gap-4 border-t border-[rgba(20,31,71,0.08)] pt-6 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
+          <section className="grid gap-4 border-t border-[var(--help-border)] pt-6 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
             <GeniusMascot alt="Gênio indicando o próximo passo" expression="happy" pose="present" size="lg" surface="default" />
             <div className="space-y-2">
               <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Próximo passo</p>
@@ -434,7 +434,7 @@ export function HelpCenterArticlePage() {
       </article>
 
       {articleSections.length >= 3 ? <aside className="hidden lg:block lg:sticky lg:top-24 lg:h-fit">
-        <section className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-4 py-4 lg:block">
+        <section className="rounded-[22px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-4 py-4 lg:block">
           <div className="space-y-4">
             <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Neste artigo</p>
             <div className="grid gap-2">

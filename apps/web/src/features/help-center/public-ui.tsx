@@ -24,14 +24,14 @@ export type HelpIconKind =
 
 function iconToneClasses(tone: 'blue' | 'pink' | 'neutral') {
   if (tone === 'pink') {
-    return 'border-[rgba(225,0,152,0.14)] bg-[rgba(225,0,152,0.08)] text-[var(--color-brand-magenta)]';
+    return 'border-[var(--help-border)] bg-[var(--help-accent-soft)] text-[var(--color-brand-magenta)]';
   }
 
   if (tone === 'neutral') {
-    return 'border-[rgba(20,31,71,0.08)] bg-[rgba(20,31,71,0.04)] text-[var(--help-ink)]';
+    return 'border-[var(--help-border)] bg-[var(--help-surface)] text-[var(--help-ink)]';
   }
 
-  return 'border-[rgba(48,127,226,0.16)] bg-[rgba(48,127,226,0.1)] text-[var(--help-link)]';
+  return 'border-[var(--help-border)] bg-[var(--help-accent-soft)] text-[var(--help-link)]';
 }
 
 export function HelpIcon({
@@ -317,7 +317,7 @@ export function PublicSearchStateCard({
       ? {
           icon: 'alert' as const,
           iconTone: 'pink' as const,
-          border: 'border-[rgba(225,0,152,0.14)]',
+          border: 'border-[var(--help-border)]',
         }
       : tone === 'empty'
         ? {
@@ -334,7 +334,7 @@ export function PublicSearchStateCard({
   const resolvedMascotExpression = mascotExpression ?? (tone === 'empty' ? 'wink' : 'happy');
 
   return (
-    <div className={cx('rounded-[26px] border bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_16px_36px_rgba(20,31,71,0.05)]', toneMap.border)}>
+    <div className={cx('rounded-[26px] border bg-[var(--help-surface-strong)] px-5 py-5 shadow-[var(--help-shadow)]', toneMap.border)}>
       <div className="flex items-start gap-4">
             {showMascot ? <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] bg-[var(--help-accent-soft)]">
               <GeniusMascot alt="Gênio orientando a consulta" expression={resolvedMascotExpression} pose={resolvedMascotPose} size="sm" surface={tone === 'loading' ? 'loading' : 'empty'} />
@@ -394,10 +394,10 @@ export function PublicHelpHeader({
   );
 
   return (
-    <header className="gso-help-header border-b border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)]">
+    <header className="gso-help-header border-b border-[var(--help-border)] bg-[var(--help-surface-strong)]">
       <div className="mx-auto flex max-w-[1520px] items-center justify-between gap-5 px-4 py-4 sm:px-6 lg:px-8 xl:px-10">
         <div className="flex min-w-0 items-center gap-3.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--help-accent-strong)] text-sm font-semibold text-white">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--help-accent-strong)] text-sm font-semibold text-[var(--help-hero-text)]">
             <GeniusMascot
               alt="Gênio da Central de Ajuda"
               animated={false}
@@ -409,7 +409,7 @@ export function PublicHelpHeader({
             <p className="truncate text-sm font-semibold text-[var(--help-ink-strong)] sm:text-[1rem]">
               {brandName}
             </p>
-            <span className="hidden rounded-full border border-[rgba(48,127,226,0.14)] bg-[rgba(48,127,226,0.08)] px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-[var(--help-link)] sm:inline-flex">
+            <span className="hidden rounded-full border border-[var(--help-content-callout-border)] bg-[var(--help-content-callout)] px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-[var(--help-link)] sm:inline-flex">
               {mobileTitle}
             </span>
             <p className="truncate text-[0.74rem] text-[var(--help-muted)] sm:hidden">
@@ -458,7 +458,7 @@ export function PublicHelpHeader({
           <summary className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-[14px] border border-[var(--help-border)] bg-[color:var(--color-surface-strong)] text-[var(--help-ink)]">
             <HelpIcon kind="menu" />
           </summary>
-          <div className="absolute right-0 top-[calc(100%+10px)] z-30 grid min-w-[210px] gap-1 rounded-[18px] border border-[var(--help-border)] bg-[color:var(--color-surface-strong)] p-2 shadow-[0_16px_36px_rgba(20,31,71,0.08)]">
+          <div className="absolute right-0 top-[calc(100%+10px)] z-30 grid min-w-[210px] gap-1 rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] p-2 shadow-[var(--help-shadow)]">
             <Link
               className={cx(
                 'rounded-[12px] px-3 py-2 text-sm font-medium no-underline',
@@ -538,7 +538,7 @@ export function PublicHelpFooter({
   const hasContact = Boolean(supportContacts.email || whatsapp);
 
   return (
-    <footer className="mt-10 border-t border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)]">
+    <footer className="mt-10 border-t border-[var(--help-border)] bg-[var(--help-surface-strong)]">
       <div className="mx-auto flex max-w-[1520px] flex-col gap-5 px-4 py-7 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8 xl:px-10">
         <div className="space-y-1">
           <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Precisa de ajuda?</p>

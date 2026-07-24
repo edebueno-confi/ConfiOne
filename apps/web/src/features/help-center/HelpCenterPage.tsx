@@ -44,10 +44,10 @@ interface HelpCenterSpaceSummary {
 
 function PublicHelpLoadingSurface() {
   return (
-    <div className="min-h-screen bg-[#f4f7fc]">
+    <div className="min-h-screen bg-[var(--help-surface)]">
       <PublicHelpHeader active="articles" brandName="Genius Returns" showOtherCenters={false} spaceSlug="genius" tertiaryLabel="Categorias" />
       <main className="mx-auto max-w-[1520px] px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
-        <section aria-busy="true" className="flex min-h-[160px] flex-col items-center justify-center rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-6 text-center shadow-[0_18px_40px_rgba(20,31,71,0.05)] sm:min-h-[250px] sm:px-8">
+        <section aria-busy="true" className="flex min-h-[160px] flex-col items-center justify-center rounded-[28px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-5 py-6 text-center shadow-[var(--help-shadow)] sm:min-h-[250px] sm:px-8">
           <div className="flex h-32 w-32 items-center justify-center sm:h-44 sm:w-44">
             <div className="scale-[0.68] sm:scale-[0.9]">
               <GeniusMascot alt="Gênio consultando a documentação" expression="happy" pose="magic" size="xl" surface="loading" />
@@ -187,7 +187,7 @@ export function HelpCenterPage() {
   const primarySpace = spaces[0] ?? null;
 
   return (
-    <div className="min-h-screen bg-[#f4f7fc]">
+    <div className="min-h-screen bg-[var(--help-surface)]">
       <PublicHelpHeader
         active="directory"
         brandName={primarySpace?.brandName ?? 'Genius Returns'}
@@ -196,7 +196,7 @@ export function HelpCenterPage() {
       />
 
       <main className="mx-auto grid max-w-[1520px] gap-6 px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
-        <section className="rounded-[28px] border border-[rgba(20,31,71,0.1)] bg-[color:var(--color-surface-strong)] px-6 py-6 shadow-[0_18px_40px_rgba(20,31,71,0.05)] sm:px-8">
+        <section className="rounded-[28px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-6 py-6 shadow-[var(--help-shadow)] sm:px-8">
           <div className="space-y-4">
             <PublicBreadcrumb items={[{ label: 'Central de Ajuda' }, { label: 'Outras centrais' }]} />
             <div className="flex flex-wrap items-end justify-between gap-4">
@@ -221,7 +221,7 @@ export function HelpCenterPage() {
             {spaces.map((space) => (
               <article
                 key={space.knowledgeSpaceId}
-                className="rounded-[24px] border border-[rgba(20,31,71,0.08)] bg-[#fbfcff] px-5 py-5"
+                className="rounded-[24px] border border-[var(--help-border)] bg-[var(--help-surface)] px-5 py-5"
               >
                 <div className="space-y-3">
                   <div>
@@ -405,7 +405,7 @@ export function HelpCenterSpaceLayout() {
 
   return (
     <div
-      className="min-h-screen bg-[#f4f7fc]"
+      className="min-h-screen bg-[var(--help-surface)]"
       style={{
         ...theme,
       }}
