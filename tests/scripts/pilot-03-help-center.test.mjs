@@ -7,6 +7,18 @@ const articles = fs.readFileSync('apps/web/src/features/help-center/HelpCenterAr
 const article = fs.readFileSync('apps/web/src/features/help-center/HelpCenterArticlePage.tsx', 'utf8');
 const states = fs.readFileSync('apps/web/src/features/help-center/public-ui.tsx', 'utf8');
 
+test('home taxonomy exposes five task categories and no empty reports card', () => {
+  assert.match(home, /Erros e solu/);
+  assert.doesNotMatch(home, /title: 'Relat/);
+  assert.match(home, /md:grid-cols-2 xl:grid-cols-5/);
+});
+
+test('public assets use the article content width', () => {
+  const markdown = fs.readFileSync('apps/web/src/features/help-center/markdown.tsx', 'utf8');
+  assert.match(markdown, /max-w-\[min\(100%,920px\)\]/);
+  assert.match(markdown, /max-h-\[780px\]/);
+});
+
 test('home pública usa o mascote oficial como guia da consulta', () => {
   assert.match(home, /GeniusMascot/);
   assert.match(home, /heroMascot\.pose/);

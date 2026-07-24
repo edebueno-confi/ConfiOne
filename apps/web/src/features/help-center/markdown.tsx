@@ -78,10 +78,10 @@ function imageSizeClass(size?: Block['imageSize']) {
   }
 
   if (size === 'full') {
-    return 'max-w-[78ch]';
+    return 'w-full max-w-[min(100%,920px)]';
   }
 
-  return 'max-w-[680px]';
+  return 'w-full max-w-[min(100%,920px)]';
 }
 
 function mediaSizeClass(size?: Block['mediaSize']) {
@@ -702,7 +702,7 @@ export function MarkdownDocument({
             >
               <img
                 alt={asset.alt_text ?? block.alt ?? ''}
-                className="h-auto max-h-[620px] w-full object-contain"
+                className="h-auto max-h-[780px] w-full object-contain"
                 height={asset.height ?? undefined}
                 loading="lazy"
                 src={asset.signed_url}
