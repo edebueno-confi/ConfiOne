@@ -173,6 +173,11 @@ function parseInline(text: string): InlinePart[] {
 }
 
 function normalizeConfigurationSource(source: string) {
+  const hasEditorialStructure = /^(?:#{1,6}\s|[-*]\s|\d+[.)]\s|:::callout\s)/m.test(source);
+  if (hasEditorialStructure) {
+    return source;
+  }
+
   const lines = source.replace(/\r\n/g, '\n').split('\n');
   const normalized: string[] = [];
   let meaningfulLine = true;
@@ -608,6 +613,13 @@ export function MarkdownDocument({
 
         if (block.type === 'callout') {
           const tone = block.tone ?? 'info';
+          const firstLine = block.lines?.[0]?.trim() ?? '';
+          const isTip = /^dica\s*:/i.test(firstLine);
+          const calloutLines = isTip
+            ? [firstLine.replace(/^dica\s*:\s*/i, ''), ...(block.lines?.slice(1) ?? [])]
+            : block.lines?.length
+              ? block.lines
+              : [''];
           const toneClass =
             tone === 'warning'
               ? 'border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-surface)] text-[color:var(--color-warning-ink)]'
@@ -624,8 +636,9 @@ export function MarkdownDocument({
                 : tone === 'danger'
                   ? 'bg-[color:var(--color-danger-text)] text-white'
                   : 'bg-[color:var(--help-link)] text-white';
-          const title =
-            tone === 'warning'
+          const title = isTip
+            ? 'Dica'
+            : tone === 'warning'
               ? 'Atenção'
               : tone === 'success'
                 ? 'Importante'
@@ -645,7 +658,7 @@ export function MarkdownDocument({
               </span>
               <div className="space-y-1">
                 <p className="text-sm font-extrabold">{title}</p>
-                {(block.lines?.length ? block.lines : ['']).map((line, lineIndex) => (
+                {calloutLines.map((line, lineIndex) => (
                   <p key={`${key}-${lineIndex}`} className="text-sm leading-6">
                     {renderInline(line)}
                   </p>

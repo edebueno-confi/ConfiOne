@@ -62,6 +62,10 @@ import {
 } from '../admin/admin-api';
 import { classifyAdminError } from '../admin/admin-errors';
 import { type MarkdownAsset } from '../help-center/markdown';
+import {
+  KNOWLEDGE_SUMMARY_LIMIT,
+  resolveKnowledgeSaveMode,
+} from './knowledge-editorial-rules';
 
 type PagePhase = 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
@@ -92,7 +96,7 @@ const EMPTY_FORM: ArticleEditorForm = {
 
 const TITLE_LIMIT = 150;
 const SLUG_LIMIT = 120;
-const SUMMARY_LIMIT = 160;
+const SUMMARY_LIMIT = KNOWLEDGE_SUMMARY_LIMIT;
 const PUBLIC_PUBLISH_REVIEW_NOTES =
   'Revisão humana confirmada no Admin Knowledge antes de publicação pública.';
 
@@ -3817,8 +3821,14 @@ export function KnowledgeArticleEditorPage() {
         p_source_hash: sourceHash,
       };
 
+      const saveMode = resolveKnowledgeSaveMode({
+        articleId: targetArticleId,
+        articleStatus: articleDetail?.status ?? status,
+        isEditorialRevision,
+      });
+
       const saved =
-        isEditorialRevision && targetArticleId
+        saveMode === 'editorial-revision' && targetArticleId
           ? await updateKnowledgeArticleEditorialRevisionV2({
               p_article_id: targetArticleId,
               p_knowledge_space_id: activeSpace.id,
@@ -3831,7 +3841,7 @@ export function KnowledgeArticleEditorPage() {
               p_source_path: articlePayload.p_source_path,
               p_source_hash: articlePayload.p_source_hash,
             })
-          : targetArticleId
+          : saveMode === 'draft' && targetArticleId
             ? await updateKnowledgeArticleDraftV2({
                 ...articlePayload,
                 p_article_id: targetArticleId,
@@ -4240,7 +4250,7 @@ export function KnowledgeArticleEditorPage() {
             'grid items-start',
             metadataCollapsed
               ? 'xl:grid-cols-[minmax(0,1fr)_64px]'
-              : 'xl:grid-cols-[minmax(0,1fr)_320px]',
+              : 'xl:grid-cols-[minmax(0,1fr)_minmax(520px,50vw)]',
           )}
         >
           <aside className="sticky top-[84px] order-2 max-h-[calc(100vh-84px)] overflow-hidden border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)]">
@@ -4302,7 +4312,7 @@ export function KnowledgeArticleEditorPage() {
                         disabled={isReadOnly}
                         maxLength={SUMMARY_LIMIT + 40}
                         onChange={(event) => updateForm({ summary: event.target.value })}
-                        placeholder="Explique em até 160 caracteres o que o artigo resolve."
+                        placeholder="Explique em até 320 caracteres o que o artigo resolve."
                         value={form.summary}
                       />
                       <CharacterCounter limit={SUMMARY_LIMIT} value={form.summary} />
