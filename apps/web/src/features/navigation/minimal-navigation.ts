@@ -51,7 +51,7 @@ export function buildMinimalNavigation({
   const roles = permissions.roles ?? [];
   const screenKeys = permissions.screenKeys ?? [];
   const isPlatformAdmin = permissions.isPlatformAdmin || roles.includes('platform_admin');
-  const isDashboardViewer = !isPlatformAdmin && permissions.hasDashboardViewerAccess === true && screenKeys.length === 0;
+  const isDashboardViewer = !isPlatformAdmin && permissions.hasDashboardViewerAccess === true;
 
   if (isDashboardViewer) {
     return [{
