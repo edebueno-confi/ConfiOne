@@ -9,8 +9,8 @@ const states = fs.readFileSync('apps/web/src/features/help-center/public-ui.tsx'
 
 test('home pública usa o mascote oficial como guia da consulta', () => {
   assert.match(home, /GeniusMascot/);
-  assert.match(home, /pose="welcome"/);
-  assert.match(home, /expression="happy"/);
+  assert.match(home, /heroMascot\.pose/);
+  assert.match(home, /heroMascot\.expression/);
   assert.doesNotMatch(home, /mascotUrl/);
   assert.match(home, /slice\(0, 3\)/);
 });

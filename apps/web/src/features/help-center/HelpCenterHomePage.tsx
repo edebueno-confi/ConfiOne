@@ -46,6 +46,45 @@ type SuggestedArticle = {
   to: string;
 };
 
+type HeroAssistantState = 'waiting' | 'focused' | 'processing' | 'result' | 'empty' | 'error';
+
+const heroMascotByState: Record<HeroAssistantState, {
+  message: string;
+  pose: 'welcome' | 'present' | 'think' | 'celebrate' | 'magic' | 'shrug';
+  expression: 'happy' | 'wink' | 'wow';
+}> = {
+  waiting: {
+    message: 'Pergunte ao Gênio',
+    pose: 'shrug',
+    expression: 'happy',
+  },
+  focused: {
+    message: 'Estou entendendo a sua dúvida.',
+    pose: 'think',
+    expression: 'happy',
+  },
+  processing: {
+    message: 'Consultando a documentação...',
+    pose: 'think',
+    expression: 'happy',
+  },
+  result: {
+    message: 'Encontrei caminhos para você.',
+    pose: 'present',
+    expression: 'happy',
+  },
+  empty: {
+    message: 'Vamos tentar por outro caminho.',
+    pose: 'shrug',
+    expression: 'happy',
+  },
+  error: {
+    message: 'A consulta encontrou um obstáculo.',
+    pose: 'shrug',
+    expression: 'wink',
+  },
+};
+
 type CategoryCard = {
   id: string;
   title: string;
@@ -78,6 +117,24 @@ function buildSuggestedArticleLinks(
       to: `/help/${spaceSlug}/articles/${article.slug}`,
     }];
   });
+}
+
+function resolveHeroAssistantState({
+  activeQuery,
+  searchInput,
+  searchPhase,
+}: {
+  activeQuery: string;
+  searchInput: string;
+  searchPhase: SearchPhase;
+}): HeroAssistantState {
+  if (searchInput.trim() && searchInput.trim() !== activeQuery) return 'focused';
+  if (searchPhase === 'loading' || (activeQuery && searchPhase === 'idle')) return 'processing';
+  if (searchPhase === 'ready') return 'result';
+  if (searchPhase === 'empty') return 'empty';
+  if (searchPhase === 'error' || searchPhase === 'contract-unavailable') return 'error';
+  if (searchInput.trim()) return 'focused';
+  return 'waiting';
 }
 
 function buildCategoryCards(
@@ -168,6 +225,12 @@ export function HelpCenterHomePage() {
     () => buildSuggestedArticleLinks(context.primaryRoute.knowledge_space_slug, context.articles),
     [context.articles, context.primaryRoute.knowledge_space_slug],
   );
+  const heroAssistantState = resolveHeroAssistantState({
+    activeQuery,
+    searchInput,
+    searchPhase,
+  });
+  const heroMascot = heroMascotByState[heroAssistantState];
   const topArticles = context.articles.slice(0, 3);
 
   const loadSearch = useEffectEvent(async (query: string) => {
@@ -333,33 +396,34 @@ export function HelpCenterHomePage() {
               <AppButton className="h-12 w-full shrink-0 rounded-[14px] px-7 text-base sm:w-auto" type="submit">Buscar</AppButton>
             </form>
 
-            <div className="space-y-2" data-testid="hero-suggestions">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--help-hero-muted)]">Sugestões rápidas</p>
-              <div className="flex flex-wrap gap-2">
-                {suggestedArticles.map(({ id, title, to }) => (
-                <Link
-                    aria-label={`Abrir artigo: ${title}`}
-                    className="inline-flex min-h-9 max-w-full items-center gap-2 rounded-[12px] border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-3 text-sm text-[var(--help-hero-muted)] no-underline transition hover:border-[var(--help-accent)] hover:bg-[var(--help-accent-soft)]"
-                    data-suggestion-id={id}
-                    key={id}
-                    to={to}
-                >
-                  <HelpIcon className="h-4 w-4 shrink-0" kind="search" />
-                    <span className="truncate">{title}</span>
-                </Link>
-                ))}
-              </div>
-            </div>
           </div>
 
-          <div className="relative order-2 flex min-h-[210px] items-center justify-center lg:col-start-2 lg:min-h-0" data-testid="hero-mascot">
-            <div className="pointer-events-none absolute inset-x-[8%] bottom-[12%] h-24 rounded-full bg-[radial-gradient(ellipse,var(--help-hero-soft),transparent_68%)]" />
-            <div className="relative flex flex-col items-center gap-2">
-              <div className="rounded-full border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-4 py-2 text-center text-xs font-semibold text-[var(--help-hero-muted)] shadow-[var(--help-shadow)]">
-                O Gênio ajuda você a encontrar o caminho certo.
+          <div className="relative order-2 flex min-h-[250px] items-center justify-center lg:col-start-2 lg:min-h-0" data-testid="hero-companion">
+            <div className="pointer-events-none absolute inset-x-0 bottom-[16%] h-32 rounded-full bg-[radial-gradient(ellipse,var(--help-hero-soft),transparent_68%)]" />
+            <div className="relative flex w-full flex-col items-center gap-2">
+              <div aria-live="polite" className="rounded-full border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-4 py-2 text-center text-xs font-semibold text-[var(--help-hero-muted)] shadow-[var(--help-shadow)]" data-testid="hero-assistant-message">
+                {heroMascot.message}
               </div>
-              <GeniusMascot alt="Gênio guiando a consulta na Central de Ajuda" expression="happy" pose="welcome" size="xl" surface="default" />
-              <span className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--help-hero-muted)]">Consulta guiada</span>
+              <div className="flex items-center justify-center" data-testid="hero-mascot">
+                <GeniusMascot alt="Gênio acompanhando a consulta na Central de Ajuda" expression={heroMascot.expression} pose={heroMascot.pose} size="xl" surface={heroAssistantState === 'processing' ? 'loading' : 'default'} />
+              </div>
+              <div className="mt-1 w-full max-w-[25rem] space-y-2" data-testid="hero-suggestions">
+                <p className="text-center text-xs font-semibold uppercase tracking-[0.16em] text-[var(--help-hero-muted)]">Sugestões do Gênio</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {suggestedArticles.map(({ id, title, to }) => (
+                    <Link
+                      aria-label={`Abrir artigo: ${title}`}
+                      className="inline-flex min-h-9 max-w-full items-center gap-2 rounded-[12px] border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-3 text-sm text-[var(--help-hero-muted)] no-underline transition hover:border-[var(--help-accent)] hover:bg-[var(--help-accent-soft)]"
+                      data-suggestion-id={id}
+                      key={id}
+                      to={to}
+                    >
+                      <HelpIcon className="h-4 w-4 shrink-0" kind="search" />
+                      <span className="truncate">{title}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -25,6 +25,24 @@ test('hero não duplica CTAs e preserva ações de busca previsíveis', () => {
   assert.match(home, /role="search"/);
   assert.match(home, /setSearchParams\(nextParams/);
   assert.match(home, /nextParams\.delete\('q'\)/);
-  assert.match(home, /Sugestões rápidas/);
+  assert.match(home, /Sugestões do Gênio/);
   assert.doesNotMatch(home, /Pergunte ao Gênio como título/);
+});
+
+test('Gênio conduz a consulta com fala reativa e poses semânticas', () => {
+  assert.match(home, /heroAssistantState/);
+  assert.match(home, /Sugestões do Gênio/);
+  assert.match(home, /Consultando a documentação/);
+  assert.match(home, /Encontrei caminhos para você/);
+  assert.match(home, /pose: 'think'/);
+  assert.match(home, /pose: 'present'/);
+  assert.match(home, /pose: 'shrug'/);
+  assert.doesNotMatch(home, /CONSULTA GUIADA|Consulta guiada/);
+});
+
+test('sugestões ficam no bloco do Gênio, não junto ao campo de busca', () => {
+  const mascotIndex = home.indexOf('data-testid="hero-mascot"');
+  const suggestionsIndex = home.indexOf('data-testid="hero-suggestions"');
+  assert.ok(mascotIndex > -1 && suggestionsIndex > mascotIndex);
+  assert.match(home, /data-testid="hero-companion"/);
 });
