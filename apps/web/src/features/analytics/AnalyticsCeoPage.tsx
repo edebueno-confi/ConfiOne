@@ -62,6 +62,16 @@ export function AnalyticsCeoPage({ sharedPeriod, onSharedPeriodChange, onRetry }
   if (state.loading) return <AnalyticsLoadingState title="Carregando visão executiva" description="O Gênio está consolidando Comercial, Suporte e Financeiro a partir das fontes." />;
   if (state.error || !state.data) return <MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
   const { commercial: c, support: s, finance: f } = state.data;
+  const hasPeriodData = [
+    c.openDeals,
+    c.wonDeals,
+    c.lostDeals,
+    s.totalTickets,
+    f.titles,
+    state.data.dataQuality.financeSourceAt ? 1 : 0,
+    state.data.dataQuality.hubspotSourceAt ? 1 : 0,
+  ].some((value) => value > 0);
+  if (!hasPeriodData) return <MinimalState title="Sem dados neste período" description="Não encontramos registros para este recorte. Ajuste o período ou tente novamente para consultar outra janela." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
   const handleMerge = async (confirmation: string) => {
     if (!mergeTarget) return;
     setMergeState({ loading: true });

@@ -3,8 +3,8 @@ import type { ReactNode } from 'react';
 export function AnalyticsLoadingState({ title, description }: { title: string; description: string }) {
   return (
     <section aria-busy="true" aria-label={title} className="space-y-4" role="status">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {Array.from({ length: 4 }, (_, index) => <div aria-hidden="true" className="h-24 animate-pulse rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)]" key={index} />)}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        {Array.from({ length: 5 }, (_, index) => <div aria-hidden="true" className={`h-24 animate-pulse rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] ${index === 3 ? 'lg:col-start-1' : ''}`} key={index} />)}
       </div>
       <div className="grid gap-4 xl:grid-cols-2">
         {Array.from({ length: 2 }, (_, index) => <div aria-hidden="true" className="h-56 animate-pulse rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)]" key={index} />)}
