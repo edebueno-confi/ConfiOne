@@ -1,0 +1,6 @@
+[
+  { "status": "not_configured", "source": "OMIE", "syncRunId": null },
+  { "status": "syncing", "source": "HubSpot", "syncRunId": "00000000-0000-0000-0000-000000000006" },
+  { "status": "unavailable", "source": "HubSpot", "syncRunId": null },
+  { "status": "error", "source": "OMIE", "syncRunId": "00000000-0000-0000-0000-000000000007", "reason": "Fonte indisponível" }
+]

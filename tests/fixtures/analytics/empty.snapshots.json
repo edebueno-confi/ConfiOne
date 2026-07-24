@@ -1,0 +1,9 @@
+{
+  "status": "empty",
+  "source": "HubSpot Deals",
+  "asOf": "2026-07-24T12:00:00Z",
+  "lastSuccessfulSyncAt": "2026-07-24T11:55:00Z",
+  "syncRunId": "00000000-0000-0000-0000-000000000005",
+  "coverage": { "expected": 0, "received": 0 },
+  "metrics": { "openDeals": 0, "wonDeals": 0 }
+}

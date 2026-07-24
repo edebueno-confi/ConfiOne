@@ -1,0 +1,10 @@
+{
+  "status": "stale",
+  "source": "HubSpot + OMIE",
+  "asOf": "2026-07-23T12:00:00Z",
+  "lastSuccessfulSyncAt": "2026-07-23T12:00:00Z",
+  "syncRunId": "00000000-0000-0000-0000-000000000004",
+  "coverage": { "expected": 124, "received": 124 },
+  "temporalType": "snapshot",
+  "metrics": { "periodWonRevenue": 100000, "currentOverdueBalance": 12000 }
+}

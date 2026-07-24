@@ -1,0 +1,10 @@
+{
+  "status": "partial",
+  "source": "HubSpot Tickets",
+  "asOf": "2026-07-24T12:00:00Z",
+  "lastSuccessfulSyncAt": "2026-07-24T11:40:00Z",
+  "syncRunId": "00000000-0000-0000-0000-000000000002",
+  "coverage": { "expected": 30, "received": 27 },
+  "temporalType": "period_flow",
+  "metrics": { "openTickets": 6, "totalTickets": 27 }
+}

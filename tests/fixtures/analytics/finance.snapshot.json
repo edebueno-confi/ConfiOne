@@ -1,0 +1,9 @@
+{
+  "status": "fresh",
+  "source": "OMIE",
+  "asOf": "2026-07-24T12:00:00Z",
+  "lastSuccessfulSyncAt": "2026-07-24T11:50:00Z",
+  "syncRunId": "00000000-0000-0000-0000-000000000003",
+  "coverage": { "expected": 100, "received": 100 },
+  "metrics": { "openBalance": 90000, "overdueBalance": 12000, "receivedAmount": 45000 }
+}
