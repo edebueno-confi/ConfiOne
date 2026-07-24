@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useEffectEvent, useMemo, useState } from 'react';
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
-import mascotUrl from '../../../assets/brand/genius-mascot.svg';
 import { AppButton, GhostButton } from '../../components/ui';
+import { GeniusMascot } from '../../components/GeniusMascot';
 import type {
   PublicKnowledgeArticleListRow,
   PublicKnowledgeNavigationRow,
@@ -182,6 +182,7 @@ export function HelpCenterHomePage() {
   );
   const activeQuery = (searchParams.get('q') ?? '').trim();
   const topArticles = context.articles.slice(0, 5);
+  const visibleCategoryCards = categoryCards.filter((card) => !card.isSupport);
   const portalHref = supportContacts.websiteUrl ?? supportContacts.docsUrl ?? null;
   const onboardingArticle =
     context.articles.find((article) => article.category_name?.toLowerCase().includes('primeiro')) ??
@@ -407,7 +408,7 @@ export function HelpCenterHomePage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-[92px_minmax(0,1fr)] items-center gap-4">
                   <div className="flex h-[92px] w-[92px] items-center justify-center rounded-[28px] bg-[radial-gradient(circle_at_top_left,rgba(48,127,226,0.18),transparent_58%),linear-gradient(180deg,rgba(237,244,255,0.96),rgba(223,236,255,0.88))]">
-                    <img alt="Mascote Genius" className="h-auto w-[68px]" src={mascotUrl} />
+                    <GeniusMascot alt="Gênio guiando a consulta da documentação" expression="happy" pose="welcome" size="md" surface="default" />
                   </div>
                   <div className="space-y-1.5">
                     <h2 className="text-[1.18rem] font-semibold leading-7 tracking-[-0.04em] text-[var(--help-ink-strong)]">
@@ -454,11 +455,11 @@ export function HelpCenterHomePage() {
           </div>
         </div>
 
-        <div className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_18px_36px_rgba(20,31,71,0.05)] lg:hidden">
+        <div className="border-t border-white/15 bg-[color:var(--color-surface-strong)] px-1 py-4 lg:hidden">
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="flex h-[78px] w-[78px] shrink-0 items-center justify-center rounded-[24px] bg-[radial-gradient(circle_at_top_left,rgba(48,127,226,0.18),transparent_58%),linear-gradient(180deg,rgba(237,244,255,0.96),rgba(223,236,255,0.88))]">
-                <img alt="Mascote Genius" className="h-auto w-[58px]" src={mascotUrl} />
+                <GeniusMascot alt="Gênio guiando a consulta da documentação" expression="happy" pose="welcome" size="sm" surface="default" />
               </div>
               <div className="space-y-1.5">
                 <h2 className="text-[1.1rem] font-semibold tracking-[-0.04em] text-[var(--help-ink-strong)]">
@@ -594,7 +595,7 @@ export function HelpCenterHomePage() {
         </div>
 
         <div className="grid gap-3 md:hidden">
-          {categoryCards.map((card) => (
+          {visibleCategoryCards.slice(0, 3).map((card) => (
             <article
               key={`mobile-${card.id}`}
               className="rounded-[20px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-4 py-4 shadow-[0_14px_30px_rgba(20,31,71,0.04)]"
@@ -635,10 +636,15 @@ export function HelpCenterHomePage() {
               </div>
             </article>
           ))}
+          {visibleCategoryCards.length > 3 ? (
+            <Link className="pt-1 text-sm font-semibold text-[var(--help-link)] no-underline" to={`/help/${context.primaryRoute.knowledge_space_slug}/articles`}>
+              Ver todas as categorias <HelpIcon kind="chevron-right" />
+            </Link>
+          ) : null}
         </div>
 
         <div className="hidden gap-4 md:grid md:grid-cols-2 xl:grid-cols-6">
-          {categoryCards.map((card) => (
+          {visibleCategoryCards.map((card) => (
             <article
               key={card.id}
               className="flex min-h-[248px] flex-col rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-4 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]"

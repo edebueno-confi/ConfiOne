@@ -1,11 +1,11 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
-import { EmptyState } from '../../components/states';
 import type { PublicKnowledgeNavigationRow } from '../../contracts/public-contracts';
 import type { HelpCenterSpaceContext } from './context';
 import {
   HelpIcon,
   PublicBreadcrumb,
+  PublicSearchStateCard,
   formatRelativePublicDate,
 } from './public-ui';
 
@@ -59,6 +59,8 @@ export function HelpCenterArticlesPage() {
   );
   const searchQuery = searchParams.get('q')?.trim().toLowerCase() ?? '';
   const [searchInput, setSearchInput] = useState(searchParams.get('q')?.trim() ?? '');
+  const pageSize = 10;
+  const requestedPage = Number.parseInt(searchParams.get('page') ?? '1', 10);
 
   const filteredArticles = useMemo(() => {
     return context.articles.filter((article) => {
@@ -76,6 +78,9 @@ export function HelpCenterArticlesPage() {
       return matchesCategory && matchesQuery;
     });
   }, [context.articles, searchQuery, selectedCategoryTreeIds]);
+  const pageCount = Math.max(1, Math.ceil(filteredArticles.length / pageSize));
+  const currentPage = Math.min(Math.max(Number.isFinite(requestedPage) ? requestedPage : 1, 1), pageCount);
+  const visibleArticles = filteredArticles.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -87,6 +92,7 @@ export function HelpCenterArticlesPage() {
     } else {
       nextParams.set('q', nextQuery);
     }
+    nextParams.delete('page');
 
     setSearchParams(nextParams, { replace: true });
   }
@@ -98,6 +104,7 @@ export function HelpCenterArticlesPage() {
     } else {
       nextParams.set('category', value);
     }
+    nextParams.delete('page');
     setSearchParams(nextParams, { replace: true });
   }
 
@@ -210,18 +217,15 @@ export function HelpCenterArticlesPage() {
             </div>
             {filteredArticles.length === 0 ? (
               <div className="bg-[color:var(--color-surface-strong)] px-6 py-10">
-                <EmptyState
+                <PublicSearchStateCard
+                  description={selectedCategory || searchQuery ? 'Não encontramos artigos públicos para este filtro. Revise os termos ou volte para a lista completa.' : 'Esta central ainda não possui artigos públicos publicados para a lista geral.'}
                   title="Nenhum artigo publicado"
-                  description={
-                    selectedCategory || searchQuery
-                      ? 'Nao encontramos artigos publicos para este filtro. Revise os termos usados ou volte para a lista completa.'
-                      : 'Esta central ainda nao possui artigos publicos publicados para a lista geral.'
-                  }
+                  tone="empty"
                 />
               </div>
             ) : (
               <div className="divide-y divide-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)]">
-                {filteredArticles.map((article) => (
+                {visibleArticles.map((article) => (
                   <Link
                     key={article.id}
                     className="grid gap-2 px-5 py-4 no-underline transition hover:bg-[#fbfcff] md:grid-cols-[minmax(0,1fr)_220px_180px] md:items-center md:gap-4"
@@ -246,6 +250,15 @@ export function HelpCenterArticlesPage() {
                 ))}
               </div>
             )}
+            {filteredArticles.length > 0 ? (
+              <nav aria-label="Paginação de artigos" className="flex flex-wrap items-center justify-between gap-3 border-t border-[rgba(20,31,71,0.08)] bg-[#fbfcff] px-5 py-4">
+                <p className="text-xs text-[var(--help-muted)]">Página {currentPage} de {pageCount} · {filteredArticles.length} artigos</p>
+                <div className="flex items-center gap-2">
+                  <button className="rounded-[12px] border border-[var(--help-border)] px-3 py-2 text-sm font-semibold text-[var(--help-link)] disabled:cursor-not-allowed disabled:opacity-45" disabled={currentPage === 1} onClick={() => { const next = new URLSearchParams(searchParams); next.set('page', String(currentPage - 1)); setSearchParams(next, { replace: true }); }} type="button">Anterior</button>
+                  <button className="rounded-[12px] border border-[var(--help-border)] px-3 py-2 text-sm font-semibold text-[var(--help-link)] disabled:cursor-not-allowed disabled:opacity-45" disabled={currentPage === pageCount} onClick={() => { const next = new URLSearchParams(searchParams); next.set('page', String(currentPage + 1)); setSearchParams(next, { replace: true }); }} type="button">Próxima</button>
+                </div>
+              </nav>
+            ) : null}
           </div>
         </div>
       </div>

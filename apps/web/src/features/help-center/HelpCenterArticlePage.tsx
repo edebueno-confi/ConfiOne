@@ -6,6 +6,7 @@ import {
   ErrorState,
 } from '../../components/states';
 import { GhostButton } from '../../components/ui';
+import { GeniusMascot } from '../../components/GeniusMascot';
 import type {
   PublicKnowledgeArticleAssetRow,
   PublicKnowledgeArticleDetailRow,
@@ -21,6 +22,7 @@ import {
 import {
   HelpIcon,
   PublicBreadcrumb,
+  PublicSearchStateCard,
   formatRelativePublicDate,
 } from './public-ui';
 
@@ -126,15 +128,7 @@ function extractArticleSections(source: string, fallbackTitle: string) {
 
 function ArticlePageSkeleton() {
   return (
-    <div className="grid gap-5 lg:grid-cols-[196px_minmax(0,1fr)_220px] xl:grid-cols-[210px_minmax(0,1fr)_232px]">
-      <div className="hidden rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] p-4 lg:block">
-        <div className="h-5 w-28 rounded-full bg-[var(--help-surface)]" />
-        <div className="mt-4 grid gap-2">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <div key={`left-${index}`} className="h-10 rounded-[14px] bg-[var(--help-surface)]" />
-          ))}
-        </div>
-      </div>
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px] xl:grid-cols-[minmax(0,1fr)_232px]">
       <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-6 py-6 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
         <div className="h-5 w-48 rounded-full bg-[var(--help-surface)]" />
         <div className="mt-5 h-12 w-3/4 rounded-[16px] bg-[var(--help-surface)]" />
@@ -334,53 +328,19 @@ export function HelpCenterArticlePage() {
   if (phase === 'empty' || !article) {
     return (
       <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-6 py-8 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
-        <EmptyState
+        <PublicSearchStateCard
+          action={<Link to={`/help/${spaceSlug}/articles`}><GhostButton>Voltar para a lista de artigos</GhostButton></Link>}
+          description="O artigo solicitado não está disponível nesta Central Pública. Volte para a lista, busque outro termo ou explore as categorias."
           title="Artigo não encontrado"
-          description="O artigo solicitado não está disponível nesta central pública. Volte para a lista de artigos ou siga pela navegação principal."
-          action={
-            <Link to={`/help/${spaceSlug}/articles`}>
-              <GhostButton>Voltar para a lista de artigos</GhostButton>
-            </Link>
-          }
+          tone="empty"
         />
       </div>
     );
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[196px_minmax(0,1fr)_220px] xl:grid-cols-[210px_minmax(0,1fr)_232px]">
-      <aside className="order-2 rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-4 py-4 lg:order-1 lg:sticky lg:top-24 lg:h-fit">
-        <div className="space-y-4">
-          <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Nesta categoria</p>
-          <div className="grid gap-1.5">
-            {sameCategoryArticles.length > 0 ? (
-              sameCategoryArticles.map((entry) => (
-                <Link
-                  key={entry.id}
-                  className={`rounded-[14px] px-3 py-2 text-sm no-underline transition ${
-                    entry.id === article.id
-                      ? 'bg-[var(--help-accent-soft)] font-semibold text-[var(--help-link)]'
-                      : 'text-[var(--help-ink)] hover:bg-[#fbfcff]'
-                  }`}
-                  to={`/help/${spaceSlug}/articles/${entry.slug}`}
-                >
-                  {entry.title}
-                </Link>
-              ))
-            ) : (
-              <p className="text-sm leading-6 text-[var(--help-muted)]">
-                Esta categoria ainda não tem outros artigos publicados.
-              </p>
-            )}
-          </div>
-          <Link className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--help-link)] no-underline" to={`/help/${spaceSlug}/articles`}>
-            Ver todos os artigos
-            <HelpIcon kind="chevron-right" />
-          </Link>
-        </div>
-      </aside>
-
-      <article className="order-1 rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_18px_40px_rgba(20,31,71,0.05)] sm:px-8 sm:py-6 lg:order-2 lg:px-11 xl:px-12">
+    <div className={articleSections.length >= 3 ? 'grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px] xl:grid-cols-[minmax(0,1fr)_232px]' : 'grid gap-5'}>
+      <article className="mx-auto w-full max-w-[1080px] rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_18px_40px_rgba(20,31,71,0.05)] sm:px-8 sm:py-6 lg:px-11 xl:px-12">
         <div className="space-y-5">
           <PublicBreadcrumb
             items={[
@@ -420,7 +380,7 @@ export function HelpCenterArticlePage() {
             </p>
           </div>
 
-          <details className="rounded-[18px] border border-[rgba(20,31,71,0.08)] bg-[#fbfcff] px-4 py-3 lg:hidden">
+          {articleSections.length >= 3 ? <details className="rounded-[18px] border border-[rgba(20,31,71,0.08)] bg-[#fbfcff] px-4 py-3 lg:hidden">
             <summary className="cursor-pointer list-none text-sm font-semibold text-[var(--help-ink-strong)]">
               Neste artigo
             </summary>
@@ -435,7 +395,7 @@ export function HelpCenterArticlePage() {
                 </a>
               ))}
             </div>
-          </details>
+          </details> : null}
 
           <div className="min-w-0">
             <MarkdownDocument
@@ -444,11 +404,19 @@ export function HelpCenterArticlePage() {
               source={articleBody}
             />
           </div>
+          <section className="grid gap-4 border-t border-[rgba(20,31,71,0.08)] pt-6 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
+            <GeniusMascot alt="Gênio indicando o próximo passo" expression="happy" pose="present" size="md" surface="default" />
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Próximo passo</p>
+              <p className="text-sm leading-6 text-[var(--help-muted)]">Se esta orientação não resolver sua dúvida, consulte um artigo relacionado ou entre no portal para falar com o suporte.</p>
+              {relatedArticles.length > 0 ? <div className="flex flex-wrap gap-x-4 gap-y-2 pt-1">{relatedArticles.map((entry) => <Link key={entry.id} className="text-sm font-semibold text-[var(--help-link)] no-underline" to={`/help/${spaceSlug}/articles/${entry.slug}`}>{entry.title}</Link>)}</div> : null}
+            </div>
+          </section>
         </div>
       </article>
 
-      <aside className="order-3 grid gap-4 lg:sticky lg:top-24 lg:h-fit">
-        <section className="hidden rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-4 py-4 lg:block">
+      {articleSections.length >= 3 ? <aside className="hidden lg:block lg:sticky lg:top-24 lg:h-fit">
+        <section className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-4 py-4 lg:block">
           <div className="space-y-4">
             <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Neste artigo</p>
             <div className="grid gap-2">
@@ -465,25 +433,7 @@ export function HelpCenterArticlePage() {
           </div>
         </section>
 
-        {relatedArticles.length > 0 ? (
-          <section className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-4 py-4">
-            <div className="space-y-4">
-              <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Artigos relacionados</p>
-              <div className="grid gap-3">
-                {relatedArticles.map((entry) => (
-                  <Link
-                    key={entry.id}
-                    className="text-sm font-medium leading-6 text-[var(--help-link)] no-underline"
-                    to={`/help/${spaceSlug}/articles/${entry.slug}`}
-                  >
-                    {entry.title}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
-        ) : null}
-      </aside>
+      </aside> : null}
     </div>
   );
 }
