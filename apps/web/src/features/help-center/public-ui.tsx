@@ -300,11 +300,15 @@ export function PublicSearchStateCard({
   title,
   description,
   action,
+  mascotPose,
+  mascotExpression,
 }: {
   tone: 'loading' | 'empty' | 'error';
   title: string;
   description: string;
   action?: ReactNode;
+  mascotPose?: 'magic' | 'shrug';
+  mascotExpression?: 'happy' | 'wink';
 }) {
   const toneMap =
     tone === 'error'
@@ -324,14 +328,14 @@ export function PublicSearchStateCard({
             iconTone: 'blue' as const,
             border: 'border-[var(--help-border)]',
         };
-  const mascotPose = tone === 'loading' ? 'magic' : tone === 'empty' ? 'shrug' : 'shrug';
-  const mascotExpression = tone === 'empty' ? 'wink' : 'happy';
+  const resolvedMascotPose = mascotPose ?? (tone === 'loading' ? 'magic' : 'shrug');
+  const resolvedMascotExpression = mascotExpression ?? (tone === 'empty' ? 'wink' : 'happy');
 
   return (
     <div className={cx('rounded-[26px] border bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_16px_36px_rgba(20,31,71,0.05)]', toneMap.border)}>
       <div className="flex items-start gap-4">
         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] bg-[var(--help-accent-soft)]">
-          <GeniusMascot alt="Gênio orientando a consulta" expression={mascotExpression} pose={mascotPose} size="sm" surface={tone === 'loading' ? 'loading' : 'empty'} />
+          <GeniusMascot alt="Gênio orientando a consulta" expression={resolvedMascotExpression} pose={resolvedMascotPose} size="sm" surface={tone === 'loading' ? 'loading' : 'empty'} />
         </div>
         <div className="space-y-2">
           <p className="text-base font-semibold text-[var(--help-ink-strong)]">{title}</p>

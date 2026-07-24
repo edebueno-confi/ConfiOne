@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
+import { GhostButton } from '../../components/ui';
 import type { PublicKnowledgeNavigationRow } from '../../contracts/public-contracts';
 import type { HelpCenterSpaceContext } from './context';
 import {
@@ -219,7 +220,15 @@ export function HelpCenterArticlesPage() {
               <div className="bg-[color:var(--color-surface-strong)] px-6 py-10">
                 <PublicSearchStateCard
                   description={selectedCategory || searchQuery ? 'Não encontramos artigos públicos para este filtro. Revise os termos ou volte para a lista completa.' : 'Esta central ainda não possui artigos públicos publicados para a lista geral.'}
+                  action={
+                    <div className="flex flex-wrap items-center gap-2">
+                      {searchQuery ? <GhostButton onClick={() => { const next = new URLSearchParams(searchParams); next.delete('q'); next.delete('page'); setSearchInput(''); setSearchParams(next, { replace: true }); }}>Limpar busca</GhostButton> : null}
+                      <Link className="text-sm font-semibold text-[var(--help-link)] no-underline" to={`/help/${context.primaryRoute.knowledge_space_slug}/articles`}>Ver todos os artigos</Link>
+                      {rootCategories.slice(0, 3).map((category) => <Link className="text-sm text-[var(--help-link)] no-underline" key={`empty-${category.category_id}`} to={`/help/${context.primaryRoute.knowledge_space_slug}/articles?category=${category.category_id}`}>{category.category_name}</Link>)}
+                    </div>
+                  }
                   title="Nenhum artigo publicado"
+                  mascotExpression="wink"
                   tone="empty"
                 />
               </div>

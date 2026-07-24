@@ -181,7 +181,7 @@ export function HelpCenterHomePage() {
     [context.articles, context.primaryRoute.knowledge_space_slug, rootCategories, supportContacts],
   );
   const activeQuery = (searchParams.get('q') ?? '').trim();
-  const topArticles = context.articles.slice(0, 5);
+  const topArticles = context.articles.slice(0, 3);
   const visibleCategoryCards = categoryCards.filter((card) => !card.isSupport);
   const portalHref = supportContacts.websiteUrl ?? supportContacts.docsUrl ?? null;
   const onboardingArticle =
@@ -503,7 +503,7 @@ export function HelpCenterHomePage() {
         {searchPhase !== 'idle' ? <div className="mt-1">{renderSearchContent()}</div> : null}
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-3">
+      <section className="hidden">
         <article className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]">
           <div className="flex items-start gap-4">
             <PublicIconBadge className="h-12 w-12 rounded-[18px]" icon="search" tone="blue" />
@@ -643,7 +643,7 @@ export function HelpCenterHomePage() {
           ) : null}
         </div>
 
-        <div className="hidden gap-4 md:grid md:grid-cols-2 xl:grid-cols-6">
+        <div className="hidden gap-4 md:grid md:grid-cols-2 xl:grid-cols-5">
           {visibleCategoryCards.map((card) => (
             <article
               key={card.id}
@@ -682,7 +682,7 @@ export function HelpCenterHomePage() {
         </div>
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_348px]">
+      <section className="grid gap-5">
         <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-4 py-5 shadow-[0_18px_40px_rgba(20,31,71,0.05)] sm:px-6">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="space-y-1">
@@ -745,7 +745,7 @@ export function HelpCenterHomePage() {
           </div>
         </div>
 
-        <aside className="grid gap-4">
+        <aside className="hidden">
           <section className="rounded-[24px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]">
             <div className="space-y-4">
               <h2 className="text-[1.55rem] font-semibold tracking-[-0.05em] text-[var(--help-ink-strong)]">
@@ -812,6 +812,16 @@ export function HelpCenterHomePage() {
           </section>
         </aside>
       </section>
+
+      {portalHref ? (
+        <section className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-4">
+          <div>
+            <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Precisa tratar uma solicitação?</p>
+            <p className="text-sm leading-6 text-[var(--help-muted)]">Entre no portal quando a documentação não for suficiente.</p>
+          </div>
+          <a className="inline-flex min-h-10 items-center rounded-[12px] bg-[var(--help-link)] px-4 text-sm font-semibold text-white no-underline" href={portalHref} rel="noreferrer" target="_blank">Entrar no portal</a>
+        </section>
+      ) : null}
     </div>
   );
 }

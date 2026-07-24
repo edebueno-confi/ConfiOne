@@ -30,7 +30,8 @@ test('artigo mantém uma única coluna auxiliar condicional e companion após o 
 });
 
 test('estados públicos usam linguagem visual sem técnica interna', () => {
-  assert.match(states, /pose={mascotPose}/);
+  assert.match(states, /resolvedMascotPose/);
+  assert.match(states, /expression={resolvedMascotExpression}/);
   assert.match(states, /tone === 'loading' \? 'magic'/);
   assert.match(states, /tone === 'empty' \? 'wink'/);
 });

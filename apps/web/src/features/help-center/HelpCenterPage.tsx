@@ -7,6 +7,7 @@ import {
   LoadingState,
 } from '../../components/states';
 import { AppButton, GhostButton } from '../../components/ui';
+import { GeniusMascot } from '../../components/GeniusMascot';
 import type { PublicKnowledgeSpaceResolverRow } from '../../contracts/public-contracts';
 import { classifyAdminError } from '../admin/admin-errors';
 import type { HelpCenterSpaceContext } from './context';
@@ -40,6 +41,24 @@ interface HelpCenterSpaceSummary {
   organizationDisplayName: string;
   canonicalPath: string;
   canonicalHost: string | null;
+}
+
+function PublicHelpLoadingSurface() {
+  return (
+    <div className="min-h-screen bg-[#f4f7fc]">
+      <PublicHelpHeader active="directory" brandName="Genius Returns" showOtherCenters={false} spaceSlug="genius" />
+      <main className="mx-auto grid max-w-[1520px] gap-5 px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
+        <section aria-busy="true" className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] p-5 shadow-[0_18px_40px_rgba(20,31,71,0.05)] sm:p-8">
+          <div className="flex items-center gap-4 border-b border-[rgba(20,31,71,0.08)] pb-5">
+            <GeniusMascot alt="Gênio preparando a Central de Ajuda" expression="happy" pose="magic" size="md" surface="loading" />
+            <div className="min-w-0 flex-1 space-y-2"><div className="h-7 w-64 animate-pulse rounded-full bg-[var(--help-surface)]" /><div className="h-4 w-96 max-w-full animate-pulse rounded-full bg-[var(--help-surface)]" /></div>
+          </div>
+          <div className="mt-6 h-28 animate-pulse rounded-[22px] bg-[var(--help-surface)]" />
+          <div className="mt-5 grid gap-4 md:grid-cols-3">{Array.from({ length: 3 }, (_, index) => <div className="h-28 animate-pulse rounded-[20px] bg-[var(--help-surface)]" key={index} />)}</div>
+        </section>
+      </main>
+    </div>
+  );
 }
 
 function buildSpaceSummary(
@@ -127,6 +146,8 @@ export function HelpCenterPage() {
   }, []);
 
   if (phase === 'loading') {
+    return <PublicHelpLoadingSurface />;
+    /* legacy loading surface removed: the real public shell is rendered above */
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-6 py-12">
         <LoadingState
@@ -342,6 +363,7 @@ export function HelpCenterSpaceLayout() {
   }
 
   if (phase === 'loading') {
+    return <PublicHelpLoadingSurface />;
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-6 py-12">
         <LoadingState

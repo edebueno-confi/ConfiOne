@@ -1,5 +1,5 @@
 import { useEffect, useEffectEvent, useMemo, useState } from 'react';
-import { Link, useOutletContext, useParams } from 'react-router-dom';
+import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import {
   ContractUnavailableState,
   EmptyState,
@@ -130,6 +130,10 @@ function ArticlePageSkeleton() {
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px] xl:grid-cols-[minmax(0,1fr)_232px]">
       <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-6 py-6 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
+        <div className="mb-5 flex items-center gap-3 border-b border-[rgba(20,31,71,0.08)] pb-4">
+          <GeniusMascot alt="Gênio preparando o artigo" expression="happy" pose="magic" size="sm" surface="loading" />
+          <div className="h-4 w-48 animate-pulse rounded-full bg-[var(--help-surface)]" />
+        </div>
         <div className="h-5 w-48 rounded-full bg-[var(--help-surface)]" />
         <div className="mt-5 h-12 w-3/4 rounded-[16px] bg-[var(--help-surface)]" />
         <div className="mt-4 h-6 w-56 rounded-full bg-[var(--help-surface)]" />
@@ -161,6 +165,7 @@ export function HelpCenterArticlePage() {
     articleSlug: string;
   }>();
   const context = useOutletContext<HelpCenterSpaceContext>();
+  const navigate = useNavigate();
   const [phase, setPhase] = useState<DetailPhase>('loading');
   const [message, setMessage] = useState<string | null>(null);
   const [article, setArticle] = useState<PublicKnowledgeArticleDetailRow | null>(null);
@@ -329,9 +334,22 @@ export function HelpCenterArticlePage() {
     return (
       <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-6 py-8 shadow-[0_18px_40px_rgba(20,31,71,0.05)]">
         <PublicSearchStateCard
-          action={<Link to={`/help/${spaceSlug}/articles`}><GhostButton>Voltar para a lista de artigos</GhostButton></Link>}
+          action={
+            <div className="grid gap-3">
+              <form className="flex flex-wrap gap-2" onSubmit={(event) => { event.preventDefault(); const query = new FormData(event.currentTarget).get('q')?.toString().trim(); navigate(`/help/${spaceSlug}/articles${query ? `?q=${encodeURIComponent(query)}` : ''}`); }}>
+                <input aria-label="Buscar artigos" className="h-10 min-w-0 flex-1 rounded-[12px] border border-[var(--help-border)] px-3 text-sm" name="q" placeholder="Buscar na documentação" type="search" />
+                <GhostButton type="submit">Buscar</GhostButton>
+              </form>
+              <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+                <Link className="font-semibold text-[var(--help-link)] no-underline" to={`/help/${spaceSlug}`}>Voltar para a visão geral</Link>
+                <Link className="font-semibold text-[var(--help-link)] no-underline" to={`/help/${spaceSlug}/articles`}>Ver todos os artigos</Link>
+                {context.navigation.filter((entry) => entry.parent_category_id === null).slice(0, 3).map((category) => <Link className="text-[var(--help-link)] no-underline" key={category.category_id} to={`/help/${spaceSlug}/articles?category=${category.category_id}`}>{category.category_name}</Link>)}
+              </div>
+            </div>
+          }
           description="O artigo solicitado não está disponível nesta Central Pública. Volte para a lista, busque outro termo ou explore as categorias."
           title="Artigo não encontrado"
+          mascotExpression="happy"
           tone="empty"
         />
       </div>
@@ -405,7 +423,7 @@ export function HelpCenterArticlePage() {
             />
           </div>
           <section className="grid gap-4 border-t border-[rgba(20,31,71,0.08)] pt-6 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
-            <GeniusMascot alt="Gênio indicando o próximo passo" expression="happy" pose="present" size="md" surface="default" />
+            <GeniusMascot alt="Gênio indicando o próximo passo" expression="happy" pose="present" size="lg" surface="default" />
             <div className="space-y-2">
               <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Próximo passo</p>
               <p className="text-sm leading-6 text-[var(--help-muted)]">Se esta orientação não resolver sua dúvida, consulte um artigo relacionado ou entre no portal para falar com o suporte.</p>
