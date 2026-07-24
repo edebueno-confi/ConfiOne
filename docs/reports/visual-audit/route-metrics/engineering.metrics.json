@@ -1,0 +1,48 @@
+{
+  "route": "/engineering",
+  "innerWidth": 1600,
+  "innerHeight": 900,
+  "scrollHeight": 900,
+  "clientHeight": 900,
+  "hasGlobalScroll": false,
+  "hasHorizontalScroll": false,
+  "scrollables": [
+    {
+      "tag": "section",
+      "cls": "min-h-0 overflow-y-auto rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2.5",
+      "role": null,
+      "scrollHeight": 364,
+      "clientHeight": 278,
+      "scrollWidth": 254,
+      "clientWidth": 254,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "FiltrosLimpar filtrosStatusTodosEm triagemAceitoRejeitadoEm execuçãoAguardando e"
+    },
+    {
+      "tag": "section",
+      "cls": "min-h-0 flex-1 overflow-y-auto border-t border-[color:var(--color-border)] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff",
+      "role": null,
+      "scrollHeight": 327,
+      "clientHeight": 16,
+      "scrollWidth": 616,
+      "clientWidth": 616,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "Contexto técnicoInvestigar trilha extensa da operação crítica QAEm execuçãoUrgen"
+    },
+    {
+      "tag": "aside",
+      "cls": "min-h-0 overflow-y-auto rounded-[18px] border border-[color:var(--color-border)] bg-white/93 p-3 shadow-[0_12px_24px_rgb",
+      "role": null,
+      "scrollHeight": 861,
+      "clientHeight": 734,
+      "scrollWidth": 348,
+      "clientWidth": 348,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "Item selecionadoWI-46A2A89FInvestigaçãoEm execuçãoUrgenteInvestigar trilha exten"
+    }
+  ],
+  "sampleText": "Genius Support OS\n\nOperação interna CX B2B\n\nNAVEGAÇÃO\n\nOperação CX\nFila operacional\nTickets\nClientes B2B\nAcionamentos\nConhecimento\nEngenharia\nFila técnica\nItens técnicos\nRetornos ao CX\nGovernança\nContas B2B\nPortal do cliente\nÁreas internas\nAcessos\nSistema\nGovernança de conhecimento\nDiário de Construção\nDocumentos do produto\nQL\n\nQA Local Engineering Member A\n\nOperação interna\n\nEncerrar sessão\nEngenharia\n\nDemandas técnicas vinculadas ao suporte e à operação.\n\nRecarregar\n●\n\nEm triagem\n\n1\n\n●\n\nEm execução\n\n5\n\n●\n\nAguardando externo\n\n1\n\n●\n\nProntos para retorno\n\n2\n\n●\n\nConcluídos\n\n0\n\nTriagem técnica\n\nSelecione uma fila ou filtre os itens.\n\nFILA RÁPIDA\n\nTodos\nfila técnica\n9\nMeus itens\nsob minha responsabilidade\n7\nNão atribuídos\nprecisam de responsável\n2\nEm triagem\na qualificar\n1\nAguardando suporte\nprontos para retorno\n2\nAguardando externo\nbloqueio fora do time\n1\n\nFILTROS\n\nLimpar filtros\nStatus\nTodos\nEm triagem\nAceito\nRejeitado\nEm execução\nAguardando externo\nPronto para retorno\nConcluído\nCancelado\nTipo\nTodos\nBug\nMelhoria\nTarefa técnica\nInvestigação\nCliente\nTodos\nSupport QA Tenant A Operação Enterprise\nResponsável\nTodos\nQA Local Engineering Member A\nItens técnicos\n\n9 item(ns) encontrados\n\n9 EM"
+}

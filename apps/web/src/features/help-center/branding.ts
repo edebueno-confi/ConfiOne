@@ -86,24 +86,21 @@ function fallbackTheme(space: {
 
   if (slug === 'genius') {
     return {
-      '--help-surface': '#eef5ff',
-      '--help-surface-strong': '#ffffff',
-      '--help-panel': 'rgba(255,255,255,0.9)',
-      '--help-ink': '#223357',
-      '--help-ink-strong': '#142042',
-      '--help-muted': 'rgba(20,32,66,0.72)',
-      '--help-border': 'rgba(20,31,71,0.12)',
-      '--help-accent': '#307fe2',
-      '--help-accent-strong': '#141f47',
-      '--help-accent-soft': 'rgba(48,127,226,0.14)',
-      '--help-link': '#1f67c6',
-      '--help-link-hover': '#153d82',
-      '--help-code-surface': '#142042',
-      '--help-code-ink': '#f5f8ff',
-      '--help-hero':
-        'linear-gradient(135deg, rgba(20,31,71,0.98), rgba(48,127,226,0.94) 55%, rgba(116,210,231,0.92))',
-      '--help-orb-a': 'rgba(116,210,231,0.2)',
-      '--help-orb-b': 'rgba(225,0,152,0.14)',
+      '--help-surface': 'var(--gso-help-surface)',
+      '--help-surface-strong': 'var(--gso-help-surface-strong)',
+      '--help-panel': 'var(--gso-help-panel)',
+      '--help-ink': 'var(--gso-help-ink)',
+      '--help-ink-strong': 'var(--gso-help-ink-strong)',
+      '--help-muted': 'var(--gso-help-muted)',
+      '--help-border': 'var(--gso-help-border)',
+      '--help-accent': 'var(--gso-help-accent)',
+      '--help-accent-strong': 'var(--gso-help-accent-strong)',
+      '--help-accent-soft': 'var(--gso-help-accent-soft)',
+      '--help-link': 'var(--gso-help-link)',
+      '--help-link-hover': 'var(--gso-help-link-hover)',
+      '--help-hero': 'var(--gso-help-hero)',
+      '--help-orb-a': 'color-mix(in srgb, var(--color-brand-cyan) 20%, transparent)',
+      '--help-orb-b': 'color-mix(in srgb, var(--color-brand-pink) 14%, transparent)',
     } as CSSProperties;
   }
 
@@ -164,7 +161,9 @@ export function buildHelpCenterTheme(space: {
   themeTokens?: PublicHelpThemeTokens | null;
 }) {
   const theme = fallbackTheme(space);
-  const safeTokens = sanitizePublicThemeTokens(space.themeTokens);
+  const safeTokens = space.knowledgeSpaceSlug.toLowerCase() === 'genius'
+    ? {}
+    : sanitizePublicThemeTokens(space.themeTokens);
   const overrides = Object.entries(THEME_TOKEN_TO_VAR).reduce<Record<string, string>>(
     (result, [key, cssVar]) => {
       const value = safeTokens[key as keyof PublicHelpThemeTokens];
@@ -232,6 +231,10 @@ export function sanitizePublicSupportContacts(
 ) {
   return {
     email: isSafeEmail(contacts?.email) ? contacts!.email!.trim().toLowerCase() : null,
+    whatsapp:
+      contacts?.whatsapp && contacts.whatsapp.trim() && contacts.whatsapp.trim().length <= 40
+        ? contacts.whatsapp.trim()
+        : null,
     websiteUrl: isSafeUrl(contacts?.websiteUrl) ? contacts!.websiteUrl!.trim() : null,
     statusPageUrl: isSafeUrl(contacts?.statusPageUrl)
       ? contacts!.statusPageUrl!.trim()

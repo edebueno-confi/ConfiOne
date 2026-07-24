@@ -3,6 +3,8 @@ import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
+import { resolveSupabaseCliCommand } from '../../scripts/lib/supabase-cli-command.mjs';
+
 const FIXTURE = {
   admin: {
     email: 'ede.oliveira@confi.com.vc',
@@ -44,25 +46,7 @@ function parseArgs(argv) {
 }
 
 function localSupabaseCommandArgs(args) {
-  const localSupabaseBinary = join(
-    process.cwd(),
-    'node_modules',
-    'supabase',
-    'bin',
-    process.platform === 'win32' ? 'supabase.exe' : 'supabase',
-  );
-
-  if (existsSync(localSupabaseBinary)) {
-    return {
-      command: localSupabaseBinary,
-      args,
-    };
-  }
-
-  return {
-    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    args: ['supabase', ...args],
-  };
+  return resolveSupabaseCliCommand(args);
 }
 
 function runProcess(command, args, options = {}) {

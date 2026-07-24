@@ -3,6 +3,15 @@
 ## Objetivo
 Definir o dominio de perfil operacional do cliente B2B dentro do Genius Support OS para que suporte e CS tenham contexto real durante a tratativa de tickets, sem inflar o produto para um CRM genérico e sem abrir schema ou frontend nesta fase.
 
+## Estado executavel P1 em 2026-05-22
+- O modelo operacional minimo esta materializado em tabelas `customer_account_profiles`, `customer_account_integrations`, `customer_account_features`, `customer_account_customizations` e `customer_account_alerts`.
+- A leitura administrativa passa por `vw_admin_customer_account_profile_detail`, `vw_admin_customer_account_integrations`, `vw_admin_customer_account_customizations`, `vw_admin_customer_account_alerts` e `vw_admin_customer_account_features`.
+- A leitura de suporte passa por `vw_support_customer_account_context`, `vw_support_customers_list`, `vw_support_customer_detail`, `vw_support_customer_recent_tickets` e `vw_support_customer_recent_events`.
+- A escrita administrativa passa por RPCs `rpc_admin_*customer*`, incluindo upsert de profile, add/update/archive de integracao/customizacao/alerta e set de feature flag.
+- `/admin/tenants` possui aba `Conta B2B` para governanca minima do profile operacional, sem criar CRM paralelo.
+- O Portal Cliente nao recebe alertas internos, customizacoes internas, notas operacionais, integracoes sensiveis, audit bruto, internal actions, engenharia ou paths de storage.
+- A fixture local funcional imprime resumo de `customer_account` para apoiar QA autenticado.
+
 ## Premissas
 - o Genius Support OS atende operacao B2B de SaaS de logistica reversa
 - o sujeito modelado aqui e o cliente B2B contratado, nunca o shopper final

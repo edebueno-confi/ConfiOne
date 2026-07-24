@@ -29,22 +29,38 @@ storybook-static/
 test-results/
 playwright-report/
 .playwright-mcp/
+.playwright-cli/
 .nyc_output/
+output/playwright/
 
 # Local tooling
 .tmp/
 tmp/
 temp/
+/.codex-local/
 .vercel/
 .supabase/
 supabase/.temp/
 
 # Logs
 *.log
+/.codex-*.log
+/.tmp*.log
+/.tmp_*.log
+/.tmp-*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# Local reports and runtime dumps
+/.tmp-*/
+/.tmp-*.txt
+/*.out
+/*.err
+/*-backup.patch
+/untracked-files-inventory.txt
+/seed-functional-log.txt
 
 # Editor and OS
 .DS_Store
@@ -55,3 +71,7 @@ Thumbs.db
 !.vscode/settings.json
 *.swp
 *.swo
+.worktrees/
+
+# Design handoff bundle kept locally as reference; runtime assets live in apps/web/assets.
+/Recreação do mascote Genius-handoff/

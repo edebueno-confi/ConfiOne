@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { Navigate } from 'react-router-dom';
 import { formatDateTime } from '../../app/format';
+import { sanitizeOperationalVisibleText } from '../../lib/operational-copy';
 import {
   ContractUnavailableState,
   EmptyState,
@@ -19,6 +20,7 @@ import {
   cx,
   Field,
   GhostButton,
+  GovernedActionDrawer,
   InlineNotice,
   SelectInput,
   StatusPill,
@@ -32,12 +34,15 @@ import {
 } from '../../contracts/admin-contracts';
 import {
   addTenantMember,
-  listAdminMemberships,
+  listAdminAccessMemberships,
   listAdminTenants,
   lookupAdminUsers,
+  listAdminAccessUsers,
+  setGlobalRole,
   updateTenantMemberRole,
   updateTenantMemberStatus,
-  type AdminTenantMembershipRow,
+  type AdminAccessMembershipRow,
+  type AdminAccessUserRow,
   type AdminTenantsListItemRow,
   type AdminUserLookupRow,
 } from '../admin/admin-api';
@@ -48,7 +53,7 @@ type PagePhase = 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type LookupPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type AccessTab = 'users' | 'roles' | 'invites' | 'permissions';
 type UserSituation = 'active' | 'inactive' | 'blocked';
-type RailMode = 'detail' | 'invite';
+type AccessDrawer = 'invite' | 'membership' | null;
 
 interface AddMembershipFormState {
   tenantId: string;
@@ -79,6 +84,8 @@ interface PermissionSummary {
   blocked: number;
 }
 
+type AdminTenantMembershipRow = AdminAccessMembershipRow;
+
 const PAGE_SIZE_OPTIONS = [12, 24, 48] as const;
 const TABS: Array<{ key: AccessTab; label: string }> = [
   { key: 'users', label: 'Usuários' },
@@ -101,7 +108,7 @@ function emptyAddMembershipForm(): AddMembershipFormState {
   };
 }
 
-function tenantRoleLabel(role: TenantRole) {
+function tenantRoleLabel(role: TenantRole | 'customer_user' | 'customer_manager') {
   switch (role) {
     case 'tenant_admin':
       return 'Admin';
@@ -111,12 +118,16 @@ function tenantRoleLabel(role: TenantRole) {
       return 'Solicitante';
     case 'tenant_viewer':
       return 'Leitor';
+    case 'customer_manager':
+      return 'Gestão cliente';
+    case 'customer_user':
+      return 'Usuário cliente';
     default:
       return 'Indisponível';
   }
 }
 
-function tenantRoleHelper(role: TenantRole) {
+function tenantRoleHelper(role: TenantRole | 'customer_user' | 'customer_manager') {
   switch (role) {
     case 'tenant_admin':
       return 'Coordena acessos e a operação do cliente.';
@@ -126,6 +137,10 @@ function tenantRoleHelper(role: TenantRole) {
       return 'Abre demandas e acompanha o retorno.';
     case 'tenant_viewer':
       return 'Consulta contexto e histórico sem operar mudanças.';
+    case 'customer_manager':
+      return 'Coordena o acesso do cliente no portal autenticado.';
+    case 'customer_user':
+      return 'Opera apenas o acesso liberado para o contato no portal.';
     default:
       return 'Indisponível';
   }
@@ -208,7 +223,7 @@ function formatOptionalDate(value: string | null) {
 }
 
 function getDisplayName(membership: AdminTenantMembershipRow) {
-  return membership.user_full_name?.trim() || 'Indisponível';
+  return sanitizeOperationalVisibleText(membership.user_full_name?.trim(), 'Indisponivel');
 }
 
 function getDisplayEmail(membership: AdminTenantMembershipRow) {
@@ -300,9 +315,10 @@ export function AccessPage() {
   const [phase, setPhase] = useState<PagePhase>('loading');
   const [pageMessage, setPageMessage] = useState<string | null>(null);
   const [memberships, setMemberships] = useState<AdminTenantMembershipRow[]>([]);
+  const [accessUsers, setAccessUsers] = useState<AdminAccessUserRow[]>([]);
   const [tenants, setTenants] = useState<AdminTenantsListItemRow[]>([]);
   const [activeTab, setActiveTab] = useState<AccessTab>('users');
-  const [railMode, setRailMode] = useState<RailMode>('detail');
+  const [activeDrawer, setActiveDrawer] = useState<AccessDrawer>(null);
   const [selectedTenantFilter, setSelectedTenantFilter] = useState<string>('all');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>('all');
   const [selectedSituations, setSelectedSituations] = useState<UserSituation[]>([
@@ -330,14 +346,16 @@ export function AccessPage() {
 
   const loadSurface = useEffectEvent(async () => {
     try {
-      const [tenantRows, membershipRows] = await Promise.all([
+      const [tenantRows, membershipRows, userRows] = await Promise.all([
         listAdminTenants(),
-        listAdminMemberships(),
+        listAdminAccessMemberships(),
+        listAdminAccessUsers(),
       ]);
 
       setBackendDenied(false);
       setTenants(tenantRows);
       setMemberships(membershipRows);
+      setAccessUsers(userRows);
       setPhase('ready');
       setPageMessage(null);
       setAddForm((current) => ({
@@ -370,6 +388,36 @@ export function AccessPage() {
       );
     }
   });
+
+  const dashboardUsers = accessUsers.filter((user) => {
+    if (!deferredQuery.trim()) return true;
+    return [user.full_name, user.email, user.user_id]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+      .includes(deferredQuery.trim().toLowerCase());
+  });
+
+  const [globalRoleSubmitting, setGlobalRoleSubmitting] = useState<string | null>(null);
+  const [globalRoleMessage, setGlobalRoleMessage] = useState<string | null>(null);
+
+  async function toggleDashboardViewer(user: AdminAccessUserRow) {
+    setGlobalRoleSubmitting(user.user_id);
+    setGlobalRoleMessage(null);
+    try {
+      await setGlobalRole({
+        userId: user.user_id,
+        role: 'dashboard_viewer',
+        enabled: !user.platform_roles.includes('dashboard_viewer'),
+      });
+      setAccessUsers(await listAdminAccessUsers());
+      setGlobalRoleMessage('Acesso do Dashboard atualizado com sucesso.');
+    } catch (error) {
+      setGlobalRoleMessage(error instanceof Error ? error.message : 'Não foi possível atualizar o acesso do Dashboard.');
+    } finally {
+      setGlobalRoleSubmitting(null);
+    }
+  }
 
   useEffect(() => {
     if (didBootstrapRef.current) {
@@ -430,6 +478,11 @@ export function AccessPage() {
 
   useEffect(() => {
     if (!selectedMembership) {
+      return;
+    }
+
+    if (!selectedMembership.can_update_role || !selectedMembership.can_update_status) {
+      setUpdateMessage('Esta ação não está disponível para este acesso.');
       return;
     }
 
@@ -572,7 +625,7 @@ export function AccessPage() {
       await loadSurface();
       setSelectedMembershipId(created.id);
       setActiveTab('users');
-      setRailMode('detail');
+      setActiveDrawer(null);
       setAddMessage('Convite registrado com sucesso.');
     } catch (error) {
       const classified = classifyAdminError(error, 'Falha ao registrar o convite.');
@@ -654,7 +707,7 @@ export function AccessPage() {
   );
 
   if (backendDenied) {
-    return <Navigate replace state={{ reason: 'backend-permission' }} to="/access-denied" />;
+    return <Navigate replace state={{ reason: 'missing-authorized-workspace' }} to="/access-denied" />;
   }
 
   if (phase === 'loading') {
@@ -675,36 +728,38 @@ export function AccessPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[color:var(--color-border)] pb-5">
-        <div className="space-y-1">
-          <h1 className="text-[2rem] font-semibold tracking-[-0.05em] text-[color:var(--color-ink)]">
-            Acesso
-          </h1>
-          <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-            Gerencie usuários, papéis, permissões e convites da plataforma.
-          </p>
-        </div>
+    <>
+    <div className="gso-screen-frame flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
+      <header className="gso-screen-header shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
+              Acessos
+            </h1>
+            <p className="text-sm text-[color:var(--minimal-text-secondary)]">
+              Gerencie usuários, papéis, permissões e convites da plataforma.
+            </p>
+          </div>
 
-        <AppButton className="min-h-11 gap-2 px-5" onClick={() => setRailMode('invite')}>
-          + Convidar usuário
-        </AppButton>
+          <AppButton className="min-h-9 gap-2 rounded-md px-4 text-sm" onClick={() => setActiveDrawer('invite')}>
+            + Convidar usuário
+          </AppButton>
+        </div>
       </header>
 
-      <div className="border-b border-[color:var(--color-border)]">
-        <div className="flex flex-wrap gap-5">
+      <div className="gso-screen-tabs shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)]">
+        <div className="flex flex-wrap gap-1 px-5 pt-1">
           {TABS.map((tab) => (
             <button
               key={tab.key}
               className={cx(
-                'border-b-2 px-1 pb-3 text-sm font-semibold transition',
+                'min-h-9 border-b-2 px-2 text-sm transition',
                 activeTab === tab.key
-                  ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
-                  : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
+                  ? 'border-[color:var(--minimal-action)] font-medium text-[color:var(--minimal-text)]'
+                  : 'border-transparent text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)]',
               )}
               onClick={() => {
                 setActiveTab(tab.key);
-                setRailMode('detail');
               }}
               type="button"
             >
@@ -714,20 +769,70 @@ export function AccessPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[240px_minmax(0,1fr)_320px]">
-        <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white p-4 shadow-[var(--shadow-panel)]">
-          <div className="space-y-5">
+      {activeTab === 'users' ? (
+        <section className="shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-5 py-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-[color:var(--minimal-text)]">Acesso ao Dashboard Gerencial</h2>
+              <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">
+                Conceda o perfil operacional sem liberar o console administrativo completo. Ele inclui Dashboard, Portal do cliente, Conteúdo e Integrações.
+              </p>
+            </div>
+            {globalRoleMessage ? <p role="status" className="text-xs text-[color:var(--minimal-text-secondary)]">{globalRoleMessage}</p> : null}
+          </div>
+          <div className="mt-3 overflow-x-auto rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)]">
+            <table className="w-full min-w-[680px] text-xs">
+              <thead className="border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]">
+                <tr>
+                  <th className="px-3 py-2">Usuário</th>
+                  <th className="px-3 py-2">Perfil global</th>
+                  <th className="px-3 py-2 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dashboardUsers.slice(0, 12).map((user) => {
+                  const enabled = user.platform_roles.includes('dashboard_viewer');
+                  const busy = globalRoleSubmitting === user.user_id;
+                  return (
+                    <tr className="border-b border-[color:var(--minimal-border)] last:border-0" key={user.user_id}>
+                      <td className="px-3 py-2">
+                        <p className="font-medium text-[color:var(--minimal-text)]">{user.full_name || 'Usuário sem nome'}</p>
+                        <p className="mt-0.5 text-[color:var(--minimal-text-tertiary)]">{user.email || 'E-mail indisponível'}</p>
+                      </td>
+                      <td className="px-3 py-2">
+                        <StatusPill tone={enabled ? 'positive' : 'default'}>{enabled ? 'Dashboard liberado' : 'Sem acesso'}</StatusPill>
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <button
+                          className="rounded-md border border-[color:var(--minimal-border-strong)] px-2.5 py-1.5 font-medium text-[color:var(--minimal-text)] hover:bg-[color:var(--minimal-surface-muted)] disabled:cursor-not-allowed disabled:opacity-60"
+                          disabled={busy}
+                          onClick={() => void toggleDashboardViewer(user)}
+                          type="button"
+                        >
+                          {busy ? 'Salvando...' : enabled ? 'Revogar' : 'Liberar Dashboard'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      <div className="grid min-h-0 flex-1 overflow-hidden xl:grid-cols-[220px_minmax(0,1fr)_360px]">
+        <section className="hidden border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] p-3 xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+          <div className="space-y-3">
             <div className="space-y-1">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
                 Filtros
-              </p>
-              <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-                Refine a base principal sem tirar o foco da gestão de acessos.
               </p>
             </div>
 
             <Field label="Buscar">
               <TextInput
+                className="h-9 rounded-[14px] px-3.5 text-[13px]"
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Buscar usuários..."
                 value={query}
@@ -736,6 +841,7 @@ export function AccessPage() {
 
             <Field label="Papel">
               <SelectInput
+                className="h-9 rounded-[14px] px-3.5 text-[13px]"
                 onChange={(event) => setSelectedRoleFilter(event.target.value)}
                 value={selectedRoleFilter}
               >
@@ -748,9 +854,9 @@ export function AccessPage() {
               </SelectInput>
             </Field>
 
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-[color:var(--color-ink)]">Situação</p>
-              <label className="flex items-center gap-3 text-sm text-[color:var(--color-ink)]">
+            <div className="space-y-2">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">Situação</p>
+              <label className="flex items-center gap-2 text-[0.82rem] text-[color:var(--color-ink)]">
                 <input
                   checked={selectedSituations.length === SITUATION_FILTERS.length}
                   className="h-4 w-4 rounded border-[color:var(--color-border)] text-[color:var(--color-brand-blue)]"
@@ -767,7 +873,7 @@ export function AccessPage() {
               </label>
               {SITUATION_FILTERS.map((item) => (
                 <label
-                  className="flex items-center gap-3 text-sm text-[color:var(--color-ink)]"
+                  className="flex items-center gap-2 text-[0.82rem] text-[color:var(--color-ink)]"
                   key={item.key}
                 >
                   <input
@@ -781,30 +887,31 @@ export function AccessPage() {
               ))}
             </div>
 
-            <Field label="Tenant">
+            <Field label="Cliente">
               <SelectInput
+                className="h-9 rounded-[14px] px-3.5 text-[13px]"
                 onChange={(event) => setSelectedTenantFilter(event.target.value)}
                 value={selectedTenantFilter}
               >
                 <option value="all">Todos</option>
                 {tenants.map((tenant) => (
                   <option key={tenant.id} value={tenant.id}>
-                    {tenant.display_name}
+                    {sanitizeOperationalVisibleText(tenant.display_name)}
                   </option>
                 ))}
               </SelectInput>
             </Field>
 
-            <GhostButton className="min-h-11 w-full" onClick={resetFilters}>
+            <GhostButton className="min-h-9 w-full text-[12.5px]" onClick={resetFilters}>
               Limpar filtros
             </GhostButton>
           </div>
         </section>
 
-        <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white shadow-[var(--shadow-panel)]">
+        <section className="min-w-0 bg-[color:var(--minimal-surface)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
           <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-5 py-4">
             <div>
-              <h2 className="text-[1.55rem] font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
+              <h2 className="text-base font-semibold text-[color:var(--minimal-text)]">
                 {activeTab === 'users'
                   ? `Usuários (${filteredMemberships.length})`
                   : activeTab === 'roles'
@@ -816,7 +923,7 @@ export function AccessPage() {
             </div>
 
             <SelectInput
-              className="w-[150px]"
+              className="w-[170px]"
               onChange={(event) => setPageSize(Number(event.target.value) as (typeof PAGE_SIZE_OPTIONS)[number])}
               value={String(pageSize)}
             >
@@ -846,15 +953,47 @@ export function AccessPage() {
             </div>
           ) : (
             <>
-              <div className="overflow-hidden">
-                <table className="min-w-full border-collapse text-left">
+              <div className="overflow-hidden xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
+                <table className="minimal-access-table w-full table-fixed border-collapse text-left">
+                  {activeTab === 'users' ? (
+                    <colgroup>
+                      <col className="w-[32%]" />
+                      <col className="w-[16%]" />
+                      <col className="w-[20%]" />
+                      <col className="w-[16%]" />
+                      <col className="w-[16%]" />
+                    </colgroup>
+                  ) : activeTab === 'roles' ? (
+                    <colgroup>
+                      <col className="w-[42%]" />
+                      <col className="w-[14%]" />
+                      <col className="w-[14%]" />
+                      <col className="w-[14%]" />
+                      <col className="w-[16%]" />
+                    </colgroup>
+                  ) : activeTab === 'invites' ? (
+                    <colgroup>
+                      <col className="w-[28%]" />
+                      <col className="w-[22%]" />
+                      <col className="w-[16%]" />
+                      <col className="w-[18%]" />
+                      <col className="w-[16%]" />
+                    </colgroup>
+                  ) : (
+                    <colgroup>
+                      <col className="w-[20%]" />
+                      <col className="w-[44%]" />
+                      <col className="w-[16%]" />
+                      <col className="w-[20%]" />
+                    </colgroup>
+                  )}
                   <thead>
                     <tr className="border-b border-[color:var(--color-border)] text-[0.72rem] uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
                       {activeTab === 'users' ? (
                         <>
                           <th className="px-4 py-3 font-semibold">Usuário</th>
                           <th className="px-4 py-3 font-semibold">Papel</th>
-                          <th className="px-4 py-3 font-semibold">Tenant</th>
+                          <th className="px-4 py-3 font-semibold">Cliente</th>
                           <th className="px-4 py-3 font-semibold">Situação</th>
                           <th className="px-4 py-3 font-semibold">Último acesso</th>
                         </>
@@ -869,7 +1008,7 @@ export function AccessPage() {
                       ) : activeTab === 'invites' ? (
                         <>
                           <th className="px-4 py-3 font-semibold">Usuário</th>
-                          <th className="px-4 py-3 font-semibold">Tenant</th>
+                          <th className="px-4 py-3 font-semibold">Cliente</th>
                           <th className="px-4 py-3 font-semibold">Situação</th>
                           <th className="px-4 py-3 font-semibold">Convite</th>
                           <th className="px-4 py-3 font-semibold">Convidado por</th>
@@ -900,15 +1039,14 @@ export function AccessPage() {
                               key={membership.id}
                               onClick={() => {
                                 setSelectedMembershipId(membership.id);
-                                setRailMode('detail');
                               }}
                             >
                               <td className="px-4 py-3">
-                                <div className="space-y-1">
-                                  <p className="font-semibold text-[color:var(--color-ink)]">
+                                <div className="min-w-0 space-y-1">
+                                  <p className="line-clamp-1 font-semibold text-[color:var(--color-ink)]">
                                     {getDisplayName(membership)}
                                   </p>
-                                  <p className="text-[color:var(--color-muted)]">
+                                  <p className="line-clamp-1 text-[color:var(--color-muted)]">
                                     {getDisplayEmail(membership)}
                                   </p>
                                 </div>
@@ -917,7 +1055,7 @@ export function AccessPage() {
                                 {tenantRoleLabel(membership.role)}
                               </td>
                               <td className="px-4 py-3 text-[color:var(--color-ink)]">
-                                {membership.tenant_display_name || 'Indisponível'}
+                                {sanitizeOperationalVisibleText(membership.tenant_display_name)}
                               </td>
                               <td className="px-4 py-3">
                                 <StatusPill tone={membershipStateTone(membership)}>
@@ -977,21 +1115,20 @@ export function AccessPage() {
                                   key={membership.id}
                                   onClick={() => {
                                     setSelectedMembershipId(membership.id);
-                                    setRailMode('detail');
                                   }}
                                 >
-                                  <td className="px-4 py-3">
-                                    <div className="space-y-1">
-                                      <p className="font-semibold text-[color:var(--color-ink)]">
-                                        {getDisplayName(membership)}
-                                      </p>
-                                      <p className="text-[color:var(--color-muted)]">
-                                        {getDisplayEmail(membership)}
-                                      </p>
-                                    </div>
-                                  </td>
+                              <td className="px-4 py-3">
+                                <div className="min-w-0 space-y-1">
+                                  <p className="line-clamp-1 font-semibold text-[color:var(--color-ink)]">
+                                    {getDisplayName(membership)}
+                                  </p>
+                                  <p className="line-clamp-1 text-[color:var(--color-muted)]">
+                                    {getDisplayEmail(membership)}
+                                  </p>
+                                </div>
+                              </td>
                                   <td className="px-4 py-3 text-[color:var(--color-ink)]">
-                                {membership.tenant_display_name || 'Indisponível'}
+                                {sanitizeOperationalVisibleText(membership.tenant_display_name)}
                                   </td>
                                   <td className="px-4 py-3">
                                     <StatusPill tone={membershipStateTone(membership)}>
@@ -1002,7 +1139,7 @@ export function AccessPage() {
                                     {formatOptionalDate(membership.created_at)}
                                   </td>
                                   <td className="px-4 py-3 text-[color:var(--color-ink)]">
-                                {membership.invited_by_full_name || 'Indisponível'}
+                                {sanitizeOperationalVisibleText(membership.invited_by_full_name)}
                                   </td>
                                 </tr>
                               );
@@ -1056,7 +1193,7 @@ export function AccessPage() {
                 </p>
                 <div className="flex items-center gap-2">
                   <button
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[color:var(--color-border)] bg-white text-[color:var(--color-ink)] disabled:opacity-40"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] text-[color:var(--color-ink)] disabled:opacity-40"
                     disabled={safePageIndex === 1}
                     onClick={() => setPageIndex((current) => Math.max(1, current - 1))}
                     type="button"
@@ -1069,7 +1206,7 @@ export function AccessPage() {
                         'inline-flex h-10 w-10 items-center justify-center rounded-xl border text-sm font-medium transition',
                         page === safePageIndex
                           ? 'border-[color:var(--color-brand-blue)] bg-[rgba(48,127,226,0.08)] text-[color:var(--color-brand-blue)]'
-                          : 'border-[color:var(--color-border)] bg-white text-[color:var(--color-ink)]',
+                          : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] text-[color:var(--color-ink)]',
                       )}
                       key={page}
                       onClick={() => setPageIndex(page)}
@@ -1079,7 +1216,7 @@ export function AccessPage() {
                     </button>
                   ))}
                   <button
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[color:var(--color-border)] bg-white text-[color:var(--color-ink)] disabled:opacity-40"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] text-[color:var(--color-ink)] disabled:opacity-40"
                     disabled={safePageIndex === totalPages}
                     onClick={() => setPageIndex((current) => Math.min(totalPages, current + 1))}
                     type="button"
@@ -1092,188 +1229,9 @@ export function AccessPage() {
           )}
         </section>
 
-        <aside className="rounded-[24px] border border-[color:var(--color-border)] bg-white p-4 shadow-[var(--shadow-panel)]">
-          {railMode === 'invite' ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
-                    Convidar usuário
-                  </p>
-                  <h2 className="text-lg font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                    Novo acesso
-                  </h2>
-                </div>
-                <GhostButton className="min-h-10 px-3" onClick={() => setRailMode('detail')}>
-                  Fechar
-                </GhostButton>
-              </div>
-
-              <form className="space-y-4" onSubmit={handleAddMembership}>
-                <Field
-                  label="Buscar usuário existente"
-                  description="Consulte por nome ou e-mail para preencher o convite com segurança."
-                >
-                  <TextInput
-                    onChange={(event) => {
-                      setLookupQuery(event.target.value);
-                      if (lookupPhase !== 'idle') {
-                        setLookupPhase('idle');
-                      }
-                      if (lookupMessage) {
-                        setLookupMessage(null);
-                      }
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault();
-                        void handleLookupUsers();
-                      }
-                    }}
-                    placeholder="Buscar por nome ou email"
-                    value={lookupQuery}
-                  />
-                </Field>
-
-                <GhostButton className="min-h-11 w-full" onClick={() => void handleLookupUsers()}>
-                  {lookupPhase === 'loading' ? 'Buscando...' : 'Buscar usuário'}
-                </GhostButton>
-
-                {lookupMessage ? (
-                  <InlineNotice
-                    tone={
-                      lookupPhase === 'error'
-                        ? 'critical'
-                        : lookupPhase === 'contract-unavailable'
-                          ? 'warning'
-                          : 'default'
-                    }
-                  >
-                    {lookupMessage}
-                  </InlineNotice>
-                ) : null}
-
-                {lookupResults.length > 0 ? (
-                  <div className="space-y-2">
-                    {lookupResults.map((user) => {
-                      const isSelected = addForm.userId === user.user_id;
-
-                      return (
-                        <button
-                          key={user.user_id}
-                          className={cx(
-                            'w-full rounded-[18px] border px-4 py-3 text-left transition',
-                            isSelected
-                              ? 'border-[color:var(--color-brand-blue)] bg-[rgba(48,127,226,0.08)]'
-                              : 'border-[color:var(--color-border)] bg-white hover:border-[rgba(48,127,226,0.35)]',
-                          )}
-                          onClick={() => applyLookupSelection(user)}
-                          type="button"
-                        >
-                          <p className="font-medium text-[color:var(--color-ink)]">
-                            {user.full_name ?? 'Indisponível'}
-                          </p>
-                          <p className="text-sm text-[color:var(--color-muted)]">
-                            {user.email ?? 'Indisponível'}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : null}
-
-                <Field label="Tenant">
-                  <SelectInput
-                    onChange={(event) =>
-                      setAddForm((current) => ({
-                        ...current,
-                        tenantId: event.target.value,
-                      }))
-                    }
-                    required
-                    value={addForm.tenantId}
-                  >
-                    <option value="">Selecione um tenant</option>
-                    {tenants.map((tenant) => (
-                      <option key={tenant.id} value={tenant.id}>
-                        {tenant.display_name}
-                      </option>
-                    ))}
-                  </SelectInput>
-                </Field>
-
-                <Field label="Papel">
-                  <SelectInput
-                    onChange={(event) =>
-                      setAddForm((current) => ({
-                        ...current,
-                        role: event.target.value as TenantRole,
-                      }))
-                    }
-                    value={addForm.role}
-                  >
-                    {TENANT_ROLES.map((role) => (
-                      <option key={role} value={role}>
-                        {tenantRoleLabel(role)}
-                      </option>
-                    ))}
-                  </SelectInput>
-                </Field>
-
-                <details className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
-                  <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-ink)]">
-                    Opcoes avancadas
-                  </summary>
-                  <div className="mt-3 space-y-4">
-                    <Field label="Situação inicial">
-                      <SelectInput
-                        onChange={(event) =>
-                          setAddForm((current) => ({
-                            ...current,
-                            status: event.target.value as MembershipStatus,
-                          }))
-                        }
-                        value={addForm.status}
-                      >
-                        {MEMBERSHIP_STATUSES.map((status) => (
-                          <option key={status} value={status}>
-                            {membershipStatusLabel(status)}
-                          </option>
-                        ))}
-                      </SelectInput>
-                    </Field>
-                    <Field
-                      label="Identificador manual"
-                      description="Use apenas quando a pessoa não aparecer na busca."
-                    >
-                      <TextInput
-                        onChange={(event) =>
-                          setAddForm((current) => ({
-                            ...current,
-                            userId: event.target.value,
-                          }))
-                        }
-                        placeholder="Cole o identificador interno se precisar"
-                        required
-                        value={addForm.userId}
-                      />
-                    </Field>
-                  </div>
-                </details>
-
-                {addMessage ? (
-                  <InlineNotice tone={addMessage.includes('sucesso') ? 'default' : 'critical'}>
-                    {addMessage}
-                  </InlineNotice>
-                ) : null}
-
-                <AppButton className="min-h-11 w-full" disabled={addSubmitting} type="submit">
-                  {addSubmitting ? 'Enviando...' : 'Enviar convite'}
-                </AppButton>
-              </form>
-            </div>
-          ) : activeTab === 'roles' ? (
-            <div className="space-y-4">
+        <aside className="hidden border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] p-4 xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+          {activeTab === 'roles' ? (
+            <div className="space-y-4 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
                 Detalhes do papel
               </p>
@@ -1284,10 +1242,7 @@ export function AccessPage() {
                 />
               ) : (
                 <div className="space-y-4">
-                  <div className="flex flex-col items-center gap-3 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-5 text-center">
-                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--color-brand-blue),var(--color-brand-navy))] text-2xl font-semibold text-white">
-                      {selectedRoleSummary.label.slice(0, 1)}
-                    </div>
+                  <div className="border-b border-[color:var(--minimal-border)] pb-4">
                     <div className="space-y-1">
                       <h2 className="text-2xl font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
                         {selectedRoleSummary.label}
@@ -1332,7 +1287,7 @@ export function AccessPage() {
                     <div className="mt-3 flex flex-wrap gap-2">
                       {selectedRoleSummary.tenants.length > 0 ? (
                         selectedRoleSummary.tenants.map((tenant) => (
-                          <StatusPill key={tenant}>{tenant || 'Indisponível'}</StatusPill>
+                          <StatusPill key={tenant}>{sanitizeOperationalVisibleText(tenant)}</StatusPill>
                         ))
                       ) : (
                         <p className="text-sm text-[color:var(--color-muted)]">Indisponível</p>
@@ -1426,10 +1381,10 @@ export function AccessPage() {
                 </div>
                 <div className="border-t border-[color:var(--color-border)] pt-4">
                   <dt className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                    Tenant
+                    Cliente
                   </dt>
                   <dd className="mt-1 text-[color:var(--color-ink)]">
-                    {selectedMembership.tenant_display_name || 'Indisponível'}
+                    {sanitizeOperationalVisibleText(selectedMembership.tenant_display_name)}
                   </dd>
                 </div>
                 <div className="border-t border-[color:var(--color-border)] pt-4">
@@ -1448,47 +1403,304 @@ export function AccessPage() {
                 </div>
               </dl>
 
-              <form className="space-y-4 border-t border-[color:var(--color-border)] pt-4" onSubmit={handleUpdateMembership}>
-                <p className="text-sm font-semibold text-[color:var(--color-ink)]">Ações</p>
-                <Field label="Papel">
-                  <SelectInput
-                    onChange={(event) => setRoleDraft(event.target.value as TenantRole)}
-                    value={roleDraft}
-                  >
-                    {TENANT_ROLES.map((role) => (
-                      <option key={role} value={role}>
-                        {tenantRoleLabel(role)}
-                      </option>
-                    ))}
-                  </SelectInput>
-                </Field>
-                <Field label="Situação">
-                  <SelectInput
-                    onChange={(event) => setStatusDraft(event.target.value as MembershipStatus)}
-                    value={statusDraft}
-                  >
-                    {MEMBERSHIP_STATUSES.map((status) => (
-                      <option key={status} value={status}>
-                        {membershipStatusLabel(status)}
-                      </option>
-                    ))}
-                  </SelectInput>
-                </Field>
-
-                {updateMessage ? (
-                  <InlineNotice tone={updateMessage.includes('sucesso') ? 'default' : 'critical'}>
-                    {updateMessage}
-                  </InlineNotice>
-                ) : null}
-
-                <AppButton className="min-h-11 w-full" disabled={updateSubmitting} type="submit">
-                  {updateSubmitting ? 'Salvando...' : 'Salvar alterações'}
-                </AppButton>
-              </form>
+              <div className="space-y-3 border-t border-[color:var(--color-border)] pt-4">
+                <p className="text-sm font-semibold text-[color:var(--color-ink)]">Ações governadas</p>
+                <GhostButton
+                  className="min-h-11 w-full justify-center"
+                  onClick={() => setActiveDrawer('membership')}
+                  type="button"
+                >
+                  Alterar papel ou situação
+                </GhostButton>
+                <p className="text-xs leading-5 text-[color:var(--color-muted)]">
+                  Alterações de acesso usam painel dedicado para preservar contexto e permissões.
+                </p>
+              </div>
             </div>
           )}
         </aside>
       </div>
     </div>
+    {activeDrawer === 'invite' ? (
+      <GovernedActionDrawer
+        description="Registre um novo vínculo de acesso para uma conta B2B."
+        footer={
+          <>
+            <GhostButton onClick={() => setActiveDrawer(null)} type="button">
+              Cancelar
+            </GhostButton>
+            <AppButton
+              disabled={addSubmitting}
+              form="admin-access-invite-form"
+              type="submit"
+            >
+              {addSubmitting ? 'Enviando...' : 'Enviar convite'}
+            </AppButton>
+          </>
+        }
+        onClose={() => setActiveDrawer(null)}
+        title="Convidar usuário"
+      >
+        <form className="space-y-6" id="admin-access-invite-form" onSubmit={handleAddMembership}>
+          <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5">
+            <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+              <Field
+                label="Buscar usuário existente"
+                description="Consulte por nome ou e-mail para preencher o vínculo com segurança."
+              >
+                <TextInput
+                  onChange={(event) => {
+                    setLookupQuery(event.target.value);
+                    if (lookupPhase !== 'idle') {
+                      setLookupPhase('idle');
+                    }
+                    if (lookupMessage) {
+                      setLookupMessage(null);
+                    }
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      void handleLookupUsers();
+                    }
+                  }}
+                  placeholder="Buscar por nome ou email"
+                  value={lookupQuery}
+                />
+              </Field>
+
+              <GhostButton className="min-h-11 px-5" onClick={() => void handleLookupUsers()}>
+                {lookupPhase === 'loading' ? 'Buscando...' : 'Buscar usuário'}
+              </GhostButton>
+            </div>
+
+            {lookupMessage ? (
+              <div className="mt-4">
+                <InlineNotice
+                  tone={
+                    lookupPhase === 'error'
+                      ? 'critical'
+                      : lookupPhase === 'contract-unavailable'
+                        ? 'warning'
+                        : 'default'
+                  }
+                >
+                  {lookupMessage}
+                </InlineNotice>
+              </div>
+            ) : null}
+
+            {lookupResults.length > 0 ? (
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {lookupResults.map((user) => {
+                  const isSelected = addForm.userId === user.user_id;
+
+                  return (
+                    <button
+                      key={user.user_id}
+                      className={cx(
+                        'min-w-0 rounded-[18px] border px-4 py-3 text-left transition',
+                        isSelected
+                          ? 'border-[color:var(--color-brand-blue)] bg-[rgba(48,127,226,0.08)]'
+                          : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] hover:border-[rgba(48,127,226,0.35)]',
+                      )}
+                      onClick={() => applyLookupSelection(user)}
+                      type="button"
+                    >
+                      <p className="truncate font-medium text-[color:var(--color-ink)]">
+                        {sanitizeOperationalVisibleText(user.full_name)}
+                      </p>
+                      <p className="truncate text-sm text-[color:var(--color-muted)]">
+                        {user.email ?? 'Indisponível'}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+          </section>
+
+          <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-5">
+            <h3 className="text-base font-semibold text-[color:var(--color-ink)]">
+              Dados do acesso
+            </h3>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <Field label="Cliente">
+                <SelectInput
+                  onChange={(event) =>
+                    setAddForm((current) => ({
+                      ...current,
+                      tenantId: event.target.value,
+                    }))
+                  }
+                  required
+                  value={addForm.tenantId}
+                >
+                  <option value="">Selecione um cliente</option>
+                  {tenants.map((tenant) => (
+                    <option key={tenant.id} value={tenant.id}>
+                      {sanitizeOperationalVisibleText(tenant.display_name)}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Field>
+
+              <Field label="Papel">
+                <SelectInput
+                  onChange={(event) =>
+                    setAddForm((current) => ({
+                      ...current,
+                      role: event.target.value as TenantRole,
+                    }))
+                  }
+                  value={addForm.role}
+                >
+                  {TENANT_ROLES.map((role) => (
+                    <option key={role} value={role}>
+                      {tenantRoleLabel(role)}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Field>
+
+              <Field label="Situação inicial">
+                <SelectInput
+                  onChange={(event) =>
+                    setAddForm((current) => ({
+                      ...current,
+                      status: event.target.value as MembershipStatus,
+                    }))
+                  }
+                  value={addForm.status}
+                >
+                  {MEMBERSHIP_STATUSES.map((status) => (
+                    <option key={status} value={status}>
+                      {membershipStatusLabel(status)}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Field>
+
+              <Field
+                label="Referência manual"
+                description="Use apenas quando a pessoa não aparecer na busca."
+              >
+                <TextInput
+                  onChange={(event) =>
+                    setAddForm((current) => ({
+                      ...current,
+                      userId: event.target.value,
+                    }))
+                  }
+                  placeholder="Cole o identificador se precisar"
+                  required
+                  value={addForm.userId}
+                />
+              </Field>
+            </div>
+          </section>
+
+          {addMessage ? (
+            <InlineNotice tone={addMessage.includes('sucesso') ? 'default' : 'critical'}>
+              {addMessage}
+            </InlineNotice>
+          ) : null}
+        </form>
+      </GovernedActionDrawer>
+    ) : null}
+
+    {activeDrawer === 'membership' && selectedMembership ? (
+      <GovernedActionDrawer
+        description="Atualize papel e situação do acesso selecionado sem comprimir o contexto no rail."
+        footer={
+          <>
+            <GhostButton onClick={() => setActiveDrawer(null)} type="button">
+              Cancelar
+            </GhostButton>
+            <AppButton
+              disabled={
+                updateSubmitting ||
+                !selectedMembership.can_update_role ||
+                !selectedMembership.can_update_status
+              }
+              form="admin-access-membership-form"
+              type="submit"
+            >
+              {updateSubmitting ? 'Salvando...' : 'Salvar alterações'}
+            </AppButton>
+          </>
+        }
+        onClose={() => setActiveDrawer(null)}
+        title="Gerenciar acesso"
+      >
+        <form className="space-y-6" id="admin-access-membership-form" onSubmit={handleUpdateMembership}>
+          <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5">
+            <div className="flex min-w-0 items-center gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--color-brand-blue),var(--color-brand-navy))] text-base font-semibold text-white">
+                {getInitials(selectedMembership.user_full_name, selectedMembership.user_email)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="truncate text-lg font-semibold tracking-[-0.035em] text-[color:var(--color-ink)]">
+                  {getDisplayName(selectedMembership)}
+                </h3>
+                <p className="truncate text-sm text-[color:var(--color-muted)]">
+                  {getDisplayEmail(selectedMembership)}
+                </p>
+              </div>
+              <StatusPill tone={membershipStateTone(selectedMembership)}>
+                {membershipStateLabel(selectedMembership)}
+              </StatusPill>
+            </div>
+          </section>
+
+          <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] p-5">
+            <h3 className="text-base font-semibold text-[color:var(--color-ink)]">
+              Permissões do vínculo
+            </h3>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <Field label="Papel">
+                <SelectInput
+                  disabled={!selectedMembership.can_update_role}
+                  onChange={(event) => setRoleDraft(event.target.value as TenantRole)}
+                  value={roleDraft}
+                >
+                  {TENANT_ROLES.map((role) => (
+                    <option key={role} value={role}>
+                      {tenantRoleLabel(role)}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Field>
+              <Field label="Situação">
+                <SelectInput
+                  disabled={!selectedMembership.can_update_status}
+                  onChange={(event) => setStatusDraft(event.target.value as MembershipStatus)}
+                  value={statusDraft}
+                >
+                  {MEMBERSHIP_STATUSES.map((status) => (
+                    <option key={status} value={status}>
+                      {membershipStatusLabel(status)}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Field>
+            </div>
+          </section>
+
+          {updateMessage ? (
+            <InlineNotice tone={updateMessage.includes('sucesso') ? 'default' : 'critical'}>
+              {updateMessage}
+            </InlineNotice>
+          ) : null}
+
+          {!selectedMembership.can_update_role || !selectedMembership.can_update_status ? (
+            <InlineNotice>
+              Alteração desabilitada para evitar autogestão ou transição sem permissão.
+            </InlineNotice>
+          ) : null}
+        </form>
+      </GovernedActionDrawer>
+    ) : null}
+    </>
   );
 }

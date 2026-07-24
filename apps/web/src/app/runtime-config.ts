@@ -1,7 +1,17 @@
+export interface HelpCenterIntegrationLinks {
+  apiDocs: string;
+  apiDocsSpec: string;
+  swagger: string;
+  production: string;
+  qa: string;
+  mock: string | null;
+}
+
 export interface RuntimeConfig {
   appEnv: string;
   supabaseUrl: string;
   supabaseAnonKey: string;
+  helpCenterIntegrationLinks: HelpCenterIntegrationLinks;
 }
 
 export interface MissingRuntimeConfig {
@@ -10,10 +20,48 @@ export interface MissingRuntimeConfig {
 
 const runtimeEnv = import.meta.env;
 
-function readEnvValue(key: string) {
-  return (runtimeEnv[key as keyof typeof runtimeEnv] ?? '')
+const defaultHelpCenterIntegrationLinks: HelpCenterIntegrationLinks = {
+  apiDocs: 'https://apidocs.geniusreturns.com.br/openapi',
+  apiDocsSpec: 'https://apidocs.geniusreturns.com.br/_spec/openapi.json?download=',
+  swagger: 'https://integration.geniusreturns.com.br/swagger/index.html',
+  production: 'https://integration.geniusreturns.com.br',
+  qa: 'https://integration-qa.geniusreturns.com.br',
+  mock: null,
+};
+
+function readEnvValue(key: string, env: Record<string, unknown> = runtimeEnv) {
+  return (env[key] ?? '')
     .toString()
     .trim();
+}
+
+function readSafeExternalUrl(key: string, fallback: string | null, env: Record<string, unknown>) {
+  const candidate = readEnvValue(key, env);
+  if (!candidate) return fallback;
+
+  try {
+    const parsed = new URL(candidate);
+    return parsed.protocol === 'https:' ? parsed.toString() : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export function resolveHelpCenterIntegrationLinks(
+  env: Record<string, unknown> = runtimeEnv,
+): HelpCenterIntegrationLinks {
+  return {
+    apiDocs: readSafeExternalUrl('VITE_HELP_CENTER_API_DOCS_URL', defaultHelpCenterIntegrationLinks.apiDocs, env) ?? defaultHelpCenterIntegrationLinks.apiDocs,
+    apiDocsSpec: readSafeExternalUrl('VITE_HELP_CENTER_API_DOCS_SPEC_URL', defaultHelpCenterIntegrationLinks.apiDocsSpec, env) ?? defaultHelpCenterIntegrationLinks.apiDocsSpec,
+    swagger: readSafeExternalUrl('VITE_HELP_CENTER_SWAGGER_URL', defaultHelpCenterIntegrationLinks.swagger, env) ?? defaultHelpCenterIntegrationLinks.swagger,
+    production: readSafeExternalUrl('VITE_HELP_CENTER_PRODUCTION_URL', defaultHelpCenterIntegrationLinks.production, env) ?? defaultHelpCenterIntegrationLinks.production,
+    qa: readSafeExternalUrl('VITE_HELP_CENTER_QA_URL', defaultHelpCenterIntegrationLinks.qa, env) ?? defaultHelpCenterIntegrationLinks.qa,
+    mock: readSafeExternalUrl('VITE_HELP_CENTER_MOCK_URL', defaultHelpCenterIntegrationLinks.mock, env),
+  };
+}
+
+export function readHelpCenterIntegrationLinks(): HelpCenterIntegrationLinks {
+  return resolveHelpCenterIntegrationLinks(runtimeEnv);
 }
 
 export function readRuntimeConfig():
@@ -41,6 +89,7 @@ export function readRuntimeConfig():
       appEnv,
       supabaseUrl,
       supabaseAnonKey,
+      helpCenterIntegrationLinks: readHelpCenterIntegrationLinks(),
     },
   };
 }

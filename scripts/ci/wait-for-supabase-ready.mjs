@@ -1,28 +1,6 @@
 import { createConnection } from "node:net";
 import { spawn } from "node:child_process";
 
-const baseEndpoints = [
-  {
-    label: "REST admin readiness",
-    url: "http://127.0.0.1:55321/rest-admin/v1/ready",
-    method: "HEAD",
-  },
-];
-
-const edgeRuntimeEndpoint = {
-  label: "Edge runtime health",
-  url: "http://127.0.0.1:55321/functions/v1/_internal/health",
-  method: "HEAD",
-};
-
-const sockets = [
-  {
-    label: "Postgres TCP readiness",
-    host: process.env.SUPABASE_DB_HOST ?? "127.0.0.1",
-    port: Number(process.env.SUPABASE_DB_PORT ?? 55322),
-  },
-];
-
 const timeoutMs = Number(process.env.SUPABASE_READY_TIMEOUT_MS ?? 60_000);
 const intervalMs = Number(process.env.SUPABASE_READY_INTERVAL_MS ?? 2_000);
 
@@ -58,11 +36,20 @@ function runProcess(command, args) {
   });
 }
 
-async function shouldProbeEdgeRuntime() {
-  if (process.env.SUPABASE_READY_REQUIRE_EDGE === "1") {
-    return true;
+function parseStatusEnv(output) {
+  const values = new Map();
+
+  for (const line of output.split(/\r?\n/)) {
+    const match = line.match(/^([A-Z0-9_]+)="?(.*?)"?$/);
+    if (match) {
+      values.set(match[1], match[2]);
+    }
   }
 
+  return values;
+}
+
+async function readSupabaseStatusEnv() {
   const command =
     process.platform === "win32"
       ? process.env.ComSpec ?? "cmd.exe"
@@ -74,11 +61,70 @@ async function shouldProbeEdgeRuntime() {
   const result = await runProcess(command, args);
 
   if (result.code !== 0) {
+    return {
+      values: new Map(),
+      rawOutput: `${result.stdout}\n${result.stderr}`,
+      available: false,
+    };
+  }
+
+  const rawOutput = `${result.stdout}\n${result.stderr}`;
+
+  return {
+    values: parseStatusEnv(rawOutput),
+    rawOutput,
+    available: true,
+  };
+}
+
+function resolveDatabaseSocket(statusValues) {
+  if (process.env.SUPABASE_DB_HOST || process.env.SUPABASE_DB_PORT) {
+    return {
+      label: "Postgres TCP readiness",
+      host: process.env.SUPABASE_DB_HOST ?? "127.0.0.1",
+      port: Number(process.env.SUPABASE_DB_PORT ?? 54322),
+    };
+  }
+
+  const dbUrl = statusValues.get("DB_URL");
+  if (dbUrl) {
+    try {
+      const parsed = new URL(dbUrl);
+      return {
+        label: "Postgres TCP readiness",
+        host: parsed.hostname,
+        port: Number(parsed.port || 5432),
+      };
+    } catch {
+      // Fall through to the default local Supabase port.
+    }
+  }
+
+  return {
+    label: "Postgres TCP readiness",
+    host: "127.0.0.1",
+    port: 54322,
+  };
+}
+
+function resolveApiUrl(statusValues) {
+  return (
+    process.env.SUPABASE_API_URL ??
+    statusValues.get("API_URL") ??
+    "http://127.0.0.1:54321"
+  ).replace(/\/+$/, "");
+}
+
+function shouldProbeEdgeRuntime(statusResult) {
+  if (process.env.SUPABASE_READY_REQUIRE_EDGE === "1") {
     return true;
   }
 
-  const statusOutput = `${result.stdout}\n${result.stderr}`;
-  return !statusOutput.includes("supabase_edge_runtime_");
+  if (!statusResult.available) {
+    return true;
+  }
+
+  return !statusResult.rawOutput.includes("supabase_edge_runtime_");
 }
 
 async function probeEndpoint(endpoint) {
@@ -154,11 +200,24 @@ async function probeSocket(socket) {
 }
 
 async function main() {
-  const endpoints = [...baseEndpoints];
-  const probeEdgeRuntime = await shouldProbeEdgeRuntime();
+  const statusResult = await readSupabaseStatusEnv();
+  const apiUrl = resolveApiUrl(statusResult.values);
+  const endpoints = [
+    {
+      label: "REST admin readiness",
+      url: `${apiUrl}/rest-admin/v1/ready`,
+      method: "HEAD",
+    },
+  ];
+  const sockets = [resolveDatabaseSocket(statusResult.values)];
+  const probeEdgeRuntime = shouldProbeEdgeRuntime(statusResult);
 
   if (probeEdgeRuntime) {
-    endpoints.push(edgeRuntimeEndpoint);
+    endpoints.push({
+      label: "Edge runtime health",
+      url: `${apiUrl}/functions/v1/_internal/health`,
+      method: "HEAD",
+    });
   } else {
     console.log(
       "[supabase-ready] edge runtime reported as stopped by supabase status; skipping edge health probe",

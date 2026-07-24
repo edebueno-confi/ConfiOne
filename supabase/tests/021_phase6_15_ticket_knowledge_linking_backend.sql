@@ -2,7 +2,7 @@ create extension if not exists pgtap with schema extensions;
 
 begin;
 
-select plan(32);
+select plan(36);
 
 insert into auth.users (
   instance_id,
@@ -196,8 +196,8 @@ values
 select ok(
   has_table_privilege('authenticated', 'public.vw_support_ticket_knowledge_links', 'SELECT')
   and has_table_privilege('authenticated', 'public.vw_support_knowledge_article_picker', 'SELECT')
-  and not has_table_privilege('authenticated', 'public.vw_customer_portal_ticket_knowledge_links', 'SELECT'),
-  'authenticated recebe apenas as views internas contratuais do vinculo ticket kb'
+  and has_table_privilege('authenticated', 'public.vw_customer_portal_ticket_knowledge_links', 'SELECT'),
+  'authenticated recebe as views contratuais de knowledge para suporte e portal'
 );
 
 select ok(
@@ -449,6 +449,79 @@ select throws_ok(
   'authenticated nao le ticket_knowledge_links diretamente'
 );
 
+select ok(
+  exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'vw_support_knowledge_article_picker'
+      and column_name = 'can_send_to_customer'
+  )
+  and exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'vw_support_knowledge_article_picker'
+      and column_name = 'reason_if_blocked'
+  ),
+  'picker do suporte projeta decisao backend-safe e motivo de bloqueio'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.vw_support_knowledge_article_picker
+    where ticket_id = '10000000-0000-4000-8000-000000000001'::uuid
+      and article_slug = 'artigo-publico-publicado'
+      and can_send_to_customer
+      and is_customer_send_allowed
+      and article_status = 'published'::public.knowledge_article_status
+      and article_visibility = 'public'::public.knowledge_visibility
+      and public_article_path is not null
+      and reason_if_blocked is null
+  ),
+  'picker libera envio ao cliente apenas para artigo published/public com rota publica'
+);
+
+select ok(
+  not exists (
+    select 1
+    from public.vw_support_knowledge_article_picker
+    where ticket_id = '10000000-0000-4000-8000-000000000001'::uuid
+      and article_slug in ('artigo-interno-publicado', 'artigo-restrito-publicado')
+      and can_send_to_customer
+  )
+  and exists (
+    select 1
+    from public.vw_support_knowledge_article_picker
+    where ticket_id = '10000000-0000-4000-8000-000000000001'::uuid
+      and article_slug in ('artigo-interno-publicado', 'artigo-restrito-publicado')
+      and not can_send_to_customer
+      and reason_if_blocked is not null
+  ),
+  'picker bloqueia envio de artigos internal/restricted com motivo operacional'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.vw_support_knowledge_public_link_candidates
+    where ticket_id = '10000000-0000-4000-8000-000000000001'::uuid
+      and article_slug = 'artigo-publico-publicado'
+      and can_send_to_customer
+      and article_status = 'published'::public.knowledge_article_status
+      and article_visibility = 'public'::public.knowledge_visibility
+      and public_article_path is not null
+  )
+  and not exists (
+    select 1
+    from public.vw_support_knowledge_public_link_candidates
+    where ticket_id = '10000000-0000-4000-8000-000000000001'::uuid
+      and article_slug in ('artigo-interno-publicado', 'artigo-restrito-publicado')
+  ),
+  'vw_support_knowledge_public_link_candidates expoe somente candidatos published/public'
+);
+
 select lives_ok(
   $$
     select public.rpc_support_link_ticket_article(
@@ -611,8 +684,8 @@ select is(
     from public.vw_customer_portal_ticket_knowledge_links
     where ticket_id = '10000000-0000-4000-8000-000000000001'::uuid
   ),
-  1,
-  'portal future view expone apenas o artigo realmente enviado ao cliente'
+  0,
+  'sem contexto customer-facing autenticado a view do portal nao expone links'
 );
 
 select is(

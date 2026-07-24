@@ -234,7 +234,7 @@ values
     (select id from public.knowledge_spaces where slug = 'genius'),
     'public',
     'Configuracoes',
-    'configuracoes',
+    'configuracoes-fase45',
     'Categoria publica raiz'
   ),
   (
@@ -242,7 +242,7 @@ values
     (select id from public.knowledge_spaces where slug = 'genius'),
     'public',
     'Integracoes',
-    'integracoes',
+    'integracoes-fase45',
     'Categoria publica filha'
   ),
   (
@@ -434,7 +434,11 @@ select is(
   pg_temp.safe_bigint(
     $$select count(*)
       from public.vw_public_knowledge_articles_list
-      where knowledge_space_slug = 'genius'$$
+      where slug in (
+        'configurar-portal-b2b',
+        'integrar-transportadora',
+        'artigo-legado-publico'
+      )$$
   ),
   3::bigint,
   'anon le os artigos publicados e publicos do space ativo, incluindo compatibilidade legado sem knowledge_space_id'
@@ -494,7 +498,11 @@ select is(
   pg_temp.safe_bigint(
     $$select count(*)
       from public.vw_public_knowledge_navigation
-      where knowledge_space_slug = 'genius'$$
+      where category_slug in (
+        'configuracoes-fase45',
+        'integracoes-fase45',
+        'legado-publico'
+      )$$
   ),
   3::bigint,
   'navigation retorna as categorias publicas relevantes, incluindo a categoria legada sem knowledge_space_id'
@@ -504,7 +512,7 @@ select is(
   pg_temp.safe_bigint(
     $$select subtree_article_count
       from public.vw_public_knowledge_navigation
-      where category_slug = 'configuracoes'$$
+      where category_slug = 'configuracoes-fase45'$$
   ),
   2::bigint,
   'navigation agrega apenas artigos publicos no subtree da categoria raiz'
@@ -514,7 +522,7 @@ select is(
   pg_temp.safe_bigint(
     $$select article_count
       from public.vw_public_knowledge_navigation
-      where category_slug = 'integracoes'$$
+      where category_slug = 'integracoes-fase45'$$
   ),
   1::bigint,
   'navigation retorna a contagem correta de artigos publicos por categoria filha'

@@ -1,4 +1,192 @@
-import type { IsoTimestamp, JsonValue, Uuid } from '@genius-support-os/contracts';
+import type {
+  AdminInternalActionTargetArea,
+  AdminInternalArea,
+  AdminInternalAreaMembership,
+  AdminInternalAccessProfile,
+  AdminInternalCollaborator,
+  AdminCustomerAccountAlert,
+  AdminCustomerAccountCustomization,
+  AdminCustomerAccountFeature,
+  AdminCustomerAccountIntegration,
+  AdminCustomerAccountProfileDetail,
+  AdminCommercialProduct,
+  AdminCommercialProductDetail,
+  AdminCommercialProductDetailFeature,
+  AdminCommercialProductDetailModule,
+  AdminCommercialProductDetailOwnership,
+  AdminCommercialProductDetailPlan,
+  AdminCustomerProductSubscription,
+  AdminCustomerProductSubscriptionDetail,
+  AdminCustomerProductSubscriptionEntitlement,
+  AdminCustomerProductSubscriptionOwner,
+  AiActionKey,
+  AiIntendedUse,
+  AiPolicyDecision,
+  AiSourceStatus,
+  AiSourceType,
+  AiSourceVisibility,
+  CustomerAlertSeverity,
+  CustomerCustomizationRiskLevel,
+  CustomerIntegrationEnvironment,
+  CustomerIntegrationStatus,
+  CustomerIntegrationType,
+  CustomerOperationalStatus,
+  CustomerProductFeatureEntitlementSource,
+  CustomerProductFeatureEntitlementStatus,
+  CustomerProductInternalOwnerRole,
+  CustomerProductInternalOwnerStatus,
+  CustomerProductLine,
+  CustomerProductSubscriptionStatus,
+  CUSTOMER_PRODUCT_SUBSCRIPTION_STATUSES,
+  InternalAreaMembershipRecord,
+  InternalAreaMembershipRole,
+  InternalAreaMembershipStatus,
+  IsoTimestamp,
+  JsonValue,
+  RpcAdminAddCustomerAccountAlertPayload,
+  RpcAdminAddCustomerCustomizationPayload,
+  RpcAdminAddCustomerIntegrationPayload,
+  RpcAdminAddInternalAreaMembershipPayload,
+  RpcAdminAddInternalAreaMembershipResponse,
+  RpcAdminArchiveCustomerAccountAlertPayload,
+  RpcAdminArchiveCustomerCustomizationPayload,
+  RpcAdminArchiveCustomerIntegrationPayload,
+  RpcAdminArchiveInternalAreaMembershipPayload,
+  RpcAdminArchiveInternalAreaMembershipResponse,
+  RpcAdminSetCustomerFeatureFlagPayload,
+  RpcAdminUpdateCustomerAccountAlertPayload,
+  RpcAdminUpdateCustomerCustomizationPayload,
+  RpcAdminUpdateCustomerIntegrationPayload,
+  RpcAdminUpdateInternalAreaMembershipPayload,
+  RpcAdminUpdateInternalAreaMembershipResponse,
+  RpcAdminUpsertCustomerAccountProfilePayload,
+  Uuid,
+} from '@genius-support-os/contracts';
+
+export type {
+  AdminInternalAccessProfile,
+  AdminCustomerAccountAlert,
+  AdminCustomerAccountCustomization,
+  AdminCustomerAccountFeature,
+  AdminCustomerAccountIntegration,
+  AdminCustomerAccountProfileDetail,
+  AdminCommercialProduct,
+  AdminCommercialProductDetail,
+  AdminCommercialProductDetailFeature,
+  AdminCommercialProductDetailModule,
+  AdminCommercialProductDetailOwnership,
+  AdminCommercialProductDetailPlan,
+  AdminCustomerProductSubscription,
+  AdminCustomerProductSubscriptionDetail,
+  AdminCustomerProductSubscriptionEntitlement,
+  AdminCustomerProductSubscriptionOwner,
+  AdminInternalActionTargetArea,
+  AdminInternalArea,
+  AdminInternalAreaMembership,
+  AdminInternalCollaborator,
+  CustomerAlertSeverity,
+  CustomerCustomizationRiskLevel,
+  CustomerIntegrationEnvironment,
+  CustomerIntegrationStatus,
+  CustomerIntegrationType,
+  CustomerOperationalStatus,
+  CustomerProductFeatureEntitlementSource,
+  CustomerProductFeatureEntitlementStatus,
+  CustomerProductInternalOwnerRole,
+  CustomerProductInternalOwnerStatus,
+  CustomerProductLine,
+  CustomerProductSubscriptionStatus,
+  InternalAreaMembershipRecord,
+  InternalAreaMembershipRole,
+  InternalAreaMembershipStatus,
+  RpcAdminAddCustomerAccountAlertPayload,
+  RpcAdminAddCustomerCustomizationPayload,
+  RpcAdminAddCustomerIntegrationPayload,
+  RpcAdminAddInternalAreaMembershipPayload,
+  RpcAdminAddInternalAreaMembershipResponse,
+  RpcAdminArchiveCustomerAccountAlertPayload,
+  RpcAdminArchiveCustomerCustomizationPayload,
+  RpcAdminArchiveCustomerIntegrationPayload,
+  RpcAdminArchiveInternalAreaMembershipPayload,
+  RpcAdminArchiveInternalAreaMembershipResponse,
+  RpcAdminSetCustomerFeatureFlagPayload,
+  RpcAdminUpdateCustomerAccountAlertPayload,
+  RpcAdminUpdateCustomerCustomizationPayload,
+  RpcAdminUpdateCustomerIntegrationPayload,
+  RpcAdminUpdateInternalAreaMembershipPayload,
+  RpcAdminUpdateInternalAreaMembershipResponse,
+  RpcAdminUpsertCustomerAccountProfilePayload,
+};
+
+export const CUSTOMER_PRODUCT_LINES = [
+  'genius_returns',
+  'after_sale',
+  'hybrid',
+  'other',
+] as const satisfies readonly CustomerProductLine[];
+
+export const CUSTOMER_OPERATIONAL_STATUSES = [
+  'onboarding',
+  'active',
+  'limited',
+  'suspended',
+  'legacy',
+] as const satisfies readonly CustomerOperationalStatus[];
+
+export const CUSTOMER_INTEGRATION_TYPES = [
+  'ecommerce_platform',
+  'erp',
+  'oms',
+  'logistics_provider',
+  'carrier',
+  'gateway',
+  'refund_provider',
+  'custom_api',
+  'other',
+] as const satisfies readonly CustomerIntegrationType[];
+
+export const CUSTOMER_INTEGRATION_STATUSES = [
+  'planned',
+  'active',
+  'degraded',
+  'disabled',
+  'deprecated',
+] as const satisfies readonly CustomerIntegrationStatus[];
+
+export const CUSTOMER_INTEGRATION_ENVIRONMENTS = [
+  'production',
+  'sandbox',
+  'staging',
+  'other',
+] as const satisfies readonly CustomerIntegrationEnvironment[];
+
+export const CUSTOMER_CUSTOMIZATION_RISK_LEVELS = [
+  'low',
+  'medium',
+  'high',
+  'critical',
+] as const satisfies readonly CustomerCustomizationRiskLevel[];
+
+export const CUSTOMER_ALERT_SEVERITIES = [
+  'info',
+  'warning',
+  'high',
+  'critical',
+] as const satisfies readonly CustomerAlertSeverity[];
+
+export { CUSTOMER_PRODUCT_SUBSCRIPTION_STATUSES };
+
+export const INTERNAL_AREA_MEMBERSHIP_ROLES = [
+  'member',
+  'manager',
+  'viewer',
+] as const satisfies readonly InternalAreaMembershipRole[];
+
+export const INTERNAL_AREA_MEMBERSHIP_STATUSES = [
+  'active',
+  'inactive',
+  'archived',
+] as const satisfies readonly InternalAreaMembershipStatus[];
 
 export const TENANT_STATUSES = ['active', 'suspended', 'archived'] as const;
 export type TenantStatus = (typeof TENANT_STATUSES)[number];
@@ -14,6 +202,20 @@ export const TENANT_ROLES = [
 ] as const;
 export type TenantRole = (typeof TENANT_ROLES)[number];
 
+export const CUSTOMER_PORTAL_ROLES = [
+  'customer_user',
+  'customer_manager',
+] as const;
+export type CustomerPortalRole = (typeof CUSTOMER_PORTAL_ROLES)[number];
+
+export type CustomerPortalAccessStatus = 'active' | 'pending' | 'blocked';
+export type CustomerPortalEntitlementScope = 'tenant' | 'customer_portal';
+export type CustomerPortalEntitlementStatus = 'active' | 'archived';
+export type CustomerPortalKnowledgeExposureSource =
+  | 'public'
+  | 'customer_portal'
+  | 'ticket_linked';
+
 export const PLATFORM_ROLES = [
   'platform_admin',
   'support_agent',
@@ -22,8 +224,100 @@ export const PLATFORM_ROLES = [
   'engineering_manager',
   'knowledge_manager',
   'audit_reviewer',
+  'dashboard_viewer',
 ] as const;
 export type PlatformRole = (typeof PLATFORM_ROLES)[number];
+
+export const INTERNAL_SCREEN_CATEGORIES = [
+  'workspace',
+  'intelligence',
+  'administration',
+] as const;
+export type InternalScreenCategory = (typeof INTERNAL_SCREEN_CATEGORIES)[number];
+
+export const INTERNAL_SCREEN_KEYS = [
+  'home',
+  'support_inbox',
+  'support_queue',
+  'support_tickets',
+  'customers_b2b',
+  'cs_portfolio',
+  'internal_actions',
+  'product',
+  'admin_overview',
+  'analytics',
+  'tenants',
+  'customer_portal_admin',
+  'internal_areas',
+  'access',
+  'system',
+  'settings',
+  'knowledge',
+  'product_docs',
+] as const;
+export type InternalScreenKey = (typeof INTERNAL_SCREEN_KEYS)[number];
+
+export interface AdminInternalScreenCatalogRow {
+  screen_key: InternalScreenKey;
+  display_name: string;
+  route_path: string;
+  category: InternalScreenCategory;
+  sort_order: number;
+  is_system: boolean;
+  is_active: boolean;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+  default_area_keys: string[];
+  dependency_screen_keys: InternalScreenKey[];
+  can_manage: boolean;
+}
+
+export interface AdminInternalMembershipScreenGrantRow {
+  grant_id: Uuid;
+  membership_id: Uuid;
+  tenant_id: Uuid;
+  tenant_display_name: string;
+  user_id: Uuid;
+  user_full_name: string | null;
+  user_email: string | null;
+  area_key: string;
+  area_label: string;
+  area_role: InternalAreaMembershipRole;
+  membership_status: InternalAreaMembershipStatus;
+  screen_key: InternalScreenKey;
+  screen_display_name: string;
+  route_path: string;
+  category: InternalScreenCategory;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+  can_revoke: boolean;
+}
+
+export interface InternalActorWorkspaceContextRow {
+  actor_user_id: Uuid;
+  tenant_id: Uuid | null;
+  area_key: string | null;
+  area_role: InternalAreaMembershipRole | null;
+  permission_source: 'global_role' | 'area_membership';
+  screen_key: InternalScreenKey;
+  display_name: string;
+  route_path: string;
+  category: InternalScreenCategory;
+  sort_order: number;
+}
+
+export interface RpcAdminReplaceInternalMembershipScreensPayload {
+  membershipId: Uuid;
+  screenKeys: InternalScreenKey[];
+}
+
+export interface RpcAdminReplaceInternalMembershipScreensResponse {
+  membership_id: Uuid;
+  user_id: Uuid;
+  tenant_id: Uuid;
+  area_key: string;
+  screen_keys: InternalScreenKey[];
+}
 
 export interface AdminGateProfileRow {
   id: Uuid;
@@ -143,6 +437,11 @@ export interface AdminTenantMembershipRow {
   updated_at: IsoTimestamp;
   created_by_user_id: Uuid | null;
   updated_by_user_id: Uuid | null;
+  created_by_full_name?: string | null;
+  updated_by_full_name?: string | null;
+  access_state?: 'active' | 'pending' | 'blocked';
+  can_update_role?: boolean;
+  can_update_status?: boolean;
 }
 
 export interface AdminUserLookupRow {
@@ -169,6 +468,365 @@ export interface AdminAuditFeedRow {
   before_state: JsonValue | null;
   after_state: JsonValue | null;
   metadata: JsonValue | null;
+}
+
+export interface AdminAccessUserRow {
+  user_id: Uuid;
+  full_name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  is_active: boolean;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+  platform_roles: PlatformRole[];
+  tenant_roles: TenantRole[];
+  membership_count: number;
+  active_membership_count: number;
+  invited_membership_count: number;
+  revoked_membership_count: number;
+  last_access_updated_at: IsoTimestamp;
+  memberships: JsonValue;
+}
+
+export interface RpcAdminSetGlobalRoleResponse {
+  user_id: Uuid;
+  role: PlatformRole;
+  enabled: boolean;
+  updated_at: IsoTimestamp;
+}
+
+export type AdminAccessMembershipRow = AdminTenantMembershipRow & {
+  access_state: 'active' | 'pending' | 'blocked';
+  created_by_full_name: string | null;
+  updated_by_full_name: string | null;
+  can_update_role: boolean;
+  can_update_status: boolean;
+};
+
+export type AdminSystemSeverity = 'ok' | 'attention' | 'critical';
+export type AdminSystemCheckStatus = AdminSystemSeverity | 'unavailable';
+export type CommunicationChannelReadinessStatus =
+  | 'active'
+  | 'disabled'
+  | 'not_configured'
+  | 'future'
+  | 'blocked'
+  | 'unavailable';
+
+export type CommunicationDeliveryChannel =
+  | 'customer_portal'
+  | 'email_future'
+  | 'whatsapp_future'
+  | 'chat_future'
+  | 'api_future';
+
+export interface AdminSystemAuditEventRow {
+  id: Uuid;
+  occurred_at: IsoTimestamp;
+  actor_user_id: Uuid | null;
+  actor_display_name: string;
+  actor_email: string | null;
+  tenant_id: Uuid | null;
+  tenant_slug: string | null;
+  scope_label: string;
+  entity_schema: string;
+  service_key: string;
+  service_label: string;
+  entity_id: Uuid | null;
+  action: string;
+  action_label: string;
+  severity: AdminSystemSeverity;
+  impact_label: string;
+  sanitized_context: JsonValue;
+}
+
+export interface AdminSystemHealthCheckRow {
+  check_key: string;
+  label: string;
+  description: string;
+  status: AdminSystemCheckStatus;
+  area: string;
+  checked_at: IsoTimestamp;
+}
+
+export interface AdminSystemOperationalSummaryRow {
+  audit_event_count: number;
+  audit_events_24h: number;
+  critical_event_count: number;
+  attention_event_count: number;
+  observed_service_count: number;
+  last_event_at: IsoTimestamp | null;
+}
+
+export interface AdminCommunicationChannelReadinessRow {
+  tenant_id: Uuid;
+  tenant_slug: string;
+  tenant_display_name: string;
+  tenant_status: TenantStatus;
+  channel_key: CommunicationDeliveryChannel;
+  channel_label: string;
+  direction_supported: 'inbound' | 'outbound' | 'bidirectional';
+  is_external: boolean;
+  is_real_channel: boolean;
+  provider_required: boolean;
+  status_global: CommunicationChannelReadinessStatus;
+  future_provider_type: string | null;
+  description: string;
+  readiness_status: CommunicationChannelReadinessStatus;
+  is_enabled: boolean;
+  can_send: boolean;
+  can_receive: boolean;
+  reason_if_unavailable: string | null;
+  required_setup_summary: string;
+  operational_note: string | null;
+  last_checked_at: IsoTimestamp;
+  managed_by_user_id: Uuid | null;
+  managed_by_full_name: string | null;
+  managed_by_email: string | null;
+  updated_at: IsoTimestamp | null;
+  can_mark_active: boolean;
+  activation_blocked_by_contract: boolean;
+}
+
+export interface AdminAiOperationalContextReadinessRow {
+  readiness_key: string;
+  readiness_status: 'prepared_not_active';
+  readiness_label: string;
+  allowed_source_count: number;
+  restricted_source_count: number;
+  future_source_count: number;
+  citation_required_count: number;
+  redaction_required_count: number;
+  human_review_required: boolean;
+  audit_required: boolean;
+  llm_provider_configured: boolean;
+  embeddings_enabled: boolean;
+  auto_send_enabled: boolean;
+  auto_publish_enabled: boolean;
+}
+
+export interface AdminAiContextSourcePolicyRow {
+  policy_key: string;
+  source_type: AiSourceType;
+  source_status: AiSourceStatus;
+  visibility: AiSourceVisibility;
+  allowed_uses: AiIntendedUse[];
+  requires_tenant: boolean;
+  requires_entitlement: boolean;
+  requires_citation: boolean;
+  requires_redaction: boolean;
+  allowed_destinations: string[];
+  forbidden_destinations: string[];
+  policy_summary: string;
+  updated_at: IsoTimestamp;
+}
+
+export interface AdminAiActionPolicyRow {
+  action_key: AiActionKey;
+  decision: AiPolicyDecision;
+  requires_human_review: boolean;
+  allowed_source_types: AiSourceType[];
+  allowed_destinations: string[];
+  forbidden_reason: string | null;
+  audit_required: boolean;
+  policy_summary: string;
+  updated_at: IsoTimestamp;
+}
+
+export type InternalDocumentStatus = 'draft' | 'published' | 'archived' | 'blocked';
+export type InternalDocumentSensitivity = 'internal' | 'restricted' | 'public_internal';
+export type InternalDocumentValidationStatus = 'valid' | 'warning' | 'blocked';
+export type InternalDocumentSurface = 'product-docs' | 'build-journal';
+
+export interface AdminInternalDocumentCatalogRow {
+  document_id: Uuid;
+  slug: string;
+  source_path: string;
+  title: string;
+  category: string;
+  status: InternalDocumentStatus;
+  sensitivity: InternalDocumentSensitivity;
+  owner: string;
+  surfaces: InternalDocumentSurface[];
+  allow_inline_reader: boolean;
+  description: string | null;
+  current_source_hash: string;
+  current_version_number: number;
+  current_validation_status: InternalDocumentValidationStatus;
+  updated_at: IsoTimestamp;
+  published_at: IsoTimestamp | null;
+}
+
+export interface AdminInternalDocumentValidationWarning {
+  id: string;
+  count: number;
+  severity: string;
+}
+
+export interface AdminInternalDocumentDetailRow
+  extends AdminInternalDocumentCatalogRow {
+  body_md_sanitized: string;
+  validation_warnings: JsonValue;
+  sanitized_size_bytes: number;
+  original_size_bytes: number;
+}
+
+export interface AdminCustomerPortalAccessOverviewRow {
+  tenant_count: number;
+  active_tenant_count: number;
+  portal_user_count: number;
+  active_user_count: number;
+  invited_user_count: number;
+  blocked_user_count: number;
+  manager_count: number;
+  visible_ticket_count: number;
+  authorized_article_count: number;
+  tenant_without_manager_count: number;
+  missing_contact_count: number;
+  inactive_contact_count: number;
+}
+
+export interface AdminCustomerPortalTenantAccessRow {
+  tenant_id: Uuid;
+  tenant_slug: string;
+  tenant_display_name: string;
+  tenant_status: TenantStatus;
+  portal_user_count: number;
+  active_user_count: number;
+  invited_user_count: number;
+  blocked_user_count: number;
+  manager_count: number;
+  visible_ticket_count: number;
+  authorized_article_count: number;
+  active_entitlement_count: number;
+  active_ticket_link_count: number;
+  last_access_at: IsoTimestamp | null;
+  has_active_manager: boolean;
+  missing_contact_count: number;
+  inactive_contact_count: number;
+  risk_summary: string | null;
+}
+
+export interface AdminCustomerPortalUserRow {
+  membership_id: Uuid;
+  tenant_id: Uuid;
+  tenant_slug: string;
+  tenant_display_name: string;
+  tenant_status: TenantStatus;
+  user_id: Uuid;
+  user_full_name: string | null;
+  user_email: string | null;
+  user_is_active: boolean;
+  linked_contact_id: Uuid | null;
+  linked_contact_full_name: string | null;
+  linked_contact_email: string | null;
+  linked_contact_job_title: string | null;
+  linked_contact_is_primary: boolean;
+  linked_contact_is_active: boolean;
+  portal_role: CustomerPortalRole;
+  membership_status: MembershipStatus;
+  access_status: CustomerPortalAccessStatus;
+  can_view_all_tenant_tickets: boolean;
+  visible_ticket_count: number;
+  authorized_article_count: number;
+  last_access_at: IsoTimestamp | null;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+  created_by_full_name: string | null;
+  updated_by_full_name: string | null;
+  risk_summary: string | null;
+  missing_contact: boolean;
+  inactive_contact: boolean;
+}
+
+export interface AdminCustomerPortalUserDetailRow
+  extends AdminCustomerPortalUserRow {
+  tenant_legal_name: string;
+  public_article_count: number;
+  tenant_article_count: number;
+  customer_portal_article_count: number;
+  ticket_linked_article_count: number;
+}
+
+export interface AdminKnowledgeEntitlementRow {
+  entitlement_id: Uuid;
+  tenant_id: Uuid;
+  tenant_slug: string;
+  tenant_display_name: string;
+  article_id: Uuid;
+  article_title: string;
+  article_slug: string;
+  category_name: string | null;
+  article_visibility: KnowledgeVisibility;
+  article_status: KnowledgeArticleStatus;
+  entitlement_scope: CustomerPortalEntitlementScope;
+  entitlement_status: CustomerPortalEntitlementStatus;
+  relation_reason: string | null;
+  exposure_source: Extract<
+    CustomerPortalKnowledgeExposureSource,
+    'public' | 'customer_portal'
+  >;
+  created_by_user_id: Uuid | null;
+  created_by_full_name: string | null;
+  created_at: IsoTimestamp;
+  archived_at: IsoTimestamp | null;
+  archived_by_user_id: Uuid | null;
+  archived_by_full_name: string | null;
+}
+
+export interface AdminKnowledgeEntitlementDetailRow
+  extends AdminKnowledgeEntitlementRow {
+  published_at: IsoTimestamp | null;
+  updated_at: IsoTimestamp | null;
+  active_ticket_link_count: number;
+}
+
+export interface AdminTicketKnowledgeLinkRow {
+  ticket_knowledge_link_id: Uuid;
+  tenant_id: Uuid;
+  tenant_slug: string;
+  tenant_display_name: string;
+  ticket_id: Uuid;
+  ticket_title: string;
+  ticket_status: string;
+  article_id: Uuid;
+  article_title: string;
+  article_slug: string;
+  category_name: string | null;
+  article_visibility: KnowledgeVisibility;
+  article_status: KnowledgeArticleStatus;
+  relation_reason: string | null;
+  link_status: CustomerPortalEntitlementStatus;
+  exposure_source: Extract<CustomerPortalKnowledgeExposureSource, 'ticket_linked'>;
+  created_by_user_id: Uuid | null;
+  created_by_full_name: string | null;
+  created_at: IsoTimestamp;
+  archived_at: IsoTimestamp | null;
+  archived_by_user_id: Uuid | null;
+  archived_by_full_name: string | null;
+}
+
+export interface AdminCustomerPortalArticleCandidateRow {
+  article_id: Uuid;
+  article_title: string;
+  article_slug: string;
+  category_name: string | null;
+  article_visibility: KnowledgeVisibility;
+  article_status: KnowledgeArticleStatus;
+  knowledge_space_slug: string | null;
+  knowledge_space_display_name: string | null;
+  published_at: IsoTimestamp | null;
+}
+
+export interface AdminCustomerPortalTicketCandidateRow {
+  ticket_id: Uuid;
+  tenant_id: Uuid;
+  tenant_slug: string;
+  tenant_display_name: string;
+  ticket_title: string;
+  customer_status_label: string;
+  updated_at: IsoTimestamp;
+  requester_contact_full_name: string | null;
 }
 
 export interface RpcAdminCreateTenantPayload {
@@ -209,6 +867,68 @@ export interface RpcAdminUpdateTenantMemberStatusPayload {
 }
 
 export type RpcAdminUpdateTenantMemberStatusResponse = AdminTenantMembershipRecordRow;
+
+export interface AdminKnowledgeEntitlementRecordRow {
+  id: Uuid;
+  tenant_id: Uuid;
+  article_id: Uuid;
+  entitlement_scope: CustomerPortalEntitlementScope;
+  status: 'active';
+  relation_reason: string | null;
+  created_by_user_id: Uuid | null;
+  updated_by_user_id: Uuid | null;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+  archived_at: IsoTimestamp | null;
+  archived_by_user_id: Uuid | null;
+}
+
+export interface AdminTicketKnowledgeLinkRecordRow {
+  id: Uuid;
+  tenant_id: Uuid;
+  ticket_id: Uuid;
+  article_id: Uuid | null;
+  link_type: string;
+  note: string | null;
+  created_by_user_id: Uuid;
+  created_at: IsoTimestamp;
+  archived_at: IsoTimestamp | null;
+  archived_by_user_id: Uuid | null;
+}
+
+export interface RpcAdminGrantKnowledgeArticleEntitlementPayload {
+  p_tenant_id: Uuid;
+  p_article_id: Uuid;
+  p_entitlement_scope: CustomerPortalEntitlementScope;
+  p_relation_reason?: string | null;
+}
+
+export type RpcAdminGrantKnowledgeArticleEntitlementResponse =
+  AdminKnowledgeEntitlementRecordRow;
+
+export interface RpcAdminArchiveKnowledgeArticleEntitlementPayload {
+  p_entitlement_id: Uuid;
+}
+
+export type RpcAdminArchiveKnowledgeArticleEntitlementResponse =
+  AdminKnowledgeEntitlementRecordRow;
+
+export interface RpcAdminLinkKnowledgeArticleToTicketPayload {
+  p_tenant_id: Uuid;
+  p_ticket_id: Uuid;
+  p_article_id: Uuid;
+  p_relation_reason?: string | null;
+}
+
+export type RpcAdminLinkKnowledgeArticleToTicketResponse =
+  AdminTicketKnowledgeLinkRecordRow;
+
+export interface RpcAdminUnlinkKnowledgeArticleFromTicketPayload {
+  p_ticket_knowledge_link_id: Uuid;
+}
+
+export type RpcAdminUnlinkKnowledgeArticleFromTicketResponse =
+  AdminTicketKnowledgeLinkRecordRow;
 
 export interface RpcAdminCreateTenantContactPayload {
   p_tenant_id: Uuid;
@@ -267,6 +987,15 @@ export const KNOWLEDGE_ARTICLE_REVIEW_STATUSES = [
 ] as const;
 export type KnowledgeArticleReviewStatus =
   (typeof KNOWLEDGE_ARTICLE_REVIEW_STATUSES)[number];
+
+export const KNOWLEDGE_ARTICLE_ASSET_REVIEW_STATUSES = [
+  'pending',
+  'approved',
+  'blocked',
+  'replaced',
+] as const;
+export type KnowledgeArticleAssetReviewStatus =
+  (typeof KNOWLEDGE_ARTICLE_ASSET_REVIEW_STATUSES)[number];
 
 export const KNOWLEDGE_SPACE_STATUSES = ['draft', 'active', 'archived'] as const;
 export type KnowledgeSpaceStatus = (typeof KNOWLEDGE_SPACE_STATUSES)[number];
@@ -359,6 +1088,7 @@ export interface AdminKnowledgeArticleRecordRow {
   slug: string;
   summary: string | null;
   body_md: string;
+  tags: string[];
   source_path: string | null;
   source_hash: string | null;
   current_revision_number: number;
@@ -394,6 +1124,7 @@ export interface AdminKnowledgeArticleListItemV2Row {
   title: string;
   slug: string;
   summary: string | null;
+  tags: string[];
   source_path: string | null;
   source_hash: string | null;
   public_article_path: string | null;
@@ -449,6 +1180,7 @@ export interface AdminKnowledgeArticleEditorialDraftRow {
   slug: string;
   summary: string | null;
   body_md: string;
+  tags: string[];
   source_path: string | null;
   source_hash: string | null;
   based_on_revision_number: number;
@@ -484,6 +1216,7 @@ export interface AdminKnowledgeArticleDetailV2Row {
   slug: string;
   summary: string | null;
   body_md: string;
+  tags: string[];
   source_path: string | null;
   source_hash: string | null;
   public_article_path: string | null;
@@ -498,6 +1231,37 @@ export interface AdminKnowledgeArticleDetailV2Row {
   revisions: AdminKnowledgeArticleRevisionRow[];
   sources: AdminKnowledgeArticleSourceRow[];
   editorial_draft: AdminKnowledgeArticleEditorialDraftRow | null;
+}
+
+export interface AdminKnowledgeArticleAssetRow {
+  id: Uuid;
+  article_id: Uuid;
+  article_title: string;
+  article_slug: string;
+  article_status: KnowledgeArticleStatus;
+  article_visibility: KnowledgeVisibility;
+  knowledge_space_id: Uuid;
+  knowledge_space_slug: string;
+  category_id: Uuid | null;
+  category_name: string | null;
+  source_url: string | null;
+  source_path: string | null;
+  source_hash: string;
+  storage_bucket: string;
+  storage_object_path: string;
+  detected_mime_type: string;
+  file_size_bytes: number;
+  width: number | null;
+  height: number | null;
+  alt_text: string | null;
+  caption: string | null;
+  review_status: KnowledgeArticleAssetReviewStatus;
+  visibility: KnowledgeVisibility;
+  is_blocked: boolean;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+  reviewed_by_full_name: string | null;
+  signed_url?: string | null;
 }
 
 export interface KnowledgeReviewHumanConfirmations {
@@ -597,6 +1361,14 @@ export interface RpcAdminUpdateKnowledgeArticleDraftV2Payload {
 export type RpcAdminUpdateKnowledgeArticleDraftV2Response =
   AdminKnowledgeArticleRecordRow;
 
+export interface RpcAdminReplaceKnowledgeArticleTagsV1Payload {
+  p_article_id: Uuid;
+  p_knowledge_space_id: Uuid;
+  p_tags?: string[];
+}
+
+export type RpcAdminReplaceKnowledgeArticleTagsV1Response = string[];
+
 export interface RpcAdminArticleSpaceActionV2Payload {
   p_article_id: Uuid;
   p_knowledge_space_id: Uuid;
@@ -652,3 +1424,45 @@ export interface RpcAdminMarkKnowledgeArticleReviewedPayload {
 
 export type RpcAdminMarkKnowledgeArticleReviewedResponse =
   AdminKnowledgeArticleReviewAdvisoryRecordRow;
+
+export interface RpcAdminPrepareKnowledgeArticlePublicationEvidencePayload {
+  p_article_id: Uuid;
+  p_human_confirmations?: KnowledgeReviewHumanConfirmations | null;
+  p_review_notes?: string | null;
+}
+
+export type RpcAdminPrepareKnowledgeArticlePublicationEvidenceResponse =
+  AdminKnowledgeArticleReviewAdvisoryRecordRow;
+
+export interface RpcAdminUpsertKnowledgeArticleAssetPayload {
+  p_article_id: Uuid;
+  p_knowledge_space_id: Uuid;
+  p_source_url?: string | null;
+  p_source_path: string;
+  p_source_hash: string;
+  p_storage_object_path: string;
+  p_detected_mime_type: string;
+  p_file_size_bytes: number;
+  p_width?: number | null;
+  p_height?: number | null;
+  p_alt_text?: string | null;
+  p_caption?: string | null;
+  p_review_status?: KnowledgeArticleAssetReviewStatus;
+  p_visibility?: KnowledgeVisibility;
+  p_is_blocked?: boolean;
+}
+
+export type RpcAdminUpsertKnowledgeArticleAssetResponse =
+  AdminKnowledgeArticleAssetRow;
+
+export interface RpcAdminUpdateKnowledgeArticleAssetReviewPayload {
+  p_asset_id: Uuid;
+  p_review_status: KnowledgeArticleAssetReviewStatus;
+  p_visibility?: KnowledgeVisibility;
+  p_is_blocked?: boolean;
+  p_alt_text?: string | null;
+  p_caption?: string | null;
+}
+
+export type RpcAdminUpdateKnowledgeArticleAssetReviewResponse =
+  AdminKnowledgeArticleAssetRow;

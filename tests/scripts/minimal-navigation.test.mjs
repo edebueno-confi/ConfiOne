@@ -1,0 +1,97 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import test from 'node:test';
+import path from 'node:path';
+
+import {
+  buildMinimalNavigation,
+  resolveMinimalRouteLabel,
+} from '../../apps/web/src/features/navigation/minimal-navigation.ts';
+
+function itemIds(navigation) {
+  return navigation.flatMap((section) => section.items.map((item) => item.id));
+}
+
+test('shows the personal cockpit and CS workspace for a CS-authorized user', () => {
+  const navigation = buildMinimalNavigation({
+    pathname: '/cs/portfolio',
+    permissions: {
+      isPlatformAdmin: false,
+      roles: [],
+      hasCsPortfolioAccess: true,
+    },
+  });
+
+  assert.deepEqual(itemIds(navigation), ['home', 'cs-portfolio']);
+});
+
+test('keeps support routes available inside an authorized support workspace', () => {
+  const navigation = buildMinimalNavigation({
+    pathname: '/support/queue',
+    permissions: {
+      isPlatformAdmin: false,
+      roles: ['support_agent'],
+    },
+  });
+
+  assert.deepEqual(itemIds(navigation), [
+    'home',
+    'support-inbox',
+    'support-queue',
+    'support-tickets',
+    'support-customers',
+  ]);
+});
+
+test('shows complete operational and governance navigation to platform admins', () => {
+  const navigation = buildMinimalNavigation({
+    pathname: '/admin/tenants',
+    permissions: {
+      isPlatformAdmin: true,
+      hasCsPortfolioAccess: true,
+      hasInternalActionAreaAccess: true,
+    },
+  });
+
+  const ids = itemIds(navigation);
+
+  assert.equal(ids.includes('admin-tenants'), true);
+  assert.equal(ids.includes('admin-access'), true);
+  assert.equal(ids.includes('admin-system'), true);
+  assert.equal(ids.includes('admin-knowledge'), true);
+  assert.equal(ids.includes('support-queue'), true);
+  assert.equal(ids.includes('cs-portfolio'), true);
+});
+
+test('builds navigation from contextual screen grants for a non-admin user', () => {
+  const navigation = buildMinimalNavigation({
+    pathname: '/admin/analytics',
+    permissions: {
+      isPlatformAdmin: false,
+      roles: [],
+      screenKeys: ['home', 'analytics', 'knowledge', 'product_docs'],
+    },
+  });
+
+  const ids = itemIds(navigation);
+  assert.deepEqual(ids, ['home', 'admin-analytics', 'admin-overview', 'admin-knowledge', 'admin-product-docs']);
+});
+
+test('resolves a short operational label for the current route', () => {
+  assert.equal(resolveMinimalRouteLabel('/support/queue'), 'Fila operacional');
+  assert.equal(resolveMinimalRouteLabel('/admin/access'), 'Acessos');
+  assert.equal(resolveMinimalRouteLabel('/support/tickets/ticket-1'), 'Ticket');
+});
+
+test('support home nao oferece atalho para configuracoes administrativas', () => {
+  const source = fs.readFileSync(
+    path.resolve('apps/web/src/features/home/HomePage.tsx'),
+    'utf8',
+  );
+
+  assert.doesNotMatch(
+    source,
+    /to=["']\/admin\/settings["']/,
+    'o suporte nao deve apontar para uma configuracao protegida pelo Admin Console',
+  );
+});

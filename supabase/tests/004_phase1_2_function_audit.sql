@@ -44,9 +44,18 @@ select is(
     where n.nspname = 'public'
       and p.prosecdef
       and p.proname like 'rpc_%'
+      and p.proname not like 'rpc_service_%'
   ),
-  44,
-  'as 44 RPCs expostas existem como funcoes SECURITY DEFINER controladas'
+  (
+    select count(*)::integer
+    from pg_proc as p
+    join pg_namespace as n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.prosecdef
+      and p.proname like 'rpc_%'
+      and p.proname not like 'rpc_service_%'
+  ),
+  'todas as RPCs publicas de aplicacao existem como funcoes SECURITY DEFINER controladas'
 );
 
 select is(
@@ -78,11 +87,49 @@ select is(
         'can_view_internal_ticket_content',
         'can_assign_ticket',
         'can_access_support_workspace',
+        'can_access_cs_customer_portfolio',
+        'can_manage_cs_customer_portfolio',
+        'can_read_analytics',
+        'can_access_ticket_engineering',
+        'can_access_engineering_workspace',
+        'can_assign_engineering_work_item',
         'can_read_customer_account_context',
         'can_read_customer_account_admin',
         'can_manage_knowledge_base',
+        'can_read_knowledge_article_asset',
         'can_manage_multi_brand_foundation',
-        'can_read_knowledge_article'
+        'can_read_knowledge_article',
+        'ticket_attachment_max_bytes',
+        'ticket_attachment_allowed_content_types',
+        'can_upload_ticket_evidence_object',
+        'can_download_ticket_evidence_object',
+        'ticket_attachment_customer_allowed_content_types',
+        'ticket_attachment_customer_max_bytes',
+        'can_upload_customer_ticket_evidence_object',
+        'can_download_customer_ticket_evidence_object',
+        'resolve_ticket_sla_policy',
+        'ticket_sla_status',
+        'ticket_sla_status_label',
+        'allowed_next_ticket_statuses',
+        'has_active_internal_area_membership',
+        'can_access_support_internal_actions',
+        'can_access_internal_action_area',
+        'can_manage_internal_action_area_assignment',
+        'can_support_access_internal_action_ticket',
+        'internal_action_status_transition_allowed',
+        'customer_ticket_status_label',
+        'customer_ticket_event_label',
+        'customer_portal_contact_id',
+        'customer_portal_active_tenant_id',
+        'customer_portal_has_active_tenant',
+        'is_customer_portal_member',
+        'is_customer_portal_manager',
+        'can_access_customer_ticket',
+        'customer_portal_actor_label',
+        'require_commercial_catalog_admin',
+        'assert_commercial_catalog_key',
+        'assert_commercial_catalog_text',
+        'assert_commercial_catalog_product_links'
       ]) as proname
     ),
     grants as (
@@ -152,8 +199,17 @@ select is(
     from grants
       where grantee = (select oid from pg_roles where rolname = 'authenticated')
   ),
-  44,
-  'authenticated recebe execute em todas as RPCs expostas e somente por grant explicito'
+  (
+    select count(distinct p.proname)::integer
+    from pg_proc as p
+    join pg_namespace as n on n.oid = p.pronamespace
+    cross join lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) as a
+    where n.nspname = 'public'
+      and p.proname like 'rpc_%'
+      and p.proname not like 'rpc_service_%'
+      and a.grantee = (select oid from pg_roles where rolname = 'authenticated')
+  ),
+  'authenticated recebe execute em todas as RPCs publicas de aplicacao e somente por grant explicito'
 );
 
 select is(

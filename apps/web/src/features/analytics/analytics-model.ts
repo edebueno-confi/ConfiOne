@@ -1,0 +1,665 @@
+// Tipos e mapeadores do modulo Analytics/Dashboard Gerencial.
+// As views retornam numeric como string (PostgREST), entao normalizamos aqui.
+
+function toNumber(value: unknown): number {
+  if (value === null || value === undefined || value === '') return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizePercentage(value: unknown): number {
+  const parsed = toNumber(value);
+  const ratio = parsed > 1 ? parsed / 100 : parsed;
+  return Math.max(0, Math.min(1, ratio));
+}
+
+function toText(value: unknown): string {
+  return value === null || value === undefined ? '' : String(value);
+}
+
+export interface CommercialKpis {
+  totalDeals: number;
+  openDeals: number;
+  wonDeals: number;
+  lostDeals: number;
+  wonRevenue: number;
+  conversionRate: number;
+  avgTicket: number;
+}
+
+export interface CommercialFunnelStage {
+  stageId: string;
+  label: string;
+  displayOrder: number;
+  isWon: boolean;
+  isClosed: boolean;
+  dealCount: number;
+  stageRevenue: number;
+}
+
+export interface CommercialByOwner {
+  ownerId: string | null;
+  ownerName: string;
+  dealCount: number;
+  wonCount: number;
+  wonRevenue: number;
+}
+
+export interface CommercialByPipeline {
+  pipelineId: string;
+  label: string;
+  dealCount: number;
+  wonCount: number;
+  wonRevenue: number;
+}
+
+export interface CommercialMonthlyPoint {
+  monthStart: string;
+  createdCount: number;
+  wonCount: number;
+  wonRevenue: number;
+}
+
+export interface CsKpis {
+  totalTickets: number;
+  openTickets: number;
+  closedTickets: number;
+  closedRate: number;
+}
+
+export interface CsByStatus {
+  stageId: string;
+  label: string;
+  displayOrder: number;
+  isClosed: boolean;
+  ticketCount: number;
+  pipelineBreakdown?: CsPipelineBreakdown[];
+}
+
+export interface CsPipelineBreakdown {
+  pipelineId: string;
+  pipelineLabel: string;
+  ticketCount: number;
+}
+
+export interface CsMonthlyPoint {
+  monthStart: string;
+  createdCount: number;
+  closedCount: number;
+}
+
+export interface CsSourcePoint {
+  label: string;
+  ticketCount: number;
+}
+
+export interface CsPipelinePoint {
+  pipelineId: string;
+  label: string;
+  ticketCount: number;
+  sourceSummary?: CsSourcePoint[];
+}
+
+export interface CsOwnerPoint {
+  ownerId: string | null;
+  ownerName: string;
+  ticketCount: number;
+  pipelineBreakdown?: CsPipelineBreakdown[];
+}
+
+export interface SyncRun {
+  id: string;
+  domainKey: string | null;
+  status: 'running' | 'success' | 'error';
+  startedAt: string;
+  finishedAt: string | null;
+  dealsSynced: number;
+  ticketsSynced: number;
+  ownersSynced: number;
+  stagesSynced: number;
+  companiesSynced: number;
+  errorMessage: string | null;
+}
+
+export interface AnalyticsFilters {
+  from: string;
+  to: string;
+  ownerId: string;
+  stageId: string;
+  priority: string;
+}
+
+export interface CommercialSnapshot {
+  kpis: CommercialKpis;
+  funnel: CommercialFunnelStage[];
+  byPipeline: CommercialByPipeline[];
+  byOwner: CommercialByOwner[];
+  monthly: CommercialMonthlyPoint[];
+}
+
+export interface CsSnapshot {
+  kpis: CsKpis;
+  byStatus: CsByStatus[];
+  monthly: CsMonthlyPoint[];
+  bySource: CsSourcePoint[];
+  byPipeline: CsPipelinePoint[];
+  byOwner: CsOwnerPoint[];
+  latestTicketCreatedAt: string | null;
+}
+
+export interface FinanceKpis {
+  totalTitles: number;
+  netAmount: number;
+  receivedAmount: number;
+  balance: number;
+  overdueTitles: number;
+  overdueBalance: number;
+  receivedRate: number;
+  openTitles: number;
+  openBalance: number;
+  overdueRate: number;
+  avgDaysOverdue: number;
+  due30: number;
+  due60: number;
+  due90: number;
+}
+
+export interface FinanceBreakdown {
+  key: string;
+  titles: number;
+  balance: number;
+}
+
+export interface FinanceDebtor {
+  client: string;
+  taxId: string | null;
+  titles: number;
+  balance: number;
+}
+
+export interface FinanceMonthlyPoint {
+  month: string;
+  titles: number;
+  balance: number;
+}
+
+export interface FinanceCsBucket {
+  key: string;
+  titles: number;
+  balance: number;
+  overdueBalance: number;
+}
+
+export interface FinanceSnapshot {
+  source: 'api' | 'spreadsheet' | 'none';
+  kpis: FinanceKpis;
+  byStatus: FinanceBreakdown[];
+  byAging: FinanceBreakdown[];
+  agingDays: FinanceBreakdown[];
+  monthly: FinanceMonthlyPoint[];
+  projection: FinanceMonthlyPoint[];
+  byCategory: FinanceBreakdown[];
+  topDebtors: FinanceDebtor[];
+  csReconciliation: { matchedBalance: number; unmatchedBalance: number; byClientStatus: FinanceCsBucket[] };
+}
+
+export interface FinanceSourceStatus {
+  api: { provider: string; resource: string; configured: boolean; lastSyncAt: string | null; lastStatus: string | null; metrics: string[]; fallback: string };
+  spreadsheet: { provider: string; available: boolean; lastImportAt: string | null };
+}
+
+export interface CeoSnapshot {
+  commercial: { totalDeals: number; openDeals: number; wonDeals: number; lostDeals: number; openPipelineValue: number; wonRevenue: number; conversionRate: number; avgTicket: number; avgSalesCycleDays: number; unassignedDeals: number };
+  support: { totalTickets: number; createdTickets: number; openTickets: number; closedTickets: number; closedRate: number; highPriorityOpen: number; firstResponseSlaTracked: number; closeSlaTracked: number; sourceFilled: number; bySource: CsSourcePoint[]; byPipeline: CsPipelinePoint[]; byOwner: CsOwnerPoint[]; latestTicketCreatedAt: string | null };
+  finance: { titles: number; netAmount: number; balance: number; overdueTitles: number; overdueBalance: number; matchedTitles: number; unmatchedTitles: number };
+  financialAlerts: FinancialAlert[];
+  dataQuality: { financeTitles: number; matchedFinanceTitles: number; unmatchedFinanceTitles: number; ambiguousFinanceTitles: number; resolvedGroupTitles: number; financeSourceAt: string | null; hubspotSourceAt: string | null };
+}
+
+export interface CeoHistory {
+  currentFrom: string;
+  currentTo: string;
+  previousFrom: string;
+  previousTo: string;
+  current: CeoSnapshot;
+  previous: CeoSnapshot;
+}
+
+export interface FinancialAlert {
+  alertKey: string;
+  companyId: string | null;
+  companyName: string;
+  sourceClientName: string;
+  csOwnerId: string | null;
+  csOwnerName: string;
+  mrr: number;
+  clientStatus: string;
+  contractStatus: string;
+  overdueBalance: number;
+  overdueTitles: number;
+  maxDaysOverdue: number;
+  oldestDueDate: string | null;
+  matchConfidence: number;
+  matchMethod: string;
+  candidateCount: number;
+}
+
+export interface AmbiguousCompanyCandidate {
+  companyId: string;
+  companyName: string;
+  domain: string;
+  contractStatus: string;
+  clientStatus: string;
+  csOwnerId: string | null;
+  csOwnerName: string;
+  matchMethod: string;
+}
+
+export interface AmbiguousOverdueTitle {
+  financeId: string;
+  sourceClientName: string;
+  sourceTaxId: string;
+  documentNumber: string;
+  balance: number;
+  dueDate: string | null;
+  issuedDate: string | null;
+  candidateCount: number;
+  candidates: AmbiguousCompanyCandidate[];
+}
+
+export interface ReconciliationQualityCandidate extends AmbiguousCompanyCandidate {
+  taxId: string;
+}
+
+export interface ReconciliationQualityRow {
+  financeId: string;
+  sourceClientName: string;
+  sourceTaxId: string;
+  documentNumber: string;
+  balance: number;
+  dueDate: string | null;
+  issuedDate: string | null;
+  candidateCount: number;
+  matchStatus: 'matched' | 'unmatched' | 'ambiguous';
+  candidates: ReconciliationQualityCandidate[];
+}
+
+export interface ReconciliationQualitySummary {
+  rowsTotal: number;
+  groupsTotal?: number;
+  titlesTotal?: number;
+  matchedTitles: number;
+  unmatchedTitles: number;
+  ambiguousTitles: number;
+  matchedGroups?: number;
+  unmatchedGroups?: number;
+  ambiguousGroups?: number;
+}
+
+export interface ReconciliationQualityGroup {
+  groupKey: string;
+  sourceClientName: string;
+  sourceTaxId: string;
+  titleCount: number;
+  totalBalance: number;
+  oldestDueDate: string | null;
+  latestDueDate: string | null;
+  candidateCount: number;
+  matchStatus: ReconciliationQualityRow['matchStatus'];
+  matchedTitles: number;
+  unmatchedTitles: number;
+  ambiguousTitles: number;
+  resolutionType: 'economic_group' | null;
+  resolutionLabel: string | null;
+  resolutionMasterCompanyId: string | null;
+  resolutionMemberCompanyIds: string[];
+  resolutionNote: string | null;
+  candidates: ReconciliationQualityCandidate[];
+  titles: ReconciliationQualityRow[];
+}
+
+export interface ReconciliationQualityResult {
+  summary: ReconciliationQualitySummary;
+  rows: ReconciliationQualityRow[];
+  groups: ReconciliationQualityGroup[];
+}
+
+export interface AnalyticsSourceConfig {
+  id: string;
+  domainKey: 'commercial' | 'cs';
+  objectType: 'deal' | 'ticket';
+  pipelineId: string;
+  hubspotLabel: string | null;
+  alias: string | null;
+  label: string;
+  isActive: boolean;
+}
+
+export interface AnalyticsSharedPeriod {
+  from: string;
+  to: string;
+}
+
+export interface AnalyticsPageProps {
+  sharedPeriod?: AnalyticsSharedPeriod;
+  onSharedPeriodChange?: (period: AnalyticsSharedPeriod) => void;
+  onRetry?: () => void;
+}
+
+export const EMPTY_COMMERCIAL_KPIS: CommercialKpis = {
+  totalDeals: 0,
+  openDeals: 0,
+  wonDeals: 0,
+  lostDeals: 0,
+  wonRevenue: 0,
+  conversionRate: 0,
+  avgTicket: 0,
+};
+
+export const EMPTY_CS_KPIS: CsKpis = {
+  totalTickets: 0,
+  openTickets: 0,
+  closedTickets: 0,
+  closedRate: 0,
+};
+
+export const DEFAULT_ANALYTICS_FILTERS: AnalyticsFilters = {
+  from: '',
+  to: '',
+  ownerId: '',
+  stageId: '',
+  priority: '',
+};
+
+export function mapCommercialSnapshot(value: unknown): CommercialSnapshot {
+  const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  const rows = (key: string) => (Array.isArray(data[key]) ? data[key] : []) as Record<string, unknown>[];
+  return {
+    kpis: mapCommercialKpis((data.kpis as Record<string, unknown> | undefined) ?? null),
+    funnel: rows('funnel').map(mapCommercialFunnel),
+    byPipeline: rows('by_pipeline').map(mapCommercialByPipeline),
+    byOwner: rows('by_owner').map(mapCommercialByOwner),
+    monthly: rows('monthly').map(mapCommercialMonthly),
+  };
+}
+
+export function mapCsSnapshot(value: unknown): CsSnapshot {
+  const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  const rows = (key: string) => (Array.isArray(data[key]) ? data[key] : []) as Record<string, unknown>[];
+  return {
+    kpis: mapCsKpis((data.kpis as Record<string, unknown> | undefined) ?? null),
+    byStatus: rows('by_status').map(mapCsByStatus),
+    monthly: rows('monthly').map(mapCsMonthly),
+    bySource: rows('by_source').map((row) => ({ label: toText(row.label) || 'Sem fonte', ticketCount: toNumber(row.ticket_count) })),
+    byPipeline: rows('by_pipeline').map((row) => ({ pipelineId: toText(row.pipeline_id), label: toText(row.label) || 'Pipeline sem nome', ticketCount: toNumber(row.ticket_count), sourceSummary: Array.isArray(row.source_summary) ? row.source_summary.map((source) => { const item = (source && typeof source === 'object' ? source : {}) as Record<string, unknown>; return { label: toText(item.label) || 'Sem fonte', ticketCount: toNumber(item.ticket_count) }; }) : [] })),
+    byOwner: rows('by_owner').map((row) => ({ ownerId: row.owner_id ? toText(row.owner_id) : null, ownerName: toText(row.owner_name) || 'Sem responsavel', ticketCount: toNumber(row.ticket_count), pipelineBreakdown: mapCsPipelineBreakdown(row.pipeline_breakdown) })),
+    latestTicketCreatedAt: data.latest_ticket_created_at ? toText(data.latest_ticket_created_at) : null,
+  };
+}
+
+export function mapFinanceSnapshot(value: unknown): FinanceSnapshot {
+  const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  const rows = (key: string) => (Array.isArray(data[key]) ? data[key] : []) as Record<string, unknown>[];
+  const recon = (data.cs_reconciliation && typeof data.cs_reconciliation === 'object' ? data.cs_reconciliation : {}) as Record<string, unknown>;
+  const reconRows = (Array.isArray(recon.by_client_status) ? recon.by_client_status : []) as Record<string, unknown>[];
+  const sourceValue = data.source === 'api' || data.source === 'spreadsheet' ? data.source : 'none';
+  return {
+    source: sourceValue as FinanceSnapshot['source'],
+    kpis: mapFinanceKpis((data.kpis as Record<string, unknown> | undefined) ?? null),
+    byStatus: rows('by_status').map((row) => mapFinanceBreakdown(row, 'status')),
+    byAging: rows('by_aging').map((row) => mapFinanceBreakdown(row, 'bucket')),
+    agingDays: rows('aging_days').map((row) => mapFinanceBreakdown(row, 'bucket')),
+    monthly: rows('monthly').map((row) => ({ month: toText(row.month), titles: toNumber(row.titles), balance: toNumber(row.balance) })),
+    projection: rows('projection').map((row) => ({ month: toText(row.month), titles: toNumber(row.titles), balance: toNumber(row.balance) })),
+    byCategory: rows('by_category').map((row) => mapFinanceBreakdown(row, 'key')),
+    topDebtors: rows('top_debtors').map((row) => ({ client: toText(row.client) || 'Indisponível', taxId: toText(row.tax_id) || null, titles: toNumber(row.titles), balance: toNumber(row.balance) })),
+    csReconciliation: {
+      matchedBalance: toNumber(recon.matched_balance),
+      unmatchedBalance: toNumber(recon.unmatched_balance),
+      byClientStatus: reconRows.map((row) => ({ key: toText(row.key) || 'Indisponível', titles: toNumber(row.titles), balance: toNumber(row.balance), overdueBalance: toNumber(row.overdue_balance) })),
+    },
+  };
+}
+
+export function mapFinanceSourceStatus(value: unknown): FinanceSourceStatus {
+  const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  const api = (data.api && typeof data.api === 'object' ? data.api : {}) as Record<string, unknown>;
+  const spreadsheet = (data.spreadsheet && typeof data.spreadsheet === 'object' ? data.spreadsheet : {}) as Record<string, unknown>;
+  return {
+    api: { provider: toText(api.provider) || 'Omie', resource: toText(api.resource) || 'Contas a Receber', configured: Boolean(api.configured), lastSyncAt: api.last_sync_at ? toText(api.last_sync_at) : null, lastStatus: api.last_status ? toText(api.last_status) : null, metrics: Array.isArray(api.metrics) ? api.metrics.map(toText).filter(Boolean) : [], fallback: toText(api.fallback) },
+    spreadsheet: { provider: toText(spreadsheet.provider) || 'Planilha exportada do Omie', available: Boolean(spreadsheet.available), lastImportAt: spreadsheet.last_import_at ? toText(spreadsheet.last_import_at) : null },
+  };
+}
+
+export function mapCeoSnapshot(value: unknown): CeoSnapshot {
+  const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  const section = (key: string) => (data[key] && typeof data[key] === 'object' ? data[key] : {}) as Record<string, unknown>;
+  const c = section('commercial'); const s = section('support'); const f = section('finance');
+  const financialAlerts = Array.isArray(data.financial_alerts) ? data.financial_alerts : [];
+  const quality = section('data_quality');
+  return {
+    commercial: { totalDeals: toNumber(c.total_deals), openDeals: toNumber(c.open_deals), wonDeals: toNumber(c.won_deals), lostDeals: toNumber(c.lost_deals), openPipelineValue: toNumber(c.open_pipeline_value), wonRevenue: toNumber(c.won_revenue), conversionRate: toNumber(c.conversion_rate), avgTicket: toNumber(c.avg_ticket), avgSalesCycleDays: toNumber(c.avg_sales_cycle_days), unassignedDeals: toNumber(c.unassigned_deals) },
+    support: { totalTickets: toNumber(s.total_tickets), createdTickets: toNumber(s.created_tickets || s.total_tickets), openTickets: toNumber(s.open_tickets), closedTickets: toNumber(s.closed_tickets), closedRate: toNumber(s.closed_rate), highPriorityOpen: toNumber(s.high_priority_open), firstResponseSlaTracked: toNumber(s.first_response_sla_tracked), closeSlaTracked: toNumber(s.close_sla_tracked), sourceFilled: toNumber(s.source_filled), bySource: Array.isArray(s.by_source) ? s.by_source.map((row) => { const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>; return { label: toText(item.label) || 'Sem fonte', ticketCount: toNumber(item.ticket_count) }; }) : [], byPipeline: Array.isArray(s.by_pipeline) ? s.by_pipeline.map((row) => { const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>; return { pipelineId: toText(item.pipeline_id), label: toText(item.label) || 'Pipeline sem nome', ticketCount: toNumber(item.ticket_count) }; }) : [], byOwner: Array.isArray(s.by_owner) ? s.by_owner.map((row) => { const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>; return { ownerId: item.owner_id ? toText(item.owner_id) : null, ownerName: toText(item.owner_name) || 'Sem responsavel', ticketCount: toNumber(item.ticket_count) }; }) : [], latestTicketCreatedAt: s.latest_ticket_created_at ? toText(s.latest_ticket_created_at) : null },
+    finance: { titles: toNumber(f.titles), netAmount: toNumber(f.net_amount), balance: toNumber(f.balance), overdueTitles: toNumber(f.overdue_titles), overdueBalance: toNumber(f.overdue_balance), matchedTitles: toNumber(f.matched_titles), unmatchedTitles: toNumber(f.unmatched_titles) },
+    financialAlerts: financialAlerts.map((row) => { const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>; return { alertKey: toText(item.alert_key), companyId: item.company_id ? toText(item.company_id) : null, companyName: toText(item.company_name) || 'Cliente não reconciliado', sourceClientName: toText(item.source_client_name), csOwnerId: item.cs_owner_id ? toText(item.cs_owner_id) : null, csOwnerName: toText(item.cs_owner_name), mrr: toNumber(item.mrr), clientStatus: toText(item.client_status), contractStatus: toText(item.contract_status), overdueBalance: toNumber(item.overdue_balance), overdueTitles: toNumber(item.overdue_titles), maxDaysOverdue: toNumber(item.max_days_overdue), oldestDueDate: item.oldest_due_date ? toText(item.oldest_due_date) : null, matchConfidence: toNumber(item.match_confidence), matchMethod: toText(item.match_method), candidateCount: toNumber(item.candidate_count) }; }),
+    dataQuality: { financeTitles: toNumber(quality.finance_titles), matchedFinanceTitles: toNumber(quality.matched_finance_titles), unmatchedFinanceTitles: toNumber(quality.unmatched_finance_titles), ambiguousFinanceTitles: toNumber(quality.ambiguous_finance_titles), resolvedGroupTitles: toNumber(quality.resolved_group_titles), financeSourceAt: quality.finance_source_at ? toText(quality.finance_source_at) : null, hubspotSourceAt: quality.hubspot_source_at ? toText(quality.hubspot_source_at) : null },
+  };
+}
+
+export function mapCeoHistory(value: unknown): CeoHistory {
+  const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  return {
+    currentFrom: toText(data.current_from),
+    currentTo: toText(data.current_to),
+    previousFrom: toText(data.previous_from),
+    previousTo: toText(data.previous_to),
+    current: mapCeoSnapshot(data.current),
+    previous: mapCeoSnapshot(data.previous),
+  };
+}
+
+export function mapReconciliationQuality(value: unknown): ReconciliationQualityResult {
+  const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  const summary = (data.summary && typeof data.summary === 'object' ? data.summary : {}) as Record<string, unknown>;
+  const rows = Array.isArray(data.rows) ? data.rows : [];
+  const mapCandidate = (candidate: unknown): ReconciliationQualityCandidate => { const entry = (candidate && typeof candidate === 'object' ? candidate : {}) as Record<string, unknown>; return { companyId: toText(entry.company_id), companyName: toText(entry.company_name), domain: toText(entry.domain), taxId: toText(entry.tax_id), contractStatus: toText(entry.contract_status), clientStatus: toText(entry.client_status), csOwnerId: entry.cs_owner_id ? toText(entry.cs_owner_id) : null, csOwnerName: toText(entry.cs_owner_name), matchMethod: toText(entry.match_method) }; };
+  const mapRow = (row: unknown): ReconciliationQualityRow => {
+      const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>;
+      const candidates = Array.isArray(item.candidates) ? item.candidates : [];
+      return {
+        financeId: toText(item.finance_id), sourceClientName: toText(item.source_client_name), sourceTaxId: toText(item.source_tax_id), documentNumber: toText(item.document_number), balance: toNumber(item.balance), dueDate: item.due_date ? toText(item.due_date) : null, issuedDate: item.issued_date ? toText(item.issued_date) : null, candidateCount: toNumber(item.candidate_count), matchStatus: (toText(item.match_status) || 'unmatched') as ReconciliationQualityRow['matchStatus'],
+        candidates: candidates.map(mapCandidate),
+      };
+    };
+  const groups = Array.isArray(data.groups) ? data.groups.map((group) => { const item = (group && typeof group === 'object' ? group : {}) as Record<string, unknown>; const candidates = Array.isArray(item.candidates) ? item.candidates : []; const titles = Array.isArray(item.titles) ? item.titles : []; const memberIds = Array.isArray(item.resolution_member_company_ids) ? item.resolution_member_company_ids.map(toText).filter(Boolean) : []; return { groupKey: toText(item.group_key), sourceClientName: toText(item.source_client_name), sourceTaxId: toText(item.source_tax_id), titleCount: toNumber(item.title_count), totalBalance: toNumber(item.total_balance), oldestDueDate: item.oldest_due_date ? toText(item.oldest_due_date) : null, latestDueDate: item.latest_due_date ? toText(item.latest_due_date) : null, candidateCount: toNumber(item.candidate_count), matchStatus: (toText(item.match_status) || 'unmatched') as ReconciliationQualityRow['matchStatus'], matchedTitles: toNumber(item.matched_titles), unmatchedTitles: toNumber(item.unmatched_titles), ambiguousTitles: toNumber(item.ambiguous_titles), resolutionType: item.resolution_type ? toText(item.resolution_type) as 'economic_group' : null, resolutionLabel: item.resolution_label ? toText(item.resolution_label) : null, resolutionMasterCompanyId: item.resolution_master_company_id ? toText(item.resolution_master_company_id) : null, resolutionMemberCompanyIds: memberIds, resolutionNote: item.resolution_note ? toText(item.resolution_note) : null, candidates: candidates.map(mapCandidate), titles: titles.map(mapRow) }; }) : [];
+  return {
+    summary: { rowsTotal: toNumber(summary.groups_total ?? summary.rows_total), groupsTotal: toNumber(summary.groups_total), titlesTotal: toNumber(summary.titles_total ?? summary.rows_total), matchedTitles: toNumber(summary.matched_titles), unmatchedTitles: toNumber(summary.unmatched_titles), ambiguousTitles: toNumber(summary.ambiguous_titles), matchedGroups: toNumber(summary.matched_groups), unmatchedGroups: toNumber(summary.unmatched_groups), ambiguousGroups: toNumber(summary.ambiguous_groups) },
+    rows: rows.map(mapRow),
+    groups,
+  };
+}
+
+export function mapAnalyticsSourceConfig(row: Record<string, unknown>): AnalyticsSourceConfig {
+  const pipelineId = toText(row.hubspot_pipeline_id);
+  const hubspotLabel = row.hubspot_pipeline_label ? toText(row.hubspot_pipeline_label) : null;
+  const alias = row.label ? toText(row.label) : null;
+  return { id: toText(row.id), domainKey: toText(row.domain_key) as AnalyticsSourceConfig['domainKey'], objectType: toText(row.object_type) as AnalyticsSourceConfig['objectType'], pipelineId, hubspotLabel, alias, label: alias || hubspotLabel || pipelineId, isActive: Boolean(row.is_active) };
+}
+
+export function mapAmbiguousOverdueTitles(value: unknown): AmbiguousOverdueTitle[] {
+  const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  const rows = Array.isArray(data.titles) ? data.titles : [];
+  return rows.map((row) => {
+    const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>;
+    const candidates = Array.isArray(item.candidates) ? item.candidates : [];
+    return {
+      financeId: toText(item.finance_id),
+      sourceClientName: toText(item.source_client_name),
+      sourceTaxId: toText(item.source_tax_id),
+      documentNumber: toText(item.document_number),
+      balance: toNumber(item.balance),
+      dueDate: item.due_date ? toText(item.due_date) : null,
+      issuedDate: item.issued_date ? toText(item.issued_date) : null,
+      candidateCount: toNumber(item.candidate_count),
+      candidates: candidates.map((candidate) => {
+        const entry = (candidate && typeof candidate === 'object' ? candidate : {}) as Record<string, unknown>;
+        return { companyId: toText(entry.company_id), companyName: toText(entry.company_name), domain: toText(entry.domain), contractStatus: toText(entry.contract_status), clientStatus: toText(entry.client_status), csOwnerId: entry.cs_owner_id ? toText(entry.cs_owner_id) : null, csOwnerName: toText(entry.cs_owner_name), matchMethod: toText(entry.match_method) };
+      }),
+    };
+  });
+}
+
+export function mapFinanceKpis(row: Record<string, unknown> | null): FinanceKpis {
+  if (!row) return { totalTitles: 0, netAmount: 0, receivedAmount: 0, balance: 0, overdueTitles: 0, overdueBalance: 0, receivedRate: 0, openTitles: 0, openBalance: 0, overdueRate: 0, avgDaysOverdue: 0, due30: 0, due60: 0, due90: 0 };
+  return {
+    totalTitles: toNumber(row.total_titles),
+    netAmount: toNumber(row.net_amount),
+    receivedAmount: toNumber(row.received_amount),
+    balance: toNumber(row.balance),
+    overdueTitles: toNumber(row.overdue_titles),
+    overdueBalance: toNumber(row.overdue_balance),
+    receivedRate: normalizePercentage(row.received_rate),
+    openTitles: toNumber(row.open_titles),
+    openBalance: toNumber(row.open_balance),
+    overdueRate: normalizePercentage(row.overdue_rate),
+    avgDaysOverdue: toNumber(row.avg_days_overdue),
+    due30: toNumber(row.due_30),
+    due60: toNumber(row.due_60),
+    due90: toNumber(row.due_90),
+  };
+}
+
+function mapFinanceBreakdown(row: Record<string, unknown>, key: string): FinanceBreakdown {
+  return { key: toText(row[key]) || 'Indisponível', titles: toNumber(row.titles), balance: toNumber(row.balance) };
+}
+
+export function mapCommercialKpis(row: Record<string, unknown> | null): CommercialKpis {
+  if (!row) return EMPTY_COMMERCIAL_KPIS;
+  return {
+    totalDeals: toNumber(row.total_deals),
+    openDeals: toNumber(row.open_deals),
+    wonDeals: toNumber(row.won_deals),
+    lostDeals: toNumber(row.lost_deals),
+    wonRevenue: toNumber(row.won_revenue),
+    conversionRate: toNumber(row.conversion_rate),
+    avgTicket: toNumber(row.avg_ticket),
+  };
+}
+
+export function mapCommercialFunnel(row: Record<string, unknown>): CommercialFunnelStage {
+  return {
+    stageId: toText(row.stage_id),
+    label: toText(row.label),
+    displayOrder: toNumber(row.display_order),
+    isWon: Boolean(row.is_won),
+    isClosed: Boolean(row.is_closed),
+    dealCount: toNumber(row.deal_count),
+    stageRevenue: toNumber(row.stage_revenue),
+  };
+}
+
+export function mapCommercialByOwner(row: Record<string, unknown>): CommercialByOwner {
+  return {
+    ownerId: row.owner_id ? toText(row.owner_id) : null,
+    ownerName: toText(row.owner_name) || 'Sem responsavel',
+    dealCount: toNumber(row.deal_count),
+    wonCount: toNumber(row.won_count),
+    wonRevenue: toNumber(row.won_revenue),
+  };
+}
+
+export function mapCommercialByPipeline(row: Record<string, unknown>): CommercialByPipeline {
+  return {
+    pipelineId: toText(row.pipeline_id),
+    label: toText(row.label) || 'Pipeline sem nome',
+    dealCount: toNumber(row.deal_count),
+    wonCount: toNumber(row.won_count),
+    wonRevenue: toNumber(row.won_revenue),
+  };
+}
+
+export function mapCommercialMonthly(row: Record<string, unknown>): CommercialMonthlyPoint {
+  return {
+    monthStart: toText(row.month_start),
+    createdCount: toNumber(row.created_count),
+    wonCount: toNumber(row.won_count),
+    wonRevenue: toNumber(row.won_revenue),
+  };
+}
+
+export function mapCsKpis(row: Record<string, unknown> | null): CsKpis {
+  if (!row) return EMPTY_CS_KPIS;
+  return {
+    totalTickets: toNumber(row.total_tickets),
+    openTickets: toNumber(row.open_tickets),
+    closedTickets: toNumber(row.closed_tickets),
+    closedRate: toNumber(row.closed_rate),
+  };
+}
+
+export function mapCsByStatus(row: Record<string, unknown>): CsByStatus {
+  return {
+    stageId: toText(row.stage_id),
+    label: toText(row.label),
+    displayOrder: toNumber(row.display_order),
+    isClosed: Boolean(row.is_closed),
+    ticketCount: toNumber(row.ticket_count),
+    pipelineBreakdown: mapCsPipelineBreakdown(row.pipeline_breakdown),
+  };
+}
+
+function mapCsPipelineBreakdown(value: unknown): CsPipelineBreakdown[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((row) => {
+    const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>;
+    return { pipelineId: toText(item.pipeline_id), pipelineLabel: toText(item.pipeline_label) || 'Pipeline sem nome', ticketCount: toNumber(item.ticket_count) };
+  });
+}
+
+export function mapCsMonthly(row: Record<string, unknown>): CsMonthlyPoint {
+  return {
+    monthStart: toText(row.month_start),
+    createdCount: toNumber(row.created_count),
+    closedCount: toNumber(row.closed_count),
+  };
+}
+
+export function mapSyncRun(row: Record<string, unknown> | null): SyncRun | null {
+  if (!row) return null;
+  return {
+    id: toText(row.id),
+    domainKey: row.domain_key ? toText(row.domain_key) : null,
+    status: (toText(row.status) || 'running') as SyncRun['status'],
+    startedAt: toText(row.started_at),
+    finishedAt: row.finished_at ? toText(row.finished_at) : null,
+    dealsSynced: toNumber(row.deals_synced),
+    ticketsSynced: toNumber(row.tickets_synced),
+    ownersSynced: toNumber(row.owners_synced),
+    stagesSynced: toNumber(row.stages_synced),
+    companiesSynced: toNumber(row.companies_synced),
+    errorMessage: row.error_message ? toText(row.error_message) : null,
+  };
+}
+
+// Formatadores de apresentacao (pt-BR).
+export function formatCurrencyBRL(value: number): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+export function formatPercent(ratio: number): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'percent',
+    maximumFractionDigits: 1,
+  }).format(ratio);
+}
+
+export function formatMonthLabel(monthStart: string): string {
+  if (!monthStart) return '';
+  const date = new Date(monthStart);
+  if (Number.isNaN(date.getTime())) return monthStart;
+  return new Intl.DateTimeFormat('pt-BR', { month: 'short', year: '2-digit' }).format(date);
+}

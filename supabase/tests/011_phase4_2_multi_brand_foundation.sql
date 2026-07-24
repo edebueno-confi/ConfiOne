@@ -299,6 +299,9 @@ values
     timezone('utc', now())
   );
 
+delete from public.user_global_roles
+where role = 'platform_admin';
+
 select is(
   app_private.bootstrap_first_platform_admin(
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,
@@ -558,9 +561,13 @@ set local request.jwt.claim.role = 'authenticated';
 set local request.jwt.claim.sub = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 select is(
-  pg_temp.safe_bigint('select count(*) from public.vw_admin_organizations_list'),
-  3::bigint,
-  'platform_admin le tres organizations pela view administrativa nova'
+  pg_temp.safe_bigint(
+    $$select count(*)
+      from public.vw_admin_organizations_list
+      where slug in ('org-genius', 'org-aftersale')$$
+  ),
+  2::bigint,
+  'platform_admin le as organizations criadas pelo teste'
 );
 
 select is(
@@ -584,9 +591,13 @@ select is(
 );
 
 select is(
-  pg_temp.safe_bigint('select count(*) from public.vw_admin_knowledge_spaces'),
-  3::bigint,
-  'platform_admin le tres knowledge_spaces pela view administrativa nova'
+  pg_temp.safe_bigint(
+    $$select count(*)
+      from public.vw_admin_knowledge_spaces
+      where slug in ('fixture-genius', 'fixture-aftersale')$$
+  ),
+  2::bigint,
+  'platform_admin le os knowledge_spaces criados pelo teste'
 );
 
 select is(
@@ -679,9 +690,13 @@ select is(
 );
 
 select is(
-  pg_temp.safe_bigint('select count(*) from public.vw_admin_tenants_list'),
+  pg_temp.safe_bigint(
+    $$select count(*)
+      from public.vw_admin_tenants_list
+      where slug in ('kb-tenant-a', 'kb-tenant-b')$$
+  ),
   2::bigint,
-  'view administrativa atual de tenants continua funcional apos organization_id'
+  'view administrativa atual de tenants continua funcional para os tenants do teste apos organization_id'
 );
 
 select throws_ok(

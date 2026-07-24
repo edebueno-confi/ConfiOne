@@ -1,4 +1,5 @@
 import { toAppError } from '../../app/errors';
+import { readRuntimeConfig } from '../../app/runtime-config';
 import { requireSupabaseBrowserClient } from '../../app/supabase-browser';
 import type {
   CustomerIntegrationEnvironment,
@@ -6,6 +7,8 @@ import type {
   CustomerIntegrationType,
   CustomerOperationalStatus,
   CustomerProductLine,
+  EngineeringWorkItemType,
+  InternalActionUpdateKind,
   KnowledgeArticleStatus,
   KnowledgeArticleVisibility,
   RpcAddInternalTicketNotePayload,
@@ -18,12 +21,33 @@ import type {
   RpcCloseTicketResponse,
   RpcCreateTicketPayload,
   RpcCreateTicketResponse,
+  RpcInternalActionAddEvidenceLinkPayload,
+  RpcInternalActionAddEvidenceLinkResponse,
+  RpcSupportAcceptInternalActionReturnPayload,
+  RpcSupportAcceptInternalActionReturnResponse,
+  RpcSupportCloseInternalActionPayload,
+  RpcSupportCloseInternalActionResponse,
+  RpcSupportCreateInternalActionPayload,
+  RpcSupportCreateInternalActionResponse,
+  RpcSupportCreateTicketAttachmentUploadResponse,
+  RpcSupportGetTicketAttachmentDownloadUrlResponse,
+  RpcSupportRequestInternalActionFollowupPayload,
+  RpcSupportRequestInternalActionFollowupResponse,
+  RpcSupportRegisterTicketAttachmentResponse,
+  RpcSupportUpdateTicketClassificationPayload,
+  RpcSupportUpdateTicketClassificationResponse,
+  RpcSupportUpdateTicketPrioritySeverityPayload,
+  RpcSupportUpdateTicketPrioritySeverityResponse,
   RpcReopenTicketPayload,
   RpcReopenTicketResponse,
   RpcSupportArchiveTicketArticleLinkPayload,
   RpcSupportArchiveTicketArticleLinkResponse,
+  RpcSupportCreateEngineeringWorkItemFromTicketPayload,
+  RpcSupportCreateEngineeringWorkItemFromTicketResponse,
   RpcSupportLinkTicketArticlePayload,
   RpcSupportLinkTicketArticleResponse,
+  RpcSupportLinkTicketToEngineeringWorkItemPayload,
+  RpcSupportLinkTicketToEngineeringWorkItemResponse,
   RpcSupportMarkArticleNeedsUpdatePayload,
   RpcSupportMarkArticleNeedsUpdateResponse,
   RpcSupportMarkDocumentationGapPayload,
@@ -31,18 +55,31 @@ import type {
   RpcUpdateTicketStatusPayload,
   RpcUpdateTicketStatusResponse,
   SupportAssignableAgent,
+  SupportTicketIntakeContact,
+  SupportTicketIntakeTenant,
   SupportCustomerAccountAlert,
   SupportCustomerAccountContext,
   SupportCustomerAccountCustomization,
   SupportCustomerAccountFeature,
   SupportCustomerAccountIntegration,
+  SupportCustomerProductContext,
+  SupportCustomerProductContextFeature,
+  SupportCustomerProductContextOwner,
   SupportCustomer360,
   SupportKnowledgeArticlePickerItem,
+  SupportInternalActionTargetArea,
+  SupportInternalActionDetail,
+  SupportInternalActionTimelineEntry,
   SupportCustomerRecentEventsWindow,
   SupportCustomerRecentTicketsWindow,
+  SupportTicketAttachment,
+  SupportTicketClassificationOption,
   SupportTicketDetail,
+  SupportTicketEngineeringLink,
+  SupportTicketInternalAction,
   SupportTicketKnowledgeLink,
   SupportTicketQueueItem,
+  SupportTicketQueuePage,
   SupportTicketTimelineItem,
   SupportTicketTimelineRecentWindow,
   TicketPriority,
@@ -54,6 +91,65 @@ import type {
 
 function requireClient() {
   return requireSupabaseBrowserClient();
+}
+
+function requireSupabaseFunctionBaseUrl() {
+  const config = readRuntimeConfig();
+
+  if (!config.ok) {
+    throw new Error('As funções seguras do Supabase não estão disponíveis neste ambiente.');
+  }
+
+  return {
+    supabaseUrl: config.config.supabaseUrl.replace(/\/$/, ''),
+    supabaseAnonKey: config.config.supabaseAnonKey,
+  };
+}
+
+async function requireActiveSessionToken() {
+  const client = requireClient();
+  const {
+    data: { session },
+    error,
+  } = await client.auth.getSession();
+
+  if (error) {
+    throw new Error('Falha ao recuperar a sessão ativa antes de chamar o backend seguro.');
+  }
+
+  if (!session?.access_token) {
+    throw new Error('A sessão ativa expirou antes da chamada segura.');
+  }
+
+  return session.access_token;
+}
+
+async function callSupabaseFunctionJson<T>(
+  relativeUrl: string,
+  init: RequestInit = {},
+): Promise<T> {
+  const { supabaseUrl, supabaseAnonKey } = requireSupabaseFunctionBaseUrl();
+  const accessToken = await requireActiveSessionToken();
+  const response = await fetch(`${supabaseUrl}${relativeUrl}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      apikey: supabaseAnonKey,
+      ...(init.headers ?? {}),
+    },
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; [key: string]: unknown }
+    | null;
+
+  if (!response.ok) {
+    throw new Error(
+      payload?.error ?? 'Falha ao chamar a função segura vinculada às evidências do ticket.',
+    );
+  }
+
+  return payload as T;
 }
 
 function mapPermissionFlags(row: Record<string, unknown>) {
@@ -81,9 +177,36 @@ function mapQueueItem(row: Record<string, unknown>): SupportTicketQueueItem {
     requesterContactEmail: (row.requester_contact_email as string | null) ?? null,
     title: String(row.title),
     source: row.source as SupportTicketQueueItem['source'],
+    originKey: row.origin_key as SupportTicketQueueItem['originKey'],
+    originLabel: String(row.origin_label ?? 'Origem indisponivel'),
+    channelKey: row.channel_key as SupportTicketQueueItem['channelKey'],
+    channelLabel: String(row.channel_label ?? 'Canal indisponivel'),
+    canReplyNow: Boolean(row.can_reply_now),
+    replyMode: row.reply_mode as SupportTicketQueueItem['replyMode'],
+    reasonIfUnavailable: (row.reason_if_unavailable as string | null) ?? null,
     status: row.status as SupportTicketQueueItem['status'],
     priority: row.priority as SupportTicketQueueItem['priority'],
     severity: row.severity as SupportTicketQueueItem['severity'],
+    categoryId: (row.category_id as string | null) ?? null,
+    categorySlug: (row.category_slug as string | null) ?? null,
+    categoryName: (row.category_name as string | null) ?? null,
+    categoryDescription: (row.category_description as string | null) ?? null,
+    currentOperationalReasonId:
+      (row.current_operational_reason_id as string | null) ?? null,
+    currentOperationalReasonName:
+      (row.current_operational_reason_name as string | null) ?? null,
+    slaPolicyId: (row.sla_policy_id as string | null) ?? null,
+    slaPolicyName: (row.sla_policy_name as string | null) ?? null,
+    slaPolicyScope:
+      (row.sla_policy_scope as SupportTicketQueueItem['slaPolicyScope'] | null) ?? 'none',
+    slaBusinessCalendarName: (row.sla_business_calendar_name as string | null) ?? null,
+    slaBusinessCalendarTimezone: (row.sla_business_calendar_timezone as string | null) ?? null,
+    firstResponseDueAt: (row.first_response_due_at as string | null) ?? null,
+    resolutionDueAt: (row.resolution_due_at as string | null) ?? null,
+    slaStatus: row.sla_status as SupportTicketQueueItem['slaStatus'],
+    slaStatusLabel: String(row.sla_status_label ?? 'Sem politica definida'),
+    isSlaAvailable: Boolean(row.is_sla_available),
+    slaReference: String(row.sla_reference ?? 'Governanca interna.'),
     createdByUserId: String(row.created_by_user_id),
     createdByFullName: (row.created_by_full_name as string | null) ?? null,
     assignedToUserId: (row.assigned_to_user_id as string | null) ?? null,
@@ -117,9 +240,44 @@ function mapTicketDetail(row: Record<string, unknown>): SupportTicketDetail {
     title: String(row.title),
     description: String(row.description),
     source: row.source as SupportTicketDetail['source'],
+    originKey: row.origin_key as SupportTicketDetail['originKey'],
+    originLabel: String(row.origin_label ?? 'Origem indisponivel'),
+    channelKey: row.channel_key as SupportTicketDetail['channelKey'],
+    channelLabel: String(row.channel_label ?? 'Canal indisponivel'),
+    canReplyNow: Boolean(row.can_reply_now),
+    replyMode: row.reply_mode as SupportTicketDetail['replyMode'],
+    reasonIfUnavailable: (row.reason_if_unavailable as string | null) ?? null,
     status: row.status as SupportTicketDetail['status'],
     priority: row.priority as SupportTicketDetail['priority'],
     severity: row.severity as SupportTicketDetail['severity'],
+    categoryId: (row.category_id as string | null) ?? null,
+    categorySlug: (row.category_slug as string | null) ?? null,
+    categoryName: (row.category_name as string | null) ?? null,
+    categoryDescription: (row.category_description as string | null) ?? null,
+    initialOperationalReasonId:
+      (row.initial_operational_reason_id as string | null) ?? null,
+    initialOperationalReasonName:
+      (row.initial_operational_reason_name as string | null) ?? null,
+    currentOperationalReasonId:
+      (row.current_operational_reason_id as string | null) ?? null,
+    currentOperationalReasonName:
+      (row.current_operational_reason_name as string | null) ?? null,
+    slaPolicyId: (row.sla_policy_id as string | null) ?? null,
+    slaPolicyName: (row.sla_policy_name as string | null) ?? null,
+    slaPolicyScope:
+      (row.sla_policy_scope as SupportTicketDetail['slaPolicyScope'] | null) ?? 'none',
+    slaBusinessCalendarKey: (row.sla_business_calendar_key as string | null) ?? null,
+    slaBusinessCalendarName: (row.sla_business_calendar_name as string | null) ?? null,
+    slaBusinessCalendarTimezone: (row.sla_business_calendar_timezone as string | null) ?? null,
+    firstResponseDueAt: (row.first_response_due_at as string | null) ?? null,
+    resolutionDueAt: (row.resolution_due_at as string | null) ?? null,
+    slaStatus: row.sla_status as SupportTicketDetail['slaStatus'],
+    slaStatusLabel: String(row.sla_status_label ?? 'Sem politica definida'),
+    isSlaAvailable: Boolean(row.is_sla_available),
+    slaReference: String(row.sla_reference ?? 'Governanca interna.'),
+    allowedNextStatuses: Array.isArray(row.allowed_next_statuses)
+      ? (row.allowed_next_statuses as SupportTicketDetail['allowedNextStatuses'])
+      : [],
     closeReason: (row.close_reason as string | null) ?? null,
     createdByUserId: String(row.created_by_user_id),
     createdByFullName: (row.created_by_full_name as string | null) ?? null,
@@ -159,6 +317,23 @@ function mapTimelineItem(row: Record<string, unknown>): SupportTicketTimelineIte
       row.metadata && typeof row.metadata === 'object' && !Array.isArray(row.metadata)
         ? (row.metadata as JsonObject)
         : ({} as JsonObject),
+    communicationDirection:
+      row.communication_direction as SupportTicketTimelineItem['communicationDirection'],
+    communicationChannel:
+      row.communication_channel as SupportTicketTimelineItem['communicationChannel'],
+    communicationChannelLabel: String(row.communication_channel_label ?? 'Canal indisponivel'),
+    isCustomerVisible: Boolean(row.is_customer_visible),
+    deliveryChannel:
+      (row.delivery_channel as SupportTicketTimelineItem['deliveryChannel'] | null) ?? null,
+    deliveryStatus:
+      (row.delivery_status as SupportTicketTimelineItem['deliveryStatus'] | null) ?? null,
+    deliveryProviderState:
+      (row.delivery_provider_state as SupportTicketTimelineItem['deliveryProviderState'] | null) ??
+      null,
+    deliveryStatusLabel: (row.delivery_status_label as string | null) ?? null,
+    deliveryReasonIfBlocked: (row.delivery_reason_if_blocked as string | null) ?? null,
+    deliveryDeliveredAt: (row.delivery_delivered_at as string | null) ?? null,
+    deliveryFailedAt: (row.delivery_failed_at as string | null) ?? null,
   };
 
   return base as SupportTicketTimelineItem;
@@ -365,7 +540,55 @@ function mapTicketKnowledgeLink(row: Record<string, unknown>): SupportTicketKnow
       (row.article_visibility as KnowledgeArticleVisibility | null) ?? null,
     articleStatus: (row.article_status as KnowledgeArticleStatus | null) ?? null,
     publicArticlePath: (row.public_article_path as string | null) ?? null,
+    canSendToCustomer: Boolean(row.can_send_to_customer),
     isCustomerSendAllowed: Boolean(row.is_customer_send_allowed),
+    reasonIfBlocked: (row.reason_if_blocked as string | null) ?? null,
+  };
+}
+
+function mapCustomerProductContextFeature(
+  value: unknown,
+): SupportCustomerProductContextFeature {
+  const row = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+
+  return {
+    featureKey: String(row.featureKey),
+    displayName: String(row.displayName),
+    entitlementSource:
+      row.entitlementSource as SupportCustomerProductContextFeature['entitlementSource'],
+  };
+}
+
+function mapCustomerProductContextOwner(value: unknown): SupportCustomerProductContextOwner {
+  const row = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+
+  return {
+    areaKey: (row.areaKey as SupportCustomerProductContextOwner['areaKey']) ?? null,
+    areaDisplayName: (row.areaDisplayName as string | null) ?? null,
+    ownerRole: row.ownerRole as SupportCustomerProductContextOwner['ownerRole'],
+  };
+}
+
+function mapCustomerProductContext(row: Record<string, unknown>): SupportCustomerProductContext {
+  return {
+    subscriptionId: String(row.subscription_id),
+    tenantId: String(row.tenant_id),
+    tenantSlug: String(row.tenant_slug),
+    tenantDisplayName: String(row.tenant_display_name),
+    productKey: String(row.product_key),
+    productDisplayName: String(row.product_display_name),
+    planKey: String(row.plan_key),
+    planDisplayName: String(row.plan_display_name),
+    status: row.status as SupportCustomerProductContext['status'],
+    startedAt: (row.started_at as string | null) ?? null,
+    endedAt: (row.ended_at as string | null) ?? null,
+    renewalAt: (row.renewal_at as string | null) ?? null,
+    activeSupportFeatures: Array.isArray(row.active_support_features)
+      ? row.active_support_features.map(mapCustomerProductContextFeature)
+      : [],
+    activeInternalOwners: Array.isArray(row.active_internal_owners)
+      ? row.active_internal_owners.map(mapCustomerProductContextOwner)
+      : [],
   };
 }
 
@@ -382,7 +605,9 @@ function mapKnowledgeArticlePickerItem(
     articleVisibility: row.article_visibility as KnowledgeArticleVisibility,
     articleStatus: row.article_status as KnowledgeArticleStatus,
     publicArticlePath: (row.public_article_path as string | null) ?? null,
+    canSendToCustomer: Boolean(row.can_send_to_customer),
     isCustomerSendAllowed: Boolean(row.is_customer_send_allowed),
+    reasonIfBlocked: (row.reason_if_blocked as string | null) ?? null,
   };
 }
 
@@ -394,52 +619,61 @@ function mapRecentWindowMeta(row: Record<string, unknown> | null | undefined) {
   };
 }
 
-interface ListSupportTicketsQueueOptions {
+export interface ListSupportTicketsQueueOptions {
   status?: TicketStatus | 'all';
   priority?: TicketPriority | 'all';
   severity?: TicketSeverity | 'all';
   tenantId?: Uuid | 'all';
   assignedToUserId?: Uuid | 'all' | 'unassigned';
+  categoryId?: Uuid | 'all';
+  scope?: 'open' | 'closed' | 'all';
+  inboxFilter?: string;
+  search?: string;
+  page?: number;
+  pageSize?: number;
 }
+
+export const SUPPORT_QUEUE_PAGE_SIZE = 50;
 
 export async function listSupportTicketsQueue(
   options: ListSupportTicketsQueueOptions = {},
-) {
+): Promise<SupportTicketQueuePage> {
   const client = requireClient();
-  let query = client
-    .from('vw_support_tickets_queue')
-    .select('*')
-    .order('updated_at', { ascending: false });
-
-  if (options.status && options.status !== 'all') {
-    query = query.eq('status', options.status);
-  }
-
-  if (options.priority && options.priority !== 'all') {
-    query = query.eq('priority', options.priority);
-  }
-
-  if (options.severity && options.severity !== 'all') {
-    query = query.eq('severity', options.severity);
-  }
-
-  if (options.tenantId && options.tenantId !== 'all') {
-    query = query.eq('tenant_id', options.tenantId);
-  }
-
-  if (options.assignedToUserId === 'unassigned') {
-    query = query.is('assigned_to_user_id', null);
-  } else if (options.assignedToUserId && options.assignedToUserId !== 'all') {
-    query = query.eq('assigned_to_user_id', options.assignedToUserId);
-  }
-
-  const { data, error } = await query;
+  const pageSize = Math.max(1, Math.min(options.pageSize ?? SUPPORT_QUEUE_PAGE_SIZE, SUPPORT_QUEUE_PAGE_SIZE));
+  const page = Math.max(1, options.page ?? 1);
+  const { data, error } = await client.rpc('rpc_support_ticket_queue_page', {
+    p_status: options.status ?? 'all',
+    p_priority: options.priority ?? 'all',
+    p_severity: options.severity ?? 'all',
+    p_tenant_id: options.tenantId && options.tenantId !== 'all' ? options.tenantId : null,
+    p_assigned_to_user_id: options.assignedToUserId ?? 'all',
+    p_category_id: options.categoryId ?? 'all',
+    p_scope: options.scope ?? 'open',
+    p_inbox_filter: options.inboxFilter ?? 'all',
+    p_search: options.search?.trim() || null,
+    p_limit: pageSize,
+    p_offset: (page - 1) * pageSize,
+  });
 
   if (error) {
     throw toAppError(error, 'Falha ao carregar a fila oficial do Support Workspace.');
   }
 
-  return (data ?? []).map((row) => mapQueueItem(row as Record<string, unknown>));
+  const payload = (data ?? {}) as Record<string, unknown>;
+  const scopeCounts = (payload.scope_counts ?? {}) as Record<string, unknown>;
+  const filterCounts = (payload.filter_counts ?? {}) as Record<string, unknown>;
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  return {
+    items: items.map((row) => mapQueueItem(row as Record<string, unknown>)),
+    totalCount: Number(payload.total_count ?? 0),
+    scopeCounts: {
+      open: Number(scopeCounts.open ?? 0),
+      closed: Number(scopeCounts.closed ?? 0),
+    },
+    filterCounts: Object.fromEntries(
+      Object.entries(filterCounts).map(([key, value]) => [key, Number(value ?? 0)]),
+    ),
+  } satisfies SupportTicketQueuePage;
 }
 
 export async function getSupportTicketDetail(ticketId: Uuid) {
@@ -475,6 +709,265 @@ export async function getSupportTicketTimelineRecent(
 
   return {
     ...mapRecentWindowMeta(rows[0]),
+    entries: rows.map((row) => mapTimelineItem(row)),
+  };
+}
+
+function mapSupportTicketAttachment(
+  row: Record<string, unknown>,
+): SupportTicketAttachment {
+  return {
+    attachmentId: String(row.attachment_id),
+    ticketId: String(row.ticket_id),
+    displayName: String(row.display_name),
+    contentType: (row.content_type as string | null) ?? null,
+    sizeBytes: Number(row.size_bytes ?? 0),
+    uploadedByName: (row.uploaded_by_name as string | null) ?? null,
+    createdAt: String(row.created_at),
+    status: row.status as SupportTicketAttachment['status'],
+    canDownload: Boolean(row.can_download),
+    canArchive: Boolean(row.can_archive),
+  };
+}
+
+function mapTicketAttachmentUploadContractRow(
+  row: Record<string, unknown>,
+): RpcSupportCreateTicketAttachmentUploadResponse {
+  return {
+    attachmentId: String(row.attachment_id),
+    uploadIntentId: String(row.upload_intent_id),
+    ticketId: String(row.ticket_id),
+    tenantId: String(row.tenant_id),
+    displayName: String(row.display_name),
+    contentType: String(row.content_type),
+    sizeBytes: Number(row.size_bytes ?? 0),
+    maxSizeBytes: Number(row.max_size_bytes ?? 0),
+    expiresAt: String(row.expires_at),
+    uploadUrl: String(row.upload_url),
+  };
+}
+
+function mapTicketAttachmentDownloadContractRow(
+  row: Record<string, unknown>,
+): RpcSupportGetTicketAttachmentDownloadUrlResponse {
+  return {
+    attachmentId: String(row.attachment_id),
+    expiresAt: String(row.expires_at),
+    downloadUrl: String(row.download_url),
+  };
+}
+
+function mapSupportTicketEngineeringLink(
+  row: Record<string, unknown>,
+): SupportTicketEngineeringLink {
+  return {
+    engineeringTicketLinkId: String(row.engineering_ticket_link_id),
+    ticketId: String(row.ticket_id),
+    tenantId: String(row.tenant_id),
+    handoffNote: (row.handoff_note as string | null) ?? null,
+    createdByUserId: String(row.created_by_user_id),
+    createdByFullName: (row.created_by_full_name as string | null) ?? null,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    engineeringWorkItemId: String(row.engineering_work_item_id),
+    workItemType: row.work_item_type as EngineeringWorkItemType,
+    workItemStatus: row.work_item_status as SupportTicketEngineeringLink['workItemStatus'],
+    workItemPriority: row.work_item_priority as SupportTicketEngineeringLink['workItemPriority'],
+    workItemTitle: String(row.work_item_title),
+    workItemDescription: String(row.work_item_description),
+    assignedToUserId: (row.assigned_to_user_id as string | null) ?? null,
+    assignedToFullName: (row.assigned_to_full_name as string | null) ?? null,
+    workItemCreatedAt: String(row.work_item_created_at),
+    workItemUpdatedAt: String(row.work_item_updated_at),
+    lastUpdateKind:
+      (row.last_update_kind as SupportTicketEngineeringLink['lastUpdateKind']) ?? null,
+    lastUpdateSummary: (row.last_update_summary as string | null) ?? null,
+    lastUpdateNextStep: (row.last_update_next_step as string | null) ?? null,
+    lastUpdateAt: (row.last_update_at as string | null) ?? null,
+  };
+}
+
+function mapSupportTicketInternalAction(
+  row: Record<string, unknown>,
+): SupportTicketInternalAction {
+  return {
+    internalActionId: String(row.internal_action_id),
+    ticketId: String(row.ticket_id),
+    tenantId: String(row.tenant_id),
+    targetArea: String(row.target_area),
+    targetAreaLabel: String(row.target_area_label),
+    supportType: row.support_type as SupportTicketInternalAction['supportType'],
+    priority: row.priority as SupportTicketInternalAction['priority'],
+    status: row.status as SupportTicketInternalAction['status'],
+    summary: String(row.summary),
+    assignedAreaUserId: (row.assigned_area_user_id as string | null) ?? null,
+    assignedAreaUserName: (row.assigned_area_user_name as string | null) ?? null,
+    requestedByUserId: String(row.requested_by_user_id),
+    requestedByUserName: (row.requested_by_user_name as string | null) ?? null,
+    lastUpdateKind: (row.last_update_kind as InternalActionUpdateKind | null) ?? null,
+    lastUpdateSummary: (row.last_update_summary as string | null) ?? null,
+    lastUpdateAt: (row.last_update_at as string | null) ?? null,
+    hasPendingReturn: Boolean(row.has_pending_return),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+function mapSupportInternalActionTargetArea(
+  row: Record<string, unknown>,
+): SupportInternalActionTargetArea {
+  return {
+    areaKey: String(row.area_key),
+    displayName: String(row.display_name),
+    status: row.status as SupportInternalActionTargetArea['status'],
+    allowsSpecializedBridge: Boolean(row.allows_specialized_bridge),
+    canCreateAction: Boolean(row.can_create_action),
+    unavailableReason: (row.unavailable_reason as string | null) ?? null,
+  };
+}
+
+function mapSupportInternalActionDetail(
+  row: Record<string, unknown>,
+): SupportInternalActionDetail {
+  return {
+    internalActionId: String(row.internal_action_id),
+    ticketId: String(row.ticket_id),
+    ticketTitle: String(row.ticket_title),
+    ticketStatus: row.ticket_status as SupportInternalActionDetail['ticketStatus'],
+    ticketPriority: row.ticket_priority as SupportInternalActionDetail['ticketPriority'],
+    ticketSeverity: row.ticket_severity as SupportInternalActionDetail['ticketSeverity'],
+    tenantId: String(row.tenant_id),
+    targetArea: String(row.target_area),
+    targetAreaLabel: String(row.target_area_label),
+    supportType: row.support_type as SupportInternalActionDetail['supportType'],
+    priority: row.priority as SupportInternalActionDetail['priority'],
+    status: row.status as SupportInternalActionDetail['status'],
+    summary: String(row.summary),
+    context: String(row.context),
+    requestedByUserId: String(row.requested_by_user_id),
+    requestedByUserName: (row.requested_by_user_name as string | null) ?? null,
+    assignedAreaUserId: (row.assigned_area_user_id as string | null) ?? null,
+    assignedAreaUserName: (row.assigned_area_user_name as string | null) ?? null,
+    returnedToSupportAt: (row.returned_to_support_at as string | null) ?? null,
+    closedAt: (row.closed_at as string | null) ?? null,
+    cancelledAt: (row.cancelled_at as string | null) ?? null,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    updatedByUserId: (row.updated_by_user_id as string | null) ?? null,
+    updatedByUserName: (row.updated_by_user_name as string | null) ?? null,
+    lastUpdateId: (row.last_update_id as string | null) ?? null,
+    lastUpdateKind: (row.last_update_kind as InternalActionUpdateKind | null) ?? null,
+    lastUpdateSummary: (row.last_update_summary as string | null) ?? null,
+    lastUpdateAt: (row.last_update_at as string | null) ?? null,
+    lastUpdateByUserId: (row.last_update_by_user_id as string | null) ?? null,
+    lastUpdateByUserName: (row.last_update_by_user_name as string | null) ?? null,
+    linkedEvidenceCount: Number(row.linked_evidence_count ?? 0),
+    hasPendingReturn: Boolean(row.has_pending_return),
+  };
+}
+
+function mapSupportInternalActionTimelineEntry(
+  row: Record<string, unknown>,
+): SupportInternalActionTimelineEntry {
+  return {
+    internalActionUpdateId: String(row.internal_action_update_id),
+    internalActionId: String(row.internal_action_id),
+    ticketId: String(row.ticket_id),
+    tenantId: String(row.tenant_id),
+    targetArea: String(row.target_area),
+    targetAreaLabel: String(row.target_area_label),
+    updateKind: row.update_kind as SupportInternalActionTimelineEntry['updateKind'],
+    statusBefore:
+      (row.status_before as SupportInternalActionTimelineEntry['statusBefore']) ?? null,
+    statusAfter:
+      (row.status_after as SupportInternalActionTimelineEntry['statusAfter']) ?? null,
+    body: String(row.body ?? ''),
+    metadata: (row.metadata as JsonObject | null) ?? {},
+    createdByUserId: String(row.created_by_user_id),
+    createdByUserName: (row.created_by_user_name as string | null) ?? null,
+    createdAt: String(row.created_at),
+  };
+}
+
+function mapSupportTicketIntakeTenant(
+  row: Record<string, unknown>,
+): SupportTicketIntakeTenant {
+  return {
+    tenantId: String(row.tenant_id),
+    tenantSlug: String(row.tenant_slug),
+    tenantDisplayName: (row.tenant_display_name as string | null) ?? null,
+    tenantLegalName: (row.tenant_legal_name as string | null) ?? null,
+    tenantStatus: String(row.tenant_status),
+    tenantCreatedAt: String(row.tenant_created_at),
+    tenantUpdatedAt: String(row.tenant_updated_at),
+    activeContactsCount: Number(row.active_contacts_count ?? 0),
+    hasActiveContacts: Boolean(row.has_active_contacts),
+  };
+}
+
+function mapSupportTicketIntakeContact(
+  row: Record<string, unknown>,
+): SupportTicketIntakeContact {
+  return {
+    id: String(row.id),
+    tenantId: String(row.tenant_id),
+    linkedUserId: (row.linked_user_id as string | null) ?? null,
+    fullName: String(row.full_name),
+    email: String(row.email),
+    phone: (row.phone as string | null) ?? null,
+    jobTitle: (row.job_title as string | null) ?? null,
+    isPrimary: Boolean(row.is_primary),
+    createdAt: String(row.created_at),
+  };
+}
+
+function mapSupportTicketClassificationOption(
+  row: Record<string, unknown>,
+): SupportTicketClassificationOption {
+  return {
+    optionKind: row.option_kind as SupportTicketClassificationOption['optionKind'],
+    optionId: String(row.option_id),
+    slug: String(row.slug),
+    name: String(row.name),
+    description: (row.description as string | null) ?? null,
+    reasonType:
+      (row.reason_type as SupportTicketClassificationOption['reasonType']) ?? null,
+    appliesToStatus:
+      (row.applies_to_status as SupportTicketClassificationOption['appliesToStatus']) ??
+      null,
+    status: row.status as SupportTicketClassificationOption['status'],
+    sortOrder: Number(row.sort_order ?? 0),
+  };
+}
+
+interface GetSupportTicketTimelinePageOptions {
+  limit?: number;
+  beforeOccurredAt?: string | null;
+  beforeTimelineEntryId?: Uuid | null;
+}
+
+export async function getSupportTicketTimelinePage(
+  ticketId: Uuid,
+  options: GetSupportTicketTimelinePageOptions = {},
+): Promise<SupportTicketTimelineRecentWindow> {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_get_ticket_timeline', {
+    p_ticket_id: ticketId,
+    p_limit: options.limit ?? 50,
+    p_before_occurred_at: options.beforeOccurredAt ?? null,
+    p_before_timeline_entry_id: options.beforeTimelineEntryId ?? null,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar a pagina da timeline do ticket.');
+  }
+
+  const rows = (data ?? []) as Record<string, unknown>[];
+
+  return {
+    totalAvailableCount: Number(rows[0]?.total_available_count ?? 0),
+    recentLimit: Number(rows[0]?.page_limit ?? options.limit ?? 50),
+    hasMore: Boolean(rows[0]?.has_more),
     entries: rows.map((row) => mapTimelineItem(row)),
   };
 }
@@ -525,6 +1018,22 @@ export async function getSupportCustomerAccountContext(tenantId: Uuid) {
   }
 
   return data ? mapCustomerAccountContext(data as Record<string, unknown>) : null;
+}
+
+export async function listSupportCustomerProductContexts(tenantId: Uuid) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_support_customer_product_context')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .order('product_display_name', { ascending: true })
+    .order('plan_display_name', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o contexto de produtos contratados.');
+  }
+
+  return (data ?? []).map((row) => mapCustomerProductContext(row as Record<string, unknown>));
 }
 
 export async function getSupportCustomerRecentTickets(
@@ -587,6 +1096,59 @@ export async function listSupportAssignableAgents(tenantId: Uuid) {
   return (data ?? []).map((row) => mapAssignableAgent(row as Record<string, unknown>));
 }
 
+export async function listSupportTicketIntakeTenants() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_support_ticket_intake_tenants')
+    .select('*')
+    .order('tenant_display_name', { ascending: true, nullsFirst: false })
+    .order('tenant_legal_name', { ascending: true, nullsFirst: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar os clientes elegíveis para abrir ticket.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapSupportTicketIntakeTenant(row as Record<string, unknown>),
+  );
+}
+
+export async function listSupportTicketIntakeContacts(tenantId: Uuid) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_support_ticket_intake_contacts')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .order('is_primary', { ascending: false })
+    .order('full_name', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar os contatos elegíveis para abrir ticket.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapSupportTicketIntakeContact(row as Record<string, unknown>),
+  );
+}
+
+export async function listSupportTicketClassificationOptions() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_support_ticket_classification_options')
+    .select('*')
+    .order('option_kind', { ascending: true })
+    .order('sort_order', { ascending: true })
+    .order('name', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar categorias e motivos operacionais.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapSupportTicketClassificationOption(row as Record<string, unknown>),
+  );
+}
+
 export async function getSupportTicketKnowledgeLinks(ticketId: Uuid) {
   const client = requireClient();
   const { data, error } = await client
@@ -600,6 +1162,186 @@ export async function getSupportTicketKnowledgeLinks(ticketId: Uuid) {
   }
 
   return (data ?? []).map((row) => mapTicketKnowledgeLink(row as Record<string, unknown>));
+}
+
+export async function listSupportTicketAttachments(ticketId: Uuid) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_support_ticket_attachments')
+    .select('*')
+    .eq('ticket_id', ticketId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar as evidências vinculadas a este ticket.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapSupportTicketAttachment(row as Record<string, unknown>),
+  );
+}
+
+export async function uploadSupportTicketAttachment(input: {
+  ticketId: Uuid;
+  tenantId: Uuid;
+  file: File;
+}): Promise<RpcSupportRegisterTicketAttachmentResponse> {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_create_ticket_attachment_upload', {
+    p_ticket_id: input.ticketId,
+    p_tenant_id: input.tenantId,
+    p_original_filename: input.file.name,
+    p_content_type: input.file.type,
+    p_size_bytes: input.file.size,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao preparar o upload seguro da evidência.');
+  }
+
+  const contractRow = Array.isArray(data) ? data[0] : data;
+
+  if (!contractRow) {
+    throw new Error('O backend não retornou a intenção de upload esperada.');
+  }
+
+  const uploadContract = mapTicketAttachmentUploadContractRow(
+    contractRow as Record<string, unknown>,
+  );
+  const formData = new FormData();
+  formData.append('file', input.file);
+
+  const payload = await callSupabaseFunctionJson<{
+    attachment?: Record<string, unknown>;
+  }>(uploadContract.uploadUrl, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!payload.attachment) {
+    throw new Error('A função segura não devolveu o anexo registrado.');
+  }
+
+  return mapSupportTicketAttachment(payload.attachment);
+}
+
+export async function getSupportTicketAttachmentSignedUrl(
+  attachmentId: Uuid,
+): Promise<{ attachmentId: Uuid; signedUrl: string; expiresAt: string }> {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_get_ticket_attachment_download_url', {
+    p_attachment_id: attachmentId,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao preparar o download seguro da evidência.');
+  }
+
+  const contractRow = Array.isArray(data) ? data[0] : data;
+
+  if (!contractRow) {
+    throw new Error('O backend não retornou a URL temporária esperada para download.');
+  }
+
+  const downloadContract = mapTicketAttachmentDownloadContractRow(
+    contractRow as Record<string, unknown>,
+  );
+
+  return await callSupabaseFunctionJson<{
+    attachmentId: Uuid;
+    signedUrl: string;
+    expiresAt: string;
+  }>(downloadContract.downloadUrl, {
+    method: 'GET',
+  });
+}
+
+export async function listSupportTicketEngineeringLinks(ticketId: Uuid) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_support_ticket_engineering_links')
+    .select('*')
+    .eq('ticket_id', ticketId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar os handoffs técnicos deste ticket.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapSupportTicketEngineeringLink(row as Record<string, unknown>),
+  );
+}
+
+export async function listSupportTicketInternalActions(ticketId: Uuid) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_support_ticket_internal_actions')
+    .select('*')
+    .eq('ticket_id', ticketId)
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar os acionamentos internos deste ticket.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapSupportTicketInternalAction(row as Record<string, unknown>),
+  );
+}
+
+export async function listSupportInternalActionTargetAreas(
+  ticketId: Uuid,
+): Promise<SupportInternalActionTargetArea[]> {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_support_list_internal_action_target_areas',
+    {
+      p_ticket_id: ticketId,
+    },
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar as áreas internas disponíveis.');
+  }
+
+  return ((data ?? []) as Record<string, unknown>[]).map((row) =>
+    mapSupportInternalActionTargetArea(row as Record<string, unknown>),
+  );
+}
+
+export async function getSupportInternalActionDetail(internalActionId: Uuid) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_support_internal_action_detail')
+    .select('*')
+    .eq('internal_action_id', internalActionId)
+    .maybeSingle();
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o detalhe do acionamento interno.');
+  }
+
+  return data
+    ? mapSupportInternalActionDetail(data as Record<string, unknown>)
+    : null;
+}
+
+export async function listSupportInternalActionTimeline(internalActionId: Uuid) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_support_internal_action_timeline')
+    .select('*')
+    .eq('internal_action_id', internalActionId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar o histórico interno deste acionamento.');
+  }
+
+  return (data ?? []).map((row) =>
+    mapSupportInternalActionTimelineEntry(row as Record<string, unknown>),
+  );
 }
 
 export async function listSupportKnowledgeArticlePicker(ticketId: Uuid) {
@@ -630,6 +1372,8 @@ export async function createTicket(payload: RpcCreateTicketPayload) {
     p_priority: payload.priority,
     p_severity: payload.severity,
     p_requester_contact_id: payload.requesterContactId ?? null,
+    p_category_id: payload.categoryId ?? null,
+    p_operational_reason_id: payload.operationalReasonId ?? null,
   });
 
   if (error) {
@@ -641,9 +1385,10 @@ export async function createTicket(payload: RpcCreateTicketPayload) {
 
 export async function updateTicketStatus(payload: RpcUpdateTicketStatusPayload) {
   const client = requireClient();
-  const { data, error } = await client.rpc('rpc_update_ticket_status', {
+  const { data, error } = await client.rpc('rpc_support_update_ticket_status_v2', {
     p_ticket_id: payload.ticketId,
     p_status: payload.status,
+    p_operational_reason_id: payload.operationalReasonId ?? null,
     p_note: payload.note ?? null,
   });
 
@@ -652,6 +1397,56 @@ export async function updateTicketStatus(payload: RpcUpdateTicketStatusPayload) 
   }
 
   return data as RpcUpdateTicketStatusResponse;
+}
+
+export async function recalculateSupportTicketSla(ticketId: Uuid) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_recalculate_ticket_sla', {
+    p_ticket_id: ticketId,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao recalcular o SLA interno do ticket.');
+  }
+
+  return data;
+}
+
+export async function updateTicketClassification(
+  payload: RpcSupportUpdateTicketClassificationPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_update_ticket_classification', {
+    p_ticket_id: payload.ticketId,
+    p_category_id: payload.categoryId,
+    p_operational_reason_id: payload.operationalReasonId ?? null,
+    p_note: payload.note ?? null,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao atualizar a classificacao operacional do ticket.');
+  }
+
+  return data as RpcSupportUpdateTicketClassificationResponse;
+}
+
+export async function updateTicketPrioritySeverity(
+  payload: RpcSupportUpdateTicketPrioritySeverityPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_update_ticket_priority_severity', {
+    p_ticket_id: payload.ticketId,
+    p_priority: payload.priority,
+    p_severity: payload.severity,
+    p_operational_reason_id: payload.operationalReasonId ?? null,
+    p_note: payload.note ?? null,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao atualizar prioridade e severidade do ticket.');
+  }
+
+  return data as RpcSupportUpdateTicketPrioritySeverityResponse;
 }
 
 export async function assignTicket(payload: RpcAssignTicketPayload) {
@@ -791,4 +1586,137 @@ export async function markSupportArticleNeedsUpdate(
   }
 
   return data as RpcSupportMarkArticleNeedsUpdateResponse;
+}
+
+export async function createSupportEngineeringWorkItemFromTicket(
+  payload: RpcSupportCreateEngineeringWorkItemFromTicketPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_support_create_engineering_work_item_from_ticket',
+    {
+      p_ticket_id: payload.ticketId,
+      p_work_item_type: payload.workItemType,
+      p_title: payload.title,
+      p_description: payload.description,
+      p_handoff_note: payload.handoffNote ?? null,
+    },
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao criar a demanda técnica vinculada ao ticket.');
+  }
+
+  return data as RpcSupportCreateEngineeringWorkItemFromTicketResponse;
+}
+
+export async function createSupportInternalAction(
+  payload: RpcSupportCreateInternalActionPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_create_internal_action', {
+    p_ticket_id: payload.ticketId,
+    p_target_area: payload.targetArea,
+    p_support_type: payload.supportType,
+    p_priority: payload.priority ?? 'normal',
+    p_summary: payload.summary,
+    p_context: payload.context,
+    p_evidence_attachment_ids: payload.evidenceAttachmentIds ?? null,
+    p_assigned_area_user_id: payload.assignedAreaUserId ?? null,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao criar o acionamento interno.');
+  }
+
+  return data as RpcSupportCreateInternalActionResponse;
+}
+
+export async function addInternalActionEvidenceLink(
+  payload: RpcInternalActionAddEvidenceLinkPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_internal_action_add_evidence_link', {
+    p_internal_action_id: payload.internalActionId,
+    p_tenant_id: payload.tenantId,
+    p_ticket_attachment_id: payload.ticketAttachmentId,
+    p_note: payload.note ?? null,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao vincular a evidência a este acionamento.');
+  }
+
+  return data as RpcInternalActionAddEvidenceLinkResponse;
+}
+
+export async function acceptSupportInternalActionReturn(
+  payload: RpcSupportAcceptInternalActionReturnPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_accept_internal_action_return', {
+    p_internal_action_id: payload.internalActionId,
+    p_tenant_id: payload.tenantId,
+    p_note: payload.note ?? null,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao aceitar o retorno deste acionamento.');
+  }
+
+  return data as RpcSupportAcceptInternalActionReturnResponse;
+}
+
+export async function requestSupportInternalActionFollowup(
+  payload: RpcSupportRequestInternalActionFollowupPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_request_internal_action_followup', {
+    p_internal_action_id: payload.internalActionId,
+    p_tenant_id: payload.tenantId,
+    p_note: payload.note,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao solicitar complemento deste acionamento.');
+  }
+
+  return data as RpcSupportRequestInternalActionFollowupResponse;
+}
+
+export async function closeSupportInternalAction(
+  payload: RpcSupportCloseInternalActionPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_support_close_internal_action', {
+    p_internal_action_id: payload.internalActionId,
+    p_tenant_id: payload.tenantId,
+    p_note: payload.note ?? null,
+  });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao encerrar este acionamento.');
+  }
+
+  return data as RpcSupportCloseInternalActionResponse;
+}
+
+export async function linkSupportTicketToEngineeringWorkItem(
+  payload: RpcSupportLinkTicketToEngineeringWorkItemPayload,
+) {
+  const client = requireClient();
+  const { data, error } = await client.rpc(
+    'rpc_support_link_ticket_to_engineering_work_item',
+    {
+      p_ticket_id: payload.ticketId,
+      p_engineering_work_item_id: payload.engineeringWorkItemId,
+      p_handoff_note: payload.handoffNote ?? null,
+    },
+  );
+
+  if (error) {
+    throw toAppError(error, 'Falha ao vincular este ticket a uma demanda técnica.');
+  }
+
+  return data as RpcSupportLinkTicketToEngineeringWorkItemResponse;
 }

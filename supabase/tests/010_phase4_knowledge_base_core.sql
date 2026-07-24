@@ -155,6 +155,9 @@ values
 insert into public.user_global_roles (user_id, role)
 values ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'::uuid, 'support_agent'::public.platform_role);
 
+delete from public.user_global_roles
+where role = 'platform_admin';
+
 select is(
   app_private.bootstrap_first_platform_admin(
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,

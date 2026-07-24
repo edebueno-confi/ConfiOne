@@ -267,9 +267,14 @@ select is(
   (
     select count(*)::integer
     from public.vw_support_assignable_agents
+    where user_id in (
+      'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid,
+      'cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid,
+      'dddddddd-dddd-4ddd-8ddd-dddddddddddd'::uuid
+    )
   ),
-  4,
-  'platform_admin enxerga agentes atribuiveis ativos de todos os tenants permitidos'
+  3,
+  'platform_admin enxerga os agentes atribuiveis ativos criados pelo teste'
 );
 
 select is(

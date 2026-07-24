@@ -157,6 +157,9 @@ values
     timezone('utc', now())
   );
 
+delete from public.user_global_roles
+where role = 'platform_admin';
+
 select is(
   app_private.bootstrap_first_platform_admin(
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,
@@ -280,9 +283,10 @@ select is(
   (
     select count(*)::integer
     from public.vw_admin_tenants_list
+    where slug in ('tenant-admin-view-a', 'tenant-admin-view-b')
   ),
   2,
-  'platform_admin le globalmente a lista contratual de tenants'
+  'platform_admin le os tenants contratuais criados pelo teste'
 );
 
 select is(

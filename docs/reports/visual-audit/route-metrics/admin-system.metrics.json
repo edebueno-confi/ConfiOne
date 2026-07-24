@@ -1,0 +1,36 @@
+{
+  "route": "/admin/system",
+  "innerWidth": 1600,
+  "innerHeight": 900,
+  "scrollHeight": 900,
+  "clientHeight": 900,
+  "hasGlobalScroll": false,
+  "hasHorizontalScroll": false,
+  "scrollables": [
+    {
+      "tag": "div",
+      "cls": "overflow-hidden rounded-[20px] border border-[color:var(--color-border)] xl:min-h-0 xl:flex-1 xl:overflow-y-auto",
+      "role": null,
+      "scrollHeight": 9761,
+      "clientHeight": 0,
+      "scrollWidth": 732,
+      "clientWidth": 554,
+      "overflowY": "auto",
+      "overflowX": "hidden",
+      "text": "TipoSeveridadeOrigemResumoDataSituaçãoAtualizacaoCríticoGovernanca de canaisOper"
+    },
+    {
+      "tag": "div",
+      "cls": "space-y-4 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1",
+      "role": null,
+      "scrollHeight": 1565,
+      "clientHeight": 681,
+      "scrollWidth": 352,
+      "clientWidth": 352,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "Detalhe operacionalCríticoGovernanca de canaisAtualizacaoOperador interno regist"
+    }
+  ],
+  "sampleText": "Genius Support OS\n\nOperação interna CX B2B\n\nNAVEGAÇÃO\n\nOperação CX\nFila operacional\nTickets\nClientes B2B\nAcionamentos\nConhecimento\nEngenharia\nFila técnica\nItens técnicos\nRetornos ao CX\nGovernança\nContas B2B\nPortal do cliente\nÁreas internas\nAcessos\nSistema\nGovernança de conhecimento\nDiário de Construção\nDocumentos do produto\nQL\n\nQA Local Platform Admin\n\nAdministrador da plataforma\n\nEncerrar sessão\nSistema\n\nAuditoria, saúde do sistema e eventos operacionais.\n\nRecarregar\nSaúde\nAuditoria\nJobs\nSegurança\n\nMONITORAMENTO\n\nSaúde geral\n4 checks\nAuditoria\n120 eventos\nFalhas recentes\n401 críticos\nSegurança\n3 pendências\nTIPO\nTodos\nCriacao\nAtualizacao\nSEVERIDADE\nTodas\nEstável\nAtenção\nCrítico\nPERÍODO\nÚltimas 24h\nÚltimos 7 dias\nÚltimos 30 dias\nTodo o feed\nSERVIÇO\nTodos\nAlertas do cliente\nPerfis\nGovernanca de canais\nContatos do cliente\nAcessos por cliente\nEventos de ticket\nEntregas de mensagens\nMensagens de ticket\nTickets\nBUSCAR\nRecarregar\nFeed operacional\n120 ITENS VISÍVEIS\nGovernança de canais\n\nPortal é o canal ativo do MVP. Canais externos permanecem sem envio real.\n\nSEM SEGREDO CONFIGURADO\n\nPortal Cliente\n\nCanal nativo governado\n\nATIVO\n\nTenants ativos: 3/3\n\nEnvio permitido: Sim, via contrato at"
+}

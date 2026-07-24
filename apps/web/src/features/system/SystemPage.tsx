@@ -7,16 +7,25 @@ import {
   useState,
 } from 'react';
 import { Navigate } from 'react-router-dom';
+import { sanitizeOperationalVisibleText } from '../../lib/operational-copy';
 import {
-  listAdminAuditFeed,
-  listAdminMemberships,
-  listAdminTenants,
-  type AdminAuditFeedRow,
-  type AdminTenantMembershipRow,
-  type AdminTenantsListItemRow,
+  getAdminAiOperationalContextReadiness,
+  getAdminSystemOperationalSummary,
+  listAdminAiActionPolicies,
+  listAdminAiContextSourcePolicies,
+  listAdminCommunicationChannelReadiness,
+  listAdminSystemAuditEvents,
+  listAdminSystemHealthChecks,
+  type AdminAiActionPolicyRow,
+  type AdminAiContextSourcePolicyRow,
+  type AdminAiOperationalContextReadinessRow,
+  type AdminCommunicationChannelReadinessRow,
+  type AdminSystemAuditEventRow,
+  type AdminSystemHealthCheckRow,
+  type AdminSystemOperationalSummaryRow,
 } from '../admin/admin-api';
 import { classifyAdminError } from '../admin/admin-errors';
-import { formatDateTime, humanizeToken, stringifyJsonPreview } from '../../app/format';
+import { formatDateTime } from '../../app/format';
 import {
   ContractUnavailableState,
   EmptyState,
@@ -38,42 +47,23 @@ type PagePhase = 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type SystemTab = 'health' | 'audit' | 'jobs' | 'security';
 type SystemSeverity = 'ok' | 'attention' | 'critical';
 type SystemPeriodFilter = '24h' | '7d' | '30d' | 'all';
+type AdminAuditFeedRow = AdminSystemAuditEventRow;
+type ChannelReadinessSummary = {
+  channelKey: AdminCommunicationChannelReadinessRow['channel_key'];
+  channelLabel: string;
+  statusLabel: string;
+  tone: 'positive' | 'warning' | 'critical' | 'default';
+  tenantCount: number;
+  activeCount: number;
+  unavailableCount: number;
+  isExternal: boolean;
+  canSendCount: number;
+  reason: string;
+  setup: string;
+};
 
 function lower(value: string | null | undefined) {
   return String(value ?? '').toLowerCase();
-}
-
-function humanizeSystemService(entityTable: string) {
-  return humanizeToken(entityTable).replaceAll('_', ' ');
-}
-
-function classifySystemSeverity(entry: AdminAuditFeedRow): SystemSeverity {
-  const action = lower(entry.action);
-  const entity = lower(entry.entity_table);
-  const metadata = lower(stringifyJsonPreview(entry.metadata));
-
-  if (
-    action.includes('delete') ||
-    action.includes('archive') ||
-    action.includes('revoke') ||
-    metadata.includes('error') ||
-    metadata.includes('failed')
-  ) {
-    return 'critical';
-  }
-
-  if (
-    action.includes('update') ||
-    action.includes('review') ||
-    action.includes('publish') ||
-    action.includes('invite') ||
-    entity.includes('membership') ||
-    entity.includes('role')
-  ) {
-    return 'attention';
-  }
-
-  return 'ok';
 }
 
 function toneForSystemSeverity(severity: SystemSeverity) {
@@ -100,31 +90,89 @@ function humanizeSystemSeverity(severity: SystemSeverity) {
   return 'Estavel';
 }
 
+function humanizeChannelReadiness(status: AdminCommunicationChannelReadinessRow['readiness_status']) {
+  if (status === 'active') {
+    return 'Ativo';
+  }
+
+  if (status === 'not_configured') {
+    return 'Não configurado';
+  }
+
+  if (status === 'future') {
+    return 'Preparado para futuro';
+  }
+
+  if (status === 'blocked') {
+    return 'Bloqueado';
+  }
+
+  if (status === 'disabled') {
+    return 'Desabilitado';
+  }
+
+  return 'Indisponível';
+}
+
+function toneForChannelReadiness(status: AdminCommunicationChannelReadinessRow['readiness_status']) {
+  if (status === 'active') {
+    return 'positive' as const;
+  }
+
+  if (status === 'blocked' || status === 'unavailable') {
+    return 'critical' as const;
+  }
+
+  if (status === 'disabled' || status === 'not_configured' || status === 'future') {
+    return 'warning' as const;
+  }
+
+  return 'default' as const;
+}
+
+function formatSanitizedContext(value: unknown) {
+  if (!value || typeof value !== 'object') {
+    return 'Indisponível';
+  }
+
+  const context = value as {
+    metadata_keys?: unknown;
+    before_keys?: unknown;
+    after_keys?: unknown;
+  };
+  const keys = [
+    ...(Array.isArray(context.metadata_keys) ? context.metadata_keys : []),
+    ...(Array.isArray(context.before_keys) ? context.before_keys : []),
+    ...(Array.isArray(context.after_keys) ? context.after_keys : []),
+  ]
+    .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    .filter((item, index, all) => all.indexOf(item) === index);
+
+  if (keys.length === 0) {
+    return 'Indisponível';
+  }
+
+  return `${keys.length} campo${keys.length === 1 ? '' : 's'} protegido${keys.length === 1 ? '' : 's'}`;
+}
+
 function buildSystemEventMessage(entry: AdminAuditFeedRow) {
-  const actor = entry.actor_full_name ?? entry.actor_email ?? 'Operador interno';
-  const service = humanizeSystemService(entry.entity_table);
-  const action = humanizeToken(entry.action).replaceAll('_', ' ');
-  const scope = entry.tenant_display_name ?? 'escopo global';
+  const actor = sanitizeOperationalVisibleText(entry.actor_display_name || entry.actor_email, 'Operador interno');
+  const service = sanitizeOperationalVisibleText(entry.service_label || 'Sistema');
+  const action = sanitizeOperationalVisibleText(entry.action_label || 'Evento');
+  const scope = sanitizeOperationalVisibleText(entry.scope_label || 'escopo global');
 
   return `${actor} registrou ${action.toLowerCase()} em ${service.toLowerCase()} dentro de ${scope}.`;
 }
 
 function buildSystemImpact(entry: AdminAuditFeedRow) {
-  const severity = classifySystemSeverity(entry);
-
-  if (severity === 'critical') {
-    return 'Esse registro pede verificação imediata porque altera acesso, arquivo ou mudança sensível na operação.';
-  }
-
-  if (severity === 'attention') {
-    return 'Esse evento merece acompanhamento porque muda configuração, papel ou etapa editorial com impacto operacional.';
-  }
-
-  return 'Registro informativo para rastrear rotina administrativa e manter contexto do control plane.';
+  return sanitizeOperationalVisibleText(
+    entry.impact_label,
+    'Registro informativo para manter contexto operacional.',
+  );
 }
 
 function buildSystemActions(entry: AdminAuditFeedRow) {
-  const severity = classifySystemSeverity(entry);
+  const severity = entry.severity;
   const isSecurity = matchesSecurityLens(entry);
 
   if (severity === 'critical') {
@@ -151,7 +199,7 @@ function buildSystemActions(entry: AdminAuditFeedRow) {
 }
 
 function matchesSecurityLens(entry: AdminAuditFeedRow) {
-  const entity = lower(entry.entity_table);
+  const entity = lower(entry.service_key);
   const action = lower(entry.action);
 
   return (
@@ -213,7 +261,7 @@ function matchesTab(entry: AdminAuditFeedRow, activeTab: SystemTab) {
     return matchesJobsLens(entry);
   }
 
-  return !matchesSecurityLens(entry) || classifySystemSeverity(entry) !== 'ok';
+  return !matchesSecurityLens(entry) || entry.severity !== 'ok';
 }
 
 function SystemMetricCard({
@@ -226,11 +274,11 @@ function SystemMetricCard({
   helper: string;
 }) {
   return (
-    <div className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
+    <div className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3.5">
       <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
         {label}
       </p>
-      <p className="mt-2 text-[1.85rem] font-semibold tracking-[-0.05em] text-[color:var(--color-ink)]">
+      <p className="mt-1.5 text-[1.55rem] font-semibold tracking-[-0.045em] text-[color:var(--color-ink)]">
         {value}
       </p>
       <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">{helper}</p>
@@ -254,7 +302,7 @@ function SystemSurfaceCard({
   return (
     <section
       className={cx(
-        'rounded-[28px] border border-[color:var(--color-border)] bg-white/94 px-5 py-5 shadow-[0_16px_34px_rgba(16,30,74,0.08)]',
+        'h-full border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4',
         className,
       )}
     >
@@ -281,8 +329,13 @@ export function SystemPage() {
   const [phase, setPhase] = useState<PagePhase>('loading');
   const [pageMessage, setPageMessage] = useState<string | null>(null);
   const [auditFeed, setAuditFeed] = useState<AdminAuditFeedRow[]>([]);
-  const [tenants, setTenants] = useState<AdminTenantsListItemRow[]>([]);
-  const [memberships, setMemberships] = useState<AdminTenantMembershipRow[]>([]);
+  const [channelReadiness, setChannelReadiness] = useState<AdminCommunicationChannelReadinessRow[]>([]);
+  const [aiReadiness, setAiReadiness] =
+    useState<AdminAiOperationalContextReadinessRow | null>(null);
+  const [aiSourcePolicies, setAiSourcePolicies] = useState<AdminAiContextSourcePolicyRow[]>([]);
+  const [aiActionPolicies, setAiActionPolicies] = useState<AdminAiActionPolicyRow[]>([]);
+  const [healthChecks, setHealthChecks] = useState<AdminSystemHealthCheckRow[]>([]);
+  const [summary, setSummary] = useState<AdminSystemOperationalSummaryRow | null>(null);
   const [activeTab, setActiveTab] = useState<SystemTab>('health');
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [actionFilter, setActionFilter] = useState<string>('all');
@@ -294,16 +347,32 @@ export function SystemPage() {
 
   const loadSurface = useEffectEvent(async () => {
     try {
-      const [tenantRows, membershipRows, auditRows] = await Promise.all([
-        listAdminTenants(),
-        listAdminMemberships(),
-        listAdminAuditFeed(),
+      const [
+        auditRows,
+        healthRows,
+        summaryRow,
+        channelRows,
+        aiReadinessRow,
+        aiSourcePolicyRows,
+        aiActionPolicyRows,
+      ] = await Promise.all([
+        listAdminSystemAuditEvents(),
+        listAdminSystemHealthChecks(),
+        getAdminSystemOperationalSummary(),
+        listAdminCommunicationChannelReadiness(),
+        getAdminAiOperationalContextReadiness(),
+        listAdminAiContextSourcePolicies(),
+        listAdminAiActionPolicies(),
       ]);
 
       setBackendDenied(false);
-      setTenants(tenantRows);
-      setMemberships(membershipRows);
       setAuditFeed(auditRows);
+      setHealthChecks(healthRows);
+      setSummary(summaryRow);
+      setChannelReadiness(channelRows);
+      setAiReadiness(aiReadinessRow);
+      setAiSourcePolicies(aiSourcePolicyRows);
+      setAiActionPolicies(aiActionPolicyRows);
       setPageMessage(null);
       setPhase('ready');
     } catch (error) {
@@ -322,9 +391,13 @@ export function SystemPage() {
         return;
       }
 
-      setTenants([]);
-      setMemberships([]);
-      setAuditFeed([]);
+        setAuditFeed([]);
+        setChannelReadiness([]);
+        setAiReadiness(null);
+        setAiSourcePolicies([]);
+        setAiActionPolicies([]);
+        setHealthChecks([]);
+      setSummary(null);
       setPageMessage(classified.message);
       setPhase(
         classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
@@ -346,7 +419,7 @@ export function SystemPage() {
     [auditFeed],
   );
   const distinctServices = useMemo(
-    () => Array.from(new Set(auditFeed.map((entry) => entry.entity_table))).sort(),
+    () => Array.from(new Set(auditFeed.map((entry) => entry.service_key))).sort(),
     [auditFeed],
   );
 
@@ -361,11 +434,11 @@ export function SystemPage() {
           return false;
         }
 
-        if (serviceFilter !== 'all' && entry.entity_table !== serviceFilter) {
+        if (serviceFilter !== 'all' && entry.service_key !== serviceFilter) {
           return false;
         }
 
-        if (severityFilter !== 'all' && classifySystemSeverity(entry) !== severityFilter) {
+        if (severityFilter !== 'all' && entry.severity !== severityFilter) {
           return false;
         }
 
@@ -378,12 +451,14 @@ export function SystemPage() {
         }
 
         const haystack = [
-          entry.actor_full_name ?? '',
+          entry.actor_display_name ?? '',
           entry.actor_email ?? '',
-          entry.tenant_display_name ?? '',
+          entry.scope_label ?? '',
           entry.tenant_slug ?? '',
-          entry.entity_table,
+          entry.service_key,
+          entry.service_label,
           entry.action,
+          entry.action_label,
           buildSystemEventMessage(entry),
         ]
           .join(' ')
@@ -408,6 +483,68 @@ export function SystemPage() {
   const selectedEntry =
     filteredFeed.find((entry) => entry.id === selectedEventId) ?? filteredFeed[0] ?? null;
 
+  const channelSummaries = useMemo(() => {
+    const grouped = new Map<string, AdminCommunicationChannelReadinessRow[]>();
+
+    for (const row of channelReadiness) {
+      const rows = grouped.get(row.channel_key) ?? [];
+      rows.push(row);
+      grouped.set(row.channel_key, rows);
+    }
+
+    return Array.from(grouped.values()).map((rows): ChannelReadinessSummary => {
+      const first = rows[0];
+      const activeCount = rows.filter((row) => row.readiness_status === 'active').length;
+      const canSendCount = rows.filter((row) => row.can_send).length;
+      const unavailableRows = rows.filter((row) => row.readiness_status !== 'active');
+      const referenceRow = unavailableRows[0] ?? first;
+
+      return {
+        channelKey: first.channel_key,
+        channelLabel: first.channel_label,
+        statusLabel:
+          activeCount === rows.length
+            ? 'Ativo'
+            : humanizeChannelReadiness(referenceRow.readiness_status),
+        tone:
+          activeCount === rows.length
+            ? 'positive'
+            : toneForChannelReadiness(referenceRow.readiness_status),
+        tenantCount: rows.length,
+        activeCount,
+        unavailableCount: rows.length - activeCount,
+        isExternal: first.is_external,
+        canSendCount,
+        reason:
+          referenceRow.reason_if_unavailable ??
+          (activeCount === rows.length ? 'Canal disponível para a operação atual.' : 'Indisponível'),
+        setup: referenceRow.required_setup_summary || 'Indisponível',
+      };
+    });
+  }, [channelReadiness]);
+
+  const aiPolicySummary = useMemo(() => {
+    const updatedAt = [...aiSourcePolicies, ...aiActionPolicies]
+      .map((policy) => policy.updated_at)
+      .filter(Boolean)
+      .sort()
+      .at(-1);
+    const blockedAutomationCount = aiActionPolicies.filter(
+      (policy) => policy.decision === 'denied',
+    ).length;
+    const reviewRequiredCount = aiActionPolicies.filter(
+      (policy) => policy.requires_human_review,
+    ).length;
+
+    return {
+      actionPolicyCount: aiActionPolicies.length,
+      blockedAutomationCount,
+      sourcePolicyCount: aiSourcePolicies.length,
+      reviewRequiredCount,
+      updatedAt: updatedAt ?? null,
+    };
+  }, [aiActionPolicies, aiSourcePolicies]);
+
   const relatedEntries = useMemo(() => {
     if (!selectedEntry) {
       return [] as AdminAuditFeedRow[];
@@ -417,31 +554,21 @@ export function SystemPage() {
       .filter(
         (entry) =>
           entry.id !== selectedEntry.id &&
-          (entry.entity_table === selectedEntry.entity_table ||
+          (entry.service_key === selectedEntry.service_key ||
             (entry.tenant_id && entry.tenant_id === selectedEntry.tenant_id)),
       )
       .slice(0, 4);
   }, [auditFeed, selectedEntry]);
 
-  const checksOkCount = auditFeed.filter(
-    (entry) => classifySystemSeverity(entry) === 'ok',
-  ).length;
-  const alertCount = auditFeed.filter(
-    (entry) => classifySystemSeverity(entry) === 'attention',
-  ).length;
-  const failureCount = auditFeed.filter(
-    (entry) => classifySystemSeverity(entry) === 'critical',
-  ).length;
-  const recentCount = auditFeed.filter((entry) => withinPeriod(entry.occurred_at, '24h')).length;
-  const activeTenantCount = tenants.filter((tenant) => tenant.status === 'active').length;
-  const activeMembershipCount = memberships.filter(
-    (membership) => membership.status === 'active',
-  ).length;
-  const suspendedTenantCount = tenants.filter((tenant) => tenant.status !== 'active').length;
-  const selectedSeverity = selectedEntry ? classifySystemSeverity(selectedEntry) : 'ok';
+  const checksOkCount = healthChecks.filter((check) => check.status === 'ok').length;
+  const unavailableCheckCount = healthChecks.filter((check) => check.status === 'unavailable').length;
+  const alertCount = summary?.attention_event_count ?? 0;
+  const failureCount = summary?.critical_event_count ?? 0;
+  const recentCount = summary?.audit_events_24h ?? 0;
+  const selectedSeverity = selectedEntry ? selectedEntry.severity : 'ok';
 
   if (backendDenied) {
-    return <Navigate replace state={{ reason: 'backend-permission' }} to="/access-denied" />;
+    return <Navigate replace state={{ reason: 'missing-authorized-workspace' }} to="/access-denied" />;
   }
 
   if (phase === 'loading') {
@@ -464,26 +591,24 @@ export function SystemPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-[30px] border border-[color:var(--color-border)] bg-white/95 px-6 py-6 shadow-[0_18px_40px_rgba(16,30,74,0.09)]">
+    <div className="gso-screen-frame flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
+      <section className="gso-screen-header shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-2">
-            <h1 className="text-[2.18rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
+          <div className="space-y-1">
+            <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
               Sistema
             </h1>
-            <p className="max-w-3xl text-sm leading-6 text-[color:var(--color-muted)]">
-              Auditoria, saúde do sistema e eventos operacionais em uma única superfície administrativa.
+            <p className="text-sm text-[color:var(--minimal-text-secondary)]">
+              Auditoria, saúde do sistema e eventos operacionais.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <GhostButton className="min-h-11 px-4" onClick={() => void loadSurface()}>
-              Recarregar
-            </GhostButton>
-          </div>
+          <GhostButton className="min-h-9 rounded-md px-3 text-sm" onClick={() => void loadSurface()}>
+            Recarregar
+          </GhostButton>
         </div>
 
-        <nav className="mt-5 flex flex-wrap gap-2 border-b border-[color:var(--color-border)] pb-2">
+        <nav className="mt-3 flex flex-wrap gap-1">
           {[
             { id: 'health', label: 'Saúde' },
             { id: 'audit', label: 'Auditoria' },
@@ -492,10 +617,10 @@ export function SystemPage() {
           ].map((tab) => (
             <button
               className={cx(
-                'inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold transition',
+                'inline-flex min-h-9 items-center border-b-2 border-transparent px-2 text-sm transition',
                 activeTab === tab.id
-                  ? 'bg-[rgba(48,127,226,0.1)] text-[color:var(--color-brand-blue)] shadow-[inset_0_-2px_0_var(--color-brand-blue)]'
-                  : 'text-[color:var(--color-muted)] hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-ink)]',
+                  ? 'border-[color:var(--minimal-action)] font-medium text-[color:var(--minimal-text)]'
+                  : 'text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)]',
               )}
               key={tab.id}
               onClick={() => setActiveTab(tab.id as SystemTab)}
@@ -505,151 +630,252 @@ export function SystemPage() {
             </button>
           ))}
         </nav>
-
-        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <SystemMetricCard helper="Eventos com leitura estável." label="Checks verdes" value={String(checksOkCount)} />
-          <SystemMetricCard helper="Itens que pedem atenção." label="Alertas" value={String(alertCount)} />
-          <SystemMetricCard helper="Ocorrências nas últimas 24h." label="Eventos recentes" value={String(recentCount)} />
-          <SystemMetricCard helper="Registros críticos no feed." label="Falhas" value={String(failureCount)} />
-        </div>
       </section>
 
-      <div className="grid gap-5 xl:grid-cols-[292px_minmax(0,1.24fr)_332px]">
-        <aside className="space-y-5">
-          <SystemSurfaceCard
-            description="Use listas rápidas e filtros para recortar o feed sem inflar a área central."
-            title="Monitoramento"
-          >
-            <div className="space-y-4">
-              <div className="space-y-2">
-                {[
-                  { id: 'health', label: 'Saúde geral', helper: `${checksOkCount} checks estáveis` },
-                  { id: 'audit', label: 'Auditoria', helper: `${auditFeed.length} eventos carregados` },
-                  { id: 'jobs', label: 'Falhas recentes', helper: `${failureCount} itens críticos` },
-                  { id: 'security', label: 'Segurança', helper: `${activeMembershipCount} associações ativas` },
-                ].map((item) => (
-                  <button
-                    className={cx(
-                      'flex w-full items-center justify-between rounded-[18px] border px-4 py-3 text-left transition',
-                      activeTab === item.id
-                        ? 'border-[rgba(48,127,226,0.3)] bg-[rgba(48,127,226,0.08)]'
-                        : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] hover:bg-white',
-                    )}
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id as SystemTab)}
-                    type="button"
-                  >
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold text-[color:var(--color-ink)]">{item.label}</p>
-                      <p className="text-xs leading-5 text-[color:var(--color-muted)]">{item.helper}</p>
-                    </div>
-                    <span className="text-sm text-[color:var(--color-muted)]">›</span>
-                  </button>
+      <div className="grid min-h-0 flex-1 overflow-hidden xl:grid-cols-[220px_minmax(0,1fr)_360px]">
+        <aside className="hidden border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] p-3 xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
+                Monitoramento
+              </p>
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+              {[
+                { id: 'health', label: 'Saúde geral', count: `${checksOkCount} checks` },
+                { id: 'audit', label: 'Auditoria', count: `${auditFeed.length} eventos` },
+                { id: 'jobs', label: 'Falhas recentes', count: `${failureCount} críticos` },
+                { id: 'security', label: 'Segurança', count: `${unavailableCheckCount} pendências` },
+              ].map((item) => (
+                <button
+                  className={cx(
+                    'flex w-full items-center justify-between border-b border-[color:var(--minimal-border)] px-1 py-2.5 text-left transition-colors',
+                    activeTab === item.id
+                      ? 'bg-[color:var(--minimal-selection)]'
+                      : 'hover:bg-[color:var(--minimal-surface-muted)]',
+                  )}
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id as SystemTab)}
+                  type="button"
+                >
+                  <span className="min-w-0 truncate text-[0.8rem] font-semibold text-[color:var(--color-ink)]">{item.label}</span>
+                  <span className="shrink-0 text-[0.72rem] text-[color:var(--color-muted)]">{item.count}</span>
+                </button>
+              ))}
+            </div>
+
+            <label className="grid gap-1.5">
+              <span className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">Tipo</span>
+              <SelectInput className="h-9 min-w-0 rounded-[14px] px-3.5 text-[13px]" onChange={(event) => setActionFilter(event.target.value)} value={actionFilter}>
+                <option value="all">Todos</option>
+                {distinctActions.map((action) => (
+                  <option key={action} value={action}>
+                    {auditFeed.find((entry) => entry.action === action)?.action_label ?? action}
+                  </option>
                 ))}
-              </div>
+              </SelectInput>
+            </label>
 
-              <div className="grid gap-3">
-                <label className="grid gap-2">
-                  <span className="text-sm font-medium text-[color:var(--color-ink)]">Tipo</span>
-                  <SelectInput onChange={(event) => setActionFilter(event.target.value)} value={actionFilter}>
-                    <option value="all">Todos</option>
-                    {distinctActions.map((action) => (
-                      <option key={action} value={action}>
-                        {humanizeToken(action).replaceAll('_', ' ')}
-                      </option>
-                    ))}
-                  </SelectInput>
-                </label>
+            <label className="grid gap-1.5">
+              <span className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">Severidade</span>
+              <SelectInput
+                className="h-9 min-w-0 rounded-[14px] px-3.5 text-[13px]"
+                onChange={(event) => setSeverityFilter(event.target.value as 'all' | SystemSeverity)}
+                value={severityFilter}
+              >
+                <option value="all">Todas</option>
+                <option value="ok">Estável</option>
+                <option value="attention">Atenção</option>
+                <option value="critical">Crítico</option>
+              </SelectInput>
+            </label>
 
-                <label className="grid gap-2">
-                  <span className="text-sm font-medium text-[color:var(--color-ink)]">Severidade</span>
-                  <SelectInput
-                    onChange={(event) =>
-                      setSeverityFilter(event.target.value as 'all' | SystemSeverity)
-                    }
-                    value={severityFilter}
-                  >
-                    <option value="all">Todas</option>
-                    <option value="ok">Estavel</option>
-                    <option value="attention">Atenção</option>
-                    <option value="critical">Critico</option>
-                  </SelectInput>
-                </label>
+            <label className="grid gap-1.5">
+              <span className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">Período</span>
+              <SelectInput
+                className="h-9 min-w-0 rounded-[14px] px-3.5 text-[13px]"
+                onChange={(event) => setPeriodFilter(event.target.value as SystemPeriodFilter)}
+                value={periodFilter}
+              >
+                <option value="24h">Últimas 24h</option>
+                <option value="7d">Últimos 7 dias</option>
+                <option value="30d">Últimos 30 dias</option>
+                <option value="all">Todo o feed</option>
+              </SelectInput>
+            </label>
 
-                <label className="grid gap-2">
-                  <span className="text-sm font-medium text-[color:var(--color-ink)]">Periodo</span>
-                  <SelectInput
-                    onChange={(event) =>
-                      setPeriodFilter(event.target.value as SystemPeriodFilter)
-                    }
-                    value={periodFilter}
-                  >
-                    <option value="24h">Ultimas 24h</option>
-                    <option value="7d">Ultimos 7 dias</option>
-                    <option value="30d">Ultimos 30 dias</option>
-                    <option value="all">Todo o feed</option>
-                  </SelectInput>
-                </label>
+            <label className="grid gap-1.5">
+              <span className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">Serviço</span>
+              <SelectInput className="h-9 min-w-0 rounded-[14px] px-3.5 text-[13px]" onChange={(event) => setServiceFilter(event.target.value)} value={serviceFilter}>
+                <option value="all">Todos</option>
+                {distinctServices.map((service) => (
+                  <option key={service} value={service}>
+                    {auditFeed.find((entry) => entry.service_key === service)?.service_label ?? service}
+                  </option>
+                ))}
+              </SelectInput>
+            </label>
 
-                <label className="grid gap-2">
-                  <span className="text-sm font-medium text-[color:var(--color-ink)]">Serviço</span>
-                  <SelectInput onChange={(event) => setServiceFilter(event.target.value)} value={serviceFilter}>
-                    <option value="all">Todos</option>
-                    {distinctServices.map((service) => (
-                      <option key={service} value={service}>
-                        {humanizeSystemService(service)}
-                      </option>
-                    ))}
-                  </SelectInput>
-                </label>
+            <label className="grid gap-1.5">
+              <span className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">Buscar</span>
+              <TextInput
+                className="h-9 min-w-0 rounded-[14px] px-3.5 text-[13px]"
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Pessoa, cliente ou serviço"
+                value={query}
+              />
+            </label>
 
-                <label className="grid gap-2">
-                  <span className="text-sm font-medium text-[color:var(--color-ink)]">Buscar</span>
-                  <TextInput
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Buscar por pessoa, cliente ou serviço"
-                    value={query}
-                  />
-                </label>
-
-                <AppButton className="min-h-11 w-full px-4" onClick={() => void loadSurface()}>
-                  Recarregar
-                </AppButton>
-              </div>
-            </div>
-          </SystemSurfaceCard>
-
-          <SystemSurfaceCard
-            description="Pulso atual da operação administrativa."
-            title="Checks rápidos"
-          >
-            <div className="space-y-3 text-sm leading-6 text-[color:var(--color-muted)]">
-              <div className="flex items-center justify-between gap-3 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
-                <span>Clientes ativos</span>
-                <span className="font-semibold text-[color:var(--color-ink)]">{activeTenantCount}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
-                <span>Clientes em atenção</span>
-                <span className="font-semibold text-[color:var(--color-ink)]">{suspendedTenantCount}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
-                <span>Memberships ativas</span>
-                <span className="font-semibold text-[color:var(--color-ink)]">{activeMembershipCount}</span>
-              </div>
-            </div>
-          </SystemSurfaceCard>
+            <AppButton className="min-h-9 w-full px-4 text-[12.5px]" onClick={() => void loadSurface()}>
+              Recarregar
+            </AppButton>
+          </div>
         </aside>
 
-        <div className="space-y-5">
+        <div className="min-w-0 xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
           <SystemSurfaceCard
             actions={
-              <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+              <div className="flex flex-wrap items-center gap-2 text-[0.72rem] uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
                 <span>{filteredFeed.length} itens visíveis</span>
               </div>
             }
-            description="Checks e eventos administrativos para rastrear mudancas, alertas e contexto operacional do control plane."
-            title="Eventos e checks"
+            className="xl:flex xl:min-h-0 xl:flex-1 xl:flex-col"
+            title="Feed operacional"
           >
+            <div className="hidden">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <h3 className="text-[0.98rem] font-semibold text-[color:var(--color-ink)]">
+                    Governança de canais
+                  </h3>
+                  <p className="text-sm leading-6 text-[color:var(--color-muted)]">
+                    Portal é o canal ativo do MVP. Canais externos permanecem sem envio real.
+                  </p>
+                </div>
+                <StatusPill>Sem segredo configurado</StatusPill>
+              </div>
+
+              {channelSummaries.length === 0 ? (
+                <div className="mt-3">
+                  <InlineNotice>
+                    Readiness de canais indisponível neste ambiente.
+                  </InlineNotice>
+                </div>
+              ) : (
+                <div className="mt-4 grid gap-2 lg:grid-cols-2">
+                  {channelSummaries.map((channel) => (
+                    <div
+                      className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3.5 py-3"
+                      key={channel.channelKey}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[color:var(--color-ink)]">
+                            {channel.channelLabel}
+                          </p>
+                          <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
+                            {channel.isExternal
+                              ? 'Provider externo não configurado'
+                              : 'Canal nativo governado'}
+                          </p>
+                        </div>
+                        <StatusPill tone={channel.tone}>{channel.statusLabel}</StatusPill>
+                      </div>
+                      <div className="mt-3 grid gap-1 text-xs leading-5 text-[color:var(--color-muted)]">
+                        <p>
+                          Clientes ativos: {channel.activeCount}/{channel.tenantCount}
+                        </p>
+                        <p>Envio permitido: {channel.canSendCount > 0 ? 'Sim, conforme operação atual' : 'Não'}</p>
+                        <p>{channel.reason}</p>
+                        <p>Próximo requisito: {channel.setup}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="hidden">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <h3 className="text-[0.98rem] font-semibold text-[color:var(--color-ink)]">
+                    AI-native readiness
+                  </h3>
+                  <p className="text-sm leading-6 text-[color:var(--color-muted)]">
+                    Preparado para governança, não ativo. Nenhuma resposta é enviada automaticamente.
+                  </p>
+                </div>
+                <StatusPill tone="warning">Preparada, não ativa</StatusPill>
+              </div>
+
+              {!aiReadiness ? (
+                <div className="mt-3">
+                  <InlineNotice>Readiness AI-native indisponível neste ambiente.</InlineNotice>
+                </div>
+              ) : (
+                <>
+                  <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3.5 py-3">
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                        Fontes
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
+                        {aiPolicySummary.sourcePolicyCount || aiReadiness.allowed_source_count + aiReadiness.restricted_source_count + aiReadiness.future_source_count}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
+                        {aiReadiness.allowed_source_count} permitidas, {aiReadiness.restricted_source_count} restritas, {aiReadiness.future_source_count} futuras
+                      </p>
+                    </div>
+                    <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3.5 py-3">
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                        Políticas de ação
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
+                        {aiPolicySummary.actionPolicyCount || 'Indisponível'}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
+                        {aiPolicySummary.blockedAutomationCount} automações bloqueadas; {aiPolicySummary.reviewRequiredCount} exigem revisão humana
+                      </p>
+                    </div>
+                    <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3.5 py-3">
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                        Motor de resposta
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
+                        Não configurado
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
+                        Nenhuma automação externa ativa nesta versão
+                      </p>
+                    </div>
+                    <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3.5 py-3">
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                        Última atualização
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink)]">
+                        {aiPolicySummary.updatedAt ? formatDateTime(aiPolicySummary.updatedAt) : 'Indisponível'}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
+                        Governança configurada para revisão humana
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <StatusPill>{aiReadiness.human_review_required ? 'Revisão humana obrigatória' : 'Revisão indisponível'}</StatusPill>
+                    <StatusPill>{aiReadiness.audit_required ? 'Auditoria obrigatória' : 'Auditoria indisponível'}</StatusPill>
+                    <StatusPill tone={aiReadiness.auto_send_enabled ? 'critical' : 'default'}>Resposta automática bloqueada</StatusPill>
+                    <StatusPill tone={aiReadiness.auto_publish_enabled ? 'critical' : 'default'}>Publicação automática bloqueada</StatusPill>
+                    <StatusPill tone={aiReadiness.embeddings_enabled ? 'critical' : 'default'}>Busca assistida inativa</StatusPill>
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="mb-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+              <SystemMetricCard helper="Em leitura estável." label="Checks verdes" value={String(checksOkCount)} />
+              <SystemMetricCard helper="Eventos que pedem atenção da operação." label="Alertas" value={String(alertCount)} />
+              <SystemMetricCard helper="Nas últimas 24h." label="Eventos recentes" value={String(recentCount)} />
+              <SystemMetricCard helper="Eventos críticos em acompanhamento." label="Críticos" value={String(failureCount)} />
+            </div>
             {auditFeed.length === 0 ? (
               <EmptyState
                 description="Ainda não existem eventos de auditoria nesta área."
@@ -661,59 +887,56 @@ export function SystemPage() {
                 title="Nenhum registro bateu com o recorte"
               />
             ) : (
-              <div className="overflow-hidden rounded-[20px] border border-[color:var(--color-border)]">
-                <div className="hidden grid-cols-[138px_112px_170px_minmax(0,1fr)_148px_122px] gap-3 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)] lg:grid">
-                  <span>Tipo</span>
-                  <span>Severidade</span>
-                  <span>Serviço</span>
-                  <span>Mensagem</span>
-                  <span>Timestamp</span>
+              <div className="overflow-hidden rounded-[20px] border border-[color:var(--color-border)] xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
+                <div className="hidden grid-cols-[minmax(128px,0.8fr)_minmax(0,1.6fr)_minmax(112px,0.7fr)] gap-3 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)] lg:grid">
+                  <span>Evento</span>
+                  <span>Resumo operacional</span>
                   <span>Status</span>
                 </div>
                 <div className="divide-y divide-[color:var(--color-border)]">
                   {filteredFeed.map((entry) => {
-                    const severity = classifySystemSeverity(entry);
+                    const severity = entry.severity;
                     const selected = entry.id === selectedEntry?.id;
 
                     return (
                       <button
                         className={cx(
-                          'grid w-full gap-3 px-4 py-4 text-left transition lg:grid-cols-[138px_112px_170px_minmax(0,1fr)_148px_122px]',
+                          'grid w-full gap-3 px-4 py-4 text-left transition lg:grid-cols-[minmax(128px,0.8fr)_minmax(0,1.6fr)_minmax(112px,0.7fr)]',
                           selected
                             ? 'bg-[rgba(48,127,226,0.08)]'
-                            : 'bg-white hover:bg-[color:var(--color-surface)]',
+                            : 'bg-[color:var(--color-surface-strong)] hover:bg-[color:var(--color-surface)]',
                         )}
                         key={entry.id}
                         onClick={() => setSelectedEventId(entry.id)}
                         type="button"
                       >
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-[color:var(--color-ink)]">
-                            {humanizeToken(entry.action).replaceAll('_', ' ')}
+                        <div className="min-w-0 space-y-2">
+                          <p className="line-clamp-1 text-sm font-semibold text-[color:var(--color-ink)]">
+                            {sanitizeOperationalVisibleText(entry.action_label)}
                           </p>
-                        </div>
-                        <div className="min-w-0">
-                          <StatusPill tone={toneForSystemSeverity(severity)}>
-                            {humanizeSystemSeverity(severity)}
-                          </StatusPill>
-                        </div>
-                        <div className="min-w-0 text-sm text-[color:var(--color-muted)]">
-                          {humanizeSystemService(entry.entity_table)}
+                          <div className="flex flex-wrap gap-2">
+                            <StatusPill tone={toneForSystemSeverity(severity)}>
+                              {humanizeSystemSeverity(severity)}
+                            </StatusPill>
+                            <StatusPill>{sanitizeOperationalVisibleText(entry.service_label)}</StatusPill>
+                          </div>
                         </div>
                         <div className="min-w-0">
                           <p className="line-clamp-2 text-sm leading-6 text-[color:var(--color-ink)]">
                             {buildSystemEventMessage(entry)}
                           </p>
                         </div>
-                        <div className="text-sm text-[color:var(--color-muted)]">
-                          {formatDateTime(entry.occurred_at)}
-                        </div>
-                        <div className="text-sm font-medium text-[color:var(--color-ink)]">
-                          {severity === 'ok'
-                            ? 'Monitorado'
-                            : severity === 'attention'
-                              ? 'Em observação'
-                              : 'Escalar'}
+                        <div className="min-w-0 space-y-1 text-sm">
+                          <p className="font-medium text-[color:var(--color-ink)]">
+                            {severity === 'ok'
+                              ? 'Monitorado'
+                              : severity === 'attention'
+                                ? 'Em observação'
+                                : 'Escalar'}
+                          </p>
+                          <p className="text-[color:var(--color-muted)]">
+                            {formatDateTime(entry.occurred_at)}
+                          </p>
                         </div>
                       </button>
                     );
@@ -724,95 +947,84 @@ export function SystemPage() {
           </SystemSurfaceCard>
         </div>
 
-        <aside className="space-y-5">
-          <SystemSurfaceCard
-            description="Leitura curta do evento selecionado para decidir o proximo passo."
-            title="Detalhe operacional"
-          >
+        <aside className="hidden border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] p-4 xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+          <div className="space-y-4 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
+            <div className="space-y-1">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
+                Detalhe operacional
+              </p>
+            </div>
             {!selectedEntry ? (
               <InlineNotice>Nenhum evento ficou disponível para abrir detalhes neste recorte.</InlineNotice>
             ) : (
               <div className="space-y-4">
-                <section className="rounded-[24px] bg-[linear-gradient(180deg,#081d4a_0%,#102c6d_100%)] px-4 py-4 text-white shadow-[0_18px_34px_rgba(12,25,66,0.28)]">
+                <section className="border-b border-[color:var(--minimal-border)] pb-4 text-[color:var(--minimal-text)]">
                   <div className="space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusPill tone={toneForSystemSeverity(selectedSeverity)}>
                         {humanizeSystemSeverity(selectedSeverity)}
                       </StatusPill>
-                      <StatusPill>{humanizeSystemService(selectedEntry.entity_table)}</StatusPill>
+                      <StatusPill>{sanitizeOperationalVisibleText(selectedEntry.service_label)}</StatusPill>
                     </div>
                     <div className="space-y-1">
                       <h3 className="text-lg font-semibold tracking-[-0.04em]">
-                        {humanizeToken(selectedEntry.action).replaceAll('_', ' ')}
+                        {sanitizeOperationalVisibleText(selectedEntry.action_label)}
                       </h3>
-                      <p className="text-sm leading-6 text-white/78">
+                      <p className="text-sm leading-6 text-[color:var(--minimal-text-secondary)]">
                         {buildSystemEventMessage(selectedEntry)}
                       </p>
                     </div>
                     <div className="grid gap-2 text-sm leading-6 text-white/78">
-                      <p>Serviço: {humanizeSystemService(selectedEntry.entity_table)}</p>
-                      <p>Severidade: {humanizeSystemSeverity(selectedSeverity)}</p>
-                      <p>Timestamp: {formatDateTime(selectedEntry.occurred_at)}</p>
+                      <p>Área: {sanitizeOperationalVisibleText(selectedEntry.service_label)}</p>
+                      <p>Prioridade: {humanizeSystemSeverity(selectedSeverity)}</p>
+                      <p>Registrado em: {formatDateTime(selectedEntry.occurred_at)}</p>
                     </div>
                   </div>
                 </section>
 
-                <SystemSurfaceCard
-                  className="border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 shadow-none"
-                  description="Escopo afetado e ator envolvido."
-                  title="Contexto"
-                >
-                  <div className="grid gap-2 text-sm leading-6 text-[color:var(--color-muted)]">
-                    <p>Cliente: {selectedEntry.tenant_display_name ?? 'Indisponível'}</p>
-                    <p>Slug: {selectedEntry.tenant_slug ?? 'Indisponível'}</p>
-                    <p>Operador: {selectedEntry.actor_full_name ?? selectedEntry.actor_email ?? 'Indisponível'}</p>
+                <section className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
+                  <h3 className="text-[0.98rem] font-semibold text-[color:var(--color-ink)]">Contexto</h3>
+                  <div className="mt-3 grid gap-2 text-sm leading-6 text-[color:var(--color-muted)]">
+                    <p>Escopo: {sanitizeOperationalVisibleText(selectedEntry.scope_label)}</p>
+                    <p>Operador: {sanitizeOperationalVisibleText(selectedEntry.actor_display_name ?? selectedEntry.actor_email)}</p>
                   </div>
-                </SystemSurfaceCard>
+                </section>
 
-                <SystemSurfaceCard
-                  className="border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 shadow-none"
-                  description="Leitura objetiva do impacto atual."
-                  title="Impacto"
-                >
-                  <p className="text-sm leading-6 text-[color:var(--color-muted)]">
+                <section className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
+                  <h3 className="text-[0.98rem] font-semibold text-[color:var(--color-ink)]">Impacto</h3>
+                  <p className="mt-3 text-sm leading-6 text-[color:var(--color-muted)]">
                     {buildSystemImpact(selectedEntry)}
                   </p>
-                </SystemSurfaceCard>
+                </section>
 
-                <SystemSurfaceCard
-                  className="border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 shadow-none"
-                  description="Passos sugeridos usando apenas o contexto atual."
-                  title="Ações recomendadas"
-                >
-                  <ul className="space-y-2 text-sm leading-6 text-[color:var(--color-muted)]">
+                <section className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
+                  <h3 className="text-[0.98rem] font-semibold text-[color:var(--color-ink)]">Ações recomendadas</h3>
+                  <ul className="mt-3 space-y-2 text-sm leading-6 text-[color:var(--color-muted)]">
                     {buildSystemActions(selectedEntry).map((item) => (
                       <li key={item}>{item}</li>
                     ))}
                   </ul>
-                </SystemSurfaceCard>
+                </section>
 
-                <SystemSurfaceCard
-                  className="border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 shadow-none"
-                  description="Registros proximos para fechar a leitura do evento."
-                  title="Historico relacionado"
-                >
+                <section className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
+                  <h3 className="text-[0.98rem] font-semibold text-[color:var(--color-ink)]">Histórico relacionado</h3>
                   {relatedEntries.length === 0 ? (
-                    <p className="text-sm leading-6 text-[color:var(--color-muted)]">
+                    <p className="mt-3 text-sm leading-6 text-[color:var(--color-muted)]">
                       Indisponível.
                     </p>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="mt-3 space-y-2">
                       {relatedEntries.map((entry) => (
                         <div
-                          className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-3"
+                          className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-3"
                           key={entry.id}
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <p className="text-sm font-semibold text-[color:var(--color-ink)]">
-                              {humanizeToken(entry.action).replaceAll('_', ' ')}
+                              {entry.action_label}
                             </p>
-                            <StatusPill tone={toneForSystemSeverity(classifySystemSeverity(entry))}>
-                              {humanizeSystemSeverity(classifySystemSeverity(entry))}
+                            <StatusPill tone={toneForSystemSeverity(entry.severity)}>
+                              {humanizeSystemSeverity(entry.severity)}
                             </StatusPill>
                           </div>
                           <p className="mt-1 text-sm leading-6 text-[color:var(--color-muted)]">
@@ -822,22 +1034,19 @@ export function SystemPage() {
                       ))}
                     </div>
                   )}
-                </SystemSurfaceCard>
+                </section>
 
-                <details className="rounded-[22px] border border-[color:var(--color-border)] bg-white px-4 py-4">
-                  <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-ink)]">
-                    Detalhes do registro
-                  </summary>
+                <section className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4">
+                  <h3 className="text-[0.98rem] font-semibold text-[color:var(--color-ink)]">Dados protegidos</h3>
                   <div className="mt-3 space-y-3 text-sm leading-6 text-[color:var(--color-muted)]">
                     <p>Referência interna: {selectedEntry.entity_id ?? 'Indisponível'}</p>
-                    <p>Metadata resumida: {stringifyJsonPreview(selectedEntry.metadata)}</p>
-                    <p>Antes: {stringifyJsonPreview(selectedEntry.before_state)}</p>
-                    <p>Depois: {stringifyJsonPreview(selectedEntry.after_state)}</p>
+                    <p>Campos protegidos: {formatSanitizedContext(selectedEntry.sanitized_context)}</p>
+                    <p>Informações sensíveis não são expostas nesta tela.</p>
                   </div>
-                </details>
+                </section>
               </div>
             )}
-          </SystemSurfaceCard>
+          </div>
         </aside>
       </div>
     </div>

@@ -1,0 +1,24 @@
+{
+  "route": "/portal/help",
+  "innerWidth": 1600,
+  "innerHeight": 900,
+  "scrollHeight": 900,
+  "clientHeight": 900,
+  "hasGlobalScroll": false,
+  "hasHorizontalScroll": false,
+  "scrollables": [
+    {
+      "tag": "section",
+      "cls": "min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-5 shadow-[var(--shadow-pa",
+      "role": null,
+      "scrollHeight": 1743,
+      "clientHeight": 866,
+      "scrollWidth": 974,
+      "clientWidth": 974,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "Central autorizadaKnowledge liberada para o seu tenantA busca e a descoberta des"
+    }
+  ],
+  "sampleText": "GENIUS SUPPORT OS\n\nPortal do cliente\n\nAcesso autenticado ao próprio contexto B2B.\n\nVisão operacional\nTickets\nCentral autorizada\n\nTENANT ATIVO\n\nSupport QA Tenant A Operação Enterprise\n\nUsuário cliente\n\nmarina.ops@support-qa-a.local\n\nAmbiente do cliente\n\nSair\n\nCENTRAL AUTORIZADA\n\nKnowledge liberada para o seu tenant\n\nA busca e a descoberta desta área respeitam liberações aprovadas, publicação concluída e vínculos reais com tickets permitidos.\n\nARTIGOS VISÍVEIS\n\n7\n\nPÚBLICOS\n\n4\n\nAUTORIZADOS\n\n3\n\nBuscar e navegar\n\nOs filtros abaixo usam apenas dados reais desta conta. A busca nunca expõe conteúdo não liberado para o seu tenant.\n\nBuscar artigo\nProcure por integração, operação, ticket ou conteúdo já aprovado.\nCategoria\nTodas\nIntegrações\nOperação de reversa\nPrimeiros passos\nSuporte restrito tenant A\nSuporte técnico\nOrigem\nTodas\nPúblico\nAutorizado no portal\nRelacionado ao ticket\nBuscar\n7 RESULTADOS\nResultados autorizados\n\nOrdenação segura da plataforma, sem recomendações artificiais e sem depender de filtros locais.\n\nComo compartilhar evidências em um ticket\n\nSuporte técnico\n\nRELACIONADO AO TICKET\n\nOrientações objetivas para anexar evidências úteis sem prejudicar a leitura do ticket.\n\nArtigo"
+}

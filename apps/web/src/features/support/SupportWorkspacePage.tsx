@@ -11,7 +11,6 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import {
   formatDateTime,
   humanizeToken,
-  stringifyJsonPreview,
 } from '../../app/format';
 import {
   ContractUnavailableState,
@@ -19,11 +18,12 @@ import {
   ErrorState,
   LoadingState,
 } from '../../components/states';
+import { Avatar } from '../../components/Avatar';
+import { FilterTabs } from '../../components/FilterTabs';
 import {
   AppButton,
   ContextSubsidebar,
   ContextSubsidebarSection,
-  Field,
   GhostButton,
   InlineNotice,
   PageHeader,
@@ -40,39 +40,70 @@ import { useAuthContext } from '../auth/auth-context';
 import { classifyAdminError } from '../admin/admin-errors';
 import {
   addInternalTicketNote,
+  addInternalActionEvidenceLink,
   addTicketMessage,
+  acceptSupportInternalActionReturn,
   archiveSupportTicketArticleLink,
   assignTicket,
+  closeSupportInternalAction,
   closeTicket,
+  createTicket,
+  createSupportInternalAction,
+  createSupportEngineeringWorkItemFromTicket,
+  getSupportInternalActionDetail,
+  getSupportTicketAttachmentSignedUrl,
   getSupportCustomerAccountContext,
+  listSupportCustomerProductContexts,
   getSupportCustomer360,
   getSupportCustomerRecentEvents,
   getSupportCustomerRecentTickets,
   getSupportTicketDetail,
+  listSupportInternalActionTargetAreas,
+  listSupportInternalActionTimeline,
+  listSupportTicketInternalActions,
+  listSupportTicketAttachments,
+  listSupportTicketEngineeringLinks,
   getSupportTicketKnowledgeLinks,
+  getSupportTicketTimelinePage,
   getSupportTicketTimelineRecent,
   linkSupportTicketArticle,
   listSupportAssignableAgents,
+  listSupportTicketIntakeContacts,
+  listSupportTicketIntakeTenants,
+  listSupportTicketClassificationOptions,
   listSupportKnowledgeArticlePicker,
   listSupportCustomers360,
   markSupportArticleNeedsUpdate,
   markSupportDocumentationGap,
   listSupportTicketsQueue,
+  SUPPORT_QUEUE_PAGE_SIZE,
   reopenTicket,
+  requestSupportInternalActionFollowup,
+  uploadSupportTicketAttachment,
+  updateTicketClassification,
+  updateTicketPrioritySeverity,
   updateTicketStatus,
 } from './support-api';
 import {
+  ENGINEERING_WORK_ITEM_TYPES,
+  INTERNAL_ACTION_SUPPORT_TYPES,
   TICKET_PRIORITIES,
   TICKET_SEVERITIES,
+  TICKET_SOURCES,
   TICKET_STATUSES,
-  type KnowledgeArticleStatus,
-  type KnowledgeArticleVisibility,
+  type InternalActionStatus,
+  type InternalActionSupportType,
+  type SupportInternalActionTargetArea,
+  type SupportInternalActionDetail,
+  type SupportInternalActionTimelineEntry,
+  type EngineeringWorkItemType,
   type SupportAssignableAgent,
   type SupportCustomerAccountAlert,
   type SupportCustomerAccountContext,
   type SupportCustomerAccountCustomization,
   type SupportCustomerAccountFeature,
   type SupportCustomerAccountIntegration,
+  type SupportCustomerProductContext,
   type SupportCustomer360,
   type SupportCustomer360Contact,
   type SupportCustomerRecentEventsWindow,
@@ -80,7 +111,13 @@ import {
   type SupportCustomer360RecentEvent,
   type SupportCustomer360RecentTicket,
   type SupportKnowledgeArticlePickerItem,
+  type SupportTicketIntakeContact,
+  type SupportTicketIntakeTenant,
+  type SupportTicketClassificationOption,
   type SupportTicketDetail,
+  type SupportTicketAttachment,
+  type SupportTicketEngineeringLink,
+  type SupportTicketInternalAction,
   type SupportTicketKnowledgeLink,
   type SupportTicketQueueItem,
   type SupportTicketTimelineItem,
@@ -88,40 +125,178 @@ import {
   type TicketKnowledgeLinkType,
   type TicketPriority,
   type TicketSeverity,
+  type TicketSource,
   type TicketStatus,
   type TicketStatusUpdateTarget,
   type Uuid,
 } from '../../contracts/support-contracts';
+import {
+  QueueTicketItem,
+  EvidenceFileChip,
+  OperationalField,
+  OperationalFooterActions,
+  OperationalFormGrid,
+  OperationalModal,
+  SupportConversationMessage,
+  SupportIconActionButton,
+  SupportInternalNote,
+  SupportPrimaryActionButton,
+  SupportSearchInput,
+  SupportSecondaryActionButton,
+  SupportSystemEvent,
+  SupportWorkspaceGrid,
+} from './components/SupportWorkspacePrimitives';
+import { SupportTicketComposerSection } from './components/SupportTicketComposerSection';
+import {
+  SupportClassificationDrawerPanel,
+  SupportDrawerField,
+  SupportDrawerPill,
+  SupportEvidenceDrawerPanel,
+  SupportKnowledgeDrawerPanel,
+  SupportRelatedDrawerPanel,
+  SupportStatusDrawerPanel,
+} from './components/SupportTicketContextPanels';
+import {
+  SupportEngineeringHandoffDrawerPanel,
+  SupportInternalActionsDrawerPanel,
+} from './components/SupportTicketAdvancedContextPanels';
+import { SupportTicketContextRail } from './components/SupportTicketContextRail';
+import { SupportTicketConversationSection } from './components/SupportTicketConversationSection';
+import { SupportTicketQueue } from './components/SupportTicketQueue';
+import { SupportTicketRightRail } from './components/SupportTicketRightRail';
+import { SupportTicketWorkspaceHeader } from './components/SupportTicketWorkspaceHeader';
+import {
+  SupportHelpCenterPanel,
+  OperationalQueueBadge,
+  queueMetricIcon,
+  SupportSummaryStrip,
+} from './components/SupportWorkspaceAuxiliaryPanels';
+import { SupportQueueLoadingScaffold, SupportTicketLoadingScaffold } from './components/SupportWorkspaceStates';
+import { CompactSupportPill, SupportSurfaceIcon } from './components/SupportWorkspaceVisuals';
+import {
+  formatSlaDueLabel,
+  formatSupportShortTime,
+  humanizeKnowledgeLinkType,
+  humanizeKnowledgeStatus,
+  humanizeKnowledgeVisibility,
+  humanizePriority,
+  humanizeSeverity,
+  humanizeStatus,
+  primaryContactFromCustomer,
+  readCustomerDocumentLabel,
+  supportTicketCode,
+  ticketTenantLabel,
+  toneForKnowledgeLinkType,
+  toneForTicketStatus,
+  compactTicketStatusLabel,
+} from './lib/SupportWorkspacePresentation';
+import {
+  supportActionDrawerSize,
+  supportActionDrawerWidthVariant,
+} from './lib/SupportWorkspaceContextRail';
+import type {
+  KnowledgePhase,
+  QueueFilters,
+  TicketActionDrawer,
+} from './lib/SupportWorkspaceTypes';
 
 type PagePhase = 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type DetailPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type AgentsPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
-type KnowledgePhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
+type IntakePhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
+type AttachmentPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
+type EngineeringPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
+type InternalActionsPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
+type InternalActionDetailPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
+type InternalActionTargetAreasPhase = 'idle' | 'loading' | 'ready' | 'contract-unavailable' | 'error';
 type WorkspaceVariant = 'queue' | 'tickets';
 type ComposerMode = 'public' | 'internal';
+type TicketInboxScope = 'open' | 'closed';
+type TicketInboxFilter =
+  | 'all'
+  | 'in_progress'
+  | 'awaiting'
+  | 'urgent'
+  | 'operations'
+  | 'engineering'
+  | 'all_closed'
+  | 'resolved'
+  | 'closed'
+  | 'cancelled';
+const TICKET_ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
+const TICKET_ATTACHMENT_ACCEPT =
+  '.pdf,.json,.jpg,.jpeg,.png,.webp,.csv,.txt,application/pdf,application/json,image/jpeg,image/png,image/webp,text/csv,text/plain';
 
-interface QueueFilters {
-  status: TicketStatus | 'all';
-  priority: TicketPriority | 'all';
-  severity: TicketSeverity | 'all';
-  tenantId: Uuid | 'all';
-  assignedToUserId: Uuid | 'all' | 'unassigned';
+interface TicketIntakeDraft {
+  tenantId: Uuid | '';
+  requesterContactId: Uuid | '';
+  source: TicketSource;
+  priority: TicketPriority;
+  severity: TicketSeverity;
+  categoryId: Uuid | '';
+  operationalReasonId: Uuid | '';
+  title: string;
+  description: string;
+}
+interface TicketClassificationDraft {
+  categoryId: Uuid | '';
+  operationalReasonId: Uuid | '';
+  note: string;
+}
+interface TicketPrioritySeverityDraft {
+  priority: TicketPriority;
+  severity: TicketSeverity;
+  operationalReasonId: Uuid | '';
+  note: string;
 }
 
-function toneForTicketStatus(status: TicketStatus) {
-  if (status === 'resolved' || status === 'closed') {
-    return 'positive' as const;
-  }
+interface EngineeringHandoffDraft {
+  workItemType: EngineeringWorkItemType;
+  title: string;
+  description: string;
+  handoffNote: string;
+  impactSummary: string;
+  reproductionSteps: string;
+  expectedResult: string;
+  currentResult: string;
+  relatedEvidence: string;
+  technicalUrgency: TicketPriority;
+}
 
-  if (status === 'cancelled') {
-    return 'critical' as const;
-  }
+interface InternalActionCreateDraft {
+  targetArea: string;
+  supportType: InternalActionSupportType | '';
+  priority: TicketPriority;
+  summary: string;
+  context: string;
+  evidenceAttachmentIds: Uuid[];
+}
 
-  if (status === 'waiting_customer' || status === 'waiting_engineering') {
-    return 'warning' as const;
-  }
+interface TicketAttachmentUploadDraft {
+  files: File[];
+  note: string;
+  errors: Record<string, string>;
+}
 
-  return 'default' as const;
+interface SupportCustomerPreviewSnapshot {
+  customer: SupportCustomer360;
+  accountContext: SupportCustomerAccountContext | null;
+  productContexts: SupportCustomerProductContext[];
+  recentTicketsWindow: SupportCustomerRecentTicketsWindow;
+  recentEventsWindow: SupportCustomerRecentEventsWindow;
+}
+
+const OPEN_TICKET_FILTERS = ['all', 'in_progress', 'awaiting', 'urgent', 'operations', 'engineering'] as const;
+const CLOSED_TICKET_FILTERS = ['all_closed', 'resolved', 'closed', 'cancelled'] as const;
+
+function defaultTicketInboxFilterForScope(scope: TicketInboxScope): TicketInboxFilter {
+  return scope === 'open' ? 'all' : 'all_closed';
+}
+
+function ticketInboxFilterMatchesScope(filter: TicketInboxFilter, scope: TicketInboxScope) {
+  return scope === 'open'
+    ? OPEN_TICKET_FILTERS.some((candidate) => candidate === filter)
+    : CLOSED_TICKET_FILTERS.some((candidate) => candidate === filter);
 }
 
 function toneForPriority(priority: TicketPriority) {
@@ -148,62 +323,202 @@ function toneForSeverity(severity: TicketSeverity) {
   return 'default' as const;
 }
 
+function humanizeSlaPolicyScope(scope: SupportTicketQueueItem['slaPolicyScope'] | SupportTicketDetail['slaPolicyScope']) {
+  if (scope === 'tenant') {
+    return 'Política do cliente';
+  }
+
+  if (scope === 'global_fallback') {
+    return 'Fallback interno';
+  }
+
+  return 'Sem política definida';
+}
+
+function approximateSlaPercent(detail: SupportTicketDetail) {
+  const dueAt = detail.resolutionDueAt ?? detail.firstResponseDueAt;
+  if (!dueAt) {
+    return detail.slaStatus === 'breached' ? 100 : detail.slaStatus === 'at_risk' ? 72 : 48;
+  }
+
+  const dueMs = Date.parse(dueAt);
+  const startMs = Date.parse(detail.createdAt);
+  if (!Number.isFinite(dueMs) || !Number.isFinite(startMs) || dueMs <= startMs) {
+    return detail.slaStatus === 'breached' ? 100 : detail.slaStatus === 'at_risk' ? 72 : 48;
+  }
+
+  const nowMs = Date.now();
+  const elapsed = Math.max(0, nowMs - startMs);
+  const total = dueMs - startMs;
+  return Math.max(0, Math.min(100, Math.round((elapsed / total) * 100)));
+}
+
+function formatRemainingTimeLabel(targetIso: string | null) {
+  if (!targetIso) {
+    return 'Prazo indisponível';
+  }
+
+  const delta = Date.parse(targetIso) - Date.now();
+  const absoluteMinutes = Math.max(0, Math.round(Math.abs(delta) / 60000));
+  const hours = Math.floor(absoluteMinutes / 60);
+  const minutes = absoluteMinutes % 60;
+  const compact = `${hours}h ${String(minutes).padStart(2, '0')}m`;
+
+  return delta >= 0 ? `${compact} restantes` : `${compact} em atraso`;
+}
+
 function humanizeVisibility(value: string) {
   return value === 'internal' ? 'Nota interna' : 'Resposta pública';
 }
 
-function humanizeStatus(status: TicketStatus) {
-  switch (status) {
-    case 'new':
-      return 'Novo';
-    case 'triage':
-      return 'Triagem';
-    case 'in_progress':
-      return 'Em andamento';
-    case 'waiting_customer':
-      return 'Aguardando cliente';
-    case 'waiting_support':
-      return 'Aguardando suporte';
-    case 'waiting_engineering':
-      return 'Aguardando engenharia';
-    case 'resolved':
-      return 'Resolvido';
-    case 'closed':
-      return 'Fechado';
-    case 'cancelled':
-      return 'Cancelado';
-    default:
-      return humanizeToken(status).replaceAll('_', ' ');
+function formatAttachmentSize(sizeBytes: number) {
+  if (!Number.isFinite(sizeBytes) || sizeBytes <= 0) {
+    return 'Tamanho indisponível';
   }
+
+  if (sizeBytes < 1024) {
+    return `${sizeBytes} B`;
+  }
+
+  if (sizeBytes < 1024 * 1024) {
+    return `${Math.max(1, Math.round(sizeBytes / 1024))} KB`;
+  }
+
+  return `${Math.round((sizeBytes / (1024 * 1024)) * 10) / 10} MB`;
 }
 
-function humanizePriority(priority: TicketPriority) {
-  switch (priority) {
-    case 'low':
-      return 'Baixa';
-    case 'normal':
-      return 'Normal';
-    case 'high':
-      return 'Alta';
-    case 'urgent':
-      return 'Urgente';
-    default:
-      return humanizeToken(priority);
-  }
+function initialsFromSupportLabel(value: string | null | undefined) {
+  const parts = (value ?? 'IN')
+    .split(/[\s@._-]+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .slice(0, 2);
+
+  return parts.length > 0
+    ? parts.map((part) => part[0]?.toLocaleUpperCase('pt-BR') ?? '').join('')
+    : 'IN';
 }
 
-function humanizeSeverity(severity: TicketSeverity) {
-  switch (severity) {
-    case 'low':
-      return 'Baixa';
-    case 'medium':
-      return 'Média';
-    case 'high':
-      return 'Alta';
-    case 'critical':
-      return 'Crítica';
+function LoadingBlock({ className }: { className?: string }) {
+  return (
+    <div
+      className={cx(
+        'animate-pulse rounded-[18px] bg-[linear-gradient(90deg,rgba(226,232,240,0.9),rgba(241,245,249,0.95),rgba(226,232,240,0.9))]',
+        className,
+      )}
+    />
+  );
+}
+
+function humanizeAttachmentStatus(status: SupportTicketAttachment['status']) {
+  return status === 'archived' ? 'Arquivado' : 'Disponível';
+}
+
+function attachmentKind(attachment: SupportTicketAttachment) {
+  const name = attachment.displayName.toLocaleLowerCase('pt-BR');
+  const contentType = attachment.contentType?.toLocaleLowerCase('pt-BR') ?? '';
+
+  if (contentType.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(name)) {
+    return 'Imagem';
+  }
+
+  if (contentType.includes('json') || contentType.includes('text') || /\.(json|txt|log|csv)$/i.test(name)) {
+    return 'Log';
+  }
+
+  return 'Documento';
+}
+
+function sanitizeSupportVisibleText(value: string | null | undefined) {
+  const sanitized = (value ?? 'Indisponível')
+    .replace(/\bpayload\b/gi, 'conteúdo técnico')
+    .replace(/\bbackend\b/gi, 'operaÃ§Ã£o')
+    .replace(/\bprovider\b/gi, 'serviÃ§o externo')
+    .replace(/\bcontratos?\b/gi, 'acordos operacionais')
+    .replace(/\btenant\b/gi, 'cliente')
+    .replace(/\bfixture\b/gi, 'registro de validaÃ§Ã£o')
+    .replace(/\bRPCs?\b/g, 'processo operacional')
+    .replace(/\bRLS\b/g, 'regra de acesso')
+    .replace(/\bSupabase\b/g, 'plataforma')
+    .replace(/\bschema\b/gi, 'estrutura');
+
+  return sanitized.length > 320 ? `${sanitized.slice(0, 317).trimEnd()}...` : sanitized;
+}
+
+function toneForAttachmentStatus(status: SupportTicketAttachment['status']) {
+  return status === 'archived' ? ('warning' as const) : ('positive' as const);
+}
+
+function friendlyAttachmentUploadErrorMessage(message: string) {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes('content type is not allowed')) {
+    return 'O tipo de arquivo não está liberado para evidências deste ticket.';
+  }
+
+  if (normalized.includes('file size exceeds')) {
+    return 'O arquivo ultrapassa o limite de 10 MB para evidências.';
+  }
+
+  if (normalized.includes('file size must be greater than zero')) {
+    return 'Selecione um arquivo com conteúdo antes de enviar.';
+  }
+
+  if (normalized.includes('ticket is not eligible')) {
+    return 'Este ticket não aceita novas evidências no status atual.';
+  }
+
+  if (normalized.includes('ticket not found')) {
+    return 'A leitura de evidências deste ticket não ficou disponível agora.';
+  }
+
+  if (normalized.includes('upload intent expired')) {
+    return 'O preparo do upload expirou. Tente enviar o arquivo novamente.';
+  }
+
+  if (normalized.includes('rpc_support_create_ticket_attachment_upload denied')) {
+    return 'Seu acesso atual não permite enviar evidências para este ticket.';
+  }
+
+  return message;
+}
+
+function friendlyAttachmentDownloadErrorMessage(message: string) {
+  const normalized = message.toLowerCase();
+
+  if (
+    normalized.includes('download grant not found') ||
+    normalized.includes('download grant expired')
+  ) {
+    return 'O link temporário expirou antes do download. Tente novamente.';
+  }
+
+  if (
+    normalized.includes('rpc_support_get_ticket_attachment_download_url denied') ||
+    normalized.includes('ticket attachment is not available')
+  ) {
+    return 'A evidência não está disponível para download com o acesso atual.';
+  }
+
+  return message;
+}
+
+function humanizeSource(source: TicketSource) {
+  switch (source) {
+    case 'portal':
+      return 'Portal';
+    case 'email':
+      return 'E-mail';
+    case 'chat':
+      return 'Chat';
+    case 'phone':
+      return 'Telefone';
+    case 'api':
+      return 'API';
+    case 'internal':
+      return 'Interno';
     default:
-      return humanizeToken(severity);
+      return humanizeToken(source);
   }
 }
 
@@ -211,36 +526,214 @@ function humanizeCustomerValue(value: string) {
   return humanizeToken(value).replaceAll('_', ' ');
 }
 
-function humanizeKnowledgeVisibility(visibility: KnowledgeArticleVisibility) {
-  if (visibility === 'public') {
-    return 'Público';
+function humanizeTenantStatus(value: string) {
+  if (value === 'active') {
+    return 'Ativo';
   }
 
-  if (visibility === 'internal') {
-    return 'Interno';
+  if (value === 'suspended') {
+    return 'Suspenso';
   }
 
-  return 'Restrito';
-}
-
-function humanizeKnowledgeStatus(status: KnowledgeArticleStatus) {
-  if (status === 'draft') {
-    return 'Rascunho';
-  }
-
-  if (status === 'review') {
-    return 'Em revisão';
-  }
-
-  if (status === 'published') {
-    return 'Publicado';
-  }
-
-  if (status === 'archived') {
+  if (value === 'archived') {
     return 'Arquivado';
   }
 
-  return humanizeToken(status).replaceAll('_', ' ');
+  return humanizeCustomerValue(value);
+}
+
+function labelForCustomerProductSubscriptionStatus(
+  value: SupportCustomerProductContext['status'],
+) {
+  const labels: Record<SupportCustomerProductContext['status'], string> = {
+    active: 'Ativa',
+    suspended: 'Suspensa',
+  };
+
+  return labels[value];
+}
+
+function toneForCustomerProductSubscriptionStatus(
+  value: SupportCustomerProductContext['status'],
+) {
+  return value === 'active' ? 'positive' as const : 'warning' as const;
+}
+
+function labelForCustomerProductEntitlementSource(
+  value: SupportCustomerProductContext['activeSupportFeatures'][number]['entitlementSource'],
+) {
+  const labels: Record<
+    SupportCustomerProductContext['activeSupportFeatures'][number]['entitlementSource'],
+    string
+  > = {
+    addon: 'Add-on',
+    migration: 'Migração',
+    ops_override: 'Override operacional',
+    pilot: 'Piloto',
+    plan: 'Plano',
+  };
+
+  return labels[value];
+}
+
+function labelForCustomerProductOwnerRole(
+  value: SupportCustomerProductContext['activeInternalOwners'][number]['ownerRole'],
+) {
+  const labels: Record<
+    SupportCustomerProductContext['activeInternalOwners'][number]['ownerRole'],
+    string
+  > = {
+    account_owner: 'Account owner',
+    cs_owner: 'CS',
+    finance_owner: 'Financeiro operacional',
+    implementation_owner: 'Implantação',
+    support_owner: 'Suporte',
+    technical_owner: 'Técnico',
+  };
+
+  return labels[value];
+}
+
+function primaryCustomerProductContext(productContexts: SupportCustomerProductContext[]) {
+  return (
+    productContexts.find((productContext) => productContext.status === 'active') ??
+    productContexts[0] ??
+    null
+  );
+}
+
+function displayCustomerProductLabel(
+  accountContext: SupportCustomerAccountContext | null,
+  productContexts: SupportCustomerProductContext[],
+) {
+  const primaryProduct = primaryCustomerProductContext(productContexts);
+
+  if (primaryProduct) {
+    return primaryProduct.productDisplayName;
+  }
+
+  return displayCustomerValue(
+    accountContext?.productLine ? humanizeCustomerValue(accountContext.productLine) : null,
+  );
+}
+
+function displayCustomerPlanLabel(
+  accountContext: SupportCustomerAccountContext | null,
+  productContexts: SupportCustomerProductContext[],
+) {
+  const primaryProduct = primaryCustomerProductContext(productContexts);
+
+  if (primaryProduct) {
+    return primaryProduct.planDisplayName;
+  }
+
+  return displayCustomerValue(
+    accountContext?.accountTier ? humanizeCustomerValue(accountContext.accountTier) : null,
+  );
+}
+
+function SupportCustomerProductsPanel({
+  productContexts,
+}: {
+  productContexts: SupportCustomerProductContext[];
+}) {
+  if (productContexts.length === 0) {
+    return (
+      <InlineNotice>
+        Nenhuma subscription ativa ou suspensa ficou disponível para esta conta.
+      </InlineNotice>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {productContexts.map((productContext) => (
+        <div
+          className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4"
+          key={productContext.subscriptionId}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusPill tone={toneForCustomerProductSubscriptionStatus(productContext.status)}>
+                  {labelForCustomerProductSubscriptionStatus(productContext.status)}
+                </StatusPill>
+                <StatusPill>{productContext.planDisplayName}</StatusPill>
+              </div>
+              <h3 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                {productContext.productDisplayName}
+              </h3>
+            </div>
+            <div className="text-right text-[12px] leading-5 text-[color:var(--color-muted)]">
+              <p>Renovação</p>
+              <p className="font-semibold text-[color:var(--color-ink)]">
+                {productContext.renewalAt ? formatDateTime(productContext.renewalAt) : 'Indisponível'}
+              </p>
+            </div>
+          </div>
+
+          <dl className="mt-3 grid gap-2 text-[12px] leading-5 text-[color:var(--color-muted)] md:grid-cols-3">
+            <div>
+              <dt className="font-semibold uppercase tracking-[0.14em]">Início</dt>
+              <dd>{productContext.startedAt ? formatDateTime(productContext.startedAt) : 'Indisponível'}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold uppercase tracking-[0.14em]">Fim</dt>
+              <dd>{productContext.endedAt ? formatDateTime(productContext.endedAt) : 'Indisponível'}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold uppercase tracking-[0.14em]">Features</dt>
+              <dd>{productContext.activeSupportFeatures.length}</dd>
+            </div>
+          </dl>
+
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                Features visíveis ao suporte
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {productContext.activeSupportFeatures.length === 0 ? (
+                  <StatusPill>Indisponível</StatusPill>
+                ) : (
+                  productContext.activeSupportFeatures.map((feature) => (
+                    <StatusPill key={`${productContext.subscriptionId}-${feature.featureKey}`}>
+                      {feature.displayName} · {labelForCustomerProductEntitlementSource(feature.entitlementSource)}
+                    </StatusPill>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                Responsáveis internos
+              </p>
+              <div className="space-y-2">
+                {productContext.activeInternalOwners.length === 0 ? (
+                  <p className="text-sm text-[color:var(--color-muted)]">Indisponível</p>
+                ) : (
+                  productContext.activeInternalOwners.map((owner, index) => (
+                    <div
+                      className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-sm"
+                      key={`${productContext.subscriptionId}-${owner.ownerRole}-${owner.areaKey ?? index}`}
+                    >
+                      <p className="font-semibold text-[color:var(--color-ink)]">
+                        {labelForCustomerProductOwnerRole(owner.ownerRole)}
+                      </p>
+                      <p className="text-[color:var(--color-muted)]">
+                        {displayCustomerValue(owner.areaDisplayName)}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function extractPublicArticleBasePath(publicArticlePath: string | null | undefined) {
@@ -266,209 +759,77 @@ function buildAbsoluteAppUrl(path: string) {
   return new URL(path, window.location.origin).toString();
 }
 
-function LoadingBlock({ className }: { className?: string }) {
-  return (
-    <div
-      className={cx(
-        'animate-pulse rounded-[18px] bg-[linear-gradient(90deg,rgba(226,232,240,0.9),rgba(241,245,249,0.95),rgba(226,232,240,0.9))]',
-        className,
-      )}
-    />
-  );
-}
+function getKnowledgeCustomerSendBlockReason(
+  article: Pick<
+    SupportKnowledgeArticlePickerItem,
+    | 'articleStatus'
+    | 'articleVisibility'
+    | 'canSendToCustomer'
+    | 'isCustomerSendAllowed'
+    | 'publicArticlePath'
+    | 'reasonIfBlocked'
+  >,
+) {
+  if (!article.canSendToCustomer || !article.isCustomerSendAllowed) {
+    return article.reasonIfBlocked ?? 'Backend não autorizou o envio ao cliente.';
+  }
 
-function SupportQueueLoadingScaffold() {
-  return (
-    <div className="space-y-5">
-      <PageHeader
-        eyebrow="Suporte"
-        title="Fila operacional"
-        description="A fila continua ocupando a área principal enquanto o contexto operacional termina de sincronizar."
-      />
+  if (!article.publicArticlePath) {
+    return 'Rota pública indisponível.';
+  }
 
-      <WorkspaceSplit
-        layoutClassName="xl:grid-cols-[292px_minmax(0,1fr)]"
-        sidebar={
-          <ContextSubsidebar
-            description="Filtros e filas rápidas seguem reservados na lateral para a triagem não perder a estrutura."
-            title="Triagem da fila"
-          >
-            <ContextSubsidebarSection
-              description="As ferramentas da fila aparecem no mesmo lugar assim que os dados forem liberados."
-              title="Carregando filtros"
-            >
-              <div className="space-y-3">
-                <LoadingBlock className="h-16" />
-                <LoadingBlock className="h-16" />
-                <LoadingBlock className="h-16" />
-                <LoadingBlock className="h-16" />
-              </div>
-            </ContextSubsidebarSection>
-          </ContextSubsidebar>
-        }
-        main={
-          <div className="space-y-4">
-            <SummaryStrip>
-              <LoadingBlock className="h-[76px] min-w-[160px] flex-1" />
-              <LoadingBlock className="h-[76px] min-w-[160px] flex-1" />
-              <LoadingBlock className="h-[76px] min-w-[160px] flex-1" />
-              <LoadingBlock className="h-[76px] min-w-[160px] flex-1" />
-            </SummaryStrip>
+  if (article.articleStatus !== 'published') {
+    return 'Artigo ainda não publicado.';
+  }
 
-            <div className="grid gap-5 xl:grid-cols-[minmax(0,0.72fr)_minmax(320px,0.28fr)]">
-              <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white px-5 py-5 shadow-[0_14px_28px_rgba(19,33,79,0.08)]">
-                <div className="mb-4 space-y-2">
-                  <LoadingBlock className="h-6 w-40" />
-                  <LoadingBlock className="h-4 w-80 max-w-full" />
-                </div>
-                <div className="space-y-3">
-                  <LoadingBlock className="h-44" />
-                  <LoadingBlock className="h-44" />
-                  <LoadingBlock className="h-44" />
-                </div>
-              </section>
+  if (article.articleVisibility !== 'public') {
+    return 'Conteúdo não é público.';
+  }
 
-              <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white px-5 py-5 shadow-[0_14px_28px_rgba(19,33,79,0.08)] xl:sticky xl:top-4">
-                <div className="mb-4 space-y-2">
-                  <LoadingBlock className="h-6 w-36" />
-                  <LoadingBlock className="h-4 w-52 max-w-full" />
-                </div>
-                <LoadingBlock className="h-[420px]" />
-              </section>
-            </div>
-          </div>
-        }
-      />
-    </div>
-  );
-}
-
-function SupportTicketLoadingScaffold() {
-  return (
-    <div className="space-y-4">
-      <div className="space-y-3 rounded-[28px] border border-[color:var(--color-border)] bg-white px-5 py-5 shadow-[0_16px_30px_rgba(19,33,79,0.08)]">
-        <div className="flex flex-wrap items-center gap-3">
-          <LoadingBlock className="h-9 w-40 rounded-full" />
-          <LoadingBlock className="h-9 w-24 rounded-full" />
-          <LoadingBlock className="h-6 w-40" />
-        </div>
-        <LoadingBlock className="h-12 w-[720px] max-w-full" />
-        <div className="grid gap-3 border-t border-[color:var(--color-border)] pt-4 lg:grid-cols-4">
-          <LoadingBlock className="h-14" />
-          <LoadingBlock className="h-14" />
-          <LoadingBlock className="h-14" />
-          <LoadingBlock className="h-14" />
-        </div>
-        <div className="flex flex-wrap gap-6 border-t border-[color:var(--color-border)] pt-4">
-          <LoadingBlock className="h-6 w-24" />
-          <LoadingBlock className="h-6 w-32" />
-          <LoadingBlock className="h-6 w-32" />
-          <LoadingBlock className="h-6 w-28" />
-        </div>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,0.74fr)_minmax(318px,0.26fr)]">
-        <section className="overflow-hidden rounded-[28px] border border-[color:var(--color-border)] bg-white shadow-[0_16px_30px_rgba(19,33,79,0.08)]">
-          <div className="px-5 py-4">
-            <div className="flex justify-center">
-              <LoadingBlock className="h-7 w-20 rounded-full" />
-            </div>
-            <div className="mt-5 space-y-4">
-              <div className="flex items-start gap-3">
-                <LoadingBlock className="h-11 w-11 rounded-full" />
-                <LoadingBlock className="h-24 flex-1" />
-              </div>
-              <div className="flex justify-end gap-3">
-                <LoadingBlock className="h-24 w-[78%]" />
-                <LoadingBlock className="h-11 w-11 rounded-full" />
-              </div>
-              <div className="flex items-start gap-3">
-                <LoadingBlock className="h-11 w-11 rounded-full" />
-                <LoadingBlock className="h-28 w-[82%]" />
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-[color:var(--color-border)] px-5 py-5">
-            <div className="mb-4 flex gap-4">
-              <LoadingBlock className="h-7 w-32" />
-              <LoadingBlock className="h-7 w-28" />
-            </div>
-            <LoadingBlock className="h-48 rounded-[26px]" />
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex gap-2">
-                <LoadingBlock className="h-10 w-10 rounded-full" />
-                <LoadingBlock className="h-10 w-10 rounded-full" />
-                <LoadingBlock className="h-10 w-10 rounded-full" />
-              </div>
-              <LoadingBlock className="h-12 w-80 max-w-full rounded-full" />
-              <LoadingBlock className="h-12 w-40 rounded-full" />
-            </div>
-          </div>
-        </section>
-
-        <aside className="space-y-3">
-          <LoadingBlock className="h-[340px] rounded-[24px]" />
-          <LoadingBlock className="h-[180px] rounded-[24px]" />
-          <LoadingBlock className="h-[180px] rounded-[24px]" />
-        </aside>
-      </div>
-    </div>
-  );
+  return null;
 }
 
 function humanizeTicketEventLabel(eventType: SupportTicketTimelineItem['eventType']) {
-  switch (eventType) {
+  const normalizedEventType = String(eventType ?? '').toLocaleLowerCase('pt-BR');
+
+  switch (normalizedEventType) {
     case 'ticket_created':
       return 'Ticket criado';
     case 'assigned':
-      return 'Responsavel atualizado';
+      return 'Responsável atualizado';
     case 'status_changed':
       return 'Status atualizado';
+    case 'classification_changed':
+    case 'classification_updated':
+      return 'Classificação atualizada';
+    case 'priority_changed':
+    case 'priority_severity_changed':
+    case 'priority_severity_updated':
+      return 'Prioridade e severidade atualizadas';
+    case 'sla_policy_changed':
+    case 'sla_policy_updated':
+      return 'SLA atualizado';
     case 'message_added':
       return 'Mensagem registrada';
     case 'internal_note_added':
       return 'Nota interna registrada';
+    case 'attachment_added':
+      return 'Evidência registrada';
+    case 'escalated_to_engineering':
+      return 'Escalado para engenharia';
+    case 'linked_to_work_item':
+      return 'Vinculado a demanda técnica';
+    case 'engineering_update_added':
+      return 'Retorno técnico registrado';
+    case 'engineering_status_updated':
+      return 'Andamento técnico atualizado';
     case 'resolved':
       return 'Ticket resolvido';
     case 'cancelled':
       return 'Ticket cancelado';
     default:
-      return humanizeToken(eventType ?? 'evento').replaceAll('_', ' ');
+      return 'Evento operacional registrado';
   }
-}
-
-function humanizeKnowledgeLinkType(linkType: TicketKnowledgeLinkType) {
-  switch (linkType) {
-    case 'reference_internal':
-      return 'Referencia interna';
-    case 'sent_to_customer':
-      return 'Link enviado ao cliente';
-    case 'documentation_gap':
-      return 'Lacuna de documentação';
-    case 'needs_update':
-    return 'Precisa revisão';
-    case 'suggested_article':
-      return 'Artigo sugerido';
-    default:
-      return humanizeToken(linkType).replaceAll('_', ' ');
-  }
-}
-
-function toneForKnowledgeLinkType(linkType: TicketKnowledgeLinkType) {
-  if (linkType === 'sent_to_customer') {
-    return 'positive' as const;
-  }
-
-  if (linkType === 'documentation_gap' || linkType === 'needs_update') {
-    return 'warning' as const;
-  }
-
-  if (linkType === 'suggested_article') {
-    return 'accent' as const;
-  }
-
-  return 'default' as const;
 }
 
 function toneForAlertSeverity(severity: SupportCustomerAccountAlert['severity']) {
@@ -499,14 +860,86 @@ function toneForCustomizationRisk(
 
 function humanizeSupportRole(role: SupportAssignableAgent['role']) {
   if (role === 'platform_admin') {
-    return 'Platform admin';
+    return 'Administrador da plataforma';
   }
 
   if (role === 'support_manager') {
-    return 'Support manager';
+    return 'Gestor de suporte';
   }
 
-  return 'Support agent';
+  return 'Agente de suporte';
+}
+
+function buildSupportCustomerRecentEventKey(
+  event: SupportCustomer360RecentEvent,
+  index: number,
+) {
+  const actorKey = event.actorUserId ?? 'no-actor';
+  return [
+    'customer-event',
+    event.ticketId,
+    event.eventType,
+    event.visibility,
+    event.occurredAt,
+    actorKey,
+    index,
+  ].join(':');
+}
+
+function humanizeEngineeringWorkItemType(workItemType: EngineeringWorkItemType) {
+  switch (workItemType) {
+    case 'bug':
+      return 'Bug';
+    case 'improvement':
+      return 'Melhoria';
+    case 'technical_task':
+      return 'Tarefa técnica';
+    case 'investigation':
+      return 'Investigação';
+    default:
+      return humanizeToken(workItemType).replaceAll('_', ' ');
+  }
+}
+
+function humanizeEngineeringWorkItemStatus(
+  status: SupportTicketEngineeringLink['workItemStatus'],
+) {
+  switch (status) {
+    case 'triage':
+      return 'Triagem';
+    case 'accepted':
+      return 'Aceito';
+    case 'rejected':
+      return 'Rejeitado';
+    case 'in_progress':
+      return 'Em andamento';
+    case 'waiting_external':
+      return 'Aguardando externo';
+    case 'released':
+      return 'Liberado';
+    case 'cancelled':
+      return 'Cancelado';
+    default:
+      return humanizeToken(status).replaceAll('_', ' ');
+  }
+}
+
+function toneForEngineeringWorkItemStatus(
+  status: SupportTicketEngineeringLink['workItemStatus'],
+) {
+  if (status === 'released') {
+    return 'positive' as const;
+  }
+
+  if (status === 'rejected' || status === 'cancelled') {
+    return 'critical' as const;
+  }
+
+  if (status === 'triage' || status === 'waiting_external') {
+    return 'warning' as const;
+  }
+
+  return 'default' as const;
 }
 
 function formatAssignableAgentLabel(agent: SupportAssignableAgent) {
@@ -521,8 +954,16 @@ function formatAssignedAgentSummary(agent: SupportAssignableAgent | null) {
   return agent.fullName;
 }
 
-function ticketTenantLabel(ticket: Pick<SupportTicketQueueItem, 'tenantDisplayName' | 'tenantLegalName' | 'tenantSlug'>) {
-  return ticket.tenantDisplayName ?? ticket.tenantLegalName ?? ticket.tenantSlug;
+function intakeTenantLabel(
+  tenant: Pick<SupportTicketIntakeTenant, 'tenantDisplayName' | 'tenantLegalName' | 'tenantSlug'>,
+) {
+  return tenant.tenantDisplayName ?? tenant.tenantLegalName ?? 'Cliente indisponível';
+}
+
+function displaySupportCustomerName(
+  customer: Pick<SupportCustomer360, 'tenantDisplayName' | 'tenantLegalName'>,
+) {
+  return customer.tenantDisplayName ?? customer.tenantLegalName ?? 'Cliente indisponível';
 }
 
 function emptyFilters(): QueueFilters {
@@ -530,6 +971,7 @@ function emptyFilters(): QueueFilters {
     status: 'all',
     priority: 'all',
     severity: 'all',
+    categoryId: 'all',
     tenantId: 'all',
     assignedToUserId: 'all',
   };
@@ -541,6 +983,37 @@ function emptyTimelineWindow(): SupportTicketTimelineRecentWindow {
     totalAvailableCount: 0,
     recentLimit: 25,
     hasMore: false,
+  };
+}
+
+function emptyTicketIntakeDraft(): TicketIntakeDraft {
+  return {
+    tenantId: '',
+    requesterContactId: '',
+    source: 'internal',
+    priority: 'normal',
+    severity: 'medium',
+    categoryId: '',
+    operationalReasonId: '',
+    title: '',
+    description: '',
+  };
+}
+
+function emptyTicketClassificationDraft(): TicketClassificationDraft {
+  return {
+    categoryId: '',
+    operationalReasonId: '',
+    note: '',
+  };
+}
+
+function emptyTicketPrioritySeverityDraft(): TicketPrioritySeverityDraft {
+  return {
+    priority: 'normal',
+    severity: 'medium',
+    operationalReasonId: '',
+    note: '',
   };
 }
 
@@ -570,17 +1043,71 @@ function emptyKnowledgeArticlePicker(): SupportKnowledgeArticlePickerItem[] {
   return [];
 }
 
-function buildStatusChoices(currentStatus: TicketStatus) {
-  const available = TICKET_STATUSES.filter(
-    (status): status is TicketStatusUpdateTarget =>
-      status !== 'closed' && status !== currentStatus,
-  );
+function emptyTicketAttachments(): SupportTicketAttachment[] {
+  return [];
+}
 
-  if (currentStatus === 'closed') {
-    return available;
+function emptyTicketEngineeringLinks(): SupportTicketEngineeringLink[] {
+  return [];
+}
+
+function emptyEngineeringHandoffDraft(): EngineeringHandoffDraft {
+  return {
+    workItemType: 'investigation',
+    title: '',
+    description: '',
+    handoffNote: '',
+    impactSummary: '',
+    reproductionSteps: '',
+    expectedResult: '',
+    currentResult: '',
+    relatedEvidence: '',
+    technicalUrgency: 'high',
+  };
+}
+
+function emptyInternalActionCreateDraft(): InternalActionCreateDraft {
+  return {
+    targetArea: '',
+    supportType: 'analysis',
+    priority: 'normal',
+    summary: '',
+    context: '',
+    evidenceAttachmentIds: [],
+  };
+}
+
+function emptyAttachmentUploadDraft(): TicketAttachmentUploadDraft {
+  return {
+    files: [],
+    note: '',
+    errors: {},
+  };
+}
+
+function buildStatusChoices(
+  currentStatus: TicketStatus,
+  allowedNextStatuses: TicketStatus[] = [],
+): TicketStatusUpdateTarget[] {
+  const backendAllowed = allowedNextStatuses.length > 0 ? allowedNextStatuses : TICKET_STATUSES;
+  const choices: TicketStatusUpdateTarget[] = [];
+
+  for (const status of backendAllowed) {
+    if (status !== 'closed' && status !== currentStatus) {
+      choices.push(status);
+    }
   }
 
-  return [currentStatus as TicketStatusUpdateTarget, ...available];
+  return choices;
+}
+
+function requiresOperationalReasonForStatus(status: TicketStatusUpdateTarget) {
+  return (
+    status === 'waiting_customer' ||
+    status === 'waiting_engineering' ||
+    status === 'resolved' ||
+    status === 'cancelled'
+  );
 }
 
 function friendlyTicketStatusErrorMessage(message: string) {
@@ -598,16 +1125,75 @@ function friendlyTicketStatusErrorMessage(message: string) {
 
 function summarizeTimelineEvent(entry: SupportTicketTimelineItem) {
   if (entry.entryType === 'message') {
-    return entry.body ?? '';
+    return sanitizeSupportVisibleText(entry.body ?? '');
   }
 
-  const metadata = readTimelineMetadata(entry);
-  const statusValue = readTimelineMetadataString(entry, 'status');
+  const previousStatus = readTimelineMetadataString(entry, 'previous_status', 'previousStatus');
+  const nextStatus = readTimelineMetadataString(entry, 'new_status', 'newStatus', 'status');
   const assignedToUserId = readTimelineMetadataString(entry, 'assigned_to_user_id');
   const note = readTimelineMetadataString(entry, 'note');
+  const operationalReasonName = readTimelineMetadataString(
+    entry,
+    'operational_reason_name',
+    'operationalReasonName',
+  );
 
-  if (entry.eventType === 'status_changed' && statusValue) {
-    return `Status movido para ${humanizeStatus(statusValue as TicketStatus)}.`;
+  if (
+    (entry.eventType === 'status_changed' ||
+      entry.eventType === 'resolved' ||
+      entry.eventType === 'closed' ||
+      entry.eventType === 'cancelled' ||
+      entry.eventType === 'reopened') &&
+    nextStatus
+  ) {
+    const summary = previousStatus
+      ? `Status alterado de ${humanizeStatus(previousStatus as TicketStatus)} para ${humanizeStatus(nextStatus as TicketStatus)}.`
+      : `Status movido para ${humanizeStatus(nextStatus as TicketStatus)}.`;
+
+    if (operationalReasonName) {
+      return `${summary} Motivo: ${operationalReasonName}.`;
+    }
+
+    return summary;
+  }
+
+  if (entry.eventType === 'escalated_to_engineering') {
+    const workItemType = readTimelineMetadataString(entry, 'work_item_type');
+    return workItemType
+      ? `Handoff técnico aberto como ${humanizeEngineeringWorkItemType(workItemType as EngineeringWorkItemType)}.`
+      : 'Handoff técnico registrado para a equipe de engenharia.';
+  }
+
+  if (entry.eventType === 'linked_to_work_item') {
+    const workItemStatus = readTimelineMetadataString(entry, 'work_item_status');
+    return workItemStatus
+      ? `Ticket vinculado a uma demanda técnica em ${humanizeEngineeringWorkItemStatus(workItemStatus as SupportTicketEngineeringLink['workItemStatus'])}.`
+      : 'Ticket vinculado a uma demanda técnica existente.';
+  }
+
+  if (
+    (entry.eventType as string) === 'engineering_update_added' ||
+    (entry.eventType as string) === 'engineering_status_updated' ||
+    (entry.eventType as string) === 'work_item_update_added'
+  ) {
+    const summary = readTimelineMetadataString(entry, 'summary');
+    const nextStep = readTimelineMetadataString(entry, 'next_step');
+
+    if (summary && nextStep) {
+      return sanitizeSupportVisibleText(`${summary} Próximo passo: ${nextStep}`);
+    }
+
+    return summary
+      ? sanitizeSupportVisibleText(summary)
+      : 'Retorno técnico registrado para apoiar a tratativa.';
+  }
+
+  if (entry.eventType === 'attachment_added') {
+    const attachmentName = readTimelineMetadataString(entry, 'attachment_name');
+    const attachmentSize = readTimelineMetadataString(entry, 'attachment_size_label');
+    return attachmentName
+      ? `Evidência registrada: ${attachmentName}${attachmentSize ? ` · ${attachmentSize}` : ''}.`
+      : 'Evidência registrada no ticket.';
   }
 
   if (entry.eventType === 'assigned') {
@@ -641,17 +1227,10 @@ function summarizeTimelineEvent(entry: SupportTicketTimelineItem) {
   }
 
   if (note) {
-    return note;
+    return sanitizeSupportVisibleText(note);
   }
 
-  const metadataSummary =
-    metadata
-      ? Object.entries(metadata)
-          .map(([key, value]) => `${humanizeToken(key)}: ${String(value)}`)
-          .join(' · ')
-      : '';
-
-  return metadataSummary || humanizeTicketEventLabel(entry.eventType);
+  return sanitizeSupportVisibleText(humanizeTicketEventLabel(entry.eventType));
 }
 
 type ConversationLane = 'customer' | 'agent' | 'internal';
@@ -660,18 +1239,6 @@ type ConversationAttachment = {
   name: string;
   sizeLabel: string | null;
 };
-
-function initialsFromLabel(value: string | null | undefined) {
-  const normalized = String(value ?? '')
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((chunk) => chunk[0]?.toUpperCase() ?? '')
-    .join('');
-
-  return normalized || 'GS';
-}
 
 function readTimelineMetadata(entry: SupportTicketTimelineItem) {
   if (!entry.metadata || typeof entry.metadata !== 'object' || Array.isArray(entry.metadata)) {
@@ -812,6 +1379,24 @@ function buildConversationDividerLabel(entries: SupportTicketTimelineItem[]) {
   });
 }
 
+function shouldHideConversationEvent(entry: SupportTicketTimelineItem) {
+  if (entry.entryType !== 'event') {
+    return false;
+  }
+
+  const haystack = `${entry.eventType ?? ''} ${summarizeTimelineEvent(entry)}`
+    .toLocaleLowerCase('pt-BR')
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '');
+
+  return (
+    haystack.includes('mensagem registrada') ||
+    haystack.includes('nota interna registrada') ||
+    haystack.includes('evidencia registrada') ||
+    haystack.includes('anexo registrado')
+  );
+}
+
 function ConversationEntry({
   entry,
   requesterName,
@@ -830,88 +1415,79 @@ function ConversationEntry({
         ? 'Agente'
         : 'Cliente';
   const timestamp = formatDateTime(entry.occurredAt);
-  const avatar = initialsFromLabel(author);
-
   if (lane === 'internal') {
     return (
-      <article className="mx-auto max-w-[92%] rounded-[15px] border border-amber-200 bg-[linear-gradient(180deg,rgba(255,248,227,0.98),rgba(255,241,206,0.94))] px-3 py-2 shadow-[0_6px_14px_rgba(180,120,34,0.05)]">
-        <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-          <StatusPill tone="warning">{label}</StatusPill>
-          <p className="font-semibold text-[color:var(--color-ink)]">{author}</p>
-          <span className="ml-auto text-[color:var(--color-muted)]">{timestamp}</span>
-        </div>
-        <p className="mt-1.5 whitespace-pre-wrap text-[12.5px] leading-[1.3rem] text-[color:var(--color-ink)]">
-          {summary}
-        </p>
-      </article>
+      <SupportInternalNote timestamp={timestamp}>
+        {summary}
+      </SupportInternalNote>
     );
   }
 
   return (
-    <div
-      className={cx(
-        'flex items-end gap-2.5',
-        lane === 'agent' ? 'justify-end' : 'justify-start',
-      )}
-    >
-      {lane === 'customer' ? (
-        <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#f05b93,#ee3f77)] text-[13px] font-semibold text-white shadow-[0_6px_14px_rgba(240,91,147,0.2)]">
-          {avatar}
-        </div>
-      ) : null}
-
-      <div
-        className={cx(
-          'min-w-0 max-w-[min(88%,43rem)] space-y-0.5',
-          lane === 'agent' && 'items-end',
-        )}
-      >
-        <div
+    <SupportConversationMessage
+      author={author}
+      avatar={
+        <Avatar
+          email={entry.actorEmail}
+          fallbackMascot
+          label={`Avatar de ${author}`}
+          name={author}
+          size="md"
           className={cx(
-            'flex flex-wrap items-center gap-1.5 px-1 text-[10px]',
-            lane === 'agent' ? 'justify-end' : 'justify-start',
-          )}
-        >
-          <p className="font-semibold text-[color:var(--color-ink)]">{author}</p>
-          <span className="text-[color:var(--color-muted)]">{label}</span>
-          <span className="text-[color:var(--color-muted)]">{timestamp}</span>
-        </div>
-        <article
-          className={cx(
-            'min-w-0 rounded-[15px] border px-3 py-2 shadow-[0_6px_14px_rgba(19,33,79,0.05)]',
+            'border text-[12px] font-semibold',
             lane === 'agent'
-              ? 'border-[rgba(48,127,226,0.24)] bg-[linear-gradient(180deg,rgba(243,248,255,0.98),rgba(236,244,255,0.92))]'
-              : 'border-[color:var(--color-border)] bg-white',
+              ? 'border-[rgba(240,74,174,0.22)] bg-[rgba(240,74,174,0.08)] text-[color:var(--color-brand-pink)]'
+              : 'border-[rgba(47,107,255,0.14)] bg-[rgba(47,107,255,0.08)] text-[color:var(--color-brand-blue)]',
           )}
-        >
-          <div className="space-y-2">
-            <p className="whitespace-pre-wrap text-[12.5px] leading-[1.3rem] text-[color:var(--color-ink)]">
-              {summary}
-            </p>
-            {attachment ? (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-[11px] border border-[color:var(--color-border)] bg-white/86 px-3 py-1.5 text-[13px]">
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-[color:var(--color-ink)]">
-                    {attachment.name}
-                  </p>
-                </div>
-                {attachment.sizeLabel ? (
-                  <span className="shrink-0 text-xs text-[color:var(--color-muted)]">
-                    {attachment.sizeLabel}
-                  </span>
-                ) : null}
-              </div>
-            ) : null}
+        />
+      }
+      attachment={
+        attachment ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-[color:var(--color-support-border)] bg-[color:var(--color-surface-strong)]/92 px-3 py-2 text-[11px]">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[9px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-brand-blue)]">
+                <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="attachment" />
+              </span>
+              <p className="truncate font-medium text-[color:var(--color-ink)]">
+                {attachment.name}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {attachment.sizeLabel ? (
+                <span className="shrink-0 text-[10px] text-[color:var(--color-muted)]">
+                  {attachment.sizeLabel}
+                </span>
+              ) : null}
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[color:var(--color-border)] text-[color:var(--color-muted)]">
+                <SupportSurfaceIcon className="h-[11px] w-[11px]" kind="open" />
+              </span>
+            </div>
           </div>
-        </article>
-      </div>
-
-      {lane === 'agent' ? (
-        <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#1f5dcf,#377ef7)] text-[13px] font-semibold text-white shadow-[0_6px_14px_rgba(55,126,247,0.18)]">
-          {avatar}
-        </div>
-      ) : null}
-    </div>
+        ) : null
+      }
+      lane={lane === 'agent' ? 'agent' : 'customer'}
+      meta={
+        <>
+          <span className="text-[color:var(--color-muted)]">•</span>
+          <span className="text-[color:var(--color-muted)]">{label}</span>
+          <span className="text-[color:var(--color-muted)]">·</span>
+          <span className="text-[color:var(--color-muted)]">
+            {entry.communicationChannelLabel ?? 'Canal indisponível'}
+          </span>
+          {entry.deliveryStatusLabel ? (
+            <>
+              <span className="text-[color:var(--color-muted)]">·</span>
+              <span className="text-[color:var(--color-muted)]">
+                {entry.deliveryStatusLabel}
+              </span>
+            </>
+          ) : null}
+          <span className="text-[color:var(--color-muted)]">{timestamp}</span>
+        </>
+      }
+    >
+      {summary}
+    </SupportConversationMessage>
   );
 }
 
@@ -929,6 +1505,11 @@ function TechnicalTimelineRow({
           <StatusPill tone={entry.visibility === 'internal' ? 'critical' : 'default'}>
             {entry.eventType ? humanizeToken(entry.eventType) : 'evento'}
           </StatusPill>
+          <StatusPill tone={entry.isCustomerVisible ? 'accent' : 'default'}>
+            {entry.communicationDirection === 'system'
+              ? 'Sistema'
+              : entry.communicationChannelLabel ?? 'Canal indisponível'}
+          </StatusPill>
           <p className="text-xs text-[color:var(--color-muted)]">
                     {entry.actorFullName ?? entry.actorEmail ?? 'Autor não identificado'}
           </p>
@@ -940,102 +1521,84 @@ function TechnicalTimelineRow({
   );
 }
 
+function ConversationEventEntry({
+  entry,
+}: {
+  entry: SupportTicketTimelineItem;
+}) {
+  return (
+    <SupportSystemEvent
+      icon={<SupportSurfaceIcon className="h-[10px] w-[10px]" kind="ticket" />}
+      label={`${humanizeTicketEventLabel(entry.eventType)} · ${entry.communicationChannelLabel ?? 'Canal indisponível'}`}
+      summary={summarizeTimelineEvent(entry)}
+      timestamp={formatDateTime(entry.occurredAt)}
+    />
+  );
+}
+
 function SupportConversation({
   window,
   requesterName,
+  loadingMore = false,
+  onLoadMore,
 }: {
   window: SupportTicketTimelineRecentWindow;
   requesterName?: string | null;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 }) {
-  const entries = window.entries;
+  const entries = window.entries.filter((entry) => !shouldHideConversationEvent(entry));
   const conversationEntries = entries.filter((entry) => entry.entryType === 'message');
   const eventEntries = entries.filter((entry) => entry.entryType === 'event');
   const dividerLabel = buildConversationDividerLabel(conversationEntries);
 
   if (conversationEntries.length === 0 && eventEntries.length === 0) {
     return (
-      <EmptyState
-        title="Conversa vazia"
-                description="Este ticket ainda não recebeu mensagens, notas internas nem eventos adicionais."
-      />
+      <div className="flex min-h-48 items-center justify-center px-4 py-10 text-center">
+        <div className="max-w-sm">
+          <h3 className="text-sm font-medium text-[color:var(--minimal-text)]">Conversa vazia</h3>
+          <p className="mt-2 text-sm leading-6 text-[color:var(--minimal-text-secondary)]">
+            Este ticket ainda não recebeu mensagens, notas internas nem eventos adicionais.
+          </p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-3">
       {dividerLabel ? (
         <div className="flex items-center justify-center">
-          <span className="rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+          <span className="rounded-full border border-[color:var(--color-support-border)] bg-[color:var(--color-support-surface)] px-2.5 py-1 text-[9.5px] font-semibold text-[color:var(--color-muted)]">
             {dividerLabel}
           </span>
         </div>
       ) : null}
-      {conversationEntries.length === 0 ? (
-        <EmptyState
-          title="Sem conversa recente"
-                description="A janela atual ainda não trouxe respostas públicas nem notas internas para este ticket."
-        />
-      ) : (
-        <div className="space-y-1">
-          {conversationEntries.map((entry) => (
+      <div className="space-y-3">
+        {entries.map((entry) =>
+          entry.entryType === 'message' ? (
             <ConversationEntry
               entry={entry}
               key={entry.timelineEntryId}
               requesterName={requesterName}
             />
-          ))}
-        </div>
-      )}
+          ) : (
+            <ConversationEventEntry entry={entry} key={entry.timelineEntryId} />
+          ),
+        )}
+      </div>
 
       {window.hasMore ? (
-        <p className="text-xs leading-5 text-[color:var(--color-muted)]">
-          Historico anterior recolhido para manter a leitura rapida.
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-function SupportRecentActivity({
-  window,
-}: {
-  window: SupportTicketTimelineRecentWindow;
-}) {
-  const entries = window.entries.filter((entry) => entry.entryType === 'event').slice(0, 2);
-
-  if (entries.length === 0) {
-    return (
-      <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-        Nenhuma mudanca recente apareceu fora da conversa principal.
-      </p>
-    );
-  }
-
-  return (
-    <div className="space-y-1.5">
-      {entries.map((entry) => (
-        <div
-          className="rounded-[13px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2"
-          key={entry.timelineEntryId}
-        >
-          <div className="flex items-start gap-2.5">
-            <span className="mt-1 inline-flex h-2 w-2 shrink-0 rounded-full bg-[color:var(--color-brand-blue)]" />
-            <div className="min-w-0 flex-1 space-y-0.5">
-              <p className="text-[12px] font-medium leading-4 text-[color:var(--color-ink)]">
-                {summarizeTimelineEvent(entry)}
-              </p>
-              <p className="text-[10.5px] leading-4 text-[color:var(--color-muted)]">
-                {formatDateTime(entry.occurredAt)} · {entry.actorFullName ?? entry.actorEmail ?? 'Equipe Genius'}
-              </p>
-            </div>
-          </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[16px] border border-dashed border-[color:var(--color-support-border)] bg-[color:var(--color-support-surface)] px-4 py-3">
+          <p className="text-xs leading-5 text-[color:var(--color-muted)]">
+            Há histórico anterior disponível para consulta.
+          </p>
+          {onLoadMore ? (
+            <GhostButton disabled={loadingMore} onClick={onLoadMore} type="button">
+              {loadingMore ? 'Carregando histórico' : 'Carregar histórico anterior'}
+            </GhostButton>
+          ) : null}
         </div>
-      ))}
-
-      {window.hasMore ? (
-        <p className="text-[10.5px] leading-4 text-[color:var(--color-muted)]">
-          O restante do historico fica recolhido para manter a tratativa leve.
-        </p>
       ) : null}
     </div>
   );
@@ -1068,649 +1631,130 @@ function SupportTechnicalHistory({
   );
 }
 
-function SupportKnowledgeLinkCard({
-  link,
-  disabled,
-  onCopyPublicLink,
-  onArchive,
-}: {
-  link: SupportTicketKnowledgeLink;
-  disabled: boolean;
-  onCopyPublicLink: (publicArticlePath: string) => void;
-  onArchive: (linkId: Uuid) => void;
-}) {
-  const title =
-    link.articleTitle ??
-    (link.linkType === 'documentation_gap'
-      ? 'Lacuna registrada sem artigo'
-      : 'Vinculo sem artigo associado');
-
-  return (
-    <article className="rounded-[13px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2">
-      <div className="flex flex-wrap items-start justify-between gap-2.5">
-        <div className="min-w-0 flex-1 space-y-1.5">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <StatusPill tone={toneForKnowledgeLinkType(link.linkType)}>
-              {humanizeKnowledgeLinkType(link.linkType)}
-            </StatusPill>
-            {link.articleVisibility ? (
-              <StatusPill>{humanizeKnowledgeVisibility(link.articleVisibility)}</StatusPill>
-            ) : null}
-            {link.articleStatus ? (
-              <StatusPill>{humanizeKnowledgeStatus(link.articleStatus)}</StatusPill>
-            ) : null}
-          </div>
-          <div className="space-y-0.5">
-            <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">{title}</p>
-            <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                      Registrado por {link.createdByFullName ?? 'Operador não identificado'} em{' '}
-              {formatDateTime(link.createdAt)}
-            </p>
-          </div>
-          {link.note ? (
-            <p className="line-clamp-2 text-[12px] leading-5 text-[color:var(--color-muted)]">
-              {link.note}
-            </p>
-          ) : null}
-          {link.publicArticlePath ? (
-            <div className="flex flex-wrap gap-1.5 pt-0.5">
-              <a
-                className="inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white px-2.5 text-[12px] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/35 hover:text-[color:var(--color-brand-blue)]"
-                href={link.publicArticlePath}
-                rel="noreferrer"
-                target="_blank"
-              >
-                    Abrir artigo público
-              </a>
-              <GhostButton
-                className="min-h-8 rounded-full px-2.5 text-[12px]"
-                disabled={disabled}
-                onClick={() => onCopyPublicLink(link.publicArticlePath!)}
-                type="button"
-              >
-                Copiar link
-              </GhostButton>
-            </div>
-          ) : link.linkType === 'sent_to_customer' ? (
-            <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                  Link público indisponível para este conteúdo no estado atual.
-            </p>
-          ) : null}
-        </div>
-        <GhostButton
-          className="min-h-8 rounded-full px-2.5 text-[13px]"
-          disabled={disabled}
-          onClick={() => onArchive(link.ticketKnowledgeLinkId)}
-          type="button"
-        >
-          Arquivar
-        </GhostButton>
-      </div>
-    </article>
-  );
-}
-
-function SupportKnowledgePickerCard({
-  article,
-  disabled,
-  onCopyPublicLink,
-  onLinkInternal,
-  onNeedsUpdate,
-  onSendToCustomer,
-}: {
-  article: SupportKnowledgeArticlePickerItem;
-  disabled: boolean;
-  onCopyPublicLink: (publicArticlePath: string) => void;
-  onLinkInternal: (articleId: Uuid) => void;
-  onNeedsUpdate: (articleId: Uuid) => void;
-  onSendToCustomer: (articleId: Uuid) => void;
-}) {
-  return (
-    <article className="rounded-[13px] border border-[color:var(--color-border)] bg-white px-3 py-2.5">
-      <div className="space-y-1.5">
-        <div className="space-y-1.5">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <StatusPill>{humanizeKnowledgeVisibility(article.articleVisibility)}</StatusPill>
-            <StatusPill>{humanizeKnowledgeStatus(article.articleStatus)}</StatusPill>
-            {article.categoryName ? <StatusPill tone="accent">{article.categoryName}</StatusPill> : null}
-          </div>
-          <div className="space-y-0.5">
-            <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-              {article.articleTitle}
-            </p>
-            <p className="line-clamp-2 text-[13px] leading-5 text-[color:var(--color-muted)]">
-                      {article.articleSummary?.trim() || 'Resumo ainda não informado para este artigo.'}
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-            {article.isCustomerSendAllowed && article.publicArticlePath
-                        ? 'Este artigo pode ser usado como link público para o cliente.'
-                        : 'Link público indisponível. Este artigo segue apenas para uso interno no estado atual.'}
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            <GhostButton
-              className="min-h-9 px-2.5 text-[13px]"
-              disabled={disabled}
-              onClick={() => onLinkInternal(article.articleId)}
-              type="button"
-            >
-              Referencia interna
-            </GhostButton>
-            {article.isCustomerSendAllowed && article.publicArticlePath ? (
-              <AppButton
-                className="min-h-9 px-3"
-                disabled={disabled}
-                onClick={() => onSendToCustomer(article.articleId)}
-                type="button"
-              >
-                Marcar como link ao cliente
-              </AppButton>
-            ) : null}
-            {article.publicArticlePath ? (
-              <>
-                <a
-                  className="inline-flex min-h-9 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white px-2.5 text-[13px] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/35 hover:text-[color:var(--color-brand-blue)]"
-                  href={article.publicArticlePath}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  Abrir artigo
-                </a>
-                <GhostButton
-                  className="min-h-9 px-2.5 text-[13px]"
-                  disabled={disabled}
-                  onClick={() => onCopyPublicLink(article.publicArticlePath!)}
-                  type="button"
-                >
-                  Copiar link
-                </GhostButton>
-              </>
-            ) : null}
-            <GhostButton
-              className="min-h-9 px-2.5 text-[13px]"
-              disabled={disabled}
-              onClick={() => onNeedsUpdate(article.articleId)}
-              type="button"
-            >
-                  Precisa revisão
-            </GhostButton>
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function SupportKnowledgePanel({
-  articles,
-  links,
-  loading,
-  noteDraft,
-  onArchive,
-  onCopyPublicLink,
-  onLinkInternal,
-  onMarkGap,
-  onNeedsUpdate,
-  onNoteChange,
-  onSearchChange,
-  onSendToCustomer,
-  phase,
-  search,
-  message,
-}: {
-  articles: SupportKnowledgeArticlePickerItem[];
-  links: SupportTicketKnowledgeLink[];
-  loading: boolean;
-  noteDraft: string;
-  onArchive: (linkId: Uuid) => void;
-  onCopyPublicLink: (publicArticlePath: string) => void;
-  onLinkInternal: (articleId: Uuid) => void;
-  onMarkGap: () => void;
-  onNeedsUpdate: (articleId: Uuid) => void;
-  onNoteChange: (value: string) => void;
-  onSearchChange: (value: string) => void;
-  onSendToCustomer: (articleId: Uuid) => void;
-  phase: KnowledgePhase;
-  search: string;
-  message: string | null;
-}) {
-  const visibleLinks = links.slice(0, 2);
-  const hiddenLinksCount = Math.max(links.length - visibleLinks.length, 0);
-  const visibleArticles = articles.slice(0, 2);
-
-  return (
-    <section className="space-y-3">
-      <div className="space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-          Conhecimento
-        </p>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-[15px] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-            Conteudo relacionado ao ticket
-          </h3>
-          <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-            {links.length === 0
-              ? 'Nenhum vinculo ativo'
-              : `${links.length} vinculo(s) acompanhando esta tratativa`}
-          </p>
-        </div>
-      </div>
-
-      {phase === 'contract-unavailable' ? (
-        <InlineNotice tone="warning">
-                  {message ?? 'O painel de conhecimento ainda não ficou disponível para esta tratativa.'}
-        </InlineNotice>
-      ) : phase === 'error' ? (
-        <InlineNotice tone="critical">
-                  {message ?? 'Não foi possível carregar o conhecimento relacionado deste ticket.'}
-        </InlineNotice>
-      ) : phase === 'loading' ? (
-        <LoadingState
-          title="Carregando conhecimento"
-          description="Estamos preparando os vinculos e os artigos disponiveis para este ticket."
-        />
-      ) : (
-        <>
-          <div className="grid gap-3 xl:grid-cols-[minmax(0,0.94fr)_minmax(260px,0.82fr)]">
-            <div className="space-y-2 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-                  Vinculos ativos
-                </h4>
-                <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                  {links.length === 0
-                    ? 'Nenhum artigo ligado'
-                    : `${links.length} referencia(s) em acompanhamento`}
-                </p>
-              </div>
-              {links.length === 0 ? (
-                <InlineNotice>
-                  Nenhum artigo foi relacionado a este ticket ainda.
-                </InlineNotice>
-              ) : (
-                <div className="space-y-1.5">
-                  {visibleLinks.map((link) => (
-                    <SupportKnowledgeLinkCard
-                      disabled={loading}
-                      key={link.ticketKnowledgeLinkId}
-                      link={link}
-                      onCopyPublicLink={onCopyPublicLink}
-                      onArchive={onArchive}
-                    />
-                  ))}
-                  {hiddenLinksCount > 0 ? (
-                    <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                      Mais {hiddenLinksCount} vinculo(s) seguem no historico deste ticket.
-                    </p>
-                  ) : null}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2 rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
-              <div className="space-y-1">
-                <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-                  Buscar e vincular
-                </h4>
-                <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                  Relacione artigos internos ou marque lacunas para a proxima tratativa.
-                </p>
-              </div>
-
-              <TextInput
-                className="min-h-10"
-                onChange={(event) => onSearchChange(event.target.value)}
-                placeholder="Buscar artigo por título, resumo ou categoria"
-                value={search}
-              />
-
-              <TextareaInput
-                className="min-h-[84px]"
-                onChange={(event) => onNoteChange(event.target.value)}
-                placeholder="Observação curta opcional para o próximo operador."
-                value={noteDraft}
-              />
-
-              <GhostButton
-                className="min-h-9 px-3 text-[13px]"
-                disabled={loading}
-                onClick={onMarkGap}
-                type="button"
-              >
-                Marcar lacuna de documentação
-              </GhostButton>
-            </div>
-          </div>
-
-          <div className="space-y-2 rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-                  Sugestões disponíveis
-              </h4>
-              <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                {articles.length === 0 ? 'Sem resultados para o filtro atual' : `${articles.length} artigo(s) encontrados`}
-              </p>
-            </div>
-
-            {articles.length === 0 ? (
-              <InlineNotice tone="warning">
-                Nenhum artigo permitido apareceu para este filtro.
-              </InlineNotice>
-            ) : (
-              <div className="grid gap-2 xl:grid-cols-2">
-                {visibleArticles.map((article) => (
-                  <SupportKnowledgePickerCard
-                    article={article}
-                    disabled={loading}
-                    key={article.articleId}
-                    onCopyPublicLink={onCopyPublicLink}
-                    onLinkInternal={onLinkInternal}
-                    onNeedsUpdate={onNeedsUpdate}
-                    onSendToCustomer={onSendToCustomer}
-                  />
-                ))}
-              </div>
-            )}
-
-            {articles.length > visibleArticles.length ? (
-              <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                Ajuste a busca para abrir outros artigos desta base.
-              </p>
-            ) : null}
-          </div>
-        </>
-      )}
-    </section>
-  );
-}
-
-function SupportHelpPanel({
-  articles,
-  links,
-  onCopyPublicLink,
-}: {
-  articles: SupportKnowledgeArticlePickerItem[];
-  links: SupportTicketKnowledgeLink[];
-  onCopyPublicLink: (publicArticlePath: string) => void;
-}) {
-  const publicArticles = articles
-    .filter((article) => article.isCustomerSendAllowed && article.publicArticlePath)
-    .slice(0, 3);
-  const publicLinks = links
-    .filter(
-      (link) =>
-        link.publicArticlePath &&
-        (link.linkType === 'sent_to_customer' || link.isCustomerSendAllowed),
-    )
-    .slice(0, 3);
-  const helpCenterBasePath =
-    extractPublicArticleBasePath(publicArticles[0]?.publicArticlePath) ??
-    extractPublicArticleBasePath(publicLinks[0]?.publicArticlePath) ??
-    '/help/genius';
-
-  return (
-    <section className="space-y-3">
-      <div className="space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-          Central de ajuda
-        </p>
-        <h3 className="text-[15px] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-          Conteúdo público sugerido para esta tratativa
-        </h3>
-        <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-                Use este painel para validar se já existe material público pronto antes de responder o cliente.
-        </p>
-      </div>
-
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,0.92fr)_minmax(260px,0.8fr)]">
-        <div className="space-y-2 rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-              Artigos prontos para o cliente
-            </h4>
-            <Link
-              className="text-[12px] font-semibold text-[color:var(--color-brand-blue)]"
-              to={helpCenterBasePath}
-            >
-              Abrir central
-            </Link>
-          </div>
-
-          {publicArticles.length === 0 ? (
-            <EmptyState
-              title="Nenhum artigo público sugerido"
-              description="Quando um conteúdo puder ser compartilhado com o cliente, ele aparecerá aqui."
-            />
-          ) : (
-            <div className="space-y-2">
-              {publicArticles.map((article) => (
-                <article
-                  className="rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5"
-                  key={article.articleId}
-                >
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <StatusPill>{humanizeKnowledgeVisibility(article.articleVisibility)}</StatusPill>
-                    <StatusPill>{humanizeKnowledgeStatus(article.articleStatus)}</StatusPill>
-                    {article.categoryName ? <StatusPill tone="accent">{article.categoryName}</StatusPill> : null}
-                  </div>
-                  <p className="mt-1.5 text-[13px] font-semibold text-[color:var(--color-ink)]">
-                    {article.articleTitle}
-                  </p>
-                  <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-[color:var(--color-muted)]">
-                      {article.articleSummary?.trim() || 'Resumo ainda não informado para este artigo.'}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    <a
-                      className="inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white px-2.5 text-[12px] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/35 hover:text-[color:var(--color-brand-blue)]"
-                      href={article.publicArticlePath!}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      Abrir artigo
-                    </a>
-                    <GhostButton
-                      className="min-h-8 rounded-full px-2.5 text-[12px]"
-                      onClick={() => onCopyPublicLink(article.publicArticlePath!)}
-                      type="button"
-                    >
-                      Copiar link
-                    </GhostButton>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-2 rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
-          <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-            Conteudos ja relacionados
-          </h4>
-          {publicLinks.length === 0 ? (
-            <InlineNotice>
-              Ainda não existe conteúdo público marcado para este ticket.
-            </InlineNotice>
-          ) : (
-            <div className="space-y-1.5">
-              {publicLinks.map((link) => (
-                <div
-                  className="rounded-[14px] border border-[color:var(--color-border)] bg-white px-3 py-2"
-                  key={link.ticketKnowledgeLinkId}
-                >
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <StatusPill tone={toneForKnowledgeLinkType(link.linkType)}>
-                      {humanizeKnowledgeLinkType(link.linkType)}
-                    </StatusPill>
-                    {link.articleVisibility ? (
-                      <StatusPill>{humanizeKnowledgeVisibility(link.articleVisibility)}</StatusPill>
-                    ) : null}
-                  </div>
-                  <p className="mt-1.5 text-[13px] font-semibold text-[color:var(--color-ink)]">
-                    {link.articleTitle ?? 'Conteúdo público relacionado'}
-                  </p>
-                  <p className="mt-1 text-[11px] leading-5 text-[color:var(--color-muted)]">
-                    Vinculado em {formatDateTime(link.createdAt)}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    <a
-                      className="inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2.5 text-[12px] font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/35 hover:text-[color:var(--color-brand-blue)]"
-                      href={link.publicArticlePath!}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      Abrir artigo
-                    </a>
-                    <GhostButton
-                      className="min-h-8 rounded-full px-2.5 text-[12px]"
-                      onClick={() => onCopyPublicLink(link.publicArticlePath!)}
-                      type="button"
-                    >
-                      Copiar link
-                    </GhostButton>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="rounded-[14px] border border-dashed border-[rgba(48,127,226,0.28)] bg-white/72 px-3 py-2.5">
-            <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-              Quando não houver conteúdo pronto, siga com a resposta pública e registre a lacuna na aba Conhecimento.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function SupportMoreActionsPanel({
-  closeReason,
-  canClose,
-  canReopen,
-  canUpdateStatus,
-  onCloseReasonChange,
-  onCloseSubmit,
-  onReopenReasonChange,
-  onReopenSubmit,
-  onStatusNoteChange,
-  onStatusSubmit,
-  reopenReason,
-  statusNote,
-  submitting,
-  window,
-}: {
-  closeReason: string;
-  canClose: boolean;
-  canReopen: boolean;
-  canUpdateStatus: boolean;
-  onCloseReasonChange: (value: string) => void;
-  onCloseSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onReopenReasonChange: (value: string) => void;
-  onReopenSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onStatusNoteChange: (value: string) => void;
-  onStatusSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  reopenReason: string;
-  statusNote: string;
-  submitting: boolean;
-  window: SupportTicketTimelineRecentWindow;
-}) {
-  return (
-    <section className="space-y-3">
-      <div className="space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-          Mais ações
-        </p>
-        <h3 className="text-[15px] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-          Movimentos secundarios da tratativa
-        </h3>
-      </div>
-
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,0.92fr)_minmax(260px,0.8fr)]">
-        <div className="space-y-3">
-          <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
-            <form className="space-y-2.5" onSubmit={onStatusSubmit}>
-              <Field
-                label="Atualizar com observação"
-                description="Use quando a mudanca de andamento precisa registrar o contexto operacional."
-              >
-                <TextareaInput
-                  className="min-h-[96px]"
-                  onChange={(event) => onStatusNoteChange(event.target.value)}
-                  placeholder="Descreva o proximo passo ou o motivo da mudanca."
-                  value={statusNote}
-                />
-              </Field>
-              <AppButton
-                className="min-h-10 rounded-[14px] px-4.5"
-                disabled={submitting || !canUpdateStatus}
-                type="submit"
-              >
-                {submitting ? 'Atualizando...' : 'Salvar status com observação'}
-              </AppButton>
-            </form>
-          </section>
-
-          {(canClose || canReopen) ? (
-            <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
-              <div className="space-y-3">
-                {canClose ? (
-                  <form className="space-y-2.5" onSubmit={onCloseSubmit}>
-                    <Field label="Motivo do fechamento">
-                      <TextareaInput
-                        className="min-h-[96px]"
-                        onChange={(event) => onCloseReasonChange(event.target.value)}
-                        placeholder="Obrigatorio para encerrar."
-                        value={closeReason}
-                      />
-                    </Field>
-                    <AppButton
-                      className="min-h-10 rounded-[14px] bg-[linear-gradient(135deg,#8b1e3f,#c3365e)] px-4.5"
-                      disabled={submitting || closeReason.trim().length === 0}
-                      type="submit"
-                    >
-                      {submitting ? 'Fechando...' : 'Fechar ticket'}
-                    </AppButton>
-                  </form>
-                ) : null}
-
-                {canReopen ? (
-                  <form className="space-y-2.5 border-t border-[color:var(--color-border)] pt-3" onSubmit={onReopenSubmit}>
-                    <Field label="Motivo da reabertura">
-                      <TextareaInput
-                        className="min-h-[84px]"
-                        onChange={(event) => onReopenReasonChange(event.target.value)}
-                        placeholder="Opcional para reabrir."
-                        value={reopenReason}
-                      />
-                    </Field>
-                    <GhostButton className="min-h-10 w-full px-4" disabled={submitting} type="submit">
-                      {submitting ? 'Reabrindo...' : 'Reabrir ticket'}
-                    </GhostButton>
-                  </form>
-                ) : null}
-              </div>
-            </section>
-          ) : null}
-        </div>
-
-        <section className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
-          <div className="space-y-2">
-            <h4 className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-              Historico de apoio
-            </h4>
-            <SupportTechnicalHistory window={window} />
-          </div>
-        </section>
-      </div>
-    </section>
-  );
-}
-
 function SupportQueueItem({
+  ticket,
+  isSelected,
+  isBulkSelected,
+  onSelect,
+  onToggleBulk,
+}: {
+  ticket: SupportTicketQueueItem;
+  isSelected: boolean;
+  isBulkSelected: boolean;
+  onSelect: () => void;
+  onToggleBulk: () => void;
+}) {
+  const slaTone =
+    ticket.slaStatus === 'breached'
+      ? 'critical'
+      : ticket.slaStatus === 'at_risk'
+        ? 'warning'
+        : 'default';
+  const assigneeLabel = ticket.assignedToFullName ?? 'Sem responsável';
+  const slaLabel = ticket.slaStatusLabel ?? 'Indisponível';
+
+  return (
+    <article
+      className={cx(
+        'grid min-h-[84px] cursor-pointer grid-cols-[44px_minmax(0,1fr)_96px] items-center gap-3 border-b border-[color:var(--minimal-border)] px-3 py-3 text-left transition-colors duration-150 lg:min-h-[76px] lg:grid-cols-[28px_minmax(220px,1.45fr)_minmax(150px,0.8fr)_minmax(130px,0.65fr)_minmax(150px,0.75fr)_120px] lg:gap-4 lg:px-4',
+        'focus-within:ring-2 focus-within:ring-inset focus-within:ring-[color:var(--minimal-focus)]',
+        isSelected
+          ? 'bg-[color:var(--minimal-selection)]'
+          : 'bg-[color:var(--minimal-surface)] hover:bg-[color:var(--minimal-surface-muted)]',
+        isBulkSelected && 'bg-[color:var(--minimal-selection)]',
+      )}
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+    >
+      <button
+        aria-label={`${isBulkSelected ? 'Remover' : 'Selecionar'} ${supportTicketCode(ticket.id)} para ação em massa`}
+        aria-pressed={isBulkSelected}
+        className={cx(
+          'inline-flex h-10 w-10 items-center justify-center rounded border text-[10px] lg:h-4 lg:w-4',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]',
+          isBulkSelected
+            ? 'border-[color:var(--minimal-action)] bg-[color:var(--minimal-action)] text-[color:var(--minimal-action-ink)]'
+            : 'border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] text-transparent',
+        )}
+        onClick={(event) => {
+          event.stopPropagation();
+          onToggleBulk();
+        }}
+        type="button"
+      >
+        {isBulkSelected ? '✓' : ''}
+      </button>
+
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-medium text-[color:var(--minimal-text-tertiary)]">
+            {supportTicketCode(ticket.id)}
+          </span>
+          <span className="text-[11px] text-[color:var(--minimal-text-tertiary)]">
+            {formatSupportShortTime(ticket.createdAt ?? ticket.updatedAt)}
+          </span>
+        </div>
+        <h3 className="mt-1 truncate text-sm font-medium text-[color:var(--minimal-text)]">
+          {sanitizeSupportVisibleText(ticket.title)}
+        </h3>
+        <p className="mt-1 truncate text-xs text-[color:var(--minimal-text-secondary)]">
+          {ticket.categoryName ?? 'Sem categoria'} · {ticket.channelLabel ?? 'Canal indisponível'}
+        </p>
+        <p className="mt-1 truncate text-xs text-[color:var(--minimal-text-tertiary)] lg:hidden">
+          {compactTicketStatusLabel(ticket.status)} · {humanizePriority(ticket.priority)}
+        </p>
+      </div>
+
+      <div className="hidden min-w-0 lg:block">
+        <p className="truncate text-sm text-[color:var(--minimal-text)]">
+          {ticketTenantLabel(ticket)}
+        </p>
+        <p className="mt-1 truncate text-xs text-[color:var(--minimal-text-tertiary)]">
+          {sanitizeSupportVisibleText(ticket.requesterContactFullName)}
+        </p>
+      </div>
+
+      <div className="hidden min-w-0 lg:block">
+        <p className="text-sm text-[color:var(--minimal-text)]">
+          {compactTicketStatusLabel(ticket.status)}
+        </p>
+        <p className="mt-1 text-xs text-[color:var(--minimal-text-tertiary)]">
+          {humanizePriority(ticket.priority)}
+        </p>
+      </div>
+
+      <div className="hidden min-w-0 lg:block">
+        <p className="truncate text-sm text-[color:var(--minimal-text)]">{assigneeLabel}</p>
+        <p className="mt-1 text-xs text-[color:var(--minimal-text-tertiary)]">
+          {ticket.assignedToFullName ? 'Operação CX' : 'Precisa de dono'}
+        </p>
+      </div>
+
+      <div
+        className={cx(
+          'min-w-0 text-right',
+          slaTone === 'critical' && 'text-[color:var(--minimal-danger-text)]',
+          slaTone === 'warning' && 'text-[color:var(--minimal-warning-text)]',
+          slaTone === 'default' && 'text-[color:var(--minimal-text-secondary)]',
+        )}
+      >
+        <p className="truncate text-sm font-medium">{slaLabel}</p>
+        <p className="mt-1 text-xs">
+          {ticket.slaStatus === 'breached' ? 'Vencido' : 'Dentro do prazo'}
+        </p>
+      </div>
+    </article>
+  );
+}
+
+function SupportTicketInboxItem({
   ticket,
   isSelected,
   onSelect,
@@ -1720,290 +1764,37 @@ function SupportQueueItem({
   onSelect: () => void;
 }) {
   return (
-    <article
+    <button
+      aria-pressed={isSelected}
       className={cx(
-        'rounded-[20px] border p-4 transition',
+        'block w-full rounded-md border px-3 py-2.5 text-left transition-colors',
         isSelected
-          ? 'border-[rgba(48,127,226,0.46)] bg-[rgba(48,127,226,0.08)] shadow-[0_10px_22px_rgba(19,33,79,0.08)]'
-          : 'border-[color:var(--color-border)] bg-white hover:border-[rgba(48,127,226,0.24)] hover:bg-[rgba(255,255,255,0.98)]',
+          ? 'border-[color:var(--minimal-action)] bg-[color:var(--minimal-selection)]'
+          : 'border-transparent bg-transparent hover:bg-[color:var(--minimal-surface-muted)]',
       )}
+      onClick={onSelect}
+      type="button"
     >
-      <button
-        className="block w-full min-w-0 text-left"
-        onClick={onSelect}
-        type="button"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <StatusPill tone={toneForTicketStatus(ticket.status)}>
-            {humanizeStatus(ticket.status)}
-          </StatusPill>
-            <p className="text-xs font-medium uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
-              {humanizePriority(ticket.priority)} · {humanizeSeverity(ticket.severity)}
-          </p>
-        </div>
-
-        <div className="mt-3 min-w-0 space-y-2">
-          <h3 className="line-clamp-2 max-w-full text-lg font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
-            {ticket.title}
-          </h3>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[color:var(--color-muted)]">
-            <span>Cliente: {ticketTenantLabel(ticket)}</span>
-                  <span>Responsável: {ticket.assignedToFullName ?? 'Não atribuído'}</span>
-            <span>Última atividade: {formatDateTime(ticket.lastMessageAt ?? ticket.updatedAt)}</span>
-          </div>
-        </div>
-      </button>
-    </article>
-  );
-}
-
-function SupportSummaryStrip({
-  totalOpen,
-  waitingCustomer,
-  highAttention,
-  unassigned,
-}: {
-  totalOpen: number;
-  waitingCustomer: number;
-  highAttention: number;
-  unassigned: number;
-}) {
-  const items = [
-    { label: 'Abertos', value: totalOpen },
-    { label: 'Urgentes', value: highAttention },
-                  { label: 'Não atribuídos', value: unassigned },
-    { label: 'Aguardando cliente', value: waitingCustomer },
-  ];
-
-  return (
-    <div className="flex flex-wrap items-center gap-2 rounded-[18px] border border-[color:var(--color-border)] bg-white/88 px-3 py-3">
-      {items.map((item) => (
-        <div
-          className="inline-flex items-center gap-2 rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2"
-          key={item.label}
+      <div className="flex items-center justify-between gap-2 text-[11px] text-[color:var(--minimal-text-tertiary)]">
+        <span>{supportTicketCode(ticket.id)}</span>
+        <span>{formatSupportShortTime(ticket.lastMessageAt ?? ticket.updatedAt)}</span>
+      </div>
+      <p className="mt-1 truncate text-sm font-medium text-[color:var(--minimal-text)]">{sanitizeSupportVisibleText(ticket.title)}</p>
+      <p className="mt-1 truncate text-xs text-[color:var(--minimal-text-secondary)]">
+        {ticketTenantLabel(ticket)}
+      </p>
+      <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-[color:var(--minimal-text-tertiary)]">
+        <span>{compactTicketStatusLabel(ticket.status)}</span>
+        <span
+          className={cx(
+            ticket.slaStatus === 'breached' && 'text-[color:var(--minimal-danger-text)]',
+            ticket.slaStatus === 'at_risk' && 'text-[color:var(--minimal-warning-text)]',
+          )}
         >
-          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
-            {item.label}
-          </span>
-          <span className="text-sm font-semibold text-[color:var(--color-ink)]">{item.value}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function SupportTicketPreview({
-  ticket,
-  detail,
-  customer,
-}: {
-  ticket: SupportTicketQueueItem | null;
-  detail: SupportTicketDetail | null;
-  customer: SupportCustomer360 | null;
-}) {
-  if (!ticket && !detail) {
-    return (
-      <EmptyState
-        title="Nenhum ticket em foco"
-        description="Selecione um ticket da fila para abrir a previa operacional."
-      />
-    );
-  }
-
-  const title = detail?.title ?? ticket?.title ?? 'Ticket sem título';
-  const tenant =
-    detail?.tenantDisplayName ??
-    detail?.tenantLegalName ??
-    detail?.tenantSlug ??
-      (ticket ? ticketTenantLabel(ticket) : 'Cliente não identificado');
-  const assigned =
-    detail?.assignedToFullName ?? ticket?.assignedToFullName ?? 'Não atribuído';
-  const lastActivity = formatDateTime(
-    detail?.lastMessageAt ?? detail?.updatedAt ?? ticket?.lastMessageAt ?? ticket?.updatedAt ?? null,
-  );
-  const tenantId = detail?.tenantId ?? ticket?.tenantId ?? null;
-  const ticketId = detail?.id ?? ticket?.id ?? null;
-
-  return (
-    <div className="space-y-4">
-      <div className="rounded-[22px] border border-[rgba(48,127,226,0.22)] bg-[linear-gradient(180deg,rgba(17,28,66,1),rgba(24,42,97,0.98))] px-5 py-5 text-white">
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusPill tone={toneForTicketStatus(detail?.status ?? ticket?.status ?? 'new')}>
-            {humanizeStatus((detail?.status ?? ticket?.status ?? 'new') as TicketStatus)}
-          </StatusPill>
-          <span className="text-xs font-medium uppercase tracking-[0.14em] text-white/66">
-            {humanizeToken(detail?.priority ?? ticket?.priority ?? 'normal')} ·{' '}
-            {humanizeToken(detail?.severity ?? ticket?.severity ?? 'low')}
-          </span>
-        </div>
-
-        <div className="mt-4 min-w-0 space-y-2">
-          <h3 className="line-clamp-3 text-[1.45rem] font-semibold tracking-[-0.05em]">{title}</h3>
-          <div className="space-y-1 text-sm text-white/72">
-            <p>Cliente B2B: {tenant}</p>
-            <p>Responsavel: {assigned}</p>
-            <p>Ultima atividade: {lastActivity}</p>
-          </div>
-        </div>
-
-        {ticketId ? (
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Link
-              className="inline-flex min-h-12 items-center justify-center rounded-full bg-white px-5 py-2 text-sm font-semibold text-[color:var(--color-brand-navy)]"
-              to={`/support/tickets/${ticketId}`}
-            >
-              Atender ticket
-            </Link>
-            {tenantId ? (
-              <Link
-                className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/22 px-5 py-2 text-sm font-semibold text-white"
-                to={`/support/customers/${tenantId}`}
-              >
-                Ver cliente
-              </Link>
-            ) : null}
-          </div>
-        ) : null}
+          {ticket.slaStatusLabel ?? 'SLA indisponível'}
+        </span>
       </div>
-
-      <div className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4 text-sm leading-6 text-[color:var(--color-muted)]">
-        <p className="font-medium text-[color:var(--color-ink)]">Previa de atendimento</p>
-        <p className="mt-2">
-          {detail?.description?.trim() ||
-            'Abra o ticket para responder, registrar nota interna ou ajustar status e atribuicao.'}
-        </p>
-        {customer ? (
-          <div className="mt-4 border-t border-[color:var(--color-border)] pt-3 text-sm">
-                <p>Contato principal: {customer.activeContacts[0]?.fullName ?? 'Não identificado'}</p>
-            <p>Tickets abertos deste cliente: {customer.openTicketCount}</p>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function SupportQueueToolbar({
-  filters,
-  tenantOptions,
-  assigneeOptions,
-  onChange,
-  onRefresh,
-  embedded = false,
-}: {
-  filters: QueueFilters;
-  tenantOptions: Array<{ id: string; label: string }>;
-  assigneeOptions: Array<{ id: string; label: string }>;
-  onChange: (next: QueueFilters) => void;
-  onRefresh: () => void;
-  embedded?: boolean;
-}) {
-  const content = (
-    <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="space-y-1">
-          <p className="text-sm font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-            Triagem operacional
-          </p>
-          <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-            Filtros de fila para definir proximo atendimento sem virar dashboard.
-          </p>
-        </div>
-        <GhostButton onClick={onRefresh}>Recarregar</GhostButton>
-      </div>
-
-      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-1">
-        <Field label="Status">
-          <SelectInput
-            onChange={(event) => onChange({ ...filters, status: event.target.value as QueueFilters['status'] })}
-            value={filters.status}
-          >
-            <option value="all">Todos</option>
-            {TICKET_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {humanizeStatus(status)}
-              </option>
-            ))}
-          </SelectInput>
-        </Field>
-
-        <Field label="Prioridade">
-          <SelectInput
-            onChange={(event) =>
-              onChange({ ...filters, priority: event.target.value as QueueFilters['priority'] })
-            }
-            value={filters.priority}
-          >
-            <option value="all">Todas</option>
-            {TICKET_PRIORITIES.map((priority) => (
-                          <option key={priority} value={priority}>
-                            {humanizePriority(priority)}
-              </option>
-            ))}
-          </SelectInput>
-        </Field>
-
-        <Field label="Severidade">
-          <SelectInput
-            onChange={(event) =>
-              onChange({ ...filters, severity: event.target.value as QueueFilters['severity'] })
-            }
-            value={filters.severity}
-          >
-            <option value="all">Todas</option>
-            {TICKET_SEVERITIES.map((severity) => (
-                          <option key={severity} value={severity}>
-                            {humanizeSeverity(severity)}
-              </option>
-            ))}
-          </SelectInput>
-        </Field>
-
-        <Field label="Cliente">
-          <SelectInput
-            onChange={(event) => onChange({ ...filters, tenantId: event.target.value as QueueFilters['tenantId'] })}
-            value={filters.tenantId}
-          >
-            <option value="all">Todos</option>
-            {tenantOptions.map((tenant) => (
-              <option key={tenant.id} value={tenant.id}>
-                {tenant.label}
-              </option>
-            ))}
-          </SelectInput>
-        </Field>
-
-        <Field label="Responsavel">
-          <SelectInput
-            onChange={(event) =>
-              onChange({
-                ...filters,
-                assignedToUserId: event.target.value as QueueFilters['assignedToUserId'],
-              })
-            }
-            value={filters.assignedToUserId}
-          >
-            <option value="all">Todos</option>
-                <option value="unassigned">Não atribuídos</option>
-            {assigneeOptions.map((assignee) => (
-              <option key={assignee.id} value={assignee.id}>
-                {assignee.label}
-              </option>
-            ))}
-          </SelectInput>
-        </Field>
-      </div>
-    </>
-  );
-
-  if (embedded) {
-    return content;
-  }
-
-  return (
-    <div className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4">
-      {content}
-    </div>
+    </button>
   );
 }
 
@@ -2040,11 +1831,10 @@ function SupportCustomerRail({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <StatusPill>{customer.tenantStatus}</StatusPill>
-              <StatusPill tone="accent">{customer.tenantSlug}</StatusPill>
+              <StatusPill>{humanizeTenantStatus(customer.tenantStatus)}</StatusPill>
             </div>
             <h3 className="text-base font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-              {customer.tenantDisplayName ?? customer.tenantLegalName ?? customer.tenantSlug}
+              {displaySupportCustomerName(customer)}
             </h3>
             <p className="text-sm leading-6 text-[color:var(--color-muted)]">
               {customer.activeContactsCount} contatos ativos · {customer.openTicketCount} tickets abertos
@@ -2066,9 +1856,9 @@ function SupportCustomerRail({
           </summary>
           <div className="mt-3 space-y-3">
             {primaryContact ? (
-              <div className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-3">
+              <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-medium text-[color:var(--color-ink)]">{primaryContact.fullName}</p>
+                  <p className="font-medium text-[color:var(--color-ink)]">{sanitizeSupportVisibleText(primaryContact.fullName)}</p>
                   {primaryContact.isPrimary ? <StatusPill tone="accent">principal</StatusPill> : null}
                 </div>
                 <p className="mt-1 text-sm text-[color:var(--color-muted)]">{primaryContact.email}</p>
@@ -2101,10 +1891,10 @@ function SupportCustomerRail({
                     Nenhum evento recente apareceu por aqui.
                   </p>
               ) : (
-                recentEvents.map((event) => (
+                recentEvents.map((event, index) => (
                   <SupportRecentEventCard
                     event={event}
-                    key={`${event.ticketId}-${event.occurredAt}-${event.eventType}`}
+                    key={buildSupportCustomerRecentEventKey(event, index)}
                   />
                 ))
               )}
@@ -2117,15 +1907,14 @@ function SupportCustomerRail({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+      <div className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <StatusPill>{customer.tenantStatus}</StatusPill>
-              <StatusPill tone="accent">{customer.tenantSlug}</StatusPill>
+              <StatusPill>{humanizeTenantStatus(customer.tenantStatus)}</StatusPill>
             </div>
             <h3 className="text-base font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-              {customer.tenantDisplayName ?? customer.tenantLegalName ?? customer.tenantSlug}
+              {displaySupportCustomerName(customer)}
             </h3>
           </div>
           <Link
@@ -2140,11 +1929,11 @@ function SupportCustomerRail({
         </p>
       </div>
 
-      <div className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+      <div className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4">
         <SupportAccountContextCompact accountContext={accountContext} customer={customer} />
       </div>
 
-      <div className="space-y-2 rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+      <div className="space-y-2 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4">
         <div className="space-y-1">
           <h4 className="text-sm font-semibold text-[color:var(--color-ink)]">Tickets recentes</h4>
             <p className="text-xs leading-5 text-[color:var(--color-muted)]">
@@ -2160,7 +1949,7 @@ function SupportCustomerRail({
         )}
       </div>
 
-      <details className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+      <details className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4">
         <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-ink)]">
           Contatos e eventos recentes
         </summary>
@@ -2185,8 +1974,11 @@ function SupportCustomerRail({
                 Nenhum evento recente apareceu por aqui.
               </p>
             ) : (
-              recentEvents.map((event) => (
-                <SupportRecentEventCard key={`${event.ticketId}-${event.occurredAt}-${event.eventType}`} event={event} />
+              recentEvents.map((event, index) => (
+                <SupportRecentEventCard
+                  key={buildSupportCustomerRecentEventKey(event, index)}
+                  event={event}
+                />
               ))
             )}
           </div>
@@ -2204,7 +1996,7 @@ function SupportContactCard({
   return (
     <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="font-medium text-[color:var(--color-ink)]">{contact.fullName}</p>
+        <p className="font-medium text-[color:var(--color-ink)]">{sanitizeSupportVisibleText(contact.fullName)}</p>
         {contact.isPrimary ? <StatusPill tone="accent">principal</StatusPill> : null}
       </div>
       <p className="mt-1 text-sm text-[color:var(--color-muted)]">{contact.email}</p>
@@ -2219,7 +2011,7 @@ function SupportRecentTicketCard({
 }) {
   return (
     <Link
-      className="block rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3 transition hover:bg-white"
+      className="block rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3 transition hover:bg-[color:var(--color-surface-strong)]"
       to={`/support/tickets/${ticket.id}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2228,7 +2020,7 @@ function SupportRecentTicketCard({
                             {humanizePriority(ticket.priority)}
         </span>
       </div>
-      <p className="mt-2 line-clamp-2 font-medium text-[color:var(--color-ink)]">{ticket.title}</p>
+      <p className="mt-2 line-clamp-2 font-medium text-[color:var(--color-ink)]">{sanitizeSupportVisibleText(ticket.title)}</p>
       <p className="mt-1 text-xs text-[color:var(--color-muted)]">
         Atualizado em {formatDateTime(ticket.updatedAt)}
       </p>
@@ -2243,7 +2035,7 @@ function SupportRecentEventCard({
 }) {
   return (
     <Link
-      className="block rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3 transition hover:bg-white"
+      className="block rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3 transition hover:bg-[color:var(--color-surface-strong)]"
       to={`/support/tickets/${event.ticketId}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2260,8 +2052,73 @@ function SupportRecentEventCard({
   );
 }
 
-function primaryContactFromCustomer(customer: SupportCustomer360) {
-  return customer.activeContacts.find((contact) => contact.isPrimary) ?? customer.activeContacts[0] ?? null;
+function isOperationsQueueTicket(ticket: SupportTicketQueueItem) {
+  const candidate = `${ticket.categorySlug ?? ''} ${ticket.categoryName ?? ''}`.toLocaleLowerCase('pt-BR');
+  return (
+    candidate.includes('opera') ||
+    candidate.includes('support') ||
+    candidate.includes('suporte')
+  );
+}
+
+function ticketMatchesInboxScope(
+  ticket: SupportTicketQueueItem,
+  scope: TicketInboxScope,
+) {
+  if (scope === 'open') {
+    return (
+      ticket.status === 'new' ||
+      ticket.status === 'triage' ||
+      ticket.status === 'waiting_customer' ||
+      ticket.status === 'waiting_support' ||
+      ticket.status === 'waiting_engineering' ||
+      ticket.status === 'in_progress'
+    );
+  }
+
+  return (
+    ticket.status === 'resolved' ||
+    ticket.status === 'closed' ||
+    ticket.status === 'cancelled'
+  );
+}
+
+function ticketMatchesInboxFilter(
+  ticket: SupportTicketQueueItem,
+  filter: TicketInboxFilter,
+) {
+  switch (filter) {
+    case 'in_progress':
+      return ticket.status === 'in_progress';
+    case 'awaiting':
+      return (
+        ticket.isWaitingCustomer ||
+        ticket.isWaitingEngineering ||
+        ticket.status === 'waiting_customer' ||
+        ticket.status === 'waiting_engineering'
+      );
+    case 'urgent':
+      return (
+        ticket.priority === 'urgent' ||
+        ticket.severity === 'critical' ||
+        ticket.slaStatus === 'at_risk' ||
+        ticket.slaStatus === 'breached'
+      );
+    case 'operations':
+      return isOperationsQueueTicket(ticket);
+    case 'engineering':
+      return ticket.isWaitingEngineering;
+    case 'resolved':
+      return ticket.status === 'resolved';
+    case 'closed':
+      return ticket.status === 'closed';
+    case 'cancelled':
+      return ticket.status === 'cancelled';
+    case 'all_closed':
+    case 'all':
+    default:
+      return true;
+  }
 }
 
 function primaryPlatformFromContext(accountContext: SupportCustomerAccountContext | null) {
@@ -2341,7 +2198,9 @@ function SupportAccountContextCompact({
             {humanizeCustomerValue(accountContext.operationalStatus)}
           </StatusPill>
         ) : null}
-        {accountContext.accountTier ? <StatusPill>{accountContext.accountTier}</StatusPill> : null}
+        {accountContext.accountTier ? (
+          <StatusPill>{humanizeCustomerValue(accountContext.accountTier)}</StatusPill>
+        ) : null}
       </div>
 
       <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
@@ -2349,7 +2208,7 @@ function SupportAccountContextCompact({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <dt className="font-medium text-[color:var(--color-ink)]">Plataforma</dt>
             <dd className="text-right">
-                {primaryPlatform ? primaryPlatform.provider : 'Plataforma não registrada'}
+                {primaryPlatform ? primaryPlatform.provider : 'Indisponível'}
             </dd>
           </div>
           <div className="flex flex-wrap items-start justify-between gap-3 border-t border-[color:var(--color-border)] pt-3">
@@ -2357,13 +2216,13 @@ function SupportAccountContextCompact({
             <dd className="text-right">
               {integrations.length > 0
                 ? integrations.map((integration) => integration.provider).join(' · ')
-                : 'Sem integrações principais'}
+                : 'Indisponível'}
             </dd>
           </div>
           <div className="flex flex-wrap items-start justify-between gap-3 border-t border-[color:var(--color-border)] pt-3">
             <dt className="font-medium text-[color:var(--color-ink)]">Contato operacional</dt>
             <dd className="text-right">
-                {primaryContact ? `${primaryContact.fullName} · ${primaryContact.email}` : 'Não identificado'}
+                {primaryContact ? `${sanitizeSupportVisibleText(primaryContact.fullName)} · ${primaryContact.email}` : 'Indisponível'}
             </dd>
           </div>
         </dl>
@@ -2383,7 +2242,7 @@ function SupportAccountContextCompact({
       {features.length > 0 ? (
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-            Features ativas
+            Recursos ativos
           </p>
           <div className="flex flex-wrap gap-2">
             {features.map((feature) => (
@@ -2418,7 +2277,7 @@ function SupportAccountContextCompact({
         </div>
       ) : null}
 
-      <details className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3">
+      <details className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3">
         <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-ink)]">
           Detalhes operacionais recolhidos
         </summary>
@@ -2492,10 +2351,10 @@ function SupportTicketCustomerSnapshot({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">
             <p className="text-sm font-semibold text-[color:var(--color-ink)]">
-              {customer.tenantDisplayName ?? customer.tenantLegalName ?? customer.tenantSlug}
+              {displaySupportCustomerName(customer)}
             </p>
             <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-                {primaryContact ? `${primaryContact.fullName} · ${primaryContact.email}` : 'Contato principal não identificado'}
+                {primaryContact ? `${sanitizeSupportVisibleText(primaryContact.fullName)} · ${primaryContact.email}` : 'Contato principal não identificado'}
             </p>
           </div>
           <Link
@@ -2519,7 +2378,7 @@ function SupportTicketCustomerSnapshot({
       <div className="space-y-1">
         <div className="min-w-0 space-y-1">
           <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">
-            {customer.tenantDisplayName ?? customer.tenantLegalName ?? customer.tenantSlug}
+            {displaySupportCustomerName(customer)}
           </p>
           <div className="flex flex-wrap gap-1">
             {accountContext.productLine ? (
@@ -2530,7 +2389,9 @@ function SupportTicketCustomerSnapshot({
                 {humanizeCustomerValue(accountContext.operationalStatus)}
               </StatusPill>
             ) : null}
-            {accountContext.accountTier ? <StatusPill>{accountContext.accountTier}</StatusPill> : null}
+              {accountContext.accountTier ? (
+                <StatusPill>{humanizeCustomerValue(accountContext.accountTier)}</StatusPill>
+              ) : null}
           </div>
         </div>
         <Link
@@ -2552,25 +2413,27 @@ function SupportTicketCustomerSnapshot({
           <div className="flex items-start justify-between gap-3 border-t border-[color:var(--color-border)] pt-0.5">
             <dt className="font-medium text-[color:var(--color-ink)]">Produto</dt>
             <dd className="text-right">
-                {accountContext.productLine ? humanizeCustomerValue(accountContext.productLine) : 'Não identificado'}
+                {accountContext.productLine ? humanizeCustomerValue(accountContext.productLine) : 'Indisponível'}
             </dd>
           </div>
           <div className="flex items-start justify-between gap-3 border-t border-[color:var(--color-border)] pt-0.5">
             <dt className="font-medium text-[color:var(--color-ink)]">Porte / tier</dt>
             <dd className="text-right">
-                {accountContext.accountTier ?? 'Não identificado'}
+                {accountContext.accountTier
+                  ? humanizeCustomerValue(accountContext.accountTier)
+                  : 'Indisponível'}
             </dd>
           </div>
           <div className="flex items-start justify-between gap-3 border-t border-[color:var(--color-border)] pt-0.5">
             <dt className="font-medium text-[color:var(--color-ink)]">Contato principal</dt>
             <dd className="text-right">
-                {primaryContact ? primaryContact.fullName : 'Não identificado'}
+                {sanitizeSupportVisibleText(primaryContact?.fullName)}
             </dd>
           </div>
           <div className="flex items-start justify-between gap-3 border-t border-[color:var(--color-border)] pt-0.5">
             <dt className="font-medium text-[color:var(--color-ink)]">E-mail</dt>
             <dd className="text-right break-all">
-                {primaryContact?.email ?? 'Não identificado'}
+                {primaryContact?.email ?? 'Indisponível'}
             </dd>
           </div>
         </dl>
@@ -2607,7 +2470,9 @@ function SupportAccountContextOverview({
             {humanizeCustomerValue(accountContext.operationalStatus)}
           </StatusPill>
         ) : null}
-        {accountContext.accountTier ? <StatusPill>{accountContext.accountTier}</StatusPill> : null}
+        {accountContext.accountTier ? (
+          <StatusPill>{humanizeCustomerValue(accountContext.accountTier)}</StatusPill>
+        ) : null}
       </div>
 
       {accountContext.activeAlerts.length > 0 ? (
@@ -2625,10 +2490,10 @@ function SupportAccountContextOverview({
         <div className="space-y-4 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-              Plataforma e stack
+              Plataforma e ambiente
             </p>
             <p className="text-sm font-medium text-[color:var(--color-ink)]">
-                {primaryPlatform ? primaryPlatform.provider : 'Plataforma não registrada'}
+                {primaryPlatform ? primaryPlatform.provider : 'Indisponível'}
             </p>
             <p className="text-sm leading-6 text-[color:var(--color-muted)]">
               {primaryPlatform
@@ -2646,7 +2511,7 @@ function SupportAccountContextOverview({
               accountContext.integrations.map((integration) => (
                 <div
                   key={integration.id}
-                  className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-3"
+                  className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-3"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-sm font-medium text-[color:var(--color-ink)]">
@@ -2696,7 +2561,7 @@ function SupportAccountContextOverview({
               {accountContext.activeCustomizations.map((customization) => (
                 <div
                   key={customization.id}
-                  className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-3"
+                  className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-3"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-sm font-medium text-[color:var(--color-ink)]">
@@ -2715,12 +2580,12 @@ function SupportAccountContextOverview({
           ) : null}
 
           {primaryContact ? (
-            <div className="rounded-[16px] border border-[color:var(--color-border)] bg-white px-3 py-3">
+            <div className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-3">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
                 Contato principal
               </p>
               <p className="mt-1 text-sm font-medium text-[color:var(--color-ink)]">
-                {primaryContact.fullName}
+                {sanitizeSupportVisibleText(primaryContact.fullName)}
               </p>
               <p className="text-sm leading-6 text-[color:var(--color-muted)]">
                 {primaryContact.email}
@@ -2730,7 +2595,7 @@ function SupportAccountContextOverview({
         </div>
       </div>
 
-      <details className="rounded-[20px] border border-[color:var(--color-border)] bg-white px-4 py-4">
+      <details className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4">
         <summary className="cursor-pointer text-sm font-semibold text-[color:var(--color-ink)]">
           Observações internas e flags controladas
         </summary>
@@ -2750,9 +2615,9 @@ function SupportAccountContextOverview({
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
               Flags operacionais
             </p>
-            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words text-xs leading-6 text-[color:var(--color-muted)]">
-              {stringifyJsonPreview(accountContext.operationalFlags)}
-            </pre>
+            <p className="mt-2 text-xs leading-6 text-[color:var(--color-muted)]">
+              {summarizeOperationalFlags(accountContext.operationalFlags)}
+            </p>
           </div>
         </div>
       </details>
@@ -2774,7 +2639,14 @@ function SupportWorkspaceView({
   const [phase, setPhase] = useState<PagePhase>('loading');
   const [pageMessage, setPageMessage] = useState<string | null>(null);
   const [tickets, setTickets] = useState<SupportTicketQueueItem[]>([]);
+  const [queueTotalCount, setQueueTotalCount] = useState(0);
+  const [queueScopeCounts, setQueueScopeCounts] = useState({ open: 0, closed: 0 });
+  const [queueFilterCounts, setQueueFilterCounts] = useState<Record<string, number>>({});
   const [filters, setFilters] = useState<QueueFilters>(emptyFilters);
+  const [ticketInboxScope, setTicketInboxScope] = useState<TicketInboxScope>('open');
+  const [ticketInboxFilter, setTicketInboxFilter] = useState<TicketInboxFilter>('all');
+  const [ticketInboxSearch, setTicketInboxSearch] = useState('');
+  const [ticketInboxPage, setTicketInboxPage] = useState(1);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(focusTicketId ?? null);
   const [detailPhase, setDetailPhase] = useState<DetailPhase>('idle');
   const [detailMessage, setDetailMessage] = useState<string | null>(null);
@@ -2782,6 +2654,7 @@ function SupportWorkspaceView({
   const [timelineWindow, setTimelineWindow] = useState<SupportTicketTimelineRecentWindow>(
     emptyTimelineWindow(),
   );
+  const [timelineLoadingMore, setTimelineLoadingMore] = useState(false);
   const [customer, setCustomer] = useState<SupportCustomer360 | null>(null);
   const [customerAccountContext, setCustomerAccountContext] =
     useState<SupportCustomerAccountContext | null>(null);
@@ -2793,6 +2666,43 @@ function SupportWorkspaceView({
     useState<SupportTicketKnowledgeLink[]>(emptyTicketKnowledgeLinks());
   const [knowledgeArticlePicker, setKnowledgeArticlePicker] =
     useState<SupportKnowledgeArticlePickerItem[]>(emptyKnowledgeArticlePicker());
+  const [attachments, setAttachments] =
+    useState<SupportTicketAttachment[]>(emptyTicketAttachments());
+  const [attachmentPhase, setAttachmentPhase] = useState<AttachmentPhase>('idle');
+  const [attachmentMessage, setAttachmentMessage] = useState<string | null>(null);
+  const [attachmentSubmitting, setAttachmentSubmitting] = useState(false);
+  const [attachmentDownloadingId, setAttachmentDownloadingId] = useState<Uuid | null>(null);
+  const [attachmentUploadDraft, setAttachmentUploadDraft] =
+    useState<TicketAttachmentUploadDraft>(emptyAttachmentUploadDraft());
+  const [engineeringLinks, setEngineeringLinks] =
+    useState<SupportTicketEngineeringLink[]>(emptyTicketEngineeringLinks());
+  const [engineeringPhase, setEngineeringPhase] = useState<EngineeringPhase>('idle');
+  const [engineeringMessage, setEngineeringMessage] = useState<string | null>(null);
+  const [internalActions, setInternalActions] = useState<SupportTicketInternalAction[]>([]);
+  const [internalActionsPhase, setInternalActionsPhase] = useState<InternalActionsPhase>('idle');
+  const [internalActionsMessage, setInternalActionsMessage] = useState<string | null>(null);
+  const [internalActionTargetAreas, setInternalActionTargetAreas] =
+    useState<SupportInternalActionTargetArea[]>([]);
+  const [internalActionTargetAreasPhase, setInternalActionTargetAreasPhase] =
+    useState<InternalActionTargetAreasPhase>('idle');
+  const [internalActionTargetAreasMessage, setInternalActionTargetAreasMessage] =
+    useState<string | null>(null);
+  const [internalActionCreateDraft, setInternalActionCreateDraft] =
+    useState<InternalActionCreateDraft>(emptyInternalActionCreateDraft());
+  const [selectedInternalActionId, setSelectedInternalActionId] = useState<Uuid | null>(null);
+  const [internalActionDetail, setInternalActionDetail] =
+    useState<SupportInternalActionDetail | null>(null);
+  const [internalActionTimeline, setInternalActionTimeline] =
+    useState<SupportInternalActionTimelineEntry[]>([]);
+  const [internalActionDetailPhase, setInternalActionDetailPhase] =
+    useState<InternalActionDetailPhase>('idle');
+  const [internalActionDetailMessage, setInternalActionDetailMessage] =
+    useState<string | null>(null);
+  const [internalActionSupportNote, setInternalActionSupportNote] = useState('');
+  const [internalActionEvidenceAttachmentId, setInternalActionEvidenceAttachmentId] =
+    useState<Uuid | ''>('');
+  const [internalActionEvidenceNote, setInternalActionEvidenceNote] = useState('');
+  const [internalActionSubmitting, setInternalActionSubmitting] = useState(false);
   const [knowledgePhase, setKnowledgePhase] = useState<KnowledgePhase>('idle');
   const [knowledgeMessage, setKnowledgeMessage] = useState<string | null>(null);
   const [knowledgeSearch, setKnowledgeSearch] = useState('');
@@ -2801,36 +2711,74 @@ function SupportWorkspaceView({
   const [assignableAgents, setAssignableAgents] = useState<SupportAssignableAgent[]>([]);
   const [agentsPhase, setAgentsPhase] = useState<AgentsPhase>('idle');
   const [agentsMessage, setAgentsMessage] = useState<string | null>(null);
+  const [intakePhase, setIntakePhase] = useState<IntakePhase>('idle');
+  const [intakeMessage, setIntakeMessage] = useState<string | null>(null);
+  const [intakeContactsMessage, setIntakeContactsMessage] = useState<string | null>(null);
+  const [intakeContactsLoading, setIntakeContactsLoading] = useState(false);
+  const [intakeSubmitting, setIntakeSubmitting] = useState(false);
+  const [showCreateTicket, setShowCreateTicket] = useState(false);
+  const [intakeTenants, setIntakeTenants] = useState<SupportTicketIntakeTenant[]>([]);
+  const [intakeContacts, setIntakeContacts] = useState<SupportTicketIntakeContact[]>([]);
+  const [classificationOptions, setClassificationOptions] =
+    useState<SupportTicketClassificationOption[]>([]);
+  const [classificationOptionsMessage, setClassificationOptionsMessage] = useState<string | null>(null);
+  const [intakeDraft, setIntakeDraft] = useState<TicketIntakeDraft>(emptyTicketIntakeDraft());
+  const [classificationDraft, setClassificationDraft] =
+    useState<TicketClassificationDraft>(emptyTicketClassificationDraft());
+  const [prioritySeverityDraft, setPrioritySeverityDraft] =
+    useState<TicketPrioritySeverityDraft>(emptyTicketPrioritySeverityDraft());
+  const [handoffDraft, setHandoffDraft] =
+    useState<EngineeringHandoffDraft>(emptyEngineeringHandoffDraft());
+  const [handoffSubmitting, setHandoffSubmitting] = useState(false);
   const [statusDraft, setStatusDraft] = useState<TicketStatusUpdateTarget>('triage');
+  const [statusReasonId, setStatusReasonId] = useState<Uuid | ''>('');
   const [statusNote, setStatusNote] = useState('');
   const [closeReason, setCloseReason] = useState('');
   const [reopenReason, setReopenReason] = useState('');
   const [messageDraft, setMessageDraft] = useState('');
   const [noteDraft, setNoteDraft] = useState('');
   const [composerMode, setComposerMode] = useState<ComposerMode>('public');
+  const [workspaceTab, setWorkspaceTab] = useState<
+    'conversation' | 'details' | 'activities' | 'related' | 'sla' | 'history'
+  >('conversation');
   const [assignDraft, setAssignDraft] = useState('');
   const [detailNotice, setDetailNotice] = useState<string | null>(null);
   const [detailNoticeTone, setDetailNoticeTone] = useState<'default' | 'critical'>('default');
   const [submitting, setSubmitting] = useState(false);
-  const [ticketToolbarTab, setTicketToolbarTab] = useState<
-    'conversation' | 'knowledge' | 'help' | 'more'
-  >('conversation');
+  const [activeDrawer, setActiveDrawer] = useState<TicketActionDrawer>('none');
+  const [showQueueFilters, setShowQueueFilters] = useState(false);
+  const [bulkSelectedTicketIds, setBulkSelectedTicketIds] = useState<Uuid[]>([]);
   const threadScrollContainerRef = useRef<HTMLDivElement | null>(null);
   const pendingThreadScrollRef = useRef<'idle' | 'latest'>('idle');
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
 
   const loadQueue = useEffectEvent(async (preferredTicketId?: string | null) => {
     try {
-      const data = await listSupportTicketsQueue(filters);
+      const data = await listSupportTicketsQueue({
+        ...filters,
+        scope: ticketInboxScope,
+        inboxFilter: ticketInboxFilter,
+        search: ticketInboxSearch,
+        page: ticketInboxPage,
+        pageSize: SUPPORT_QUEUE_PAGE_SIZE,
+      });
       setBackendDenied(false);
-      setTickets(data);
+      setTickets(data.items);
+      setQueueTotalCount(data.totalCount);
+      setQueueScopeCounts(data.scopeCounts);
+      setQueueFilterCounts(data.filterCounts);
       setPhase('ready');
       setPageMessage(null);
       setSelectedTicketId((current) => {
+        if (variant === 'queue' && !preferredTicketId && !focusTicketId) {
+          return data.items.some((ticket) => ticket.id === current) ? current : null;
+        }
+
         const nextSelected =
           preferredTicketId ??
           focusTicketId ??
-          (data.some((ticket) => ticket.id === current) ? current : null) ??
-          data[0]?.id ??
+          (data.items.some((ticket) => ticket.id === current) ? current : null) ??
+          data.items[0]?.id ??
           null;
         return nextSelected;
       });
@@ -2851,11 +2799,129 @@ function SupportWorkspaceView({
       }
 
       setTickets([]);
+      setQueueTotalCount(0);
+      setQueueScopeCounts({ open: 0, closed: 0 });
+      setQueueFilterCounts({});
       setSelectedTicketId(null);
       setPageMessage(classified.message);
       setPhase(
         classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
       );
+    }
+  });
+
+  const loadIntakeTenants = useEffectEvent(async (preferredTenantId?: Uuid | null) => {
+    setIntakePhase('loading');
+    setIntakeMessage(null);
+
+    try {
+      const rows = await listSupportTicketIntakeTenants();
+      setIntakeTenants(rows);
+      setIntakePhase('ready');
+      setIntakeMessage(null);
+      setIntakeDraft((current) => {
+        const fallbackTenantId =
+          preferredTenantId && rows.some((row) => row.tenantId === preferredTenantId)
+            ? preferredTenantId
+            : current.tenantId && rows.some((row) => row.tenantId === current.tenantId)
+              ? current.tenantId
+              : rows.length === 1
+                ? rows[0]?.tenantId ?? ''
+                : '';
+
+        if (fallbackTenantId === current.tenantId) {
+          return current;
+        }
+
+        return {
+          ...current,
+          tenantId: fallbackTenantId,
+          requesterContactId: '',
+        };
+      });
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao carregar os clientes elegíveis para abrir ticket.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      setIntakeTenants([]);
+      setIntakeContacts([]);
+      setIntakeContactsMessage(null);
+      setIntakeContactsLoading(false);
+      setIntakeMessage(classified.message);
+      setIntakePhase(
+        classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
+      );
+    }
+  });
+
+  const loadIntakeContacts = useEffectEvent(async (tenantId: Uuid) => {
+    setIntakeContactsLoading(true);
+    setIntakeContactsMessage(null);
+
+    try {
+      const rows = await listSupportTicketIntakeContacts(tenantId);
+      setIntakeContacts(rows);
+      setIntakeContactsMessage(null);
+      setIntakeDraft((current) => {
+        if (
+          current.requesterContactId &&
+          rows.some((contact) => contact.id === current.requesterContactId)
+        ) {
+          return current;
+        }
+
+        const primaryContact =
+          rows.find((contact) => contact.isPrimary) ?? rows[0] ?? null;
+
+        return {
+          ...current,
+          requesterContactId: primaryContact?.id ?? '',
+        };
+      });
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao carregar os contatos elegíveis para abrir ticket.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      setIntakeContacts([]);
+      setIntakeContactsMessage(classified.message);
+    } finally {
+      setIntakeContactsLoading(false);
+    }
+  });
+
+  const loadClassificationOptions = useEffectEvent(async () => {
+    setClassificationOptionsMessage(null);
+
+    try {
+      const rows = await listSupportTicketClassificationOptions();
+      setClassificationOptions(rows);
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao carregar categorias e motivos operacionais.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      setClassificationOptions([]);
+      setClassificationOptionsMessage(classified.message);
     }
   });
 
@@ -2870,6 +2936,18 @@ function SupportWorkspaceView({
     setDetailMessage(null);
     setAgentsPhase('loading');
     setAgentsMessage(null);
+    setAttachmentPhase('loading');
+    setAttachmentMessage(null);
+    setEngineeringPhase('loading');
+    setEngineeringMessage(null);
+    setInternalActionsPhase('loading');
+    setInternalActionsMessage(null);
+    setInternalActionTargetAreasPhase('loading');
+    setInternalActionTargetAreasMessage(null);
+    setInternalActionDetailPhase('idle');
+    setInternalActionDetailMessage(null);
+    setInternalActionDetail(null);
+    setInternalActionTimeline([]);
     setKnowledgePhase('loading');
     setKnowledgeMessage(null);
 
@@ -2884,9 +2962,28 @@ function SupportWorkspaceView({
       if (!detail) {
         setTicketDetail(null);
         setTimelineWindow(emptyTimelineWindow());
+        setTimelineLoadingMore(false);
         setCustomer(null);
         setCustomerRecentTickets(emptyCustomerRecentTicketsWindow());
         setCustomerRecentEvents(emptyCustomerRecentEventsWindow());
+        setAttachments(emptyTicketAttachments());
+        setAttachmentPhase('idle');
+        setAttachmentMessage(null);
+        setEngineeringLinks(emptyTicketEngineeringLinks());
+        setEngineeringPhase('idle');
+        setEngineeringMessage(null);
+        setInternalActions([]);
+        setInternalActionsPhase('idle');
+        setInternalActionsMessage(null);
+        setInternalActionTargetAreas([]);
+        setInternalActionTargetAreasPhase('idle');
+        setInternalActionTargetAreasMessage(null);
+        setInternalActionCreateDraft(emptyInternalActionCreateDraft());
+        setSelectedInternalActionId(null);
+        setInternalActionDetail(null);
+        setInternalActionTimeline([]);
+        setInternalActionDetailPhase('idle');
+        setInternalActionDetailMessage(null);
         setKnowledgeLinks(emptyTicketKnowledgeLinks());
         setKnowledgeArticlePicker(emptyKnowledgeArticlePicker());
         setKnowledgePhase('idle');
@@ -2903,15 +3000,34 @@ function SupportWorkspaceView({
       ]);
       setTicketDetail(detail);
       setTimelineWindow(timelineRecent);
+      setTimelineLoadingMore(false);
       setCustomer(customerRow);
       setCustomerAccountContext(customerAccountRow);
       setCustomerRecentTickets(recentTicketsWindow);
       setCustomerRecentEvents(recentEventsWindow);
       setDetailPhase('ready');
-      setStatusDraft(detail.status === 'closed' ? 'triage' : detail.status);
+      setStatusDraft(
+        buildStatusChoices(detail.status, detail.allowedNextStatuses)[0] ??
+          (detail.status === 'closed' ? 'triage' : (detail.status as TicketStatusUpdateTarget)),
+      );
+      setStatusReasonId('');
+      setClassificationDraft({
+        categoryId: detail.categoryId ?? '',
+        operationalReasonId: '',
+        note: '',
+      });
+      setPrioritySeverityDraft({
+        priority: detail.priority,
+        severity: detail.severity,
+        operationalReasonId: '',
+        note: '',
+      });
       setAssignDraft(detail.assignedToUserId ?? '');
       if (!options?.preserveSurfaceState) {
-        setTicketToolbarTab('conversation');
+        setHandoffDraft(emptyEngineeringHandoffDraft());
+      }
+      if (!options?.preserveSurfaceState) {
+        setActiveDrawer('none');
       }
       setComposerMode((currentMode) => {
         if (options?.preserveSurfaceState) {
@@ -2928,6 +3044,10 @@ function SupportWorkspaceView({
       });
       setKnowledgeSearch('');
       setKnowledgeNoteDraft('');
+      setInternalActionSupportNote('');
+      setInternalActionEvidenceAttachmentId('');
+      setInternalActionEvidenceNote('');
+      setInternalActionCreateDraft(emptyInternalActionCreateDraft());
 
       try {
         const agentRows = await listSupportAssignableAgents(detail.tenantId);
@@ -2949,6 +3069,87 @@ function SupportWorkspaceView({
         setAgentsPhase(
           classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
         );
+      }
+
+      try {
+        const [attachmentRows, engineeringLinkRows] = await Promise.all([
+          listSupportTicketAttachments(detail.id),
+          listSupportTicketEngineeringLinks(detail.id),
+        ]);
+        setAttachments(attachmentRows);
+        setAttachmentPhase('ready');
+        setEngineeringLinks(engineeringLinkRows);
+        setEngineeringPhase('ready');
+      } catch (error) {
+        const classified = classifyAdminError(
+          error,
+          'Falha ao carregar as evidências e os handoffs técnicos do ticket.',
+        );
+
+        if (classified.kind === 'session-expired') {
+          markSessionExpired();
+          return;
+        }
+
+        setAttachments(emptyTicketAttachments());
+        setAttachmentMessage(classified.message);
+        setAttachmentPhase(
+          classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
+        );
+        setEngineeringLinks(emptyTicketEngineeringLinks());
+        setEngineeringMessage(classified.message);
+        setEngineeringPhase(
+          classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
+        );
+      }
+
+      try {
+        const [internalActionRows, targetAreaRows] = await Promise.all([
+          listSupportTicketInternalActions(detail.id),
+          listSupportInternalActionTargetAreas(detail.id),
+        ]);
+        setInternalActions(internalActionRows);
+        setInternalActionsPhase('ready');
+        setInternalActionsMessage(null);
+        setInternalActionTargetAreas(targetAreaRows);
+        setInternalActionTargetAreasPhase('ready');
+        setInternalActionTargetAreasMessage(null);
+        setInternalActionCreateDraft((current) => ({
+          ...current,
+          targetArea:
+            current.targetArea && targetAreaRows.some((area) => area.areaKey === current.targetArea)
+              ? current.targetArea
+              : targetAreaRows[0]?.areaKey ?? '',
+        }));
+        setSelectedInternalActionId((current) => {
+          if (current && internalActionRows.some((row) => row.internalActionId === current)) {
+            return current;
+          }
+
+          return internalActionRows[0]?.internalActionId ?? null;
+        });
+      } catch (error) {
+        const classified = classifyAdminError(
+          error,
+          'Falha ao carregar os acionamentos internos deste ticket.',
+        );
+
+        if (classified.kind === 'session-expired') {
+          markSessionExpired();
+          return;
+        }
+
+        setInternalActions([]);
+        setInternalActionsMessage(classified.message);
+        setInternalActionsPhase(
+          classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
+        );
+        setInternalActionTargetAreas([]);
+        setInternalActionTargetAreasMessage(classified.message);
+        setInternalActionTargetAreasPhase(
+          classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
+        );
+        setSelectedInternalActionId(null);
       }
 
       try {
@@ -2995,10 +3196,29 @@ function SupportWorkspaceView({
 
       setTicketDetail(null);
       setTimelineWindow(emptyTimelineWindow());
+      setTimelineLoadingMore(false);
       setCustomer(null);
       setCustomerAccountContext(null);
       setCustomerRecentTickets(emptyCustomerRecentTicketsWindow());
       setCustomerRecentEvents(emptyCustomerRecentEventsWindow());
+      setAttachments(emptyTicketAttachments());
+      setAttachmentPhase('idle');
+      setAttachmentMessage(null);
+      setEngineeringLinks(emptyTicketEngineeringLinks());
+      setEngineeringPhase('idle');
+      setEngineeringMessage(null);
+      setInternalActions([]);
+      setInternalActionsPhase('idle');
+      setInternalActionsMessage(null);
+      setInternalActionTargetAreas([]);
+      setInternalActionTargetAreasPhase('idle');
+      setInternalActionTargetAreasMessage(null);
+      setInternalActionCreateDraft(emptyInternalActionCreateDraft());
+      setSelectedInternalActionId(null);
+      setInternalActionDetail(null);
+      setInternalActionTimeline([]);
+      setInternalActionDetailPhase('idle');
+      setInternalActionDetailMessage(null);
       setKnowledgeLinks(emptyTicketKnowledgeLinks());
       setKnowledgeArticlePicker(emptyKnowledgeArticlePicker());
       setKnowledgePhase('idle');
@@ -3020,7 +3240,16 @@ function SupportWorkspaceView({
 
     didBootstrapRef.current = true;
     void loadQueue(focusTicketId ?? null);
+    void loadClassificationOptions();
   }, []);
+
+  useEffect(() => {
+    if (variant !== 'queue') {
+      return;
+    }
+
+    void loadIntakeTenants();
+  }, [variant]);
 
   useEffect(() => {
     void loadQueue(focusTicketId ?? null);
@@ -3029,7 +3258,12 @@ function SupportWorkspaceView({
     filters.priority,
     filters.severity,
     filters.status,
+    filters.categoryId,
     filters.tenantId,
+    ticketInboxScope,
+    ticketInboxFilter,
+    ticketInboxSearch,
+    ticketInboxPage,
     focusTicketId,
   ]);
 
@@ -3038,10 +3272,29 @@ function SupportWorkspaceView({
       setDetailPhase('idle');
       setTicketDetail(null);
       setTimelineWindow(emptyTimelineWindow());
+      setTimelineLoadingMore(false);
       setCustomer(null);
       setCustomerAccountContext(null);
       setCustomerRecentTickets(emptyCustomerRecentTicketsWindow());
       setCustomerRecentEvents(emptyCustomerRecentEventsWindow());
+      setAttachments(emptyTicketAttachments());
+      setAttachmentPhase('idle');
+      setAttachmentMessage(null);
+      setEngineeringLinks(emptyTicketEngineeringLinks());
+      setEngineeringPhase('idle');
+      setEngineeringMessage(null);
+      setInternalActions([]);
+      setInternalActionsPhase('idle');
+      setInternalActionsMessage(null);
+      setInternalActionTargetAreas([]);
+      setInternalActionTargetAreasPhase('idle');
+      setInternalActionTargetAreasMessage(null);
+      setInternalActionCreateDraft(emptyInternalActionCreateDraft());
+      setSelectedInternalActionId(null);
+      setInternalActionDetail(null);
+      setInternalActionTimeline([]);
+      setInternalActionDetailPhase('idle');
+      setInternalActionDetailMessage(null);
       setKnowledgeLinks(emptyTicketKnowledgeLinks());
       setKnowledgeArticlePicker(emptyKnowledgeArticlePicker());
       setKnowledgePhase('idle');
@@ -3056,12 +3309,24 @@ function SupportWorkspaceView({
   }, [selectedTicketId]);
 
   useEffect(() => {
+    if (!intakeDraft.tenantId) {
+      setIntakeContacts([]);
+      setIntakeContactsMessage(null);
+      setIntakeContactsLoading(false);
+      return;
+    }
+
+    void loadIntakeContacts(intakeDraft.tenantId);
+  }, [intakeDraft.tenantId]);
+
+  useEffect(() => {
     setDetailNotice(null);
     pendingThreadScrollRef.current = 'idle';
+    setTimelineLoadingMore(false);
   }, [selectedTicketId]);
 
   useEffect(() => {
-    if (ticketToolbarTab !== 'conversation' || pendingThreadScrollRef.current !== 'latest') {
+    if (pendingThreadScrollRef.current !== 'latest') {
       return;
     }
 
@@ -3091,7 +3356,7 @@ function SupportWorkspaceView({
         window.clearTimeout(retry);
       }
     };
-  }, [detailNotice, ticketToolbarTab, timelineWindow]);
+  }, [detailNotice, timelineWindow]);
 
   const tenantOptions = useMemo(() => {
     const items = new Map<string, { id: string; label: string }>();
@@ -3127,6 +3392,52 @@ function SupportWorkspaceView({
     );
   }, [tickets]);
 
+  const ticketCategoryOptions = useMemo(
+    () => classificationOptions.filter((option) => option.optionKind === 'category'),
+    [classificationOptions],
+  );
+  const classificationReasonOptions = useMemo(
+    () =>
+      classificationOptions.filter(
+        (option) =>
+          option.optionKind === 'operational_reason' &&
+          option.reasonType === 'classification_update',
+      ),
+    [classificationOptions],
+  );
+  const priorityReasonOptions = useMemo(
+    () =>
+      classificationOptions.filter(
+        (option) =>
+          option.optionKind === 'operational_reason' &&
+          option.reasonType === 'priority_change',
+      ),
+    [classificationOptions],
+  );
+  const statusReasonOptions = useMemo(
+    () =>
+      classificationOptions.filter((option) => {
+        if (option.optionKind !== 'operational_reason') {
+          return false;
+        }
+
+        if (option.appliesToStatus && option.appliesToStatus !== statusDraft) {
+          return false;
+        }
+
+        if (statusDraft === 'resolved') {
+          return option.reasonType === 'resolution' || option.reasonType === 'status_transition';
+        }
+
+        if (statusDraft === 'cancelled') {
+          return option.reasonType === 'cancellation' || option.reasonType === 'status_transition';
+        }
+
+        return option.reasonType === 'status_transition';
+      }),
+    [classificationOptions, statusDraft],
+  );
+
   const selectedTicketSummary =
     tickets.find((ticket) => ticket.id === selectedTicketId) ?? null;
   const filteredKnowledgeArticles = useMemo(() => {
@@ -3156,23 +3467,146 @@ function SupportWorkspaceView({
       : null;
   const currentUserAssignableAgent =
     user?.id ? assignableAgents.find((agent) => agent.userId === user.id) ?? null : null;
-  const totalOpen = tickets.filter(
-    (ticket) =>
-      ticket.status !== 'resolved' &&
-      ticket.status !== 'closed' &&
-      ticket.status !== 'cancelled',
-  ).length;
-  const waitingCustomer = tickets.filter((ticket) => ticket.isWaitingCustomer).length;
-  const highAttention = tickets.filter(
-    (ticket) => ticket.priority === 'urgent' || ticket.severity === 'critical',
-  ).length;
-  const unassigned = tickets.filter((ticket) => ticket.isUnassigned).length;
+  const ticketInboxScopeTickets = tickets;
+  const ticketInboxScopeCounts = queueScopeCounts;
+  const totalOpen = queueScopeCounts.open;
+  const waitingCustomer = queueFilterCounts.waiting_customer ?? 0;
+  const highAttention = queueFilterCounts.high_attention ?? 0;
+  const unassigned = queueFilterCounts.unassigned ?? 0;
+  const waitingEngineering = queueFilterCounts.waiting_engineering ?? 0;
+  const ticketInboxTabs = useMemo(
+    () =>
+      ticketInboxScope === 'open'
+        ? [
+            { key: 'all' as const, label: 'Todos', count: queueFilterCounts.all ?? 0 },
+            {
+              key: 'in_progress' as const,
+              label: 'Em tratativa',
+              count: queueFilterCounts.in_progress ?? 0,
+            },
+            {
+              key: 'awaiting' as const,
+              label: 'Aguardando',
+              count: queueFilterCounts.awaiting ?? 0,
+            },
+            {
+              key: 'urgent' as const,
+              label: 'Urgentes',
+              count: queueFilterCounts.urgent ?? 0,
+            },
+            {
+              key: 'operations' as const,
+              label: 'Operações',
+              count: queueFilterCounts.operations ?? 0,
+            },
+            {
+              key: 'engineering' as const,
+              label: 'Dependências',
+              count: queueFilterCounts.engineering ?? 0,
+            },
+          ]
+        : [
+            { key: 'all_closed' as const, label: 'Todos fechados', count: queueFilterCounts.all_closed ?? 0 },
+            {
+              key: 'resolved' as const,
+              label: 'Resolvidos',
+              count: queueFilterCounts.resolved ?? 0,
+            },
+            {
+              key: 'closed' as const,
+              label: 'Fechados',
+              count: queueFilterCounts.closed ?? 0,
+            },
+            {
+              key: 'cancelled' as const,
+              label: 'Cancelados',
+              count: queueFilterCounts.cancelled ?? 0,
+            },
+          ],
+    [ticketInboxScope, ticketInboxScopeTickets],
+  );
+  const ticketInboxFilteredTickets = useMemo(() => {
+    const search = ticketInboxSearch.trim().toLocaleLowerCase('pt-BR');
+
+    return ticketInboxScopeTickets.filter((ticket) => {
+      if (!ticketMatchesInboxFilter(ticket, ticketInboxFilter)) {
+        return false;
+      }
+
+      if (search.length === 0) {
+        return true;
+      }
+
+      const haystack = [
+        supportTicketCode(ticket.id),
+        ticket.title,
+        ticketTenantLabel(ticket),
+        ticket.tenantSlug,
+        ticket.categoryName ?? '',
+        ticket.assignedToFullName ?? '',
+        ticket.slaStatusLabel ?? '',
+      ]
+        .join(' ')
+        .toLocaleLowerCase('pt-BR');
+
+      return haystack.includes(search);
+    });
+  }, [ticketInboxFilter, ticketInboxScopeTickets, ticketInboxSearch]);
+  const ticketInboxPageSize = SUPPORT_QUEUE_PAGE_SIZE;
+  const ticketInboxTotalPages = Math.max(
+    1,
+    Math.ceil(queueTotalCount / ticketInboxPageSize),
+  );
+  const safeTicketInboxPage = Math.min(ticketInboxPage, ticketInboxTotalPages);
+  const ticketInboxVisibleTickets = ticketInboxFilteredTickets;
+  const ticketInboxStart =
+    queueTotalCount === 0 ? 0 : (safeTicketInboxPage - 1) * ticketInboxPageSize + 1;
+  const ticketInboxEnd = Math.min(
+    queueTotalCount,
+    safeTicketInboxPage * ticketInboxPageSize,
+  );
+
+  function resetTicketInboxFilters(scope: TicketInboxScope = ticketInboxScope) {
+    setTicketInboxSearch('');
+    setTicketInboxFilter(defaultTicketInboxFilterForScope(scope));
+  }
+
+  function handleChangeTicketInboxScope(scope: TicketInboxScope) {
+    if (scope === ticketInboxScope) {
+      return;
+    }
+
+    setTicketInboxScope(scope);
+    setTicketInboxFilter(defaultTicketInboxFilterForScope(scope));
+  }
 
   function handleSelectTicket(ticketId: string) {
+    setBulkSelectedTicketIds([]);
     setSelectedTicketId(ticketId);
+    setActiveDrawer('none');
+    setAttachmentUploadDraft(emptyAttachmentUploadDraft());
     if (variant === 'tickets') {
       void navigate(`/support/tickets/${ticketId}`);
     }
+  }
+
+  function handleToggleQueueBulkTicket(ticketId: Uuid) {
+    setBulkSelectedTicketIds((current) =>
+      current.includes(ticketId)
+        ? current.filter((id) => id !== ticketId)
+        : [...current, ticketId],
+    );
+    setActiveDrawer('none');
+  }
+
+  function handleSelectAllQueueVisibleTickets() {
+    setBulkSelectedTicketIds(queueVisibleTickets.map((ticket) => ticket.id));
+    setSelectedTicketId(null);
+    setActiveDrawer('none');
+  }
+
+  function handleClearQueueBulkSelection() {
+    setBulkSelectedTicketIds([]);
   }
 
   function applySuccess(message: string) {
@@ -3185,7 +3619,184 @@ function SupportWorkspaceView({
     setDetailNoticeTone('critical');
   }
 
-  async function handleCopyPublicKnowledgeLink(publicArticlePath: string) {
+  function openAttachmentPicker() {
+    setActiveDrawer('evidence');
+    attachmentInputRef.current?.click();
+  }
+
+  async function handleDownloadAttachment(attachmentId: Uuid) {
+    setAttachmentDownloadingId(attachmentId);
+    setDetailNotice(null);
+
+    try {
+      const payload = await getSupportTicketAttachmentSignedUrl(attachmentId);
+
+      if (typeof window !== 'undefined' && typeof window.open === 'function') {
+        window.open(payload.signedUrl, '_blank', 'noopener,noreferrer');
+      }
+
+      applySuccess('Download temporário preparado com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao preparar o download seguro da evidência.',
+      );
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(friendlyAttachmentDownloadErrorMessage(classified.message));
+    } finally {
+      setAttachmentDownloadingId(null);
+    }
+  }
+
+  function handleAttachmentSelection(fileList: FileList | File[] | File | null) {
+    const files =
+      fileList instanceof File
+        ? [fileList]
+        : fileList
+          ? Array.from(fileList)
+          : [];
+
+    if (files.length === 0) {
+      return;
+    }
+
+    const nextFiles: File[] = [];
+    const nextErrors: Record<string, string> = {};
+
+    files.forEach((file, index) => {
+      const key = `${file.name}:${index}`;
+      if (file.size <= 0) {
+        nextErrors[key] = 'Arquivo vazio.';
+        return;
+      }
+
+      if (file.size > TICKET_ATTACHMENT_MAX_BYTES) {
+        nextErrors[key] = 'Ultrapassa 10 MB.';
+        return;
+      }
+
+      if (!file.type) {
+        nextErrors[key] = 'Tipo indisponível.';
+        return;
+      }
+
+      nextFiles.push(file);
+    });
+
+    setAttachmentUploadDraft((current) => ({
+      ...current,
+      files: [...current.files, ...nextFiles],
+      errors: { ...current.errors, ...nextErrors },
+    }));
+    setDetailNotice(null);
+    setActiveDrawer('evidence');
+
+    if (Object.keys(nextErrors).length > 0 && nextFiles.length === 0) {
+      applyFailure('Alguns arquivos não puderam ser preparados para upload.');
+    }
+  }
+
+  function handleRemoveDraftAttachment(indexToRemove: number) {
+    setAttachmentUploadDraft((current) => ({
+      ...current,
+      files: current.files.filter((_, index) => index !== indexToRemove),
+      errors: Object.fromEntries(
+        Object.entries(current.errors).filter((_, index) => index !== indexToRemove),
+      ),
+    }));
+  }
+
+  async function handleSubmitAttachmentUpload() {
+    if (!ticketDetail || attachmentUploadDraft.files.length === 0) {
+      return;
+    }
+
+    setAttachmentSubmitting(true);
+    setDetailNotice(null);
+
+    const failedFiles: File[] = [];
+    const failedErrors: Record<string, string> = {};
+    let successCount = 0;
+
+    try {
+      for (const [index, file] of attachmentUploadDraft.files.entries()) {
+        const key = `${file.name}:${index}`;
+        try {
+          await uploadSupportTicketAttachment({
+            ticketId: ticketDetail.id,
+            tenantId: ticketDetail.tenantId,
+            file,
+          });
+          successCount += 1;
+        } catch (error) {
+          const classified = classifyAdminError(
+            error,
+            'Falha ao enviar a evidência para o ticket.',
+          );
+          if (classified.kind === 'session-expired') {
+            markSessionExpired();
+            return;
+          }
+
+          failedFiles.push(file);
+          failedErrors[key] = friendlyAttachmentUploadErrorMessage(classified.message);
+        }
+      }
+
+      if (successCount > 0) {
+        await loadDetail(ticketDetail.id, { preserveSurfaceState: true });
+      }
+
+      setAttachmentUploadDraft((current) => ({
+        ...current,
+        files: failedFiles,
+        errors: failedErrors,
+        note: failedFiles.length === 0 ? '' : current.note,
+      }));
+
+      if (successCount > 0 && failedFiles.length === 0) {
+        applySuccess(
+          successCount === 1
+            ? 'Evidência enviada com sucesso.'
+            : `${successCount} evidências enviadas com sucesso.`,
+        );
+        setActiveDrawer('evidence');
+      } else if (successCount > 0) {
+        applyFailure(
+          `${successCount} arquivo(s) enviado(s), mas ainda há itens com falha.`,
+        );
+      } else {
+        applyFailure('Nenhum arquivo pôde ser enviado agora.');
+      }
+    } finally {
+      if (attachmentInputRef.current) {
+        attachmentInputRef.current.value = '';
+      }
+      setAttachmentSubmitting(false);
+    }
+  }
+
+  async function handleCopyPublicKnowledgeLink(
+    article: Pick<
+      SupportKnowledgeArticlePickerItem,
+      | 'articleStatus'
+      | 'articleVisibility'
+      | 'canSendToCustomer'
+      | 'isCustomerSendAllowed'
+      | 'publicArticlePath'
+      | 'reasonIfBlocked'
+    >,
+  ) {
+    const blockReason = getKnowledgeCustomerSendBlockReason(article);
+
+    if (blockReason) {
+      applyFailure(blockReason);
+      return;
+    }
+
     try {
       if (
         typeof navigator === 'undefined' ||
@@ -3195,10 +3806,117 @@ function SupportWorkspaceView({
         throw new Error('clipboard unavailable');
       }
 
-      await navigator.clipboard.writeText(buildAbsoluteAppUrl(publicArticlePath));
+      await navigator.clipboard.writeText(buildAbsoluteAppUrl(article.publicArticlePath ?? ''));
       applySuccess('Link público copiado com sucesso.');
     } catch {
       applyFailure('Não foi possível copiar o link público agora.');
+    }
+  }
+
+  function handleOpenKnowledgeArticle(article: SupportKnowledgeArticlePickerItem) {
+    const blockReason = getKnowledgeCustomerSendBlockReason(article);
+
+    if (blockReason) {
+      applyFailure(blockReason);
+      return;
+    }
+
+    if (typeof window !== 'undefined' && typeof window.open === 'function') {
+      window.open(buildAbsoluteAppUrl(article.publicArticlePath ?? ''), '_blank', 'noopener,noreferrer');
+    }
+  }
+
+  function handleUseArticleInReply(article: SupportKnowledgeArticlePickerItem) {
+    const blockReason = getKnowledgeCustomerSendBlockReason(article);
+
+    if (blockReason) {
+      applyFailure(blockReason);
+      return;
+    }
+
+    setComposerMode('public');
+    setActiveDrawer('none');
+    setMessageDraft((current) => {
+      const link = buildAbsoluteAppUrl(article.publicArticlePath ?? '');
+      if (current.includes(link)) {
+        return current;
+      }
+
+      return current.trim().length === 0 ? link : `${current.trim()}\n${link}`;
+    });
+    applySuccess('Link preparado na resposta pública.');
+  }
+
+  async function handleLoadOlderTimeline() {
+    if (!ticketDetail || !timelineWindow.hasMore || timelineLoadingMore) {
+      return;
+    }
+
+    const oldestEntry = [...timelineWindow.entries].sort((left, right) => {
+      const occurredDiff =
+        new Date(left.occurredAt).getTime() - new Date(right.occurredAt).getTime();
+
+      if (occurredDiff !== 0) {
+        return occurredDiff;
+      }
+
+      return left.timelineEntryId.localeCompare(right.timelineEntryId);
+    })[0];
+
+    if (!oldestEntry) {
+      return;
+    }
+
+    setTimelineLoadingMore(true);
+    setDetailNotice(null);
+
+    try {
+      const olderPage = await getSupportTicketTimelinePage(ticketDetail.id, {
+        limit: 25,
+        beforeOccurredAt: oldestEntry.occurredAt,
+        beforeTimelineEntryId: oldestEntry.timelineEntryId,
+      });
+
+      setTimelineWindow((current) => {
+        const existingIds = new Set(
+          current.entries.map((entry) => entry.timelineEntryId),
+        );
+        const olderEntries = olderPage.entries.filter(
+          (entry) => !existingIds.has(entry.timelineEntryId),
+        );
+        const mergedEntries = [...olderEntries, ...current.entries].sort((left, right) => {
+          const occurredDiff =
+            new Date(left.occurredAt).getTime() - new Date(right.occurredAt).getTime();
+
+          if (occurredDiff !== 0) {
+            return occurredDiff;
+          }
+
+          return left.timelineEntryId.localeCompare(right.timelineEntryId);
+        });
+
+        return {
+          entries: mergedEntries,
+          totalAvailableCount:
+            olderPage.totalAvailableCount || current.totalAvailableCount,
+          recentLimit: current.recentLimit + olderEntries.length,
+          hasMore: olderPage.hasMore,
+        };
+      });
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao carregar o histórico anterior do ticket.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      applyFailure(classified.message);
+    } finally {
+      setTimelineLoadingMore(false);
     }
   }
 
@@ -3238,9 +3956,227 @@ function SupportWorkspaceView({
     await Promise.all([loadQueue(ticketId), loadDetail(ticketId, options)]);
   }
 
+  const loadSelectedInternalAction = useEffectEvent(async (internalActionId: Uuid) => {
+    setInternalActionDetailPhase('loading');
+    setInternalActionDetailMessage(null);
+
+    try {
+      const [detailRow, timelineRows] = await Promise.all([
+        getSupportInternalActionDetail(internalActionId),
+        listSupportInternalActionTimeline(internalActionId),
+      ]);
+
+      if (!detailRow) {
+        setInternalActionDetail(null);
+        setInternalActionTimeline([]);
+        setInternalActionDetailPhase('error');
+        setInternalActionDetailMessage(
+          'O acionamento selecionado não apareceu na leitura interna disponível.',
+        );
+        return;
+      }
+
+      setInternalActionDetail(detailRow);
+      setInternalActionTimeline(timelineRows);
+      setInternalActionDetailPhase('ready');
+      setInternalActionDetailMessage(null);
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao carregar o detalhe do acionamento interno.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      setInternalActionDetail(null);
+      setInternalActionTimeline([]);
+      setInternalActionDetailMessage(classified.message);
+      setInternalActionDetailPhase(
+        classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
+      );
+    }
+  });
+
+  async function handleSubmitTicketIntake(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const title = intakeDraft.title.trim();
+    const description = intakeDraft.description.trim();
+
+    if (!intakeDraft.tenantId || title.length === 0 || description.length === 0) {
+      return;
+    }
+
+    setIntakeSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      const created = await createTicket({
+        tenantId: intakeDraft.tenantId,
+        requesterContactId: intakeDraft.requesterContactId || null,
+        source: intakeDraft.source,
+        priority: intakeDraft.priority,
+        severity: intakeDraft.severity,
+        categoryId: intakeDraft.categoryId || null,
+        operationalReasonId: intakeDraft.operationalReasonId || null,
+        title,
+        description,
+      });
+      setShowCreateTicket(false);
+      setIntakeDraft({
+        ...emptyTicketIntakeDraft(),
+        tenantId: created.tenantId,
+      });
+      await loadIntakeTenants(created.tenantId);
+      await loadQueue(created.id);
+      void navigate(`/support/tickets/${created.id}`);
+    } catch (error) {
+      const classified = classifyAdminError(error, 'Falha ao abrir o ticket operacional.');
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      applyFailure(classified.message);
+    } finally {
+      setIntakeSubmitting(false);
+    }
+  }
+
   function optionalKnowledgeNote() {
     const trimmed = knowledgeNoteDraft.trim();
     return trimmed.length > 0 ? trimmed : null;
+  }
+
+  async function handleCreateEngineeringHandoff(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!ticketDetail) {
+      return;
+    }
+
+    const title = handoffDraft.title.trim();
+    const baseDescription = handoffDraft.description.trim();
+    const impactSummary = handoffDraft.impactSummary.trim();
+    const reproductionSteps = handoffDraft.reproductionSteps.trim();
+    const expectedResult = handoffDraft.expectedResult.trim();
+    const currentResult = handoffDraft.currentResult.trim();
+    const relatedEvidence = handoffDraft.relatedEvidence.trim();
+    const technicalUrgency = handoffDraft.technicalUrgency;
+    const description = [
+      baseDescription,
+      impactSummary ? `Impacto: ${impactSummary}` : null,
+      reproductionSteps ? `Passos para reproduzir: ${reproductionSteps}` : null,
+      expectedResult ? `Resultado esperado: ${expectedResult}` : null,
+      currentResult ? `Resultado atual: ${currentResult}` : null,
+    ]
+      .filter((value): value is string => Boolean(value))
+      .join('\n\n');
+    const handoffNote = [
+      relatedEvidence ? `Evidências relacionadas: ${relatedEvidence}` : null,
+      technicalUrgency ? `Urgência técnica: ${humanizePriority(technicalUrgency)}` : null,
+      handoffDraft.handoffNote.trim() || null,
+    ]
+      .filter((value): value is string => Boolean(value))
+      .join('\n');
+
+    if (!ticketDetail.canUpdateStatus || title.length === 0 || description.length === 0) {
+      return;
+    }
+
+    setHandoffSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      await createSupportEngineeringWorkItemFromTicket({
+        ticketId: ticketDetail.id,
+        workItemType: handoffDraft.workItemType,
+        title,
+        description,
+        handoffNote: handoffNote || null,
+      });
+      setHandoffDraft(emptyEngineeringHandoffDraft());
+      await refreshDetail(ticketDetail.id);
+      setActiveDrawer('handoff');
+      applySuccess('Demanda técnica criada e vinculada ao ticket com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao criar a demanda técnica vinculada a este ticket.',
+      );
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(classified.message);
+    } finally {
+      setHandoffSubmitting(false);
+    }
+  }
+
+  async function handleCreateInternalAction(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!ticketDetail) {
+      return;
+    }
+
+    const targetArea = internalActionCreateDraft.targetArea.trim();
+    const supportType = internalActionCreateDraft.supportType;
+    const summary = internalActionCreateDraft.summary.trim();
+    const context = internalActionCreateDraft.context.trim();
+    const selectedArea = internalActionTargetAreas.find((area) => area.areaKey === targetArea);
+
+    if (!targetArea || !supportType || !internalActionCreateDraft.priority || summary.length === 0 || context.length === 0) {
+      applyFailure('Preencha área, tipo de apoio, prioridade, resumo e contexto do acionamento.');
+      return;
+    }
+
+    if (!selectedArea?.canCreateAction) {
+      applyFailure('Esta área interna não está disponível para acionamento neste ticket.');
+      return;
+    }
+
+    setInternalActionSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      const created = await createSupportInternalAction({
+        ticketId: ticketDetail.id,
+        targetArea,
+        supportType,
+        priority: internalActionCreateDraft.priority,
+        summary,
+        context,
+        evidenceAttachmentIds:
+          internalActionCreateDraft.evidenceAttachmentIds.length > 0
+            ? internalActionCreateDraft.evidenceAttachmentIds
+            : null,
+      });
+
+      setInternalActionCreateDraft({
+        ...emptyInternalActionCreateDraft(),
+        targetArea: internalActionTargetAreas[0]?.areaKey ?? '',
+      });
+      setSelectedInternalActionId(created.id);
+      await refreshDetail(ticketDetail.id);
+      setSelectedInternalActionId(created.id);
+      setActiveDrawer('automation');
+      applySuccess('Acionamento interno criado com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(error, 'Falha ao criar o acionamento interno.');
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(classified.message);
+    } finally {
+      setInternalActionSubmitting(false);
+    }
   }
 
   async function handleArchiveKnowledgeLink(linkId: Uuid) {
@@ -3278,6 +4214,18 @@ function SupportWorkspaceView({
   ) {
     if (!ticketDetail) {
       return;
+    }
+
+    if (linkType === 'sent_to_customer') {
+      const article = knowledgeArticlePicker.find((item) => item.articleId === articleId);
+      const blockReason = article
+        ? getKnowledgeCustomerSendBlockReason(article)
+        : 'Artigo indisponível no contexto autorizado deste ticket.';
+
+      if (blockReason) {
+        applyFailure(blockReason);
+        return;
+      }
     }
 
     setKnowledgeSubmitting(true);
@@ -3374,10 +4322,159 @@ function SupportWorkspaceView({
     }
   }
 
+  async function handleAcceptInternalActionReturn() {
+    if (!ticketDetail || !internalActionDetail) {
+      return;
+    }
+
+    setInternalActionSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      await acceptSupportInternalActionReturn({
+        internalActionId: internalActionDetail.internalActionId,
+        tenantId: internalActionDetail.tenantId,
+        note: internalActionSupportNote.trim() || null,
+      });
+      await refreshDetail(ticketDetail.id);
+      await loadSelectedInternalAction(internalActionDetail.internalActionId);
+      setInternalActionSupportNote('');
+      applySuccess('Retorno do acionamento aceito com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao aceitar o retorno deste acionamento.',
+      );
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(classified.message);
+    } finally {
+      setInternalActionSubmitting(false);
+    }
+  }
+
+  async function handleRequestInternalActionFollowup() {
+    if (!ticketDetail || !internalActionDetail) {
+      return;
+    }
+
+    const note = internalActionSupportNote.trim();
+    if (note.length === 0) {
+      applyFailure('Descreva o complemento solicitado à área interna.');
+      return;
+    }
+
+    setInternalActionSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      await requestSupportInternalActionFollowup({
+        internalActionId: internalActionDetail.internalActionId,
+        tenantId: internalActionDetail.tenantId,
+        note,
+      });
+      await refreshDetail(ticketDetail.id);
+      await loadSelectedInternalAction(internalActionDetail.internalActionId);
+      setInternalActionSupportNote('');
+      applySuccess('Complemento solicitado à área interna com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao solicitar complemento deste acionamento.',
+      );
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(classified.message);
+    } finally {
+      setInternalActionSubmitting(false);
+    }
+  }
+
+  async function handleCloseInternalAction() {
+    if (!ticketDetail || !internalActionDetail) {
+      return;
+    }
+
+    setInternalActionSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      await closeSupportInternalAction({
+        internalActionId: internalActionDetail.internalActionId,
+        tenantId: internalActionDetail.tenantId,
+        note: internalActionSupportNote.trim() || null,
+      });
+      await refreshDetail(ticketDetail.id);
+      await loadSelectedInternalAction(internalActionDetail.internalActionId);
+      setInternalActionSupportNote('');
+      applySuccess('Acionamento encerrado com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(error, 'Falha ao encerrar este acionamento.');
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(classified.message);
+    } finally {
+      setInternalActionSubmitting(false);
+    }
+  }
+
+  async function handleLinkInternalActionEvidence() {
+    if (!ticketDetail || !internalActionDetail || !internalActionEvidenceAttachmentId) {
+      return;
+    }
+
+    setInternalActionSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      await addInternalActionEvidenceLink({
+        internalActionId: internalActionDetail.internalActionId,
+        tenantId: internalActionDetail.tenantId,
+        ticketAttachmentId: internalActionEvidenceAttachmentId,
+        note: internalActionEvidenceNote.trim() || null,
+      });
+      await refreshDetail(ticketDetail.id);
+      await loadSelectedInternalAction(internalActionDetail.internalActionId);
+      setInternalActionEvidenceAttachmentId('');
+      setInternalActionEvidenceNote('');
+      applySuccess('Evidência vinculada ao acionamento com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao vincular a evidência a este acionamento.',
+      );
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(classified.message);
+    } finally {
+      setInternalActionSubmitting(false);
+    }
+  }
+
   async function handleUpdateStatus(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!ticketDetail) {
+      return;
+    }
+
+    const nextStatusChoices = buildStatusChoices(ticketDetail.status, ticketDetail.allowedNextStatuses);
+
+    if (nextStatusChoices.length === 0) {
+      applyFailure('Nenhuma transição de status está disponível para este ticket.');
+      return;
+    }
+
+    if (requiresOperationalReasonForStatus(statusDraft) && !statusReasonId) {
+      applyFailure('Informe o motivo da mudança de status.');
       return;
     }
 
@@ -3388,10 +4485,13 @@ function SupportWorkspaceView({
       await updateTicketStatus({
         ticketId: ticketDetail.id,
         status: statusDraft,
+        operationalReasonId: statusReasonId || null,
         note: statusNote.trim() || null,
       });
       setStatusNote('');
+      setStatusReasonId('');
       await refreshDetail(ticketDetail.id);
+      setActiveDrawer((current) => (current === 'status' ? 'none' : current));
       applySuccess('Status atualizado com sucesso.');
     } catch (error) {
       const classified = classifyAdminError(error, 'Falha ao atualizar o status do ticket.');
@@ -3400,6 +4500,116 @@ function SupportWorkspaceView({
         return;
       }
       applyFailure(friendlyTicketStatusErrorMessage(classified.message));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleSaveClassificationDrawer() {
+    if (!ticketDetail) {
+      return;
+    }
+
+    if (!classificationDraft.categoryId) {
+      applyFailure('Selecione a categoria operacional antes de salvar.');
+      return;
+    }
+
+    setSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      await updateTicketClassification({
+        ticketId: ticketDetail.id,
+        categoryId: classificationDraft.categoryId,
+        operationalReasonId: classificationDraft.operationalReasonId || null,
+        note: classificationDraft.note.trim() || null,
+      });
+
+      await updateTicketPrioritySeverity({
+        ticketId: ticketDetail.id,
+        priority: prioritySeverityDraft.priority,
+        severity: prioritySeverityDraft.severity,
+        operationalReasonId: prioritySeverityDraft.operationalReasonId || null,
+        note: prioritySeverityDraft.note.trim() || null,
+      });
+
+      await refreshDetail(ticketDetail.id);
+      setActiveDrawer('none');
+      applySuccess('Classificação operacional atualizada com sucesso.');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao salvar a classificação operacional do ticket.',
+      );
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(classified.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleUpdateClassification(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!ticketDetail || !classificationDraft.categoryId) {
+      return;
+    }
+
+    setSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      await updateTicketClassification({
+        ticketId: ticketDetail.id,
+        categoryId: classificationDraft.categoryId,
+        operationalReasonId: classificationDraft.operationalReasonId || null,
+        note: classificationDraft.note.trim() || null,
+      });
+      await refreshDetail(ticketDetail.id);
+      applySuccess('Classificação atualizada com a governança operacional da plataforma.');
+    } catch (error) {
+      const classified = classifyAdminError(error, 'Falha ao atualizar a classificação do ticket.');
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(classified.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleUpdatePrioritySeverity(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!ticketDetail) {
+      return;
+    }
+
+    setSubmitting(true);
+    setDetailNotice(null);
+
+    try {
+      await updateTicketPrioritySeverity({
+        ticketId: ticketDetail.id,
+        priority: prioritySeverityDraft.priority,
+        severity: prioritySeverityDraft.severity,
+        operationalReasonId: prioritySeverityDraft.operationalReasonId || null,
+        note: prioritySeverityDraft.note.trim() || null,
+      });
+      await refreshDetail(ticketDetail.id);
+      applySuccess('Prioridade, severidade e SLA recalculados pela governança operacional da plataforma.');
+    } catch (error) {
+      const classified = classifyAdminError(error, 'Falha ao atualizar prioridade e severidade.');
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+      applyFailure(classified.message);
     } finally {
       setSubmitting(false);
     }
@@ -3525,8 +4735,77 @@ function SupportWorkspaceView({
     }
   }
 
+  useEffect(() => {
+    setTicketInboxPage(1);
+  }, [ticketInboxFilter, ticketInboxScope, ticketInboxSearch]);
+
+  useEffect(() => {
+    if (ticketInboxFilterMatchesScope(ticketInboxFilter, ticketInboxScope)) {
+      return;
+    }
+
+    setTicketInboxFilter(defaultTicketInboxFilterForScope(ticketInboxScope));
+  }, [ticketInboxFilter, ticketInboxScope]);
+
+  useEffect(() => {
+    setAttachmentUploadDraft(emptyAttachmentUploadDraft());
+  }, [ticketDetail?.id]);
+
+  useEffect(() => {
+    setInternalActionSupportNote('');
+    setInternalActionEvidenceAttachmentId('');
+    setInternalActionEvidenceNote('');
+  }, [selectedInternalActionId]);
+
+  useEffect(() => {
+    if (activeDrawer !== 'automation' || !selectedInternalActionId) {
+      setInternalActionDetailPhase('idle');
+      setInternalActionDetailMessage(null);
+      setInternalActionDetail(null);
+      setInternalActionTimeline([]);
+      return;
+    }
+
+    void loadSelectedInternalAction(selectedInternalActionId);
+  }, [activeDrawer, selectedInternalActionId]);
+
+  useEffect(() => {
+    if (ticketInboxFilteredTickets.length === 0) {
+      return;
+    }
+
+    const selectedIsVisible =
+      selectedTicketId !== null &&
+      ticketInboxFilteredTickets.some((ticket) => ticket.id === selectedTicketId);
+
+    if (selectedIsVisible) {
+      return;
+    }
+
+    if (variant === 'queue') {
+      if (selectedTicketId !== null) {
+        setSelectedTicketId(null);
+        setActiveDrawer('none');
+        setAttachmentUploadDraft(emptyAttachmentUploadDraft());
+      }
+      return;
+    }
+
+    const nextSelectedTicketId = ticketInboxFilteredTickets[0]?.id ?? null;
+    if (!nextSelectedTicketId) {
+      return;
+    }
+
+    setSelectedTicketId(nextSelectedTicketId);
+    setActiveDrawer('none');
+    setAttachmentUploadDraft(emptyAttachmentUploadDraft());
+    if (variant === 'tickets') {
+      void navigate(`/support/tickets/${nextSelectedTicketId}`);
+    }
+  }, [navigate, selectedTicketId, ticketInboxFilteredTickets, variant]);
+
   if (backendDenied) {
-    return <Navigate replace state={{ reason: 'backend-permission' }} to="/access-denied" />;
+    return <Navigate replace state={{ reason: 'missing-authorized-workspace' }} to="/access-denied" />;
   }
 
   if (phase === 'loading') {
@@ -3551,20 +4830,57 @@ function SupportWorkspaceView({
     submitting ||
     composerDraft.trim().length === 0 ||
     (composerMode === 'public'
-      ? !ticketDetail?.canAddMessage
+      ? !ticketDetail?.canReplyNow
       : !ticketDetail?.canAddInternalNote);
 
-  const canUsePublicComposer = ticketDetail?.canAddMessage ?? false;
+  const canUsePublicComposer = ticketDetail?.canReplyNow ?? false;
   const canUseInternalComposer = ticketDetail?.canAddInternalNote ?? false;
   const knowledgeBusy = knowledgeSubmitting;
+  const canCreateEngineeringHandoff =
+    (ticketDetail?.canUpdateStatus ?? false) &&
+    engineeringPhase !== 'contract-unavailable' &&
+    engineeringPhase !== 'error';
   const selectedQueueTicket =
     tickets.find((ticket) => ticket.id === selectedTicketId) ?? null;
   const previewTicket = ticketDetail ?? null;
+  const selectedIntakeTenant =
+    intakeDraft.tenantId
+      ? intakeTenants.find((tenant) => tenant.tenantId === intakeDraft.tenantId) ?? null
+      : null;
+  const selectedIntakeContact =
+    intakeDraft.requesterContactId
+      ? intakeContacts.find((contact) => contact.id === intakeDraft.requesterContactId) ?? null
+      : null;
+  const selectedIntakeCategory =
+    intakeDraft.categoryId
+      ? ticketCategoryOptions.find((category) => category.optionId === intakeDraft.categoryId) ?? null
+      : null;
+  const selectedIntakeReason =
+    intakeDraft.operationalReasonId
+      ? classificationReasonOptions.find((reason) => reason.optionId === intakeDraft.operationalReasonId) ?? null
+      : null;
+  const canOpenIntake = intakePhase === 'ready' && intakeTenants.length > 0;
+  const intakeActionLabel =
+    intakePhase === 'contract-unavailable'
+      ? 'Intake indisponível'
+      : intakePhase === 'error'
+        ? 'Intake com falha'
+        : 'Abrir ticket';
+  const intakeSubmitDisabled =
+    intakeSubmitting ||
+    intakePhase !== 'ready' ||
+    !intakeDraft.tenantId ||
+    intakeDraft.title.trim().length === 0 ||
+    intakeDraft.description.trim().length === 0;
+  const mineCount = currentUserAssignableAgent?.userId
+    ? tickets.filter((ticket) => ticket.assignedToUserId === currentUserAssignableAgent.userId).length
+    : null;
   const queueShortcuts = [
     {
       key: 'mine',
       label: 'Meus tickets',
       helper: 'fila pessoal',
+      value: mineCount,
       active:
         filters.assignedToUserId !== 'all' &&
         currentUserAssignableAgent?.userId != null &&
@@ -3580,6 +4896,7 @@ function SupportWorkspaceView({
       key: 'unassigned',
       label: 'Não atribuídos',
       helper: 'pedem dono',
+      value: unassigned,
       active: filters.assignedToUserId === 'unassigned',
       apply: () => setFilters({ ...filters, assignedToUserId: 'unassigned' }),
       disabled: false,
@@ -3588,6 +4905,7 @@ function SupportWorkspaceView({
       key: 'urgent',
       label: 'Urgentes',
       helper: 'alta prioridade',
+      value: highAttention,
       active: filters.priority === 'urgent' || filters.severity === 'critical',
       apply: () =>
         setFilters({ ...filters, priority: 'urgent', severity: 'all' }),
@@ -3597,184 +4915,1511 @@ function SupportWorkspaceView({
       key: 'waiting-customer',
       label: 'Aguardando cliente',
       helper: 'retorno externo',
+      value: waitingCustomer,
       active: filters.status === 'waiting_customer',
       apply: () => setFilters({ ...filters, status: 'waiting_customer' }),
       disabled: false,
     },
+    {
+      key: 'waiting-engineering',
+      label: 'Dependências internas',
+      helper: 'áreas internas',
+      value: waitingEngineering,
+      active: filters.status === 'waiting_engineering',
+      apply: () => setFilters({ ...filters, status: 'waiting_engineering' }),
+      disabled: false,
+    },
   ] as const;
+  const activeQueueShortcut = queueShortcuts.find((shortcut) => shortcut.active)?.key ?? 'all';
+  const queueSummaryItems = [
+    {
+      key: 'open',
+      label: 'Abertos',
+      value: totalOpen,
+      helper: 'fila ativa',
+      tone: 'default' as const,
+    },
+    {
+      key: 'unassigned',
+      label: 'Sem responsável',
+      value: unassigned,
+      helper: 'pedem dono',
+      tone: 'attention' as const,
+    },
+    {
+      key: 'waiting_customer',
+      label: 'Aguardando cliente',
+      value: waitingCustomer,
+      helper: 'retorno externo',
+      tone: 'warning' as const,
+    },
+    {
+      key: 'waiting_engineering',
+      label: 'Dependências internas',
+      value: waitingEngineering,
+      helper: 'áreas internas',
+      tone: 'internal' as const,
+    },
+    {
+      key: 'urgent',
+      label: 'Urgentes',
+      value: highAttention,
+      helper: 'prioridade ou SLA',
+      tone: 'critical' as const,
+    },
+  ];
+  const queueSearchTerm = ticketInboxSearch.trim().toLocaleLowerCase('pt-BR');
+  const queueVisibleTickets =
+    queueSearchTerm.length === 0
+      ? tickets
+      : tickets.filter((ticket) => {
+          const haystack = [
+            supportTicketCode(ticket.id),
+            ticket.title,
+            ticketTenantLabel(ticket),
+            ticket.tenantSlug ?? '',
+            ticket.categoryName ?? '',
+            ticket.assignedToFullName ?? '',
+          ]
+            .join(' ')
+            .toLocaleLowerCase('pt-BR');
+          return haystack.includes(queueSearchTerm);
+        });
+  const bulkSelectedTickets = queueVisibleTickets.filter((ticket) =>
+    bulkSelectedTicketIds.includes(ticket.id),
+  );
+  const isQueueBulkMode = bulkSelectedTicketIds.length > 1;
+  const selectedQueueContextTicket = isQueueBulkMode ? null : selectedQueueTicket;
   const requesterLabel =
     ticketDetail?.requesterContactFullName ??
     ticketDetail?.requesterContactEmail ??
     'Cliente B2B';
+  const primaryCustomerContact = customer ? primaryContactFromCustomer(customer) : null;
+  const customerDocumentLabel = readCustomerDocumentLabel(customer);
   const currentAssignedLabel =
     formatAssignedAgentSummary(currentAssignedAgent) ??
     ticketDetail?.assignedToFullName ??
     'Sem responsavel definido';
-  const publicKnowledgeSuggestions = filteredKnowledgeArticles.filter(
-    (article) => article.isCustomerSendAllowed && article.publicArticlePath,
-  );
-  const knowledgePreviewLinks = knowledgeLinks.slice(0, 2);
+  const pendingCloseItems = [
+    !ticketDetail?.categoryName ? 'Definir categoria operacional.' : null,
+    !ticketDetail?.assignedToUserId ? 'Atribuir responsável pela tratativa.' : null,
+    ticketDetail?.status === 'waiting_customer' ? 'Aguardar retorno do cliente antes do encerramento.' : null,
+    ticketDetail?.status === 'waiting_engineering' ? 'Consolidar retorno da engenharia antes do encerramento.' : null,
+    ticketDetail && !ticketDetail.canClose ? 'Encerramento indisponível para este ticket no momento.' : null,
+  ].filter((item): item is string => Boolean(item));
+  const slaProgress = ticketDetail ? approximateSlaPercent(ticketDetail) : 0;
+  const slaDueAt = ticketDetail?.resolutionDueAt ?? ticketDetail?.firstResponseDueAt ?? null;
 
-  function openConversationSurface() {
-    setTicketToolbarTab('conversation');
+  function closeAuxiliarySurface() {
+    setActiveDrawer('none');
+  }
+
+  function closeTicketIntakeModal() {
+    if (intakeSubmitting) {
+      return;
+    }
+
+    setShowCreateTicket(false);
+    setDetailNotice(null);
+  }
+
+  function openClassificationSurface() {
+    setActiveDrawer('classification');
+  }
+
+  function openStatusSurface() {
+    setActiveDrawer('status');
   }
 
   function openKnowledgeSurface() {
-    setTicketToolbarTab('knowledge');
+    setActiveDrawer('knowledge');
   }
 
-  function openAdvancedSurface() {
-    setTicketToolbarTab('more');
+  function openEvidenceSurface() {
+    setActiveDrawer('evidence');
+  }
+
+  function openAutomationSurface() {
+    setActiveDrawer('automation');
+  }
+
+  function openHandoffSurface() {
+    setActiveDrawer('handoff');
+  }
+
+  function openRelatedSurface() {
+    setActiveDrawer('related');
+  }
+
+  function renderTicketIntakeModal() {
+    return (
+      <OperationalModal
+        description="Abra um ticket com contexto claro para que o time possa agir com mais agilidade."
+        labelledById="support-ticket-intake-title"
+        onClose={closeTicketIntakeModal}
+        open={showCreateTicket}
+        title="Novo ticket"
+        footer={
+          intakePhase === 'ready' && intakeTenants.length > 0 ? (
+            <OperationalFooterActions
+              note="As informações serão registradas com trilha de auditoria."
+            >
+              <GhostButton
+                className="rounded-[12px] px-4 text-[12px]"
+                disabled={intakeSubmitting}
+                onClick={closeTicketIntakeModal}
+                type="button"
+              >
+                Cancelar
+              </GhostButton>
+              <AppButton
+                className="rounded-[12px] px-4 text-[12px]"
+                disabled={intakeSubmitDisabled}
+                form="support-ticket-intake-form"
+                type="submit"
+              >
+                {intakeSubmitting ? 'Criando ticket' : 'Criar ticket'}
+              </AppButton>
+            </OperationalFooterActions>
+          ) : null
+        }
+      >
+        {intakePhase === 'loading' ? (
+          <LoadingState
+            title="Carregando intake"
+            description="Estamos preparando os clientes e contatos elegíveis para abrir ticket."
+          />
+        ) : intakePhase === 'contract-unavailable' ? (
+          <ContractUnavailableState contractName="intake operacional de tickets" />
+        ) : intakePhase === 'error' ? (
+          <ErrorState
+            action={<AppButton onClick={() => void loadIntakeTenants()}>Tentar novamente</AppButton>}
+            description={intakeMessage ?? 'O intake operacional não ficou disponível neste ambiente.'}
+          />
+        ) : intakeTenants.length === 0 ? (
+          <EmptyState
+            title="Nenhum cliente elegível para intake"
+            description="Nenhum cliente com acesso disponível foi liberado para abrir ticket nesta sessão."
+          />
+        ) : (
+          <form
+            className="support-ticket-intake-form"
+            id="support-ticket-intake-form"
+            onSubmit={(event) => void handleSubmitTicketIntake(event)}
+          >
+            <div className="support-ticket-intake-form__main">
+              <section className="support-ticket-intake-form__section">
+                <div className="support-ticket-intake-form__section-header">
+                  <p className="support-ticket-intake-form__section-title">Informações do ticket</p>
+                  <p className="support-ticket-intake-form__section-helper">Contexto mínimo para abrir a triagem.</p>
+                </div>
+
+                <OperationalFormGrid>
+                  <OperationalField
+                    label="Cliente B2B"
+                    description="Obrigatório para abrir o ticket no escopo correto."
+                    span="wide"
+                  >
+                    <SelectInput
+                      autoFocus
+                      className="support-operational-control"
+                      disabled={intakeSubmitting}
+                      onChange={(event) =>
+                        setIntakeDraft((current) => ({
+                          ...current,
+                          tenantId: event.target.value as Uuid | '',
+                          requesterContactId: '',
+                        }))
+                      }
+                      value={intakeDraft.tenantId}
+                    >
+                      <option value="">Selecione um cliente</option>
+                      {intakeTenants.map((tenant) => (
+                        <option key={tenant.tenantId} value={tenant.tenantId}>
+                          {intakeTenantLabel(tenant)}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </OperationalField>
+
+                  <OperationalField label="Contato solicitante">
+                    <SelectInput
+                      className="support-operational-control"
+                      disabled={!intakeDraft.tenantId || intakeContactsLoading || intakeSubmitting}
+                      onChange={(event) =>
+                        setIntakeDraft((current) => ({
+                          ...current,
+                          requesterContactId: event.target.value as Uuid | '',
+                        }))
+                      }
+                      value={intakeDraft.requesterContactId}
+                    >
+                      <option value="">
+                        {intakeContactsLoading
+                          ? 'Carregando contatos'
+                          : intakeContacts.length === 0
+                            ? 'Indisponível'
+                            : 'Sem solicitante vinculado'}
+                      </option>
+                      {intakeContacts.map((contact) => (
+                        <option key={contact.id} value={contact.id}>
+                          {sanitizeSupportVisibleText(contact.fullName)} · {contact.email}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </OperationalField>
+
+                  <OperationalField label="Origem">
+                    <SelectInput
+                      className="support-operational-control"
+                      disabled={intakeSubmitting}
+                      onChange={(event) =>
+                        setIntakeDraft((current) => ({
+                          ...current,
+                          source: event.target.value as TicketSource,
+                        }))
+                      }
+                      value={intakeDraft.source}
+                    >
+                      {TICKET_SOURCES.map((source) => (
+                        <option key={source} value={source}>
+                          {humanizeSource(source)}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </OperationalField>
+
+                  <OperationalField label="Prioridade">
+                    <SelectInput
+                      className="support-operational-control"
+                      disabled={intakeSubmitting}
+                      onChange={(event) =>
+                        setIntakeDraft((current) => ({
+                          ...current,
+                          priority: event.target.value as TicketPriority,
+                        }))
+                      }
+                      value={intakeDraft.priority}
+                    >
+                      {TICKET_PRIORITIES.map((priority) => (
+                        <option key={priority} value={priority}>
+                          {humanizePriority(priority)}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </OperationalField>
+
+                  <OperationalField label="Severidade">
+                    <SelectInput
+                      className="support-operational-control"
+                      disabled={intakeSubmitting}
+                      onChange={(event) =>
+                        setIntakeDraft((current) => ({
+                          ...current,
+                          severity: event.target.value as TicketSeverity,
+                        }))
+                      }
+                      value={intakeDraft.severity}
+                    >
+                      {TICKET_SEVERITIES.map((severity) => (
+                        <option key={severity} value={severity}>
+                          {humanizeSeverity(severity)}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </OperationalField>
+
+                  <OperationalField label="Categoria operacional">
+                    <SelectInput
+                      className="support-operational-control"
+                      disabled={intakeSubmitting || ticketCategoryOptions.length === 0}
+                      onChange={(event) =>
+                        setIntakeDraft((current) => ({
+                          ...current,
+                          categoryId: event.target.value as Uuid | '',
+                          operationalReasonId: event.target.value ? current.operationalReasonId : '',
+                        }))
+                      }
+                      value={intakeDraft.categoryId}
+                    >
+                      <option value="">Indisponível/sem categoria inicial</option>
+                      {ticketCategoryOptions.map((category) => (
+                        <option key={category.optionId} value={category.optionId}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </OperationalField>
+
+                  <OperationalField label="Motivo operacional inicial" span="wide">
+                    <SelectInput
+                      className="support-operational-control"
+                      disabled={
+                        intakeSubmitting ||
+                        !intakeDraft.categoryId ||
+                        classificationReasonOptions.length === 0
+                      }
+                      onChange={(event) =>
+                        setIntakeDraft((current) => ({
+                          ...current,
+                          operationalReasonId: event.target.value as Uuid | '',
+                        }))
+                      }
+                      value={intakeDraft.operationalReasonId}
+                    >
+                      <option value="">Sem motivo inicial</option>
+                      {classificationReasonOptions.map((reason) => (
+                        <option key={reason.optionId} value={reason.optionId}>
+                          {reason.name}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </OperationalField>
+                </OperationalFormGrid>
+
+                {classificationOptionsMessage ? (
+                  <InlineNotice tone="warning">{classificationOptionsMessage}</InlineNotice>
+                ) : null}
+
+                {intakeContactsMessage ? (
+                  <InlineNotice tone="warning">{intakeContactsMessage}</InlineNotice>
+                ) : null}
+
+                {!intakeContactsLoading &&
+                intakeDraft.tenantId &&
+                intakeContacts.length === 0 ? (
+                  <InlineNotice>
+                    Nenhum contato ativo apareceu para este cliente. O ticket pode ser aberto
+                    sem solicitante vinculado se a plataforma aceitar esse contexto.
+                  </InlineNotice>
+                ) : null}
+
+                <div className="support-ticket-intake-form__subsection">
+                  <div>
+                    <p className="support-ticket-intake-form__section-title">Assunto e contexto</p>
+                    <p className="support-ticket-intake-form__section-helper">Descreva o impacto para iniciar a análise.</p>
+                  </div>
+                </div>
+
+                {detailNotice && detailNoticeTone === 'critical' ? (
+                  <InlineNotice tone="critical">{detailNotice}</InlineNotice>
+                ) : null}
+
+                <OperationalFormGrid>
+                  <OperationalField label="Título" span="wide">
+                    <TextInput
+                      className="support-operational-control"
+                      disabled={intakeSubmitting}
+                      onChange={(event) =>
+                        setIntakeDraft((current) => ({
+                          ...current,
+                          title: event.target.value,
+                        }))
+                      }
+                      placeholder="Resumo objetivo do caso operacional"
+                      value={intakeDraft.title}
+                    />
+                  </OperationalField>
+
+                  <OperationalField label="Descrição" span="wide">
+                    <TextareaInput
+                      className="support-operational-control support-operational-control--textarea"
+                      disabled={intakeSubmitting}
+                      onChange={(event) =>
+                        setIntakeDraft((current) => ({
+                          ...current,
+                          description: event.target.value,
+                        }))
+                      }
+                      placeholder="Contexto mínimo para iniciar a triagem."
+                      rows={4}
+                      value={intakeDraft.description}
+                    />
+                  </OperationalField>
+                </OperationalFormGrid>
+                <div className="support-ticket-intake-form__evidence">
+                  <div className="support-ticket-intake-form__evidence-icon">
+                    <SupportSurfaceIcon className="h-[15px] w-[15px]" kind="attachment" />
+                  </div>
+                  <div className="min-w-0">
+                    <p>Anexe evidências quando ajudarem na análise.</p>
+                    <span>Arquivos podem ser adicionados na tratativa assim que o ticket for criado.</span>
+                  </div>
+                  <button disabled type="button">Disponível após criar ticket</button>
+                </div>
+              </section>
+            </div>
+
+            <aside className="support-ticket-intake-form__aside">
+              <section className="support-ticket-intake-form__summary">
+                <div className="support-ticket-intake-form__summary-header">
+                  <p className="support-ticket-intake-form__section-title">Resumo do ticket</p>
+                  <span>Novo</span>
+                </div>
+                <dl className="support-ticket-intake-form__summary-list">
+                  <div>
+                    <dt>Cliente</dt>
+                    <dd>{selectedIntakeTenant ? intakeTenantLabel(selectedIntakeTenant) : 'Indisponível'}</dd>
+                  </div>
+                  <div>
+                    <dt>Conta</dt>
+                    <dd>
+                      {selectedIntakeTenant
+                        ? `${humanizeTenantStatus(selectedIntakeTenant.tenantStatus)} · ${selectedIntakeTenant.activeContactsCount} contatos`
+                        : 'Indisponível'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Solicitante</dt>
+                    <dd>{sanitizeSupportVisibleText(selectedIntakeContact?.fullName)}</dd>
+                  </div>
+                  <div>
+                    <dt>Origem</dt>
+                    <dd>{humanizeSource(intakeDraft.source)}</dd>
+                  </div>
+                  <div>
+                    <dt>Prioridade</dt>
+                    <dd>{humanizePriority(intakeDraft.priority)}</dd>
+                  </div>
+                  <div>
+                    <dt>Severidade</dt>
+                    <dd>{humanizeSeverity(intakeDraft.severity)}</dd>
+                  </div>
+                  <div>
+                    <dt>Classificação</dt>
+                    <dd>{selectedIntakeCategory?.name ?? 'Indisponível'}</dd>
+                  </div>
+                  <div>
+                    <dt>Motivo</dt>
+                    <dd>{selectedIntakeReason?.name ?? 'Indisponível'}</dd>
+                  </div>
+                </dl>
+              </section>
+              <section className="support-ticket-intake-form__summary support-ticket-intake-form__summary--sla">
+                <p className="support-ticket-intake-form__section-title">SLA estimado</p>
+                <div className="support-ticket-intake-form__sla-row">
+                  <span>Status</span>
+                  <strong>Indisponível</strong>
+                </div>
+                <div className="support-ticket-intake-form__sla-row">
+                  <span>Previsão de resposta</span>
+                  <strong>Indisponível</strong>
+                </div>
+                <p>O prazo será calculado após a criação, conforme a política operacional configurada.</p>
+              </section>
+            </aside>
+          </form>
+        )}
+      </OperationalModal>
+    );
+  }
+
+  function renderBlueprintLayout() {
+    if (!ticketDetail || !selectedTicketSummary) {
+      return null;
+    }
+
+    const detail = ticketDetail;
+    const contextRailTitle =
+      activeDrawer === 'classification'
+        ? 'Classificar conversa'
+        : activeDrawer === 'status'
+          ? 'Alterar status'
+        : activeDrawer === 'evidence'
+          ? 'Evidências e relacionados'
+              : activeDrawer === 'knowledge'
+                ? 'Conhecimento relacionado'
+                : activeDrawer === 'automation'
+              ? 'Acionamentos'
+              : activeDrawer === 'handoff'
+                ? 'Handoff técnico'
+                : activeDrawer === 'related'
+                  ? 'Relacionados'
+              : null;
+    const contextRailSubtitle =
+      activeDrawer === 'classification'
+        ? 'Classifique este ticket para ajudar na triagem e na análise do time.'
+        : activeDrawer === 'status'
+          ? 'Atualize o andamento da tratativa sem sair da conversa.'
+        : activeDrawer === 'evidence'
+          ? 'Anexe e consulte evidências sem expor armazenamento interno.'
+              : activeDrawer === 'knowledge'
+                ? 'Busque artigos seguros e vínculos usados nesta conversa.'
+                : activeDrawer === 'automation'
+              ? 'Acione outras áreas para apoiar na resolução deste ticket.'
+              : activeDrawer === 'handoff'
+                ? 'Escalone para engenharia mantendo o ticket como fonte da tratativa.'
+                : activeDrawer === 'related'
+                  ? 'Consulte tickets, artigos e vínculos disponíveis para este caso.'
+              : null;
+    const contextRailDrawerSize = supportActionDrawerSize(activeDrawer);
+    const contextRailWidthVariant = supportActionDrawerWidthVariant(activeDrawer);
+    const workspaceTabs = [
+      { key: 'conversation', label: 'Conversa', count: null },
+      { key: 'details', label: 'Detalhes', count: null },
+      { key: 'activities', label: 'Atividades', count: timelineWindow.entries.length },
+      { key: 'related', label: 'Relacionados', count: knowledgeLinks.length + engineeringLinks.length },
+      { key: 'sla', label: 'SLA', count: null },
+      { key: 'history', label: 'Histórico', count: null },
+    ] as const;
+    const workspaceTabPanel =
+      workspaceTab === 'conversation' ? (
+        <SupportConversation
+          loadingMore={timelineLoadingMore}
+          onLoadMore={() => void handleLoadOlderTimeline()}
+          requesterName={requesterLabel}
+          window={timelineWindow}
+        />
+      ) : workspaceTab === 'details' ? (
+        <div className="support-ticket-tab-panel">
+          <h3>Detalhes do ticket</h3>
+          <div className="support-ticket-tab-grid">
+            <span><small>Status</small><strong>{compactTicketStatusLabel(detail.status)}</strong></span>
+            <span><small>Prioridade</small><strong>{humanizePriority(detail.priority)}</strong></span>
+            <span><small>Severidade</small><strong>{humanizeSeverity(detail.severity)}</strong></span>
+            <span><small>Categoria</small><strong>{detail.categoryName ?? 'Indisponível'}</strong></span>
+            <span><small>Origem</small><strong>{detail.originLabel ?? humanizeSource(detail.source)}</strong></span>
+            <span><small>Canal</small><strong>{detail.channelLabel ?? 'Indisponível'}</strong></span>
+            <span><small>Solicitante</small><strong>{requesterLabel}</strong></span>
+            <span><small>Responsável</small><strong>{currentAssignedLabel}</strong></span>
+          </div>
+        </div>
+      ) : workspaceTab === 'activities' ? (
+        <div className="support-ticket-tab-panel">
+          <h3>Atividades</h3>
+          <SupportTechnicalHistory window={timelineWindow} />
+        </div>
+      ) : workspaceTab === 'related' ? (
+        <div className="support-ticket-tab-panel">
+          <h3>Relacionados</h3>
+          <div className="support-ticket-tab-list">
+            {knowledgeLinks.length === 0 && engineeringLinks.length === 0 ? (
+              <InlineNotice>Nenhum vínculo operacional apareceu para este ticket.</InlineNotice>
+            ) : (
+              <>
+                {knowledgeLinks.slice(0, 4).map((link) => (
+                  <article key={link.ticketKnowledgeLinkId}>
+                    <strong>{link.articleTitle ?? 'Artigo indisponível'}</strong>
+                    <span>
+                      {humanizeKnowledgeLinkType(link.linkType)} · {link.articleVisibility ? humanizeKnowledgeVisibility(link.articleVisibility) : 'Visibilidade indisponível'}
+                    </span>
+                  </article>
+                ))}
+                {engineeringLinks.slice(0, 4).map((link) => (
+                  <article key={link.engineeringTicketLinkId}>
+                    <strong>{link.workItemTitle}</strong>
+                    <span>{humanizeEngineeringWorkItemType(link.workItemType)} · {humanizeEngineeringWorkItemStatus(link.workItemStatus)}</span>
+                  </article>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+      ) : workspaceTab === 'sla' ? (
+        <div className="support-ticket-tab-panel">
+          <h3>SLA</h3>
+          <div className="support-ticket-tab-grid">
+            <span><small>Política</small><strong>{detail.slaPolicyName ?? 'Fallback interno'}</strong></span>
+            <span><small>Referência</small><strong>{detail.slaReference || 'Governança operacional'}</strong></span>
+            <span><small>Resposta</small><strong>{slaDueAt ? formatDateTime(slaDueAt) : 'Indisponível'}</strong></span>
+            <span><small>Resolução</small><strong>{detail.resolutionDueAt ? formatDateTime(detail.resolutionDueAt) : 'Indisponível'}</strong></span>
+          </div>
+        </div>
+      ) : (
+        <div className="support-ticket-tab-panel">
+          <h3>Histórico</h3>
+          <SupportConversation
+            loadingMore={timelineLoadingMore}
+            onLoadMore={() => void handleLoadOlderTimeline()}
+            requesterName={requesterLabel}
+            window={timelineWindow}
+          />
+        </div>
+      );
+
+    const quickActions = [
+      {
+        key: 'classification',
+        icon: <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="filter" />,
+        label: 'Classificar',
+        onClick: openClassificationSurface,
+      },
+      {
+        key: 'status',
+        icon: <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="clock" />,
+        label: 'Alterar status',
+        onClick: openStatusSurface,
+      },
+      {
+        key: 'evidence',
+        icon: <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="attachment" />,
+        label: 'Evidências',
+        onClick: openEvidenceSurface,
+      },
+      {
+        key: 'knowledge',
+        icon: <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="open" />,
+        label: 'Conhecimento',
+        onClick: openKnowledgeSurface,
+      },
+      {
+        key: 'automation',
+        icon: <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="alert" />,
+        label: 'Acionamentos',
+        onClick: openAutomationSurface,
+      },
+      {
+        key: 'related',
+        icon: <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="open" />,
+        label: 'Relacionados',
+        onClick: openRelatedSurface,
+      },
+    ];
+
+    const defaultRail = (
+      <SupportTicketRightRail
+        assignedLabel={currentAssignedLabel}
+        categoryLabel={detail.categoryName ?? 'Indisponível'}
+        customerDocumentLabel={customerDocumentLabel ?? 'Indisponível'}
+        priorityIndicator={<span className="text-[color:var(--color-brand-pink)]">↑</span>}
+        priorityLabel={humanizePriority(detail.priority)}
+        quickActions={quickActions}
+        relatedArticles={filteredKnowledgeArticles.slice(0, 3).map((article) => ({
+          id: article.articleId,
+          title: article.articleTitle,
+          summary: article.articleSummary,
+        }))}
+        requesterLabel={requesterLabel}
+        resolutionDueLabel={detail.resolutionDueAt ? formatDateTime(detail.resolutionDueAt) : 'Indisponível'}
+        slaDueLabel={slaDueAt ? formatDateTime(slaDueAt) : 'Indisponível'}
+        slaPolicyName={detail.slaPolicyName ?? 'Fallback interno'}
+        slaPriorityBadge={
+          <CompactSupportPill tone={toneForPriority(detail.priority)}>
+            {humanizePriority(detail.priority)}
+          </CompactSupportPill>
+        }
+        slaProgress={slaProgress}
+        slaReference={detail.slaReference || 'Governança interna urgente'}
+        slaRemainingLabel={formatRemainingTimeLabel(slaDueAt)}
+        sourceBadge={
+          <CompactSupportPill>
+            {detail.originLabel ?? humanizeSource(detail.source)} · {detail.channelLabel ?? 'Canal indisponível'}
+          </CompactSupportPill>
+        }
+        statusLabel={compactTicketStatusLabel(detail.status)}
+        tenantLabel={sanitizeSupportVisibleText(detail.tenantDisplayName ?? detail.tenantLegalName)}
+      />
+    );
+
+    const contextPanel =
+      activeDrawer === 'classification' ? (
+        <SupportClassificationDrawerPanel
+          classificationDraft={classificationDraft}
+          classificationOptionsMessage={classificationOptionsMessage}
+          classificationReasonOptions={classificationReasonOptions}
+          humanizePriority={humanizePriority}
+          humanizeSeverity={humanizeSeverity}
+          onClassificationDraftChange={(patch) =>
+            setClassificationDraft((current) => ({
+              ...current,
+              ...patch,
+            }))
+          }
+          onPrioritySeverityDraftChange={(patch) =>
+            setPrioritySeverityDraft((current) => ({
+              ...current,
+              ...patch,
+            }))
+          }
+          priorityReasonOptions={priorityReasonOptions}
+          prioritySeverityDraft={prioritySeverityDraft}
+          submitting={submitting}
+          ticketCategoryOptions={ticketCategoryOptions}
+        />
+      ) : activeDrawer === 'status' ? (
+        <SupportStatusDrawerPanel
+          humanizeStatus={humanizeStatus}
+          nextStatusChoices={buildStatusChoices(detail.status, detail.allowedNextStatuses)}
+          onStatusDraftChange={(status) => {
+            setStatusDraft(status);
+            setStatusReasonId('');
+          }}
+          onStatusNoteChange={setStatusNote}
+          onStatusReasonChange={setStatusReasonId}
+          onSubmit={(event) => void handleUpdateStatus(event)}
+          requireStatusReason={requiresOperationalReasonForStatus(statusDraft)}
+          statusDraft={statusDraft}
+          statusNote={statusNote}
+          statusReasonId={statusReasonId}
+          statusReasonOptions={statusReasonOptions}
+          submitting={submitting}
+          ticketDetail={detail}
+        />
+      ) : activeDrawer === 'knowledge' ? (
+        <SupportKnowledgeDrawerPanel
+          articles={filteredKnowledgeArticles}
+          humanizeKnowledgeLinkType={humanizeKnowledgeLinkType}
+          humanizeKnowledgeStatus={humanizeKnowledgeStatus}
+          humanizeKnowledgeVisibility={humanizeKnowledgeVisibility}
+          links={knowledgeLinks}
+          loading={knowledgeSubmitting || knowledgePhase === 'loading'}
+          noteDraft={knowledgeNoteDraft}
+          onArchive={(linkId) => void handleArchiveKnowledgeLink(linkId)}
+          onCopyPublicLink={handleCopyPublicKnowledgeLink}
+          onLinkInternal={(articleId) => void handleLinkKnowledgeArticle(articleId, 'reference_internal')}
+          onMarkGap={() => void handleMarkDocumentationGap()}
+          onNeedsUpdate={(articleId) => void handleMarkKnowledgeNeedsUpdate(articleId)}
+          onNoteChange={setKnowledgeNoteDraft}
+          onSearchChange={setKnowledgeSearch}
+          onSendToCustomer={(articleId) => void handleLinkKnowledgeArticle(articleId, 'sent_to_customer')}
+          search={knowledgeSearch}
+        />
+      ) : activeDrawer === 'evidence' ? (
+        <SupportEvidenceDrawerPanel
+          attachmentUploadDraft={attachmentUploadDraft}
+          attachments={attachments}
+          formatAttachmentSize={formatAttachmentSize}
+          onNoteChange={(value) =>
+            setAttachmentUploadDraft((current) => ({
+              ...current,
+              note: value,
+            }))
+          }
+          onRemoveDraftFile={handleRemoveDraftAttachment}
+          onSelectFiles={() => attachmentInputRef.current?.click()}
+        />
+      ) : activeDrawer === 'automation' ? (
+        <SupportInternalActionsDrawerPanel
+          attachmentKind={attachmentKind}
+          attachments={attachments}
+          formatAttachmentSize={formatAttachmentSize}
+          humanizeAttachmentStatus={humanizeAttachmentStatus}
+          humanizePriority={humanizePriority}
+          internalActionDetail={internalActionDetail}
+          internalActionDetailMessage={internalActionDetailMessage}
+          internalActionDetailPhase={internalActionDetailPhase}
+          internalActionCreateDraft={internalActionCreateDraft}
+          internalActionEvidenceAttachmentId={internalActionEvidenceAttachmentId}
+          internalActionEvidenceNote={internalActionEvidenceNote}
+          internalActionSubmitting={internalActionSubmitting}
+          internalActionSupportNote={internalActionSupportNote}
+          internalActionTargetAreas={internalActionTargetAreas}
+          internalActionTargetAreasMessage={internalActionTargetAreasMessage}
+          internalActionTargetAreasPhase={internalActionTargetAreasPhase}
+          internalActions={internalActions}
+          internalActionsMessage={internalActionsMessage}
+          internalActionsPhase={internalActionsPhase}
+          onAcceptReturn={() => void handleAcceptInternalActionReturn()}
+          onCloseAction={() => void handleCloseInternalAction()}
+          onCreateDraftChange={(patch) =>
+            setInternalActionCreateDraft((current) => ({
+              ...current,
+              ...patch,
+            }))
+          }
+          onCreateSubmit={(event) => void handleCreateInternalAction(event)}
+          onEvidenceAttachmentChange={setInternalActionEvidenceAttachmentId}
+          onEvidenceNoteChange={setInternalActionEvidenceNote}
+          onLinkEvidence={() => void handleLinkInternalActionEvidence()}
+          onOpenHandoff={openHandoffSurface}
+          onRequestFollowup={() => void handleRequestInternalActionFollowup()}
+          onSelectInternalAction={setSelectedInternalActionId}
+          onSupportNoteChange={setInternalActionSupportNote}
+          selectedInternalActionId={selectedInternalActionId}
+          timelineEntries={internalActionTimeline}
+          toneForAttachmentStatus={toneForAttachmentStatus}
+          toneForPriority={toneForPriority}
+        />
+      ) : activeDrawer === 'handoff' ? (
+        <SupportEngineeringHandoffDrawerPanel
+          attachments={attachments}
+          canCreateEngineeringHandoff={canCreateEngineeringHandoff}
+          handoffDraft={handoffDraft}
+          handoffSubmitting={handoffSubmitting}
+          humanizeEngineeringWorkItemType={humanizeEngineeringWorkItemType}
+          onEngineeringHandoffDraftChange={(patch) =>
+            setHandoffDraft((current) => ({
+              ...current,
+              ...patch,
+            }))
+          }
+          onEngineeringHandoffSubmit={(event) => void handleCreateEngineeringHandoff(event)}
+        />
+      ) : activeDrawer === 'related' ? (
+        <SupportRelatedDrawerPanel
+          attachmentKind={attachmentKind}
+          attachments={attachments}
+          compactTicketStatusLabel={compactTicketStatusLabel}
+          engineeringLinks={engineeringLinks}
+          formatAttachmentSize={formatAttachmentSize}
+          humanizeEngineeringWorkItemStatus={humanizeEngineeringWorkItemStatus}
+          humanizeEngineeringWorkItemType={humanizeEngineeringWorkItemType}
+          humanizeKnowledgeLinkType={humanizeKnowledgeLinkType}
+          humanizePriority={humanizePriority}
+          humanizeSeverity={humanizeSeverity}
+          knowledgeLinks={knowledgeLinks}
+          recentTickets={customerRecentTickets.tickets.filter((ticket) => ticket.id !== detail.id).slice(0, 4)}
+          supportTicketCode={supportTicketCode}
+          toneForTicketStatus={toneForTicketStatus}
+        />
+      ) : null;
+
+    const contextRailFooter =
+      activeDrawer === 'classification' ? (
+        <div className="support-drawer-footer-actions">
+          <GhostButton className="support-drawer-footer-button" onClick={closeAuxiliarySurface} type="button">
+            Cancelar
+          </GhostButton>
+          <AppButton
+            className="support-drawer-footer-button"
+            disabled={submitting || !classificationDraft.categoryId}
+            onClick={() => void handleSaveClassificationDrawer()}
+            type="button"
+          >
+            {submitting ? 'Salvando...' : 'Salvar classificação'}
+          </AppButton>
+        </div>
+      ) : activeDrawer === 'status' ? (
+        <div className="support-drawer-footer-actions">
+          <GhostButton className="support-drawer-footer-button" onClick={closeAuxiliarySurface} type="button">
+            Cancelar
+          </GhostButton>
+          <AppButton
+            className="support-drawer-footer-button"
+            disabled={
+              submitting ||
+              !detail.canUpdateStatus ||
+              buildStatusChoices(detail.status, detail.allowedNextStatuses).length === 0
+            }
+            form="support-ticket-status-form"
+            type="submit"
+          >
+            {submitting ? 'Salvando...' : 'Salvar status'}
+          </AppButton>
+        </div>
+      ) : activeDrawer === 'evidence' ? (
+        <div className="support-drawer-footer-actions">
+          <GhostButton className="support-drawer-footer-button" onClick={closeAuxiliarySurface} type="button">
+            Cancelar
+          </GhostButton>
+          <AppButton
+            className="support-drawer-footer-button"
+            disabled={attachmentSubmitting || attachmentUploadDraft.files.length === 0}
+            onClick={() => void handleSubmitAttachmentUpload()}
+            type="button"
+          >
+            {attachmentSubmitting ? 'Enviando...' : 'Anexar evidência'}
+          </AppButton>
+        </div>
+      ) : activeDrawer === 'handoff' ? (
+        <div className="support-drawer-footer-actions">
+          <GhostButton className="support-drawer-footer-button" onClick={closeAuxiliarySurface} type="button">
+            Cancelar
+          </GhostButton>
+          <AppButton
+            className="support-drawer-footer-button"
+            disabled={
+              handoffSubmitting ||
+              !canCreateEngineeringHandoff ||
+              handoffDraft.title.trim().length === 0 ||
+              handoffDraft.description.trim().length === 0
+            }
+            form="support-engineering-handoff-form"
+            type="submit"
+          >
+            {handoffSubmitting ? 'Escalando...' : 'Escalar para engenharia'}
+          </AppButton>
+        </div>
+      ) : null;
+
+    const contextRail = (
+      <SupportTicketContextRail
+        defaultRail={defaultRail}
+        drawerSize={contextRailDrawerSize}
+        footer={contextRailFooter}
+        onClose={closeAuxiliarySurface}
+        panel={contextPanel}
+        subtitle={contextRailSubtitle}
+        title={contextRailTitle}
+      />
+    );
+
+    return (
+      <>
+        <SupportWorkspaceGrid
+          mainPane={
+            <SupportTicketConversationSection
+              composer={
+                <SupportTicketComposerSection
+                  attachmentIcon={<SupportSurfaceIcon className="h-[13px] w-[13px]" kind="attachment" />}
+                  canUseInternalComposer={canUseInternalComposer}
+                  canUsePublicComposer={canUsePublicComposer}
+                  composerDisabled={composerDisabled}
+                  composerDraft={composerDraft}
+                  composerMode={composerMode}
+                  publicReplyLabel={
+                    detail.replyMode === 'customer_portal_public_reply'
+                      ? 'Resposta pública via Portal'
+                      : 'Resposta pública registrada no ticket'
+                  }
+                  publicReplyUnavailableReason={
+                    detail.reasonIfUnavailable
+                      ? sanitizeSupportVisibleText(detail.reasonIfUnavailable)
+                      : null
+                  }
+                  onComposerDraftChange={(value) =>
+                    composerMode === 'public' ? setMessageDraft(value) : setNoteDraft(value)
+                  }
+                  onOpenEvidenceSurface={openEvidenceSurface}
+                  onOpenStatusSurface={() => {
+                    setStatusDraft((current) =>
+                      buildStatusChoices(detail.status, detail.allowedNextStatuses).includes(current)
+                        ? current
+                        : buildStatusChoices(detail.status, detail.allowedNextStatuses)[0] ?? 'triage',
+                    );
+                    openStatusSurface();
+                  }}
+                  onSelectInternalMode={() => setComposerMode('internal')}
+                  onSelectPublicMode={() => setComposerMode('public')}
+                  onSubmit={handleSubmitComposer}
+                  submitting={submitting}
+                />
+              }
+              detailNotice={detailNotice}
+              detailNoticeTone={detailNoticeTone}
+              header={
+                <SupportTicketWorkspaceHeader
+                  badges={
+                    <>
+                      <CompactSupportPill tone={toneForTicketStatus(detail.status)}>
+                        {compactTicketStatusLabel(detail.status)}
+                      </CompactSupportPill>
+                      <CompactSupportPill tone={toneForPriority(detail.priority)}>
+                        {humanizePriority(detail.priority)}
+                      </CompactSupportPill>
+                    </>
+                  }
+                  menuAction={
+                    <SupportIconActionButton
+                      ariaLabel="Mais ações do ticket"
+                      className="h-8 w-8 rounded-[10px]"
+                    >
+                      <SupportSurfaceIcon className="h-[13px] w-[13px]" kind="more" />
+                    </SupportIconActionButton>
+                  }
+                  assignedLabel={currentAssignedLabel}
+                  requesterLabel={requesterLabel}
+                  ticketCode={supportTicketCode(detail.id)}
+                  title={detail.title}
+                />
+              }
+              tabs={
+                <div className="flex flex-wrap items-center gap-x-1 px-3 pt-1 sm:px-5" role="tablist" aria-label="Seções da tratativa">
+                  {workspaceTabs.map((tab) => (
+                    <button
+                      aria-selected={workspaceTab === tab.key}
+                      className={cx(
+                        'inline-flex min-h-9 items-center gap-1.5 border-b-2 px-2 text-xs',
+                        workspaceTab === tab.key
+                          ? 'border-[color:var(--minimal-action)] font-medium text-[color:var(--minimal-text)]'
+                          : 'border-transparent text-[color:var(--minimal-text-secondary)]',
+                      )}
+                      key={tab.key}
+                      onClick={() => setWorkspaceTab(tab.key)}
+                      role="tab"
+                      type="button"
+                    >
+                      <span>{tab.label}</span>
+                      {tab.count !== null ? (
+                        <small className="text-[10px] text-[color:var(--minimal-text-tertiary)]">{tab.count}</small>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+              }
+              thread={workspaceTabPanel}
+              threadScrollRef={threadScrollContainerRef}
+            />
+          }
+          queuePanel={
+            <SupportTicketQueue
+              activeTab={ticketInboxFilter}
+              canGoNext={safeTicketInboxPage < ticketInboxTotalPages}
+              canGoPrevious={safeTicketInboxPage > 1}
+              currentPageLabel={safeTicketInboxPage}
+              filterIcon={<SupportSurfaceIcon className="h-[14px] w-[14px]" kind="filter" />}
+              onNextPage={() => setTicketInboxPage((current) => Math.min(ticketInboxTotalPages, current + 1))}
+              onPreviousPage={() => setTicketInboxPage((current) => Math.max(1, current - 1))}
+              onReset={resetTicketInboxFilters}
+              onScopeChange={handleChangeTicketInboxScope}
+              onSearchChange={setTicketInboxSearch}
+              onTabChange={(tabKey) => setTicketInboxFilter(tabKey as TicketInboxFilter)}
+              pageLabel={
+                <>
+                  {ticketInboxStart}-{ticketInboxEnd} de {ticketInboxFilteredTickets.length}
+                </>
+              }
+              scope={ticketInboxScope}
+              scopeCounts={ticketInboxScopeCounts}
+              search={ticketInboxSearch}
+              searchIcon={<SupportSurfaceIcon className="h-[14px] w-[14px]" kind="search" />}
+              tabs={ticketInboxTabs}
+              ticketsContent={
+                ticketInboxVisibleTickets.length === 0 ? (
+                  <InlineNotice>Nenhum ticket encontrado com os filtros atuais.</InlineNotice>
+                ) : (
+                  <div className="space-y-2">
+                    {ticketInboxVisibleTickets.map((ticket) => (
+                      <SupportTicketInboxItem
+                        isSelected={ticket.id === selectedTicketId}
+                        key={ticket.id}
+                        onSelect={() => handleSelectTicket(ticket.id)}
+                        ticket={ticket}
+                      />
+                    ))}
+                  </div>
+                )
+              }
+              totalCount={ticketInboxScopeTickets.length}
+            />
+          }
+          rightPaneWidth={contextRailWidthVariant}
+          rightRail={contextRail}
+          showDrawer={false}
+        />
+        <input
+          accept={TICKET_ATTACHMENT_ACCEPT}
+          className="hidden"
+          multiple
+          onChange={(event) => void handleAttachmentSelection(event.currentTarget.files)}
+          ref={attachmentInputRef}
+          type="file"
+        />
+      </>
+    );
   }
 
   return (
     <div
       className={cx(
         variant === 'tickets'
-          ? 'flex h-full min-h-0 flex-col gap-2.5 overflow-hidden'
-          : 'space-y-5',
+          ? 'gso-screen-frame flex h-full min-h-0 flex-col overflow-hidden'
+          : 'gso-screen-frame flex h-full min-h-0 flex-col gap-[var(--workspace-panel-gap)] overflow-hidden',
       )}
     >
-      {variant === 'queue' ? (
-        <section className="rounded-[26px] border border-[color:var(--color-border)] bg-white/95 px-5 py-5 shadow-[0_16px_30px_rgba(19,33,79,0.08)]">
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusPill tone="accent">Fila</StatusPill>
-            <StatusPill>Suporte diario</StatusPill>
-          </div>
-          <div className="mt-3 space-y-1">
-            <h1 className="text-[1.9rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
-              Fila operacional
+      {variant === 'tickets' ? (
+        <section className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-4 py-2 sm:px-5">
+          <div className="min-w-0">
+            <h1 className="text-sm font-semibold text-[color:var(--minimal-text)]">
+              Tickets
             </h1>
-            <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-              Subsidebar para triagem, lista dominante no centro e preview curto para decidir o proximo atendimento.
-            </p>
+          </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                className="h-8 rounded-md px-2.5 text-xs text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)]"
+                disabled={!ticketDetail}
+                onClick={() => {
+                  if (ticketDetail) {
+                    window.open(`/portal/tickets/${ticketDetail.id}`, '_blank', 'noopener,noreferrer');
+                  }
+                }}
+                type="button"
+              >
+                Ver no portal
+              </button>
+              <button
+                className="h-8 rounded-md px-2.5 text-xs text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)]"
+                disabled={!ticketDetail}
+                onClick={openRelatedSurface}
+                type="button"
+              >
+                Mais ações
+              </button>
+            </div>
+        </section>
+      ) : null}
+
+      {variant === 'queue' ? (
+        <section className="flex shrink-0 items-center justify-between gap-4 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4 sm:px-6">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <h1 className="text-lg font-semibold tracking-[-0.02em]">Fila operacional</h1>
+              <span className="text-xs text-[color:var(--minimal-text-secondary)]">
+                {queueTotalCount.toLocaleString('pt-BR')} ticket(s) no recorte
+              </span>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[color:var(--minimal-text-secondary)]">
+              {queueSummaryItems.slice(0, 4).map((item) => (
+                <span key={`queue-summary:${item.key}`}>
+                  <strong className="font-medium text-[color:var(--minimal-text)]">
+                    {item.value}
+                  </strong>{' '}
+                  {item.label}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              aria-label="Recarregar fila"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]"
+              onClick={() => void loadQueue(focusTicketId ?? null)}
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+                viewBox="0 0 24 24"
+              >
+                <path d="M19 8a7 7 0 1 0 1 5M19 4v4h-4" />
+              </svg>
+            </button>
+            <button
+              className="inline-flex min-h-9 items-center justify-center rounded-md border border-[color:var(--minimal-action)] bg-[color:var(--minimal-action)] px-3.5 text-sm font-medium text-[color:var(--minimal-action-ink)] hover:bg-[color:var(--minimal-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] disabled:cursor-not-allowed disabled:opacity-55"
+                disabled={!canOpenIntake}
+                onClick={() => {
+                  setBulkSelectedTicketIds([]);
+                  setSelectedTicketId(null);
+                  setShowCreateTicket(true);
+                  setDetailNotice(null);
+                  if (!intakeDraft.tenantId && intakeTenants[0]?.tenantId) {
+                    setIntakeDraft((current) => ({
+                      ...current,
+                      tenantId: intakeTenants[0]?.tenantId ?? '',
+                    }));
+                  }
+                }}
+              type="button"
+              >
+                {intakeActionLabel}
+            </button>
           </div>
         </section>
       ) : null}
 
       {variant === 'queue' ? (
-        <WorkspaceSplit
-          layoutClassName="xl:grid-cols-[292px_minmax(0,1fr)]"
-          sidebar={
-            <ContextSubsidebar
-              description="Filtros, filas rapidas e atalhos ficam aqui para deixar a lista principal livre para a triagem."
-              title="Triagem da fila"
-            >
-              <ContextSubsidebarSection
-                description="Recortes operacionais para chegar mais rapido ao proximo ticket."
-                title="Filas rapidas"
+        <div
+          className={cx(
+            'grid min-h-0 flex-1 overflow-hidden bg-[color:var(--minimal-surface)]',
+            selectedQueueContextTicket || isQueueBulkMode
+              ? 'xl:grid-cols-[minmax(720px,1fr)_320px]'
+              : 'grid-cols-1',
+          )}
+        >
+          <section className="flex min-h-0 min-w-0 flex-col overflow-hidden border-r border-[color:var(--minimal-border)]">
+            <div className="shrink-0 border-b border-[color:var(--minimal-border)] px-3 py-2 sm:px-4">
+              <FilterTabs
+                ariaLabel="Recortes da fila"
+                activeId={activeQueueShortcut}
+                items={[
+                  { id: 'all', label: 'Todos', count: queueTotalCount },
+                  ...queueShortcuts.map((shortcut) => ({
+                    id: shortcut.key,
+                    label: shortcut.label.replace('Meus tickets', 'Meus'),
+                    count: shortcut.value ?? 0,
+                    disabled: shortcut.disabled,
+                  })),
+                ]}
+                onChange={(id) => {
+                  if (id === 'all') {
+                    setFilters(emptyFilters());
+                    return;
+                  }
+                  queueShortcuts.find((shortcut) => shortcut.key === id)?.apply();
+                }}
+              />
+            </div>
+
+            <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[color:var(--minimal-border)] px-4 py-3">
+              <SupportSearchInput
+                className="min-w-[240px] max-w-md"
+                icon={<SupportSurfaceIcon className="h-[15px] w-[15px]" kind="search" />}
+                onChange={setTicketInboxSearch}
+                placeholder="Buscar por ID, cliente, assunto ou contato..."
+                value={ticketInboxSearch}
+              />
+              <button
+                aria-expanded={showQueueFilters}
+                className={cx(
+                  'inline-flex h-10 items-center gap-2 rounded-lg border px-3 text-sm',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]',
+                  showQueueFilters
+                    ? 'border-[color:var(--minimal-action)] bg-[color:var(--minimal-selection)] text-[color:var(--minimal-selection-text)]'
+                    : 'border-[color:var(--minimal-border-strong)] text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)]',
+                )}
+                onClick={() => setShowQueueFilters((current) => !current)}
+                type="button"
               >
-                <div className="grid gap-2">
-                  {queueShortcuts.map((shortcut) => (
-                    <button
-                      className={cx(
-                        'flex min-h-12 items-center justify-between gap-3 rounded-[18px] border px-4 py-3 text-left transition',
-                        shortcut.active
-                          ? 'border-[rgba(48,127,226,0.42)] bg-[rgba(48,127,226,0.08)] text-[color:var(--color-brand-blue)]'
-                          : 'border-[color:var(--color-border)] bg-white text-[color:var(--color-ink)] hover:border-[rgba(48,127,226,0.28)] hover:bg-white',
-                        shortcut.disabled && 'cursor-not-allowed opacity-50',
-                      )}
-                      disabled={shortcut.disabled}
-                      key={shortcut.key}
-                      onClick={shortcut.apply}
-                      type="button"
-                    >
-                      <span className="min-w-0">
-                        <span className="block text-sm font-semibold">{shortcut.label}</span>
-                        <span className="block text-xs text-[color:var(--color-muted)]">
-                          {shortcut.helper}
-                        </span>
-                      </span>
-                      <span className="text-xs font-semibold uppercase tracking-[0.16em]">
-                        abrir
-                      </span>
-                    </button>
+                <SupportSurfaceIcon className="h-[15px] w-[15px]" kind="filter" />
+                Filtros
+              </button>
+              {filters.status !== 'all' ? (
+                <button
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[color:var(--minimal-surface-muted)] px-2.5 text-xs text-[color:var(--minimal-text-secondary)]"
+                  onClick={() => setFilters({ ...filters, status: 'all' })}
+                  type="button"
+                >
+                  Status: {humanizeStatus(filters.status)}
+                  <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="close" />
+                </button>
+              ) : null}
+              {filters.priority !== 'all' ? (
+                <button
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[color:var(--minimal-surface-muted)] px-2.5 text-xs text-[color:var(--minimal-text-secondary)]"
+                  onClick={() => setFilters({ ...filters, priority: 'all' })}
+                  type="button"
+                >
+                  Prioridade: {humanizePriority(filters.priority)}
+                  <SupportSurfaceIcon className="h-[12px] w-[12px]" kind="close" />
+                </button>
+              ) : null}
+              <button
+                className="ml-auto text-xs text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)]"
+                onClick={() => {
+                  setFilters(emptyFilters());
+                  setTicketInboxSearch('');
+                }}
+                type="button"
+              >
+                Limpar tudo
+              </button>
+            </div>
+
+            {showQueueFilters ? (
+              <div className="grid shrink-0 gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] px-4 py-3 sm:grid-cols-2 xl:grid-cols-5">
+                <label>
+                  <span className="mb-1 block text-xs text-[color:var(--minimal-text-secondary)]">Status</span>
+                  <SelectInput
+                    onChange={(event) => setFilters({ ...filters, status: event.target.value as QueueFilters['status'] })}
+                    value={filters.status}
+                  >
+                    <option value="all">Todos</option>
+                    {TICKET_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {humanizeStatus(status)}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </label>
+                <label>
+                  <span className="mb-1 block text-xs text-[color:var(--minimal-text-secondary)]">Prioridade</span>
+                  <SelectInput
+                    onChange={(event) => setFilters({ ...filters, priority: event.target.value as QueueFilters['priority'] })}
+                    value={filters.priority}
+                  >
+                    <option value="all">Todas</option>
+                    {TICKET_PRIORITIES.map((priority) => (
+                      <option key={priority} value={priority}>
+                        {humanizePriority(priority)}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </label>
+                <label>
+                  <span className="mb-1 block text-xs text-[color:var(--minimal-text-secondary)]">Severidade</span>
+                  <SelectInput
+                    onChange={(event) => setFilters({ ...filters, severity: event.target.value as QueueFilters['severity'] })}
+                    value={filters.severity}
+                  >
+                    <option value="all">Todas</option>
+                    {TICKET_SEVERITIES.map((severity) => (
+                      <option key={severity} value={severity}>
+                        {humanizeSeverity(severity)}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </label>
+                <label>
+                  <span className="mb-1 block text-xs text-[color:var(--minimal-text-secondary)]">Responsável</span>
+                  <SelectInput
+                    onChange={(event) => setFilters({ ...filters, assignedToUserId: event.target.value as QueueFilters['assignedToUserId'] })}
+                    value={filters.assignedToUserId}
+                  >
+                    <option value="all">Todos</option>
+                    <option value="unassigned">Sem responsável</option>
+                    {assigneeOptions.map((assignee) => (
+                      <option key={assignee.id} value={assignee.id}>
+                        {assignee.label}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </label>
+                <label>
+                  <span className="mb-1 block text-xs text-[color:var(--minimal-text-secondary)]">Cliente</span>
+                  <SelectInput
+                    onChange={(event) => setFilters({ ...filters, tenantId: event.target.value as QueueFilters['tenantId'] })}
+                    value={filters.tenantId}
+                  >
+                    <option value="all">Todos</option>
+                    {tenantOptions.map((tenant) => (
+                      <option key={tenant.id} value={tenant.id}>
+                        {tenant.label}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </label>
+              </div>
+            ) : null}
+
+            {bulkSelectedTicketIds.length > 0 ? (
+              <div className="flex shrink-0 items-center justify-between border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-selection)] px-4 py-2 text-xs">
+                <span>{bulkSelectedTicketIds.length} ticket(s) selecionado(s)</span>
+                <button onClick={handleClearQueueBulkSelection} type="button">
+                  Limpar seleção
+                </button>
+              </div>
+            ) : null}
+
+            <div className="min-h-0 flex-1 overflow-auto" role="table" aria-label="Fila operacional de tickets">
+              <div className="sticky top-0 z-10 hidden grid-cols-[28px_minmax(220px,1.45fr)_minmax(150px,0.8fr)_minmax(130px,0.65fr)_minmax(150px,0.75fr)_120px] items-center gap-4 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] px-4 py-2 text-xs text-[color:var(--minimal-text-tertiary)] lg:grid" role="row">
+                <button
+                  aria-label="Selecionar todos os tickets visíveis para ações em massa"
+                  className="inline-flex h-4 w-4 items-center justify-center rounded border border-[color:var(--minimal-border-strong)]"
+                  disabled={queueVisibleTickets.length === 0}
+                  onClick={handleSelectAllQueueVisibleTickets}
+                  type="button"
+                >
+                  {bulkSelectedTicketIds.length > 1 ? '✓' : ''}
+                </button>
+                <span>Ticket</span>
+                <span>Cliente</span>
+                <span>Estado</span>
+                <span>Responsável</span>
+                <span>SLA</span>
+              </div>
+
+              {queueVisibleTickets.length === 0 ? (
+                <EmptyState
+                  title="Sem tickets para esta combinação de filtros"
+                  description="Nenhum ticket apareceu com esse recorte. Ajuste filtros, busca ou recarregue a fila."
+                />
+              ) : (
+                <div>
+                  {queueVisibleTickets.map((ticket) => (
+                    <SupportQueueItem
+                      isBulkSelected={bulkSelectedTicketIds.includes(ticket.id)}
+                      isSelected={ticket.id === selectedTicketId}
+                      key={ticket.id}
+                      onSelect={() => handleSelectTicket(ticket.id)}
+                      onToggleBulk={() => handleToggleQueueBulkTicket(ticket.id)}
+                      ticket={ticket}
+                    />
                   ))}
                 </div>
-              </ContextSubsidebarSection>
-
-              <ContextSubsidebarSection
-                description="Ajuste o recorte sem ocupar a área de trabalho principal."
-                title="Filtros"
-              >
-                <SupportQueueToolbar
-                  assigneeOptions={assigneeOptions}
-                  embedded
-                  filters={filters}
-                  onChange={setFilters}
-                  onRefresh={() => void loadQueue(focusTicketId ?? null)}
-                  tenantOptions={tenantOptions}
-                />
-              </ContextSubsidebarSection>
-            </ContextSubsidebar>
-          }
-          main={
-            <div className="space-y-4">
-              <SupportSummaryStrip
-                highAttention={highAttention}
-                totalOpen={totalOpen}
-                unassigned={unassigned}
-                waitingCustomer={waitingCustomer}
-              />
-
-              <div className="grid gap-5 xl:grid-cols-[minmax(0,0.72fr)_minmax(320px,0.28fr)]">
-                <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white px-5 py-5 shadow-[0_14px_28px_rgba(19,33,79,0.08)]">
-                  <div className="mb-4 space-y-1">
-                    <h2 className="text-lg font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                      Fila dominante
-                    </h2>
-                    <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-                      A fila continua no centro da decisao. O preview lateral so confirma o contexto antes da tratativa.
-                    </p>
-                  </div>
-                  {tickets.length === 0 ? (
-                    <EmptyState
-                      title="Sem tickets para esta combinacao de filtros"
-                      description="Nenhum ticket apareceu com esse recorte. Ajuste os filtros ou recarregue a fila."
-                    />
-                  ) : (
-                    <div className="space-y-3">
-                      {tickets.map((ticket) => (
-                        <SupportQueueItem
-                          isSelected={ticket.id === selectedTicketId}
-                          key={ticket.id}
-                          onSelect={() => handleSelectTicket(ticket.id)}
-                          ticket={ticket}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </section>
-
-                <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white px-5 py-5 shadow-[0_14px_28px_rgba(19,33,79,0.08)] xl:sticky xl:top-4">
-                  <div className="mb-4 space-y-1">
-                    <h2 className="text-lg font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                      Preview do ticket
-                    </h2>
-                    <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-                      Leitura curta antes de abrir o atendimento completo.
-                    </p>
-                  </div>
-                  {detailPhase === 'loading' ? (
-                    <LoadingState
-                      title="Carregando previa"
-                      description="Estamos preparando a previa do ticket selecionado."
-                    />
-                  ) : detailPhase === 'contract-unavailable' ? (
-                    <ContractUnavailableState contractName="previa operacional do ticket" />
-                  ) : detailPhase === 'error' ? (
-                    <ErrorState description={detailMessage ?? 'A prévia do ticket não ficou disponível.'} />
-                  ) : (
-                    <SupportTicketPreview customer={customer} detail={previewTicket} ticket={selectedQueueTicket} />
-                  )}
-                </section>
-              </div>
+              )}
             </div>
-          }
-        />
+
+            <footer className="flex shrink-0 items-center justify-between border-t border-[color:var(--minimal-border)] px-4 py-2 text-xs text-[color:var(--minimal-text-secondary)]">
+              <span>
+                Mostrando {queueVisibleTickets.length === 0 ? 0 : 1}-{queueVisibleTickets.length} de {tickets.length} tickets
+              </span>
+              <span>{queueVisibleTickets.length} por página</span>
+            </footer>
+          </section>
+
+          {isQueueBulkMode ? (
+            <aside className="support-true-bulk-panel">
+              <div className="support-true-panel-title-row">
+                <div>
+                  <h2>Ações em massa</h2>
+                  <p>{bulkSelectedTicketIds.length} tickets selecionados</p>
+                </div>
+                <button aria-label="Fechar ações em massa" onClick={handleClearQueueBulkSelection} type="button">
+                  <SupportSurfaceIcon kind="close" />
+                </button>
+              </div>
+              <p className="support-true-panel-copy">
+                As ações abaixo dependem das permissões, do status e da governança da fila.
+              </p>
+              <div className="support-true-bulk-summary">
+                <span>{bulkSelectedTickets.filter((ticket) => ticket.isUnassigned).length} sem responsável</span>
+                <span>{bulkSelectedTickets.filter((ticket) => ticket.isWaitingCustomer).length} aguardando cliente</span>
+                <span>{bulkSelectedTickets.filter((ticket) => ticket.isWaitingEngineering).length} dependência interna</span>
+              </div>
+              {[
+                'Exportar',
+                'Finalizar',
+                'Transferir',
+                'Atribuir responsável',
+                'Alterar prioridade',
+                'Adicionar tag',
+                'Vincular acionamento',
+                'Mais ações',
+              ].map((label) => (
+                <button className="support-true-bulk-action" disabled key={label} type="button">
+                  {label}
+                </button>
+              ))}
+              <div className="support-true-bulk-warning">
+                Algumas ações dependem do status e da governança aplicada aos tickets selecionados.
+              </div>
+            </aside>
+          ) : selectedQueueContextTicket ? (
+            <aside className="support-true-queue-context">
+              <div className="support-true-panel-title-row">
+                <div>
+                  <h2>{supportTicketCode(selectedQueueContextTicket.id)}</h2>
+                  <p>{selectedQueueContextTicket.slaPolicyName ?? 'Sem política definida'}</p>
+                </div>
+                <button aria-label="Fechar contexto" onClick={() => setSelectedTicketId(null)} type="button">
+                  <SupportSurfaceIcon kind="close" />
+                </button>
+              </div>
+              {detailPhase === 'loading' ? (
+                <LoadingState title="Carregando prévia" description="Preparando a leitura operacional." />
+              ) : detailPhase === 'contract-unavailable' ? (
+                <ContractUnavailableState contractName="prévia operacional do ticket" />
+              ) : detailPhase === 'error' ? (
+                <ErrorState description={detailMessage ?? 'A prévia do ticket não ficou disponível.'} />
+              ) : (
+                <>
+                  <div className="support-true-context-customer">
+                    <strong>{ticketTenantLabel(selectedQueueContextTicket)}</strong>
+                    <span>{sanitizeSupportVisibleText(selectedQueueContextTicket.requesterContactFullName)}</span>
+                    <span>{selectedQueueContextTicket.requesterContactEmail ?? 'E-mail indisponível'}</span>
+                  </div>
+                  <div className="support-true-context-tiles">
+                    <span>
+                      <small>SLA</small>
+                      <strong>{selectedQueueContextTicket.slaStatusLabel ?? 'Indisponível'}</strong>
+                    </span>
+                    <span>
+                      <small>Prioridade</small>
+                      <strong>{humanizePriority(selectedQueueContextTicket.priority)}</strong>
+                    </span>
+                  </div>
+                  <div className="support-true-context-summary">
+                    <strong>Resumo operacional</strong>
+                    <p>{sanitizeSupportVisibleText(previewTicket?.description ?? selectedQueueContextTicket.title)}</p>
+                  </div>
+                  <div className="support-true-context-timeline">
+                    <strong>Linha do tempo</strong>
+                    <span>Hoje · {formatSupportShortTime(selectedQueueContextTicket.updatedAt)}</span>
+                    <p>{compactTicketStatusLabel(selectedQueueContextTicket.status)} · {selectedQueueContextTicket.originLabel}</p>
+                  </div>
+                  <button
+                    className="support-true-context-primary"
+                    onClick={() => void navigate(`/support/tickets/${selectedQueueContextTicket.id}`)}
+                    type="button"
+                  >
+                    Abrir tratativa
+                    <span>→</span>
+                  </button>
+                </>
+              )}
+            </aside>
+          ) : null}
+        </div>
       ) : detailPhase === 'idle' ? (
         <Panel
-          className="bg-white"
+          className="bg-[color:var(--color-surface-strong)]"
           title="Nenhum ticket em tratativa"
           description="Abra um ticket pela fila para entrar no fluxo de atendimento."
         >
@@ -3792,7 +6437,7 @@ function SupportWorkspaceView({
         <ContractUnavailableState contractName="detalhe do ticket, conversa recente e contexto do cliente" />
       ) : detailPhase === 'error' || !ticketDetail || !selectedTicketSummary ? (
         focusTicketId ? (
-          <section className="rounded-[28px] border border-[color:var(--color-border)] bg-white/95 px-6 py-6 shadow-[0_18px_34px_rgba(19,33,79,0.08)]">
+          <section className="rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-6 py-6 shadow-[0_18px_34px_rgba(19,33,79,0.08)]">
             <EmptyState
               title="Ticket não encontrado"
               description={detailMessage ?? 'O ticket solicitado não apareceu na leitura operacional disponível.'}
@@ -3809,471 +6454,20 @@ function SupportWorkspaceView({
           />
         )
       ) : (
-        <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden xl:flex-row">
-          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-            <section className="shrink-0 overflow-hidden rounded-[20px] border border-[rgba(22,42,93,0.1)] bg-white shadow-[0_10px_20px_rgba(19,33,79,0.06)]">
-              <div className="px-4 py-3 sm:px-5">
-                <div className="space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <StatusPill tone={toneForTicketStatus(ticketDetail.status)}>
-                      {humanizeStatus(ticketDetail.status)}
-                    </StatusPill>
-                    <StatusPill tone={toneForPriority(ticketDetail.priority)}>
-                      {humanizePriority(ticketDetail.priority)}
-                    </StatusPill>
-                    <StatusPill tone={toneForSeverity(ticketDetail.severity)}>
-                      {humanizeSeverity(ticketDetail.severity)}
-                    </StatusPill>
-                    <span className="text-[12px] font-semibold text-[color:var(--color-ink)]">
-                      #{ticketDetail.id.slice(0, 8)}
-                    </span>
-                    <span className="text-[11px] text-[color:var(--color-muted)]">
-                      Criado em {formatDateTime(ticketDetail.createdAt)}
-                    </span>
-                  </div>
-
-                  <h3 className="max-w-4xl truncate text-[0.98rem] font-semibold tracking-[-0.03em] leading-tight text-[color:var(--color-ink)]">
-                    {ticketDetail.title}
-                  </h3>
-
-                  <div className="grid gap-2 border-t border-[color:var(--color-border)] pt-2 text-[11px] md:grid-cols-2 xl:grid-cols-4">
-                    <div className="min-w-0">
-                      <p className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                        Cliente
-                      </p>
-                      <p className="truncate font-semibold leading-4 text-[color:var(--color-ink)]">
-                        {ticketDetail.tenantDisplayName ?? ticketDetail.tenantLegalName ?? ticketDetail.tenantSlug}
-                      </p>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                        Solicitante
-                      </p>
-                      <p className="truncate font-semibold leading-4 text-[color:var(--color-ink)]">
-                        {requesterLabel}
-                      </p>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                        Responsavel
-                      </p>
-                      <p className="truncate font-semibold leading-4 text-[color:var(--color-ink)]">
-                        {currentAssignedLabel}
-                      </p>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                        Última atualização
-                      </p>
-                      <p className="truncate font-semibold leading-4 text-[color:var(--color-ink)]">
-                        {formatDateTime(ticketDetail.lastMessageAt ?? ticketDetail.updatedAt)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-[color:var(--color-border)] px-4 sm:px-5">
-                <div className="flex items-center gap-3 overflow-x-auto">
-                  <button
-                    className={cx(
-                      'inline-flex min-h-7.5 shrink-0 items-center border-b-2 px-1 text-[12px] font-semibold transition',
-                      ticketToolbarTab === 'conversation'
-                        ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
-                        : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
-                    )}
-                    onClick={openConversationSurface}
-                    type="button"
-                  >
-                    Conversar
-                  </button>
-                  <button
-                    className={cx(
-                      'inline-flex min-h-7.5 shrink-0 items-center border-b-2 px-1 text-[12px] font-semibold transition',
-                      ticketToolbarTab === 'knowledge'
-                        ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
-                        : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
-                    )}
-                    onClick={openKnowledgeSurface}
-                    type="button"
-                  >
-                    Conhecimento
-                  </button>
-                  <button
-                    className={cx(
-                      'inline-flex min-h-7.5 shrink-0 items-center border-b-2 px-1 text-[12px] font-semibold transition',
-                      ticketToolbarTab === 'help'
-                        ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
-                        : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
-                    )}
-                    onClick={() => setTicketToolbarTab('help')}
-                    type="button"
-                  >
-                    Central de ajuda
-                  </button>
-                  <button
-                    className={cx(
-                      'inline-flex min-h-7.5 shrink-0 items-center border-b-2 px-1 text-[12px] font-semibold transition',
-                      ticketToolbarTab === 'more'
-                        ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
-                        : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
-                    )}
-                    onClick={openAdvancedSurface}
-                    type="button"
-                  >
-                    Mais ações
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            {detailNotice ? (
-              <div
-                className={cx(
-                  'rounded-[14px] border px-3 py-2 text-[12px] leading-5 shadow-[0_6px_12px_rgba(19,33,79,0.05)]',
-                  detailNoticeTone === 'critical'
-                    ? 'border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] text-[color:var(--color-danger-ink)]'
-                    : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-muted)]',
-                )}
-              >
-                {detailNotice}
-              </div>
-            ) : null}
-
-            <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[20px] border border-[color:var(--color-border)] bg-white shadow-[0_10px_20px_rgba(19,33,79,0.06)]">
-              {ticketToolbarTab === 'conversation' ? (
-                <>
-                  <div
-                    className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-5"
-                    data-ticket-thread-scroll
-                    ref={threadScrollContainerRef}
-                  >
-                    <SupportConversation requesterName={requesterLabel} window={timelineWindow} />
-                  </div>
-
-                  <div
-                    className="shrink-0 border-t border-[color:var(--color-border)] bg-[linear-gradient(180deg,rgba(247,250,255,0.96),rgba(255,255,255,1))] px-4 py-3 sm:px-5"
-                    data-ticket-composer
-                  >
-                    <form className="space-y-1.5" onSubmit={handleSubmitComposer}>
-                      <div className="flex flex-wrap gap-4 border-b border-[color:var(--color-border)]">
-                        <button
-                          className={cx(
-                            'inline-flex min-h-7.5 items-center border-b-2 px-1 text-[12px] font-semibold transition',
-                            composerMode === 'public'
-                              ? 'border-[color:var(--color-brand-blue)] text-[color:var(--color-brand-blue)]'
-                              : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
-                          )}
-                          disabled={!canUsePublicComposer}
-                          onClick={() => setComposerMode('public')}
-                          type="button"
-                        >
-                          Resposta pública
-                        </button>
-                        <button
-                          className={cx(
-                            'inline-flex min-h-7.5 items-center border-b-2 px-1 text-[12px] font-semibold transition',
-                            composerMode === 'internal'
-                              ? 'border-[color:var(--color-danger-ink)] text-[color:var(--color-danger-ink)]'
-                              : 'border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',
-                          )}
-                          disabled={!canUseInternalComposer}
-                          onClick={() => setComposerMode('internal')}
-                          type="button"
-                        >
-                          Nota interna
-                        </button>
-                      </div>
-                      <div
-                        className={cx(
-                          'rounded-[16px] border px-3.5 py-2.5 shadow-[0_8px_18px_rgba(19,33,79,0.04)] transition-colors',
-                          composerMode === 'internal'
-                            ? 'border-amber-200 bg-[linear-gradient(180deg,rgba(255,248,227,0.98),rgba(255,243,214,0.95))]'
-                            : 'border-[color:var(--color-border)] bg-white',
-                        )}
-                      >
-                        <TextareaInput
-                          className={cx(
-                            'h-[142px] min-h-[142px] w-full resize-none overflow-hidden border-0 !bg-transparent px-0 py-0 text-[13px] leading-[1.35rem] shadow-none focus:border-transparent focus:ring-0',
-                            composerMode === 'internal' && 'placeholder:text-[rgba(125,92,13,0.68)]',
-                          )}
-                          onChange={(event) =>
-                            composerMode === 'public'
-                              ? setMessageDraft(event.target.value)
-                              : setNoteDraft(event.target.value)
-                          }
-                          placeholder={
-                            composerMode === 'public'
-                              ? 'Digite sua resposta pública para o cliente...'
-                              : 'Registre a nota interna da tratativa...'
-                          }
-                          value={composerDraft}
-                        />
-                        <div
-                          className={cx(
-                            'mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t pt-2',
-                            composerMode === 'internal'
-                              ? 'border-amber-200/90'
-                              : 'border-[color:var(--color-border)]',
-                          )}
-                        >
-                          <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                            {composerMode === 'public'
-                              ? 'A resposta sera enviada para o cliente.'
-                              : 'A nota ficara visivel apenas para a equipe interna.'}
-                          </p>
-                          <AppButton
-                            className={
-                              composerMode === 'internal'
-                                ? 'min-h-8.5 rounded-[12px] px-4.5 text-[12px] bg-[linear-gradient(135deg,#7c2648,#b63f76)]'
-                                : 'min-h-8.5 rounded-[12px] px-4.5 text-[12px]'
-                            }
-                            disabled={composerDisabled}
-                            type="submit"
-                          >
-                            {submitting
-                              ? composerMode === 'public'
-                                ? 'Enviando...'
-                                : 'Salvando...'
-                              : composerMode === 'public'
-                                ? 'Enviar resposta'
-                                : 'Salvar nota interna'}
-                          </AppButton>
-                        </div>
-                      </div>
-                    </form>
-                  </div>
-                </>
-              ) : (
-                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-5">
-                  {ticketToolbarTab === 'knowledge' ? (
-                    <SupportKnowledgePanel
-                      articles={filteredKnowledgeArticles}
-                      links={knowledgeLinks}
-                      loading={knowledgeBusy}
-                      message={knowledgeMessage}
-                      noteDraft={knowledgeNoteDraft}
-                      onArchive={(linkId) => void handleArchiveKnowledgeLink(linkId)}
-                      onCopyPublicLink={(publicArticlePath) =>
-                        void handleCopyPublicKnowledgeLink(publicArticlePath)
-                      }
-                      onLinkInternal={(articleId) =>
-                        void handleLinkKnowledgeArticle(articleId, 'reference_internal')
-                      }
-                      onMarkGap={() => void handleMarkDocumentationGap()}
-                      onNeedsUpdate={(articleId) => void handleMarkKnowledgeNeedsUpdate(articleId)}
-                      onNoteChange={setKnowledgeNoteDraft}
-                      onSearchChange={setKnowledgeSearch}
-                      onSendToCustomer={(articleId) =>
-                        void handleLinkKnowledgeArticle(articleId, 'sent_to_customer')
-                      }
-                      phase={knowledgePhase}
-                      search={knowledgeSearch}
-                    />
-                  ) : ticketToolbarTab === 'help' ? (
-                    <SupportHelpPanel
-                      articles={filteredKnowledgeArticles}
-                      links={knowledgeLinks}
-                      onCopyPublicLink={(publicArticlePath) =>
-                        void handleCopyPublicKnowledgeLink(publicArticlePath)
-                      }
-                    />
-                  ) : (
-                    <SupportMoreActionsPanel
-                      canClose={ticketDetail.canClose}
-                      canReopen={ticketDetail.canReopen}
-                      canUpdateStatus={ticketDetail.canUpdateStatus}
-                      closeReason={closeReason}
-                      onCloseReasonChange={setCloseReason}
-                      onCloseSubmit={handleClose}
-                      onReopenReasonChange={setReopenReason}
-                      onReopenSubmit={handleReopen}
-                      onStatusNoteChange={setStatusNote}
-                      onStatusSubmit={handleUpdateStatus}
-                      reopenReason={reopenReason}
-                      statusNote={statusNote}
-                      submitting={submitting}
-                      window={timelineWindow}
-                    />
-                  )}
-                </div>
-              )}
-            </section>
-          </div>
-
-          <aside
-            className="min-h-0 space-y-3 overflow-y-auto pr-1 xl:w-[352px] xl:shrink-0"
-            data-ticket-rail
-          >
-            <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.06)]">
-              <h4 className="text-[13px] font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
-                Cliente
-              </h4>
-              <div className="mt-1.5">
-                <SupportTicketCustomerSnapshot
-                  accountContext={customerAccountContext}
-                  customer={customer}
-                />
-              </div>
-            </section>
-
-            <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.06)]">
-              <div className="space-y-1.5">
-                <h4 className="text-[13px] font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
-                  Ações do ticket
-                </h4>
-
-                {agentsPhase === 'contract-unavailable' ? (
-                  <InlineNotice tone="critical">
-                  {agentsMessage ?? 'A lista de agentes não ficou disponível para esta tratativa.'}
-                  </InlineNotice>
-                ) : agentsPhase === 'error' ? (
-                  <InlineNotice tone="critical">
-                  {agentsMessage ?? 'Não foi possível carregar o diretório de agentes atribuíveis.'}
-                  </InlineNotice>
-                ) : agentsPhase === 'loading' ? (
-                  <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
-                    Carregando agentes disponíveis...
-                  </p>
-                ) : assignableAgents.length === 0 ? (
-                  <InlineNotice tone="warning">
-                    Nenhum agente ativo ficou disponível para este cliente.
-                  </InlineNotice>
-                ) : (
-                  <form className="space-y-2" onSubmit={handleAssign}>
-                    <Field label="Responsável">
-                      <SelectInput
-                        className="h-8.5 rounded-[12px] px-3 text-[11.5px] font-medium"
-                        onChange={(event) => setAssignDraft(event.target.value)}
-                        value={assignDraft}
-                      >
-                        <option value="">Sem responsável</option>
-                        {assignableAgents.map((agent) => (
-                          <option key={`${agent.tenantId}:${agent.userId}`} value={agent.userId}>
-                            {formatAssignableAgentLabel(agent)}
-                          </option>
-                        ))}
-                      </SelectInput>
-                    </Field>
-                    <AppButton
-                      className="min-h-8.5 w-full rounded-[12px] px-4 text-[12px]"
-                      disabled={submitting || !ticketDetail.canAssign}
-                      type="submit"
-                    >
-                      {submitting ? 'Salvando...' : 'Salvar alterações'}
-                    </AppButton>
-                    <div className="grid gap-1.5 sm:grid-cols-2">
-                      <GhostButton
-                        className="min-h-8 rounded-[12px] px-2 text-[11px]"
-                        disabled={
-                          submitting ||
-                          !ticketDetail.canAssign ||
-                          !currentUserAssignableAgent
-                        }
-                        onClick={() =>
-                          void runAssignment(currentUserAssignableAgent?.userId ?? null)
-                        }
-                        type="button"
-                      >
-                        Atribuir a mim
-                      </GhostButton>
-                      <GhostButton
-                        className="min-h-8 rounded-[12px] px-2 text-[11px]"
-                        disabled={submitting || !ticketDetail.canAssign || !ticketDetail.assignedToUserId}
-                        onClick={() => void runAssignment(null)}
-                        type="button"
-                      >
-                        Desatribuir
-                      </GhostButton>
-                    </div>
-                  </form>
-                )}
-
-                <form className="space-y-2 border-t border-[color:var(--color-border)] pt-2" onSubmit={handleUpdateStatus}>
-                  <Field label="Status">
-                    <SelectInput
-                      className="h-8.5 rounded-[12px] px-3 text-[12px]"
-                      onChange={(event) =>
-                        setStatusDraft(event.target.value as TicketStatusUpdateTarget)
-                      }
-                      value={statusDraft}
-                    >
-                      {buildStatusChoices(ticketDetail.status).map((status) => (
-                        <option key={status} value={status}>
-                          {humanizeStatus(status)}
-                        </option>
-                      ))}
-                    </SelectInput>
-                  </Field>
-                  <AppButton
-                    className="min-h-8.5 w-full rounded-[12px] px-4 text-[12px]"
-                    disabled={submitting || !ticketDetail.canUpdateStatus}
-                    type="submit"
-                  >
-                    {submitting ? 'Atualizando...' : 'Salvar andamento'}
-                  </AppButton>
-                </form>
-              </div>
-            </section>
-
-            <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.06)]">
-              <div className="flex items-center justify-between gap-2">
-                <h4 className="text-[13px] font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
-                  Conhecimento relacionado
-                </h4>
-                <GhostButton className="min-h-7.5 px-2 text-[10px]" onClick={openKnowledgeSurface}>
-                  Abrir aba
-                </GhostButton>
-              </div>
-              <div className="mt-1.5 space-y-1.5">
-                {knowledgePhase === 'loading' ? (
-                  <p className="text-[11px] leading-5 text-[color:var(--color-muted)]">
-                    Carregando vinculos...
-                  </p>
-                ) : knowledgePhase === 'contract-unavailable' || knowledgePhase === 'error' ? (
-                  <InlineNotice tone={knowledgePhase === 'error' ? 'critical' : 'warning'}>
-                    {knowledgeMessage ?? 'O painel de conhecimento não ficou disponível para este ticket.'}
-                  </InlineNotice>
-                ) : knowledgePreviewLinks.length === 0 ? (
-                  <InlineNotice>
-                    Nenhum artigo relacionado ainda.
-                  </InlineNotice>
-                ) : (
-                  knowledgePreviewLinks.slice(0, 1).map((link) => (
-                    <div
-                      className="rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2.5 py-2"
-                      key={link.ticketKnowledgeLinkId}
-                    >
-                      <div className="flex flex-wrap items-center gap-1">
-                        <StatusPill tone={toneForKnowledgeLinkType(link.linkType)}>
-                          {humanizeKnowledgeLinkType(link.linkType)}
-                        </StatusPill>
-                      </div>
-                      <p className="mt-1 text-[11px] font-semibold leading-4.5 text-[color:var(--color-ink)]">
-                        {link.articleTitle ?? 'Vínculo sem título visível'}
-                      </p>
-                    </div>
-                  ))
-                )}
-                <p className="text-[10px] leading-5 text-[color:var(--color-muted)]">
-                  {publicKnowledgeSuggestions.length > 0
-                    ? `${publicKnowledgeSuggestions.length} sugestão(ões) públicas disponíveis.`
-                    : 'Nenhuma sugestão pública pronta no momento.'}
-                </p>
-              </div>
-            </section>
-
-            <section className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3 shadow-[0_8px_16px_rgba(19,33,79,0.06)]">
-              <h4 className="text-[13px] font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
-                Atividade recente
-              </h4>
-              <div className="mt-1.5">
-                <SupportRecentActivity window={timelineWindow} />
-              </div>
-            </section>
-          </aside>
-        </div>
+        <>
+          {renderBlueprintLayout()}
+        <input
+          accept={TICKET_ATTACHMENT_ACCEPT}
+          className="hidden"
+          multiple
+          onChange={(event) => void handleAttachmentSelection(event.currentTarget.files)}
+          ref={attachmentInputRef}
+          type="file"
+        />
+        </>
       )}
+
+      {variant === 'queue' ? renderTicketIntakeModal() : null}
     </div>
   );
 }
@@ -4303,7 +6497,29 @@ function displayCustomerValue(value: string | null | undefined) {
     return 'Indisponível';
   }
 
-  return value;
+  return sanitizeSupportVisibleText(value);
+}
+
+function summarizeOperationalFlags(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return 'Nenhum sinal operacional registrado.';
+  }
+
+  const availableSignals = Object.values(value).filter((entry) => {
+    if (entry === null || entry === undefined || entry === false) {
+      return false;
+    }
+
+    if (typeof entry === 'string') {
+      return entry.trim().length > 0;
+    }
+
+    return true;
+  }).length;
+
+  return availableSignals > 0
+    ? `${availableSignals} sinal(is) operacional(is) registrado(s).`
+    : 'Nenhum sinal operacional registrado.';
 }
 
 function resolveSupportCustomerOwner(
@@ -4341,7 +6557,7 @@ function resolveCustomerRiskProfile(accountContext: SupportCustomerAccountContex
       label: 'Sem contexto',
       tone: 'default' as const,
       healthLabel: 'Contexto em aberto',
-      accentClassName: 'bg-slate-200',
+      accentClassName: 'bg-[color:var(--color-divider)]',
     };
   }
 
@@ -4358,7 +6574,7 @@ function resolveCustomerRiskProfile(accountContext: SupportCustomerAccountContex
       label: 'Risco alto',
       tone: 'critical' as const,
       healthLabel: 'Atenção imediata',
-      accentClassName: 'bg-rose-500',
+      accentClassName: 'bg-[color:var(--color-danger-text)]',
     };
   }
 
@@ -4367,7 +6583,7 @@ function resolveCustomerRiskProfile(accountContext: SupportCustomerAccountContex
       label: 'Em atenção',
       tone: 'warning' as const,
       healthLabel: 'Monitoramento ativo',
-      accentClassName: 'bg-amber-500',
+      accentClassName: 'bg-[color:var(--color-warning-text)]',
     };
   }
 
@@ -4375,7 +6591,7 @@ function resolveCustomerRiskProfile(accountContext: SupportCustomerAccountContex
         label: 'Operação estável',
     tone: 'positive' as const,
         healthLabel: 'Saúde controlada',
-    accentClassName: 'bg-emerald-500',
+    accentClassName: 'bg-[color:var(--color-success-text)]',
   };
 }
 
@@ -4447,7 +6663,7 @@ function SupportCustomerDetailCard({
   return (
     <section
       className={cx(
-        'rounded-[26px] border border-[color:var(--color-border)] bg-white/94 px-5 py-5 shadow-[0_16px_34px_rgba(16,30,74,0.08)]',
+        'rounded-[26px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/94 px-5 py-5 shadow-[0_16px_34px_rgba(16,30,74,0.08)]',
         className,
       )}
     >
@@ -4494,12 +6710,34 @@ function SupportCustomerMetricTile({
 export function SupportCustomersPage() {
   const { markSessionExpired } = useAuthContext();
   const didBootstrapRef = useRef(false);
+  const previewCacheRef = useRef(new Map<Uuid, SupportCustomerPreviewSnapshot>());
+  const selectedPreviewRequestRef = useRef(0);
   const [backendDenied, setBackendDenied] = useState(false);
   const [phase, setPhase] = useState<PagePhase>('loading');
   const [message, setMessage] = useState<string | null>(null);
   const [customers, setCustomers] = useState<SupportCustomer360[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState<Uuid | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<SupportCustomer360 | null>(null);
+  const [selectedAccountContext, setSelectedAccountContext] =
+    useState<SupportCustomerAccountContext | null>(null);
+  const [selectedProductContexts, setSelectedProductContexts] = useState<
+    SupportCustomerProductContext[]
+  >([]);
+  const [selectedRecentTicketsWindow, setSelectedRecentTicketsWindow] =
+    useState<SupportCustomerRecentTicketsWindow>(emptyCustomerRecentTicketsWindow());
+  const [selectedRecentEventsWindow, setSelectedRecentEventsWindow] =
+    useState<SupportCustomerRecentEventsWindow>(emptyCustomerRecentEventsWindow());
+  const [selectedPhase, setSelectedPhase] = useState<DetailPhase>('idle');
+  const [selectedMessage, setSelectedMessage] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+
+  function applySelectedPreviewSnapshot(snapshot: SupportCustomerPreviewSnapshot) {
+    setSelectedCustomer(snapshot.customer);
+    setSelectedAccountContext(snapshot.accountContext);
+    setSelectedProductContexts(snapshot.productContexts);
+    setSelectedRecentTicketsWindow(snapshot.recentTicketsWindow);
+    setSelectedRecentEventsWindow(snapshot.recentEventsWindow);
+  }
 
   const loadCustomers = useEffectEvent(async (preferredTenantId?: Uuid | null) => {
     try {
@@ -4534,10 +6772,94 @@ export function SupportCustomersPage() {
         return;
       }
 
+      previewCacheRef.current.clear();
       setCustomers([]);
       setSelectedTenantId(null);
+      setSelectedCustomer(null);
+      setSelectedProductContexts([]);
       setMessage(classified.message);
       setPhase(
+        classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
+      );
+    }
+  });
+
+  const loadSelectedCustomer = useEffectEvent(async (tenantId: Uuid) => {
+    const requestId = selectedPreviewRequestRef.current + 1;
+    selectedPreviewRequestRef.current = requestId;
+    const cachedPreview = previewCacheRef.current.get(tenantId);
+
+    if (cachedPreview) {
+      applySelectedPreviewSnapshot(cachedPreview);
+      setSelectedMessage(null);
+      setSelectedPhase('ready');
+    } else if (!selectedCustomer || selectedCustomer.tenantId !== tenantId) {
+      const customerSummary =
+        customers.find((customer) => customer.tenantId === tenantId) ?? null;
+
+      if (customerSummary) {
+        setSelectedCustomer(customerSummary);
+      }
+
+      setSelectedAccountContext(null);
+      setSelectedProductContexts([]);
+      setSelectedRecentTicketsWindow(emptyCustomerRecentTicketsWindow());
+      setSelectedRecentEventsWindow(emptyCustomerRecentEventsWindow());
+      setSelectedMessage(null);
+      setSelectedPhase(customerSummary ? 'ready' : 'loading');
+    }
+
+    try {
+      const [detail, context, productContexts, recentTickets, recentEvents] = await Promise.all([
+        getSupportCustomer360(tenantId),
+        getSupportCustomerAccountContext(tenantId),
+        listSupportCustomerProductContexts(tenantId),
+        getSupportCustomerRecentTickets(tenantId),
+        getSupportCustomerRecentEvents(tenantId),
+      ]);
+
+      if (selectedPreviewRequestRef.current !== requestId) {
+        return;
+      }
+
+      if (!detail) {
+        throw new Error('O cliente selecionado não ficou disponível para a visão rápida.');
+      }
+
+      const snapshot = {
+        customer: detail,
+        accountContext: context,
+        productContexts,
+        recentTicketsWindow: recentTickets,
+        recentEventsWindow: recentEvents,
+      } satisfies SupportCustomerPreviewSnapshot;
+
+      previewCacheRef.current.set(tenantId, snapshot);
+      applySelectedPreviewSnapshot(snapshot);
+      setSelectedMessage(null);
+      setSelectedPhase('ready');
+    } catch (error) {
+      const classified = classifyAdminError(
+        error,
+        'Falha ao carregar a visão rápida operacional do cliente.',
+      );
+
+      if (classified.kind === 'session-expired') {
+        markSessionExpired();
+        return;
+      }
+
+      if (selectedPreviewRequestRef.current !== requestId) {
+        return;
+      }
+
+      setSelectedCustomer(null);
+      setSelectedAccountContext(null);
+      setSelectedProductContexts([]);
+      setSelectedRecentTicketsWindow(emptyCustomerRecentTicketsWindow());
+      setSelectedRecentEventsWindow(emptyCustomerRecentEventsWindow());
+      setSelectedMessage(classified.message);
+      setSelectedPhase(
         classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
       );
     }
@@ -4571,31 +6893,40 @@ export function SupportCustomersPage() {
     );
   }, [customers, query]);
 
-  const selectedCustomer =
-    customers.find((customer) => customer.tenantId === selectedTenantId) ??
-    filteredCustomers[0] ??
-    null;
   const totalCustomers = customers.length;
   const activeCustomers = customers.filter((customer) => customer.tenantStatus === 'active').length;
   const openTickets = customers.reduce((sum, customer) => sum + customer.openTicketCount, 0);
   const activeContacts = customers.reduce((sum, customer) => sum + customer.activeContactsCount, 0);
 
   useEffect(() => {
-    if (!selectedCustomer && filteredCustomers[0]) {
+    if (!selectedTenantId && filteredCustomers[0]) {
       setSelectedTenantId(filteredCustomers[0].tenantId);
     }
-  }, [filteredCustomers, selectedCustomer]);
+  }, [filteredCustomers, selectedTenantId]);
+
+  useEffect(() => {
+    if (!selectedTenantId) {
+      setSelectedPhase('idle');
+      return;
+    }
+
+    if (phase !== 'ready') {
+      return;
+    }
+
+    void loadSelectedCustomer(selectedTenantId);
+  }, [phase, selectedTenantId]);
 
   if (backendDenied) {
-    return <Navigate replace state={{ reason: 'backend-permission' }} to="/access-denied" />;
+    return <Navigate replace state={{ reason: 'missing-authorized-workspace' }} to="/access-denied" />;
   }
 
   if (phase === 'loading') {
     return (
       <div className="space-y-5">
-        <section className="rounded-[26px] border border-[color:var(--color-border)] bg-white/95 px-5 py-5 shadow-[0_16px_30px_rgba(19,33,79,0.08)]">
-          <div className="h-6 w-44 animate-pulse rounded-full bg-slate-200" />
-          <div className="mt-3 h-10 w-[420px] max-w-full animate-pulse rounded-[22px] bg-slate-200" />
+        <section className="rounded-[26px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-5 py-5 shadow-[0_16px_30px_rgba(19,33,79,0.08)]">
+          <div className="h-6 w-44 animate-pulse rounded-full bg-[color:var(--color-divider)]" />
+          <div className="mt-3 h-10 w-[420px] max-w-full animate-pulse rounded-[22px] bg-[color:var(--color-divider)]" />
         </section>
         <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
           <LoadingBlock className="h-[520px] rounded-[26px]" />
@@ -4630,234 +6961,295 @@ export function SupportCustomersPage() {
   const previewLabel =
     selectedCustomer?.tenantDisplayName ??
     selectedCustomer?.tenantLegalName ??
-    selectedCustomer?.tenantSlug ??
-    'Indisponível';
-  const previewWaiting =
-    selectedCustomer
-      ? readCountFromJson(selectedCustomer.ticketStatusCounts as Record<string, unknown>, 'waiting_customer') +
-        readCountFromJson(selectedCustomer.ticketStatusCounts as Record<string, unknown>, 'waiting_support') +
-        readCountFromJson(selectedCustomer.ticketStatusCounts as Record<string, unknown>, 'waiting_engineering')
-      : 0;
+    'Cliente indisponível';
+  const selectedRiskProfile = resolveCustomerRiskProfile(selectedAccountContext);
+  const selectedMigrationCard = resolveMigrationCard(selectedAccountContext);
+  const selectedOwner =
+    selectedCustomer && selectedPhase === 'ready'
+      ? resolveSupportCustomerOwner(selectedCustomer, selectedRecentTicketsWindow)
+      : null;
+  const selectedPrimaryProduct = primaryCustomerProductContext(selectedProductContexts);
+  const activePreviewTabs = [
+    { id: 'accounts', label: 'Contas', active: true },
+    { id: 'contacts', label: 'Contatos', active: false },
+    { id: 'migration', label: 'Migrações', active: false },
+    { id: 'health', label: 'Saúde', active: false },
+  ];
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-[26px] border border-[color:var(--color-border)] bg-white/95 px-5 py-5 shadow-[0_16px_30px_rgba(19,33,79,0.08)]">
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusPill tone="accent">Clientes</StatusPill>
-          <StatusPill>Hub operacional</StatusPill>
-        </div>
-        <div className="mt-3 space-y-1">
-          <h1 className="text-[1.9rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
-            Carteira de clientes
-          </h1>
-          <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-            Use esta tela para localizar a conta certa antes de abrir o detalhe completo ou voltar para a fila.
-          </p>
+    <div className="space-y-4 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
+      <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/96 px-4 py-4 shadow-[0_14px_26px_rgba(19,33,79,0.08)]">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusPill tone="accent">Clientes</StatusPill>
+              <StatusPill>Cockpit B2B</StatusPill>
+            </div>
+            <div className="space-y-1">
+              <h1 className="text-[1.7rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
+                Clientes
+              </h1>
+              <p className="text-[13px] leading-5 text-[color:var(--color-muted)]">
+                Contas, contatos, migração e saúde operacional sem virar CRM genérico.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {activePreviewTabs.map((tab) => (
+              <span
+                className={cx(
+                  'inline-flex min-h-9 items-center rounded-full border px-3.5 text-[12px] font-semibold',
+                  tab.active
+                    ? 'border-[rgba(48,127,226,0.28)] bg-[rgba(48,127,226,0.1)] text-[color:var(--color-brand-blue)]'
+                    : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] text-[color:var(--color-muted)]',
+                )}
+                key={tab.id}
+              >
+                {tab.label}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
-      <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="space-y-4">
-          <SupportCustomerDetailCard
-            description="Busca e recortes rapidos para chegar ao cliente certo."
-            title="Encontrar cliente"
-          >
-            <div className="space-y-3">
-              <TextInput
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Buscar por nome ou slug"
-                value={query}
-              />
-              <GhostButton className="min-h-11 w-full px-4" onClick={() => void loadCustomers(selectedTenantId)}>
-                Recarregar lista
-              </GhostButton>
+      <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[276px_minmax(0,1fr)_360px]">
+        <aside className="space-y-3 rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/96 px-3.5 py-3 shadow-[0_12px_22px_rgba(19,33,79,0.07)]">
+          <div className="space-y-2">
+            <div className="space-y-1">
+              <h2 className="text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                Segmentação
+              </h2>
+              <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
+                Recorte rápido da carteira ativa no suporte.
+              </p>
             </div>
-          </SupportCustomerDetailCard>
 
-          <SupportCustomerDetailCard
-            description="Pulso rapido da carteira carregada agora."
-            title="Resumo da carteira"
+            <TextInput
+              className="h-10 rounded-[12px] px-3 text-[12px]"
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Buscar por nome ou slug"
+              value={query}
+            />
+          </div>
+
+          <div className="space-y-2 rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+              Recortes rápidos
+            </p>
+            {[
+              { label: 'Clientes ativos', value: activeCustomers, helper: 'contas em operação' },
+              { label: 'Tickets abertos', value: openTickets, helper: 'triagem em andamento' },
+              { label: 'Contatos ativos', value: activeContacts, helper: 'pontos de contato' },
+              { label: 'Sem responsável', value: customers.filter((customer) => customer.openTicketCount === 0).length, helper: 'sem fila recente' },
+            ].map((item) => (
+              <div
+                className="flex items-center justify-between rounded-[14px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-2.5"
+                key={item.label}
+              >
+                <div>
+                  <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">
+                    {item.label}
+                  </p>
+                  <p className="text-[11px] text-[color:var(--color-muted)]">{item.helper}</p>
+                </div>
+                <span className="text-[1.05rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                  {item.value}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <GhostButton
+            className="min-h-10 w-full rounded-[12px] px-4 text-[12px]"
+            onClick={() => void loadCustomers(selectedTenantId)}
           >
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-              <SupportCustomerMetricTile helper="contas na leitura atual" label="Clientes" value={String(totalCustomers)} />
-            <SupportCustomerMetricTile helper="contas em operação ativa" label="Ativos" value={String(activeCustomers)} />
-              <SupportCustomerMetricTile helper="itens ainda em aberto" label="Tickets abertos" value={String(openTickets)} />
-              <SupportCustomerMetricTile helper="pessoas prontas para contato" label="Contatos ativos" value={String(activeContacts)} />
-            </div>
-          </SupportCustomerDetailCard>
-
-          <SupportCustomerDetailCard
-            description="Contas mais recentes dentro do recorte atual."
-            title="Clientes carregados"
-          >
-            <div className="space-y-2">
-              {filteredCustomers.length === 0 ? (
-                <InlineNotice>Nenhum cliente apareceu com este termo.</InlineNotice>
-              ) : (
-                filteredCustomers.slice(0, 8).map((customer) => {
-                  const selected = customer.tenantId === selectedCustomer?.tenantId;
-                  const label =
-                    customer.tenantDisplayName ?? customer.tenantLegalName ?? customer.tenantSlug;
-
-                  return (
-                    <button
-                      className={cx(
-                        'w-full rounded-[18px] border px-4 py-3 text-left transition',
-                        selected
-                          ? 'border-[rgba(48,127,226,0.34)] bg-[rgba(48,127,226,0.08)]'
-                          : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] hover:border-[rgba(48,127,226,0.22)] hover:bg-white',
-                      )}
-                      key={customer.tenantId}
-                      onClick={() => setSelectedTenantId(customer.tenantId)}
-                      type="button"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="min-w-0 truncate text-sm font-semibold text-[color:var(--color-ink)]">
-                          {label}
-                        </p>
-                        <StatusPill tone={customer.tenantStatus === 'active' ? 'positive' : 'warning'}>
-                          {humanizeCustomerValue(customer.tenantStatus)}
-                        </StatusPill>
-                      </div>
-                      <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
-                        {customer.openTicketCount} ticket(s) aberto(s) · {customer.activeContactsCount} contato(s) ativo(s)
-                      </p>
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </SupportCustomerDetailCard>
+            Recarregar carteira
+          </GhostButton>
         </aside>
 
-        <div className="space-y-5">
-          {selectedCustomer ? (
-            <>
-              <section className="rounded-[30px] border border-[color:var(--color-border)] bg-white/95 px-6 py-6 shadow-[0_18px_40px_rgba(16,30,74,0.09)]">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="min-w-0 space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <StatusPill tone={selectedCustomer.tenantStatus === 'active' ? 'positive' : 'warning'}>
-                        {humanizeCustomerValue(selectedCustomer.tenantStatus)}
-                      </StatusPill>
-                      <StatusPill>{displayCustomerValue(selectedCustomer.tenantSlug)}</StatusPill>
-                    </div>
-                    <div className="space-y-1">
-                      <h2 className="text-[2rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
-                        {previewLabel}
-                      </h2>
-                      <p className="text-sm leading-6 text-[color:var(--color-muted)]">
-                        Resumo rapido antes de abrir o detalhe completo do cliente.
-                      </p>
-                    </div>
-                  </div>
+        <div className="space-y-3 xl:min-h-0 xl:flex xl:flex-col xl:overflow-hidden">
+          <SupportSummaryStrip
+            highAttention={customers.filter((customer) => customer.openTicketCount > 0).length}
+            totalOpen={openTickets}
+            unassigned={customers.filter((customer) => customer.totalTicketCount === 0).length}
+            waitingCustomer={customers.filter((customer) => customer.activeContactsCount === 0).length}
+          />
 
-                  <div className="flex flex-wrap gap-2">
-                    <Link to={`/support/customers/${selectedCustomer.tenantId}`}>
-                      <AppButton>Abrir detalhe do cliente</AppButton>
-                    </Link>
-                    <Link to="/support/queue">
-                      <GhostButton>Voltar para a fila</GhostButton>
-                    </Link>
-                  </div>
-                </div>
-              </section>
-
-              <div className="grid gap-5 xl:grid-cols-[minmax(0,1.16fr)_318px]">
-                <div className="space-y-5">
-                  <SupportCustomerDetailCard
-                    description="Indicadores que ajudam a decidir qual conta precisa de prioridade agora."
-                    title="Resumo operacional"
-                  >
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                      <SupportCustomerMetricTile helper="itens ativos nesta conta" label="Tickets abertos" value={String(selectedCustomer.openTicketCount)} />
-                      <SupportCustomerMetricTile helper="historico acumulado" label="Total de tickets" value={String(selectedCustomer.totalTicketCount)} />
-                      <SupportCustomerMetricTile helper="pessoas aptas para contato" label="Contatos ativos" value={String(selectedCustomer.activeContactsCount)} />
-                      <SupportCustomerMetricTile helper="itens aguardando retorno" label="Em espera" value={String(previewWaiting)} />
-                    </div>
-                  </SupportCustomerDetailCard>
-
-                  <SupportCustomerDetailCard
-                    description="Leitura curta para comparar as contas sem sair desta tela."
-                    title="Visao rapida da conta"
-                  >
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
-                        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                          Nome operacional
-                        </p>
-                        <p className="mt-2 text-sm font-semibold text-[color:var(--color-ink)]">
-                          {displayCustomerValue(selectedCustomer.tenantDisplayName)}
-                        </p>
-                      </div>
-                      <div className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
-                        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                          Razao social
-                        </p>
-                        <p className="mt-2 text-sm font-semibold text-[color:var(--color-ink)]">
-                          {displayCustomerValue(selectedCustomer.tenantLegalName)}
-                        </p>
-                      </div>
-                    </div>
-                  </SupportCustomerDetailCard>
-                </div>
-
-                <aside className="space-y-5">
-                  <SupportCustomerDetailCard
-                    className="px-4 py-4"
-            description="Atalhos úteis para continuar a operação."
-                    title="Proximos passos"
-                  >
-                    <div className="space-y-2">
-                      <Link
-                        className="inline-flex min-h-11 w-full items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,#1e63ff,#2e7cf5)] px-4 py-2 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(18,81,213,0.35)]"
-                        to={`/support/customers/${selectedCustomer.tenantId}`}
-                      >
-                        Ver perfil completo
-                      </Link>
-                      <Link
-                        className="inline-flex min-h-11 w-full items-center justify-center rounded-[16px] border border-[color:var(--color-border)] bg-white px-4 py-2 text-sm font-semibold text-[color:var(--color-brand-blue)]"
-                        to="/support/queue"
-                      >
-                        Abrir fila operacional
-                      </Link>
-                    </div>
-                  </SupportCustomerDetailCard>
-
-                  <SupportCustomerDetailCard
-                    className="px-4 py-4"
-                    description="Leitura do status atual sem ocupar a área principal."
-                    title="Sinais da conta"
-                  >
-                    <div className="flex flex-wrap gap-2">
-                      <StatusPill tone={selectedCustomer.tenantStatus === 'active' ? 'positive' : 'warning'}>
-                        {humanizeCustomerValue(selectedCustomer.tenantStatus)}
-                      </StatusPill>
-                      <StatusPill>{displayCustomerValue(selectedCustomer.tenantSlug)}</StatusPill>
-                      <StatusPill>{String(selectedCustomer.totalTicketCount)} historico</StatusPill>
-                    </div>
-                  </SupportCustomerDetailCard>
-
-                  <SupportCustomerDetailCard
-                    className="px-4 py-4"
-                    description="Ultimos dados conhecidos deste cadastro."
-                    title="Atualização"
-                  >
-                    <div className="space-y-2 text-sm leading-6 text-[color:var(--color-muted)]">
-                      <p>Criado em {formatDateTime(selectedCustomer.tenantCreatedAt)}</p>
-                      <p>Atualizado em {formatDateTime(selectedCustomer.tenantUpdatedAt)}</p>
-                    </div>
-                  </SupportCustomerDetailCard>
-                </aside>
+          <section className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-1 xl:flex-col xl:overflow-hidden">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div className="space-y-1">
+                <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                  Contas prioritárias
+                </h2>
+                <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
+                  Lista central dominante para abrir a conta certa sem sair do contexto.
+                </p>
               </div>
-            </>
+              <p className="text-[12px] text-[color:var(--color-muted)]">
+                {filteredCustomers.length} conta(s) no recorte atual
+              </p>
+            </div>
+
+            {filteredCustomers.length === 0 ? (
+              <EmptyState
+                title="Nenhum cliente apareceu neste recorte"
+                description="Ajuste a busca ou recarregue a carteira para continuar."
+              />
+            ) : (
+              <div className="xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
+                <div className="space-y-2.5">
+                  {filteredCustomers.map((customer) => {
+                    const selected = customer.tenantId === selectedTenantId;
+                    const customerLabel = displaySupportCustomerName(customer);
+
+                    return (
+                      <button
+                        className={cx(
+                          'w-full rounded-[18px] border px-4 py-3 text-left transition',
+                          selected
+                            ? 'border-[rgba(48,127,226,0.42)] bg-[rgba(48,127,226,0.08)] shadow-[0_8px_18px_rgba(19,33,79,0.06)]'
+                            : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] hover:border-[rgba(48,127,226,0.24)] hover:bg-[color:var(--color-surface)]',
+                        )}
+                        key={customer.tenantId}
+                        onClick={() => setSelectedTenantId(customer.tenantId)}
+                        type="button"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <StatusPill tone={customer.tenantStatus === 'active' ? 'positive' : 'warning'}>
+                                {humanizeTenantStatus(customer.tenantStatus)}
+                              </StatusPill>
+                            </div>
+                            <h3 className="truncate text-[1rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+                              {customerLabel}
+                            </h3>
+                          </div>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                            {customer.openTicketCount} em aberto
+                          </p>
+                        </div>
+
+                        <div className="mt-2 grid gap-2 text-[12px] leading-5 text-[color:var(--color-muted)] md:grid-cols-4">
+                          <span>Histórico: {customer.totalTicketCount}</span>
+                          <span>Contatos: {customer.activeContactsCount}</span>
+                          <span>Razão social: {displayCustomerValue(customer.tenantLegalName)}</span>
+                          <span>Última atualização: {formatDateTime(customer.tenantUpdatedAt)}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
+
+        <aside className="rounded-[20px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-4 shadow-[0_12px_24px_rgba(19,33,79,0.07)] xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden">
+          <div className="mb-3 space-y-1">
+            <h2 className="text-[1.04rem] font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+              Visão rápida do cliente
+            </h2>
+            <p className="text-[12px] leading-5 text-[color:var(--color-muted)]">
+              Contexto operacional da conta antes de abrir o perfil completo.
+            </p>
+          </div>
+
+          {selectedPhase === 'loading' ? (
+            <LoadingState
+              title="Carregando visão rápida"
+              description="Estamos preparando o contexto operacional desta conta."
+            />
+          ) : selectedPhase === 'contract-unavailable' ? (
+            <ContractUnavailableState resourceName="a visão rápida do cliente" />
+          ) : selectedPhase === 'error' ? (
+            <ErrorState description={selectedMessage ?? 'A visão rápida deste cliente não ficou disponível.'} />
+          ) : selectedCustomer ? (
+            <div className="space-y-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
+              <div className="rounded-[20px] border border-[rgba(48,127,226,0.22)] bg-[linear-gradient(180deg,rgba(17,28,66,1),rgba(24,42,97,0.98))] px-4 py-4 text-white">
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusPill tone={selectedRiskProfile.tone}>{selectedRiskProfile.label}</StatusPill>
+                  <StatusPill tone={selectedMigrationCard.accentTone}>{selectedMigrationCard.phase}</StatusPill>
+                </div>
+                <div className="mt-3 space-y-1.5">
+                  <h3 className="text-[1.22rem] font-semibold tracking-[-0.05em]">{previewLabel}</h3>
+                  <div className="space-y-1 text-[12px] leading-5 text-white/76">
+                    <p>Produto: {displayCustomerProductLabel(selectedAccountContext, selectedProductContexts)}</p>
+                    <p>Plano: {displayCustomerPlanLabel(selectedAccountContext, selectedProductContexts)}</p>
+                    <p>Responsável: {displayCustomerValue(selectedOwner)}</p>
+                    <p>Última atividade: {formatDateTime(selectedCustomer.tenantUpdatedAt)}</p>
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2.5">
+                  <Link
+                    className="inline-flex min-h-11 items-center justify-center rounded-full bg-[color:var(--color-surface-strong)] px-4 py-2 text-sm font-semibold text-[color:var(--color-brand-navy)]"
+                    to={`/support/customers/${selectedCustomer.tenantId}`}
+                  >
+                    Abrir cliente
+                  </Link>
+                  <Link
+                    className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/22 px-4 py-2 text-sm font-semibold text-white"
+                    to="/support/queue"
+                  >
+                    Ver tickets
+                  </Link>
+                </div>
+              </div>
+
+              <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
+                <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">Resumo operacional</p>
+                <div className="mt-2 space-y-1.5 text-[12px] leading-5 text-[color:var(--color-muted)]">
+                  <p>Tickets abertos: {selectedCustomer.openTicketCount}</p>
+                  <p>Total de tickets: {selectedCustomer.totalTicketCount}</p>
+                  <p>Contatos ativos: {selectedCustomer.activeContactsCount}</p>
+                  <p>Subscriptions: {selectedProductContexts.length}</p>
+                </div>
+              </div>
+
+              <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3">
+                <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">Contato principal</p>
+                <div className="mt-2 space-y-1.5 text-[12px] leading-5 text-[color:var(--color-muted)]">
+                  <p>
+                    {sanitizeSupportVisibleText(primaryContactFromCustomer(selectedCustomer)?.fullName)}
+                  </p>
+                  <p className="break-all">
+                    {displayCustomerValue(primaryContactFromCustomer(selectedCustomer)?.email)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-3">
+                <p className="text-[13px] font-semibold text-[color:var(--color-ink)]">Sinais da conta</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <StatusPill tone={selectedCustomer.tenantStatus === 'active' ? 'positive' : 'warning'}>
+                    {humanizeTenantStatus(selectedCustomer.tenantStatus)}
+                  </StatusPill>
+                  <StatusPill>
+                    {displayCustomerPlanLabel(selectedAccountContext, selectedProductContexts)}
+                  </StatusPill>
+                  <StatusPill>
+                    {displayCustomerValue(
+                      selectedPrimaryProduct
+                        ? labelForCustomerProductSubscriptionStatus(selectedPrimaryProduct.status)
+                        : null,
+                    )}
+                  </StatusPill>
+                  <StatusPill>
+                    {displayCustomerValue(
+                      primaryPlatformFromContext(selectedAccountContext)?.provider ?? null,
+                    )}
+                  </StatusPill>
+                </div>
+              </div>
+            </div>
           ) : (
             <EmptyState
               title="Nenhum cliente selecionado"
-              description="Escolha uma conta da lista para abrir o resumo operacional."
+              description="Escolha uma conta da lista para abrir a visão rápida operacional."
             />
           )}
-        </div>
+        </aside>
       </div>
     </div>
   );
@@ -4873,6 +7265,7 @@ export function SupportCustomerPage() {
   const [customer, setCustomer] = useState<SupportCustomer360 | null>(null);
   const [accountContext, setAccountContext] =
     useState<SupportCustomerAccountContext | null>(null);
+  const [productContexts, setProductContexts] = useState<SupportCustomerProductContext[]>([]);
   const [recentTicketsWindow, setRecentTicketsWindow] =
     useState<SupportCustomerRecentTicketsWindow>(emptyCustomerRecentTicketsWindow());
   const [recentEventsWindow, setRecentEventsWindow] =
@@ -4882,6 +7275,7 @@ export function SupportCustomerPage() {
     if (!tenantId) {
       setCustomer(null);
       setAccountContext(null);
+      setProductContexts([]);
       setRecentTicketsWindow(emptyCustomerRecentTicketsWindow());
       setRecentEventsWindow(emptyCustomerRecentEventsWindow());
       setPhase('error');
@@ -4890,9 +7284,10 @@ export function SupportCustomerPage() {
     }
 
     try {
-      const [detail, context, recentTickets, recentEvents] = await Promise.all([
+      const [detail, context, customerProductContexts, recentTickets, recentEvents] = await Promise.all([
         getSupportCustomer360(tenantId),
         getSupportCustomerAccountContext(tenantId),
+        listSupportCustomerProductContexts(tenantId),
         getSupportCustomerRecentTickets(tenantId),
         getSupportCustomerRecentEvents(tenantId),
       ]);
@@ -4900,6 +7295,7 @@ export function SupportCustomerPage() {
       setBackendDenied(false);
       setCustomer(detail);
       setAccountContext(context);
+      setProductContexts(customerProductContexts);
       setRecentTicketsWindow(recentTickets);
       setRecentEventsWindow(recentEvents);
       setMessage(null);
@@ -4922,6 +7318,7 @@ export function SupportCustomerPage() {
 
       setCustomer(null);
       setAccountContext(null);
+      setProductContexts([]);
       setRecentTicketsWindow(emptyCustomerRecentTicketsWindow());
       setRecentEventsWindow(emptyCustomerRecentEventsWindow());
       setMessage(classified.message);
@@ -4932,26 +7329,17 @@ export function SupportCustomerPage() {
   });
 
   useEffect(() => {
-    if (didBootstrapRef.current) {
-      return;
-    }
-
-    didBootstrapRef.current = true;
-    void loadCustomer();
-  }, []);
-
-  useEffect(() => {
     void loadCustomer();
   }, [tenantId]);
 
   if (backendDenied) {
-    return <Navigate replace state={{ reason: 'backend-permission' }} to="/access-denied" />;
+    return <Navigate replace state={{ reason: 'missing-authorized-workspace' }} to="/access-denied" />;
   }
 
   if (phase === 'loading') {
     return (
       <div className="space-y-5">
-        <div className="space-y-3 rounded-[28px] border border-[color:var(--color-border)] bg-white/94 px-6 py-6 shadow-[0_16px_34px_rgba(16,30,74,0.08)]">
+        <div className="space-y-3 rounded-[28px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/94 px-6 py-6 shadow-[0_16px_34px_rgba(16,30,74,0.08)]">
           <div className="flex flex-wrap items-center gap-2">
             <StatusPill tone="accent">Clientes</StatusPill>
             <StatusPill>Resumo</StatusPill>
@@ -5034,10 +7422,11 @@ export function SupportCustomerPage() {
   const visibleFeatures = visibleFeatureSlice(accountContext, 5);
   const visibleAlerts = visibleAlertSlice(accountContext, 3);
   const visibleIntegrations = visibleOperationalIntegrations(accountContext, 4);
-  const customerLabel =
-    customer.tenantDisplayName ?? customer.tenantLegalName ?? customer.tenantSlug;
+  const primaryProductContext = primaryCustomerProductContext(productContexts);
+  const customerLabel = displaySupportCustomerName(customer);
   const customerTabs = [
     { id: 'resumo', label: 'Resumo' },
+    { id: 'produtos', label: 'Produtos' },
     { id: 'contatos', label: 'Contatos' },
     { id: 'tickets', label: 'Tickets' },
     { id: 'migracao', label: 'Migração' },
@@ -5046,31 +7435,31 @@ export function SupportCustomerPage() {
   ];
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-[30px] border border-[color:var(--color-border)] bg-white/95 px-6 py-6 shadow-[0_18px_40px_rgba(16,30,74,0.09)]">
+    <div className="space-y-4 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
+      <section className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/96 px-4 py-4 shadow-[0_14px_26px_rgba(16,30,74,0.08)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <StatusPill tone="accent">Clientes</StatusPill>
-              <StatusPill>{displayCustomerValue(accountContext?.productLine ? humanizeCustomerValue(accountContext.productLine) : null)}</StatusPill>
+              <StatusPill>{displayCustomerProductLabel(accountContext, productContexts)}</StatusPill>
               <StatusPill tone={riskProfile.tone}>{riskProfile.label}</StatusPill>
             </div>
             <div className="space-y-1">
-              <h1 className="text-[2.25rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
+              <h1 className="text-[1.85rem] font-semibold tracking-[-0.06em] text-[color:var(--color-ink)]">
                 {customerLabel}
               </h1>
-              <p className="text-sm leading-6 text-[color:var(--color-muted)]">
+              <p className="text-[13px] leading-5 text-[color:var(--color-muted)]">
                 Contexto operacional completo da conta, contatos, tickets e sinais de saúde.
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <GhostButton className="min-h-11 px-4" onClick={() => window.history.back()}>
+            <GhostButton className="min-h-10 rounded-[12px] px-4 text-[12px]" onClick={() => window.history.back()}>
               Voltar
             </GhostButton>
             <Link
-              className="inline-flex min-h-11 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white px-4 py-2 text-sm font-semibold text-[color:var(--color-brand-blue)]"
+              className="inline-flex min-h-10 items-center justify-center rounded-[12px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-4 py-2 text-[12px] font-semibold text-[color:var(--color-brand-blue)]"
               to="/support/queue"
             >
               Abrir fila
@@ -5078,15 +7467,13 @@ export function SupportCustomerPage() {
           </div>
         </div>
 
-        <div className="mt-5 rounded-[22px] border border-[color:var(--color-border)] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-4">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="mt-4 rounded-[18px] border border-[color:var(--color-border)] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-3.5 py-3.5">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             {[
-              { label: 'Slug', value: displayCustomerValue(customer.tenantSlug) },
+              { label: 'Cliente', value: customerLabel },
               {
                 label: 'Produto',
-                value: displayCustomerValue(
-                  accountContext?.productLine ? humanizeCustomerValue(accountContext.productLine) : null,
-                ),
+                value: displayCustomerProductLabel(accountContext, productContexts),
               },
               {
                 label: 'Plataforma',
@@ -5094,7 +7481,7 @@ export function SupportCustomerPage() {
               },
               {
                 label: 'Plano',
-                value: displayCustomerValue(accountContext?.accountTier),
+                  value: displayCustomerPlanLabel(accountContext, productContexts),
               },
               {
                 label: 'Responsavel',
@@ -5103,12 +7490,12 @@ export function SupportCustomerPage() {
             ].map((item) => (
               <div
                 key={item.label}
-                className="rounded-[18px] border border-[color:var(--color-border)] bg-white px-4 py-3"
+                className="rounded-[16px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-3 py-2.5"
               >
-                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
                   {item.label}
                 </p>
-                <p className="mt-2 text-sm font-semibold text-[color:var(--color-ink)]">
+                <p className="mt-1.5 text-[13px] font-semibold text-[color:var(--color-ink)]">
                   {item.value}
                 </p>
               </div>
@@ -5116,11 +7503,11 @@ export function SupportCustomerPage() {
           </div>
         </div>
 
-        <nav className="mt-5 flex flex-wrap gap-2 border-b border-[color:var(--color-border)] pb-2">
+        <nav className="mt-4 flex flex-wrap gap-2 border-b border-[color:var(--color-border)] pb-2">
           {customerTabs.map((tab) => (
             <a
               className={cx(
-                'inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold transition',
+                'inline-flex min-h-9 items-center rounded-full px-3.5 text-[12px] font-semibold transition',
                 tab.id === 'resumo'
                   ? 'bg-[rgba(48,127,226,0.1)] text-[color:var(--color-brand-blue)] shadow-[inset_0_-2px_0_var(--color-brand-blue)]'
                   : 'text-[color:var(--color-muted)] hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-ink)]',
@@ -5134,13 +7521,13 @@ export function SupportCustomerPage() {
         </nav>
       </section>
 
-      <div className="grid gap-5 xl:grid-cols-[294px_minmax(0,1.28fr)_318px]">
-        <aside className="space-y-5">
-          <section className="overflow-hidden rounded-[28px] bg-[linear-gradient(180deg,#071942_0%,#0b235b_58%,#103071_100%)] px-4 py-5 text-white shadow-[0_22px_42px_rgba(8,22,61,0.28)]">
-            <div className="space-y-4">
+      <div className="grid gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[272px_minmax(0,1fr)_318px]">
+        <aside className="space-y-4">
+          <section className="overflow-hidden rounded-[22px] bg-[linear-gradient(180deg,#071942_0%,#0b235b_58%,#103071_100%)] px-4 py-4 text-white shadow-[0_18px_34px_rgba(8,22,61,0.26)]">
+            <div className="space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-3">
-                  <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-white/92 text-lg font-semibold text-[color:var(--color-brand-blue)]">
+                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--color-surface-strong)]/92 text-base font-semibold text-[color:var(--color-brand-blue)]">
                     {customerLabel
                       .split(' ')
                       .slice(0, 2)
@@ -5148,10 +7535,10 @@ export function SupportCustomerPage() {
                       .join('')}
                   </div>
                   <div className="space-y-1">
-                    <h2 className="text-[1.55rem] font-semibold tracking-[-0.05em]">{customerLabel}</h2>
+                    <h2 className="text-[1.28rem] font-semibold tracking-[-0.05em]">{customerLabel}</h2>
                     <div className="flex flex-wrap gap-2">
                       <StatusPill tone={customer.tenantStatus === 'active' ? 'positive' : 'warning'}>
-                        {displayCustomerValue(humanizeCustomerValue(customer.tenantStatus))}
+                        {displayCustomerValue(humanizeTenantStatus(customer.tenantStatus))}
                       </StatusPill>
                       <StatusPill tone={migrationCard.accentTone}>{migrationCard.phase}</StatusPill>
                     </div>
@@ -5161,7 +7548,7 @@ export function SupportCustomerPage() {
 
               <StatusPill tone={riskProfile.tone}>{riskProfile.label}</StatusPill>
 
-              <dl className="space-y-3 text-sm">
+              <dl className="space-y-2.5 text-[13px]">
                 {[
                   {
                     label: 'Plataforma',
@@ -5169,8 +7556,18 @@ export function SupportCustomerPage() {
                   },
                   {
                     label: 'Produto',
+                    value: displayCustomerProductLabel(accountContext, productContexts),
+                  },
+                  {
+                    label: 'Plano',
+                    value: displayCustomerPlanLabel(accountContext, productContexts),
+                  },
+                  {
+                    label: 'Subscription',
                     value: displayCustomerValue(
-                      accountContext?.productLine ? humanizeCustomerValue(accountContext.productLine) : null,
+                      primaryProductContext
+                        ? labelForCustomerProductSubscriptionStatus(primaryProductContext.status)
+                        : null,
                     ),
                   },
                   {
@@ -5184,7 +7581,7 @@ export function SupportCustomerPage() {
                 ].map((item) => (
                   <div
                     key={item.label}
-                    className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-3 last:border-b-0 last:pb-0"
+                    className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-2.5 last:border-b-0 last:pb-0"
                   >
                     <dt className="text-white/68">{item.label}</dt>
                     <dd className="text-right font-medium text-white">{item.value}</dd>
@@ -5194,13 +7591,13 @@ export function SupportCustomerPage() {
 
               <div className="space-y-2 pt-1">
                 <Link
-                  className="inline-flex min-h-11 w-full items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,#1e63ff,#2e7cf5)] px-4 py-2 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(18,81,213,0.35)]"
+                  className="inline-flex min-h-10 w-full items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,#1e63ff,#2e7cf5)] px-4 py-2 text-[13px] font-semibold text-white shadow-[0_16px_28px_rgba(18,81,213,0.35)]"
                   to="/support/queue"
                 >
                   Abrir tickets
                 </Link>
                 <button
-                  className="inline-flex min-h-11 w-full items-center justify-center rounded-[16px] border border-white/18 bg-transparent px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/8"
+                  className="inline-flex min-h-10 w-full items-center justify-center rounded-[14px] border border-white/18 bg-transparent px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-[color:var(--color-surface-strong)]/8"
                   onClick={() => window.history.back()}
                   type="button"
                 >
@@ -5218,7 +7615,7 @@ export function SupportCustomerPage() {
             {primaryContact ? (
               <div className="space-y-3">
                 <div className="rounded-[18px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
-                  <p className="font-semibold text-[color:var(--color-ink)]">{primaryContact.fullName}</p>
+                  <p className="font-semibold text-[color:var(--color-ink)]">{sanitizeSupportVisibleText(primaryContact.fullName)}</p>
                   <p className="mt-1 break-all text-sm text-[color:var(--color-muted)]">
                     {displayCustomerValue(primaryContact.email)}
                   </p>
@@ -5236,40 +7633,24 @@ export function SupportCustomerPage() {
               </InlineNotice>
             )}
           </SupportCustomerDetailCard>
-
-          <SupportCustomerDetailCard
-            className="px-4 py-4"
-            description="Tags uteis para lembrar o stack e o contexto da conta."
-            title="Sinais da conta"
-          >
-            <div className="flex flex-wrap gap-2">
-              <StatusPill tone="positive">
-                {displayCustomerValue(primaryPlatform?.provider ?? null)}
-              </StatusPill>
-              <StatusPill tone="accent">
-                {displayCustomerValue(
-                  accountContext?.productLine ? humanizeCustomerValue(accountContext.productLine) : null,
-                )}
-              </StatusPill>
-              <StatusPill>
-                {displayCustomerValue(accountContext?.accountTier)}
-              </StatusPill>
-              <StatusPill tone={migrationCard.accentTone}>{migrationCard.phase}</StatusPill>
-            </div>
-          </SupportCustomerDetailCard>
         </aside>
 
-        <div className="space-y-5">
+        <div className="space-y-4 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
           <div id="resumo">
             <SupportCustomerDetailCard
               title="Resumo operacional"
               description="Os indicadores que mais ajudam o suporte e o CS a decidir o proximo passo."
             >
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                 <SupportCustomerMetricTile
-                  helper="Tickets ativos neste tenant."
+                  helper="Tickets ativos desta conta."
                   label="Tickets abertos"
                   value={String(customer.openTicketCount)}
+                />
+                <SupportCustomerMetricTile
+                  helper="Produtos ativos ou suspensos desta conta."
+                  label="Subscriptions"
+                  value={String(productContexts.length)}
                 />
                 <SupportCustomerMetricTile
                   helper="Itens aguardando retorno ou ação."
@@ -5287,6 +7668,15 @@ export function SupportCustomerPage() {
                   value={String(criticalSignals)}
                 />
               </div>
+            </SupportCustomerDetailCard>
+          </div>
+
+          <div id="produtos">
+            <SupportCustomerDetailCard
+              description="Leitura support-safe dos produtos, planos, features e responsáveis internos deste cliente."
+              title="Produtos contratados"
+            >
+              <SupportCustomerProductsPanel productContexts={productContexts} />
             </SupportCustomerDetailCard>
           </div>
 
@@ -5327,7 +7717,7 @@ export function SupportCustomerPage() {
                         </div>
                         <div className="min-w-0 space-y-1">
                           <p className="line-clamp-2 text-sm font-semibold text-[color:var(--color-ink)]">
-                            {ticket.title}
+                            {sanitizeSupportVisibleText(ticket.title)}
                           </p>
                           <p className="text-xs uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
                             {humanizePriority(ticket.priority)} · {humanizeSeverity(ticket.severity)}
@@ -5356,7 +7746,10 @@ export function SupportCustomerPage() {
             ) : (
               <div className="space-y-4" id="atividade">
                 {recentEventsWindow.events.map((event, index) => (
-                  <div className="grid gap-3 md:grid-cols-[28px_minmax(0,1fr)_164px]" key={`${event.ticketId}-${event.occurredAt}-${event.eventType}`}>
+                  <div
+                    className="grid gap-3 md:grid-cols-[28px_minmax(0,1fr)_164px]"
+                    key={buildSupportCustomerRecentEventKey(event, index)}
+                  >
                     <div className="relative flex justify-center">
                       <span className="mt-2 inline-flex h-3.5 w-3.5 rounded-full bg-[color:var(--color-brand-blue)]" />
                       {index < recentEventsWindow.events.length - 1 ? (
@@ -5386,7 +7779,7 @@ export function SupportCustomerPage() {
           </SupportCustomerDetailCard>
         </div>
 
-        <aside className="space-y-5">
+        <aside className="space-y-4 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
           <SupportCustomerDetailCard
             className="px-4 py-4"
             description="Leitura curta da conta para decidir se a tratativa pede atenção extra."
@@ -5397,7 +7790,7 @@ export function SupportCustomerPage() {
               <p className="text-sm font-medium text-[color:var(--color-ink)]">Saúde geral</p>
                 <StatusPill tone={riskProfile.tone}>{riskProfile.healthLabel}</StatusPill>
               </div>
-              <div className="h-3 overflow-hidden rounded-full bg-slate-200">
+              <div className="h-3 overflow-hidden rounded-full bg-[color:var(--color-divider)]">
                 <div
                   className={cx(
                     'h-full rounded-full',
@@ -5433,9 +7826,9 @@ export function SupportCustomerPage() {
                     <span
                       className={cx(
                         'inline-flex h-4 w-4 rounded-full border',
-                        step.state === 'done' && 'border-emerald-500 bg-emerald-500',
+                        step.state === 'done' && 'border-[color:var(--color-success-border)] bg-[color:var(--color-success-text)]',
                         step.state === 'active' && 'border-[color:var(--color-brand-blue)] bg-[color:var(--color-brand-blue)]',
-                        step.state === 'pending' && 'border-slate-300 bg-white',
+                        step.state === 'pending' && 'border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]',
                       )}
                     />
                     <p
@@ -5453,7 +7846,7 @@ export function SupportCustomerPage() {
               </div>
               <div className="grid gap-2 text-sm leading-6 text-[color:var(--color-muted)]">
                 <p>Integrações operacionais: {visibleIntegrations.length}</p>
-                <p>Features ativas: {visibleFeatures.length}</p>
+                <p>Recursos ativos: {visibleFeatures.length}</p>
                 <p>Última consolidação: {latestActivity ? formatDateTime(latestActivity) : 'Indisponível'}</p>
               </div>
             </div>
@@ -5479,7 +7872,7 @@ export function SupportCustomerPage() {
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-medium text-[color:var(--color-ink)]">
-                          {contact.fullName}
+                          {sanitizeSupportVisibleText(contact.fullName)}
                         </p>
                         {contact.isPrimary ? <StatusPill tone="accent">principal</StatusPill> : null}
                       </div>

@@ -455,6 +455,11 @@ select is(
   (
     select count(*)::integer
     from public.vw_support_tickets_queue
+    where id in (
+      select ticket_a_id from test_support_ticket_ids
+      union all
+      select ticket_b_id from test_support_ticket_ids
+    )
   ),
   2,
   'platform_admin enxerga a fila completa de suporte'
@@ -464,6 +469,10 @@ select is(
   (
     select count(*)::integer
     from public.vw_support_customer_360
+    where tenant_id in (
+      '11111111-1111-4111-8111-111111111111',
+      '22222222-2222-4222-8222-222222222222'
+    )
   ),
   2,
   'platform_admin enxerga o customer_360 de ambos os tenants'

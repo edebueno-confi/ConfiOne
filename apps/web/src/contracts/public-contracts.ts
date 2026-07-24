@@ -28,6 +28,7 @@ export interface PublicHelpSeoDefaults {
 
 export interface PublicHelpSupportContacts {
   email?: string | null;
+  whatsapp?: string | null;
   websiteUrl?: string | null;
   statusPageUrl?: string | null;
   docsUrl?: string | null;
@@ -110,6 +111,24 @@ export interface PublicKnowledgeArticleDetailRow {
   body_md: string;
   published_at: IsoTimestamp | null;
   updated_at: IsoTimestamp;
+}
+
+export interface PublicKnowledgeArticleAssetRow {
+  id: Uuid;
+  article_id: Uuid;
+  knowledge_space_id: Uuid;
+  knowledge_space_slug: string;
+  article_slug: string;
+  source_hash: string;
+  storage_bucket: string;
+  storage_object_path: string;
+  detected_mime_type: string;
+  width: number | null;
+  height: number | null;
+  alt_text: string | null;
+  caption: string | null;
+  updated_at: IsoTimestamp;
+  signed_url?: string | null;
 }
 
 export interface PublicKnowledgeSearchArticleRow {

@@ -3,8 +3,12 @@ import type { AuthError, PostgrestError } from '@supabase/supabase-js';
 export type AppErrorCode =
   | 'contract-unavailable'
   | 'session-expired'
+  | 'network-retryable'
+  | 'access-revoked'
+  | 'tenant-unavailable'
   | 'permission-denied'
   | 'runtime-config'
+  | 'fatal-error'
   | 'unknown';
 
 export class AppError extends Error {
@@ -16,10 +20,42 @@ export class AppError extends Error {
   }
 }
 
+function isTimeoutLikeError(error: Error) {
+  return (
+    error.name === 'AbortError' ||
+    /timed?\s*out|timeout|abort/i.test(error.message)
+  );
+}
+
+function isNetworkLikeError(error: Error) {
+  return (
+    /Failed to fetch|Load failed|NetworkError|network request failed/i.test(
+      error.message,
+    ) || isTimeoutLikeError(error)
+  );
+}
+
+export function isNetworkRetryableError(error: unknown) {
+  if (error instanceof AppError) {
+    return error.code === 'network-retryable';
+  }
+
+  return error instanceof Error ? isNetworkLikeError(error) : false;
+}
+
 export function toAppError(
   error: PostgrestError | AuthError | Error,
   fallbackMessage: string,
 ) {
+  if (error instanceof Error && isNetworkLikeError(error)) {
+    return new AppError(
+      'network-retryable',
+      isTimeoutLikeError(error)
+        ? 'A conexão com o portal demorou mais do que o esperado. Tente novamente.'
+        : 'Não foi possível falar com o portal agora. Verifique a conexão e tente novamente.',
+    );
+  }
+
   const codeValue = 'code' in error ? String(error.code ?? '') : '';
   const statusValue =
     'status' in error && typeof error.status === 'number' ? error.status : null;

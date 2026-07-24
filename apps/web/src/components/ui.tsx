@@ -12,8 +12,7 @@ export function AppButton({
   return (
     <button
       className={cx(
-        'inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-[color:var(--color-brand-blue)]/35 disabled:cursor-not-allowed disabled:opacity-50',
-        'bg-[linear-gradient(135deg,var(--color-brand-navy),var(--color-brand-blue))] text-white shadow-[0_12px_30px_rgba(20,31,71,0.22)] hover:translate-y-[-1px]',
+        'gso-action-button inline-flex min-h-10 items-center justify-center rounded-lg border border-[color:var(--minimal-action)] bg-[color:var(--minimal-action)] px-4 py-2 text-sm font-medium text-[color:var(--minimal-action-ink)] transition-colors hover:bg-[color:var(--minimal-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
       type="button"
@@ -32,7 +31,7 @@ export function GhostButton({
   return (
     <button
       className={cx(
-        'inline-flex items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white/90 px-4 py-2 text-sm font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/40 hover:bg-[color:var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-brand-blue)]/25 disabled:cursor-not-allowed disabled:opacity-50',
+        'gso-ghost-button inline-flex min-h-10 items-center justify-center rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-4 py-2 text-sm font-medium text-[color:var(--minimal-text)] transition-colors hover:bg-[color:var(--minimal-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
       type="button"
@@ -59,17 +58,17 @@ export function Panel({
   return (
     <section
       className={cx(
-        'rounded-[26px] border border-[color:var(--color-border)] bg-white/92 p-5 shadow-[var(--shadow-panel)] backdrop-blur sm:p-6',
+        'gso-panel border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-5 sm:p-6',
         className,
       )}
     >
       <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
-          <h2 className="text-lg font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
+          <h2 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
             {title}
           </h2>
           {description ? (
-            <p className="max-w-2xl text-sm leading-6 text-[color:var(--color-muted)]">
+            <p className="max-w-2xl text-sm leading-6 text-[color:var(--minimal-text-secondary)]">
               {description}
             </p>
           ) : null}
@@ -85,7 +84,7 @@ export function PageHeader({
   title,
   description,
   action,
-  eyebrow = 'Admin Console',
+  eyebrow = 'Genius Support OS',
 }: {
   title: string;
   description: string;
@@ -93,7 +92,7 @@ export function PageHeader({
   eyebrow?: string;
 }) {
   return (
-    <header className="flex flex-wrap items-start justify-between gap-4">
+    <header className="gso-page-header flex flex-wrap items-start justify-between gap-4">
       <div className="space-y-2">
         <p className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-[color:var(--color-muted)]">
           {eyebrow}
@@ -127,13 +126,13 @@ export function StatusPill({
         : tone === 'critical'
           ? 'border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] text-[color:var(--color-danger-ink)]'
           : tone === 'accent'
-            ? 'border-[rgba(225,0,152,0.18)] bg-[rgba(225,0,152,0.1)] text-[color:var(--color-brand-magenta)]'
-            : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-ink)]';
+            ? 'border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-selection)] text-[color:var(--minimal-selection-text)]'
+            : 'border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] text-[color:var(--minimal-text-secondary)]';
 
   return (
     <span
       className={cx(
-        'inline-flex items-center rounded-full border px-2.5 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.16em]',
+        'inline-flex items-center rounded-md border px-2 py-0.5 text-[0.68rem] font-medium uppercase tracking-[0.08em]',
         toneClass,
       )}
     >
@@ -152,15 +151,15 @@ export function MetricCard({
   helper?: string;
 }) {
   return (
-    <div className="rounded-[24px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4">
-      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
+    <div className="border-b border-[color:var(--minimal-border)] py-3">
+      <p className="text-xs text-[color:var(--minimal-text-tertiary)]">
         {label}
       </p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
+      <p className="mt-1 text-lg font-semibold text-[color:var(--minimal-text)]">
         {value}
       </p>
       {helper ? (
-        <p className="mt-2 text-xs leading-5 text-[color:var(--color-muted)]">{helper}</p>
+        <p className="mt-1 text-xs leading-5 text-[color:var(--minimal-text-secondary)]">{helper}</p>
       ) : null}
     </div>
   );
@@ -176,7 +175,7 @@ export function SummaryStrip({
   return (
     <section
       className={cx(
-        'rounded-[24px] border border-[color:var(--color-border)] bg-white/92 px-4 py-4 shadow-[var(--shadow-panel)]',
+        'gso-summary-strip rounded-[24px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/92 px-4 py-4 shadow-[var(--shadow-panel)]',
         className,
       )}
     >
@@ -200,10 +199,10 @@ export function SummaryStripItem({
     <div
       className={cx(
         'min-w-[140px] flex-1 rounded-[18px] border px-4 py-3',
-        tone === 'positive' && 'border-emerald-200 bg-emerald-50/80',
-        tone === 'warning' && 'border-amber-200 bg-amber-50/80',
-        tone === 'critical' && 'border-rose-200 bg-rose-50/80',
-        tone === 'accent' && 'border-sky-200 bg-sky-50/80',
+        tone === 'positive' && 'border-[color:var(--color-success-border)] bg-[color:var(--color-success-surface)]/80',
+        tone === 'warning' && 'border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-surface)]/80',
+        tone === 'critical' && 'border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)]/80',
+        tone === 'accent' && 'border-[color:var(--color-info-border)] bg-[color:var(--color-info-surface)]/80',
         tone === 'default' && 'border-[color:var(--color-border)] bg-[color:var(--color-surface)]',
       )}
     >
@@ -265,7 +264,7 @@ export function ContextSubsidebar({
         className,
       )}
     >
-      <section className="rounded-[24px] border border-[color:var(--color-border)] bg-white/94 px-4 py-4 shadow-[0_14px_28px_rgba(19,33,79,0.08)]">
+      <section className="rounded-[24px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/94 px-4 py-4 shadow-[0_14px_28px_rgba(19,33,79,0.08)]">
         <header className="space-y-3">
           <div className="space-y-1">
             <h2 className="text-base font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
@@ -342,6 +341,58 @@ export function ContextSubsidebarSection({
   );
 }
 
+export function GovernedActionDrawer({
+  title,
+  description,
+  onClose,
+  children,
+  footer,
+  className,
+}: {
+  title: string;
+  description: string;
+  onClose: () => void;
+  children: ReactNode;
+  footer?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end overflow-hidden bg-[rgba(7,15,35,0.42)] backdrop-blur-[3px]">
+      <section
+        aria-modal="true"
+        className={cx(
+          'flex h-dvh w-[clamp(720px,50vw,860px)] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-l-[30px] border-l border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] shadow-[0_32px_90px_rgba(10,22,50,0.28)]',
+          className,
+        )}
+        role="dialog"
+      >
+        <header className="flex shrink-0 items-start justify-between gap-5 border-b border-[color:var(--color-border)] px-8 py-6">
+          <div className="min-w-0 space-y-1">
+            <h2 className="text-[1.45rem] font-semibold tracking-[-0.045em] text-[color:var(--color-ink)]">
+              {title}
+            </h2>
+            <p className="text-sm leading-6 text-[color:var(--color-muted)]">{description}</p>
+          </div>
+          <button
+            aria-label="Fechar painel"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] text-xl leading-none text-[color:var(--color-ink)] transition hover:border-[color:var(--color-brand-blue)]/40 hover:bg-[color:var(--color-surface)]"
+            onClick={onClose}
+            type="button"
+          >
+            ×
+          </button>
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-8 py-6">{children}</div>
+        {footer ? (
+          <footer className="flex shrink-0 justify-end gap-3 border-t border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-8 py-5">
+            {footer}
+          </footer>
+        ) : null}
+      </section>
+    </div>
+  );
+}
+
 export function Field({
   label,
   description,
@@ -369,7 +420,7 @@ export function TextInput({
   return (
     <input
       className={cx(
-        'h-11 rounded-2xl border border-[color:var(--color-border)] bg-white px-4 text-sm text-[color:var(--color-ink)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand-blue)]/60 focus:ring-2 focus:ring-[color:var(--color-brand-blue)]/20',
+        'h-10 rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-3.5 text-sm text-[color:var(--minimal-text)] outline-none transition-colors placeholder:text-[color:var(--minimal-text-tertiary)] focus:border-[color:var(--minimal-action)] focus:ring-2 focus:ring-[color:var(--minimal-focus)]',
         className,
       )}
       {...props}
@@ -384,7 +435,7 @@ export function SelectInput({
   return (
     <select
       className={cx(
-        'h-11 min-w-0 w-full rounded-2xl border border-[color:var(--color-border)] bg-white px-4 text-sm text-[color:var(--color-ink)] outline-none transition focus:border-[color:var(--color-brand-blue)]/60 focus:ring-2 focus:ring-[color:var(--color-brand-blue)]/20',
+        'h-10 min-w-0 w-full rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-3.5 text-sm text-[color:var(--minimal-text)] outline-none transition-colors focus:border-[color:var(--minimal-action)] focus:ring-2 focus:ring-[color:var(--minimal-focus)]',
         className,
       )}
       {...props}
@@ -399,7 +450,7 @@ export function TextareaInput({
   return (
     <textarea
       className={cx(
-        'min-h-28 rounded-[24px] border border-[color:var(--color-border)] bg-white px-4 py-3 text-sm text-[color:var(--color-ink)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand-blue)]/60 focus:ring-2 focus:ring-[color:var(--color-brand-blue)]/20',
+        'min-h-28 rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-3.5 py-3 text-sm text-[color:var(--minimal-text)] outline-none transition-colors placeholder:text-[color:var(--minimal-text-tertiary)] focus:border-[color:var(--minimal-action)] focus:ring-2 focus:ring-[color:var(--minimal-focus)]',
         className,
       )}
       {...props}

@@ -3,6 +3,13 @@
 ## Objetivo
 Criar a base editorial do Genius Support OS com versionamento, trilha de origem e governança suficiente para operar conteúdo interno primeiro e preparar documentação pública técnica para clientes B2B e usuários da plataforma, sem abrir Central Pública nesta fase.
 
+## Atualizacao P3 - AI-native, human-governed
+- Knowledge publica so pode ser fonte citavel de IA quando estiver `published/public` e projetada por contrato backend.
+- Knowledge interna pode apoiar operador/editor, mas nao pode virar resposta customer-facing sem reclassificacao e revisao humana.
+- Knowledge restrita exige entitlement antes de qualquer rascunho customer-facing.
+- IA nao publica artigo, nao altera visibilidade/status e nao substitui o gate humano de publicacao.
+- `source_path` e `source_hash` continuam rastreabilidade editorial; nao viram prompt bruto nem payload customer-facing.
+
 ## Princípio canônico atual
 - `knowledge_space` é a unidade editorial e pública da plataforma.
 - `tenant` continua como eixo operacional e de compatibilidade da KB atual.
@@ -17,6 +24,7 @@ Criar a base editorial do Genius Support OS com versionamento, trilha de origem 
   - `knowledge_articles`
   - `knowledge_article_revisions`
   - `knowledge_article_sources`
+  - `knowledge_article_assets`
 - Read models administrativos internos:
   - `vw_admin_knowledge_spaces`
   - `vw_admin_knowledge_categories`
@@ -30,6 +38,7 @@ Criar a base editorial do Genius Support OS com versionamento, trilha de origem 
   - `vw_public_knowledge_navigation`
   - `vw_public_knowledge_articles_list`
   - `vw_public_knowledge_article_detail`
+  - `vw_public_knowledge_article_assets`
 - Busca pública textual mínima:
   - `rpc_public_search_knowledge_articles`
 - Mutações editoriais administrativas:
@@ -45,9 +54,32 @@ Criar a base editorial do Genius Support OS com versionamento, trilha de origem 
   - `rpc_admin_submit_knowledge_article_for_review_v2`
   - `rpc_admin_publish_knowledge_article_v2`
   - `rpc_admin_archive_knowledge_article_v2`
+  - `rpc_admin_unpublish_knowledge_article_v2`
+  - `rpc_admin_upsert_knowledge_article_asset_v1`
+  - `rpc_admin_update_knowledge_article_asset_review_v1`
 - Pipeline legado local-only:
   - `scripts/knowledge/import-octadesk-drafts.mjs`
   - `scripts/knowledge/generate-curation-backlog.mjs`
+  - `scripts/knowledge/reprocess-octadesk-article-assets.mjs`
+
+## Cockpit administrativo
+- `/admin/knowledge` é o cockpit operacional de governança da base de conhecimento.
+- A tela usa o blueprint aprovado de Governança de conhecimento como referência visual direta: header operacional, busca global única, filtros de status/categoria/visibilidade, KPIs reais, tabela central dominante e rail direito de categorias/resumo/alertas.
+- Criação e edição de artigos acontecem em superfície dedicada, sem preview lateral comprimido dentro do cockpit.
+- `/admin/knowledge/new` é a superfície dedicada de criação manual de artigo. A tela segue o blueprint aprovado de novo artigo, usa categorias e espaços reais, salva rascunho por `rpc_admin_create_knowledge_article_draft_v2`/`rpc_admin_update_knowledge_article_draft_v2` e envia para revisão por `rpc_admin_submit_knowledge_article_for_review_v2`.
+- `/admin/knowledge/:articleId/edit` reutiliza a mesma superfície dedicada para edição de artigos existentes. Artigos publicados abrem revisão editorial por `rpc_admin_begin_knowledge_article_editorial_revision_v2` e salvam por `rpc_admin_update_knowledge_article_editorial_revision_v2`; drafts/reviews salvam por `rpc_admin_update_knowledge_article_draft_v2`.
+- O editor V1 usa Markdown seguro, toolbar operacional, checklist visual local, prévia ampla na área principal e rail de configurações/governança. O checklist não substitui gate backend e status editorial não é dropdown livre: transições acontecem por ações governadas via RPC.
+- Upload binário de imagem agora usa o bucket privado `knowledge-assets` e registra metadados por `rpc_admin_upsert_knowledge_article_asset_v1`. A tela aceita seleção, drag and drop e colagem de imagens no corpo, insere markdown governado `![alt](knowledge-asset:<id>)` e lista previews assinados via `vw_admin_knowledge_article_assets`.
+- Remoção definitiva de asset e anexos não imagem continuam fora do editor V1: o contrato atual permite imagem PNG/JPG/WEBP/GIF até 10 MB; PDF/arquivo genérico exige ampliação explícita de contrato antes de liberar no browser.
+- Métricas sem contrato real, como visualizações por artigo em 30 dias, devem aparecer como indisponíveis ou ser omitidas. O frontend não cria número fake.
+- A busca atual do cockpit é textual sobre campos expostos pelo read model administrativo; busca semântica ou busca por corpo completo exige contrato administrativo explícito futuro.
+
+## Assets governados de artigos
+- Imagens de artigos Knowledge usam o bucket privado `knowledge-assets`.
+- O corpo publico nao renderiza URL externa arbitraria; a referencia permitida no markdown e `![alt](knowledge-asset:<id>)`.
+- Assets legados Octadesk entram como `pending` e so devem aparecer no publico quando `approved`, `public`, nao bloqueados e vinculados a artigo `published/public`.
+- Admin Knowledge pode visualizar, aprovar ou bloquear assets por artigo.
+- A Central Publica usa a view filtrada `vw_public_knowledge_article_assets` e URLs assinadas curtas, sem depender da Octadesk em runtime.
 
 ## Estado de transição multi-brand
 - `knowledge_spaces`, `knowledge_space_domains` e `brand_settings` existem como fundação estrutural aditiva.
@@ -74,6 +106,18 @@ Criar a base editorial do Genius Support OS com versionamento, trilha de origem 
 ## Inventário legado atual
 Origem oficial preservada:
 - `raw_knowledge/octadesk_export/latest/articles/`
+
+Estado operacional em 2026-05-21:
+- A esteira completa do corpus Octadesk foi organizada em allowlists por onda e registrada em `docs/reports/OCTADESK_FULL_PUBLIC_HELP_EXECUTION_PLAN.md`.
+- `54` artigos foram importados/processados localmente no Admin Knowledge com rastreabilidade de `source_path` e `source_hash`.
+- Decisao de produto atual: a origem Octadesk passa a ser tratada como Central de Ajuda publica legada aprovada para migracao, salvo bloqueio tecnico critico automatico.
+- Distribuicao runtime do corpus Octadesk: `43 published/public` e `11 draft/restricted`.
+- `43` artigos Octadesk foram publicados por gate editorial existente apos normalizacao minima e revisao automatica de bloqueios criticos.
+- `11` artigos permanecem bloqueados por risco tecnico critico: token, senha explicita, permissao tecnica, erro/autorizacao, integracao sensivel, contrato Correios ou usuario administrativo.
+- A Central Publica `/help/genius` passou a expor `49` artigos no total: `43` artigos Octadesk migrados e `6` artigos seed/manuais.
+- A triagem conservadora anterior ficou registrada em `docs/reports/OCTADESK_PUBLICATION_FINAL_TRIAGE.md`; ela foi superada pela decisao de produto de migracao publica legada e preservada como historico de governanca.
+- O fechamento operacional anterior da Central de Ajuda ficou registrado em `docs/reports/GENIUS_HELP_CENTER_READINESS_REPORT.md`, `docs/reports/OCTADESK_PUBLICATION_WAVES.md` e `docs/reports/OCTADESK_WAVE_0_PUBLICATION_CHECKLIST.md`; esses documentos continuam uteis para curadoria dos bloqueados, mas a baseline publica atual e a migracao Octadesk com bloqueios criticos automaticos.
+- A execucao efetiva da migracao publica ficou registrada em `docs/reports/OCTADESK_PUBLICATION_EXECUTION_REPORT.md` e `docs/reports/OCTADESK_PUBLIC_HELP_RELEASE_STATUS.md`.
 
 Resultado do inventário atual:
 - `58` artigos detectados por `article.json`
@@ -148,15 +192,16 @@ Metadados brutos observados em `article.json`:
 - `archived` preserva histórico e rastreabilidade.
 
 ## Regras de publicação
-- Não publicar automaticamente artigos legados.
-- Não abrir Central de Ajuda pública nesta fase.
+- A publicacao em lote do corpus Octadesk e permitida apenas quando a premissa de produto confirmar a origem como Central de Ajuda publica legada aprovada para migracao.
+- Bloquear automaticamente qualquer artigo com credencial, token, senha, chave, `service_role`, header de autorizacao, JWT, URL assinada, payload sensivel, dado pessoal sensivel, instrucao claramente interna, endpoint privado, conteudo vazio/quebrado ou duplicidade exata sem canonical.
+- Asset nao revisado, advisory pendente, checklist humano individual e linguagem legada leve nao sao bloqueios absolutos quando o artigo vem da Central de Ajuda publica legada e passa pelos bloqueios criticos automaticos.
 - Não misturar conteúdo público com playbook interno.
 - Não indexar conteúdo em IA nesta fase.
 - Não promover artigo para `published` sem trilha editorial e auditoria.
 - `published` continua sendo estado editorial, não sinal de exposição pública ativa.
 - Um `knowledge_space` futuro também precisará estar ativo antes de qualquer abertura pública.
 - O contrato público de leitura já existe, mas ainda sem UI pública, busca ou roteamento ativo no frontend.
-- O contrato público de leitura agora possui UI mínima em `/help` e busca textual simples, mas continua sem IA, chat, widget, portal B2B ou abertura pública de ticket.
+- O contrato público de leitura agora possui UI em `/help` e busca textual simples, mas continua sem IA, chat, widget, portal B2B ou abertura pública de ticket.
 
 ## Superfície pública mínima
 - Rotas ativas:
@@ -182,7 +227,8 @@ Metadados brutos observados em `article.json`:
 - Todo artigo relevante deve gerar revisão em `knowledge_article_revisions`.
 - Toda origem relevante deve ser preservada em `knowledge_article_sources`.
 - Toda mutação administrativa deve gerar `audit.audit_logs`.
-- Conteúdo legado precisa de curadoria humana antes de qualquer exposição pública.
+- Conteúdo legado privado, restrito ou sensível precisa de curadoria humana antes de qualquer exposição pública.
+- Conteúdo legado vindo de Central de Ajuda pública aprovada pode ser migrado por lote desde que passe por bloqueios técnicos críticos, RPCs editoriais existentes, auditoria e QA público.
 
 ## Pipeline de curadoria esperado
 1. Inventariar todos os artigos legados.

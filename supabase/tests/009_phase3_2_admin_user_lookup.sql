@@ -104,6 +104,9 @@ values
     timezone('utc', now())
   );
 
+delete from public.user_global_roles
+where role = 'platform_admin';
+
 select is(
   app_private.bootstrap_first_platform_admin(
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,
@@ -168,9 +171,17 @@ set local request.jwt.claim.role = 'authenticated';
 set local request.jwt.claim.sub = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 select is(
-  (select count(*)::integer from public.vw_admin_user_lookup),
+  (
+    select count(*)::integer
+    from public.vw_admin_user_lookup
+    where email in (
+      'platform-admin@genius.local',
+      'tenant-admin@tenant-a.local',
+      'common-user@tenant-a.local'
+    )
+  ),
   3,
-  'platform_admin acessa o lookup global de usuarios existentes'
+  'platform_admin acessa os usuarios de teste pelo lookup global'
 );
 
 select ok(

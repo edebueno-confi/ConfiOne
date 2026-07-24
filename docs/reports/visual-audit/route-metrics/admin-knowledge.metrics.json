@@ -1,0 +1,36 @@
+{
+  "route": "/admin/knowledge",
+  "innerWidth": 1600,
+  "innerHeight": 900,
+  "scrollHeight": 900,
+  "clientHeight": 900,
+  "hasGlobalScroll": false,
+  "hasHorizontalScroll": false,
+  "scrollables": [
+    {
+      "tag": "aside",
+      "cls": "flex min-h-0 flex-col gap-4 overflow-y-auto overflow-x-hidden pr-1",
+      "role": null,
+      "scrollHeight": 873,
+      "clientHeight": 739,
+      "scrollWidth": 310,
+      "clientWidth": 310,
+      "overflowY": "auto",
+      "overflowX": "hidden",
+      "text": "CategoriasVer todas1Operação de reversa22Suporte técnico23Integrações14Primeiros"
+    },
+    {
+      "tag": "div",
+      "cls": "mt-3 max-h-full space-y-3 overflow-y-auto pr-1",
+      "role": null,
+      "scrollHeight": 94,
+      "clientHeight": 0,
+      "scrollWidth": 262,
+      "clientWidth": 262,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "Sem alertas ativosO backlog não trouxe sinal editorial crítico para os filtros a"
+    }
+  ],
+  "sampleText": "Genius Support OS\n\nOperação interna CX B2B\n\nNAVEGAÇÃO\n\nOperação CX\nFila operacional\nTickets\nClientes B2B\nAcionamentos\nConhecimento\nEngenharia\nFila técnica\nItens técnicos\nRetornos ao CX\nGovernança\nContas B2B\nPortal do cliente\nÁreas internas\nAcessos\nSistema\nGovernança de conhecimento\nDiário de Construção\nDocumentos do produto\nQL\n\nQA Local Platform Admin\n\nAdministrador da plataforma\n\nEncerrar sessão\nGovernança de conhecimento\n\nCockpit operacional para gestão, manutenção e qualidade dos conteúdos do Help Center.\n\n⇧\nImportar legado\n+\nNovo artigo\n?\nBusca global de conhecimento\n⌕\nStatus de governança\nTodos\nPublicado\nEm revisão\nRascunho\nArquivado\nCategoria\nTodas\nOperação de reversa\nSuporte técnico\nIntegrações\nPrimeiros passos\nVisibilidade\nTodas\nPúblico\nInterno\nRestrito\n\nPublicados\n\n6\n\n100% do total\n\n▥\n\nPrecisam atualização\n\n0\n\n0% do total\n\n△\n\nArquivamento sugerido\n\n0\n\n0% do total\n\n▣\n\nVisualizações (30 dias)\n\nIndisponível\n\nSem contrato real de consumo\n\n↗\nArtigos (6)\n\nTabela operacional para triagem, busca, edição e revisão governada.\n\nMais recentes\nMais antigos\nTítulo A-Z\nTÍTULO\tCATEGORIA\tSTATUS DE GOVERNANÇA\tVISIBILIDADE\tCONSUMO\tAÇÃO\n\n⎘\n\nComo compartilhar evidências em um ticket\n\nOrientaçõ"
+}

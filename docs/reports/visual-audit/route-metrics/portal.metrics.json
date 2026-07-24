@@ -1,0 +1,24 @@
+{
+  "route": "/portal",
+  "innerWidth": 1600,
+  "innerHeight": 900,
+  "scrollHeight": 900,
+  "clientHeight": 900,
+  "hasGlobalScroll": false,
+  "hasHorizontalScroll": false,
+  "scrollables": [
+    {
+      "tag": "section",
+      "cls": "min-h-0 overflow-y-auto rounded-[28px] border border-[color:var(--color-border)] bg-white/92 p-5 shadow-[var(--shadow-pa",
+      "role": null,
+      "scrollHeight": 1828,
+      "clientHeight": 866,
+      "scrollWidth": 974,
+      "clientWidth": 974,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "Portal do clienteAcompanhe seus tickets autorizadosEste portal mostra somente as"
+    }
+  ],
+  "sampleText": "GENIUS SUPPORT OS\n\nPortal do cliente\n\nAcesso autenticado ao próprio contexto B2B.\n\nVisão operacional\nTickets\nCentral autorizada\n\nTENANT ATIVO\n\nSupport QA Tenant A Operação Enterprise\n\nUsuário cliente\n\nmarina.ops@support-qa-a.local\n\nAmbiente do cliente\n\nSair\n\nPORTAL DO CLIENTE\n\nAcompanhe seus tickets autorizados\n\nEste portal mostra somente as informações autorizadas da sua conta e dos seus atendimentos.\n\nVer tickets\n\nTICKETS VISÍVEIS\n\n21\n\nCOM EVIDÊNCIAS\n\n2\n\nARTIGOS AUTORIZADOS\n\n7\n\nÚltimos tickets\n\nLista oficial já preparada para o portal cliente.\n\nQA P2 | Canal API futuro indisponivel\n\nAtualizado em 25/05/2026, 07:49\n\nRECEBIDO\nAtendimento Genius\n0 mensagens\n0 evidências\nArtigos autorizados: Indisponível\n\nQA P2 | Canal email futuro indisponivel\n\nAtualizado em 25/05/2026, 07:49\n\nRECEBIDO\nAtendimento Genius\n0 mensagens\n0 evidências\nArtigos autorizados: Indisponível\n\nQA P2 | Ticket criado pelo portal cliente\n\nAtualizado em 25/05/2026, 07:49\n\nRECEBIDO\nEnviado pelo portal\n2 mensagens\n0 evidências\nArtigos autorizados: Indisponível\n\nQA P2 | Ticket criado pelo suporte manual\n\nAtualizado em 25/05/2026, 07:49\n\nRECEBIDO\nAtendimento Genius\n0 mensagens\n0 evidências\nArtigos autorizados: Indisponív"
+}

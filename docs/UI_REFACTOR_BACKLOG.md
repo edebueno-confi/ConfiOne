@@ -1,5 +1,11 @@
 # UI_REFACTOR_BACKLOG.md
 
+## Próxima frente oficial — DASHBOARD-02
+
+`DASHBOARD-02 — Evolução do Dashboard Gerencial` foi registrada como próxima frente de produto, sem implementação nesta branch.
+
+Discovery deverá detalhar: clareza dos indicadores, hierarquia da informação, utilidade operacional, filtros e períodos, comparação de resultados, estados vazios e ausência de dados, permissões por perfil, responsividade e qualidade/origem dos dados.
+
 ## Objetivo
 Registrar o backlog oficial de polimento e evolucao de UX das superficies internas, sem misturar isso com entrega de backend ou feature nova.
 

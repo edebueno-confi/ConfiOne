@@ -15,6 +15,21 @@ Definir a arquitetura do futuro Support Workspace do Genius Support OS como ambi
 - explicitar as lacunas antes de abrir qualquer fase de UI
 - evitar dashboard pesado e manter foco em fila, detalhe e contexto operacional
 
+## Estado atual de runtime em 2026-05-16
+- Em 2026-05-24, o P4-A validou o MVP operacional ponta a ponta no Support Workspace: fila recebe ticket criado pelo Portal, o ticket workspace permite resposta pública e nota interna por RPC, Knowledge público pode ser vinculado sem expor conteúdo interno, o drawer de Acionamentos cria fluxo real para área interna e o handoff de Engenharia permanece separado por `engineering_work_items`. Nenhum botão fake, provider externo ou IA ativa foi adicionado.
+- Em 2026-05-24, o P3 adicionou fundacao AI-native, human-governed sem Copilot real, chatbot, modelo, embedding ou automacao. O Support Workspace nao deve exibir botao ativo de geracao enquanto nao houver provider/modelo aprovado; qualquer sugestao futura deve passar por `rpc_ai_validate_context_access`, fonte citavel, redaction, auditoria e revisao humana.
+- Em 2026-05-24, o P2-C adicionou governanca de readiness de canais por tenant sem provider externo. O Support Workspace continua usando `customer_portal` como canal real e recebe motivos backend-safe para canais externos futuros. `/admin/system` mostra readiness operacional sanitizado; nao existe configuracao de segredo, token, webhook, job, retry, provider fake ou envio externo real.
+- Em 2026-05-23, o P2-B adicionou a camada de readiness de delivery sem provider externo. O Support Workspace continua sem WhatsApp/e-mail/chat/API reais, mas agora consegue exibir status leve de disponibilidade no Portal para mensagens customer-facing por `ticket_message_deliveries` e `vw_support_ticket_message_deliveries`. Canais externos seguem bloqueados por `vw_support_ticket_delivery_capabilities`; nao existe botao de envio externo, retry, job ou provider fake.
+- Em 2026-05-23, a fundação P2 de origem/canal foi adicionada ao workspace sem integrar canal externo real. A fila e o detalhe passam a receber `origin_*`, `channel_*`, `can_reply_now`, `reply_mode` e `reason_if_unavailable` por read models; o composer só habilita resposta pública quando o backend permite; canais `email`, `chat` e `api` são exibidos como futuros/indisponíveis, sem botão funcional de envio externo.
+- `/support/tickets/:ticketId` materializa o Ticket Workspace operacional em tres zonas apos a sidebar global: fila viva, conversa central dominante e rail direito ou drawer lateral substituto.
+- A timeline central do ticket e a unica superficie visual de historico operacional; o card redundante de `Atividade recente` foi removido do rail direito.
+- O rail direito padrao ficou restrito a `Resumo do ticket`, `Ações rápidas` e `SLA interno`, reforcando a separacao entre contexto operacional e historico da tratativa.
+- O drawer lateral continua substituindo integralmente o rail direito quando uma acao rapida e aberta; nao existe toolbar flutuante, coluna intermediaria nem compressao adicional da conversa alem da largura aprovada do painel.
+- A fila viva agora opera com segmentacao explicita `Abertos | Fechados`, iniciando por padrao em `Abertos`; tickets encerrados continuam acessiveis por filtro, sem poluir a operacao diaria.
+- O split de lifecycle da fila usa apenas status reais ja carregados pela `vw_support_tickets_queue`, sem contrato novo, sem mock e sem view parametrizada adicional.
+- Os status operacionais hoje reutilizados para esse split sao `new`, `triage`, `waiting_customer`, `waiting_support`, `waiting_engineering`, `in_progress`, `resolved`, `closed` e `cancelled`.
+- A UI continua restrita a contratos reais ja materializados para fila, detalhe, timeline, contexto do cliente, classificacao, anexos, knowledge links, handoff tecnico, SLA e acionamentos internos. O drawer `Acionamentos` consome read models/RPCs reais de `internal_actions`; nao le tabela base, nao usa mock e nao altera `ticket.status`.
+
 ## Escopo do Support Workspace
 O Support Workspace deve cobrir:
 - fila interna de tickets
@@ -57,15 +72,23 @@ O Support Workspace deve cobrir:
 - `vw_support_customer_recent_tickets`
 - `vw_support_customer_recent_events`
 - `vw_support_assignable_agents`
+- `vw_support_ticket_channel_context`
+- `vw_support_ticket_communication_capabilities`
+- `vw_support_tenant_communication_capabilities`
+- `vw_support_ticket_channel_readiness`
+- `vw_support_ticket_message_deliveries`
+- `vw_support_ticket_delivery_capabilities`
 
 ### RPCs ja materializadas
 - `rpc_create_ticket`
 - `rpc_update_ticket_status`
+- `rpc_support_update_ticket_status_v2`
 - `rpc_assign_ticket`
 - `rpc_add_ticket_message`
 - `rpc_add_internal_ticket_note`
 - `rpc_close_ticket`
 - `rpc_reopen_ticket`
+- `rpc_support_get_ticket_timeline`
 
 ## O que esses contratos ja cobrem
 
@@ -97,6 +120,7 @@ Ja cobre:
 - timeline unificada de mensagens e eventos
 - separacao entre mensagem publica e nota interna
 - historico de status, atribuicao, resolucao, fechamento e reabertura
+- direcao/canal de comunicacao normalizados quando disponiveis (`inbound`, `outbound`, `internal`, `system`)
 
 ### RPCs
 Ja cobrem:
@@ -244,6 +268,7 @@ Uso esperado:
 - historico de tickets
 - contexto do tenant para atendimento tecnico-operacional
 - ponto natural de leitura aprofundada do futuro Customer Account Profile
+- no P1 Customer Account Operations Buildout, a leitura aprofundada foi fechada por read models de suporte (`vw_support_customers_list`, `vw_support_customer_detail`, `vw_support_customer_account_context`) e a escrita permaneceu fora do Support Workspace; alteracoes estruturais de conta B2B pertencem ao Admin.
 
 ### `/support/queue`
 - recorte operacional prioritario
@@ -364,6 +389,16 @@ No medio prazo:
 - notas internas nao podem vazar para a camada publica
 - o workspace deve continuar orientado a cliente B2B, nunca a consumidor final
 
+## Status flow vigente no runtime
+- o read model principal `vw_support_ticket_detail` ja projeta `can_update_status`, `can_close`, `can_reopen` e `allowed_next_statuses`
+- a UI deve tratar essas flags como resposta pronta do backend, e nao como sugestao para recalculo local
+- mudanca normal de andamento usa `rpc_support_update_ticket_status_v2`
+- fechamento continua caminho dedicado por `rpc_close_ticket`, apenas quando o ticket estiver elegivel para encerramento
+- reabertura continua caminho dedicado por `rpc_reopen_ticket`, retornando o ticket para `waiting_support`
+- `closed` nao deve ser tratado como opcao comum do seletor de andamento; faz parte do fluxo dedicado de encerramento
+- a matriz canonica de transicao permanece no backend por `app_private.allowed_next_ticket_statuses(...)` e `app_private.ticket_status_transition_allowed(...)`
+- se `allowed_next_statuses` vier vazio, a UX correta e expor indisponibilidade contratual ou ausencia de transicao, nunca liberar lista ampla de status teoricos
+
 ## Sequencia recomendada de fases futuras
 1. criar read models especificos de suporte, se necessario
 2. definir authz explicita do Support Workspace
@@ -378,3 +413,48 @@ No medio prazo:
 - tratar visao 360 do cliente B2B como contexto operacional, nao como CRM
 - deixar KB link, handoff para engenharia e SLA preparados como proximas camadas controladas
 - manter a gramatica visual do dominio de suporte local ao proprio workspace, usando primitives compartilhadas sem copiar o layout do Admin Console
+
+## Internal Actions V1
+- o workspace agora possui um dominio formal de `internal_actions` separado do ticket principal e separado do dominio tecnico de engenharia.
+- esse dominio possui integracao minima no Ticket Workspace para o lado do suporte:
+  - drawer `Acionamentos`
+  - catalogo real de areas acionaveis
+  - criacao de acionamento
+  - lista por ticket
+  - detalhe
+  - timeline interna
+  - aceite de retorno
+  - pedido de complemento
+  - fechamento
+  - vinculo de evidencia existente quando aplicavel
+- a operacao da area acionada agora possui superficie propria:
+  - `/internal-actions`
+  - `/internal-actions/:actionId`
+  - fila por membership ativo da area
+  - detalhe operacional, timeline interna, assumir para si, update, status interno permitido e devolucao estruturada ao suporte
+- a governanca de memberships agora possui superficie administrativa:
+  - `/admin/internal-areas`
+  - areas acionaveis
+  - memberships por area/tenant/usuario
+  - add/update/archive por RPC administrativa
+- o modelo materializado inclui:
+  - catalogo governado de areas internas
+  - membership explicito por area e tenant
+  - entidade principal de acionamento interno
+  - ledger append-only de updates
+  - vinculo de evidencia apenas por `ticket_attachments`
+  - fila por area e views de suporte
+- decisoes estruturais do V1:
+  - criar acionamento nao altera `ticket.status`
+  - pendencia interna aparece por read model, nao por status publico
+  - cliente nao ve o subfluxo
+  - suporte continua owner do ticket
+  - bridge com `engineering_work_items` continua fora deste lote
+- consequencia arquitetural:
+  - o Support Workspace passa a ter dois trilhos internos coexistindo:
+    - handoff tecnico especializado de engenharia
+    - acionamento interno generico multiarea
+  - a UI precisa manter essa separacao sem misturar lifecycle de ticket com lifecycle do subfluxo interno
+- limites ainda abertos:
+  - nao existe bridge automatica com `engineering_work_items`
+  - estados de retorno pendente exigem massa QA estavel para validacao visual recorrente

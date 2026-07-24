@@ -1,111 +1,294 @@
-import { lazy, type ReactNode, Suspense } from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { LoadingState } from '../components/states';
+import { lazy, type ComponentType, type ReactNode, Suspense } from 'react';
+import { createBrowserRouter, Navigate, useRouteError } from 'react-router-dom';
+import { ErrorState, LoadingState } from '../components/states';
+import { GeniusMascot } from '../components/GeniusMascot';
+import { AppButton, GhostButton } from '../components/ui';
 import { AuthBootstrap } from '../features/auth/AuthBootstrap';
 import { AdminGate } from '../features/auth/AdminGate';
 
-const AdminConsoleShell = lazy(async () => {
-  const module = await import('../features/admin-shell/AdminConsoleShell');
-  return { default: module.AdminConsoleShell };
-});
+const CHUNK_RECOVERY_KEY = 'genius.lazy-reload-once';
 
-const LoginPage = lazy(async () => {
-  const module = await import('../features/login/LoginPage');
-  return { default: module.LoginPage };
-});
+function isChunkLoadError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
 
-const AccessDeniedPage = lazy(async () => {
-  const module = await import('../features/auth/AccessDeniedPage');
-  return { default: module.AccessDeniedPage };
-});
+  return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(
+    error.message,
+  );
+}
 
-const TenantsPage = lazy(async () => {
-  const module = await import('../features/tenants/TenantsPage');
-  return { default: module.TenantsPage };
-});
+async function importWithChunkRecovery<T>(loader: () => Promise<T>) {
+  try {
+    const module = await loader();
 
-const KnowledgePage = lazy(async () => {
-  const module = await import('../features/knowledge/KnowledgePage');
-  return { default: module.KnowledgePage };
-});
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem(CHUNK_RECOVERY_KEY);
+    }
 
-const HelpCenterPage = lazy(async () => {
-  const module = await import('../features/help-center/HelpCenterPage');
-  return { default: module.HelpCenterPage };
-});
+    return module;
+  } catch (error) {
+    if (typeof window !== 'undefined' && isChunkLoadError(error)) {
+      const alreadyRetried = window.sessionStorage.getItem(CHUNK_RECOVERY_KEY) === '1';
 
-const HelpCenterSpaceLayout = lazy(async () => {
-  const module = await import('../features/help-center/HelpCenterPage');
-  return { default: module.HelpCenterSpaceLayout };
-});
+      if (!alreadyRetried) {
+        window.sessionStorage.setItem(CHUNK_RECOVERY_KEY, '1');
+        window.location.reload();
 
-const HelpCenterHomePage = lazy(async () => {
-  const module = await import('../features/help-center/HelpCenterHomePage');
-  return { default: module.HelpCenterHomePage };
-});
+        return await new Promise<never>(() => {
+          // Wait for the reload to replace this execution path.
+        });
+      }
 
-const HelpCenterArticlesPage = lazy(async () => {
-  const module = await import('../features/help-center/HelpCenterArticlesPage');
-  return { default: module.HelpCenterArticlesPage };
-});
+      window.sessionStorage.removeItem(CHUNK_RECOVERY_KEY);
+    }
 
-const HelpCenterArticlePage = lazy(async () => {
-  const module = await import('../features/help-center/HelpCenterArticlePage');
-  return { default: module.HelpCenterArticlePage };
-});
+    throw error;
+  }
+}
 
-const AccessPage = lazy(async () => {
-  const module = await import('../features/access/AccessPage');
-  return { default: module.AccessPage };
-});
+function lazyRouteModule<TModule, TKey extends keyof TModule>(
+  loader: () => Promise<TModule>,
+  exportName: TKey,
+) {
+  return lazy(async () => {
+    const module = await importWithChunkRecovery(loader);
+    return { default: module[exportName] as ComponentType };
+  });
+}
 
-const SystemPage = lazy(async () => {
-  const module = await import('../features/system/SystemPage');
-  return { default: module.SystemPage };
-});
+function RouteErrorBoundary() {
+  const error = useRouteError();
+  const description = isChunkLoadError(error)
+    ? 'Esta área precisa ser recarregada para sincronizar a versão mais recente da interface.'
+    : 'Não foi possível concluir a abertura desta área. Recarregue a página ou tente novamente.';
 
-const SupportWorkspaceShell = lazy(async () => {
-  const module = await import('../features/support/SupportWorkspaceShell');
-  return { default: module.SupportWorkspaceShell };
-});
+  return (
+    <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-6 py-12">
+      <ErrorState
+        title="Não foi possível abrir esta superfície"
+        description={description}
+        action={
+          <>
+            <AppButton onClick={() => window.location.reload()}>Recarregar página</AppButton>
+            <GhostButton onClick={() => window.location.assign('/admin')}>
+              Voltar ao Admin
+            </GhostButton>
+          </>
+        }
+      />
+    </div>
+  );
+}
 
-const SupportQueuePage = lazy(async () => {
-  const module = await import('../features/support/SupportWorkspacePage');
-  return { default: module.SupportQueuePage };
-});
+const AdminConsoleShell = lazyRouteModule(
+  () => import('../features/admin-shell/AdminConsoleShell'),
+  'AdminConsoleShell',
+);
 
-const SupportTicketsPage = lazy(async () => {
-  const module = await import('../features/support/SupportWorkspacePage');
-  return { default: module.SupportTicketsPage };
-});
+const LoginPage = lazyRouteModule(() => import('../features/login/LoginPage'), 'LoginPage');
 
-const SupportTicketPage = lazy(async () => {
-  const module = await import('../features/support/SupportWorkspacePage');
-  return { default: module.SupportTicketPage };
-});
+const AccessDeniedPage = lazyRouteModule(
+  () => import('../features/auth/AccessDeniedPage'),
+  'AccessDeniedPage',
+);
 
-const SupportCustomerPage = lazy(async () => {
-  const module = await import('../features/support/SupportWorkspacePage');
-  return { default: module.SupportCustomerPage };
-});
+const CustomerPortalGate = lazyRouteModule(
+  () => import('../features/customer-portal/CustomerPortalPage'),
+  'CustomerPortalGate',
+) as ReturnType<typeof lazy<ComponentType<{ children?: ReactNode }>>>;
 
-const SupportCustomersPage = lazy(async () => {
-  const module = await import('../features/support/SupportWorkspacePage');
-  return { default: module.SupportCustomersPage };
-});
+const CustomerPortalLayout = lazyRouteModule(
+  () => import('../features/customer-portal/CustomerPortalPage'),
+  'CustomerPortalLayout',
+);
 
-const SupportGate = lazy(async () => {
-  const module = await import('../features/support/SupportGate');
-  return { default: module.SupportGate };
-});
+const CustomerPortalHomePage = lazyRouteModule(
+  () => import('../features/customer-portal/CustomerPortalPage'),
+  'CustomerPortalHomePage',
+);
+
+const CustomerPortalTicketsPage = lazyRouteModule(
+  () => import('../features/customer-portal/CustomerPortalPage'),
+  'CustomerPortalTicketsPage',
+);
+
+const CustomerPortalTicketPage = lazyRouteModule(
+  () => import('../features/customer-portal/CustomerPortalPage'),
+  'CustomerPortalTicketPage',
+);
+
+const CustomerPortalHelpPage = lazyRouteModule(
+  () => import('../features/customer-portal/CustomerPortalPage'),
+  'CustomerPortalHelpPage',
+);
+
+const CustomerPortalHelpArticlePage = lazyRouteModule(
+  () => import('../features/customer-portal/CustomerPortalPage'),
+  'CustomerPortalHelpArticlePage',
+);
+
+const AdminOverviewPage = lazyRouteModule(
+  () => import('../features/admin/AdminOverviewPage'),
+  'AdminOverviewPage',
+);
+
+const AnalyticsShell = lazyRouteModule(
+  () => import('../features/analytics/AnalyticsShell'),
+  'AnalyticsShell',
+);
+
+const TenantsPage = lazyRouteModule(() => import('../features/tenants/TenantsPage'), 'TenantsPage');
+
+const KnowledgePage = lazyRouteModule(
+  () => import('../features/knowledge/KnowledgePage'),
+  'KnowledgePage',
+);
+
+const KnowledgeArticleEditorPage = lazyRouteModule(
+  () => import('../features/knowledge/KnowledgeArticleEditorPage'),
+  'KnowledgeArticleEditorPage',
+);
+
+const CustomerPortalAdminPage = lazyRouteModule(
+  () => import('../features/admin/CustomerPortalAdminPage'),
+  'CustomerPortalAdminPage',
+);
+
+const InternalAreasAdminPage = lazyRouteModule(
+  () => import('../features/admin/InternalAreasAdminPage'),
+  'InternalAreasAdminPage',
+);
+
+const BuildJournalPage = lazyRouteModule(
+  () => import('../features/build-journal/BuildJournalPage'),
+  'BuildJournalPage',
+);
+
+const ProductDocsPage = lazyRouteModule(
+  () => import('../features/product-docs/ProductDocsPage'),
+  'ProductDocsPage',
+);
+
+const HelpCenterPage = lazyRouteModule(
+  () => import('../features/help-center/HelpCenterPage'),
+  'HelpCenterPage',
+);
+
+const HelpCenterSpaceLayout = lazyRouteModule(
+  () => import('../features/help-center/HelpCenterPage'),
+  'HelpCenterSpaceLayout',
+);
+
+const HelpCenterHomePage = lazyRouteModule(
+  () => import('../features/help-center/HelpCenterHomePage'),
+  'HelpCenterHomePage',
+);
+
+const HelpCenterArticlesPage = lazyRouteModule(
+  () => import('../features/help-center/HelpCenterArticlesPage'),
+  'HelpCenterArticlesPage',
+);
+
+const HelpCenterArticlePage = lazyRouteModule(
+  () => import('../features/help-center/HelpCenterArticlePage'),
+  'HelpCenterArticlePage',
+);
+
+const AccessPage = lazyRouteModule(() => import('../features/access/AccessPage'), 'AccessPage');
+
+const SystemPage = lazyRouteModule(() => import('../features/system/SystemPage'), 'SystemPage');
+
+const SettingsPage = lazyRouteModule(
+  () => import('../features/settings/SettingsPage'),
+  'SettingsPage',
+);
+
+const SupportWorkspaceShell = lazyRouteModule(
+  () => import('../features/support/SupportWorkspaceShell'),
+  'SupportWorkspaceShell',
+);
+
+const CustomersPage = lazyRouteModule(
+  () => import('../features/customers/CustomersPage'),
+  'CustomersPage',
+);
+
+const HomePage = lazyRouteModule(
+  () => import('../features/home/HomePage'),
+  'HomePage',
+);
+
+const InboxPage = lazyRouteModule(
+  () => import('../features/inbox/InboxPage'),
+  'InboxPage',
+);
+
+const SupportQueuePage = lazyRouteModule(
+  () => import('../features/support/SupportWorkspacePage'),
+  'SupportQueuePage',
+);
+
+const SupportTicketsPage = lazyRouteModule(
+  () => import('../features/support/SupportWorkspacePage'),
+  'SupportTicketsPage',
+);
+
+const SupportTicketPage = lazyRouteModule(
+  () => import('../features/support/SupportWorkspacePage'),
+  'SupportTicketPage',
+);
+
+const EngineeringWorkspacePage = lazyRouteModule(
+  () => import('../features/engineering/EngineeringWorkspacePage'),
+  'EngineeringWorkspacePage',
+);
+
+const InternalActionsWorkspacePage = lazyRouteModule(
+  () => import('../features/internal-actions/InternalActionsWorkspacePage'),
+  'InternalActionsWorkspacePage',
+);
+
+const SupportCustomerPage = lazyRouteModule(
+  () => import('../features/support/SupportWorkspacePage'),
+  'SupportCustomerPage',
+);
+
+const SupportCustomersPage = lazyRouteModule(
+  () => import('../features/support/SupportWorkspacePage'),
+  'SupportCustomersPage',
+);
+
+const SupportGate = lazyRouteModule(
+  () => import('../features/support/SupportGate'),
+  'SupportGate',
+) as ReturnType<typeof lazy<ComponentType<{ children?: ReactNode }>>>;
+
+const CsGate = lazyRouteModule(
+  () => import('../features/cs/CsGate'),
+  'CsGate',
+) as ReturnType<typeof lazy<ComponentType<{ children?: ReactNode }>>>;
+
+const CsWorkspaceShell = lazyRouteModule(
+  () => import('../features/cs/CsWorkspaceShell'),
+  'CsWorkspaceShell',
+);
+
+const CsPortfolioPage = lazyRouteModule(
+  () => import('../features/cs/CsPortfolioPage'),
+  'CsPortfolioPage',
+);
 
 function RouteLoading() {
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-6 py-12">
-      <LoadingState
-        title="Carregando superficie"
-        description="Estamos preparando a proxima area antes de abrir a tela solicitada."
-      />
+    <div className="flex min-h-screen w-full items-center justify-center bg-[color:var(--color-background)] px-4 py-8" role="status" aria-busy="true" aria-label="Consultando a superfície solicitada">
+      <section className="flex min-h-[170px] w-full max-w-3xl flex-col items-center justify-center gap-3 px-4 text-center sm:min-h-[240px]">
+        <div className="flex h-36 w-36 items-center justify-center sm:h-44 sm:w-44">
+          <div className="scale-[0.7] sm:scale-[0.9]"><GeniusMascot alt="Gênio preparando a próxima superfície" expression="happy" pose="magic" size="xl" surface="loading" /></div>
+        </div>
+        <h1 className="text-base font-semibold text-[color:var(--color-ink)]">Consultando a superfície</h1>
+        <p className="text-sm leading-6 text-[color:var(--color-muted)]">Estamos preparando a próxima área.</p>
+      </section>
     </div>
   );
 }
@@ -117,6 +300,7 @@ function withSuspense(element: ReactNode) {
 export const router = createBrowserRouter([
   {
     element: <AuthBootstrap />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       {
         path: '/',
@@ -153,6 +337,40 @@ export const router = createBrowserRouter([
         element: withSuspense(<AccessDeniedPage />),
       },
       {
+        path: '/customer-portal',
+        element: <Navigate replace to="/portal" />,
+      },
+      {
+        path: '/portal',
+        element: withSuspense(
+          <CustomerPortalGate>
+            <CustomerPortalLayout />
+          </CustomerPortalGate>,
+        ),
+        children: [
+          {
+            index: true,
+            element: withSuspense(<CustomerPortalHomePage />),
+          },
+          {
+            path: 'tickets',
+            element: withSuspense(<CustomerPortalTicketsPage />),
+          },
+          {
+            path: 'tickets/:ticketId',
+            element: withSuspense(<CustomerPortalTicketPage />),
+          },
+          {
+            path: 'help',
+            element: withSuspense(<CustomerPortalHelpPage />),
+          },
+          {
+            path: 'help/:articleSlug',
+            element: withSuspense(<CustomerPortalHelpArticlePage />),
+          },
+        ],
+      },
+      {
         path: '/admin',
         element: (
           <AdminGate>{withSuspense(<AdminConsoleShell />)}</AdminGate>
@@ -163,6 +381,14 @@ export const router = createBrowserRouter([
             element: <Navigate replace to="/admin/tenants" />,
           },
           {
+            path: 'visao-geral',
+            element: withSuspense(<AdminOverviewPage />),
+          },
+          {
+            path: 'analytics',
+            element: withSuspense(<AnalyticsShell />),
+          },
+          {
             path: 'tenants',
             element: withSuspense(<TenantsPage />),
           },
@@ -171,12 +397,58 @@ export const router = createBrowserRouter([
             element: withSuspense(<KnowledgePage />),
           },
           {
+            path: 'knowledge/new',
+            element: withSuspense(<KnowledgeArticleEditorPage />),
+          },
+          {
+            path: 'knowledge/:articleId/edit',
+            element: withSuspense(<KnowledgeArticleEditorPage />),
+          },
+          {
+            path: 'customer-portal',
+            element: withSuspense(<CustomerPortalAdminPage />),
+          },
+          {
+            path: 'internal-areas',
+            element: withSuspense(<InternalAreasAdminPage />),
+          },
+          {
+            path: 'build-journal',
+            element: withSuspense(<BuildJournalPage />),
+          },
+          {
+            path: 'product-docs',
+            element: withSuspense(<ProductDocsPage />),
+          },
+          {
             path: 'access',
             element: withSuspense(<AccessPage />),
           },
           {
             path: 'system',
             element: withSuspense(<SystemPage />),
+          },
+          {
+            path: 'settings',
+            element: withSuspense(<SettingsPage />),
+          },
+        ],
+      },
+      {
+        path: '/cs',
+        element: withSuspense(
+          <CsGate>
+            <CsWorkspaceShell />
+          </CsGate>,
+        ),
+        children: [
+          {
+            index: true,
+            element: <Navigate replace to="/cs/portfolio" />,
+          },
+          {
+            path: 'portfolio',
+            element: withSuspense(<CsPortfolioPage />),
           },
         ],
       },
@@ -193,6 +465,10 @@ export const router = createBrowserRouter([
             element: <Navigate replace to="/support/queue" />,
           },
           {
+            path: 'inbox',
+            element: withSuspense(<InboxPage />),
+          },
+          {
             path: 'queue',
             element: withSuspense(<SupportQueuePage />),
           },
@@ -205,12 +481,66 @@ export const router = createBrowserRouter([
             element: withSuspense(<SupportTicketPage />),
           },
           {
+            path: 'clientes',
+            element: withSuspense(<CustomersPage />),
+          },
+          {
             path: 'customers',
             element: withSuspense(<SupportCustomersPage />),
           },
           {
             path: 'customers/:tenantId',
             element: withSuspense(<SupportCustomerPage />),
+          },
+        ],
+      },
+      {
+        path: '/inicio',
+        element: withSuspense(
+          <SupportGate>
+            <SupportWorkspaceShell />
+          </SupportGate>,
+        ),
+        children: [
+          {
+            index: true,
+            element: withSuspense(<HomePage />),
+          },
+        ],
+      },
+      {
+        path: '/engineering',
+        element: withSuspense(
+          <SupportGate>
+            <SupportWorkspaceShell />
+          </SupportGate>,
+        ),
+        children: [
+          {
+            index: true,
+            element: withSuspense(<EngineeringWorkspacePage />),
+          },
+          {
+            path: 'work-items/:workItemId',
+            element: withSuspense(<EngineeringWorkspacePage />),
+          },
+        ],
+      },
+      {
+        path: '/internal-actions',
+        element: withSuspense(
+          <SupportGate>
+            <SupportWorkspaceShell />
+          </SupportGate>,
+        ),
+        children: [
+          {
+            index: true,
+            element: withSuspense(<InternalActionsWorkspacePage />),
+          },
+          {
+            path: ':actionId',
+            element: withSuspense(<InternalActionsWorkspacePage />),
           },
         ],
       },

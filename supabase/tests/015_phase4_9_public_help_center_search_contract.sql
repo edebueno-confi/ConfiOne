@@ -220,16 +220,18 @@ reset request.jwt.claim.sub;
 select is(
   pg_temp.safe_bigint(
     $$select count(*)
-      from public.rpc_public_search_knowledge_articles('genius', 'webhook', 10)$$
+      from public.rpc_public_search_knowledge_articles('genius', 'webhook', 10)
+      where article_id = '63000000-0000-4000-8000-000000000001'$$
   ),
   1::bigint,
-  'anon encontra artigo publico publicado na busca'
+  'anon encontra o artigo publico publicado criado pelo teste na busca'
 );
 
 select is(
   pg_temp.safe_text(
     $$select title
       from public.rpc_public_search_knowledge_articles('genius', 'webhook', 10)
+      where article_id = '63000000-0000-4000-8000-000000000001'
       limit 1$$
   ),
   'Configurar webhook tecnico',
@@ -240,6 +242,7 @@ select is(
   pg_temp.safe_text(
     $$select category_name
       from public.rpc_public_search_knowledge_articles('genius', 'webhook', 10)
+      where article_id = '63000000-0000-4000-8000-000000000001'
       limit 1$$
   ),
   'Integracoes Publicas',
@@ -258,16 +261,18 @@ select is(
 select is(
   pg_temp.safe_bigint(
     $$select count(*)
-      from public.rpc_public_search_knowledge_articles('genius', 'restrito', 10)$$
+      from public.rpc_public_search_knowledge_articles('genius', 'restrito', 10)
+      where article_id = '63000000-0000-4000-8000-000000000003'$$
   ),
   0::bigint,
-  'anon nao encontra artigo restricted na busca publica'
+  'anon nao encontra o artigo restricted do teste na busca publica'
 );
 
 select is(
   pg_temp.safe_bigint(
     $$select count(*)
-      from public.rpc_public_search_knowledge_articles('genius', 'categoria interna', 10)$$
+      from public.rpc_public_search_knowledge_articles('genius', 'categoria interna', 10)
+      where article_id = '63000000-0000-4000-8000-000000000004'$$
   ),
   0::bigint,
   'anon nao encontra artigo em categoria interna'

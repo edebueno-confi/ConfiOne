@@ -1,0 +1,48 @@
+{
+  "route": "/support/tickets/b86df683-9756-4047-b954-350e02063aa2",
+  "innerWidth": 1600,
+  "innerHeight": 900,
+  "scrollHeight": 900,
+  "clientHeight": 900,
+  "hasGlobalScroll": false,
+  "hasHorizontalScroll": false,
+  "scrollables": [
+    {
+      "tag": "div",
+      "cls": "support-queue-panel__body min-h-0 flex-1 overflow-y-auto",
+      "role": null,
+      "scrollHeight": 1205,
+      "clientHeight": 459,
+      "scrollWidth": 308,
+      "clientWidth": 308,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "#5664A8B7QA Support | SLA contratual com virada de turno e cliente em operação c"
+    },
+    {
+      "tag": "div",
+      "cls": "min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5",
+      "role": null,
+      "scrollHeight": 1464,
+      "clientHeight": 396,
+      "scrollWidth": 608,
+      "clientWidth": 608,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "24/05Evento operacional registrado · Portal do clienteEvento operacional registr"
+    },
+    {
+      "tag": "aside",
+      "cls": "support-rail-column flex h-full min-w-0 min-h-0 flex-col overflow-y-auto xl:shrink-0",
+      "role": null,
+      "scrollHeight": 1307,
+      "clientHeight": 791,
+      "scrollWidth": 326,
+      "clientWidth": 326,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "Resumo do ticketClienteSupport QA Tenant A Operação EnterprisePortal do cliente "
+    }
+  ],
+  "sampleText": "Genius Support OS\n\nOperação interna CX B2B\n\nNAVEGAÇÃO\n\nOperação CX\nFila operacional\nTickets\nClientes B2B\nAcionamentos\nConhecimento\nEngenharia\nFila técnica\nItens técnicos\nRetornos ao CX\nGovernança\nContas B2B\nPortal do cliente\nÁreas internas\nAcessos\nSistema\nGovernança de conhecimento\nDiário de Construção\nDocumentos do produto\nQL\n\nQA Local Support Manager A\n\nOperação interna\n\nEncerrar sessão\nTickets e conversas\n\nTratativa operacional com contexto, histórico e comunicação centralizados.\n\nNovo ticket\nFila viva\n21\nAbertos\n21\nFechados\n0\nTodos\n21\nEm tratativa\n1\nAguardando\n11\nUrgentes\n5\nOperações\n2\nEngenharia\n9\n\n#5664A8B7\n\nQA Support | SLA contratual com virada de turno e cliente em operação contínua 24x7\n01:16\n\nSupport QA Tenant A Operação Enterprise\n\nDados e relatorios · Email\n\nAG. CLIENTE\nSem politica definida\n\n#0BC6AFF7\n\nQA Support | Janela de expedição não refletiu aprovação no tenant enterprise multiunidade\n01:16\n\nSupport QA Tenant A Operação Enterprise\n\nOperacao da plataforma · Portal do cliente\n\nEM TRATATIVA\nSem politica definida\n\n#B86DF683\n\nQA Support | Operação crítica com histórico extenso, anexos e retorno operacional\n20:32\n\nSupport QA Tenant A Operação Enterprise\n\nIndisponível "
+}

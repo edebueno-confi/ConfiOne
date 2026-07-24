@@ -1,4 +1,362 @@
+# Release urgente Dashboard + Central de Ajuda — 2026-07-23
+
+## Encerramento formal da RELEASE-01 — 2026-07-24
+
+- Escopo de desenvolvimento concluído: PILOT da Central Pública de Ajuda; KNOWLEDGE-01; KNOWLEDGE-01.1; TAXONOMY-01; TAXONOMY-01.1; recuperação/associação de assets; normalização editorial; busca, categorias, subcategorias, navegação pública; responsividade; acessibilidade; CTA para `/portal`; e gate técnico de preparação da RELEASE-01.
+- Estado da RELEASE-01: PR ainda não criado por falta de autenticação local do GitHub CLI; após criação, registrar `PR criado — aguardando revisão, merge e deploy`. Não considerar implantada antes de aprovação, merge, deploy e smoke em produção.
+- Estado atual deste checkout: branch `codex/release-pilot-dashboard-help-center-v1`, HEAD `dc10e66`, worktree limpo, ahead/behind `0/0` contra o remoto.
+- Central `genius`: 75 artigos; 62 `published/public`; 13 não públicos. Assets: 128 registros, 99 aprovados/públicos e 29 pendentes de revisão.
+- Taxonomia final: Configuração da operação, Integrações e API, Trocas e devoluções, Sellers e lojas, Solução de problemas e Suporte técnico; `Primeiros passos` permanece apenas como artigo preservado fora da navegação principal. Profundidade máxima: 2 níveis.
+- Evidências e validações: typechecks, build, pgTAP, smoke dos 62 artigos públicos, console/rede/overflow e `repository:check-root` aprovados. Relatórios: `docs/reports/RELEASE_01_DEVELOPMENT_CLOSURE_2026-07-24.md` e `docs/reports/TAXONOMY_01_1_FINAL_2026-07-24.md`.
+- Pendências transferidas sem reabrir os lotes: KNOWLEDGE-02/editor rico, revisão dos restritos, 29 assets pendentes, drift de migration, erro remoto UUID/`true`, merge, deploy e smoke em produção.
+- Próxima frente oficial: `DASHBOARD-02 — Evolução do Dashboard Gerencial`, somente em discovery próprio e fora desta branch.
+
+- O espaço público `genius` local está ativo com 57 artigos importados da
+  exportação Octadesk, 7 categorias, 44 artigos `published/public` e 13
+  bloqueados por regras editoriais/técnicas.
+- O fluxo usado foi importação local como draft seguida da publicação editorial
+  versionada; nenhuma publicação remota foi executada.
+- `HelpCenterHomePage` agora usa `buildHelpCenterCategoryHref`, evitando links
+  de categoria duplicados. Teste focado e QA browser sem erros de console.
+- Validacao final local do release: o Dashboard inicializa o preset de periodo
+  a partir das datas recebidas, mantendo "Este mes" coerente no primeiro paint.
+- Build web, contracts typecheck, 76/76 testes Node, higiene da raiz e diff
+  check foram executados neste ciclo sem bloqueio.
+- O timeout HTTP 500 da fila foi reproduzido no RPC autenticado como SQLSTATE
+  57014 e corrigido localmente pela migration de passagem unica; paginas 1 e 2
+  retornaram 50 itens em HTTP 200. O relatorio esta em
+  `docs/reports/SUPPORT_QUEUE_TIMEOUT_ROOT_CAUSE_2026-07-23.md`.
+- A fixture completa `supabase:qa:local-support-fixture` excedeu o timeout de
+  244s sem concluir e deve ser diagnosticada separadamente; não é bloqueio da
+  Central de Ajuda já reidratada.
+
+# Estado do contexto HubSpot no cockpit B2B — 2026-07-23
+
+- `CustomersPage` agora consome `rpc_analytics_customer_relationship_contract` com paginação limitada e mostra entidades legais, negócios e grupos econômicos resolvidos como contexto global.
+- A UI informa a proveniência (`hubspot_cache`) e bloqueia qualquer interpretação de que os totais estejam associados a uma conta individual.
+- O vínculo `tenant_id` ↔ `hubspot_company_id` continua ausente e é o próximo contrato de domínio; não foi criado vínculo heurístico.
+
+# Estado consolidado pós-lote CS/B2B — 2026-07-23
+
+- O contrato real de carteira CS está implementado localmente em `20260723203000_cs_real_portfolio_contract_v1.sql`, com RLS, RPC de escrita, histórico e pgTAP 12/12.
+- Clientes B2B, Carteira CS e Contas B2B usam lista dominante, busca/filtros e detalhe contextual; Contas B2B não abre mais a primeira conta automaticamente.
+- Smoke test autenticado em `http://127.0.0.1:4173` foi concluído nas três rotas com dados locais; typecheck, build e 68 testes Node passaram.
+- Atenção de dados: alguns nomes do seed local já persistem com `�`. A correção deve ser feita contra a fonte original em migração auditável, não por substituição heurística.
+- As pendências de produção continuam sendo: mapear owners reais, associar grupo econômico/entidade legal/deals ao cockpit, remover legado oculto e concluir a matriz responsiva light/dark.
+
+# Atualização canônica mais recente: 2026-07-23 — auditoria de dados reais de CS e redesign de Clientes B2B/Carteira CS.
+
+## Implementação do contrato real e cockpit B2B/CS — 2026-07-23
+
+- Migration local: `supabase/migrations/20260723203000_cs_real_portfolio_contract_v1.sql`.
+- Teste: `supabase/tests/074_cs_real_portfolio_contract.sql` — 12/12.
+- O domínio agora possui atribuição de carteira CS editável, origem, status, cluster, modelo, cadência, saúde, prioridade, owner e histórico.
+- A escrita passa por `rpc_admin_upsert_cs_customer_portfolio`; o backend valida ator autorizado e owner com profile/membership CS ativos.
+- `vw_cs_customer_portfolio` expõe a atribuição estruturada, sem acesso direto às tabelas base.
+- `CsPortfolioPage.tsx` e `CustomersPage.tsx` usam tabela dominante e drawer contextual, sem detalhe permanente comprimindo a operação.
+- `TenantsPage.tsx` removeu as colunas visuais de ferramentas/detalhe permanente e moveu filtros para a toolbar; o detalhe é contextual.
+- Validação atual: contracts/web typecheck, build web e 68 testes Node aprovados.
+- Limite: aplicação somente local; owners QA não foram promovidos; ainda falta QA visual autenticado e carga segura de colaboradores produtivos.
+
+## Estado canônico do lote atual — 2026-07-23
+
+- Checkout canônico: `C:\Projetos\GSO-old`.
+- Branch ativa: `codex/repository-cleanup-consolidation-20260721`.
+- HEAD observado antes deste lote: `38b6311` — `docs(analytics): document PostgREST cache fix`.
+- O worktree possui alterações herdadas staged, unstaged e untracked de diversos lotes; elas foram preservadas. Este lote não executou reset, clean, commit, push ou descarte amplo.
+- A auditoria local da planilha CS Ops confirmou 606 clientes e 42 campos na aba `BD_Clientes`. O seed local é adequado para QA, mas não deve ser tratado como carga produtiva nem como identidade real dos responsáveis.
+- O backend já possui tenants, perfis, assinaturas, segments e owners; ainda falta um contrato de carteira CS editável e a estruturação dos campos CS que hoje estão em notas/JSON. Owners só devem operar como responsáveis de CS quando houver profile ativo e membership de área válida.
+- A direção visual corrente substitui layouts de quatro zonas por no máximo duas zonas de trabalho. A lista principal deve dominar a viewport; ferramentas ficam na toolbar/menu contextual; detalhes abrem em rota/workspace/drawer, não em rail permanente.
+
+### Próxima sequência obrigatória
+
+1. Contrato backend de carteira/atribuição CS, com RLS, RPCs, auditoria, histórico e pgTAP.
+2. Modelo estruturado dos campos CS da planilha, com proveniência e edição segura.
+3. Memberships de área/função para colaboradores reais; owners QA continuam isolados como fixture.
+4. Cockpit Clientes B2B e cockpit Carteira CS, com filtros globais, atenção semântica, busca e detalhe dedicado.
+5. Simplificação de Contas B2B e unificação visual/responsiva do sistema.
+
+Evidência completa: `docs/reports/CS_B2B_PORTFOLIO_UX_DATA_AUDIT_2026-07-23.md`.
+
+# Histórico canônico anterior — 2026-07-22
+
+- Checkout canônico: `C:\Projetos\GSO-old`.
+- Branch ativa: `codex/repository-cleanup-consolidation-20260721`.
+- HEAD atual: `5cb4eea` — `feat(analytics): configure dual integration schedules`.
+- O lote OMIE↔HubSpot está fechado localmente: agenda configurável separada para
+  OMIE financeiro e HubSpot global, sincronização global HubSpot com escopo
+  `all`, atualizações HubSpot em lote, remoção de enriquecimento OMIE repetido e
+  proteção contra concorrência/timeout no fluxo financeiro.
+- Evidências locais: sincronização dedicada OMIE com 3.433/3.433 títulos e
+  execução combinada HTTP 200. O estado local mantém 10.163 empresas e 136
+  grupos financeiros reconciliáveis.
+- A agenda automática do HubSpot está implementada, mas permanece desligada por
+  padrão para evitar consumo inesperado da API; a agenda OMIE local está ativa
+  em frequência diária. A ativação remota depende de secret, scheduler e deploy
+  aprovados separadamente.
+- O heartbeat `analytics-scheduled-run` está versionado, mas o runtime Edge
+  local usado neste checkout ainda precisa ser recarregado para reconhecer a
+  nova função; um `OPTIONS` 404 nesse runtime congelado não representa falha
+  do código versionado.
+- Nenhum push, deploy remoto, publicação de migration/function, alteração de
+  secret ou write externo foi executado neste fechamento.
+- O worktree ainda contém alterações paralelas da auditoria e de outros lotes;
+  elas foram preservadas e não fazem parte do commit `5cb4eea`.
+
+As seções datadas abaixo são histórico de execução. Quando houver conflito com
+este bloco, este estado canônico atual prevalece; pendências antigas sobre
+“credencial OMIE pendente” não devem ser tratadas como pendências atuais.
+
+## Auditoria do recorte Comercial — 2026-07-23
+
+- O portal HubSpot `20108050` foi consultado em modo somente leitura. A
+  atividade comercial não está concentrada em um único pipeline: `Piloto
+  Aftersale` tem 1.150 negócios, `Pipe de Vendas` 865 e `Renovação Contratual`
+  1 na consulta atual.
+- O sincronizador agora descobre o catálogo de pipelines não arquivados do
+  HubSpot e registra candidatos localmente como inativos, sem sobrescrever
+  alias ou estado configurado pelo administrador.
+- O snapshot comercial recebeu exclusão temporária de pipelines server-side e
+  a aba Comercial mostra nome oficial, alias, ID e volume observado. O bloco de
+  seleção não altera a configuração persistida.
+- A decisão de ativar `Pipe de Vendas` e/ou `Renovação Contratual` permanece
+  administrativa e exige sincronização posterior para carregar os negócios no
+  cache local. Evidência detalhada: `docs/reports/COMMERCIAL_PIPELINE_AUDIT_2026-07-23.md`.
+
+# Checkpoint corrente — SDD de prontidão e continuidade — 2026-07-21
+
+- Checkout canônico confirmado: `C:\Projetos\GSO-old`.
+- Branch ativa: `codex/repository-cleanup-consolidation-20260721`.
+- HEAD atual: `7c7d291`, com consolidação anterior em `0f86cab`.
+- Worktree contém o lote W1 ainda não commitado (scanner, teste, package e
+  documentação); branch anterior `codex/ux-ui-rebuild-v2-discovery` preservada;
+  nenhum push, deploy, migration remota, alteração de secret ou write externo
+  foi executado neste checkpoint.
+- A spec guarda-chuva e o plano executável dos próximos ciclos são,
+  respectivamente, `docs/superpowers/specs/2026-07-21-gso-release-readiness-and-next-cycles.md`
+  e `docs/superpowers/plans/2026-07-21-gso-release-readiness-and-next-cycles.md`.
+- Auditorias paralelas confirmaram que o próximo gate local é reconciliar
+  contratos/status documental e concluir higiene; depois vêm QA autenticado do
+  Dashboard, baseline único de testes, reidratação do cache HubSpot e validação
+  de frescor/semântica OMIE.
+- Conflitos históricos relevantes ficam registrados para correção: relatórios
+  antigos citam branch/commit diferentes, a contagem da suíte varia, o escopo
+  de `dashboard_viewer` precisa de uma matriz única e o status de OMIE/cache
+  depende do ambiente e da data da evidência.
+- Próximo passo recomendado: revisar as duas violações restantes da raiz (`output/`
+  e o bundle do mascote) e só pedir decisão humana antes de arquivar/remover
+  conteúdo ainda referenciado.
+
+## W1 — verificador de higiene da raiz — 2026-07-21
+
+- criado scanner read-only com allowlist e teste TDD;
+- 10 logs/dumps transitórios foram preservados em `.tmp/logs/2026-07-21--local-environment/`;
+- a verificação atual encontrou somente `output/` e o bundle local do mascote,
+  ambos preservados para triagem e sem exclusão automática;
+- nenhum código de runtime, schema, integração externa ou secret foi alterado;
+- web local responde em `http://127.0.0.1:4173`; API/DB/Studio Supabase respondem
+  em `54321`/`54322`/`54323`; Edge Runtime, imgproxy e pooler continuam parados;
+- typecheck, build, lint/teste do banco, teste do scanner, validação documental,
+  `git diff --check` e smoke HTTP passaram.
+
+## Integrações locais — runtime e HubSpot faseado — 2026-07-21
+
+- O Edge Runtime local foi iniciado com `supabase functions serve`; os endpoints
+  de HubSpot e OMIE passaram a responder em vez de HTTP 503.
+- OMIE autenticado localmente concluiu 3.433/3.433 títulos.
+- A carga HubSpot monolítica chegou a concluir no servidor após o cliente receber
+  504, confirmando timeout do request; o snapshot persistido contém 10.162
+  empresas, 1.147 deals e 34.131 tickets.
+- A correção faseada foi validada em `companies`, `commercial` e `cs`, todos com
+  HTTP 200 e sem nova execução órfã; o frontend agora agrega as etapas.
+- Contracts/web typecheck, build, lint Supabase, pgTAP (67 arquivos, 1.194
+  testes), validação documental e `git diff --check` passaram.
+- Evidência: `docs/reports/HUBSPOT_SYNC_PHASED_EXECUTION_2026-07-21.md`.
+
+# Importacao CS Ops resiliente e preparacao da API OMIE - 2026-07-19
+
+- O HTTP 546 foi reproduzido localmente como limite de CPU/memoria do parser
+  XLSX ao carregar todas as abas.
+- O importador agora le somente `BD_Clientes` com parser XML enxuto e gravou
+  o arquivo real de CS Ops em staging: 606 linhas aceitas, nenhuma rejeitada.
+- A API OMIE agora possui sync read-only preparado para persistir titulos no
+  mesmo read model, com execucao auditavel e status de fonte/fallback na tela.
+- A chave OMIE continua pendente; nenhuma credencial foi criada ou exposta.
+
+# Mascote Genius e estados operacionais - 2026-07-21
+
+- O handoff visual foi auditado e não introduz uma segunda fonte de asset: o
+  `genius.svg` extraído é idêntico ao SVG já versionado.
+- `GeniusMascot` agora mapeia as superfícies operacionais para poses distintas:
+  magia durante loading, shrug no vazio, celebração no sucesso e welcome em
+  avatar/default.
+- O bundle de exportação permanece como referência local ignorada pelo Git;
+  o runtime usa somente componentes React e CSS do produto.
+
 # PROJECT_STATE.md
+
+## Estado do lote 2026-07-23
+
+- O catálogo comercial local inicia com os 11 pipelines conhecidos ativos e a
+  tela de Configuração permite habilitar/desabilitar cada fonte, preservando o
+  nome oficial e o alias interno.
+- `rpc_support_ticket_queue_page` aplica filtros, busca, contagem e paginação
+  no banco, com limite de 50 tickets por página.
+- `rpc_analytics_customer_relationship_contract` expõe grupo econômico com
+  resolução humana, entidade legal do HubSpot e deals paginados. Associações
+  ausentes permanecem vazias.
+- Validação local: pgTAP 73 arquivos/1.230 testes, typecheck, build e diff
+  check aprovados. Nenhuma migration remota ou publicação foi executada.
+
+## Seed local CS Ops e carteira de clientes - 2026-07-22
+
+- A planilha `CS Ops _ Carteiras e Clusters -v2.xlsx` foi extraída diretamente do caminho local, sem upload pela UI.
+- O fixture `supabase/qa/create-local-cs-ops-fixture.mjs` materializa 606 clientes, perfis operacionais, clusters, assinaturas, 575 responsáveis, tickets e ações de CS no banco local.
+- O seed é idempotente, preserva proveniência em `operational_flags`, notas e metadata, e exige Supabase local com chave local.
+- Evidência: `docs/reports/CS_OPS_LOCAL_SEED_2026-07-22.md`.
+- O modelo atual foi usado sem escrita externa; a separação futura entre grupo econômico, entidades legais e negócios HubSpot permanece contrato de domínio a fechar antes de uma carga produtiva.
+
+## Otimização da fila de suporte após seed CS Ops - 2026-07-23
+
+- A fila passou a reutilizar um único conjunto materializado de tickets visíveis,
+  evitando a reexecução de `vw_tickets_list` dentro do contexto de canal.
+- O contexto de SLA e canal agora parte do mesmo recorte autorizado. A view
+  `vw_support_tickets_queue` mantém os campos e permissões existentes.
+- O frontend limita o carregamento inicial aos 50 tickets mais recentes e
+  mantém a paginação visual local, evitando timeout quando o seed contém 607
+  tickets. Filtros server-side continuam aplicáveis antes do limite.
+- A migration local `20260723151602_optimize_support_ticket_queue_read_model.sql`
+  foi aplicada apenas no Supabase local e deve acompanhar qualquer reset local.
+- QA autenticado confirmou `/support/tickets`, `/support/queue`,
+  `/support/clientes`, `/cs/portfolio` e `/internal-actions` com os dados do
+  seed; nenhuma escrita remota foi executada.
+
+## Hardening de ACL do contrato de telas - 2026-07-23
+
+- As três funções auxiliares usadas exclusivamente por triggers de dependência
+  e atualização de telas tinham ACL implícita do PostgreSQL.
+- A migration local `20260723162000_harden_screen_dependency_function_acl.sql`
+  revoga execução de `public`, `anon`, `authenticated` e `service_role`,
+  mantendo somente o owner `postgres` explicitamente autorizado.
+- A suíte pgTAP foi reexecutada com 71 arquivos e 1.219 testes aprovados.
+- A migration foi aplicada somente no Supabase local; nenhum banco remoto,
+  secret ou integração externa foi alterado.
+
+## Contrato de identidade, area e acesso por tela - 2026-07-22
+
+- O modelo canonico de colaborador agora separa `profiles` (identidade),
+  `internal_area_memberships` (tenant, area, funcao operacional e status) e
+  `internal_screen_catalog`/grants (telas efetivamente autorizadas).
+- A migration local `20260722221746_internal_profile_screen_access_contract_v1.sql`
+  adiciona matriz por vinculo, contexto autenticado para o shell e perfis
+  nomeados reutilizaveis (`internal_access_profiles`) para casos como CS Gestor,
+  CS Operador, Financeiro e QA. Perfil global legado permanece somente como
+  compatibilidade; nao foi criado um papel global artificial por area.
+- `/admin/internal-areas` passou a configurar funcao na area, perfil de acesso
+  ou conjunto personalizado de telas, exigindo ao menos uma tela para vinculo
+  ativo. A tela continua sem inventar autorizacao local: somente envia chaves
+  do catalogo para RPCs auditadas.
+- A migration foi executada em transacao local com rollback para validar DDL,
+  views, RLS, grants e RPCs; nenhum banco remoto foi alterado. O deploy da
+  migration ainda e um gate externo.
+- Proximo hardening: tornar `vw_internal_actor_workspace_context` a fonte do
+  redirect e do shell, fechar a tela administrativa de CRUD de perfis nomeados,
+  e revisar a fronteira entre Acessos (identidade/papeis globais) e Areas
+  internas (funcao/perfil/telas por vinculo).
+
+# Central de Ajuda e acesso operacional - 2026-07-20
+
+- O papel `dashboard_viewer` agora é administrável na tela `/admin/access` e
+  cobre Dashboard, Área do cliente, Central de Ajuda, Conteúdo e Integrações.
+- A Knowledge Base local recebeu 58 artigos do corpus legado como rascunhos,
+  com origem/hash preservados; publicação continua humana e governada.
+- Evidência: `docs/reports/HELP_CENTER_CONTENT_VIEWER_ACCESS_2026-07-20.md`.
+
+# Status e responsaveis CS consolidados - 2026-07-19
+
+- O RPC `rpc_analytics_cs_snapshot` consolida categorias iguais entre pipelines
+  e devolve `pipeline_breakdown` para explicar a contagem.
+- O gráfico de status agora evita barras duplicadas; responsáveis também não
+  se repetem por pipeline e possuem detalhamento operacional na tela.
+- Evidência: `docs/reports/ANALYTICS_CS_CONSOLIDATED_BREAKDOWNS_2026-07-19.md`.
+
+# Nome oficial de pipeline versus alias interno - 2026-07-19
+
+- `analytics_source_config` agora preserva `hubspot_pipeline_label`, preenchido
+  pela definição oficial do pipeline durante a sincronização.
+- O campo `label` continua sendo o alias operacional editável no Dashboard
+  Gerencial. Configuração e CS / Suporte mostram nome HubSpot, alias e ID.
+- A migration `20260719180000_analytics_source_pipeline_names_v1.sql` foi
+  aplicada somente no banco local, sem reset, deploy ou escrita no HubSpot.
+
+## Densidade visual da Visao Executiva - 2026-07-19
+
+- As filas extensas de qualidade de dados e clientes com saldo vencido agora
+  ficam recolhidas por padrao e podem ser expandidas pelo usuario.
+- Os cabecalhos preservam contagens e alertas financeiros para decisao rapida;
+  a evidencia esta em
+  `docs/reports/ANALYTICS_EXECUTIVE_COLLAPSIBLE_SECTIONS_2026-07-19.md`.
+
+## CS Support multi-pipeline e fila de reconciliação — 2026-07-19
+
+- O diagnóstico do volume de suporte confirmou que o cache local estava lendo
+  o pipeline legado `1429283`, responsável pelos 12 tickets observados, enquanto
+  a atividade live de Rodolfo Turra está no pipeline `5034314`.
+- A configuração agora suporta múltiplos pipelines de CS, com WhatsApp,
+  Suporte B2B, Fale Conosco e Atendimento Analytics separados e administráveis
+  dentro do Dashboard Gerencial.
+- A visão de CS/CEO expõe tickets criados, origem, pipeline e responsável. O
+  sincronizador grava `hubspot_owner_id` no cache local.
+- A qualidade financeira agora possui fila detalhada de títulos reconciliados,
+  sem correspondência e ambíguos, com busca, links HubSpot e unificação somente
+  após confirmação humana.
+- O cache de tickets local ainda precisa de uma nova sincronização para trazer
+  os registros atuais dos pipelines ativos. Evidência detalhada:
+  `docs/reports/ANALYTICS_CS_PIPELINES_RECONCILIATION_QUEUE_2026-07-19.md`.
+
+## Cache de empresas apos merge HubSpot - 2026-07-19
+
+- O cache `hubspot_companies` representa somente o snapshot completo mais
+  recente retornado pelo HubSpot; IDs ausentes por merge/arquivamento sao
+  removidos apos a carga terminar com sucesso.
+- Snapshot vazio nao altera o cache anterior.
+- O caso Gloss foi corrigido: os dois IDs antigos foram removidos e o novo ID
+  `56708181165` permaneceu como unico registro correspondente.
+- Auditoria e historico continuam em `audit_log`,
+  `analytics_hubspot_merge_runs` e `hubspot_sync_runs`.
+- Evidencia: `docs/reports/HUBSPOT_COMPANY_MERGE_FLOW_2026-07-19.md`.
+
+## Continuidade confirmada — visão CEO com risco financeiro — 2026-07-18
+
+- O cache read-only `hubspot_companies` reconcilia títulos OMIE com empresa, CSM, MRR e contrato do HubSpot.
+- `rpc_analytics_ceo_snapshot` retorna alertas financeiros por cliente, confiança/ambiguidade e qualidade da cobertura.
+- A tela executiva exibe clientes com saldo vencido sem alterar o pipeline atual de Suporte.
+- O XLSX é fonte temporária; a API OMIE será validada e promovida somente após credenciais server-side e reconciliação.
+- Relatório: `docs/reports/CEO_DASHBOARD_IMPLEMENTATION_2026-07-18.md`.
+
+## Continuidade confirmada — transparência executiva — 2026-07-18
+
+- Alertas financeiros agora resolvem o nome do CSM quando o owner está presente.
+- A visão CEO mostra o frescor da última carga OMIE e da última sincronização HubSpot.
+
+## Continuidade Codex - ciclo de integrações gerenciais 2026-07-18
+
+- GSO Old permanece o ambiente canônico local; o worktree misto foi preservado.
+- Configuração de integrações foi materializada em `managed_integrations` com
+  Vault, RLS e view administrativa sanitizada.
+- Settings agora tem a superfície de configuração em `/admin/settings`.
+- HubSpot usa segredo gerenciado server-side; Omie está preparado em modo
+  read-only, mas sem credencial real até segunda-feira.
+- Gates do lote: banco, contratos, typecheck, build e testes de parsers verdes.
+- Próximo foco: read model financeiro, ingestão manual de planilhas e seleção
+  de pipes oficiais.
+
+## Continuidade confirmada — Analytics Financeiro 2026-07-18
+
+- O read model `analytics_finance_receivables` e o RPC `rpc_analytics_finance_snapshot` foram materializados com RLS, grants, auditoria e filtros server-side.
+- A exportação real `financas_554753004352157 (1).xlsx` foi carregada localmente com 3.077 títulos e provenance de importação.
+- `/admin/analytics` agora possui a área Financeiro; a API Omie permanece preparada como fonte read-only futura, sem credenciais usadas neste ciclo.
+- Evidência: `docs/reports/ANALYTICS_FINANCE_READMODEL_2026-07-18.md`.
 
 ## Produto
 Genius Support OS
@@ -11,6 +369,18 @@ A empresa opera o Genius Returns e o After Sale, SaaS B2B de automação de log�
 
 ## Decisão central
 O sistema deve ser construído como SaaS profissional desde o início, mesmo sendo inicialmente interno.
+
+## Checkpoint de continuidade — 2026-07-17
+- O Codex assumiu a continuidade no checkout `C:\Projetos\GSO-old`; o takeover está registrado em `docs/reports/CODEX_CONTINUATION_HANDOFF_2026-07-17.md`.
+- `/admin/analytics` já possui fundação HubSpot server-side, tabelas locais, views SQL, RLS e UI para Comercial e CS/Suporte.
+- A prioridade desta retomada é construir o painel gerencial dentro do produto, com HubSpot e planilha como fontes, sem depender do Looker.
+- Ainda não existe adapter, staging, import run ou contrato de planilha. O próximo lote é fechar matriz de métricas, fontes, frescor e qualidade; depois implementar importação controlada de CSV/XLSX.
+- O Ciclo A0 criou `docs/ANALYTICS_METRIC_CATALOG_V1.md`, com definições reais das views Analytics e requisitos de provenance para a futura ingestão de planilhas.
+- O Ciclo A1 criou a fundação de staging em `supabase/migrations/20260718014903_analytics_spreadsheet_ingestion_foundation_v1.sql` e o teste pgTAP correspondente; a migration ainda não foi aplicada porque o banco local está inconsistente.
+- O banco Supabase local está inconsistente com as migrations atuais (`public.profiles.is_active` ausente); reset local não foi executado.
+- Em 2026-07-18, as planilhas CS e Comercial foram auditadas em modo somente leitura. A CS possui views consolidadas; a Comercial possui 44 abas diárias variáveis. O servidor web local responde em `http://127.0.0.1:4173/`, mas a fixture administrativa não foi aplicada porque o banco também não possui `public.profiles.email`.
+- O parser inicial das abas diárias Comerciais foi criado em `scripts/analytics/commercial-daily-sheet-parser.mjs`, com testes unitários verdes em `tests/scripts/commercial-daily-sheet-parser.test.mjs`.
+- Fonte detalhada: `docs/reports/CODEX_CONTINUATION_HANDOFF_2026-07-17.md`.
 
 ## Fonte de verdade documental
 
@@ -42,7 +412,20 @@ Documentos prioritários:
 - `TICKET_KNOWLEDGE_LINKING_DATA_MODEL_REVIEW.md`
 - `TICKET_KNOWLEDGE_LINKING_MIGRATION_DESIGN.md`
 - `TICKET_KNOWLEDGE_PUBLIC_LINK_CONTRACT_REVIEW.md`
+- `TENANT_SUPPORT_POLICY_AND_SLA_AUTOMATION_V3.md`
+- `CUSTOMER_PORTAL_CONTRACT_FOUNDATION_V3.md`
+- `CUSTOMER_PORTAL_AND_OMNI_FOUNDATION_V3.md`
+- `CUSTOMER_PORTAL_SECURE_EVIDENCE_UPLOAD_V3.md`
+- `CUSTOMER_PORTAL_TICKET_COLLABORATION_V3.md`
+- `BUILD_JOURNAL_STRATEGY.md`
+- `BUILD_JOURNAL_SCREEN_SPEC.md`
+- `DOCUMENTATION_UPDATE_POLICY.md`
 - `reports/KNOWLEDGE_LEGACY_CURATION_BACKLOG.md`
+- `reports/LEGACY_CORPUS_EDITORIAL_AUDIT.md`
+- `knowledge/LEGACY_CORPUS_HUMAN_CURATION_SPRINT.md`
+- `knowledge/LEGACY_CORPUS_P0_REWRITE_CANDIDATES.md`
+- `knowledge/KNOWLEDGE_P0_HUMAN_REVIEW_GATE.md`
+- `ROADMAP_BUILDOUT_V3.md`
 
 Documentos históricos:
 - `CLEANUP_REPORT.md`
@@ -58,6 +441,141 @@ Documentos históricos:
 - Tickets, suporte, cliente B2B, engenharia e conhecimento são domínios separados.
 - Nenhum dado operacional relevante deve ser perdido.
 - Documentação deve ser viva e versionada no repositório.
+
+## Estado atual em 2026-06-09
+- Em 2026-06-17, `/admin/product-docs` foi recuperado no ambiente local e polido como leitor governado de documentos internos. A causa raiz da tela vazia era ausencia de registros em `internal_documents` e `internal_document_versions` apos reset local, apesar da whitelist possuir 12 documentos autorizados. Foi criado `documentation:sync:internal-docs:local`, os 12 documentos foram sincronizados localmente por contrato real, a UI passou a abrir o primeiro documento autorizado, ganhou cockpit em tres zonas, rail de governanca e indice interno derivado do markdown sanitizado. Relatorio: `docs/reports/PRODUCT_DOCS_GOVERNED_READER_POLISH_2026-06-17.md`.
+- Em 2026-06-09, `/cs/portfolio` foi entregue como workspace read-only sobre `vw_cs_customer_portfolio`. O corte inclui gate e redirect por contexto CS, navegação, busca, lista e detalhe com owner, produtos/planos, subscriptions, tickets, membros, última atualização e health explicitamente indisponível. QA autenticado confirmou acesso global para `platform_admin`, isolamento tenant para membership `customer_success`, denial para usuário sem acesso e ausência de overflow horizontal em desktop e viewport estreito. Relatório: `docs/reports/CS_PORTFOLIO_READONLY_UI_2026-06-09.md`.
+- Em 2026-06-09, o handoff final da retomada foi registrado com entregas consolidadas, validações, rotas locais, usuários locais de referência e próximos passos sugeridos. Relatório: `docs/reports/FINAL_RECOVERY_HANDOFF_AND_NEXT_STEPS_2026-06-09.md`.
+- O hardening de dependencias de 2026-06-09 atualizou `react-router-dom` para `7.15.0` e `@supabase/supabase-js` para `2.108.0`, removendo os advisories de React Router e da cadeia transitiva `ws`. `npm audit` passou com zero vulnerabilidades, junto de contracts typecheck, web typecheck e build. Relatorio: `docs/reports/DEPENDENCY_HARDENING_2026-06-09.md`.
+- Em 2026-06-09, o projeto foi recuperado e consolidado em `C:\Projetos\Genius-Support-OS`. A branch `codex/mvp-operational-completion-goal` foi publicada e o hash recuperado `0e9ff70926b21e604cd87fbbb45590ae61201327` foi preservado no remoto. O fallback literal de credencial local foi removido no commit `1902201`. Docker/WSL foram restaurados, o Supabase CLI foi atualizado para `2.105.0` e a baseline local passou com reset, lint, `51` arquivos pgTAP/`1085` testes, `supabase:verify` e fixture funcional completa. Relatorio: `docs/reports/POST_RECOVERY_BASELINE_2026-06-09.md`.
+- Em 2026-06-04, o lote `CS Portfolio Contract Foundation` materializou o primeiro read model backend-first de CS: `vw_cs_customer_portfolio`, protegido por `app_private.can_access_cs_customer_portfolio`. O gate usa `platform_admin` ou membership ativa por tenant na area interna `customer_success`, sem criar role global nova de CS. O corte nao cria UI `/cs`, RPC `rpc_cs_*`, mutation, health score canonico, billing/financeiro ou rota nova. Relatorio: `docs/reports/CS_PORTFOLIO_CONTRACT_FOUNDATION_2026-06-04.md`.
+- Em 2026-06-04, o lote `CS Workspace Readiness Audit` confirmou que ainda nao existe contrato CS materializado (`vw_cs_*`/`rpc_cs_*`), role/gate proprio de Customer Success, rota `/cs` ou blueprint aprovado para carteira. A criacao de UI CS agora ficaria bloqueada por ambiguidade de permissao e risco de compor portfolio/health no frontend. Proximo passo recomendado: `CS Portfolio Contract Foundation`, backend-first, antes de qualquer `/cs/portfolio`. Relatorio: `docs/reports/CS_WORKSPACE_READINESS_AUDIT_2026-06-04.md`.
+- Em 2026-06-04, o lote `OCP V1-E Support Customer Product Context UI` conectou `/support/customers` e `/support/customers/:tenantId` ao read model support-safe `vw_support_customer_product_context`. O perfil operacional do cliente passa a exibir produto, plano, status da subscription, datas, features visiveis ao suporte e responsaveis internos em leitura, sem mutation, sem usar views administrativas, sem billing/financeiro e sem backend/Supabase novo. Relatorio: `docs/reports/MVP_OPERATIONAL_COMPLETION_GOAL_REPORT_2026-06-02.md`.
+- Em 2026-06-04, o lote `OCP V1-E Admin Subscriptions Governed Mutations UI` conectou a aba `Subscriptions` em `/admin/tenants` as RPCs administrativas existentes de subscription (`rpc_admin_create_customer_product_subscription`, `rpc_admin_update_customer_product_subscription` e `rpc_admin_archive_customer_product_subscription`). A UI permite criar, editar campos governados e arquivar subscriptions por contrato real, usando o catalogo comercial por read model, sem mutation de entitlements/owners, sem billing/financeiro, sem migration nova e sem escrita direta em tabela base. Relatorio: `docs/reports/MVP_OPERATIONAL_COMPLETION_GOAL_REPORT_2026-06-02.md`.
+- Em 2026-06-02, o lote `OCP V1-E Subscriptions Read Model Hardening` corrigiu o read model administrativo `vw_admin_customer_product_subscriptions` para eliminar multiplicação indevida de contadores quando a mesma subscription possui múltiplas features e múltiplos owners. A correção usa agregações independentes por subscription, preserva o shape público da view, não altera UI, não cria mutation, não muda billing/financeiro e foi coberta por pgTAP com cenário `2 features x 2 owners`. Relatório: `docs/reports/OCP_V1_E_SUBSCRIPTIONS_READMODEL_HARDENING_2026-06-02.md`.
+- Em 2026-06-02, o lote `OCP V1-E Subscriptions Read-only UI` conectou a aba `Subscriptions` em `/admin/tenants` aos read models administrativos reais `vw_admin_customer_product_subscriptions` e `vw_admin_customer_product_subscription_detail`. A UI exibe cliente, produto, plano, status, datas, features comerciais e responsáveis internos em modo somente leitura, sem botão de criar/editar/arquivar, sem billing/financeiro, sem migration e sem alteração de Supabase. Relatório: `docs/reports/OCP_V1_E_SUBSCRIPTIONS_READONLY_UI_2026-06-02.md`.
+- Em 2026-06-02, o lote `OCP V1-E Customer Product Subscriptions Foundation` criou a fundacao backend local de subscriptions no OCP sem UI, deploy remoto, dado real ou billing. Foram adicionadas tabelas para `customer_product_subscriptions`, `customer_product_feature_entitlements` e `customer_product_internal_owners`, views admin/support-safe, RPCs administrativas, RLS/grants/auditoria, pgTAP e contratos TypeScript. Relatorio: `docs/reports/OCP_V1_E_CUSTOMER_PRODUCT_SUBSCRIPTIONS_FOUNDATION_2026-06-02.md`.
+- Em 2026-06-02, o lote `OCP V1-E Customer Product Subscriptions Decision & Execution Planning` fechou a decisao tecnica recomendada para destravar o proximo lote OCP sem implementar backend/Supabase/runtime/UI. A decisao define `After Sale` como produto/plataforma propria no catalogo comercial, confirma multiproduto por tenant, separa subscription, entitlement comercial governado e ownership interno por subscription, e prepara o execution plan para migration/backend local futuro. Documentos: `docs/product/OCP_V1_E_CUSTOMER_PRODUCT_SUBSCRIPTIONS_DECISION_RECORD.md` e `docs/reports/OCP_V1_E_CUSTOMER_PRODUCT_SUBSCRIPTIONS_EXECUTION_PLAN.md`.
+- Em 2026-06-01, o lote `Codex Goal Mode Governance Setup` materializou a preparação documental para uso controlado de `/goal`, criando `AGENTS.md` como regra permanente de entrada para agentes Codex e `docs/GOAL_EXECUTION_PLAN.md` como camada de orquestração enxuta sobre `ROADMAP_BUILDOUT_V3.md` e `OPERATIONAL_CONTROL_PLANE_V1.md`. Não houve alteração de runtime, backend, Supabase, contratos, migrations, UI ou scripts.
+- Em 2026-05-29, o lote `Project Forensic Recovery Audit` foi iniciado na branch `codex/project-forensic-recovery-audit` sem feature nova, migration nova, deploy, push remoto, uso de service_role ou alteração de secrets. A auditoria confirmou frontend/contracts/build verdes, documentação canônica existente mas com drift, Supabase local bloqueado por Docker Desktop indisponível e worktree preexistente sujo da frente visual `codex/p4-true-support-visual-refactor`. Relatório em `docs/reports/PROJECT_FORENSIC_RECOVERY_AUDIT_2026-05-29.md`.
+- Ainda em 2026-05-29, o lote `Fase 0 pós-auditoria runtime Supabase` iniciou o Docker Desktop local, subiu a stack Supabase e executou os gates de banco. A falha inicial de `supabase:verify` foi causada por readiness hardcoded em portas antigas `55321/55322`; `scripts/ci/wait-for-supabase-ready.mjs` agora deriva `API_URL` e `DB_URL` de `supabase status -o env`. Gates de banco passaram: `supabase:lint:db`, `supabase:test:db` com 47 arquivos/979 testes e `supabase:verify`. Nenhuma migration, RLS, grant, policy, function, search_path ou storage precisou ser alterado.
+- Também em 2026-05-29, o lote `Worktree Visual/Blueprint Recovery Closure` classificou a frente visual herdada de `codex/p4-true-support-visual-refactor`. As alterações de Support Workspace foram mantidas como alinhadas aos blueprints P4-F.4D; blueprints foram reorganizados por domínio/estado; 38 screenshots históricos de auditoria visual foram restaurados; CSVs locais de limpeza e `docs/reports/.serena/` foram removidos como artefatos fora de escopo. Relatório em `docs/reports/WORKTREE_VISUAL_BLUEPRINT_RECOVERY_CLOSURE_2026-05-29.md`.
+- O lote `P4-F.4D Authenticated Visual QA` gerou evidências atuais autenticadas do Support Workspace com fixture local populada. Foram capturados 9 screenshots `p4-f4d-*` e métricas JSON em `docs/reports/visual-audit/`; o resultado inicial foi `aprovado com ajustes`, sem P0 e com P1 no fluxo `Novo ticket` por divergência estrutural contra o blueprint aprovado. Em 2026-05-31, o lote `P4-F.4D Novo Ticket Visual Alignment` corrigiu o P1 sem backend/Supabase/contrato novo, gerando `p4-f4d-support-queue-new-ticket-aligned.png` e métrica correspondente. Em 2026-06-01, a revisão final pixel-a-pixel confirmou P0/P1 zerados e P2 aceitos como backlog visual ou diferenças justificadas por contrato real. Relatório em `docs/reports/P4_F4D_AUTHENTICATED_VISUAL_QA_2026-05-29.md`.
+- Estado técnico validado neste checkpoint: `npm run contracts:typecheck`, `npm run web:typecheck`, `npm run web:build`, `npm run documentation:validate:internal-docs`, `npm run supabase:lint:db`, `npm run supabase:test:db` e `npm run supabase:verify` passaram localmente.
+- Pendência operacional imediata: endurecer scripts legados de Knowledge que ainda possuem fallback literal de credencial local e decidir se a instabilidade do container local `supabase_vector` exige ajuste de observabilidade ou pode permanecer como ruído não bloqueante de desenvolvimento. O P4-F.4D visual foi aprovado para fechamento de worktree.
+
+## Histórico recente antes da auditoria
+- Em 2026-05-24, o lote P4-E Staging Environment Authorization & Remote Dry Run foi executado na branch `codex/p4-e-staging-environment-authorization`. A auditoria confirmou que nao ha staging explicitamente configurado no repositorio, nao ha project ref staging versionado, nao ha URL staging autorizada e nao ha autorizacao humana preenchida; portanto nenhum deploy remoto, db push remoto, migration remota, query remota, secret, provider, IA real ou dado real foi executado/criado. Os gates locais passaram (`contracts:typecheck`, `web:typecheck`, `web:build`, `supabase:lint:db`, `supabase:test:db` com 47 arquivos/979 testes e fixture funcional duas vezes) e o smoke local revalidou Admin, Support, Portal, Public Help, Internal Actions e Engineering. Decisao: GO local, NO-GO staging ate autorizacao explicita e NO-GO producao.
+- Em 2026-05-24, o lote P4-D Staging Pilot Candidate + Public Copy Safety Pass foi executado na branch `codex/p4-d-staging-pilot-candidate`. A auditoria nao encontrou ambiente staging explicitamente configurado no repositorio, entao nenhum deploy remoto, db push remoto, migration remota, secret ou dado real foi usado. Os gates locais passaram (`contracts:typecheck`, `web:typecheck`, `web:build`, `supabase:lint:db`, `supabase:test:db` com 47 arquivos/979 testes e fixture funcional duas vezes). A copy publica legada de Avatar/IA foi removida de `/help/genius`, substituida por orientacao baseada em artigos e suporte pelo Portal. Decisao: GO para candidato local de piloto, NO-GO para execucao staging ate autorizacao/configuracao explicita, e NO-GO para producao/cliente real.
+- Em 2026-05-24, o lote P4-C Controlled Pilot Dry Run & Release Candidate Gate executou o dry run local do piloto MVP na branch `codex/p4-c-controlled-pilot-dry-run`, a partir do commit `e5185bd9`. Todos os gates tecnicos passaram (`contracts:typecheck`, `web:typecheck`, `web:build`, `supabase:lint:db`, `supabase:test:db` com 47 arquivos/979 testes e fixture funcional duas vezes). O browser smoke validou Admin, Support, Portal, Internal Actions, Engineering e Public Help; Support enviou resposta publica e nota interna reais em fixture local; Portal viu apenas a resposta publica; Public Help permaneceu published/public. Decisao: GO para piloto controlado local/staging, condicionado a repetir gates no ambiente alvo e revisar copy publica de Avatar AI antes de cliente real. Evidencias em `docs/release/PILOT_DRY_RUN_EVIDENCE_2026-05-24.md` e relatorio em `docs/reports/P4_CONTROLLED_PILOT_DRY_RUN_2026-05-24.md`.
+- Em 2026-05-24, o lote P4-B MVP Release Readiness & Pilot Control Pack preparou o MVP para piloto controlado local/staging sem criar feature nova, migration, backend, frontend, fixture, IA real, provider externo, deploy remoto ou secrets. Foram criados o pacote `docs/release/` com matriz de regressao, checklist de release, plano de rollback, observabilidade minima e smoke runbook, alem do relatorio `docs/reports/P4_MVP_RELEASE_READINESS_2026-05-24.md`. O Go/No-Go atual permite piloto controlado apenas se os gates tecnicos, fixture idempotente, smoke autenticado e boundaries customer-facing permanecerem verdes no ambiente alvo.
+- Em 2026-05-24, o lote P4-A MVP Operational Closure & End-to-End Workflow Hardening validou o fluxo MVP ponta a ponta sem criar feature nova. O QA criou ticket pelo Portal, confirmou entrada na fila de suporte, resposta pública via Portal, nota interna sem vazamento, Knowledge público enviado, acionamento interno com retorno, escalonamento para engenharia com update/retorno, Customer Account no Support e readiness de canais/AI no Admin. Não houve migration, backend novo ou frontend novo; o lote foi de hardening, QA e documentação. Relatório em `docs/reports/P4_MVP_OPERATIONAL_CLOSURE_2026-05-24.md`.
+- Em 2026-05-24, o lote P3-B AI Readiness Admin Visibility + Functional Fixture Reliability estabilizou a fixture funcional local com timeouts e logs por etapa para child process, Supabase CLI, Edge Runtime health check, Auth, RPCs e upload seguro. A fixture `npm run supabase:qa:local-functional-fixture` voltou a concluir e manteve idempotencia. `/admin/system` passou a exibir readiness AI-native compacto por `vw_ai_operational_context_readiness`, `vw_ai_context_source_policies` e `vw_ai_action_policies`, sem criar IA real, provider, modelo, embedding, job, Copilot, segredo, token, API key ou botao de ativacao. Relatorio em `docs/reports/P3_AI_READINESS_ADMIN_VISIBILITY_AND_FIXTURE_RELIABILITY_2026-05-24.md`.
+- Em 2026-05-24, o lote P3 AI-Native Operational Readiness Foundation materializou a base AI-native, human-governed sem integrar LLM, embedding, vector database, chatbot, provider externo ou automacao. O backend agora possui catalogo declarativo de fontes e acoes (`ai_context_source_policies`, `ai_action_policies`), ledger auditavel de uso/revisao humana (`ai_usage_audit_events`), read models `vw_ai_*` e RPCs apenas para validar acesso, registrar uso futuro e registrar decisao humana. Todas as acoes automaticas sensiveis seguem proibidas: enviar resposta, publicar artigo, alterar status, criar delivery/provider, criar engenharia/internal action, alterar entitlement/RLS, ler storage path ou segredo. Relatorio em `docs/reports/P3_AI_NATIVE_OPERATIONAL_READINESS_2026-05-24.md`.
+- Em 2026-05-24, o lote P2-C Communication Channel Governance & Provider Readiness criou governanca de readiness de canais por tenant sem provider externo real. `communication_channel_definitions` e `tenant_communication_channel_settings` definem `customer_portal` como unico canal real ativo do MVP, enquanto `email_future`, `whatsapp_future`, `chat_future` e `api_future` permanecem futuros/bloqueados sem segredo, token, webhook, job, retry ou envio externo. `/admin/system` agora mostra readiness sanitizado de canais; Support consome capabilities backend-safe; Portal nao recebe readiness, provider, reason tecnico ou enum cru. Relatorio em `docs/reports/P2_COMMUNICATION_CHANNEL_GOVERNANCE_READINESS_2026-05-24.md`.
+- Em 2026-05-23, o lote P2-B Communication Delivery Readiness & Outbox Foundation criou a fundacao auditavel de delivery customer-facing sem provider externo real. `ticket_message_deliveries` registra de forma append-only a disponibilidade de mensagens publicas no `customer_portal`, enquanto email, WhatsApp, chat e API permanecem como canais futuros bloqueados por capabilities/read models. `rpc_add_ticket_message` e `rpc_customer_add_ticket_message` agora registram delivery nativo do Portal para mensagens customer-facing; notas internas nao geram delivery. Support ve status leve na timeline, Portal recebe apenas labels customer-facing e nenhum provider, enum cru, audit bruto ou storage path. Relatorio em `docs/reports/P2_COMMUNICATION_DELIVERY_READINESS_2026-05-23.md`.
+- Em 2026-05-23, o lote P2 Ticket Intake, Sources & Communication Foundation consolidou origem, canal e capacidade de comunicação dos tickets sem integrar canais externos reais. `tickets.source` foi preservado como base e normalizado por read models para suporte manual, portal cliente e canais futuros bloqueados; `vw_support_ticket_channel_context`, `vw_support_ticket_communication_capabilities`, `vw_admin_ticket_channel_definitions` e as views de fila/detalhe/timeline/portal passaram a projetar origem, canal, direção e motivo de indisponibilidade. RPCs de criação/mensagem de suporte e portal agora gravam metadata de comunicação; `/support/queue`, `/support/tickets/:ticketId` e `/portal/tickets/:ticketId` exibem labels operacionais/customer-facing sem enum cru. Relatório em `docs/reports/P2_TICKET_INTAKE_SOURCES_COMMUNICATION_FOUNDATION_2026-05-23.md`.
+- Em 2026-05-22, o lote P1-D Internal Area Empty State + Navigation Hardening fechou o risco de area interna sem demanda: o redirect e a navegacao passaram a usar `vw_internal_action_area_auth_context`, diferenciando membership ativo sem acionamentos de ausencia real de acesso. `/internal-actions` agora mostra empty state honesto para membro de area sem itens, preserva `/access-denied` para usuario sem membership, e a fixture funcional inclui `qa.local.internal-area-empty@genius.local`. Relatorio em `docs/reports/P1_INTERNAL_AREA_EMPTY_STATE_AND_NAVIGATION_2026-05-22.md`.
+- Em 2026-05-22, o lote P1-C Auth Redirect by Role corrigiu o destino inicial pós-login por papel/contexto. O login deixou de usar `/admin/tenants` como fallback universal e agora resolve a landing por read models existentes: `vw_admin_auth_context`, `vw_customer_portal_auth_context` e `vw_internal_action_queue_by_area`. QA autenticado confirmou `platform_admin -> /admin`, suporte -> `/support/queue`, área interna -> `/internal-actions`, engenharia -> `/engineering`, portal cliente -> `/portal`, `redirectTo` autorizado preservado, `redirectTo` proibido sem bypass e `/access-denied` mantido para acesso real negado. Relatório em `docs/reports/P1_AUTH_REDIRECT_BY_ROLE_2026-05-22.md`. Não houve backend, migration, RLS ou contrato novo.
+- Em 2026-05-22, o lote P1-B Customer Account UX + Authenticated QA Pass validou com browser autenticado as superfícies `/admin/tenants`, `/support/customers`, `/support/customers/:tenantId`, `/support/tickets/:ticketId`, `/portal`, `/portal/tickets` e `/portal/help`. A aba `Conta B2B` passou a expor edição real de integração, customização e alerta existentes por RPC administrativa; a fixture funcional sanitizou textos customer-facing do ticket QA principal para remover termos internos como `handoff técnico`/`retorno de engenharia`; e o relatório ficou em `docs/reports/P1_CUSTOMER_ACCOUNT_UX_AUTHENTICATED_QA_2026-05-22.md`. Não houve migration, alteração de contrato backend, CSV, seed real ou dado real.
+- Em 2026-05-22, o lote P1 Customer Account Operations Buildout fechou a camada operacional minima de conta B2B: views administrativas dedicadas para profile/integracoes/customizacoes/alertas/features, aliases operacionais de suporte, RPCs explicitas de update/archive que faltavam, aba `Conta B2B` em `/admin/tenants`, fixture funcional com resumo de account profile e relatorio em `docs/reports/P1_CUSTOMER_ACCOUNT_OPERATIONS_BUILDOUT_2026-05-22.md`. O Portal Cliente segue sem receber alertas internos, customizacoes, detalhes sensiveis de integracao, audit bruto, engenharia, internal actions ou storage path.
+- Em 2026-05-22, o lote P0-C Private Routes Authenticated QA criou `npm run supabase:qa:local-functional-fixture`, reusando a massa de suporte e adicionando usuários/acionamentos persistidos para QA autenticado de Admin, Support, Internal Actions, Engineering, Customer Portal e Public Help. O smoke browser validou rotas privadas principais com credenciais locais, confirmou ausência de vazamento de nota interna, internal actions, engenharia, audit bruto e storage path no Portal, confirmou Public Help apenas com published/public e registrou achado de UX: usuários não-admin ainda caem em `/access-denied` no redirect inicial pós-login antes de navegar para a rota correta do papel. Relatório em `docs/reports/P0_PRIVATE_ROUTES_AUTHENTICATED_QA_2026-05-22.md`.
+- Em 2026-05-22, o lote P0-B Boundary QA + Safe Knowledge Link endureceu o envio/copia de link publico de Knowledge no Support Workspace: `vw_support_knowledge_article_picker` e `vw_support_knowledge_public_link_candidates` agora projetam `can_send_to_customer`, `reason_if_blocked`, status, visibilidade e rota publica; o frontend so habilita acao customer-facing quando o backend retorna artigo `published/public` com `public_article_path`. O lote tambem reforcou pgTAP para o contrato de link seguro e registrou o QA de boundaries criticos em `docs/reports/P0_BOUNDARY_QA_AND_SAFE_KNOWLEDGE_LINK_2026-05-22.md`.
+- Em 2026-05-22, a frente de estabilização e extração estrutural do Support Workspace foi consolidada com `web:typecheck` e `web:build` verdes, QA autenticado real com `support_manager`, slot contextual sem corte inferior e redução progressiva de `SupportWorkspacePage.tsx` para cerca de 7.2k linhas. O handoff operacional desta frente, incluindo drift visual atual, backlog recomendado e regra de validação com ticket atual da fila após reidratação, está registrado em `docs/reports/SUPPORT_WORKSPACE_HANDOFF_2026-05-22.md`.
+- Em 2026-05-21, as rotas dedicadas `/admin/knowledge/new` e `/admin/knowledge/:articleId/edit` consolidam o editor V1 de artigos da base de conhecimento, separando criação/edição do cockpit `/admin/knowledge`. A tela usa blueprint aprovado, categorias e espaços reais, salva rascunho por RPC administrativa v2, edita artigos existentes na mesma superfície, abre revisão editorial para artigo publicado por RPC existente, envia drafts para revisão por RPC administrativa v2, não publica automaticamente e suporta imagens governadas por upload, drag/drop e colagem no corpo via bucket privado `knowledge-assets` + `rpc_admin_upsert_knowledge_article_asset_v1`.
+- Em 2026-05-21, a publicacao bruta do corpus Octadesk foi corrigida: os `43` artigos Octadesk antes `published/public` voltaram para `review/internal` via RPC editorial, os `11` itens de risco permanecem `draft/restricted`, `/help/genius` voltou a expor apenas os `6` artigos seed/manuais e `0` artigos Octadesk aparecem nas views publicas. A taxonomia Genius B2B foi criada/aplicada como metadado editorial para os `54` artigos e a fundacao de assets Knowledge foi materializada com `knowledge_article_assets`, bucket privado `knowledge-assets`, views/RPCs de assets, renderer seguro `knowledge-asset:<id>`, painel administrativo de assets e reprocessamento local de 5 artigos com 8 assets pendentes.
+- Em 2026-05-21, a premissa de produto da Central de Ajuda Octadesk foi ajustada: o corpus exportado passou a ser tratado como base publica legada aprovada para migracao, salvo bloqueio tecnico critico automatico. A publicacao local via contratos existentes promoveu `43` artigos Octadesk para `published/public`, mantendo `11` como `draft/restricted` por risco critico. `/help/genius` agora expoe `49` artigos no total (`43` Octadesk + `6` seed/manuais), com busca e detalhe publico validados e `0` exposicao dos bloqueados amostrados.
+- Em 2026-05-20, o fechamento operacional da Central de Ajuda Genius foi consolidado em `docs/reports/GENIUS_HELP_CENTER_READINESS_REPORT.md`, `docs/reports/OCTADESK_PUBLICATION_WAVES.md` e `docs/reports/OCTADESK_WAVE_0_PUBLICATION_CHECKLIST.md`. O Admin Knowledge fica como fila diaria de curadoria do corpus Octadesk, com `4 review/internal`, `24 draft/internal`, `26 draft/restricted`, `54` advisories pendentes e `0` vazamento publico; `/help/genius` segue seguro com 6 artigos seed/manuais.
+- Em 2026-05-20, a triagem final de publicacao do corpus Octadesk foi registrada em `docs/reports/OCTADESK_PUBLICATION_FINAL_TRIAGE.md`, `docs/reports/OCTADESK_PUBLIC_HELP_RELEASE_STATUS.md` e `docs/reports/OCTADESK_INTERNAL_KNOWLEDGE_BACKLOG.md`: `0 publish_now_candidate`, `38 needs_human_decision`, `16 restricted_blocked`, `4 obsolete_or_duplicate` e `0` artigos publicados. A Central Publica permanece com os 6 artigos seed/manuais ate revisao humana real, advisory revisado e revisao de assets.
+- Em 2026-05-20, a esteira completa do corpus Octadesk foi executada de forma local e segura: `58` artigos avaliados, `54` processados/importados no Admin Knowledge por allowlist, `54` advisories sincronizados, `4 review/internal`, `24 draft/internal`, `26 draft/restricted`, `0 published`, `0 public` e `0` exposicao em `/help/genius`. Wave 1 ficou vazia por falta de checklist humano real e revisao de assets.
+- Em 2026-05-20, a estabilizacao documental do fluxo de status do Support Workspace foi consolidada em `docs/reports/SUPPORT_WORKSPACE_STATUS_FLOW_P0_SPEC_2026-05-20.md`. A revisao confirmou o boundary backend-first vigente (`vw_support_ticket_detail` + `rpc_support_update_ticket_status_v2` + `rpc_close_ticket` + `rpc_reopen_ticket`), registrou como P0 o fallback permissivo de `allowed_next_statuses` no frontend quando o array vier vazio e alinhou `SUPPORT_WORKFLOW.md` e `SUPPORT_WORKSPACE_ARCHITECTURE_SPEC.md` ao contrato real.
+- Em 2026-05-20, o legado da Knowledge Base ganhou plano operacional por waves em `docs/knowledge/KNOWLEDGE_LEGACY_BATCH_EXECUTION_PLAN.md`, separando `duplicate`, `obsolete`, `public`, `internal` e `restricted`, com gate global de readiness, donos humanos por lote, dependências de ambiente local e metas mínimas de throughput/risco editorial. Esta fase permaneceu documental e não executou import, sync, publish, migration, contrato, RLS ou alteração de UI.
+- Em 2026-05-20, a política operacional `docs/ROOT_ARTIFACT_HYGIENE_POLICY.md` transformou os achados da auditoria estrutural da raiz em regra explícita para artefatos, evidências, logs, dumps temporários e quarentena. A política ancora destinos corretos (`docs/reports/`, `docs/design/`, `.tmp/`), naming, retenção e backlog de saneamento sem mover ou apagar artefatos nesta fase.
+- Em 2026-05-20, `docs/reports/DOCS_GPT_CANONICAL_DECISION_2026-05-20.md` consolidou a decisão operacional sobre `docs/GPT/`: a árvore passa a ser tratada como shadow tree auxiliar e não canônica, `docs/` permanece como fonte única de verdade e qualquer limpeza final da área depende primeiro da consolidação dos itens exclusivos úteis. Esta fase não moveu nem removeu conteúdo.
+- Em 2026-05-20, os 4 artigos piloto Octadesk foram submetidos para `review/internal` via `rpc_admin_submit_knowledge_article_for_review_v2`, mantendo advisories `pending`, `visibility = internal`, `source_path` e `source_hash` preservados. Nenhum artigo foi publicado, nenhum ficou `public` e `/help/genius` continua sem expor o lote piloto.
+- Em 2026-05-20, a proposta operacional de split entre verify seguro e verify destrutivo foi consolidada em `docs/reports/SUPABASE_VERIFY_SPLIT_PROPOSAL_2026-05-20.md`, formalizando três faixas de validação (`safe smoke`, `integration local` e `destructive reset`) ancoradas na baseline `docs/reports/VALIDATION_BASELINE_MATRIX_2026-05-20.md` e no mapa `docs/reports/SUPABASE_OPERATIONAL_MAP.md`. A fase permaneceu documental: não alterou scripts, não executou reset e registrou como P0 o alinhamento de readiness/portas antes de qualquer split executável.
+- Em 2026-05-20, a rotina de governanca documental foi operacionalizada em `docs/DOCUMENTATION_GOVERNANCE_RUNBOOK.md`, conectando a policy oficial a checkpoints por lote, papéis por frente, ritual de revisão de `PROJECT_STATE.md`/`DOCUMENTATION_LEDGER.md`/docs de área/`README.md`, cadência semanal de saneamento e critério de fechamento no Kanban. Esta fase não alterou runtime de produto, contrato, migration, RLS ou tela.
+- Em 2026-05-20, a governanca operacional de desenvolvimento foi materializada no Hermes com board dedicado `genius-support-os`, perfis especializados (`orchestrator`, `architect`, `web`, `supabase`, `qa`, `docsgovernor`, `knowledgeops`), backlog inicial com dependencias e automacoes read-only para documentacao e monitoramento do board. Esta fase nao alterou runtime de produto, contrato, migration, RLS ou tela.
+- Em 2026-05-20, as versoes editoriais sugeridas dos 4 drafts piloto Octadesk foram preparadas em `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_EDITORIAL_DRAFTS.md` e aplicadas localmente via `rpc_admin_update_knowledge_article_draft_v2`. Os textos removem linguagem legada, contatos operacionais e dependencias obrigatorias de prints, mas continuam `draft/internal`, com advisories `pending`, revisao humana e revisao de assets obrigatorias antes de qualquer review ou publicacao.
+- Em 2026-05-20, a curadoria humana dos 4 drafts piloto Octadesk foi preparada sem publicacao: `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_HUMAN_REVIEW.md` consolida identificacao, riscos editoriais, sugestoes de versao publica e checklist humano por artigo. Os 4 artigos continuam `draft/internal`, com advisories `pending`, `source_path` e `source_hash` preservados, sem aparecer em `/help/genius`.
+- Em 2026-05-20, o lote piloto Octadesk da Central de Ajuda foi preparado e executado apenas como draft local controlado. Foram criados `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_ALLOWLIST.json` e `docs/reports/OCTADESK_PUBLIC_HELP_PILOT_REVIEW_PACK.md`, o importador e o sync de advisories passaram a suportar `--allowlist`, e 4 artigos foram importados para o espaco `genius` como `draft/internal` com `source_path` e `source_hash` preservados. Nenhum artigo foi publicado; `/help/genius` continua sem expor os drafts. A proxima etapa e revisao humana artigo por artigo, reescrita e revisao de assets antes de qualquer publicacao.
+- O lote `Internal Actions V1` criou o domínio neutro `internal_actions` para subfluxos internos de ticket, com catálogo governado de áreas, memberships por área, ledger append-only, views/RPCs dedicadas, `ticket_events` internos e pgTAP. Em 2026-05-22, o Ticket Workspace já possui integração mínima no drawer `Acionamentos` para suporte criar, listar, abrir detalhe, acompanhar timeline interna, aceitar retorno, pedir complemento, fechar e vincular evidência existente por contratos reais. O lote P0-A fechou a operação mínima ponta a ponta com `/internal-actions`, detalhe operacional por área, devolução estruturada ao suporte e `/admin/internal-areas` para governança de `internal_area_memberships`. Continuam fora do V1: bridge automática com Engenharia e qualquer alteração automática de `ticket.status`. Status consolidado em `docs/INTERNAL_ACTIONS_V1_STATUS_REPORT.md`.
+- A curadoria refinada da Knowledge Base está pausada; os candidatos continuam como corpus/documentação inicial.
+- O foco atual é buildout funcional da plataforma interna CX B2B técnica.
+- O lote `Support Ticket Operational Flow V3` fechou o primeiro bloco real de contratos operacionais de ticket.
+- O Support Ticket Workspace agora possui timeline paginada por RPC real e contrato dedicado para candidatos seguros de link público de Knowledge.
+- O lote `Customer Account Profile Operational Core V3` materializou o segundo bloco operacional do buildout: perfil de cliente B2B consumido por Support Customers e pelo rail do Ticket Workspace, com leitura por views e escrita administrativa por RPC.
+- O lote `Knowledge Admin Operational Governance V3` endureceu a governanca editorial operacional: publicacao publica v2 agora exige gate backend de evidencia humana revisada e checklist humano completo antes de expor qualquer artigo publico.
+- O lote `Access System Observability Hardening V3` materializou read models dedicados para `/admin/access` e `/admin/system`, sanitizou audit events administrativos, conectou as telas aos contratos reais e preparou contexto Impeccable com `PRODUCT.md` e `DESIGN.md`.
+- O lote `Support Ticket Creation And Intake V3` conectou a abertura operacional de tickets em `/support/queue` ao contrato real de `rpc_create_ticket`, adicionou read models seguros de tenants/contatos para intake e cobriu o fluxo com pgTAP e fixture QA.
+- O lote `Support Ticket Attachments And Escalation V3` criou metadata sanitizada de anexos e handoff técnico real por `engineering_work_items` e `engineering_ticket_links`, mantendo upload/storage seguro fora de escopo.
+- O lote `Engineering Workspace Operational Core V3` criou o workspace operacional de engenharia com fila técnica, detalhe, ownership, status técnico, updates estruturados, retorno ao suporte, auditoria e isolamento por tenant/papel.
+- O lote `Secure Ticket Evidence Storage V3` fechou o storage seguro de evidências com bucket privado `ticket-evidence`, policies por tenant/ticket, upload governado por intent, download temporário por grant curto, metadata sanitizada e UI conectada no Ticket Workspace sem expor path interno.
+- O lote `Ticket Classification And SLA Governance V3` formalizou categorias de ticket, motivos operacionais, SLA interno, matriz de transição de status, read models/RPCs e UI conectada para intake, fila e workspace sem inventar regra no frontend.
+- O lote `Tenant Support Policy And SLA Automation V3` materializou políticas de SLA por tenant, calendário de negócio MVP como metadata governada, fallback global seguro, recalculo backend e sinais internos de SLA na fila/workspace sem timer fake, pausa ou notificação externa.
+- O lote `Support Operations Usability Completion V3` consolidou copy operacional do suporte após SLA/anexos/handoff, removendo termos técnicos visíveis ao operador sem alterar contratos ou criar nova regra.
+- O lote `Internal Documents Reader V5` migrou `/admin/product-docs` e a aba `Documentos oficiais` de `/admin/build-journal` para consumir `vw_internal_documents_catalog` e `vw_internal_document_detail`, removendo corpos markdown hardcoded do fluxo ativo do frontend. Product Docs permanece como leitor oficial controlado; Build Journal permanece como camada narrativa com reader inline, CTA para Product Docs e pendências honestas para documentos fora da whitelist. Não houve backend novo, migration, RPC, view ou RLS neste lote.
+- O blueprint `Customer Portal Readiness Blueprint V3` preparou o desenho futuro do portal cliente B2B sem implementar UI, auth paralela ou contratos fake.
+- O `Buildout Status Checkpoint V3` consolidou o estado atual do buildout e definiu os próximos blocos grandes recomendados sem implementar produto novo.
+- O lote `Customer Portal Contract Foundation V3` criou a fundacao customer-facing real do portal B2B com roles `customer_user`/`customer_manager`, read models `vw_customer_portal_*`, RPCs `rpc_customer_*`, rotas `/portal`, `/portal/tickets` e `/portal/tickets/:ticketId`, fixture QA e testes de isolamento, sem portal fake, SLA publico, IA ou Omni Inbox.
+- O lote `Customer Portal Access And Knowledge Entitlements V3` criou a camada customer-facing de entitlement de Knowledge autenticada, com `knowledge_article_entitlements`, views `vw_customer_portal_knowledge_*`, RPCs administrativas minimas de grant/archive/link/unlink e rotas `/portal/help` e `/portal/help/:articleSlug`, mantendo o Public Help estritamente publico.
+- O lote `Customer Portal Access Administration V3` criou `/admin/customer-portal`, consolidando governanca customer-facing no Admin Console com read models reais, grant/archive de entitlement, link/unlink ticket-artigo e operacao de role/status via RPC.
+- O lote `Customer Portal Search And Discoverability V3` fechou a busca autenticada do portal com `rpc_customer_search_knowledge_articles`, filtros reais por origem/categoria e descoberta contextual por ticket, sem misturar boundary publica e autenticada.
+- O lote `Customer Portal Admin Session Regression Fix And Tenant Context Prep V3` corrigiu o loop infinito de bootstrap em `/admin/customer-portal`, confirmou separacao entre contexto admin e customer-facing no runtime e preparou a especificacao segura do proximo lote de tenant switching sem implementar auth paralela.
+- Nenhuma ação fake foi habilitada no frontend; ações sem contrato completo seguem bloqueadas para lote futuro.
+- Os 8 candidatos documentais da Knowledge continuam pendentes, nao aprovados, nao publicados e nao injetados automaticamente no Help Center.
+- Próximo bloco recomendado: `Customer Portal Tenant Context And Switching V3`, para suportar multiplos vinculos customer-facing com `active_tenant_id` governado por backend e sem contaminar o contexto administrativo.
+- A fase documental `Build Journal Strategy V1` criou a fundacao editorial da futura area interna `Diario de Construcao`, registrando narrativa, limites de seguranca, workflow Humano + ChatGPT + Codex e uma especificacao futura de tela interna.
+- Nenhuma tela runtime, backend, migration, tabela, RPC, RLS, fixture, mock ou contrato novo foi criado nesta fase documental.
+- A fase `Build Journal Runtime UI V1` criou a rota real `/admin/build-journal` dentro do Admin Console, protegida pelo gate administrativo existente.
+- A tela real do `Diario de Construcao` usa conteudo estatico versionado em `apps/web/src/features/build-journal/buildJournalContent.ts`, derivado dos documentos oficiais e sanitizado para nao expor dados reais, secrets, logs crus ou payloads sensiveis.
+- A interface inclui visao geral, timeline de construcao, workflow Humano + ChatGPT + Codex, fluxo documentacao -> produto, stack tecnica, seguranca, decisoes-chave, limites/riscos e estado honesto para prints futuros.
+- O lote nao criou backend novo, migration, RPC, tabela, RLS nova, fixture, mock enganoso, storage, indexacao de documentos, IA ou contrato novo.
+- A fase `Product Docs Internal Reader V1` criou a rota real `/admin/product-docs` dentro do Admin Console, protegida pelo gate administrativo existente.
+- A tela `Documentos do Produto` expõe apenas a whitelist inicial `PRODUCT.md`, `DESIGN.md`, `docs/PRODUCT_VISION.md`, `docs/ARCHITECTURE_RULES.md`, `docs/AUTH_CONTEXT_STRATEGY.md`, `docs/ROADMAP_BUILDOUT_V3.md`, `docs/PROJECT_STATE.md`, `docs/DOCUMENTATION_LEDGER.md`, `docs/SUPPORT_WORKFLOW.md`, `docs/ENGINEERING_WORKFLOW.md`, `docs/BUILD_JOURNAL_STRATEGY.md` e `docs/BUILD_JOURNAL_SCREEN_SPEC.md`.
+- O conteúdo é estático, sanitizado e versionado em `apps/web/src/features/product-docs/productDocsContent.ts`, sem parser dinâmico de filesystem, explorador genérico, leitura arbitrária, busca backend, IA ou contrato novo.
+- A V1 usa busca local no catálogo estático, agrupamento por categoria, status/sensibilidade por documento e avisos de leitura restrita quando aplicável.
+- A interação de seleção em `/admin/product-docs` foi endurecida para evitar repaint visual da rota ao clicar em documentos do índice; o parâmetro `?doc=` permanece como deep-link de entrada controlada, não como sincronização contínua da navegação interna.
+- O lote `Product Docs Internal Reader V1` não criou backend novo, migration, RPC, tabela, RLS nova, fixture, Supabase ou contrato novo.
+- O checkpoint documental `Internal Documentation Areas Checkpoint V1` consolidou as duas áreas internas `/admin/build-journal` e `/admin/product-docs`, reafirmando a diferença entre narrativa de construção e fonte oficial controlada.
+- A consolidação registrou modelo atual de acesso por gate administrativo existente, a limitação de ausência de permissão granular dedicada, a política de exposição/sanitização e os critérios de evolução futura.
+- Pendências atuais das áreas documentais internas:
+  - permissão granular dedicada para `build-journal` e `product-docs` continua inexistente;
+  - qualquer tentativa futura de refletir a seleção interna de `/admin/product-docs` na URL sem reintroduzir flicker depende de estratégia própria de roteamento/estado;
+  - QA manual autenticada em browser real continua recomendada após mudanças visuais relevantes nessas superfícies.
+- O checkpoint permaneceu estritamente documental: sem backend novo, migration, RPC, tabela, RLS nova, fixture, Supabase, contrato novo, UI nova ou feature nova.
+- A política `Documentation Update Policy V1` tornou atualização documental parte explícita do processo de entrega do repositório.
+- O processo agora exige revisão de `PROJECT_STATE.md`, `DOCUMENTATION_LEDGER.md`, documento específico da área e `README.md` sempre que um lote relevante alterar comportamento real, fluxo, contrato, limite ou superfície operacional.
+- `CODEX_EXECUTION_RULES.md` e `VALIDATION_CHECKLIST.md` foram atualizados para tratar ausência de documentação em lote relevante como falha de processo, não como detalhe opcional.
+- Esta fase permaneceu estritamente documental: sem backend novo, migration, RPC, tabela, RLS nova, fixture, Supabase, contrato novo, UI nova ou feature nova.
+- A fase documental `Genius Cockpit UI Blueprint Skill V1` criou a skill local versionada `.skills/genius-cockpit-ui-blueprint` para guiar futuras tarefas de cockpit UI do Genius Support OS a partir de blueprints, screenshots, críticas visuais e decisões de produto.
+- A skill consolida regras de fidelidade visual, densidade, scroll, copy operacional, drawers, rails, React/Tailwind e QA visual em referências reutilizáveis ligadas ao Design System V3.
+- O lote atualizou `docs/README.md`, `docs/REPOSITORY_STRUCTURE.md`, `docs/PROJECT_STATE.md`, `docs/DOCUMENTATION_LEDGER.md` e `README.md` para registrar a existência e o uso da skill local dentro do repositório.
+- Esta fase permaneceu estritamente documental: sem backend novo, migration, RPC, tabela, RLS nova, fixture, Supabase, contrato novo, UI nova ou feature nova.
+- A fase `Build Journal Experience Upgrade V1` refatorou `/admin/build-journal` em uma experiência guiada com índice sticky, seções ancoradas, trilha `entenda em 5 minutos`, distinção entre leitura técnica e não técnica, decisões expansíveis e melhor explicação de stack, arquitetura, segurança e IA.
+- A mesma fase fez ajustes leves em `/admin/product-docs`, adicionando `Por onde começar`, trilhas de leitura por tema e copy mais clara para reforçar que a rota é uma fonte oficial controlada, sem mudar a whitelist explícita nem o modelo estático da superfície.
+- O lote permaneceu estritamente de runtime UI estática e documentação: sem backend novo, migration, RPC, tabela, RLS nova, policy nova, parser dinâmico, busca backend, storage, IA interativa ou permissão granular nova.
+- A fase `Build Journal Immersive Blueprint Fidelity V1` recriou `/admin/build-journal` com alta fidelidade à blueprint dark aprovada, usando hero imersivo horizontal, jornada em uma visão, mapa da construção, timeline por fases, documentos-fonte curados, arquitetura explicada, papel da IA, estado atual e fechamento editorial dentro da mesma rota protegida do Admin Console.
+- A exceção visual dark ficou confinada ao conteúdo da rota do Diário e não alterou navegação, auth, permissões, Product Docs, backend, contratos ou o restante do shell administrativo.
+- O lote permaneceu estritamente de runtime UI estática e documentação: sem backend novo, migration, RPC, tabela, RLS nova, policy nova, storage, parser dinâmico, busca backend, file explorer, IA interativa ou permissão granular nova.
+- A validação visual desktop desta fase foi fechada em viewport `1600x1024`, com primeira dobra mostrando hero, jornada e início claro do grid principal, sem scroll horizontal.
+- A fase `Build Journal Structural Cleanup V1` saneou o frontend atual de `/admin/build-journal` após as recriações visuais: a rota segue única, com abas internas locais; `Visão geral`, `Linha do tempo`, `Arquitetura` e `IA na Construção` estão implementadas em blueprint light; `Documentos oficiais` e `Próximos passos` seguem placeholders estáticos honestos.
+- A mesma fase consolidou `apps/web/src/features/build-journal/buildJournalContent.ts` como fonte central enxuta para tabs, timeline, entregas recentes, placeholders e copy compartilhada, removendo datasets legados órfãos e entradas mortas de arquitetura/IA no painel simples.
+- O lote `Build Journal Structural Cleanup V1` não criou backend novo, migration, RPC, view, tabela, RLS nova, policy nova, Supabase contract, parser dinâmico, busca backend, file explorer, IA interativa ou permissão granular nova.
+- A aba `Documentos oficiais` de `/admin/build-journal` foi implementada como camada narrativa sobre as fontes oficiais do produto. Ela organiza categorias documentais, explica o papel de cada grupo na construção e conecta apenas documentos whitelisted ao leitor `/admin/product-docs`, marcando itens fora da whitelist como pendentes sem ação fake.
+- A implementação de `Documentos oficiais` permaneceu frontend estático e sanitizado: sem backend novo, migration, RPC, view, RLS, Supabase contract, parser dinâmico, file explorer ou busca backend.
+- A refatoração `Build Journal Documents Inline Reader V1` manteve `/admin/product-docs` como leitor oficial controlado e passou a reutilizar o mesmo reader/whitelist dentro da aba `Documentos oficiais` do Diário. O clique em documento whitelisted agora preserva o contexto narrativo de `/admin/build-journal`; o deep link `/admin/product-docs?doc=...` permanece disponível como CTA secundário.
+- A refatoração não criou segunda whitelist, parser markdown concorrente, leitura dinâmica de filesystem, backend novo, migration, RPC, view, RLS, tabela, Supabase contract, busca backend ou permissão granular nova.
+- A fase documental `Internal Documents Architecture V1` especificou a arquitetura final desejada para documentos internos oficiais: `.md` real whitelisted -> dry-run/sanitização -> banco versionado -> views/RPCs -> Product Docs e Build Journal.
+- A spec `docs/INTERNAL_DOCUMENTS_ARCHITECTURE.md` registra que o estado atual de `productDocsContent.ts` com corpos hardcoded deve ser tratado como transitório. A evolução correta exige whitelist versionada, sync idempotente, sanitização, hash, versionamento, catálogo/detalhe por contrato real e remoção futura da duplicação de corpo documental no frontend.
+- Esta fase permaneceu estritamente documental: sem frontend novo, backend novo, migration, tabela, RPC, view, RLS, seed, Supabase, script de sync ou commit do reader inline como solução final.
+- A fase `Internal Documents Whitelist + Dry Run V2` criou a whitelist versionada `docs/internal-documents.whitelist.json` com os 12 documentos já aceitos na V1 de Product Docs e adicionou o dry-run `scripts/documentation/validate-internal-documents.mjs`.
+- O comando `npm run documentation:validate:internal-docs` valida somente documentos whitelisted, sem alterar markdowns, sem gerar saída persistente e sem gravar no banco. A primeira execução validou 12 documentos: 5 válidos, 7 com alertas informativos de termos sensíveis e 0 bloqueados.
+- A fase V2 não criou backend, migration, tabela, RPC, view, RLS, seed, Supabase, contrato runtime ou alteração frontend.
+- O lote `Internal Documents Foundation V3/V4` materializou a base backend-first de documentos internos oficiais com as tabelas `internal_documents` e `internal_document_versions`, RLS, grants, constraints, audit row change e views contratuais `vw_internal_documents_catalog` e `vw_internal_document_detail`.
+- A leitura contratual de documentos internos oficiais está restrita a `platform_admin` neste corte; `anon`, customer-facing e `authenticated` sem papel administrativo não recebem dados, e DML direto por `authenticated` permanece bloqueado.
+- O script `scripts/documentation/sync-internal-documents.mjs` adiciona dry-run/apply controlado para sincronizar apenas markdowns whitelisted, calcular hash, gerar `body_md_sanitized` e criar nova versão apenas quando o `source_hash` muda.
+- Product Docs e Build Journal ainda continuam usando a fonte frontend estática neste lote; a migração dessas superfícies para `vw_internal_documents_catalog` e `vw_internal_document_detail` fica para V5.
 
 ## Estado real do repositório em 2026-04-30
 
@@ -88,6 +606,13 @@ Documentos históricos:
 - Migration oficial do backend mínimo do Customer Account Profile `supabase/migrations/20260504195833_phase6_8_customer_account_profile_backend.sql`.
 - Migration oficial do backend mínimo do vínculo ticket -> Knowledge Base `supabase/migrations/20260505015350_phase6_15_ticket_knowledge_linking_backend.sql`.
 - Migration oficial do contrato de revisão editorial para artigos publicados `supabase/migrations/20260506190000_phase7_4_knowledge_editorial_revision.sql`.
+- Migration oficial do fluxo operacional de tickets `supabase/migrations/20260508143717_support_ticket_operational_flow_v3.sql`.
+- Migration oficial de governanca operacional da Knowledge `supabase/migrations/20260508164336_knowledge_admin_operational_governance_v3.sql`.
+- Migration oficial do intake operacional de tickets `supabase/migrations/20260508201339_support_ticket_creation_and_intake_v3.sql`.
+- Migrations oficiais do Engineering Workspace operacional `supabase/migrations/20260508214418_engineering_workspace_operational_core_v3.sql` e `supabase/migrations/20260508214852_engineering_workspace_operational_core_contracts_v3.sql`.
+- Migration oficial do storage seguro de evidências `supabase/migrations/20260508233000_secure_ticket_evidence_storage_v3.sql`.
+- Migrations oficiais da classificação e SLA de tickets `supabase/migrations/20260509001000_ticket_classification_event_types_v3.sql` e `supabase/migrations/20260509001100_ticket_classification_and_sla_governance_v3.sql`.
+- Migration oficial de política de SLA por tenant e calendário MVP `supabase/migrations/20260509042343_tenant_support_policy_and_sla_automation_v3.sql`.
 - Teste local de banco em `supabase/tests/001_phase1_identity_tenancy_rls.sql`.
 - Teste local de hardening em `supabase/tests/002_phase1_1_hardening.sql`.
 - Teste local de control plane administrativo em `supabase/tests/003_phase1_2_admin_control_plane.sql`.
@@ -109,6 +634,8 @@ Documentos históricos:
 - Teste local do backend do Customer Account Profile em `supabase/tests/020_phase6_8_customer_account_profile_backend.sql`.
 - Teste local do backend do vínculo ticket -> Knowledge Base em `supabase/tests/021_phase6_15_ticket_knowledge_linking_backend.sql`.
 - Teste local do contrato de revisão editorial para artigos publicados em `supabase/tests/022_phase7_4_knowledge_editorial_revision.sql`.
+- Teste local do fluxo operacional de tickets em `supabase/tests/023_support_ticket_operational_flow.sql`.
+- Teste local do intake operacional de tickets em `supabase/tests/024_support_ticket_creation_and_intake.sql`.
 - Seed separado em `supabase/seeds/` e desabilitado por padrão.
 - Fluxo de bootstrap seguro do primeiro `platform_admin` em `supabase/bootstrap/`.
 - Núcleo Fase 1 implementado com `profiles`, `user_global_roles`, `tenants`, `tenant_memberships`, `tenant_contacts` e `audit.audit_logs`.
@@ -128,17 +655,28 @@ Documentos históricos:
 - View contratual administrativa advisory materializada em `vw_admin_knowledge_article_review_advisories`.
 - Views contratuais públicas endurecidas materializadas em `vw_public_knowledge_space_resolver`, `vw_public_knowledge_navigation`, `vw_public_knowledge_articles_list` e `vw_public_knowledge_article_detail`.
 - Views contratuais do Support Workspace materializadas em `vw_support_tickets_queue`, `vw_support_ticket_detail`, `vw_support_ticket_timeline`, `vw_support_ticket_timeline_recent`, `vw_support_customer_360`, `vw_support_customer_recent_tickets` e `vw_support_customer_recent_events`.
+- Views contratuais de intake do Support Workspace materializadas em `vw_support_ticket_intake_tenants` e `vw_support_ticket_intake_contacts`.
 - Diretório contratual de agentes atribuíveis do Support Workspace materializado em `vw_support_assignable_agents`.
 - Views contratuais do Customer Account Profile materializadas em `vw_support_customer_account_context` e `vw_admin_customer_account_profiles`.
 - Views contratuais do vínculo ticket -> Knowledge Base materializadas em `vw_support_ticket_knowledge_links`, `vw_support_knowledge_article_picker` e `vw_customer_portal_ticket_knowledge_links`.
+- View contratual de candidatos seguros a link público no ticket materializada em `vw_support_knowledge_public_link_candidates`.
 - RPCs contratuais de escrita materializadas em `rpc_create_ticket`, `rpc_update_ticket_status`, `rpc_assign_ticket`, `rpc_add_ticket_message`, `rpc_add_internal_ticket_note`, `rpc_close_ticket` e `rpc_reopen_ticket`.
 - RPCs contratuais administrativas de Knowledge Base materializadas em `rpc_admin_create_knowledge_category`, `rpc_admin_create_knowledge_article_draft`, `rpc_admin_update_knowledge_article_draft`, `rpc_admin_submit_knowledge_article_for_review`, `rpc_admin_publish_knowledge_article` e `rpc_admin_archive_knowledge_article`.
 - RPCs contratuais administrativas v2 space-aware materializadas em `rpc_admin_create_knowledge_category_v2`, `rpc_admin_create_knowledge_article_draft_v2`, `rpc_admin_update_knowledge_article_draft_v2`, `rpc_admin_submit_knowledge_article_for_review_v2`, `rpc_admin_publish_knowledge_article_v2` e `rpc_admin_archive_knowledge_article_v2`.
 - RPCs contratuais advisory materializadas em `rpc_admin_update_knowledge_article_review_status` e `rpc_admin_mark_knowledge_article_reviewed`.
 - RPCs contratuais de revisão editorial para artigos publicados materializadas em `rpc_admin_begin_knowledge_article_editorial_revision_v2`, `rpc_admin_update_knowledge_article_editorial_revision_v2`, `rpc_admin_publish_knowledge_article_editorial_revision_v2` e `rpc_admin_discard_knowledge_article_editorial_revision_v2`.
-- RPCs administrativas do Customer Account Profile materializadas em `rpc_admin_upsert_customer_account_profile`, `rpc_admin_add_customer_integration`, `rpc_admin_update_customer_integration`, `rpc_admin_add_customer_customization`, `rpc_admin_update_customer_customization`, `rpc_admin_add_customer_account_alert` e `rpc_admin_archive_customer_account_alert`.
+- RPCs administrativas do Customer Account Profile materializadas em `rpc_admin_upsert_customer_account_profile`, `rpc_admin_add_customer_integration`, `rpc_admin_update_customer_integration`, `rpc_admin_add_customer_customization`, `rpc_admin_update_customer_customization`, `rpc_admin_add_customer_account_alert`, `rpc_admin_archive_customer_account_alert` e `rpc_admin_set_customer_feature_flag`.
 - RPCs contratuais do vínculo ticket -> Knowledge Base materializadas em `rpc_support_link_ticket_article`, `rpc_support_archive_ticket_article_link`, `rpc_support_mark_documentation_gap` e `rpc_support_mark_article_needs_update`.
+- RPC contratual de timeline paginada materializada em `rpc_support_get_ticket_timeline`.
+- RPCs contratuais do Engineering Workspace materializadas em `rpc_engineering_assign_work_item`, `rpc_engineering_unassign_work_item`, `rpc_engineering_update_work_item_status`, `rpc_engineering_add_work_item_update`, `rpc_engineering_return_work_item_to_support` e `rpc_engineering_link_existing_work_item_to_ticket`.
+- RPCs contratuais de evidências seguras materializadas em `rpc_support_create_ticket_attachment_upload`, `rpc_support_register_ticket_attachment` e `rpc_support_get_ticket_attachment_download_url`.
+- RPCs contratuais de governança de SLA por tenant materializadas em `rpc_admin_upsert_business_calendar`, `rpc_admin_upsert_ticket_sla_policy`, `rpc_admin_archive_ticket_sla_policy` e `rpc_support_recalculate_ticket_sla`.
+- O intake operacional de `/support/queue` agora abre tickets somente por `rpc_create_ticket`, sem leitura direta de `tenants` ou `tenant_contacts`.
+- O Ticket Workspace agora registra evidências reais apenas por fluxo governado de intent + edge function + RPC, e lê anexos apenas pela `vw_support_ticket_attachments` sanitizada.
+- A fila e o Ticket Workspace agora exibem contexto de SLA derivado pelo backend, incluindo política aplicada, origem da política e calendário MVP quando existirem.
 - `authenticated` não possui `SELECT`, `INSERT`, `UPDATE` nem `DELETE` direto nas tabelas base de ticketing; o app lê via views e escreve via RPCs.
+- `authenticated` não possui DML direto em `engineering_work_items`, `engineering_ticket_links` nem `engineering_work_item_updates`; o app lê por views e escreve por RPCs auditadas.
+- `authenticated` também não possui DML direto em `ticket_attachments`; upload e download seguro de evidência dependem de RPCs, grants curtos, bucket privado e edge functions controladas.
 - Pacote `packages/contracts` materializado com tipos TypeScript para views e RPCs de ticketing.
 - Pacote `packages/contracts` agora também materializa tipos TypeScript para os read models do Support Workspace.
 - Auditoria estrutural das views oficializada com `security_barrier = true`, filtros explícitos por caller e teste pgTAP dedicado.
@@ -180,6 +718,16 @@ Documentos históricos:
 - O resolver público agora expõe branding sanitizado mínimo (`brand_name`, `logo_asset_url`, `theme_tokens`, `seo_defaults` e `support_contacts` públicos) sem abrir acesso direto a `brand_settings`.
 - A busca pública agora expõe apenas metadados mínimos de resultado e nunca retorna `body_md` completo, `source_path`, `source_hash` ou metadados internos.
 - A Central Pública passou por polish de legibilidade, hierarquia visual e leitura mobile-first, mantendo a mesma superfície pública e o mesmo escopo funcional.
+- As superfícies públicas `/help/genius`, `/help/genius/articles` e `/help/genius/articles/:slug` agora usam header público leve, composição documental em light mode, scroll natural da página e ausência de shell interno com lateral sticky/rolagem própria.
+- A listagem pública de artigos agora oferece navegação simples por categoria, estados vazios amigáveis e leitura consistente com a base pública já publicada, sem expor conteúdo interno, rascunho ou termos técnicos crus.
+- A transição entre Support Workspace e Central Pública de Ajuda foi refinada apenas no frontend: a aba `Central de ajuda` do ticket continua no shell operacional aprovado e passou a reforçar a leitura pública antes do compartilhamento, sem qualquer mudança de backend, Supabase, migrations, RPCs, contracts, fixtures, RLS ou permissões.
+- A camada pública agora evita prometer abertura pública de ticket ou feedback funcional sem contrato real: a orientação ao cliente foi ajustada para usar apenas canais operacionais já acordados, links reais e mensagens honestas sobre o escopo público atual.
+- A camada pública de conhecimento agora reforça descoberta por jornada operacional usando apenas categorias e artigos já existentes, com curadoria explícita de conteúdo aprovado entre `/help/genius`, `/help/genius/articles` e `/help/genius/articles/:slug`, sem criar taxonomia dinâmica, backend novo ou CTA falso.
+- A rota `/admin/knowledge` agora reforça visualmente a origem editorial governada da Central de Ajuda, distinguindo com mais clareza rascunho, revisão, publicado e visibilidade pública/interna/restrita sem alterar fluxo funcional nem contratos.
+- A aba `Central de ajuda` em `/support/tickets/:ticketId` agora deixa explícito que a ponte com Knowledge exibe apenas leitura pública aprovada e que lacunas de documentação voltam para curadoria editorial interna, sem qualquer alteração de backend, Supabase, migrations, RPCs, contracts, fixtures, RLS ou permissões.
+- O fechamento documental desta fase preserva `docs/design/blueprint/Conversas.png` como `untracked`, fora do escopo visual/produto e sem qualquer inclusão em commit até decisão explícita.
+- A rota `/admin/knowledge` agora expõe triagem editorial mais clara para backlog legado, possíveis duplicidades, revisão humana persistida e governança de visibilidade, mantendo o cockpit Admin V3 sem scroll global e sem criar mecanismo novo de deduplicação ou publish automático.
+- O rail editorial de `/admin/knowledge` agora separa explicitamente curadoria humana, visibilidade governada, backlog legado/rastreabilidade e sinais editoriais persistidos, reforçando que conteúdo legado, interno ou restrito nunca deve parecer elegível para a camada pública sem decisão humana.
 - Estratégia oficial de FAQ da plataforma criada em `docs/PLATFORM_FAQ_STRATEGY.md`.
 - Ledger documental por fase criado em `docs/DOCUMENTATION_LEDGER.md`.
 - Estratégia oficial de curadoria do corpus legado criada em `docs/KNOWLEDGE_CONTENT_CURATION_PLAN.md`.
@@ -194,6 +742,7 @@ Documentos históricos:
 - Desenho técnico pré-migration do perfil operacional do cliente B2B criado em `docs/CUSTOMER_ACCOUNT_PROFILE_MIGRATION_DESIGN.md`.
 - Read models oficiais do Support Workspace materializados com authz restrita a `platform_admin` e roles globais de suporte com membership ativo no tenant.
 - O detalhe do Support Workspace agora prioriza conversa e composer como fluxo principal, mantendo eventos tecnicos e controles avancados em camadas secundarias.
+- O detalhe do Support Workspace agora carrega histórico anterior por `rpc_support_get_ticket_timeline`, preservando a janela recente inicial e sem abrir leitura direta nas tabelas base.
 - O backend do Customer Account Profile agora materializa perfil operacional, stack resumida, features, customizacoes e alertas por tenant, com bloqueio de conteudo sensivel antes de persistir ou auditar.
 - Relatório oficial do inventário legado criado em `docs/reports/KNOWLEDGE_LEGACY_INVENTORY_REPORT.md`.
 - Backlog versionado oficial de curadoria legado criado em `docs/reports/KNOWLEDGE_LEGACY_CURATION_BACKLOG.md`.
@@ -546,7 +1095,7 @@ Documentos históricos:
     - criar uma view dedicada para candidatos a link publico seguro
     - manter a decisao de `can_send_to_customer` e de `public_article_path` no backend
     - evitar concatenacao fragil de `/help/:spaceSlug/articles/:articleSlug` no frontend
-  - O proximo contrato candidato dessa ponte passa a ser `vw_support_knowledge_public_link_candidates`.
+  - A view dedicada dessa ponte foi materializada depois na Fase 8.2 como `vw_support_knowledge_public_link_candidates`.
 - Fase 6.18: Contextual Subsidebar UX Pattern concluida localmente.
   - O shell interno passou a formalizar 3 camadas de operacao:
     - sidebar global
@@ -706,6 +1255,1199 @@ Documentos históricos:
     - `npm run supabase:verify`
     - `npm run supabase:qa:local-support-fixture`
   - QA funcional local final gerou `admin-knowledge-edit-published.png`, `admin-knowledge-revision-flow.png` e `public-article-after-update.png`.
+- Fase 7.5: Correcao Visual Admin V3 concluida e registrada.
+  - O commit visual aprovado `57fd409260dd9acea310b029e2f46c1ea5a1b5dd` consolidou o cockpit Admin para viewport real do navegador, sem tratar `1920x1080` como altura fisica obrigatoria da app.
+  - O shell administrativo passou a operar com altura util real via `--app-viewport-height`, preservando sensacao de Full HD por densidade visual menor, compactacao de headers, paddings e colunas laterais.
+  - As rotas `/admin/knowledge`, `/admin/access` e `/admin/system` foram corrigidas para remover scroll global, eliminar scroll da coluna esquerda e manter scroll interno apenas no centro/feed/rail quando necessario.
+  - A rota `/admin/tenants` foi validada regressivamente apos os ajustes globais e permaneceu visualmente aprovada, com lista central dominante e rail direito proporcional/util.
+  - Validacoes visuais registradas:
+    - viewport real `1920x920`
+    - resize validado em `1440x780`
+    - refresh direto de rota
+    - navegacao entre telas Admin
+    - ausencia de scroll global, scroll horizontal e rolagem na coluna esquerda das rotas validadas
+  - Testes executados para o lote visual:
+    - `npm run web:typecheck`
+    - `npm run web:build`
+  - Escopo explicitamente preservado:
+    - nenhuma alteracao em backend
+    - nenhuma alteracao em Supabase
+    - nenhuma alteracao em migrations
+    - nenhuma alteracao em RPCs
+    - nenhuma alteracao em contracts
+    - nenhuma alteracao em fixtures
+    - nenhuma alteracao em RLS
+    - nenhuma alteracao em permissoes
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - futura unificacao entre `Admin Shell` e `Support Workspace Shell` em um App Shell unico
+    - navegacao futura segmentada por permissao e contexto do usuario
+    - pre-condicoes obrigatorias antes desse refactor: auditoria de auth, roles, rotas, RLS, navegacao e estados de acesso
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora do commit visual e nao deve entrar em commit documental sem decisao explicita
+- Fase 7.6: Saneamento Visual Support Workspace V3 concluido localmente.
+    - O commit visual aprovado `fcf78cd5f3289eaec74c8a68fe0d2d0d15b49488` consolidou o Support Workspace para viewport real do navegador, sem tratar `1920x1080` como altura fisica obrigatoria da app.
+    - O shell operacional de suporte passou a respeitar a viewport util real do navegador com `--app-viewport-height`, sem assumir `1920x1080` como altura fisica literal da app.
+    - `/support/queue` foi reconstruida como bancada de triagem operacional em tres colunas, com lateral compacta sem scroll, lista central dominante e rail de preview util.
+    - `/support/tickets/:ticketId` foi densificada como estacao de atendimento B2B, com thread central dominante, composer amplo, nota interna destacada em amarelo claro e rail direito restrito a contexto, acoes rapidas e SLA interno; a timeline central passou a ser a unica superficie visual de historico operacional.
+    - `/support/tickets/:ticketId` agora inicia a fila viva no escopo `Abertos`, com segmentacao explicita `Abertos | Fechados`; tickets encerrados ficam acessiveis por filtro, sem poluir a operacao diaria.
+    - O split operacional da fila usa apenas status reais ja expostos por `vw_support_tickets_queue`, sem contrato novo, sem view parametrizada e sem logica inventada no backend.
+    - `/support/customers` passou a operar como cockpit de contas B2B em tres colunas, com segmentacao lateral, lista central dominante e preview operacional do cliente usando apenas contratos reais; quando o contrato nao entrega contexto suficiente, a UI assume `Indisponivel`.
+    - `/support/customers/:tenantId` foi compactada para manter densidade operacional, sem scroll global e sem usar a coluna esquerda como solucao de rolagem.
+    - Validacoes visuais registradas:
+      - viewport real `1920x920`
+      - resize validado em `1440x780`
+      - refresh direto de rota
+      - navegacao entre telas Support
+      - ausencia de scroll global e scroll horizontal nas rotas validadas
+      - scroll interno restrito a lista/thread/feed/rail quando necessario
+      - fila aberta, fila fechada, ticket aberto, ticket fechado e drawer de classificacao validados no navegador local
+    - Validacao regressiva do Admin apos o lote Support:
+      - `/admin/tenants`
+      - `/admin/knowledge`
+      - `/admin/access`
+      - `/admin/system`
+    - todas seguiram sem scroll global e sem regressao visual obvia no shell validado
+  - Testes executados para o lote visual:
+    - `npm run web:typecheck`
+    - `npm run web:build`
+    - `npm run supabase:qa:local-support-fixture`
+  - Escopo explicitamente preservado:
+    - nenhuma alteracao em backend
+    - nenhuma alteracao em Supabase
+    - nenhuma alteracao em migrations
+    - nenhuma alteracao em RPCs
+    - nenhuma alteracao em contracts
+    - nenhuma alteracao em fixtures
+    - nenhuma alteracao em RLS
+    - nenhuma alteracao em permissoes
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - a futura unificacao entre `Admin Shell` e `Support Workspace Shell` permanece fora de escopo
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora dos commits deste lote e sem status de contrato visual
+- Fase 7.11: Legacy Corpus Editorial Cleanup V3 concluido como auditoria documental.
+  - O corpus legado candidato foi localizado em `raw_knowledge/octadesk_export/latest/` e auditado sem materializacao em banco, sem publicacao automatica e sem mutacao do dado-fonte.
+  - O inventario consolidado confirma `58` artigos candidatos distribuidos em `Configurações` (`45`), `Cadastros` (`8`) e `Erros comuns e soluções` (`5`), com concentracao dominante em `Configuração de ambiente`.
+  - O lote foi fechado como saneamento editorial e governanca de conteudo, nao como lote de publicacao publica.
+  - O relatorio oficial desta fase ficou registrado em `docs/reports/LEGACY_CORPUS_EDITORIAL_AUDIT.md`.
+  - O backlog documental ja existente em `docs/reports/KNOWLEDGE_LEGACY_CURATION_BACKLOG.md` permanece como trilha operacional por artigo, enquanto o novo relatorio consolida riscos, taxonomia proposta, matriz de decisao e backlog por fase.
+  - Riscos editoriais consolidados nesta fase:
+    - linguagem tecnica e naming legado demais em parte relevante do corpus
+    - mistura entre conteudo potencialmente publico e instrucoes internas/restritas
+    - forte concentracao de artigos sensiveis em estorno, integracoes, Correios, PIX e permissoes
+    - pelo menos uma duplicidade confirmada e outros clusters tematicos candidatos a consolidacao manual
+  - Regras confirmadas por este lote:
+    - publicacao publica continua bloqueada sem curadoria humana
+    - deduplicacao real continua manual e operacional nesta fase
+    - nenhum artigo legado deve parecer publicavel por automacao, advisory ou heuristica
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Escopo explicitamente preservado:
+    - nenhuma alteracao em backend
+    - nenhuma alteracao em Supabase
+    - nenhuma alteracao em migrations
+    - nenhuma alteracao em RPCs
+    - nenhuma alteracao em contracts
+    - nenhuma alteracao em fixtures
+    - nenhuma alteracao em RLS
+    - nenhuma alteracao em permissoes
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - reescrita humana do corpus legado candidato
+    - consolidacao manual das duplicidades e sobreposicoes por tema
+    - normalizacao editorial de taxonomia antes de novos lotes de publicacao publica
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.12: Legacy Corpus Human Curation Sprint V3 concluido como sprint documental.
+  - O backlog legado da Knowledge Base foi transformado em uma sprint operacional de curadoria humana registrada em `docs/knowledge/LEGACY_CORPUS_HUMAN_CURATION_SPRINT.md`.
+  - A sprint consolidou uma matriz editorial priorizada para os `58` artigos candidatos, com destino recomendado, categoria publica proposta, prioridade, revisao tecnica e revisao suporte/CS por item.
+  - O lote tambem formalizou:
+    - o primeiro grupo seguro de curadoria humana
+    - a proposta manual de consolidacao da duplicidade confirmada em formas de estorno
+    - a taxonomia publica definitiva recomendada para o corpus legado
+    - a lista objetiva do que nao pode ser publicado sem revisao
+  - A entrega permaneceu estritamente documental:
+    - sem publicacao publica
+    - sem alteracao de backend
+    - sem alteracao de runtime
+    - sem alteracao de contratos
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Escopo explicitamente preservado:
+    - nenhuma alteracao em backend
+    - nenhuma alteracao em Supabase
+    - nenhuma alteracao em migrations
+    - nenhuma alteracao em RPCs
+    - nenhuma alteracao em contracts
+    - nenhuma alteracao em fixtures
+    - nenhuma alteracao em RLS
+    - nenhuma alteracao em permissoes
+  - Proximo passo recomendado:
+    - abrir uma sprint manual apenas para os artigos `P0`
+    - consolidar a duplicidade confirmada antes de reabrir a trilha de estornos
+    - manter integracoes, Correios, permissoes e automacoes financeiras fora de qualquer lote publico ate revisao especifica
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.13: Legacy Corpus P0 Rewrite Sprint V3 concluido como reescrita documental.
+  - Os seis artigos `P0` do backlog legado foram localizados no corpus real e reescritos como candidatos editoriais em `docs/knowledge/LEGACY_CORPUS_P0_REWRITE_CANDIDATES.md`.
+  - Para cada artigo, a fase registrou:
+    - caminho fonte no corpus legado
+    - categoria original
+    - resumo do conteudo encontrado
+    - riscos editoriais
+    - dependencias de revisao
+    - versao candidata em markdown
+    - decisao recomendada de elegibilidade
+  - O lote permaneceu estritamente documental:
+    - sem publicacao
+    - sem alteracao de backend
+    - sem alteracao de runtime
+    - sem alteracao de contratos
+  - Decisoes editoriais recomendadas desta leva:
+    - candidatos a publico:
+      - `Como alterar ou aprovar os produtos de uma solicitacao?`
+      - `Como cadastrar motivos para troca ou devolucao`
+      - `Posso enviar uma notificacao de analise ao cliente?`
+      - `Reenviar um e-mail ao consumidor`
+    - requer revisao tecnica antes de decidir:
+      - `Como informar a SKU durantge a troca`
+      - `Regra por motivo`
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Escopo explicitamente preservado:
+    - nenhuma alteracao em backend
+    - nenhuma alteracao em Supabase
+    - nenhuma alteracao em migrations
+    - nenhuma alteracao em RPCs
+    - nenhuma alteracao em contracts
+    - nenhuma alteracao em fixtures
+    - nenhuma alteracao em RLS
+    - nenhuma alteracao em permissoes
+  - Revisoes ainda obrigatorias antes de qualquer elegibilidade publica:
+    - produto
+    - suporte/CS
+    - validacao final de aderencia ao fluxo atual
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.14: Knowledge P0 Human Review Gate V3 concluido como gate documental.
+  - A rodada formal de revisao humana dos seis candidatos `P0` foi consolidada em `docs/knowledge/KNOWLEDGE_P0_HUMAN_REVIEW_GATE.md`.
+  - O gate separou:
+    - decisao preliminar
+    - decisao final recomendada
+    - pendencia de Produto
+    - pendencia de Suporte/CS
+    - bloqueadores tecnicos e editoriais
+    - lote que pode seguir apenas para preparacao de publicacao futura
+  - Resultado consolidado do gate:
+    - elegiveis com ajustes:
+      - `Como alterar ou aprovar os produtos de uma solicitacao?`
+      - `Como cadastrar motivos para troca ou devolucao`
+      - `Posso enviar uma notificacao de analise ao cliente?`
+      - `Reenviar um e-mail ao consumidor`
+    - revisar tecnicamente antes:
+      - `Como informar a SKU durantge a troca`
+      - `Regra por motivo`
+  - O lote permaneceu estritamente documental:
+    - sem publicacao
+    - sem alteracao de backend
+    - sem alteracao de runtime
+    - sem alteracao de contracts
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Escopo explicitamente preservado:
+    - nenhuma alteracao em backend
+    - nenhuma alteracao em Supabase
+    - nenhuma alteracao em migrations
+    - nenhuma alteracao em RPCs
+    - nenhuma alteracao em contracts
+    - nenhuma alteracao em fixtures
+    - nenhuma alteracao em RLS
+    - nenhuma alteracao em permissoes
+  - Publicacao futura continua dependente de aprovacao humana explicita:
+    - Produto
+    - Suporte/CS
+    - checagem final de elegibilidade publica
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.15: Knowledge P0 Publication Prep V3 concluido como pacote documental de pre-publicacao.
+  - Os quatro artigos `P0` marcados como `elegivel com ajustes` no gate humano avancaram para `docs/knowledge/KNOWLEDGE_P0_PUBLICATION_PREP.md`.
+  - O pacote consolidou, por artigo:
+    - titulo publico candidato final
+    - categoria publica final
+    - resumo publico final
+    - corpo final candidato em markdown
+    - pontos ajustados apos o gate humano
+    - pendencias humanas finais
+    - checklist de aprovacao
+    - decisao `pronto para decisao humana final, nao publicado`
+  - Artigos incluidos neste lote:
+    - `Como alterar ou aprovar os produtos de uma solicitacao?`
+    - `Como cadastrar motivos para troca ou devolucao`
+    - `Posso enviar uma notificacao de analise ao cliente?`
+    - `Reenviar um e-mail ao consumidor`
+  - Artigos mantidos fora deste lote:
+    - `Como informar a SKU durantge a troca`
+    - `Regra por motivo`
+  - O lote permaneceu estritamente documental:
+    - sem publicacao
+    - sem alteracao de backend
+    - sem alteracao de runtime
+    - sem alteracao de contracts
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Escopo explicitamente preservado:
+    - nenhuma alteracao em backend
+    - nenhuma alteracao em Supabase
+    - nenhuma alteracao em migrations
+    - nenhuma alteracao em RPCs
+    - nenhuma alteracao em contracts
+    - nenhuma alteracao em fixtures
+    - nenhuma alteracao em RLS
+    - nenhuma alteracao em permissoes
+  - Publicacao final continua dependente de aprovacao humana explicita:
+    - Produto
+    - Suporte/CS
+    - checagem final de elegibilidade publica
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.16: Knowledge P0 Final Human Decision Gate V3 concluido como gate documental final.
+  - O gate formal final dos quatro artigos `P0` preparados foi consolidado em `docs/knowledge/KNOWLEDGE_P0_FINAL_HUMAN_DECISION.md`.
+  - A fase registrou, por artigo:
+    - categoria publica
+    - pendencia final herdada
+    - decisao de Produto
+    - decisao de Suporte/CS
+    - decisao final de elegibilidade
+    - bloqueador atual
+    - responsavel pela proxima validacao
+  - Regra aplicada nesta fase:
+    - nenhuma aprovacao humana foi simulada
+    - sem evidencia explicita no repositorio, todos os quatro artigos permaneceram `pendente`
+    - nenhum artigo pode entrar em lote futuro de publicacao sem aprovacao explicita de Produto e Suporte/CS
+  - Artigos incluidos neste gate:
+    - `Como revisar os itens de uma solicitacao`
+    - `Como organizar motivos de troca e devolucao na operacao`
+    - `Como enviar uma atualizacao de analise ao cliente`
+    - `Como reenviar uma comunicacao ao cliente`
+  - Artigos mantidos fora deste gate:
+    - `Como informar a SKU durantge a troca`
+    - `Regra por motivo`
+  - O lote permaneceu estritamente documental:
+    - sem publicacao
+    - sem alteracao de backend
+    - sem alteracao de runtime
+    - sem alteracao de contracts
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Escopo explicitamente preservado:
+    - nenhuma alteracao em backend
+    - nenhuma alteracao em Supabase
+    - nenhuma alteracao em migrations
+    - nenhuma alteracao em RPCs
+    - nenhuma alteracao em contracts
+    - nenhuma alteracao em fixtures
+    - nenhuma alteracao em RLS
+    - nenhuma alteracao em permissoes
+  - Publicacao futura continua bloqueada ate aprovacao humana explicita:
+    - Produto
+    - Suporte/CS
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.17: Knowledge Human Approval Evidence Register V3 concluido como estrutura documental oficial.
+  - O registro oficial de evidencias humanas reais foi criado em `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`.
+  - A estrutura passou a exigir evidencia minima obrigatoria por aprovador:
+    - nome
+    - area
+    - data
+    - artigo
+    - versao revisada
+    - decisao
+    - observacao obrigatoria
+    - pendencias restantes
+    - fonte da evidencia
+  - A fase registrou os quatro artigos `P0` atualmente pendentes com:
+    - `Produto: pendente`
+    - `Suporte/CS: pendente`
+    - `pode publicar: nao`
+    - `decisao final atual: pendente`
+  - Regra aplicada nesta fase:
+    - nenhuma aprovacao foi simulada
+    - ausencia de evidencia equivale a `pendente`
+    - aprovacao parcial nao libera publicacao
+    - bloqueio de Produto ou Suporte/CS impede publicacao
+  - O lote permaneceu estritamente documental:
+    - sem aprovacao de artigo
+    - sem publicacao
+    - sem alteracao de backend
+    - sem alteracao de runtime
+    - sem alteracao de contracts
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Escopo explicitamente preservado:
+    - nenhuma alteracao em backend
+    - nenhuma alteracao em Supabase
+    - nenhuma alteracao em migrations
+    - nenhuma alteracao em RPCs
+    - nenhuma alteracao em contracts
+    - nenhuma alteracao em fixtures
+    - nenhuma alteracao em RLS
+    - nenhuma alteracao em permissoes
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.18: Knowledge Governance Refinement V3 concluido como ajuste documental de governanca.
+  - A regra de bloqueio do registro humano foi refinada para separar:
+    - `bloqueio temporario`
+    - `bloqueio com possibilidade de override`
+    - `bloqueio definitivo`
+  - A regra de override passou a exigir registro explicito de:
+    - responsavel nominal
+    - area ou responsabilidade
+    - data
+    - justificativa
+    - risco aceito
+    - evidencia registrada
+    - escopo do override
+  - Limites de override registrados:
+    - override nao pode liberar segredo, token, dado sensivel, informacao tecnicamente falsa, conteudo interno restrito, exposicao operacional indevida ou promessa de funcionalidade inexistente
+  - A evolucao futura de taxonomia foi registrada em `docs/knowledge/KNOWLEDGE_TAXONOMY_FUTURE_MODEL.md` com o modelo:
+    - categoria
+    - subcategoria opcional
+    - artigo
+  - Regras conceituais definidas:
+    - categoria continua suficiente para MVP
+    - subcategoria e opcional
+    - artigo pode existir apenas com categoria
+    - nenhuma subcategoria sera simulada em frontend ou banco sem contrato real
+  - O status atual dos quatro artigos `P0` foi preservado:
+    - seguem pendentes
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de runtime
+    - sem alteracao de contracts
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.19: Knowledge P0 Approval Intake Pack V3 concluido como pacote documental de intake.
+  - O pacote objetivo para coleta futura de evidencia humana real foi criado em `docs/knowledge/KNOWLEDGE_P0_APPROVAL_INTAKE_PACK.md`.
+  - A fase consolidou:
+    - checklist de Produto
+    - checklist de Suporte/CS
+    - template copiavel de evidencia humana
+    - perguntas objetivas por artigo
+    - riscos a validar por artigo
+  - Os quatro artigos `P0` permaneceram com:
+    - `status atual: pendente`
+    - nenhuma aprovacao simulada
+    - nenhuma publicacao
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de runtime
+    - sem alteracao de contracts
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.20: Knowledge P0 Human Evidence Collection Readiness V3 concluido como playbook documental operacional.
+  - O playbook operacional de coleta foi criado em `docs/knowledge/KNOWLEDGE_P0_APPROVAL_COLLECTION_PLAYBOOK.md`.
+  - A fase consolidou:
+    - mensagens copiaveis para `Produto`
+    - mensagens copiaveis para `Suporte/CS`
+    - instrucao objetiva de como registrar evidencia recebida
+    - checklist final de readiness antes da coleta
+    - regra operacional para mensagens informais
+  - O status dos quatro artigos `P0` foi preservado:
+    - seguem pendentes
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de runtime
+    - sem alteracao de contracts
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.21: Knowledge Legacy Full Corpus Curation Pack V3 concluido como organizacao documental em massa do corpus legado.
+  - O pacote consolidado do corpus completo foi criado em `docs/knowledge/LEGACY_CORPUS_FULL_CURATION_PACK.md`.
+  - O intake geral de aprovacao humana foi criado em `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_INTAKE.md`.
+  - O playbook geral de coleta foi criado em `docs/knowledge/KNOWLEDGE_FULL_CORPUS_APPROVAL_COLLECTION_PLAYBOOK.md`.
+  - A fase organizou documentalmente todos os `58` artigos exportados do Octadesk em uma matriz unica com:
+    - categoria publica proposta
+    - subcategoria futura opcional sugerida
+    - prioridade por grupo
+    - destino recomendado
+    - riscos editorial, tecnico e de exposicao interna
+    - necessidade de revisao de Produto e Suporte/CS
+  - A decisao operacional foi consolidar a trilha por grupo e prioridade, e nao mais por artigo isolado.
+  - O status do corpus foi preservado:
+    - todos os `58` artigos seguem pendentes
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.22: Knowledge Estorno Consolidation Prep V3 concluido como preparacao editorial da duplicidade confirmada de estorno.
+  - O plano documental de consolidacao foi criado em `docs/knowledge/KNOWLEDGE_ESTORNO_CONSOLIDATION_PREP.md`.
+  - A fase comparou os dois artigos legados duplicados:
+    - `Como configurar as formas de Estorno`
+    - `Configurando as Formas de Estorno`
+  - A comparacao confirmou:
+    - corpo `content.txt` identico
+    - diferencas restritas a titulo cadastrado, metadados, asset de imagem e detalhe de formatacao HTML
+  - O artigo canonico futuro recomendado foi registrado como:
+    - `Formas de estorno disponíveis na operação`
+    - categoria `Estornos e reembolsos`
+    - subcategoria futura opcional `Formas de estorno`
+  - O status editorial foi preservado:
+    - `pendente`
+    - `Produto: pendente`
+    - `Suporte/CS: pendente`
+    - `pode publicar: nao`
+    - nenhum artigo foi aprovado
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.23: Knowledge Estorno Canonical Rewrite V3 concluido como versao candidata do canônico de estorno.
+  - A versao candidata foi criada em `docs/knowledge/KNOWLEDGE_ESTORNO_CANONICAL_REWRITE.md`.
+  - O artigo canonico foi registrado com:
+    - titulo `Formas de estorno disponíveis na operação`
+    - categoria `Estornos e reembolsos`
+    - subcategoria futura opcional `Formas de estorno`
+    - escopo limitado a visao geral, contexto operacional e cuidados basicos antes de revisar a configuracao
+  - O texto canônico excluiu explicitamente:
+    - Pix automatico
+    - vale-compra
+    - calculo de estorno
+    - politicas por motivo
+    - limites financeiros
+    - troubleshooting tecnico
+  - O status editorial foi preservado:
+    - `pendente`
+    - `Produto: pendente`
+    - `Suporte/CS: pendente`
+    - `pode publicar: nao`
+    - nenhum artigo foi aprovado
+    - nenhum artigo foi publicado
+  - Os dois artigos legados continuam apenas como origem historica da consolidacao.
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - publicacao bloqueada ate evidencia humana real de `Produto` e `Suporte/CS`
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.24: Knowledge Estorno Sensitive Subclusters Mapping V3 concluido como mapeamento documental dos trilhos sensiveis.
+  - O mapa consolidado foi criado em `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_SUBCLUSTERS.md`.
+  - A fase separou os subclusters:
+    - `Formas de estorno`
+    - `Pix e estorno`
+    - `Vale-compra e crédito`
+    - `Cálculo e limites de estorno`
+    - `Regras e políticas por motivo`
+    - `Integrações e gateway`
+    - `Erros e troubleshooting de estorno`
+  - O canônico `Formas de estorno disponíveis na operação` permaneceu restrito ao escopo geral e sem absorver trilhas financeiras ou técnicas sensíveis.
+  - A matriz de próximos canônicos possíveis foi registrada, com avanço futuro orientado por subcluster.
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos lotes de estorno devem trabalhar por subcluster, nao por artigo isolado
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.25: Knowledge ValeCompra Subcluster Prep V3 concluido como preparacao documental do subcluster de vale-compra.
+  - O mapa do subcluster foi criado em `docs/knowledge/KNOWLEDGE_VALE_COMPRA_SUBCLUSTER_PREP.md`.
+  - A fase analisou os cinco artigos fonte ligados a:
+    - automacao de estorno e vale-compra
+    - sellers autorizados a criar vale-compra
+    - alteracao de vale-compra pendente
+    - retencao via vale-compra
+    - pedidos pagos com vale-compra
+  - As fronteiras editoriais foram registradas para separar:
+    - o que pode virar orientacao publica futura
+    - o que deve permanecer interno
+    - o que exige revisao tecnica
+    - o que exige validacao financeira ou operacional
+  - A recomendacao do subcluster foi mantida como:
+    - `revisar tecnicamente antes`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos lotes de vale-compra devem continuar por recorte editorial do subcluster
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.26: Knowledge Pix Estorno Subcluster Prep V3 concluido como preparacao documental do subcluster de Pix.
+  - O mapa do subcluster foi criado em `docs/knowledge/KNOWLEDGE_PIX_ESTORNO_SUBCLUSTER_PREP.md`.
+  - A fase analisou os artigos ligados a:
+    - estorno automatico via Pix
+    - automacao de estorno e vale-compra
+    - formas de estorno por motivo
+    - mudanca manual de forma de reembolso
+    - erro operacional de estorno
+    - permissoes VTEX e relacao com gateway
+  - As fronteiras editoriais foram registradas para separar:
+    - orientacao publica conceitual futura
+    - temas internos
+    - dependencias de integracao e gateway
+    - validacoes tecnicas e financeiras
+  - A recomendacao do subcluster foi mantida como:
+    - `bloquear por risco`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos lotes de Pix devem continuar por recorte editorial do subcluster
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.27: Knowledge RegrasMotivo Subcluster Prep V3 concluido como preparacao documental do subcluster de regras por motivo.
+  - O mapa do subcluster foi criado em `docs/knowledge/KNOWLEDGE_REGRAS_MOTIVO_SUBCLUSTER_PREP.md`.
+  - A fase analisou os artigos ligados a:
+    - cadastro de motivos
+    - regra por motivo
+    - forma de estorno por motivo
+    - excecao de logistica reversa
+    - politica de estorno do frete
+    - calculo e limite de estorno como dependencia indireta
+  - As fronteiras editoriais foram registradas para separar:
+    - orientacao publica de cadastro e organizacao de motivos
+    - regras internas de operacao
+    - efeitos financeiros
+    - efeitos logisticos
+  - A recomendacao do subcluster foi mantida como:
+    - `candidato parcial a público`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos lotes de motivo devem continuar por recorte editorial do subcluster
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.28: Knowledge Motivos Public Rewrite V3 concluido como reescrita documental do recorte publico seguro de motivos.
+  - A versao candidata foi criada em `docs/knowledge/KNOWLEDGE_MOTIVOS_TROCA_DEVOLUCAO_REWRITE.md`.
+  - A fase transformou o artigo legado `Como cadastrar motivos para troca ou devolucao` em candidato publico controlado com foco em:
+    - cadastro e organizacao de motivos
+    - papel operacional de alto nivel dos motivos
+    - boas praticas nao tecnicas de nomenclatura e revisao
+  - O recorte continuou excluindo:
+    - regras internas por motivo
+    - excecoes logisticas
+    - politica de frete
+    - calculo ou limite de estorno
+    - decisoes financeiras e logisticas sensiveis
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - a publicacao continua bloqueada ate evidencia humana real
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.29: Knowledge EstornoTroubleshooting Subcluster Prep V3 concluido como preparacao documental do subcluster de troubleshooting de estorno.
+  - O mapa do subcluster foi criado em `docs/knowledge/KNOWLEDGE_ESTORNO_TROUBLESHOOTING_SUBCLUSTER_PREP.md`.
+  - A fase analisou os artigos ligados a:
+    - erro ao tentar realizar estorno
+    - erro de autorizacao na VTEX
+    - permissoes VTEX
+    - alteracao manual de forma de reembolso
+    - dependencias de gateway e status externo como contexto tecnico
+  - As fronteiras editoriais foram registradas para separar:
+    - troubleshooting publico seguro baseado em sintomas observaveis
+    - detalhes internos de credenciais e permissao
+    - integracao, gateway e backoffice manual
+  - A recomendacao do subcluster foi mantida como:
+    - `revisar tecnicamente antes`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos lotes de troubleshooting de estorno devem continuar por recorte editorial do subcluster
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.30: Knowledge EstornoCalculoLimites Subcluster Prep V3 concluido como preparacao documental do subcluster de calculo e limites de estorno.
+  - O mapa do subcluster foi criado em `docs/knowledge/KNOWLEDGE_ESTORNO_CALCULO_LIMITES_SUBCLUSTER_PREP.md`.
+  - A fase analisou os artigos ligados a:
+    - calculo de estorno
+    - limite maximo de estorno
+    - valor manual para estorno automatico
+    - politica para estorno do frete
+    - relacao entre motivo e forma de estorno como dependencia de politica
+  - As fronteiras editoriais foram registradas para separar:
+    - explicacao conceitual de politica de reembolso
+    - regras internas de calculo
+    - teto financeiro e valor manual
+    - politica comercial de frete
+  - A recomendacao do subcluster foi mantida como:
+    - `bloquear por risco`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos lotes de politica financeira de estorno devem continuar por recorte editorial do subcluster
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.31: Knowledge IntegracoesGateway Subcluster Prep V3 concluido como preparacao documental do subcluster de integracoes e gateway.
+  - O mapa do subcluster foi criado em `docs/knowledge/KNOWLEDGE_INTEGRACOES_GATEWAY_SUBCLUSTER_PREP.md`.
+  - A fase analisou os artigos ligados a:
+    - permissoes VTEX
+    - erro de autorizacao ao acessar pedidos na VTEX
+    - erro ao tentar realizar o estorno como sintoma dependente de status externo
+    - estorno automatico via Pix com dependencia de gateway
+    - automacao de estorno e vale-compra por status
+    - configuracoes de seller ligadas a estorno e logistica
+  - As fronteiras editoriais foram registradas para separar:
+    - orientacao publica segura e de alto nivel
+    - credenciais, tokens e permissoes internas
+    - gateway, integracao externa e procedimentos tecnicos
+    - seller, responsabilidade financeira e configuracao operacional sensivel
+  - A recomendacao do subcluster foi mantida como:
+    - `bloquear por risco`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos lotes devem seguir por subcluster ou por recorte seguro validado
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.32: Knowledge Estorno Sensitive Clusters Closure V3 concluido como fechamento documental executivo do cluster de estornos e reembolsos.
+  - A consolidacao executiva foi criada em `docs/knowledge/KNOWLEDGE_ESTORNO_SENSITIVE_CLUSTERS_CLOSURE.md`.
+  - A fase consolidou os subclusters:
+    - formas de estorno
+    - Pix e estorno
+    - vale-compra e credito
+    - regras e politicas por motivo
+    - motivos de troca e devolucao
+    - erros e troubleshooting de estorno
+    - calculo e limites de estorno
+    - integracoes e gateway
+  - As trilhas de avanço ficaram separadas entre:
+    - recortes que podem seguir para validacao humana
+    - recortes que ainda exigem revisao tecnica ou humana
+    - recortes bloqueados para publico ate novo recorte tecnico
+  - Os unicos recortes aptos a seguir para validacao humana ficaram mantidos como:
+    - `Formas de estorno disponíveis na operação`
+    - `Como organizar motivos de troca e devolução na operação`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos passos devem focar validacao humana dos dois recortes seguros ou abertura de novo cluster do corpus
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.33: Knowledge LogisticaPostagem Cluster Prep V3 concluido como abertura documental do cluster de logistica reversa e postagem.
+  - O mapa do cluster foi criado em `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_PREP.md`.
+  - A fase analisou os artigos ligados a:
+    - pendencia de logistica reversa
+    - prazo logistico por estado
+    - correcao de CEP e endereco
+    - regra de nao gerar logistica reversa
+    - integracao, habilitacao e erros contratuais dos Correios
+    - autorizacao de postagem e governanca de seller
+  - As fronteiras editoriais foram registradas para separar:
+    - recortes publicos potenciais por prazo, pendencia e sintomas observaveis
+    - integracao, contrato, token e operacao interna de backoffice
+    - seller, roteamento logistico e autorizacao manual de postagem
+  - A recomendacao do cluster foi mantida como:
+    - `candidato parcial a publico`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos lotes devem seguir por cluster, subcluster ou recorte seguro validado
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.34: Knowledge PrazoPendenciasPostagem Subcluster Prep V3 concluido como preparacao documental do subcluster seguro de prazo e pendencias de postagem.
+  - O mapa do subcluster foi criado em `docs/knowledge/KNOWLEDGE_PRAZO_PENDENCIAS_POSTAGEM_SUBCLUSTER_PREP.md`.
+  - A fase analisou os artigos ligados a:
+    - pendencia de logistica reversa
+    - prazo logistico por estado
+    - erro de CEP ou endereco incorreto
+    - alteracao de e-mail ou endereco da solicitacao
+    - fronteira sensivel com a regra de nao gerar logistica reversa
+  - As fronteiras editoriais foram registradas para separar:
+    - recortes publicos por prazo, pendencia e revisao cadastral
+    - operacao manual de backoffice
+    - excecoes internas de autorizacao de postagem
+  - A recomendacao do subcluster foi mantida como:
+    - `candidato a publico`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - proximos lotes devem seguir por reescrita segura do subcluster ou por validacao humana apos reescrita
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.35: Knowledge PrazoPostagem Public Rewrite V3 concluido como criacao da versao candidata publica segura de prazo de postagem.
+  - A versao candidata foi criada em `docs/knowledge/KNOWLEDGE_PRAZO_POSTAGEM_REWRITE.md`.
+  - A fase transformou o artigo legado `Como Configurar o Prazo Logístico por Estado?` em candidato publico controlado com foco em:
+    - prazo de postagem e janela operacional
+    - impacto de prazo na operacao
+    - sinais observaveis de expiracao ou pendencia
+    - revisao de dados antes de acionar suporte
+  - O recorte permaneceu explicitamente fora de:
+    - integracao com Correios
+    - contrato, token e autorizacao tecnica
+    - procedimento interno de backoffice
+    - regra manual de nao gerar logistica reversa
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - o candidato depende de validacao humana de `Produto` e `Suporte/CS`
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.36: Knowledge Logistica Safe Rewrites And Closure V3 concluido como fechamento documental do cluster de logistica reversa e postagem.
+  - As novas versoes candidatas foram criadas em:
+    - `docs/knowledge/KNOWLEDGE_PENDENCIA_LOGISTICA_REVERSA_REWRITE.md`
+    - `docs/knowledge/KNOWLEDGE_CEP_ENDERECO_POSTAGEM_REWRITE.md`
+  - O fechamento executivo do cluster foi consolidado em:
+    - `docs/knowledge/KNOWLEDGE_LOGISTICA_POSTAGEM_CLUSTER_CLOSURE.md`
+  - A fase fechou os tres recortes seguros do cluster:
+    - prazo de postagem
+    - pendencia de logistica reversa
+    - CEP ou endereco impedindo postagem
+  - O cluster manteve explicitamente fora da trilha publica:
+    - integracao com Correios
+    - contrato, token e autorizacao tecnica
+    - governanca de seller e roteamento logistico
+    - regra manual de nao gerar logistica reversa
+    - procedimentos internos de backoffice
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - os tres candidatos dependem de validacao humana de `Produto` e `Suporte/CS`
+    - a publicacao continua bloqueada ate evidencia humana real
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.37: Knowledge Remaining Corpus Closure V3 concluido como fechamento documental dos clusters restantes do corpus legado.
+  - O fechamento executivo dos clusters remanescentes foi consolidado em:
+    - `docs/knowledge/KNOWLEDGE_REMAINING_CORPUS_CLOSURE.md`
+  - A fase consolidou em um único pacote:
+    - `Primeiros passos`
+    - `Operação de trocas e devoluções`
+    - `Sellers e operação de loja`
+    - `Cadastros e configurações operacionais`
+    - `Integrações gerais fora de estorno e logística`
+  - A fase formalizou a visão final do corpus:
+    - `58` artigos mapeados
+    - `8` candidatos públicos já prontos
+    - próximo passo real concentrado em validação humana, não nova documentação fragmentada
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - os `8` candidatos continuam dependentes de validacao humana de `Produto` e `Suporte/CS`
+    - temas de integracao, seller, contrato e configuracao interna permanecem fora da trilha publica
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.38: Knowledge Legacy Corpus Final Readiness Pack V3 concluido como pacote final de prontidao da Knowledge Base legada.
+  - O pacote final foi criado em:
+    - `docs/knowledge/KNOWLEDGE_LEGACY_CORPUS_FINAL_READINESS_PACK.md`
+  - A fase consolidou o estado final do corpus:
+    - `58` artigos legados
+    - `58` artigos mapeados editorialmente
+    - `8` candidatos publicos criados e aguardando validacao humana
+    - `6` temas bloqueados por risco
+    - `17` conteudos para manter internos
+    - `17` conteudos para revisao ou reescrita futura
+    - `9` itens arquivados como legado
+    - `2` itens duplicados ou consolidados
+  - A fase registrou:
+    - matriz final dos `8` candidatos
+    - checklist unico de validacao humana para Produto e Suporte/CS
+    - instrucao operacional de registro de evidencia real
+    - lista de temas marcados como `nao mexer agora`
+    - proxima acao real como coleta de aprovacao humana, nao nova documentacao fragmentada
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Pendencias mapeadas sem implementacao nesta fase:
+    - coletar evidencia humana real para os `8` candidatos
+    - manter bloqueados os temas de Pix, calculo, integracoes, Correios, contratos, sellers e troubleshooting tecnico sensivel
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.39: Knowledge Human Review Distribution Pack V3 concluido como pacote operacional de envio para revisao humana.
+  - O pacote operacional foi criado em:
+    - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_DISTRIBUTION_PACK.md`
+  - A fase consolidou para os `8` candidatos:
+    - pacote copiavel para `Produto`
+    - pacote copiavel para `Suporte/CS`
+    - resumo por artigo para revisao humana
+    - criterios objetivos de decisao por area
+    - mensagens prontas para envio
+    - tabela de resposta esperada iniciada como `pendente`
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Proxima acao real:
+    - enviar o pacote para `Produto` e `Suporte/CS`
+    - registrar respostas formais em `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`
+    - manter os `8` candidatos como `pendente` ate evidencia humana explicita
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 7.40: Knowledge Human Review Reading Pack V3 concluido como pacote de leitura humano dos candidatos da Knowledge Base.
+  - O pacote principal de leitura foi criado em:
+    - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_READING_PACK.md`
+  - A versão resumida para envio foi criada em:
+    - `docs/knowledge/KNOWLEDGE_HUMAN_REVIEW_SUMMARY.md`
+  - A fase consolidou o texto completo dos `8` artigos candidatos para leitura de `Produto` e `Suporte/CS`, incluindo:
+    - indice navegavel em markdown
+    - categoria publica proposta
+    - subcategoria futura opcional
+    - status editorial pendente
+    - checklist Produto por artigo
+    - checklist Suporte/CS por artigo
+    - bloco de resposta por artigo
+  - O status editorial foi preservado:
+    - nenhum artigo foi aprovado
+    - nenhuma aprovacao foi simulada
+    - nenhum artigo foi publicado
+  - O lote permaneceu estritamente documental:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem alteracao de migrations, RPCs, contracts, fixtures, RLS ou permissoes
+    - sem alteracao de runtime
+    - sem publicacao
+  - Teste executado para manter o baseline do workspace:
+    - `npm run web:typecheck`
+  - Proxima acao real:
+    - enviar `KNOWLEDGE_HUMAN_REVIEW_SUMMARY.md` e `KNOWLEDGE_HUMAN_REVIEW_READING_PACK.md` para `Produto` e `Suporte/CS`
+    - registrar as respostas reais em `docs/knowledge/KNOWLEDGE_HUMAN_APPROVAL_REGISTER.md`
+    - manter os `8` candidatos como `pendente` ate evidencia humana explicita
+    - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit documental e sem status de contrato visual
+- Fase 8.1: Buildout funcional V3 iniciado como virada de foco de produto/engenharia.
+  - A curadoria editorial refinada da Knowledge Base foi pausada por decisao operacional:
+    - os `8` candidatos permanecem como corpus/documentacao inicial
+    - erros de conteudo serao tratados depois, quando a operacao real exigir
+    - nenhum artigo foi aprovado
+    - nenhum artigo foi publicado
+  - O foco atual passa a ser a construcao do bolo da plataforma:
+    - telas e fluxos operacionais faltantes
+    - contratos reais entre backend e frontend
+    - navegacao, estados e continuidade entre Knowledge, Tickets, Clientes e Central Publica
+    - operacao diaria de Suporte, CS e Admin
+  - O roadmap faseado foi criado em:
+    - `docs/ROADMAP_BUILDOUT_V3.md`
+  - O roadmap cobre:
+    - auditoria das rotas principais
+    - lacunas por dominio Admin, Support, Customers e Public Help
+    - classificacao por tipo de lacuna
+    - fases A-G de buildout funcional
+    - primeiro lote tecnico recomendado para fluxos reais de ticket
+  - Quick win de runtime implementado:
+    - remocao de contadores estaticos `8` e `12` da navegacao do `Support Workspace`
+    - motivo: os numeros nao vinham de contrato backend e poderiam simular fila/tickets inexistentes
+  - Escopo preservado:
+    - sem alteracao de backend
+    - sem alteracao de Supabase
+    - sem migration, RPC, contract, fixture, RLS ou permissao nova
+    - `docs/design/blueprint/Conversas.png` permanece fora de escopo e fora do commit
+  - Acao real executada na Fase 8.2:
+    - `Support Ticket Operational Flow V3` fechou timeline paginada, link publico seguro de Knowledge, audit trail de mutacoes e consumo de historico anterior no workspace de ticket
+    - o proximo lote grande recomendado passa a ser `Customer Account Profile Operational Flow V3`
+- Fase 8.3: Customer Account Profile Operational Core V3 concluido como segundo bloco real do buildout funcional.
+  - O core existente de Customer Account Profile foi auditado e reaproveitado sem duplicar schema.
+  - A lacuna de contrato administrativo para feature flag foi fechada por `rpc_admin_set_customer_feature_flag`.
+  - A fixture QA de suporte agora cobre cliente com perfil completo e cliente sem perfil operacional para validar estados `Indisponivel`.
+  - `/support/customers`, `/support/customers/:tenantId` e `/support/tickets/:ticketId` seguem conectados a read models reais e não habilitam edição sem contrato seguro.
+  - Acoes de escrita no frontend continuam bloqueadas; no primeiro corte somente `platform_admin` escreve via RPC administrativa.
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste commit e fora de qualquer decisao de produto.
+- Fase 8.7: Support Ticket Attachments And Escalation V3 concluido como terceiro bloco operacional real do workspace de tickets.
+  - O lote auditou `ticket_attachments` e decidiu nao habilitar upload real neste corte:
+    - nao havia bucket/policies seguras de storage prontas para multi-tenancy
+    - o frontend passou a ler apenas metadata sanitizada por `vw_support_ticket_attachments`
+    - a UI mostra bloqueio honesto para upload
+  - O handoff tecnico agora possui dominio proprio e auditavel:
+    - `engineering_work_items`
+    - `engineering_ticket_links`
+    - `rpc_support_create_engineering_work_item_from_ticket`
+    - `rpc_support_link_ticket_to_engineering_work_item`
+    - `vw_support_ticket_engineering_links`
+  - O workspace `/support/tickets/:ticketId` agora lista evidencias sanitizadas e demandas tecnicas vinculadas, sem expor bucket, path ou payload sensivel.
+  - Toda criacao de handoff gera:
+    - `ticket_event`
+    - `audit_log`
+  - O isolamento por tenant foi validado em leitura e escrita.
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
+- Fase 8.16: Customer Portal Secure Evidence Upload V3 concluido como bloco customer-facing de evidencias.
+  - O portal B2B autenticado agora pode enviar evidencias reais em tickets permitidos do proprio tenant.
+  - O fluxo reaproveita o bucket privado `ticket-evidence`, mas com boundary customer-facing propria:
+    - `rpc_customer_create_ticket_attachment_upload`
+    - `ticket-evidence-upload?boundary=customer`
+    - `rpc_customer_register_ticket_attachment`
+    - `rpc_customer_get_attachment_download_url`
+  - A view `vw_customer_portal_ticket_attachments` continua sanitizada e nao expoe bucket, path interno, URL permanente ou payload bruto.
+  - O upload customer-facing fica limitado a PDF, PNG, JPG e WebP ate `10 MB`.
+  - Evidencia enviada pelo cliente aparece no portal e no Support Workspace como metadata segura.
+  - Toda mutacao gera `ticket_event` e `audit_log` sem vazar coordenadas de storage.
+  - Permanecem fora de escopo:
+    - arquivamento/remocao pelo cliente
+    - scan/antivirus
+    - notificacao externa
+    - IA
+    - Omni Inbox
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
+- Fase 8.17: Customer Portal Ticket Collaboration V3 concluido como bloco de colaboracao customer-facing.
+  - A timeline do portal foi endurecida para expor somente mensagens e eventos seguros para cliente.
+  - O portal agora consome `vw_customer_portal_ticket_collaboration_state` para estados derivados de leitura, resposta, resolucao e reabertura.
+  - `rpc_customer_add_ticket_message` foi endurecida com body obrigatorio, limite de 4000 caracteres, bloqueio para `resolved`/`closed`/`cancelled`, `ticket_event`, `audit_log` e transicao `waiting_customer` -> `waiting_support` quando aplicavel.
+  - `rpc_customer_acknowledge_ticket_update` valida timeline entry customer-facing e permanece idempotente.
+  - Novas RPCs customer-facing:
+    - `rpc_customer_confirm_ticket_resolved`
+    - `rpc_customer_request_ticket_reopen`
+  - Cliente pode confirmar resolucao apenas quando o ticket esta `resolved` e solicitar reabertura apenas de `resolved`/`closed` com motivo.
+  - Continuam bloqueados:
+    - prioridade/severidade/categoria/SLA pelo cliente
+    - nota interna pelo cliente
+    - engenharia interna
+    - audit bruto
+    - Knowledge draft/internal/restricted
+  - notificacao externa
+  - chat realtime
+  - IA
+  - Omni Inbox
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
+- Fase 8.18: Customer Portal Access And Knowledge Entitlements V3 concluido como bloco de acesso autenticado a Knowledge.
+  - O portal ganhou uma camada propria de entitlement por `tenant_id` e artigo, sem reaproveitar o gate publico como permissao autenticada.
+  - Novas estruturas e contratos:
+    - `knowledge_article_entitlements`
+    - `vw_customer_portal_knowledge_articles`
+    - `vw_customer_portal_knowledge_article_detail`
+    - `vw_customer_portal_ticket_knowledge_links`
+    - `rpc_admin_grant_knowledge_article_entitlement`
+    - `rpc_admin_archive_knowledge_article_entitlement`
+    - `rpc_admin_link_knowledge_article_to_ticket`
+    - `rpc_admin_unlink_knowledge_article_from_ticket`
+  - `/portal` agora resume artigos autorizados e `/portal/help` + `/portal/help/:articleSlug` operam somente com subset publico/autenticado liberado pelo backend.
+  - `/portal/tickets/:ticketId` passou a exibir apenas artigos ticket-linked que o cliente realmente pode ver.
+  - O Public Help permaneceu dependente apenas de `vw_public_knowledge_*` e nao passou a depender de sessao customer.
+  - Continuam bloqueados:
+    - drafts
+    - artigos `internal`
+    - `restricted` sem entitlement explicito
+    - advisory/review editorial interno
+    - os 8 candidatos documentais como conteudo publicado
+    - busca inteligente/IA/recomendacao
+    - UI administrativa complexa para entitlements
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
+- Fase 8.19: Customer Portal Access Administration V3 concluido como bloco administrativo do portal cliente.
+  - O Admin Console ganhou a rota `/admin/customer-portal` dentro do shell existente, sem dashboard decorativo e sem auth paralela.
+  - Novos contratos administrativos:
+    - `vw_admin_customer_portal_access_overview`
+    - `vw_admin_customer_portal_tenant_access`
+    - `vw_admin_customer_portal_users`
+    - `vw_admin_customer_portal_user_detail`
+    - `vw_admin_knowledge_entitlements`
+    - `vw_admin_knowledge_entitlement_detail`
+    - `vw_admin_ticket_knowledge_links`
+    - `vw_admin_customer_portal_article_candidates`
+    - `vw_admin_customer_portal_ticket_candidates`
+  - A tela permite:
+    - revisar usuarios customer-facing por tenant
+    - revisar risco de tenant sem gestor ativo
+    - trocar role/status de memberships customer-facing existentes por RPC
+    - conceder/arquivar entitlement
+    - vincular/desvincular artigo a ticket
+  - O lote nao abriu:
+    - publish ou approval editorial
+    - draft/internal no portal
+    - busca autenticada dedicada
+    - convite customer-facing dedicado fora dos contratos genericos ja existentes
+  - O portal deixou de mostrar `publicArticleCount` como numero enganoso nos cards resumidos; agora a copy fica honesta quando a contagem autorizada nao tem contrato proprio.
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
+- Fase 8.20: Customer Portal Search And Discoverability V3 concluido como bloco de busca autenticada e descoberta segura.
+  - O portal ganhou `rpc_customer_search_knowledge_articles` para busca customer-facing com `tenant_id`, `source`, `category_name`, `ticket_id`, `limit` e `offset`.
+  - `/portal/help` agora usa busca real do backend, com filtros seguros por categoria e origem:
+    - `public`
+    - `customer_portal`
+    - `ticket_linked`
+  - `/portal` passou a reforcar a descoberta da Central autorizada com entrada clara e cards reais ordenados pelo contrato ja autorizado.
+  - `/portal/tickets/:ticketId` ganhou busca contextual por `ticket_id`, sem IA e sem expor artigo fora do ticket/tenant permitido.
+  - O termo vazio retorna apenas a lista segura autorizada; termo curto sem filtro nao vaza toda a base.
+  - Entitlement arquivado deixa de retornar artigo na busca.
+  - `ticket_id` cross-tenant falha no backend.
+  - O Help publico permaneceu separado:
+    - `/help/genius` continua publico
+    - `/help/genius/articles/:slug` continua publico
+    - `rpc_public_search_knowledge_articles` nao retorna artigos autenticados do portal
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
+- Fase 8.22: Customer Portal Tenant Context And Switching V3 concluido como bloco de contexto ativo customer-facing.
+  - `active_tenant_id` passou a ser backend-governed por `customer_portal_user_preferences`, sem `localStorage` ou cache local como source of truth.
+  - Novos contratos:
+    - `vw_customer_portal_available_tenants`
+    - `vw_customer_portal_active_tenant_context`
+    - `rpc_customer_set_active_tenant`
+  - `vw_customer_portal_auth_context` e `vw_customer_portal_profile_context` passaram a resolver apenas o tenant ativo efetivo.
+  - O gate de portal habilitado foi materializado por `customer_account_features.feature_key = 'returns_portal'`.
+  - Tickets, Knowledge, busca autenticada e criacao de ticket passaram a negar explicitamente tenant diferente do contexto ativo.
+  - O portal mostra seletor apenas quando ha multiplos tenants validos, limpa o dado do tenant anterior durante a troca e entra em estado honesto quando nao ha tenant valido.
+  - `/admin/customer-portal` permaneceu estavel, sem loading persistente e sem contaminacao do contexto customer-facing.
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
+- Fase 8.24: Customer Portal Multi-Tab Session Semantics V3 concluido como bloco de semantica oficial de sessao multiaba do portal.
+  - `vw_customer_portal_active_tenant_context` passou a expor `context_version`, derivado de `customer_portal_user_preferences.updated_at`.
+  - trocar tenant em uma aba invalida operacionalmente as demais; a aba stale deixa de tratar o tenant anterior como valido.
+  - o provider customer-facing passou a revalidar foco/visibilidade e antes de mutacoes sensiveis, sem `localStorage` nem `BroadcastChannel` como source of truth.
+  - quando detecta divergencia, a UI limpa o contexto anterior e mostra o estado honesto:
+    - `O contexto do portal mudou em outra aba. Atualize para continuar.`
+  - o backend permaneceu como enforcement real e os testes de regressao passaram a cobrir:
+    - criacao de ticket stale
+    - resposta stale
+    - ack stale
+    - upload/download stale
+    - resolucao/reabertura stale
+  - `/admin/customer-portal` e `/admin/access` continuaram fora do escopo do tenant ativo customer-facing.
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
 
 ## Ajustes de auditoria concluídos
 - Documentação redundante herdada removida da rota principal.
@@ -714,8 +2456,8 @@ Documentos históricos:
 - Estrutura do repositório consolidada em documento próprio.
 
 ## Bloqueios vigentes
-- Não iniciar telas.
-- Não iniciar telas de tickets antes dos contratos tipados do backend.
+- Não iniciar feature operacional sem contrato backend real quando houver regra de negocio.
+- Não criar telas ou acoes que simulem comportamento sem contrato.
 - Não tratar blueprint histórico como implementação pronta.
 - Não ingerir `raw_knowledge` sem classificação de sensibilidade.
 - Não publicar automaticamente artigos legados importados.
@@ -727,7 +2469,444 @@ Documentos históricos:
 - Não permitir leitura do Admin Console fora das views `vw_admin_*`.
 
 ## Próxima prioridade
-Materializar um contrato backend explícito para governar publish editorial com revisão humana concluída,
-incluindo o gate entre `review_status`, confirmações humanas e publicação efetiva,
-e abrir uma estratégia suportada para revisão e republicação de artigo já publicado,
-sem depender apenas de bloqueios de UX no frontend.
+Definir o próximo lote do Operational Control Plane sem ampliar `/cs/portfolio` com health, follow-ups, tarefas, projetos ou mutations antes de contratos backend canônicos. Prioridade técnica imediata: manter app local pronto para QA, estabilizar ruídos de infraestrutura local se afetarem produtividade e preparar apenas piloto local/staging com autorização explícita.
+
+Atualização do editor de Knowledge:
+- `/admin/knowledge/new` e `/admin/knowledge/:articleId/edit` agora usam o mesmo fluxo profissional de criação/edição, com status editorial tratado por ações governadas e não por dropdown livre.
+- Imagens coladas, arrastadas ou selecionadas no editor são enviadas ao bucket governado `knowledge-assets`, registradas por RPC administrativa e inseridas no corpo como `![alt](knowledge-asset:<id>)`.
+- A prévia do artigo saiu do rail direito e passou para um painel amplo na área principal, usando o mesmo renderer seguro da Central Pública com assets administrativos assinados.
+- QA local confirmou rascunho com imagem inline persistida ao reabrir edição, submit para `review/internal`, ausência de overflow horizontal e ausência de exposição em `/help/genius`.
+- Nenhum artigo foi publicado automaticamente, nenhum import foi executado e nenhuma alteração de schema/backend foi necessária nesta correção.
+
+Atualização posterior antes de multi-aba:
+- `Customer Portal Entitlement Visibility Regression Fix V3` foi fechado para eliminar a inconsistência observada no tenant B.
+- A causa raiz ficou na fixture local, que declarava `archiveAfterGrant: true` mas não repassava essa flag ao seed do entitlement.
+- As views e RPCs customer-facing foram reafirmadas; a correção efetiva ficou no seed QA e nas regressões de entitlement arquivado/ticket-linked arquivado.
+
+Pendência arquitetural futura já mapeada, mas fora do escopo atual:
+- avaliar a unificação entre `Admin Shell` e `Support Workspace Shell` em um App Shell único
+- segmentar navegação por permissões e contexto do usuário
+- auditar auth, roles, rotas, RLS, navegação e estados de acesso antes de qualquer implementação
+
+- Fase 8.25: Customer Portal Session Expiry And Recovery Semantics V3 concluido como bloco de expiracao, recuperacao e sessao stale/offline prolongada do portal cliente.
+  - Novo contrato backend:
+    - `rpc_customer_get_portal_session_status`
+  - O provider customer-facing passou a operar com estados oficiais:
+    - `initializing`
+    - `ready`
+    - `stale_context`
+    - `session_expired`
+    - `access_revoked`
+    - `tenant_unavailable`
+    - `network_retryable`
+    - `fatal_error`
+  - `CustomerPortalPage.tsx` passou a renderizar estados honestos para sessao expirada, acesso revogado, tenant indisponivel, erro de rede recuperavel e erro fatal, sem fallback visual falso.
+  - A aba antiga depois de logout volta para login; o portal nao preserva tickets, artigos ou mutacoes como validos depois da perda de sessao.
+  - Browser real confirmou:
+    - portal normal com customer valido
+    - reload sem loading infinito
+    - logout e retorno da aba antiga ao boundary de login
+    - customer sem tenant valido em estado seguro
+    - `/admin/customer-portal` e `/admin/access` estaveis
+  - A bateria obrigatoria fechou verde apos reidratar o stack Supabase local no Windows:
+    - `npm run supabase:db:reset`
+    - `npm run supabase:test:db`
+    - `npm run supabase:lint:db`
+    - `npm run contracts:typecheck`
+    - `npm run web:typecheck`
+    - `npm run web:build`
+    - `npm run supabase:qa:local-support-fixture`
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
+- Fase 8.26: Customer Portal Offline And Network Recovery Hardening V3 concluido como bloco de endurecimento da recuperacao em falha temporaria de rede e host indisponivel.
+  - Nenhum contrato backend novo foi necessario; o lote reaproveitou `rpc_customer_get_portal_session_status` e os contratos customer-facing existentes.
+  - `customer-portal-api.ts` passou a aplicar timeout controlado em bootstrap, leitura, mutacao e upload, classificando timeout e `Failed to fetch` como `network_retryable`.
+  - `customer-portal-context.tsx` passou a impedir retries concorrentes, promover falha temporaria de leitura para o estado global `network_retryable` e preservar um fluxo manual de recuperacao sem loop de refetch.
+  - `CustomerPortalPage.tsx` passou a limpar tickets, artigos, detalhes, anexos e resultados de busca quando a leitura falha por rede, exibindo `Conexao indisponivel` com `Tentar novamente`.
+  - O portal permaneceu sem modo offline, sem fila local e sem dado antigo tratado como valido.
+  - A bateria obrigatoria fechou verde apos reidratar o stack Supabase local:
+    - `npm run supabase:db:reset`
+    - `npm run supabase:test:db`
+    - `npm run supabase:lint:db`
+    - `npm run contracts:typecheck`
+    - `npm run web:typecheck`
+    - `npm run web:build`
+    - `npm run supabase:qa:local-support-fixture`
+  - `docs/design/blueprint/Conversas.png` permanece `untracked`, fora deste lote e fora do commit.
+
+### OCP V1-A Internal Areas Contract Consolidation
+- data: `2026-06-01`
+- branch: `codex/project-forensic-recovery-audit`
+- resumo funcional: consolidado o primeiro corte backend-first do Operational Control Plane V1 para areas internas e colaboradores, sem UI nova e sem criar tabela paralela.
+- decisao semantica:
+  - `internal_action_target_areas` funciona como catalogo inicial de areas internas no OCP V1-A.
+  - `internal_area_memberships` funciona como membership operacional de colaborador por area.
+  - `profiles`, `tenants`, `user_global_roles` e `tenant_memberships` continuam canonicos e nao foram duplicados.
+- migration criada:
+  - `supabase/migrations/20260601134126_ocp_v1_a_internal_areas_contract_consolidation.sql`
+- views criadas:
+  - `vw_admin_internal_areas`
+  - `vw_admin_internal_collaborators`
+  - `vw_internal_area_landing_context`
+- view reaproveitada:
+  - `vw_admin_internal_area_memberships`
+- RPCs novas: nenhuma.
+- contratos TypeScript adicionados:
+  - `PlatformRole`
+  - `AdminInternalArea`
+  - `AdminInternalCollaborator`
+  - `InternalAreaLandingContext`
+- teste pgTAP criado:
+  - `supabase/tests/045_ocp_v1_a_internal_areas_contract_consolidation.sql`
+- boundaries preservados:
+  - sem UI;
+  - sem catalogo comercial;
+  - sem CS Workspace;
+  - sem Finance Workspace;
+  - sem Kanban/tarefas;
+  - sem projetos operacionais;
+  - sem health score;
+  - sem duplicar identidade, tenant, roles ou memberships.
+- riscos restantes:
+  - eventual criacao de `internal_areas` so deve ocorrer se houver necessidade semantica comprovada e plano de migracao.
+  - atributos operacionais de colaborador seguem pendentes antes de qualquer `internal_collaborator_profiles`.
+  - catalogo comercial, assinatura cliente-produto-plano, ownership interno, CS, Financeiro, tarefas, projetos e health score seguem lotes futuros.
+
+### OCP V1-B Commercial Product Catalog Planning & Contract Design
+- data: `2026-06-01`
+- branch: `codex/project-forensic-recovery-audit`
+- resumo funcional: planejado o catalogo comercial futuro do Operational Control Plane V1 sem migration, schema, tabela, RPC, UI ou runtime.
+- arquivo criado:
+  - `docs/reports/OCP_V1_B_COMMERCIAL_PRODUCT_CATALOG_PLANNING_AND_CONTRACT_DESIGN_2026-06-01.md`
+- entidades auditadas:
+  - `tenants`
+  - `customer_account_profiles`
+  - `customer_account_features`
+  - `customer_account_integrations`
+  - `internal_action_target_areas`
+  - `internal_area_memberships`
+  - docs de produto, roadmap e OCP V1
+- decisao semantica:
+  - `customer_account_features` permanece como feature operacional habilitada por conta.
+  - `product_line` e `account_tier` permanecem como resumo operacional, nao catalogo canonico.
+  - catalogo comercial futuro deve nascer separado em `commercial_products`, planos, modulos, features canonicas e relacao plano-feature.
+  - assinatura cliente-produto-plano deve apontar para `tenants`, sem duplicar cliente B2B.
+- boundaries preservados:
+  - sem alteracao em `supabase/`;
+  - sem migration;
+  - sem schema;
+  - sem UI;
+  - sem catalogo implementado;
+  - sem CS, Financeiro, Kanban, projetos ou health score.
+- primeiro lote implementavel recomendado:
+  - `OCP V1-C Product Catalog Foundation`, criando apenas fundacao backend do catalogo comercial global e ownership por area, ainda sem UI e sem assinatura por cliente.
+
+### OCP V1-C Product Catalog Foundation
+- data: `2026-06-01`
+- branch: `codex/project-forensic-recovery-audit`
+- resumo funcional: criada a fundacao backend-first do catalogo comercial global do Operational Control Plane V1, sem UI e sem assinatura cliente-produto-plano.
+- migration criada:
+  - `supabase/migrations/20260601163921_ocp_v1_c_product_catalog_foundation.sql`
+- tabelas criadas:
+  - `commercial_products`
+  - `commercial_product_plans`
+  - `commercial_product_modules`
+  - `commercial_product_features`
+  - `commercial_plan_features`
+  - `product_area_ownerships`
+- views criadas:
+  - `vw_admin_commercial_products`
+  - `vw_admin_commercial_product_detail`
+  - `vw_admin_commercial_product_plans`
+  - `vw_admin_product_area_ownerships`
+- RPCs criadas:
+  - `rpc_admin_create_commercial_product`
+  - `rpc_admin_update_commercial_product`
+  - `rpc_admin_create_commercial_product_plan`
+  - `rpc_admin_update_commercial_product_plan`
+  - `rpc_admin_create_commercial_product_module`
+  - `rpc_admin_update_commercial_product_module`
+  - `rpc_admin_create_commercial_product_feature`
+  - `rpc_admin_update_commercial_product_feature`
+  - `rpc_admin_set_commercial_plan_feature`
+  - `rpc_admin_assign_product_area_ownership`
+  - `rpc_admin_archive_product_area_ownership`
+- contratos TypeScript adicionados:
+  - status/enums de produto, plano, modulo, feature, inclusao plano-feature e ownership por area.
+  - read models `AdminCommercialProduct`, `AdminCommercialProductDetail`, `AdminCommercialProductPlan` e `AdminProductAreaOwnership`.
+  - payloads/responses das RPCs administrativas do catalogo.
+- teste pgTAP criado:
+  - `supabase/tests/046_ocp_v1_c_product_catalog_foundation.sql`
+- teste global ajustado:
+  - `supabase/tests/004_phase1_2_function_audit.sql` agora reconhece 118 RPCs controladas e os helpers privados do catalogo.
+- decisoes preservadas:
+  - `customer_account_features` continua como feature operacional por conta.
+  - `product_line` e `account_tier` continuam como resumo operacional, nao catalogo canonico.
+  - `product_area_ownerships` aponta para areas internas existentes e nao concede permissao individual.
+- boundaries preservados:
+  - sem UI;
+  - sem `customer_product_subscriptions`;
+  - sem `customer_product_feature_entitlements`;
+  - sem migrar `customer_account_features`;
+  - sem CS Workspace;
+  - sem Finance Workspace;
+  - sem Kanban/tarefas;
+  - sem projetos operacionais;
+  - sem health score;
+  - sem colunas financeiras/preco.
+- riscos restantes:
+  - assinatura cliente-produto-plano ainda depende de planejamento V1-D.
+  - visibilidade por suporte, portal, CS e financeiro ainda depende de decisao de produto.
+  - catalogo ainda nao tem UI administrativa; operacao futura deve usar somente views/RPCs.
+
+### OCP V1-D Customer Product Subscriptions Planning
+- data: `2026-06-01`
+- branch: `codex/project-forensic-recovery-audit`
+- resumo funcional: planejado o vinculo cliente-produto-plano e entitlements comerciais futuros sem criar migration, schema, tabela, RPC, UI ou runtime.
+- arquivo criado:
+  - `docs/reports/OCP_V1_D_CUSTOMER_PRODUCT_SUBSCRIPTIONS_PLANNING_2026-06-01.md`
+- entidades auditadas:
+  - `tenants`
+  - `customer_account_profiles`
+  - `customer_account_features`
+  - catalogo V1-C (`commercial_products`, planos, modulos, features e ownerships)
+- proposta futura:
+  - `customer_product_subscriptions` como vinculo `tenant_id` -> `product_id` -> `plan_id`.
+  - `customer_product_feature_entitlements` apenas se Produto confirmar necessidade alem de plano.
+  - read models segmentados para Admin, Support, Portal, CS e Financeiro.
+  - RPCs administrativas governadas, auditadas e sem DML direto pelo app.
+- stop condition registrado:
+  - nao implementar subscriptions antes de decisao sobre Genius Returns/After Sale, multiproduto por tenant, visibilidade por papel, owner de manutencao e diferenca entre add-on, entitlement e override operacional.
+- boundaries preservados:
+  - sem alteracao em `supabase/`;
+  - sem migration;
+  - sem schema;
+  - sem UI;
+  - sem subscriptions implementadas;
+  - sem migrar `customer_account_features`.
+
+### Redesign Minimalista Operacional
+- fechamento: `2026-06-10`
+- status: concluído nas superfícies internas prioritárias.
+- direção aplicada:
+  - shell único para Admin, Support e CS;
+  - composição inspirada em Linear, Stripe UI Components, Atlassian e Primer;
+  - superfícies planas, densidade operacional e uma ação primária por contexto;
+  - listas e tabelas como estrutura dominante;
+  - Focus Surface para mutações e contexto.
+- rotas migradas:
+  - login e acesso negado;
+  - CS Portfolio;
+  - fila e workspace de tickets;
+  - Clientes B2B;
+  - Acessos;
+  - Sistema;
+  - Knowledge e editor.
+- consolidação:
+  - primitives canônicos atualizados;
+  - estados globais sem mascote ou gradiente decorativo;
+  - shell legado e componentes sem consumidores removidos.
+- validação:
+  - 17 testes Node aprovados;
+  - contratos e web typecheck aprovados;
+  - build Vite aprovado;
+  - QA desktop `1440x900` e mobile `390x844` sem overflow global nas rotas verificadas.
+- relatório:
+  - `docs/reports/MINIMAL_OPERATIONAL_REDESIGN_VALIDATION_2026-06-09.md`
+- boundaries:
+  - sem alteração de banco, RPC, view, RLS ou autorização;
+  - sem deploy, push ou commit.
+## Continuidade confirmada — importação manual financeira — 2026-07-18
+
+- A camada administrativa de importação agora possui uma Edge Function `analytics-spreadsheet-import` com autorização `platform_admin`, hash SHA-256 e idempotência por fonte/arquivo/versão.
+- XLSX/CSV Omie é registrado em staging, auditado e aplicado ao read model `analytics_finance_receivables` sem apagar execuções anteriores.
+- O Dashboard Gerencial > Financeiro permite escolher o arquivo, disparar o lote e navegar pelo histórico recente.
+- Validações executadas: `npm run web:typecheck`, `npm run web:build` e `git diff --check`.
+- Atenção: ainda falta a validação E2E com sessão administrativa ativa e o mapeamento operacional das fontes CS/Comercial.
+# Continuidade — visão executiva e filtros — 2026-07-18
+
+- O dashboard recebeu presets de período: semana, mês, trimestre atual, trimestre passado, ano atual, ano passado e todo o período.
+- A nova aba `Visão executiva` usa `rpc_analytics_ceo_snapshot` para consolidar HubSpot Comercial, HubSpot CS/Suporte e OMIE Financeiro.
+- KPIs agora podem exibir hint de fonte e fórmula no ícone `i`, com explicação contextual para o usuário.
+- O endpoint local da Edge Function de importação foi iniciado e responde HTTP 200 em `OPTIONS`; o 404 observado era ausência do servidor local de Functions.
+
+## Hardening de sincronização HubSpot/OMIE — 2026-07-21
+
+- O sincronizador HubSpot agora diferencia carga incremental e completa:
+  empresas e tickets usam `hs_lastmodifieddate` com sobreposição de cinco
+  minutos; Deals seguem carga completa por pipeline porque essa propriedade não
+  foi confirmada no catálogo do portal para esse objeto.
+- Execuções concorrentes recentes são bloqueadas; registros antigos presos em
+  `running` são encerrados com erro auditável de interrupção do runtime.
+- O dashboard informa o modo e os contadores processados.
+- A integração OMIE reporta `partial` quando os títulos foram persistidos, mas a
+  atualização posterior das propriedades HubSpot falhou; o financeiro não é
+  apresentado como indisponível nesse caso.
+- Evidência: `docs/reports/HUBSPOT_OMIE_SYNC_HARDENING_2026-07-21.md`.
+
+## CS Ops: preflight seguro da migração — 2026-07-21
+
+- O fluxo informa a origem e o tamanho do catálogo HubSpot usado no dry-run ou
+  na aplicação.
+- Aplicações são bloqueadas quando a consulta live retorna zero empresas, para
+  evitar criação em massa causada por cache local vazia.
+- Nenhuma empresa ou ticket foi alterado neste lote.
+- Evidência: `docs/reports/CS_OPS_PREFLIGHT_GUARD_2026-07-21.md`.
+
+## Revisão de segurança e integridade — 2026-07-21
+
+- A revisão local do lote recente confirmou gates de papel, RLS/grants,
+  `security definer` com `search_path` vazio e segredos de integração somente no
+  servidor.
+- A migration de acesso do `dashboard_viewer` reafirma os grants da view de
+  espaços, da RPC de fontes e do gate privado; o teste 063 valida a superfície
+  autenticada e o bloqueio anônimo.
+- CORS curinga no helper compartilhado e comparação direta do segredo de
+  scheduler permanecem observações de hardening, sem evidência de bypass no
+  escopo local.
+- Evidência: `docs/reports/SECURITY_AND_DIFF_REVIEW_2026-07-21.md`.
+
+## QA autenticado do Dashboard e sincronização faseada — 2026-07-21
+
+- O cabeçalho agora agrega as últimas etapas bem-sucedidas de empresas,
+  Comercial e CS/Suporte quando formam um lote faseado coerente; a etapa CS
+  isolada não aparece mais como `0 empresas, 0 deals, 0 tickets`.
+- O preset `Mês passado` foi validado com `2026-06-01` a `2026-06-30` e o
+  recorte permaneceu ao alternar para Comercial.
+- Evidência: `docs/reports/HUBSPOT_SYNC_PHASED_EXECUTION_2026-07-21.md` e
+  snapshots autenticados em `output/playwright/`.
+- O runtime Edge local permanece iniciado para os testes deste checkout;
+  isso não representa publicação ou alteração do ambiente remoto.
+
+## Help Center — estado da Central Genius — 2026-07-21
+
+- QA autenticado encontrou `/help` sem central pública porque o espaço `genius`
+  estava em `draft`, apesar do contrato de artigos públicos estar implementado.
+- Adicionada migration idempotente para manter o espaço `genius` em `active`;
+  ela não publica artigo nem executa write remoto.
+- Próximo passo local: reidratar o corpus Octadesk pelo importador oficial,
+  executar a publicação com allowlist e validar `/help/genius/articles`.
+- Execução local posterior: 58 artigos foram importados, 44 publicados e 13
+  bloqueados pelo classificador editorial; a rota pública foi validada no
+  navegador sem erro de console.
+
+## Segurança e scheduler — 2026-07-21
+
+- A ACL da RPC legada do snapshot executivo foi fechada para `anon` e
+  `authenticated`; o wrapper protegido continua sendo o contrato do Dashboard.
+- A configuração local do Supabase agora permite que OMIE e o runner de
+  integração recebam chamadas secret-only do scheduler para que a própria
+  função faça a autorização interna.
+- Nenhuma alteração remota, rotação de segredo ou execução de scheduler foi
+  realizada.
+
+## CS Ops — proteção contra duplicidade na aplicação — 2026-07-21
+
+- O backend rejeita lotes com `source_record_id` repetido antes de criar o
+  ledger de migração.
+- Antes de criar uma empresa, o backend reconsulta o CNPJ no HubSpot usando o
+  token fornecido; qualquer resultado ou falha impede a criação e exige novo
+  dry-run.
+- A lógica não altera tickets nem executa writes nesta etapa.
+- Nenhum commit, push, deploy ou write remoto foi realizado.
+# Auditoria de UX, navegação e higiene — 2026-07-22
+
+- Corrigida a exportação visual do Dashboard Gerencial para montar o relatório
+  em uma janela HTML isolada por `Blob` URL, sem `document.write`.
+- Adicionado teste de regressão `analytics-export-security.test.mjs` para impedir
+  o retorno do sink na exportação.
+- QA atual da Central pública `/help/genius/articles` e do redirecionamento
+  administrativo para login documentado em
+  `docs/reports/UX_NAVIGATION_SECURITY_AUDIT_2026-07-22.md`.
+- Varredura local não encontrou assinaturas de secrets rastreadas; usos de
+  `innerHTML` permanecem apenas no editor rico com renderer próprio e escape
+  defensivo, exigindo cobertura de payload malicioso no próximo ciclo.
+- Nenhuma ação remota, publicação, alteração de credencial ou exclusão de
+  artefato foi executada.
+# Sincronização local: recuperação do Edge Runtime — 2026-07-22
+
+- Os HTTP 503 de HubSpot e OMIE foram reproduzidos sem autenticação: o gateway
+  estava ativo, mas o container local `supabase_edge_runtime` estava encerrado
+  com código 255 e sem política de reinício.
+- O runtime foi reativado e passou a usar `unless-stopped`. `OPTIONS` dos três
+  endpoints retornou 200 e `POST` sem credencial retornou 403, confirmando o
+  roteamento e a autorização interna.
+- A UI agora diferencia 503/boot, 546/limite de worker e erro funcional do
+  provedor. Evidência: `docs/reports/SYNC_503_RUNTIME_RECOVERY_2026-07-22.md`.
+- Nenhuma sincronização externa, credencial ou banco remoto foi alterado neste
+  ciclo. A carga automática OMIE ↔ HubSpot ainda deve ser particionada caso
+  volte a exceder o limite de execução.
+## Configuracao Analytics somente leitura para dashboard_viewer - 2026-07-22
+
+- O backend continua exigindo `platform_admin` para salvar o agendamento OMIE/HubSpot ou iniciar sincronizacao manual.
+- A tela agora respeita o mesmo contrato: `dashboard_viewer` consulta status e historico, mas nao recebe controles de escrita.
+- Editor de fontes, aliases, estado de pipelines e migracao CS Ops tambem ficam restritos ao administrador na tela de configuracao.
+- Evidencia: `docs/reports/ANALYTICS_CONFIG_VIEWER_PERMISSION_FIX_2026-07-22.md`.
+## Sincronizacao dual OMIE e HubSpot - 2026-07-22
+
+- O HTTP 546 foi rastreado ao limite de CPU do Edge Runtime no fluxo combinado, nao a permissao ou credencial OMIE.
+- Atualizacoes financeiras HubSpot agora usam batch de ate 100 empresas; o caminho combinado nao repete o enriquecimento completo de clientes OMIE.
+- A agenda foi estendida para configurar separadamente OMIE financeiro e HubSpot global (empresas, Comercial, CS / Suporte, owners e estagios).
+- Migration local: `supabase/migrations/20260722162254_analytics_dual_sync_schedule_v1.sql`.
+- Evidencia: `docs/reports/DUAL_SYNC_SCHEDULE_AND_WORKER_HARDENING_2026-07-22.md`.
+# Autorização contextual aplicada ao shell - 2026-07-22
+
+O contrato de identidade, área, função, perfil e telas autorizadas agora também é consumido pela autenticação do frontend. O `vw_internal_actor_workspace_context` participa do gate, do redirecionamento pós-login e da navegação global. Assim, um colaborador sem papel global pode operar somente as telas concedidas por seu vínculo de área, enquanto `platform_admin` e os papéis legados continuam compatíveis.
+
+Perfis como `CS · Gestor`, `CS · Operador`, `Financeiro · Gestor`, `Produto · Operador` e `QA · Dashboard e conhecimento` permanecem templates reutilizáveis; o modo personalizado continua permitindo uma matriz específica por colaborador. Nenhum usuário real foi criado ou alterado neste ciclo.
+# Recomendações inteligentes de telas - 2026-07-22
+
+O catálogo de telas agora possui recomendações por área e dependências declarativas. Ao iniciar ou trocar a área de um vínculo, a UI sugere as telas adequadas à rotina; ao escolher uma tela, a seleção é expandida com suas dependências. As mesmas dependências são garantidas por triggers no banco para grants de vínculo e de perfil, evitando que uma concessão via RPC produza um contexto incompleto.
+# Correção da seed de perfis de acesso - 2026-07-22
+
+Os perfis nomeados foram normalizados e receberam novamente seus grants de telas de forma idempotente. A falha visual de `0 telas` vinha da seed inicial não encontrar os nomes persistidos com a codificação esperada; a migration de reparo usa identificadores estáveis por padrão de nome, normaliza a apresentação e preserva vínculos existentes.
+
+## Validacao final do release local - 2026-07-23
+
+- O Dashboard inicializa o preset de periodo a partir das datas recebidas,
+  mantendo "Este mes" coerente no primeiro paint e nas trocas de aba.
+- Build web, contracts typecheck, 75/75 testes Node, higiene da raiz e diff
+  check foram executados neste ciclo sem bloqueio.
+- A fixture completa de suporte continua pendente de diagnostico separado por
+  timeout; a Central de Ajuda ja foi reidratada localmente pelo fluxo oficial.
+# Smoke autenticado de release - 2026-07-23
+
+- Smoke Playwright autenticado validou localmente `/admin/analytics`,
+  `/help/genius`, `/help/genius/articles` e um artigo publico publicado.
+- Evidencias visuais foram salvas em `output/playwright/release-smoke-*.png`.
+- O Dashboard carregou a shell e a Visao executiva com KPIs reais, sem erros de
+  console, sem falhas de request e sem overflow horizontal em 1440x900.
+- `AnalyticsShell` agora isola o lazy loading da aba ativa com `Suspense`
+  interna, evitando que o fallback global substitua toda a superficie do
+  Dashboard enquanto os dominios carregam.
+- O fixture `supabase:qa:local-support-fixture` ainda exige hardening separado:
+  nesta retomada ele ficou preso/lento na etapa de Knowledge/Public Help e foi
+  encerrado pelo PID especifico. Para smoke do release, o admin local foi
+  restaurado pelo fixture menor `supabase:qa:local-admin-fixture`.
+# Context Pack V2 - correção documental e evidências - 2026-07-23
+
+- O Context Pack V1 foi parcialmente aceito, mas o ZIP enviado estava
+  incompleto e faltavam documentos individuais e evidências visuais.
+- O V2 criou `docs/context-handoff/22_UI_EVIDENCE_MATRIX.md` e
+  `docs/context-handoff/23_GIT_PROVENANCE.md`.
+- O pacote `genius-support-os-context-pack-v2.zip` foi gerado por staging
+  explícito, validado com 24 Markdown, 23 screenshots e 1 JSON de metadata, e
+  preservado em `C:\Projetos\GSO-artifacts\context-pack-20260723\`.
+- As capturas V1 com nomes ambíguos/incorretos foram movidas para o diretório
+  externo de artefatos; a pasta versionada `screenshots/` mantém somente as
+  evidências V2 nomeadas.
+- Não houve alteração funcional, reset, clean, stash, commit, push, deploy,
+  migration remota ou alteração de secret.
+
+# Context Pack de direção assistida - 2026-07-23
+
+- Novo protocolo de trabalho recebido: Codex atua como executor técnico; direção
+  de produto passa a ser conduzida no chat oficial indicado pelo Product Owner.
+- Primeiro macro-lote obrigatório: auditoria read-only e documentação canônica
+  do estado atual, sem novas funcionalidades.
+- Entrega local criada em `docs/context-handoff/` com 22 documentos Markdown e
+  8 screenshots em `docs/context-handoff/screenshots/`.
+- O pacote registra branch, HEAD, worktree sujo preservado, módulos, rotas,
+  contratos, integrações HubSpot/OMIE, tenancy, RLS, UX, riscos, conflitos e
+  decisões pendentes.
+- Não houve reset, clean, commit, push, deploy, migration remota, alteração de
+  secret ou escrita externa.

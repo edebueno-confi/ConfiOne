@@ -36,7 +36,7 @@ exception
 end;
 $$;
 
-select plan(23);
+select plan(26);
 
 select is(
   (
@@ -119,6 +119,9 @@ values (
 )
 on conflict (id) do nothing;
 
+delete from public.user_global_roles
+where role = 'platform_admin';
+
 select is(
   app_private.bootstrap_first_platform_admin(
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,
@@ -178,6 +181,63 @@ select lives_ok(
   $$,
   'artigo base entra em review antes da primeira publicação'
 );
+
+select throws_like(
+  $$
+    select public.rpc_admin_publish_knowledge_article_v2(
+      (select id from public.vw_admin_knowledge_articles_list_v2 where slug = 'artigo-publicado-original'),
+      (select id from public.vw_admin_knowledge_spaces where slug = 'genius')
+    )
+  $$,
+  '%public knowledge publish requires reviewed human evidence%',
+  'publicação pública v2 bloqueia artigo sem evidência humana revisada'
+);
+
+reset role;
+
+insert into public.knowledge_article_review_advisories (
+  article_id,
+  source_hash,
+  suggested_visibility,
+  suggested_classification,
+  classification_reason,
+  risk_flags,
+  human_confirmations,
+  review_status,
+  review_notes,
+  reviewed_by_user_id,
+  reviewed_at,
+  created_by_user_id,
+  updated_by_user_id
+)
+values (
+  (select id from public.knowledge_articles where slug = 'artigo-publicado-original'),
+  null,
+  'public',
+  'public',
+  'Evidência humana de teste para publicação pública controlada.',
+  '[]'::jsonb,
+  jsonb_build_object(
+    'title_reviewed', true,
+    'summary_reviewed', true,
+    'body_reviewed', true,
+    'category_reviewed', true,
+    'visibility_reviewed', true,
+    'no_sensitive_data_exposed', true,
+    'ready_for_review', true,
+    'ready_for_publish', true
+  ),
+  'reviewed',
+  'Confirmação humana registrada no teste.',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,
+  timezone('utc', now()),
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid
+);
+
+set local role authenticated;
+set local request.jwt.claim.role = 'authenticated';
+set local request.jwt.claim.sub = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 select is(
   (
@@ -345,6 +405,63 @@ select is(
   ),
   'false',
   'descartar revisão limpa o draft privado sem remover o artigo publicado'
+);
+
+select lives_ok(
+  $$
+    select public.rpc_admin_create_knowledge_article_draft_v2(
+      'Artigo interno que tenta virar publico',
+      'artigo-interno-para-publico',
+      'Resumo interno controlado.',
+      'Corpo interno controlado.',
+      (select id from public.vw_admin_knowledge_categories_v2 where slug = 'editorial-publico'),
+      'internal',
+      (select id from public.vw_admin_knowledge_spaces where slug = 'genius'),
+      null,
+      null,
+      null
+    );
+
+    select public.rpc_admin_submit_knowledge_article_for_review_v2(
+      (select id from public.vw_admin_knowledge_articles_list_v2 where slug = 'artigo-interno-para-publico'),
+      (select id from public.vw_admin_knowledge_spaces where slug = 'genius')
+    );
+
+    select public.rpc_admin_publish_knowledge_article_v2(
+      (select id from public.vw_admin_knowledge_articles_list_v2 where slug = 'artigo-interno-para-publico'),
+      (select id from public.vw_admin_knowledge_spaces where slug = 'genius')
+    );
+
+    select public.rpc_admin_begin_knowledge_article_editorial_revision_v2(
+      (select id from public.vw_admin_knowledge_articles_list_v2 where slug = 'artigo-interno-para-publico'),
+      (select id from public.vw_admin_knowledge_spaces where slug = 'genius')
+    );
+
+    select public.rpc_admin_update_knowledge_article_editorial_revision_v2(
+      (select id from public.vw_admin_knowledge_articles_list_v2 where slug = 'artigo-interno-para-publico'),
+      (select id from public.vw_admin_knowledge_spaces where slug = 'genius'),
+      'Artigo interno que tenta virar publico',
+      'artigo-interno-para-publico',
+      'Resumo que tenta publicacao.',
+      'Corpo que tenta publicacao.',
+      (select id from public.vw_admin_knowledge_categories_v2 where slug = 'editorial-publico'),
+      'public',
+      null,
+      null
+    );
+  $$,
+  'prepara artigo interno publicado com revisão editorial pública sem evidência'
+);
+
+select throws_like(
+  $$
+    select public.rpc_admin_publish_knowledge_article_editorial_revision_v2(
+      (select id from public.vw_admin_knowledge_articles_list_v2 where slug = 'artigo-interno-para-publico'),
+      (select id from public.vw_admin_knowledge_spaces where slug = 'genius')
+    )
+  $$,
+  '%public knowledge publish requires reviewed human evidence%',
+  'revisão editorial que muda internal para public também exige evidência humana revisada'
 );
 
 reset role;

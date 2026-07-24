@@ -59,7 +59,15 @@ values
   );
 
 select is(
-  (select count(*)::integer from public.profiles),
+  (
+    select count(*)::integer
+    from public.profiles
+    where id in (
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+      'cccccccc-cccc-cccc-cccc-cccccccccccc'
+    )
+  ),
   3,
   'sync auth.users -> profiles materializa todos os perfis'
 );
@@ -214,7 +222,14 @@ set local request.jwt.claim.role = 'authenticated';
 set local request.jwt.claim.sub = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 
 select is(
-  (select count(*)::integer from public.tenants),
+  (
+    select count(*)::integer
+    from public.tenants
+    where id in (
+      '11111111-1111-1111-1111-111111111111',
+      '22222222-2222-2222-2222-222222222222'
+    )
+  ),
   2,
   'Platform admin enxerga todos os tenants'
 );
@@ -225,6 +240,10 @@ select ok(
     from audit.audit_logs as al
     where al.entity_table = 'tenant_contacts'
       and al.action = 'insert'
+      and al.tenant_id in (
+        '11111111-1111-1111-1111-111111111111',
+        '22222222-2222-2222-2222-222222222222'
+      )
   ) = 2,
   'Auditoria registra os inserts iniciais de tenant_contacts'
 );

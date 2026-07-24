@@ -3,6 +3,8 @@
 ## Visão
 Genius Support OS é a plataforma de operação CX B2B técnica do ecossistema Genius, desenhada para transformar suporte, conhecimento e tecnologia em um sistema único, rastreável e escalável para SaaS de logística reversa.
 
+O produto deve ser AI-native, human-governed: a arquitetura prepara fontes, contexto, permissões, citações, auditoria e revisão humana para IA futura, mas IA não é source of truth e não executa ação operacional sem humano.
+
 ## Problema
 A operação atual depende de canais descentralizados, conhecimento informal e baixa rastreabilidade entre suporte, CS, times técnicos, engenharia e clientes B2B. Isso gera demora, retrabalho, perda de contexto, falta de devolutiva e dependência de pessoas específicas.
 
@@ -31,9 +33,19 @@ Criar uma plataforma interna robusta para:
 - Operação manual de troca ou devolução em nome da loja.
 - SAC B2C genérico.
 - Atendimento omnichannel para consumidor final.
+- IA que responde, publica, fecha ticket, altera status, cria engenharia/internal action ou envia mensagem automaticamente.
 
 ## Norte do produto
 Cada solicitação B2B deve ter dono, status, histórico, contexto, prazo, vínculo com conhecimento oficial e devolutiva clara para cliente B2B e times internos.
 
 ## Resultado esperado
 Menos dependência de WhatsApp e e-mail como memória informal, menos informação perdida, mais previsibilidade operacional e base técnica para escalar suporte, CS, engenharia e documentação oficial com identidade pública segura por marca, sem escalar caos.
+
+## Fechamento MVP P4-A
+Em 2026-05-24, o fluxo MVP operacional foi validado ponta a ponta: cliente B2B autenticado abre ticket no Portal, suporte recebe na fila, responde pelo Portal, registra nota interna, usa Knowledge público, aciona área interna, escala para engenharia, recebe retornos estruturados e preserva boundary customer-facing. O MVP segue sem IA real, provider externo, WhatsApp/e-mail real, chatbot, CRM genérico ou automação perigosa.
+
+## Readiness de piloto P4-B
+Em 2026-05-24, o MVP ganhou pacote operacional de piloto controlado: matriz de regressão, checklist de release, plano de rollback, observabilidade mínima e runbook de smoke em `docs/release/`. O piloto só deve abrir em ambiente local/staging controlado com gates técnicos verdes, fixture idempotente, smoke autenticado por papel, boundaries customer-facing confirmados e rollback entendido. Deploy remoto, produção, provider externo, IA real, secrets, dados reais e integrações externas continuam fora do corte.
+
+## Candidato de piloto P4-D
+Em 2026-05-24, a preparação de candidato staging confirmou que o repositório ainda não possui staging explicitamente configurado. O produto permanece apto como candidato local de piloto, com gates locais verdes e copy pública ajustada para não prometer Avatar, chatbot ou IA ativa. A experiência pública deve comunicar apenas Central de Ajuda, artigos, tickets e suporte pelo Portal até existir provider/modelo governado e autorizado.

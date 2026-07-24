@@ -1,11 +1,246 @@
 # VIEW_RPC_CONTRACTS.md
 
+## Contrato CS Portfolio V1 — atribuição operacional por cliente — 2026-07-23
+
+### Entidades
+
+- `cs_customer_portfolio_assignments`: uma atribuição corrente por `tenant_id`, com nome da carteira, status, owner, cluster, modelo de atendimento, cadência, saúde, prioridade, origem e observações operacionais.
+- `cs_customer_portfolio_assignment_history`: histórico append-only da atribuição; não é exposto diretamente ao frontend autenticado.
+
+### Read model
+
+- `vw_cs_customer_portfolio`: read model existente, agora acrescido de `portfolio_assignment_id`, `portfolio_name`, `portfolio_assignment_status`, `portfolio_owner_*`, `portfolio_cluster_key`, `portfolio_service_model`, `portfolio_contact_frequency`, `portfolio_health_status`, `portfolio_priority`, `portfolio_source` e `portfolio_updated_at`.
+- `vw_cs_customer_portfolio_base`: cópia interna do read model anterior; acesso restrito a `service_role` durante a evolução.
+
+### Command
+
+- `rpc_admin_upsert_cs_customer_portfolio(p_tenant_id, p_portfolio_name, p_assignment_status, p_owner_user_id, p_cluster_key, p_service_model, p_contact_frequency, p_health_status, p_priority, p_notes, p_source, p_source_record_id)`.
+
+### Regras
+
+- A escrita exige `platform_admin` ou membership ativa de gestor em `customer_success` no tenant.
+- O owner informado deve ser profile ativo com membership ativa em `customer_success` no mesmo tenant; e-mails QA não são promovidos automaticamente.
+- O app não possui DML direto nas tabelas; leitura passa pelo read model e escrita pela RPC.
+- Toda alteração é auditada por `audit.capture_row_change()` e também registrada no histórico do domínio.
+- Origem e identificador de origem são preservados para futura carga CS Ops.
+
+## Contrato V1-B - identidade, area, funcao, perfil e telas - 2026-07-22
+
+### Entidades canonicas
+
+- `profiles`: identidade autenticada do colaborador.
+- `user_global_roles`: papeis de plataforma legados e de governanca ampla;
+  nao deve receber um papel artificial para cada departamento.
+- `tenant_memberships`: pertencimento do usuario ao cliente/tenant.
+- `internal_area_memberships`: pertencimento operacional do colaborador a uma
+  area e cliente, com `role` (`member`, `manager`, `viewer`), `status`,
+  `permission_mode` e, opcionalmente, `access_profile_id`.
+- `internal_screen_catalog`: catalogo governado de rotas/telas. Nome, rota,
+  categoria e ordem pertencem ao backend.
+- `internal_area_membership_screen_grants`: telas explicitas de um vinculo;
+  e o modo `custom` para excecoes individuais.
+- `internal_access_profiles` e `internal_access_profile_screen_grants`:
+  presets nomeados por area ou globais, como CS Gestor, CS Operador, Financeiro
+  Gestor, Produto Operador e QA.
+
+### Read models
+
+- `vw_admin_internal_screen_catalog`: catalogo de telas para administracao.
+- `vw_admin_internal_membership_screen_grants`: grants efetivos por vinculo.
+- `vw_admin_internal_access_profiles`: perfis ativos e quantidade de telas.
+- `vw_admin_internal_access_profile_screen_grants`: telas de cada preset.
+- `vw_internal_actor_workspace_context`: contexto autenticado do usuario,
+  unindo papel global legado e vinculos de area por perfil ou customizacao.
+
+### Commands
+
+- `rpc_admin_replace_internal_membership_screens(membership_id, screen_keys)`:
+  substitui atomicamente o conjunto individual e muda o vinculo para modo
+  `custom`, removendo eventual preset.
+- `rpc_admin_create_internal_access_profile(area_key, name, description)` e
+  `rpc_admin_update_internal_access_profile(...)`: governam presets nomeados.
+- `rpc_admin_replace_internal_access_profile_screens(profile_id, screen_keys)`:
+  substitui as telas de um preset por chaves ativas do catalogo.
+- `rpc_admin_assign_internal_access_profile(membership_id, profile_id)`:
+  aplica preset compativel com a area ao colaborador.
+- `rpc_admin_clear_internal_access_profile(membership_id)`: retorna o vinculo
+  ao modo custom para permitir uma excecao individual.
+
+### Regras de seguranca e consumo
+
+- Todas as escritas exigem ator ativo, `platform_admin`, RLS e auditoria de
+  linha; tabelas de suporte nao sao expostas diretamente ao frontend.
+- Vinculo ativo sem tela nao e aceito pela UI; o backend continua permitindo a
+  transicao intermediaria para preservar administracao de dados existentes.
+- O frontend nao decide acesso por nome de rota: deve consumir o read model
+  autenticado no proximo ciclo de shell/redirect.
+
+## Índice de contratos Analytics — checkpoint 2026-07-21
+
+O Dashboard Gerencial deve consumir views/read models e RPCs server-side; este
+documento não deve ser interpretado como autorização para o frontend ler tabelas
+base ou decidir regras. A matriz detalhada de fontes, período, fórmula, frescor,
+qualidade e caveats está em `docs/spec.md`,
+`docs/ANALYTICS_METRIC_CATALOG_V1.md` e nos relatórios do Dashboard Gerencial.
+
+Durante o ciclo SDD de prontidão será consolidado aqui o inventário nominal de
+views/RPCs, caller autorizado, shape de erro, idempotência, tenant scope e
+auditoria das funções HubSpot/OMIE/CS Ops. Até essa consolidação, qualquer
+contrato novo deve ser auditado nas migrations e no código antes da UI; não se
+deve inventar um nome de view ou RPC a partir da documentação histórica.
+
 ## Regra canônica
 - Leitura do app deve passar por views/read models contratuais.
 - Escrita do app deve passar por RPCs transacionais.
 - O app autenticado não deve ler nem escrever diretamente nas tabelas base de ticketing.
 
 ## Estado executável atual
+
+Fase P4-A - MVP Operational Closure & End-to-End Workflow Hardening:
+- Nenhum contrato novo foi criado.
+- O fechamento MVP validou a convivência dos contratos já existentes:
+  - Portal: `rpc_customer_create_ticket`, `rpc_customer_add_ticket_message`, `vw_customer_portal_ticket_timeline`, `vw_customer_portal_ticket_knowledge_links`.
+  - Support: `vw_support_tickets_queue`, `vw_support_ticket_detail`, `rpc_add_ticket_message`, `rpc_add_internal_ticket_note`, `rpc_support_get_ticket_timeline`, `rpc_support_link_ticket_article`.
+  - Internal Actions: `rpc_support_create_internal_action`, `vw_internal_action_queue_by_area`, `rpc_internal_action_return_to_support`.
+  - Engineering: `rpc_support_create_engineering_work_item_from_ticket`, `vw_support_ticket_engineering_links`, `rpc_engineering_add_work_item_update`, `rpc_engineering_return_work_item_to_support`.
+  - Governance: `vw_admin_communication_channel_readiness`, `vw_ai_operational_context_readiness`.
+- O Portal continuou sem acesso a nota interna, internal actions, engenharia, audit bruto, storage path, readiness/provider e AI readiness.
+
+Fase P3-B - AI Readiness Admin Visibility + Functional Fixture Reliability:
+- `/admin/system` passou a ler readiness AI-native por contratos existentes, sem migration nova.
+- Read models consumidos:
+  - `vw_ai_operational_context_readiness`
+  - `vw_ai_context_source_policies`
+  - `vw_ai_action_policies`
+- A UI administrativa mostra somente resumo sanitizado: IA preparada para governanca, nao ativa; provider/modelo nao configurado; embeddings inativos; respostas/publicacao automatica bloqueadas; revisao humana e auditoria obrigatorias.
+- Nenhuma RPC de IA e chamada pela tela; as RPCs P3 seguem reservadas para validacao/log/revisao humana futura.
+- O app nao exibe ledger bruto, prompt, output, token, API key, storage path ou botao de ativacao de IA.
+
+Fase P3 - AI-Native Operational Readiness Foundation:
+- Fundacao AI-native, human-governed criada sem LLM, provider, embedding, vector database, chatbot ou automacao.
+- Tabelas novas:
+  - `ai_context_source_policies`
+  - `ai_action_policies`
+  - `ai_usage_audit_events`
+- Read models novos:
+  - `vw_ai_context_source_policies`
+  - `vw_ai_action_policies`
+  - `vw_ai_operational_context_readiness`
+  - `vw_ai_support_ticket_context_readiness`
+  - `vw_ai_customer_account_context_readiness`
+  - `vw_ai_knowledge_context_readiness`
+  - `vw_ai_usage_audit_events`
+- RPCs novas:
+  - `rpc_ai_validate_context_access`
+  - `rpc_ai_log_usage_event`
+  - `rpc_ai_register_human_review_decision`
+- Boundary:
+  - AI nao e source of truth.
+  - AI nao escreve direto no banco.
+  - AI nao altera `ticket.status`.
+  - AI nao envia mensagem ao cliente.
+  - AI nao publica Knowledge.
+  - AI nao cria delivery/provider, engineering work item ou internal action.
+  - `ai_usage_audit_events` nao armazena provider, modelo, prompt ou output nesta fase.
+
+Fase P2-C - Communication Channel Governance & Provider Readiness:
+- Governanca de canais por tenant foi criada sem provider externo real.
+- Canal real do MVP:
+  - `customer_portal`
+- Canais futuros/bloqueados:
+  - `email_future`
+  - `whatsapp_future`
+  - `chat_future`
+  - `api_future`
+- Estruturas novas:
+  - `communication_channel_definitions`
+  - `tenant_communication_channel_settings`
+- Read models novos ou ampliados:
+  - `vw_admin_communication_channel_readiness`
+  - `vw_support_tenant_communication_capabilities`
+  - `vw_support_ticket_channel_readiness`
+  - `vw_support_ticket_channel_context`
+  - `vw_support_ticket_communication_capabilities`
+  - `vw_support_ticket_delivery_capabilities`
+  - `vw_admin_communication_delivery_summary`
+  - `vw_admin_system_audit_events`
+- RPCs administrativas:
+  - `rpc_admin_update_tenant_channel_readiness`
+  - `rpc_admin_disable_tenant_channel`
+  - `rpc_admin_mark_channel_future_ready`
+- `authenticated` nao possui DML direto nas tabelas de governanca.
+- RPCs bloqueiam segredo/token/API key/webhook em campos de texto e impedem canal externo `active`.
+- Portal Cliente nao recebe readiness, provider, reason tecnico, audit bruto ou enum cru.
+
+Fase P2-B - Communication Delivery Readiness & Outbox Foundation:
+- Delivery customer-facing agora possui ledger append-only, auditado e provider-agnostic.
+- Canal real neste corte:
+  - `customer_portal`
+- Canais preparados e bloqueados, sem provider externo:
+  - `email_future`
+  - `whatsapp_future`
+  - `chat_future`
+  - `api_future`
+- Estrutura nova:
+  - `ticket_message_deliveries`
+- Read models novos:
+  - `vw_support_ticket_message_deliveries`
+  - `vw_support_ticket_delivery_capabilities`
+  - `vw_customer_portal_ticket_delivery_state`
+  - `vw_admin_communication_delivery_summary`
+- Read models ampliados:
+  - `vw_support_ticket_timeline`
+  - `vw_support_ticket_timeline_recent`
+  - `vw_customer_portal_ticket_timeline`
+- RPCs ajustadas:
+  - `rpc_add_ticket_message`
+  - `rpc_customer_add_ticket_message`
+  - `rpc_support_get_ticket_timeline`
+- Notas internas nao geram delivery customer-facing.
+- `rpc_add_ticket_message` bloqueia canais externos futuros (`email`, `chat`, `api`) para nao simular envio.
+- `authenticated` nao possui DML direto em `ticket_message_deliveries`; leitura do app passa apenas por views sanitizadas.
+- Portal Cliente nao recebe `provider_state`, erro tecnico, reason bruto, audit, storage path ou metadata de delivery.
+
+Fase P2 - Ticket Intake, Sources & Communication Foundation:
+- Origem/canal de ticket agora é contrato de leitura derivado no backend, sem integração externa real.
+- Read models novos:
+  - `vw_admin_ticket_channel_definitions`
+  - `vw_support_ticket_channel_context`
+  - `vw_support_ticket_communication_capabilities`
+- Read models ampliados:
+  - `vw_support_tickets_queue`
+  - `vw_support_ticket_detail`
+  - `vw_ticket_timeline`
+  - `vw_support_ticket_timeline`
+  - `vw_support_ticket_timeline_recent`
+  - `vw_customer_portal_ticket_list`
+  - `vw_customer_portal_ticket_detail`
+  - `vw_customer_portal_ticket_timeline`
+- RPCs ajustadas para gravar metadata de comunicação:
+  - `rpc_create_ticket`
+  - `rpc_add_ticket_message`
+  - `rpc_add_internal_ticket_note`
+  - `rpc_support_get_ticket_timeline`
+  - `rpc_customer_create_ticket`
+  - `rpc_customer_add_ticket_message`
+- `can_reply_now`, `reply_mode` e `reason_if_unavailable` são derivados por backend; o frontend não decide se canal externo pode responder.
+- Canais `email`, `chat` e `api` permanecem preparados para futuro e bloqueados para resposta direta até integração explícita.
+- O Portal Cliente recebe apenas labels customer-facing e continua sem nota interna, internal actions, engenharia, audit bruto, storage path ou enum técnico.
+
+Fase Knowledge Assets V1:
+- A Central de Ajuda possui fundacao governada para imagens de artigos:
+  - `knowledge_article_assets`
+  - bucket privado `knowledge-assets`
+- Leitura administrativa de assets por artigo:
+  - `vw_admin_knowledge_article_assets`
+- Leitura publica filtrada de assets aprovados:
+  - `vw_public_knowledge_article_assets`
+- Mutacoes administrativas:
+  - `rpc_admin_unpublish_knowledge_article_v2`
+  - `rpc_admin_upsert_knowledge_article_asset_v1`
+  - `rpc_admin_update_knowledge_article_asset_review_v1`
+- O frontend publico renderiza apenas placeholders governados `knowledge-asset:<id>` resolvidos pela view publica de assets; URL externa arbitraria no markdown nao e renderizada como imagem.
+- `anon` nao recebe SELECT direto em `knowledge_article_assets`; `authenticated` administra via views/RPCs e policies de storage.
 
 Fase 1.2:
 - RPCs administrativas de tenancy e identidade continuam vigentes.
@@ -46,6 +281,229 @@ Fase 3.2:
   - `vw_admin_user_lookup`
 - `authenticated` não possui mais `SELECT` direto em `public.profiles`.
 - A tela `Access` usa nome/email -> `user_id` pela view contratual e mantém fallback manual controlado apenas quando necessário.
+
+Fase Access/System Hardening V3:
+- `/admin/access` agora possui read models dedicados de control plane:
+  - `vw_admin_access_users`
+  - `vw_admin_access_user_detail`
+  - `vw_admin_access_memberships`
+- `/admin/system` agora possui read models dedicados de observabilidade segura:
+  - `vw_admin_system_audit_events`
+  - `vw_admin_system_health_checks`
+  - `vw_admin_system_operational_summary`
+- `vw_admin_system_audit_events` substitui a leitura bruta de `vw_admin_audit_feed` na tela System e nao expoe `metadata`, `before_state` ou `after_state` brutos.
+- Severidade, servico, acao, impacto e contexto sanitizado do audit feed administrativo sao derivados no backend.
+- `rpc_admin_add_tenant_member`, `rpc_admin_update_tenant_member_role` e `rpc_admin_update_tenant_member_status` foram endurecidas contra autopromocao e transicoes fora do contrato.
+
+Fase 8.6:
+- O intake operacional de tickets agora possui read models dedicados para a fila do suporte:
+  - `vw_support_ticket_intake_tenants`
+  - `vw_support_ticket_intake_contacts`
+- `/support/queue` passou a abrir tickets apenas por:
+  - `rpc_create_ticket`
+- O frontend do intake nao le `tenants` nem `tenant_contacts` diretamente.
+- O backend continua controlando o status inicial em `new`, cria `ticket_created` e preserva o audit trail existente.
+- Categoria inicial continua sem contrato de dominio proprio e, por isso, nao foi habilitada no intake.
+
+Fase 8.9:
+- O storage seguro de evidências de ticket agora foi materializado com bucket privado, metadata governada, signed URL curta e isolamento explícito por `tenant_id` + `ticket_id`.
+- O bucket oficial do domínio é:
+  - `ticket-evidence`
+- O frontend autenticado continua sem ler `ticket_attachments` nem `storage.objects` diretamente.
+- A leitura contratual de evidências continua por:
+  - `vw_support_ticket_attachments`
+- A escrita contratual de evidências passa a existir por:
+  - `rpc_support_create_ticket_attachment_upload`
+  - `rpc_support_register_ticket_attachment`
+  - `rpc_support_get_ticket_attachment_download_url`
+- O upload binário segue fluxo governado:
+  - intent por RPC
+  - envio para `ticket-evidence-upload`
+  - registro final via `rpc_support_register_ticket_attachment`
+- O download não expõe `bucket`, `path` nem URL persistente:
+  - grant curto por RPC
+  - resolução por `ticket-evidence-download`
+
+Fase 8.10:
+- A classificacao operacional de tickets agora possui dominio proprio, separado de Knowledge:
+  - `ticket_categories`
+  - `ticket_operational_reasons`
+  - `ticket_sla_policies`
+- O frontend le opcoes e SLA apenas por:
+  - `vw_support_ticket_classification_options`
+  - `vw_support_ticket_sla_context`
+  - `vw_support_tickets_queue`
+  - `vw_support_ticket_detail`
+- O frontend escreve classificacao, prioridade/severidade e status apenas por:
+  - `rpc_create_ticket`
+  - `rpc_support_update_ticket_classification`
+  - `rpc_support_update_ticket_priority_severity`
+  - `rpc_support_update_ticket_status_v2`
+- `rpc_create_ticket` passou a aceitar categoria e motivo inicial opcionais, sem tornar categoria obrigatoria para tickets legados.
+- SLA e governanca interna calculada no backend por politica ativa; o frontend nao calcula prazo nem timer.
+- Transicoes invalidas de status falham no backend e mudancas relevantes geram `ticket_event` e `audit.audit_logs`.
+
+Fase 8.11:
+- A governanca de SLA evoluiu para politicas tenant-aware com fallback global controlado.
+- O calendario de negocio MVP foi materializado como metadata governada, sem ainda aplicar calculo completo por horario util/feriado.
+- Estruturas novas ou ampliadas:
+  - `business_calendars`
+  - `business_calendar_weekly_hours`
+  - `business_calendar_holidays`
+  - `ticket_sla_policies.tenant_id`
+  - `ticket_sla_policies.business_calendar_id`
+  - `ticket_sla_policies.archived_at`
+- O frontend continua lendo SLA apenas por:
+  - `vw_support_ticket_sla_context`
+  - `vw_support_tickets_queue`
+  - `vw_support_ticket_detail`
+- Admin/operacao governada de policy passa por:
+  - `vw_admin_ticket_sla_policies`
+  - `rpc_admin_upsert_business_calendar`
+  - `rpc_admin_upsert_ticket_sla_policy`
+  - `rpc_admin_archive_ticket_sla_policy`
+  - `rpc_support_recalculate_ticket_sla`
+- `app_private.resolve_ticket_sla_policy(tenant_id, category_id, priority, severity)` aplica precedencia tenant > global, com teste cobrindo match especifico e fallback.
+- O frontend nao calcula due date, status de SLA, origem de policy, pausa ou breach; esses sinais sao derivados no backend/read model.
+- Pausa por status, notificacao externa e calculo por horario util completo continuam fora do contrato ate decisao explicita.
+
+Fase 8.15:
+- A fundacao customer-facing do Portal Cliente B2B foi materializada sem auth paralela e sem frontend como source of truth.
+- `tenant_role` agora inclui papeis customer-facing:
+  - `customer_user`
+  - `customer_manager`
+- O acesso customer-facing exige membership ativa, tenant explicito e contato ativo vinculado ao usuario autenticado.
+- A leitura do portal cliente passa apenas por:
+  - `vw_customer_portal_auth_context`
+  - `vw_customer_portal_profile_context`
+  - `vw_customer_portal_ticket_list`
+  - `vw_customer_portal_ticket_detail`
+  - `vw_customer_portal_ticket_timeline`
+  - `vw_customer_portal_ticket_attachments`
+  - `vw_customer_portal_knowledge_articles`
+- A escrita customer-facing passa apenas por:
+  - `rpc_customer_create_ticket`
+  - `rpc_customer_add_ticket_message`
+  - `rpc_customer_get_attachment_download_url`
+  - `rpc_customer_acknowledge_ticket_update`
+- As views removem contexto interno de suporte, notas internas, engenharia, SLA interno, audit bruto, advisory, drafts, Knowledge interna/restrita e storage path.
+- Download de evidencia no portal usa grant curto e a edge function `ticket-evidence-download`; o frontend nao recebe `storage_bucket`, `storage_object_path` ou URL permanente.
+- `customer_ticket_update_acknowledgements` registra leitura customer-facing sem permitir DML direto por `authenticated`.
+- `customer_user` ve tickets do proprio contato/criacao; `customer_manager` ve tickets do proprio tenant; ambos continuam bloqueados contra cross-tenant.
+- O frontend em `/portal`, `/portal/tickets` e `/portal/tickets/:ticketId` consome somente esses contratos e nao calcula permissao, SLA, status, analytics ou roteamento.
+
+Fase 8.17:
+- A colaboracao customer-facing do portal foi consolidada sem expor operacao interna.
+- `vw_customer_portal_ticket_timeline` foi endurecida para expor apenas mensagens `customer` e eventos seguros para cliente, sem nota interna, engenharia, audit bruto, advisory, metadata sensivel ou anexo interno.
+- Novo read model:
+  - `vw_customer_portal_ticket_collaboration_state`
+- O read model deriva no backend:
+  - `can_reply`
+  - `can_acknowledge`
+  - `can_confirm_resolution`
+  - `can_request_reopen`
+  - `unread_count`
+  - `has_new_updates`
+  - `last_customer_message_at`
+  - `last_support_response_at`
+- RPCs customer-facing finais do lote:
+  - `rpc_customer_add_ticket_message`
+  - `rpc_customer_acknowledge_ticket_update`
+  - `rpc_customer_confirm_ticket_resolved`
+  - `rpc_customer_request_ticket_reopen`
+- `rpc_customer_add_ticket_message` bloqueia tickets `resolved`, `closed` e `cancelled`, limita body a 4000 caracteres, gera `ticket_event`/`audit_log` e, quando aplicavel, move `waiting_customer` para `waiting_support` no backend.
+- `rpc_customer_acknowledge_ticket_update` permanece idempotente e agora valida que o timeline entry informado pertence a timeline customer-facing autorizada.
+- Confirmacao de resolucao pelo cliente so fecha ticket que ja esta `resolved`; reabertura so existe para `resolved`/`closed` com motivo obrigatorio.
+- Cliente continua sem permissao para prioridade, severidade, categoria, SLA, notas internas, engenharia, audit bruto, advisory, drafts, Knowledge internal/restricted ou qualquer DML direto.
+
+Fase 8.18:
+- O acesso customer-facing a Knowledge autenticada passou a ter camada propria de entitlement, sem substituir o gate editorial publico e sem delegar filtro de seguranca ao frontend.
+- Estruturas novas:
+  - `knowledge_article_entitlements`
+  - `knowledge_article_entitlement_scope`
+  - `knowledge_article_entitlement_status`
+- O modelo de entitlement aceita somente:
+  - `tenant`
+  - `customer_portal`
+  - `ticket_linked`
+- `public` continua derivado exclusivamente do gate editorial da Knowledge publica e nao pode ser concedido por entitlement administrativo.
+- A leitura customer-facing de Knowledge agora passa apenas por:
+  - `vw_customer_portal_knowledge_articles`
+  - `vw_customer_portal_knowledge_article_detail`
+  - `vw_customer_portal_ticket_knowledge_links`
+- Os read models expõem somente:
+  - `article_id`
+  - `slug`
+  - `title`
+  - `summary`
+  - `category_name`
+  - `published_at`
+  - `updated_at`
+  - `relation_reason`
+  - `source`
+  - `source_label`
+  - `body_md` apenas no detalhe autorizado
+- Os read models continuam removendo `draft body`, notas internas, checklist editorial, advisory, metadata bruta, motivo interno de visibilidade, autor interno nao seguro e qualquer dado de engenharia/auditoria.
+- A administracao minima de entitlement/link passa apenas por:
+  - `rpc_admin_grant_knowledge_article_entitlement`
+  - `rpc_admin_archive_knowledge_article_entitlement`
+  - `rpc_admin_link_knowledge_article_to_ticket`
+  - `rpc_admin_unlink_knowledge_article_from_ticket`
+- Essas RPCs exigem artigo `published`, bloqueiam artigo `draft` e `internal`, exigem `tenant_id` explicito, validam `ticket_id` quando aplicavel e geram `audit.audit_logs`.
+- `ticket_linked` para cliente autenticado depende de `ticket_knowledge_links` em `sent_to_customer` e do ticket ainda ser visivel ao ator customer-facing.
+- O frontend do portal em `/portal`, `/portal/help`, `/portal/help/:articleSlug` e `/portal/tickets/:ticketId` continua apenas renderizando read models; o Public Help em `/help/:spaceSlug` segue publico e independente de sessao customer.
+
+Fase Internal Documents Foundation V3/V4:
+- Documentos internos oficiais passam a ter fundação backend-first própria, separada da Knowledge Base:
+  - `internal_documents`
+  - `internal_document_versions`
+- A leitura contratual futura para Product Docs e Build Journal deve passar apenas por:
+  - `vw_internal_documents_catalog`
+  - `vw_internal_document_detail`
+- As views filtram documentos `archived` e `blocked`, expõem apenas a versão atual válida/warning e aplicam autorização no backend por `platform_admin` neste corte.
+- `anon`, customer-facing e `authenticated` sem papel administrativo não recebem dados pelas views.
+- `authenticated` não possui `SELECT`, `INSERT`, `UPDATE` ou `DELETE` direto nas tabelas base.
+- Não foi criada RPC de sync/publicação neste lote; a escrita inicial é feita por script server-side controlado, usando whitelist versionada e sem aceitar path arbitrário por CLI.
+- Product Docs e Build Journal ainda não consomem essas views neste lote; a migração de frontend fica para V5.
+
+Fase 8.19:
+- A administracao operacional do portal cliente passou a ter uma superficie propria no Admin Console, sem criar shell novo e sem delegar seguranca ao frontend.
+- A nova rota `/admin/customer-portal` le apenas:
+  - `vw_admin_customer_portal_access_overview`
+  - `vw_admin_customer_portal_tenant_access`
+  - `vw_admin_customer_portal_users`
+  - `vw_admin_customer_portal_user_detail`
+  - `vw_admin_knowledge_entitlements`
+  - `vw_admin_knowledge_entitlement_detail`
+  - `vw_admin_ticket_knowledge_links`
+  - `vw_admin_customer_portal_article_candidates`
+  - `vw_admin_customer_portal_ticket_candidates`
+- Essas views expõem apenas o necessario para governanca customer-facing:
+  - tenant
+  - usuario
+  - role/status
+  - ultimo acesso quando houver fonte real
+  - contagem de tickets visiveis
+  - contagem de artigos autorizados
+  - relation_reason
+  - ticket vinculado quando aplicavel
+- Essas views bloqueiam:
+  - password/auth secret/token
+  - draft body
+  - article internal
+  - advisory/review interno
+  - raw metadata
+  - audit bruto
+  - storage path
+- A mutacao no Admin Console do portal cliente continua passando apenas por RPC:
+  - `rpc_admin_grant_knowledge_article_entitlement`
+  - `rpc_admin_archive_knowledge_article_entitlement`
+  - `rpc_admin_link_knowledge_article_to_ticket`
+  - `rpc_admin_unlink_knowledge_article_from_ticket`
+  - `rpc_admin_update_tenant_member_role` para `customer_user`/`customer_manager`
+  - `rpc_admin_update_tenant_member_status` para memberships customer-facing existentes
+- Entitlement continua sem publicar, aprovar ou bypassar gate editorial.
+- Como ainda nao existe contrato dedicado de contagem autorizada para os cards resumidos do portal, o frontend remove o numero enganoso e renderiza `Artigos autorizados: Indisponível`.
 
 Fase 4:
 - Knowledge Base agora possui núcleo editorial real com views internas contratuais e RPCs administrativas próprias.
@@ -198,11 +656,40 @@ Fase 6.8:
   - `rpc_admin_update_customer_customization`
   - `rpc_admin_add_customer_account_alert`
   - `rpc_admin_archive_customer_account_alert`
+  - `rpc_admin_set_customer_feature_flag`
 - Regras:
   - `tenant_id` e obrigatorio em todas as tabelas;
   - suporte e CS internos leem apenas o contexto operacional autorizado por tenant;
   - `platform_admin` continua sendo o write actor garantido do primeiro corte;
   - o dominio bloqueia tokens, senhas, chaves, payloads sigilosos e endpoints sensiveis antes de persistir ou auditar.
+
+Fase P1 Customer Account Operations Buildout:
+- O dominio Customer Account foi fechado como operacao minima governada para Admin e Support, sem transformar o produto em CRM generico.
+- Novas views administrativas dedicadas:
+  - `vw_admin_customer_account_profile_detail`
+  - `vw_admin_customer_account_integrations`
+  - `vw_admin_customer_account_customizations`
+  - `vw_admin_customer_account_alerts`
+  - `vw_admin_customer_account_features`
+- Novos aliases operacionais de suporte:
+  - `vw_support_customers_list`
+  - `vw_support_customer_detail`
+- Novas RPCs administrativas:
+  - `rpc_admin_archive_customer_integration`
+  - `rpc_admin_archive_customer_customization`
+  - `rpc_admin_update_customer_account_alert`
+- Permanecem vigentes:
+  - `rpc_admin_upsert_customer_account_profile`
+  - `rpc_admin_add_customer_integration`
+  - `rpc_admin_update_customer_integration`
+  - `rpc_admin_add_customer_customization`
+  - `rpc_admin_update_customer_customization`
+  - `rpc_admin_add_customer_account_alert`
+  - `rpc_admin_archive_customer_account_alert`
+  - `rpc_admin_set_customer_feature_flag`
+- `/admin/tenants` passa a usar a aba `Conta B2B` para editar perfil, adicionar/arquivar integracoes, adicionar/arquivar customizacoes, adicionar/arquivar alertas e atualizar feature flags por RPC.
+- O frontend continua sem ler `customer_account_*` diretamente e sem persistir estado local como fonte de verdade.
+- Portal Cliente permanece limitado a contexto customer-facing seguro; alertas internos, customizacoes, integracoes detalhadas, observacoes internas, audit bruto e paths de storage continuam fora das views do Portal.
 
 Fase 6.15:
 - O backend minimo do vinculo ticket -> Knowledge Base agora foi materializado como dominio auditavel proprio, sem abrir tabela-base ao frontend.
@@ -217,6 +704,33 @@ Fase 6.15:
   - `rpc_support_archive_ticket_article_link`
   - `rpc_support_mark_documentation_gap`
   - `rpc_support_mark_article_needs_update`
+
+Fase 8.4:
+- A governanca operacional da Knowledge Base endureceu a publicacao publica v2 sem alterar a regra de leitura publica existente.
+- O frontend administrativo continua lendo apenas:
+  - `vw_admin_knowledge_spaces`
+  - `vw_admin_knowledge_categories_v2`
+  - `vw_admin_knowledge_articles_list_v2`
+  - `vw_admin_knowledge_article_detail_v2`
+  - `vw_admin_knowledge_article_review_advisories`
+- O Public Help continua lendo apenas:
+  - `vw_public_knowledge_space_resolver`
+  - `vw_public_knowledge_navigation`
+  - `vw_public_knowledge_articles_list`
+  - `vw_public_knowledge_article_detail`
+  - `vw_public_help_categories`
+  - `rpc_public_search_knowledge_articles`
+- O ticket workspace continua lendo candidatos compartilhaveis apenas por:
+  - `vw_support_knowledge_public_link_candidates`
+- A publicacao publica por `rpc_admin_publish_knowledge_article_v2` e `rpc_admin_publish_knowledge_article_editorial_revision_v2` agora exige gate backend de evidencia humana revisada:
+  - advisory persistido;
+  - classificacao publica;
+  - visibilidade publica sugerida;
+  - `review_status = reviewed`;
+  - `reviewed_by_user_id` e `reviewed_at`;
+  - checklist humano completo em `human_confirmations`.
+- As funcoes privadas `app_private.public_knowledge_publish_confirmations_complete` e `app_private.require_public_knowledge_publish_gate` nao sao superficie publica do frontend.
+- Os 8 candidatos documentais da Knowledge seguem fora da base publica e nao foram injetados automaticamente.
 - Regras:
   - `sent_to_customer` exige artigo `public` + `published`;
   - artigo `internal` ou `restricted` nunca pode entrar no fluxo de envio ao cliente;
@@ -243,6 +757,18 @@ Fase 6.17:
   - `public_article_path`
   - `can_send_to_customer`
   - `reason_if_blocked`
+
+Fase 8.2:
+- O lote `Support Ticket Operational Flow V3` materializou o contrato operacional faltante para historico paginado do ticket e link publico seguro de Knowledge dentro do workspace.
+- O frontend de `/support/tickets/:ticketId` passa a usar:
+  - `rpc_support_get_ticket_timeline`
+- O backend passa a oferecer:
+  - `vw_support_knowledge_public_link_candidates`
+- Regras:
+  - a timeline completa continua sendo lida por contrato, sem `SELECT` direto em `ticket_messages` ou `ticket_events`;
+  - o carregamento de historico anterior usa cursor estavel por `occurred_at` + `timeline_entry_id`;
+  - link publico seguro de Knowledge so aparece quando o artigo esta publicado, publico e possui rota publica resolvida no backend;
+  - nenhuma acao de envio automatico ao cliente foi criada nesta fase.
 
 ## Views contratuais vigentes
 
@@ -463,6 +989,27 @@ Fase 6.17:
   - nao expande acesso cross-tenant;
   - usa `security_barrier = true`.
 
+### `vw_support_knowledge_public_link_candidates`
+- Finalidade: candidatos seguros de artigo publico para uso assistivo dentro de um ticket.
+- Retorna: `ticket_id`, `tenant_id`, contexto do tenant, `article_id`, `article_title`, `article_slug`, `article_summary`, `category_name`, `article_visibility`, `article_status`, `public_article_path`, `can_send_to_customer`, `is_customer_send_allowed` e `reason_if_blocked`.
+- Regras:
+  - filtra pelo tenant do ticket e pela permissao do Support Workspace;
+  - depende de `app_private.vw_knowledge_articles_public_contract`;
+  - retorna apenas artigos publicos publicados com `public_article_path` resolvido;
+  - `can_send_to_customer` so e verdadeiro quando `public_article_path` esta preenchido, `article_status = published` e `article_visibility = public`;
+  - nao expõe draft, internal, restricted, playbook interno ou rota montada por heuristica no frontend;
+  - usa `security_barrier = true`.
+
+### `vw_support_knowledge_article_picker` - elegibilidade de envio
+- O picker geral do Support Workspace continua permitindo vinculo interno de artigos autorizados ao ticket.
+- Para acao customer-facing, o frontend deve considerar apenas os campos projetados pelo backend:
+  - `can_send_to_customer = true`
+  - `is_customer_send_allowed = true`
+  - `public_article_path` preenchido
+  - `article_status = published`
+  - `article_visibility = public`
+- Quando qualquer requisito falhar, `reason_if_blocked` deve alimentar copy operacional e a acao de copiar/enviar link deve permanecer desabilitada.
+
 ### `vw_support_customer_360`
 - Finalidade: read model minimo de visao 360 do cliente B2B para suporte interno.
 - Retorna: tenant, preview resumido de contatos ativos, tickets recentes, contagem de tickets por status e eventos recentes relevantes.
@@ -497,6 +1044,24 @@ Fase 6.17:
   - limita os papeis a `platform_admin`, `support_manager` e `support_agent`;
   - respeita o mesmo contrato de autorizacao operacional usado por `rpc_assign_ticket`;
   - nao expõe usuarios de outros tenants nem dados sensiveis adicionais;
+  - usa `security_barrier = true`.
+
+### `vw_support_ticket_intake_tenants`
+- Finalidade: lookup contratual de clientes B2B elegíveis para abertura de ticket no Support Workspace.
+- Retorna: `tenant_id`, `tenant_slug`, nomes do tenant, `tenant_status`, timestamps principais e contagem de contatos ativos.
+- Regras:
+  - retorna apenas tenants autorizados pelo boundary do Support Workspace;
+  - nao depende da fila atual para descobrir tenants elegiveis;
+  - permite estado explicito de tenant sem contato ativo (`has_active_contacts = false`);
+  - usa `security_barrier = true`.
+
+### `vw_support_ticket_intake_contacts`
+- Finalidade: lookup contratual de contatos ativos para o tenant selecionado no intake.
+- Retorna: `id`, `tenant_id`, `linked_user_id`, `full_name`, `email`, `phone`, `job_title`, `is_primary` e `created_at`.
+- Regras:
+  - retorna apenas contatos ativos de tenants elegiveis;
+  - nao expoe tabela-base de contatos ao frontend;
+  - permite fallback honesto de intake sem solicitante quando nao houver contato retornado;
   - usa `security_barrier = true`.
 
 ### `vw_public_knowledge_space_resolver`
@@ -762,6 +1327,7 @@ Fase 6.17:
 - Regras:
   - valida tenant do caller;
   - valida `requester_contact_id` no mesmo tenant;
+  - mantem `status = new` como estado inicial controlado pelo backend;
   - cria `ticket_created` em `ticket_events`;
   - gera `audit.audit_logs`.
 
@@ -824,6 +1390,19 @@ Fase 6.17:
   - gera evento `reopened`;
   - gera auditoria.
 
+### `rpc_support_get_ticket_timeline`
+- Escopo: `platform_admin`, `support_manager` e `support_agent` com acesso ao tenant do ticket.
+- Entrada: `ticket_id`, `limit`, `before_occurred_at?`, `before_timeline_entry_id?`.
+- Retorno: pagina da timeline operacional com `total_available_count`, `page_limit` e `has_more`.
+- Regras:
+  - valida ator ativo;
+  - valida acesso ao Support Workspace no tenant do ticket;
+  - limita pagina entre 1 e 100 itens;
+  - ordena por `occurred_at` + `timeline_entry_id` para cursor estavel;
+  - usa `vw_support_ticket_timeline` como fonte;
+  - nao abre `SELECT` direto nas tabelas base;
+  - falha no backend para caller sem permissao, sem fallback de frontend.
+
 ## Regras de exposição
 
 - Todas as RPCs expostas são `SECURITY DEFINER` com `SET search_path = ''`.
@@ -838,6 +1417,20 @@ Fase 6.17:
   - `vw_support_ticket_detail`
   - `vw_support_ticket_timeline`
   - `vw_support_ticket_timeline_recent`
+  - `vw_support_ticket_intake_tenants`
+  - `vw_support_ticket_intake_contacts`
+  - `vw_support_ticket_attachments`
+  - `vw_support_internal_action_target_areas`
+  - `vw_support_ticket_internal_actions`
+  - `vw_support_internal_action_detail`
+  - `vw_support_internal_action_timeline`
+  - `vw_internal_action_queue_by_area`
+  - `vw_support_ticket_engineering_links`
+  - `vw_engineering_work_items_queue`
+  - `vw_engineering_work_item_detail`
+  - `vw_engineering_work_item_ticket_links`
+  - `vw_engineering_work_item_updates`
+  - `vw_support_knowledge_public_link_candidates`
   - `vw_support_customer_360`
   - `vw_support_customer_account_context`
   - `vw_support_customer_recent_tickets`
@@ -876,6 +1469,27 @@ Fase 6.17:
   - `rpc_add_internal_ticket_note`
   - `rpc_close_ticket`
   - `rpc_reopen_ticket`
+  - `rpc_support_create_ticket_attachment_upload`
+  - `rpc_support_register_ticket_attachment`
+  - `rpc_support_get_ticket_attachment_download_url`
+  - `rpc_support_list_internal_action_target_areas`
+  - `rpc_support_create_internal_action`
+  - `rpc_internal_action_assign`
+  - `rpc_internal_action_add_comment`
+  - `rpc_internal_action_update_status`
+  - `rpc_internal_action_add_evidence_link`
+  - `rpc_internal_action_return_to_support`
+  - `rpc_support_accept_internal_action_return`
+  - `rpc_support_request_internal_action_followup`
+  - `rpc_support_close_internal_action`
+  - `rpc_support_create_engineering_work_item_from_ticket`
+  - `rpc_support_link_ticket_to_engineering_work_item`
+  - `rpc_engineering_assign_work_item`
+  - `rpc_engineering_unassign_work_item`
+  - `rpc_engineering_update_work_item_status`
+  - `rpc_engineering_add_work_item_update`
+  - `rpc_engineering_return_work_item_to_support`
+  - `rpc_engineering_link_existing_work_item_to_ticket`
 - O app autenticado escreve Knowledge Base apenas por:
   - `rpc_admin_create_knowledge_category`
   - `rpc_admin_create_knowledge_article_draft`
@@ -899,6 +1513,7 @@ Fase 6.17:
   - `rpc_admin_update_customer_customization`
   - `rpc_admin_add_customer_account_alert`
   - `rpc_admin_archive_customer_account_alert`
+  - `rpc_admin_set_customer_feature_flag`
 
 ## Fase 6.2 - Support Workspace UI Minimum
 
@@ -913,22 +1528,304 @@ Fase 6.17:
 - `vw_support_tickets_queue`
 - `vw_support_ticket_detail`
 - `vw_support_ticket_timeline_recent`
+- `rpc_support_get_ticket_timeline`
+- `vw_support_ticket_intake_tenants`
+- `vw_support_ticket_intake_contacts`
 - `vw_support_customer_360`
 - `vw_support_customer_recent_tickets`
 - `vw_support_customer_recent_events`
 
 ### Escrita consumida pelo frontend
+- `rpc_create_ticket`
 - `rpc_update_ticket_status`
 - `rpc_assign_ticket`
 - `rpc_add_ticket_message`
 - `rpc_add_internal_ticket_note`
 - `rpc_close_ticket`
 - `rpc_reopen_ticket`
+ - `rpc_support_create_engineering_work_item_from_ticket`
 
 ### Boundary mantido
 - a UI do workspace nao le tabelas base de ticketing
 - a UI nao cria mutacoes novas fora das RPCs ja aprovadas
 - a UI continua interna e B2B, sem qualquer capacidade de atendimento a shopper final
+- o intake respeita tenant explicito, solicitante opcional quando nao houver contato e status inicial controlado pelo backend
+- categoria inicial continua fora da UI por falta de contrato backend
+
+## Fase 8.7 - Support Ticket Attachments And Escalation V3
+
+### Leitura consumida pelo frontend
+- `vw_support_ticket_attachments`
+- `vw_support_ticket_engineering_links`
+
+### Escrita consumida pelo frontend
+- `rpc_support_create_engineering_work_item_from_ticket`
+
+### Regras de consumo
+- `/support/tickets/:ticketId` lista anexos apenas por metadata sanitizada; `storage_bucket` e `storage_object_path` nao sao expostos ao app.
+- o upload real permanece bloqueado porque ainda nao existe bucket/policy segura configurada para storage multi-tenant.
+- o handoff tecnico cria entidade propria de engenharia e vinculo explicito com o ticket; o ticket nao vira backlog tecnico por texto livre.
+- a leitura de work items vinculados ocorre apenas por `vw_support_ticket_engineering_links`.
+
+### Boundary mantido
+- nenhuma tabela base nova de engenharia e lida diretamente pelo frontend
+- nenhum upload inseguro foi habilitado
+- tickets fechados/cancelados nao aceitam novo handoff tecnico
+- o status tecnico continua sendo controlado pelo dominio `engineering_work_items`, sem RPC paralela para status do link
+
+## Fase 8.8 - Engineering Workspace Operational Core V3
+
+### Leitura consumida pelo frontend
+- `vw_engineering_work_items_queue`
+- `vw_engineering_work_item_detail`
+- `vw_engineering_work_item_ticket_links`
+- `vw_engineering_work_item_updates`
+- `vw_support_ticket_engineering_links`
+
+### Escrita consumida pelo frontend
+- `rpc_engineering_assign_work_item`
+- `rpc_engineering_unassign_work_item`
+- `rpc_engineering_update_work_item_status`
+- `rpc_engineering_add_work_item_update`
+- `rpc_engineering_return_work_item_to_support`
+
+### Regras de consumo
+- `/engineering` e `/engineering/work-items/:workItemId` leem demandas tecnicas apenas pelos read models dedicados.
+- o status tecnico e controlado pelo backend; o frontend nao monta transicao livre.
+- `engineering_work_item_updates` guarda updates estruturados de engenharia e nao substitui `ticket_messages`.
+- retorno ao suporte cria update tecnico `support_return`, gera `ticket_event` estruturado e atualiza o ticket vinculado para `waiting_support` quando permitido.
+- o ticket workspace le o ultimo retorno tecnico por `vw_support_ticket_engineering_links`, sem expor payload cru nem misturar demanda tecnica na conversa.
+
+### Boundary mantido
+- nenhuma tabela base de engenharia e lida diretamente pelo frontend
+- suporte ve vinculos tecnicos permitidos, mas nao escreve em work item tecnico
+- `engineering_work_item` nao e ticket e nao deve virar backlog de produto generico
+- notificacao externa, SLA tecnico, upload/storage e sprint/kanban continuam fora deste contrato
+
+## Fase 8.9 - Secure Ticket Evidence Storage V3
+
+### Leitura consumida pelo frontend
+- `vw_support_ticket_attachments`
+
+### Escrita consumida pelo frontend
+- `rpc_support_create_ticket_attachment_upload`
+- `rpc_support_register_ticket_attachment`
+- `rpc_support_get_ticket_attachment_download_url`
+
+### Functions operacionais consumidas pelo frontend
+- `ticket-evidence-upload`
+- `ticket-evidence-download`
+
+### Regras de consumo
+- `/support/tickets/:ticketId` lista evidências apenas por metadata sanitizada.
+- a view contratual expõe somente:
+  - `attachment_id`
+  - `ticket_id`
+  - `display_name`
+  - `content_type`
+  - `size_bytes`
+  - `uploaded_by_name`
+  - `created_at`
+  - `status`
+  - `can_download`
+  - `can_archive`
+- a view não expõe:
+  - `storage_bucket`
+  - `storage_object_path`
+  - URL assinada persistente
+  - payload bruto de storage
+- o upload real depende de intent prévio emitido por RPC com:
+  - `tenant_id` explícito
+  - `ticket_id` explícito
+  - tipo MIME permitido
+  - tamanho máximo validado
+  - ator autenticado e autorizado no tenant do ticket
+- o download depende de grant curto emitido por RPC e resolvido por edge function com signed URL temporária.
+- `ticket_event` e `audit_log` são gerados sem registrar `bucket` ou `path` sensível no evento do ticket.
+
+### Boundary mantido
+- bucket permanece privado (`public = false`)
+- o frontend não lê `storage.objects`
+- o frontend não conhece `storage_bucket` nem `storage_object_path`
+- nenhum upload cross-tenant é aceito
+- `authenticated` continua sem DML direto em `ticket_attachments`
+- arquivamento de evidência continua fora da superfície porque não existe RPC segura habilitada para isso neste corte
+
+## Fase 8.16 - Customer Portal Secure Evidence Upload V3
+
+### Leitura consumida pelo frontend
+- `vw_customer_portal_ticket_attachments`
+- `vw_support_ticket_attachments`
+
+### Escrita consumida pelo frontend
+- `rpc_customer_create_ticket_attachment_upload`
+- `rpc_customer_register_ticket_attachment`
+- `rpc_customer_get_attachment_download_url`
+
+### Functions operacionais consumidas pelo frontend
+- `ticket-evidence-upload` com `boundary=customer`
+- `ticket-evidence-download`
+
+### Regras de consumo
+- `/portal/tickets/:ticketId` envia evidencias por intent customer-facing antes do upload.
+- O bucket `ticket-evidence` permanece privado e e reaproveitado com policies especificas para cliente autenticado.
+- O upload customer-facing aceita apenas:
+  - `application/pdf`
+  - `image/jpeg`
+  - `image/png`
+  - `image/webp`
+- O limite customer-facing e `10 MB` por arquivo.
+- O cliente so pode anexar evidencia em ticket permitido do proprio tenant/contato.
+- Tickets `closed` e `cancelled` nao aceitam upload customer-facing.
+- O registro final cria metadata em `ticket_attachments` com `visibility = customer`.
+- `ticket_event` e `audit_log` sao gerados sem bucket/path sensivel.
+
+### Boundary mantido
+- O frontend nao recebe `storage_bucket`, `storage_object_path`, path interno ou URL permanente.
+- O frontend nao filtra seguranca nem monta URL de storage.
+- Upload anonimo e cross-tenant ficam bloqueados por RPC, storage policy e testes.
+- Arquivamento/remocao de evidencia pelo cliente continua bloqueado por falta de RPC segura dedicada.
+
+## Fase 8.20 - Customer Portal Search And Discoverability V3
+
+### Leitura consumida pelo frontend
+- `vw_customer_portal_knowledge_articles`
+- `vw_customer_portal_knowledge_article_detail`
+- `vw_customer_portal_ticket_knowledge_links`
+
+### Busca consumida pelo frontend
+- `rpc_customer_search_knowledge_articles`
+
+### Regras de consumo
+- `/portal/help` passou a usar busca autenticada governada pelo backend, sem array local como source of truth.
+- A RPC aceita:
+  - `tenant_id`
+  - `search_query`
+  - `category_name`
+  - `source` em `all|public|customer_portal|ticket_linked`
+  - `ticket_id` opcional para descoberta contextual
+  - `limit`
+  - `offset`
+- A busca retorna apenas:
+  - `article_id`
+  - `slug`
+  - `title`
+  - `summary`
+  - `category_name`
+  - `source`
+  - `source_label`
+  - `relation_reason`
+  - `published_at`
+  - `updated_at`
+  - `match_reason`
+- O termo vazio retorna apenas a lista segura autorizada ao ator.
+- Termo curto sem filtro nao vaza a base inteira; a UX exige pelo menos 2 caracteres ou filtro real.
+- `/portal/tickets/:ticketId` pode buscar artigos no contexto do proprio ticket via `ticket_id` explicito.
+
+### Boundary mantido
+- `draft` nunca aparece.
+- `internal` nunca aparece.
+- `restricted` so aparece com entitlement legitimo ou vinculo ticket-linked autorizado.
+- Entitlement arquivado deixa de expor artigo na busca.
+- A busca publica continua separada em `rpc_public_search_knowledge_articles` e nao passa a listar artigos autenticados.
+- O frontend nao decide entitlement, nao reordena por heuristica e nao monta recomendacao IA.
+
+## Fase 8.22 - Customer Portal Tenant Context And Switching V3
+
+### Leitura consumida pelo frontend
+- `vw_customer_portal_available_tenants`
+- `vw_customer_portal_active_tenant_context`
+- `vw_customer_portal_auth_context`
+- `vw_customer_portal_profile_context`
+
+### Escrita consumida pelo frontend
+- `rpc_customer_set_active_tenant`
+
+### Regras de consumo
+- o tenant ativo passou a ser backend-governed por `customer_portal_user_preferences`
+- o frontend nao escolhe tenant por `contexts[0]`, `localStorage` ou cache como fonte de verdade
+- a selecao valida:
+  - membership ativa em `customer_user|customer_manager`
+  - tenant `active`
+  - portal habilitado por `customer_account_features.feature_key = 'returns_portal'`
+- se houver apenas um tenant valido, o backend aplica fallback seguro
+- se nao houver tenant valido, os read models retornam estado vazio/seguro
+- tickets, Knowledge, busca autenticada, profile context e criacao de ticket passam a respeitar o tenant ativo efetivo
+- `rpc_customer_search_knowledge_articles` nega explicitamente tenant diferente do ativo, em vez de devolver falso vazio cross-tenant
+
+### Boundary mantido
+- `active_tenant_id` customer-facing nao interfere em `vw_admin_auth_context`
+- `/admin/customer-portal` continua exigindo role admin real
+- tenant sem portal habilitado nao pode ser selecionado mesmo com membership ativa
+
+## Fase 8.24 - Customer Portal Multi-Tab Session Semantics V3
+
+### Leitura consumida pelo frontend
+- `vw_customer_portal_active_tenant_context`
+
+### Escrita consumida pelo frontend
+- `rpc_customer_set_active_tenant`
+
+### Regras de consumo
+- `vw_customer_portal_active_tenant_context` passa a expor `context_version`
+- `context_version` vem de `customer_portal_user_preferences.updated_at` quando existe preferencia valida
+- o fallback sem preferencia persistida usa timestamp estavel (`1970-01-01T00:00:00Z`) apenas para deteccao segura de primeira troca
+- a aba revalida o contexto no foco/visibilitychange e antes de mutacoes sensiveis
+- se `tenant_id` ou `context_version` divergirem do ultimo contexto aceito, a UI entra em estado stale e exige refresh
+
+### Acoes protegidas por revalidacao + backend
+- `rpc_customer_create_ticket`
+- `rpc_customer_add_ticket_message`
+- `rpc_customer_create_ticket_attachment_upload`
+- `rpc_customer_get_attachment_download_url`
+- `rpc_customer_acknowledge_ticket_update`
+- `rpc_customer_confirm_ticket_resolved`
+- `rpc_customer_request_ticket_reopen`
+- `rpc_customer_search_knowledge_articles`
+
+### Boundary mantido
+- nenhuma surface customer-facing volta para `todos os tenants do usuario`
+- `localStorage` e cache local nao viram source of truth de tenant
+- o enforcement real continua no backend via `customer_portal_has_active_tenant(...)` e `can_access_customer_ticket(...)`
+- o contexto administrativo continua isolado de `active_tenant_id`
+
+## Fase 8.25 - Customer Portal Session Expiry And Recovery Semantics V3
+
+### Leitura consumida pelo frontend
+- `vw_customer_portal_auth_context`
+- `vw_customer_portal_available_tenants`
+- `vw_customer_portal_active_tenant_context`
+- `rpc_customer_get_portal_session_status`
+
+### Escrita consumida pelo frontend
+- `rpc_customer_set_active_tenant`
+
+### Regras de consumo
+- `rpc_customer_get_portal_session_status` virou o contrato leve de revalidacao operacional do portal.
+- O retorno classifica apenas estados seguros:
+  - `ready`
+  - `access_revoked`
+  - `tenant_unavailable`
+- `session_expired`, `network_retryable` e `fatal_error` continuam resolvidos no boundary do app a partir do erro real de sessao/rede/contrato.
+- `context_version` continua vindo de `vw_customer_portal_active_tenant_context`.
+- O frontend nao trata tenant anterior, cache ou storage local como source of truth depois de sessao expirada, erro de rede ou perda de acesso.
+
+### Acoes protegidas
+- `rpc_customer_create_ticket`
+- `rpc_customer_add_ticket_message`
+- `rpc_customer_create_ticket_attachment_upload`
+- `rpc_customer_register_ticket_attachment`
+- `rpc_customer_get_attachment_download_url`
+- `rpc_customer_acknowledge_ticket_update`
+- `rpc_customer_confirm_ticket_resolved`
+- `rpc_customer_request_ticket_reopen`
+- `rpc_customer_search_knowledge_articles`
+
+### Boundary mantido
+- `active_tenant_id` continua backend-governed.
+- `session_expired` nao vira fallback silencioso para `tenant_unavailable`.
+- `access_revoked` nao reutiliza contexto antigo nem dispara refresh infinito.
+- `/admin/customer-portal` e `/admin/access` continuam fora do contexto customer-facing.
 
 ## Fase 6.3 - Support Workspace Agent Directory + Assignment UX
 
@@ -954,7 +1851,250 @@ Fase 6.17:
 - `Atribuir a mim` e `Desatribuir` continuam usando somente `rpc_assign_ticket`
 - o `user_id` tecnico permanece apenas como fallback recolhido para excecao operacional
 
+## Fase 8.27 - Internal Actions Backend Foundation V1
+
+### Leitura materializada no backend
+- `vw_support_internal_action_target_areas`
+- `vw_support_ticket_internal_actions`
+- `vw_support_internal_action_detail`
+- `vw_support_internal_action_timeline`
+- `vw_internal_action_queue_by_area`
+- `vw_internal_action_area_auth_context`
+- `vw_internal_action_detail_by_area`
+- `vw_internal_action_timeline_by_area`
+- `vw_admin_internal_action_target_areas`
+- `vw_admin_internal_area_memberships`
+
+### Escrita materializada no backend
+- `rpc_support_list_internal_action_target_areas`
+- `rpc_support_create_internal_action`
+- `rpc_internal_action_assign`
+- `rpc_internal_action_assign_to_self`
+- `rpc_internal_action_add_comment`
+- `rpc_internal_action_update_status`
+- `rpc_internal_action_add_evidence_link`
+- `rpc_internal_action_return_to_support`
+- `rpc_support_accept_internal_action_return`
+- `rpc_support_request_internal_action_followup`
+- `rpc_support_close_internal_action`
+- `rpc_admin_add_internal_area_membership`
+- `rpc_admin_update_internal_area_membership`
+- `rpc_admin_archive_internal_area_membership`
+
+### Regras de consumo
+- `internal_actions` nasce como domínio novo, neutro e ticket-cêntrico; não substitui `engineering_work_items` neste corte.
+- O suporte continua owner do ticket principal; a área acionada atua só no subfluxo interno.
+- O catálogo acionável para o Support Workspace vem de `rpc_support_list_internal_action_target_areas`, que filtra áreas ativas por ticket/tenant acessível ao suporte e não expõe tabela base.
+- Criar, atribuir, comentar, devolver, pedir complemento e fechar acionamento gera ledger append-only, `ticket_event` interno e `audit.audit_logs`.
+- O V1 usa apenas evidências já existentes em `ticket_attachments`; não cria bucket, storage path ou upload próprio.
+- Pendência interna não altera `ticket.status`; a sinalização sai por read model dedicado.
+- As views novas não expõem conversa completa do ticket para a fila da área nem metadata sensível de storage.
+- `vw_internal_action_area_auth_context` expõe apenas tenant, área, role/status de membership ativo e contagem operacional, permitindo distinguir área autorizada sem demanda de usuário sem membership.
+- `/internal-actions` consome `vw_internal_action_queue_by_area`, `vw_internal_action_detail_by_area`, `vw_internal_action_timeline_by_area` e apenas RPCs do domínio para assumir, comentar, atualizar andamento e devolver ao suporte.
+- `/admin/internal-areas` consome views `vw_admin_*` e RPCs administrativas para adicionar, atualizar ou arquivar `internal_area_memberships`.
+
+### Boundary mantido
+- Cliente/portal não lê nem escreve `internal_actions`.
+- O frontend do Support Workspace já possui integração mínima no drawer `Acionamentos` para o lado do suporte: catálogo real de áreas, criação, lista, detalhe, timeline interna, aceite de retorno, pedido de complemento, fechamento e vínculo de evidência existente.
+- A área acionada possui workspace/fila própria, mas não responde cliente, não fecha ticket e não altera `ticket.status`.
+- Não existe bridge com Engenharia neste lote; `engineering_work_items` segue íntegro e separado.
+
+## OCP V1-A - Internal Areas Contract Consolidation
+
+### Leitura materializada no backend
+- `vw_admin_internal_areas`
+- `vw_admin_internal_collaborators`
+- `vw_admin_internal_area_memberships`
+- `vw_internal_area_landing_context`
+
+### Escrita materializada no backend
+- nenhuma RPC nova.
+- a manutenção de memberships segue pelos contratos existentes:
+  - `rpc_admin_add_internal_area_membership`
+  - `rpc_admin_update_internal_area_membership`
+  - `rpc_admin_archive_internal_area_membership`
+
+### Decisão semântica
+- `internal_action_target_areas` passa a funcionar como catálogo inicial de áreas internas para o OCP V1-A, sem criar `internal_areas` ou `internal_areas_v2`.
+- `internal_area_memberships` passa a funcionar como membership operacional de colaborador por área, mantendo vínculo com `profiles`, `tenants` e `area_key`.
+- `profiles`, `tenants`, `user_global_roles` e `tenant_memberships` continuam entidades canônicas; o lote não cria identidade, cliente, role ou membership paralelos.
+- `vw_admin_internal_area_memberships` já cobre o contrato necessário de membership administrativo e foi preservada.
+- `vw_internal_area_landing_context` é uma camada canônica de roteamento futuro, derivada de `vw_internal_action_area_auth_context`, sem mudar o frontend atual.
+
+### Regras de consumo
+- Admin/OCP deve ler áreas por `vw_admin_internal_areas`.
+- Admin/OCP deve ler colaboradores por `vw_admin_internal_collaborators`.
+- Admin/OCP deve ler vínculos área-colaborador por `vw_admin_internal_area_memberships`.
+- Roteamento futuro de área interna deve preferir `vw_internal_area_landing_context`, não a fila operacional como prova de acesso.
+- Frontend futuro continua proibido de ler `profiles`, `user_global_roles`, `internal_action_target_areas` ou `internal_area_memberships` diretamente.
+
+### Boundary mantido
+- sem UI nova;
+- sem catálogo comercial;
+- sem CS Workspace;
+- sem Finance Workspace;
+- sem Kanban/tarefas;
+- sem projetos operacionais;
+- sem health score;
+- sem RPC nova;
+- sem tabela nova;
+- sem duplicação de identidade, tenant, roles ou memberships.
+
+## OCP V1-C - Product Catalog Foundation
+
+### Leitura materializada no backend
+- `vw_admin_commercial_products`
+- `vw_admin_commercial_product_detail`
+- `vw_admin_commercial_product_plans`
+- `vw_admin_product_area_ownerships`
+
+### Escrita materializada no backend
+- `rpc_admin_create_commercial_product`
+- `rpc_admin_update_commercial_product`
+- `rpc_admin_create_commercial_product_plan`
+- `rpc_admin_update_commercial_product_plan`
+- `rpc_admin_create_commercial_product_module`
+- `rpc_admin_update_commercial_product_module`
+- `rpc_admin_create_commercial_product_feature`
+- `rpc_admin_update_commercial_product_feature`
+- `rpc_admin_set_commercial_plan_feature`
+- `rpc_admin_assign_product_area_ownership`
+- `rpc_admin_archive_product_area_ownership`
+
+### Decisão semântica
+- O catalogo comercial global passa a existir como dominio proprio em `commercial_products`, planos, modulos, features, relacao plano-feature e ownership por area.
+- `customer_account_features` continua sendo feature operacional habilitada por conta e nao foi migrada nem reinterpretada.
+- `product_line` e `account_tier` continuam como resumo operacional em Customer Account, nao fonte canonica de produto/plano.
+- `product_area_ownerships` referencia `internal_action_target_areas.area_key` e nao concede permissao individual; permissao de pessoa continua em `profiles`, `user_global_roles`, `tenant_memberships` e `internal_area_memberships`.
+
+### Regras de consumo
+- Admin/OCP futuro deve ler catalogo comercial por `vw_admin_commercial_products` e detalhe por `vw_admin_commercial_product_detail`.
+- Admin/OCP futuro deve ler planos por `vw_admin_commercial_product_plans`.
+- Admin/OCP futuro deve ler ownership por `vw_admin_product_area_ownerships`.
+- Mutacoes administrativas devem passar exclusivamente pelas RPCs `rpc_admin_*` do catalogo.
+- Views administrativas retornam zero linhas para usuario autenticado sem `platform_admin`.
+- `anon` nao possui leitura do catalogo administrativo.
+- `authenticated` nao possui SELECT ou DML direto nas tabelas base do catalogo.
+- Todas as RPCs novas sao `SECURITY DEFINER` com `SET search_path = ''`.
+- Todas as mutacoes passam por audit trail via `audit.audit_logs`.
+
+### Boundary mantido
+- sem UI nova;
+- sem assinatura cliente-produto-plano;
+- sem `customer_product_subscriptions`;
+- sem `customer_product_feature_entitlements`;
+- sem migrar `customer_account_features`;
+- sem CS Workspace;
+- sem Finance Workspace;
+- sem Kanban/tarefas;
+- sem projetos operacionais;
+- sem health score;
+- sem colunas financeiras ou preco no catalogo V1-C.
+
+## OCP V1-E - Customer Product Subscriptions Foundation
+
+### Leitura materializada no backend
+- `vw_admin_customer_product_subscriptions`
+- `vw_admin_customer_product_subscription_detail`
+- `vw_admin_customer_product_feature_entitlements`
+- `vw_admin_customer_product_internal_owners`
+- `vw_support_customer_product_context`
+
+### Escrita materializada no backend
+- `rpc_admin_create_customer_product_subscription`
+- `rpc_admin_update_customer_product_subscription`
+- `rpc_admin_archive_customer_product_subscription`
+- `rpc_admin_set_customer_product_feature_entitlement`
+- `rpc_admin_archive_customer_product_feature_entitlement`
+- `rpc_admin_assign_customer_product_internal_owner`
+- `rpc_admin_archive_customer_product_internal_owner`
+
+### Decisão semântica
+- `customer_product_subscriptions` materializa o vínculo `tenant_id` -> `product_id` -> `plan_id`.
+- Um tenant pode manter múltiplos produtos ativos, mas não múltiplas assinaturas correntes para o mesmo produto.
+- `customer_product_feature_entitlements` registra entitlement comercial por assinatura e fica separado de `customer_account_features` e dos entitlements de Knowledge.
+- `customer_product_internal_owners` registra ownership operacional interno por assinatura e não concede permissão.
+- O domínio não modela preço, cobrança, invoice, pagamento ou receita.
+
+### Regras de consumo
+- Admin/OCP deve ler assinaturas por `vw_admin_customer_product_subscriptions` e detalhe por `vw_admin_customer_product_subscription_detail`.
+- Admin/OCP deve mutar assinaturas, entitlements e owners apenas pelas RPCs administrativas do lote.
+- Suporte deve usar apenas `vw_support_customer_product_context`, filtrada por `app_private.can_access_support_workspace(tenant_id)`.
+- Views administrativas retornam zero linhas para usuário autenticado sem `platform_admin`.
+- `authenticated` não possui SELECT ou DML direto nas tabelas base.
+- `anon` não possui leitura de tabelas base, views ou execução de RPCs.
+- Todas as RPCs novas são `SECURITY DEFINER` com `SET search_path = ''`.
+- Todas as mutações passam por audit trail via `audit.audit_logs`.
+
+### Consumo frontend atual
+- Em 2026-06-02, `/admin/tenants` passou a consumir `vw_admin_customer_product_subscriptions` e `vw_admin_customer_product_subscription_detail` em uma aba `Subscriptions` somente leitura no detalhe do cliente.
+- Em 2026-06-02, o hardening `OCP V1-E Subscriptions Read Model Hardening` corrigiu `vw_admin_customer_product_subscriptions` para calcular `active_entitlement_count` e `active_owner_count` por agregações independentes por subscription, eliminando multiplicação por join entre features e owners sem alterar o shape público da view.
+- Em 2026-06-04, `/admin/tenants` passou a oferecer mutação governada de subscription usando somente contratos existentes:
+  - leitura do catálogo por `vw_admin_commercial_products` e `vw_admin_commercial_product_detail`;
+  - criação por `rpc_admin_create_customer_product_subscription`;
+  - atualização por `rpc_admin_update_customer_product_subscription`;
+  - arquivamento por `rpc_admin_archive_customer_product_subscription`.
+- Em 2026-06-04, `/support/customers` e `/support/customers/:tenantId` passaram a consumir `vw_support_customer_product_context` para exibir contexto de produto contratado em leitura:
+  - produto e plano contratados;
+  - status ativo/suspenso;
+  - datas de inicio, fim e renovacao;
+  - features visiveis ao suporte;
+  - responsaveis internos por area/role.
+- A UI continua sem mutation de entitlement/owner; `vw_admin_customer_product_subscription_detail` segue sendo a fonte para features comerciais e responsáveis internos exibidos em leitura.
+- A UI de suporte nao consome views administrativas V1-E e nao chama RPCs administrativas de subscription.
+- A UI não modela billing, preço, invoice, payment, revenue ou financeiro.
+
+### Boundary mantido
+- sem UI de mutação de entitlement/owner;
+- sem CS Workspace;
+- sem Finance Workspace;
+- sem cobrança, preço, invoice, payment ou revenue;
+- sem migration remota;
+- sem alteração de `customer_account_features`;
+- sem dado real ou seed customer-facing.
+
+## CS Portfolio Contract Foundation - 2026-06-04
+
+### Leitura materializada no backend
+- `vw_cs_customer_portfolio`
+
+### Gate materializado no backend
+- `app_private.can_access_cs_customer_portfolio(target_tenant_id uuid)`
+
+### Regras de acesso
+- `platform_admin` le a carteira global.
+- Usuario sem `platform_admin` precisa de profile ativo, tenant membership ativa no tenant e membership ativa em `internal_area_memberships` com `area_key = 'customer_success'`.
+- Roles de area autorizadas neste corte: `viewer`, `member` e `manager`.
+
+### Regras de consumo
+- CS deve ler portfolio por `vw_cs_customer_portfolio`.
+- Frontend futuro continua proibido de montar portfolio com composicao local de views de suporte.
+- `vw_support_customer_product_context` permanece contrato de suporte, nao contrato CS.
+- Health score permanece `unavailable` ate contrato proprio.
+- Billing, preco, invoice, payment, revenue e financeiro seguem fora do contrato.
+- Nao ha RPC `rpc_cs_*` neste corte.
+
+### Boundary mantido
+- sem UI `/cs`;
+- sem mutation CS;
+- sem follow-up, tarefa, projeto, reuniao ou plano de acao;
+- sem role global nova de CS;
+- sem dado financeiro;
+- sem leitura direta de tabelas base pelo frontend.
+
 ## Próximos contratos planejados
+- OCP V1-F Customer Portfolio/Workspace Planning:
+  - planejar consumo futuro dos read models V1-E por Admin, Suporte e CS sem criar UI antes de blueprint e autorização explícita.
+  - manter `customer_account_features` como override/habilitacao operacional ate haver decisão de produto e migration explicita para integração com subscription.
+- Atualização posterior - entitlement arquivado no portal cliente:
+  - `knowledge_article_entitlements.archived_at is not null` remove a exposição do artigo em:
+    - `vw_customer_portal_knowledge_articles`
+    - `vw_customer_portal_knowledge_article_detail`
+    - `rpc_customer_search_knowledge_articles`
+  - `ticket_knowledge_links.archived_at is not null` remove a exposição do artigo em:
+    - `vw_customer_portal_ticket_knowledge_links`
+    - busca contextual `ticket_linked` em `rpc_customer_search_knowledge_articles`
+  - a regressão observada em tenant B não veio do contrato backend; a causa raiz ficou no seed QA, que mantinha ativo um entitlement marcado para arquivamento.
 - Ticket -> Knowledge Base assistive linking:
   - backend minimo ja materializado em:
     - `vw_support_ticket_knowledge_links`
@@ -966,7 +2106,7 @@ Fase 6.17:
     - `rpc_support_mark_article_needs_update`
   - review de contrato publico seguro documentada em:
     - `TICKET_KNOWLEDGE_PUBLIC_LINK_CONTRACT_REVIEW.md`
-  - proxima view candidata:
+  - view publica segura materializada em Fase 8.2:
     - `vw_support_knowledge_public_link_candidates`
   - boundary esperado:
     - frontend continua sem leitura de tabela-base
@@ -989,3 +2129,11 @@ Fase 6.17:
 - Frontend usando HTML legado de Octadesk como corpo/UI de artigo.
 - Escrita direta em tabelas críticas sem RPC.
 - Uso do blueprint histórico como contrato executável.
+# Atualização V1-C — autorização efetiva no frontend — 2026-07-22
+
+O read model `vw_internal_actor_workspace_context` deixou de ser apenas um catálogo administrativo: ele agora é carregado pelo contexto autenticado e alimenta o gate, o redirecionamento pós-login e o shell global. A lista de `screen_key` é deduplicada no cliente apenas para composição da navegação; a concessão permanece no banco, com RLS, funções `security definer`, auditoria e escopo de usuário/tenant.
+
+Para usuários sem papel global, uma rota só é considerada autorizada quando seu `screen_key` estiver no contexto efetivo. Os papéis globais continuam funcionando como fallback de compatibilidade e como acesso administrativo amplo para `platform_admin`.
+# Atualização V1-D — catálogo inteligente de telas — 2026-07-22
+
+`vw_admin_internal_screen_catalog` passa a expor, além da tela e rota, `default_area_keys` e `dependency_screen_keys`. Esses metadados são apenas orientação governada: a autorização continua nos grants de vínculo/perfil. Triggers de banco mantêm o fechamento transitivo das dependências quando uma tela é concedida por RPC ou inserção controlada.

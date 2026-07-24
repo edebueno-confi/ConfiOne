@@ -1,0 +1,50 @@
+{
+  "state": "selected",
+  "url": "http://127.0.0.1:4182/support/queue",
+  "innerWidth": 1440,
+  "innerHeight": 900,
+  "scrollHeight": 900,
+  "clientHeight": 900,
+  "hasGlobalScroll": false,
+  "hasHorizontalScroll": false,
+  "selectedTicket": true,
+  "dialogOpen": false,
+  "scrollables": [
+    {
+      "tag": "div",
+      "className": "support-operational-filter-stack__scroll",
+      "width": 182,
+      "height": 203,
+      "scrollHeight": 449,
+      "clientHeight": 203,
+      "scrollWidth": 172,
+      "clientWidth": 172,
+      "overflowY": "auto",
+      "overflowX": "hidden"
+    },
+    {
+      "tag": "div",
+      "className": "support-operational-queue-table__body",
+      "width": 610,
+      "height": 598,
+      "scrollHeight": 1326,
+      "clientHeight": 598,
+      "scrollWidth": 600,
+      "clientWidth": 600,
+      "overflowY": "auto",
+      "overflowX": "hidden"
+    },
+    {
+      "tag": "div",
+      "className": "support-operational-context-panel__body",
+      "width": 290,
+      "height": 679,
+      "scrollHeight": 949,
+      "clientHeight": 679,
+      "scrollWidth": 280,
+      "clientWidth": 280,
+      "overflowY": "auto",
+      "overflowX": "hidden"
+    }
+  ]
+}

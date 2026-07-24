@@ -1,0 +1,24 @@
+{
+  "route": "/admin/customer-portal",
+  "innerWidth": 1600,
+  "innerHeight": 900,
+  "scrollHeight": 900,
+  "clientHeight": 900,
+  "hasGlobalScroll": false,
+  "hasHorizontalScroll": false,
+  "scrollables": [
+    {
+      "tag": "aside",
+      "cls": "min-h-0 overflow-y-auto",
+      "role": null,
+      "scrollHeight": 905,
+      "clientHeight": 884,
+      "scrollWidth": 300,
+      "clientWidth": 300,
+      "overflowY": "auto",
+      "overflowX": "auto",
+      "text": "Contexto selecionadoDetalhes do cliente e ações de governança.Tenant em focoSQSu"
+    }
+  ],
+  "sampleText": "Genius Support OS\n\nOperação interna CX B2B\n\nNAVEGAÇÃO\n\nOperação CX\nFila operacional\nTickets\nClientes B2B\nAcionamentos\nConhecimento\nEngenharia\nFila técnica\nItens técnicos\nRetornos ao CX\nGovernança\nContas B2B\nPortal do cliente\nÁreas internas\nAcessos\nSistema\nGovernança de conhecimento\nDiário de Construção\nDocumentos do produto\nQL\n\nQA Local Platform Admin\n\nAdministrador da plataforma\n\nEncerrar sessão\nFiltros\n\nRefine a lista de clientes e o status do portal.\n\nStatus do portal\nTodos os status\nOperacional\nSuspenso\nArquivado\nEntitlements\nTodos\nAtivos\nArquivados\nPendências\nTodos\nCom pendência\nSem pendência\nBuscar cliente...\n\nGENIUS SUPPORT OS\n\nPortal do cliente\n\nGovernança dos acessos customer-facing, artigos autorizados e vínculos com tickets.\n\nGerenciar acesso\nRecarregar\n\nCLIENTES COM PORTAL\n\n3\n\nUSUÁRIOS COM ACESSO\n\n6\n\nTICKETS VISÍVEIS\n\n28\n\nARTIGOS AUTORIZADOS\n\n20\n\nPENDÊNCIAS\n\n1\n\nClientes com portal\n\nClientes B2B com Portal Cliente governado por acesso, Knowledge e tickets visíveis.\n\n3 clientes\nCLIENTE / TENANT\nSTATUS DO PORTAL\nUSUÁRIOS COM ACESSO\nTICKETS VISÍVEIS\nARTIGOS AUTORIZADOS\nPENDÊNCIAS\nÚLTIMO ACESSO\nSQ\n\nSupport QA Tenant A Operação Enterprise\n\nsupport-qa-a\n\nCom gestão\n\nOperaciona"
+}

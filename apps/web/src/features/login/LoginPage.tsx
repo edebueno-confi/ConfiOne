@@ -1,36 +1,34 @@
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
-import mascotUrl from '../../../assets/brand/genius-mascot.svg';
 import {
-  ContractUnavailableState,
-  ErrorState,
-  LoadingState,
-} from '../../components/states';
-import {
-  AppButton,
-  Field,
-  GhostButton,
-  InlineNotice,
-  Panel,
-  TextInput,
-} from '../../components/ui';
+  MinimalButton,
+  MinimalField,
+  MinimalNotice,
+  MinimalPage,
+  MinimalSurface,
+  MinimalTextInput,
+} from '../../components/minimal-ui';
+import { MinimalState } from '../../components/minimal-states';
+import { ThemeToggle } from '../../components/ThemeToggle';
+import { GeniusMascot } from '../../components/GeniusMascot';
 import { signInWithPassword } from '../auth/auth-api';
 import { useAuthContext } from '../auth/auth-context';
+import {
+  resolvePostLoginRedirect,
+  type PostLoginDenialReason,
+} from '../auth/post-login-redirect';
 
-function sanitizeRedirectTo(rawValue: string | null) {
-  if (!rawValue || !rawValue.startsWith('/') || rawValue.startsWith('//')) {
-    return '/admin/tenants';
-  }
-
-  return rawValue;
-}
+type RedirectResolverState =
+  | { phase: 'idle' | 'loading' }
+  | { phase: 'resolved'; destination: string }
+  | { phase: 'denied'; reason: PostLoginDenialReason }
+  | { phase: 'error'; message: string };
 
 export function LoginPage() {
   const [searchParams] = useSearchParams();
-  const redirectTo = sanitizeRedirectTo(searchParams.get('redirectTo'));
+  const redirectTo = searchParams.get('redirectTo');
   const {
     phase,
-    gate,
     sessionExpired,
     clearSessionExpired,
     configError,
@@ -39,64 +37,119 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [redirectResolver, setRedirectResolver] = useState<RedirectResolverState>({
+    phase: 'idle',
+  });
+
+  useEffect(() => {
+    if (phase !== 'authenticated') {
+      setRedirectResolver({ phase: 'idle' });
+      return;
+    }
+
+    let cancelled = false;
+    setRedirectResolver({ phase: 'loading' });
+
+    resolvePostLoginRedirect(redirectTo)
+      .then((resolution) => {
+        if (cancelled) {
+          return;
+        }
+
+        if (resolution.destination) {
+          setRedirectResolver({
+            phase: 'resolved',
+            destination: resolution.destination,
+          });
+          return;
+        }
+
+        setRedirectResolver({
+          phase: 'denied',
+          reason: resolution.denialReason ?? 'missing-authorized-workspace',
+        });
+      })
+      .catch((error) => {
+        if (cancelled) {
+          return;
+        }
+
+        setRedirectResolver({
+          phase: 'error',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Sua sessão foi encontrada, mas o destino inicial não pôde ser validado.',
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [phase, redirectTo]);
 
   if (phase === 'config-error') {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-6 py-12">
-        <ErrorState
+      <MinimalPage>
+        <MinimalState
           title="Ambiente de acesso indisponível"
           description={
             configError ??
             'As configurações mínimas deste ambiente ainda não foram liberadas.'
           }
+          tone="critical"
         />
-      </div>
+      </MinimalPage>
     );
   }
 
-  if (phase === 'booting' || (phase === 'authenticated' && gate.phase === 'loading')) {
+  if (phase === 'booting' || (phase === 'authenticated' && redirectResolver.phase === 'loading')) {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-6 py-12">
-        <LoadingState
+      <MinimalPage>
+        <MinimalState
           title="Carregando sessão"
           description="Estamos validando seu acesso."
+          loading
         />
-      </div>
+      </MinimalPage>
     );
   }
 
-  if (phase === 'authenticated' && gate.phase === 'ready') {
-    return <Navigate replace to={redirectTo} />;
+  if (phase === 'authenticated' && redirectResolver.phase === 'resolved') {
+    return <Navigate replace to={redirectResolver.destination} />;
   }
 
-  if (phase === 'authenticated' && gate.phase === 'denied') {
+  if (phase === 'authenticated' && redirectResolver.phase === 'denied') {
     return (
       <Navigate
         replace
-        state={{ reason: gate.denialReason }}
+        state={{ reason: redirectResolver.reason }}
         to="/access-denied"
       />
     );
   }
 
-  if (phase === 'authenticated' && gate.phase === 'contract-unavailable') {
+  if (phase === 'authenticated' && redirectResolver.phase === 'error') {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-6 py-12">
-        <ContractUnavailableState contractName="acesso do workspace" />
-      </div>
+      <MinimalPage>
+        <MinimalState
+          description={redirectResolver.message}
+          title="Não foi possível validar sua área inicial"
+          tone="critical"
+        />
+      </MinimalPage>
     );
   }
 
-  if (phase === 'authenticated' && gate.phase === 'error') {
+  if (phase === 'authenticated') {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-6 py-12">
-        <ErrorState
-          description={
-            gate.message ??
-            'Sua sessão foi encontrada, mas o acesso ao workspace não pôde ser validado.'
-          }
+      <MinimalPage>
+        <MinimalState
+          title="Carregando sessão"
+          description="Estamos validando sua área inicial."
+          loading
         />
-      </div>
+      </MinimalPage>
     );
   }
 
@@ -118,67 +171,46 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#eef4ff_0%,#f6f9ff_42%,#f2f5fb_100%)] px-6 py-8 sm:px-8 lg:px-10">
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-6 lg:grid-cols-[minmax(0,1.08fr)_420px]">
-        <section className="relative overflow-hidden rounded-[38px] border border-white/55 bg-[linear-gradient(180deg,#071942_0%,#0b235b_54%,#103071_100%)] p-8 text-white shadow-[0_32px_70px_rgba(20,31,71,0.24)] sm:p-10">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.14),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(48,127,226,0.22),transparent_36%)]" />
-          <div className="relative flex h-full flex-col justify-between gap-10">
-            <div className="flex items-start justify-between gap-6">
-              <div className="space-y-4">
-                <div className="inline-flex items-center gap-3 rounded-full border border-white/14 bg-white/8 px-4 py-2">
-                  <img alt="Mascote Genius" className="w-9 shrink-0" src={mascotUrl} />
-                  <div className="leading-tight">
-                    <p className="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-white/58">
-                      Genius
-                    </p>
-                    <p className="text-base font-semibold text-white">Support OS</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.32em] text-white/58">
-                    Acesso interno
-                  </p>
-                  <h1 className="max-w-2xl text-[clamp(2.8rem,5vw,4.4rem)] font-semibold tracking-[-0.07em] leading-[1.02] text-white">
-                    Entrar no Genius Support OS
-                  </h1>
-                  <p className="max-w-xl text-base leading-8 text-white/74">
-                    Acesse sua área de trabalho autorizada.
-                  </p>
-                </div>
-              </div>
-
-              <div className="hidden rounded-[28px] border border-white/12 bg-white/8 p-4 lg:block">
-                <img alt="Mascote Genius" className="w-32" src={mascotUrl} />
-              </div>
-            </div>
-
-            <div className="rounded-[26px] border border-white/12 bg-white/8 p-5">
-              <p className="text-sm leading-7 text-white/78">
-                Use sua conta aprovada para entrar no ambiente interno.
+    <MinimalPage>
+      <div className="w-full max-w-[26rem]">
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <GeniusMascot size="lg" alt="Gênio, mascote do GeniusOS" />
+            <div>
+              <p className="text-base font-semibold text-[color:var(--minimal-text)]">
+                Genius<span className="text-[color:var(--genius-site-pink)]">OS</span>
+              </p>
+              <p className="text-xs text-[color:var(--minimal-text-tertiary)]">
+                Atendimento Genius e After Sale
               </p>
             </div>
           </div>
-        </section>
+          <ThemeToggle />
+        </div>
 
-        <Panel
-          title="Entrar"
-          description="Acesse sua área de trabalho autorizada."
-          className="rounded-[34px] border-white/70 bg-white/94 p-7 shadow-[0_30px_64px_rgba(20,31,71,0.12)] sm:p-8"
-        >
+        <MinimalSurface>
           <form className="space-y-5" onSubmit={handleSubmit}>
+            <div>
+              <h1 className="text-xl font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
+                Entrar
+              </h1>
+              <p className="mt-1 text-sm text-[color:var(--minimal-text-secondary)]">
+                Use sua conta autorizada para acessar a operação.
+              </p>
+            </div>
+
             {sessionExpired ? (
-              <InlineNotice tone="warning">
+              <MinimalNotice tone="warning">
                 Sua sessão expirou. Entre novamente para continuar.
-              </InlineNotice>
+              </MinimalNotice>
             ) : null}
 
             {errorMessage ? (
-              <InlineNotice tone="critical">{errorMessage}</InlineNotice>
+              <MinimalNotice tone="critical">{errorMessage}</MinimalNotice>
             ) : null}
 
-            <Field label="Email">
-              <TextInput
+            <MinimalField label="Email">
+              <MinimalTextInput
                 autoComplete="email"
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="voce@empresa.com"
@@ -186,47 +218,30 @@ export function LoginPage() {
                 type="email"
                 value={email}
               />
-            </Field>
+            </MinimalField>
 
-            <Field label="Senha">
-              <TextInput
+            <MinimalField label="Senha">
+              <MinimalTextInput
                 autoComplete="current-password"
                 onChange={(event) => setPassword(event.target.value)}
-                placeholder="Digite sua senha"
+                placeholder="Sua senha"
                 required
                 type="password"
                 value={password}
               />
-            </Field>
+            </MinimalField>
 
-            <div className="flex flex-wrap gap-3">
-              <AppButton disabled={submitting} type="submit">
+            <div className="grid gap-4">
+              <MinimalButton className="w-full" loading={submitting} type="submit">
                 {submitting ? 'Validando acesso...' : 'Entrar'}
-              </AppButton>
-              <GhostButton
-                disabled={submitting}
-                onClick={() => {
-                  setEmail('');
-                  setPassword('');
-                  setErrorMessage(null);
-                  clearSessionExpired();
-                }}
-              >
-                Limpar
-              </GhostButton>
-            </div>
-
-            <div className="rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4">
-              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                Acesso
-              </p>
-              <p className="mt-2 text-sm leading-7 text-[color:var(--color-muted)]">
-                Use sua conta aprovada para acessar o ambiente interno.
+              </MinimalButton>
+              <p className="text-center text-xs leading-5 text-[color:var(--minimal-text-tertiary)]">
+                Acesso restrito a contas autorizadas.
               </p>
             </div>
           </form>
-        </Panel>
+        </MinimalSurface>
       </div>
-    </div>
+    </MinimalPage>
   );
 }

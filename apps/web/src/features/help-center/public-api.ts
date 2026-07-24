@@ -2,6 +2,7 @@ import { toAppError } from '../../app/errors';
 import { requireSupabaseBrowserClient } from '../../app/supabase-browser';
 import type {
   PublicKnowledgeArticleDetailRow,
+  PublicKnowledgeArticleAssetRow,
   PublicKnowledgeArticleListRow,
   PublicKnowledgeNavigationRow,
   PublicKnowledgeSearchArticleRow,
@@ -97,6 +98,46 @@ export async function getPublicKnowledgeArticle(
   }
 
   return (data ?? null) as PublicKnowledgeArticleDetailRow | null;
+}
+
+export async function listPublicKnowledgeArticleAssets(articleId: string) {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_public_knowledge_article_assets')
+    .select('*')
+    .eq('article_id', articleId)
+    .order('updated_at', { ascending: true });
+
+  if (error) {
+    throw toAppError(error, 'Falha ao carregar os assets públicos do artigo.');
+  }
+
+  const rows = (data ?? []) as PublicKnowledgeArticleAssetRow[];
+  const enriched = await Promise.all(
+    rows.map(async (row) => {
+      if (row.storage_bucket === 'knowledge-public-assets') {
+        const { data: publicData } = client.storage
+          .from(row.storage_bucket)
+          .getPublicUrl(row.storage_object_path);
+
+        return {
+          ...row,
+          signed_url: publicData.publicUrl,
+        } satisfies PublicKnowledgeArticleAssetRow;
+      }
+
+      const { data: signedData } = await client.storage
+        .from(row.storage_bucket)
+        .createSignedUrl(row.storage_object_path, 60 * 10);
+
+      return {
+        ...row,
+        signed_url: signedData?.signedUrl ?? null,
+      } satisfies PublicKnowledgeArticleAssetRow;
+    }),
+  );
+
+  return enriched;
 }
 
 export async function searchPublicKnowledgeArticles(

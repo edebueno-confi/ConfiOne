@@ -122,3 +122,9 @@ Conteúdo:
 - Fluxo editorial claro.
 - Publicação pública é explícita.
 - Diferença entre interno e público fica evidente.
+
+## Nota V3
+
+- `/admin/knowledge` continua sendo a superfície editorial.
+- Entitlement customer-facing não publica nem aprova artigo.
+- A governança operacional de entitlement e ticket-linked Knowledge do portal cliente fica em `/admin/customer-portal`, reaproveitando contratos editoriais reais sem expor draft, advisory ou checklist interno.

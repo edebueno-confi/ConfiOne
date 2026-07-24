@@ -3,6 +3,274 @@ import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
+import { runReconciledMutation } from '../../scripts/lib/reconciled-mutation.mjs';
+import { resolveSupabaseCliCommand } from '../../scripts/lib/supabase-cli-command.mjs';
+
+const LEGACY_POPULATED_QA_TICKET_TITLE =
+  'QA Support | Operação crítica com histórico extenso, anexos e handoff técnico';
+const POPULATED_QA_TICKET_TITLE =
+  'QA Support | Operação crítica com histórico extenso, anexos e retorno operacional';
+const FETCH_TIMEOUT_MS = Number(process.env.GENIUS_QA_FETCH_TIMEOUT_MS ?? 20_000);
+const PROCESS_TIMEOUT_MS = Number(process.env.GENIUS_QA_PROCESS_TIMEOUT_MS ?? 90_000);
+
+const EXTRA_INBOX_TICKETS = [
+  {
+    tenantSlug: 'support-qa-a',
+    title: 'QA Support | Janela de expedição não refletiu aprovação no tenant enterprise multiunidade',
+    description:
+      'A operação reportou que a janela aprovada não refletiu corretamente no tenant enterprise multiunidade.',
+    priority: 'high',
+    severity: 'medium',
+    source: 'portal',
+    categorySlug: 'operacao-plataforma',
+    operationalReasonSlug: 'classificacao-ajustada',
+    assignee: 'support-agent-a',
+    status: 'in_progress',
+    publicMessage:
+      'Estamos conferindo a janela aprovada e a aplicação operacional para responder com contexto único.',
+    internalNote:
+      'Comparar rollout homologado, variação do tenant e impacto na fila antes de devolver ao cliente.',
+  },
+  {
+    tenantSlug: 'support-qa-a',
+    title: 'QA Support | SLA contratual com virada de turno e cliente em operação contínua 24x7',
+    description:
+      'O cliente questionou o prazo interno durante a virada de turno e pediu validação da leitura operacional.',
+    priority: 'normal',
+    severity: 'low',
+    source: 'email',
+    categorySlug: 'dados-relatorios',
+    operationalReasonSlug: 'classificacao-ajustada',
+    assignee: 'support-manager-a',
+    status: 'waiting_customer',
+    publicMessage:
+      'Solicitamos confirmação da janela operacional aplicada para revisar a leitura do prazo internamente.',
+    internalNote:
+      'Revisar corte operacional e evitar prometer mudança de SLA sem respaldo contratual.',
+  },
+  {
+    tenantSlug: 'support-qa-a',
+    title: 'QA Support | Reprocessamento manual em lote após falha de sincronização de evento externo',
+    description:
+      'Foi solicitado apoio para reprocessamento manual após falha intermitente em evento externo.',
+    priority: 'urgent',
+    severity: 'high',
+    source: 'phone',
+    categorySlug: 'integracao-tecnica',
+    operationalReasonSlug: 'classificacao-inicial',
+    assignee: 'support-manager-a',
+    status: 'waiting_engineering',
+    publicMessage:
+      'A tratativa foi priorizada e o time Genius já recebeu o recorte necessário da sincronização.',
+    internalNote:
+      'Consolidar lote afetado, id externo e janela de erro antes do próximo retorno operacional.',
+  },
+  {
+    tenantSlug: 'support-qa-a',
+    title: 'QA Support | Solicitação de evidência complementar para reenvio logístico com múltiplas coletas',
+    description:
+      'O suporte precisa consolidar a trilha de múltiplas coletas antes do retorno final.',
+    priority: 'normal',
+    severity: 'medium',
+    source: 'portal',
+    categorySlug: 'devolucao-troca',
+    operationalReasonSlug: 'classificacao-ajustada',
+    assignee: 'support-agent-a',
+    status: 'waiting_support',
+    publicMessage:
+      'Estamos reunindo as evidências do reenvio para responder sem fragmentar a comunicação.',
+    internalNote:
+      'Garantir que a fila mostre o histórico completo das coletas relacionadas.',
+  },
+  {
+    tenantSlug: 'support-qa-b',
+    title: 'QA Support | Cliente B com divergência entre motivo homologado e fluxo exibido na experiência autenticada',
+    description:
+      'O tenant B identificou divergência entre o motivo homologado e o fluxo apresentado ao usuário autenticado.',
+    priority: 'high',
+    severity: 'medium',
+    source: 'portal',
+    categorySlug: 'operacao-plataforma',
+    operationalReasonSlug: 'classificacao-inicial',
+    assignee: 'support-agent-b',
+    status: 'triage',
+    publicMessage:
+      'Abrimos a triagem e vamos validar o comportamento observado na experiência autenticada.',
+    internalNote:
+      'Cruzar onboarding assistido, regra ativa e artigos restritos vigentes do tenant B.',
+  },
+  {
+    tenantSlug: 'support-qa-b',
+    title: 'QA Support | Tracking parcial em conta growth com múltiplos centros operacionais ativos',
+    description:
+      'Conta growth reportou tracking parcial e ausência de atualização em parte dos centros operacionais.',
+    priority: 'urgent',
+    severity: 'high',
+    source: 'api',
+    categorySlug: 'integracao-tecnica',
+    operationalReasonSlug: 'classificacao-ajustada',
+    assignee: 'support-agent-b',
+    status: 'in_progress',
+    publicMessage:
+      'Estamos correlacionando os eventos recebidos para consolidar um retorno único ao cliente.',
+    internalNote:
+      'Separar centro afetado, payload mais recente e possível atraso do provedor.',
+  },
+  {
+    tenantSlug: 'support-qa-b',
+    title: 'QA Support | Solicitação de revisão de política operacional em onboarding assistido com restrição de janela',
+    description:
+      'O cliente pediu revisão da política operacional durante onboarding assistido e com janela restrita.',
+    priority: 'low',
+    severity: 'low',
+    source: 'internal',
+    categorySlug: 'dados-relatorios',
+    operationalReasonSlug: 'classificacao-ajustada',
+    assignee: 'support-manager-a',
+    status: 'new',
+    publicMessage:
+      'Ticket aberto para acompanhar a revisão antes de qualquer orientação definitiva ao cliente.',
+    internalNote:
+      'Manter o caso na fila até a confirmação formal da política revisada.',
+  },
+  {
+    tenantSlug: 'support-qa-c',
+    title: 'QA Support | Intake recorrente sem solicitante ativo e contexto reduzido para triagem inicial',
+    description:
+      'Novo ticket de intake aberto sem solicitante ativo para validar consistência da fila em volume.',
+    priority: 'normal',
+    severity: 'medium',
+    source: 'internal',
+    assignee: null,
+    status: 'new',
+    publicMessage:
+      'Registro criado pelo intake para validar o comportamento da fila sem solicitante associado.',
+    internalNote:
+      'Conferir ordenação, visibilidade e leitura operacional do contexto reduzido.',
+    viaRpc: true,
+  },
+  {
+    tenantSlug: 'support-qa-a',
+    title: 'QA Support | Ajuste de classificação após retorno parcial do cliente com evidência textual extensa',
+    description:
+      'O cliente retornou com evidência textual extensa e o suporte precisa reclassificar a tratativa.',
+    priority: 'high',
+    severity: 'medium',
+    source: 'email',
+    categorySlug: 'estorno-reembolso',
+    operationalReasonSlug: 'classificacao-ajustada',
+    assignee: 'support-agent-a',
+    status: 'waiting_customer',
+    publicMessage:
+      'Recebemos o material complementar e pedimos confirmação final de alguns pontos antes de seguir.',
+    internalNote:
+      'Validar se a evidência é suficiente para reclassificação sem envolver nova escalada técnica.',
+  },
+  {
+    tenantSlug: 'support-qa-a',
+    title: 'QA Support | Retorno técnico pronto para devolutiva operacional em caso de integração sensível',
+    legacyTitles: [
+      'QA Support | Retorno de engenharia pronto para devolutiva operacional em caso de integração sensível',
+    ],
+    description:
+      'O suporte recebeu retorno técnico e precisa preparar a devolutiva operacional final.',
+    priority: 'normal',
+    severity: 'low',
+    source: 'internal',
+    categorySlug: 'integracao-tecnica',
+    operationalReasonSlug: 'classificacao-ajustada',
+    assignee: 'support-manager-a',
+    status: 'waiting_support',
+    publicMessage:
+      'A devolutiva técnica está sendo traduzida para o contexto operacional do cliente.',
+    internalNote:
+      'Garantir linguagem clara e sem expor detalhe técnico cru na resposta.',
+  },
+];
+
+const EXTRA_TICKET_TIMELINE_MESSAGES = [
+  {
+    fixtureKey: 'qa-thread-customer-01',
+    ticketTenantSlug: 'support-qa-a',
+    ticketTitle: POPULATED_QA_TICKET_TITLE,
+    actorKey: 'customer-manager-a',
+    visibility: 'customer',
+    lane: 'customer',
+    body:
+      'Abrimos este chamado porque o webhook não respondeu em três tentativas, o painel do cliente segue sem atualização e precisamos de uma posição consolidada.',
+  },
+  {
+    fixtureKey: 'qa-thread-agent-01',
+    ticketTenantSlug: 'support-qa-a',
+    ticketTitle: POPULATED_QA_TICKET_TITLE,
+    actorKey: 'support-manager-a',
+    visibility: 'customer',
+    lane: 'agent',
+    body:
+      'Estamos revisando a trilha operacional completa e já separamos os eventos mais recentes para comparar com a integração ativa do tenant.',
+  },
+  {
+    fixtureKey: 'qa-thread-internal-01',
+    ticketTenantSlug: 'support-qa-a',
+    ticketTitle: POPULATED_QA_TICKET_TITLE,
+    actorKey: 'support-manager-a',
+    visibility: 'internal',
+    lane: 'internal',
+    body:
+      'Confirmar se a fila está lendo corretamente a última devolutiva da engenharia antes de responder em público.',
+  },
+  {
+    fixtureKey: 'qa-thread-customer-02',
+    ticketTenantSlug: 'support-qa-a',
+    ticketTitle: POPULATED_QA_TICKET_TITLE,
+    actorKey: 'customer-user-a',
+    visibility: 'customer',
+    lane: 'customer',
+    body:
+      'O ambiente afetado é produção. Também percebemos atraso na conciliação e isso aumentou o volume de contatos internos.',
+  },
+  {
+    fixtureKey: 'qa-thread-agent-02',
+    ticketTenantSlug: 'support-qa-a',
+    ticketTitle: POPULATED_QA_TICKET_TITLE,
+    actorKey: 'support-agent-a',
+    visibility: 'customer',
+    lane: 'agent',
+    body:
+      'Perfeito. Já incluímos esse recorte na investigação e vamos responder com um próximo passo único para evitar mensagens fragmentadas.',
+  },
+  {
+    fixtureKey: 'qa-thread-internal-02',
+    ticketTenantSlug: 'support-qa-a',
+    ticketTitle: POPULATED_QA_TICKET_TITLE,
+    actorKey: 'support-agent-a',
+    visibility: 'internal',
+    lane: 'internal',
+    body:
+      'Priorizar esta conversa na leitura da inbox, porque ela concentra anexos, vínculo de conhecimento e retorno técnico recente.',
+  },
+  {
+    fixtureKey: 'qa-thread-customer-03',
+    ticketTenantSlug: 'support-qa-a',
+    ticketTitle: POPULATED_QA_TICKET_TITLE,
+    actorKey: 'customer-manager-a',
+    visibility: 'customer',
+    lane: 'customer',
+    body:
+      'Anexamos novas evidências e precisamos confirmar se a tratativa seguirá em validação ou se o suporte já consegue orientar o time operacional.',
+  },
+  {
+    fixtureKey: 'qa-thread-agent-03',
+    ticketTenantSlug: 'support-qa-a',
+    ticketTitle: POPULATED_QA_TICKET_TITLE,
+    actorKey: 'support-manager-a',
+    visibility: 'customer',
+    lane: 'agent',
+    body:
+      'O time Genius já recebeu o contexto necessário. Assim que a validação voltar, consolidamos a orientação operacional e retornamos no mesmo thread.',
+  },
+];
+
 const FIXTURE = {
   qaAdmin: {
     email: 'qa.local.platform-admin@genius.local',
@@ -39,12 +307,156 @@ const FIXTURE = {
       globalRole: 'support_agent',
       tenantSlug: 'support-qa-b',
     },
+    {
+      key: 'engineering-member-a',
+      email: 'qa.local.engineering-member-a@genius.local',
+      password: 'Local-QA-Engineering-A-2026!',
+      fullName: 'QA Local Engineering Member A',
+      globalRole: 'engineering_member',
+      tenantSlug: 'support-qa-a',
+    },
+  ],
+  accessUsers: [
+    {
+      key: 'access-tenant-admin',
+      email: 'qa.local.access-tenant-admin@genius.local',
+      password: 'Local-QA-Access-Admin-2026!',
+      fullName: 'QA Local Access Tenant Admin',
+      tenantSlug: 'support-qa-a',
+      role: 'tenant_admin',
+      status: 'active',
+    },
+    {
+      key: 'access-invited-viewer',
+      email: 'qa.local.access-invited-viewer@genius.local',
+      password: 'Local-QA-Access-Viewer-2026!',
+      fullName: 'QA Local Access Invited Viewer',
+      tenantSlug: 'support-qa-b',
+      role: 'tenant_viewer',
+      status: 'invited',
+    },
+    {
+      key: 'access-revoked-requester',
+      email: 'qa.local.access-revoked-requester@genius.local',
+      password: 'Local-QA-Access-Revoked-2026!',
+      fullName: 'QA Local Access Revoked Requester',
+      tenantSlug: 'support-qa-c',
+      role: 'tenant_requester',
+      status: 'revoked',
+    },
+  ],
+  customerPortalUsers: [
+    {
+      key: 'customer-user-a',
+      email: 'marina.ops@support-qa-a.local',
+      password: 'Local-QA-Customer-A-2026!',
+      fullName: 'Marina Operações QA',
+      tenantSlug: 'support-qa-a',
+      role: 'customer_user',
+      status: 'active',
+      contact: {
+        fullName: 'Marina Operações QA',
+        email: 'marina.ops@support-qa-a.local',
+        phone: '+55 11 91000-0001',
+        jobTitle: 'Coordenação de Operações',
+      },
+    },
+    {
+      key: 'customer-manager-a',
+      email: 'gestao.portal@support-qa-a.local',
+      password: 'Local-QA-Customer-Manager-A-2026!',
+      fullName: 'Gestão Portal QA Tenant A',
+      tenantSlug: 'support-qa-a',
+      role: 'customer_manager',
+      status: 'active',
+      contact: {
+        fullName: 'Gestão Portal QA Tenant A',
+        email: 'gestao.portal@support-qa-a.local',
+        phone: '+55 11 91000-0004',
+        jobTitle: 'Gestão de Atendimento B2B',
+      },
+    },
+    {
+      key: 'customer-user-b',
+      email: 'rafael.integracoes@support-qa-b.local',
+      password: 'Local-QA-Customer-B-2026!',
+      fullName: 'Rafael Integrações QA',
+      tenantSlug: 'support-qa-b',
+      role: 'customer_user',
+      status: 'active',
+      contact: {
+        fullName: 'Rafael Integrações QA',
+        email: 'rafael.integracoes@support-qa-b.local',
+        phone: '+55 11 91000-0002',
+        jobTitle: 'Analista de Integrações',
+      },
+    },
+    {
+      key: 'customer-multi-tenant-a',
+      email: 'camila.multi@support-qa.local',
+      password: 'Local-QA-Customer-Multi-2026!',
+      fullName: 'Camila Multi Tenant QA',
+      tenantSlug: 'support-qa-a',
+      role: 'customer_manager',
+      status: 'active',
+      contact: {
+        fullName: 'Camila Multi Tenant QA',
+        email: 'camila.multi@support-qa.local',
+        phone: '+55 11 91000-0006',
+        jobTitle: 'Coordenação Multi-tenant',
+      },
+    },
+    {
+      key: 'customer-multi-tenant-b',
+      email: 'camila.multi@support-qa.local',
+      password: 'Local-QA-Customer-Multi-2026!',
+      fullName: 'Camila Multi Tenant QA',
+      tenantSlug: 'support-qa-b',
+      role: 'customer_manager',
+      status: 'active',
+      contact: {
+        fullName: 'Camila Multi Tenant QA',
+        email: 'camila.multi@support-qa.local',
+        phone: '+55 11 91000-0007',
+        jobTitle: 'Coordenação Multi-tenant',
+      },
+    },
+    {
+      key: 'customer-multi-tenant-c-blocked',
+      email: 'camila.multi@support-qa.local',
+      password: 'Local-QA-Customer-Multi-2026!',
+      fullName: 'Camila Multi Tenant QA',
+      tenantSlug: 'support-qa-c',
+      role: 'customer_manager',
+      status: 'active',
+      contact: {
+        fullName: 'Camila Multi Tenant QA',
+        email: 'camila.multi@support-qa.local',
+        phone: '+55 11 91000-0008',
+        jobTitle: 'Coordenação Multi-tenant',
+      },
+    },
+    {
+      key: 'customer-no-access',
+      email: 'sem.acesso.portal@support-qa-b.local',
+      password: 'Local-QA-Customer-No-Access-2026!',
+      fullName: 'Cliente Sem Acesso QA',
+      tenantSlug: 'support-qa-b',
+      role: 'customer_user',
+      status: 'revoked',
+      contact: {
+        fullName: 'Cliente Sem Acesso QA',
+        email: 'sem.acesso.portal@support-qa-b.local',
+        phone: '+55 11 91000-0005',
+        jobTitle: 'Contato sem acesso ativo',
+      },
+    },
   ],
   tenants: [
     {
       slug: 'support-qa-a',
       legalName: 'Support QA Tenant A Ltda',
-      displayName: 'Support QA Tenant A',
+      displayName: 'Support QA Tenant A Operação Enterprise',
       contact: {
         fullName: 'Marina Operações QA',
         email: 'marina.ops@support-qa-a.local',
@@ -116,7 +528,7 @@ const FIXTURE = {
     {
       slug: 'support-qa-b',
       legalName: 'Support QA Tenant B Ltda',
-      displayName: 'Support QA Tenant B',
+      displayName: 'Support QA Tenant B Growth Multioperação',
       contact: {
         fullName: 'Rafael Integrações QA',
         email: 'rafael.integracoes@support-qa-b.local',
@@ -142,6 +554,12 @@ const FIXTURE = {
           },
         ],
         features: [
+          {
+            featureKey: 'returns_portal',
+            enabled: true,
+            source: 'contract',
+            notes: 'Portal autenticado também habilitado para o tenant B.',
+          },
           {
             featureKey: 'basic_returns_flow',
             enabled: true,
@@ -170,6 +588,11 @@ const FIXTURE = {
         ],
       },
     },
+    {
+      slug: 'support-qa-c',
+      legalName: 'Support QA Tenant C Ltda',
+      displayName: 'Support QA Tenant C',
+    },
   ],
   tickets: [
     {
@@ -180,8 +603,11 @@ const FIXTURE = {
       priority: 'high',
       severity: 'medium',
       source: 'portal',
+      categorySlug: 'estorno-reembolso',
+      operationalReasonSlug: 'classificacao-inicial',
       assignee: 'support-agent-a',
       status: 'in_progress',
+      slaScenario: 'at_risk',
       publicMessage:
         'Recebemos o caso e estamos validando a trilha operacional da conciliação.',
       internalNote:
@@ -196,12 +622,16 @@ const FIXTURE = {
       priority: 'urgent',
       severity: 'critical',
       source: 'api',
+      categorySlug: 'integracao-tecnica',
+      operationalReasonSlug: 'classificacao-inicial',
       assignee: null,
       status: 'waiting_engineering',
+      slaScenario: 'breached',
       publicMessage:
         'Registramos o incidente e escalamos a validação técnica do endpoint informado.',
       internalNote:
         'Conferir timeout, retries e eventuais bloqueios no endpoint do tenant.',
+      extraTimelineEntries: 16,
     },
     {
       tenantSlug: 'support-qa-a',
@@ -211,6 +641,8 @@ const FIXTURE = {
       priority: 'high',
       severity: 'medium',
       source: 'email',
+      categorySlug: 'devolucao-troca',
+      operationalReasonSlug: 'classificacao-inicial',
       assignee: 'support-manager-a',
       status: 'triage',
       publicMessage:
@@ -226,6 +658,8 @@ const FIXTURE = {
       priority: 'normal',
       severity: 'low',
       source: 'internal',
+      categorySlug: 'dados-relatorios',
+      operationalReasonSlug: 'classificacao-ajustada',
       assignee: null,
       status: 'waiting_customer',
       publicMessage:
@@ -241,6 +675,8 @@ const FIXTURE = {
       priority: 'normal',
       severity: 'medium',
       source: 'phone',
+      categorySlug: 'devolucao-troca',
+      operationalReasonSlug: 'classificacao-ajustada',
       assignee: 'support-agent-a',
       status: 'waiting_support',
       publicMessage:
@@ -256,6 +692,8 @@ const FIXTURE = {
       priority: 'urgent',
       severity: 'high',
       source: 'portal',
+      categorySlug: 'operacao-plataforma',
+      operationalReasonSlug: 'classificacao-inicial',
       assignee: 'support-manager-a',
       status: 'in_progress',
       publicMessage:
@@ -277,6 +715,22 @@ const FIXTURE = {
         'Ticket aberto para acompanhar a aprovação final antes de aplicar a configuração.',
       internalNote:
         'Sem ação técnica agora. Aguarde o retorno do time responsável.',
+    },
+    {
+      tenantSlug: 'support-qa-c',
+    title: 'QA Support | Intake criado sem solicitante identificado',
+      description:
+        'Ticket aberto pelo fluxo real de intake para validar tenant sem contato ativo vinculado.',
+      priority: 'normal',
+      severity: 'medium',
+      source: 'internal',
+      assignee: null,
+      status: 'new',
+      publicMessage:
+        'Fluxo de intake validado sem contato vinculado no momento da abertura.',
+      internalNote:
+        'Confirmar visibilidade na fila e trilha inicial de auditoria após criação via RPC.',
+      viaRpc: true,
     },
     {
       tenantSlug: 'support-qa-b',
@@ -308,6 +762,38 @@ const FIXTURE = {
       internalNote:
         'Aguardando o retorno do cliente com o mapeamento final dos motivos aprovados.',
     },
+    {
+      tenantSlug: 'support-qa-a',
+      title: POPULATED_QA_TICKET_TITLE,
+      legacyTitles: [LEGACY_POPULATED_QA_TICKET_TITLE],
+      description:
+        'Ticket principal da massa local de QA para validar thread longa, anexos múltiplos, links de conhecimento e retorno operacional.',
+      priority: 'urgent',
+      severity: 'critical',
+      source: 'portal',
+      categorySlug: 'integracao-tecnica',
+      operationalReasonSlug: 'classificacao-inicial',
+      assignee: 'support-manager-a',
+      status: 'waiting_engineering',
+      slaScenario: 'breached',
+      publicMessage:
+        'Recebemos o caso principal da QA e já centralizamos a validação operacional com o time Genius.',
+      internalNote:
+        'Usar este ticket para validar densidade, rolagem da thread, evidências, links e atividade recente.',
+      extraTimelineEntries: 22,
+    },
+    ...EXTRA_INBOX_TICKETS,
+  ],
+  ticketTimelineMessages: EXTRA_TICKET_TIMELINE_MESSAGES,
+  customerPortalCollaborations: [
+    {
+      ticketTenantSlug: 'support-qa-a',
+      ticketTitle: 'QA Support | Painel de SLA interno desalinhado',
+      actorKey: 'customer-manager-a',
+      message:
+        'Confirmamos o horário de corte operacional. Podem seguir com a revisão pelo suporte.',
+      acknowledge: true,
+    },
   ],
   knowledgeBase: {
     categories: [
@@ -323,6 +809,13 @@ const FIXTURE = {
         name: 'Suporte restrito tenant A',
         slug: 'support-restrito-tenant-a',
         description: 'Referencias restritas do tenant A.',
+        visibility: 'restricted',
+      },
+      {
+        tenantSlug: 'support-qa-b',
+        name: 'Suporte restrito tenant B',
+        slug: 'support-restrito-tenant-b',
+        description: 'Referências restritas do tenant B.',
         visibility: 'restricted',
       },
     ],
@@ -346,6 +839,85 @@ const FIXTURE = {
         bodyMd:
           'Conteúdo restrito da operação. Não compartilhar com o cliente nem replicar em área pública.',
         visibility: 'restricted',
+      },
+      {
+        tenantSlug: 'support-qa-a',
+        categorySlug: 'support-restrito-tenant-a',
+        title: 'Expedição: checklist autenticado do tenant A',
+        slug: 'expedicao-checklist-autenticado-tenant-a',
+        summary: 'Guia autenticado liberado para o portal do tenant A.',
+        bodyMd:
+          'Conteúdo autenticado customer-facing para o tenant A, com orientações operacionais aprovadas sem expor playbook interno.',
+        visibility: 'restricted',
+      },
+      {
+        tenantSlug: 'support-qa-a',
+        categorySlug: 'support-restrito-tenant-a',
+        title: 'Expedição: retorno controlado para ticket específico',
+        slug: 'expedicao-retorno-controlado-ticket-especifico',
+        summary: 'Orientação restrita liberada apenas para um ticket autorizado.',
+        bodyMd:
+          'Conteúdo restrito aprovado apenas para o ticket específico, sem advisory editorial nem contexto interno bruto.',
+        visibility: 'restricted',
+      },
+      {
+        tenantSlug: 'support-qa-b',
+        categorySlug: 'support-restrito-tenant-b',
+        title: 'Operação da plataforma: artigo restrito do tenant B',
+        slug: 'operacao-plataforma-artigo-restrito-b',
+        summary: 'Guia restrito do tenant B para validar arquivamento de entitlement.',
+        bodyMd:
+          'Conteúdo restrito customer-facing do tenant B, usado para validar a retirada governada de acesso no portal.',
+        visibility: 'restricted',
+      },
+      {
+        tenantSlug: 'support-qa-a',
+        categorySlug: 'support-restrito-tenant-a',
+        title: 'Rascunho restrito que não pode vazar',
+        slug: 'rascunho-restrito-que-nao-pode-vazar',
+        summary: 'Rascunho de fixture para validar bloqueio customer-facing.',
+        bodyMd:
+          'Este rascunho existe apenas para validar que o portal não expõe conteúdo não publicado.',
+        visibility: 'restricted',
+        targetStatus: 'draft',
+      },
+    ],
+    entitlements: [
+      {
+        tenantSlug: 'support-qa-a',
+        actorKey: 'qa-admin',
+        articleSlug: 'expedicao-checklist-autenticado-tenant-a',
+        entitlementScope: 'customer_portal',
+        relationReason:
+          'Liberado para o portal do tenant A como orientação autenticada aprovada.',
+      },
+      {
+        tenantSlug: 'support-qa-b',
+        actorKey: 'qa-admin',
+        articleSlug: 'operacao-plataforma-artigo-restrito-b',
+        entitlementScope: 'tenant',
+        relationReason:
+          'Entitlement arquivado para validar governança de retirada de acesso no portal.',
+        archiveAfterGrant: true,
+      },
+    ],
+    customerTicketLinks: [
+      {
+        ticketTitle: 'QA Support | Divergência na regra de expedição',
+        ticketTenantSlug: 'support-qa-a',
+        actorKey: 'qa-admin',
+        articleSlug: 'expedicao-retorno-controlado-ticket-especifico',
+        relationReason:
+          'Liberado para este ticket porque o fluxo aprovado depende de orientação contextual restrita.',
+      },
+      {
+        ticketTitle: 'QA Support | Regra de motivo precisa de ajuste',
+        ticketTenantSlug: 'support-qa-b',
+        actorKey: 'qa-admin',
+        articleSlug: 'operacao-plataforma-artigo-restrito-b',
+        relationReason:
+          'Vínculo temporário arquivado para validar a retirada governada de artigos ticket-linked no portal.',
+        archiveAfterLink: true,
       },
     ],
     links: [
@@ -372,8 +944,298 @@ const FIXTURE = {
         linkType: 'documentation_gap',
         note: 'Falta uma página dedicada explicando a divergência de expedição aprovada no rollout.',
       },
+      {
+        ticketTitle: POPULATED_QA_TICKET_TITLE,
+        ticketTenantSlug: 'support-qa-a',
+        actorKey: 'support-manager-a',
+        linkType: 'sent_to_customer',
+        articleSlug: 'como-compartilhar-evidencias-em-um-ticket',
+        note: 'Artigo público adicional para validar truncamento e volume de conhecimento relacionado.',
+      },
+      {
+        ticketTitle: POPULATED_QA_TICKET_TITLE,
+        ticketTenantSlug: 'support-qa-a',
+        actorKey: 'support-manager-a',
+        linkType: 'reference_internal',
+        articleSlug: 'erp-diagnostico-interno-webhook',
+        note: 'Playbook interno usado para revisar a investigação longa da fixture de QA.',
+      },
+      {
+        ticketTitle: POPULATED_QA_TICKET_TITLE,
+        ticketTenantSlug: 'support-qa-a',
+        actorKey: 'support-manager-a',
+        linkType: 'documentation_gap',
+        note: 'Ainda falta uma orientação consolidada que una webhook, evidências e devolutiva operacional.',
+      },
     ],
   },
+  engineeringHandoffs: [
+    {
+      ticketTitle: 'QA Support | Conciliacao de devoluções com atraso',
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      workItemType: 'improvement',
+      title: 'Melhorar conciliação de devoluções',
+      description:
+        'Otimizar a confirmação entre lote de conciliação, janela operacional e retorno exibido para o suporte.',
+      handoffNote:
+        'Suporte precisa de rastreabilidade clara para orientar o cliente sem abrir investigação duplicada.',
+    },
+    {
+      ticketTitle: 'QA Support | Webhook sem retorno na integração ERP',
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      workItemType: 'investigation',
+      title: 'Investigar timeout do webhook ERP do tenant A',
+      description:
+        'Consolidar a cronologia do incidente, revisar retries e validar por que o retorno do endpoint não confirmou o processamento.',
+      handoffNote:
+        'Cliente A com operação crítica parada. Suporte já confirmou impacto, janela e ausência de retorno na trilha externa.',
+    },
+    {
+      ticketTitle: 'QA Support | Etiqueta sem baixa automatica',
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      workItemType: 'bug',
+      title: 'Webhooks não disparam na baixa automática',
+      description:
+        'Validar por que etiquetas expedidas não disparam atualização automática no fluxo operacional do cliente.',
+      handoffNote:
+        'A fila logística depende da confirmação para reduzir reenvios manuais e evitar divergência no atendimento.',
+    },
+    {
+      ticketTitle: 'QA Support | Painel de SLA interno desalinhado',
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      workItemType: 'technical_task',
+      title: 'Ajuste no cálculo de prazo de SLA',
+      description:
+        'Revisar o cálculo operacional de prazo aplicado à fila interna e comparar com a janela contratual validada.',
+      handoffNote:
+        'Retorno técnico precisa ser traduzível para o suporte antes de qualquer comunicação ao cliente.',
+    },
+    {
+      ticketTitle: 'QA Support | Reenvio de coleta sem tracking',
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      workItemType: 'investigation',
+      title: 'Investigar falha no processamento de tracking',
+      description:
+        'Conferir a chegada do evento de tracking e o ponto em que a informação deixou de aparecer no atendimento.',
+      handoffNote:
+        'Suporte confirmou impacto operacional e precisa de orientação objetiva para o próximo contato.',
+    },
+    {
+      ticketTitle: 'QA Support | Divergência na regra de expedição',
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      workItemType: 'bug',
+      title: 'Timeout na integração com transportadora',
+      description:
+        'Investigar timeout recorrente na integração de expedição antes de confirmar ajuste operacional ao suporte.',
+      handoffNote:
+        'Caso prioritário do tenant A, com risco de nova divergência se a regra for ajustada sem evidência técnica.',
+    },
+    {
+      ticketTitle: 'QA Support | Ajuste de motivo pendente em homologação',
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      workItemType: 'technical_task',
+      title: 'Refatoração do módulo de regras',
+      description:
+        'Remover duplicidade de avaliação e melhorar testes da regra de motivo antes da liberação operacional.',
+      handoffNote:
+        'Demanda técnica concluível sem exposição ao cliente, mas precisa aparecer na visão semanal de engenharia.',
+    },
+    {
+      ticketTitle: POPULATED_QA_TICKET_TITLE,
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      workItemType: 'investigation',
+      title: 'Investigar trilha extensa da operação crítica QA',
+      description:
+        'Consolidar o histórico de mensagens, anexos e timeout recorrente antes de orientar o suporte sobre a próxima resposta pública.',
+      handoffNote:
+        'Ticket principal da QA visual. A leitura da engenharia precisa aparecer de forma compacta, útil e com contexto suficiente para o suporte.',
+    },
+  ],
+  engineeringOperations: [
+    {
+      handoffTitle: 'Melhorar conciliação de devoluções',
+      actorKey: 'engineering-member-a',
+      assign: true,
+      status: 'triage',
+      updateSummary:
+        'Demanda qualificada com recorte de conciliação e janela operacional confirmada pelo suporte.',
+      updateNextStep:
+        'Mapear pontos de confirmação antes de propor ajuste técnico.',
+    },
+    {
+      handoffTitle: 'Investigar timeout do webhook ERP do tenant A',
+      actorKey: 'engineering-member-a',
+      assign: true,
+      status: 'in_progress',
+      statusSummary:
+        'Engenharia iniciou a demanda e confirmou que a análise técnica deve seguir no tenant A.',
+      statusNextStep: 'Consolidar evidências antes do retorno ao suporte.',
+      updateSummary:
+        'Timeout reproduzido em ambiente controlado sem expor conteúdo sensível.',
+      updateNextStep:
+        'Preparar orientação operacional para o suporte validar com o cliente.',
+    },
+    {
+      handoffTitle: 'Webhooks não disparam na baixa automática',
+      actorKey: 'engineering-member-a',
+      assign: true,
+      status: 'waiting_external',
+      statusSummary:
+        'Validação depende de confirmação externa do evento de baixa recebido pela operação.',
+      statusNextStep:
+        'Aguardar evidência do provedor antes de alterar a regra de tratamento.',
+      updateSummary:
+        'Fluxo interno revisado e sem falha reproduzida com os dados atuais.',
+      updateNextStep:
+        'Solicitar ao suporte evidência do evento externo mais recente.',
+    },
+    {
+      handoffTitle: 'Ajuste no cálculo de prazo de SLA',
+      actorKey: 'engineering-member-a',
+      assign: true,
+      status: 'returned_to_support',
+      statusSummary:
+        'Cálculo revisado e pronto para devolutiva operacional ao suporte.',
+      statusNextStep:
+        'Suporte deve validar a explicação com a janela contratual do cliente.',
+      updateSummary:
+        'Diferença explicada por regra de corte operacional aplicada fora do horário principal.',
+      updateNextStep:
+        'Retornar ao suporte com orientação de leitura do prazo.',
+    },
+    {
+      handoffTitle: 'Investigar falha no processamento de tracking',
+      actorKey: 'engineering-member-a',
+      assign: false,
+      status: 'accepted',
+      statusSummary:
+        'Demanda aceita para análise técnica do processamento de tracking.',
+      statusNextStep:
+        'Definir responsável técnico antes de iniciar alteração.',
+      updateSummary:
+        'Caso aceito e aguardando distribuição interna.',
+      updateNextStep:
+        'Priorizar junto ao responsável da integração logística.',
+    },
+    {
+      handoffTitle: 'Timeout na integração com transportadora',
+      actorKey: 'engineering-member-a',
+      assign: true,
+      status: 'in_progress',
+      statusSummary:
+        'Investigação em andamento com foco no tempo de resposta da transportadora.',
+      statusNextStep:
+        'Comparar tentativas recentes e preparar retorno ao suporte.',
+      updateSummary:
+        'Timeout intermitente confirmado em parte das tentativas monitoradas.',
+      updateNextStep:
+        'Validar se o fallback operacional pode ser acionado no próximo atendimento.',
+    },
+    {
+      handoffTitle: 'Refatoração do módulo de regras',
+      actorKey: 'engineering-member-a',
+      assign: true,
+      status: 'in_progress',
+      statusSummary:
+        'Ajuste técnico em execução para acompanhamento operacional.',
+      statusNextStep:
+        'Concluir validação antes de devolver ao suporte.',
+      updateSummary:
+        'Duplicidade identificada e comportamento validado no fluxo local.',
+      updateNextStep:
+        'Preparar validação final antes do retorno operacional.',
+    },
+    {
+      handoffTitle: 'Investigar trilha extensa da operação crítica QA',
+      actorKey: 'engineering-member-a',
+      assign: true,
+      status: 'in_progress',
+      statusSummary:
+        'A engenharia assumiu o caso principal da QA e está consolidando a trilha técnica para apoiar a resposta operacional.',
+      statusNextStep:
+        'Confirmar evidências mais recentes, revisar timeout e devolver orientação acionável ao suporte.',
+      updateSummary:
+        'Histórico longo reproduzido localmente com o recorte do tenant enterprise e os anexos mais recentes.',
+      updateNextStep:
+        'Preparar devolutiva técnica curta para o suporte responder no mesmo thread.',
+    },
+  ],
+  attachments: [
+    {
+      ticketTitle: 'QA Support | Webhook sem retorno na integração ERP',
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      fileName: 'webhook-erp-timeout-evidencia-qa.txt',
+      contentType: 'text/plain',
+      visibility: 'internal',
+      uploadBoundary: 'internal',
+      body:
+        'Evidência técnica sanitizada para validar a tratativa do ticket com anexo real, sem expor conteúdo sensível.',
+    },
+    {
+      ticketTitle: 'QA Support | Conciliacao de devoluções com atraso',
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'customer-manager-a',
+      fileName: 'conciliacao-devolucoes-portal-qa.pdf',
+      contentType: 'application/pdf',
+      visibility: 'customer',
+      uploadBoundary: 'customer',
+      body:
+        'Evidência operacional da fila de conciliação para o tenant A. Conteúdo sanitizado para validar o fluxo seguro de anexos.',
+    },
+    {
+      ticketTitle: POPULATED_QA_TICKET_TITLE,
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-manager-a',
+      fileName: 'operacao-critica-qA-retorno-webhook.txt',
+      contentType: 'text/plain',
+      visibility: 'internal',
+      uploadBoundary: 'internal',
+      body:
+        'Resumo sanitizado do histórico do webhook com foco em timeout, retries e janelas de validação operacional.',
+    },
+    {
+      ticketTitle: POPULATED_QA_TICKET_TITLE,
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'support-agent-a',
+      fileName: 'operacao-critica-qa-log-integracao.json',
+      contentType: 'application/json',
+      visibility: 'internal',
+      uploadBoundary: 'internal',
+      body:
+        '{"event":"webhook_timeout","tenant":"support-qa-a","note":"payload sanitizado para validacao local da UI"}',
+    },
+    {
+      ticketTitle: POPULATED_QA_TICKET_TITLE,
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'customer-manager-a',
+      fileName: 'operacao-critica-qa-evidencia-cliente.pdf',
+      contentType: 'application/pdf',
+      visibility: 'customer',
+      uploadBoundary: 'customer',
+      body:
+        'Documento sanitizado do cliente com o recorte operacional do incidente principal de QA.',
+    },
+    {
+      ticketTitle: POPULATED_QA_TICKET_TITLE,
+      ticketTenantSlug: 'support-qa-a',
+      actorKey: 'customer-user-a',
+      fileName: 'operacao-critica-qa-captura-painel.png',
+      contentType: 'image/png',
+      visibility: 'customer',
+      uploadBoundary: 'customer',
+      body:
+        '2026-05-14T09:00:00Z timeout recorte sanitizado para validar o rail de evidencias\n2026-05-14T09:03:00Z retry segunda tentativa sem retorno',
+    },
+  ],
   publicHelpCenter: {
     legacyCategorySlugs: ['primeiros-passos-genius'],
     categories: [
@@ -574,26 +1436,103 @@ function fail(message) {
   process.exit(1);
 }
 
-function localSupabaseCommandArgs(args) {
-  const localSupabaseBinary = join(
-    process.cwd(),
-    'node_modules',
-    'supabase',
-    'bin',
-    process.platform === 'win32' ? 'supabase.exe' : 'supabase',
-  );
+function logStep(message) {
+  console.log(`[support-fixture] ${message}`);
+}
 
-  if (existsSync(localSupabaseBinary)) {
-    return {
-      command: localSupabaseBinary,
-      args,
-    };
+async function fetchWithTimeout(label, url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error(`Timeout em ${label} apos ${timeoutMs}ms.`);
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function readLocalSupabaseStatusEnv() {
+  const status = spawnSync('npx', ['supabase', 'status', '-o', 'env'], {
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: 'utf-8',
+    shell: process.platform === 'win32',
+    timeout: PROCESS_TIMEOUT_MS,
+  });
+
+  if (status.error) {
+    fail(
+      status.error.code === 'ETIMEDOUT'
+        ? 'Timeout ao ler o ambiente local do Supabase.'
+        : status.error.message,
+    );
   }
 
-  return {
-    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    args: ['supabase', ...args],
-  };
+  if (status.status !== 0) {
+    fail(`Falha ao ler o ambiente local do Supabase: ${status.stderr || status.stdout}`);
+  }
+
+  const entries = {};
+  for (const rawLine of status.stdout.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || !line.includes('=')) {
+      continue;
+    }
+
+    const separatorIndex = line.indexOf('=');
+    const key = line.slice(0, separatorIndex);
+    const rawValue = line.slice(separatorIndex + 1).trim();
+    entries[key] = rawValue.replace(/^"/, '').replace(/"$/, '');
+  }
+
+  return entries;
+}
+
+async function isEdgeRuntimeHealthy(apiUrl) {
+  try {
+    const response = await fetchWithTimeout(
+      'health check da Edge Runtime local',
+      `${apiUrl.replace(/\/$/, '')}/functions/v1/_internal/health`,
+      { method: 'HEAD' },
+      5_000,
+    );
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function ensureLocalEdgeRuntime() {
+  logStep('validando Edge Runtime local');
+  const localEnv = readLocalSupabaseStatusEnv();
+  const apiUrl = localEnv.API_URL;
+  const anonKey = localEnv.ANON_KEY;
+
+  if (!apiUrl || !anonKey) {
+    fail('API_URL ou ANON_KEY ausentes no Supabase local.');
+  }
+
+  if (await isEdgeRuntimeHealthy(apiUrl)) {
+    logStep('Edge Runtime local saudavel');
+    return { apiUrl, anonKey };
+  }
+
+  fail(
+    'Edge Runtime local indisponivel. Rode npm run supabase:start e aguarde readiness; a fixture nao inicia functions serve porque isso exigiria SERVICE_ROLE_KEY local.',
+  );
+}
+
+function localSupabaseCommandArgs(args) {
+  return resolveSupabaseCliCommand(args);
 }
 
 function runProcess(command, args, options = {}) {
@@ -602,10 +1541,14 @@ function runProcess(command, args, options = {}) {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
     env: process.env,
+    timeout: PROCESS_TIMEOUT_MS,
     ...options,
   });
 
   if (result.error) {
+    if (result.error.code === 'ETIMEDOUT') {
+      fail(`Timeout ao executar ${command} ${args.join(' ')}.`);
+    }
     fail(result.error.message);
   }
 
@@ -639,7 +1582,6 @@ function runSupabaseStatusEnv() {
 function assertLocalOnly(envMap) {
   const apiUrl = envMap.get('API_URL') ?? '';
   const dbUrl = envMap.get('DB_URL') ?? '';
-  const serviceRoleKey = envMap.get('SERVICE_ROLE_KEY') ?? '';
   const anonKey = envMap.get('ANON_KEY') ?? '';
 
   const isLocalApi =
@@ -647,15 +1589,14 @@ function assertLocalOnly(envMap) {
     apiUrl.startsWith('http://localhost:');
   const isLocalDb = dbUrl.includes('@127.0.0.1:') || dbUrl.includes('@localhost:');
 
-  if (!isLocalApi || !isLocalDb || !serviceRoleKey || !anonKey) {
+  if (!isLocalApi || !isLocalDb || !anonKey) {
     fail(
-      'Fixture de suporte bloqueada: este script so pode rodar contra o Supabase local com API_URL/DB_URL locais e chaves locais validas.',
+      'Fixture de suporte bloqueada: este script so pode rodar contra o Supabase local com API_URL/DB_URL locais e ANON_KEY local valida.',
     );
   }
 
   return {
     apiUrl,
-    serviceRoleKey,
     anonKey,
   };
 }
@@ -698,7 +1639,11 @@ function runSupabaseDbQuery(sql) {
 
     if (Array.isArray(parsed)) {
       const rowsEntry = [...parsed].reverse().find((entry) => Array.isArray(entry?.rows));
-      return rowsEntry ?? { rows: [] };
+      if (rowsEntry) {
+        return rowsEntry;
+      }
+      // CLI nova (>=2.105): `db query --output json` retorna as linhas como array direto.
+      return { rows: parsed };
     }
 
     if (parsed && typeof parsed === 'object' && Array.isArray(parsed.results)) {
@@ -725,21 +1670,35 @@ async function signInLocalUser({ apiUrl, anonKey, email, password }) {
 
   for (let attempt = 1; attempt <= 5; attempt += 1) {
     try {
-      const response = await fetch(`${apiUrl}/auth/v1/token?grant_type=password`, {
-        method: 'POST',
-        headers: {
-          apikey: anonKey,
-          'Content-Type': 'application/json',
+      const response = await fetchWithTimeout(
+        `login local ${email}`,
+        `${apiUrl}/auth/v1/token?grant_type=password`,
+        {
+          method: 'POST',
+          headers: {
+            apikey: anonKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            password,
+          }),
         },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
+      );
 
       if (!response.ok) {
         const detail = await response.text();
-        fail(`Falha ao autenticar fixture local ${email}: ${response.status} ${detail}`);
+        const isTransient =
+          [502, 503, 504].includes(response.status) ||
+          /issued at future|upstream|temporar/i.test(detail);
+
+        if (!isTransient || attempt === 5) {
+          fail(`Falha ao autenticar fixture local ${email}: ${response.status} ${detail}`);
+        }
+
+        lastError = new Error(`${response.status} ${detail}`);
+        await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+        continue;
       }
 
       return response.json();
@@ -762,16 +1721,20 @@ async function signInLocalUser({ apiUrl, anonKey, email, password }) {
 }
 
 async function callRpcAsUser({ apiUrl, anonKey, accessToken, rpcName, body }) {
-  const response = await fetch(`${apiUrl}/rest/v1/rpc/${rpcName}`, {
-    method: 'POST',
-    headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-      Prefer: 'return=representation',
+  const response = await fetchWithTimeout(
+    `RPC ${rpcName}`,
+    `${apiUrl}/rest/v1/rpc/${rpcName}`,
+    {
+      method: 'POST',
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  });
+  );
 
   if (!response.ok) {
     const detail = await response.text();
@@ -801,61 +1764,139 @@ function queryAuthUserByEmail(email) {
   return result.rows?.[0] ?? null;
 }
 
-async function createOrUpdateAuthUser({
-  apiUrl,
-  serviceRoleKey,
-  email,
-  password,
-  fullName,
-}) {
-  const existingUser = queryAuthUserByEmail(email);
-  const payload = {
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: {
-      full_name: fullName,
-      name: fullName,
-      locale: 'pt-BR',
-      timezone: 'America/Sao_Paulo',
-    },
-  };
+async function createOrUpdateAuthUser({ email, password, fullName }) {
+  const result = runSupabaseDbQuery(`
+    with input as (
+      select
+        coalesce(
+          (select id from auth.users where email = '${sqlEscape(email)}'),
+          gen_random_uuid()
+        ) as id,
+        '${sqlEscape(email)}'::text as email,
+        '${sqlEscape(password)}'::text as password,
+        '${sqlEscape(fullName)}'::text as full_name
+    ),
+    upsert_user as (
+      insert into auth.users (
+        instance_id,
+        id,
+        aud,
+        role,
+        email,
+        encrypted_password,
+        email_confirmed_at,
+        confirmation_token,
+        recovery_token,
+        email_change_token_new,
+        email_change,
+        email_change_token_current,
+        phone,
+        phone_change,
+        phone_change_token,
+        reauthentication_token,
+        raw_app_meta_data,
+        raw_user_meta_data,
+        is_sso_user,
+        is_anonymous,
+        created_at,
+        updated_at
+      )
+      select
+        '00000000-0000-0000-0000-000000000000'::uuid,
+        input.id,
+        'authenticated',
+        'authenticated',
+        input.email,
+        crypt(input.password, gen_salt('bf')),
+        timezone('utc', now()),
+        '',
+        '',
+        '',
+        '',
+        '',
+        null,
+        '',
+        '',
+        '',
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        jsonb_build_object(
+          'full_name', input.full_name,
+          'name', input.full_name,
+          'locale', 'pt-BR',
+          'timezone', 'America/Sao_Paulo',
+          'email_verified', true
+        ),
+        false,
+        false,
+        timezone('utc', now()),
+        timezone('utc', now())
+      from input
+      on conflict (id) do update
+      set
+        email = excluded.email,
+        encrypted_password = excluded.encrypted_password,
+        email_confirmed_at = excluded.email_confirmed_at,
+        confirmation_token = '',
+        recovery_token = '',
+        email_change_token_new = '',
+        email_change = '',
+        email_change_token_current = '',
+        phone = null,
+        phone_change = '',
+        phone_change_token = '',
+        reauthentication_token = '',
+        raw_app_meta_data = excluded.raw_app_meta_data,
+        raw_user_meta_data = excluded.raw_user_meta_data,
+        is_sso_user = false,
+        is_anonymous = false,
+        deleted_at = null,
+        updated_at = timezone('utc', now())
+      returning id, email
+    ),
+    upsert_identity as (
+      insert into auth.identities (
+        provider_id,
+        user_id,
+        identity_data,
+        provider,
+        last_sign_in_at,
+        created_at,
+        updated_at
+      )
+      select
+        upsert_user.id::text,
+        upsert_user.id,
+        jsonb_build_object(
+          'sub', upsert_user.id::text,
+          'email', upsert_user.email,
+          'email_verified', true,
+          'phone_verified', false
+        ),
+        'email',
+        timezone('utc', now()),
+        timezone('utc', now()),
+        timezone('utc', now())
+      from upsert_user
+      on conflict on constraint identities_provider_id_provider_unique
+      do update
+      set
+        user_id = excluded.user_id,
+        identity_data = excluded.identity_data,
+        updated_at = timezone('utc', now())
+      returning user_id
+    )
+    select
+      (select id::text from upsert_user) as id,
+      (select email::text from upsert_user) as email,
+      (select count(*)::integer from upsert_identity) as identity_count;
+  `);
 
-  if (existingUser?.id) {
-    const updateResponse = await fetch(`${apiUrl}/auth/v1/admin/users/${existingUser.id}`, {
-      method: 'PUT',
-      headers: {
-        apikey: serviceRoleKey,
-        Authorization: `Bearer ${serviceRoleKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!updateResponse.ok) {
-      const detail = await updateResponse.text();
-      fail(`Falha ao atualizar usuario Auth local ${email}: ${updateResponse.status} ${detail}`);
-    }
-
-    return updateResponse.json();
+  const user = result.rows?.[0] ?? null;
+  if (!user?.id || user.identity_count !== 1) {
+    fail(`Falha ao materializar usuario Auth local por SQL: ${email}.`);
   }
 
-  const createResponse = await fetch(`${apiUrl}/auth/v1/admin/users`, {
-    method: 'POST',
-    headers: {
-      apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!createResponse.ok) {
-    const detail = await createResponse.text();
-    fail(`Falha ao criar usuario Auth local ${email}: ${createResponse.status} ${detail}`);
-  }
-
-  return createResponse.json();
+  return user;
 }
 
 function queryProfileByEmail(email) {
@@ -869,6 +1910,422 @@ function queryProfileByEmail(email) {
   `);
 
   return result.rows?.[0] ?? null;
+}
+
+function queryCommercialProductByKey(productKey) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id, product_key, display_name, status::text as status
+    from public.commercial_products
+    where product_key = '${sqlEscape(productKey)}'
+    order by created_at asc
+    limit 1;
+  `);
+
+  return result.rows?.[0] ?? null;
+}
+
+function queryCommercialProductPlanByKey(productId, planKey) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id, product_id::text as product_id, plan_key, display_name, status::text as status
+    from public.commercial_product_plans
+    where product_id = '${sqlEscape(productId)}'::uuid
+      and plan_key = '${sqlEscape(planKey)}'
+    order by created_at asc
+    limit 1;
+  `);
+
+  return result.rows?.[0] ?? null;
+}
+
+function queryCommercialProductFeatureByKey(productId, featureKey) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id, product_id::text as product_id, feature_key, display_name, status::text as status
+    from public.commercial_product_features
+    where product_id = '${sqlEscape(productId)}'::uuid
+      and feature_key = '${sqlEscape(featureKey)}'
+    order by created_at asc
+    limit 1;
+  `);
+
+  return result.rows?.[0] ?? null;
+}
+
+function queryCustomerProductSubscription(tenantId, productId) {
+  const result = runSupabaseDbQuery(`
+    select
+      id::text as id,
+      tenant_id::text as tenant_id,
+      product_id::text as product_id,
+      plan_id::text as plan_id,
+      status::text as status
+    from public.customer_product_subscriptions
+    where tenant_id = '${sqlEscape(tenantId)}'::uuid
+      and product_id = '${sqlEscape(productId)}'::uuid
+      and archived_at is null
+      and status in ('pending', 'active', 'suspended')
+    order by created_at asc
+    limit 1;
+  `);
+
+  return result.rows?.[0] ?? null;
+}
+
+function queryOcpV1ESubscriptionSummary({ actorUserId, tenantSlug, productKey }) {
+  const result = runSupabaseDbQuery(`
+    with auth_context as (
+      select
+        set_config('request.jwt.claim.role', 'authenticated', true),
+        set_config('request.jwt.claim.sub', '${sqlEscape(actorUserId)}', true)
+    )
+    select jsonb_build_object(
+      'subscription', (
+        select to_jsonb(subscription)
+        from public.vw_admin_customer_product_subscriptions as subscription
+        where subscription.tenant_slug = '${sqlEscape(tenantSlug)}'
+          and subscription.product_key = '${sqlEscape(productKey)}'
+        order by subscription.created_at asc
+        limit 1
+      ),
+      'detail', (
+        select jsonb_build_object(
+          'subscription_id', detail.subscription_id,
+          'tenant_slug', detail.tenant_slug,
+          'product_key', detail.product_key,
+          'product_display_name', detail.product_display_name,
+          'plan_key', detail.plan_key,
+          'plan_display_name', detail.plan_display_name,
+          'status', detail.status,
+          'entitlements_count', jsonb_array_length(coalesce(detail.entitlements, '[]'::jsonb)),
+          'owners_count', jsonb_array_length(coalesce(detail.owners, '[]'::jsonb)),
+          'entitlements', detail.entitlements,
+          'owners', detail.owners
+        )
+        from public.vw_admin_customer_product_subscription_detail as detail
+        where detail.tenant_slug = '${sqlEscape(tenantSlug)}'
+          and detail.product_key = '${sqlEscape(productKey)}'
+        order by detail.created_at asc
+        limit 1
+      )
+    ) as summary
+    from auth_context;
+  `);
+
+  return result.rows?.[0]?.summary ?? {};
+}
+
+async function ensureCommercialProduct({ adminSession, product }) {
+  const existing = queryCommercialProductByKey(product.productKey);
+  if (existing?.id) {
+    if (existing.status !== product.status) {
+      await callRpcAsUser({
+        ...adminSession,
+        rpcName: 'rpc_admin_update_commercial_product',
+        body: {
+          p_product_id: existing.id,
+          p_display_name: product.displayName,
+          p_description: product.description,
+          p_status: product.status,
+        },
+      });
+    }
+
+    return existing.id;
+  }
+
+  const created = await callRpcAsUser({
+    ...adminSession,
+    rpcName: 'rpc_admin_create_commercial_product',
+    body: {
+      p_product_key: product.productKey,
+      p_display_name: product.displayName,
+      p_description: product.description,
+      p_status: product.status,
+    },
+  });
+
+  return created?.id ?? queryCommercialProductByKey(product.productKey)?.id;
+}
+
+async function ensureCommercialProductPlan({ adminSession, productId, plan }) {
+  const existing = queryCommercialProductPlanByKey(productId, plan.planKey);
+  if (existing?.id) {
+    if (existing.status !== plan.status) {
+      await callRpcAsUser({
+        ...adminSession,
+        rpcName: 'rpc_admin_update_commercial_product_plan',
+        body: {
+          p_plan_id: existing.id,
+          p_display_name: plan.displayName,
+          p_description: plan.description,
+          p_status: plan.status,
+          p_sort_order: plan.sortOrder,
+        },
+      });
+    }
+
+    return existing.id;
+  }
+
+  const created = await callRpcAsUser({
+    ...adminSession,
+    rpcName: 'rpc_admin_create_commercial_product_plan',
+    body: {
+      p_product_id: productId,
+      p_plan_key: plan.planKey,
+      p_display_name: plan.displayName,
+      p_description: plan.description,
+      p_status: plan.status,
+      p_sort_order: plan.sortOrder,
+    },
+  });
+
+  return created?.id ?? queryCommercialProductPlanByKey(productId, plan.planKey)?.id;
+}
+
+async function ensureCommercialProductFeature({ adminSession, productId, feature }) {
+  const existing = queryCommercialProductFeatureByKey(productId, feature.featureKey);
+  if (existing?.id) {
+    if (existing.status !== feature.status) {
+      await callRpcAsUser({
+        ...adminSession,
+        rpcName: 'rpc_admin_update_commercial_product_feature',
+        body: {
+          p_feature_id: existing.id,
+          p_display_name: feature.displayName,
+          p_module_id: null,
+          p_description: feature.description,
+          p_status: feature.status,
+          p_customer_visible_default: feature.customerVisibleDefault,
+          p_support_visible_default: feature.supportVisibleDefault,
+          p_sort_order: feature.sortOrder,
+        },
+      });
+    }
+
+    return existing.id;
+  }
+
+  const created = await callRpcAsUser({
+    ...adminSession,
+    rpcName: 'rpc_admin_create_commercial_product_feature',
+    body: {
+      p_product_id: productId,
+      p_feature_key: feature.featureKey,
+      p_display_name: feature.displayName,
+      p_module_id: null,
+      p_description: feature.description,
+      p_status: feature.status,
+      p_customer_visible_default: feature.customerVisibleDefault,
+      p_support_visible_default: feature.supportVisibleDefault,
+      p_sort_order: feature.sortOrder,
+    },
+  });
+
+  return created?.id ?? queryCommercialProductFeatureByKey(productId, feature.featureKey)?.id;
+}
+
+async function ensureCustomerProductSubscription({
+  adminSession,
+  tenantId,
+  productId,
+  planId,
+}) {
+  const existing = queryCustomerProductSubscription(tenantId, productId);
+  if (existing?.id) {
+    if (existing.status !== 'active' || existing.plan_id !== planId) {
+      await callRpcAsUser({
+        ...adminSession,
+        rpcName: 'rpc_admin_update_customer_product_subscription',
+        body: {
+          p_subscription_id: existing.id,
+          p_plan_id: planId,
+          p_status: 'active',
+          p_started_at: null,
+          p_ended_at: null,
+          p_renewal_at: null,
+          p_contract_reference: 'QA-OCP-V1E-LOCAL',
+          p_notes_internal: 'Fixture local sanitizada para validacao do MVP operacional.',
+          p_metadata: {
+            fixture: 'local_support_workspace',
+            containsBilling: false,
+          },
+        },
+      });
+    }
+
+    return existing.id;
+  }
+
+  const created = await callRpcAsUser({
+    ...adminSession,
+    rpcName: 'rpc_admin_create_customer_product_subscription',
+    body: {
+      p_tenant_id: tenantId,
+      p_product_id: productId,
+      p_plan_id: planId,
+      p_status: 'active',
+      p_started_at: new Date('2026-06-01T00:00:00.000Z').toISOString(),
+      p_renewal_at: new Date('2027-06-01T00:00:00.000Z').toISOString(),
+      p_contract_reference: 'QA-OCP-V1E-LOCAL',
+      p_source: 'manual_admin',
+      p_notes_internal: 'Fixture local sanitizada para validacao do MVP operacional.',
+      p_metadata: {
+        fixture: 'local_support_workspace',
+        containsBilling: false,
+      },
+    },
+  });
+
+  return created?.id ?? queryCustomerProductSubscription(tenantId, productId)?.id;
+}
+
+async function ensureOcpV1ESubscriptionsFixture({ adminSession, tenantMap, operatorMap }) {
+  const tenantId = tenantMap.get('support-qa-a');
+  const adminUserId = operatorMap.get('qa-admin');
+  const supportManagerId = operatorMap.get('support-manager-a');
+
+  if (!tenantId) {
+    fail('Tenant support-qa-a ausente para fixture OCP V1-E.');
+  }
+
+  if (!adminUserId) {
+    fail('QA admin ausente para fixture OCP V1-E.');
+  }
+
+  if (!supportManagerId) {
+    fail('Support manager support-manager-a ausente para fixture OCP V1-E.');
+  }
+
+  const productId = await ensureCommercialProduct({
+    adminSession,
+    product: {
+      productKey: 'genius_returns_local_qa',
+      displayName: 'Genius Returns',
+      description: 'Produto operacional para validacao local de subscriptions V1-E.',
+      status: 'active',
+    },
+  });
+
+  if (!productId) {
+    fail('Produto OCP V1-E local nao foi materializado.');
+  }
+
+  const planId = await ensureCommercialProductPlan({
+    adminSession,
+    productId,
+    plan: {
+      planKey: 'enterprise',
+      displayName: 'Enterprise',
+      description: 'Plano enterprise sem preco, billing ou financeiro no fixture local.',
+      status: 'active',
+      sortOrder: 10,
+    },
+  });
+
+  if (!planId) {
+    fail('Plano OCP V1-E local nao foi materializado.');
+  }
+
+  const featureIds = [];
+  for (const feature of [
+    {
+      featureKey: 'returns_portal',
+      displayName: 'Portal de reversa',
+      description: 'Feature comercial visivel para suporte e portal autorizado.',
+      status: 'active',
+      customerVisibleDefault: true,
+      supportVisibleDefault: true,
+      sortOrder: 10,
+      entitlementSource: 'plan',
+      reason: 'Feature incluida no plano enterprise local.',
+    },
+    {
+      featureKey: 'priority_support',
+      displayName: 'Suporte prioritario',
+      description: 'Feature comercial adicional para validar agregacao sem duplicacao.',
+      status: 'active',
+      customerVisibleDefault: false,
+      supportVisibleDefault: true,
+      sortOrder: 20,
+      entitlementSource: 'addon',
+      reason: 'Addon local para validar contagens independentes.',
+    },
+  ]) {
+    const featureId = await ensureCommercialProductFeature({
+      adminSession,
+      productId,
+      feature,
+    });
+
+    if (!featureId) {
+      fail(`Feature OCP V1-E local ausente: ${feature.featureKey}.`);
+    }
+
+    featureIds.push({ ...feature, id: featureId });
+  }
+
+  const subscriptionId = await ensureCustomerProductSubscription({
+    adminSession,
+    tenantId,
+    productId,
+    planId,
+  });
+
+  if (!subscriptionId) {
+    fail('Subscription OCP V1-E local nao foi materializada.');
+  }
+
+  for (const feature of featureIds) {
+    await callRpcAsUser({
+      ...adminSession,
+      rpcName: 'rpc_admin_set_customer_product_feature_entitlement',
+      body: {
+        p_subscription_id: subscriptionId,
+        p_feature_id: feature.id,
+        p_entitlement_source: feature.entitlementSource,
+        p_status: 'active',
+        p_reason: feature.reason,
+        p_starts_at: new Date('2026-06-01T00:00:00.000Z').toISOString(),
+        p_ends_at: null,
+        p_metadata: {
+          fixture: 'local_support_workspace',
+          containsBilling: false,
+        },
+      },
+    });
+  }
+
+  await callRpcAsUser({
+    ...adminSession,
+    rpcName: 'rpc_admin_assign_customer_product_internal_owner',
+    body: {
+      p_subscription_id: subscriptionId,
+      p_owner_role: 'support_owner',
+      p_owner_user_id: null,
+      p_area_key: 'operations',
+      p_status: 'active',
+      p_notes_internal: 'Area operacional responsavel pela subscription local.',
+    },
+  });
+
+  await callRpcAsUser({
+    ...adminSession,
+    rpcName: 'rpc_admin_assign_customer_product_internal_owner',
+    body: {
+      p_subscription_id: subscriptionId,
+      p_owner_role: 'cs_owner',
+      p_owner_user_id: supportManagerId,
+      p_area_key: null,
+      p_status: 'active',
+      p_notes_internal: 'Responsavel interno para validar ownership nominal no Admin.',
+    },
+  });
+
+  return queryOcpV1ESubscriptionSummary({
+    actorUserId: adminUserId,
+    tenantSlug: 'support-qa-a',
+    productKey: 'genius_returns_local_qa',
+  });
 }
 
 function bootstrapFirstPlatformAdmin(userId) {
@@ -887,10 +2344,14 @@ function bootstrapFirstPlatformAdmin(userId) {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
       env: process.env,
+      timeout: PROCESS_TIMEOUT_MS,
     },
   );
 
   if (result.error) {
+    if (result.error.code === 'ETIMEDOUT') {
+      fail('Timeout ao executar bootstrap local do platform_admin de suporte.');
+    }
     fail(result.error.message);
   }
 
@@ -962,7 +2423,13 @@ function ensureGlobalRole({ actorUserId, userId, role }) {
   `);
 }
 
-function ensureTenantMembership({ actorUserId, tenantId, userId, role = 'tenant_viewer' }) {
+function ensureTenantMembership({
+  actorUserId,
+  tenantId,
+  userId,
+  role = 'tenant_viewer',
+  status = 'active',
+}) {
   runSupabaseDbQuery(`
     insert into public.tenant_memberships (
       tenant_id,
@@ -977,7 +2444,7 @@ function ensureTenantMembership({ actorUserId, tenantId, userId, role = 'tenant_
       '${sqlEscape(tenantId)}'::uuid,
       '${sqlEscape(userId)}'::uuid,
       '${role}'::public.tenant_role,
-      'active'::public.membership_status,
+      '${status}'::public.membership_status,
       '${sqlEscape(actorUserId)}'::uuid,
       '${sqlEscape(actorUserId)}'::uuid,
       '${sqlEscape(actorUserId)}'::uuid
@@ -992,7 +2459,7 @@ function ensureTenantMembership({ actorUserId, tenantId, userId, role = 'tenant_
   runSupabaseDbQuery(`
     update public.tenant_memberships
     set
-      status = 'active'::public.membership_status,
+      status = '${status}'::public.membership_status,
       role = '${role}'::public.tenant_role,
       updated_by_user_id = '${sqlEscape(actorUserId)}'::uuid
     where tenant_id = '${sqlEscape(tenantId)}'::uuid
@@ -1332,7 +2799,13 @@ function ensureContact(adminUserId, tenantId, contact) {
       '${sqlEscape(contact.email)}',
       '${sqlEscape(contact.phone)}',
       '${sqlEscape(contact.jobTitle)}',
-      true,
+      not exists (
+        select 1
+        from public.tenant_contacts
+        where tenant_id = '${sqlEscape(tenantId)}'::uuid
+          and is_primary
+          and is_active
+      ),
       true,
       '${sqlEscape(adminUserId)}'::uuid,
       '${sqlEscape(adminUserId)}'::uuid
@@ -1348,12 +2821,34 @@ function ensureContact(adminUserId, tenantId, contact) {
   return contactId;
 }
 
-function queryExistingSupportTicket(tenantId, title) {
+function ensureCustomerPortalContact({ actorUserId, tenantId, userId, contact }) {
+  const contactId = ensureContact(actorUserId, tenantId, contact);
+
+  runSupabaseDbQuery(`
+    update public.tenant_contacts
+    set
+      linked_user_id = '${sqlEscape(userId)}'::uuid,
+      full_name = '${sqlEscape(contact.fullName)}',
+      phone = '${sqlEscape(contact.phone)}',
+      job_title = '${sqlEscape(contact.jobTitle)}',
+      is_active = true,
+      updated_by_user_id = '${sqlEscape(actorUserId)}'::uuid
+    where id = '${sqlEscape(contactId)}'::uuid
+      and tenant_id = '${sqlEscape(tenantId)}'::uuid;
+  `);
+
+  return contactId;
+}
+
+function queryExistingSupportTicket(tenantId, title, legacyTitles = []) {
+  const titleList = [title, ...legacyTitles]
+    .map((candidate) => `'${sqlEscape(candidate)}'`)
+    .join(', ');
   const result = runSupabaseDbQuery(`
     select id::text as id
     from public.tickets
     where tenant_id = '${sqlEscape(tenantId)}'::uuid
-      and title = '${sqlEscape(title)}'
+      and title in (${titleList})
     limit 1;
   `);
 
@@ -1449,6 +2944,66 @@ function queryKnowledgeArticleBySlugInSpace(slug, knowledgeSpaceId) {
   return result.rows?.[0] ?? null;
 }
 
+function ensurePublicKnowledgeArticleReviewEvidence(articleId, reviewerEmail) {
+  const reviewer = queryAuthUserByEmail(reviewerEmail);
+  if (!reviewer?.id) {
+    fail(`Revisor humano ausente para evidência de Knowledge: ${reviewerEmail}.`);
+  }
+
+  runSupabaseDbQuery(`
+    insert into public.knowledge_article_review_advisories (
+      article_id,
+      source_hash,
+      suggested_visibility,
+      suggested_classification,
+      classification_reason,
+      risk_flags,
+      human_confirmations,
+      review_status,
+      review_notes,
+      reviewed_by_user_id,
+      reviewed_at,
+      created_by_user_id,
+      updated_by_user_id
+    )
+    values (
+      '${sqlEscape(articleId)}'::uuid,
+      null,
+      'public',
+      'public',
+      'Evidência humana QA para publicação pública controlada.',
+      '[]'::jsonb,
+      jsonb_build_object(
+        'title_reviewed', true,
+        'summary_reviewed', true,
+        'body_reviewed', true,
+        'category_reviewed', true,
+        'visibility_reviewed', true,
+        'no_sensitive_data_exposed', true,
+        'ready_for_review', true,
+        'ready_for_publish', true
+      ),
+      'reviewed',
+      'Validação operacional registra evidência explícita antes de publicar artigo público.',
+      '${sqlEscape(reviewer.id)}'::uuid,
+      timezone('utc', now()),
+      '${sqlEscape(reviewer.id)}'::uuid,
+      '${sqlEscape(reviewer.id)}'::uuid
+    )
+    on conflict (article_id) do update
+    set suggested_visibility = excluded.suggested_visibility,
+        suggested_classification = excluded.suggested_classification,
+        classification_reason = excluded.classification_reason,
+        risk_flags = excluded.risk_flags,
+        human_confirmations = excluded.human_confirmations,
+        review_status = excluded.review_status,
+        review_notes = excluded.review_notes,
+        reviewed_by_user_id = excluded.reviewed_by_user_id,
+        reviewed_at = excluded.reviewed_at,
+        updated_by_user_id = excluded.updated_by_user_id;
+  `);
+}
+
 function queryPublicHelpCenterArticleContractBySlug(slug) {
   const result = runSupabaseDbQuery(`
     select
@@ -1481,6 +3036,7 @@ function queryPublicHelpCenterArticleContractBySlug(slug) {
 }
 
 async function ensureKnowledgeArticlePublished(adminSession, tenantId, article, categoryId) {
+  const targetStatus = article.targetStatus ?? 'published';
   let existing = queryKnowledgeArticleBySlug(article.slug, tenantId);
 
   if (!existing?.id) {
@@ -1507,6 +3063,10 @@ async function ensureKnowledgeArticlePublished(adminSession, tenantId, article, 
 
   if (!existing?.id) {
     fail(`Nao foi possivel materializar o artigo ${article.slug}.`);
+  }
+
+  if (targetStatus === 'draft') {
+    return existing.id;
   }
 
   if (existing.status === 'draft') {
@@ -1613,6 +3173,8 @@ async function ensureKnowledgeArticlePublishedV2(
   }
 
   if (existing?.status === 'review') {
+    ensurePublicKnowledgeArticleReviewEvidence(existing.id, FIXTURE.contentAuthor.email);
+
     await callRpcAsUser({
       apiUrl: adminSession.apiUrl,
       anonKey: adminSession.anonKey,
@@ -1719,9 +3281,171 @@ async function ensureTicketKnowledgeLink({ actorSession, tenantId, ticketId, lin
   return created?.id ?? queryTicketKnowledgeLink(ticketId, link.linkType, link.articleSlug);
 }
 
+function queryKnowledgeArticleEntitlement(tenantId, articleId, entitlementScope) {
+  const result = runSupabaseDbQuery(`
+    select
+      id::text as id,
+      archived_at
+    from public.knowledge_article_entitlements
+    where tenant_id = '${sqlEscape(tenantId)}'::uuid
+      and article_id = '${sqlEscape(articleId)}'::uuid
+      and entitlement_scope = '${sqlEscape(entitlementScope)}'::public.knowledge_article_entitlement_scope
+    limit 1;
+  `);
+
+  return result.rows?.[0] ?? null;
+}
+
+async function ensureKnowledgeArticleEntitlement({
+  actorSession,
+  tenantId,
+  articleSlug,
+  entitlementScope,
+  relationReason,
+  archiveAfterGrant = false,
+}) {
+  const article = queryKnowledgeArticleBySlug(articleSlug, tenantId);
+  if (!article?.id) {
+    fail(`Artigo restrito ausente para entitlement customer-facing: ${articleSlug}.`);
+  }
+
+  let entitlementRecord = queryKnowledgeArticleEntitlement(tenantId, article.id, entitlementScope);
+
+  if (!entitlementRecord?.id) {
+    const created = await callRpcAsUser({
+      apiUrl: actorSession.apiUrl,
+      anonKey: actorSession.anonKey,
+      accessToken: actorSession.accessToken,
+      rpcName: 'rpc_admin_grant_knowledge_article_entitlement',
+      body: {
+        p_tenant_id: tenantId,
+        p_article_id: article.id,
+        p_entitlement_scope: entitlementScope,
+        p_relation_reason: relationReason,
+      },
+    });
+
+    entitlementRecord = {
+      id:
+        created?.id ??
+        queryKnowledgeArticleEntitlement(tenantId, article.id, entitlementScope)?.id ??
+        null,
+      archived_at: null,
+    };
+  }
+
+  if (!entitlementRecord?.id) {
+    fail(`Entitlement customer-facing não foi materializado para ${articleSlug}.`);
+  }
+
+  if (archiveAfterGrant && entitlementRecord.archived_at === null) {
+    await callRpcAsUser({
+      apiUrl: actorSession.apiUrl,
+      anonKey: actorSession.anonKey,
+      accessToken: actorSession.accessToken,
+      rpcName: 'rpc_admin_archive_knowledge_article_entitlement',
+      body: {
+        p_tenant_id: tenantId,
+        p_entitlement_id: entitlementRecord.id,
+      },
+    });
+  }
+
+  return entitlementRecord.id;
+}
+
+async function ensureCustomerTicketKnowledgeLink({
+  actorSession,
+  tenantId,
+  ticketId,
+  articleSlug,
+  relationReason,
+  archiveAfterLink = false,
+}) {
+  let article = queryKnowledgeArticleBySlug(articleSlug, tenantId);
+  if (!article?.id) {
+    const publicKnowledgeSpaceId = queryKnowledgeSpaceBySlug('genius');
+    if (publicKnowledgeSpaceId) {
+      article = queryKnowledgeArticleBySlugInSpace(articleSlug, publicKnowledgeSpaceId);
+    }
+  }
+
+  if (!article?.id) {
+    fail(`Artigo ausente para vínculo customer-facing com ticket: ${articleSlug}.`);
+  }
+
+  let linkId = queryTicketKnowledgeLink(ticketId, 'sent_to_customer', articleSlug);
+
+  if (!linkId) {
+    const created = await callRpcAsUser({
+      apiUrl: actorSession.apiUrl,
+      anonKey: actorSession.anonKey,
+      accessToken: actorSession.accessToken,
+      rpcName: 'rpc_admin_link_knowledge_article_to_ticket',
+      body: {
+        p_tenant_id: tenantId,
+        p_ticket_id: ticketId,
+        p_article_id: article.id,
+        p_relation_reason: relationReason,
+      },
+    });
+
+    linkId = created?.id ?? queryTicketKnowledgeLink(ticketId, 'sent_to_customer', articleSlug);
+  }
+
+  if (archiveAfterLink && linkId) {
+    await callRpcAsUser({
+      apiUrl: actorSession.apiUrl,
+      anonKey: actorSession.anonKey,
+      accessToken: actorSession.accessToken,
+      rpcName: 'rpc_admin_unlink_knowledge_article_from_ticket',
+      body: {
+        p_tenant_id: tenantId,
+        p_ticket_knowledge_link_id: linkId,
+      },
+    });
+  }
+
+  return linkId;
+}
+
+function queryBusinessCalendarIdBySlug(slug) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id
+    from public.business_calendars
+    where slug = '${sqlEscape(slug)}'
+    limit 1;
+  `);
+
+  return result.rows?.[0]?.id ?? null;
+}
+
+function queryTicketSlaPolicyIdBySlug(slug) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id
+    from public.ticket_sla_policies
+    where slug = '${sqlEscape(slug)}'
+    limit 1;
+  `);
+
+  return result.rows?.[0]?.id ?? null;
+}
+
 function createSupportTicket({ actorUserId, tenantId, contactId, ticket }) {
-  const existingTicketId = queryExistingSupportTicket(tenantId, ticket.title);
+  const existingTicketId = queryExistingSupportTicket(
+    tenantId,
+    ticket.title,
+    ticket.legacyTitles ?? [],
+  );
   if (existingTicketId) {
+    runSupabaseDbQuery(`
+      update public.tickets
+      set
+        title = '${sqlEscape(ticket.title)}',
+        description = '${sqlEscape(ticket.description)}',
+        updated_by_user_id = '${sqlEscape(actorUserId)}'::uuid
+      where id = '${sqlEscape(existingTicketId)}'::uuid;
+    `);
     return existingTicketId;
   }
 
@@ -1762,6 +3486,64 @@ function createSupportTicket({ actorUserId, tenantId, contactId, ticket }) {
     fail(`Nao foi possivel criar o ticket ${ticket.title}.`);
   }
 
+  if (ticket.categorySlug) {
+    runSupabaseDbQuery(`
+      with selected_category as (
+        select id
+        from public.ticket_categories
+        where slug = '${sqlEscape(ticket.categorySlug)}'
+          and status = 'active'
+        limit 1
+      ),
+      selected_reason as (
+        select id
+        from public.ticket_operational_reasons
+        where slug = '${sqlEscape(ticket.operationalReasonSlug ?? 'classificacao-inicial')}'
+          and status = 'active'
+        limit 1
+      ),
+      updated_ticket as (
+        update public.tickets as t
+        set
+          category_id = (select id from selected_category),
+          initial_operational_reason_id = (select id from selected_reason),
+          current_operational_reason_id = (select id from selected_reason),
+          updated_by_user_id = '${sqlEscape(actorUserId)}'::uuid
+        where t.id = '${sqlEscape(ticketId)}'::uuid
+        returning t.*
+      ),
+      resolved_policy as (
+        select
+          ut.id as ticket_id,
+          p.id as policy_id,
+          p.first_response_minutes,
+          p.resolution_minutes
+        from updated_ticket as ut
+        left join lateral app_private.resolve_ticket_sla_policy(
+          ut.tenant_id,
+          ut.category_id,
+          ut.priority,
+          ut.severity
+        ) as p
+          on true
+      )
+      update public.tickets as t
+      set
+        sla_policy_id = rp.policy_id,
+        first_response_due_at = case
+          when rp.policy_id is null then null
+          else t.created_at + make_interval(mins => rp.first_response_minutes)
+        end,
+        resolution_due_at = case
+          when rp.policy_id is null then null
+          else t.created_at + make_interval(mins => rp.resolution_minutes)
+        end,
+        updated_by_user_id = '${sqlEscape(actorUserId)}'::uuid
+      from resolved_policy as rp
+      where t.id = rp.ticket_id;
+    `);
+  }
+
   runSupabaseDbQuery(`
     insert into public.ticket_events (
       tenant_id,
@@ -1777,7 +3559,12 @@ function createSupportTicket({ actorUserId, tenantId, contactId, ticket }) {
       'ticket_created'::public.ticket_event_type,
       'customer'::public.message_visibility,
       '${sqlEscape(actorUserId)}'::uuid,
-      '{}'::jsonb
+      jsonb_build_object(
+        'category_slug',
+        ${ticket.categorySlug ? `'${sqlEscape(ticket.categorySlug)}'` : 'null'},
+        'operational_reason_slug',
+        ${ticket.operationalReasonSlug ? `'${sqlEscape(ticket.operationalReasonSlug)}'` : 'null'}
+      )
     );
   `);
 
@@ -1991,6 +3778,506 @@ function createSupportTicket({ actorUserId, tenantId, contactId, ticket }) {
   return ticketId;
 }
 
+function queryTicketCategoryIdBySlug(slug) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id
+    from public.ticket_categories
+    where slug = '${sqlEscape(slug)}'
+      and status = 'active'
+    limit 1;
+  `);
+
+  const categoryId = result.rows?.[0]?.id;
+  if (!categoryId) {
+    fail(`Categoria operacional de ticket ausente: ${slug}.`);
+  }
+
+  return categoryId;
+}
+
+function queryTicketOperationalReasonIdBySlug(slug) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id
+    from public.ticket_operational_reasons
+    where slug = '${sqlEscape(slug)}'
+      and status = 'active'
+    limit 1;
+  `);
+
+  const reasonId = result.rows?.[0]?.id;
+  if (!reasonId) {
+    fail(`Motivo operacional de ticket ausente: ${slug}.`);
+  }
+
+  return reasonId;
+}
+
+async function ensureSupportSlaPolicyFixture({ actorSession, tenantMap }) {
+  const tenantId = tenantMap.get('support-qa-a');
+  if (!tenantId) {
+    fail('Tenant support-qa-a ausente para fixture de SLA.');
+  }
+
+  const categoryId = queryTicketCategoryIdBySlug('integracao-tecnica');
+  if (!categoryId) {
+    fail('Categoria integracao-tecnica ausente para fixture de SLA.');
+  }
+
+  const calendarSlug = 'qa-tenant-a-business-hours';
+  const calendar = await callRpcAsUser({
+    apiUrl: actorSession.apiUrl,
+    anonKey: actorSession.anonKey,
+    accessToken: actorSession.accessToken,
+    rpcName: 'rpc_admin_upsert_business_calendar',
+    body: {
+      p_business_calendar_id: queryBusinessCalendarIdBySlug(calendarSlug),
+      p_tenant_id: tenantId,
+      p_slug: calendarSlug,
+      p_name: 'Expediente QA Tenant A',
+      p_timezone: 'America/Sao_Paulo',
+      p_status: 'active',
+    },
+  });
+
+  if (!calendar?.id) {
+    fail('Calendario de SLA do tenant A nao foi criado pela RPC administrativa.');
+  }
+
+  const policySlug = 'qa-tenant-a-integracao-critica';
+  await callRpcAsUser({
+    apiUrl: actorSession.apiUrl,
+    anonKey: actorSession.anonKey,
+    accessToken: actorSession.accessToken,
+    rpcName: 'rpc_admin_upsert_ticket_sla_policy',
+    body: {
+      p_policy_id: queryTicketSlaPolicyIdBySlug(policySlug),
+      p_tenant_id: tenantId,
+      p_slug: policySlug,
+      p_name: 'SLA interno QA Tenant A integração crítica',
+      p_description: 'Política tenant-aware para validar precedência de SLA no cockpit de suporte.',
+      p_category_id: categoryId,
+      p_priority: 'urgent',
+      p_severity: 'critical',
+      p_first_response_minutes: 15,
+      p_resolution_minutes: 30,
+      p_business_calendar_id: calendar.id,
+      p_status: 'active',
+    },
+  });
+}
+
+function applyFixtureTicketSlaScenario({ ticketId, scenario, actorUserId }) {
+  if (!scenario) {
+    return;
+  }
+
+  const resolutionExpression =
+    scenario === 'breached'
+      ? "timezone('utc', now()) - interval '15 minutes'"
+      : scenario === 'at_risk'
+        ? "timezone('utc', now()) + interval '30 minutes'"
+        : null;
+
+  if (!resolutionExpression) {
+    return;
+  }
+
+  runSupabaseDbQuery(`
+    update public.tickets
+    set
+      first_response_due_at = least(first_response_due_at, timezone('utc', now()) + interval '10 minutes'),
+      resolution_due_at = ${resolutionExpression},
+      updated_by_user_id = '${sqlEscape(actorUserId)}'::uuid
+    where id = '${sqlEscape(ticketId)}'::uuid;
+  `);
+}
+
+async function createSupportTicketViaRpc({
+  actorSession,
+  tenantId,
+  contactId,
+  ticket,
+}) {
+  const existingTicketId = queryExistingSupportTicket(tenantId, ticket.title);
+  if (existingTicketId) {
+    return existingTicketId;
+  }
+
+  const created = await runReconciledMutation({
+    mutate: () =>
+      callRpcAsUser({
+        apiUrl: actorSession.apiUrl,
+        anonKey: actorSession.anonKey,
+        accessToken: actorSession.accessToken,
+        rpcName: 'rpc_create_ticket',
+        body: {
+          p_tenant_id: tenantId,
+          p_title: ticket.title,
+          p_description: ticket.description,
+          p_source: ticket.source,
+          p_priority: ticket.priority,
+          p_severity: ticket.severity,
+          p_requester_contact_id: contactId ?? null,
+          p_category_id: ticket.categorySlug
+            ? queryTicketCategoryIdBySlug(ticket.categorySlug)
+            : null,
+          p_operational_reason_id: ticket.operationalReasonSlug
+            ? queryTicketOperationalReasonIdBySlug(ticket.operationalReasonSlug)
+            : null,
+        },
+      }),
+    reconcile: () => queryExistingSupportTicket(tenantId, ticket.title),
+  });
+
+  const ticketId = created?.id ?? queryExistingSupportTicket(tenantId, ticket.title);
+  if (!ticketId) {
+    fail(`Nao foi possivel criar via RPC o ticket ${ticket.title}.`);
+  }
+
+  return ticketId;
+}
+
+async function createEngineeringWorkItemFromTicketViaRpc({
+  actorSession,
+  ticketId,
+  handoff,
+}) {
+  const existingLink = runSupabaseDbQuery(`
+    select etl.id::text as id
+    from public.engineering_ticket_links as etl
+    join public.engineering_work_items as ewi
+      on ewi.id = etl.engineering_work_item_id
+     and ewi.tenant_id = etl.tenant_id
+    where etl.ticket_id = '${sqlEscape(ticketId)}'::uuid
+      and ewi.title = '${sqlEscape(handoff.title)}'
+    limit 1;
+  `);
+
+  if (existingLink.rows?.[0]?.id) {
+    return existingLink.rows[0].id;
+  }
+
+  const created = await callRpcAsUser({
+    apiUrl: actorSession.apiUrl,
+    anonKey: actorSession.anonKey,
+    accessToken: actorSession.accessToken,
+    rpcName: 'rpc_support_create_engineering_work_item_from_ticket',
+    body: {
+      p_ticket_id: ticketId,
+      p_work_item_type: handoff.workItemType,
+      p_title: handoff.title,
+      p_description: handoff.description,
+      p_handoff_note: handoff.handoffNote ?? null,
+    },
+  });
+
+  const linkId =
+    created?.id ??
+    runSupabaseDbQuery(`
+      select etl.id::text as id
+      from public.engineering_ticket_links as etl
+      join public.engineering_work_items as ewi
+        on ewi.id = etl.engineering_work_item_id
+       and ewi.tenant_id = etl.tenant_id
+      where etl.ticket_id = '${sqlEscape(ticketId)}'::uuid
+        and ewi.title = '${sqlEscape(handoff.title)}'
+      limit 1;
+    `).rows?.[0]?.id;
+
+  if (!linkId) {
+    fail(`Nao foi possivel criar o handoff técnico para o ticket ${handoff.ticketTitle}.`);
+  }
+
+  return linkId;
+}
+
+function queryEngineeringWorkItemIdByLink(linkId) {
+  const result = runSupabaseDbQuery(`
+    select engineering_work_item_id::text as id
+    from public.engineering_ticket_links
+    where id = '${sqlEscape(linkId)}'::uuid
+    limit 1;
+  `);
+
+  return result.rows?.[0]?.id ?? null;
+}
+
+function queryEngineeringWorkItemState(workItemId) {
+  const result = runSupabaseDbQuery(`
+    select
+      status::text as status,
+      assigned_to_user_id::text as assigned_to_user_id
+    from public.engineering_work_items
+    where id = '${sqlEscape(workItemId)}'::uuid
+    limit 1;
+  `);
+
+  return result.rows?.[0] ?? null;
+}
+
+async function applyEngineeringOperationViaRpc({
+  actorSession,
+  workItemId,
+  tenantId,
+  operation,
+}) {
+  if (operation.assign) {
+    const currentState = queryEngineeringWorkItemState(workItemId);
+    if (!currentState?.assigned_to_user_id) {
+      await callRpcAsUser({
+        apiUrl: actorSession.apiUrl,
+        anonKey: actorSession.anonKey,
+        accessToken: actorSession.accessToken,
+        rpcName: 'rpc_engineering_assign_work_item',
+        body: {
+          p_engineering_work_item_id: workItemId,
+          p_tenant_id: tenantId,
+          p_assigned_to_user_id: null,
+        },
+      });
+    }
+  }
+
+  if (operation.status) {
+    const currentState = queryEngineeringWorkItemState(workItemId);
+    if (currentState?.status !== operation.status) {
+      await callRpcAsUser({
+        apiUrl: actorSession.apiUrl,
+        anonKey: actorSession.anonKey,
+        accessToken: actorSession.accessToken,
+        rpcName: 'rpc_engineering_update_work_item_status',
+        body: {
+          p_engineering_work_item_id: workItemId,
+          p_tenant_id: tenantId,
+          p_status: operation.status,
+          p_summary: operation.statusSummary,
+          p_next_step: operation.statusNextStep ?? null,
+        },
+      });
+    }
+  }
+
+  if (operation.updateSummary) {
+    await callRpcAsUser({
+      apiUrl: actorSession.apiUrl,
+      anonKey: actorSession.anonKey,
+      accessToken: actorSession.accessToken,
+      rpcName: 'rpc_engineering_add_work_item_update',
+      body: {
+        p_engineering_work_item_id: workItemId,
+        p_tenant_id: tenantId,
+        p_summary: operation.updateSummary,
+        p_next_step: operation.updateNextStep ?? null,
+      },
+    });
+  }
+}
+
+function queryTicketAttachmentId(ticketId, fileName) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id
+    from public.ticket_attachments
+    where ticket_id = '${sqlEscape(ticketId)}'::uuid
+      and file_name = '${sqlEscape(fileName)}'
+    order by created_at desc
+    limit 1;
+  `);
+
+  return result.rows?.[0]?.id ?? null;
+}
+
+function queryFixtureTicketMessageId(ticketId, fixtureKey) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id
+    from public.ticket_messages
+    where ticket_id = '${sqlEscape(ticketId)}'::uuid
+      and metadata ->> 'fixture_key' = '${sqlEscape(fixtureKey)}'
+    order by created_at desc
+    limit 1;
+  `);
+
+  return result.rows?.[0]?.id ?? null;
+}
+
+function queryFixtureTicketEventId(ticketId, fixtureKey, eventType) {
+  const result = runSupabaseDbQuery(`
+    select id::text as id
+    from public.ticket_events
+    where ticket_id = '${sqlEscape(ticketId)}'::uuid
+      and event_type = '${sqlEscape(eventType)}'::public.ticket_event_type
+      and metadata ->> 'fixture_key' = '${sqlEscape(fixtureKey)}'
+    order by created_at desc
+    limit 1;
+  `);
+
+  return result.rows?.[0]?.id ?? null;
+}
+
+function ensureFixtureTimelineMessage({
+  actorUserId,
+  entry,
+  tenantId,
+  ticketId,
+}) {
+  const eventType = entry.visibility === 'internal' ? 'internal_note_added' : 'message_added';
+
+  let messageId = queryFixtureTicketMessageId(ticketId, entry.fixtureKey);
+  if (!messageId) {
+    const createdMessage = runSupabaseDbQuery(`
+      insert into public.ticket_messages (
+        tenant_id,
+        ticket_id,
+        visibility,
+        body,
+        created_by_user_id,
+        metadata
+      )
+      values (
+        '${sqlEscape(tenantId)}'::uuid,
+        '${sqlEscape(ticketId)}'::uuid,
+        '${sqlEscape(entry.visibility)}'::public.message_visibility,
+        '${sqlEscape(entry.body)}',
+        '${sqlEscape(actorUserId)}'::uuid,
+        jsonb_build_object(
+          'fixture_key', '${sqlEscape(entry.fixtureKey)}',
+          'conversation_lane', '${sqlEscape(entry.lane)}'
+        )
+      )
+      returning id::text as id;
+    `);
+
+    messageId = createdMessage.rows?.[0]?.id ?? null;
+  }
+
+  if (!messageId) {
+    fail(`Mensagem de fixture ausente para ${entry.fixtureKey}.`);
+  }
+
+  const existingEventId = queryFixtureTicketEventId(ticketId, entry.fixtureKey, eventType);
+  if (existingEventId) {
+    return messageId;
+  }
+
+  runSupabaseDbQuery(`
+    insert into public.ticket_events (
+      tenant_id,
+      ticket_id,
+      event_type,
+      visibility,
+      actor_user_id,
+      message_id,
+      metadata
+    )
+    values (
+      '${sqlEscape(tenantId)}'::uuid,
+      '${sqlEscape(ticketId)}'::uuid,
+      '${sqlEscape(eventType)}'::public.ticket_event_type,
+      '${sqlEscape(entry.visibility)}'::public.message_visibility,
+      '${sqlEscape(actorUserId)}'::uuid,
+      '${sqlEscape(messageId)}'::uuid,
+      jsonb_build_object(
+        'fixture_key', '${sqlEscape(entry.fixtureKey)}',
+        'conversation_lane', '${sqlEscape(entry.lane)}'
+      )
+    );
+  `);
+
+  return messageId;
+}
+
+function applyFixtureUploadIntentVisibility({ uploadIntentId, visibility }) {
+  if (visibility !== 'customer') {
+    return;
+  }
+
+  runSupabaseDbQuery(`
+    update public.ticket_attachment_upload_intents
+    set visibility = 'customer'::public.message_visibility
+    where id = '${sqlEscape(uploadIntentId)}'::uuid;
+  `);
+}
+
+async function uploadTicketAttachmentViaSecureFlow({
+  actorSession,
+  ticketId,
+  tenantId,
+  attachment,
+}) {
+  const existingAttachmentId = queryTicketAttachmentId(ticketId, attachment.fileName);
+  if (existingAttachmentId) {
+    return existingAttachmentId;
+  }
+
+  const encoded = new TextEncoder().encode(attachment.body);
+  const isCustomerUpload = attachment.uploadBoundary === 'customer';
+  const prepared = await callRpcAsUser({
+    apiUrl: actorSession.apiUrl,
+    anonKey: actorSession.anonKey,
+    accessToken: actorSession.accessToken,
+    rpcName: isCustomerUpload
+      ? 'rpc_customer_create_ticket_attachment_upload'
+      : 'rpc_support_create_ticket_attachment_upload',
+    body: {
+      p_ticket_id: ticketId,
+      p_tenant_id: tenantId,
+      p_original_filename: attachment.fileName,
+      p_content_type: attachment.contentType,
+      p_size_bytes: encoded.byteLength,
+    },
+  });
+
+  const uploadContract = Array.isArray(prepared) ? prepared[0] : prepared;
+  if (!uploadContract?.upload_url || !uploadContract?.upload_intent_id) {
+    fail(`Contrato de upload ausente para a evidência ${attachment.fileName}.`);
+  }
+
+  if (!isCustomerUpload) {
+    applyFixtureUploadIntentVisibility({
+      uploadIntentId: uploadContract.upload_intent_id,
+      visibility: attachment.visibility,
+    });
+  }
+
+  const formData = new FormData();
+  formData.append(
+    'file',
+    new Blob([encoded], { type: attachment.contentType }),
+    attachment.fileName,
+  );
+
+  const uploadResponse = await fetchWithTimeout(
+    `upload de evidencia ${attachment.fileName}`,
+    `${actorSession.apiUrl}${uploadContract.upload_url}`,
+    {
+      method: 'POST',
+      headers: {
+        apikey: actorSession.anonKey,
+        Authorization: `Bearer ${actorSession.accessToken}`,
+      },
+      body: formData,
+    },
+  );
+
+  if (!uploadResponse.ok) {
+    const detail = await uploadResponse.text();
+    fail(
+      `Falha ao enviar evidência segura ${attachment.fileName}: ${uploadResponse.status} ${detail}`,
+    );
+  }
+
+  const payload = await uploadResponse.json().catch(() => null);
+  const attachmentId =
+    payload?.attachment?.attachment_id ??
+    payload?.attachment?.attachmentId ??
+    queryTicketAttachmentId(ticketId, attachment.fileName);
+
+  if (!attachmentId) {
+    fail(`Nao foi possivel registrar a evidência segura ${attachment.fileName}.`);
+  }
+
+  return attachmentId;
+}
+
 function clearFixtureTickets() {
   return null;
 }
@@ -2101,12 +4388,13 @@ async function ensurePublicHelpCenterFixture(authorSession) {
 }
 
 async function main() {
+  logStep('iniciando fixture local de suporte');
   const envMap = runSupabaseStatusEnv();
-  const { apiUrl, serviceRoleKey, anonKey } = assertLocalOnly(envMap);
+  const { apiUrl, anonKey } = assertLocalOnly(envMap);
+  await ensureLocalEdgeRuntime();
 
+  logStep('criando/atualizando usuarios internos principais');
   const qaAdmin = await createOrUpdateAuthUser({
-    apiUrl,
-    serviceRoleKey,
     ...FIXTURE.qaAdmin,
   });
 
@@ -2118,8 +4406,6 @@ async function main() {
   ensurePlatformAdminRole(profile.id);
 
   const contentAuthor = await createOrUpdateAuthUser({
-    apiUrl,
-    serviceRoleKey,
     ...FIXTURE.contentAuthor,
   });
 
@@ -2133,15 +4419,20 @@ async function main() {
   const tenantMap = new Map();
   const contactMap = new Map();
 
+  logStep('hidratando tenants, contatos e customer accounts');
   for (const tenant of FIXTURE.tenants) {
     const tenantId = ensureTenant(profile.id, tenant);
     tenantMap.set(tenant.slug, tenantId);
-    contactMap.set(tenant.slug, ensureContact(profile.id, tenantId, tenant.contact));
-    ensureCustomerAccountProfile(profile.id, tenantId, tenant.customerAccount);
-    ensureCustomerAccountIntegrations(profile.id, tenantId, tenant.customerAccount);
-    ensureCustomerAccountFeatures(profile.id, tenantId, tenant.customerAccount);
-    ensureCustomerAccountCustomizations(profile.id, tenantId, tenant.customerAccount);
-    ensureCustomerAccountAlerts(profile.id, tenantId, tenant.customerAccount);
+    if (tenant.contact) {
+      contactMap.set(tenant.slug, ensureContact(profile.id, tenantId, tenant.contact));
+    }
+    if (tenant.customerAccount) {
+      ensureCustomerAccountProfile(profile.id, tenantId, tenant.customerAccount);
+      ensureCustomerAccountIntegrations(profile.id, tenantId, tenant.customerAccount);
+      ensureCustomerAccountFeatures(profile.id, tenantId, tenant.customerAccount);
+      ensureCustomerAccountCustomizations(profile.id, tenantId, tenant.customerAccount);
+      ensureCustomerAccountAlerts(profile.id, tenantId, tenant.customerAccount);
+    }
     ensureTenantMembership({
       actorUserId: profile.id,
       tenantId,
@@ -2170,12 +4461,9 @@ async function main() {
       },
     ],
   ]);
-  const sessionCache = new Map();
-
+  logStep('hidratando agentes de suporte');
   for (const agent of FIXTURE.agents) {
     const authUser = await createOrUpdateAuthUser({
-      apiUrl,
-      serviceRoleKey,
       email: agent.email,
       password: agent.password,
       fullName: agent.fullName,
@@ -2213,44 +4501,88 @@ async function main() {
     });
   }
 
-  clearFixtureTickets();
+  logStep('hidratando usuarios de access');
+  for (const accessUser of FIXTURE.accessUsers) {
+    const authUser = await createOrUpdateAuthUser({
+      email: accessUser.email,
+      password: accessUser.password,
+      fullName: accessUser.fullName,
+    });
 
-  const createdTickets = [];
-  const ticketMap = new Map();
-  for (const ticket of FIXTURE.tickets) {
-    const tenantId = tenantMap.get(ticket.tenantSlug);
-    const contactId = contactMap.get(ticket.tenantSlug);
-
-    if (!tenantId || !contactId) {
-      fail(`Tenant ou contato ausente para o fixture ${ticket.title}.`);
+    const accessProfile = queryProfileByEmail(accessUser.email);
+    if (!accessProfile?.id || !accessProfile.is_active) {
+      fail(`O profile do usuario de access local ${accessUser.email} nao foi materializado corretamente.`);
     }
 
-    const ticketId = createSupportTicket({
-      actorUserId:
-        ticket.assignee && operatorMap.has(ticket.assignee)
-          ? operatorMap.get(ticket.assignee)
-          : profile.id,
+    const tenantId = tenantMap.get(accessUser.tenantSlug);
+    if (!tenantId) {
+      fail(`Tenant ausente para o usuario de access local ${accessUser.email}.`);
+    }
+
+    ensureTenantMembership({
+      actorUserId: profile.id,
       tenantId,
-      contactId,
-      ticket: {
-        ...ticket,
-        assignee:
-          ticket.assignee && operatorMap.has(ticket.assignee) ? operatorMap.get(ticket.assignee) : null,
-      },
+      userId: accessProfile.id,
+      role: accessUser.role,
+      status: accessUser.status,
     });
 
-    createdTickets.push({
-      id: ticketId,
-      title: ticket.title,
-      tenant_slug: ticket.tenantSlug,
-      status: ticket.status,
-    });
-    ticketMap.set(`${ticket.tenantSlug}::${ticket.title}`, ticketId);
+    operatorMap.set(accessUser.key, accessProfile.id);
+    operatorMap.set(accessUser.email, accessProfile.id);
+    operatorMap.set(authUser.id, accessProfile.id);
   }
 
-  const knowledgeCategoryMap = new Map();
-  const createdKnowledgeArticles = [];
-  const createdKnowledgeLinks = [];
+  const customerPortalUserMap = new Map();
+  logStep('hidratando usuarios do portal cliente');
+  for (const portalUser of FIXTURE.customerPortalUsers) {
+    const authUser = await createOrUpdateAuthUser({
+      email: portalUser.email,
+      password: portalUser.password,
+      fullName: portalUser.fullName,
+    });
+
+    const portalProfile = queryProfileByEmail(portalUser.email);
+    if (!portalProfile?.id || !portalProfile.is_active) {
+      fail(`O profile customer-facing local ${portalUser.email} nao foi materializado corretamente.`);
+    }
+
+    const tenantId = tenantMap.get(portalUser.tenantSlug);
+    if (!tenantId) {
+      fail(`Tenant ausente para o usuario customer-facing local ${portalUser.email}.`);
+    }
+
+    const contactId = ensureCustomerPortalContact({
+      actorUserId: profile.id,
+      contact: portalUser.contact,
+      tenantId,
+      userId: portalProfile.id,
+    });
+
+    ensureTenantMembership({
+      actorUserId: profile.id,
+      tenantId,
+      userId: portalProfile.id,
+      role: portalUser.role,
+      status: portalUser.status,
+    });
+
+    operatorMap.set(portalUser.key, portalProfile.id);
+    operatorMap.set(portalUser.email, portalProfile.id);
+    operatorMap.set(authUser.id, portalProfile.id);
+    customerPortalUserMap.set(portalUser.key, {
+      contactId,
+      profileId: portalProfile.id,
+      userId: authUser.id,
+    });
+    sessionConfigByKey.set(portalUser.key, {
+      apiUrl,
+      anonKey,
+      email: portalUser.email,
+      password: portalUser.password,
+    });
+  }
+
+  const sessionCache = new Map();
   const getSessionForKey = async (key) => {
     if (sessionCache.has(key)) {
       return sessionCache.get(key);
@@ -2270,8 +4602,145 @@ async function main() {
     sessionCache.set(key, session);
     return session;
   };
+
+  logStep('hidratando politica de SLA');
+  await ensureSupportSlaPolicyFixture({
+    actorSession: await getSessionForKey('qa-admin'),
+    tenantMap,
+  });
+
+  clearFixtureTickets();
+
+  const createdTickets = [];
+  const ticketMap = new Map();
+  logStep('criando/atualizando tickets da fixture');
+  for (const ticket of FIXTURE.tickets) {
+    const tenantId = tenantMap.get(ticket.tenantSlug);
+    const contactId = contactMap.get(ticket.tenantSlug);
+
+    if (!tenantId) {
+      fail(`Tenant ausente para o fixture ${ticket.title}.`);
+    }
+
+    const ticketId = ticket.viaRpc
+      ? await createSupportTicketViaRpc({
+          actorSession: await getSessionForKey('qa-admin'),
+          tenantId,
+          contactId: contactId ?? null,
+          ticket,
+        })
+      : createSupportTicket({
+          actorUserId:
+            ticket.assignee && operatorMap.has(ticket.assignee)
+              ? operatorMap.get(ticket.assignee)
+              : profile.id,
+          tenantId,
+          contactId,
+          ticket: {
+            ...ticket,
+            assignee:
+              ticket.assignee && operatorMap.has(ticket.assignee)
+                ? operatorMap.get(ticket.assignee)
+                : null,
+          },
+        });
+
+    applyFixtureTicketSlaScenario({
+      ticketId,
+      scenario: ticket.slaScenario,
+      actorUserId: profile.id,
+    });
+
+    createdTickets.push({
+      id: ticketId,
+      title: ticket.title,
+      tenant_slug: ticket.tenantSlug,
+      status: ticket.status,
+    });
+    ticketMap.set(`${ticket.tenantSlug}::${ticket.title}`, ticketId);
+  }
+
+  logStep('criando timeline adicional de tickets');
+  for (const entry of FIXTURE.ticketTimelineMessages ?? []) {
+    const ticketId = ticketMap.get(`${entry.ticketTenantSlug}::${entry.ticketTitle}`);
+    const tenantId = tenantMap.get(entry.ticketTenantSlug);
+    const actorUserId = operatorMap.get(entry.actorKey);
+
+    if (!ticketId) {
+      fail(`Ticket ausente para mensagem adicional da fixture: ${entry.ticketTitle}.`);
+    }
+
+    if (!tenantId) {
+      fail(`Tenant ausente para mensagem adicional da fixture: ${entry.ticketTenantSlug}.`);
+    }
+
+    if (!actorUserId) {
+      fail(`Ator ausente para mensagem adicional da fixture: ${entry.actorKey}.`);
+    }
+
+    ensureFixtureTimelineMessage({
+      actorUserId,
+      entry,
+      tenantId,
+      ticketId,
+    });
+  }
+
+  const createdCustomerPortalCollaborations = [];
+  logStep('criando colaboracoes do portal cliente');
+  for (const collaboration of FIXTURE.customerPortalCollaborations ?? []) {
+    const ticketId = ticketMap.get(
+      `${collaboration.ticketTenantSlug}::${collaboration.ticketTitle}`,
+    );
+    const actorSession = await getSessionForKey(collaboration.actorKey);
+
+    if (!ticketId) {
+      fail(`Ticket ausente para colaboracao customer-facing: ${collaboration.ticketTitle}.`);
+    }
+
+    if (collaboration.message) {
+      await callRpcAsUser({
+        ...actorSession,
+        body: {
+          p_body: collaboration.message,
+          p_ticket_id: ticketId,
+        },
+        rpcName: 'rpc_customer_add_ticket_message',
+      });
+    }
+
+    if (collaboration.acknowledge) {
+      await callRpcAsUser({
+        ...actorSession,
+        body: {
+          p_last_timeline_entry_id: null,
+          p_ticket_id: ticketId,
+        },
+        rpcName: 'rpc_customer_acknowledge_ticket_update',
+      });
+    }
+
+    createdCustomerPortalCollaborations.push({
+      actor_key: collaboration.actorKey,
+      acknowledged: Boolean(collaboration.acknowledge),
+      message_registered: Boolean(collaboration.message),
+      ticket_id: ticketId,
+      ticket_title: collaboration.ticketTitle,
+      ticket_tenant_slug: collaboration.ticketTenantSlug,
+    });
+  }
+
+  const knowledgeCategoryMap = new Map();
+  const createdKnowledgeArticles = [];
+  const createdKnowledgeEntitlements = [];
+  const createdKnowledgeLinks = [];
+  const createdEngineeringHandoffs = [];
+  const engineeringWorkItemMap = new Map();
+  const createdEngineeringOperations = [];
+  const createdAttachments = [];
   const adminSession = await getSessionForKey('qa-admin');
   const contentAuthorSession = await getSessionForKey('content-author');
+  logStep('hidratando Public Help e Knowledge Base');
   const publicHelpCenter = await ensurePublicHelpCenterFixture(contentAuthorSession);
 
   for (const category of FIXTURE.knowledgeBase.categories ?? []) {
@@ -2303,6 +4772,33 @@ async function main() {
       id: articleId,
       tenant_slug: article.tenantSlug,
       visibility: article.visibility,
+      status: article.targetStatus ?? 'published',
+    });
+  }
+
+  for (const entitlement of FIXTURE.knowledgeBase.entitlements ?? []) {
+    const tenantId = tenantMap.get(entitlement.tenantSlug);
+    const actorSession = await getSessionForKey(entitlement.actorKey);
+
+    if (!tenantId) {
+      fail(`Tenant ausente para entitlement de conhecimento: ${entitlement.tenantSlug}.`);
+    }
+
+    const entitlementId = await ensureKnowledgeArticleEntitlement({
+      actorSession,
+      tenantId,
+      articleSlug: entitlement.articleSlug,
+      entitlementScope: entitlement.entitlementScope,
+      relationReason: entitlement.relationReason,
+      archiveAfterGrant: Boolean(entitlement.archiveAfterGrant),
+    });
+
+    createdKnowledgeEntitlements.push({
+      id: entitlementId,
+      tenant_slug: entitlement.tenantSlug,
+      article_slug: entitlement.articleSlug,
+      entitlement_scope: entitlement.entitlementScope,
+      archived: Boolean(entitlement.archiveAfterGrant),
     });
   }
 
@@ -2335,6 +4831,131 @@ async function main() {
     });
   }
 
+  for (const link of FIXTURE.knowledgeBase.customerTicketLinks ?? []) {
+    const ticketId = ticketMap.get(`${link.ticketTenantSlug}::${link.ticketTitle}`);
+    const tenantId = tenantMap.get(link.ticketTenantSlug);
+    const actorSession = await getSessionForKey(link.actorKey);
+
+    if (!ticketId) {
+      fail(`Ticket ausente para vínculo customer-facing: ${link.ticketTitle}.`);
+    }
+
+    if (!tenantId) {
+      fail(`Tenant ausente para vínculo customer-facing: ${link.ticketTenantSlug}.`);
+    }
+
+    const linkId = await ensureCustomerTicketKnowledgeLink({
+      actorSession,
+      tenantId,
+      ticketId,
+      articleSlug: link.articleSlug,
+      relationReason: link.relationReason,
+      archiveAfterLink: Boolean(link.archiveAfterLink),
+    });
+
+    createdKnowledgeLinks.push({
+      id: linkId,
+      ticket_title: link.ticketTitle,
+      ticket_tenant_slug: link.ticketTenantSlug,
+      link_type: 'sent_to_customer',
+      article_slug: link.articleSlug,
+      relation_reason: link.relationReason,
+      archived: Boolean(link.archiveAfterLink),
+    });
+  }
+
+  logStep('criando handoffs de engenharia');
+  for (const handoff of FIXTURE.engineeringHandoffs ?? []) {
+    const ticketId = ticketMap.get(`${handoff.ticketTenantSlug}::${handoff.ticketTitle}`);
+    if (!ticketId) {
+      fail(`Ticket ausente para handoff técnico: ${handoff.ticketTitle}.`);
+    }
+
+    const actorSession = await getSessionForKey(handoff.actorKey);
+    const linkId = await createEngineeringWorkItemFromTicketViaRpc({
+      actorSession,
+      ticketId,
+      handoff,
+    });
+    const workItemId = queryEngineeringWorkItemIdByLink(linkId);
+    if (!workItemId) {
+      fail(`Work item ausente para o handoff técnico ${handoff.title}.`);
+    }
+
+    createdEngineeringHandoffs.push({
+      link_id: linkId,
+      work_item_id: workItemId,
+      ticket_title: handoff.ticketTitle,
+      ticket_tenant_slug: handoff.ticketTenantSlug,
+      work_item_type: handoff.workItemType,
+      title: handoff.title,
+    });
+    engineeringWorkItemMap.set(handoff.title, {
+      workItemId,
+      tenantId: tenantMap.get(handoff.ticketTenantSlug),
+    });
+  }
+
+  logStep('aplicando operacoes de engenharia');
+  for (const operation of FIXTURE.engineeringOperations ?? []) {
+    const target = engineeringWorkItemMap.get(operation.handoffTitle);
+    if (!target?.workItemId || !target.tenantId) {
+      fail(`Work item ausente para operacao tecnica: ${operation.handoffTitle}.`);
+    }
+
+    const actorSession = await getSessionForKey(operation.actorKey);
+    await applyEngineeringOperationViaRpc({
+      actorSession,
+      workItemId: target.workItemId,
+      tenantId: target.tenantId,
+      operation,
+    });
+
+    createdEngineeringOperations.push({
+      work_item_id: target.workItemId,
+      actor_key: operation.actorKey,
+      status: operation.status ?? null,
+      assigned: Boolean(operation.assign),
+      update_registered: Boolean(operation.updateSummary),
+    });
+  }
+
+  logStep('enviando evidencias seguras');
+  for (const attachment of FIXTURE.attachments ?? []) {
+    const ticketId = ticketMap.get(`${attachment.ticketTenantSlug}::${attachment.ticketTitle}`);
+    const tenantId = tenantMap.get(attachment.ticketTenantSlug);
+    if (!ticketId) {
+      fail(`Ticket ausente para evidência segura: ${attachment.ticketTitle}.`);
+    }
+    if (!tenantId) {
+      fail(`Tenant ausente para evidência segura: ${attachment.ticketTenantSlug}.`);
+    }
+
+    const actorSession = await getSessionForKey(attachment.actorKey);
+    const attachmentId = await uploadTicketAttachmentViaSecureFlow({
+      actorSession,
+      ticketId,
+      tenantId,
+      attachment,
+    });
+
+    createdAttachments.push({
+      attachment_id: attachmentId,
+      ticket_id: ticketId,
+      ticket_title: attachment.ticketTitle,
+      ticket_tenant_slug: attachment.ticketTenantSlug,
+      file_name: attachment.fileName,
+      content_type: attachment.contentType,
+    });
+  }
+
+  logStep('hidratando subscriptions OCP V1-E para QA local');
+  const ocpV1ESubscriptions = await ensureOcpV1ESubscriptionsFixture({
+    adminSession,
+    tenantMap,
+    operatorMap,
+  });
+
   console.log(
     JSON.stringify(
       {
@@ -2359,22 +4980,48 @@ async function main() {
           tenant_slug: agent.tenantSlug,
           user_id: operatorMap.get(agent.key),
         })),
+        access_users: FIXTURE.accessUsers.map((accessUser) => ({
+          key: accessUser.key,
+          email: accessUser.email,
+          password: accessUser.password,
+          tenant_slug: accessUser.tenantSlug,
+          role: accessUser.role,
+          status: accessUser.status,
+          user_id: operatorMap.get(accessUser.key),
+        })),
+        customer_portal_users: FIXTURE.customerPortalUsers.map((portalUser) => ({
+          key: portalUser.key,
+          email: portalUser.email,
+          password: portalUser.password,
+          tenant_slug: portalUser.tenantSlug,
+          role: portalUser.role,
+          status: portalUser.status,
+          user_id: customerPortalUserMap.get(portalUser.key)?.profileId ?? null,
+          contact_id: customerPortalUserMap.get(portalUser.key)?.contactId ?? null,
+        })),
         tenants: FIXTURE.tenants.map((tenant) => ({
           slug: tenant.slug,
           id: tenantMap.get(tenant.slug),
         })),
         customer_accounts: FIXTURE.tenants.map((tenant) => ({
           tenant_slug: tenant.slug,
-          product_line: tenant.customerAccount.productLine,
-          integrations: tenant.customerAccount.integrations.length,
-          features: tenant.customerAccount.features.length,
-          customizations: tenant.customerAccount.customizations.length,
-          alerts: tenant.customerAccount.alerts.length,
+          has_profile: Boolean(tenant.customerAccount),
+          product_line: tenant.customerAccount?.productLine ?? null,
+          integrations: tenant.customerAccount?.integrations?.length ?? 0,
+          features: tenant.customerAccount?.features?.length ?? 0,
+          customizations: tenant.customerAccount?.customizations?.length ?? 0,
+          alerts: tenant.customerAccount?.alerts?.length ?? 0,
         })),
         knowledge_articles: createdKnowledgeArticles,
+        knowledge_entitlements: createdKnowledgeEntitlements,
         knowledge_links: createdKnowledgeLinks,
+        engineering_handoffs: createdEngineeringHandoffs,
+        engineering_operations: createdEngineeringOperations,
+        attachments: createdAttachments,
+        ocp_v1_e_subscriptions: ocpV1ESubscriptions,
         public_help_center: publicHelpCenter,
         tickets: createdTickets,
+        customer_portal_collaborations: createdCustomerPortalCollaborations,
       },
       null,
       2,
