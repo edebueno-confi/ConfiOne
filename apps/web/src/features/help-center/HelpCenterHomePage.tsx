@@ -153,6 +153,8 @@ function buildCategoryCards(
   rootCategories: PublicKnowledgeNavigationRow[],
   articles: PublicKnowledgeArticleListRow[],
 ) {
+  if (rootCategories.length > 0) return buildTaxonomyCategoryCards(spaceSlug, rootCategories);
+
   const definitions: Array<Omit<CategoryCard, 'count' | 'to'> & { query: string; patterns: string[] }> = [
     {
       id: 'integracoes',
@@ -216,6 +218,30 @@ function buildCategoryCards(
       to: buildHelpCenterCategoryHref(spaceSlug, category?.category_id, query),
     } satisfies CategoryCard;
   }).filter((card) => card.count > 0);
+}
+
+function buildTaxonomyCategoryCards(
+  spaceSlug: string,
+  rootCategories: PublicKnowledgeNavigationRow[],
+) {
+  const definitions: Array<Omit<CategoryCard, 'count' | 'to'> & { categorySlug: string }> = [
+    { id: 'integracoes', title: 'Integra\u00e7\u00f5es e API', description: 'Conecte sua loja, ERPs e plataformas ao Genius Returns.', categorySlug: 'integracoes', icon: 'puzzle', tone: 'blue' },
+    { id: 'configuracoes', title: 'Configura\u00e7\u00e3o da opera\u00e7\u00e3o', description: 'Organize par\u00e2metros, regras, estornos e comunica\u00e7\u00e3o com o cliente.', categorySlug: 'configuracao-da-operacao', icon: 'gear', tone: 'pink' },
+    { id: 'operacao-reversa', title: 'Trocas e devolu\u00e7\u00f5es', description: 'Acompanhe solicita\u00e7\u00f5es e entenda cada etapa da log\u00edstica reversa.', categorySlug: 'operacao-de-trocas-e-devolucoes', icon: 'truck', tone: 'blue' },
+    { id: 'erros-e-solucoes', title: 'Solu\u00e7\u00e3o de problemas', description: 'Encontre diagn\u00f3sticos, corre\u00e7\u00f5es e caminhos de recupera\u00e7\u00e3o.', categorySlug: 'solucao-de-problemas', icon: 'chart', tone: 'pink' },
+    { id: 'sellers-e-lojas', title: 'Sellers e lojas', description: 'Configure lojas, sellers e os canais que participam da opera\u00e7\u00e3o.', categorySlug: 'sellers-e-lojas', icon: 'cap', tone: 'blue' },
+  ];
+
+  return definitions
+    .map(({ categorySlug, ...definition }) => {
+      const category = rootCategories.find((entry) => entry.category_slug === categorySlug);
+      return {
+        ...definition,
+        count: category?.subtree_article_count ?? 0,
+        to: buildHelpCenterCategoryHref(spaceSlug, category?.category_id, categorySlug),
+      } satisfies CategoryCard;
+    })
+    .filter((card) => card.count > 0);
 }
 
 export function HelpCenterHomePage() {
