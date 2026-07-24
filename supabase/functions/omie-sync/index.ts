@@ -48,7 +48,9 @@ Deno.serve(async (req) => {
   let syncRunId: string | null = null;
   try {
     const credentials = parseOmieCredentials(secret);
-    const { data: syncRun, error: syncRunError } = await client.from('analytics_finance_sync_runs').insert({ status: 'processing', triggered_by_user_id: actorId === 'scheduled' ? null : actorId }).select('id').single();
+    const correlationHeader = req.headers.get('x-analytics-correlation-id');
+    const correlationId = correlationHeader && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(correlationHeader) ? correlationHeader : crypto.randomUUID();
+    const { data: syncRun, error: syncRunError } = await client.from('analytics_finance_sync_runs').insert({ status: 'processing', triggered_by_user_id: actorId === 'scheduled' ? null : actorId, correlation_id: correlationId }).select('id').single();
     if (syncRunError?.code === '23505') {
       return jsonResponse(
         { error: 'Já existe uma sincronização OMIE em andamento. Aguarde a conclusão antes de tentar novamente.', code: 'OMIE_SYNC_IN_PROGRESS' },
