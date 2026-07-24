@@ -229,7 +229,8 @@ function normalizeConfigurationSource(source: string) {
 }
 
 function parseMarkdown(source: string, categoryName?: string) {
-  const normalizedSource = categoryName?.toLocaleLowerCase('pt-BR').startsWith('configura')
+  const normalizedCategory = categoryName?.toLocaleLowerCase('pt-BR') ?? '';
+  const normalizedSource = (normalizedCategory.startsWith('configura') || normalizedCategory.startsWith('sellers e loja'))
     ? normalizeConfigurationSource(source)
     : source;
   const lines = normalizedSource.replace(/\r\n/g, '\n').split('\n');

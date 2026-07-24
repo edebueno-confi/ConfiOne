@@ -130,7 +130,8 @@ function stripDuplicateLeadHeading(source: string, title: string) {
 }
 
 function isRawConfigurationSummary(summary: string | null, categoryName: string | null) {
-  if (!summary || !categoryName?.toLocaleLowerCase('pt-BR').startsWith('configura')) {
+  const normalizedCategory = categoryName?.toLocaleLowerCase('pt-BR') ?? '';
+  if (!summary || !(normalizedCategory.startsWith('configura') || normalizedCategory.startsWith('sellers e loja'))) {
     return false;
   }
 
