@@ -4,6 +4,10 @@ import path from 'node:path';
 import { createClient } from '@supabase/supabase-js';
 
 import { readLocalSupabaseConfig } from './local-supabase-config.mjs';
+import {
+  repairMojibake as safeRepairMojibake,
+  stripLegacySupportContacts,
+} from './legacy-normalization.mjs';
 
 const DEFAULT_ROOT = 'raw_knowledge/octadesk_export/latest';
 
@@ -188,7 +192,7 @@ function normalizeLocalSrc(src) {
 }
 
 function buildMarkdownFromHtml(html, assetBySrc, articleTitle) {
-  let source = repairMojibake(html);
+  let source = safeRepairMojibake(html);
 
   source = source.replace(/<img\b([^>]*?)>/gi, (_match, attrs) => {
     const src = /src="([^"]+)"/i.exec(attrs)?.[1] ?? '';
@@ -214,17 +218,20 @@ function buildMarkdownFromHtml(html, assetBySrc, articleTitle) {
       if (!/^https?:\/\//i.test(href) && !/^mailto:/i.test(href)) {
         return stripTags(text);
       }
+      if (/^https?:\/\/o205658-f7a\.octadesk\.com\//i.test(href)) {
+        return stripTags(text);
+      }
       return `[${stripTags(text)}](${href})`;
     });
 
-  const markdown = stripEmbeddedSupportContacts(repairMojibake(stripTags(source)))
+  const markdown = stripLegacySupportContacts(safeRepairMojibake(stripTags(source)))
     .split('\n')
     .map((line) => line.trimEnd())
     .join('\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  const normalizedTitle = repairMojibake(articleTitle);
+  const normalizedTitle = safeRepairMojibake(articleTitle);
   return markdown.startsWith('# ') ? markdown : `# ${normalizedTitle}\n\n${markdown}`;
 }
 
