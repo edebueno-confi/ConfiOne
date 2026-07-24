@@ -2,11 +2,18 @@ create extension if not exists pgtap with schema extensions;
 
 begin;
 
-select plan(10);
+select plan(12);
 
 select ok(
-  position('dashboard_viewer' in pg_get_functiondef('app_private.can_manage_knowledge_base()'::regprocedure)) > 0,
-  'dashboard_viewer participa do gate editorial da Knowledge Base'
+  position('dashboard_viewer' in pg_get_functiondef('app_private.can_manage_knowledge_base()'::regprocedure)) = 0,
+  'dashboard_viewer nao participa do gate editorial da Knowledge Base'
+);
+
+select ok(
+  position('has_any_global_role' in pg_get_functiondef('app_private.can_manage_knowledge_base()'::regprocedure)) > 0
+    and position('platform_admin' in pg_get_functiondef('app_private.can_manage_knowledge_base()'::regprocedure)) > 0
+    and position('knowledge_manager' in pg_get_functiondef('app_private.can_manage_knowledge_base()'::regprocedure)) > 0,
+  'Knowledge Base permanece restrita aos perfis editoriais autorizados'
 );
 
 select ok(
@@ -72,6 +79,11 @@ select ok(
     'SELECT'::text
   ),
   'anon nao pode ler o catalogo administrativo de espacos'
+);
+
+select ok(
+  position('dashboard_viewer' in pg_get_functiondef('app_private.can_read_knowledge_article_asset(uuid,public.knowledge_visibility,public.knowledge_article_asset_review_status,boolean)'::regprocedure)) = 0,
+  'dashboard_viewer nao recebe leitura indireta de assets privados'
 );
 
 select * from finish();
