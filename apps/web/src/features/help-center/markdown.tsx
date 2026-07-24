@@ -1,4 +1,11 @@
 import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  geniusReturnsIntegrationLinks,
+  getGeniusReturnsApiDocsUrl,
+  getGeniusReturnsApiOperation,
+  resolveGeniusReturnsIntegrationTokens,
+} from './help-center-integrations';
 
 interface InlinePart {
   text: string;
@@ -6,6 +13,7 @@ interface InlinePart {
   italic?: boolean;
   code?: boolean;
   href?: string;
+  external?: boolean;
   markTone?: 'blue' | 'green' | 'yellow' | 'pink' | 'purple' | 'gray';
   textTone?: 'blue' | 'green' | 'yellow' | 'red' | 'gray';
 }
@@ -37,7 +45,8 @@ interface Block {
     | 'callout'
     | 'youtube'
     | 'divider'
-    | 'related';
+    | 'related'
+    | 'api-reference';
   level?: 1 | 2 | 3 | 4 | 5 | 6;
   text?: string;
   items?: string[];
@@ -54,6 +63,7 @@ interface Block {
   relatedSlug?: string;
   relatedTitle?: string;
   relatedSummary?: string;
+  apiOperationKey?: string;
 }
 
 function parseImageAlt(value: string) {
@@ -107,7 +117,7 @@ function parseMediaSize(value?: string) {
 }
 
 function isSafeHref(value: string) {
-  return /^(https?:\/\/|mailto:)/i.test(value);
+  return /^(https?:\/\/|mailto:|\/help\/)/i.test(value);
 }
 
 function isValidYouTubeId(value: string) {
@@ -116,14 +126,15 @@ function isValidYouTubeId(value: string) {
 
 function parseInline(text: string): InlinePart[] {
   const parts: InlinePart[] = [];
+  const resolvedText = resolveGeniusReturnsIntegrationTokens(text);
   const pattern =
     /(\[color:(blue|green|yellow|red|gray)]([\s\S]+?)\[\/color]|\[mark:(blue|green|yellow|pink|purple|gray)]([\s\S]+?)\[\/mark]|\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`|\*([^*]+)\*)/g;
   let lastIndex = 0;
 
-  for (const match of text.matchAll(pattern)) {
+  for (const match of resolvedText.matchAll(pattern)) {
     const index = match.index ?? 0;
     if (index > lastIndex) {
-      parts.push({ text: text.slice(lastIndex, index) });
+      parts.push({ text: resolvedText.slice(lastIndex, index) });
     }
 
     if (match[2] && match[3]) {
@@ -137,9 +148,11 @@ function parseInline(text: string): InlinePart[] {
         text: match[5],
       });
     } else if (match[6] && match[7]) {
+      const href = match[7].trim();
       parts.push({
         text: match[6],
-        href: isSafeHref(match[7].trim()) ? match[7].trim() : undefined,
+        href: isSafeHref(href) ? href : undefined,
+        external: /^(https?:\/\/|mailto:)/i.test(href),
       });
     } else if (match[8]) {
       parts.push({ text: match[8], bold: true });
@@ -152,11 +165,11 @@ function parseInline(text: string): InlinePart[] {
     lastIndex = index + match[0].length;
   }
 
-  if (lastIndex < text.length) {
-    parts.push({ text: text.slice(lastIndex) });
+  if (lastIndex < resolvedText.length) {
+    parts.push({ text: resolvedText.slice(lastIndex) });
   }
 
-  return parts.length > 0 ? parts : [{ text }];
+  return parts.length > 0 ? parts : [{ text: resolvedText }];
 }
 
 function normalizeConfigurationSource(source: string) {
@@ -350,6 +363,16 @@ function parseMarkdown(source: string, categoryName?: string) {
       continue;
     }
 
+    const apiReferenceMatch = /^::api-reference\s+([a-z0-9-]+)\s*$/i.exec(trimmed);
+    if (apiReferenceMatch) {
+      blocks.push({
+        apiOperationKey: apiReferenceMatch[1],
+        type: 'api-reference',
+      });
+      index += 1;
+      continue;
+    }
+
     const youtubeMatch =
       /^::youtube\s+([A-Za-z0-9_-]{6,20})(?:\s*\|size=(small|medium|large|full))?\s*$/i.exec(
         trimmed,
@@ -417,15 +440,28 @@ function renderInline(text: string): ReactNode[] {
     const key = `${part.text}-${index}`;
 
     if (part.href) {
+      if (!part.external) {
+        return (
+          <Link
+            key={key}
+            className="font-medium text-[color:var(--help-link)] underline decoration-[var(--help-content-rule)] underline-offset-4 hover:text-[color:var(--help-link-hover)]"
+            to={part.href}
+          >
+            {part.text}
+          </Link>
+        );
+      }
+
       return (
         <a
           key={key}
           className="font-medium text-[color:var(--help-link)] underline decoration-[var(--help-content-rule)] underline-offset-4 hover:text-[color:var(--help-link-hover)]"
           href={part.href}
-          rel="noreferrer"
+          aria-label={`${part.text} (link externo)`}
+          rel="noopener noreferrer"
           target="_blank"
         >
-          {part.text}
+          {part.text} <span aria-hidden="true">↗</span>
         </a>
       );
     }
@@ -656,6 +692,59 @@ export function MarkdownDocument({
                 {related.summary || 'Abra este artigo relacionado na Central.'}
               </span>
             </a>
+          );
+        }
+
+        if (block.type === 'api-reference') {
+          const operation = getGeniusReturnsApiOperation(block.apiOperationKey ?? '');
+          if (!operation) {
+            return null;
+          }
+
+          const apiDocsUrl = getGeniusReturnsApiDocsUrl(block.apiOperationKey ?? '');
+          return (
+            <aside
+              key={key}
+              className="grid max-w-[78ch] gap-4 rounded-[22px] border border-[var(--help-content-callout-border)] bg-[var(--help-content-callout)] px-5 py-5 shadow-[var(--help-content-shadow)]"
+              aria-label={`Referência técnica: ${operation.title}`}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-extrabold text-[color:var(--help-ink-strong)]">
+                    {operation.title}
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-[color:var(--help-muted)]">
+                    {operation.purpose}
+                  </p>
+                </div>
+                <span className="rounded-lg bg-[var(--help-link)] px-2.5 py-1 font-mono text-xs font-bold text-white">
+                  {operation.method}
+                </span>
+              </div>
+              <code className="block overflow-x-auto rounded-xl bg-[var(--help-code-surface)] px-3 py-2 text-sm text-[color:var(--help-code-ink)]">
+                {operation.path}
+              </code>
+              <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+                <a
+                  className="font-semibold text-[color:var(--help-link)] underline underline-offset-4"
+                  href={apiDocsUrl}
+                  aria-label={`Consultar ${operation.title} na API Docs (link externo)`}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  API Docs ↗
+                </a>
+                <a
+                  className="font-semibold text-[color:var(--help-link)] underline underline-offset-4"
+                  href={geniusReturnsIntegrationLinks.swagger}
+                  aria-label={`Consultar ${operation.title} no Swagger (link externo)`}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Swagger ↗
+                </a>
+              </div>
+            </aside>
           );
         }
 

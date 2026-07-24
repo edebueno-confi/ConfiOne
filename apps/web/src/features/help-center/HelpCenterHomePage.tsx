@@ -156,7 +156,7 @@ function buildCategoryCards(
   const definitions: Array<Omit<CategoryCard, 'count' | 'to'> & { query: string; patterns: string[] }> = [
     {
       id: 'integracoes',
-      title: 'Integrações',
+      title: 'Integrações e API',
       description: 'Conecte sua loja, ERPs e plataformas ao Genius Returns.',
       query: 'integração',
       patterns: ['integr'],
