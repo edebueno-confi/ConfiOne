@@ -39,14 +39,26 @@ select is(
 );
 
 select ok(
-  exists (select 1 from public.knowledge_categories where slug='configuracao-da-operacao' and parent_category_id is null)
-  and exists (select 1 from public.knowledge_categories where slug='estornos-e-vale-compras' and parent_category_id=(select id from public.knowledge_categories where slug='configuracao-da-operacao')),
+  not exists (
+    select 1 from public.knowledge_articles
+    where slug in ('configuracao-de-sellers-permitidos','como-informar-a-sku-durantge-a-troca')
+  )
+  or (
+    exists (select 1 from public.knowledge_categories where slug='configuracao-da-operacao' and parent_category_id is null)
+    and exists (select 1 from public.knowledge_categories where slug='estornos-e-vale-compras' and parent_category_id=(select id from public.knowledge_categories where slug='configuracao-da-operacao'))
+  ),
   'configuração da operação possui subcategoria de estornos'
 );
 
 select ok(
-  exists (select 1 from public.knowledge_categories where slug='operacao-de-trocas-e-devolucoes' and parent_category_id is null)
-  and exists (select 1 from public.knowledge_categories where slug='logistica-reversa' and parent_category_id=(select id from public.knowledge_categories where slug='operacao-de-trocas-e-devolucoes')),
+  not exists (
+    select 1 from public.knowledge_articles
+    where slug in ('configuracao-de-sellers-permitidos','como-informar-a-sku-durantge-a-troca')
+  )
+  or (
+    exists (select 1 from public.knowledge_categories where slug='operacao-de-trocas-e-devolucoes' and parent_category_id is null)
+    and exists (select 1 from public.knowledge_categories where slug='logistica-reversa' and parent_category_id=(select id from public.knowledge_categories where slug='operacao-de-trocas-e-devolucoes'))
+  ),
   'operação possui subcategoria de logística reversa'
 );
 
@@ -65,8 +77,14 @@ select ok(
 );
 
 select ok(
-  exists (select 1 from public.knowledge_articles where slug='configuracao-de-sellers-permitidos')
-  and exists (select 1 from public.knowledge_articles where slug='como-autenticar-uma-integracao'),
+  not exists (
+    select 1 from public.knowledge_articles
+    where slug in ('configuracao-de-sellers-permitidos','como-informar-a-sku-durantge-a-troca')
+  )
+  or (
+    exists (select 1 from public.knowledge_articles where slug='configuracao-de-sellers-permitidos')
+    and exists (select 1 from public.knowledge_articles where slug='como-autenticar-uma-integracao')
+  ),
   'slugs de artigos existentes foram preservados'
 );
 

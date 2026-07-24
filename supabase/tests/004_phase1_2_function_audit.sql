@@ -88,6 +88,7 @@ select is(
         'can_assign_ticket',
         'can_access_support_workspace',
         'can_access_cs_customer_portfolio',
+        'can_manage_cs_customer_portfolio',
         'can_read_analytics',
         'can_access_ticket_engineering',
         'can_access_engineering_workspace',
