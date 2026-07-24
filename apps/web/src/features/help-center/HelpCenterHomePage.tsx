@@ -304,7 +304,7 @@ export function HelpCenterHomePage() {
           {searchResults.map((article) => (
             <Link
               key={article.article_id}
-              className="rounded-[20px] border border-[var(--help-border)] bg-[color:var(--color-surface-strong)] px-4 py-4 no-underline transition hover:border-[rgba(48,127,226,0.22)]"
+              className="rounded-[20px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-4 py-4 no-underline transition hover:border-[var(--help-accent)]"
               to={`/help/${context.primaryRoute.knowledge_space_slug}/articles/${article.slug}`}
             >
               <div className="flex items-start justify-between gap-4">
@@ -330,19 +330,18 @@ export function HelpCenterHomePage() {
   return (
     <div className="grid gap-5 pb-8">
       <section className="grid gap-4">
-        <div className="gso-help-hero relative overflow-hidden rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[linear-gradient(180deg,#071859_0%,#09154a_100%)] px-6 py-6 shadow-[0_24px_50px_rgba(7,24,89,0.18)] sm:px-8 sm:py-7 lg:min-h-[430px] lg:px-10 lg:py-8 xl:min-h-[442px] xl:px-12">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(106,160,255,0.16),transparent_28%),linear-gradient(165deg,transparent_12%,rgba(255,255,255,0.06)_46%,transparent_68%)]" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[44%] bg-[linear-gradient(135deg,transparent_0%,rgba(120,155,255,0.12)_46%,transparent_74%)]" />
+        <div className="gso-help-hero relative overflow-hidden rounded-[28px] border border-[var(--help-hero-border)] bg-[var(--help-hero)] px-6 py-6 shadow-[var(--help-shadow)] sm:px-8 sm:py-7 lg:min-h-[390px] lg:px-10 lg:py-8 xl:px-12">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,var(--help-orb-a),transparent_28%)]" />
 
-          <div className="relative flex h-full flex-col gap-4 lg:pr-[410px] xl:pr-[448px]">
+          <div className="relative flex flex-col gap-4 lg:h-full lg:pr-[410px] xl:pr-[448px]">
             <div className="space-y-3 pt-1 lg:max-w-[760px]">
-              <h1 className="max-w-[760px] text-[2.55rem] font-semibold leading-[0.98] tracking-[-0.07em] text-white sm:text-[3rem] lg:text-[3.75rem]">
-                <span className="block">Documentação oficial</span>
-                <span className="block">para clientes B2B.</span>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--help-hero-muted)]">Central de Ajuda</p>
+              <h1 className="max-w-[760px] text-[2.55rem] font-semibold leading-[0.98] tracking-[-0.07em] text-[var(--help-hero-text)] sm:text-[3rem] lg:text-[3.75rem]">
+                <span className="block">Seu desejo é uma</span>
+                <span className="block">consulta.</span>
               </h1>
-              <p className="max-w-[700px] text-[0.98rem] leading-7 text-[rgba(235,241,255,0.9)]">
-                Guias, respostas e orientações para configurar, operar e evoluir o
-                uso do Genius Returns com mais autonomia.
+              <p className="max-w-[700px] text-[0.98rem] leading-7 text-[var(--help-hero-muted)]">
+                Pergunte ao Genius e encontre orientações para configurar, operar e resolver dúvidas no Genius Returns.
               </p>
             </div>
 
@@ -350,16 +349,16 @@ export function HelpCenterHomePage() {
               className="relative z-10 flex max-w-[840px] min-w-0 flex-col gap-3 sm:flex-row sm:items-center"
               onSubmit={handleSearchSubmit}
             >
-              <div className="flex min-w-0 flex-1 flex-col gap-2 rounded-[16px] border border-white/35 bg-[color:var(--color-surface-strong)] p-1.5 shadow-[0_10px_22px_rgba(7,24,89,0.12)] sm:flex-row sm:items-center sm:gap-0">
+              <div className="flex min-w-0 flex-1 flex-col gap-2 rounded-[16px] border border-[var(--help-hero-border)] bg-[var(--help-surface-strong)] p-1.5 shadow-[var(--help-shadow)] sm:flex-row sm:items-center sm:gap-0">
                 <label className="relative min-w-0 flex-1">
                   <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--help-muted)]">
                     <HelpIcon kind="search" />
                   </span>
                   <input
                     autoComplete="off"
-                    className="h-11 w-full rounded-[12px] bg-transparent pl-11 pr-4 text-sm text-[var(--help-ink-strong)] outline-none placeholder:text-[var(--help-muted)]"
+                    className="h-11 w-full rounded-[12px] bg-transparent pl-11 pr-4 text-sm text-[var(--help-ink-strong)] outline-none placeholder:text-[var(--help-muted)] focus:ring-2 focus:ring-[var(--help-focus)]"
                     onChange={(event) => setSearchInput(event.target.value)}
-                    placeholder="Busque artigos, temas ou descreva sua dúvida..."
+                    placeholder="O que você quer saber?"
                     type="search"
                     value={searchInput}
                   />
@@ -371,26 +370,26 @@ export function HelpCenterHomePage() {
             </form>
 
             <div className="flex flex-wrap gap-2.5 text-sm">
-              <span className="inline-flex min-h-9 items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.12)] bg-[rgba(48,127,226,0.22)] px-3.5 text-white">
+              <span className="inline-flex min-h-9 items-center gap-2 rounded-[12px] border border-[var(--help-hero-border)] bg-[var(--help-accent-soft)] px-3.5 text-[var(--help-hero-text)]">
                 <HelpIcon kind="search" className="h-4 w-4" />
                 Busca global inteligente
               </span>
               <Link
-                className="inline-flex min-h-9 items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.14)] bg-[rgba(7,24,89,0.16)] px-3.5 text-[rgba(235,241,255,0.92)] no-underline transition hover:bg-[rgba(255,255,255,0.08)]"
+                className="inline-flex min-h-9 items-center gap-2 rounded-[12px] border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-3.5 text-[var(--help-hero-muted)] no-underline transition hover:bg-[var(--help-accent-soft)]"
                 to={`/help/${context.primaryRoute.knowledge_space_slug}/articles`}
               >
                 <HelpIcon kind="doc" className="h-4 w-4" />
                 Artigos
               </Link>
               <Link
-                className="inline-flex min-h-9 items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.14)] bg-[rgba(7,24,89,0.16)] px-3.5 text-[rgba(235,241,255,0.92)] no-underline transition hover:bg-[rgba(255,255,255,0.08)]"
+                className="inline-flex min-h-9 items-center gap-2 rounded-[12px] border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-3.5 text-[var(--help-hero-muted)] no-underline transition hover:bg-[var(--help-accent-soft)]"
                 to={guideHref}
               >
                 <HelpIcon kind="doc" className="h-4 w-4" />
                 Guias passo a passo
               </Link>
               <Link
-                className="inline-flex min-h-9 items-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.14)] bg-[rgba(7,24,89,0.16)] px-3.5 text-[rgba(235,241,255,0.92)] no-underline transition hover:bg-[rgba(255,255,255,0.08)]"
+                className="inline-flex min-h-9 items-center gap-2 rounded-[12px] border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-3.5 text-[var(--help-hero-muted)] no-underline transition hover:bg-[var(--help-accent-soft)]"
                 to={guideHref}
               >
                 <HelpIcon kind="support" className="h-4 w-4" />
@@ -398,35 +397,26 @@ export function HelpCenterHomePage() {
               </Link>
             </div>
 
-            <p className="pt-1 text-xs leading-5 text-[rgba(235,241,255,0.84)]">
+            <p className="pt-1 text-xs leading-5 text-[var(--help-hero-muted)]">
               Exemplos: integração com Shopify, etiquetas reversas, relatórios,
               transportadoras
             </p>
           </div>
 
-          <div className="hidden lg:absolute lg:right-8 lg:top-5 lg:block lg:w-[410px] xl:right-10 xl:w-[428px]">
-            <div className="rounded-[26px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_20px_42px_rgba(0,14,72,0.2)]">
+          <div className="hidden lg:absolute lg:right-8 lg:top-8 lg:block lg:w-[360px] xl:right-12 xl:w-[390px]">
+            <div className="flex flex-col items-center gap-4 px-4 py-2 text-center">
               <div className="space-y-4">
-                <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center gap-5">
-                  <div className="flex h-[132px] w-[132px] items-center justify-center rounded-[32px] bg-[radial-gradient(circle_at_top_left,rgba(48,127,226,0.18),transparent_58%),linear-gradient(180deg,rgba(237,244,255,0.96),rgba(223,236,255,0.88))]">
-                    <GeniusMascot alt="Gênio guiando a consulta da documentação" expression="happy" pose="welcome" size="lg" surface="default" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <h2 className="text-[1.18rem] font-semibold leading-7 tracking-[-0.04em] text-[var(--help-ink-strong)]">
-                      Orientação por artigos
-                    </h2>
-                    <p className="text-sm leading-6 text-[var(--help-muted)]">
-                      Encontre conteúdos oficiais, siga guias públicos e abra
-                      um ticket quando precisar do suporte.
-                    </p>
-                  </div>
+                <GeniusMascot alt="Genius anfitrião da consulta" expression="happy" pose="welcome" size="xl" surface="default" />
+                <div className="space-y-1.5">
+                  <h2 className="text-[1.18rem] font-semibold leading-7 tracking-[-0.04em] text-[var(--help-hero-text)]">Pergunte ao Genius</h2>
+                  <p className="text-sm leading-6 text-[var(--help-hero-muted)]">Comece pela busca ou escolha uma sugestão de consulta.</p>
                 </div>
 
                 <div className="grid gap-2.5">
                   {suggestedSearchItems.map((prompt) => (
                     <Link
                       key={prompt}
-                      className="flex min-h-[44px] items-center gap-3 rounded-[14px] border border-[rgba(20,31,71,0.08)] px-3.5 text-sm text-[var(--help-ink)] no-underline transition hover:border-[rgba(48,127,226,0.22)] hover:bg-[#fbfcff]"
+                      className="flex min-h-[44px] items-center gap-3 rounded-[14px] border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-3.5 text-left text-sm text-[var(--help-hero-text)] no-underline transition hover:border-[var(--help-accent)]"
                       to={`/help/${context.primaryRoute.knowledge_space_slug}?q=${encodeURIComponent(prompt)}`}
                     >
                       <PublicIconBadge className="h-7 w-7 rounded-[10px]" icon="support" tone="blue" />
@@ -443,7 +433,7 @@ export function HelpCenterHomePage() {
                   </Link>
                   <div className="text-center">
                     <Link
-                      className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--help-link)] no-underline"
+                      className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--help-hero-text)] no-underline"
                       to={guideHref}
                     >
                       Saiba como funciona
@@ -454,29 +444,21 @@ export function HelpCenterHomePage() {
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="border-t border-white/15 bg-[color:var(--color-surface-strong)] px-1 py-4 lg:hidden">
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="flex h-[96px] w-[96px] shrink-0 items-center justify-center rounded-[26px] bg-[radial-gradient(circle_at_top_left,rgba(48,127,226,0.18),transparent_58%),linear-gradient(180deg,rgba(237,244,255,0.96),rgba(223,236,255,0.88))]">
-                <GeniusMascot alt="Gênio guiando a consulta da documentação" expression="happy" pose="welcome" size="md" surface="default" />
-              </div>
+          <div className="gso-help-mobile-genius mt-5 border-t border-[var(--help-hero-border)] pt-5 lg:hidden">
+            <div className="space-y-4">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <GeniusMascot alt="Genius anfitrião da consulta" expression="happy" pose="welcome" size="xl" surface="default" />
               <div className="space-y-1.5">
-                <h2 className="text-[1.1rem] font-semibold tracking-[-0.04em] text-[var(--help-ink-strong)]">
-                  Orientação por artigos
-                </h2>
-                <p className="text-sm leading-6 text-[var(--help-muted)]">
-                  Encontre conteúdos oficiais e use o portal quando precisar
-                  falar com o suporte.
-                </p>
+                <h2 className="text-[1.1rem] font-semibold tracking-[-0.04em] text-[var(--help-hero-text)]">Pergunte ao Genius</h2>
+                <p className="text-sm leading-6 text-[var(--help-hero-muted)]">Escolha uma sugestão ou refine sua pergunta na busca.</p>
               </div>
             </div>
             <div className="grid gap-2.5">
               {suggestedSearchItems.map((prompt) => (
                 <Link
                   key={`mobile-${prompt}`}
-                  className="flex min-h-[44px] items-center gap-3 rounded-[14px] border border-[rgba(20,31,71,0.08)] px-3.5 text-sm text-[var(--help-ink)] no-underline"
+                  className="flex min-h-[44px] items-center gap-3 rounded-[14px] border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-3.5 text-sm text-[var(--help-hero-text)] no-underline"
                   to={`/help/${context.primaryRoute.knowledge_space_slug}?q=${encodeURIComponent(prompt)}`}
                 >
                   <PublicIconBadge className="h-7 w-7 rounded-[10px]" icon="support" tone="blue" />
@@ -491,7 +473,7 @@ export function HelpCenterHomePage() {
             </Link>
             <div>
               <Link
-                className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--help-link)] no-underline"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--help-hero-text)] no-underline"
                 to={guideHref}
               >
                 Saiba como funciona
@@ -501,11 +483,13 @@ export function HelpCenterHomePage() {
           </div>
         </div>
 
+        </div>
+
         {searchPhase !== 'idle' ? <div className="mt-1">{renderSearchContent()}</div> : null}
       </section>
 
       <section className="hidden">
-        <article className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]">
+        <article className="rounded-[22px] border border-[var(--help-border)] bg-[color:var(--help-surface-strong)] px-5 py-5 shadow-[var(--help-shadow)]">
           <div className="flex items-start gap-4">
             <PublicIconBadge className="h-12 w-12 rounded-[18px]" icon="search" tone="blue" />
             <div className="min-w-0 flex-1 space-y-1.5">
@@ -527,7 +511,7 @@ export function HelpCenterHomePage() {
           </div>
         </article>
 
-        <article className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]">
+        <article className="rounded-[22px] border border-[var(--help-border)] bg-[color:var(--help-surface-strong)] px-5 py-5 shadow-[var(--help-shadow)]">
           <div className="flex items-start gap-4">
             <PublicIconBadge className="h-12 w-12 rounded-[18px]" icon="support" tone="blue" />
             <div className="min-w-0 flex-1 space-y-1.5">
@@ -549,7 +533,7 @@ export function HelpCenterHomePage() {
           </div>
         </article>
 
-        <article className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]">
+        <article className="rounded-[22px] border border-[var(--help-border)] bg-[color:var(--help-surface-strong)] px-5 py-5 shadow-[var(--help-shadow)]">
           <div className="flex items-start gap-4">
             <PublicIconBadge className="h-12 w-12 rounded-[18px]" icon="support" tone="pink" />
             <div className="min-w-0 flex-1 space-y-1.5">
@@ -599,7 +583,7 @@ export function HelpCenterHomePage() {
           {visibleCategoryCards.slice(0, 3).map((card) => (
             <article
               key={`mobile-${card.id}`}
-              className="rounded-[20px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-4 py-4 shadow-[0_14px_30px_rgba(20,31,71,0.04)]"
+              className="rounded-[20px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-4 py-4 shadow-[var(--help-shadow)]"
             >
               <div className="flex items-start gap-3">
                 <PublicIconBadge className="h-11 w-11 rounded-[16px]" icon={card.icon} tone={card.tone} />
@@ -648,7 +632,7 @@ export function HelpCenterHomePage() {
           {visibleCategoryCards.map((card) => (
             <article
               key={card.id}
-              className="flex min-h-[248px] flex-col rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-4 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]"
+              className="flex min-h-[248px] flex-col rounded-[22px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-4 py-5 shadow-[var(--help-shadow)]"
             >
               <div className="space-y-4">
                 <PublicIconBadge icon={card.icon} tone={card.tone} />
@@ -684,7 +668,7 @@ export function HelpCenterHomePage() {
       </section>
 
       <section className="grid gap-5">
-        <div className="rounded-[28px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-4 py-5 shadow-[0_18px_40px_rgba(20,31,71,0.05)] sm:px-6">
+        <div className="rounded-[28px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-4 py-5 shadow-[var(--help-shadow)] sm:px-6">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="space-y-1">
               <h2 className="text-[1.65rem] font-semibold tracking-[-0.05em] text-[var(--help-ink-strong)]">
@@ -703,22 +687,22 @@ export function HelpCenterHomePage() {
             </Link>
           </div>
 
-          <div className="mt-5 overflow-hidden rounded-[20px] border border-[rgba(20,31,71,0.08)]">
-            <div className="hidden grid-cols-[minmax(0,1fr)_150px_150px_28px] items-center gap-4 bg-[#fbfcff] px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--help-muted)] md:grid">
+          <div className="mt-5 overflow-hidden rounded-[20px] border border-[var(--help-border)]">
+            <div className="hidden grid-cols-[minmax(0,1fr)_150px_150px_28px] items-center gap-4 bg-[var(--help-surface)] px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--help-muted)] md:grid">
               <span>Artigo</span>
               <span>Categoria</span>
               <span>Atualizado</span>
               <span />
             </div>
-            <div className="divide-y divide-[rgba(20,31,71,0.08)]">
+            <div className="divide-y divide-[var(--help-border)]">
               {topArticles.map((article) => (
                 <Link
                   key={article.id}
-                  className="grid gap-2 px-4 py-4 no-underline transition hover:bg-[#fbfcff] md:grid-cols-[minmax(0,1fr)_150px_150px_28px] md:items-center md:gap-4"
+                  className="grid gap-2 px-4 py-4 no-underline transition hover:bg-[var(--help-surface)] md:grid-cols-[minmax(0,1fr)_150px_150px_28px] md:items-center md:gap-4"
                   to={`/help/${context.primaryRoute.knowledge_space_slug}/articles/${article.slug}`}
                 >
                   <div className="flex min-w-0 items-start gap-3">
-                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[12px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] text-[var(--help-muted)]">
+                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[12px] border border-[var(--help-border)] bg-[color:var(--help-surface-strong)] text-[var(--help-muted)]">
                       <HelpIcon kind="doc" />
                     </span>
                     <p className="min-w-0 text-sm font-medium text-[var(--help-ink)]">
@@ -747,7 +731,7 @@ export function HelpCenterHomePage() {
         </div>
 
         <aside className="hidden">
-          <section className="rounded-[24px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]">
+          <section className="rounded-[24px] border border-[var(--help-border)] bg-[color:var(--help-surface-strong)] px-5 py-5 shadow-[var(--help-shadow)]">
             <div className="space-y-4">
               <h2 className="text-[1.55rem] font-semibold tracking-[-0.05em] text-[var(--help-ink-strong)]">
                 Acesso rápido
@@ -775,7 +759,7 @@ export function HelpCenterHomePage() {
             </div>
           </section>
 
-          <section className="rounded-[24px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_16px_34px_rgba(20,31,71,0.04)]">
+          <section className="rounded-[24px] border border-[var(--help-border)] bg-[color:var(--help-surface-strong)] px-5 py-5 shadow-[var(--help-shadow)]">
             <div className="space-y-4">
               <h2 className="text-[1.55rem] font-semibold tracking-[-0.05em] text-[var(--help-ink-strong)]">
                 Como esta central ajuda você
