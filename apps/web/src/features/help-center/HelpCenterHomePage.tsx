@@ -21,11 +21,30 @@ import {
 
 type SearchPhase = 'idle' | 'loading' | 'ready' | 'empty' | 'contract-unavailable' | 'error';
 
-const suggestedSearchItems = [
-  'Como configurar a integração com Shopify?',
-  'Onde acompanho uma solicitação?',
-  'Quais são as boas práticas de operação?',
+const suggestedArticleDefinitions = [
+  {
+    id: 'calculo-do-estorno',
+    title: 'Como configurar o cálculo do estorno',
+    match: 'como configurar o calculo do estorno',
+  },
+  {
+    id: 'pagamento-estorno',
+    title: 'Como automatizar o pagamento de Estorno e Vale-Compra',
+    match: 'como automatizar o pagamento de estorno e vale-compra',
+  },
+  {
+    id: 'acompanhar-solicitacoes',
+    title: 'Como acompanhar solicitações de troca e devolução',
+    match: 'como acompanhar solicitacoes de troca e devolucao',
+  },
 ] as const;
+
+type SuggestedArticle = {
+  id: string;
+  title: string;
+  articleId: string;
+  to: string;
+};
 
 type CategoryCard = {
   id: string;
@@ -42,6 +61,23 @@ function normalize(value: string | null | undefined) {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
+}
+
+function buildSuggestedArticleLinks(
+  spaceSlug: string,
+  articles: PublicKnowledgeArticleListRow[],
+): SuggestedArticle[] {
+  return suggestedArticleDefinitions.flatMap((definition) => {
+    const article = articles.find((candidate) => normalize(candidate.title) === definition.match);
+    if (!article) return [];
+
+    return [{
+      id: definition.id,
+      title: article.title,
+      articleId: article.id,
+      to: `/help/${spaceSlug}/articles/${article.slug}`,
+    }];
+  });
 }
 
 function buildCategoryCards(
@@ -127,6 +163,10 @@ export function HelpCenterHomePage() {
   const categoryCards = useMemo(
     () => buildCategoryCards(context.primaryRoute.knowledge_space_slug, rootCategories, context.articles),
     [context.articles, context.primaryRoute.knowledge_space_slug, rootCategories],
+  );
+  const suggestedArticles = useMemo(
+    () => buildSuggestedArticleLinks(context.primaryRoute.knowledge_space_slug, context.articles),
+    [context.articles, context.primaryRoute.knowledge_space_slug],
   );
   const topArticles = context.articles.slice(0, 3);
 
@@ -265,57 +305,66 @@ export function HelpCenterHomePage() {
   return (
     <div className="grid gap-8 pb-8">
       <section className="grid gap-4" aria-labelledby="help-home-title">
-        <div className="gso-help-hero relative overflow-hidden rounded-[28px] border border-[var(--help-hero-border)] bg-[var(--help-hero)] px-5 py-6 shadow-[var(--help-shadow)] sm:px-8 sm:py-8 lg:grid lg:min-h-[390px] lg:grid-cols-[minmax(0,1.65fr)_minmax(260px,0.9fr)] lg:grid-rows-[auto_auto_1fr] lg:gap-x-8 lg:px-10 lg:py-9 xl:px-12">
+        <div className="gso-help-hero relative overflow-hidden rounded-[28px] border border-[var(--help-hero-border)] bg-[var(--help-hero)] px-5 py-6 shadow-[var(--help-shadow)] sm:px-8 sm:py-8 lg:grid lg:min-h-[390px] lg:grid-cols-[minmax(0,1.12fr)_minmax(340px,0.88fr)] lg:gap-x-8 lg:px-10 lg:py-9 xl:px-12" data-testid="help-home-hero">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,var(--help-orb-a),transparent_28%)]" />
 
-          <div className="relative order-1 space-y-3 lg:col-start-1 lg:row-start-1">
+          <div className="relative z-10 order-1 flex flex-col justify-center gap-5 lg:col-start-1">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--help-hero-muted)]">Central de Ajuda</p>
-            <h1 className="max-w-[680px] text-[2.5rem] font-semibold leading-[0.98] tracking-[-0.07em] text-[var(--help-hero-text)] sm:text-[3rem] lg:text-[3.75rem]" id="help-home-title">
+            <h1 className="max-w-[680px] text-[2.5rem] font-semibold leading-[0.98] tracking-[-0.07em] text-[var(--help-hero-text)] sm:text-[3rem] lg:text-[3.65rem]" id="help-home-title">
               <span className="block">Seu desejo é uma</span>
               <span className="block">consulta.</span>
             </h1>
-            <p className="max-w-[650px] text-[0.98rem] leading-7 text-[var(--help-hero-muted)]">Pergunte ao Gênio e encontre orientações para configurar, operar e resolver dúvidas no Genius Returns.</p>
-          </div>
+            <p className="max-w-[35rem] text-[0.98rem] leading-7 text-[var(--help-hero-muted)]">Pergunte ao Gênio e encontre orientações para configurar, operar e resolver dúvidas no Genius Returns.</p>
 
-          <form className="relative z-10 order-2 flex min-w-0 max-w-[720px] flex-col gap-3 sm:flex-row sm:items-center lg:col-start-1 lg:row-start-2" onSubmit={handleSearchSubmit} role="search">
-            <label className="relative min-w-0 flex-1">
-              <span className="sr-only">Buscar na Central de Ajuda</span>
-              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--help-muted)]"><HelpIcon kind="search" /></span>
-              <input
-                aria-label="Buscar na Central de Ajuda"
-                autoComplete="off"
-                className="h-12 w-full rounded-[14px] border border-[var(--help-hero-border)] bg-[var(--help-surface-strong)] pl-11 pr-4 text-sm text-[var(--help-ink-strong)] outline-none placeholder:text-[var(--help-muted)] focus:ring-2 focus:ring-[var(--help-focus)]"
-                onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Digite sua dúvida..."
-                type="search"
-                value={searchInput}
-              />
-            </label>
-            <AppButton className="h-12 w-full shrink-0 rounded-[14px] px-7 text-base sm:w-auto" type="submit">Buscar</AppButton>
-          </form>
+            <form className="flex min-w-0 max-w-[720px] flex-col gap-3 sm:flex-row sm:items-center" onSubmit={handleSearchSubmit} role="search">
+              <label className="relative min-w-0 flex-1">
+                <span className="sr-only">Buscar na Central de Ajuda</span>
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--help-muted)]"><HelpIcon kind="search" /></span>
+                <input
+                  aria-label="Buscar na Central de Ajuda"
+                  autoComplete="off"
+                  className="h-12 w-full rounded-[14px] border border-[var(--help-hero-border)] bg-[var(--help-surface-strong)] pl-11 pr-4 text-sm text-[var(--help-ink-strong)] outline-none placeholder:text-[var(--help-muted)] focus:ring-2 focus:ring-[var(--help-focus)]"
+                  onChange={(event) => setSearchInput(event.target.value)}
+                  placeholder="Digite sua dúvida..."
+                  type="search"
+                  value={searchInput}
+                />
+              </label>
+              <AppButton className="h-12 w-full shrink-0 rounded-[14px] px-7 text-base sm:w-auto" type="submit">Buscar</AppButton>
+            </form>
 
-          <div className="relative order-3 flex items-center justify-center lg:col-start-2 lg:row-span-3 lg:row-start-1">
-            <GeniusMascot alt="Gênio guiando a consulta na Central de Ajuda" expression="happy" pose="welcome" size="xl" surface="default" />
-          </div>
-
-          <div className="relative order-4 space-y-2 lg:col-start-1 lg:row-start-3 lg:self-end">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--help-hero-muted)]">Sugestões rápidas</p>
-            <div className="flex flex-wrap gap-2">
-              {suggestedSearchItems.map((prompt) => (
+            <div className="space-y-2" data-testid="hero-suggestions">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--help-hero-muted)]">Sugestões rápidas</p>
+              <div className="flex flex-wrap gap-2">
+                {suggestedArticles.map(({ id, title, to }) => (
                 <Link
-                  className="inline-flex min-h-9 max-w-full items-center gap-2 rounded-[12px] border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-3 text-sm text-[var(--help-hero-muted)] no-underline transition hover:border-[var(--help-accent)] hover:bg-[var(--help-accent-soft)]"
-                  key={prompt}
-                  to={`/help/${context.primaryRoute.knowledge_space_slug}?q=${encodeURIComponent(prompt)}`}
+                    aria-label={`Abrir artigo: ${title}`}
+                    className="inline-flex min-h-9 max-w-full items-center gap-2 rounded-[12px] border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-3 text-sm text-[var(--help-hero-muted)] no-underline transition hover:border-[var(--help-accent)] hover:bg-[var(--help-accent-soft)]"
+                    data-suggestion-id={id}
+                    key={id}
+                    to={to}
                 >
                   <HelpIcon className="h-4 w-4 shrink-0" kind="search" />
-                  <span className="truncate">{prompt}</span>
+                    <span className="truncate">{title}</span>
                 </Link>
-              ))}
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="relative order-2 flex min-h-[210px] items-center justify-center lg:col-start-2 lg:min-h-0" data-testid="hero-mascot">
+            <div className="pointer-events-none absolute inset-x-[8%] bottom-[12%] h-24 rounded-full bg-[radial-gradient(ellipse,var(--help-hero-soft),transparent_68%)]" />
+            <div className="relative flex flex-col items-center gap-2">
+              <div className="rounded-full border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-4 py-2 text-center text-xs font-semibold text-[var(--help-hero-muted)] shadow-[var(--help-shadow)]">
+                O Gênio ajuda você a encontrar o caminho certo.
+              </div>
+              <GeniusMascot alt="Gênio guiando a consulta na Central de Ajuda" expression="happy" pose="welcome" size="xl" surface="default" />
+              <span className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--help-hero-muted)]">Consulta guiada</span>
             </div>
           </div>
         </div>
 
-        {searchPhase !== 'idle' ? <div aria-busy={searchPhase === 'loading'} className="mt-1">{renderSearchContent()}</div> : null}
+        {searchPhase !== 'idle' ? <div aria-busy={searchPhase === 'loading'} className="mt-1" data-testid="help-home-search-results">{renderSearchContent()}</div> : null}
       </section>
 
       <section className="grid gap-4" id="categorias">
