@@ -15,6 +15,7 @@ function parseArgs(argv) {
     spaceSlug: null,
     title: null,
     allowlist: null,
+    all: false,
     email: process.env.KNOWLEDGE_ADMIN_EMAIL,
     password: process.env.KNOWLEDGE_ADMIN_PASSWORD,
   };
@@ -27,6 +28,7 @@ function parseArgs(argv) {
     else if (arg === '--space-slug') args.spaceSlug = argv[++index];
     else if (arg === '--title') args.title = argv[++index];
     else if (arg === '--allowlist') args.allowlist = argv[++index];
+    else if (arg === '--all') args.all = true;
     else if (arg === '--email') args.email = argv[++index];
     else if (arg === '--password') args.password = argv[++index];
     else throw new Error(`Unknown argument: ${arg}`);
@@ -38,8 +40,11 @@ function parseArgs(argv) {
   if (!args.spaceSlug) {
     throw new Error('--space-slug is required.');
   }
-  if (!args.title && !args.allowlist) {
-    throw new Error('Use --title or --allowlist to select explicit articles.');
+  if (!args.title && !args.allowlist && !args.all) {
+    throw new Error('Use --title, --allowlist or --all to select articles explicitly.');
+  }
+  if (Number(Boolean(args.title)) + Number(Boolean(args.allowlist)) + Number(args.all) > 1) {
+    throw new Error('Use only one article selector: --title, --allowlist or --all.');
   }
 
   return args;
@@ -241,7 +246,7 @@ async function main() {
   const allowedTitles = args.allowlist ? await readAllowlist(args.allowlist) : null;
   const selected = index.filter((article) => {
     const title = normalizeText(article.title);
-    return args.title ? title === normalizeText(args.title) : allowedTitles.has(title);
+    return args.all || (args.title ? title === normalizeText(args.title) : allowedTitles.has(title));
   });
 
   if (selected.length === 0) {
@@ -271,14 +276,17 @@ async function main() {
   if (spaceError) throw spaceError;
 
   const results = [];
+  const processedRuntimeArticleIds = new Set();
 
   for (const articleIndex of selected) {
     const articlePath = path.join(root, articleIndex.articleDirRelative);
     const article = JSON.parse(await fs.readFile(path.join(articlePath, 'article.json'), 'utf8'));
     const localHtml = await fs.readFile(path.join(articlePath, 'content.local.html'), 'utf8');
+    const localText = await fs.readFile(path.join(articlePath, 'content.txt'), 'utf8');
     const sourcePath = `${args.root.replace(/\\/g, '/')}/${articleIndex.articleDirRelative}`;
+    const sourceHash = sha256(Buffer.from(localText.trim(), 'utf8'));
 
-    const { data: runtimeArticle, error: articleError } = await supabase
+    let { data: runtimeArticle, error: articleError } = await supabase
       .from('vw_admin_knowledge_article_detail_v2')
       .select('*')
       .eq('knowledge_space_id', space.id)
@@ -286,8 +294,33 @@ async function main() {
       .maybeSingle();
     if (articleError) throw articleError;
     if (!runtimeArticle) {
+      const fallback = await supabase
+        .from('vw_admin_knowledge_article_detail_v2')
+        .select('*')
+        .eq('knowledge_space_id', space.id)
+        .eq('source_hash', sourceHash)
+        .maybeSingle();
+      if (fallback.error) throw fallback.error;
+      runtimeArticle = fallback.data;
+    }
+    if (!runtimeArticle) {
       throw new Error(`Runtime article not found for ${sourcePath}`);
     }
+    if (processedRuntimeArticleIds.has(runtimeArticle.id)) {
+      results.push({
+        title: repairMojibake(article.title),
+        status: runtimeArticle.status,
+        visibility: runtimeArticle.visibility,
+        assets: article.assets?.length ?? 0,
+        markdownBytes: 0,
+        applied: args.apply,
+        upsertedAssets: 0,
+        articleUpdate: 'duplicate_source_skipped',
+        publicAssets: runtimeArticle.status === 'published' && runtimeArticle.visibility === 'public',
+      });
+      continue;
+    }
+    processedRuntimeArticleIds.add(runtimeArticle.id);
 
     const assetBySrc = new Map();
     const upsertedAssets = [];
@@ -305,6 +338,9 @@ async function main() {
       const buffer = await fs.readFile(absoluteAssetPath);
       const fileHash = sha256(buffer);
       const detected = detectImageDimensions(buffer);
+      if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(detected.mime)) {
+        throw new Error(`Unsupported or invalid image asset: ${relativeAssetPath}`);
+      }
       const storageExtension = detected.mime === 'image/jpeg'
         ? 'jpg'
         : detected.mime === 'image/webp'
