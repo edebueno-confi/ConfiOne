@@ -116,7 +116,7 @@ export async function getCsMonthly(): Promise<CsMonthlyPoint[]> {
 export async function getLatestSyncRun(): Promise<SyncRun | null> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client
-    .from('hubspot_sync_runs')
+    .from('vw_analytics_dashboard_sync_status')
     .select('*')
     .order('started_at', { ascending: false })
     .limit(10);
@@ -243,7 +243,7 @@ export interface IntegrationSchedule {
 
 export async function getIntegrationSchedule(): Promise<IntegrationSchedule | null> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.from('analytics_integration_schedule').select('enabled,frequency,last_run_at,last_status,last_message,hubspot_enabled,hubspot_frequency,hubspot_last_run_at,hubspot_last_status,hubspot_last_message').eq('id', true).maybeSingle();
+  const { data, error } = await client.from('vw_analytics_integration_schedule_read').select('enabled,frequency,last_run_at,last_status,last_message,hubspot_enabled,hubspot_frequency,hubspot_last_run_at,hubspot_last_status,hubspot_last_message').eq('id', true).maybeSingle();
   if (error) throw toAppError(error, 'Falha ao carregar o agendamento da integração.');
   if (!data) return null;
   const row = data as Record<string, unknown>;
@@ -327,7 +327,7 @@ export async function getReconciliationQuality(input: { from?: string; to?: stri
 
 export async function listAnalyticsSourceConfig(): Promise<AnalyticsSourceConfig[]> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.from('analytics_source_config').select('*').order('domain_key').order('label');
+  const { data, error } = await client.from('vw_analytics_dashboard_pipeline_catalog').select('*').order('domain_key').order('label');
   if (error) throw toAppError(error, 'Falha ao carregar as fontes configuradas do Dashboard.');
   return (data ?? []).map((row) => mapAnalyticsSourceConfig(row as Row));
 }
