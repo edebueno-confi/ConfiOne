@@ -403,12 +403,12 @@ export function HelpCenterHomePage() {
             </p>
           </div>
 
-          <div className="hidden lg:absolute lg:right-8 lg:top-6 lg:block lg:w-[362px] xl:right-10 xl:w-[376px]">
+          <div className="hidden lg:absolute lg:right-8 lg:top-5 lg:block lg:w-[410px] xl:right-10 xl:w-[428px]">
             <div className="rounded-[26px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-5 shadow-[0_20px_42px_rgba(0,14,72,0.2)]">
               <div className="space-y-4">
-                <div className="grid grid-cols-[92px_minmax(0,1fr)] items-center gap-4">
-                  <div className="flex h-[92px] w-[92px] items-center justify-center rounded-[28px] bg-[radial-gradient(circle_at_top_left,rgba(48,127,226,0.18),transparent_58%),linear-gradient(180deg,rgba(237,244,255,0.96),rgba(223,236,255,0.88))]">
-                    <GeniusMascot alt="Gênio guiando a consulta da documentação" expression="happy" pose="welcome" size="md" surface="default" />
+                <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center gap-5">
+                  <div className="flex h-[132px] w-[132px] items-center justify-center rounded-[32px] bg-[radial-gradient(circle_at_top_left,rgba(48,127,226,0.18),transparent_58%),linear-gradient(180deg,rgba(237,244,255,0.96),rgba(223,236,255,0.88))]">
+                    <GeniusMascot alt="Gênio guiando a consulta da documentação" expression="happy" pose="welcome" size="lg" surface="default" />
                   </div>
                   <div className="space-y-1.5">
                     <h2 className="text-[1.18rem] font-semibold leading-7 tracking-[-0.04em] text-[var(--help-ink-strong)]">
@@ -458,8 +458,8 @@ export function HelpCenterHomePage() {
         <div className="border-t border-white/15 bg-[color:var(--color-surface-strong)] px-1 py-4 lg:hidden">
           <div className="space-y-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-[78px] w-[78px] shrink-0 items-center justify-center rounded-[24px] bg-[radial-gradient(circle_at_top_left,rgba(48,127,226,0.18),transparent_58%),linear-gradient(180deg,rgba(237,244,255,0.96),rgba(223,236,255,0.88))]">
-                <GeniusMascot alt="Gênio guiando a consulta da documentação" expression="happy" pose="welcome" size="sm" surface="default" />
+              <div className="flex h-[96px] w-[96px] shrink-0 items-center justify-center rounded-[26px] bg-[radial-gradient(circle_at_top_left,rgba(48,127,226,0.18),transparent_58%),linear-gradient(180deg,rgba(237,244,255,0.96),rgba(223,236,255,0.88))]">
+                <GeniusMascot alt="Gênio guiando a consulta da documentação" expression="happy" pose="welcome" size="md" surface="default" />
               </div>
               <div className="space-y-1.5">
                 <h2 className="text-[1.1rem] font-semibold tracking-[-0.04em] text-[var(--help-ink-strong)]">
@@ -813,15 +813,6 @@ export function HelpCenterHomePage() {
         </aside>
       </section>
 
-      {portalHref ? (
-        <section className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[color:var(--color-surface-strong)] px-5 py-4">
-          <div>
-            <p className="text-sm font-semibold text-[var(--help-ink-strong)]">Precisa tratar uma solicitação?</p>
-            <p className="text-sm leading-6 text-[var(--help-muted)]">Entre no portal quando a documentação não for suficiente.</p>
-          </div>
-          <a className="inline-flex min-h-10 items-center rounded-[12px] bg-[var(--help-link)] px-4 text-sm font-semibold text-white no-underline" href={portalHref} rel="noreferrer" target="_blank">Entrar no portal</a>
-        </section>
-      ) : null}
     </div>
   );
 }

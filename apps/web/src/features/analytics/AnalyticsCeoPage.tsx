@@ -84,12 +84,28 @@ export function AnalyticsCeoPage({ sharedPeriod, onSharedPeriodChange, onRetry }
   };
   return <div className="space-y-5">
     <Filters value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={[]} />
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-6 xl:grid-cols-5">
-      <KpiCard className="lg:col-span-2 xl:col-span-1" label="Pipeline aberto" value={formatCurrencyBRL(c.openPipelineValue)} hint={`${c.openDeals.toLocaleString('pt-BR')} deals abertos`} source="HubSpot Deals: soma dos valores em estágios não fechados." />
-      <KpiCard className="lg:col-span-2 xl:col-span-1" label="Receita ganha" value={formatCurrencyBRL(c.wonRevenue)} hint={`${c.wonDeals.toLocaleString('pt-BR')} ganhos`} source="HubSpot Deals: soma dos deals em estágio marcado como ganho." />
-      <KpiCard className="lg:col-span-2 xl:col-span-1" label="Conversão comercial" value={formatPercent(c.conversionRate)} hint={`${c.lostDeals.toLocaleString('pt-BR')} perdidos`} source="Backend: ganhos divididos por ganhos mais perdidos." />
-      <KpiCard className="lg:col-span-3 xl:col-span-1" label="Saldo vencido" value={formatCurrencyBRL(f.overdueBalance)} hint={`${f.overdueTitles.toLocaleString('pt-BR')} títulos`} tone={f.overdueBalance > 0 ? 'critical' : 'neutral'} source="OMIE: saldo de títulos classificados como atrasados; cancelados ficam separados." />
-      <KpiCard className="lg:col-span-3 xl:col-span-1" label="Clientes com alerta" value={state.data.financialAlerts.length.toLocaleString('pt-BR')} hint="Inadimplência reconciliada" tone={state.data.financialAlerts.length > 0 ? 'warning' : 'neutral'} source="Empresas com saldo vencido positivo, reconciliadas com OMIE por CNPJ ou nome exato." />
+    <div className="grid gap-4 lg:grid-cols-6 xl:grid-cols-5">
+      <section className="space-y-2 lg:col-span-6 xl:col-span-3" aria-labelledby="analytics-period-performance">
+        <div>
+          <h2 id="analytics-period-performance" className="text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--minimal-text-secondary)]">Desempenho no período</h2>
+          <p className="mt-1 text-xs text-[color:var(--minimal-text-tertiary)]">Indicadores afetados pelo recorte selecionado.</p>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <KpiCard label="Pipeline aberto" value={formatCurrencyBRL(c.openPipelineValue)} hint={`${c.openDeals.toLocaleString('pt-BR')} deals abertos`} source="HubSpot Deals: soma dos valores em estágios não fechados." />
+          <KpiCard label="Receita ganha" value={formatCurrencyBRL(c.wonRevenue)} hint={`${c.wonDeals.toLocaleString('pt-BR')} ganhos`} source="HubSpot Deals: soma dos deals em estágio marcado como ganho." />
+          <KpiCard label="Conversão comercial" value={formatPercent(c.conversionRate)} hint={`${c.lostDeals.toLocaleString('pt-BR')} perdidos`} source="Backend: ganhos divididos por ganhos mais perdidos." />
+        </div>
+      </section>
+      <section className="space-y-2 lg:col-span-6 xl:col-span-2" aria-labelledby="analytics-current-risk">
+        <div>
+          <h2 id="analytics-current-risk" className="text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--minimal-text-secondary)]">Risco financeiro atual</h2>
+          <p className="mt-1 text-xs text-[color:var(--minimal-text-tertiary)]">Posição atual, não afetada pelo período selecionado.</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <KpiCard label="Saldo vencido" value={formatCurrencyBRL(f.overdueBalance)} hint={`${f.overdueTitles.toLocaleString('pt-BR')} títulos`} tone={f.overdueBalance > 0 ? 'critical' : 'neutral'} source="OMIE: saldo de títulos classificados como atrasados; cancelados ficam separados." />
+          <KpiCard label="Clientes com alerta" value={state.data.financialAlerts.length.toLocaleString('pt-BR')} hint="Inadimplência reconciliada" tone={state.data.financialAlerts.length > 0 ? 'warning' : 'neutral'} source="Empresas com saldo vencido positivo, reconciliadas com OMIE por CNPJ ou nome exato." />
+        </div>
+      </section>
     </div>
     {history ? <ChartCard title="Evolução executiva" description={`Comparação com ${formatPeriod(history.previousFrom, history.previousTo)}. A variação é calculada no backend para o mesmo número de dias.`}><div className="grid gap-2 sm:grid-cols-3"><HistoryMetric label="Receita ganha" current={history.current.commercial.wonRevenue} previous={history.previous.commercial.wonRevenue} format={formatCurrencyBRL} /><HistoryMetric label="Conversão" current={history.current.commercial.conversionRate} previous={history.previous.commercial.conversionRate} format={formatPercent} percentage /><HistoryMetric label="Saldo vencido" current={history.current.finance.overdueBalance} previous={history.previous.finance.overdueBalance} format={formatCurrencyBRL} inverse /></div></ChartCard> : null}
     <div className="grid gap-4 xl:grid-cols-3">

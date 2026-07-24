@@ -167,8 +167,8 @@ export function HelpCenterArticlesPage() {
           </div>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
-          <aside className="rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[#fbfcff] px-4 py-4">
+        <div className="grid items-start gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+          <aside className="hidden rounded-[22px] border border-[rgba(20,31,71,0.08)] bg-[#fbfcff] px-4 py-4 lg:block">
             <div className="space-y-3">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--help-muted)]">
                 Categorias
@@ -210,14 +210,14 @@ export function HelpCenterArticlesPage() {
             </div>
           </aside>
 
-          <div className="min-w-0 overflow-hidden rounded-[22px] border border-[rgba(20,31,71,0.08)]">
+          <div className="min-w-0 self-start overflow-hidden rounded-[22px] border border-[rgba(20,31,71,0.08)]">
             <div className="hidden grid-cols-[minmax(0,1fr)_220px_180px] gap-4 bg-[#fbfcff] px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--help-muted)] md:grid">
               <span>Artigo</span>
               <span>Categoria</span>
               <span>Atualizado em</span>
             </div>
             {filteredArticles.length === 0 ? (
-              <div className="bg-[color:var(--color-surface-strong)] px-6 py-10">
+              <div className="bg-[color:var(--color-surface-strong)] px-4 py-5 sm:px-6">
                 <PublicSearchStateCard
                   description={selectedCategory || searchQuery ? 'Não encontramos artigos públicos para este filtro. Revise os termos ou volte para a lista completa.' : 'Esta central ainda não possui artigos públicos publicados para a lista geral.'}
                   action={

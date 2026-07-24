@@ -42,8 +42,9 @@ test('shell do dashboard viewer não expõe configuração, logs, sincronizaçã
 });
 
 test('Dashboard Gerencial distribui cinco KPIs em grade 3 + 2 a partir de 1024px', () => {
-  assert.match(ceoPage, /grid-cols-2 gap-3 lg:grid-cols-6 xl:grid-cols-5/);
-  assert.match(ceoPage, /lg:col-span-3 xl:col-span-1/);
+  assert.match(ceoPage, /Desempenho no período/);
+  assert.match(ceoPage, /Risco financeiro atual/);
+  assert.match(ceoPage, /Posição atual, não afetada pelo período selecionado/);
   assert.match(fs.readFileSync('apps/web/src/features/analytics/analytics-ui.tsx', 'utf8'), /grid-cols-2 gap-3 lg:grid-cols-6 xl:grid-cols-5/);
   assert.match(ceoPage, /Sem dados neste período/);
   assert.match(fs.readFileSync('apps/web/src/features/analytics/analytics-ui.tsx', 'utf8'), /Array\.from\(\{ length: 5/);
