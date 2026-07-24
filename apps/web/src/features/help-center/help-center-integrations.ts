@@ -1,10 +1,6 @@
-export const geniusReturnsIntegrationLinks = {
-  apiDocs: 'https://apidocs.geniusreturns.com.br/openapi',
-  apiDocsSpec: 'https://apidocs.geniusreturns.com.br/_spec/openapi.json?download=',
-  swagger: 'https://integration.geniusreturns.com.br/swagger/index.html',
-  production: 'https://integration.geniusreturns.com.br',
-  qa: 'https://integration-qa.geniusreturns.com.br',
-} as const;
+import { readHelpCenterIntegrationLinks } from '../../app/runtime-config';
+
+export const geniusReturnsIntegrationLinks = readHelpCenterIntegrationLinks();
 
 export type GeniusReturnsApiOperationKey =
   | 'authenticate'
