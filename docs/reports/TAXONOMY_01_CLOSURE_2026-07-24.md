@@ -92,7 +92,7 @@ O lote não alterou RLS, autorização ou contratos de acesso. Artigos restritos
 
 ## Evidências
 
-As evidências atualizadas estão em `output/playwright/knowledge-01-*.png`, incluindo home, lista desktop/mobile, artigo, busca vazia e not-found. A matriz completa e este relatório documentam a classificação aplicada.
+As evidências atualizadas estão em `output/playwright/taxonomy-01-*.png`, incluindo home desktop/mobile, categorias desktop/mobile, subcategoria de estornos, breadcrumb, buscas por estorno/seller/API, busca sem resultado e tentativa de artigo restrito. A matriz completa e este relatório documentam a classificação aplicada.
 
 ## Bloqueios
 
