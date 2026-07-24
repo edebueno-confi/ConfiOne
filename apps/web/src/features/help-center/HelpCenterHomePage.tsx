@@ -369,32 +369,22 @@ export function HelpCenterHomePage() {
               </div>
             </form>
 
-            <div className="flex flex-wrap gap-2.5 text-sm">
-              <span className="inline-flex min-h-9 items-center gap-2 rounded-[12px] border border-[var(--help-hero-border)] bg-[var(--help-accent-soft)] px-3.5 text-[var(--help-hero-text)]">
-                <HelpIcon kind="search" className="h-4 w-4" />
-                Busca global inteligente
-              </span>
-              <Link
-                className="inline-flex min-h-9 items-center gap-2 rounded-[12px] border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-3.5 text-[var(--help-hero-muted)] no-underline transition hover:bg-[var(--help-accent-soft)]"
-                to={`/help/${context.primaryRoute.knowledge_space_slug}/articles`}
-              >
-                <HelpIcon kind="doc" className="h-4 w-4" />
-                Artigos
-              </Link>
-              <Link
-                className="inline-flex min-h-9 items-center gap-2 rounded-[12px] border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-3.5 text-[var(--help-hero-muted)] no-underline transition hover:bg-[var(--help-accent-soft)]"
-                to={guideHref}
-              >
-                <HelpIcon kind="doc" className="h-4 w-4" />
-                Guias passo a passo
-              </Link>
-              <Link
-                className="inline-flex min-h-9 items-center gap-2 rounded-[12px] border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-3.5 text-[var(--help-hero-muted)] no-underline transition hover:bg-[var(--help-accent-soft)]"
-                to={guideHref}
-              >
-                <HelpIcon kind="support" className="h-4 w-4" />
-                Buscar orientação
-              </Link>
+            <div className="space-y-2.5 text-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--help-hero-muted)]">
+                Sugestões para começar
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {suggestedSearchItems.map((prompt) => (
+                  <Link
+                    key={`desktop-${prompt}`}
+                    className="inline-flex min-h-9 items-center gap-2 rounded-[12px] border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-3.5 text-[var(--help-hero-muted)] no-underline transition hover:border-[var(--help-accent)] hover:bg-[var(--help-accent-soft)]"
+                    to={`/help/${context.primaryRoute.knowledge_space_slug}?q=${encodeURIComponent(prompt)}`}
+                  >
+                    <HelpIcon kind="search" className="h-4 w-4" />
+                    <span className="max-w-[18rem] truncate">{prompt}</span>
+                  </Link>
+                ))}
+              </div>
             </div>
 
             <p className="pt-1 text-xs leading-5 text-[var(--help-hero-muted)]">
@@ -403,43 +393,13 @@ export function HelpCenterHomePage() {
             </p>
           </div>
 
-          <div className="hidden lg:absolute lg:right-8 lg:top-8 lg:block lg:w-[360px] xl:right-12 xl:w-[390px]">
-            <div className="flex flex-col items-center gap-4 px-4 py-2 text-center">
-              <div className="space-y-4">
+          <div className="hidden lg:absolute lg:inset-y-0 lg:right-8 lg:flex lg:w-[360px] lg:items-center xl:right-12 xl:w-[390px]">
+            <div className="flex w-full flex-col items-center gap-4 px-4 py-2 text-center">
+              <div className="space-y-3">
                 <GeniusMascot alt="Gênio anfitrião da consulta" expression="happy" pose="welcome" size="xl" surface="default" />
                 <div className="space-y-1.5">
                   <h2 className="text-[1.18rem] font-semibold leading-7 tracking-[-0.04em] text-[var(--help-hero-text)]">Pergunte ao Gênio</h2>
-                  <p className="text-sm leading-6 text-[var(--help-hero-muted)]">Comece pela busca ou escolha uma sugestão de consulta.</p>
-                </div>
-
-                <div className="grid gap-2.5">
-                  {suggestedSearchItems.map((prompt) => (
-                    <Link
-                      key={prompt}
-                      className="flex min-h-[44px] items-center gap-3 rounded-[14px] border border-[var(--help-hero-border)] bg-[color:var(--help-hero-soft)] px-3.5 text-left text-sm text-[var(--help-hero-text)] no-underline transition hover:border-[var(--help-accent)]"
-                      to={`/help/${context.primaryRoute.knowledge_space_slug}?q=${encodeURIComponent(prompt)}`}
-                    >
-                      <PublicIconBadge className="h-7 w-7 rounded-[10px]" icon="support" tone="blue" />
-                      <span className="min-w-0 flex-1">{prompt}</span>
-                    </Link>
-                  ))}
-                </div>
-
-                <div className="space-y-3 pt-1">
-                  <Link className="block no-underline" to={guideHref}>
-                    <AppButton className="min-h-[46px] w-full justify-center rounded-[14px] text-base">
-                      Ver guia recomendado
-                    </AppButton>
-                  </Link>
-                  <div className="text-center">
-                    <Link
-                      className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--help-hero-text)] no-underline"
-                      to={guideHref}
-                    >
-                      Saiba como funciona
-                      <HelpIcon kind="chevron-right" />
-                    </Link>
-                  </div>
+                  <p className="text-sm leading-6 text-[var(--help-hero-muted)]">O Gênio acompanha sua consulta enquanto você encontra a orientação certa.</p>
                 </div>
               </div>
             </div>

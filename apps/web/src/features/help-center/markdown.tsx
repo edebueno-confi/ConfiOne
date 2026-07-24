@@ -159,8 +159,69 @@ function parseInline(text: string): InlinePart[] {
   return parts.length > 0 ? parts : [{ text }];
 }
 
-function parseMarkdown(source: string) {
+function normalizeConfigurationSource(source: string) {
   const lines = source.replace(/\r\n/g, '\n').split('\n');
+  const normalized: string[] = [];
+  let meaningfulLine = true;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) {
+      normalized.push('');
+      meaningfulLine = true;
+      continue;
+    }
+
+    const combinedLead = /^([A-ZÀ-Ú0-9][A-ZÀ-Ú0-9\s:?!-]{8,100}?)\s+(Passo a passo\b.+)$/.exec(line);
+    if (meaningfulLine && normalized.every((entry) => !entry.trim()) && combinedLead) {
+      normalized.push(`# ${combinedLead[1].trim()}`);
+      normalized.push(`## ${combinedLead[2].replace(/:$/, '')}`);
+      meaningfulLine = false;
+      continue;
+    }
+
+    if (meaningfulLine && normalized.every((entry) => !entry.trim()) && /^[A-ZÀ-Ú0-9][A-ZÀ-Ú0-9\s:?!-]{8,100}$/.test(line)) {
+      normalized.push(`# ${line}`);
+      meaningfulLine = false;
+      continue;
+    }
+
+    if (/^passo a passo\b/i.test(line)) {
+      normalized.push(`## ${line.replace(/:$/, '')}`);
+      meaningfulLine = false;
+      continue;
+    }
+
+    if (/^dica\s*:/i.test(line)) {
+      normalized.push(':::callout info');
+      normalized.push(line.replace(/^dica\s*:\s*/i, ''));
+      normalized.push(':::');
+      normalized.push('');
+      meaningfulLine = true;
+      continue;
+    }
+
+    if (/^(acesse|abra|no menu|selecione|escolha|clique|caso precise|ao clicar|insira|inserir|escolher|configure|defina|informe|revise)\b/i.test(line)) {
+      while (normalized.at(-1) === '') {
+        normalized.pop();
+      }
+      normalized.push(`1. ${line}`);
+      meaningfulLine = false;
+      continue;
+    }
+
+    normalized.push(rawLine);
+    meaningfulLine = false;
+  }
+
+  return normalized.join('\n');
+}
+
+function parseMarkdown(source: string, categoryName?: string) {
+  const normalizedSource = categoryName?.toLocaleLowerCase('pt-BR').startsWith('configura')
+    ? normalizeConfigurationSource(source)
+    : source;
+  const lines = normalizedSource.replace(/\r\n/g, '\n').split('\n');
   const blocks: Block[] = [];
   let index = 0;
 
@@ -430,14 +491,16 @@ function slugifyHeading(value: string) {
 
 export function MarkdownDocument({
   assets = {},
+  categoryName,
   relatedArticles = [],
   source,
 }: {
   assets?: Record<string, MarkdownAsset>;
+  categoryName?: string;
   relatedArticles?: MarkdownRelatedArticle[];
   source: string;
 }) {
-  const blocks = parseMarkdown(source);
+  const blocks = parseMarkdown(source, categoryName);
   const headingUsage = new Map<string, number>();
   let levelTwoIndex = 0;
   const relatedById = new Map(relatedArticles.map((article) => [article.id, article]));

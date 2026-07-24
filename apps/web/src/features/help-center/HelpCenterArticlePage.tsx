@@ -74,6 +74,14 @@ function stripDuplicateLeadHeading(source: string, title: string) {
   }
 
   const firstLine = lines[firstMeaningfulIndex].trim();
+  if (/^[A-ZÀ-Ú0-9][A-ZÀ-Ú0-9\s:?!-]{8,}\s+Passo a passo\b/.test(firstLine)) {
+    lines.splice(firstMeaningfulIndex, 1);
+    if (lines[firstMeaningfulIndex]?.trim() === '') {
+      lines.splice(firstMeaningfulIndex, 1);
+    }
+    return lines.join('\n');
+  }
+
   const match = /^#\s+(.+)$/.exec(firstLine);
   if (!match) {
     return source;
@@ -89,6 +97,14 @@ function stripDuplicateLeadHeading(source: string, title: string) {
   }
 
   return lines.join('\n');
+}
+
+function isRawConfigurationSummary(summary: string | null, categoryName: string | null) {
+  if (!summary || !categoryName?.toLocaleLowerCase('pt-BR').startsWith('configura')) {
+    return false;
+  }
+
+  return summary.length > 140 && /passo a passo|acesse o painel|no menu/i.test(summary);
 }
 
 function extractArticleSections(source: string, fallbackTitle: string) {
@@ -271,6 +287,9 @@ export function HelpCenterArticlePage() {
     () => stripDuplicateLeadHeading(article?.body_md ?? '', article?.title ?? ''),
     [article?.body_md, article?.title],
   );
+  const articleSummary = isRawConfigurationSummary(article?.summary ?? null, article?.category_name ?? null)
+    ? null
+    : article?.summary;
   const assetMap = useMemo(
     () =>
       Object.fromEntries(
@@ -392,10 +411,10 @@ export function HelpCenterArticlePage() {
               </span>
             </div>
 
-            <p className="max-w-3xl text-sm leading-7 text-[var(--help-muted)] sm:text-base">
-              {article.summary ??
+            {articleSummary || !article?.summary ? <p className="max-w-3xl text-sm leading-7 text-[var(--help-muted)] sm:text-base">
+              {articleSummary ??
                 'Aprenda como executar esta configuração pública com mais clareza e segurança.'}
-            </p>
+            </p> : null}
           </div>
 
           {articleSections.length >= 3 ? <details className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-3 lg:hidden">
@@ -418,6 +437,7 @@ export function HelpCenterArticlePage() {
           <div className="min-w-0">
             <MarkdownDocument
               assets={assetMap}
+              categoryName={article.category_name ?? undefined}
               relatedArticles={context.articles}
               source={articleBody}
             />

@@ -145,14 +145,20 @@ export async function resolvePostLoginRedirect(
     hasCsPortfolioAccess: csPortfolioAccess,
   };
   const redirectTo = normalizeRedirectTo(rawRedirectTo);
-  const destination =
-    redirectTo && canOpenInternalRoute(redirectTo, context)
+  const requestedRouteAllowed = redirectTo ? canOpenInternalRoute(redirectTo, context) : null;
+  const destination = redirectTo
+    ? requestedRouteAllowed
       ? redirectTo
-      : getDefaultInternalLandingRoute(context);
+      : '/access-denied'
+    : getDefaultInternalLandingRoute(context);
 
   return {
     destination,
-    denialReason: destination ? null : 'missing-authorized-workspace',
+    denialReason: redirectTo && requestedRouteAllowed === false
+      ? 'missing-authorized-workspace'
+      : destination
+        ? null
+        : 'missing-authorized-workspace',
     roles,
     screenKeys,
     hasCustomerPortalAccess: customerPortalAccess,
