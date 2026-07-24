@@ -341,7 +341,7 @@ export function HelpCenterHomePage() {
                 <span className="block">consulta.</span>
               </h1>
               <p className="max-w-[700px] text-[0.98rem] leading-7 text-[var(--help-hero-muted)]">
-                Pergunte ao Genius e encontre orientações para configurar, operar e resolver dúvidas no Genius Returns.
+                Pergunte ao Gênio e encontre orientações para configurar, operar e resolver dúvidas no Genius Returns.
               </p>
             </div>
 
@@ -406,9 +406,9 @@ export function HelpCenterHomePage() {
           <div className="hidden lg:absolute lg:right-8 lg:top-8 lg:block lg:w-[360px] xl:right-12 xl:w-[390px]">
             <div className="flex flex-col items-center gap-4 px-4 py-2 text-center">
               <div className="space-y-4">
-                <GeniusMascot alt="Genius anfitrião da consulta" expression="happy" pose="welcome" size="xl" surface="default" />
+                <GeniusMascot alt="Gênio anfitrião da consulta" expression="happy" pose="welcome" size="xl" surface="default" />
                 <div className="space-y-1.5">
-                  <h2 className="text-[1.18rem] font-semibold leading-7 tracking-[-0.04em] text-[var(--help-hero-text)]">Pergunte ao Genius</h2>
+                  <h2 className="text-[1.18rem] font-semibold leading-7 tracking-[-0.04em] text-[var(--help-hero-text)]">Pergunte ao Gênio</h2>
                   <p className="text-sm leading-6 text-[var(--help-hero-muted)]">Comece pela busca ou escolha uma sugestão de consulta.</p>
                 </div>
 
@@ -448,9 +448,9 @@ export function HelpCenterHomePage() {
           <div className="gso-help-mobile-genius mt-5 border-t border-[var(--help-hero-border)] pt-5 lg:hidden">
             <div className="space-y-4">
             <div className="flex flex-col items-center gap-2 text-center">
-              <GeniusMascot alt="Genius anfitrião da consulta" expression="happy" pose="welcome" size="xl" surface="default" />
+              <GeniusMascot alt="Gênio anfitrião da consulta" expression="happy" pose="welcome" size="xl" surface="default" />
               <div className="space-y-1.5">
-                <h2 className="text-[1.1rem] font-semibold tracking-[-0.04em] text-[var(--help-hero-text)]">Pergunte ao Genius</h2>
+                <h2 className="text-[1.1rem] font-semibold tracking-[-0.04em] text-[var(--help-hero-text)]">Pergunte ao Gênio</h2>
                 <p className="text-sm leading-6 text-[var(--help-hero-muted)]">Escolha uma sugestão ou refine sua pergunta na busca.</p>
               </div>
             </div>

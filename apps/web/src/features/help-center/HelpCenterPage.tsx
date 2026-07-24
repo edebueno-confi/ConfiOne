@@ -12,7 +12,6 @@ import { classifyAdminError } from '../admin/admin-errors';
 import type { HelpCenterSpaceContext } from './context';
 import {
   buildHelpCenterSeoTitle,
-  buildHelpCenterTheme,
   sanitizePublicSupportContacts,
   sanitizePublicSeoDefaults,
   useHelpCenterDocumentMeta,
@@ -44,7 +43,7 @@ interface HelpCenterSpaceSummary {
 
 function PublicHelpLoadingSurface() {
   return (
-    <div className="min-h-screen bg-[var(--help-surface)]">
+    <div data-public-theme="light" className="min-h-screen bg-[var(--help-surface)]">
       <PublicHelpHeader active="articles" brandName="Genius Returns" showOtherCenters={false} spaceSlug="genius" tertiaryLabel="Categorias" />
       <main className="mx-auto max-w-[1520px] px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
         <section aria-busy="true" className="flex min-h-[160px] flex-col items-center justify-center rounded-[28px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-5 py-6 text-center shadow-[var(--help-shadow)] sm:min-h-[250px] sm:px-8">
@@ -151,7 +150,7 @@ export function HelpCenterPage() {
 
   if (phase === 'contract-unavailable') {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-6 py-12">
+      <div data-public-theme="light" className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-6 py-12">
         <ContractUnavailableState contractName="central pública de ajuda" />
       </div>
     );
@@ -159,7 +158,7 @@ export function HelpCenterPage() {
 
   if (phase === 'error') {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-6 py-12">
+      <div data-public-theme="light" className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-6 py-12">
         <ErrorState
           title="Falha ao carregar a Central de Ajuda"
           description={
@@ -174,7 +173,7 @@ export function HelpCenterPage() {
 
   if (phase === 'empty') {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-6 py-12">
+      <div data-public-theme="light" className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-6 py-12">
         <EmptyState
           title="Nenhuma central disponível"
           description="Ainda não existe uma central publicada para leitura neste ambiente."
@@ -319,17 +318,6 @@ export function HelpCenterSpaceLayout() {
   }, [spaceSlug]);
 
   const space = context?.primaryRoute ?? null;
-  const theme = useMemo(
-    () =>
-      space
-        ? buildHelpCenterTheme({
-            brandName: space.brand_name,
-            knowledgeSpaceSlug: space.knowledge_space_slug,
-            themeTokens: space.theme_tokens,
-          })
-        : null,
-    [space],
-  );
   const seoDefaults = useMemo(
     () => (space ? sanitizePublicSeoDefaults(space.seo_defaults) : null),
     [space],
@@ -404,12 +392,7 @@ export function HelpCenterSpaceLayout() {
         : 'directory';
 
   return (
-    <div
-      className="min-h-screen bg-[var(--help-surface)]"
-      style={{
-        ...theme,
-      }}
-    >
+    <div data-public-theme="light" className="min-h-screen bg-[var(--help-surface)]">
       <PublicHelpHeader
         active={active}
         brandName={space.brand_name}

@@ -284,6 +284,52 @@
   --minimal-drawer-shadow: 16px 0 40px rgba(2, 8, 24, 0.55);
 }
 
+/* A Central Pública é uma superfície editorial clara, independente do tema interno. */
+[data-public-theme='light'] {
+  color-scheme: light;
+  --color-app-bg: #f4f7fc;
+  --color-surface: #f4f7fc;
+  --color-surface-strong: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-border: #dce4f2;
+  --color-divider: #e8eef7;
+  --color-ink: #162443;
+  --color-text-primary: #162443;
+  --color-text-secondary: #6b7892;
+  --color-text-muted: #98a3b8;
+  --color-muted: #6b7892;
+  --minimal-surface: #ffffff;
+  --minimal-surface-muted: #f4f7fc;
+  --minimal-text: #162443;
+  --minimal-text-secondary: #6b7892;
+  --minimal-text-tertiary: #98a3b8;
+  --minimal-border: #dce4f2;
+  --minimal-border-strong: #c7d2e5;
+  --minimal-action: #2f6bff;
+  --minimal-action-hover: #235cf0;
+  --minimal-focus: rgba(47, 107, 255, 0.28);
+  --help-surface: #eef5ff;
+  --help-surface-strong: #ffffff;
+  --help-panel: rgba(255, 255, 255, 0.92);
+  --help-ink: #223357;
+  --help-ink-strong: #142042;
+  --help-muted: rgba(20, 32, 66, 0.72);
+  --help-border: rgba(20, 31, 71, 0.12);
+  --help-accent: #307fe2;
+  --help-accent-strong: #141f47;
+  --help-accent-soft: rgba(48, 127, 226, 0.14);
+  --help-link: #1f67c6;
+  --help-link-hover: #153d82;
+  --help-focus: rgba(48, 127, 226, 0.28);
+  --help-skeleton: #dfeaff;
+  --help-hero: #071859;
+  --help-hero-soft: #0b1f69;
+  --help-hero-text: #f5f8ff;
+  --help-hero-muted: rgba(235, 241, 255, 0.9);
+  --help-hero-border: rgba(255, 255, 255, 0.16);
+  --help-shadow: 0 18px 40px rgba(20, 31, 71, 0.08);
+}
+
 * {
   box-sizing: border-box;
   scrollbar-color: rgba(100, 116, 139, 0.28) transparent;

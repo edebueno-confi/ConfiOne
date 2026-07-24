@@ -95,7 +95,7 @@ export function AnalyticsCeoPage({ sharedPeriod, onSharedPeriodChange, onRetry }
           <h2 id="analytics-period-performance" className="text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--minimal-text-secondary)]">Desempenho no período</h2>
           <p className="mt-1 text-xs text-[color:var(--minimal-text-tertiary)]">Indicadores afetados pelo recorte selecionado.</p>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 lg:grid-cols-3">
           <KpiCard label="Pipeline aberto" value={formatCurrencyBRL(c.openPipelineValue)} hint={`${c.openDeals.toLocaleString('pt-BR')} deals abertos`} source="HubSpot Deals: soma dos valores em estágios não fechados." />
           <KpiCard label="Receita ganha" value={formatCurrencyBRL(c.wonRevenue)} hint={`${c.wonDeals.toLocaleString('pt-BR')} ganhos`} source="HubSpot Deals: soma dos deals em estágio marcado como ganho." />
           <KpiCard label="Conversão comercial" value={formatPercent(c.conversionRate)} hint={`${c.lostDeals.toLocaleString('pt-BR')} perdidos`} source="Backend: ganhos divididos por ganhos mais perdidos." />
@@ -106,7 +106,7 @@ export function AnalyticsCeoPage({ sharedPeriod, onSharedPeriodChange, onRetry }
           <h2 id="analytics-current-risk" className="text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--minimal-text-secondary)]">Risco financeiro atual</h2>
           <p className="mt-1 text-xs text-[color:var(--minimal-text-tertiary)]">Posição atual, não afetada pelo período selecionado.</p>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2">
           <KpiCard label="Saldo vencido" value={formatCurrencyBRL(f.overdueBalance)} hint={`${f.overdueTitles.toLocaleString('pt-BR')} títulos`} tone={f.overdueBalance > 0 ? 'critical' : 'neutral'} source="OMIE: saldo de títulos classificados como atrasados; cancelados ficam separados." />
           <KpiCard label="Clientes com alerta" value={state.data.financialAlerts.length.toLocaleString('pt-BR')} hint="Inadimplência reconciliada" tone={state.data.financialAlerts.length > 0 ? 'warning' : 'neutral'} source="Empresas com saldo vencido positivo, reconciliadas com OMIE por CNPJ ou nome exato." />
         </div>

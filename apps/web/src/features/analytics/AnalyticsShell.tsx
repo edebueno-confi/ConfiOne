@@ -102,7 +102,7 @@ export function AnalyticsShell() {
           </div>
         </div>
 
-        <nav className="gso-workspace-tabs mt-4 flex max-w-full flex-nowrap gap-1 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0" aria-label="Áreas do dashboard">
+        <nav className="gso-workspace-tabs mt-4 flex max-w-full flex-nowrap gap-1 overflow-x-auto pb-1 pr-4 sm:flex-wrap sm:overflow-visible sm:pb-0 sm:pr-0" aria-label="Áreas do dashboard">
           {visibleDomains.map((domain) => {
             const isActive = domain.key === activeKey;
             return (
@@ -112,7 +112,7 @@ export function AnalyticsShell() {
                 onClick={() => setActiveKey(domain.key)}
                 aria-current={isActive ? 'page' : undefined}
                 title={domain.description}
-                className={`gso-workspace-tab rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                className={`gso-workspace-tab flex-none whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                   isActive
                     ? 'bg-[color:var(--minimal-surface-muted)] text-[color:var(--minimal-text)]'
                     : 'text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)]'
