@@ -1,4 +1,4 @@
-# INTEGRATIONS-02 — Hardening completo HubSpot e OMIE
+# INTEGRATIONS-02.1 — Bloqueadores de integridade corrigidos
 
 ## Resultado
 
@@ -15,12 +15,12 @@ Decisao: APROVADO PARA REVISAO, condicionado ao PR #4 e aos checks do HEAD final
 
 ## Identidade e snapshot OMIE
 
-- Titulos usam `omie-v2` com ID oficial ou chave composta deterministica.
+- Titulos usam `omie-v3` com ID oficial ou chave composta deterministica.
 - A posicao da linha, pagina e ordem da API nao participam da identidade.
-- Registros sem campos estaveis suficientes sao rejeitados do snapshot, sem fallback posicional.
-- `analytics_finance_receivables_staging` possui RLS habilitada, sem grants para anon/authenticated.
-- `rpc_service_promote_omie_snapshot(uuid)` preserva o snapshot anterior ate a promocao, expira somente o snapshot ativo anterior e nao transforma ausencia em recebido.
-- Resposta OMIE vazia e colisao de identidade abortam a promocao e preservam o snapshot anterior.
+- Registros sem campos estaveis suficientes sao rejeitados explicitamente com motivo sanitizado.
+- `analytics_finance_receivables_staging` possui RLS habilitada, sem grants para anon/authenticated, e a RPC valida o conteúdo por si mesma.
+- `rpc_service_promote_omie_snapshot(uuid)` valida run, staging, source key, identidade, contagens, duplicidade e idempotência antes de alterar o snapshot.
+- Resposta OMIE vazia, colisão de identidade e falha de lote preservam o snapshot anterior.
 - Identidades legadas permanecem rastreadas como `legacy`; migracao automatica de colisoes nao foi inventada.
 
 ## Correlacao, concorrencia e seguranca
@@ -31,6 +31,7 @@ Decisao: APROVADO PARA REVISAO, condicionado ao PR #4 e aos checks do HEAD final
 - O RPC de promocao e executavel somente por `service_role`.
 - A implementacao interna do snapshot CS nao e executavel por `authenticated`; o wrapper autorizado retorna o objeto vazio contratual sem `can_read_analytics()`.
 - Falhas da etapa HubSpot deixam a execucao como `partial`, nunca como sucesso falso.
+- Runs distinguem `processing`, `completed`, `partial`, `empty`, `failed` e `abandoned`.
 - Nenhuma credencial, token, payload produtivo ou chamada real foi usada.
 
 ## HubSpot
@@ -51,10 +52,12 @@ Decisao: APROVADO PARA REVISAO, condicionado ao PR #4 e aos checks do HEAD final
 
 - Typechecks, build, verify, lint DB e teste pgTAP focado passam.
 - A suite completa chegou a falhar em uma execucao imediatamente apos o reset por incompatibilidade revelada pelo gate CS; o contrato foi ajustado para preservar a resposta JSON vazia existente. `npm run supabase:verify` foi executado novamente e passou com 80 arquivos e 1.297 testes.
-- A suite Node focada de HubSpot/OMIE passa com 18 testes.
+- A suite Node focada de HubSpot/OMIE passa com 15 testes comportamentais.
+- O teste pgTAP focado de integridade passa com 19 testes comportamentais.
+- A suite DB completa passa com 80 arquivos e 1.307 testes.
 - Nao houve sincronizacao real, benchmark produtivo ou teste contra APIs externas.
 
 ## Pendencias bloqueadas
 
-- Publicacao requer credenciais administradas e gate operacional fora deste lote.
+- Publicacao e sincronização real requerem credenciais administradas e gate operacional fora deste lote.
 - Idempotencia de writes externos, merge ambiguo, tombstones completos, watermarks por objeto e rate limiting administrativo exigem contratos runtime adicionais e nao foram simulados como se estivessem concluidos.
