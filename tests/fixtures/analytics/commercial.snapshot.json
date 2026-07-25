@@ -1,0 +1,10 @@
+{
+  "status": "fresh",
+  "source": "HubSpot Deals",
+  "asOf": "2026-07-24T12:00:00Z",
+  "lastSuccessfulSyncAt": "2026-07-24T11:55:00Z",
+  "syncRunId": "00000000-0000-0000-0000-000000000001",
+  "coverage": { "expected": 24, "received": 24 },
+  "temporalType": "period_flow",
+  "metrics": { "openDeals": 8, "wonDeals": 4, "wonRevenue": 125000 }
+}

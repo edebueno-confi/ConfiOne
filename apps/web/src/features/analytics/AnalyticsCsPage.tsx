@@ -22,10 +22,11 @@ import { resolveAnalyticsPeriod } from './analytics-periods';
 import { TicketMonthlyChart, TicketStatusChart } from './charts/AnalyticsCharts';
 import { listAnalyticsSourceConfig } from './analytics-api';
 import type { AnalyticsPageProps } from './analytics-model';
+import type { AnalyticsBlockState } from '@genius-support-os/contracts';
 
 type State =
   | { phase: 'loading' }
-  | { phase: 'ready'; kpis: CsKpis; byStatus: CsByStatus[]; monthly: CsMonthlyPoint[]; bySource: CsSourcePoint[]; byPipeline: CsPipelinePoint[]; byOwner: CsOwnerPoint[]; latestTicketCreatedAt: string | null }
+  | { phase: 'ready'; kpis: CsKpis; byStatus: CsByStatus[]; monthly: CsMonthlyPoint[]; bySource: CsSourcePoint[]; byPipeline: CsPipelinePoint[]; byOwner: CsOwnerPoint[]; latestTicketCreatedAt: string | null; state?: AnalyticsBlockState }
   | { phase: 'error'; message: string };
 
 type PipelineFilterOption = AnalyticsSourceConfig & Pick<CsPipelinePoint, 'ticketCount' | 'sourceSummary'>;
@@ -77,7 +78,7 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
     return <MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores de suporte estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
   }
 
-  const { kpis, byStatus, monthly, bySource, byPipeline, byOwner, latestTicketCreatedAt } = state;
+  const { kpis, byStatus, monthly, bySource, byPipeline, byOwner, latestTicketCreatedAt, state: dataState } = state;
   const stageOptions = byStatus.map((status) => ({ value: status.stageId, label: status.label }));
   const priorityOptions = [{ value: 'HIGH', label: 'Alta' }, { value: 'MEDIUM', label: 'Média' }, { value: 'LOW', label: 'Baixa' }];
   const pipelineOptions: PipelineFilterOption[] = configuredPipelines.map((pipeline) => {
@@ -89,15 +90,15 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
     <div className="space-y-5">
       <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} priorityOptions={priorityOptions} stageLabel="Status" />
       {pipelineOptions.length > 0 ? <PipelineScopeFilter pipelines={pipelineOptions} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null}
-      {kpis.totalTickets === 0 ? <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." /> : null}
-      {kpis.totalTickets > 0 ? <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label="Tickets totais" value={kpis.totalTickets.toLocaleString('pt-BR')} hint="Nos pipelines de suporte" source="Total de tickets nos pipelines de suporte ativos, considerando o período e os filtros selecionados." />
-        <KpiCard label="Abertos" value={kpis.openTickets.toLocaleString('pt-BR')} hint="Ainda não encerrados" source="Tickets que ainda não estão em um estágio de encerrado." />
-        <KpiCard label="Encerrados" value={kpis.closedTickets.toLocaleString('pt-BR')} hint="Em estágio de encerrado" source="Tickets que já estão em um estágio de encerrado." />
-        <KpiCard label="% Encerrados" value={formatPercent(kpis.closedRate)} hint="Encerrados sobre o total" source="Tickets encerrados divididos pelo total de tickets do período." />
+      {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." /> : null}
+      {dataState?.status !== 'empty' ? <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <KpiCard state={dataState} temporalType="Fluxo no período" label="Tickets totais" value={kpis.totalTickets.toLocaleString('pt-BR')} hint="Nos pipelines de suporte" source="Total de tickets nos pipelines de suporte ativos, considerando o período e os filtros selecionados." />
+        <KpiCard state={dataState} temporalType="Posição dos registros" label="Abertos" value={kpis.openTickets.toLocaleString('pt-BR')} hint="Ainda não encerrados" source="Tickets que ainda não estão em um estágio de encerrado." />
+        <KpiCard state={dataState} temporalType="Fluxo no período" label="Encerrados" value={kpis.closedTickets.toLocaleString('pt-BR')} hint="Em estágio de encerrado" source="Tickets que já estão em um estágio de encerrado." />
+        <KpiCard state={dataState} temporalType="Fluxo no período" label="% Encerrados" value={formatPercent(kpis.closedRate)} hint="Encerrados sobre o total" source="Tickets encerrados divididos pelo total de tickets do período." />
       </div> : null}
 
-      {kpis.totalTickets > 0 ? <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      {dataState?.status !== 'empty' ? <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <ChartCard title="Tickets por status" description="Status com o mesmo nome são consolidados; o tooltip mostra a distribuição por pipeline.">
           {byStatus.length > 0 ? (
             <TicketStatusChart data={byStatus} />
@@ -114,7 +115,7 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
           )}
         </ChartCard>
       </div> : null}
-      {kpis.totalTickets > 0 ? <ChartCard title="Origem, pipeline e responsável" description={`O recorte reúne os pipelines ativos de CS / Suporte. Último ticket criado no cache: ${latestTicketCreatedAt ? new Date(latestTicketCreatedAt).toLocaleString('pt-BR') : 'indisponível'}.`}>
+      {dataState?.status !== 'empty' ? <ChartCard title="Origem, pipeline e responsável" description={`O recorte reúne os pipelines ativos de CS / Suporte. Último ticket criado no cache: ${latestTicketCreatedAt ? new Date(latestTicketCreatedAt).toLocaleString('pt-BR') : 'indisponível'}.`}>
         <div className="grid gap-4 lg:grid-cols-3"><Breakdown title="Por origem" rows={bySource.map((row) => ({ label: row.label, value: row.ticketCount }))} /><Breakdown title="Por pipeline" rows={byPipeline.map((row) => ({ label: row.label, value: row.ticketCount }))} /><Breakdown title="Por responsável" rows={byOwner.slice(0, 8).map((row) => ({ label: row.ownerName, value: row.ticketCount }))} /></div>
         <OwnerPipelineNote owners={byOwner.slice(0, 8)} />
       </ChartCard> : null}

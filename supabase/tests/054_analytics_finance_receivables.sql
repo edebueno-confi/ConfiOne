@@ -6,8 +6,8 @@ select ok(
   'read model financeiro existe'
 );
 select ok(
-  has_table_privilege('authenticated', 'public.analytics_finance_receivables', 'select'),
-  'authenticated pode ler somente o contrato financeiro'
+  not has_table_privilege('authenticated', 'public.analytics_finance_receivables', 'select'),
+  'authenticated não lê diretamente o read model financeiro bruto'
 );
 select ok(
   not has_table_privilege('anon', 'public.analytics_finance_receivables', 'select'),

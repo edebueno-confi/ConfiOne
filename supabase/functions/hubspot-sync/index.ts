@@ -410,6 +410,10 @@ Deno.serve(async (req) => {
       domain_key: scope === 'all' ? requestedDomain : scope,
       status: 'running',
       triggered_by: actor === 'scheduler' ? null : actor,
+      correlation_id: (() => {
+        const header = req.headers.get('x-analytics-correlation-id');
+        return header && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(header) ? header : crypto.randomUUID();
+      })(),
     })
     .select('id')
     .single();

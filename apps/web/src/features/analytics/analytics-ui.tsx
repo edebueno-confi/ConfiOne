@@ -1,5 +1,34 @@
 import type { ReactNode } from 'react';
 import { GeniusMascot } from '../../components/GeniusMascot';
+import type { AnalyticsBlockState, AnalyticsDataStatus } from '@genius-support-os/contracts';
+
+const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
+  fresh: 'Atualizado',
+  stale: 'Pode estar desatualizado',
+  partial: 'Dados parciais',
+  empty: 'Nenhum registro no recorte',
+  not_configured: 'Fonte não configurada',
+  syncing: 'Sincronizando',
+  unavailable: 'Fonte indisponível',
+  error: 'Erro na fonte',
+};
+
+function formatStateDate(value: string | null): string {
+  if (!value) return 'atualização não registrada';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'atualização não registrada' : `última atualização ${date.toLocaleString('pt-BR')}`;
+}
+
+export function AnalyticsStateBadge({ state }: { state?: AnalyticsBlockState }) {
+  if (!state) return null;
+  const tone = state.status === 'fresh' ? 'text-[color:var(--minimal-action)]' : state.status === 'stale' || state.status === 'partial' ? 'text-[color:var(--minimal-warning-text)]' : 'text-[color:var(--minimal-danger-text)]';
+  return <span className={`inline-flex flex-wrap items-center gap-1 text-[11px] ${tone}`} aria-label={`Estado dos dados: ${STATUS_LABELS[state.status]}`}>
+    <span className="font-semibold">{STATUS_LABELS[state.status]}</span>
+    <span aria-hidden="true">·</span>
+    <span>{formatStateDate(state.lastSuccessfulSyncAt)}</span>
+    {state.coverage.expected != null && state.coverage.received != null ? <span>· cobertura {state.coverage.received}/{state.coverage.expected}</span> : null}
+  </span>;
+}
 
 export function formatCountLabel(
   count: number,
@@ -29,13 +58,15 @@ export function AnalyticsRetryAction({ onRetry }: { onRetry?: () => void }) {
   return onRetry ? <button type="button" onClick={onRetry} className="rounded-lg bg-[color:var(--minimal-text)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-surface)]">Tentar novamente</button> : null;
 }
 
-export function KpiCard({ label, value, hint, source, tone = 'neutral', className = '' }: { label: string; value: string; hint?: string; source?: string; tone?: 'neutral' | 'warning' | 'critical'; className?: string }) {
+export function KpiCard({ label, value, hint, source, tone = 'neutral', className = '', state, temporalType }: { label: string; value: string; hint?: string; source?: string; tone?: 'neutral' | 'warning' | 'critical'; className?: string; state?: AnalyticsBlockState; temporalType?: string }) {
   const toneClass = tone === 'critical' ? 'border-[color:var(--minimal-danger-border)] bg-[color:var(--minimal-danger-surface)]' : tone === 'warning' ? 'border-[color:var(--minimal-warning-border)] bg-[color:var(--minimal-warning-surface)]' : 'border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)]';
   const valueClass = tone === 'critical' ? 'text-[color:var(--minimal-danger-text)]' : tone === 'warning' ? 'text-[color:var(--minimal-warning-text)]' : 'text-[color:var(--minimal-text)]';
   return <div className={`rounded-xl border px-4 py-3.5 ${toneClass} ${className}`}>
     <p className={`text-2xl font-semibold tabular-nums leading-none ${valueClass}`}>{value}</p>
     <div className="mt-2.5 flex items-center gap-1.5"><p className={`text-sm font-medium ${valueClass}`}>{label}</p>{source ? <MetricInfo text={source} /> : null}</div>
     {hint ? <p className="mt-0.5 text-xs text-[color:var(--minimal-text-tertiary)]">{hint}</p> : null}
+    {temporalType ? <p className="mt-2 text-[11px] text-[color:var(--minimal-text-secondary)]">{temporalType}</p> : null}
+    <div className="mt-1"><AnalyticsStateBadge state={state} /></div>
   </div>;
 }
 

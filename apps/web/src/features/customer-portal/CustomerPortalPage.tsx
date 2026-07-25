@@ -546,7 +546,7 @@ function PortalShell({ children }: { children: ReactNode }) {
 
 export function CustomerPortalGate({ children }: { children: ReactNode }) {
   const location = useLocation();
-  const { phase, configError, sessionExpired, signOut, clearSessionExpired } = useAuthContext();
+  const { phase, gate, configError, sessionExpired, signOut, clearSessionExpired } = useAuthContext();
 
   if (phase === 'config-error') {
     return (
@@ -604,6 +604,14 @@ export function CustomerPortalGate({ children }: { children: ReactNode }) {
   if (phase === 'anonymous') {
     const redirectTo = `${location.pathname}${location.search}`;
     return <Navigate replace to={`/login?redirectTo=${encodeURIComponent(redirectTo)}`} />;
+  }
+
+  if (
+    phase === 'authenticated' &&
+    gate.actor?.is_platform_admin !== true &&
+    gate.actor?.roles.includes('dashboard_viewer') === true
+  ) {
+    return <Navigate replace to="/access-denied" state={{ reason: 'route-not-authorized' }} />;
   }
 
   return (

@@ -1,10 +1,11 @@
+import type { AnalyticsBlockState, AnalyticsDataStatus } from '@genius-support-os/contracts';
+import { createAnalyticsBlockState, parseAnalyticsNumber } from './analytics-state';
+
 // Tipos e mapeadores do modulo Analytics/Dashboard Gerencial.
 // As views retornam numeric como string (PostgREST), entao normalizamos aqui.
 
 function toNumber(value: unknown): number {
-  if (value === null || value === undefined || value === '') return 0;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
+  return parseAnalyticsNumber(value) ?? 0;
 }
 
 function normalizePercentage(value: unknown): number {
@@ -119,6 +120,7 @@ export interface SyncRun {
   stagesSynced: number;
   companiesSynced: number;
   errorMessage: string | null;
+  correlationId: string | null;
 }
 
 export interface AnalyticsFilters {
@@ -135,6 +137,7 @@ export interface CommercialSnapshot {
   byPipeline: CommercialByPipeline[];
   byOwner: CommercialByOwner[];
   monthly: CommercialMonthlyPoint[];
+  state?: AnalyticsBlockState;
 }
 
 export interface CsSnapshot {
@@ -145,6 +148,7 @@ export interface CsSnapshot {
   byPipeline: CsPipelinePoint[];
   byOwner: CsOwnerPoint[];
   latestTicketCreatedAt: string | null;
+  state?: AnalyticsBlockState;
 }
 
 export interface FinanceKpis {
@@ -201,6 +205,7 @@ export interface FinanceSnapshot {
   byCategory: FinanceBreakdown[];
   topDebtors: FinanceDebtor[];
   csReconciliation: { matchedBalance: number; unmatchedBalance: number; byClientStatus: FinanceCsBucket[] };
+  state?: AnalyticsBlockState;
 }
 
 export interface FinanceSourceStatus {
@@ -214,6 +219,7 @@ export interface CeoSnapshot {
   finance: { titles: number; netAmount: number; balance: number; overdueTitles: number; overdueBalance: number; matchedTitles: number; unmatchedTitles: number };
   financialAlerts: FinancialAlert[];
   dataQuality: { financeTitles: number; matchedFinanceTitles: number; unmatchedFinanceTitles: number; ambiguousFinanceTitles: number; resolvedGroupTitles: number; financeSourceAt: string | null; hubspotSourceAt: string | null };
+  state?: AnalyticsBlockState;
 }
 
 export interface CeoHistory {
@@ -374,26 +380,31 @@ export const DEFAULT_ANALYTICS_FILTERS: AnalyticsFilters = {
 export function mapCommercialSnapshot(value: unknown): CommercialSnapshot {
   const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
   const rows = (key: string) => (Array.isArray(data[key]) ? data[key] : []) as Record<string, unknown>[];
+  const rawKpis = (data.kpis && typeof data.kpis === 'object' ? data.kpis : {}) as Record<string, unknown>;
+  const received = toNumber(rawKpis.total_deals);
   return {
-    kpis: mapCommercialKpis((data.kpis as Record<string, unknown> | undefined) ?? null),
+    kpis: mapCommercialKpis(rawKpis),
     funnel: rows('funnel').map(mapCommercialFunnel),
     byPipeline: rows('by_pipeline').map(mapCommercialByPipeline),
     byOwner: rows('by_owner').map(mapCommercialByOwner),
     monthly: rows('monthly').map(mapCommercialMonthly),
+    state: createSnapshotState(data, 'HubSpot / Deals', received),
   };
 }
 
 export function mapCsSnapshot(value: unknown): CsSnapshot {
   const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
   const rows = (key: string) => (Array.isArray(data[key]) ? data[key] : []) as Record<string, unknown>[];
+  const rawKpis = (data.kpis && typeof data.kpis === 'object' ? data.kpis : {}) as Record<string, unknown>;
   return {
-    kpis: mapCsKpis((data.kpis as Record<string, unknown> | undefined) ?? null),
+    kpis: mapCsKpis(rawKpis),
     byStatus: rows('by_status').map(mapCsByStatus),
     monthly: rows('monthly').map(mapCsMonthly),
     bySource: rows('by_source').map((row) => ({ label: toText(row.label) || 'Sem fonte', ticketCount: toNumber(row.ticket_count) })),
     byPipeline: rows('by_pipeline').map((row) => ({ pipelineId: toText(row.pipeline_id), label: toText(row.label) || 'Pipeline sem nome', ticketCount: toNumber(row.ticket_count), sourceSummary: Array.isArray(row.source_summary) ? row.source_summary.map((source) => { const item = (source && typeof source === 'object' ? source : {}) as Record<string, unknown>; return { label: toText(item.label) || 'Sem fonte', ticketCount: toNumber(item.ticket_count) }; }) : [] })),
     byOwner: rows('by_owner').map((row) => ({ ownerId: row.owner_id ? toText(row.owner_id) : null, ownerName: toText(row.owner_name) || 'Sem responsavel', ticketCount: toNumber(row.ticket_count), pipelineBreakdown: mapCsPipelineBreakdown(row.pipeline_breakdown) })),
     latestTicketCreatedAt: data.latest_ticket_created_at ? toText(data.latest_ticket_created_at) : null,
+    state: createSnapshotState(data, 'HubSpot / Tickets', toNumber(rawKpis.total_tickets)),
   };
 }
 
@@ -403,9 +414,10 @@ export function mapFinanceSnapshot(value: unknown): FinanceSnapshot {
   const recon = (data.cs_reconciliation && typeof data.cs_reconciliation === 'object' ? data.cs_reconciliation : {}) as Record<string, unknown>;
   const reconRows = (Array.isArray(recon.by_client_status) ? recon.by_client_status : []) as Record<string, unknown>[];
   const sourceValue = data.source === 'api' || data.source === 'spreadsheet' ? data.source : 'none';
+  const rawKpis = (data.kpis && typeof data.kpis === 'object' ? data.kpis : {}) as Record<string, unknown>;
   return {
     source: sourceValue as FinanceSnapshot['source'],
-    kpis: mapFinanceKpis((data.kpis as Record<string, unknown> | undefined) ?? null),
+    kpis: mapFinanceKpis(rawKpis),
     byStatus: rows('by_status').map((row) => mapFinanceBreakdown(row, 'status')),
     byAging: rows('by_aging').map((row) => mapFinanceBreakdown(row, 'bucket')),
     agingDays: rows('aging_days').map((row) => mapFinanceBreakdown(row, 'bucket')),
@@ -418,6 +430,7 @@ export function mapFinanceSnapshot(value: unknown): FinanceSnapshot {
       unmatchedBalance: toNumber(recon.unmatched_balance),
       byClientStatus: reconRows.map((row) => ({ key: toText(row.key) || 'Indisponível', titles: toNumber(row.titles), balance: toNumber(row.balance), overdueBalance: toNumber(row.overdue_balance) })),
     },
+    state: createSnapshotState(data, sourceValue === 'none' ? 'OMIE / planilha' : sourceValue === 'api' ? 'OMIE API' : 'Planilha OMIE', toNumber(rawKpis.total_titles), sourceValue !== 'none'),
   };
 }
 
@@ -437,12 +450,40 @@ export function mapCeoSnapshot(value: unknown): CeoSnapshot {
   const c = section('commercial'); const s = section('support'); const f = section('finance');
   const financialAlerts = Array.isArray(data.financial_alerts) ? data.financial_alerts : [];
   const quality = section('data_quality');
+  const received = toNumber(c.total_deals) + toNumber(s.total_tickets) + toNumber(f.titles);
   return {
     commercial: { totalDeals: toNumber(c.total_deals), openDeals: toNumber(c.open_deals), wonDeals: toNumber(c.won_deals), lostDeals: toNumber(c.lost_deals), openPipelineValue: toNumber(c.open_pipeline_value), wonRevenue: toNumber(c.won_revenue), conversionRate: toNumber(c.conversion_rate), avgTicket: toNumber(c.avg_ticket), avgSalesCycleDays: toNumber(c.avg_sales_cycle_days), unassignedDeals: toNumber(c.unassigned_deals) },
     support: { totalTickets: toNumber(s.total_tickets), createdTickets: toNumber(s.created_tickets || s.total_tickets), openTickets: toNumber(s.open_tickets), closedTickets: toNumber(s.closed_tickets), closedRate: toNumber(s.closed_rate), highPriorityOpen: toNumber(s.high_priority_open), firstResponseSlaTracked: toNumber(s.first_response_sla_tracked), closeSlaTracked: toNumber(s.close_sla_tracked), sourceFilled: toNumber(s.source_filled), bySource: Array.isArray(s.by_source) ? s.by_source.map((row) => { const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>; return { label: toText(item.label) || 'Sem fonte', ticketCount: toNumber(item.ticket_count) }; }) : [], byPipeline: Array.isArray(s.by_pipeline) ? s.by_pipeline.map((row) => { const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>; return { pipelineId: toText(item.pipeline_id), label: toText(item.label) || 'Pipeline sem nome', ticketCount: toNumber(item.ticket_count) }; }) : [], byOwner: Array.isArray(s.by_owner) ? s.by_owner.map((row) => { const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>; return { ownerId: item.owner_id ? toText(item.owner_id) : null, ownerName: toText(item.owner_name) || 'Sem responsavel', ticketCount: toNumber(item.ticket_count) }; }) : [], latestTicketCreatedAt: s.latest_ticket_created_at ? toText(s.latest_ticket_created_at) : null },
     finance: { titles: toNumber(f.titles), netAmount: toNumber(f.net_amount), balance: toNumber(f.balance), overdueTitles: toNumber(f.overdue_titles), overdueBalance: toNumber(f.overdue_balance), matchedTitles: toNumber(f.matched_titles), unmatchedTitles: toNumber(f.unmatched_titles) },
     financialAlerts: financialAlerts.map((row) => { const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>; return { alertKey: toText(item.alert_key), companyId: item.company_id ? toText(item.company_id) : null, companyName: toText(item.company_name) || 'Cliente não reconciliado', sourceClientName: toText(item.source_client_name), csOwnerId: item.cs_owner_id ? toText(item.cs_owner_id) : null, csOwnerName: toText(item.cs_owner_name), mrr: toNumber(item.mrr), clientStatus: toText(item.client_status), contractStatus: toText(item.contract_status), overdueBalance: toNumber(item.overdue_balance), overdueTitles: toNumber(item.overdue_titles), maxDaysOverdue: toNumber(item.max_days_overdue), oldestDueDate: item.oldest_due_date ? toText(item.oldest_due_date) : null, matchConfidence: toNumber(item.match_confidence), matchMethod: toText(item.match_method), candidateCount: toNumber(item.candidate_count) }; }),
     dataQuality: { financeTitles: toNumber(quality.finance_titles), matchedFinanceTitles: toNumber(quality.matched_finance_titles), unmatchedFinanceTitles: toNumber(quality.unmatched_finance_titles), ambiguousFinanceTitles: toNumber(quality.ambiguous_finance_titles), resolvedGroupTitles: toNumber(quality.resolved_group_titles), financeSourceAt: quality.finance_source_at ? toText(quality.finance_source_at) : null, hubspotSourceAt: quality.hubspot_source_at ? toText(quality.hubspot_source_at) : null },
+    state: createSnapshotState(data, 'HubSpot + OMIE', received),
+  };
+}
+
+function createSnapshotState(data: Record<string, unknown>, source: string, received: number, sourceConfigured = true): AnalyticsBlockState {
+  const status = data.status;
+  const validStatus = typeof status === 'string' && ['fresh', 'stale', 'partial', 'empty', 'not_configured', 'syncing', 'unavailable', 'error'].includes(status);
+  const lastSuccessfulSyncAt = typeof data.last_successful_sync_at === 'string'
+    ? data.last_successful_sync_at
+    : typeof data.synced_at === 'string' ? data.synced_at : null;
+  const state = createAnalyticsBlockState({
+    source,
+    sourceConfigured,
+    queried: true,
+    received,
+    expected: typeof data.expected_count === 'number' ? data.expected_count : null,
+    lastSuccessfulSyncAt,
+    staleAfterMinutes: typeof data.stale_after_minutes === 'number' ? data.stale_after_minutes : null,
+    partial: data.partial === true,
+    unavailable: data.unavailable === true,
+    error: data.error === true,
+    reason: typeof data.reason === 'string' ? data.reason : null,
+  });
+  const syncRunId = typeof data.sync_run_id === 'string' ? data.sync_run_id : null;
+  return {
+    ...(validStatus ? { ...state, status: status as AnalyticsDataStatus } : state),
+    syncRunId,
   };
 }
 
@@ -638,6 +679,7 @@ export function mapSyncRun(row: Record<string, unknown> | null): SyncRun | null 
     stagesSynced: toNumber(row.stages_synced),
     companiesSynced: toNumber(row.companies_synced),
     errorMessage: row.error_message ? toText(row.error_message) : null,
+    correlationId: row.correlation_id ? toText(row.correlation_id) : null,
   };
 }
 

@@ -30,6 +30,15 @@ export {
 } from './ticketing.js';
 
 export type {
+  AnalyticsBlockState,
+  AnalyticsCoverage,
+  AnalyticsDataStatus,
+  AnalyticsMetricDefinition,
+  AnalyticsMetricResult,
+  AnalyticsTemporalType,
+} from './analytics.js';
+
+export type {
   AiActionKey,
   AiActionPolicy,
   AiContextAccessDecision,

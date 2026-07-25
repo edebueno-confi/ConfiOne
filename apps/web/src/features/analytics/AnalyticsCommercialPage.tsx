@@ -18,6 +18,7 @@ import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, KpiCard, Metric
 import { AnalyticsFilters as AnalyticsFiltersBar } from './AnalyticsFilters';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import type { AnalyticsPageProps } from './analytics-model';
+import type { AnalyticsBlockState } from '@genius-support-os/contracts';
 import { CommercialFunnelChart, CommercialMonthlyChart } from './charts/AnalyticsCharts';
 
 type State =
@@ -29,6 +30,7 @@ type State =
       byPipeline: CommercialByPipeline[];
       byOwner: CommercialByOwner[];
       monthly: CommercialMonthlyPoint[];
+      state?: AnalyticsBlockState;
     }
   | { phase: 'error'; message: string };
 
@@ -78,7 +80,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
     return <MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores comerciais estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
   }
 
-  const { kpis, funnel, byPipeline, byOwner, monthly } = state;
+  const { kpis, funnel, byPipeline, byOwner, monthly, state: dataState } = state;
   const stageOptions = funnel.map((stage) => ({ value: stage.stageId, label: stage.label }));
   const ownerOptions = byOwner.filter((owner) => owner.ownerId).map((owner) => ({ value: owner.ownerId as string, label: owner.ownerName }));
   const pipelineOptions = configuredPipelines.map((pipeline) => {
@@ -90,19 +92,19 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
     <div className="space-y-5">
       <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} ownerOptions={ownerOptions} />
       {pipelineOptions.length > 0 ? <CommercialPipelineScopeFilter pipelines={pipelineOptions} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null}
-      {kpis.totalDeals === 0 ? (
+      {dataState?.status === 'empty' ? (
         <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." />
       ) : null}
-      {kpis.totalDeals > 0 ? <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label="Negócios totais" value={kpis.totalDeals.toLocaleString('pt-BR')} hint="No funil comercial" source="Total de negócios no funil comercial, considerando o período e os filtros selecionados." />
-        <KpiCard label="Em aberto" value={kpis.openDeals.toLocaleString('pt-BR')} hint="Ainda não fechados" source="Negócios que ainda não chegaram a um estágio de fechado (nem ganho, nem perdido)." />
-        <KpiCard label="Ganhos" value={kpis.wonDeals.toLocaleString('pt-BR')} hint={formatCountLabel(kpis.lostDeals, 'perdido', 'perdidos')} source="Negócios fechados como ganhos no período." />
-        <KpiCard label="Receita ganha" value={formatCurrencyBRL(kpis.wonRevenue)} hint="Negócios ganhos" source="Soma do valor dos negócios ganhos no período." />
-        <KpiCard label="Conversão" value={formatPercent(kpis.conversionRate)} hint="Ganhos sobre fechados" source="Negócios ganhos divididos pelo total de negócios fechados (ganhos mais perdidos). Os em aberto não entram na conta." tone={kpis.conversionRate >= 0.3 ? 'neutral' : 'warning'} />
-        <KpiCard label="Ticket médio" value={formatCurrencyBRL(kpis.avgTicket)} hint="Por negócio ganho" source="Receita ganha dividida pela quantidade de negócios ganhos no período." />
+      {dataState?.status !== 'empty' ? <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <KpiCard state={dataState} temporalType="Fluxo no período" label="Negócios totais" value={kpis.totalDeals.toLocaleString('pt-BR')} hint="No funil comercial" source="Total de negócios no funil comercial, considerando o período e os filtros selecionados." />
+        <KpiCard state={dataState} temporalType="Posição dos registros" label="Em aberto" value={kpis.openDeals.toLocaleString('pt-BR')} hint="Ainda não fechados" source="Negócios que ainda não chegaram a um estágio de fechado (nem ganho, nem perdido)." />
+        <KpiCard state={dataState} temporalType="Fluxo no período" label="Ganhos" value={kpis.wonDeals.toLocaleString('pt-BR')} hint={formatCountLabel(kpis.lostDeals, 'perdido', 'perdidos')} source="Negócios fechados como ganhos no período." />
+        <KpiCard state={dataState} temporalType="Fluxo no período" label="Receita ganha" value={formatCurrencyBRL(kpis.wonRevenue)} hint="Negócios ganhos" source="Soma do valor dos negócios ganhos no período." />
+        <KpiCard state={dataState} temporalType="Fluxo no período" label="Conversão" value={formatPercent(kpis.conversionRate)} hint="Ganhos sobre fechados" source="Negócios ganhos divididos pelo total de negócios fechados (ganhos mais perdidos). Os em aberto não entram na conta." tone={kpis.conversionRate >= 0.3 ? 'neutral' : 'warning'} />
+        <KpiCard state={dataState} temporalType="Fluxo no período" label="Ticket médio" value={formatCurrencyBRL(kpis.avgTicket)} hint="Por negócio ganho" source="Receita ganha dividida pela quantidade de negócios ganhos no período." />
       </div> : null}
 
-      {kpis.totalDeals > 0 ? <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      {dataState?.status !== 'empty' ? <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <ChartCard title="Funil por estágio" description="Quantidade de negócios em cada estágio do funil comercial.">
           {funnel.length > 0 ? (
             <CommercialFunnelChart data={funnel} />
@@ -120,7 +122,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
         </ChartCard>
       </div> : null}
 
-      {kpis.totalDeals > 0 ? <ChartCard title="Negócios por responsável" description="Responsável pelo negócio no HubSpot.">
+      {dataState?.status !== 'empty' ? <ChartCard title="Negócios por responsável" description="Responsável pelo negócio no HubSpot.">
         {byOwner.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[520px] text-sm">

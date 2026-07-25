@@ -1,10 +1,13 @@
+import { randomBytes } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { resolveSupabaseCliCommand } from '../../scripts/lib/supabase-cli-command.mjs';
 
 const email = 'qa.local.dashboard-viewer@genius.local';
-const password = 'Local-QA-Dashboard-Viewer-2026!';
+const password = process.env.DASHBOARD_VIEWER_QA_PASSWORD ?? `Local-QA-${randomBytes(24).toString('base64url')}`;
 const fullName = 'QA Dashboard Viewer';
+const credentialsPath = resolve(process.env.GSO_QA_CREDENTIALS_PATH ?? '.tmp/dashboard-viewer-credentials.json');
 
 function fail(message) {
   console.error(message);
@@ -81,4 +84,6 @@ const verification = query(`
   from public.profiles p where p.id = '${sqlEscape(user.id)}'::uuid;
 `);
 if (!verification.rows?.[0]?.has_dashboard_viewer) fail('Usuário criado, mas o papel dashboard_viewer não foi aplicado.');
-console.log(JSON.stringify({ environment: 'local', email, password, userId: user.id, role: 'dashboard_viewer', scope: ['Dashboard gerencial', 'Área do cliente', 'Central de ajuda'], verified: verification.rows[0] }, null, 2));
+mkdirSync(dirname(credentialsPath), { recursive: true });
+writeFileSync(credentialsPath, JSON.stringify({ email, password, role: 'dashboard_viewer', userId: user.id }, null, 2), 'utf8');
+console.log(JSON.stringify({ environment: 'local', email, userId: user.id, role: 'dashboard_viewer', scope: ['Dashboard gerencial'], credentialsPath, verified: verification.rows[0] }, null, 2));
