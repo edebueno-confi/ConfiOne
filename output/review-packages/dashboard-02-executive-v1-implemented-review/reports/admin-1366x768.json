@@ -1,0 +1,18 @@
+{
+  "name": "admin-1366x768",
+  "width": 1366,
+  "height": 768,
+  "profile": "admin",
+  "state": "fresh-or-empty",
+  "errors": [
+    "network: http://127.0.0.1:54321/rest/v1/vw_internal_actor_workspace_context?select=screen_key&order=sort_order.asc net::ERR_ABORTED",
+    "network: http://127.0.0.1:54321/rest/v1/vw_admin_auth_context?select=* net::ERR_ABORTED",
+    "network: http://127.0.0.1:54321/rest/v1/vw_admin_auth_context?select=id%2Cis_active%2Croles net::ERR_ABORTED"
+  ],
+  "metrics": {
+    "scrollWidth": 1366,
+    "clientWidth": 1366,
+    "scrollHeight": 768,
+    "bodyText": "Pular para o conteúdo\n✦\n✦\nGeniusOS\nMinha rotina\nInício\nAtendimento\nFila operacional\nTickets\nClientes B2B\nCarteira CS\nAcionamentos\nProduto\nInteligência\nDashboard gerencial\nAdministração\n\nGeniusOS  /  Dashboard gerencial\n\nEO\n\nEduardo Oliveira\n\nAdministrador da plataforma\n\nDashboard Gerencial\n\nVisão executiva integrada a HubSpot, OMIE e fontes operacionais.\n\nExportar relatório\nÚltima sincronização concluída · 24/07/2026, 23:19\nVisão executiva\nComercial\nCS / Suporte\nFinanceiro\nLogs\nConfiguração\nAtualize o cache do Dashboard Gerencial quando precisar consultar dados recentes.\nSincronizar HubSpot\n\nVISÃO EXECUTIVA\n\nDecida com o contexto certo\n\nDesempenho do período, posição atual e prioridades operacionais em um só lugar.\n\nConsolidação atualizado\nAtualizado\n·\natualização não registrada\nDomínio em foco\nTodos os domínios\nComercial\nCS / Suporte\nFinanceiro\nPeríodo\nPersonalizado\nEsta semana\nEste mês\nMês passado\nTrimestre atual\nTrimestre passado\nEste ano\nAno passado\nTodo o período\nDe\nAté\nAplicar\nLimpar\n\nO histórico permanece armazenado; os filtros alteram apenas a leitura desta análise.\n\nDesempenho no período\n\nIndicadores afetados pelo recorte selecionado.\n\nR$ 22.800\n\nReceita ganha\n\n1 ganho\n\nPeríodo selecionado\n\n1\n\nNegócios ganhos\n\n5 perdidos\n\nPeríodo selecionado\n\n16,7%\n\nConversão\n\nGanhos sobre ganhos e perdas\n\nPeríodo selecionado\n\n0\n\nTickets criados\n\n0 encerrados\n\nPeríodo selecionado\n\nPosição atual\n\nPosição atual, não afetada pelo período selecionado.\n\nR$ 0\n\nSaldo vencido\n\n0 títulos vencidos\n\n0\n\nClientes com alerta\n\nInadimplência reconciliada\n\n0\n\nCarteira de suporte\n\n0 altas prioridades abertas\n\nNenhuma exceção determinística no recorte.\n\nResumo por domínio\n\nAprofunde somente quando a leitura executiva indicar necessidade.\n\nComercial\n\nComo o período evoluiu\n\nR$ 22.800\n\n13 negócios abertos · 1 ganho\n\nAbrir domínio →\nCS / Suporte\n\nOnde a operação pede atenção\n\n0 tickets abertos\n\n0 altas prioridades · 0% encerrados\n\nAbrir domínio →\nFinanceiro\n\nQual é a posição financeira\n\nR$ 0\n\n0 títulos sem correspondência\n\nAbrir domínio →\nPipelines prioritários\n\nRanking determinístico por volume de tickets ativos no recorte.\n\nNenhum pipeline com atividade no período selecionado.\n\nComparação temporal disponível para o mesmo recorte: R$ 22.800 no período atual."
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "package": "dashboard-02-executive-v1-implemented-review",
+  "generatedAt": "2026-07-25T03:02:46.259Z",
+  "files": [
+    {
+      "name": "admin-1440x900.png",
+      "path": "screenshots/desktop/admin-1440x900.png",
+      "type": "image",
+      "size": 172862,
+      "viewport": "1440x900",
+      "profile": "admin",
+      "state": "local fixture",
+      "description": "Visão Executiva produtiva em desktop.",
+      "commit": "3f189a6",
+      "generatedAt": "2026-07-25T03:02:46.243Z"
+    },
+    {
+      "name": "admin-1366x768.png",
+      "path": "screenshots/desktop/admin-1366x768.png",
+      "type": "image",
+      "size": 157161,
+      "viewport": "1366x768",
+      "profile": "admin",
+      "state": "local fixture",
+      "description": "Visão Executiva em largura desktop intermediária.",
+      "commit": "3f189a6",
+      "generatedAt": "2026-07-25T03:02:46.244Z"
+    },
+    {
+      "name": "admin-1024x768.png",
+      "path": "screenshots/tablet/admin-1024x768.png",
+      "type": "image",
+      "size": 138732,
+      "viewport": "1024x768",
+      "profile": "admin",
+      "state": "local fixture",
+      "description": "Grade responsiva para tablet horizontal.",
+      "commit": "3f189a6",
+      "generatedAt": "2026-07-25T03:02:46.245Z"
+    },
+    {
+      "name": "admin-768x1024.png",
+      "path": "screenshots/tablet/admin-768x1024.png",
+      "type": "image",
+      "size": 122204,
+      "viewport": "768x1024",
+      "profile": "admin",
+      "state": "local fixture",
+      "description": "Largura tablet vertical.",
+      "commit": "3f189a6",
+      "generatedAt": "2026-07-25T03:02:46.245Z"
+    },
+    {
+      "name": "admin-390x844.png",
+      "path": "screenshots/mobile/admin-390x844.png",
+      "type": "image",
+      "size": 75610,
+      "viewport": "390x844",
+      "profile": "admin",
+      "state": "local fixture",
+      "description": "Visão Executiva em uma coluna no mobile.",
+      "commit": "3f189a6",
+      "generatedAt": "2026-07-25T03:02:46.246Z"
+    },
+    {
+      "name": "viewer-390x844.png",
+      "path": "screenshots/mobile/viewer-390x844.png",
+      "type": "image",
+      "size": 69505,
+      "viewport": "390x844",
+      "profile": "dashboard_viewer",
+      "state": "local fixture",
+      "description": "Dashboard viewer sem navegação de outros domínios.",
+      "commit": "3f189a6",
+      "generatedAt": "2026-07-25T03:02:46.246Z"
+    },
+    {
+      "name": "viewer-1440x900.png",
+      "path": "screenshots/desktop/viewer-1440x900.png",
+      "type": "image",
+      "size": 136648,
+      "viewport": "1440x900",
+      "profile": "dashboard_viewer",
+      "state": "local fixture",
+      "description": "Dashboard viewer em desktop.",
+      "commit": "3f189a6",
+      "generatedAt": "2026-07-25T03:02:46.247Z"
+    },
+    {
+      "name": "admin-dark-1440x900.png",
+      "path": "screenshots/states/admin-dark-1440x900.png",
+      "type": "image",
+      "size": 172936,
+      "viewport": "1440x900",
+      "profile": "admin",
+      "state": "dark",
+      "description": "Tema escuro da Visão Executiva produtiva.",
+      "commit": "3f189a6",
+      "generatedAt": "2026-07-25T03:02:46.247Z"
+    },
+    {
+      "name": "admin-1440x900.png",
+      "path": "screenshots/states/admin-1440x900.png",
+      "type": "image",
+      "size": 172862,
+      "viewport": "1440x900",
+      "profile": "admin",
+      "state": "fresh-or-empty",
+      "description": "Estado real da fixture local, com fontes sem dados financeiros e de pipelines.",
+      "commit": "3f189a6",
+      "generatedAt": "2026-07-25T03:02:46.249Z"
+    },
+    {
+      "name": "before-current-1440-reference.png",
+      "path": "screenshots/comparisons/before-current-1440-reference.png",
+      "type": "image",
+      "size": 81834,
+      "viewport": "1440x900",
+      "profile": "admin fixture",
+      "state": "before",
+      "description": "Referência equivalente anterior documentada no discovery.",
+      "commit": "3f189a6",
+      "generatedAt": "2026-07-25T03:02:46.252Z"
+    },
+    {
+      "name": "after-executive-1440.png",
+      "path": "screenshots/comparisons/after-executive-1440.png",
+      "type": "image",
+      "size": 172862,
+      "viewport": "1440x900",
+      "profile": "admin",
+      "state": "after",
+      "description": "Implementação produtiva equivalente após a refatoração.",
+      "commit": "3f189a6",
+      "generatedAt": "2026-07-25T03:02:46.253Z"
+    }
+  ]
+}
