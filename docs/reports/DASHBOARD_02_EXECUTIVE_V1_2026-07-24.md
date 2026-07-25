@@ -68,10 +68,10 @@ O pacote de revisão contém uma referência equivalente do discovery e uma capt
 
 ## Pacote de revisão
 
-`output/review-packages/dashboard-02-executive-v1-implemented-review.zip` contém o índice HTML local, manifesto, relatórios, capturas, comparação e assets sem caminhos absolutos, dados reais de clientes, secrets ou dependências externas.
+O pacote de revisão `dashboard-02-executive-v1-implemented-review` foi mantido localmente para consulta e upload, mas removido do versionamento por ser artefato gerado e duplicado.
 
 ## Atualização DASHBOARD-02.3.1 — gate de design
 
 O gate de organização e preservação funcional foi executado exclusivamente em `/admin/analytics`. A hierarquia executiva foi consolidada, a primeira dobra foi reduzida, a posição atual foi separada do período, o limite de KPIs e exceções foi aplicado, e os pipelines passaram a comunicar atendimento prioritário sem inventar rota ou dado.
 
-O shell do `dashboard_viewer` permanece restrito ao Dashboard Gerencial, com identidade visual correta e sem comandos administrativos. Estados de frescor, ausência, erro e cobertura incompleta não são convertidos silenciosamente em zero. O relatório detalhado e o novo pacote estão em `docs/reports/DASHBOARD_02_EXECUTIVE_DESIGN_GATE_2026-07-25.md` e `output/review-packages/dashboard-02-executive-v1-design-gate-review/`.
+O shell do `dashboard_viewer` permanece restrito ao Dashboard Gerencial, com identidade visual correta e sem comandos administrativos. Estados de frescor, ausência, erro e cobertura incompleta não são convertidos silenciosamente em zero. O relatório detalhado está em `docs/reports/DASHBOARD_02_EXECUTIVE_DESIGN_GATE_2026-07-25.md`; o pacote binário correspondente permanece fora do versionamento.

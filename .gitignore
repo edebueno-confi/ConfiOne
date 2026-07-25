@@ -54,6 +54,11 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Local reports and runtime dumps
+# Pacotes de revisão gerados; preservar localmente, mas não versionar duplicatas binárias.
+/output/review-packages/
+# Alternativas visuais rejeitadas, preservadas localmente para auditoria histórica.
+/docs/prototypes/dashboard-02/evidence/option-b-*.png
+/docs/prototypes/dashboard-02/evidence/option-c-*.png
 /.tmp-*/
 /.tmp-*.txt
 /*.out
