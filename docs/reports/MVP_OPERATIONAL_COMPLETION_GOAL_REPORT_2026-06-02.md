@@ -72,13 +72,13 @@ Resumo confirmado por query local apos reset e fixture:
 
 ## Credenciais QA principais
 
-- Platform admin: `qa.local.platform-admin@genius.local` / `Local-QA-Admin-2026!`
-- Support manager: `qa.local.support-manager-a@genius.local` / `Local-QA-Manager-A-2026!`
-- Support agent: `qa.local.support-agent-a@genius.local` / `Local-QA-Agent-A-2026!`
-- Engineering member: `qa.local.engineering-member-a@genius.local` / `Local-QA-Engineering-A-2026!`
-- Customer user: `marina.ops@support-qa-a.local` / `Local-QA-Customer-A-2026!`
-- Customer manager: `gestao.portal@support-qa-a.local` / `Local-QA-Customer-Manager-A-2026!`
-- Internal area member: `qa.local.internal-area-member@genius.local` / `Local-QA-Internal-Area-2026!`
+- Platform admin: `qa.local.platform-admin@genius.local` / `LOCAL_QA_ADMIN_PASSWORD`
+- Support manager: `qa.local.support-manager-a@genius.local` / `LOCAL_QA_SUPPORT_MANAGER_PASSWORD`
+- Support agent: `qa.local.support-agent-a@genius.local` / `LOCAL_QA_SUPPORT_AGENT_PASSWORD`
+- Engineering member: `qa.local.engineering-member-a@genius.local` / `LOCAL_QA_ENGINEERING_PASSWORD`
+- Customer user: `marina.ops@support-qa-a.local` / `LOCAL_QA_CLIENT_PASSWORD`
+- Customer manager: `gestao.portal@support-qa-a.local` / `LOCAL_QA_CUSTOMER_MANAGER_PASSWORD`
+- Internal area member: `qa.local.internal-area-member@genius.local` / `LOCAL_QA_INTERNAL_AREA_MEMBER_PASSWORD`
 
 ## Rotas recomendadas para validacao humana
 

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { resolveSupabaseCliCommand } from '../../scripts/lib/supabase-cli-command.mjs';
+import { readQaPassword } from '../../scripts/local-qa/credentials.mjs';
 
 const SUPPORT_FIXTURE_SCRIPT = 'supabase/qa/create-local-support-fixture.mjs';
 const FETCH_TIMEOUT_MS = Number(process.env.GENIUS_QA_FETCH_TIMEOUT_MS ?? 20_000);
@@ -41,56 +42,56 @@ const USERS = {
   platformAdmin: {
     key: 'platform_admin',
     email: 'qa.local.platform-admin@genius.local',
-    password: 'Local-QA-Admin-2026!',
+    password: readQaPassword('LOCAL_QA_ADMIN_PASSWORD'),
   },
   supportManager: {
     key: 'support_manager',
     email: 'qa.local.support-manager-a@genius.local',
-    password: 'Local-QA-Manager-A-2026!',
+    password: readQaPassword('LOCAL_QA_SUPPORT_MANAGER_PASSWORD'),
   },
   supportAgent: {
     key: 'support_agent',
     email: 'qa.local.support-agent-a@genius.local',
-    password: 'Local-QA-Agent-A-2026!',
+      password: readQaPassword('LOCAL_QA_SUPPORT_AGENT_PASSWORD'),
   },
   internalAreaMember: {
     key: 'internal_area_member',
     email: 'qa.local.internal-area-member@genius.local',
-    password: 'Local-QA-Internal-Area-2026!',
+    password: readQaPassword('LOCAL_QA_INTERNAL_AREA_MEMBER_PASSWORD'),
     fullName: 'QA Local Internal Area Member',
   },
   internalAreaEmpty: {
     key: 'internal_area_empty',
     email: 'qa.local.internal-area-empty@genius.local',
-    password: 'Local-QA-Internal-Empty-2026!',
+    password: readQaPassword('LOCAL_QA_INTERNAL_AREA_EMPTY_PASSWORD'),
     fullName: 'QA Local Internal Area Empty',
   },
   internalAreaNonMember: {
     key: 'internal_area_non_member',
     email: 'qa.local.internal-area-non-member@genius.local',
-    password: 'Local-QA-Internal-NoArea-2026!',
+    password: readQaPassword('LOCAL_QA_INTERNAL_AREA_NON_MEMBER_PASSWORD'),
     fullName: 'QA Local Internal Area Non Member',
   },
   customerSuccessMember: {
     key: 'customer_success_member',
     email: 'qa.local.customer-success-a@genius.local',
-    password: 'Local-QA-Customer-Success-A-2026!',
+    password: readQaPassword('LOCAL_QA_CUSTOMER_SUCCESS_PASSWORD'),
     fullName: 'QA Local Customer Success A',
   },
   engineeringMember: {
     key: 'engineering_member',
     email: 'qa.local.engineering-member-a@genius.local',
-    password: 'Local-QA-Engineering-A-2026!',
+    password: readQaPassword('LOCAL_QA_ENGINEERING_PASSWORD'),
   },
   customerUser: {
     key: 'customer_user',
     email: 'marina.ops@support-qa-a.local',
-    password: 'Local-QA-Customer-A-2026!',
+    password: readQaPassword('LOCAL_QA_CLIENT_PASSWORD'),
   },
   customerManager: {
     key: 'customer_manager',
     email: 'gestao.portal@support-qa-a.local',
-    password: 'Local-QA-Customer-Manager-A-2026!',
+    password: readQaPassword('LOCAL_QA_CUSTOMER_MANAGER_PASSWORD'),
   },
 };
 
@@ -1337,29 +1338,10 @@ async function main() {
       {
         fixture: 'local-functional-private-routes',
         remote_used: false,
-        users: {
-          ...USERS,
-          internalAreaMember: {
-            ...USERS.internalAreaMember,
-            user_id: internalMemberAuth.id ?? internalMemberProfile.id,
-            profile_id: internalMemberProfile.id,
-          },
-          internalAreaEmpty: {
-            ...USERS.internalAreaEmpty,
-            user_id: internalEmptyAuth.id ?? internalEmptyProfile.id,
-            profile_id: internalEmptyProfile.id,
-          },
-          internalAreaNonMember: {
-            ...USERS.internalAreaNonMember,
-            user_id: internalNonMemberAuth.id ?? internalNonMemberProfile.id,
-            profile_id: internalNonMemberProfile.id,
-          },
-          customerSuccessMember: {
-            ...USERS.customerSuccessMember,
-            user_id: customerSuccessAuth.id ?? customerSuccessProfile.id,
-            profile_id: customerSuccessProfile.id,
-          },
-        },
+        users: Object.fromEntries(Object.entries(USERS).map(([key, user]) => [key, (() => {
+          const { password: _password, ...safeUser } = user;
+          return safeUser;
+        })()])),
         internal_area_membership: {
           membership_id: membershipId,
           empty_membership_id: emptyMembershipId,

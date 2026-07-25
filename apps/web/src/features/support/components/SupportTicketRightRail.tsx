@@ -7,6 +7,11 @@ export interface SupportTicketRightRailAction {
   onClick: () => void;
 }
 
+export interface SupportTicketAssigneeOption {
+  id: string;
+  label: string;
+}
+
 function RailSection({
   title,
   children,
@@ -60,6 +65,11 @@ export function SupportTicketRightRail({
   requesterLabel,
   customerDocumentLabel,
   relatedArticles = [],
+  assigneeOptions = [],
+  assignmentValue = '',
+  onAssignmentChange,
+  onAssignmentSubmit,
+  assignmentSubmitting = false,
 }: {
   tenantLabel: string;
   sourceBadge: ReactNode;
@@ -83,6 +93,11 @@ export function SupportTicketRightRail({
     title: string;
     summary?: string | null;
   }>;
+  assigneeOptions?: SupportTicketAssigneeOption[];
+  assignmentValue?: string;
+  onAssignmentChange?: (value: string) => void;
+  onAssignmentSubmit?: () => void;
+  assignmentSubmitting?: boolean;
 }) {
   return (
     <aside
@@ -107,6 +122,38 @@ export function SupportTicketRightRail({
           <RailRow label="Solicitante" value={requesterLabel} />
           <RailRow label="Documento" value={customerDocumentLabel} />
         </dl>
+        {onAssignmentChange && onAssignmentSubmit ? (
+          <form
+            className="mt-3 grid gap-2 border-t border-[color:var(--minimal-border)] pt-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onAssignmentSubmit();
+            }}
+          >
+            <label className="grid gap-1 text-xs text-[color:var(--minimal-text-secondary)]">
+              <span>Atualizar responsável</span>
+              <select
+                aria-label="Atualizar responsável"
+                className="min-h-9 rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-2 text-xs text-[color:var(--minimal-text)]"
+                disabled={assignmentSubmitting}
+                onChange={(event) => onAssignmentChange(event.target.value)}
+                value={assignmentValue}
+              >
+                <option value="">Sem responsável</option>
+                {assigneeOptions.map((option) => (
+                  <option key={option.id} value={option.id}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            <button
+              className="min-h-9 rounded-md border border-[color:var(--minimal-action)] px-2 text-xs font-medium text-[color:var(--minimal-action)] disabled:opacity-50"
+              disabled={assignmentSubmitting}
+              type="submit"
+            >
+              {assignmentSubmitting ? 'Salvando…' : 'Salvar responsável'}
+            </button>
+          </form>
+        ) : null}
         <div className="mt-2 flex justify-end">{sourceBadge}</div>
       </RailSection>
 

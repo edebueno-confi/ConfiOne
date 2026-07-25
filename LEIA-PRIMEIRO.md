@@ -12,7 +12,7 @@ _Índice canônico. Se você quer entender o projeto hoje, leia só estes. O res
 
 ## Como rodar/testar
 
-- **INICIAR-GENIUS.bat** — sobe o ambiente local e abre o app (login admin: `qa.local.platform-admin@genius.local` / `Local-QA-Admin-2026!`).
+- **INICIAR-GENIUS.bat** — sobe o ambiente local e abre o app (login admin: `qa.local.platform-admin@genius.local` / `LOCAL_QA_ADMIN_PASSWORD`).
 - **COMO-TESTAR.md** — passo a passo para não-técnicos.
 
 ## O que é histórico (não é plano atual)

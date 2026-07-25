@@ -17,16 +17,16 @@
 ## Login de administrador
 
 - Usuario: `qa.local.platform-admin@genius.local`
-- Senha: `Local-QA-Admin-2026!`
+- Senha: variável local ignorada `LOCAL_QA_ADMIN_PASSWORD`
 
 ### Outros usuarios de teste (opcional)
 
 | Perfil | Usuario | Senha |
 | --- | --- | --- |
-| Admin da plataforma | qa.local.platform-admin@genius.local | Local-QA-Admin-2026! |
-| Suporte (gestor) | qa.local.support-manager-a@genius.local | Local-QA-Manager-A-2026! |
-| Customer Success | qa.local.customer-success-a@genius.local | Local-QA-Customer-Success-A-2026! |
-| Engenharia | qa.local.engineering-member-a@genius.local | Local-QA-Engineering-A-2026! |
+| Admin da plataforma | qa.local.platform-admin@genius.local | `LOCAL_QA_ADMIN_PASSWORD` |
+| Suporte (gestor) | qa.local.support-manager-a@genius.local | `LOCAL_QA_SUPPORT_MANAGER_PASSWORD` |
+| Customer Success | qa.local.customer-success-a@genius.local | `LOCAL_QA_CUSTOMER_SUCCESS_PASSWORD` |
+| Engenharia | qa.local.engineering-member-a@genius.local | `LOCAL_QA_ENGINEERING_PASSWORD` |
 
 ## Testar o tema claro/escuro
 

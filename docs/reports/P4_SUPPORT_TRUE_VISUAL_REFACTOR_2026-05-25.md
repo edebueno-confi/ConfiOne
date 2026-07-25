@@ -86,7 +86,7 @@ Implementado:
 ## Browser QA autenticado
 
 - Usuario: `support_manager`
-- Credencial usada: `qa.local.support-manager-a@genius.local / Local-QA-Manager-A-2026!`
+- Credencial usada: `qa.local.support-manager-a@genius.local / LOCAL_QA_SUPPORT_MANAGER_PASSWORD`
 - Viewport: `1672x941`
 - Rotas validadas:
   - `/support/queue`

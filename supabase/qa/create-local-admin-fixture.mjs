@@ -4,16 +4,17 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { resolveSupabaseCliCommand } from '../../scripts/lib/supabase-cli-command.mjs';
+import { readQaPassword } from '../../scripts/local-qa/credentials.mjs';
 
 const FIXTURE = {
   admin: {
     email: 'ede.oliveira@confi.com.vc',
-    password: 'Admin123!',
+    password: readQaPassword('LOCAL_QA_ADMIN_PASSWORD'),
     fullName: 'Eduardo Oliveira',
   },
   denied: {
     email: 'qa.local.denied@genius.local',
-    password: 'Local-QA-NoRole-Only-2026!',
+    password: readQaPassword('LOCAL_QA_DENIED_PASSWORD'),
     fullName: 'QA Local No Role User',
   },
   tenant: {
@@ -540,13 +541,13 @@ async function main() {
           user_id: adminAuthUser.id,
           profile_id: adminProfile.id,
           email: FIXTURE.admin.email,
-          password: FIXTURE.admin.password,
+          password: '[LOCAL_QA_PASSWORD_OMITTED]',
         },
         denied_user: args.includeDeniedUser
           ? {
               user_id: deniedUserId,
               email: FIXTURE.denied.email,
-              password: FIXTURE.denied.password,
+              password: '[LOCAL_QA_PASSWORD_OMITTED]',
             }
           : null,
         tenant: {

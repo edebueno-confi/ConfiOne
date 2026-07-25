@@ -59,7 +59,7 @@ echo     http://localhost:4173
 echo.
 echo   Login de ADMIN:
 echo     Usuario: qa.local.platform-admin@genius.local
-echo     Senha:   Local-QA-Admin-2026!
+echo     Senha:   LOCAL_QA_ADMIN_PASSWORD
 echo.
 echo   (Se abrir em branco, espere alguns segundos e F5.)
 echo   MANTENHA ESTA JANELA ABERTA enquanto testa.

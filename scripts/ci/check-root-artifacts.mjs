@@ -4,6 +4,8 @@ import { resolve } from 'node:path';
 
 export const DEFAULT_ALLOWED_ROOT_FILES = new Set([
   '.env.example',
+  '.env.local.qa',
+  '.env.local.qa.example',
   '.gitattributes',
   '.gitignore',
   'AGENTS.md',

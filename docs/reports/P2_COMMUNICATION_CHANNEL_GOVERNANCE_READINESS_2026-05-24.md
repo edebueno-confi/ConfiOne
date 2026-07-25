@@ -63,11 +63,11 @@ A fixture funcional local passou a registrar readiness sanitizado para o tenant 
 - `api_future`: `blocked`
 
 Credenciais usadas:
-- `qa.local.platform-admin@genius.local` / `Local-QA-Admin-2026!`
-- `qa.local.support-manager-a@genius.local` / `Local-QA-Manager-A-2026!`
-- `qa.local.support-agent-a@genius.local` / `Local-QA-Agent-A-2026!`
-- `marina.ops@support-qa-a.local` / `Local-QA-Customer-A-2026!`
-- `gestao.portal@support-qa-a.local` / `Local-QA-Customer-Manager-A-2026!`
+- `qa.local.platform-admin@genius.local` / `LOCAL_QA_ADMIN_PASSWORD`
+- `qa.local.support-manager-a@genius.local` / `LOCAL_QA_SUPPORT_MANAGER_PASSWORD`
+- `qa.local.support-agent-a@genius.local` / `LOCAL_QA_SUPPORT_AGENT_PASSWORD`
+- `marina.ops@support-qa-a.local` / `LOCAL_QA_CLIENT_PASSWORD`
+- `gestao.portal@support-qa-a.local` / `LOCAL_QA_CUSTOMER_MANAGER_PASSWORD`
 
 ## QA e boundaries
 

@@ -93,13 +93,13 @@ Cenarios cobertos:
 
 ## Usuários QA
 Fixture funcional nao foi alterada nesta fase. Credenciais esperadas para QA manual permanecem:
-- `qa.local.platform-admin@genius.local` / `Local-QA-Admin-2026!`
-- `qa.local.support-manager-a@genius.local` / `Local-QA-Manager-A-2026!`
-- `qa.local.support-agent-a@genius.local` / `Local-QA-Agent-A-2026!`
-- `qa.local.engineering-member-a@genius.local` / `Local-QA-Engineering-A-2026!`
-- `qa.local.internal-area-member@genius.local` / `Local-QA-Internal-Area-2026!`
-- `marina.ops@support-qa-a.local` / `Local-QA-Customer-A-2026!`
-- `gestao.portal@support-qa-a.local` / `Local-QA-Customer-Manager-A-2026!`
+- `qa.local.platform-admin@genius.local` / `LOCAL_QA_ADMIN_PASSWORD`
+- `qa.local.support-manager-a@genius.local` / `LOCAL_QA_SUPPORT_MANAGER_PASSWORD`
+- `qa.local.support-agent-a@genius.local` / `LOCAL_QA_SUPPORT_AGENT_PASSWORD`
+- `qa.local.engineering-member-a@genius.local` / `LOCAL_QA_ENGINEERING_PASSWORD`
+- `qa.local.internal-area-member@genius.local` / `LOCAL_QA_INTERNAL_AREA_MEMBER_PASSWORD`
+- `marina.ops@support-qa-a.local` / `LOCAL_QA_CLIENT_PASSWORD`
+- `gestao.portal@support-qa-a.local` / `LOCAL_QA_CUSTOMER_MANAGER_PASSWORD`
 
 ## Validacoes registradas
 - `supabase db reset --local`

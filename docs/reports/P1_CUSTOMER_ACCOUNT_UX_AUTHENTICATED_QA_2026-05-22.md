@@ -21,11 +21,11 @@ O lote validou a experiência operacional de Customer Account com fixture local 
 
 | Papel | Email | Senha | Rotas testadas |
 | --- | --- | --- | --- |
-| platform_admin | `qa.local.platform-admin@genius.local` | `Local-QA-Admin-2026!` | `/admin/tenants` |
-| support_manager | `qa.local.support-manager-a@genius.local` | `Local-QA-Manager-A-2026!` | `/support/customers`, `/support/customers/:tenantId`, `/support/tickets/:ticketId` |
-| support_agent | `qa.local.support-agent-a@genius.local` | `Local-QA-Agent-A-2026!` | `/support/customers` |
-| customer_user | `marina.ops@support-qa-a.local` | `Local-QA-Customer-A-2026!` | `/portal/tickets/:ticketId` |
-| customer_manager | `gestao.portal@support-qa-a.local` | `Local-QA-Customer-Manager-A-2026!` | `/portal`, `/portal/tickets`, `/portal/help`, artigos autorizados/bloqueados |
+| platform_admin | `qa.local.platform-admin@genius.local` | `LOCAL_QA_ADMIN_PASSWORD` | `/admin/tenants` |
+| support_manager | `qa.local.support-manager-a@genius.local` | `LOCAL_QA_SUPPORT_MANAGER_PASSWORD` | `/support/customers`, `/support/customers/:tenantId`, `/support/tickets/:ticketId` |
+| support_agent | `qa.local.support-agent-a@genius.local` | `LOCAL_QA_SUPPORT_AGENT_PASSWORD` | `/support/customers` |
+| customer_user | `marina.ops@support-qa-a.local` | `LOCAL_QA_CLIENT_PASSWORD` | `/portal/tickets/:ticketId` |
+| customer_manager | `gestao.portal@support-qa-a.local` | `LOCAL_QA_CUSTOMER_MANAGER_PASSWORD` | `/portal`, `/portal/tickets`, `/portal/help`, artigos autorizados/bloqueados |
 
 Observação: usuários não-admin ainda redirecionam inicialmente para `/access-denied` após login, e a sessão fica válida para navegação direta à rota correta. Esse achado já existia no P0-C.
 

@@ -47,6 +47,10 @@ export function canOpenInternalRoute(
       return true;
     }
 
+    if (hasAnyRole(context.roles, ['support_manager', 'support_agent'])) {
+      return matchesRoute(redirectTo, '/admin/analytics') && hasScreen(context, 'analytics');
+    }
+
     if (context.roles.includes('dashboard_viewer')) {
       return matchesRoute(redirectTo, '/admin/analytics');
     }

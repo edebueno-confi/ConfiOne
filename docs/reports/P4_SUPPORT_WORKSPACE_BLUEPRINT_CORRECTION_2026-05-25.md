@@ -154,7 +154,7 @@ Aplicado como referência de correção:
 
 Credencial usada:
 
-- `qa.local.support-manager-a@genius.local / Local-QA-Manager-A-2026!`
+- `qa.local.support-manager-a@genius.local / LOCAL_QA_SUPPORT_MANAGER_PASSWORD`
 
 Rotas validadas:
 

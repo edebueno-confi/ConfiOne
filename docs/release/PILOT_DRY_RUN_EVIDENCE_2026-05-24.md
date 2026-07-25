@@ -24,15 +24,15 @@ Observacao: o Supabase CLI informou apenas aviso de versao mais nova disponivel.
 
 | Papel | Email | Senha | Resultado |
 | --- | --- | --- | --- |
-| `platform_admin` | `qa.local.platform-admin@genius.local` | `Local-QA-Admin-2026!` | Admin console acessivel; `/admin/system` validado |
-| `support_manager` | `qa.local.support-manager-a@genius.local` | `Local-QA-Manager-A-2026!` | `/support/queue` e ticket workspace validado |
-| `support_agent` | `qa.local.support-agent-a@genius.local` | `Local-QA-Agent-A-2026!` | landing em `/support/queue` validada |
-| `internal_area_member` | `qa.local.internal-area-member@genius.local` | `Local-QA-Internal-Area-2026!` | fila/detalhe de acionamento interno validado |
-| `internal_area_empty` | `qa.local.internal-area-empty@genius.local` | `Local-QA-Internal-Empty-2026!` | empty state honesto validado |
-| `internal_area_non_member` | `qa.local.internal-area-non-member@genius.local` | `Local-QA-Internal-NoArea-2026!` | bloqueio em `/access-denied` validado |
-| `engineering_member` | `qa.local.engineering-member-a@genius.local` | `Local-QA-Engineering-A-2026!` | `/engineering` e work item validado |
-| `customer_user` | `marina.ops@support-qa-a.local` | `Local-QA-Customer-A-2026!` | Portal e ticket customer-facing validados |
-| `customer_manager` | `gestao.portal@support-qa-a.local` | `Local-QA-Customer-Manager-A-2026!` | Portal manager validado |
+| `platform_admin` | `qa.local.platform-admin@genius.local` | `LOCAL_QA_ADMIN_PASSWORD` | Admin console acessivel; `/admin/system` validado |
+| `support_manager` | `qa.local.support-manager-a@genius.local` | `LOCAL_QA_SUPPORT_MANAGER_PASSWORD` | `/support/queue` e ticket workspace validado |
+| `support_agent` | `qa.local.support-agent-a@genius.local` | `LOCAL_QA_SUPPORT_AGENT_PASSWORD` | landing em `/support/queue` validada |
+| `internal_area_member` | `qa.local.internal-area-member@genius.local` | `LOCAL_QA_INTERNAL_AREA_MEMBER_PASSWORD` | fila/detalhe de acionamento interno validado |
+| `internal_area_empty` | `qa.local.internal-area-empty@genius.local` | `LOCAL_QA_INTERNAL_AREA_EMPTY_PASSWORD` | empty state honesto validado |
+| `internal_area_non_member` | `qa.local.internal-area-non-member@genius.local` | `LOCAL_QA_INTERNAL_AREA_NON_MEMBER_PASSWORD` | bloqueio em `/access-denied` validado |
+| `engineering_member` | `qa.local.engineering-member-a@genius.local` | `LOCAL_QA_ENGINEERING_PASSWORD` | `/engineering` e work item validado |
+| `customer_user` | `marina.ops@support-qa-a.local` | `LOCAL_QA_CLIENT_PASSWORD` | Portal e ticket customer-facing validados |
+| `customer_manager` | `gestao.portal@support-qa-a.local` | `LOCAL_QA_CUSTOMER_MANAGER_PASSWORD` | Portal manager validado |
 | `public_anon` | N/A | N/A | Public Help validado sem login |
 
 ## IDs uteis

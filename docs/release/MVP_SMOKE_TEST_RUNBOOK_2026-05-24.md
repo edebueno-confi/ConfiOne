@@ -17,15 +17,15 @@ Nao criar dados reais. Nao usar CSV. Nao testar provider externo. Nao ativar IA 
 
 ## Credenciais
 
-- Admin: `qa.local.platform-admin@genius.local` / `Local-QA-Admin-2026!`
-- Suporte gerente: `qa.local.support-manager-a@genius.local` / `Local-QA-Manager-A-2026!`
-- Suporte agente: `qa.local.support-agent-a@genius.local` / `Local-QA-Agent-A-2026!`
-- Area interna com itens: `qa.local.internal-area-member@genius.local` / `Local-QA-Internal-Area-2026!`
-- Area interna vazia: `qa.local.internal-area-empty@genius.local` / `Local-QA-Internal-Empty-2026!`
-- Usuario sem area: `qa.local.internal-area-non-member@genius.local` / `Local-QA-Internal-NoArea-2026!`
-- Engenharia: `qa.local.engineering-member-a@genius.local` / `Local-QA-Engineering-A-2026!`
-- Cliente: `marina.ops@support-qa-a.local` / `Local-QA-Customer-A-2026!`
-- Gestor cliente: `gestao.portal@support-qa-a.local` / `Local-QA-Customer-Manager-A-2026!`
+- Admin: `qa.local.platform-admin@genius.local` / `LOCAL_QA_ADMIN_PASSWORD`
+- Suporte gerente: `qa.local.support-manager-a@genius.local` / `LOCAL_QA_SUPPORT_MANAGER_PASSWORD`
+- Suporte agente: `qa.local.support-agent-a@genius.local` / `LOCAL_QA_SUPPORT_AGENT_PASSWORD`
+- Area interna com itens: `qa.local.internal-area-member@genius.local` / `LOCAL_QA_INTERNAL_AREA_MEMBER_PASSWORD`
+- Area interna vazia: `qa.local.internal-area-empty@genius.local` / `LOCAL_QA_INTERNAL_AREA_EMPTY_PASSWORD`
+- Usuario sem area: `qa.local.internal-area-non-member@genius.local` / `LOCAL_QA_INTERNAL_AREA_NON_MEMBER_PASSWORD`
+- Engenharia: `qa.local.engineering-member-a@genius.local` / `LOCAL_QA_ENGINEERING_PASSWORD`
+- Cliente: `marina.ops@support-qa-a.local` / `LOCAL_QA_CLIENT_PASSWORD`
+- Gestor cliente: `gestao.portal@support-qa-a.local` / `LOCAL_QA_CUSTOMER_MANAGER_PASSWORD`
 
 ## Passo a passo
 

@@ -33,14 +33,14 @@ if "%SEEDCODE%"=="0" (
   echo   Volte ao navegador: http://localhost:4173
   echo   Entre com:
   echo     qa.local.platform-admin@genius.local
-  echo     Local-QA-Admin-2026!
+  echo     LOCAL_QA_ADMIN_PASSWORD
   echo ==================================================
 ) else (
   echo ==================================================
   echo   [ATENCAO] O seed completo nao terminou 100%%.
   echo   MESMO ASSIM, tente entrar no navegador com:
   echo     qa.local.platform-admin@genius.local
-  echo     Local-QA-Admin-2026!
+  echo     LOCAL_QA_ADMIN_PASSWORD
   echo   (o usuario admin costuma ser criado no inicio).
   echo.
   echo   Se ainda dizer "Credenciais invalidas",
