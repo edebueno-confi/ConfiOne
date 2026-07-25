@@ -52,7 +52,7 @@ Decisao: APROVADO PARA REVISAO, condicionado ao PR #4 e aos checks do HEAD final
 
 - Typechecks, build, verify, lint DB e teste pgTAP focado passam.
 - A suite completa chegou a falhar em uma execucao imediatamente apos o reset por incompatibilidade revelada pelo gate CS; o contrato foi ajustado para preservar a resposta JSON vazia existente. `npm run supabase:verify` foi executado novamente e passou com 80 arquivos e 1.297 testes.
-- A suite Node focada de HubSpot/OMIE passa com 15 testes comportamentais.
+- A suite Node focada de HubSpot/OMIE passa com 17 testes comportamentais.
 - O teste pgTAP focado de integridade passa com 19 testes comportamentais.
 - A suite DB completa passa com 80 arquivos e 1.307 testes.
 - Nao houve sincronizacao real, benchmark produtivo ou teste contra APIs externas.
