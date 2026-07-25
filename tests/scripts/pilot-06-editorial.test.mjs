@@ -10,7 +10,7 @@ const markdown = fs.readFileSync('apps/web/src/features/help-center/markdown.tsx
 
 test('contadores quantitativos usam regra compartilhada de singular e plural', () => {
   assert.match(analyticsUi, /export function formatCountLabel/);
-  assert.match(ceoPage, /formatCountLabel\(c\.wonDeals, 'ganho', 'ganhos'\)/);
+  assert.match(ceoPage, /formatCountLabel\(data\.commercial\.wonDeals, 'ganho', 'ganhos'\)/);
   assert.match(commercialPage, /formatCountLabel\(kpis\.lostDeals, 'perdido', 'perdidos'\)/);
   assert.doesNotMatch(ceoPage, /\$\{c\.wonDeals\.toLocaleString\('pt-BR'\)\} ganhos/);
 });

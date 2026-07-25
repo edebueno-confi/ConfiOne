@@ -1,0 +1,49 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import test from 'node:test';
+
+const page = fs.readFileSync('apps/web/src/features/analytics/AnalyticsCeoPage.tsx', 'utf8');
+const executive = fs.readFileSync('apps/web/src/features/analytics/analytics-executive.ts', 'utf8');
+const shell = fs.readFileSync('apps/web/src/features/analytics/AnalyticsShell.tsx', 'utf8');
+
+test('visão executiva separa desempenho de posição atual', () => {
+  assert.match(page, /Desempenho no período/);
+  assert.match(page, /Posição atual, não afetada pelo período selecionado/);
+  assert.match(page, /Domínio em foco/);
+  assert.doesNotMatch(page, /Decida com o contexto certo/);
+});
+
+test('ranking de pipelines é determinístico e limitado a cinco', () => {
+  assert.match(executive, /sort\(\(left, right\) => right\.ticketCount - left\.ticketCount/);
+  assert.match(executive, /slice\(0, limit\)/);
+  assert.match(executive, /limit = 5/);
+  assert.match(page, /Pipelines de atendimento prioritários/);
+});
+
+test('exceções distinguem qualidade de dados e risco operacional', () => {
+  assert.match(executive, /Dados e integrações/);
+  assert.match(executive, /Tickets de alta prioridade em aberto/);
+  assert.doesNotMatch(page, /status: 'partial'/);
+  assert.match(page, /Sinais operacionais separados da qualidade/);
+});
+
+test('dashboard_viewer recebe somente conteúdo autorizado', () => {
+  assert.match(shell, /DOMAINS\.filter\(\(domain\) => domain\.key === 'ceo'\)/);
+  assert.match(shell, /Visualizador gerencial/);
+  assert.match(page, /isDashboardViewer \? <div/);
+  assert.match(page, /Detalhamento restrito ao perfil/);
+  assert.doesNotMatch(page, /href=.*analytics\/pipelines/);
+});
+
+test('rotas internas usam React Router e não links HTML diretos', () => {
+  assert.match(page, /from 'react-router-dom'/);
+  assert.match(page, /<Link to=/);
+  assert.doesNotMatch(page, /<a key=/);
+});
+
+test('comparação temporal só aparece quando há base válida', () => {
+  assert.match(page, /previous\.commercial/);
+  assert.match(page, /previousDenominator === 0/);
+  assert.match(page, /comparison\.revenue/);
+  assert.doesNotMatch(page, /Comparação temporal disponível para o mesmo recorte/);
+});

@@ -1,0 +1,29 @@
+{
+  "metrics": {
+    "revenue": "R$ 284.600",
+    "won": "42",
+    "conversion": "18,4%",
+    "tickets": "126",
+    "currentBalance": "R$ 91.300",
+    "alerts": "7"
+  },
+  "pipelines": [
+    { "name": "Novos negócios", "domain": "Comercial", "value": "R$ 148.200", "count": 38, "change": "+12%" },
+    { "name": "Expansão de contas", "domain": "Comercial", "value": "R$ 76.400", "count": 17, "change": "+8%" },
+    { "name": "Renovação anual", "domain": "Comercial", "value": "R$ 59.100", "count": 13, "change": "-3%" },
+    { "name": "Parcerias", "domain": "Comercial", "value": "R$ 42.700", "count": 9, "change": "+4%" },
+    { "name": "Enterprise", "domain": "Comercial", "value": "R$ 31.800", "count": 6, "change": "+22%" },
+    { "name": "Onboarding", "domain": "CS", "value": "—", "count": 31, "change": "+5%" },
+    { "name": "Adoção", "domain": "CS", "value": "—", "count": 24, "change": "stable" },
+    { "name": "Risco de churn", "domain": "CS", "value": "—", "count": 8, "change": "+2" },
+    { "name": "Suporte prioritário", "domain": "CS", "value": "—", "count": 6, "change": "-1" },
+    { "name": "Escalações", "domain": "CS", "value": "—", "count": 4, "change": "stable" },
+    { "name": "Incidentes", "domain": "CS", "value": "—", "count": 3, "change": "-2" },
+    { "name": "Recebíveis em aberto", "domain": "Financeiro", "value": "R$ 91.300", "count": 27, "change": "+7%" },
+    { "name": "Vencidos", "domain": "Financeiro", "value": "R$ 34.800", "count": 11, "change": "+4%" },
+    { "name": "A vencer", "domain": "Financeiro", "value": "R$ 56.500", "count": 16, "change": "+9%" },
+    { "name": "Conciliação", "domain": "Financeiro", "value": "R$ 12.200", "count": 5, "change": "stable" },
+    { "name": "Importações", "domain": "Financeiro", "value": "—", "count": 4, "change": "stable" },
+    { "name": "Legado sem uso recente", "domain": "Interno", "value": "—", "count": 0, "change": "—" }
+  ]
+}
