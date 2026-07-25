@@ -17,7 +17,7 @@ begin
 
   if payload ? 'tenant_id'
      and nullif(payload ->> 'tenant_id', '') is not null
-     and (payload ->> 'tenant_id') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' then
+     and (payload ->> 'tenant_id') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then
     target_tenant_id := (payload ->> 'tenant_id')::uuid;
   end if;
 
@@ -25,7 +25,7 @@ begin
   -- preservados em before_state/after_state, sem abortar a mutação auditada.
   if payload ? 'id'
      and nullif(payload ->> 'id', '') is not null
-     and (payload ->> 'id') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' then
+     and (payload ->> 'id') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then
     target_entity_id := (payload ->> 'id')::uuid;
   end if;
 
@@ -54,6 +54,7 @@ from public.analytics_spreadsheet_import_runs
 where app_private.has_global_role('platform_admin'::public.platform_role);
 
 revoke all on public.vw_analytics_spreadsheet_import_runs_read from public, anon;
+revoke all on public.vw_analytics_spreadsheet_import_runs_read from authenticated;
 grant select on public.vw_analytics_spreadsheet_import_runs_read to authenticated;
 
 comment on view public.vw_analytics_spreadsheet_import_runs_read is
