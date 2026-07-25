@@ -1,0 +1,7 @@
+{
+  "source": "deterministic-local-only",
+  "viewports": [[1440,900],[1366,768],[1024,768],[768,1024],[390,844]],
+  "states": ["fresh","stale","partial","error","zero"],
+  "pipelineCount": 17,
+  "options": ["a","b","c"]
+}
