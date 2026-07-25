@@ -24,7 +24,7 @@ test('extrai página e metadados de contas a receber', () => {
 });
 
 test('normaliza valores decimais da API sem transformar ponto decimal em milhar', () => {
-  const [row] = normalizeOmieApiReceivables([
+  const { accepted: [row] } = normalizeOmieApiReceivables([
     { nCodTitulo: 10, nValorTitulo: '1234.56', nValorPago: '234,56', dDtVenc: '31/12/2030', cStatus: 'A vencer' },
   ], 'sync-1');
   assert.equal(row.net_amount, 1234.56);
@@ -37,7 +37,26 @@ test('deriva identidade Omie estavel sem depender da ordem da carga', () => {
   const reordered = deriveOmieSourceRecordId({ nValorTitulo: '1234.56', dDtVenc: '31/12/2030', nParcela: 2, cNumDocFiscal: 'NF-9', codigo_cliente_fornecedor: 42 });
   assert.ok(first);
   assert.equal(first, reordered);
-  assert.match(first, /^omie-v2:/);
+  assert.match(first, /^omie-v3:/);
+});
+
+test('diferencia vencimento, valor e normaliza formatos equivalentes', () => {
+  const base = { codigo_cliente_fornecedor: 42, cNumDocFiscal: 'NF-9', nParcela: 2, dDtVenc: '31/12/2030', nValorTitulo: '1.234,56' };
+  assert.equal(deriveOmieSourceRecordId(base), deriveOmieSourceRecordId({ ...base, dDtVenc: '2030-12-31', nValorTitulo: '1234.560' }));
+  assert.notEqual(deriveOmieSourceRecordId(base), deriveOmieSourceRecordId({ ...base, dDtVenc: '01/01/2031' }));
+  assert.notEqual(deriveOmieSourceRecordId(base), deriveOmieSourceRecordId({ ...base, nValorTitulo: '1234.57' }));
+  assert.notEqual(deriveOmieSourceRecordId(base), deriveOmieSourceRecordId({ ...base, nParcela: 3 }));
+});
+
+test('prioriza ID oficial e retorna rejeicoes explicitas sem payload sensivel', () => {
+  const normalized = normalizeOmieApiReceivables([
+    { nCodTitulo: 10, nValorTitulo: '10,00', dDtVenc: '31/12/2030', cCNPJ: '12345678000199' },
+    { nValorTitulo: '10,00', dDtVenc: '31/12/2030' },
+  ], 'sync-1');
+  assert.match(String(normalized.accepted[0].source_record_id), /^omie-v3:id:/);
+  assert.equal(normalized.summary.rejected, 1);
+  assert.equal(normalized.rejected[0].reasonCode, 'missing_official_id_and_composite_fields');
+  assert.equal(JSON.stringify(normalized.rejected).includes('12345678000199'), false);
 });
 
 test('nao cria identidade posicional para titulo sem identificador estavel', () => {
