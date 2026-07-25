@@ -40,6 +40,29 @@ function valueAt(row: Record<string, unknown>, ...keys: string[]) {
   return null;
 }
 
+function stablePart(value: unknown): string {
+  return String(value ?? '').trim().normalize('NFKC').toLowerCase().replace(/\s+/g, ' ');
+}
+
+/**
+ * Identidade de negócio versionada para títulos Omie.
+ * O fallback deliberadamente retorna null: títulos sem chave estável não podem
+ * ser publicados como se fossem o mesmo registro apenas por posição.
+ */
+export function deriveOmieSourceRecordId(row: Record<string, unknown>): string | null {
+  const official = valueAt(row, 'nCodTitulo', 'codigo_lancamento_omie', 'codigo_lancamento_integracao', 'id');
+  if (official !== null) return `omie-v2:id:${stablePart(official)}`;
+  const customer = valueAt(row, 'codigo_cliente_fornecedor', 'codigo_cliente_omie', 'codigo_cliente');
+  const document = valueAt(row, 'cNumDocFiscal', 'numero_documento_fiscal', 'numero_documento', 'cNumDoc');
+  const installment = valueAt(row, 'nParcela', 'parcela', 'numero_parcela');
+  const dueDate = valueAt(row, 'dDtVenc', 'data_vencimento', 'vencimento');
+  const amount = valueAt(row, 'nValorTitulo', 'valor_documento', 'valor', 'nValor');
+  const kind = valueAt(row, 'cTipo', 'tipo_titulo', 'origem');
+  if (customer === null || document === null || dueDate === null || amount === null) return null;
+  const parts = [customer, document, installment ?? '', dueDate, amount, kind ?? ''].map(stablePart);
+  return `omie-v2:composite:${parts.map((part) => encodeURIComponent(part)).join('|')}`;
+}
+
 const SENSITIVE_PAYLOAD_KEY = /cpf|cnpj|tax.?id|documento|app.?key|app.?secret|token|password/i;
 
 export function redactSensitivePayload(value: unknown): unknown {
@@ -85,7 +108,7 @@ function agingBucket(status: string, dueDate: string | null) {
 }
 
 export function normalizeOmieApiReceivables(rows: unknown[], syncRunId: string) {
-  return rows.map((entry, index) => {
+  return rows.flatMap((entry) => {
     const raw = (entry && typeof entry === 'object' ? entry : {}) as Record<string, unknown>;
     const details = (raw.detalhes && typeof raw.detalhes === 'object' ? raw.detalhes : raw) as Record<string, unknown>;
     const status = String(valueAt(details, 'cStatus', 'status_titulo', 'status') ?? 'Indisponivel').trim();
@@ -101,14 +124,16 @@ export function normalizeOmieApiReceivables(rows: unknown[], syncRunId: string) 
     const net = netAmount ?? 0;
     const explicitReceived = numberValue(valueAt(details, 'nValorPago', 'valor_pago', 'valor_recebido'));
     const receivedAmount = explicitReceived ?? (isReceived ? net : 0);
-    const sourceRecordId = String(valueAt(details, 'nCodTitulo', 'codigo_lancamento_omie', 'codigo_lancamento_integracao', 'id') ?? '').trim();
+    const sourceRecordId = deriveOmieSourceRecordId(details);
+    if (!sourceRecordId) return [];
     const clientName = String(valueAt(details, 'cNomeCliente', 'nome_cliente', 'cliente', 'cliente_nome') ?? '').trim() || null;
     const clientTaxId = String(valueAt(details, 'cCPFCNPJ', 'cpf_cnpj', 'cliente_cnpj') ?? '').trim() || null;
     const balance = (isReceived || isCancelledStatus) ? 0 : Math.max(net - receivedAmount, 0);
     return {
       sync_run_id: syncRunId,
+      identity_version: 'omie-v2',
       source_key: 'omie_receivables_api',
-      source_record_id: sourceRecordId || `omie-row:${index + 1}`,
+      source_record_id: sourceRecordId,
       status_original: status,
       aging_bucket: agingBucket(status, dueDate),
       document_number: String(valueAt(details, 'cNumDocFiscal', 'numero_documento_fiscal', 'numero_documento', 'cNumDoc') ?? '').trim() || null,
@@ -184,8 +209,13 @@ export async function fetchOmieReceivables(
   // A paginação é serializada: o OMIE rejeita chamadas simultâneas do mesmo
   // método com 8020/REDUNDANT.
   const rows: unknown[] = [];
+  let previousPage = 0;
   for (let page = 1; page <= 100; page += 1) {
     const parsed = await fetchPage(page);
+    if (!Number.isInteger(parsed.page) || parsed.page !== page || parsed.page <= previousPage || !Number.isInteger(parsed.totalPages) || parsed.totalPages < parsed.page) {
+      throw new Error(`Resposta Omie sem progresso de pagina: esperado ${page}, recebido ${parsed.page}/${parsed.totalPages}.`);
+    }
+    previousPage = parsed.page;
     rows.push(...parsed.rows);
     if (parsed.page >= parsed.totalPages || parsed.rows.length === 0) return rows;
   }

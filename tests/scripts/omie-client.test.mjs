@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildOmieReceivablesRequest, parseOmieCredentials, extractOmieReceivablesPage, fetchOmieReceivables, normalizeOmieApiReceivables, buildOmieClientsRequest, extractOmieClientsPage, fetchOmieClientsIndex, enrichReceivablesWithClients } from '../../supabase/functions/_shared/omie.ts';
+import { buildOmieReceivablesRequest, parseOmieCredentials, extractOmieReceivablesPage, fetchOmieReceivables, normalizeOmieApiReceivables, buildOmieClientsRequest, extractOmieClientsPage, fetchOmieClientsIndex, enrichReceivablesWithClients, deriveOmieSourceRecordId } from '../../supabase/functions/_shared/omie.ts';
 
 test('monta requisição paginada da API Omie sem expor segredo', () => {
   const request = buildOmieReceivablesRequest({ appKey: 'key', appSecret: 'secret' }, 2, 500);
@@ -30,6 +30,28 @@ test('normaliza valores decimais da API sem transformar ponto decimal em milhar'
   assert.equal(row.net_amount, 1234.56);
   assert.equal(row.received_amount, 234.56);
   assert.equal(row.balance, 1000);
+});
+
+test('deriva identidade Omie estavel sem depender da ordem da carga', () => {
+  const first = deriveOmieSourceRecordId({ codigo_cliente_fornecedor: 42, cNumDocFiscal: 'NF-9', nParcela: 2, dDtVenc: '31/12/2030', nValorTitulo: '1234.56' });
+  const reordered = deriveOmieSourceRecordId({ nValorTitulo: '1234.56', dDtVenc: '31/12/2030', nParcela: 2, cNumDocFiscal: 'NF-9', codigo_cliente_fornecedor: 42 });
+  assert.ok(first);
+  assert.equal(first, reordered);
+  assert.match(first, /^omie-v2:/);
+});
+
+test('nao cria identidade posicional para titulo sem identificador estavel', () => {
+  assert.equal(deriveOmieSourceRecordId({ cStatus: 'A vencer', nValorTitulo: 10 }), null);
+});
+
+test('rejeita pagina Omie que retrocede ou repete o numero informado', async () => {
+  await assert.rejects(
+    fetchOmieReceivables({ appKey: 'a', appSecret: 'b' }, async (_url, init) => {
+      const page = JSON.parse(String(init?.body ?? '{}')).param[0].pagina;
+      return new Response(JSON.stringify({ pagina: page === 1 ? 1 : 1, total_de_paginas: 2, conta_receber_cadastro: [{ codigo_lancamento_omie: page }] }), { status: 200 });
+    }, { timeoutMs: 1000, maxRetries: 0 }),
+    /pagina|progresso/i,
+  );
 });
 
 test('faz retry apenas para falhas transitórias da API Omie', async () => {
