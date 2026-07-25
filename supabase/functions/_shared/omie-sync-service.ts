@@ -3,6 +3,17 @@ import { enrichReceivablesWithClients, fetchOmieClientsIndex, fetchOmieReceivabl
 
 export const OMIE_STAGING_BATCH_SIZE = 500;
 
+export async function stageOmieRowsInBatches(client: SupabaseClient, rows: Array<Record<string, unknown>>) {
+  let batchCount = 0;
+  for (let index = 0; index < rows.length; index += OMIE_STAGING_BATCH_SIZE) {
+    const batch = rows.slice(index, index + OMIE_STAGING_BATCH_SIZE);
+    const { error } = await client.from('analytics_finance_receivables_staging').insert(batch);
+    if (error) throw new Error(`Falha no lote OMIE ${batchCount + 1}: ${error.message}`);
+    batchCount += 1;
+  }
+  return { stagedRows: rows.length, batchCount };
+}
+
 function rejectionCounts(rejected: Array<{ reasonCode: string }>) {
   return rejected.reduce<Record<string, number>>((result, item) => { result[item.reasonCode] = (result[item.reasonCode] ?? 0) + 1; return result; }, {});
 }
@@ -27,12 +38,8 @@ export async function runOmieSnapshot(client: SupabaseClient, credentials: OmieC
     for (const row of normalized.accepted) { const key = `${row.source_key}:${row.source_record_id}`; if (identityKeys.has(key)) throw new Error('Colisao de identidade Omie detectada.'); identityKeys.add(key); }
     const enrichment = { status: 'unavailable', matched: 0, unmatched: normalized.accepted.length, errors: 0 } as { status: 'complete'|'partial'|'unavailable'; matched: number; unmatched: number; errors: number };
     try { const clients = await fetchOmieClientsIndex(credentials); enrichReceivablesWithClients(normalized.accepted as any, clients); enrichment.matched = normalized.accepted.filter((row: any) => row.client_name || row.client_tax_id || row.client_trade_name).length; enrichment.unmatched = normalized.accepted.length - enrichment.matched; enrichment.status = enrichment.unmatched ? 'partial' : 'complete'; } catch { enrichment.errors = 1; }
-    for (let index = 0; index < normalized.accepted.length; index += OMIE_STAGING_BATCH_SIZE) {
-      const batch = normalized.accepted.slice(index, index + OMIE_STAGING_BATCH_SIZE);
-      const { error } = await client.from('analytics_finance_receivables_staging').insert(batch);
-      if (error) throw new Error(`Falha no lote OMIE ${Math.floor(index / OMIE_STAGING_BATCH_SIZE) + 1}: ${error.message}`);
-    }
-    const batchCount = Math.ceil(normalized.accepted.length / OMIE_STAGING_BATCH_SIZE);
+    const staged = await stageOmieRowsInBatches(client, normalized.accepted);
+    const batchCount = staged.batchCount;
     await client.from('analytics_finance_sync_runs').update({ staged_rows: normalized.accepted.length, batch_count: batchCount, enrichment }).eq('id', syncRunId);
     const { data: promotion, error: promotionError } = await client.rpc('rpc_service_promote_omie_snapshot', { p_sync_run_id: syncRunId });
     if (promotionError) throw new Error(`Falha ao promover snapshot Omie: ${promotionError.message}`);

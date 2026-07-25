@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildOmieReceivablesRequest, parseOmieCredentials, extractOmieReceivablesPage, fetchOmieReceivables, normalizeOmieApiReceivables, buildOmieClientsRequest, extractOmieClientsPage, fetchOmieClientsIndex, enrichReceivablesWithClients, deriveOmieSourceRecordId } from '../../supabase/functions/_shared/omie.ts';
+import { stageOmieRowsInBatches, OMIE_STAGING_BATCH_SIZE } from '../../supabase/functions/_shared/omie-sync-service.ts';
 
 test('monta requisição paginada da API Omie sem expor segredo', () => {
   const request = buildOmieReceivablesRequest({ appKey: 'key', appSecret: 'secret' }, 2, 500);
@@ -144,4 +145,20 @@ test('enriquece títulos com nome/CNPJ do cliente por codigo_cliente_fornecedor'
   enrichReceivablesWithClients(rows, clients);
   assert.equal(rows[0].client_name, 'ACME LTDA');
   assert.equal(rows[0].client_tax_id, '12345678000199');
+});
+
+test('persiste staging em lotes governados e retorna contagens', async () => {
+  const batches = [];
+  const client = { from: () => ({ insert: async (rows) => { batches.push(rows); return { error: null }; } }) };
+  const result = await stageOmieRowsInBatches(client, Array.from({ length: OMIE_STAGING_BATCH_SIZE + 2 }, (_, index) => ({ index })));
+  assert.deepEqual(result, { stagedRows: OMIE_STAGING_BATCH_SIZE + 2, batchCount: 2 });
+  assert.equal(batches[0].length, OMIE_STAGING_BATCH_SIZE);
+  assert.equal(batches[1].length, 2);
+});
+
+test('falha de lote interrompe a persistência imediatamente', async () => {
+  let calls = 0;
+  const client = { from: () => ({ insert: async () => { calls += 1; return { error: new Error('falha controlada') }; } }) };
+  await assert.rejects(stageOmieRowsInBatches(client, Array.from({ length: OMIE_STAGING_BATCH_SIZE + 2 }, (_, index) => ({ index }))), /falha controlada/);
+  assert.equal(calls, 1);
 });
