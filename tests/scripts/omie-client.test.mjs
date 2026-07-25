@@ -162,3 +162,13 @@ test('falha de lote interrompe a persistência imediatamente', async () => {
   await assert.rejects(stageOmieRowsInBatches(client, Array.from({ length: OMIE_STAGING_BATCH_SIZE + 2 }, (_, index) => ({ index }))), /falha controlada/);
   assert.equal(calls, 1);
 });
+
+test('falha em lote intermediário ou final não envia lotes seguintes', async () => {
+  for (const failingBatch of [2, 3]) {
+    let calls = 0;
+    const client = { from: () => ({ insert: async () => { calls += 1; return calls === failingBatch ? { error: new Error(`falha lote ${failingBatch}`) } : { error: null }; } }) };
+    const rows = Array.from({ length: OMIE_STAGING_BATCH_SIZE * 3 }, (_, index) => ({ index }));
+    await assert.rejects(stageOmieRowsInBatches(client, rows), new RegExp(`falha lote ${failingBatch}`));
+    assert.equal(calls, failingBatch);
+  }
+});
