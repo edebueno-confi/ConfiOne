@@ -12,3 +12,5 @@
 | Retries sem politica comum completa | media | Protecoes existentes preservadas | `_shared/hubspot.ts`, `_shared/omie.ts` | testes existentes | Mitigado | Jitter/deadline global ficam para lote seguinte |
 | Escritas externas sem idempotencia total | critica | Nao simular; manter etapa separada e sem retry cego | runners existentes | revisao de fluxo | Bloqueado | Requer ledger/contrato externo |
 | Tombstones/watermarks completos | alta | Nao inventar sem contrato HubSpot confirmado | HubSpot | auditoria | Bloqueado | Requer reconciliacao por objeto |
+| Resposta OMIE vazia e colisao de identidade | alta | Abortam antes da promocao e preservam o snapshot anterior | `_shared/omie-sync-service.ts` | Node focado; revisao do fluxo | Corrigido | Requer observacao com volume produtivo |
+| Falha HubSpot reportada como sucesso | alta | Marca a execucao como `partial` | `analytics-integration-run/index.ts` | teste de runtime; revisao do fluxo | Corrigido | Chamada externa nao executada |

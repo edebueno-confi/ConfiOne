@@ -53,6 +53,7 @@ Deno.serve(async (req) => {
   const rawCorrelation = req.headers.get('x-analytics-correlation-id')?.trim() ?? '';
   const correlationId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(rawCorrelation) ? rawCorrelation : crypto.randomUUID();
   try {
+    await client.rpc('rpc_service_mark_integration_run', { p_status: 'running', p_message: `Iniciado (${mode === 'scheduled' ? 'scheduled' : 'admin'})` });
     const omie = await runOmieSnapshot(client, parseOmieCredentials(await getSecret(client, 'omie')), mode === 'scheduled' ? null : mode, correlationId);
     let hubspot = { updated: 0, failed: 0, companies: 0 };
     try {
@@ -65,10 +66,14 @@ Deno.serve(async (req) => {
       hubspot = { updated, failed: rows.length - updated, companies: rows.length };
     } catch {
       // O snapshot OMIE permanece valido; a etapa de enriquecimento pode ser reexecutada.
+      hubspot = { updated: 0, failed: 1, companies: 0 };
     }
-    return jsonResponse({ ok: true, mode: mode === 'scheduled' ? 'scheduled' : 'admin', correlationId, omie, hubspot, status: hubspot.failed ? 'partial' : 'success' });
+    const status = hubspot.failed ? 'partial' : 'success';
+    await client.rpc('rpc_service_mark_integration_run', { p_status: status, p_message: `OMIE ${omie.acceptedRows} titulos; HubSpot ${hubspot.updated}/${hubspot.companies} empresas.` });
+    return jsonResponse({ ok: true, mode: mode === 'scheduled' ? 'scheduled' : 'admin', correlationId, omie, hubspot, status });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    await client.rpc('rpc_service_mark_integration_run', { p_status: 'error', p_message: 'Falha na orquestracao das integracoes.' });
     if (/OMIE_SYNC_IN_PROGRESS|REDUNDANT|8020/i.test(message)) return jsonResponse({ error: 'A API Omie esta ocupada ou ja existe uma sincronizacao em andamento.', code: 'OMIE_PROVIDER_BUSY' }, { status: 409, headers: { 'retry-after': '30' } });
     return jsonResponse({ error: 'Falha na orquestracao das integracoes.', correlationId }, { status: 502 });
   }

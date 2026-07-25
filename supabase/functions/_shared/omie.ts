@@ -59,7 +59,7 @@ export function deriveOmieSourceRecordId(row: Record<string, unknown>): string |
   const amount = valueAt(row, 'nValorTitulo', 'valor_documento', 'valor', 'nValor');
   const kind = valueAt(row, 'cTipo', 'tipo_titulo', 'origem');
   if (customer === null || document === null || dueDate === null || amount === null) return null;
-  const parts = [customer, document, installment ?? '', dueDate, amount, kind ?? ''].map(stablePart);
+  const parts = [customer, document, installment ?? '', kind ?? ''].map(stablePart);
   return `omie-v2:composite:${parts.map((part) => encodeURIComponent(part)).join('|')}`;
 }
 

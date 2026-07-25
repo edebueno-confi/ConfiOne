@@ -1,5 +1,5 @@
 begin;
-select plan(8);
+select plan(9);
 
 select ok(to_regclass('public.analytics_finance_receivables_staging') is not null, 'staging financeiro existe');
 select ok((select relrowsecurity from pg_class where oid = 'public.analytics_finance_receivables_staging'::regclass), 'staging financeiro possui RLS');
@@ -21,6 +21,7 @@ select is(
 );
 select ok(position('can_read_analytics' in pg_get_functiondef('public.rpc_analytics_cs_snapshot(date,date,text,text,text[])'::regprocedure)) > 0, 'wrapper CS declara gate de leitura');
 select ok(position('SECURITY DEFINER' in upper(pg_get_functiondef('public.rpc_analytics_cs_snapshot(date,date,text,text,text[])'::regprocedure))) > 0, 'wrapper CS permanece controlado');
+select is(has_function_privilege('authenticated', 'public.rpc_analytics_cs_snapshot_impl(date,date,text,text,text[])', 'EXECUTE'), false, 'implementacao legada nao e executavel diretamente');
 
 select * from finish();
 rollback;

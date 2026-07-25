@@ -25,7 +25,13 @@ export async function runOmieSnapshot(
   const syncRunId = String(syncRun.id);
   try {
     const rows = await fetchOmieReceivables(credentials);
+    if (rows.length === 0) throw new Error('A API Omie retornou um snapshot vazio; o snapshot anterior foi preservado para evitar apagamento indevido.');
     const normalized = normalizeOmieApiReceivables(rows, syncRunId).map((row) => ({ ...row, identity_version: 'omie-v2' }));
+    const identityKeys = new Set<string>();
+    for (const row of normalized) {
+      if (identityKeys.has(row.source_record_id)) throw new Error(`Colisao de identidade Omie detectada para ${row.source_record_id}.`);
+      identityKeys.add(row.source_record_id);
+    }
     try {
       const clients = await fetchOmieClientsIndex(credentials);
       enrichReceivablesWithClients(normalized, clients);

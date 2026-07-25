@@ -4,7 +4,7 @@
 
 Status: implementacao local concluida para os achados tecnicamente solucionaveis sem credenciais ou chamadas externas.
 
-Decisao: AINDA BLOQUEADO para aprovacao de revisao remota ate o PR e os checks do HEAD final.
+Decisao: APROVADO PARA REVISAO, condicionado ao PR #4 e aos checks do HEAD final.
 
 ## Arquitetura final
 
@@ -20,6 +20,7 @@ Decisao: AINDA BLOQUEADO para aprovacao de revisao remota ate o PR e os checks d
 - Registros sem campos estaveis suficientes sao rejeitados do snapshot, sem fallback posicional.
 - `analytics_finance_receivables_staging` possui RLS habilitada, sem grants para anon/authenticated.
 - `rpc_service_promote_omie_snapshot(uuid)` preserva o snapshot anterior ate a promocao, expira somente o snapshot ativo anterior e nao transforma ausencia em recebido.
+- Resposta OMIE vazia e colisao de identidade abortam a promocao e preservam o snapshot anterior.
 - Identidades legadas permanecem rastreadas como `legacy`; migracao automatica de colisoes nao foi inventada.
 
 ## Correlacao, concorrencia e seguranca
@@ -28,6 +29,8 @@ Decisao: AINDA BLOQUEADO para aprovacao de revisao remota ate o PR e os checks d
 - Runs antigos sao encerrados como falha antes de nova tentativa.
 - O wrapper publico `rpc_analytics_cs_snapshot` declara explicitamente `app_private.can_read_analytics()` antes de delegar ao implementacao legado.
 - O RPC de promocao e executavel somente por `service_role`.
+- A implementacao interna do snapshot CS nao e executavel por `authenticated`; o wrapper autorizado retorna o objeto vazio contratual sem `can_read_analytics()`.
+- Falhas da etapa HubSpot deixam a execucao como `partial`, nunca como sucesso falso.
 - Nenhuma credencial, token, payload produtivo ou chamada real foi usada.
 
 ## HubSpot
@@ -47,8 +50,8 @@ Decisao: AINDA BLOQUEADO para aprovacao de revisao remota ate o PR e os checks d
 ## Testes e limitacoes
 
 - Typechecks, build, verify, lint DB e teste pgTAP focado passam.
-- A suite completa chegou a falhar em uma execucao imediatamente apos o reset por estado transitorio do ambiente; `npm run supabase:verify` foi executado novamente e passou com 80 arquivos e 1.294 testes.
-- A suite Node focada de HubSpot/OMIE passa com 17 testes.
+- A suite completa chegou a falhar em uma execucao imediatamente apos o reset por incompatibilidade revelada pelo gate CS; o contrato foi ajustado para preservar a resposta JSON vazia existente. `npm run supabase:verify` foi executado novamente e passou com 80 arquivos e 1.297 testes.
+- A suite Node focada de HubSpot/OMIE passa com 18 testes.
 - Nao houve sincronizacao real, benchmark produtivo ou teste contra APIs externas.
 
 ## Pendencias bloqueadas
