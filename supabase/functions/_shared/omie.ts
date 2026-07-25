@@ -25,11 +25,11 @@ export function buildOmieReceivablesRequest(credentials: OmieCredentials, page: 
 }
 
 export function extractOmieReceivablesPage(payload: unknown) {
-  const value = (payload ?? {}) as { pagina?: number; total_de_paginas?: number; conta_receber_cadastro?: unknown[]; lista_contas_receber?: unknown[] };
+  const value = (payload ?? {}) as { pagina?: number; total_de_paginas?: number; total_de_registros?: number; conta_receber_cadastro?: unknown[]; lista_contas_receber?: unknown[] };
   const rows = Array.isArray(value.conta_receber_cadastro)
     ? value.conta_receber_cadastro
     : Array.isArray(value.lista_contas_receber) ? value.lista_contas_receber : [];
-  return { rows, page: Number(value.pagina ?? 1), totalPages: Number(value.total_de_paginas ?? 1) };
+  return { rows, page: Number(value.pagina ?? 1), totalPages: Number(value.total_de_paginas ?? 1), totalRecords: Number.isFinite(Number(value.total_de_registros)) ? Number(value.total_de_registros) : null };
 }
 
 function valueAt(row: Record<string, unknown>, ...keys: string[]) {
@@ -38,6 +38,34 @@ function valueAt(row: Record<string, unknown>, ...keys: string[]) {
     if (value !== undefined && value !== null && String(value).trim() !== '') return value;
   }
   return null;
+}
+
+function stablePart(value: unknown): string {
+  return String(value ?? '').trim().normalize('NFKC').toLowerCase().replace(/\s+/g, ' ');
+}
+
+/**
+ * Identidade de negócio versionada para títulos Omie.
+ * O fallback deliberadamente retorna null: títulos sem chave estável não podem
+ * ser publicados como se fossem o mesmo registro apenas por posição.
+ */
+export function deriveOmieSourceRecordId(row: Record<string, unknown>): string | null {
+  const official = valueAt(row, 'nCodTitulo', 'codigo_lancamento_omie', 'codigo_lancamento_integracao', 'id');
+  if (official !== null) return `omie-v3:id:${stablePart(official)}`;
+  const customer = valueAt(row, 'codigo_cliente_fornecedor', 'codigo_cliente_omie', 'codigo_cliente');
+  const document = valueAt(row, 'cNumDocFiscal', 'numero_documento_fiscal', 'numero_documento', 'cNumDoc');
+  const installment = valueAt(row, 'nParcela', 'parcela', 'numero_parcela');
+  const dueDate = valueAt(row, 'dDtVenc', 'data_vencimento', 'vencimento');
+  const amount = valueAt(row, 'nValorTitulo', 'valor_documento', 'valor', 'nValor');
+  const kind = valueAt(row, 'cTipo', 'tipo_titulo', 'origem');
+  if (customer === null || document === null || dueDate === null || amount === null) return null;
+  const dueDateCanonical = normalizeCanonicalDate(valueAt(row, 'dDtVenc', 'data_vencimento', 'vencimento'));
+  const amountCanonical = normalizeCanonicalNumber(valueAt(row, 'nValorTitulo', 'valor_documento', 'valor', 'nValor'));
+  const integrationCode = valueAt(row, 'codigo_lancamento_integracao', 'codigo_integracao');
+  const category = valueAt(row, 'cCodCateg', 'categoria', 'categoria_codigo');
+  if (dueDateCanonical === null || amountCanonical === null) return null;
+  const parts = [customer, document, installment ?? '', kind ?? '', dueDateCanonical, amountCanonical, integrationCode ?? '', category ?? ''].map(stablePart);
+  return `omie-v3:composite:${parts.map((part) => encodeURIComponent(part)).join('|')}`;
 }
 
 const SENSITIVE_PAYLOAD_KEY = /cpf|cnpj|tax.?id|documento|app.?key|app.?secret|token|password/i;
@@ -62,6 +90,10 @@ function excelOrOmieDate(value: unknown) {
   return /^\d{4}-\d{2}-\d{2}/.test(raw) ? raw.slice(0, 10) : null;
 }
 
+export function normalizeCanonicalDate(value: unknown): string | null {
+  return excelOrOmieDate(value);
+}
+
 function numberValue(value: unknown) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
   const input = String(value ?? '').trim().replace(/R\$\s?/gi, '').replace(/\s/g, '');
@@ -71,6 +103,11 @@ function numberValue(value: unknown) {
     : input;
   const parsed = Number(raw.replace(/[^0-9.-]/g, ''));
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function normalizeCanonicalNumber(value: unknown): string | null {
+  const parsed = numberValue(value);
+  return parsed === null ? null : parsed.toFixed(2);
 }
 
 function agingBucket(status: string, dueDate: string | null) {
@@ -84,14 +121,32 @@ function agingBucket(status: string, dueDate: string | null) {
   return dueDate ? 'a_vencer' : 'indisponivel';
 }
 
-export function normalizeOmieApiReceivables(rows: unknown[], syncRunId: string) {
-  return rows.map((entry, index) => {
-    const raw = (entry && typeof entry === 'object' ? entry : {}) as Record<string, unknown>;
+export type RejectedReceivable = { reasonCode: string; message: string; index: number; fields: string[] };
+export type NormalizedReceivablesResult = { accepted: Array<Record<string, unknown>>; rejected: RejectedReceivable[]; summary: { received: number; accepted: number; rejected: number } };
+
+export function normalizeOmieApiReceivables(rows: unknown[], syncRunId: string): NormalizedReceivablesResult {
+  const accepted: Array<Record<string, unknown>> = [];
+  const rejected: RejectedReceivable[] = [];
+  rows.forEach((entry, index) => {
+    if (!entry || typeof entry !== 'object') {
+      rejected.push({ reasonCode: 'invalid_record_shape', message: 'Registro OMIE com formato invalido.', index, fields: [] });
+      return;
+    }
+    const raw = entry as Record<string, unknown>;
     const details = (raw.detalhes && typeof raw.detalhes === 'object' ? raw.detalhes : raw) as Record<string, unknown>;
     const status = String(valueAt(details, 'cStatus', 'status_titulo', 'status') ?? 'Indisponivel').trim();
     const dueDate = excelOrOmieDate(valueAt(details, 'dDtVenc', 'data_vencimento', 'vencimento'));
     const issuedDate = excelOrOmieDate(valueAt(details, 'dDtEmissao', 'data_emissao', 'emissao'));
-    const netAmount = numberValue(valueAt(details, 'nValorTitulo', 'valor_documento', 'valor', 'nValor'));
+    const rawAmount = valueAt(details, 'nValorTitulo', 'valor_documento', 'valor', 'nValor');
+    const netAmount = numberValue(rawAmount);
+    if (rawAmount !== null && netAmount === null) {
+      rejected.push({ reasonCode: 'invalid_amount', message: 'Valor do titulo invalido.', index, fields: ['amount'] });
+      return;
+    }
+    if (valueAt(details, 'dDtVenc', 'data_vencimento', 'vencimento') !== null && dueDate === null) {
+      rejected.push({ reasonCode: 'invalid_due_date', message: 'Vencimento do titulo invalido.', index, fields: ['due_date'] });
+      return;
+    }
     // O ListarContasReceber nao retorna valor pago nem saldo; a liquidacao e
     // derivada do status. RECEBIDO conta como recebido integral; CANCELADO sai
     // do saldo; ATRASADO/VENCE HOJE/A VENCER permanecem em aberto pelo valor.
@@ -101,14 +156,19 @@ export function normalizeOmieApiReceivables(rows: unknown[], syncRunId: string) 
     const net = netAmount ?? 0;
     const explicitReceived = numberValue(valueAt(details, 'nValorPago', 'valor_pago', 'valor_recebido'));
     const receivedAmount = explicitReceived ?? (isReceived ? net : 0);
-    const sourceRecordId = String(valueAt(details, 'nCodTitulo', 'codigo_lancamento_omie', 'codigo_lancamento_integracao', 'id') ?? '').trim();
+    const sourceRecordId = deriveOmieSourceRecordId(details);
+    if (!sourceRecordId) {
+      rejected.push({ reasonCode: 'missing_official_id_and_composite_fields', message: 'Titulo sem identificador estavel suficiente.', index, fields: ['customer', 'document', 'due_date', 'amount'] });
+      return;
+    }
     const clientName = String(valueAt(details, 'cNomeCliente', 'nome_cliente', 'cliente', 'cliente_nome') ?? '').trim() || null;
     const clientTaxId = String(valueAt(details, 'cCPFCNPJ', 'cpf_cnpj', 'cliente_cnpj') ?? '').trim() || null;
     const balance = (isReceived || isCancelledStatus) ? 0 : Math.max(net - receivedAmount, 0);
-    return {
+    accepted.push({
       sync_run_id: syncRunId,
+      identity_version: 'omie-v3',
       source_key: 'omie_receivables_api',
-      source_record_id: sourceRecordId || `omie-row:${index + 1}`,
+      source_record_id: sourceRecordId,
       status_original: status,
       aging_bucket: agingBucket(status, dueDate),
       document_number: String(valueAt(details, 'cNumDocFiscal', 'numero_documento_fiscal', 'numero_documento', 'cNumDoc') ?? '').trim() || null,
@@ -126,11 +186,12 @@ export function normalizeOmieApiReceivables(rows: unknown[], syncRunId: string) 
       is_partial: /parcial/i.test(status),
       effective_at: dueDate ? `${dueDate}T00:00:00Z` : null,
       raw_payload: redactSensitivePayload(raw),
-    };
+    });
   });
+  return { accepted, rejected, summary: { received: rows.length, accepted: accepted.length, rejected: rejected.length } };
 }
 
-export async function fetchOmieReceivables(
+export async function fetchOmieReceivablesWithMetadata(
   credentials: OmieCredentials,
   fetchImpl: typeof fetch = fetch,
   options: { timeoutMs?: number; maxRetries?: number } = {},
@@ -178,18 +239,39 @@ export async function fetchOmieReceivables(
       } catch { /* corpo indisponivel */ }
       throw new Error(`Omie Contas a Receber falhou (${response.status})${detail ? `: ${detail}` : ''}.`);
     }
-    return extractOmieReceivablesPage(await response.json());
+    const payload = await response.json();
+    if (payload && typeof payload === 'object' && ('faultstring' in payload || 'faultcode' in payload)) throw new Error('OMIE_FUNCTIONAL_FAULT');
+    return extractOmieReceivablesPage(payload);
   }
 
   // A paginação é serializada: o OMIE rejeita chamadas simultâneas do mesmo
   // método com 8020/REDUNDANT.
   const rows: unknown[] = [];
+  let totalRecords: number | null = null;
+  let totalPages: number | null = null;
+  let previousPage = 0;
   for (let page = 1; page <= 100; page += 1) {
     const parsed = await fetchPage(page);
+    if (!Number.isInteger(parsed.page) || parsed.page !== page || parsed.page <= previousPage || !Number.isInteger(parsed.totalPages) || parsed.totalPages < parsed.page) {
+      throw new Error(`Resposta Omie sem progresso de pagina: esperado ${page}, recebido ${parsed.page}/${parsed.totalPages}.`);
+    }
+    previousPage = parsed.page;
+    totalPages = parsed.totalPages;
+    const parsedRawRecords = (parsed as { totalRecords?: number | null }).totalRecords;
+    const parsedRecords = Number(parsedRawRecords);
+    if (parsedRawRecords !== null && parsedRawRecords !== undefined && Number.isFinite(parsedRecords) && parsedRecords >= 0) totalRecords = parsedRecords;
     rows.push(...parsed.rows);
-    if (parsed.page >= parsed.totalPages || parsed.rows.length === 0) return rows;
+    if (parsed.rows.length === 0 && parsed.page < parsed.totalPages) throw new Error('OMIE_EMPTY_PAGE_BEFORE_END');
+    if (parsed.page >= parsed.totalPages) {
+      if (totalRecords !== null && totalRecords !== rows.length) throw new Error('OMIE_RECORD_COUNT_MISMATCH');
+      return { rows, metadata: { totalPages, totalRecords, returnedRecords: rows.length } };
+    }
   }
   throw new Error('Omie excedeu o limite de 100 páginas por execução.');
+}
+
+export async function fetchOmieReceivables(credentials: OmieCredentials, fetchImpl: typeof fetch = fetch, options: { timeoutMs?: number; maxRetries?: number } = {}) {
+  return (await fetchOmieReceivablesWithMetadata(credentials, fetchImpl, options)).rows;
 }
 
 // --- Enriquecimento de clientes (read-only) ---------------------------------
@@ -285,18 +367,21 @@ export async function fetchOmieClientsIndex(
 export function enrichReceivablesWithClients<T extends { client_name: string | null; client_tax_id: string | null; client_trade_name?: string | null; raw_payload: unknown }>(
   rows: T[],
   clients: Map<string, OmieClientInfo>,
-): T[] {
-  if (clients.size === 0) return rows;
+): { rows: T[]; stats: { matched: number; unmatched: number; fieldsUpdated: number } } {
+  let matched = 0;
+  let unmatched = 0;
+  let fieldsUpdated = 0;
   for (const row of rows) {
     const raw = (row.raw_payload && typeof row.raw_payload === 'object' ? row.raw_payload : {}) as Record<string, unknown>;
     const code = valueAt(raw, 'codigo_cliente_fornecedor', 'codigo_cliente_omie');
     const key = code === null ? '' : String(code).trim();
-    if (!key) continue;
+    if (!key) { unmatched += 1; continue; }
     const info = clients.get(key);
-    if (!info) continue;
-    if (!row.client_name && info.name) row.client_name = info.name;
-    if (!row.client_tax_id && info.taxId) row.client_tax_id = info.taxId;
-    if (!row.client_trade_name && info.tradeName) row.client_trade_name = info.tradeName;
+    if (!info) { unmatched += 1; continue; }
+    matched += 1;
+    if (!row.client_name && info.name) { row.client_name = info.name; fieldsUpdated += 1; }
+    if (!row.client_tax_id && info.taxId) { row.client_tax_id = info.taxId; fieldsUpdated += 1; }
+    if (!row.client_trade_name && info.tradeName) { row.client_trade_name = info.tradeName; fieldsUpdated += 1; }
   }
-  return rows;
+  return { rows, stats: { matched, unmatched, fieldsUpdated } };
 }

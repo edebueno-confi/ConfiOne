@@ -18,6 +18,7 @@ Deno.serve(async (req) => {
   if (!baseUrl || !anonKey) return jsonResponse({ error: 'Runtime Supabase sem URL ou chave publica configurada.' }, { status: 503 });
 
   const results: Array<{ function: string; status: number; payload: unknown }> = [];
+  const correlationId = crypto.randomUUID();
   for (const functionName of SYNC_FUNCTIONS) {
     try {
       const response = await fetch(`${baseUrl}/functions/v1/${functionName}`, {
@@ -26,6 +27,7 @@ Deno.serve(async (req) => {
           apikey: anonKey,
           'Content-Type': 'application/json',
           'x-analytics-sync-secret': configuredSecret,
+          'x-analytics-correlation-id': correlationId,
         },
         body: '{}',
       });
@@ -37,5 +39,5 @@ Deno.serve(async (req) => {
   }
 
   const failed = results.filter((result) => result.status >= 400);
-  return jsonResponse({ ok: failed.length === 0, results }, { status: failed.length === 0 ? 200 : 502 });
+  return jsonResponse({ ok: failed.length === 0, correlationId, results }, { status: failed.length === 0 ? 200 : 502 });
 });
