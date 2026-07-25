@@ -104,15 +104,16 @@ try {
       const events = { consoleErrors: [], pageErrors: [], requestFailures: [], unexpectedResponses: [], expectedForbidden: 0, administrativeRequests: [] };
       page.on('console', (message) => { if (message.type() === 'error') events.consoleErrors.push(message.text()); });
       page.on('pageerror', (error) => events.pageErrors.push(error.message));
-      page.on('requestfailed', (request) => events.requestFailures.push(`${request.method()} ${request.url()}`));
+      page.on('requestfailed', (request) => events.requestFailures.push(`${request.method()} ${request.url()} (${request.failure()?.errorText ?? 'unknown'})`));
       page.on('request', (request) => {
-        if (account.role === 'dashboard_viewer' && /\/rpc\/rpc_admin_|analytics_integration_schedule|managed_integrations/.test(request.url())) {
+        if (account.role !== 'platform_admin' && /\/rpc\/rpc_admin_|analytics_integration_schedule|managed_integrations/.test(request.url())) {
           events.administrativeRequests.push(`${request.method()} ${request.url()}`);
         }
       });
       page.on('response', (response) => {
-        if (response.status() === 403 && account.role !== 'platform_admin') events.expectedForbidden += 1;
-        if ([400, 401, 404, 409, 500].includes(response.status())) events.unexpectedResponses.push(`${response.status()} ${response.url()}`);
+        const status = response.status();
+        if (status === 403) events.unexpectedResponses.push(`403 ${response.url()}`);
+        if ([400, 401, 404, 409, 422, 500].includes(status)) events.unexpectedResponses.push(`${status} ${response.url()}`);
       });
       await page.goto(`${baseUrl}/login?redirectTo=${encodeURIComponent(account.desktop)}`, { waitUntil: 'domcontentloaded' });
       await page.getByLabel('Email').fill(account.email);
