@@ -30,6 +30,7 @@
     "local:qa:verify": "node scripts/local-qa/verify.mjs",
     "local:qa:smoke": "node scripts/local-qa/browser-smoke.mjs",
     "local:qa:smoke:auth": "node scripts/local-qa/smoke.mjs",
+    "local:qa:writes": "node scripts/local-qa/ui-writes.mjs",
     "local:qa:secret-scan": "node scripts/local-qa/secret-scan.mjs",
     "local:qa:scenario": "node scripts/local-qa/scenario.mjs",
     "knowledge:curation:backlog": "node scripts/knowledge/generate-curation-backlog.mjs",

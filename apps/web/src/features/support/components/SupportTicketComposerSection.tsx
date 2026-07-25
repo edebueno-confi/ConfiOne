@@ -75,6 +75,8 @@ export function SupportTicketComposerSection({
       ? publicReplyUnavailableReason ?? publicReplyLabel
       : 'Visível apenas para a operação interna';
 
+  const submitDisabled = composerDisabled || composerDraft.trim().length === 0;
+
   return (
     <div
       className="shrink-0 border-t border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-4 py-3 sm:px-5"
@@ -185,7 +187,7 @@ export function SupportTicketComposerSection({
                 ? 'bg-[color:var(--minimal-warning-text)] text-[color:var(--minimal-action-ink)]'
                 : 'bg-[color:var(--minimal-action)] text-[color:var(--minimal-action-ink)]',
             )}
-            disabled={composerDisabled}
+            disabled={submitDisabled}
             type="submit"
           >
             {submitting

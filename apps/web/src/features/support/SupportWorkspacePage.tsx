@@ -4828,7 +4828,6 @@ function SupportWorkspaceView({
   const composerDraft = composerMode === 'public' ? messageDraft : noteDraft;
   const composerDisabled =
     submitting ||
-    composerDraft.trim().length === 0 ||
     (composerMode === 'public'
       ? !ticketDetail?.canReplyNow
       : !ticketDetail?.canAddInternalNote);
@@ -5578,7 +5577,13 @@ function SupportWorkspaceView({
 
     const defaultRail = (
       <SupportTicketRightRail
+        assigneeOptions={assignableAgents.map((agent) => ({
+          id: agent.userId,
+          label: formatAssignableAgentLabel(agent),
+        }))}
         assignedLabel={currentAssignedLabel}
+        assignmentSubmitting={submitting}
+        assignmentValue={assignDraft}
         categoryLabel={detail.categoryName ?? 'Indisponível'}
         customerDocumentLabel={customerDocumentLabel ?? 'Indisponível'}
         priorityIndicator={<span className="text-[color:var(--color-brand-pink)]">↑</span>}
@@ -5590,6 +5595,8 @@ function SupportWorkspaceView({
           summary: article.articleSummary,
         }))}
         requesterLabel={requesterLabel}
+        onAssignmentChange={setAssignDraft}
+        onAssignmentSubmit={() => void runAssignment(assignDraft.trim() || null)}
         resolutionDueLabel={detail.resolutionDueAt ? formatDateTime(detail.resolutionDueAt) : 'Indisponível'}
         slaDueLabel={slaDueAt ? formatDateTime(slaDueAt) : 'Indisponível'}
         slaPolicyName={detail.slaPolicyName ?? 'Fallback interno'}
