@@ -380,7 +380,7 @@ export interface FinanceImportRun {
 export async function listFinanceImportRuns(): Promise<FinanceImportRun[]> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client
-    .from('analytics_spreadsheet_import_runs')
+    .from('vw_analytics_spreadsheet_import_runs_read')
     .select('id,status,original_filename,total_rows,accepted_rows,rejected_rows,created_at,finished_at')
     .order('created_at', { ascending: false })
     .limit(8);
@@ -453,7 +453,7 @@ export async function listCsOpsImportRuns(): Promise<CsOpsImportRun[]> {
   const sourceIds = (sources ?? []).map((row) => String(row.id));
   if (!sourceIds.length) return [];
   const { data, error } = await client
-    .from('analytics_spreadsheet_import_runs')
+    .from('vw_analytics_spreadsheet_import_runs_read')
     .select('id,status,original_filename,total_rows,accepted_rows,rejected_rows,created_at')
     .in('source_id', sourceIds)
     .order('created_at', { ascending: false })
