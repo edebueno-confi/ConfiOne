@@ -9,6 +9,7 @@ alter table public.analytics_finance_sync_runs
   add column if not exists batch_count integer not null default 0,
   add column if not exists rejected_by_reason jsonb not null default '{}'::jsonb,
   add column if not exists enrichment jsonb not null default '{}'::jsonb,
+  add column if not exists coverage jsonb not null default '{}'::jsonb,
   add column if not exists metadata jsonb not null default '{}'::jsonb,
   add column if not exists promotion_result jsonb;
 

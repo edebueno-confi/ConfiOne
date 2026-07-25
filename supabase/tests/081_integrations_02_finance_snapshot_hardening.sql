@@ -1,7 +1,8 @@
 begin;
-select plan(19);
+select plan(20);
 
 select ok(to_regclass('public.analytics_finance_receivables_staging') is not null, 'staging financeiro existe');
+select ok((select count(*) from information_schema.columns where table_schema = 'public' and table_name = 'analytics_finance_sync_runs' and column_name = 'coverage') = 1, 'run OMIE possui cobertura separada');
 select ok((select relrowsecurity from pg_class where oid = 'public.analytics_finance_receivables_staging'::regclass), 'staging financeiro possui RLS');
 select ok(to_regprocedure('public.rpc_service_promote_omie_snapshot(uuid)') is not null, 'RPC de promocao atomica existe');
 select is(

@@ -239,7 +239,9 @@ export async function fetchOmieReceivablesWithMetadata(
       } catch { /* corpo indisponivel */ }
       throw new Error(`Omie Contas a Receber falhou (${response.status})${detail ? `: ${detail}` : ''}.`);
     }
-    return extractOmieReceivablesPage(await response.json());
+    const payload = await response.json();
+    if (payload && typeof payload === 'object' && ('faultstring' in payload || 'faultcode' in payload)) throw new Error('OMIE_FUNCTIONAL_FAULT');
+    return extractOmieReceivablesPage(payload);
   }
 
   // A paginação é serializada: o OMIE rejeita chamadas simultâneas do mesmo
@@ -255,10 +257,15 @@ export async function fetchOmieReceivablesWithMetadata(
     }
     previousPage = parsed.page;
     totalPages = parsed.totalPages;
-    const parsedRecords = Number((parsed as { totalRecords?: number | null }).totalRecords);
-    if (Number.isFinite(parsedRecords) && parsedRecords >= 0) totalRecords = parsedRecords;
+    const parsedRawRecords = (parsed as { totalRecords?: number | null }).totalRecords;
+    const parsedRecords = Number(parsedRawRecords);
+    if (parsedRawRecords !== null && parsedRawRecords !== undefined && Number.isFinite(parsedRecords) && parsedRecords >= 0) totalRecords = parsedRecords;
     rows.push(...parsed.rows);
-    if (parsed.page >= parsed.totalPages || parsed.rows.length === 0) return { rows, metadata: { totalPages, totalRecords, returnedRecords: rows.length } };
+    if (parsed.rows.length === 0 && parsed.page < parsed.totalPages) throw new Error('OMIE_EMPTY_PAGE_BEFORE_END');
+    if (parsed.page >= parsed.totalPages) {
+      if (totalRecords !== null && totalRecords !== rows.length) throw new Error('OMIE_RECORD_COUNT_MISMATCH');
+      return { rows, metadata: { totalPages, totalRecords, returnedRecords: rows.length } };
+    }
   }
   throw new Error('Omie excedeu o limite de 100 páginas por execução.');
 }
@@ -360,18 +367,21 @@ export async function fetchOmieClientsIndex(
 export function enrichReceivablesWithClients<T extends { client_name: string | null; client_tax_id: string | null; client_trade_name?: string | null; raw_payload: unknown }>(
   rows: T[],
   clients: Map<string, OmieClientInfo>,
-): T[] {
-  if (clients.size === 0) return rows;
+): { rows: T[]; stats: { matched: number; unmatched: number; fieldsUpdated: number } } {
+  let matched = 0;
+  let unmatched = 0;
+  let fieldsUpdated = 0;
   for (const row of rows) {
     const raw = (row.raw_payload && typeof row.raw_payload === 'object' ? row.raw_payload : {}) as Record<string, unknown>;
     const code = valueAt(raw, 'codigo_cliente_fornecedor', 'codigo_cliente_omie');
     const key = code === null ? '' : String(code).trim();
-    if (!key) continue;
+    if (!key) { unmatched += 1; continue; }
     const info = clients.get(key);
-    if (!info) continue;
-    if (!row.client_name && info.name) row.client_name = info.name;
-    if (!row.client_tax_id && info.taxId) row.client_tax_id = info.taxId;
-    if (!row.client_trade_name && info.tradeName) row.client_trade_name = info.tradeName;
+    if (!info) { unmatched += 1; continue; }
+    matched += 1;
+    if (!row.client_name && info.name) { row.client_name = info.name; fieldsUpdated += 1; }
+    if (!row.client_tax_id && info.taxId) { row.client_tax_id = info.taxId; fieldsUpdated += 1; }
+    if (!row.client_trade_name && info.tradeName) { row.client_trade_name = info.tradeName; fieldsUpdated += 1; }
   }
-  return rows;
+  return { rows, stats: { matched, unmatched, fieldsUpdated } };
 }

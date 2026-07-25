@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildOmieReceivablesRequest, parseOmieCredentials, extractOmieReceivablesPage, fetchOmieReceivables, normalizeOmieApiReceivables, buildOmieClientsRequest, extractOmieClientsPage, fetchOmieClientsIndex, enrichReceivablesWithClients, deriveOmieSourceRecordId } from '../../supabase/functions/_shared/omie.ts';
+import { buildOmieReceivablesRequest, parseOmieCredentials, extractOmieReceivablesPage, fetchOmieReceivables, fetchOmieReceivablesWithMetadata, normalizeOmieApiReceivables, buildOmieClientsRequest, extractOmieClientsPage, fetchOmieClientsIndex, enrichReceivablesWithClients, deriveOmieSourceRecordId } from '../../supabase/functions/_shared/omie.ts';
 import { stageOmieRowsInBatches, OMIE_STAGING_BATCH_SIZE } from '../../supabase/functions/_shared/omie-sync-service.ts';
 
 test('monta requisição paginada da API Omie sem expor segredo', () => {
@@ -74,12 +74,26 @@ test('rejeita pagina Omie que retrocede ou repete o numero informado', async () 
   );
 });
 
+test('classifica cobertura vazia autoritativa, ambigua e inconsistente', async () => {
+  const fetchPage = (payload) => async () => new Response(JSON.stringify(payload), { status: 200 });
+  const authoritative = await fetchOmieReceivablesWithMetadata({ appKey: 'a', appSecret: 'b' }, fetchPage({ pagina: 1, total_de_paginas: 1, total_de_registros: 0, conta_receber_cadastro: [] }), { maxRetries: 0 });
+  assert.deepEqual(authoritative.metadata, { totalPages: 1, totalRecords: 0, returnedRecords: 0 });
+  const ambiguous = await fetchOmieReceivablesWithMetadata({ appKey: 'a', appSecret: 'b' }, fetchPage({ pagina: 1, total_de_paginas: 1, conta_receber_cadastro: [] }), { maxRetries: 0 });
+  assert.equal(ambiguous.metadata.totalRecords, null);
+  await assert.rejects(fetchOmieReceivablesWithMetadata({ appKey: 'a', appSecret: 'b' }, fetchPage({ pagina: 1, total_de_paginas: 1, total_de_registros: 2, conta_receber_cadastro: [] }), { maxRetries: 0 }), /COUNT_MISMATCH/);
+});
+
+test('rejeita página vazia intermediária e fault funcional em HTTP 200', async () => {
+  await assert.rejects(fetchOmieReceivablesWithMetadata({ appKey: 'a', appSecret: 'b' }, async () => new Response(JSON.stringify({ pagina: 1, total_de_paginas: 2, total_de_registros: 1, conta_receber_cadastro: [] }), { status: 200 }), { maxRetries: 0 }), /EMPTY_PAGE_BEFORE_END/);
+  await assert.rejects(fetchOmieReceivablesWithMetadata({ appKey: 'a', appSecret: 'b' }, async () => new Response(JSON.stringify({ faultcode: 'E', faultstring: 'erro funcional' }), { status: 200 }), { maxRetries: 0 }), /FUNCTIONAL_FAULT/);
+});
+
 test('faz retry apenas para falhas transitórias da API Omie', async () => {
   let calls = 0;
   const rows = await fetchOmieReceivables({ appKey: 'a', appSecret: 'b' }, async () => {
     calls += 1;
     if (calls === 1) return new Response('temporário', { status: 503 });
-    return new Response(JSON.stringify({ pagina: 1, total_de_paginas: 1, conta_receber_cadastro: [{ codigo_lancamento_omie: 10 }] }), { status: 200 });
+    return new Response(JSON.stringify({ pagina: 1, total_de_paginas: 1, total_de_registros: 1, conta_receber_cadastro: [{ codigo_lancamento_omie: 10 }] }), { status: 200 });
   }, { timeoutMs: 1000, maxRetries: 1 });
   assert.equal(calls, 2);
   assert.deepEqual(rows, [{ codigo_lancamento_omie: 10 }]);
@@ -98,6 +112,7 @@ test('busca páginas de contas a receber em série e preserva a ordem', async ()
     return new Response(JSON.stringify({
       pagina: page,
       total_de_paginas: 4,
+      total_de_registros: 4,
       conta_receber_cadastro: [{ codigo_lancamento_omie: page }],
     }), { status: 200 });
   }, { timeoutMs: 1000, maxRetries: 0 });
@@ -142,7 +157,8 @@ test('busca páginas de clientes em série', async () => {
 test('enriquece títulos com nome/CNPJ do cliente por codigo_cliente_fornecedor', () => {
   const rows = [{ client_name: null, client_tax_id: null, raw_payload: { codigo_cliente_fornecedor: 99 } }];
   const clients = new Map([['99', { name: 'ACME LTDA', taxId: '12345678000199' }]]);
-  enrichReceivablesWithClients(rows, clients);
+  const result = enrichReceivablesWithClients(rows, clients);
+  assert.deepEqual(result.stats, { matched: 1, unmatched: 0, fieldsUpdated: 2 });
   assert.equal(rows[0].client_name, 'ACME LTDA');
   assert.equal(rows[0].client_tax_id, '12345678000199');
 });
