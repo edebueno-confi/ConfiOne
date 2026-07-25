@@ -1,7 +1,10 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
-const files = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' }).split('\0').filter(Boolean);
+const files = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' })
+  .split('\0')
+  .filter(Boolean)
+  .filter((file) => file !== 'scripts/local-qa/secret-scan.mjs');
 const suspicious = /(Admin123!|Local-QA-[A-Za-z0-9-]+!|eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}|sb_(?:secret|publishable)_[A-Za-z0-9_-]{12,}|Bearer\s+[A-Za-z0-9._-]{20,})/i;
 const matches = [];
 for (const file of files) {
