@@ -32,22 +32,21 @@ test('navegação visível do dashboard_viewer contém somente o Dashboard geren
   assert.equal((viewerBranch.match(/id: 'dashboard-operational'/g) ?? []).length, 1);
 });
 
-test('shell do dashboard viewer não expõe configuração, logs, sincronização ou exportação administrativa', () => {
+test('shell do dashboard viewer mostra apenas a Visão executiva e não expõe comandos administrativos', () => {
   assert.match(analyticsShell, /DOMAINS\.filter/);
-  assert.match(analyticsShell, /logs|config/);
+  assert.match(analyticsShell, /domain\.key === 'ceo'/);
   assert.match(analyticsShell, /isPlatformAdmin/);
   assert.match(analyticsShell, /onRetry|retry|Tentar novamente/);
-  assert.match(analyticsShell, /!\['logs', 'config'\]\.includes\(domain\.key\)/);
   assert.match(adminGate, /canOpenInternalRoute/);
 });
 
 test('Dashboard Gerencial distribui cinco KPIs em grade 3 + 2 a partir de 1024px', () => {
   assert.match(ceoPage, /Desempenho no período/);
-  assert.match(ceoPage, /Risco financeiro atual/);
+  assert.match(ceoPage, /Resumo por domínio/);
   assert.match(ceoPage, /Posição atual, não afetada pelo período selecionado/);
   assert.match(fs.readFileSync('apps/web/src/features/analytics/analytics-ui.tsx', 'utf8'), /min-h-\[170px\].*sm:min-h-\[240px\]/s);
   assert.match(fs.readFileSync('apps/web/src/features/analytics/analytics-ui.tsx', 'utf8'), /size="xl" surface="loading"/);
-  assert.match(ceoPage, /Sem dados neste período/);
+  assert.match(ceoPage, /Nenhum registro no período selecionado/);
 });
 
 test('status de sincronização distingue delta processado do snapshot acumulado', () => {
