@@ -1,19 +1,18 @@
-# INTEGRATIONS-02 — Matriz de resolucao
+# INTEGRATIONS-02 — Matriz de resolução final
 
-| Achado INTEGRATIONS-01 | Severidade | Acao | Arquivos | Teste | Status | Limitacao |
-|---|---|---|---|---|---|---|
-| Dois runners OMIE | alta | Servico canonico compartilhado | `_shared/omie-sync-service.ts`, `omie-sync`, `analytics-integration-run` | Node focado; build | Corrigido | Sync real nao executado |
-| Identidade `omie-row:<posicao>` | critica | ID oficial ou chave composta `omie-v3`; rejeicao explícita sem identidade | `_shared/omie.ts` | estabilidade, datas, valores, ausência posicional | Corrigido | Colisoes legadas requerem revisao |
-| Snapshot parcial publicado | critica | staging + RPC defensiva de promoção atômica | migrations 20260725060007/20260725152837 | pgTAP 081 comportamental; reset | Corrigido | Sem volume produtivo |
-| Ausencia virava recebido | critica | Promocao marca somente snapshot anterior como inativo | migration 20260725060007 | pgTAP 081; revisao SQL | Mitigado | Cancelamento externo exige contrato |
-| Correlacao incompleta | alta | UUID gerado no scheduler e propagado | `analytics-scheduled-run`, servico OMIE | Node/runtime focado | Corrigido | Worker HubSpot existente mantido |
-| Cursor HubSpot repetido | media | Guard de progresso | `_shared/hubspot.ts` | Node focado | Corrigido | Limites de Search ja existentes |
-| Wrapper CS com gate indireto | alta | Wrapper explicita `can_read_analytics` | migration 20260725061345 | pgTAP 081 | Corrigido | Nao amplia acesso |
-| Retries sem politica comum completa | media | Protecoes existentes preservadas | `_shared/hubspot.ts`, `_shared/omie.ts` | testes existentes | Mitigado | Jitter/deadline global ficam para lote seguinte |
-| Escritas externas sem idempotencia total | critica | Nao simular; manter etapa separada e sem retry cego | runners existentes | revisao de fluxo | Bloqueado | Requer ledger/contrato externo |
-| Tombstones/watermarks completos | alta | Nao inventar sem contrato HubSpot confirmado | HubSpot | auditoria | Bloqueado | Requer reconciliacao por objeto |
-| Resposta OMIE vazia e colisao de identidade | alta | Abortam antes da promocao e preservam o snapshot anterior | `_shared/omie-sync-service.ts` | Node focado; revisao do fluxo | Corrigido | Requer observacao com volume produtivo |
-| Falha HubSpot reportada como sucesso | alta | Marca a execucao como `partial` | `analytics-integration-run/index.ts` | teste de runtime; revisao do fluxo | Corrigido | Chamada externa nao executada |
-| Rejeições silenciosas | alta | Contrato accepted/rejected/summary com motivos sanitizados | `_shared/omie.ts`, `omie-sync-service.ts` | Node comportamental | Corrigido | Sem payload produtivo |
-| Persistência monolítica | média | Lotes sequenciais de 500 registros | `omie-sync-service.ts` | revisão de fluxo | Corrigido | Sem benchmark externo |
-| RPC dependente do caller | crítica | Validações defensivas no banco e idempotência | `20260725152837_integrations_02_1_integrity_hardening.sql` | pgTAP comportamental | Corrigido | Migration remota não aplicada |
+| Achado | Severidade | Tratamento | Validação | Status | Limitação |
+|---|---|---|---|---|---|
+| Dois runners OMIE | alta | Serviço canônico compartilhado | Node, build | Corrigido | Sync real não executado |
+| Identidade posicional | crítica | ID oficial ou identidade composta `omie-v3` | Node, casos de formato e ordem | Corrigido | Colisões legadas exigem revisão |
+| Snapshot parcial publicado | crítica | Staging e RPC defensiva de promoção atômica | pgTAP, reset local | Corrigido | Sem volume produtivo |
+| Resposta vazia ambígua | alta | Total autoritativo obrigatório e classificação explícita | Node, fault HTTP 200, páginas vazias | Corrigido | Depende da qualidade do contrato OMIE |
+| Contagem divergente | alta | Falha antes da promoção e preservação do snapshot | Node, pgTAP | Corrigido | Sem API externa |
+| Cobertura misturada ao status | alta | Coluna `coverage` separada com métricas de ingestão e enriquecimento | pgTAP, Node | Corrigido | Observabilidade produtiva futura |
+| Enriquecimento superestimado | alta | Match exige código e entrada no índice; `fieldsUpdated` separado | Node | Corrigido | Índice real não consultado |
+| Colisão de identidade | crítica | Falha antes do staging, contador por motivo e sem promoção | Revisão de serviço | Corrigido | Requer monitoramento produtivo |
+| Escritas críticas sem erro | alta | Erros Supabase verificados em atualização, staging e promoção | Typecheck, revisão | Corrigido | Falhas remotas não simuladas |
+| Staging residual | alta | Limpeza server-side após falha e código de falha de cleanup | Revisão de fluxo | Corrigido | Falha de cleanup não forçada em DB |
+| Cursor HubSpot repetido | média | Guard de progresso preservado | Node focado | Corrigido | Limites de Search existentes |
+| Wrapper CS sem gate explícito | alta | `can_read_analytics()` no wrapper | pgTAP | Corrigido | Não amplia acesso |
+| Writes externos sem idempotência total | crítica | Etapa separada, sem retry cego | Auditoria | Bloqueado | Requer ledger e contrato externo |
+| Tombstones e watermarks | alta | Não inventados sem contrato confirmado | Auditoria | Bloqueado | Próximo lote |
