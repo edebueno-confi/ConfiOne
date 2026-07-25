@@ -92,6 +92,11 @@ const manifest = {
   package: 'local-qa-rehydration',
   generated_at: generatedAt,
   commit,
+  file_count: entries.length + 2,
+  directory_count: 3,
+  zip_entry_count: entries.length + 3,
+  report_count: entries.filter((entry) => entry.type === 'report').length,
+  screenshot_count: screenshots.length,
   counts: { files: entries.length, directories: 3, screenshots: screenshots.length, reports: entries.filter((entry) => entry.type === 'report').length },
   files: entries,
 };
