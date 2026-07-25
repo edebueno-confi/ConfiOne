@@ -53,18 +53,18 @@ Regras:
 
 Usuários relevantes:
 
-- `qa.local.internal-area-member@genius.local` / `Local-QA-Internal-Area-2026!`
+- `qa.local.internal-area-member@genius.local` / `LOCAL_QA_INTERNAL_AREA_MEMBER_PASSWORD`
   - membership: `finance`
   - esperado: vê fila com acionamentos persistidos
-- `qa.local.internal-area-empty@genius.local` / `Local-QA-Internal-Empty-2026!`
+- `qa.local.internal-area-empty@genius.local` / `LOCAL_QA_INTERNAL_AREA_EMPTY_PASSWORD`
   - membership: `operations`
   - esperado: cai em `/internal-actions` e vê empty state honesto
-- `qa.local.internal-area-non-member@genius.local` / `Local-QA-Internal-NoArea-2026!`
+- `qa.local.internal-area-non-member@genius.local` / `LOCAL_QA_INTERNAL_AREA_NON_MEMBER_PASSWORD`
   - sem membership de área
   - esperado: `/access-denied`, sem empty state enganoso
-- `qa.local.support-manager-a@genius.local` / `Local-QA-Manager-A-2026!`
+- `qa.local.support-manager-a@genius.local` / `LOCAL_QA_SUPPORT_MANAGER_PASSWORD`
   - esperado: landing em `/support/queue`; sem fila interna se não tiver membership
-- `qa.local.platform-admin@genius.local` / `Local-QA-Admin-2026!`
+- `qa.local.platform-admin@genius.local` / `LOCAL_QA_ADMIN_PASSWORD`
   - esperado: comportamento administrativo preservado
 
 ## Rotas a validar

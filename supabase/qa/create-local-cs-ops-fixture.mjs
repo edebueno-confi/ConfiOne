@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { resolveSupabaseCliCommand } from '../../scripts/lib/supabase-cli-command.mjs';
+import { readQaPassword } from '../../scripts/local-qa/credentials.mjs';
 
 const WORKBOOK = process.env.CS_OPS_WORKBOOK ?? 'C:\\Users\\edebu\\Downloads\\CS Ops _ Carteiras e Clusters -v2.xlsx';
 const PYTHON = process.env.CODEX_PYTHON ?? 'C:\\Users\\edebu\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe';
@@ -12,9 +13,9 @@ const SOURCE = 'cs_ops_workbook_20260719';
 const PRODUCT_ID = '4d4e0c1d-7f38-4c28-9b9f-2f5b5fc9d901';
 const PLAN_ID = '5e5f1d2e-8a49-4d39-acaf-3f6c6fdad012';
 const CSM_USERS = [
-  { key: 'sirlei', match: /sirlei/i, email: 'qa.local.cs-sirlei@genius.local', password: 'Local-QA-CS-Sirlei-2026!', name: 'Sirlei Cândido' },
-  { key: 'mary', match: /mary|laurentino/i, email: 'qa.local.cs-mary@genius.local', password: 'Local-QA-CS-Mary-2026!', name: 'Mary Laurentino' },
-  { key: 'rodolfo', match: /rodolfo|turra/i, email: 'qa.local.cs-rodolfo@genius.local', password: 'Local-QA-CS-Rodolfo-2026!', name: 'Rodolfo Turra' },
+  { key: 'sirlei', match: /sirlei/i, email: 'qa.local.cs-sirlei@genius.local', password: readQaPassword('LOCAL_QA_CS_SIRLEI_PASSWORD'), name: 'Sirlei Cândido' },
+  { key: 'mary', match: /mary|laurentino/i, email: 'qa.local.cs-mary@genius.local', password: readQaPassword('LOCAL_QA_CS_MARY_PASSWORD'), name: 'Mary Laurentino' },
+  { key: 'rodolfo', match: /rodolfo|turra/i, email: 'qa.local.cs-rodolfo@genius.local', password: readQaPassword('LOCAL_QA_CS_RODOLFO_PASSWORD'), name: 'Rodolfo Turra' },
 ];
 
 function fail(message) {

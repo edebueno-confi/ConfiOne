@@ -87,7 +87,12 @@ values
 on conflict (user_id, role) do update set updated_by_user_id = excluded.updated_by_user_id;
 
 insert into public.tenant_memberships (tenant_id, user_id, role, status, invited_by_user_id, created_by_user_id, updated_by_user_id)
-select t.id, u.id, 'tenant_manager'::public.tenant_role, 'active'::public.membership_status, '${users.admin}', '${users.admin}', '${users.admin}' from public.tenants t cross join public.profiles u where t.id in ('${tenantIds.aurora}', '${tenantIds.horizonte}', '${tenantIds.atlas}') and u.id in ('${users.manager}', '${users.agent}')
+select t.id, '${users.manager}', 'tenant_viewer'::public.tenant_role, 'active'::public.membership_status, '${users.admin}', '${users.admin}', '${users.admin}'
+from public.tenants t where t.id in ('${tenantIds.aurora}', '${tenantIds.horizonte}', '${tenantIds.atlas}')
+on conflict (tenant_id, user_id) do update set status = 'active'::public.membership_status, role = excluded.role, updated_by_user_id = excluded.updated_by_user_id;
+insert into public.tenant_memberships (tenant_id, user_id, role, status, invited_by_user_id, created_by_user_id, updated_by_user_id)
+select t.id, '${users.agent}', 'tenant_viewer'::public.tenant_role, 'active'::public.membership_status, '${users.admin}', '${users.admin}', '${users.admin}'
+from public.tenants t where t.id in ('${tenantIds.aurora}', '${tenantIds.horizonte}')
 on conflict (tenant_id, user_id) do update set status = 'active'::public.membership_status, role = excluded.role, updated_by_user_id = excluded.updated_by_user_id;
 insert into public.tenant_memberships (tenant_id, user_id, role, status, invited_by_user_id, created_by_user_id, updated_by_user_id)
 values ('${tenantIds.aurora}', '${users.client}', 'customer_user'::public.tenant_role, 'active'::public.membership_status, '${users.admin}', '${users.admin}', '${users.admin}')
@@ -95,7 +100,7 @@ on conflict (tenant_id, user_id) do update set status = 'active'::public.members
 
 insert into public.tenant_contacts (id, tenant_id, linked_user_id, full_name, email, job_title, is_primary, is_active, created_by_user_id, updated_by_user_id)
 values
- ('${contactIds.aurora}', '${tenantIds.aurora}', '${users.client}', 'QA Local Cliente Aurora', '${qa.LOCAL_QA_CLIENT_EMAIL}', 'Contato de QA', true, true, '${users.admin}', '${users.admin}'),
+ ('${contactIds.aurora}', '${tenantIds.aurora}', '${users.client}', 'QA Local Cliente Aurora', '${sqlEscape(qa.LOCAL_QA_CLIENT_EMAIL)}', 'Contato de QA', true, true, '${users.admin}', '${users.admin}'),
  ('${contactIds.horizonte}', '${tenantIds.horizonte}', null, 'QA Local Horizonte', 'horizonte.qa.local@genius.local', 'Contato de QA', true, true, '${users.admin}', '${users.admin}'),
  ('${contactIds.atlas}', '${tenantIds.atlas}', null, 'QA Local Atlas', 'atlas.qa.local@genius.local', 'Contato de QA', true, true, '${users.admin}', '${users.admin}')
 on conflict (id) do update set linked_user_id = excluded.linked_user_id, is_active = true, updated_by_user_id = excluded.updated_by_user_id;

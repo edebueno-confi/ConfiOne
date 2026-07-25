@@ -36,60 +36,63 @@ O título legado com `handoff técnico` é reconhecido apenas para atualizar mas
 
 ## Credenciais locais de referência
 
+As senhas são somente variáveis do arquivo ignorado `.env.local.qa`. Elas não
+devem ser registradas em documentação, scripts rastreados ou relatórios.
+
 ### Support Workspace
 
 - `qa.local.support-manager-a@genius.local`
-- senha: `Local-QA-Manager-A-2026!`
+- senha: `LOCAL_QA_SUPPORT_MANAGER_PASSWORD`
 - papel global: `support_manager`
 - membership esperada: tenant fixture `support-qa-a`, status `active`
 
 ### Admin QA
 
 - `qa.local.platform-admin@genius.local`
-- senha: `Local-QA-Admin-2026!`
+- senha: `LOCAL_QA_ADMIN_PASSWORD`
 - papel global: `platform_admin`
 
 ### Área interna
 
 - `qa.local.internal-area-member@genius.local`
-- senha: `Local-QA-Internal-Area-2026!`
+- senha: `LOCAL_QA_INTERNAL_AREA_MEMBER_PASSWORD`
 - papel operacional: membro ativo da área `finance` no tenant `support-qa-a`
 
 - `qa.local.internal-area-empty@genius.local`
-- senha: `Local-QA-Internal-Empty-2026!`
+- senha: `LOCAL_QA_INTERNAL_AREA_EMPTY_PASSWORD`
 - papel operacional: membro ativo da área `operations` no tenant `support-qa-a`, sem acionamentos persistidos pela fixture
 
 - `qa.local.internal-area-non-member@genius.local`
-- senha: `Local-QA-Internal-NoArea-2026!`
+- senha: `LOCAL_QA_INTERNAL_AREA_NON_MEMBER_PASSWORD`
 - papel operacional: usuário ativo no tenant `support-qa-a`, sem membership de área interna
 
 ### Customer Success
 
 - `qa.local.customer-success-a@genius.local`
-- senha: `Local-QA-Customer-Success-A-2026!`
+- senha: `LOCAL_QA_CUSTOMER_SUCCESS_PASSWORD`
 - papel operacional: membership ativa `customer_success` no tenant `support-qa-a`
 - escopo esperado: apenas clientes retornados por `vw_cs_customer_portfolio`
 
 ### Engineering
 
 - `qa.local.engineering-member-a@genius.local`
-- senha: `Local-QA-Engineering-A-2026!`
+- senha: `LOCAL_QA_ENGINEERING_PASSWORD`
 - papel global: `engineering_member`
 
 ### Customer Portal
 
 - `marina.ops@support-qa-a.local`
-- senha: `Local-QA-Customer-A-2026!`
+- senha: `LOCAL_QA_CLIENT_PASSWORD`
 - papel customer-facing: `customer_user`
 
 - `gestao.portal@support-qa-a.local`
-- senha: `Local-QA-Customer-Manager-A-2026!`
+- senha: `LOCAL_QA_CUSTOMER_MANAGER_PASSWORD`
 - papel customer-facing: `customer_manager`
 
 ### Content author QA
 
 - `ede.oliveira@confi.com.vc`
-- senha: `Admin123!`
+- senha: `LOCAL_QA_ADMIN_PASSWORD`
 - papel global esperado: `platform_admin`
 
 ## Observações operacionais

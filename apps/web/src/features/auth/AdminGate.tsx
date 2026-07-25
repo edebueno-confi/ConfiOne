@@ -118,8 +118,7 @@ export function AdminGate({ children }: { children: ReactNode }) {
   }
 
   if (phase === 'authenticated' && gate.phase === 'ready') {
-    const isDashboardViewer = gate.actor?.is_platform_admin !== true && gate.actor?.roles.includes('dashboard_viewer') === true;
-    const canOpenRoute = !isDashboardViewer || location.pathname === '/admin' || canOpenInternalRoute(location.pathname, {
+    const canOpenRoute = canOpenInternalRoute(location.pathname, {
         roles: gate.actor?.roles ?? [],
         screenKeys: gate.actor?.screen_keys ?? [],
         hasCustomerPortalAccess: false,

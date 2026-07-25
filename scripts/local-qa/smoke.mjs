@@ -17,4 +17,4 @@ for (const [role, email, password] of accounts) {
   const session = await response.json();
   results.push({ role, authenticated: Boolean(session.access_token) });
 }
-console.log(JSON.stringify({ environment: 'local', smoke: 'auth', results, console_errors: 0, unexpected_400: 0, unexpected_403: 0, unexpected_500: 0 }));
+console.log(JSON.stringify({ environment: 'local', smoke: 'auth', results }));

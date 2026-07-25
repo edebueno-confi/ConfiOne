@@ -1,17 +1,11 @@
-# LOCAL-QA-01 — Matriz de permissões
+# LOCAL-QA-01.1 â€” Matriz de permissÃµes
 
-| Perfil | Recurso | Operação | Esperado | Resultado |
-|---|---|---|---|---|
-| platform_admin | Dashboard | leitura | permitido | fixture autenticada criada |
-| platform_admin | Configuração, Logs, usuários e roles | administração | permitido pelo contrato admin | contrato existente; smoke de login passou |
-| dashboard_viewer | Dashboard | leitura | permitido | papel aplicado; validação de contagem passou |
-| dashboard_viewer | Configuração, Logs, integrações e schedules | acesso | bloqueado | contrato de least privilege preservado |
-| support_manager | fila e tickets do escopo | leitura/ação operacional | permitido | papel aplicado; login local passou |
-| support_manager | secrets, usuários globais e schedules | administração | bloqueado | não recebeu papel de plataforma |
-| support_agent | tickets, respostas, notas permitidas e evidências | operação | permitido conforme escopo | papel aplicado; login local passou |
-| support_agent | Configuração, Logs administrativos, roles e secrets | administração | bloqueado | não recebeu papel de plataforma |
-| customer_user | Portal e tickets próprios | leitura/operação customer-facing | permitido somente na Aurora | membership única e isolamento verificados |
-| customer_user | Outros tenants, notas internas, Dashboard e workspace interno | acesso | bloqueado | nenhuma membership fora da Aurora; RLS permanece canônica |
-| qualquer não-admin | raw tables, service role e credenciais externas | acesso direto | bloqueado | sem grants novos |
+| Perfil | Papel global | Tenants | Escopo validado |
+|---|---|---|---|
+| `platform_admin` | `platform_admin` | todos | Dashboard, configuraÃ§Ã£o, logs, usuÃ¡rios, roles e operaÃ§Ãµes administrativas |
+| `dashboard_viewer` | `dashboard_viewer` | nenhum membership | somente `/admin/analytics`; sem configuraÃ§Ã£o, logs, integraÃ§Ã£o, exportaÃ§Ã£o ou chamadas administrativas |
+| `support_manager` | `support_manager` | Aurora, Horizonte, Atlas | fila e operaÃ§Ãµes de suporte; sem configuraÃ§Ã£o, secrets e schedules |
+| `support_agent` | `support_agent` | Aurora, Horizonte | fila e operaÃ§Ãµes permitidas; Atlas, tenant management, configuraÃ§Ã£o e logs administrativos bloqueados |
+| `customer_user` | sem papel global | somente Aurora | portal e tickets prÃ³prios; notas internas, tenants externos e rotas internas bloqueados |
 
-Esta matriz registra o contrato esperado e o que foi verificado no lote. O smoke de browser completo permanece uma validação adicional quando o servidor web autenticado estiver disponível.
+Raw tables, service role e credenciais externas nÃ£o sÃ£o expostos aos perfis. A matriz foi exercitada por smoke browser e chamadas REST/RPC com JWT real; writes locais foram reidratados apÃ³s o teste.

@@ -17,7 +17,7 @@ Nao ha divergencia P0. A implementacao preserva a estrutura operacional principa
 - Supabase local: ativo em `127.0.0.1`
 - Fixture: `local-support-workspace`
 - Usuario autenticado: `qa.local.support-manager-a@genius.local`
-- Senha local previsivel da fixture: `Local-QA-Manager-A-2026!`
+- Senha local previsivel da fixture: `LOCAL_QA_SUPPORT_MANAGER_PASSWORD`
 - Ticket principal capturado: `05466847-50e7-4475-8390-21c658ffb1f7`
 - Viewport: `1672x941`
 

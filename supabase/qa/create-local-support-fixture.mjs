@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 
 import { runReconciledMutation } from '../../scripts/lib/reconciled-mutation.mjs';
 import { resolveSupabaseCliCommand } from '../../scripts/lib/supabase-cli-command.mjs';
+import { readQaPassword } from '../../scripts/local-qa/credentials.mjs';
 
 const LEGACY_POPULATED_QA_TICKET_TITLE =
   'QA Support | Operação crítica com histórico extenso, anexos e handoff técnico';
@@ -274,19 +275,19 @@ const EXTRA_TICKET_TIMELINE_MESSAGES = [
 const FIXTURE = {
   qaAdmin: {
     email: 'qa.local.platform-admin@genius.local',
-    password: 'Local-QA-Admin-2026!',
+    password: readQaPassword('LOCAL_QA_ADMIN_PASSWORD'),
     fullName: 'QA Local Platform Admin',
   },
   contentAuthor: {
     email: 'ede.oliveira@confi.com.vc',
-    password: 'Admin123!',
+    password: readQaPassword('LOCAL_QA_ADMIN_PASSWORD'),
     fullName: 'Eduardo Oliveira',
   },
   agents: [
     {
       key: 'support-agent-a',
       email: 'qa.local.support-agent-a@genius.local',
-      password: 'Local-QA-Agent-A-2026!',
+      password: readQaPassword('LOCAL_QA_SUPPORT_AGENT_PASSWORD'),
       fullName: 'QA Local Support Agent A',
       globalRole: 'support_agent',
       tenantSlug: 'support-qa-a',
@@ -294,7 +295,7 @@ const FIXTURE = {
     {
       key: 'support-manager-a',
       email: 'qa.local.support-manager-a@genius.local',
-      password: 'Local-QA-Manager-A-2026!',
+      password: readQaPassword('LOCAL_QA_SUPPORT_MANAGER_PASSWORD'),
       fullName: 'QA Local Support Manager A',
       globalRole: 'support_manager',
       tenantSlug: 'support-qa-a',
@@ -302,7 +303,7 @@ const FIXTURE = {
     {
       key: 'support-agent-b',
       email: 'qa.local.support-agent-b@genius.local',
-      password: 'Local-QA-Agent-B-2026!',
+      password: readQaPassword('LOCAL_QA_SUPPORT_AGENT_B_PASSWORD'),
       fullName: 'QA Local Support Agent B',
       globalRole: 'support_agent',
       tenantSlug: 'support-qa-b',
@@ -310,7 +311,7 @@ const FIXTURE = {
     {
       key: 'engineering-member-a',
       email: 'qa.local.engineering-member-a@genius.local',
-      password: 'Local-QA-Engineering-A-2026!',
+      password: readQaPassword('LOCAL_QA_ENGINEERING_PASSWORD'),
       fullName: 'QA Local Engineering Member A',
       globalRole: 'engineering_member',
       tenantSlug: 'support-qa-a',
@@ -320,7 +321,7 @@ const FIXTURE = {
     {
       key: 'access-tenant-admin',
       email: 'qa.local.access-tenant-admin@genius.local',
-      password: 'Local-QA-Access-Admin-2026!',
+      password: readQaPassword('LOCAL_QA_ACCESS_ADMIN_PASSWORD'),
       fullName: 'QA Local Access Tenant Admin',
       tenantSlug: 'support-qa-a',
       role: 'tenant_admin',
@@ -329,7 +330,7 @@ const FIXTURE = {
     {
       key: 'access-invited-viewer',
       email: 'qa.local.access-invited-viewer@genius.local',
-      password: 'Local-QA-Access-Viewer-2026!',
+      password: readQaPassword('LOCAL_QA_ACCESS_VIEWER_PASSWORD'),
       fullName: 'QA Local Access Invited Viewer',
       tenantSlug: 'support-qa-b',
       role: 'tenant_viewer',
@@ -338,7 +339,7 @@ const FIXTURE = {
     {
       key: 'access-revoked-requester',
       email: 'qa.local.access-revoked-requester@genius.local',
-      password: 'Local-QA-Access-Revoked-2026!',
+      password: readQaPassword('LOCAL_QA_ACCESS_REVOKED_PASSWORD'),
       fullName: 'QA Local Access Revoked Requester',
       tenantSlug: 'support-qa-c',
       role: 'tenant_requester',
@@ -349,7 +350,7 @@ const FIXTURE = {
     {
       key: 'customer-user-a',
       email: 'marina.ops@support-qa-a.local',
-      password: 'Local-QA-Customer-A-2026!',
+      password: readQaPassword('LOCAL_QA_CLIENT_PASSWORD'),
       fullName: 'Marina Operações QA',
       tenantSlug: 'support-qa-a',
       role: 'customer_user',
@@ -364,7 +365,7 @@ const FIXTURE = {
     {
       key: 'customer-manager-a',
       email: 'gestao.portal@support-qa-a.local',
-      password: 'Local-QA-Customer-Manager-A-2026!',
+      password: readQaPassword('LOCAL_QA_CUSTOMER_MANAGER_PASSWORD'),
       fullName: 'Gestão Portal QA Tenant A',
       tenantSlug: 'support-qa-a',
       role: 'customer_manager',
@@ -379,7 +380,7 @@ const FIXTURE = {
     {
       key: 'customer-user-b',
       email: 'rafael.integracoes@support-qa-b.local',
-      password: 'Local-QA-Customer-B-2026!',
+      password: readQaPassword('LOCAL_QA_CUSTOMER_B_PASSWORD'),
       fullName: 'Rafael Integrações QA',
       tenantSlug: 'support-qa-b',
       role: 'customer_user',
@@ -394,7 +395,7 @@ const FIXTURE = {
     {
       key: 'customer-multi-tenant-a',
       email: 'camila.multi@support-qa.local',
-      password: 'Local-QA-Customer-Multi-2026!',
+      password: readQaPassword('LOCAL_QA_CUSTOMER_MULTI_PASSWORD'),
       fullName: 'Camila Multi Tenant QA',
       tenantSlug: 'support-qa-a',
       role: 'customer_manager',
@@ -409,7 +410,7 @@ const FIXTURE = {
     {
       key: 'customer-multi-tenant-b',
       email: 'camila.multi@support-qa.local',
-      password: 'Local-QA-Customer-Multi-2026!',
+      password: readQaPassword('LOCAL_QA_CUSTOMER_MULTI_PASSWORD'),
       fullName: 'Camila Multi Tenant QA',
       tenantSlug: 'support-qa-b',
       role: 'customer_manager',
@@ -424,7 +425,7 @@ const FIXTURE = {
     {
       key: 'customer-multi-tenant-c-blocked',
       email: 'camila.multi@support-qa.local',
-      password: 'Local-QA-Customer-Multi-2026!',
+      password: readQaPassword('LOCAL_QA_CUSTOMER_MULTI_PASSWORD'),
       fullName: 'Camila Multi Tenant QA',
       tenantSlug: 'support-qa-c',
       role: 'customer_manager',
@@ -439,7 +440,7 @@ const FIXTURE = {
     {
       key: 'customer-no-access',
       email: 'sem.acesso.portal@support-qa-b.local',
-      password: 'Local-QA-Customer-No-Access-2026!',
+      password: readQaPassword('LOCAL_QA_CUSTOMER_NO_ACCESS_PASSWORD'),
       fullName: 'Cliente Sem Acesso QA',
       tenantSlug: 'support-qa-b',
       role: 'customer_user',
@@ -4965,25 +4966,25 @@ async function main() {
           user_id: qaAdmin.id,
           profile_id: profile.id,
           email: FIXTURE.qaAdmin.email,
-          password: FIXTURE.qaAdmin.password,
+          password: '[LOCAL_QA_PASSWORD_OMITTED]',
         },
         content_author: {
           user_id: contentAuthor.id,
           profile_id: contentAuthorProfile.id,
           email: FIXTURE.contentAuthor.email,
-          password: FIXTURE.contentAuthor.password,
+          password: '[LOCAL_QA_PASSWORD_OMITTED]',
         },
         support_agents: FIXTURE.agents.map((agent) => ({
           key: agent.key,
           email: agent.email,
-          password: agent.password,
+          password: '[LOCAL_QA_PASSWORD_OMITTED]',
           tenant_slug: agent.tenantSlug,
           user_id: operatorMap.get(agent.key),
         })),
         access_users: FIXTURE.accessUsers.map((accessUser) => ({
           key: accessUser.key,
           email: accessUser.email,
-          password: accessUser.password,
+          password: '[LOCAL_QA_PASSWORD_OMITTED]',
           tenant_slug: accessUser.tenantSlug,
           role: accessUser.role,
           status: accessUser.status,
@@ -4992,7 +4993,7 @@ async function main() {
         customer_portal_users: FIXTURE.customerPortalUsers.map((portalUser) => ({
           key: portalUser.key,
           email: portalUser.email,
-          password: portalUser.password,
+          password: '[LOCAL_QA_PASSWORD_OMITTED]',
           tenant_slug: portalUser.tenantSlug,
           role: portalUser.role,
           status: portalUser.status,

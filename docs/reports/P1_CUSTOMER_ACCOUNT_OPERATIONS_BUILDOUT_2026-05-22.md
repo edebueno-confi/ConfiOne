@@ -51,11 +51,11 @@ O lote fechou a camada operacional minima de Customer Account para clientes B2B,
 Script: `npm run supabase:qa:local-functional-fixture`.
 
 Usuarios locais principais:
-- `qa.local.platform-admin@genius.local` / `Local-QA-Admin-2026!`
-- `qa.local.support-manager-a@genius.local` / `Local-QA-Manager-A-2026!`
-- `qa.local.support-agent-a@genius.local` / `Local-QA-Agent-A-2026!`
-- `marina.ops@support-qa-a.local` / `Local-QA-Customer-A-2026!`
-- `gestao.portal@support-qa-a.local` / `Local-QA-Customer-Manager-A-2026!`
+- `qa.local.platform-admin@genius.local` / `LOCAL_QA_ADMIN_PASSWORD`
+- `qa.local.support-manager-a@genius.local` / `LOCAL_QA_SUPPORT_MANAGER_PASSWORD`
+- `qa.local.support-agent-a@genius.local` / `LOCAL_QA_SUPPORT_AGENT_PASSWORD`
+- `marina.ops@support-qa-a.local` / `LOCAL_QA_CLIENT_PASSWORD`
+- `gestao.portal@support-qa-a.local` / `LOCAL_QA_CUSTOMER_MANAGER_PASSWORD`
 
 Dados artificiais:
 - tenant `support-qa-a`

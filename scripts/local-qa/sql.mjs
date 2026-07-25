@@ -1,4 +1,5 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { runLocalCommand } from './assert-local-supabase.mjs';
@@ -20,39 +21,22 @@ export function runSql(sql) {
 }
 
 export function runSqlBatch(sql) {
-  const statements = [];
-  let start = 0;
-  let quote = false;
-  let dollarTag = null;
-  for (let index = 0; index < sql.length; index += 1) {
-    const char = sql[index];
-    if (dollarTag) {
-      if (sql.startsWith(dollarTag, index)) { index += dollarTag.length - 1; dollarTag = null; }
-      continue;
-    }
-    if (quote) {
-      if (char === "'" && sql[index + 1] === "'") { index += 1; continue; }
-      if (char === "'") quote = false;
-      continue;
-    }
-    if (char === "'") { quote = true; continue; }
-    if (char === '$') {
-      const match = sql.slice(index).match(/^\$[A-Za-z_0-9]*\$/);
-      if (match) { dollarTag = match[0]; index += dollarTag.length - 1; }
-      continue;
-    }
-    if (char === ';') {
-      const statement = sql.slice(start, index).trim();
-      if (statement && !/^(begin|commit|rollback)$/i.test(statement)) statements.push(statement);
-      start = index + 1;
-    }
+  const normalized = sql.trim();
+  if (!normalized) return { rows: [] };
+
+  // The whole batch is sent through one psql session. BEGIN/COMMIT are
+  // deliberately preserved so a mid-fixture error rolls back all business
+  // data instead of leaving a partially hydrated local database. Supabase
+  // CLI `db query` uses a prepared statement and rejects multiple commands;
+  // the local database container is the supported single-session fallback.
+  try {
+    const container = process.env.LOCAL_QA_DB_CONTAINER ?? 'supabase_db_genius-support-os';
+    const result = spawnSync('docker', ['exec', '-i', container, 'psql', '-X', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres', '-d', 'postgres', '-q'], {
+      input: `${normalized}\n`, encoding: 'utf8', windowsHide: true,
+    });
+    if (result.status !== 0) throw new Error([result.stderr, result.stdout].filter(Boolean).join('\n'));
+    return { rows: [] };
+  } catch (error) {
+    throw new Error(`LOCAL_QA_SQL_TRANSACTION_FAILED: ${error.message}`);
   }
-  const tail = sql.slice(start).trim();
-  if (tail && !/^(begin|commit|rollback)$/i.test(tail)) statements.push(tail);
-  let result = { rows: [] };
-  for (const [index, statement] of statements.entries()) {
-    try { result = runSql(statement); }
-    catch (error) { throw new Error(`LOCAL_QA_SQL_FAILED statement=${index + 1}: ${statement.slice(0, 180)}\n${error.message}`); }
-  }
-  return result;
 }

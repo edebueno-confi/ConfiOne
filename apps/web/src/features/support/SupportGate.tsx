@@ -81,12 +81,44 @@ export function SupportGate({ children }: { children: ReactNode }) {
     return <Navigate replace to={`/login?redirectTo=${encodeURIComponent(redirectTo)}`} />;
   }
 
+  if (phase === 'authenticated' && gate.phase === 'loading') {
+    return <SupportGateBootShell />;
+  }
+
+  if (phase === 'authenticated' && gate.phase === 'denied') {
+    return <Navigate replace to="/access-denied" state={{ reason: gate.denialReason ?? 'route-not-authorized' }} />;
+  }
+
+  if (phase === 'authenticated' && (gate.phase === 'error' || gate.phase === 'contract-unavailable')) {
+    return (
+      <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-6 py-12">
+        <ErrorState
+          title="Acesso ao suporte indisponível"
+          description={gate.message ?? 'Não foi possível validar seu acesso a esta área.'}
+        />
+      </div>
+    );
+  }
+
   if (
     phase === 'authenticated' &&
     gate.actor?.is_platform_admin !== true &&
     gate.actor?.roles.includes('dashboard_viewer') === true
   ) {
     return <Navigate replace to="/access-denied" state={{ reason: 'route-not-authorized' }} />;
+  }
+
+  if (phase === 'authenticated' && gate.phase === 'ready') {
+    const isSupportOperator =
+      gate.actor?.is_platform_admin === true ||
+      gate.actor?.roles.some((role) => role === 'support_manager' || role === 'support_agent') === true ||
+      gate.actor?.screen_keys?.some((key) =>
+        ['support_inbox', 'support_queue', 'support_tickets'].includes(key),
+      ) === true;
+
+    if (!isSupportOperator) {
+      return <Navigate replace to="/access-denied" state={{ reason: 'route-not-authorized' }} />;
+    }
   }
 
   return <>{children}</>;
