@@ -64,6 +64,13 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export function nextHubSpotCursor(previous: string | undefined | null, candidate: unknown, context: string): string | null {
+  if (candidate === undefined || candidate === null || candidate === '') return null;
+  const next = String(candidate).trim();
+  if (!next || next === previous) throw new Error(`Cursor HubSpot sem progresso em ${context}.`);
+  return next;
+}
+
 // Fetch com backoff em 429/5xx respeitando Retry-After (proteção de rate limit).
 async function hubspotFetch(
   path: string,
@@ -250,7 +257,7 @@ export async function fetchOwners(tokenOverride?: string): Promise<HubSpotOwner[
       });
     }
 
-    after = payload.paging?.next?.after ?? null;
+    after = nextHubSpotCursor(after, payload.paging?.next?.after, 'owners');
     await sleep(120);
   } while (after);
 
@@ -292,7 +299,7 @@ export async function fetchDealsByPipeline(
     };
 
     records.push(...(payload.results ?? []));
-    after = payload.paging?.next?.after;
+    after = nextHubSpotCursor(after, payload.paging?.next?.after, 'deals');
     await sleep(150);
   } while (after);
 
@@ -381,7 +388,7 @@ export async function fetchTicketsByPipeline(
       }
 
       records.push(...(payload.results ?? []));
-      after = payload.paging?.next?.after;
+      after = nextHubSpotCursor(after, payload.paging?.next?.after, 'tickets');
       firstPage = false;
       await sleep(150);
     } while (after);
@@ -417,7 +424,7 @@ export async function fetchTicketsByPipeline(
     total = total ?? (Number.isFinite(Number(payload.total)) ? Number(payload.total) : null);
     if (total !== null && total > searchMaxResults) return fetchRange(startMs, endMs);
     recent.push(...(payload.results ?? []));
-    after = payload.paging?.next?.after;
+    after = nextHubSpotCursor(after, payload.paging?.next?.after, 'tickets incremental');
     await sleep(150);
   } while (after);
   return recent;
@@ -451,7 +458,7 @@ export async function fetchCompanies(
         paging?: { next?: { after?: string } };
       };
       records.push(...(payload.results ?? []));
-      after = payload.paging?.next?.after;
+      after = nextHubSpotCursor(after, payload.paging?.next?.after, 'companies incremental');
       await sleep(120);
     } while (after);
 
@@ -467,7 +474,7 @@ export async function fetchCompanies(
       paging?: { next?: { after?: string } };
     };
     records.push(...(payload.results ?? []));
-    after = payload.paging?.next?.after;
+    after = nextHubSpotCursor(after, payload.paging?.next?.after, 'companies');
     await sleep(120);
   } while (after);
 

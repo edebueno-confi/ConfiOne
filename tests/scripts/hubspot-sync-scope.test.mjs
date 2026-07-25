@@ -6,6 +6,7 @@ import {
   syncsCompanies,
   syncsPipelines,
 } from '../../supabase/functions/_shared/hubspot-sync-scope.mjs';
+import { nextHubSpotCursor } from '../../supabase/functions/_shared/hubspot.ts';
 
 test('normaliza escopos conhecidos e protege entrada inválida', () => {
   assert.equal(normalizeHubspotSyncScope('companies'), 'companies');
@@ -29,4 +30,10 @@ test('mapeia escopos de pipeline para o tipo HubSpot correto', () => {
   assert.equal(scopeObjectType('cs'), 'ticket');
   assert.equal(scopeObjectType('companies'), null);
   assert.equal(scopeObjectType('all'), null);
+});
+
+test('falha quando o cursor HubSpot se repete e encerra quando nao ha proximo', () => {
+  assert.equal(nextHubSpotCursor('10', undefined, 'teste'), null);
+  assert.equal(nextHubSpotCursor('10', '11', 'teste'), '11');
+  assert.throws(() => nextHubSpotCursor('10', '10', 'teste'), /sem progresso/i);
 });
