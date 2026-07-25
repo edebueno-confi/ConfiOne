@@ -31,6 +31,12 @@ Catálogo baseado no roteador, páginas, APIs, views/RPCs, contratos e testes ex
 - Não comprovadas: exportações uniformes e alguns helpers antigos.
 - Não implementadas neste lote: `/admin/analytics/pipelines`, novo redesign produtivo e tombstones/watermarks por pipeline.
 
+## Implementação DASHBOARD-02.3
+
+A Visão Executiva produtiva foi reorganizada na rota `/admin/analytics` com cabeçalho executivo, filtros de período e domínio em foco, desempenho temporal, posição atual, exceções determinísticas, resumos por domínio e até cinco pipelines prioritários. O contrato continua usando os RPCs `rpc_analytics_ceo_snapshot` e `rpc_analytics_ceo_history`; nenhum dado foi fabricado e nenhuma tela de domínio foi refatorada.
+
+O perfil `dashboard_viewer` recebe somente a Visão Executiva no shell, sem sincronização, exportação administrativa, configuração ou links de aprofundamento para outros domínios. O perfil administrativo preserva a ação de sincronização existente e os comandos autorizados.
+
 ## Limites
 
 `dashboard_viewer` só recebe o contrato de Analytics. O perfil não recebe telas, tabelas brutas, RPCs administrativos ou o portal. As views públicas do Dashboard sanitizam mensagens de erro; detalhes de investigação continuam sendo responsabilidade de superfícies administrativas autorizadas.

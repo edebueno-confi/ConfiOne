@@ -84,6 +84,10 @@ Cabeçalho compacto → desempenho no período → posição atual → exceçõe
 - `/admin/analytics/pipelines`: catálogo, estágios, comparação, frescor e investigação.
 - `/admin/logs`: histórico técnico para perfis autorizados.
 
+## Decisão executada — DASHBOARD-02.3
+
+A Opção A foi aplicada na rota produtiva: leitura compacta por perguntas gerenciais, estados governados, resumos com navegação para domínios existentes e ranking determinístico de até cinco pipelines ativos. O CTA geral `Ver todos` foi omitido porque `/admin/analytics/pipelines` ainda não existe. O filtro global de pipeline não foi criado; o domínio em foco altera apenas a apresentação do resumo, enquanto o período é enviado aos contratos existentes.
+
 ## Componentes
 
 Preservar contratos, filtros, mappers e views. Consolidar chips de estado, cabeçalho de fonte, KPI temporal e resumo de pipeline. Criar futuramente `AnalyticsExecutiveHeader`, `AnalyticsMetricGroup`, `AnalyticsAttentionList` e `AnalyticsPipelineSummary` somente quando houver reutilização comprovada. Remover apenas componentes legados após prova de ausência de consumidores.
