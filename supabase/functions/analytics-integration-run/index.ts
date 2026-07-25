@@ -94,7 +94,9 @@ Deno.serve(async (req) => {
   const mode = await authorize(req, client);
   if (!mode) return jsonResponse({ error: 'Acesso negado.' }, { status: 403 });
 
-  const { data: schedule } = await client.from('analytics_integration_schedule').select('enabled,frequency,last_run_at').eq('id', true).maybeSingle();
+  // A tabela possui uma unica linha. Evitar o filtro booleano no PostgREST
+  // remove a dependencia do schema cache para o tipo de `id`.
+  const { data: schedule } = await client.from('analytics_integration_schedule').select('enabled,frequency,last_run_at').limit(1).maybeSingle();
   if (mode === 'scheduled') {
     const enabled = schedule?.enabled === true;
     const frequency = String(schedule?.frequency ?? 'off');

@@ -324,7 +324,7 @@ Deno.serve(async (req) => {
   const { data: syncSchedule } = await client
     .from('analytics_integration_schedule')
     .select('hubspot_enabled,hubspot_frequency,hubspot_last_run_at')
-    .eq('id', true)
+    .limit(1)
     .maybeSingle();
   if (actor === 'scheduler') {
     const enabled = syncSchedule?.hubspot_enabled === true;
@@ -507,7 +507,7 @@ Deno.serve(async (req) => {
         hubspot_last_run_at: new Date().toISOString(),
         hubspot_last_status: 'success',
         hubspot_last_message: `HubSpot ${counters.companies} empresas, ${counters.deals} deals, ${counters.tickets} tickets, ${counters.owners} responsÃ¡veis e ${counters.stages} estÃ¡gios.`,
-      }).eq('id', true);
+      }).limit(1);
     }
 
     return jsonResponse({ ok: true, runId, mode: updatedAfterMs === undefined ? 'full' : 'incremental', ...counters });
@@ -532,7 +532,7 @@ Deno.serve(async (req) => {
         hubspot_last_run_at: new Date().toISOString(),
         hubspot_last_status: 'error',
         hubspot_last_message: message.slice(0, 500),
-      }).eq('id', true);
+      }).limit(1);
     }
 
     return jsonResponse({ error: message }, { status: 502 });

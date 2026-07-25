@@ -243,7 +243,10 @@ export interface IntegrationSchedule {
 
 export async function getIntegrationSchedule(): Promise<IntegrationSchedule | null> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.from('vw_analytics_integration_schedule_read').select('enabled,frequency,last_run_at,last_status,last_message,hubspot_enabled,hubspot_frequency,hubspot_last_run_at,hubspot_last_status,hubspot_last_message').eq('id', true).maybeSingle();
+  // A agenda e um singleton. Nao filtre pelo campo `id`: em ambientes com
+  // schema cache antigo o PostgREST pode interpretar o literal booleano como
+  // UUID e devolver `invalid input syntax for type uuid: "true"`.
+  const { data, error } = await client.from('vw_analytics_integration_schedule_read').select('enabled,frequency,last_run_at,last_status,last_message,hubspot_enabled,hubspot_frequency,hubspot_last_run_at,hubspot_last_status,hubspot_last_message').limit(1).maybeSingle();
   if (error) throw toAppError(error, 'Falha ao carregar o agendamento da integração.');
   if (!data) return null;
   const row = data as Record<string, unknown>;
