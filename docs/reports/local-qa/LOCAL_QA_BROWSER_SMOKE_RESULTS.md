@@ -15,4 +15,3 @@
 - Nenhum processo web órfão ficou ativo; porta liberada no `finally`.
 
 Screenshots são geradas localmente em `output/local-qa/` e excluídas do Git.
-

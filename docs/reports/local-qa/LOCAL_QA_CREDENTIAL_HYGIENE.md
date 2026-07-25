@@ -8,4 +8,3 @@
 - `npm run local:qa:secret-scan`: passou sem matches em 1.541 arquivos rastreados.
 - Scripts de fixture não imprimem mais senhas; saídas usam `[LOCAL_QA_PASSWORD_OMITTED]`.
 - Nenhum token, JWT, service role, cookie ou payload real foi adicionado ao lote.
-
