@@ -144,6 +144,14 @@ export function CsGate({ children }: { children: ReactNode }) {
     return <Navigate replace to={`/login?redirectTo=${encodeURIComponent(redirectTo)}`} />;
   }
 
+  if (
+    phase === 'authenticated' &&
+    gate.actor?.is_platform_admin !== true &&
+    gate.actor?.roles.includes('dashboard_viewer') === true
+  ) {
+    return <Navigate replace to="/access-denied" state={{ reason: 'route-not-authorized' }} />;
+  }
+
   if (portfolio === null) {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-6 py-12">

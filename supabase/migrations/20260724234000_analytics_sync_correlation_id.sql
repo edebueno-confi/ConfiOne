@@ -25,6 +25,8 @@ with (security_barrier = true)
 as
 select id, domain_key, status, started_at, finished_at,
        deals_synced, tickets_synced, owners_synced, stages_synced,
-       companies_synced, error_message, correlation_id
+       companies_synced,
+       case when status = 'error' then 'A sincronização não foi concluída.' else null end as error_message,
+       correlation_id
 from public.hubspot_sync_runs
 where app_private.can_read_analytics();

@@ -3,12 +3,12 @@
 
 delete from public.internal_role_screen_grants
 where role = 'dashboard_viewer'::public.platform_role
-  and screen_key not in ('home', 'analytics');
+  and screen_key <> 'analytics';
 
 insert into public.internal_role_screen_grants (role, screen_key)
 select 'dashboard_viewer'::public.platform_role, screen_key
 from public.internal_screen_catalog
-where screen_key in ('home', 'analytics')
+where screen_key = 'analytics'
 on conflict (role, screen_key) do nothing;
 
 create or replace function app_private.can_read_analytics()
@@ -41,7 +41,8 @@ with (security_barrier = true)
 as
 select id, domain_key, status, started_at, finished_at,
        deals_synced, tickets_synced, owners_synced, stages_synced,
-       companies_synced, error_message
+       companies_synced,
+       case when status = 'error' then 'A sincronização não foi concluída.' else null end as error_message
 from public.hubspot_sync_runs
 where app_private.can_read_analytics();
 
@@ -81,6 +82,8 @@ on public.analytics_source_config,
 from authenticated;
 
 revoke select on public.analytics_source_config, public.hubspot_sync_runs,
+  public.hubspot_companies, public.hubspot_deals, public.hubspot_tickets,
+  public.hubspot_owners, public.hubspot_pipeline_stages,
   public.analytics_finance_receivables, public.analytics_finance_sync_runs,
   public.analytics_spreadsheet_import_runs, public.analytics_spreadsheet_rows
 from authenticated;

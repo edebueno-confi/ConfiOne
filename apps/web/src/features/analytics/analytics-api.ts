@@ -148,7 +148,7 @@ export async function getLatestSyncRun(): Promise<SyncRun | null> {
 export async function listHubspotSyncRuns(): Promise<SyncRun[]> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client
-    .from('hubspot_sync_runs')
+    .from('vw_analytics_dashboard_sync_status')
     .select('*')
     .order('started_at', { ascending: false })
     .limit(30);

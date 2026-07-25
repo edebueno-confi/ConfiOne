@@ -23,6 +23,7 @@ export function SupportGate({ children }: { children: ReactNode }) {
   const location = useLocation();
   const {
     phase,
+    gate,
     sessionExpired,
     configError,
     signOut,
@@ -78,6 +79,14 @@ export function SupportGate({ children }: { children: ReactNode }) {
   if (phase === 'anonymous') {
     const redirectTo = `${location.pathname}${location.search}`;
     return <Navigate replace to={`/login?redirectTo=${encodeURIComponent(redirectTo)}`} />;
+  }
+
+  if (
+    phase === 'authenticated' &&
+    gate.actor?.is_platform_admin !== true &&
+    gate.actor?.roles.includes('dashboard_viewer') === true
+  ) {
+    return <Navigate replace to="/access-denied" state={{ reason: 'route-not-authorized' }} />;
   }
 
   return <>{children}</>;
