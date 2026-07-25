@@ -35,7 +35,7 @@ export function AnalyticsShell() {
   const { gate } = useAuthContext();
   const isPlatformAdmin = gate.actor?.is_platform_admin === true;
   const isDashboardViewer = !isPlatformAdmin && gate.actor?.roles.includes('dashboard_viewer') === true;
-  const visibleDomains = isDashboardViewer ? DOMAINS.filter((domain) => !['logs', 'config'].includes(domain.key)) : DOMAINS;
+  const visibleDomains = isDashboardViewer ? DOMAINS.filter((domain) => domain.key === 'ceo') : DOMAINS;
   const [activeKey, setActiveKey] = useState(visibleDomains[0]?.key ?? 'commercial');
   const [reloadKey, setReloadKey] = useState(0);
   const [latestRun, setLatestRun] = useState<SyncRun | null>(null);
@@ -165,6 +165,7 @@ export function AnalyticsShell() {
                   sharedPeriod={sharedPeriod}
                   onSharedPeriodChange={setSharedPeriod}
                   onRetry={() => setReloadKey((current) => current + 1)}
+                  isDashboardViewer={isDashboardViewer}
                 />
           ) : null}
         </Suspense>

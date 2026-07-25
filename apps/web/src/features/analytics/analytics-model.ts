@@ -350,6 +350,7 @@ export interface AnalyticsPageProps {
   sharedPeriod?: AnalyticsSharedPeriod;
   onSharedPeriodChange?: (period: AnalyticsSharedPeriod) => void;
   onRetry?: () => void;
+  isDashboardViewer?: boolean;
 }
 
 export const EMPTY_COMMERCIAL_KPIS: CommercialKpis = {
