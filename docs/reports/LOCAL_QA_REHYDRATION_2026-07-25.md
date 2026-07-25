@@ -1,21 +1,17 @@
-# LOCAL-QA-01.1 â€” ReidrataÃ§Ã£o automÃ¡tica do Supabase local
+# LOCAL-QA-01.2 — Fechamento definitivo do gate funcional
 
 ## Resultado
 
-Ambiente local QA reidratÃ¡vel, protegido contra remoto, com cinco usuÃ¡rios locais, trÃªs empresas sintÃ©ticas, tickets e dados analÃ­ticos sintÃ©ticos. A hidrataÃ§Ã£o usa uma Ãºnica sessÃ£o PostgreSQL com `BEGIN/COMMIT`; Auth Ã© provisionado antes em etapa compensÃ¡vel.
+Ambiente QA local reidratável, protegido contra remoto e validado com cinco personas. O lote adiciona writes reais pela interface, matriz backend com assertions, menor privilégio para schedules, higiene de arquivos e pacote técnico UTF-8.
 
-## Contagens verificadas
+## Baseline
 
-5 usuÃ¡rios, 3 tenants, 18 tickets, 6 recebÃ­veis `local_qa_finance`, 3 deals, 3 tickets HubSpot sintÃ©ticos, 0 registros OMIE externos e 0 schedules ativos.
+5 usuários, 3 tenants, 18 tickets, 6 recebíveis `local_qa_finance`, 3 deals, 3 tickets HubSpot sintéticos, 0 registros OMIE externos e 0 schedules ativos.
 
-## CenÃ¡rios e seguranÃ§a
+## Segurança e isolamento
 
-Os cenÃ¡rios `baseline`, `empty`, `partial`, `stale`, `unavailable` e `zero-real` sÃ£o determinÃ­sticos, locais, reversÃ­veis por hidrataÃ§Ã£o e nÃ£o executam sincronizaÃ§Ã£o externa. Nenhuma credencial, token, JWT, payload real ou migration remota foi usado.
+Nenhuma credencial, token, JWT, payload real, sincronização externa, migration remota, deploy ou write externo foi usado. O stash editorial permanece preservado e não aplicado.
 
-## ValidaÃ§Ãµes
+## Validações
 
-Dois resets completos, hidrataÃ§Ã£o repetida, smoke Playwright das cinco personas em desktop/mobile, smoke JWT, testes Node, secret scan e `supabase:verify` passaram. O lint DB passou com avisos histÃ³ricos de variÃ¡veis nÃ£o lidas.
-
-## DocumentaÃ§Ã£o relacionada
-
-Runbook, matriz de permissÃµes, inventÃ¡rio, smoke browser e higiene de credenciais estÃ£o em `docs/runbooks/LOCAL_QA_ENVIRONMENT.md` e `docs/reports/local-qa/`.
+Reset local, hidratação, verificação, matriz JWT, writes UI, smoke Playwright, cenários Analytics, secret scan, typechecks, build, testes DB, lint DB, repository check e diff check foram executados conforme o relatório final do lote.

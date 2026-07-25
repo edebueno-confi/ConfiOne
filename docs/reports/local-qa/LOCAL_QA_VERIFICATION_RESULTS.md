@@ -1,27 +1,19 @@
-# LOCAL-QA-01.1 â€” Resultados de verificaÃ§Ã£o
+# LOCAL-QA-01.2 — Resultados de verificação
 
-## ExecuÃ§Ãµes aprovadas
+## Execuções aprovadas
 
-- `npm run local:qa:reset`: passou duas vezes, com hidrataÃ§Ã£o e verificaÃ§Ã£o.
-- `npm run local:qa:hydrate`: passou repetidamente sem duplicaÃ§Ã£o.
-- `npm run local:qa:verify`: passou com contagens baseline estÃ¡veis.
-- `npm run local:qa:smoke`: cinco personas, desktop/mobile, navegaÃ§Ã£o e bloqueios de rota passaram sem erros funcionais.
-- `node scripts/local-qa/backend-smoke.mjs`: REST/RPC com JWT real dos cinco usuÃ¡rios; writes locais reidratados depois.
-- `npm run supabase:verify`: reset, 1.308 testes DB e verificaÃ§Ã£o de importaÃ§Ã£o passaram.
-- `npm run local:qa:secret-scan`: 1.541 arquivos rastreados, zero matches.
+- `npm run supabase:db:reset`: passou com a migration de menor privilégio do schedule.
+- `npm run local:qa:hydrate`: passou com baseline determinístico.
+- `npm run local:qa:verify`: 5 usuários, 3 tenants, 18 tickets, 6 recebíveis, 3 deals, 3 tickets HubSpot e 0 schedules ativos.
+- `node scripts/local-qa/backend-smoke.mjs`: matriz declarativa JWT com assertions de status e quantidade, todas aprovadas.
+- `npm run local:qa:writes`: writes reais pela interface para manager, agent e customer, com reload e isolamento confirmados.
+- `npm run local:qa:smoke`: cinco personas em 1440×900 e 390×844, sem erros de console, rede ou overflow.
+- `npm run local:qa:secret-scan`: 1.548 arquivos rastreados, zero matches.
 
-## Contagens baseline
+## Cenários
 
-| Recurso | Contagem |
-|---|---:|
-| UsuÃ¡rios obrigatÃ³rios | 5 |
-| Empresas/tenants QA | 3 |
-| Tickets | 18 |
-| RecebÃ­veis `local_qa_finance` | 6 |
-| Deals | 3 |
-| Tickets HubSpot sintÃ©ticos | 3 |
-| Schedules ativos | 0 |
+`baseline`, `empty`, `partial`, `stale`, `unavailable` e `zero-real` permanecem locais, sintéticos e reversíveis. Nenhuma sincronização HubSpot/OMIE, migration remota, deploy ou write externo foi executado.
 
-## Limites
+## Limitações
 
-NÃ£o foram executadas chamadas externas, sincronizaÃ§Ãµes HubSpot/OMIE, migration remota ou deploy. Os avisos do lint DB sÃ£o preexistentes e nÃ£o bloquearam o schema.
+A criação de ticket pelo customer não faz parte da superfície exercitada neste gate; a resposta em ticket próprio foi validada.

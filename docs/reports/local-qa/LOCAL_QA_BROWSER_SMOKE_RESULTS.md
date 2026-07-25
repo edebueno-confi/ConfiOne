@@ -1,17 +1,13 @@
-# LOCAL-QA-01.1 — Smoke browser real
+# LOCAL-QA-01.2 — Smoke browser real
 
-## Execução
+`npm run local:qa:smoke` executou sessões isoladas de cinco personas em 1440×900 e 390×844.
 
-`npm run local:qa:smoke` inicia o Vite automaticamente, aguarda healthcheck, executa Playwright e encerra o processo. Foram validadas cinco personas em 1440×900 e 390×844.
+- `platform_admin`: `/inicio` e áreas administrativas permitidas.
+- `dashboard_viewer`: `/admin/analytics`; configuração e requests administrativos bloqueados.
+- `support_manager`: fila operacional e rota permitida; configuração e schedule bruto bloqueados.
+- `support_agent`: Aurora/Horizonte permitidos; Atlas e gestão administrativa bloqueados.
+- `customer_user`: `/portal`; ticket próprio permitido, tenant externo e rotas internas bloqueados.
 
-## Resultado
+Console errors: 0. Page errors: 0. Request failures: 0. Respostas inesperadas 400/401/403/404/409/422/500: 0. Overflow horizontal: 0.
 
-- `platform_admin`: `/inicio`, áreas administrativas acessíveis conforme rota; sem erro funcional.
-- `dashboard_viewer`: `/admin/analytics`; configuração, logs, integração, exportação e chamadas administrativas bloqueados.
-- `support_manager`: fila e operações de suporte; configuração e schedules bloqueados.
-- `support_agent`: escopo de Aurora/Horizonte; Atlas e gestão administrativa bloqueados.
-- `customer_user`: `/portal`; rotas internas e tenants fora de Aurora bloqueados.
-- Console errors, page errors, request failures e respostas inesperadas: zero no smoke final.
-- Nenhum processo web órfão ficou ativo; porta liberada no `finally`.
-
-Screenshots são geradas localmente em `output/local-qa/` e excluídas do Git.
+O classificador não trata mais qualquer `403` como esperado; somente operações explicitamente proibidas entram nessa categoria. As screenshots finais são geradas em `output/local-qa/` e permanecem fora do Git.
