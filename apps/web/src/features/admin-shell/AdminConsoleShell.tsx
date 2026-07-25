@@ -15,7 +15,7 @@ export function AdminConsoleShell() {
         screenKeys: gate.actor?.screen_keys ?? [],
         hasDashboardViewerAccess: isDashboardViewer,
       }}
-      userSubtitle="Administrador da plataforma"
+      userSubtitle={isDashboardViewer && !isPlatformAdmin ? 'Visualizador gerencial' : 'Administrador da plataforma'}
     >
       <Outlet />
     </MinimalAppShell>

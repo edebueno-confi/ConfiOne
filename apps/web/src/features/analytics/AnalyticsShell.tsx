@@ -95,11 +95,15 @@ export function AnalyticsShell() {
             <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">
               Visão executiva integrada a HubSpot, OMIE e fontes operacionais.
             </p>
+            {isDashboardViewer ? <p className="mt-1 text-xs font-medium text-[color:var(--minimal-text-tertiary)]">Visualizador gerencial · acesso ao Dashboard</p> : null}
           </div>
           <div className="flex flex-col items-end gap-1">
+            <div className="flex flex-wrap justify-end gap-2">
               {isPlatformAdmin ? <button type="button" onClick={() => setReportOpen(true)} className="inline-flex items-center rounded-lg border border-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action)] transition hover:bg-[color:var(--minimal-surface-muted)]">
                 Exportar relatório
               </button> : null}
+              {isPlatformAdmin && activeKey === 'ceo' ? <button type="button" onClick={() => void handleSync()} disabled={syncing} className="inline-flex items-center rounded-lg bg-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action-ink)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">{syncing ? 'Sincronizando...' : 'Sincronizar HubSpot'}</button> : null}
+            </div>
               <SyncStatusLabel run={latestRun} error={syncStatusError} />
             {syncError ? (
               <span className="text-xs text-[color:var(--minimal-danger-text)]">{syncError}</span>
@@ -133,7 +137,7 @@ export function AnalyticsShell() {
         </nav>
       </header>
 
-      {isPlatformAdmin ? (
+      {isPlatformAdmin && activeKey !== 'ceo' ? (
         <div className="gso-command-strip flex flex-wrap items-center justify-end gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-5 py-2.5 sm:px-6">
           <span className="mr-auto text-xs text-[color:var(--minimal-text-tertiary)]">
             Atualize o cache do Dashboard Gerencial quando precisar consultar dados recentes.
