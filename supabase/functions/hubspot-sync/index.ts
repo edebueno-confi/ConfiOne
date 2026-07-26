@@ -416,7 +416,7 @@ Deno.serve(async (req) => {
         return header && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(header) ? header : crypto.randomUUID();
       })(),
     })
-    .select('id')
+    .select('id,correlation_id')
     .single();
 
   if (runError || !runRow) {
@@ -514,7 +514,7 @@ Deno.serve(async (req) => {
       }).limit(1);
     }
 
-    return jsonResponse({ ok: true, runId, mode: updatedAfterMs === undefined ? 'full' : 'incremental', ...counters });
+    return jsonResponse({ ok: true, runId, correlationId: runRow.correlation_id, mode: updatedAfterMs === undefined ? 'full' : 'incremental', ...counters });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     await client
