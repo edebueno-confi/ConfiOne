@@ -40,6 +40,7 @@ import {
 } from './analytics-model';
 import { aggregateLatestHubspotSyncRuns } from './analytics-sync-runs.mjs';
 import { formatAnalyticsSyncError } from './analytics-sync-errors.mjs';
+import { buildCsSyncPayload, sanitizeCsSyncResult } from './analytics-cs-control.mjs';
 
 type Row = Record<string, unknown>;
 
@@ -154,6 +155,18 @@ export async function listHubspotSyncRuns(): Promise<SyncRun[]> {
     .limit(30);
   if (error) throw toAppError(error, 'Falha ao carregar os logs de sincronização HubSpot.');
   return (data ?? []).map((row) => mapSyncRun(row as Row)).filter((row): row is SyncRun => Boolean(row));
+}
+
+export async function getLatestCsSyncRun(): Promise<SyncRun | null> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client
+    .from('vw_analytics_dashboard_sync_status')
+    .select('*')
+    .eq('domain_key', 'cs')
+    .order('started_at', { ascending: false })
+    .limit(1);
+  if (error) throw toAppError(error, 'Falha ao carregar o status da sincronização de CS.');
+  return mapSyncRun((data?.[0] as Row) ?? null);
 }
 
 function rpcFilters(filters: AnalyticsFilters) {
@@ -560,4 +573,35 @@ export async function triggerHubspotSync(
   }
 
   return aggregate;
+}
+
+export interface CsSupportSyncResult {
+  status: 'success' | 'partial';
+  mode: 'full' | 'incremental';
+  correlationId: string | null;
+  tickets: number;
+  owners: number;
+  stages: number;
+}
+
+export async function triggerCsSupportSync(latestRun: SyncRun | null): Promise<CsSupportSyncResult> {
+  const config = readRuntimeConfig();
+  if (!config.ok) throw new Error('As funções seguras do Supabase não estão disponíveis neste ambiente.');
+  const client = requireSupabaseBrowserClient();
+  const { data: { session }, error: sessionError } = await client.auth.getSession();
+  if (sessionError || !session?.access_token) throw new Error('Sessão ativa indisponível para sincronizar CS / Suporte.');
+  const correlationId = crypto.randomUUID();
+  const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/hubspot-sync`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      apikey: config.config.supabaseAnonKey,
+      'Content-Type': 'application/json',
+      'x-analytics-correlation-id': correlationId,
+    },
+    body: JSON.stringify(buildCsSyncPayload(latestRun)),
+  });
+  const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
+  if (!response.ok) throw new Error(formatAnalyticsSyncError({ operation: 'HubSpot CS / Suporte', status: response.status, payload }));
+  return sanitizeCsSyncResult(payload);
 }
