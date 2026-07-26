@@ -93,14 +93,18 @@ security definer
 set search_path = ''
 as $$
 declare
-  v_actor uuid := app_private.require_active_actor();
+  v_actor uuid;
+  v_is_service_role boolean := coalesce(current_setting('request.jwt.claim.role', true), '') = 'service_role';
   v_run public.hubspot_sync_runs;
   v_domains text[] := case when p_domain_key in ('commercial', 'cs') then array[p_domain_key] else array['commercial','cs'] end;
   v_mode text := case when p_mode in ('full','incremental') then p_mode else 'incremental' end;
   v_after bigint := null;
   v_count integer := 0;
 begin
-  if not app_private.has_global_role('platform_admin'::public.platform_role) then
+  if not v_is_service_role then
+    v_actor := app_private.require_active_actor();
+  end if;
+  if not v_is_service_role and not app_private.has_global_role('platform_admin'::public.platform_role) then
     raise exception 'analytics HubSpot start denied';
   end if;
   perform public.rpc_analytics_hubspot_abandon_stale_runs(900);
@@ -145,7 +149,10 @@ create or replace function public.rpc_analytics_hubspot_abandon_stale_runs(p_tim
 returns integer language plpgsql security definer set search_path = '' as $$
 declare v_count integer;
 begin
-  if not app_private.has_global_role('platform_admin'::public.platform_role) then raise exception 'analytics HubSpot recovery denied'; end if;
+  if coalesce(current_setting('request.jwt.claim.role', true), '') <> 'service_role'
+     and not app_private.has_global_role('platform_admin'::public.platform_role) then
+    raise exception 'analytics HubSpot recovery denied';
+  end if;
   update public.hubspot_sync_runs
   set status='abandoned', finished_at=timezone('utc',now()), heartbeat_at=timezone('utc',now()), watermark_advanced=false,
       error_code='WORKER_TIMEOUT', error_message='Execucao abandonada por ausencia de heartbeat; snapshot anterior preservado.'
@@ -187,7 +194,10 @@ declare
   v_item public.analytics_cs_sync_work_items;
   v_now timestamptz := timezone('utc', now());
 begin
-  if not app_private.has_global_role('platform_admin'::public.platform_role) then raise exception 'analytics HubSpot worker denied'; end if;
+  if coalesce(current_setting('request.jwt.claim.role', true), '') <> 'service_role'
+     and not app_private.has_global_role('platform_admin'::public.platform_role) then
+    raise exception 'analytics HubSpot worker denied';
+  end if;
   if nullif(btrim(p_worker_id), '') is null then raise exception 'worker id obrigatorio'; end if;
   select item.* into v_item
   from public.analytics_cs_sync_work_items item
@@ -221,7 +231,10 @@ create or replace function public.rpc_analytics_hubspot_checkpoint_work_item(
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare v_item public.analytics_cs_sync_work_items; v_run_id uuid; v_now timestamptz:=timezone('utc',now()); v_status text;
 begin
-  if not app_private.has_global_role('platform_admin'::public.platform_role) then raise exception 'analytics HubSpot checkpoint denied'; end if;
+  if coalesce(current_setting('request.jwt.claim.role', true), '') <> 'service_role'
+     and not app_private.has_global_role('platform_admin'::public.platform_role) then
+    raise exception 'analytics HubSpot checkpoint denied';
+  end if;
   select * into v_item from public.analytics_cs_sync_work_items where id=p_work_item_id for update;
   if v_item.id is null or v_item.lease_owner<>p_worker_id then raise exception 'lease do item invalido ou expirado'; end if;
   v_run_id:=v_item.parent_run_id;
@@ -246,7 +259,10 @@ create or replace function public.rpc_analytics_hubspot_finalize_run(p_run_id uu
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare v_run public.hubspot_sync_runs; v_total integer; v_completed integer; v_promoted integer:=0; v_now timestamptz:=timezone('utc',now());
 begin
-  if not app_private.has_global_role('platform_admin'::public.platform_role) then raise exception 'analytics HubSpot finalize denied'; end if;
+  if coalesce(current_setting('request.jwt.claim.role', true), '') <> 'service_role'
+     and not app_private.has_global_role('platform_admin'::public.platform_role) then
+    raise exception 'analytics HubSpot finalize denied';
+  end if;
   select * into v_run from public.hubspot_sync_runs where id=p_run_id for update;
   if v_run.id is null then raise exception 'run nao encontrado'; end if;
   if v_run.status in ('success','succeeded','failed','error','abandoned','cancelled') then return jsonb_build_object('status',v_run.status,'run_id',v_run.id,'watermark_advanced',v_run.watermark_advanced); end if;

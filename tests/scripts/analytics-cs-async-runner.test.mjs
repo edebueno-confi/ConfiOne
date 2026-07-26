@@ -17,6 +17,15 @@ test('um unico start assíncrono atende Comercial e CS e retorna 202', () => {
   assert.match(migration, /array\['commercial','cs'\]/);
 });
 
+test('workers agendados usam apenas a identidade service_role, sem ampliar o acesso interativo', () => {
+  assert.match(migration, /current_setting\('request\.jwt\.claim\.role', true\)/);
+  assert.match(migration, /v_is_service_role boolean/);
+  assert.match(migration, /if not v_is_service_role and not app_private\.has_global_role\('platform_admin'/);
+  assert.match(migration, /<> 'service_role'/);
+  assert.match(migration, /v_actor uuid;/);
+  assert.doesNotMatch(migration, /grant execute on function public\.rpc_analytics_hubspot_.* to anon/);
+});
+
 test('parent e work items comuns têm lease, cursor, retry e domínio', () => {
   assert.match(migration, /analytics_hubspot_claim_work_item/);
   assert.match(migration, /analytics_hubspot_checkpoint_work_item/);
