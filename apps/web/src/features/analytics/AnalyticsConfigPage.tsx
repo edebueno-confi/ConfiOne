@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { MinimalState } from '../../components/minimal-states';
 import { GeniusSyncOverlay } from '../../components/GeniusSyncOverlay';
-import { getIntegrationSchedule, getLatestCsSyncRun, listAnalyticsSourceConfig, listCsOpsImportRuns, runCsOpsMigration, runIntegrationNow, setIntegrationSchedule, triggerCsOpsSpreadsheetImport, triggerCsSupportSync, triggerHubspotSync, upsertAnalyticsSourceConfig, type CsOpsImportRun, type CsOpsMigrationPreflight, type IntegrationSchedule } from './analytics-api';
+import { getCsSyncProgress, getIntegrationSchedule, getLatestCsSyncRun, listAnalyticsSourceConfig, listCsOpsImportRuns, runCsOpsMigration, runIntegrationNow, setIntegrationSchedule, triggerCsOpsSpreadsheetImport, triggerCsSupportSync, triggerHubspotSync, upsertAnalyticsSourceConfig, type CsOpsImportRun, type CsOpsMigrationPreflight, type IntegrationSchedule } from './analytics-api';
 import type { AnalyticsSourceConfig, SyncRun } from './analytics-model';
 import { ChartCard, MetricInfo } from './analytics-ui';
 import { useAuthContext } from '../auth/auth-context';
@@ -49,7 +49,7 @@ export function AnalyticsConfigPage() {
   }));
   const saveSchedule = async () => { setScheduleBusy(true); setScheduleMsg(null); try { await setIntegrationSchedule(schedule?.enabled ?? false, schedule?.frequency ?? 'off', schedule?.hubspotEnabled ?? false, schedule?.hubspotFrequency ?? 'off'); loadSchedule(); setScheduleMsg('Agendamento salvo.'); } catch (error) { setScheduleMsg(error instanceof Error ? error.message : 'Falha ao salvar o agendamento.'); } finally { setScheduleBusy(false); } };
   const runNow = async () => { setScheduleBusy(true); setRunningNow(true); setScheduleMsg(null); try { const r = await runIntegrationNow(); setScheduleMsg(`${r.status === 'partial' ? 'Atenção: ' : ''}Sincronização concluída: ${r.omieTitles.toLocaleString('pt-BR')} títulos do OMIE e ${r.updated.toLocaleString('pt-BR')}/${r.companies.toLocaleString('pt-BR')} empresas atualizadas no HubSpot.${r.message ? ` ${r.message}` : ''}`); loadSchedule(); } catch (error) { setScheduleMsg(error instanceof Error ? error.message : 'Falha ao sincronizar agora.'); } finally { setRunningNow(false); setScheduleBusy(false); } };
-  const runHubspotNow = async () => { setScheduleBusy(true); setHubspotRunningNow(true); setScheduleMsg(null); try { const result = await triggerHubspotSync(undefined, { phased: false }); setScheduleMsg(`Sincronização HubSpot concluída: ${result.companies.toLocaleString('pt-BR')} empresas, ${result.deals.toLocaleString('pt-BR')} deals, ${result.tickets.toLocaleString('pt-BR')} tickets, ${result.owners.toLocaleString('pt-BR')} responsáveis e ${result.stages.toLocaleString('pt-BR')} estágios.`); loadSchedule(); } catch (error) { setScheduleMsg(error instanceof Error ? error.message : 'Falha ao sincronizar o HubSpot.'); } finally { setHubspotRunningNow(false); setScheduleBusy(false); } };
+  const runHubspotNow = async () => { setScheduleBusy(true); setHubspotRunningNow(true); setScheduleMsg(null); try { const result = await triggerHubspotSync(undefined, { phased: false }); setScheduleMsg(`Sincronização HubSpot iniciada: o orquestrador consultará as fontes configuradas e atualizará o Dashboard ao concluir. Execução: ${result.runId ?? 'indisponível'}.`); loadSchedule(); } catch (error) { setScheduleMsg(error instanceof Error ? error.message : 'Falha ao iniciar a sincronização do HubSpot.'); } finally { setHubspotRunningNow(false); setScheduleBusy(false); } };
   const runCsSupport = async () => {
     if (!canManageIntegration || csControlBusy) return;
     const initial = latestCsRun?.status !== 'success';
@@ -60,7 +60,9 @@ export function AnalyticsConfigPage() {
     setCsControlBusy(true); setCsControlMsg(null);
     try {
       const result = await triggerCsSupportSync(latestCsRun);
-      setCsControlMsg(`${result.status === 'partial' ? 'Execução parcial' : 'Execução concluída'} (${result.mode}): ${result.tickets.toLocaleString('pt-BR')} tickets, ${result.owners.toLocaleString('pt-BR')} responsáveis e ${result.stages.toLocaleString('pt-BR')} estágios. Correlação: ${result.correlationId ?? 'indisponível'}.`);
+      setCsControlMsg(result.status === 'queued'
+        ? `Carga de CS enfileirada (${result.mode}). O progresso será atualizado automaticamente. Correlação: ${result.correlationId ?? 'indisponível'}.`
+        : `${result.status === 'partial' ? 'Execução parcial' : 'Execução concluída'} (${result.mode}): ${result.tickets.toLocaleString('pt-BR')} tickets, ${result.owners.toLocaleString('pt-BR')} responsáveis e ${result.stages.toLocaleString('pt-BR')} estágios. Correlação: ${result.correlationId ?? 'indisponível'}.`);
       loadLatestCsRun();
     } catch (error) {
       setCsControlMsg(error instanceof Error ? error.message : 'Falha ao executar CS / Suporte.');
@@ -80,6 +82,16 @@ export function AnalyticsConfigPage() {
     try { const result = await runCsOpsMigration(run.id, mode); const counts = result.counts; if (result.preflight) setCsOpsPreflight({ ...result.preflight, sourceImportRunId: result.sourceImportRunId }); setCsOpsMsg(`${mode === 'dry_run' ? 'Dry-run' : 'Migração'} concluído: ${Number(counts.total_rows ?? 0).toLocaleString('pt-BR')} linhas, ${Number(counts.update_rows ?? 0).toLocaleString('pt-BR')} atualizações, ${Number(counts.create_rows ?? 0).toLocaleString('pt-BR')} criações, ${Number(counts.ambiguous_rows ?? 0).toLocaleString('pt-BR')} ambiguidades. ${result.message}`); loadCsOps(); } catch (error) { setCsOpsMsg(error instanceof Error ? error.message : 'Falha ao processar a migração CS Ops.'); } finally { setCsOpsBusy(false); }
   };
   useEffect(() => { load(); loadSchedule(); loadCsOps(); loadLatestCsRun(); }, []);
+  useEffect(() => {
+    if (!latestCsRun || !['queued', 'running', 'partial'].includes(latestCsRun.status)) return;
+    const timer = window.setInterval(() => {
+      void Promise.all([loadLatestCsRun(), getCsSyncProgress(latestCsRun.id)]).then(([, progress]) => {
+        if (progress?.error) setCsControlMsg(`Carga de CS: ${progress.error}`);
+        else if (progress) setCsControlMsg(`Carga de CS em andamento: ${progress.pipelinesCompleted}/${progress.pipelinesTotal} pipelines, ${progress.pages} páginas e ${progress.received.toLocaleString('pt-BR')} tickets recebidos.`);
+      });
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [latestCsRun?.id, latestCsRun?.status]);
   const save = async () => {
     if (!canManageIntegration) { setState((current) => ({ ...current, error: 'Somente administradores da plataforma podem alterar as fontes.' })); return; }
     if (!draft.pipelineId.trim() || !/^\d+$/.test(draft.pipelineId.trim())) { setState((current) => ({ ...current, error: 'Informe um ID numérico de pipeline.' })); return; }
@@ -98,7 +110,7 @@ export function AnalyticsConfigPage() {
           {csControlBusy ? 'Consultando CS / Suporte…' : latestCsRun?.status === 'success' ? 'Sincronizar CS / Suporte' : 'Executar carga inicial de CS / Suporte'}
         </button>
         <span className="text-xs text-[color:var(--minimal-text-tertiary)]">
-          {latestCsRun ? `Última execução: ${latestCsRun.status} · ${new Date(latestCsRun.finishedAt ?? latestCsRun.startedAt).toLocaleString('pt-BR')}` : 'Nenhuma execução CS bem-sucedida registrada.'}
+          {latestCsRun ? `Última execução: ${latestCsRun.status} · ${new Date(latestCsRun.finishedAt ?? latestCsRun.startedAt).toLocaleString('pt-BR')}${latestCsRun.pipelinesTotal > 0 ? ` · ${latestCsRun.pipelinesCompleted}/${latestCsRun.pipelinesTotal} pipelines` : ''}` : 'Nenhuma execução CS registrada.'}
         </span>
       </div>
       {csControlMsg ? <p role="status" className="mt-3 text-xs text-[color:var(--minimal-text-secondary)]">{csControlMsg}</p> : null}

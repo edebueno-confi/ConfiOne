@@ -386,6 +386,15 @@ deno_version = 2
 [functions.hubspot-sync]
 verify_jwt = false
 
+[functions.hubspot-orchestrator-start]
+verify_jwt = false
+
+[functions.hubspot-orchestrator-worker]
+verify_jwt = false
+
+[functions.hubspot-orchestrator-dispatcher]
+verify_jwt = false
+
 [functions.hubspot-cs-diagnostic]
 verify_jwt = false
 

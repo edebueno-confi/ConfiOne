@@ -18,6 +18,7 @@ import {
 } from './analytics-model';
 import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, KpiCard, MetricInfo } from './analytics-ui';
 import { AnalyticsFilters as AnalyticsFiltersBar } from './AnalyticsFilters';
+import { AnalyticsPipelineCombobox } from './AnalyticsPipelineCombobox';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import { TicketMonthlyChart, TicketStatusChart } from './charts/AnalyticsCharts';
 import { listAnalyticsSourceConfig } from './analytics-api';
@@ -89,7 +90,7 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
   return (
     <div className="space-y-5">
       <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} priorityOptions={priorityOptions} stageLabel="Status" />
-      {pipelineOptions.length > 0 ? <PipelineScopeFilter pipelines={pipelineOptions} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null}
+      {pipelineOptions.length > 0 ? <AnalyticsPipelineCombobox storageKey="analytics-cs-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.ticketCount }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null}
       {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." /> : null}
       {dataState?.status !== 'empty' ? <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard state={dataState} temporalType="Fluxo no período" label="Tickets totais" value={kpis.totalTickets.toLocaleString('pt-BR')} hint="Nos pipelines de suporte" source="Total de tickets nos pipelines de suporte ativos, considerando o período e os filtros selecionados." />

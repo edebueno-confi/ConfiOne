@@ -29,6 +29,7 @@ export const DEFAULT_ALLOWED_ROOT_FILES = new Set([
 export const DEFAULT_ALLOWED_ROOT_DIRECTORIES = new Set([
   '.agents',
   '.codex',
+  '.superdesign',
   '.git',
   '.github',
   '.playwright-cli',
