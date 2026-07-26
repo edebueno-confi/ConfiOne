@@ -6,6 +6,7 @@ import type { AnalyticsSourceConfig, SyncRun } from './analytics-model';
 import { ChartCard, MetricInfo } from './analytics-ui';
 import { useAuthContext } from '../auth/auth-context';
 import { canManageAnalyticsIntegration } from './analytics-permissions.mjs';
+import { HubspotCsDiagnosticCard } from './HubspotCsDiagnosticCard';
 
 type Draft = { id?: string; domainKey: 'commercial' | 'cs'; objectType: 'deal' | 'ticket'; pipelineId: string; alias: string; isActive: boolean };
 const EMPTY_DRAFT: Draft = { domainKey: 'cs', objectType: 'ticket', pipelineId: '', alias: '', isActive: true };
@@ -90,6 +91,7 @@ export function AnalyticsConfigPage() {
   if (state.error && rows.length === 0) return <MinimalState tone="critical" title="Não foi possível carregar" description={state.error} />;
   return <>
     <div className="space-y-5">
+    <HubspotCsDiagnosticCard enabled={canManageIntegration} />
     {canManageIntegration ? <ChartCard title="Controle de CS / Suporte" description="Executa exclusivamente a leitura de tickets do HubSpot usando a sessão autenticada. Não aciona Comercial, OMIE ou alterações no HubSpot.">
       <div className="flex flex-wrap items-center gap-3">
         <button type="button" disabled={csControlBusy} onClick={() => void runCsSupport()} className="h-9 rounded-md bg-[color:var(--minimal-action)] px-3 text-sm font-medium text-[color:var(--minimal-action-ink)] disabled:cursor-not-allowed disabled:opacity-60">
