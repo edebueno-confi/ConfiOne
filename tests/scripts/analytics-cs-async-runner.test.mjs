@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const migration = await readFile(new URL('../../supabase/migrations/20260726215117_analytics_hubspot_common_orchestrator_v1.sql', import.meta.url), 'utf8');
 const startFixMigration = await readFile(new URL('../../supabase/migrations/20260726230100_analytics_hubspot_common_start_state_fix_v1.sql', import.meta.url), 'utf8');
+const serviceIdentityMigration = await readFile(new URL('../../supabase/migrations/20260726234000_analytics_hubspot_service_identity_v1.sql', import.meta.url), 'utf8');
 const worker = await readFile(new URL('../../supabase/functions/hubspot-orchestrator-worker/index.ts', import.meta.url), 'utf8');
 const runner = await readFile(new URL('../../supabase/functions/_shared/hubspot-cs-runner.ts', import.meta.url), 'utf8');
 const dispatcher = await readFile(new URL('../../supabase/functions/hubspot-orchestrator-dispatcher/index.ts', import.meta.url), 'utf8');
@@ -31,6 +32,13 @@ test('workers agendados usam apenas a identidade service_role, sem ampliar o ace
 test('erros do runner preservam mensagem estruturada sem expor credenciais', () => {
   assert.match(runner, /JSON\.stringify\(error\)/);
   assert.match(runner, /\[REDACTED\]/);
+});
+
+test('service client interno nao depende de sub de usuario e nao abre acesso anonimo', () => {
+  assert.match(serviceIdentityMigration, /auth\.uid\(\) is null/);
+  assert.match(serviceIdentityMigration, /<> 'anon'/);
+  assert.match(serviceIdentityMigration, /revoke all on function app_private\.is_internal_service_request/);
+  assert.match(serviceIdentityMigration, /v_is_service_role boolean := app_private\.is_internal_service_request\(\)/);
 });
 
 test('run enfileirado nao grava source evidence invalida', () => {
