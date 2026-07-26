@@ -16,6 +16,7 @@ import {
 } from './analytics-model';
 import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, KpiCard, MetricInfo, formatCountLabel } from './analytics-ui';
 import { AnalyticsFilters as AnalyticsFiltersBar } from './AnalyticsFilters';
+import { AnalyticsPipelineCombobox } from './AnalyticsPipelineCombobox';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import type { AnalyticsPageProps } from './analytics-model';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
@@ -91,7 +92,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
   return (
     <div className="space-y-5">
       <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} ownerOptions={ownerOptions} />
-      {pipelineOptions.length > 0 ? <CommercialPipelineScopeFilter pipelines={pipelineOptions} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null}
+      {pipelineOptions.length > 0 ? <AnalyticsPipelineCombobox storageKey="analytics-commercial-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.dealCount }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null}
       {dataState?.status === 'empty' ? (
         <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." />
       ) : null}

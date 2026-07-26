@@ -69,7 +69,7 @@ export function AnalyticsShell() {
     try {
       const result = await triggerHubspotSync();
       setSyncMessage(
-        `${result.mode === 'incremental' ? 'Atualização incremental' : 'Carga completa'} concluída: ${result.companies.toLocaleString('pt-BR')} ${result.companies === 1 ? 'empresa' : 'empresas'}, ${result.deals.toLocaleString('pt-BR')} ${result.deals === 1 ? 'negócio' : 'negócios'} e ${result.tickets.toLocaleString('pt-BR')} ${result.tickets === 1 ? 'ticket' : 'tickets'} processados.`,
+        `${result.mode === 'incremental' ? 'Atualização incremental' : 'Carga completa'} iniciada. O Dashboard será atualizado quando o orquestrador concluir a execução.`,
       );
       refreshLatestRun();
       setReloadKey((current) => current + 1);
