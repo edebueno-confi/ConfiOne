@@ -32,7 +32,11 @@ export async function resolveHubSpotToken(client: SupabaseClient): Promise<strin
 }
 
 export function runnerError(error: unknown, status = 502) {
-  const raw = error instanceof Error ? error.message : String(error);
+  const raw = error instanceof Error
+    ? error.message
+    : typeof error === 'object' && error !== null
+      ? String((error as { message?: unknown }).message ?? JSON.stringify(error))
+      : String(error);
   const sanitized = raw.replace(/(Bearer\s+|pat-[A-Za-z0-9_-]+|sb_secret_[A-Za-z0-9_-]+)/gi, '[REDACTED]').slice(0, 500);
   return jsonResponse({ error: sanitized }, { status });
 }
