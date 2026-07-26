@@ -37,7 +37,7 @@ function isDue(frequency: string, lastRunAt: string | null): boolean {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return optionsResponse();
+  if (req.method === 'OPTIONS') return optionsResponse(req);
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed.' }, { status: 405 });
   const client = createServiceClient();
   const mode = await authorize(req, client);

@@ -2910,3 +2910,13 @@ Os perfis nomeados foram normalizados e receberam novamente seus grants de telas
   decisões pendentes.
 - Não houve reset, clean, commit, push, deploy, migration remota, alteração de
   secret ou escrita externa.
+# INTEGRATIONS-03 — 2026-07-26
+
+- Correção versionada para separar watermarks do HubSpot por domínio, evitando
+  que Comercial transforme a primeira carga de CS em incremental.
+- CORS das funções de Analytics passou a validar Production/Preview conhecidos;
+  localhost permanece opt-in por `ALLOW_LOCAL_CORS`.
+- Snapshot OMIE remoto validado com 3.433 títulos recebidos e aceitos, sem nova
+  sincronização neste lote.
+- A carga inicial de CS/Support ainda exige autorização explícita antes do
+  write remoto.
