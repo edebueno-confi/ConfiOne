@@ -38,6 +38,34 @@ import {
   type ReconciliationQualityResult,
   type AnalyticsSourceConfig,
 } from './analytics-model';
+
+export interface HubspotCsDiagnosticPipeline {
+  label: string;
+  activeRecords: number;
+  archivedRecords: number | null;
+  configuredForSync: boolean;
+  stages: Array<{ label: string; closed: boolean }>;
+}
+
+export interface HubspotCsDiagnostic {
+  object: 'tickets';
+  endpoint: string;
+  filters: string[];
+  pages: number;
+  paginationComplete: boolean;
+  total: number;
+  sourceState: 'available' | 'empty_authoritative' | 'empty_unverified' | 'forbidden' | 'misconfigured' | 'partial' | 'failed';
+  scopesPresent: string[];
+  scopesAbsent: string[];
+  pipelines: HubspotCsDiagnosticPipeline[];
+}
+
+export async function runHubspotCsDiagnostic(): Promise<HubspotCsDiagnostic> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.functions.invoke('hubspot-cs-diagnostic', { body: {} });
+  if (error) throw new Error(error.message || 'Falha ao executar o diagnóstico de CS / Suporte.');
+  return data as HubspotCsDiagnostic;
+}
 import { aggregateLatestHubspotSyncRuns } from './analytics-sync-runs.mjs';
 import { formatAnalyticsSyncError } from './analytics-sync-errors.mjs';
 import { buildCsSyncPayload, sanitizeCsSyncResult } from './analytics-cs-control.mjs';
