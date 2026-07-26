@@ -25,6 +25,7 @@ import {
   fetchPipelineLabel,
   fetchPipelineDefinitions,
   fetchTicketsByPipeline,
+  type HubSpotTicketPipelineEvidence,
   toNumeric,
   toTimestamp,
   type HubSpotRecord,
@@ -36,6 +37,11 @@ import {
   syncsPipelines,
   usesDomainSyncWatermark,
 } from '../_shared/hubspot-sync-scope.mjs';
+import {
+  classifyCsSource,
+  resolveCsLoadMode,
+  shouldAdvanceCsWatermark,
+} from '../_shared/analytics-cs-source-contract.mjs';
 
 const DEAL_PROPERTIES = [
   'pipeline',
@@ -226,8 +232,14 @@ async function syncDeals(client: SupabaseClient, pipelineId: string, token: stri
   return rows.length;
 }
 
-async function syncTickets(client: SupabaseClient, pipelineId: string, token: string, updatedAfterMs?: number): Promise<number> {
-  const records = await fetchTicketsByPipeline(pipelineId, TICKET_PROPERTIES, token, updatedAfterMs);
+async function syncTickets(
+  client: SupabaseClient,
+  pipelineId: string,
+  token: string,
+  updatedAfterMs: number | undefined,
+  evidence: HubSpotTicketPipelineEvidence,
+): Promise<number> {
+  const records = await fetchTicketsByPipeline(pipelineId, TICKET_PROPERTIES, token, updatedAfterMs, evidence);
   const now = new Date().toISOString();
   const rows = records.map((record: HubSpotRecord) => ({
     ticket_id: record.id,
@@ -425,11 +437,12 @@ Deno.serve(async (req) => {
 
   const runId = runRow.id as string;
   const counters = { deals: 0, tickets: 0, owners: 0, stages: 0, companies: 0 };
+  const ticketEvidence: HubSpotTicketPipelineEvidence = { total: null, pages: 0, complete: true };
 
   try {
     let previousSuccessQuery = client
       .from('hubspot_sync_runs')
-      .select('finished_at')
+      .select('finished_at,source_total,source_state,source_pagination_complete')
       .eq('status', 'success')
       .not('finished_at', 'is', null)
       .order('finished_at', { ascending: false });
@@ -441,7 +454,10 @@ Deno.serve(async (req) => {
     // fronteira válida para a janela incremental de empresas/tickets.
     const { data: previousSuccess } = await previousSuccessQuery.limit(1).maybeSingle();
     const previousFinishedAt = previousSuccess?.finished_at ? Date.parse(String(previousSuccess.finished_at)) : Number.NaN;
-    const updatedAfterMs = !fullRefresh && Number.isFinite(previousFinishedAt)
+    const previousBoundary = resolveCsLoadMode(previousSuccess, fullRefresh);
+    const updatedAfterMs = scope === 'cs' && previousBoundary === 'full'
+      ? undefined
+      : !fullRefresh && Number.isFinite(previousFinishedAt)
       ? Math.max(0, previousFinishedAt - 5 * 60 * 1000)
       : undefined;
     const hubspotToken = await resolveHubSpotToken(client);
@@ -488,21 +504,45 @@ Deno.serve(async (req) => {
         if (config.object_type === 'deal') {
           counters.deals += await syncDeals(client, config.hubspot_pipeline_id, hubspotToken);
         } else {
-          counters.tickets += await syncTickets(client, config.hubspot_pipeline_id, hubspotToken, updatedAfterMs);
+          const pipelineEvidence: HubSpotTicketPipelineEvidence = { total: null, pages: 0, complete: false };
+          const received = await syncTickets(client, config.hubspot_pipeline_id, hubspotToken, updatedAfterMs, pipelineEvidence);
+          counters.tickets += received;
+          if (pipelineEvidence.total !== null) {
+            ticketEvidence.total = (ticketEvidence.total ?? 0) + pipelineEvidence.total;
+          }
+          ticketEvidence.pages += pipelineEvidence.pages;
+          ticketEvidence.complete = ticketEvidence.complete && pipelineEvidence.complete;
         }
       }
     }
 
+    const sourceState = scope === 'cs'
+      ? classifyCsSource({
+        total: ticketEvidence.total,
+        recordsReceived: counters.tickets,
+        pagesComplete: ticketEvidence.complete,
+        scopeValidated: uniqueConfigs.length > 0,
+        fullLoad: updatedAfterMs === undefined,
+      })
+      : null;
+    const status = sourceState === 'partial' ? 'partial' : sourceState === 'failed' ? 'error' : 'success';
+    const watermarkAdvanced = sourceState ? shouldAdvanceCsWatermark(sourceState) : updatedAfterMs !== undefined;
     await client
       .from('hubspot_sync_runs')
       .update({
-        status: 'success',
+        status,
         finished_at: new Date().toISOString(),
         deals_synced: counters.deals,
         tickets_synced: counters.tickets,
         owners_synced: counters.owners,
         stages_synced: counters.stages,
         companies_synced: counters.companies,
+        source_total: ticketEvidence.total,
+        source_records_received: counters.tickets,
+        source_pages: ticketEvidence.pages,
+        source_pagination_complete: ticketEvidence.complete,
+        source_state: sourceState,
+        watermark_advanced: watermarkAdvanced,
       })
       .eq('id', runId);
 
@@ -514,7 +554,7 @@ Deno.serve(async (req) => {
       }).limit(1);
     }
 
-    return jsonResponse({ ok: true, runId, correlationId: runRow.correlation_id, mode: updatedAfterMs === undefined ? 'full' : 'incremental', ...counters });
+    return jsonResponse({ ok: true, runId, correlationId: runRow.correlation_id, mode: updatedAfterMs === undefined ? 'full' : 'incremental', sourceState, sourceTotal: ticketEvidence.total, sourcePages: ticketEvidence.pages, ...counters });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     await client
@@ -527,6 +567,12 @@ Deno.serve(async (req) => {
         owners_synced: counters.owners,
         stages_synced: counters.stages,
         companies_synced: counters.companies,
+        source_total: ticketEvidence.total,
+        source_records_received: counters.tickets,
+        source_pages: ticketEvidence.pages,
+        source_pagination_complete: ticketEvidence.complete,
+        source_state: 'failed',
+        watermark_advanced: false,
         error_message: message.slice(0, 1000),
       })
       .eq('id', runId);

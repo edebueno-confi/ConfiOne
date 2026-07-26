@@ -3,8 +3,9 @@ export function resolveCsSyncMode(latestRun) {
 }
 
 export function buildCsSyncPayload(latestRun) {
-  const mode = resolveCsSyncMode(latestRun);
-  return mode === 'full' ? { scope: 'cs', full: true } : { scope: 'cs' };
+  // O backend determina full/incremental com base na evidência persistida.
+  // O frontend não pode transformar um success/0 legado em watermark.
+  return { scope: 'cs' };
 }
 
 export function sanitizeCsSyncResult(payload) {

@@ -1,5 +1,5 @@
 export function resolveCsSyncMode(latestRun: { status?: string } | null): 'full' | 'incremental';
-export function buildCsSyncPayload(latestRun: { status?: string } | null): { scope: 'cs'; full?: true };
+export function buildCsSyncPayload(latestRun: { status?: string } | null): { scope: 'cs' };
 export function sanitizeCsSyncResult(payload: Record<string, unknown> | null): {
   status: 'success' | 'partial';
   correlationId: string | null;

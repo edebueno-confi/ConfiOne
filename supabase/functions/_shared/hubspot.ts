@@ -41,6 +41,12 @@ export interface HubSpotRecord {
   properties: Record<string, string | null>;
 }
 
+export interface HubSpotTicketPipelineEvidence {
+  total: number | null;
+  pages: number;
+  complete: boolean;
+}
+
 export interface HubSpotMergeResult {
   id?: string;
   archived?: boolean;
@@ -314,6 +320,7 @@ export async function fetchTicketsByPipeline(
   properties: string[],
   tokenOverride?: string,
   updatedAfterMs?: number,
+  evidence?: HubSpotTicketPipelineEvidence,
 ): Promise<HubSpotRecord[]> {
   // A Search API query cannot paginate beyond 10,000 matching records. The
   // main support pipeline currently exceeds that limit, so partition by the
@@ -373,6 +380,7 @@ export async function fetchTicketsByPipeline(
 
       if (firstPage) {
         total = Number.isFinite(Number(payload.total)) ? Number(payload.total) : null;
+        if (evidence) evidence.total = total;
         if (total !== null && total > searchMaxResults) {
           const midpoint = rangeStartMs + Math.floor((rangeEndMs - rangeStartMs) / 2);
           if (midpoint <= rangeStartMs || midpoint >= rangeEndMs) {
@@ -383,16 +391,19 @@ export async function fetchTicketsByPipeline(
           }
           const older = await fetchRange(rangeStartMs, midpoint);
           const newer = await fetchRange(midpoint, rangeEndMs);
+          if (evidence) evidence.complete = true;
           return [...older, ...newer];
         }
       }
 
       records.push(...(payload.results ?? []));
+      if (evidence) evidence.pages += 1;
       after = nextHubSpotCursor(after, payload.paging?.next?.after, 'tickets');
       firstPage = false;
       await sleep(150);
     } while (after);
 
+    if (evidence) evidence.complete = true;
     return records;
   }
 
@@ -422,12 +433,32 @@ export async function fetchTicketsByPipeline(
     }, 0, tokenOverride);
     const payload = await response.json() as TicketSearchPayload;
     total = total ?? (Number.isFinite(Number(payload.total)) ? Number(payload.total) : null);
+    if (evidence) evidence.total = total;
     if (total !== null && total > searchMaxResults) return fetchRange(startMs, endMs);
     recent.push(...(payload.results ?? []));
+    if (evidence) evidence.pages += 1;
     after = nextHubSpotCursor(after, payload.paging?.next?.after, 'tickets incremental');
     await sleep(150);
   } while (after);
+  if (evidence) evidence.complete = true;
   return recent;
+}
+
+// Consulta somente o total autoritativo do Search API, sem baixar registros.
+// Usado pelo diagnóstico de origem; não grava nem expõe propriedades.
+export async function fetchTicketPipelineTotal(pipelineId: string, tokenOverride?: string): Promise<number> {
+  const response = await hubspotFetch('/crm/v3/objects/tickets/search', {
+    method: 'POST',
+    body: JSON.stringify({
+      filterGroups: [{ filters: [{ propertyName: 'hs_pipeline', operator: 'EQ', value: pipelineId }] }],
+      properties: [],
+      limit: 1,
+    }),
+  }, 0, tokenOverride);
+  const payload = await response.json() as { total?: unknown };
+  const total = Number(payload.total);
+  if (!Number.isFinite(total) || total < 0) throw new Error(`Total de tickets inválido para o pipeline ${pipelineId}.`);
+  return total;
 }
 
 // Empresas: cache completo para reconciliação read-only com fontes financeiras.

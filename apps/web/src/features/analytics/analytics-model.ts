@@ -111,7 +111,7 @@ export interface CsOwnerPoint {
 export interface SyncRun {
   id: string;
   domainKey: string | null;
-  status: 'running' | 'success' | 'error';
+  status: 'running' | 'success' | 'partial' | 'error';
   startedAt: string;
   finishedAt: string | null;
   dealsSynced: number;
@@ -121,6 +121,9 @@ export interface SyncRun {
   companiesSynced: number;
   errorMessage: string | null;
   correlationId: string | null;
+  sourceTotal: number | null;
+  sourceState: string | null;
+  sourcePaginationComplete: boolean;
 }
 
 export interface AnalyticsFilters {
@@ -681,6 +684,9 @@ export function mapSyncRun(row: Record<string, unknown> | null): SyncRun | null 
     companiesSynced: toNumber(row.companies_synced),
     errorMessage: row.error_message ? toText(row.error_message) : null,
     correlationId: row.correlation_id ? toText(row.correlation_id) : null,
+    sourceTotal: row.source_total === null || row.source_total === undefined ? null : toNumber(row.source_total),
+    sourceState: row.source_state ? toText(row.source_state) : null,
+    sourcePaginationComplete: row.source_pagination_complete === true,
   };
 }
 
