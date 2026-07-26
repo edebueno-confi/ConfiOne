@@ -1,7 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { jsonResponse, optionsResponse } from '../_shared/ticket-evidence.ts';
 
-const SYNC_FUNCTIONS = ['hubspot-sync', 'analytics-integration-run'] as const;
+const SYNC_FUNCTIONS = ['hubspot-cs-dispatcher', 'hubspot-sync', 'analytics-integration-run'] as const;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return optionsResponse(req);
@@ -21,6 +21,7 @@ Deno.serve(async (req) => {
   const correlationId = crypto.randomUUID();
   for (const functionName of SYNC_FUNCTIONS) {
     try {
+      const body = functionName === 'hubspot-sync' ? JSON.stringify({ scope: 'commercial' }) : '{}';
       const response = await fetch(`${baseUrl}/functions/v1/${functionName}`, {
         method: 'POST',
         headers: {
@@ -29,7 +30,7 @@ Deno.serve(async (req) => {
           'x-analytics-sync-secret': configuredSecret,
           'x-analytics-correlation-id': correlationId,
         },
-        body: '{}',
+        body,
       });
       const payload = await response.json().catch(() => null);
       results.push({ function: functionName, status: response.status, payload });

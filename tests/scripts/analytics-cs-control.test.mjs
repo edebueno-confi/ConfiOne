@@ -22,7 +22,7 @@ test('resultado CS exibe somente contagens e correlation id sanitizado', () => {
 });
 
 test('controle e runner mantêm o escopo CS isolado e autenticado', () => {
-  assert.match(apiSource, /body: JSON\.stringify\(buildCsSyncPayload\(latestRun\)\)/);
+  assert.match(apiSource, /body: JSON\.stringify\(\{\s*\.\.\.buildCsSyncPayload\(latestRun\), correlationId\s*\}\)/);
   assert.match(configSource, /Controle de CS \/ Suporte/);
   assert.match(configSource, /triggerCsSupportSync\(latestCsRun\)/);
   assert.match(functionSource, /const actor = await authorize\(req, client\)/);

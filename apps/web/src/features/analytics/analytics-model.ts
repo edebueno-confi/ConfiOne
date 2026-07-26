@@ -111,7 +111,7 @@ export interface CsOwnerPoint {
 export interface SyncRun {
   id: string;
   domainKey: string | null;
-  status: 'running' | 'success' | 'partial' | 'error';
+  status: 'queued' | 'running' | 'success' | 'succeeded' | 'partial' | 'error' | 'failed' | 'abandoned' | 'cancelled';
   startedAt: string;
   finishedAt: string | null;
   dealsSynced: number;
@@ -124,6 +124,14 @@ export interface SyncRun {
   sourceTotal: number | null;
   sourceState: string | null;
   sourcePaginationComplete: boolean;
+  heartbeatAt: string | null;
+  recordsNormalized: number;
+  recordsAccepted: number;
+  recordsRejected: number;
+  recordsPromoted: number;
+  pipelinesTotal: number;
+  pipelinesCompleted: number;
+  errorCode: string | null;
 }
 
 export interface AnalyticsFilters {
@@ -687,6 +695,14 @@ export function mapSyncRun(row: Record<string, unknown> | null): SyncRun | null 
     sourceTotal: row.source_total === null || row.source_total === undefined ? null : toNumber(row.source_total),
     sourceState: row.source_state ? toText(row.source_state) : null,
     sourcePaginationComplete: row.source_pagination_complete === true,
+    heartbeatAt: row.heartbeat_at ? toText(row.heartbeat_at) : null,
+    recordsNormalized: toNumber(row.records_normalized),
+    recordsAccepted: toNumber(row.records_accepted),
+    recordsRejected: toNumber(row.records_rejected),
+    recordsPromoted: toNumber(row.records_promoted),
+    pipelinesTotal: toNumber(row.pipelines_total),
+    pipelinesCompleted: toNumber(row.pipelines_completed),
+    errorCode: row.error_code ? toText(row.error_code) : null,
   };
 }
 

@@ -47,6 +47,19 @@ export interface HubSpotTicketPipelineEvidence {
   complete: boolean;
 }
 
+export interface HubSpotTicketPageOptions {
+  cursor?: string | null;
+  rangeStartMs?: number;
+  rangeEndMs?: number;
+  updatedAfterMs?: number;
+}
+
+export interface HubSpotTicketPage {
+  records: HubSpotRecord[];
+  total: number | null;
+  nextCursor: string | null;
+}
+
 export interface HubSpotMergeResult {
   id?: string;
   archived?: boolean;
@@ -442,6 +455,47 @@ export async function fetchTicketsByPipeline(
   } while (after);
   if (evidence) evidence.complete = true;
   return recent;
+}
+
+// Página única para o runner assíncrono. O worker persiste o cursor antes de
+// encerrar a invocação; não deve ser substituída pela função full acima.
+export async function fetchTicketsPageByPipeline(
+  pipelineId: string,
+  properties: string[],
+  tokenOverride: string | undefined,
+  options: HubSpotTicketPageOptions = {},
+): Promise<HubSpotTicketPage> {
+  const rangeStartMs = options.rangeStartMs ?? 0;
+  const rangeEndMs = options.rangeEndMs ?? Date.UTC(2100, 0, 1);
+  const filters: Array<Record<string, string>> = [
+    { propertyName: 'hs_pipeline', operator: 'EQ', value: pipelineId },
+    { propertyName: 'createdate', operator: 'GTE', value: String(rangeStartMs) },
+    { propertyName: 'createdate', operator: 'LT', value: String(rangeEndMs) },
+  ];
+  if (options.updatedAfterMs !== undefined) {
+    filters.push({ propertyName: 'hs_lastmodifieddate', operator: 'GTE', value: String(options.updatedAfterMs) });
+  }
+  const body: Record<string, unknown> = {
+    filterGroups: [{ filters }],
+    properties,
+    limit: 100,
+    sorts: [{ propertyName: 'createdate', direction: 'ASCENDING' }],
+  };
+  if (options.cursor) body.after = options.cursor;
+  const response = await hubspotFetch('/crm/v3/objects/tickets/search', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  }, 0, tokenOverride);
+  const payload = await response.json() as {
+    results?: HubSpotRecord[];
+    total?: number;
+    paging?: { next?: { after?: string } };
+  };
+  return {
+    records: payload.results ?? [],
+    total: Number.isFinite(Number(payload.total)) ? Number(payload.total) : null,
+    nextCursor: payload.paging?.next?.after ? String(payload.paging.next.after) : null,
+  };
 }
 
 // Consulta somente o total autoritativo do Search API, sem baixar registros.

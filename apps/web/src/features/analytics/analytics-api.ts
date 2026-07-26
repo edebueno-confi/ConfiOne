@@ -604,12 +604,51 @@ export async function triggerHubspotSync(
 }
 
 export interface CsSupportSyncResult {
-  status: 'success' | 'partial';
+  status: 'queued' | 'success' | 'partial';
   mode: 'full' | 'incremental';
   correlationId: string | null;
   tickets: number;
   owners: number;
   stages: number;
+}
+
+export interface CsSyncProgress {
+  runId: string;
+  status: SyncRun['status'];
+  pipelinesTotal: number;
+  pipelinesCompleted: number;
+  pages: number;
+  received: number;
+  accepted: number;
+  rejected: number;
+  promoted: number;
+  retries: number;
+  watermarkAdvanced: boolean;
+  lastActivity: string | null;
+  error: string | null;
+}
+
+export async function getCsSyncProgress(runId: string): Promise<CsSyncProgress | null> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.from('vw_analytics_cs_sync_progress').select('*').eq('run_id', runId).maybeSingle();
+  if (error) throw toAppError(error, 'Falha ao carregar o progresso da sincronização de CS.');
+  if (!data) return null;
+  const row = data as Record<string, unknown>;
+  return {
+    runId,
+    status: String(row.status ?? 'queued') as SyncRun['status'],
+    pipelinesTotal: Number(row.pipelines_total ?? 0),
+    pipelinesCompleted: Number(row.completed_items ?? row.pipelines_completed ?? 0),
+    pages: Number(row.source_pages ?? 0),
+    received: Number(row.source_records_received ?? 0),
+    accepted: Number(row.records_accepted ?? 0),
+    rejected: Number(row.records_rejected ?? 0),
+    promoted: Number(row.records_promoted ?? 0),
+    retries: Number(row.retries ?? 0),
+    watermarkAdvanced: row.watermark_advanced === true,
+    lastActivity: row.last_item_activity ? String(row.last_item_activity) : null,
+    error: row.error_message ? String(row.error_message) : null,
+  };
 }
 
 export async function triggerCsSupportSync(latestRun: SyncRun | null): Promise<CsSupportSyncResult> {
@@ -619,7 +658,7 @@ export async function triggerCsSupportSync(latestRun: SyncRun | null): Promise<C
   const { data: { session }, error: sessionError } = await client.auth.getSession();
   if (sessionError || !session?.access_token) throw new Error('Sessão ativa indisponível para sincronizar CS / Suporte.');
   const correlationId = crypto.randomUUID();
-  const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/hubspot-sync`, {
+  const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/hubspot-cs-start`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${session.access_token}`,
@@ -627,9 +666,9 @@ export async function triggerCsSupportSync(latestRun: SyncRun | null): Promise<C
       'Content-Type': 'application/json',
       'x-analytics-correlation-id': correlationId,
     },
-    body: JSON.stringify(buildCsSyncPayload(latestRun)),
+    body: JSON.stringify({ ...buildCsSyncPayload(latestRun), correlationId }),
   });
   const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
   if (!response.ok) throw new Error(formatAnalyticsSyncError({ operation: 'HubSpot CS / Suporte', status: response.status, payload }));
-  return sanitizeCsSyncResult(payload);
+  return { ...sanitizeCsSyncResult(payload), status: 'queued', mode: 'full' };
 }

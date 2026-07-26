@@ -46,7 +46,7 @@ test('Dashboard Gerencial distribui cinco KPIs em grade 3 + 2 a partir de 1024px
   assert.match(ceoPage, /Posição atual, não afetada pelo período selecionado/);
   assert.match(fs.readFileSync('apps/web/src/features/analytics/analytics-ui.tsx', 'utf8'), /min-h-\[170px\].*sm:min-h-\[240px\]/s);
   assert.match(fs.readFileSync('apps/web/src/features/analytics/analytics-ui.tsx', 'utf8'), /size="xl" surface="loading"/);
-  assert.match(ceoPage, /Nenhum registro no período selecionado/);
+  assert.match(ceoPage, /Não há registros no período selecionado/);
 });
 
 test('status de sincronização distingue delta processado do snapshot acumulado', () => {
