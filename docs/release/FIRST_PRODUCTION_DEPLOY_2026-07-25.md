@@ -44,6 +44,7 @@ O deploy não foi promovido. O Supabase remoto não foi reconciliado com seguran
 - `npm run supabase:verify`: bloqueado no passo de fixture por ausência deliberada de `LOCAL_QA_ADMIN_PASSWORD` no worktree limpo; não foi copiado `.env.local.qa`
 - `npm run local:qa:secret-scan`: aprovado, 1557 arquivos rastreados e 0 matches
 - bundle: sem variáveis privilegiadas, localhost de aplicação ou mocks/fixtures embutidos; o vendor Supabase contém apenas um default interno `http://localhost:9999` não utilizado
+- advisors Supabase: bloqueio adicional por views e funções `SECURITY DEFINER` expostas a roles externas; nenhuma correção remota foi aplicada
 - `git diff --check`: aprovado
 
 ## RELEASE-SCOPE-01

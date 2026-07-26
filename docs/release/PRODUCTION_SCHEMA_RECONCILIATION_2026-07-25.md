@@ -47,6 +47,10 @@ Não foi classificada como mero drift de history. A ausência de tabelas, views,
 
 Não foi executada alteração remota. Não foi criado dump contendo dados. O rollback aplicável neste estado é não promover Production até a reconciliação ser aprovada; qualquer forward-fix futuro deve ser versionado e testado em ambiente isolado.
 
+## Advisories de segurança remotos
+
+O advisor oficial do Supabase reportou riscos já existentes no schema remoto, incluindo views públicas com `SECURITY DEFINER` e funções `SECURITY DEFINER` executáveis por roles externas. Esses avisos não foram corrigidos neste lote porque a correção exigiria migration forward-only, revisão de contrato e validação de RLS/grants. A existência desses avisos reforça o bloqueio de Production.
+
 ## Próxima ação única
 
 Executar uma reconciliação remota controlada com credencial operacional do Supabase CLI/API disponível, dry-run e revisão do diff estrutural. Somente após esse gate aplicar migrations forward-only comprovadas.
