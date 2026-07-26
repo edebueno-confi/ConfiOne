@@ -31,6 +31,7 @@ test('workers agendados usam apenas a identidade service_role, sem ampliar o ace
 
 test('erros do runner preservam mensagem estruturada sem expor credenciais', () => {
   assert.match(runner, /JSON\.stringify\(error\)/);
+  assert.match(worker, /runnerMessage\(error\)/);
   assert.match(runner, /\[REDACTED\]/);
 });
 

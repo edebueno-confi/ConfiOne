@@ -31,12 +31,16 @@ export async function resolveHubSpotToken(client: SupabaseClient): Promise<strin
   throw new Error(error ? `Falha ao ler credencial gerenciada do HubSpot: ${error.message}` : 'Credencial do HubSpot não configurada.');
 }
 
-export function runnerError(error: unknown, status = 502) {
-  const raw = error instanceof Error
+export function runnerMessage(error: unknown): string {
+  return error instanceof Error
     ? error.message
     : typeof error === 'object' && error !== null
       ? String((error as { message?: unknown }).message ?? JSON.stringify(error))
       : String(error);
+}
+
+export function runnerError(error: unknown, status = 502) {
+  const raw = runnerMessage(error);
   const sanitized = raw.replace(/(Bearer\s+|pat-[A-Za-z0-9_-]+|sb_secret_[A-Za-z0-9_-]+)/gi, '[REDACTED]').slice(0, 500);
   return jsonResponse({ error: sanitized }, { status });
 }
