@@ -5,6 +5,7 @@ import test from 'node:test';
 const migration = await readFile(new URL('../../supabase/migrations/20260726215117_analytics_hubspot_common_orchestrator_v1.sql', import.meta.url), 'utf8');
 const startFixMigration = await readFile(new URL('../../supabase/migrations/20260726230100_analytics_hubspot_common_start_state_fix_v1.sql', import.meta.url), 'utf8');
 const serviceIdentityMigration = await readFile(new URL('../../supabase/migrations/20260726234000_analytics_hubspot_service_identity_v1.sql', import.meta.url), 'utf8');
+const stagingAclMigration = await readFile(new URL('../../supabase/migrations/20260726241000_analytics_hubspot_staging_service_acl_v1.sql', import.meta.url), 'utf8');
 const worker = await readFile(new URL('../../supabase/functions/hubspot-orchestrator-worker/index.ts', import.meta.url), 'utf8');
 const runner = await readFile(new URL('../../supabase/functions/_shared/hubspot-cs-runner.ts', import.meta.url), 'utf8');
 const dispatcher = await readFile(new URL('../../supabase/functions/hubspot-orchestrator-dispatcher/index.ts', import.meta.url), 'utf8');
@@ -40,6 +41,12 @@ test('service client interno nao depende de sub de usuario e nao abre acesso ano
   assert.match(serviceIdentityMigration, /<> 'anon'/);
   assert.match(serviceIdentityMigration, /revoke all on function app_private\.is_internal_service_request/);
   assert.match(serviceIdentityMigration, /v_is_service_role boolean := app_private\.is_internal_service_request\(\)/);
+});
+
+test('workers escrevem apenas no staging privado com grant service_role', () => {
+  assert.match(stagingAclMigration, /grant select, insert, update on public\.analytics_cs_ticket_staging to service_role/);
+  assert.match(stagingAclMigration, /grant select, insert, update on public\.analytics_hubspot_deal_staging to service_role/);
+  assert.doesNotMatch(stagingAclMigration, /to authenticated|to anon|to public/);
 });
 
 test('run enfileirado nao grava source evidence invalida', () => {
