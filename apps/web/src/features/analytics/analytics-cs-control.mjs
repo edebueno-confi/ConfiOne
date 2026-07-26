@@ -10,13 +10,14 @@ export function buildCsSyncPayload(latestRun) {
 
 export function sanitizeCsSyncResult(payload) {
   return {
-    status: payload?.status === 'partial' ? 'partial' : 'success',
-    correlationId: typeof payload?.correlationId === 'string' && /^[0-9a-f-]{36}$/i.test(payload.correlationId)
-      ? payload.correlationId
+    status: payload?.status === 'queued' ? 'queued' : payload?.status === 'partial' ? 'partial' : 'success',
+    correlationId: typeof (payload?.correlationId ?? payload?.correlation_id) === 'string' && /^[0-9a-f-]{36}$/i.test(payload.correlationId ?? payload.correlation_id)
+      ? (payload.correlationId ?? payload.correlation_id)
       : null,
     tickets: Number(payload?.tickets ?? 0),
     owners: Number(payload?.owners ?? 0),
     stages: Number(payload?.stages ?? 0),
     mode: payload?.mode === 'full' ? 'full' : 'incremental',
+    runId: typeof (payload?.runId ?? payload?.run_id) === 'string' ? (payload.runId ?? payload.run_id) : null,
   };
 }

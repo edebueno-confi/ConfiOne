@@ -6,6 +6,7 @@ export const CS_TICKET_PROPERTIES = [
   'hs_ticket_priority', 'createdate', 'closedate',
   'hs_time_to_first_response_sla_status', 'hs_time_to_close_sla_status', 'subject',
 ];
+export const HUBSPOT_DEAL_PROPERTIES = ['pipeline','dealstage','hubspot_owner_id','amount_in_home_currency','dealtype','dealname','createdate','closedate','hs_lastmodifieddate'];
 
 export async function authorizeCsRunner(req: Request, client: SupabaseClient): Promise<string | null> {
   const configuredSecret = Deno.env.get('ANALYTICS_SYNC_SECRET')?.trim();
@@ -55,6 +56,30 @@ export function toTicketStagingRow(record: { id: string; properties: Record<stri
     hs_closed_at: toIsoTimestamp(record.properties.closedate),
     time_to_first_response_sla_status: record.properties.hs_time_to_first_response_sla_status ?? null,
     time_to_close_sla_status: record.properties.hs_time_to_close_sla_status ?? null,
+    raw: record.properties,
+    source_page: pageNumber,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+export function toDealStagingRow(record: { id: string; properties: Record<string, string | null> }, pipelineId: string, parentRunId: string, pageNumber: number) {
+  const amount = Number(record.properties.amount_in_home_currency ?? '');
+  const timestamp = (value: string | null | undefined) => {
+    if (!value) return null;
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+  };
+  return {
+    parent_run_id: parentRunId,
+    pipeline_id: record.properties.pipeline ?? pipelineId,
+    deal_id: record.id,
+    dealstage: record.properties.dealstage ?? null,
+    owner_id: record.properties.hubspot_owner_id ?? null,
+    amount_home: Number.isFinite(amount) ? amount : null,
+    dealtype: record.properties.dealtype ?? null,
+    deal_name: record.properties.dealname ?? null,
+    hs_created_at: timestamp(record.properties.createdate),
+    hs_closed_at: timestamp(record.properties.closedate),
     raw: record.properties,
     source_page: pageNumber,
     updated_at: new Date().toISOString(),

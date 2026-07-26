@@ -1,7 +1,9 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { jsonResponse, optionsResponse } from '../_shared/ticket-evidence.ts';
 
-const SYNC_FUNCTIONS = ['hubspot-cs-dispatcher', 'hubspot-sync', 'analytics-integration-run'] as const;
+// HubSpot e OMIE continuam agendados separadamente; somente HubSpot passa pelo
+// orquestrador comum deste lote. A funcao OMIE nao e chamada por testes locais.
+const SYNC_FUNCTIONS = ['hubspot-orchestrator-dispatcher', 'analytics-integration-run'] as const;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return optionsResponse(req);
@@ -21,7 +23,7 @@ Deno.serve(async (req) => {
   const correlationId = crypto.randomUUID();
   for (const functionName of SYNC_FUNCTIONS) {
     try {
-      const body = functionName === 'hubspot-sync' ? JSON.stringify({ scope: 'commercial' }) : '{}';
+      const body = '{}';
       const response = await fetch(`${baseUrl}/functions/v1/${functionName}`, {
         method: 'POST',
         headers: {

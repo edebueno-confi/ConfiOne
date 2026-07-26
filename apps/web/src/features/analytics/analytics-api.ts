@@ -68,7 +68,7 @@ export async function runHubspotCsDiagnostic(): Promise<HubspotCsDiagnostic> {
 }
 import { aggregateLatestHubspotSyncRuns } from './analytics-sync-runs.mjs';
 import { formatAnalyticsSyncError } from './analytics-sync-errors.mjs';
-import { buildCsSyncPayload, sanitizeCsSyncResult } from './analytics-cs-control.mjs';
+import { sanitizeCsSyncResult } from './analytics-cs-control.mjs';
 
 type Row = Record<string, unknown>;
 
@@ -547,6 +547,8 @@ export interface HubspotSyncResult {
   owners: number;
   stages: number;
   companies: number;
+  status?: 'queued' | 'success' | 'partial';
+  runId?: string;
 }
 
 export async function triggerHubspotSync(
@@ -568,12 +570,7 @@ export async function triggerHubspotSync(
   }
 
   const baseUrl = config.config.supabaseUrl.replace(/\/$/, '');
-  const scopes: Array<'companies' | 'commercial' | 'cs' | undefined> =
-    options.phased === false || domain ? [undefined] : ['companies', 'commercial', 'cs'];
-  const aggregate: HubspotSyncResult = { mode: 'incremental', deals: 0, tickets: 0, owners: 0, stages: 0, companies: 0 };
-
-  for (const scope of scopes) {
-    const response = await fetch(`${baseUrl}/functions/v1/hubspot-sync`, {
+  const response = await fetch(`${baseUrl}/functions/v1/hubspot-orchestrator-start`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${session.access_token}`,
@@ -582,25 +579,16 @@ export async function triggerHubspotSync(
       },
       body: JSON.stringify({
         ...(domain ? { domain } : {}),
-        ...(scope ? { scope } : {}),
         ...(options.full ? { full: true } : {}),
       }),
     });
 
     const payload = (await response.json().catch(() => null)) as ({ error?: string; code?: string; message?: string } & Partial<HubspotSyncResult>) | null;
     if (!response.ok) {
-      const label = scope ? ` na etapa ${scope}` : '';
-      throw new Error(formatAnalyticsSyncError({ operation: `HubSpot${label}`, status: response.status, payload }));
+      throw new Error(formatAnalyticsSyncError({ operation: 'HubSpot', status: response.status, payload }));
     }
-    aggregate.mode = payload?.mode === 'full' ? 'full' : aggregate.mode;
-    aggregate.deals += Number(payload?.deals ?? 0);
-    aggregate.tickets += Number(payload?.tickets ?? 0);
-    aggregate.owners += Number(payload?.owners ?? 0);
-    aggregate.stages += Number(payload?.stages ?? 0);
-    aggregate.companies += Number(payload?.companies ?? 0);
-  }
-
-  return aggregate;
+  const rawRunId = payload as (Partial<HubspotSyncResult> & { run_id?: string }) | null;
+  return { mode: rawRunId?.mode === 'full' ? 'full' : 'incremental', deals: 0, tickets: 0, owners: 0, stages: 0, companies: 0, status: 'queued', runId: rawRunId?.runId ?? rawRunId?.run_id };
 }
 
 export interface CsSupportSyncResult {
@@ -630,7 +618,7 @@ export interface CsSyncProgress {
 
 export async function getCsSyncProgress(runId: string): Promise<CsSyncProgress | null> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.from('vw_analytics_cs_sync_progress').select('*').eq('run_id', runId).maybeSingle();
+  const { data, error } = await client.from('vw_analytics_hubspot_sync_progress').select('*').eq('run_id', runId).maybeSingle();
   if (error) throw toAppError(error, 'Falha ao carregar o progresso da sincronização de CS.');
   if (!data) return null;
   const row = data as Record<string, unknown>;
@@ -658,7 +646,7 @@ export async function triggerCsSupportSync(latestRun: SyncRun | null): Promise<C
   const { data: { session }, error: sessionError } = await client.auth.getSession();
   if (sessionError || !session?.access_token) throw new Error('Sessão ativa indisponível para sincronizar CS / Suporte.');
   const correlationId = crypto.randomUUID();
-  const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/hubspot-cs-start`, {
+  const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/hubspot-orchestrator-start`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${session.access_token}`,
@@ -666,7 +654,7 @@ export async function triggerCsSupportSync(latestRun: SyncRun | null): Promise<C
       'Content-Type': 'application/json',
       'x-analytics-correlation-id': correlationId,
     },
-    body: JSON.stringify({ ...buildCsSyncPayload(latestRun), correlationId }),
+    body: JSON.stringify({ domain: 'cs_support', correlationId }),
   });
   const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
   if (!response.ok) throw new Error(formatAnalyticsSyncError({ operation: 'HubSpot CS / Suporte', status: response.status, payload }));

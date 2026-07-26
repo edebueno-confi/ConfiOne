@@ -60,6 +60,12 @@ export interface HubSpotTicketPage {
   nextCursor: string | null;
 }
 
+export interface HubSpotObjectPage {
+  records: HubSpotRecord[];
+  total: number | null;
+  nextCursor: string | null;
+}
+
 export interface HubSpotMergeResult {
   id?: string;
   archived?: boolean;
@@ -323,6 +329,21 @@ export async function fetchDealsByPipeline(
   } while (after);
 
   return records;
+}
+
+export async function fetchDealsPageByPipeline(
+  pipelineId: string,
+  properties: string[],
+  tokenOverride?: string,
+  options: { cursor?: string | null; updatedAfterMs?: number } = {},
+): Promise<HubSpotObjectPage> {
+  const filters: Array<Record<string, string>> = [{ propertyName: 'pipeline', operator: 'EQ', value: pipelineId }];
+  if (options.updatedAfterMs !== undefined) filters.push({ propertyName: 'hs_lastmodifieddate', operator: 'GTE', value: String(options.updatedAfterMs) });
+  const body: Record<string, unknown> = { filterGroups: [{ filters }], properties, limit: 100, sorts: [{ propertyName: 'createdate', direction: 'ASCENDING' }] };
+  if (options.cursor) body.after = options.cursor;
+  const response = await hubspotFetch('/crm/v3/objects/deals/search', { method: 'POST', body: JSON.stringify(body) }, 0, tokenOverride);
+  const payload = await response.json() as { results?: HubSpotRecord[]; total?: number; paging?: { next?: { after?: string } } };
+  return { records: payload.results ?? [], total: Number.isFinite(Number(payload.total)) ? Number(payload.total) : null, nextCursor: nextHubSpotCursor(options.cursor, payload.paging?.next?.after, 'deals') };
 }
 
 // Tickets: Search API filtrada pelo pipe.
