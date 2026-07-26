@@ -1,10 +1,10 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createServiceClient, jsonResponse, optionsResponse } from '../_shared/ticket-evidence.ts';
 import { fetchDealsPageByPipeline, fetchTicketsPageByPipeline, fetchOwners, fetchPipelineDefinitions, fetchPipelineStages } from '../_shared/hubspot.ts';
-import { authorizeCsRunner, HUBSPOT_DEAL_PROPERTIES, CS_TICKET_PROPERTIES, resolveHubSpotToken, runnerError, toDealStagingRow, toTicketStagingRow } from '../_shared/hubspot-cs-runner.ts';
+import { authorizeCsRunner, HUBSPOT_DEAL_PROPERTIES, CS_TICKET_PROPERTIES, resolveHubSpotToken, runnerError, runnerMessage, toDealStagingRow, toTicketStagingRow } from '../_shared/hubspot-cs-runner.ts';
 
 function failure(error: unknown, attempts: number) {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = runnerMessage(error);
   const match = message.match(/\((429|5\d\d)\)/);
   const retryable = Boolean(match) || /timeout|tempo limite|network|fetch failed|conex[aã]o/i.test(message);
   return retryable && attempts < 5 ? { code: `RETRY_${match?.[1] ?? 'TRANSIENT'}`, message } : { code: match?.[1] === '403' ? 'FORBIDDEN' : 'PERMANENT_FAILURE', message };
