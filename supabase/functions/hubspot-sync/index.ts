@@ -34,6 +34,7 @@ import {
   scopeObjectType,
   syncsCompanies,
   syncsPipelines,
+  usesDomainSyncWatermark,
 } from '../_shared/hubspot-sync-scope.mjs';
 
 const DEAL_PROPERTIES = [
@@ -308,7 +309,7 @@ async function syncCompanies(client: SupabaseClient, token: string, updatedAfter
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return optionsResponse();
+    return optionsResponse(req);
   }
   if (req.method !== 'POST') {
     return jsonResponse({ error: 'Method not allowed.' }, { status: 405 });
@@ -432,6 +433,9 @@ Deno.serve(async (req) => {
       .eq('status', 'success')
       .not('finished_at', 'is', null)
       .order('finished_at', { ascending: false });
+    if (usesDomainSyncWatermark(scope)) {
+      previousSuccessQuery = previousSuccessQuery.eq('domain_key', scope);
+    }
     // O primeiro lote após uma execução legada pode não ter `domain_key`
     // preenchido por escopo. Um snapshot global bem-sucedido ainda é uma
     // fronteira válida para a janela incremental de empresas/tickets.

@@ -23,3 +23,9 @@ export function scopeObjectType(scope) {
   if (scope === 'cs') return 'ticket';
   return null;
 }
+
+// Cada domínio precisa de seu próprio marco incremental. Uma execução de
+// Comercial não pode fazer a primeira carga de CS parecer incremental.
+export function usesDomainSyncWatermark(scope) {
+  return scope === 'companies' || scope === 'commercial' || scope === 'cs';
+}

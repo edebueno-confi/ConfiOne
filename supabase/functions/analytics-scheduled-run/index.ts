@@ -4,7 +4,7 @@ import { jsonResponse, optionsResponse } from '../_shared/ticket-evidence.ts';
 const SYNC_FUNCTIONS = ['hubspot-sync', 'analytics-integration-run'] as const;
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return optionsResponse();
+  if (req.method === 'OPTIONS') return optionsResponse(req);
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed.' }, { status: 405 });
 
   const configuredSecret = Deno.env.get('ANALYTICS_SYNC_SECRET')?.trim();

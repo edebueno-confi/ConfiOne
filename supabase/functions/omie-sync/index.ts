@@ -17,7 +17,7 @@ async function authorize(req: Request, client: ReturnType<typeof createServiceCl
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return optionsResponse();
+  if (req.method === 'OPTIONS') return optionsResponse(req);
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed.' }, { status: 405 });
   const client = createServiceClient();
   const actorId = await authorize(req, client);
