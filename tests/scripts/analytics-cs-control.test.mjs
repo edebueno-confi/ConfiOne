@@ -8,9 +8,9 @@ const apiSource = await readFile(new URL('../../apps/web/src/features/analytics/
 const configSource = await readFile(new URL('../../apps/web/src/features/analytics/AnalyticsConfigPage.tsx', import.meta.url), 'utf8');
 const functionSource = await readFile(new URL('../../supabase/functions/hubspot-sync/index.ts', import.meta.url), 'utf8');
 
-test('controle CS usa carga completa somente sem sucesso anterior e incremental depois', () => {
+test('backend decide a janela CS e o frontend envia somente o escopo', () => {
   assert.equal(resolveCsSyncMode(null), 'full');
-  assert.deepEqual(buildCsSyncPayload(null), { scope: 'cs', full: true });
+  assert.deepEqual(buildCsSyncPayload(null), { scope: 'cs' });
   assert.equal(resolveCsSyncMode({ status: 'error' }), 'full');
   assert.deepEqual(buildCsSyncPayload({ status: 'success' }), { scope: 'cs' });
 });
