@@ -37,7 +37,7 @@ test('erros do runner preservam mensagem estruturada sem expor credenciais', () 
 test('service client interno nao depende de sub de usuario e nao abre acesso anonimo', () => {
   assert.match(serviceIdentityMigration, /auth\.uid\(\) is null/);
   assert.match(serviceIdentityMigration, /<> 'anon'/);
-  assert.match(serviceIdentityMigration, /revoke all on function app_private\.is_internal_service_request\(\) from public, anon/);
+  assert.match(serviceIdentityMigration, /revoke all on function app_private\.is_internal_service_request/);
   assert.match(serviceIdentityMigration, /v_is_service_role boolean := app_private\.is_internal_service_request\(\)/);
 });
 

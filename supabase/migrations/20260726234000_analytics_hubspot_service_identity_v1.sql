@@ -87,6 +87,5 @@ end;
 $$;
 
 revoke all on function app_private.is_internal_service_request() from public, anon, authenticated, service_role;
-grant execute on function app_private.is_internal_service_request() to authenticated, service_role;
 revoke all on function public.rpc_analytics_hubspot_start_run(text,text,uuid) from public, anon;
 grant execute on function public.rpc_analytics_hubspot_start_run(text,text,uuid) to authenticated, service_role;
