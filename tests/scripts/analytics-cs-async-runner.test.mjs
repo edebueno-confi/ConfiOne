@@ -5,6 +5,7 @@ import test from 'node:test';
 const migration = await readFile(new URL('../../supabase/migrations/20260726215117_analytics_hubspot_common_orchestrator_v1.sql', import.meta.url), 'utf8');
 const startFixMigration = await readFile(new URL('../../supabase/migrations/20260726230100_analytics_hubspot_common_start_state_fix_v1.sql', import.meta.url), 'utf8');
 const worker = await readFile(new URL('../../supabase/functions/hubspot-orchestrator-worker/index.ts', import.meta.url), 'utf8');
+const runner = await readFile(new URL('../../supabase/functions/_shared/hubspot-cs-runner.ts', import.meta.url), 'utf8');
 const dispatcher = await readFile(new URL('../../supabase/functions/hubspot-orchestrator-dispatcher/index.ts', import.meta.url), 'utf8');
 const start = await readFile(new URL('../../supabase/functions/hubspot-orchestrator-start/index.ts', import.meta.url), 'utf8');
 const compatibility = await readFile(new URL('../../supabase/functions/hubspot-sync/index.ts', import.meta.url), 'utf8');
@@ -25,6 +26,11 @@ test('workers agendados usam apenas a identidade service_role, sem ampliar o ace
   assert.match(migration, /<> 'service_role'/);
   assert.match(migration, /v_actor uuid;/);
   assert.doesNotMatch(migration, /grant execute on function public\.rpc_analytics_hubspot_.* to anon/);
+});
+
+test('erros do runner preservam mensagem estruturada sem expor credenciais', () => {
+  assert.match(runner, /JSON\.stringify\(error\)/);
+  assert.match(runner, /\[REDACTED\]/);
 });
 
 test('run enfileirado nao grava source evidence invalida', () => {
