@@ -378,7 +378,7 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
-            element: <Navigate replace to="/admin/tenants" />,
+            element: <Navigate replace to="/admin/analytics" />,
           },
           {
             path: 'visao-geral',

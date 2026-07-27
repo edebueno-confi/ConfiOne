@@ -6754,3 +6754,8 @@ Cada registro deve informar:
 - Causa: perfis persistidos com nomes incompatíveis com a consulta original da seed, resultando em `0 telas`.
 - Correção: normalização dos nomes e reaplicação idempotente dos grants por perfil.
 - Evidência: banco local confirma cinco perfis com contagens de telas não nulas.
+# ACCESS-01 — Control plane interno — 2026-07-27
+
+Fundação aditiva local para contexto interno, capabilities, perfis, convites e allowlist
+de superfícies. A UI de `/admin/access` ainda requer separação da governança de memberships
+de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CONTROL_PLANE_2026-07-27.md`.

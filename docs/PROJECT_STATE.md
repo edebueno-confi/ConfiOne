@@ -2920,3 +2920,11 @@ Os perfis nomeados foram normalizados e receberam novamente seus grants de telas
   sincronização neste lote.
 - A carga inicial de CS/Support ainda exige autorização explícita antes do
   write remoto.
+# ACCESS-01 — Fundação do control plane interno — 2026-07-27
+
+- Branch local: `codex/access-01-internal-control-plane`, criada a partir de `origin/main` no merge `0f7216f`.
+- Fundação aditiva criada para contextos interno/cliente, capacidades, allowlist de release, convites e perfis canônicos.
+- Nenhuma operação remota, push, deploy, HubSpot ou OMIE foi executada.
+- Validações locais: reset do banco, pgTAP, typechecks, build, secret scan, higiene da raiz e diff check aprovados.
+- Bloqueio atual: `/admin/access` ainda é a UI legada de memberships de cliente; não afirmar o control plane operacional até a UI interna e os RPCs de CRUD serem separados.
+- Relatório: `docs/reports/ACCESS_01_INTERNAL_CONTROL_PLANE_2026-07-27.md`.

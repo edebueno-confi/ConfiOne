@@ -106,3 +106,10 @@ Permissões devem ser validadas no banco/RPC/policy, nunca apenas no frontend.
 - Não pode usar RPC administrativa.
 - Não pode criar membership.
 - Mantém apenas leitura e autoedição segura do próprio `profile`, sob RLS e trigger de proteção.
+# ACCESS-01 — Contexto interno explícito — 2026-07-27
+
+O contexto interno passa a ser representado por `public.user_actor_contexts` com
+`actor_type = internal`, status e primário. Membership de cliente não concede acesso
+interno; ausência de contexto interno ativo resulta em deny by default. A autorização
+efetiva combina release allowlist, capabilities e overrides auditáveis. O frontend
+consome os read models, mas não decide precedência.

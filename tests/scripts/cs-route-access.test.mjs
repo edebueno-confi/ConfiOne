@@ -13,7 +13,7 @@ const csContext = {
   hasCsPortfolioAccess: true,
 };
 
-test('allows CS routes only for platform admins or users with portfolio access', () => {
+test('allows CS routes only for users with portfolio access', () => {
   assert.equal(canOpenInternalRoute('/cs/portfolio', csContext), true);
   assert.equal(
     canOpenInternalRoute('/cs/portfolio', {
@@ -28,7 +28,7 @@ test('allows CS routes only for platform admins or users with portfolio access',
       roles: ['platform_admin'],
       hasCsPortfolioAccess: false,
     }),
-    true,
+    false,
   );
 });
 
