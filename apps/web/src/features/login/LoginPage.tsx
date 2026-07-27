@@ -12,6 +12,7 @@ import { MinimalState } from '../../components/minimal-states';
 import { ThemeToggle } from '../../components/ThemeToggle';
 import { GeniusMascot } from '../../components/GeniusMascot';
 import { signInWithPassword } from '../auth/auth-api';
+import { acceptAdminInternalInvitation } from '../admin/admin-api';
 import { useAuthContext } from '../auth/auth-context';
 import {
   resolvePostLoginRedirect,
@@ -27,6 +28,7 @@ type RedirectResolverState =
 export function LoginPage() {
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirectTo');
+  const inviteId = searchParams.get('invite_id');
   const {
     phase,
     sessionExpired,
@@ -50,7 +52,12 @@ export function LoginPage() {
     let cancelled = false;
     setRedirectResolver({ phase: 'loading' });
 
-    resolvePostLoginRedirect(redirectTo)
+    const resolve = async () => {
+      if (inviteId) await acceptAdminInternalInvitation(inviteId);
+      return resolvePostLoginRedirect(redirectTo);
+    };
+
+    resolve()
       .then((resolution) => {
         if (cancelled) {
           return;
@@ -86,7 +93,7 @@ export function LoginPage() {
     return () => {
       cancelled = true;
     };
-  }, [phase, redirectTo]);
+  }, [phase, redirectTo, inviteId]);
 
   if (phase === 'config-error') {
     return (

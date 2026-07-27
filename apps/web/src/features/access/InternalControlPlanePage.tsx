@@ -71,13 +71,6 @@ function fieldLabel(label: string, children: React.ReactNode) {
   return <label className="grid gap-1.5"><span className="text-xs font-medium text-[color:var(--minimal-text-secondary)]">{label}</span>{children}</label>;
 }
 
-function randomTokenHash() {
-  const raw = `${crypto.randomUUID()}-${crypto.randomUUID()}-${Date.now()}`;
-  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw)).then((buffer) =>
-    Array.from(new Uint8Array(buffer)).map((byte) => byte.toString(16).padStart(2, '0')).join(''),
-  );
-}
-
 export function InternalControlPlanePage() {
   const { markSessionExpired } = useAuthContext();
   const [phase, setPhase] = useState<LoadPhase>('loading');
@@ -149,9 +142,8 @@ export function InternalControlPlanePage() {
 
   async function submitInvite(event: React.FormEvent) {
     event.preventDefault();
-    const tokenHash = await randomTokenHash();
     const expiresAt = new Date(Date.now() + Number(inviteForm.days || 7) * 86400000).toISOString();
-    await runAction(() => createAdminInternalInvitation({ email: inviteForm.email, fullName: inviteForm.fullName, areaKey: inviteForm.areaKey, functionId: inviteForm.functionId || null, accessProfileId: inviteForm.profileId || null, tokenHash, expiresAt }), 'Convite preparado. O envio externo permanece sob o gate de comunicação.');
+    await runAction(() => createAdminInternalInvitation({ email: inviteForm.email, fullName: inviteForm.fullName, areaKey: inviteForm.areaKey, functionId: inviteForm.functionId || null, accessProfileId: inviteForm.profileId || null, expiresAt }), 'Convite enviado pelo provedor oficial.');
     setInviteForm((current) => ({ ...current, fullName: '', email: '', functionId: '', profileId: '' }));
   }
 

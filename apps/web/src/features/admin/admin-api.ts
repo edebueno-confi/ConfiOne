@@ -1710,9 +1710,9 @@ export async function getAdminInternalAccessUser(userId: string) {
   return data as Record<string, unknown>;
 }
 
-export async function setAdminInternalUserStatus(userId: string, isActive: boolean) {
+export async function setAdminInternalUserStatus(userId: string, isActive: boolean, justification = 'Alteração realizada pelo administrador no control plane.') {
   const client = requireClient();
-  const { data, error } = await client.rpc('rpc_admin_set_internal_user_status', { p_user_id: userId, p_is_active: isActive });
+  const { data, error } = await client.rpc('rpc_admin_set_internal_user_status', { p_user_id: userId, p_is_active: isActive, p_justification: justification });
   if (error) throw toAppError(error, 'Falha ao atualizar o status do usuário.');
   return data;
 }
@@ -1736,18 +1736,17 @@ export async function listAdminInternalInvites() {
   return (data ?? []) as AdminInternalInviteRow[];
 }
 
-export async function createAdminInternalInvitation(input: { email: string; fullName: string; areaKey: string; functionId?: string | null; accessProfileId?: string | null; tokenHash: string; expiresAt: string }) {
+export async function createAdminInternalInvitation(input: { email: string; fullName: string; areaKey: string; functionId?: string | null; accessProfileId?: string | null; expiresAt: string }) {
   const client = requireClient();
-  const { data, error } = await client.rpc('rpc_admin_create_internal_invitation_v2', {
-    p_email: input.email,
-    p_full_name: input.fullName,
-    p_area_key: input.areaKey,
-    p_function_id: input.functionId ?? null,
-    p_access_profile_id: input.accessProfileId ?? null,
-    p_token_hash: input.tokenHash,
-    p_expires_at: input.expiresAt,
-  });
+  const { data, error } = await client.functions.invoke('internal-access-invite', { body: { action: 'create', ...input } });
   if (error) throw toAppError(error, 'Falha ao preparar o convite interno.');
+  return data as Record<string, unknown>;
+}
+
+export async function acceptAdminInternalInvitation(inviteId: string) {
+  const client = requireClient();
+  const { data, error } = await client.functions.invoke('internal-access-invite', { body: { action: 'accept', inviteId } });
+  if (error) throw toAppError(error, 'Falha ao aceitar o convite interno.');
   return data as Record<string, unknown>;
 }
 
