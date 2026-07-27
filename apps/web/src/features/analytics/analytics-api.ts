@@ -64,7 +64,19 @@ export async function runHubspotCsDiagnostic(): Promise<HubspotCsDiagnostic> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client.functions.invoke('hubspot-cs-diagnostic', { body: {} });
   if (error) throw new Error(error.message || 'Falha ao executar o diagnóstico de CS / Suporte.');
-  return data as HubspotCsDiagnostic;
+  const payload = (data ?? {}) as Partial<HubspotCsDiagnostic>;
+  return {
+    object: 'tickets',
+    endpoint: payload.endpoint ?? 'HubSpot',
+    filters: Array.isArray(payload.filters) ? payload.filters : [],
+    pages: Number(payload.pages ?? 0),
+    paginationComplete: Boolean(payload.paginationComplete),
+    total: Number(payload.total ?? 0),
+    sourceState: payload.sourceState ?? 'failed',
+    scopesPresent: Array.isArray(payload.scopesPresent) ? payload.scopesPresent : [],
+    scopesAbsent: Array.isArray(payload.scopesAbsent) ? payload.scopesAbsent : [],
+    pipelines: Array.isArray(payload.pipelines) ? payload.pipelines : [],
+  };
 }
 import { aggregateLatestHubspotSyncRuns } from './analytics-sync-runs.mjs';
 import { formatAnalyticsSyncError } from './analytics-sync-errors.mjs';
