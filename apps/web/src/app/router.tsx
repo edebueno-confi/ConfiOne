@@ -195,7 +195,7 @@ const HelpCenterArticlePage = lazyRouteModule(
   'HelpCenterArticlePage',
 );
 
-const AccessPage = lazyRouteModule(() => import('../features/access/AccessPage'), 'AccessPage');
+const AccessPage = lazyRouteModule(() => import('../features/access/InternalControlPlanePage'), 'InternalControlPlanePage');
 
 const SystemPage = lazyRouteModule(() => import('../features/system/SystemPage'), 'SystemPage');
 
