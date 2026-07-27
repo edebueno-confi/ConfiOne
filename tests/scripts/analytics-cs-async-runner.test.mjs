@@ -13,6 +13,7 @@ const dispatcher = await readFile(new URL('../../supabase/functions/hubspot-orch
 const start = await readFile(new URL('../../supabase/functions/hubspot-orchestrator-start/index.ts', import.meta.url), 'utf8');
 const compatibility = await readFile(new URL('../../supabase/functions/hubspot-sync/index.ts', import.meta.url), 'utf8');
 const schedule = await readFile(new URL('../../supabase/functions/analytics-scheduled-run/index.ts', import.meta.url), 'utf8');
+const cronMigration = await readFile(new URL('../../supabase/migrations/20260727020500_analytics_hubspot_daily_incremental_cron.sql', import.meta.url), 'utf8');
 const api = await readFile(new URL('../../apps/web/src/features/analytics/analytics-api.ts', import.meta.url), 'utf8');
 
 test('um unico start assíncrono atende Comercial e CS e retorna 202', () => {
@@ -99,11 +100,23 @@ test('promoção é posterior à cobertura completa e usa chaves HubSpot estáve
 test('schedule e compatibilidade usam somente o motor comum', () => {
   assert.match(schedule, /hubspot-orchestrator-dispatcher/);
   assert.doesNotMatch(schedule, /hubspot-cs-dispatcher/);
-  assert.match(schedule, /analytics-integration-run/);
+  assert.doesNotMatch(schedule, /analytics-integration-run/);
+  assert.match(schedule, /hubspot_enabled/);
+  assert.match(schedule, /hubspot_frequency/);
   assert.doesNotMatch(compatibility, /fetchDealsByPipeline|fetchTicketsByPipeline|updateCompaniesBatch/);
   assert.match(compatibility, /rpc_analytics_hubspot_start_run/);
   assert.match(dispatcher, /hubspot-orchestrator-worker/);
   assert.match(api, /hubspot-orchestrator-start/);
+});
+
+test('cron do HubSpot e idempotente, diario e separado do OMIE', () => {
+  assert.match(cronMigration, /create extension if not exists pg_cron/);
+  assert.match(cronMigration, /create extension if not exists pg_net/);
+  assert.match(cronMigration, /analytics-hubspot-daily-incremental/);
+  assert.match(cronMigration, /'0 8 \* \* \*'/);
+  assert.match(cronMigration, /cron\.unschedule/);
+  assert.match(cronMigration, /gso_analytics_sync_scheduler/);
+  assert.doesNotMatch(cronMigration, /analytics-integration-run|omie-sync/);
 });
 
 test('janela incremental usa marcador persistido com sobreposição de cinco minutos', () => {
