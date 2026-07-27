@@ -6766,3 +6766,7 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - Teste Node: `tests/scripts/access-01-1-ui-contract.test.mjs`.
 - Resultado: `/admin/access` usa quatro tabs (usuários internos, convites, áreas/funções e perfis/permissões); clientes permanecem fora do control plane.
 - Gate remoto ainda não executado: push, PR, merge, migration remota, deploy e convite externo permanecem pendentes de autorização.
+## ACCESS-01.2 — Convites oficiais e navegação contextual — 2026-07-27
+
+- Relatório: `docs/reports/ACCESS_01_2_INVITES_SAGA_NAVIGATION_2026-07-27.md`.
+- Entrega: Edge Function oficial, aceite idempotente, compensação condicionada, rate limit, guarda do último administrador e URLs canônicas do Dashboard.

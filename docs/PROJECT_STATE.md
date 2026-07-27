@@ -2936,3 +2936,11 @@ Os perfis nomeados foram normalizados e receberam novamente seus grants de telas
 - Suspensão, reativação, atribuição de área/função/perfil e revogação de convite passam por RPCs auditáveis; nenhuma senha, token bruto ou link completo é persistido ou retornado em listagens.
 - Convites ficam preparados localmente; o envio oficial depende do provedor de comunicação e do gate remoto previsto no ACCESS-01.1.
 - Relatório: `docs/reports/ACCESS_01_1_ADMIN_OPERATIONAL_CRUD_2026-07-27.md`.
+## ACCESS-01.2 — Convites oficiais e navegação contextual — 2026-07-27
+
+- `internal-access-invite` usa Auth Admin somente server-side; tokens, action links e credenciais não chegam ao navegador nem aos relatórios.
+- O aceite vincula a identidade Auth ao convite por e-mail e materializa contexto interno, tenant e membership de forma idempotente; compensação só remove usuário criado pela saga quando não há contexto ou membership.
+- O último `platform_admin` ativo não pode ser suspenso, removido ou tornado inativo pela superfície protegida.
+- A navegação da Visão Executiva usa URL como fonte canônica: `tab`, `pipeline`, `from`, `to`, `status` e `owner`.
+- Validações locais: 86 arquivos pgTAP / 1.390 testes; Node navegação, typechecks, build, secret scan, repository check e diff check aprovados.
+- Relatório: `docs/reports/ACCESS_01_2_INVITES_SAGA_NAVIGATION_2026-07-27.md`.
