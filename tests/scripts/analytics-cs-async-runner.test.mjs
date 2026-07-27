@@ -58,6 +58,12 @@ test('tickets acima do teto de busca sao particionados antes da persistencia', (
   assert.match(partitionMigration, /status = 'succeeded'/);
 });
 
+test('shared sync usa lotes menores e lease ampliado para a carga de empresas', () => {
+  assert.match(worker, /p_lease_seconds: 300/);
+  assert.match(worker, /offset \+= 500/);
+  assert.match(worker, /rows\.slice\(offset, offset \+ 500\)/);
+});
+
 test('run enfileirado nao grava source evidence invalida', () => {
   assert.match(startFixMigration, /source_state=null/);
   assert.doesNotMatch(startFixMigration, /source_state='queued'/);
