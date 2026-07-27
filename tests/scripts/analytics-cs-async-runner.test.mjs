@@ -14,6 +14,7 @@ const start = await readFile(new URL('../../supabase/functions/hubspot-orchestra
 const compatibility = await readFile(new URL('../../supabase/functions/hubspot-sync/index.ts', import.meta.url), 'utf8');
 const schedule = await readFile(new URL('../../supabase/functions/analytics-scheduled-run/index.ts', import.meta.url), 'utf8');
 const cronMigration = await readFile(new URL('../../supabase/migrations/20260727020500_analytics_hubspot_daily_incremental_cron.sql', import.meta.url), 'utf8');
+const cronTimeoutMigration = await readFile(new URL('../../supabase/migrations/20260727022833_analytics_hubspot_cron_timeout_hardening.sql', import.meta.url), 'utf8');
 const api = await readFile(new URL('../../apps/web/src/features/analytics/analytics-api.ts', import.meta.url), 'utf8');
 
 test('um unico start assíncrono atende Comercial e CS e retorna 202', () => {
@@ -117,6 +118,12 @@ test('cron do HubSpot e idempotente, diario e separado do OMIE', () => {
   assert.match(cronMigration, /cron\.unschedule/);
   assert.match(cronMigration, /gso_analytics_sync_scheduler/);
   assert.doesNotMatch(cronMigration, /analytics-integration-run|omie-sync/);
+});
+
+test('cron possui timeout compatível com o dispatcher particionado', () => {
+  assert.match(cronTimeoutMigration, /create or replace function app_private\.enqueue_hubspot_daily_incremental/);
+  assert.match(cronTimeoutMigration, /timeout_milliseconds := 300000/);
+  assert.doesNotMatch(cronTimeoutMigration, /analytics-integration-run|omie-sync/);
 });
 
 test('janela incremental usa marcador persistido com sobreposição de cinco minutos', () => {
