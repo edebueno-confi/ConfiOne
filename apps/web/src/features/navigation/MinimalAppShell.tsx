@@ -48,10 +48,27 @@ function ShellNavigation({
     [pathname, permissions],
   );
 
-  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
-    administration: true,
-    intelligence: true,
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => {
+    try {
+      return JSON.parse(window.localStorage.getItem('gso-shell-sections') ?? '{}') as Record<string, boolean>;
+    } catch {
+      return {};
+    }
   });
+
+  useEffect(() => {
+    const activeSection = sections.find((section) => section.items.some((item) => item.matches(pathname)));
+    if (!activeSection || collapsedSections[activeSection.id] !== true) return;
+    setCollapsedSections((current) => ({ ...current, [activeSection.id]: false }));
+  }, [sections, pathname, collapsedSections]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('gso-shell-sections', JSON.stringify(collapsedSections));
+    } catch {
+      // Preferência de navegação não bloqueia a aplicação.
+    }
+  }, [collapsedSections]);
 
   return (
     <nav aria-label="Navegação principal" className="space-y-5">
@@ -63,7 +80,7 @@ function ShellNavigation({
               className="gso-nav-group-toggle mb-1.5 flex min-h-8 w-full items-center justify-between gap-2 rounded-md px-2 text-left text-xs font-medium text-[color:var(--minimal-text-tertiary)] hover:bg-[color:var(--minimal-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]"
               onClick={() => setCollapsedSections((current) => {
                 const willOpen = current[section.id] !== false;
-                return Object.fromEntries(sections.map((candidate) => [candidate.id, candidate.id === section.id ? !willOpen : true]));
+                return { ...current, [section.id]: !willOpen };
               })}
               type="button"
             >
@@ -199,7 +216,7 @@ export function MinimalAppShell({
             </Link>
           </div>
 
-          <div className={cx('min-h-0 flex-1 overflow-hidden py-4', sidebarCollapsed ? 'px-1.5' : 'px-2')}>
+          <div className={cx('min-h-0 flex-1 overflow-y-auto overscroll-contain py-4', sidebarCollapsed ? 'px-1.5' : 'px-2')}>
             <ShellNavigation collapsed={sidebarCollapsed} pathname={location.pathname} permissions={permissions} />
           </div>
 
