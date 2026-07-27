@@ -6,6 +6,7 @@ const migration = await readFile(new URL('../../supabase/migrations/202607262151
 const startFixMigration = await readFile(new URL('../../supabase/migrations/20260726230100_analytics_hubspot_common_start_state_fix_v1.sql', import.meta.url), 'utf8');
 const serviceIdentityMigration = await readFile(new URL('../../supabase/migrations/20260726234000_analytics_hubspot_service_identity_v1.sql', import.meta.url), 'utf8');
 const stagingAclMigration = await readFile(new URL('../../supabase/migrations/20260726241000_analytics_hubspot_staging_service_acl_v1.sql', import.meta.url), 'utf8');
+const partitionMigration = await readFile(new URL('../../supabase/migrations/20260726243000_analytics_hubspot_search_partition_v1.sql', import.meta.url), 'utf8');
 const worker = await readFile(new URL('../../supabase/functions/hubspot-orchestrator-worker/index.ts', import.meta.url), 'utf8');
 const runner = await readFile(new URL('../../supabase/functions/_shared/hubspot-cs-runner.ts', import.meta.url), 'utf8');
 const dispatcher = await readFile(new URL('../../supabase/functions/hubspot-orchestrator-dispatcher/index.ts', import.meta.url), 'utf8');
@@ -47,6 +48,14 @@ test('workers escrevem apenas no staging privado com grant service_role', () => 
   assert.match(stagingAclMigration, /grant select, insert, update on public\.analytics_cs_ticket_staging to service_role/);
   assert.match(stagingAclMigration, /grant select, insert, update on public\.analytics_hubspot_deal_staging to service_role/);
   assert.doesNotMatch(stagingAclMigration, /to authenticated|to anon|to public/);
+});
+
+test('tickets acima do teto de busca sao particionados antes da persistencia', () => {
+  assert.match(worker, /page\.total !== null && page\.total > 10_000/);
+  assert.match(worker, /rpc_analytics_hubspot_split_work_item/);
+  assert.match(partitionMigration, /range_start_ms/);
+  assert.match(partitionMigration, /range_end_ms/);
+  assert.match(partitionMigration, /status = 'succeeded'/);
 });
 
 test('run enfileirado nao grava source evidence invalida', () => {
