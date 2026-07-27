@@ -27,6 +27,13 @@ Deno.serve(async (req) => {
       let nextCursor: string | null = null;
       if (item.object_type === 'ticket') {
         const page = await fetchTicketsPageByPipeline(item.pipeline_id, CS_TICKET_PROPERTIES, token, { cursor: item.cursor, rangeStartMs: Number(item.range_start_ms), rangeEndMs: Number(item.range_end_ms), updatedAfterMs: item.source_updated_after_ms ? Number(item.source_updated_after_ms) : undefined });
+        if (!item.cursor && page.total !== null && page.total > 10_000) {
+          const midpoint = Number(item.range_start_ms) + Math.floor((Number(item.range_end_ms) - Number(item.range_start_ms)) / 2);
+          if (midpoint <= Number(item.range_start_ms) || midpoint >= Number(item.range_end_ms)) throw new Error('Intervalo de busca de tickets sem ponto de particionamento.');
+          const { data: splitResult, error: splitError } = await client.rpc('rpc_analytics_hubspot_split_work_item', { p_work_item_id: item.work_item_id, p_worker_id: workerId, p_midpoint_ms: midpoint });
+          if (splitError) throw splitError;
+          return jsonResponse({ status: 'split', runId: item.run_id, workItemId: item.work_item_id, total: page.total, split: splitResult });
+        }
         records = page.records; nextCursor = page.nextCursor;
         const rows = records.map((r) => toTicketStagingRow(r, item.pipeline_id, item.run_id, Number(item.page_number)));
         if (rows.length) { const { error } = await client.from('analytics_cs_ticket_staging').upsert(rows, { onConflict: 'parent_run_id,ticket_id' }); if (error) throw error; }
