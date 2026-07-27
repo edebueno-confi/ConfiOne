@@ -2928,3 +2928,11 @@ Os perfis nomeados foram normalizados e receberam novamente seus grants de telas
 - Validações locais: reset do banco, pgTAP, typechecks, build, secret scan, higiene da raiz e diff check aprovados.
 - Bloqueio atual: `/admin/access` ainda é a UI legada de memberships de cliente; não afirmar o control plane operacional até a UI interna e os RPCs de CRUD serem separados.
 - Relatório: `docs/reports/ACCESS_01_INTERNAL_CONTROL_PLANE_2026-07-27.md`.
+## ACCESS-01.1 — Interface administrativa e CRUD interno — 2026-07-27
+
+- `/admin/access` passou a usar o control plane de colaboradores internos; a UI legada de memberships de cliente permanece preservada no código, fora da experiência principal.
+- A camada aditiva inclui read models e RPCs para usuários internos, convites sanitizados, áreas organizacionais, funções, perfis, capacidades e overrides.
+- O catálogo organizacional possui dez áreas canônicas. O catálogo legado de áreas-alvo dos acionamentos permanece intacto para compatibilidade operacional.
+- Suspensão, reativação, atribuição de área/função/perfil e revogação de convite passam por RPCs auditáveis; nenhuma senha, token bruto ou link completo é persistido ou retornado em listagens.
+- Convites ficam preparados localmente; o envio oficial depende do provedor de comunicação e do gate remoto previsto no ACCESS-01.1.
+- Relatório: `docs/reports/ACCESS_01_1_ADMIN_OPERATIONAL_CRUD_2026-07-27.md`.

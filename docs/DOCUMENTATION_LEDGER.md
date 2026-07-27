@@ -6759,3 +6759,10 @@ Cada registro deve informar:
 Fundação aditiva local para contexto interno, capabilities, perfis, convites e allowlist
 de superfícies. A UI de `/admin/access` ainda requer separação da governança de memberships
 de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CONTROL_PLANE_2026-07-27.md`.
+## ACCESS-01.1 — Interface e CRUD administrativo interno — 2026-07-27
+
+- Migration: `supabase/migrations/20260727040334_access_01_1_admin_operational_crud.sql`.
+- Teste pgTAP: `supabase/tests/085_access_01_1_admin_operational_crud.sql`.
+- Teste Node: `tests/scripts/access-01-1-ui-contract.test.mjs`.
+- Resultado: `/admin/access` usa quatro tabs (usuários internos, convites, áreas/funções e perfis/permissões); clientes permanecem fora do control plane.
+- Gate remoto ainda não executado: push, PR, merge, migration remota, deploy e convite externo permanecem pendentes de autorização.
