@@ -8,6 +8,7 @@ import { AnalyticsFilters as Filters } from './AnalyticsFilters';
 import { AnalyticsLoadingState, AnalyticsRetryAction, AnalyticsStateBadge, KpiCard, formatCountLabel } from './analytics-ui';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import { buildExecutiveExceptions, rankExecutivePipelines } from './analytics-executive';
+import { analyticsHref } from './analytics-navigation';
 
 const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
   fresh: 'Dados atualizados',
@@ -64,9 +65,9 @@ export function AnalyticsCeoPage({ sharedPeriod, onSharedPeriodChange, onRetry, 
   ];
 
   const domainCards = [
-    { title: 'Comercial', description: 'Volume e capacidade de conversão', value: unavailable ? 'Indisponível' : formatCurrency(data.commercial.openPipelineValue), details: `${formatCountLabel(data.commercial.openDeals, 'negócio aberto', 'negócios abertos')} · ciclo médio ${data.commercial.avgSalesCycleDays > 0 ? `${Math.round(data.commercial.avgSalesCycleDays).toLocaleString('pt-BR')} dias` : 'indisponível'}`, href: '/admin/analytics/commercial' },
-    { title: 'CS / Suporte', description: 'Risco operacional da fila', value: unavailable ? 'Indisponível' : formatCountLabel(data.support.highPriorityOpen, 'alta prioridade', 'altas prioridades'), details: `${formatPercent(data.support.closedRate)} encerrados · ${formatCountLabel(data.support.closeSlaTracked, 'SLA acompanhado', 'SLAs acompanhados')}`, href: '/admin/analytics/cs' },
-    { title: 'Financeiro', description: 'Qualidade da reconciliação', value: unavailable ? 'Indisponível' : formatCountLabel(data.finance.unmatchedTitles, 'título sem correspondência', 'títulos sem correspondência'), details: `${formatCurrency(data.finance.balance)} em posição atual`, href: '/admin/analytics/finance' },
+    { title: 'Comercial', description: 'Volume e capacidade de conversão', value: unavailable ? 'Indisponível' : formatCurrency(data.commercial.openPipelineValue), details: `${formatCountLabel(data.commercial.openDeals, 'negócio aberto', 'negócios abertos')} · ciclo médio ${data.commercial.avgSalesCycleDays > 0 ? `${Math.round(data.commercial.avgSalesCycleDays).toLocaleString('pt-BR')} dias` : 'indisponível'}`, href: analyticsHref('commercial') },
+    { title: 'CS / Suporte', description: 'Risco operacional da fila', value: unavailable ? 'Indisponível' : formatCountLabel(data.support.highPriorityOpen, 'alta prioridade', 'altas prioridades'), details: `${formatPercent(data.support.closedRate)} encerrados · ${formatCountLabel(data.support.closeSlaTracked, 'SLA acompanhado', 'SLAs acompanhados')}`, href: analyticsHref('cs-support') },
+    { title: 'Financeiro', description: 'Qualidade da reconciliação', value: unavailable ? 'Indisponível' : formatCountLabel(data.finance.unmatchedTitles, 'título sem correspondência', 'títulos sem correspondência'), details: `${formatCurrency(data.finance.balance)} em posição atual`, href: analyticsHref('finance') },
   ];
 
   const applyFilters = (next: AnalyticsFilters) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); setMobileFiltersOpen(false); };

@@ -1,4 +1,5 @@
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { formatDateTime } from '../../app/format';
 import { getLatestSyncRun, triggerHubspotSync } from './analytics-api';
 import { listEnabledAnalyticsDomains } from './analytics-domains';
@@ -9,6 +10,7 @@ import { resolveAnalyticsPeriod } from './analytics-periods';
 import { AnalyticsReportExport } from './AnalyticsReportExport';
 import { GeniusSyncOverlay } from '../../components/GeniusSyncOverlay';
 import { MinimalState } from '../../components/minimal-states';
+import { analyticsDomainFromTab, analyticsTabForDomain, normalizeAnalyticsSearch } from './analytics-navigation';
 
 const DOMAINS = listEnabledAnalyticsDomains();
 
@@ -36,15 +38,24 @@ export function AnalyticsShell() {
   const isPlatformAdmin = gate.actor?.is_platform_admin === true;
   const isDashboardViewer = !isPlatformAdmin && gate.actor?.roles.includes('dashboard_viewer') === true;
   const visibleDomains = isDashboardViewer ? DOMAINS.filter((domain) => domain.key === 'ceo') : DOMAINS;
-  const [activeKey, setActiveKey] = useState(visibleDomains[0]?.key ?? 'commercial');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const urlParams = useMemo(() => normalizeAnalyticsSearch(location.search), [location.search]);
+  const activeKey = analyticsDomainFromTab(urlParams.get('tab'));
   const [reloadKey, setReloadKey] = useState(0);
   const [latestRun, setLatestRun] = useState<SyncRun | null>(null);
   const [syncStatusError, setSyncStatusError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
-  const [sharedPeriod, setSharedPeriod] = useState<AnalyticsSharedPeriod>(() => resolveAnalyticsPeriod('month'));
+  const [sharedPeriod, setSharedPeriod] = useState<AnalyticsSharedPeriod>(() => ({ ...resolveAnalyticsPeriod('month'), from: urlParams.get('from') ?? resolveAnalyticsPeriod('month').from, to: urlParams.get('to') ?? resolveAnalyticsPeriod('month').to }));
   const [reportOpen, setReportOpen] = useState(false);
+
+  useEffect(() => {
+    const from = urlParams.get('from');
+    const to = urlParams.get('to');
+    if (from && to) setSharedPeriod((current) => current.from === from && current.to === to ? current : { from, to });
+  }, [urlParams]);
 
   const activeDomain = visibleDomains.find((domain) => domain.key === activeKey) ?? visibleDomains[0];
 
@@ -121,7 +132,12 @@ export function AnalyticsShell() {
               <button
                 key={domain.key}
                 type="button"
-                onClick={() => setActiveKey(domain.key)}
+                onClick={() => {
+                  const next = normalizeAnalyticsSearch(location.search);
+                  next.set('tab', analyticsTabForDomain(domain.key));
+                  if (domain.key !== 'cs') next.delete('pipeline');
+                  navigate({ pathname: '/admin/analytics', search: `?${next.toString()}` });
+                }}
                 aria-current={isActive ? 'page' : undefined}
                 title={domain.description}
                 className={`gso-workspace-tab flex-none whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition ${

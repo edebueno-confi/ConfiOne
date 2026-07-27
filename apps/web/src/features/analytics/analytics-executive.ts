@@ -35,7 +35,7 @@ export function rankExecutivePipelines(rows: CsPipelinePoint[], limit = 5): Exec
     .filter((row) => row.pipelineId && row.ticketCount > 0)
     .sort((left, right) => right.ticketCount - left.ticketCount || left.label.localeCompare(right.label, 'pt-BR') || left.pipelineId.localeCompare(right.pipelineId))
     .slice(0, limit)
-    .map((row) => ({ id: row.pipelineId, label: row.label, domain: 'CS / Suporte', count: row.ticketCount, href: '/admin/analytics/cs' }));
+    .map((row) => ({ id: row.pipelineId, label: row.label, domain: 'CS / Suporte', count: row.ticketCount, href: `/admin/analytics?tab=cs-support&pipeline=${encodeURIComponent(row.pipelineId)}` }));
 }
 
 export function buildExecutiveExceptions(snapshot: CeoSnapshot): ExecutiveException[] {
