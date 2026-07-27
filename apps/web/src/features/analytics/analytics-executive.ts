@@ -43,13 +43,13 @@ export function buildExecutiveExceptions(snapshot: CeoSnapshot): ExecutiveExcept
   const state = snapshot.state;
   if (state && state.status !== 'fresh') {
     const label = state.status === 'stale' ? 'Fonte com atualização atrasada' : state.status === 'partial' ? 'Fonte com cobertura parcial' : state.status === 'syncing' ? 'Fonte em atualização' : state.status === 'empty' ? 'Nenhum registro no recorte' : state.status === 'not_configured' ? 'Fonte ainda não configurada' : 'Fonte indisponível para leitura';
-    exceptions.push({ key: `source-${state.status}`, domain: 'Dados e integrações', title: label, detail: state.reason || 'A leitura executiva precisa ser interpretada com cautela.', action: 'Verificar fontes', href: '/admin/analytics/config', severity: STATUS_SEVERITY[state.status] });
+    exceptions.push({ key: `source-${state.status}`, domain: 'Dados e integrações', title: label, detail: state.reason || 'A leitura executiva precisa ser interpretada com cautela.', action: 'Verificar fontes', href: '/admin/settings?section=analytics&panel=diagnostics', severity: STATUS_SEVERITY[state.status] });
   }
   if (snapshot.support.highPriorityOpen > 0) {
-    exceptions.push({ key: 'support-high-priority', domain: 'CS / Suporte', title: 'Tickets de alta prioridade em aberto', detail: `${snapshot.support.highPriorityOpen.toLocaleString('pt-BR')} ${snapshot.support.highPriorityOpen === 1 ? 'ticket exige' : 'tickets exigem'} acompanhamento.`, action: 'Abrir CS / Suporte', href: '/admin/analytics/cs', severity: 2 });
+    exceptions.push({ key: 'support-high-priority', domain: 'CS / Suporte', title: 'Tickets de alta prioridade em aberto', detail: `${snapshot.support.highPriorityOpen.toLocaleString('pt-BR')} ${snapshot.support.highPriorityOpen === 1 ? 'ticket exige' : 'tickets exigem'} acompanhamento.`, action: 'Abrir CS / Suporte', href: '/admin/analytics?tab=cs-support', severity: 2 });
   }
   if (snapshot.finance.overdueBalance > 0) {
-    exceptions.push({ key: 'finance-overdue', domain: 'Financeiro', title: 'Saldo vencido identificado', detail: `${snapshot.finance.overdueTitles.toLocaleString('pt-BR')} ${snapshot.finance.overdueTitles === 1 ? 'título vencido' : 'títulos vencidos'} somam ${formatCurrency(snapshot.finance.overdueBalance)}.`, action: 'Abrir Financeiro', href: '/admin/analytics/finance', severity: 3 });
+    exceptions.push({ key: 'finance-overdue', domain: 'Financeiro', title: 'Saldo vencido identificado', detail: `${snapshot.finance.overdueTitles.toLocaleString('pt-BR')} ${snapshot.finance.overdueTitles === 1 ? 'título vencido' : 'títulos vencidos'} somam ${formatCurrency(snapshot.finance.overdueBalance)}.`, action: 'Abrir Financeiro', href: '/admin/analytics?tab=finance', severity: 3 });
   }
   return exceptions.sort((left, right) => right.severity - left.severity || left.key.localeCompare(right.key)).slice(0, 3);
 }

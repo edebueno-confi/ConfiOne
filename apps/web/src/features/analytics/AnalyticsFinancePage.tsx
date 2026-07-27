@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { MinimalState } from '../../components/minimal-states';
-import { GeniusSyncOverlay } from '../../components/GeniusSyncOverlay';
-import { getFinanceSnapshot, getFinanceSourceStatus, getFinanceUnmatchedClients, triggerOmieSync, type FinanceUnmatchedClient } from './analytics-api';
+import { getFinanceSnapshot, getFinanceSourceStatus, getFinanceUnmatchedClients, type FinanceUnmatchedClient } from './analytics-api';
 import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, KpiCard, MetricInfo } from './analytics-ui';
 import { formatCurrencyBRL, formatMonthLabel, formatPercent, type AnalyticsFilters, DEFAULT_ANALYTICS_FILTERS, type FinanceBreakdown, type FinanceSnapshot, type FinanceSourceStatus } from './analytics-model';
 import { ANALYTICS_PERIOD_OPTIONS, resolveAnalyticsPeriod, type AnalyticsPeriodPreset } from './analytics-periods';
@@ -62,8 +62,6 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
   const [draft, setDraft] = useState(filters);
   const [state, setState] = useState<{ phase: 'loading' } | { phase: 'ready'; snapshot: FinanceSnapshot } | { phase: 'error'; message: string }>({ phase: 'loading' });
   const [sourceStatus, setSourceStatus] = useState<FinanceSourceStatus | null>(null);
-  const [syncingOmie, setSyncingOmie] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
   const [preset, setPreset] = useState<AnalyticsPeriodPreset | ''>('month');
   const [unmatched, setUnmatched] = useState<FinanceUnmatchedClient[] | null>(null);
   const [loadingUnmatched, setLoadingUnmatched] = useState(false);
@@ -92,17 +90,6 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
 
   useEffect(() => { getFinanceSourceStatus().then(setSourceStatus).catch(() => setSourceStatus(null)); }, []);
 
-  const syncOmie = async () => {
-    setSyncingOmie(true); setMessage(null);
-    try {
-      const result = await triggerOmieSync();
-      setMessage(`Sincronização concluída: ${result.acceptedRows.toLocaleString('pt-BR')} títulos atualizados pela API OMIE.`);
-      setSourceStatus(await getFinanceSourceStatus());
-      setFilters((current) => ({ ...current }));
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Falha ao sincronizar o OMIE.'); }
-    finally { setSyncingOmie(false); }
-  };
-
   const applyPreset = (nextPreset: AnalyticsPeriodPreset) => {
     setPreset(nextPreset);
     const next = { ...draft, ...resolveAnalyticsPeriod(nextPreset) };
@@ -127,17 +114,16 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
     <section className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-sm font-semibold text-[color:var(--minimal-text)]">Cockpit financeiro</h2>
+          <h2 className="text-sm font-semibold text-[color:var(--minimal-text)]">Fonte financeira</h2>
           {sourceIsApi
             ? <Tag label="Fonte: API OMIE (ao vivo)" tone="positive" />
             : snapshot.source === 'spreadsheet' ? <Tag label="Fonte: planilha (fallback)" tone="warning" /> : <Tag label="Sem fonte financeira" tone="critical" />}
-          {sourceStatus?.api.lastSyncAt ? <span className="text-xs text-[color:var(--minimal-text-tertiary)]">Última sincronização: {new Date(sourceStatus.api.lastSyncAt).toLocaleString('pt-BR')}</span> : null}
+          {sourceStatus?.api.lastSyncAt ? <span className="text-xs text-[color:var(--minimal-text-tertiary)]">Atualizada em {new Date(sourceStatus.api.lastSyncAt).toLocaleString('pt-BR')}</span> : null}
+          <Link to="/admin/settings?section=analytics&panel=omie" className="text-xs font-medium text-[color:var(--minimal-action)] hover:underline">Gerenciar OMIE</Link>
         </div>
-        <button type="button" disabled={syncingOmie || !sourceStatus?.api.configured} onClick={() => void syncOmie()} className="rounded-lg bg-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action-ink)] disabled:opacity-50">{syncingOmie ? 'Sincronizando...' : 'Sincronizar OMIE API'}</button>
       </div>
       {!sourceStatus?.api.configured ? <p className="mt-2 text-xs text-[color:var(--minimal-warning-text)]">Configure a credencial OMIE em Configurações → Integrações para ativar a fonte ao vivo. O histórico de importações fica na aba Logs.</p> : null}
       {!sourceIsApi && snapshot.source === 'spreadsheet' ? <p className="mt-2 text-xs text-[color:var(--minimal-text-tertiary)]">Exibindo a planilha como fallback. Previsibilidade, aging por dias e cruzamento com CS ficam completos apenas com a API OMIE.</p> : null}
-      {message ? <p className="mt-2 text-xs text-[color:var(--minimal-text-secondary)]">{message}</p> : null}
     </section>
 
     {/* Filtros */}
@@ -218,6 +204,5 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
       </ChartCard>
     </>}
     </div>
-    {syncingOmie ? <GeniusSyncOverlay source="OMIE" detail="Os títulos financeiros e o cruzamento com o HubSpot serão recalculados ao final." /> : null}
   </>;
 }

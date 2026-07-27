@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { MinimalState } from '../../components/minimal-states';
 import { GeniusSyncOverlay } from '../../components/GeniusSyncOverlay';
 import { getCsSyncProgress, getIntegrationSchedule, getLatestCsSyncRun, listAnalyticsSourceConfig, listCsOpsImportRuns, runCsOpsMigration, runIntegrationNow, setIntegrationSchedule, triggerCsOpsSpreadsheetImport, triggerCsSupportSync, triggerHubspotSync, upsertAnalyticsSourceConfig, type CsOpsImportRun, type CsOpsMigrationPreflight, type IntegrationSchedule } from './analytics-api';
@@ -103,6 +104,10 @@ export function AnalyticsConfigPage() {
   if (state.error && rows.length === 0) return <MinimalState tone="critical" title="Não foi possível carregar" description={state.error} />;
   return <>
     <div className="space-y-5">
+    <nav aria-label="Painéis de Dashboard e Analytics" className="flex flex-wrap items-center gap-2 rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-3 py-2 text-xs">
+      <span className="font-semibold text-[color:var(--minimal-text)]">Dashboard e Analytics</span>
+      {[['overview', 'Visão geral'], ['hubspot', 'HubSpot'], ['omie', 'OMIE'], ['schedules', 'Agendamentos'], ['pipelines', 'Pipelines'], ['history', 'Histórico'], ['diagnostics', 'Diagnóstico']].map(([panel, label]) => <Link key={panel} to={`/admin/settings?section=analytics&panel=${panel}`} className="rounded-md px-2 py-1 text-[color:var(--minimal-action)] hover:bg-[color:var(--minimal-surface)] hover:underline">{label}</Link>)}
+    </nav>
     <HubspotCsDiagnosticCard enabled={canManageIntegration} />
     {canManageIntegration ? <ChartCard title="Controle de CS / Suporte" description="Executa exclusivamente a leitura de tickets do HubSpot usando a sessão autenticada. Não aciona Comercial, OMIE ou alterações no HubSpot.">
       <div className="flex flex-wrap items-center gap-3">
