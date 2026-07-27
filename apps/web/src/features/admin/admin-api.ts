@@ -1578,16 +1578,15 @@ export async function listAdminInternalMembershipScreenGrants() {
 
 export async function listInternalActorWorkspaceContext() {
   const client = requireClient();
-  const { data, error } = await client
-    .from('vw_internal_actor_workspace_context')
-    .select('*')
-    .order('sort_order', { ascending: true });
+  const { data, error } = await client.rpc('rpc_internal_actor_workspace_context');
 
   if (error) {
     throw toAppError(error, 'Falha ao carregar o contexto de telas do usuário.');
   }
 
-  return (data ?? []) as InternalActorWorkspaceContextRow[];
+  return ([...(data ?? [])].sort(
+    (left, right) => Number(left.sort_order ?? 0) - Number(right.sort_order ?? 0),
+  ) ?? []) as InternalActorWorkspaceContextRow[];
 }
 
 export async function setGlobalRole(input: {

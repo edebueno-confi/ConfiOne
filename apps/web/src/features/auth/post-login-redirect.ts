@@ -78,17 +78,19 @@ async function hasCsPortfolioAccess() {
 
 async function loadWorkspaceScreenKeys() {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client
-    .from('vw_internal_actor_workspace_context')
-    .select('screen_key')
-    .order('sort_order', { ascending: true });
+  const { data, error } = await client.rpc('rpc_internal_actor_workspace_context');
 
   if (error) {
     throw toAppError(error, 'Falha ao validar as telas autorizadas do usuário.');
   }
 
   return Array.from(
-    new Set((data ?? []).map((row) => row.screen_key as InternalScreenKey).filter(Boolean)),
+    new Set(
+      [...(data ?? [])]
+        .sort((left, right) => Number(left.sort_order ?? 0) - Number(right.sort_order ?? 0))
+        .map((row) => row.screen_key as InternalScreenKey)
+        .filter(Boolean),
+    ),
   );
 }
 
