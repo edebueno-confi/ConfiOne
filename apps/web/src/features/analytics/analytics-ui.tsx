@@ -7,6 +7,7 @@ const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
   stale: 'Pode estar desatualizado',
   partial: 'Dados parciais',
   empty: 'Nenhum registro no recorte',
+  zero: 'Zero real no recorte',
   not_configured: 'Fonte não configurada',
   syncing: 'Sincronizando',
   unavailable: 'Fonte indisponível',
@@ -21,7 +22,7 @@ function formatStateDate(value: string | null): string {
 
 export function AnalyticsStateBadge({ state }: { state?: AnalyticsBlockState }) {
   if (!state) return null;
-  const tone = state.status === 'fresh' ? 'text-[color:var(--minimal-action)]' : state.status === 'stale' || state.status === 'partial' ? 'text-[color:var(--minimal-warning-text)]' : 'text-[color:var(--minimal-danger-text)]';
+  const tone = state.status === 'fresh' || state.status === 'zero' ? 'text-[color:var(--minimal-action)]' : state.status === 'stale' || state.status === 'partial' ? 'text-[color:var(--minimal-warning-text)]' : 'text-[color:var(--minimal-danger-text)]';
   const statusLabel = state.status === 'fresh' && !state.lastSuccessfulSyncAt ? 'Dados recebidos' : STATUS_LABELS[state.status];
   return <span className={`inline-flex flex-wrap items-center gap-1 text-[11px] ${tone}`} aria-label={`Estado dos dados: ${statusLabel}`}>
     <span className="font-semibold">{statusLabel}</span>

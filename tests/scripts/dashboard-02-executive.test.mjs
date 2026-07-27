@@ -17,7 +17,7 @@ test('ranking de pipelines é determinístico e limitado a cinco', () => {
   assert.match(executive, /sort\(\(left, right\) => right\.ticketCount - left\.ticketCount/);
   assert.match(executive, /slice\(0, limit\)/);
   assert.match(executive, /limit = 5/);
-  assert.match(page, /Pipelines de atendimento prioritários/);
+  assert.match(page, /Pipelines de Suporte prioritários/);
 });
 
 test('exceções distinguem qualidade de dados e risco operacional', () => {
@@ -25,6 +25,13 @@ test('exceções distinguem qualidade de dados e risco operacional', () => {
   assert.match(executive, /Tickets de alta prioridade em aberto/);
   assert.doesNotMatch(page, /status: 'partial'/);
   assert.match(page, /Sinais operacionais separados da qualidade/);
+});
+
+test('visão integrada separa os seis domínios e preserva fontes ausentes', () => {
+  for (const label of ['Comercial', 'Customer Success', 'Suporte', 'Financeiro', 'Produto', 'Desenvolvimento']) assert.match(page, new RegExp(label));
+  assert.match(page, /Fonte ainda não conectada/);
+  assert.match(page, /customer_success/);
+  assert.doesNotMatch(page, /CS \/ Suporte/);
 });
 
 test('dashboard_viewer recebe somente conteúdo autorizado', () => {

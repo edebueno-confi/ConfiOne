@@ -3,6 +3,7 @@ export const ANALYTICS_DATA_STATUSES = [
   'stale',
   'partial',
   'empty',
+  'zero',
   'not_configured',
   'syncing',
   'unavailable',
