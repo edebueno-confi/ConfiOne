@@ -76,11 +76,14 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
     finally { setLoadingUnmatched(false); }
   };
 
-  useEffect(() => { setFilters((current) => ({ ...current, ...period })); setDraft((current) => ({ ...current, ...period })); }, [period.from, period.to]);
+  useEffect(() => {
+    setFilters((current) => current.from === period.from && current.to === period.to ? current : { ...current, ...period });
+    setDraft((current) => current.from === period.from && current.to === period.to ? current : { ...current, ...period });
+  }, [period.from, period.to]);
 
   useEffect(() => {
     let cancelled = false;
-    setState({ phase: 'loading' });
+    setState((current) => current.phase === 'ready' ? current : { phase: 'loading' });
     getFinanceSnapshot(filters, filters.clientQuery)
       .then((snapshot) => { if (!cancelled) setState({ phase: 'ready', snapshot }); })
       .catch((error) => { if (!cancelled) setState({ phase: 'error', message: error instanceof Error ? error.message : 'Falha ao carregar o financeiro.' }); });

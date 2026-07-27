@@ -39,11 +39,13 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
   const [configuredPipelines, setConfiguredPipelines] = useState<AnalyticsSourceConfig[]>([]);
   const [excludedPipelineIds, setExcludedPipelineIds] = useState<string[]>([]);
 
-  useEffect(() => { setFilters((current) => ({ ...current, ...period })); }, [period.from, period.to]);
+  useEffect(() => {
+    setFilters((current) => current.from === period.from && current.to === period.to ? current : { ...current, ...period });
+  }, [period.from, period.to]);
 
   useEffect(() => {
     let cancelled = false;
-    setState({ phase: 'loading' });
+    setState((current) => current.phase === 'ready' ? current : { phase: 'loading' });
 
     Promise.all([getCsSnapshot(filters, excludedPipelineIds), listAnalyticsSourceConfig()])
       .then(([snapshot, configs]) => {
