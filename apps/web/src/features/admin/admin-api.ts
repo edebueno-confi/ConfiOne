@@ -4,6 +4,12 @@ import type {
   AdminAuditFeedRow,
   AdminAccessMembershipRow,
   AdminAccessUserRow,
+  AdminInternalAccessUserRow,
+  AdminInternalAccessAreaRow,
+  AdminInternalFunctionRow,
+  AdminInternalInviteRow,
+  AdminInternalOverrideRow,
+  AdminInternalProfileRow,
   AdminCustomerAccountAlert,
   AdminCustomerAccountCustomization,
   AdminCustomerAccountFeature,
@@ -1688,6 +1694,171 @@ export async function assignInternalAccessProfile(input: {
   }
 
   return data;
+}
+
+export async function listAdminInternalAccessUsers() {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_list_internal_access_users');
+  if (error) throw toAppError(error, 'Falha ao carregar os usuários internos.');
+  return (data ?? []) as AdminInternalAccessUserRow[];
+}
+
+export async function getAdminInternalAccessUser(userId: string) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_get_internal_access_user', { p_user_id: userId });
+  if (error) throw toAppError(error, 'Falha ao carregar o detalhe do usuário.');
+  return data as Record<string, unknown>;
+}
+
+export async function setAdminInternalUserStatus(userId: string, isActive: boolean, justification = 'Alteração realizada pelo administrador no control plane.') {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_set_internal_user_status', { p_user_id: userId, p_is_active: isActive, p_justification: justification });
+  if (error) throw toAppError(error, 'Falha ao atualizar o status do usuário.');
+  return data;
+}
+
+export async function updateAdminInternalAccessAssignment(input: { userId: string; areaKey: string; functionId?: string | null; accessProfileId?: string | null }) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_update_internal_access_assignment', {
+    p_user_id: input.userId,
+    p_area_key: input.areaKey,
+    p_function_id: input.functionId ?? null,
+    p_access_profile_id: input.accessProfileId ?? null,
+  });
+  if (error) throw toAppError(error, 'Falha ao atualizar a atribuição interna.');
+  return data;
+}
+
+export async function listAdminInternalInvites() {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_list_internal_invites');
+  if (error) throw toAppError(error, 'Falha ao carregar os convites internos.');
+  return (data ?? []) as AdminInternalInviteRow[];
+}
+
+export async function createAdminInternalInvitation(input: { email: string; fullName: string; areaKey: string; functionId?: string | null; accessProfileId?: string | null; expiresAt: string }) {
+  const client = requireClient();
+  const { data, error } = await client.functions.invoke('internal-access-invite', { body: { action: 'create', ...input } });
+  if (error) throw toAppError(error, 'Falha ao preparar o convite interno.');
+  return data as Record<string, unknown>;
+}
+
+export async function acceptAdminInternalInvitation(inviteId: string) {
+  const client = requireClient();
+  const { data, error } = await client.functions.invoke('internal-access-invite', { body: { action: 'accept', inviteId } });
+  if (error) throw toAppError(error, 'Falha ao aceitar o convite interno.');
+  return data as Record<string, unknown>;
+}
+
+export async function revokeAdminInternalInvitation(inviteId: string) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_revoke_internal_invitation', { p_invite_id: inviteId });
+  if (error) throw toAppError(error, 'Falha ao revogar o convite interno.');
+  return data;
+}
+
+export async function listAdminInternalAccessAreas() {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_list_internal_areas');
+  if (error) throw toAppError(error, 'Falha ao carregar as áreas internas.');
+  return (data ?? []) as AdminInternalAccessAreaRow[];
+}
+
+export async function createAdminInternalAccessArea(input: { areaKey: string; displayName: string; description?: string }) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_create_internal_area', { p_area_key: input.areaKey, p_display_name: input.displayName, p_description: input.description ?? null });
+  if (error) throw toAppError(error, 'Falha ao criar a área interna.');
+  return data as AdminInternalAccessAreaRow;
+}
+
+export async function updateAdminInternalAccessArea(input: { areaKey: string; displayName: string; description?: string; isActive: boolean; managerUserId?: string | null }) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_update_internal_area', { p_area_key: input.areaKey, p_display_name: input.displayName, p_description: input.description ?? null, p_is_active: input.isActive, p_manager_user_id: input.managerUserId ?? null });
+  if (error) throw toAppError(error, 'Falha ao atualizar a área interna.');
+  return data as AdminInternalAccessAreaRow;
+}
+
+export async function listAdminInternalFunctions() {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_list_internal_functions');
+  if (error) throw toAppError(error, 'Falha ao carregar as funções internas.');
+  return (data ?? []) as AdminInternalFunctionRow[];
+}
+
+export async function createAdminInternalFunction(input: { areaKey: string; name: string; description?: string; defaultAccessProfileId?: string | null }) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_create_internal_function', { p_area_key: input.areaKey, p_name: input.name, p_description: input.description ?? null, p_default_access_profile_id: input.defaultAccessProfileId ?? null });
+  if (error) throw toAppError(error, 'Falha ao criar a função interna.');
+  return data as AdminInternalFunctionRow;
+}
+
+export async function updateAdminInternalFunction(input: { functionId: string; name: string; description?: string; defaultAccessProfileId?: string | null; isActive: boolean }) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_update_internal_function', { p_function_id: input.functionId, p_name: input.name, p_description: input.description ?? null, p_default_access_profile_id: input.defaultAccessProfileId ?? null, p_is_active: input.isActive });
+  if (error) throw toAppError(error, 'Falha ao atualizar a função interna.');
+  return data as AdminInternalFunctionRow;
+}
+
+export async function listAdminAccessProfiles() {
+  const client = requireClient();
+  const { data, error } = await client.from('vw_admin_access_profiles').select('*').order('name');
+  if (error) throw toAppError(error, 'Falha ao carregar os perfis internos.');
+  return (data ?? []) as AdminInternalProfileRow[];
+}
+
+export async function listAdminAccessCapabilities() {
+  const client = requireClient();
+  const { data, error } = await client.from('vw_admin_access_capabilities').select('*').order('domain').order('display_name');
+  if (error) throw toAppError(error, 'Falha ao carregar as capacidades.');
+  return (data ?? []) as Array<{ capability_key: string; display_name: string; description: string | null; domain: string; is_active: boolean }>;
+}
+
+export async function listAdminAccessProfileCapabilities() {
+  const client = requireClient();
+  const { data, error } = await client.from('vw_admin_access_profile_capabilities').select('*');
+  if (error) throw toAppError(error, 'Falha ao carregar as capacidades dos perfis.');
+  return (data ?? []) as Array<{ access_profile_id: string; capability_key: string }>;
+}
+
+export async function replaceAdminAccessProfileCapabilities(profileId: string, capabilityKeys: string[]) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_replace_internal_profile_capabilities', { p_access_profile_id: profileId, p_capability_keys: capabilityKeys });
+  if (error) throw toAppError(error, 'Falha ao atualizar as capacidades do perfil.');
+  return data;
+}
+
+export async function createAdminAccessProfile(input: { areaKey?: string | null; name: string; description?: string }) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_create_internal_access_profile', { p_area_key: input.areaKey ?? null, p_name: input.name, p_description: input.description ?? null });
+  if (error) throw toAppError(error, 'Falha ao criar o perfil interno.');
+  return data;
+}
+
+export async function updateAdminAccessProfile(input: { profileId: string; name: string; description?: string; isActive: boolean }) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_update_internal_access_profile', { p_access_profile_id: input.profileId, p_name: input.name, p_description: input.description ?? null, p_is_active: input.isActive });
+  if (error) throw toAppError(error, 'Falha ao atualizar o perfil interno.');
+  return data;
+}
+
+export async function listAdminInternalOverrides() {
+  const client = requireClient();
+  const { data, error } = await client.from('vw_admin_access_overrides').select('*').order('updated_at', { ascending: false });
+  if (error) throw toAppError(error, 'Falha ao carregar os overrides.');
+  return (data ?? []) as AdminInternalOverrideRow[];
+}
+
+export async function upsertAdminInternalOverride(input: { userId: string; capabilityKey: string; effect: 'allow' | 'deny'; justification: string; validUntil?: string | null }) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_upsert_internal_override', { p_user_id: input.userId, p_capability_key: input.capabilityKey, p_effect: input.effect, p_justification: input.justification, p_valid_until: input.validUntil ?? null });
+  if (error) throw toAppError(error, 'Falha ao salvar o override.');
+  return data;
+}
+
+export async function removeAdminInternalOverride(overrideId: string) {
+  const client = requireClient();
+  const { error } = await client.rpc('rpc_admin_remove_internal_override', { p_override_id: overrideId });
+  if (error) throw toAppError(error, 'Falha ao remover o override.');
 }
 
 export async function listAdminKnowledgeArticleAssets(articleId: string) {

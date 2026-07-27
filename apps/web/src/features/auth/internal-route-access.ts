@@ -17,7 +17,7 @@ function hasAnyRole(roles: PlatformRole[], candidates: PlatformRole[]) {
 }
 
 function hasScreen(context: InternalRouteContext, screenKey: InternalScreenKey) {
-  return context.roles.includes('platform_admin') || context.screenKeys?.includes(screenKey) === true;
+  return context.screenKeys?.includes(screenKey) === true;
 }
 
 export function canOpenInternalRoute(
@@ -43,8 +43,10 @@ export function canOpenInternalRoute(
   }
 
   if (matchesRoute(redirectTo, '/admin')) {
-    if (context.roles.includes('platform_admin')) {
-      return true;
+    if (redirectTo === '/admin') {
+      return (context.screenKeys ?? []).some((key) =>
+        ['analytics', 'settings', 'knowledge', 'access'].includes(key),
+      );
     }
 
     if (hasAnyRole(context.roles, ['support_manager', 'support_agent'])) {
@@ -115,13 +117,12 @@ export function canOpenInternalRoute(
 }
 
 export function getDefaultInternalLandingRoute(context: InternalRouteContext) {
-  if (context.roles.includes('platform_admin')) {
-    return '/inicio';
-  }
-
   const preferredScreens: Array<[InternalScreenKey, string]> = [
-    ['home', '/inicio'],
     ['analytics', '/admin/analytics'],
+    ['knowledge', '/admin/knowledge'],
+    ['access', '/admin/access'],
+    ['settings', '/admin/settings'],
+    ['home', '/inicio'],
     ['support_inbox', '/support/inbox'],
     ['support_queue', '/support/queue'],
     ['cs_portfolio', '/cs/portfolio'],

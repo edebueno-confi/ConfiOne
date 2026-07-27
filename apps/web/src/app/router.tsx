@@ -195,7 +195,7 @@ const HelpCenterArticlePage = lazyRouteModule(
   'HelpCenterArticlePage',
 );
 
-const AccessPage = lazyRouteModule(() => import('../features/access/AccessPage'), 'AccessPage');
+const AccessPage = lazyRouteModule(() => import('../features/access/InternalControlPlanePage'), 'InternalControlPlanePage');
 
 const SystemPage = lazyRouteModule(() => import('../features/system/SystemPage'), 'SystemPage');
 
@@ -378,7 +378,7 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
-            element: <Navigate replace to="/admin/tenants" />,
+            element: <Navigate replace to="/admin/analytics" />,
           },
           {
             path: 'visao-geral',

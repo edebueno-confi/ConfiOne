@@ -488,6 +488,107 @@ export interface AdminAccessUserRow {
   memberships: JsonValue;
 }
 
+export type InternalAccessStatus = 'active' | 'suspended' | 'inactive';
+export type InternalInviteStatus = 'pending' | 'sent' | 'accepted' | 'expired' | 'revoked' | 'failed';
+export type InternalCapabilityEffect = 'allow' | 'deny';
+
+export interface AdminInternalAccessUserRow {
+  user_id: string;
+  full_name: string | null;
+  email: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  platform_roles: PlatformRole[];
+  areas: Array<Record<string, unknown>>;
+  area_count: number;
+  override_count: number;
+  access_status: InternalAccessStatus;
+  last_access_at: string;
+  can_manage: boolean;
+}
+
+export interface AdminInternalAccessAreaRow {
+  area_key: string;
+  display_name: string;
+  description: string | null;
+  manager_user_id: string | null;
+  manager_name: string | null;
+  is_system: boolean;
+  is_active: boolean;
+  active_user_count: number;
+  active_function_count: number;
+  can_manage: boolean;
+}
+
+export interface AdminInternalFunctionRow {
+  function_id: string;
+  name: string;
+  description: string | null;
+  area_key: string;
+  area_label: string;
+  default_access_profile_id: string | null;
+  default_access_profile_name: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  can_manage: boolean;
+}
+
+export interface AdminInternalInviteRow {
+  invite_id: string;
+  email: string;
+  full_name: string;
+  area_key: string;
+  area_label: string;
+  function_id: string | null;
+  function_name: string | null;
+  access_profile_id: string | null;
+  access_profile_name: string | null;
+  status: InternalInviteStatus;
+  expires_at: string;
+  sent_at: string | null;
+  accepted_at: string | null;
+  revoked_at: string | null;
+  created_at: string;
+  updated_at: string;
+  invited_by_name: string | null;
+  can_manage: boolean;
+}
+
+export interface AdminInternalProfileRow {
+  access_profile_id: string;
+  name: string;
+  description: string | null;
+  is_system: boolean;
+  is_active: boolean;
+  user_count: number;
+  capability_count: number;
+  screen_count: number;
+  can_manage: boolean;
+}
+
+export interface AdminInternalProfileCapabilityRow {
+  access_profile_id: string;
+  capability_key: string;
+}
+
+export interface AdminInternalOverrideRow {
+  override_id: string;
+  user_id: string;
+  full_name: string | null;
+  email: string | null;
+  capability_key: string;
+  capability_name: string;
+  domain: string;
+  effect: InternalCapabilityEffect;
+  justification: string;
+  valid_until: string | null;
+  created_at: string;
+  updated_at: string;
+  granted_by_name: string | null;
+}
+
 export interface RpcAdminSetGlobalRoleResponse {
   user_id: Uuid;
   role: PlatformRole;
