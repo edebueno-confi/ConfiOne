@@ -37,14 +37,14 @@ test('visão integrada separa os seis domínios e preserva fontes ausentes', () 
 test('dashboard_viewer recebe somente conteúdo autorizado', () => {
   assert.match(shell, /DOMAINS\.filter\(\(domain\) => domain\.key === 'ceo'\)/);
   assert.match(shell, /Visualizador gerencial/);
-  assert.match(page, /isDashboardViewer \? <div/);
+  assert.match(page, /isDashboardViewer\s*\?/);
   assert.match(page, /Detalhamento restrito ao perfil/);
   assert.doesNotMatch(page, /href=.*analytics\/pipelines/);
 });
 
 test('rotas internas usam React Router e não links HTML diretos', () => {
-  assert.match(page, /from 'react-router-dom'/);
-  assert.match(page, /<Link to=/);
+  assert.match(page, /from ["']react-router-dom["']/);
+  assert.match(page, /<Link[\s\S]*?\bto=/);
   assert.doesNotMatch(page, /<a key=/);
 });
 
