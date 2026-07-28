@@ -35,10 +35,13 @@ test('visão integrada separa os seis domínios e preserva fontes ausentes', () 
 });
 
 test('dashboard_viewer recebe somente conteúdo autorizado', () => {
-  assert.match(shell, /DOMAINS\.filter\(\(domain\) => domain\.key === 'ceo'\)/);
+  assert.match(shell, /const visibleDomains = DOMAINS/);
+  assert.match(shell, /visibleDomains\.map/);
+  assert.doesNotMatch(shell, /DOMAINS\.filter\(\(domain\) => domain\.key === 'ceo'\)/);
   assert.match(shell, /Visualizador gerencial/);
   assert.match(page, /isDashboardViewer\s*\?/);
-  assert.match(page, /Detalhamento restrito ao perfil/);
+  assert.match(shell, /isPlatformAdmin\s*\?/);
+  assert.doesNotMatch(shell, /isDashboardViewer\s*\?[^\n]*Exportar/);
   assert.doesNotMatch(page, /href=.*analytics\/pipelines/);
 });
 
