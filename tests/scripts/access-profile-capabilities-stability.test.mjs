@@ -36,13 +36,17 @@ test('read models de Access permanecem estaveis em consultas repetidas', async (
 
   const accessToken = await login();
   for (let index = 0; index < 100; index += 1) {
-    const [capabilities, overrides, capabilityView, overrideView] = await Promise.all([
+    const [capabilities, overrides, profiles, capabilityCatalog, capabilityView, overrideView, profileView, catalogView] = await Promise.all([
       rest('/rest/v1/rpc/rpc_admin_list_internal_access_profile_capabilities_v2', accessToken),
       rest('/rest/v1/rpc/rpc_admin_list_internal_access_overrides_v2', accessToken),
+      rest('/rest/v1/rpc/rpc_admin_list_internal_access_profiles_v2', accessToken),
+      rest('/rest/v1/rpc/rpc_admin_list_internal_access_capabilities_v2', accessToken),
       rest('/rest/v1/vw_admin_access_profile_capabilities?select=access_profile_id,capability_key&limit=1', accessToken),
       rest('/rest/v1/vw_admin_access_overrides?select=override_id,user_id,capability_key&limit=1', accessToken),
+      rest('/rest/v1/vw_admin_access_profiles?select=access_profile_id,name&limit=1', accessToken),
+      rest('/rest/v1/vw_admin_access_capabilities?select=capability_key,display_name&limit=1', accessToken),
     ]);
-    for (const result of [capabilities, overrides, capabilityView, overrideView]) {
+    for (const result of [capabilities, overrides, profiles, capabilityCatalog, capabilityView, overrideView, profileView, catalogView]) {
       assert.ok(result.status < 500, `PostgREST retornou ${result.status}: ${result.body.slice(0, 240)}`);
       assert.doesNotMatch(result.body, /PGRST00[01]|database system is in recovery|segmentation fault/i);
     }

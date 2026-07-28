@@ -176,6 +176,62 @@ revoke all on function public.rpc_admin_list_internal_access_overrides_v2() from
 grant execute on function public.rpc_admin_list_internal_access_profile_capabilities_v2() to authenticated, service_role;
 grant execute on function public.rpc_admin_list_internal_access_overrides_v2() to authenticated, service_role;
 
+create or replace function public.rpc_admin_list_internal_access_profiles_v2()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select coalesce(
+    jsonb_agg(to_jsonb(rows) order by rows.name),
+    '[]'::jsonb
+  )
+  from (
+    select
+      profile_row.id as access_profile_id,
+      profile_row.name,
+      profile_row.description,
+      profile_row.is_system,
+      profile_row.is_active,
+      count(distinct membership.user_id) filter (where membership.status = 'active'::public.internal_area_membership_status)::integer as user_count,
+      count(distinct capability.capability_key)::integer as capability_count,
+      count(distinct screen.screen_key)::integer as screen_count,
+      app_private.has_internal_capability('access.profiles.manage') as can_manage
+    from public.internal_access_profiles as profile_row
+    left join public.internal_area_memberships as membership on membership.access_profile_id = profile_row.id
+    left join public.internal_access_profile_capability_grants as capability on capability.access_profile_id = profile_row.id
+    left join public.internal_access_profile_screen_grants as screen on screen.access_profile_id = profile_row.id
+    where app_private.has_internal_capability('access.view')
+    group by profile_row.id
+  ) as rows;
+$function$;
+
+create or replace function public.rpc_admin_list_internal_access_capabilities_v2()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select coalesce(
+    jsonb_agg(to_jsonb(rows) order by rows.domain, rows.display_name),
+    '[]'::jsonb
+  )
+  from (
+    select capability_key, display_name, description, domain, is_active
+    from public.internal_capabilities
+    where is_active
+      and app_private.has_internal_capability('access.view')
+  ) as rows;
+$function$;
+
+revoke all on function public.rpc_admin_list_internal_access_profiles_v2() from public, anon;
+revoke all on function public.rpc_admin_list_internal_access_capabilities_v2() from public, anon;
+grant execute on function public.rpc_admin_list_internal_access_profiles_v2() to authenticated, service_role;
+grant execute on function public.rpc_admin_list_internal_access_capabilities_v2() to authenticated, service_role;
+revoke all on public.vw_admin_access_profiles, public.vw_admin_access_capabilities from public, anon, authenticated, service_role;
+
 -- Compatibilidade de catálogo sem acesso direto: o frontend usa os RPCs v2.
 -- O predicado de capability não fica no plano de uma view consultável pelo
 -- PostgREST, e authenticated não recebe SELECT direto nessas relações.

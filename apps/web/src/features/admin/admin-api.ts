@@ -1800,16 +1800,16 @@ export async function updateAdminInternalFunction(input: { functionId: string; n
 
 export async function listAdminAccessProfiles() {
   const client = requireClient();
-  const { data, error } = await client.from('vw_admin_access_profiles').select('*').order('name');
+  const { data, error } = await client.rpc('rpc_admin_list_internal_access_profiles_v2');
   if (error) throw toAppError(error, 'Falha ao carregar os perfis internos.');
-  return (data ?? []) as AdminInternalProfileRow[];
+  return (Array.isArray(data) ? data : []) as AdminInternalProfileRow[];
 }
 
 export async function listAdminAccessCapabilities() {
   const client = requireClient();
-  const { data, error } = await client.from('vw_admin_access_capabilities').select('*').order('domain').order('display_name');
+  const { data, error } = await client.rpc('rpc_admin_list_internal_access_capabilities_v2');
   if (error) throw toAppError(error, 'Falha ao carregar as capacidades.');
-  return (data ?? []) as Array<{ capability_key: string; display_name: string; description: string | null; domain: string; is_active: boolean }>;
+  return (Array.isArray(data) ? data : []) as Array<{ capability_key: string; display_name: string; description: string | null; domain: string; is_active: boolean }>;
 }
 
 export async function listAdminAccessProfileCapabilities() {
