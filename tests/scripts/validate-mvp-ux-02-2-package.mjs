@@ -72,6 +72,16 @@ const validation = {
 };
 writeFileSync(rel('reports/validation-report.json'), JSON.stringify(validation, null, 2));
 writeFileSync(rel('reports/EVIDENCE_INTEGRITY_REPORT.md'), `# Evidência e integridade do pacote\n\n- Arquivos validados: ${files.length}.\n- Screenshots PNG validadas: ${pngs.length}.\n- Dimensões lidas do binário PNG: sim.\n- Hashes SHA-256 conferidos contra o manifesto: sim.\n- PNGs duplicadas: ${validation.duplicatePngHashes}.\n- Links locais do index conferidos: sim.\n- Caminhos absolutos/externos, segredos, cookies e estados de sessão: ${failures.length ? 'falha encontrada' : 'não encontrados'}.\n- Resultado: **${validation.valid ? 'APROVADO' : 'REPROVADO'}**.\n\n${failures.length ? failures.map((failure) => `- ${failure}`).join('\n') : 'Nenhuma falha de integridade foi encontrada.'}\n`);
+const manifestByPath = new Map(manifest.files.map((item) => [item.path, item]));
+for (const path of files) {
+  if (path === 'manifest.json') continue;
+  const item = manifestByPath.get(path) ?? { name: path.split('/').pop(), path, type: 'application/octet-stream', viewport: null, state: 'package', profile: 'reviewer', description: 'Artefato de revisão navegável.', commit: 'unknown', generatedAt: validation.validatedAt.slice(0, 10) };
+  item.size = statSync(rel(path)).size;
+  item.sha256 = hash(rel(path));
+  manifestByPath.set(path, item);
+}
+manifest.files = [...manifestByPath.values()];
+writeFileSync(rel('manifest.json'), JSON.stringify(manifest, null, 2));
 if (failures.length) {
   console.error(JSON.stringify(validation, null, 2));
   process.exit(1);
