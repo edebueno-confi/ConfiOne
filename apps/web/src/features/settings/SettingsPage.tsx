@@ -778,7 +778,18 @@ function GroupDetail({
             <TicketCategoriesPanel state={ticketCategories} />
           ) : isIntegrations ? (
             integrations.phase === 'ready' ? (
-              <AnalyticsConfigPage />
+              <>
+                <div className="gso-settings-integration-panorama" aria-label="Panorama das integrações">
+                  {integrations.items.filter((item) => ['hubspot', 'omie', 'github'].includes(item.provider)).map((item) => (
+                    <div className="gso-settings-integration-signal" key={item.id}>
+                      <span>{item.provider === 'hubspot' ? 'HubSpot' : item.provider === 'omie' ? 'OMIE' : 'Produto'}</span>
+                      <strong>{item.hasCredentials ? 'Configurado' : 'Aguardando configuração'}</strong>
+                      <small>{item.lastRunAt ? `Última execução: ${new Date(item.lastRunAt).toLocaleString('pt-BR')}` : 'Nenhuma execução registrada'}</small>
+                    </div>
+                  ))}
+                </div>
+                <AnalyticsConfigPage />
+              </>
             ) : integrations.phase === 'error' ? (
               <div className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] px-4 py-3 text-sm text-[color:var(--color-danger-text)]">Não foi possível carregar as integrações agora.</div>
             ) : (
