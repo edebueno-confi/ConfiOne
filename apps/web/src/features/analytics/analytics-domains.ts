@@ -19,7 +19,7 @@ export interface AnalyticsDomain {
 }
 
 export const ANALYTICS_DOMAINS: AnalyticsDomain[] = [
-  { key: 'ceo', label: 'Visão executiva', description: 'Resumo para decisão de CEO', syncDomain: null, Component: AnalyticsCeoPage, enabled: true },
+  { key: 'ceo', label: 'Visão Geral', description: 'Resumo para decisão de CEO', syncDomain: null, Component: AnalyticsCeoPage, enabled: true },
   { key: 'commercial', label: 'Comercial', description: 'Operação Aftersale (Deals HubSpot)', syncDomain: 'commercial', Component: AnalyticsCommercialPage, enabled: true },
   { key: 'customer_success', label: 'Customer Success', description: 'Carteira e relacionamento com clientes', syncDomain: null, Component: AnalyticsCustomerSuccessPage, enabled: true },
   { key: 'support', label: 'Suporte', description: 'Tickets, atendimento e backlog (HubSpot)', syncDomain: 'cs', Component: AnalyticsCsPage, enabled: true },

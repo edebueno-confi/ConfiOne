@@ -330,6 +330,7 @@ function ExecutiveHdCanvas({
     { label: "Produto", state: undefined, note: "não conectado" },
     { label: "Desenvolvimento", state: undefined, note: "não conectado" },
   ];
+  const availableSources = sourceStates.filter((item) => item.state && !['error', 'unavailable', 'not_configured'].includes(item.state.status)).length;
   const qualityExpected = state?.coverage.expected;
   const qualityReceived = state?.coverage.received;
   const qualityLabel =
@@ -359,6 +360,7 @@ function ExecutiveHdCanvas({
             </div>
           ))}
         </div>
+        <span className="gso-hd-source-summary">{availableSources} de {sourceStates.length} fontes disponíveis</span>
         <span className="gso-hd-pulse-meta">
           {state?.lastSuccessfulSyncAt
             ? `Última atualização ${formatRelativeSync(state.lastSuccessfulSyncAt)}`
@@ -368,9 +370,9 @@ function ExecutiveHdCanvas({
 
       <section className="gso-hd-context" aria-labelledby="executive-heading">
         <div>
-          <p className="gso-hd-eyebrow">Canvas Gerencial Gênio HD</p>
+          <p className="gso-hd-eyebrow">Visão Geral</p>
           <div className="gso-hd-title-row">
-            <h2 id="executive-heading">Visão Executiva</h2>
+            <h2 id="executive-heading">Visão Geral</h2>
             {state ? <HdStatus state={state} /> : null}
           </div>
           <p>

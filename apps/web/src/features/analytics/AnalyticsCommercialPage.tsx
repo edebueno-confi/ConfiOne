@@ -21,6 +21,7 @@ import { resolveAnalyticsPeriod } from './analytics-periods';
 import type { AnalyticsPageProps } from './analytics-model';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
 import { CommercialFunnelChart, CommercialMonthlyChart } from './charts/AnalyticsCharts';
+import { AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
 
 type State =
   | { phase: 'loading' }
@@ -74,13 +75,11 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
   }, [filters, excludedPipelineIds]);
 
   if (state.phase === 'loading') {
-    return (
-      <AnalyticsLoadingState title="Carregando comercial" description="O Gênio está consultando os negócios sincronizados do HubSpot." />
-    );
+    return <AnalyticsHdDomainFrame title="Comercial" description="Receita, pipeline e conversão para decisão comercial." source="HubSpot · Deals"><AnalyticsLoadingState title="Carregando comercial" description="O Gênio está consultando os negócios sincronizados do HubSpot." /></AnalyticsHdDomainFrame>;
   }
 
   if (state.phase === 'error') {
-    return <MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores comerciais estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
+    return <AnalyticsHdDomainFrame title="Comercial" description="Receita, pipeline e conversão para decisão comercial." source="HubSpot · Deals"><MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores comerciais estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} /></AnalyticsHdDomainFrame>;
   }
 
   const { kpis, funnel, byPipeline, byOwner, monthly, state: dataState } = state;
@@ -92,6 +91,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
   });
 
   return (
+    <AnalyticsHdDomainFrame title="Comercial" description="Receita, pipeline e conversão para decisão comercial." source="HubSpot · Deals" state={dataState}>
     <div className="gso-hd-domain-surface space-y-5">
       <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} ownerOptions={ownerOptions} />
       {pipelineOptions.length > 0 ? <AnalyticsPipelineCombobox storageKey="analytics-commercial-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.dealCount }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null}
@@ -163,6 +163,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
         )}
       </ChartCard> : null}
     </div>
+    </AnalyticsHdDomainFrame>
   );
 }
 

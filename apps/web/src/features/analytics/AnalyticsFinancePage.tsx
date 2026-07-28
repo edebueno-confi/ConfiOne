@@ -6,6 +6,7 @@ import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, KpiCard, Metric
 import { formatCurrencyBRL, formatMonthLabel, formatPercent, type AnalyticsFilters, DEFAULT_ANALYTICS_FILTERS, type FinanceBreakdown, type FinanceSnapshot, type FinanceSourceStatus } from './analytics-model';
 import { ANALYTICS_PERIOD_OPTIONS, resolveAnalyticsPeriod, type AnalyticsPeriodPreset } from './analytics-periods';
 import type { AnalyticsPageProps } from './analytics-model';
+import { AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
 
 type FinanceFilters = AnalyticsFilters & { clientQuery: string };
 
@@ -98,17 +99,17 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
   };
   const apply = () => { if (draft.from && draft.to && draft.from > draft.to) return; setFilters(draft); onSharedPeriodChange?.({ from: draft.from, to: draft.to }); };
 
-  if (state.phase === 'loading') return <AnalyticsLoadingState title="Carregando financeiro" description="O Gênio está consultando as Contas a Receber do OMIE." />;
-  if (state.phase === 'error') return <MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores financeiros estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
+  if (state.phase === 'loading') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber"><AnalyticsLoadingState title="Carregando financeiro" description="O Gênio está consultando as Contas a Receber do OMIE." /></AnalyticsHdDomainFrame>;
+  if (state.phase === 'error') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber"><MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores financeiros estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} /></AnalyticsHdDomainFrame>;
   const { snapshot } = state;
   const { kpis } = snapshot;
   const dataState = snapshot.state;
-  if (dataState?.status === 'error' || dataState?.status === 'unavailable') return <MinimalState tone="critical" title="Dados financeiros indisponíveis" description="A fonte financeira não respondeu. Tente novamente mais tarde." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
-  if (dataState?.status === 'not_configured') return <MinimalState title="Fonte financeira não configurada" description="Configure a fonte OMIE ou o fallback aprovado para consultar estes indicadores." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
+  if (dataState?.status === 'error' || dataState?.status === 'unavailable') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState tone="critical" title="Dados financeiros indisponíveis" description="A fonte financeira não respondeu. Tente novamente mais tarde." actions={<AnalyticsRetryAction onRetry={onRetry} />} /></AnalyticsHdDomainFrame>;
+  if (dataState?.status === 'not_configured') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState title="Fonte financeira não configurada" description="Configure a fonte OMIE ou o fallback aprovado para consultar estes indicadores." actions={<AnalyticsRetryAction onRetry={onRetry} />} /></AnalyticsHdDomainFrame>;
   const sourceIsApi = snapshot.source === 'api';
   const controlClass = 'mt-1 block w-full rounded-lg border border-[color:var(--minimal-border-strong)] bg-transparent px-2 py-1.5 text-sm text-[color:var(--minimal-text)]';
 
-  return <>
+  return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}>
     <div className="gso-hd-domain-surface space-y-5">
     {/* Toolbar de fonte e sincronização */}
     <section className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4">
@@ -204,5 +205,5 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
       </ChartCard>
     </>}
     </div>
-  </>;
+  </AnalyticsHdDomainFrame>;
 }

@@ -66,14 +66,30 @@ export function AnalyticsShell() {
             <SyncStatusLabel run={latestRun} error={syncStatusError} />
           </div>
         </div>
-        <nav className="gso-workspace-tabs mt-2 flex max-w-full flex-nowrap gap-1 overflow-x-auto pb-1 pr-4" aria-label="Áreas do dashboard">
+        <nav className="gso-workspace-tabs gso-analytics-domain-tabs mt-2 flex max-w-full flex-nowrap gap-1 overflow-x-auto pb-1 pr-4" aria-label="Áreas do dashboard">
           {visibleDomains.map((domain) => {
             const isActive = domain.key === activeKey;
             return <button key={domain.key} type="button" onClick={() => { const next = normalizeAnalyticsSearch(location.search); next.set('tab', analyticsTabForDomain(domain.key)); if (domain.key !== 'support') next.delete('pipeline'); navigate({ pathname: '/admin/analytics', search: `?${next.toString()}` }); }} aria-current={isActive ? 'page' : undefined} title={domain.description} className={`gso-workspace-tab flex-none whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition ${isActive ? 'bg-[color:var(--minimal-surface-muted)] text-[color:var(--minimal-text)]' : 'text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)]'}`}>{domain.label}</button>;
           })}
         </nav>
+        <label className="gso-analytics-domain-select mt-2">
+          <span>Área do dashboard</span>
+          <select
+            value={activeDomain?.key ?? ''}
+            onChange={(event) => {
+              const domain = visibleDomains.find((item) => item.key === event.target.value);
+              if (!domain) return;
+              const next = normalizeAnalyticsSearch(location.search);
+              next.set('tab', analyticsTabForDomain(domain.key));
+              if (domain.key !== 'support') next.delete('pipeline');
+              navigate({ pathname: '/admin/analytics', search: `?${next.toString()}` });
+            }}
+          >
+            {visibleDomains.map((domain) => <option key={domain.key} value={domain.key}>{domain.label}</option>)}
+          </select>
+        </label>
       </header>
-      <div className="px-5 py-4 sm:px-6">
+      <div className="gso-analytics-content px-5 py-4 sm:px-6">
         <Suspense fallback={<MinimalState loading title="Carregando área do dashboard" description="Estamos preparando os indicadores deste recorte." />}>
           {ActiveComponent ? <ActiveComponent key={`${activeKey}-${reloadKey}`} sharedPeriod={sharedPeriod} onSharedPeriodChange={setSharedPeriod} onRetry={() => setReloadKey((current) => current + 1)} isDashboardViewer={isDashboardViewer} /> : null}
         </Suspense>
