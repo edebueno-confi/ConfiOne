@@ -299,14 +299,27 @@ values
     timezone('utc', now())
   );
 
-delete from public.user_global_roles
-where role = 'platform_admin';
+do $$
+begin
+  if exists (select 1 from public.user_global_roles where role = 'platform_admin') then
+    insert into public.user_global_roles (user_id, role)
+    values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'platform_admin'::public.platform_role)
+    on conflict (user_id, role) do nothing;
+  end if;
+end $$;
 
 select is(
-  app_private.bootstrap_first_platform_admin(
-    'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,
-    'pgTAP multi brand foundation'
-  )::text,
+  case
+    when exists (
+      select 1 from public.user_global_roles
+      where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid
+        and role = 'platform_admin'::public.platform_role
+    ) then 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::text
+    else app_private.bootstrap_first_platform_admin(
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,
+      'pgTAP multi brand foundation'
+    )::text
+  end,
   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   'bootstrap do primeiro platform_admin permanece funcional na fundacao multi-brand'
 );
