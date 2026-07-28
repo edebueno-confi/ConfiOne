@@ -52,10 +52,8 @@ test("responsividade, foco e reduced motion estão cobertos por tokens locais", 
   assert.match(shell, /overflow-y-auto/);
 });
 
-test("dashboard viewer preserva somente o recorte executivo", () => {
-  assert.match(
-    shell,
-    /visibleDomains = isDashboardViewer \? DOMAINS\.filter\(\(domain\) => domain\.key === 'ceo'\)/,
-  );
-  assert.match(page, /Detalhamento restrito ao perfil/);
+test("dashboard viewer recebe os domínios executivos sem ações administrativas", () => {
+  assert.match(shell, /const visibleDomains = DOMAINS/);
+  assert.match(page, /isDashboardViewer/);
+  assert.doesNotMatch(page, /Detalhamento restrito ao perfil/);
 });
