@@ -1,7 +1,7 @@
 # MVP-UX-02.1 — Implementação local e auditoria do Canvas Gerencial Gênio HD
 
-Data: 2026-07-28  
-Branch: `codex/mvp-ux-01-structural-simplification`  
+Data: 2026-07-28
+Branch: `codex/mvp-ux-01-structural-simplification`
 Escopo: refatoração visual local do Dashboard Gerencial, shell interno, Access e Settings. Nenhuma alteração em HubSpot, OMIE, Central de Ajuda, Knowledge, Taxonomia, usuários remotos ou migrations remotas.
 
 ## Direção aprovada
