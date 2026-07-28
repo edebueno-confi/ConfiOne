@@ -92,7 +92,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
   });
 
   return (
-    <div className="space-y-5">
+    <div className="gso-hd-domain-surface space-y-5">
       <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} ownerOptions={ownerOptions} />
       {pipelineOptions.length > 0 ? <AnalyticsPipelineCombobox storageKey="analytics-commercial-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.dealCount }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null}
       {dataState?.status === 'empty' ? (

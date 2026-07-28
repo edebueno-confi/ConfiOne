@@ -31,7 +31,7 @@ export function AnalyticsCustomerSuccessPage({ sharedPeriod, onRetry }: Analytic
   const data = state.data.customerSuccess;
   const isUnavailable = ['empty', 'unavailable', 'error', 'not_configured'].includes(data.state.status);
   const statusLabel = STATUS_LABELS[data.state.status];
-  return <div className="space-y-5" data-testid="customer-success-dashboard">
+  return <div className="gso-hd-domain-surface space-y-5" data-testid="customer-success-dashboard">
     <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[color:var(--minimal-border)] pb-3">
       <div><h2 className="text-base font-semibold text-[color:var(--minimal-text)]">Customer Success</h2><p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">Carteira, relacionamento e sinais de saúde disponíveis.</p></div>
       <div className="text-right"><span className="text-xs font-medium text-[color:var(--minimal-text-secondary)]">{statusLabel}</span><AnalyticsStateBadge state={data.state} /></div>

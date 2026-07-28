@@ -10,7 +10,7 @@ export function AnalyticsDevelopmentPage(_props: AnalyticsPageProps) {
 }
 
 function UnavailableArea({ title, description }: { title: string; description: string }) {
-  return <section className="space-y-4" aria-labelledby="analytics-unavailable-heading">
+  return <section className="gso-hd-domain-surface space-y-4" aria-labelledby="analytics-unavailable-heading">
     <header className="border-b border-[color:var(--minimal-border)] pb-3">
       <h2 id="analytics-unavailable-heading" className="text-base font-semibold text-[color:var(--minimal-text)]">{title}</h2>
       <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">Fonte ainda não conectada</p>

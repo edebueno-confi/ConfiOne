@@ -173,7 +173,7 @@ export function InternalControlPlanePage() {
   const pendingInvites = invites.filter((invite) => invite.status === 'pending' || invite.status === 'sent').length;
 
   return (
-    <div className="gso-screen-frame flex h-full min-h-0 flex-col gap-4 overflow-y-auto bg-[color:var(--minimal-surface)] p-4 sm:p-6">
+    <div className="gso-screen-frame gso-access-hd flex h-full min-h-0 flex-col gap-4 overflow-y-auto bg-[color:var(--minimal-surface)] p-4 sm:p-6">
       <header className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-5">
         <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--minimal-text-tertiary)]">Control plane interno</p><h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--minimal-text)]">Acessos e áreas</h1><p className="mt-1 max-w-2xl text-sm text-[color:var(--minimal-text-secondary)]">Administre colaboradores internos, convites, funções e permissões efetivas.</p></div>
         <AppButton onClick={() => selectTab('invites')}>Convidar usuário</AppButton>

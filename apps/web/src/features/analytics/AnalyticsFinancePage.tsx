@@ -109,7 +109,7 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
   const controlClass = 'mt-1 block w-full rounded-lg border border-[color:var(--minimal-border-strong)] bg-transparent px-2 py-1.5 text-sm text-[color:var(--minimal-text)]';
 
   return <>
-    <div className="space-y-5">
+    <div className="gso-hd-domain-surface space-y-5">
     {/* Toolbar de fonte e sincronização */}
     <section className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
