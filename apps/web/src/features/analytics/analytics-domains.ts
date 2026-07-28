@@ -5,75 +5,29 @@ const AnalyticsCommercialPage = lazy(() => import('./AnalyticsCommercialPage').t
 const AnalyticsCsPage = lazy(() => import('./AnalyticsCsPage').then((module) => ({ default: module.AnalyticsCsPage })));
 const AnalyticsFinancePage = lazy(() => import('./AnalyticsFinancePage').then((module) => ({ default: module.AnalyticsFinancePage })));
 const AnalyticsCeoPage = lazy(() => import('./AnalyticsCeoPage').then((module) => ({ default: module.AnalyticsCeoPage })));
-const AnalyticsLogsPage = lazy(() => import('./AnalyticsLogsPage').then((module) => ({ default: module.AnalyticsLogsPage })));
-const AnalyticsConfigPage = lazy(() => import('./AnalyticsConfigPage').then((module) => ({ default: module.AnalyticsConfigPage })));
+const AnalyticsCustomerSuccessPage = lazy(() => import('./AnalyticsCustomerSuccessPage').then((module) => ({ default: module.AnalyticsCustomerSuccessPage })));
+const AnalyticsProductPage = lazy(() => import('./AnalyticsUnavailablePages').then((module) => ({ default: module.AnalyticsProductPage })));
+const AnalyticsDevelopmentPage = lazy(() => import('./AnalyticsUnavailablePages').then((module) => ({ default: module.AnalyticsDevelopmentPage })));
 
-// Registry/adapter por dominio de dados. Adicionar uma nova area (Financeiro,
-// Produto, Migracao, Onboarding, Juridico, Clientes) = registrar um item aqui
-// com o seu componente de secao. A UI (AnalyticsShell) itera sobre este array,
-// entao nenhuma tela precisa ser reescrita para plugar uma area nova.
 export interface AnalyticsDomain {
   key: string;
   label: string;
   description: string;
-  // syncDomain: chave enviada a Edge Function hubspot-sync. null = area sem
-  // fonte HubSpot sincronizavel ainda (usa outro adapter no futuro).
   syncDomain: 'commercial' | 'cs' | null;
   Component: ComponentType<AnalyticsPageProps>;
   enabled: boolean;
 }
 
 export const ANALYTICS_DOMAINS: AnalyticsDomain[] = [
-  {
-    key: 'ceo',
-    label: 'Visão executiva',
-    description: 'Resumo para decisão de CEO',
-    syncDomain: null,
-    Component: AnalyticsCeoPage,
-    enabled: true,
-  },
-  {
-    key: 'commercial',
-    label: 'Comercial',
-    description: 'Operacao Aftersale (Deals HubSpot)',
-    syncDomain: 'commercial',
-    Component: AnalyticsCommercialPage,
-    enabled: true,
-  },
-  {
-    key: 'cs',
-    label: 'CS / Suporte',
-    description: 'Tickets de suporte (HubSpot)',
-    syncDomain: 'cs',
-    Component: AnalyticsCsPage,
-    enabled: true,
-  },
-  {
-    key: 'finance',
-    label: 'Financeiro',
-    description: 'Contas a receber do Omie ou planilha exportada',
-    syncDomain: null,
-    Component: AnalyticsFinancePage,
-    enabled: true,
-  },
-  {
-    key: 'logs',
-    label: 'Logs',
-    description: 'Histórico das integrações gerenciais',
-    syncDomain: null,
-    Component: AnalyticsLogsPage,
-    enabled: true,
-  },
-  {
-    key: 'config',
-    label: 'Configuração',
-    description: 'Pipelines e fontes do Dashboard Gerencial',
-    syncDomain: null,
-    Component: AnalyticsConfigPage,
-    enabled: true,
-  },
+  { key: 'ceo', label: 'Visão Geral', description: 'Resumo para decisão de CEO', syncDomain: null, Component: AnalyticsCeoPage, enabled: true },
+  { key: 'commercial', label: 'Comercial', description: 'Operação Aftersale (Deals HubSpot)', syncDomain: 'commercial', Component: AnalyticsCommercialPage, enabled: true },
+  { key: 'customer_success', label: 'Customer Success', description: 'Carteira e relacionamento com clientes', syncDomain: null, Component: AnalyticsCustomerSuccessPage, enabled: true },
+  { key: 'support', label: 'Suporte', description: 'Tickets, atendimento e backlog (HubSpot)', syncDomain: 'cs', Component: AnalyticsCsPage, enabled: true },
+  { key: 'finance', label: 'Financeiro', description: 'Contas a receber do OMIE ou planilha exportada', syncDomain: null, Component: AnalyticsFinancePage, enabled: true },
+  { key: 'product', label: 'Produto', description: 'Fonte de produto ainda não conectada', syncDomain: null, Component: AnalyticsProductPage, enabled: true },
+  { key: 'development', label: 'Desenvolvimento', description: 'Fonte de desenvolvimento ainda não conectada', syncDomain: null, Component: AnalyticsDevelopmentPage, enabled: true },
 ];
 
-export function listEnabledAnalyticsDomains(): AnalyticsDomain[] {
+export function listEnabledAnalyticsDomains() {
   return ANALYTICS_DOMAINS.filter((domain) => domain.enabled);
 }

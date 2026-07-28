@@ -8,8 +8,8 @@ test('analytics navigation preserves the canonical allowlist', () => {
   for (const key of ['tab', 'pipeline', 'from', 'to', 'status', 'owner']) assert.match(source, new RegExp(`['"]${key}['"]`));
 });
 
-test('analytics navigation supports the four public dashboard tabs', () => {
-  for (const tab of ['ceo', 'commercial', 'cs-support', 'finance']) assert.match(source, new RegExp(`['"]${tab}['"]`));
+test('analytics navigation supports the executive dashboard domains', () => {
+  for (const tab of ['ceo', 'commercial', 'customer-success', 'support', 'finance', 'product', 'development']) assert.match(source, new RegExp(`['"]${tab}['"]`));
 });
 
 test('analytics navigation validates identifiers and dates', () => {

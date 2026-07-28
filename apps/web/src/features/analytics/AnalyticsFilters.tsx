@@ -8,14 +8,20 @@ export function AnalyticsFilters({ value, onApply, stageOptions, ownerOptions = 
   const [draft, setDraft] = useState(value);
   const [validation, setValidation] = useState<string | null>(null);
   const [preset, setPreset] = useState<AnalyticsPeriodPreset | ''>(() => matchAnalyticsPeriodPreset(value));
+  const [mobileOpen, setMobileOpen] = useState(false);
   useEffect(() => { setDraft(value); setPreset(matchAnalyticsPeriodPreset(value)); }, [value]);
   const update = (key: keyof AnalyticsFilters, next: string) => setDraft((current) => ({ ...current, [key]: next }));
-  const apply = () => { if (draft.from && draft.to && draft.from > draft.to) { setValidation('A data inicial precisa ser anterior ou igual à data final.'); return; } setValidation(null); onApply(draft); };
-  const clear = () => { const next = { from: '', to: '', ownerId: '', stageId: '', priority: '' }; setDraft(next); setValidation(null); onApply(next); };
-  const applyPreset = (nextPreset: AnalyticsPeriodPreset) => { setPreset(nextPreset); const period = resolveAnalyticsPeriod(nextPreset); setDraft((current) => ({ ...current, ...period })); setValidation(null); onApply({ ...draft, ...period }); };
+  const apply = () => {
+    if (draft.from && draft.to && draft.from > draft.to) { setValidation('A data inicial precisa ser anterior ou igual à data final.'); return; }
+    setValidation(null); onApply(draft); setMobileOpen(false);
+  };
+  const clear = () => { const next = { from: '', to: '', ownerId: '', stageId: '', priority: '' }; setDraft(next); setValidation(null); onApply(next); setMobileOpen(false); };
+  const applyPreset = (nextPreset: AnalyticsPeriodPreset) => { setPreset(nextPreset); const period = resolveAnalyticsPeriod(nextPreset); setDraft((current) => ({ ...current, ...period })); setValidation(null); onApply({ ...draft, ...period }); setMobileOpen(false); };
   const controlClass = 'h-9 rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-2.5 text-sm font-normal text-[color:var(--minimal-text)] outline-none transition focus:border-[color:var(--minimal-text-secondary)] focus:ring-2 focus:ring-[color:var(--minimal-border-strong)]';
+  const activeCount = [draft.from, draft.to, draft.ownerId, draft.stageId, draft.priority].filter(Boolean).length;
   return <section className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-4 py-3.5" aria-label="Filtros da análise">
-    <div className="flex flex-wrap items-end gap-3">
+    <button type="button" onClick={() => setMobileOpen((current) => !current)} className="flex h-9 w-full items-center justify-between rounded-md border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-3 text-sm font-medium text-[color:var(--minimal-text)] sm:hidden">Filtros <span className="text-xs text-[color:var(--minimal-text-tertiary)]">{activeCount ? `${activeCount} ativo${activeCount === 1 ? '' : 's'}` : 'Nenhum ativo'}</span></button>
+    <div className={`${mobileOpen ? 'flex' : 'hidden'} flex-wrap items-end gap-3 sm:flex`}>
       <FilterField label="Período"><select value={preset} onChange={(event) => applyPreset(event.target.value as AnalyticsPeriodPreset)} className={controlClass}><option value="">Personalizado</option>{ANALYTICS_PERIOD_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></FilterField>
       <FilterField label="De"><input type="date" value={draft.from} onChange={(event) => update('from', event.target.value)} className={controlClass} /></FilterField>
       <FilterField label="Até"><input type="date" value={draft.to} onChange={(event) => update('to', event.target.value)} className={controlClass} /></FilterField>

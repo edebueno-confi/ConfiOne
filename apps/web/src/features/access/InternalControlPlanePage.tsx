@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { formatDateTime } from '../../app/format';
 import { EmptyState, ErrorState, LoadingState } from '../../components/states';
 import {
@@ -50,10 +51,10 @@ type Tab = 'users' | 'invites' | 'structure' | 'permissions';
 type LoadPhase = 'loading' | 'ready' | 'error' | 'denied';
 
 const tabs: Array<{ key: Tab; label: string }> = [
-  { key: 'users', label: 'Usuários internos' },
+  { key: 'users', label: 'Usuários' },
   { key: 'invites', label: 'Convites' },
-  { key: 'structure', label: 'Áreas e funções' },
-  { key: 'permissions', label: 'Perfis e permissões' },
+  { key: 'structure', label: 'Estrutura' },
+  { key: 'permissions', label: 'Perfis' },
 ];
 
 function statusLabel(status: string) {
@@ -73,9 +74,25 @@ function fieldLabel(label: string, children: React.ReactNode) {
 
 export function InternalControlPlanePage() {
   const { markSessionExpired } = useAuthContext();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [phase, setPhase] = useState<LoadPhase>('loading');
   const [message, setMessage] = useState<{ text: string; tone?: 'positive' | 'warning' | 'critical' } | null>(null);
-  const [tab, setTab] = useState<Tab>('users');
+  const [tab, setTab] = useState<Tab>(() => {
+    const candidate = searchParams.get('tab');
+    return candidate === 'invites' || candidate === 'structure' || candidate === 'permissions' ? candidate : 'users';
+  });
+
+  useEffect(() => {
+    const candidate = searchParams.get('tab');
+    if (candidate === 'users' || candidate === 'invites' || candidate === 'structure' || candidate === 'permissions') setTab(candidate);
+  }, [searchParams]);
+
+  const selectTab = (next: Tab) => {
+    setTab(next);
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', next);
+    setSearchParams(params, { replace: true });
+  };
   const [users, setUsers] = useState<AdminInternalAccessUserRow[]>([]);
   const [invites, setInvites] = useState<AdminInternalInviteRow[]>([]);
   const [areas, setAreas] = useState<AdminInternalAccessAreaRow[]>([]);
@@ -156,15 +173,15 @@ export function InternalControlPlanePage() {
   const pendingInvites = invites.filter((invite) => invite.status === 'pending' || invite.status === 'sent').length;
 
   return (
-    <div className="gso-screen-frame flex h-full min-h-0 flex-col gap-4 overflow-y-auto bg-[color:var(--minimal-surface)] p-4 sm:p-6">
+    <div className="gso-screen-frame gso-access-hd flex h-full min-h-0 flex-col gap-4 overflow-y-auto bg-[color:var(--minimal-surface)] p-4 sm:p-6">
       <header className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-5">
         <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--minimal-text-tertiary)]">Control plane interno</p><h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--minimal-text)]">Acessos e áreas</h1><p className="mt-1 max-w-2xl text-sm text-[color:var(--minimal-text-secondary)]">Administre colaboradores internos, convites, funções e permissões efetivas.</p></div>
-        <AppButton onClick={() => setTab('invites')}>Convidar usuário</AppButton>
+        <AppButton onClick={() => selectTab('invites')}>Convidar usuário</AppButton>
       </header>
       <div className="grid gap-3 sm:grid-cols-3"><Metric label="Usuários ativos" value={activeUsers} hint="contexto interno ativo" /><Metric label="Convites pendentes" value={pendingInvites} hint="sem token exposto" /><Metric label="Usuários suspensos" value={suspendedUsers} hint="sem acesso operacional" /></div>
       {message ? <InlineNotice tone={message.tone}>{message.text}</InlineNotice> : null}
       <nav className="flex gap-1 overflow-x-auto rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] p-1" aria-label="Seções de acessos">
-        {tabs.map((item) => <button className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium ${tab === item.key ? 'bg-[color:var(--minimal-surface)] text-[color:var(--minimal-text)] shadow-sm' : 'text-[color:var(--minimal-text-secondary)]'}`} key={item.key} onClick={() => setTab(item.key)} type="button">{item.label}</button>)}
+        {tabs.map((item) => <button className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium ${tab === item.key ? 'bg-[color:var(--minimal-surface)] text-[color:var(--minimal-text)] shadow-sm' : 'text-[color:var(--minimal-text-secondary)]'}`} key={item.key} onClick={() => selectTab(item.key)} type="button">{item.label}</button>)}
       </nav>
       {tab === 'users' ? <UsersPanel users={filteredUsers} query={query} setQuery={setQuery} filters={{ area: userAreaFilter, functionId: userFunctionFilter, profile: userProfileFilter, status: userStatusFilter }} setFilters={{ setArea: setUserAreaFilter, setFunctionId: setUserFunctionFilter, setProfile: setUserProfileFilter, setStatus: setUserStatusFilter }} selectedUser={selectedUser} detail={detail} assignment={assignment} setAssignment={setAssignment} areas={areas} functions={functions} profiles={profiles} capabilities={capabilities} overrides={overrides.filter((item) => item.user_id === selectedUser?.user_id)} overrideForm={overrideForm} setOverrideForm={setOverrideForm} onSelect={openUser} onRefresh={() => void load()} onAction={runAction} busy={busy} /> : null}
       {tab === 'invites' ? <InvitesPanel invites={invites} areas={areas} functions={functions} profiles={profiles} form={inviteForm} setForm={setInviteForm} onSubmit={submitInvite} onRevoke={(id) => void runAction(() => revokeAdminInternalInvitation(id), 'Convite revogado.')} busy={busy} /> : null}

@@ -1,7 +1,7 @@
-export type AnalyticsUrlTab = 'ceo' | 'commercial' | 'cs-support' | 'finance';
+export type AnalyticsUrlTab = 'ceo' | 'commercial' | 'customer-success' | 'support' | 'finance' | 'product' | 'development';
 
-const allowedTabs = new Set<AnalyticsUrlTab>(['ceo', 'commercial', 'cs-support', 'finance']);
-const allowedKeys = new Set(['tab', 'pipeline', 'from', 'to', 'status', 'owner']);
+const allowedTabs = new Set<AnalyticsUrlTab>(['ceo', 'commercial', 'customer-success', 'support', 'finance', 'product', 'development']);
+const allowedKeys = new Set(['tab', 'pipeline', 'from', 'to', 'status', 'owner', 'priority', 'stage']);
 
 export function normalizeAnalyticsSearch(search: string) {
   const input = new URLSearchParams(search);
@@ -9,14 +9,14 @@ export function normalizeAnalyticsSearch(search: string) {
   for (const [key, value] of input.entries()) {
     if (!allowedKeys.has(key) || !value.trim()) continue;
     if (key === 'tab') {
-      const tab = value === 'cs' ? 'cs-support' : value;
+      const tab = value === 'cs' || value === 'cs-support' ? 'support' : value;
       if (!allowedTabs.has(tab as AnalyticsUrlTab)) continue;
       output.set('tab', tab);
     } else if (key === 'from' || key === 'to') {
       if (/^\d{4}-\d{2}-\d{2}$/.test(value)) output.set(key, value);
     } else if (key === 'pipeline' || key === 'owner') {
       if (/^[A-Za-z0-9_-]{1,120}$/.test(value)) output.set(key, value);
-    } else if (key === 'status') {
+    } else if (key === 'status' || key === 'priority' || key === 'stage') {
       output.set(key, value.slice(0, 120));
     }
   }
@@ -30,12 +30,12 @@ export function normalizeAnalyticsSearch(search: string) {
 }
 
 export function analyticsDomainFromTab(tab: string | null) {
-  if (tab === 'commercial' || tab === 'cs-support' || tab === 'finance') return tab === 'cs-support' ? 'cs' : tab;
+  if (tab === 'commercial' || tab === 'customer-success' || tab === 'support' || tab === 'finance' || tab === 'product' || tab === 'development') return tab === 'support' ? 'support' : tab.replace('customer-success', 'customer_success');
   return 'ceo';
 }
 
 export function analyticsTabForDomain(domain: string) {
-  return domain === 'cs' ? 'cs-support' : domain as AnalyticsUrlTab;
+  return domain === 'customer_success' ? 'customer-success' : domain === 'cs' ? 'support' : domain as AnalyticsUrlTab;
 }
 
 export function analyticsHref(tab: AnalyticsUrlTab, extras: Record<string, string | undefined> = {}) {

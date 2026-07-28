@@ -1800,23 +1800,23 @@ export async function updateAdminInternalFunction(input: { functionId: string; n
 
 export async function listAdminAccessProfiles() {
   const client = requireClient();
-  const { data, error } = await client.from('vw_admin_access_profiles').select('*').order('name');
+  const { data, error } = await client.rpc('rpc_admin_list_internal_access_profiles_v2');
   if (error) throw toAppError(error, 'Falha ao carregar os perfis internos.');
-  return (data ?? []) as AdminInternalProfileRow[];
+  return (Array.isArray(data) ? data : []) as AdminInternalProfileRow[];
 }
 
 export async function listAdminAccessCapabilities() {
   const client = requireClient();
-  const { data, error } = await client.from('vw_admin_access_capabilities').select('*').order('domain').order('display_name');
+  const { data, error } = await client.rpc('rpc_admin_list_internal_access_capabilities_v2');
   if (error) throw toAppError(error, 'Falha ao carregar as capacidades.');
-  return (data ?? []) as Array<{ capability_key: string; display_name: string; description: string | null; domain: string; is_active: boolean }>;
+  return (Array.isArray(data) ? data : []) as Array<{ capability_key: string; display_name: string; description: string | null; domain: string; is_active: boolean }>;
 }
 
 export async function listAdminAccessProfileCapabilities() {
   const client = requireClient();
-  const { data, error } = await client.from('vw_admin_access_profile_capabilities').select('*');
+  const { data, error } = await client.rpc('rpc_admin_list_internal_access_profile_capabilities_v2');
   if (error) throw toAppError(error, 'Falha ao carregar as capacidades dos perfis.');
-  return (data ?? []) as Array<{ access_profile_id: string; capability_key: string }>;
+  return (Array.isArray(data) ? data : []) as Array<{ access_profile_id: string; capability_key: string }>;
 }
 
 export async function replaceAdminAccessProfileCapabilities(profileId: string, capabilityKeys: string[]) {
@@ -1842,9 +1842,10 @@ export async function updateAdminAccessProfile(input: { profileId: string; name:
 
 export async function listAdminInternalOverrides() {
   const client = requireClient();
-  const { data, error } = await client.from('vw_admin_access_overrides').select('*').order('updated_at', { ascending: false });
+  const { data, error } = await client.rpc('rpc_admin_list_internal_access_overrides_v2');
   if (error) throw toAppError(error, 'Falha ao carregar os overrides.');
-  return (data ?? []) as AdminInternalOverrideRow[];
+  const rows = Array.isArray(data) ? data as AdminInternalOverrideRow[] : [];
+  return [...rows].sort((left, right) => String(right.updated_at ?? '').localeCompare(String(left.updated_at ?? '')));
 }
 
 export async function upsertAdminInternalOverride(input: { userId: string; capabilityKey: string; effect: 'allow' | 'deny'; justification: string; validUntil?: string | null }) {

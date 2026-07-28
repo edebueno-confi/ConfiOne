@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { cx } from '../../components/ui';
 import {
   archiveConversationType,
@@ -30,7 +31,7 @@ import {
   saveHelpCenterSupportContacts,
   saveManagedIntegration,
 } from './settings-api';
-import { IntegrationSettingsPanel } from './IntegrationSettingsPanel';
+import { AnalyticsConfigPage } from '../analytics/AnalyticsConfigPage';
 import { useAuthContext } from '../auth/auth-context';
 
 type GroupStatus = 'ativo' | 'existe_hoje' | 'em_breve';
@@ -697,7 +698,7 @@ function GroupDetail({
   mutating,
   mutationError,
   integrations,
-  onSaveIntegration,
+  onSaveIntegration: _onSaveIntegration,
 }: {
   group: SettingsGroup;
   conversationTypes: LoadState<ConversationType>;
@@ -777,7 +778,18 @@ function GroupDetail({
             <TicketCategoriesPanel state={ticketCategories} />
           ) : isIntegrations ? (
             integrations.phase === 'ready' ? (
-              <IntegrationSettingsPanel error={mutationError} items={integrations.items} mutating={mutating} onSave={onSaveIntegration} />
+              <>
+                <div className="gso-settings-integration-panorama" aria-label="Panorama das integrações">
+                  {integrations.items.filter((item) => ['hubspot', 'omie', 'github'].includes(item.provider)).map((item) => (
+                    <div className="gso-settings-integration-signal" key={item.id}>
+                      <span>{item.provider === 'hubspot' ? 'HubSpot' : item.provider === 'omie' ? 'OMIE' : 'Produto'}</span>
+                      <strong>{item.hasCredentials ? 'Configurado' : 'Aguardando configuração'}</strong>
+                      <small>{item.lastRunAt ? `Última execução: ${new Date(item.lastRunAt).toLocaleString('pt-BR')}` : 'Nenhuma execução registrada'}</small>
+                    </div>
+                  ))}
+                </div>
+                <AnalyticsConfigPage />
+              </>
             ) : integrations.phase === 'error' ? (
               <div className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] px-4 py-3 text-sm text-[color:var(--color-danger-text)]">Não foi possível carregar as integrações agora.</div>
             ) : (
@@ -796,9 +808,11 @@ function GroupDetail({
 
 export function SettingsPage() {
   const { gate } = useAuthContext();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isDashboardViewer = gate.actor?.roles.includes('dashboard_viewer') === true && gate.actor?.is_platform_admin !== true;
-  const visibleGroups = isDashboardViewer ? GROUPS.filter((group) => group.id === 'integracoes') : GROUPS;
-  const [selectedId, setSelectedId] = useState<string>(isDashboardViewer ? 'integracoes' : GROUPS[0].id);
+  const visibleGroups = isDashboardViewer ? GROUPS.filter((group) => group.id === 'integracoes') : GROUPS.filter((group) => ['integracoes', 'central-ajuda', 'marcas'].includes(group.id));
+  const requestedSection = searchParams.get('section') === 'analytics' ? 'integracoes' : searchParams.get('section');
+  const [selectedId, setSelectedId] = useState<string>(isDashboardViewer ? 'integracoes' : requestedSection ?? 'integracoes');
   const [conversationTypes, setConversationTypes] = useState<LoadState<ConversationType>>({ phase: 'idle' });
   const [priorityLevels, setPriorityLevels] = useState<LoadState<PriorityLevel>>({ phase: 'idle' });
   const [quickReplies, setQuickReplies] = useState<LoadState<QuickReply>>({ phase: 'idle' });
@@ -810,6 +824,18 @@ export function SettingsPage() {
   const [mutating, setMutating] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const selected = visibleGroups.find((group: SettingsGroup) => group.id === selectedId) ?? visibleGroups[0];
+
+  useEffect(() => {
+    const next = isDashboardViewer ? 'integracoes' : (searchParams.get('section') === 'analytics' ? 'integracoes' : searchParams.get('section'));
+    if (next && visibleGroups.some((group) => group.id === next)) setSelectedId(next);
+  }, [isDashboardViewer, searchParams, visibleGroups]);
+
+  const selectGroup = (groupId: string) => {
+    setSelectedId(groupId);
+    const params = new URLSearchParams(searchParams);
+    params.set('section', groupId === 'integracoes' ? 'analytics' : groupId);
+    setSearchParams(params, { replace: true });
+  };
 
   const loadTypes = useCallback(async () => {
     setConversationTypes({ phase: 'loading' });
@@ -1133,7 +1159,7 @@ export function SettingsPage() {
                   active ? 'gso-nav-link--active bg-[color:var(--minimal-selection)]' : 'bg-transparent hover:bg-[color:var(--minimal-surface-muted)]',
                 )}
                 key={group.id}
-                onClick={() => setSelectedId(group.id)}
+                onClick={() => selectGroup(group.id)}
                 type="button"
               >
                 <span className={cx('truncate text-sm font-medium', active ? 'text-[color:var(--minimal-selection-text)]' : 'text-[color:var(--minimal-text)]')}>{group.label}</span>
