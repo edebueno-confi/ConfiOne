@@ -23,7 +23,11 @@ export function AnalyticsShell() {
   const { gate } = useAuthContext();
   const isPlatformAdmin = gate.actor?.is_platform_admin === true;
   const isDashboardViewer = !isPlatformAdmin && gate.actor?.roles.includes('dashboard_viewer') === true;
-  const visibleDomains = isDashboardViewer ? DOMAINS.filter((domain) => domain.key === 'ceo') : DOMAINS;
+  // O dashboard_viewer recebe a mesma leitura dos domínios executivos, sem
+  // ganhar ações administrativas. A autorização de rota e os read models
+  // continuam sendo a fonte da permissão; aqui só evitamos esconder dados
+  // aprovados da navegação.
+  const visibleDomains = DOMAINS;
   const location = useLocation();
   const navigate = useNavigate();
   const urlParams = useMemo(() => normalizeAnalyticsSearch(location.search), [location.search]);

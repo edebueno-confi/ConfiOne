@@ -330,7 +330,13 @@ function ExecutiveHdCanvas({
     { label: "Produto", state: undefined, note: "não conectado" },
     { label: "Desenvolvimento", state: undefined, note: "não conectado" },
   ];
-  const availableSources = sourceStates.filter((item) => item.state && !['error', 'unavailable', 'not_configured'].includes(item.state.status)).length;
+  const availableSources = sourceStates.filter((item) => item.state && ['fresh', 'stale', 'partial', 'syncing', 'zero'].includes(item.state.status)).length;
+  const sourceCoverage = (sourceState?: AnalyticsBlockState) => {
+    const expected = sourceState?.coverage.expected;
+    const received = sourceState?.coverage.received;
+    if (expected === null || expected === undefined || received === null || received === undefined) return null;
+    return `${received.toLocaleString("pt-BR")}/${expected.toLocaleString("pt-BR")}`;
+  };
   const qualityExpected = state?.coverage.expected;
   const qualityReceived = state?.coverage.received;
   const qualityLabel =
@@ -342,11 +348,11 @@ function ExecutiveHdCanvas({
       : "Cobertura não informada";
 
   return (
-    <div className="gso-hd-canvas" data-testid="executive-dashboard">
-      <section className="gso-hd-pulse" aria-label="Pulso das fontes">
+    <div className="gso-hd-canvas gso-executive-canvas" data-testid="executive-dashboard">
+      <section className="gso-hd-pulse gso-executive-source-pulse" aria-label="Pulso das fontes">
         <div className="gso-hd-pulse-label">
           <span className="gso-hd-signal-dot" aria-hidden="true" />
-          Fontes operacionais
+          Pulso das fontes
         </div>
         <div className="gso-hd-source-list">
           {sourceStates.map((item) => (
@@ -356,7 +362,7 @@ function ExecutiveHdCanvas({
                 aria-hidden="true"
               />
               <span>{item.label}</span>
-              <small>{item.note ?? shortStatus(item.state?.status)}</small>
+              <small>{item.note ?? [shortStatus(item.state?.status), sourceCoverage(item.state)].filter(Boolean).join(" · ")}</small>
             </div>
           ))}
         </div>
@@ -565,8 +571,8 @@ function ExecutiveHdCanvas({
       >
         <HdSectionHeading
           id="domains-heading"
-          title="Matriz das áreas"
-          description="Cada unidade mostra o sinal mais útil disponível no contrato atual."
+          title="Mapa das áreas"
+          description="As áreas ativas ganham peso; Produto e Desenvolvimento permanecem conectados ao mapa sem inventar métricas."
         />
         <div className="gso-hd-domain-grid">
           {domainCards
@@ -575,7 +581,6 @@ function ExecutiveHdCanvas({
               <HdDomain
                 key={card.key}
                 card={card}
-                isDashboardViewer={isDashboardViewer}
               />
             ))}
         </div>
@@ -719,10 +724,8 @@ function HdMetric({
 }
 function HdDomain({
   card,
-  isDashboardViewer,
 }: {
   card: DomainCard;
-  isDashboardViewer: boolean;
 }) {
   const body = (
     <>
@@ -749,18 +752,10 @@ function HdDomain({
       <p>{card.description}</p>
       <strong>{card.value}</strong>
       <small>{card.details}</small>
-      {isDashboardViewer ? (
-        <em>Detalhamento restrito ao perfil</em>
-      ) : (
-        <span className="gso-hd-domain-link">Abrir domínio →</span>
-      )}
+      <span className="gso-hd-domain-link">Abrir domínio →</span>
     </>
   );
-  return isDashboardViewer ? (
-    <div className={`gso-hd-domain ${card.tone === "muted" ? "is-muted" : ""}`}>
-      {body}
-    </div>
-  ) : (
+  return (
     <Link
       to={card.href}
       className={`gso-hd-domain ${card.tone === "muted" ? "is-muted" : ""}`}

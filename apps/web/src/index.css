@@ -4157,6 +4157,148 @@ table {
   }
 }
 
+/* MVP-UX-02.3 — Executive Intelligence Canvas.
+   A camada visual usa os tokens do HD e preserva os contratos renderizados
+   pelos componentes acima; não cria dados nem regras de negócio locais. */
+.gso-executive-canvas {
+  --executive-glow: color-mix(in srgb, var(--hd-accent) 11%, transparent);
+  background: color-mix(in srgb, var(--hd-canvas) 96%, var(--hd-accent));
+  border-top: 1px solid color-mix(in srgb, var(--hd-accent) 16%, var(--hd-border));
+  padding: 0.35rem 0.25rem 2rem;
+}
+.gso-executive-canvas > section,
+.gso-executive-canvas > .gso-hd-lower-grid {
+  position: relative;
+}
+.gso-executive-canvas .gso-hd-pulse {
+  min-height: 3rem;
+  border-bottom-color: color-mix(in srgb, var(--hd-accent) 24%, var(--hd-border));
+  background: color-mix(in srgb, var(--hd-surface) 60%, transparent);
+}
+.gso-executive-canvas .gso-hd-pulse-label {
+  color: var(--hd-text);
+  font-size: 0.62rem;
+}
+.gso-executive-source-pulse .gso-hd-source-list {
+  position: relative;
+  isolation: isolate;
+  gap: 0;
+}
+.gso-executive-source-pulse .gso-hd-source-list::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  right: 4%;
+  left: 4%;
+  height: 1px;
+  background: color-mix(in srgb, var(--hd-accent) 36%, var(--hd-border));
+}
+.gso-executive-source-pulse .gso-hd-source {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.5rem;
+  padding: 0 0.65rem;
+  background: color-mix(in srgb, var(--hd-canvas) 88%, transparent);
+}
+.gso-executive-source-pulse .gso-hd-source::before {
+  content: '';
+  width: 0.46rem;
+  height: 0.46rem;
+  flex: 0 0 auto;
+  border: 2px solid var(--hd-accent);
+  border-radius: 999px;
+  background: var(--hd-surface);
+  box-shadow: 0 0 0 3px var(--executive-glow);
+}
+.gso-executive-source-pulse .gso-hd-source-line { display: none; }
+.gso-executive-source-pulse .gso-hd-source span:not(.gso-hd-source-line) {
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.gso-executive-source-pulse .gso-hd-source small { font-size: 0.6rem; }
+.gso-executive-canvas .gso-hd-context {
+  min-height: 5rem;
+  padding: 0.85rem 0 0.8rem;
+}
+.gso-executive-canvas .gso-hd-context > div:first-child { max-width: 32rem; }
+.gso-executive-canvas .gso-hd-title-row h2 { font-size: clamp(1.35rem, 2.4vw, 2.05rem); }
+.gso-executive-canvas .gso-hd-context-side {
+  border-left-color: color-mix(in srgb, var(--hd-pink) 35%, var(--hd-border));
+}
+.gso-executive-canvas .gso-hd-filter-bar {
+  border-bottom: 1px solid color-mix(in srgb, var(--hd-accent) 18%, var(--hd-border));
+}
+.gso-executive-canvas .gso-hd-ribbon,
+.gso-executive-canvas .gso-hd-current-strip {
+  padding: 0.7rem 0 0.9rem;
+}
+.gso-executive-canvas .gso-hd-metric-grid {
+  border-top: 0;
+  border-bottom: 0;
+  background: color-mix(in srgb, var(--hd-surface) 56%, transparent);
+}
+.gso-executive-canvas .gso-hd-metric { min-height: 5.5rem; }
+.gso-executive-canvas .gso-hd-metric:first-child {
+  background: color-mix(in srgb, var(--hd-accent) 9%, var(--hd-surface));
+  box-shadow: inset 3px 0 0 var(--hd-accent);
+}
+.gso-executive-canvas .gso-hd-domain-matrix { padding-top: 0.9rem; }
+.gso-executive-canvas .gso-hd-domain-grid {
+  grid-template-columns: 1.45fr 1.2fr 1.2fr 1.1fr 0.72fr 0.72fr;
+  border-top: 1px solid color-mix(in srgb, var(--hd-accent) 20%, var(--hd-border));
+  border-bottom: 1px solid color-mix(in srgb, var(--hd-accent) 20%, var(--hd-border));
+  background: color-mix(in srgb, var(--hd-surface) 52%, transparent);
+}
+.gso-executive-canvas .gso-hd-domain {
+  min-height: 7.8rem;
+  border-right-color: color-mix(in srgb, var(--hd-border) 72%, transparent);
+  background: transparent;
+}
+.gso-executive-canvas .gso-hd-domain:hover,
+.gso-executive-canvas .gso-hd-domain:focus-visible {
+  background: color-mix(in srgb, var(--hd-accent) 7%, transparent);
+}
+.gso-executive-canvas .gso-hd-domain.is-muted {
+  min-height: 5.9rem;
+  align-self: end;
+  background: color-mix(in srgb, var(--hd-surface-muted) 48%, transparent);
+}
+.gso-executive-canvas .gso-hd-domain.is-muted > strong {
+  margin-top: 0.45rem;
+  font-size: 0.76rem;
+}
+.gso-executive-canvas .gso-hd-domain.is-muted > small { font-size: 0.6rem; }
+.gso-executive-canvas .gso-hd-lower-grid {
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1.25rem;
+  padding-top: 0.9rem;
+}
+.gso-executive-canvas .gso-hd-integrity,
+.gso-executive-canvas .gso-hd-exceptions {
+  border-top: 2px solid var(--hd-pink);
+  padding-top: 0.5rem;
+}
+.gso-executive-canvas .gso-hd-exceptions { border-top-color: var(--hd-accent); }
+.gso-executive-canvas .gso-hd-pipelines { padding-top: 0.9rem; }
+
+@media (max-width: 1199px) {
+  .gso-analytics-domain-tabs { display: none; }
+  .gso-analytics-domain-select { display: grid; }
+  .gso-executive-canvas .gso-hd-domain-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .gso-executive-canvas { padding-inline: 0; }
+  .gso-executive-source-pulse .gso-hd-source-summary { display: inline; }
+  .gso-executive-source-pulse .gso-hd-source-list::before { display: none; }
+  .gso-executive-source-pulse .gso-hd-source { background: transparent; }
+  .gso-executive-canvas .gso-hd-domain-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gso-executive-canvas .gso-hd-domain.is-muted { min-height: 5.2rem; }
+  .gso-executive-canvas .gso-hd-lower-grid { grid-template-columns: 1fr; }
+}
+
 .genius-mascot[data-surface='success'] { --genius-mascot-accent: var(--color-success-text); }
 .genius-mascot[data-surface='empty'] { --genius-mascot-accent: var(--genius-site-pink); }
 .genius-mascot[data-surface='loading'] { --genius-mascot-accent: var(--genius-site-cyan); }

@@ -136,9 +136,11 @@ export function MinimalAppShell({
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
-      return window.localStorage.getItem('gso-shell-sidebar-collapsed') === 'true';
+      const stored = window.localStorage.getItem('gso-shell-sidebar-collapsed');
+      if (stored !== null) return stored === 'true';
+      return window.location.pathname.startsWith('/admin/analytics') && window.innerWidth >= 1440;
     } catch {
-      return false;
+      return window.location.pathname.startsWith('/admin/analytics') && window.innerWidth >= 1440;
     }
   });
   const mobileCloseButtonRef = useRef<HTMLButtonElement>(null);
