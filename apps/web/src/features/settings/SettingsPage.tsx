@@ -47,6 +47,12 @@ interface SettingsGroup {
 
 type LoadState<T> = { phase: 'idle' | 'loading' } | { phase: 'ready'; items: T[] } | { phase: 'error' };
 
+import { canOpenSettingsSection } from '../../app/release-surface.mjs';
+import { AnalyticsConfigPage } from '../analytics/AnalyticsConfigPage';
+import { AnalyticsLogsPage } from '../analytics/AnalyticsLogsPage';
+
+const DASHBOARD_SECTION_IDS = ['dashboard-fontes', 'dashboard-historico'];
+
 const GROUPS: SettingsGroup[] = [
   { id: 'marcas', label: 'Marcas', description: 'As marcas atendidas na plataforma e sua identidade.', controls: ['Nome da marca', 'Central de ajuda (slug)', 'Ordem'], usadoEm: 'Central de ajuda, portal do cliente e atendimento', status: 'ativo', nota: 'Genius e After Sale na mesma plataforma; gerenciável aqui.' },
   { id: 'central-ajuda', label: 'Central de ajuda', description: 'Contatos exibidos no rodapé público, fora do conteúdo dos artigos.', controls: ['E-mail de suporte', 'WhatsApp de suporte', 'Site e links auxiliares', 'Por central de ajuda'], usadoEm: 'Rodapé da Central de Ajuda pública', status: 'ativo', nota: 'Os artigos não armazenam mais contatos operacionais; esta configuração é a fonte única para o público.' },
@@ -62,17 +68,10 @@ const GROUPS: SettingsGroup[] = [
   { id: 'segmentos', label: 'Segmentos e clusters', description: 'Como os clientes são agrupados na carteira de CS.', controls: ['Nome do segmento', 'Cor', 'Ordem'], usadoEm: 'Carteira de CS (clusterização)', status: 'ativo', nota: 'Parâmetro gerenciável pela tela; base para a clusterização de CS.' },
   { id: 'canais', label: 'Canais', description: 'Por onde as mensagens entram e saem.', controls: ['Canal', 'Situação', 'Marca'], usadoEm: 'Entrada e saída de mensagens', status: 'existe_hoje', nota: 'Portal do cliente ativo; e-mail e WhatsApp são evolução futura.' },
   { id: 'integracoes', label: 'Integrações', description: 'Fontes externas, credenciais e atualizações do dashboard gerencial.', controls: ['HubSpot', 'Planilhas CS e Comercial', 'Omie Financeiro', 'GitHub Produto'], usadoEm: 'Dashboard gerencial e ingestões operacionais', status: 'ativo', nota: 'Segredos ficam no Vault; o painel mostra apenas o estado configurado.' },
+  { id: 'dashboard-fontes', label: 'Fontes do Dashboard', description: 'Pipelines e fontes que alimentam o Dashboard Gerencial.', controls: ['Pipelines HubSpot', 'Fontes OMIE', 'Planilhas'], usadoEm: 'Dashboard Gerencial', status: 'ativo', nota: 'Antes ficava como aba dentro do Dashboard; parametro de sistema pertence a Configuracoes.' },
+  { id: 'dashboard-historico', label: 'Historico de sincronizacoes', description: 'Execucoes, resultados e erros das integracoes gerenciais.', controls: ['Execucoes', 'Status', 'Erros'], usadoEm: 'Dashboard Gerencial', status: 'ativo', nota: 'Antes ficava como aba Logs dentro do Dashboard.' },
 ];
 
-function StatusPill({ status }: { status: GroupStatus }) {
-  if (status === 'ativo') {
-    return <span className="inline-flex items-center rounded-full border border-[color:var(--color-success-border)] bg-[color:var(--color-success-surface)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--color-success-text)]">Ativo</span>;
-  }
-  if (status === 'existe_hoje') {
-    return <span className="inline-flex items-center rounded-full border border-[color:var(--color-info-border)] bg-[color:var(--color-info-surface)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--color-info-text)]">Existe hoje</span>;
-  }
-  return <span className="inline-flex items-center rounded-full border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--minimal-text-tertiary)]">Em breve</span>;
-}
 
 function ColorPill({ token, label }: { token: string | null; label: string }) {
   const map: Record<string, string> = {
@@ -734,13 +733,25 @@ function GroupDetail({
 
   return (
     <article className="min-h-0 overflow-y-auto bg-[color:var(--minimal-surface)]">
+      {DASHBOARD_SECTION_IDS.includes(group.id) ? (
+        <>
+          <header className="border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6">
+            <h2 className="text-xl font-semibold tracking-[-0.025em] text-[color:var(--minimal-text)]">{group.label}</h2>
+            <p className="mt-1 text-sm text-[color:var(--minimal-text-secondary)]">{group.description}</p>
+          </header>
+          <div className="px-5 py-5 sm:px-6">
+            {group.id === 'dashboard-fontes' ? <AnalyticsConfigPage /> : <AnalyticsLogsPage />}
+          </div>
+        </>
+      ) : (
+      <>
       <header className="border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-xl font-semibold tracking-[-0.025em] text-[color:var(--minimal-text)]">{group.label}</h2>
             <p className="mt-1 text-sm text-[color:var(--minimal-text-secondary)]">{group.description}</p>
           </div>
-          <StatusPill status={group.status} />
+
         </div>
       </header>
 
@@ -790,6 +801,8 @@ function GroupDetail({
           )}
         </section>
       </div>
+      </>
+      )}
     </article>
   );
 }
@@ -797,8 +810,26 @@ function GroupDetail({
 export function SettingsPage() {
   const { gate } = useAuthContext();
   const isDashboardViewer = gate.actor?.roles.includes('dashboard_viewer') === true && gate.actor?.is_platform_admin !== true;
-  const visibleGroups = isDashboardViewer ? GROUPS.filter((group) => group.id === 'integracoes') : GROUPS;
-  const [selectedId, setSelectedId] = useState<string>(isDashboardViewer ? 'integracoes' : GROUPS[0].id);
+  // Ordem de validacao: superficie do release primeiro, permissao do perfil
+  // depois. Configuracoes passa a exibir apenas o que o usuario pode operar.
+  const settingsPermissions = {
+    isPlatformAdmin: gate.actor?.is_platform_admin === true,
+    screenKeys: gate.actor?.screen_keys ?? [],
+  };
+  const visibleGroups = GROUPS.filter((group) => canOpenSettingsSection(group.id, settingsPermissions));
+  const [selectedId, setSelectedId] = useState<string>(() => {
+    // A busca global do Genio deixa aqui a secao pedida.
+    try {
+      const requested = window.sessionStorage.getItem('genius.settings-section');
+      if (requested) {
+        window.sessionStorage.removeItem('genius.settings-section');
+        if (visibleGroups.some((group) => group.id === requested)) return requested;
+      }
+    } catch {
+      // sessionStorage indisponivel: segue com a primeira secao visivel.
+    }
+    return visibleGroups[0]?.id ?? GROUPS[0].id;
+  });
   const [conversationTypes, setConversationTypes] = useState<LoadState<ConversationType>>({ phase: 'idle' });
   const [priorityLevels, setPriorityLevels] = useState<LoadState<PriorityLevel>>({ phase: 'idle' });
   const [quickReplies, setQuickReplies] = useState<LoadState<QuickReply>>({ phase: 'idle' });
@@ -903,9 +934,15 @@ export function SettingsPage() {
     void loadSegments();
     void loadBrands();
     void loadHelpCenterSupportContacts();
-    void loadCategories();
     void loadIntegrations();
-  }, [isDashboardViewer, loadTypes, loadPriorities, loadQuickReplies, loadSegments, loadBrands, loadHelpCenterSupportContacts, loadCategories, loadIntegrations]);
+
+    // Só busca dados de uma seção que o usuário pode realmente abrir. Carregar
+    // tudo de forma indiscriminada fazia a tela consultar tabelas de módulos
+    // ocultos e receber 403 da RLS — barulho no console e requisição inútil.
+    if (visibleGroups.some((group) => group.id === 'categorias')) {
+      void loadCategories();
+    }
+  }, [isDashboardViewer, visibleGroups, loadTypes, loadPriorities, loadQuickReplies, loadSegments, loadBrands, loadHelpCenterSupportContacts, loadCategories, loadIntegrations]);
 
   const handleSaveIntegration = useCallback(
     async (input: Parameters<typeof saveManagedIntegration>[0]) => {
@@ -1137,7 +1174,7 @@ export function SettingsPage() {
                 type="button"
               >
                 <span className={cx('truncate text-sm font-medium', active ? 'text-[color:var(--minimal-selection-text)]' : 'text-[color:var(--minimal-text)]')}>{group.label}</span>
-                <StatusPill status={group.status} />
+
               </button>
             );
           })}

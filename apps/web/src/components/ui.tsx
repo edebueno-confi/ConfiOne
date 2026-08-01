@@ -12,7 +12,7 @@ export function AppButton({
   return (
     <button
       className={cx(
-        'gso-action-button inline-flex min-h-10 items-center justify-center rounded-lg border border-[color:var(--minimal-action)] bg-[color:var(--minimal-action)] px-4 py-2 text-sm font-medium text-[color:var(--minimal-action-ink)] transition-colors hover:bg-[color:var(--minimal-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] disabled:cursor-not-allowed disabled:opacity-50',
+        'gso-action-button inline-flex min-h-10 items-center justify-center rounded-[var(--radius)] border border-[color:var(--action)] bg-[color:var(--action)] px-4 py-2 text-sm font-medium text-[color:var(--action-ink)] transition-colors hover:bg-[color:var(--brand-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus)] disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
       type="button"
@@ -31,7 +31,7 @@ export function GhostButton({
   return (
     <button
       className={cx(
-        'gso-ghost-button inline-flex min-h-10 items-center justify-center rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-4 py-2 text-sm font-medium text-[color:var(--minimal-text)] transition-colors hover:bg-[color:var(--minimal-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] disabled:cursor-not-allowed disabled:opacity-50',
+        'gso-ghost-button inline-flex min-h-10 items-center justify-center rounded-[var(--radius)] border border-[color:var(--border-strong)] bg-[color:var(--surface)] px-4 py-2 text-sm font-medium text-[color:var(--text)] transition-colors hover:bg-[color:var(--surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus)] disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
       type="button"
@@ -58,17 +58,17 @@ export function Panel({
   return (
     <section
       className={cx(
-        'gso-panel border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-5 sm:p-6',
+        'gso-panel rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[color:var(--surface)] p-5 sm:p-6 shadow-[var(--shadow-sm)]',
         className,
       )}
     >
       <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
-          <h2 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
+          <h2 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--text)]">
             {title}
           </h2>
           {description ? (
-            <p className="max-w-2xl text-sm leading-6 text-[color:var(--minimal-text-secondary)]">
+            <p className="max-w-2xl text-sm leading-6 text-[color:var(--text-2)]">
               {description}
             </p>
           ) : null}
@@ -84,7 +84,7 @@ export function PageHeader({
   title,
   description,
   action,
-  eyebrow = 'Genius Support OS',
+  eyebrow,
 }: {
   title: string;
   description: string;
@@ -94,14 +94,12 @@ export function PageHeader({
   return (
     <header className="gso-page-header flex flex-wrap items-start justify-between gap-4">
       <div className="space-y-2">
-        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-[color:var(--color-muted)]">
-          {eyebrow}
-        </p>
+        {eyebrow ? <p className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-[color:var(--text-3)]">{eyebrow}</p> : null}
         <div className="space-y-1">
-          <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
+          <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[color:var(--text)]">
             {title}
           </h1>
-          <p className="max-w-3xl text-sm leading-6 text-[color:var(--color-muted)]">
+          <p className="max-w-3xl text-sm leading-6 text-[color:var(--text-2)]">
             {description}
           </p>
         </div>
