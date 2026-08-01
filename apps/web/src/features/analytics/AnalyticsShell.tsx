@@ -40,7 +40,7 @@ export function AnalyticsShell() {
   // `logs` e `config` saíram do Dashboard e passaram a viver em Configurações.
   const releasedDomains = DOMAINS.filter((domain) => isAnalyticsDomainPublishedInRelease(domain.key));
   const visibleDomains = isDashboardViewer
-    ? releasedDomains.filter((domain) => domain.key === 'ceo')
+    ? DOMAINS.filter((domain) => domain.key === 'ceo').filter((domain) => isAnalyticsDomainPublishedInRelease(domain.key))
     : releasedDomains;
   const [activeKey, setActiveKey] = useState(visibleDomains[0]?.key ?? 'commercial');
   const [reloadKey, setReloadKey] = useState(0);
