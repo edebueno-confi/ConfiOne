@@ -324,6 +324,67 @@ function CharacterCounter({ value, limit }: { value: string; limit: number }) {
   );
 }
 
+/**
+ * Estado editorial do artigo, sempre visível no header.
+ * Publicar é a ação de maior consequência: o estado precisa ser explícito.
+ */
+function EditorStatusBadge({
+  status,
+  isEditorialRevision,
+}: {
+  status: ArticleEditorStatus;
+  isEditorialRevision: boolean;
+}) {
+  const tone =
+    status === 'published'
+      ? isEditorialRevision
+        ? 'border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-surface)] text-[color:var(--color-warning-text)]'
+        : 'border-[color:var(--color-success-border)] bg-[color:var(--color-success-surface)] text-[color:var(--color-success-text)]'
+      : status === 'review'
+        ? 'border-[color:var(--color-info-border)] bg-[color:var(--color-info-surface)] text-[color:var(--color-info-text)]'
+        : 'border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] text-[color:var(--minimal-text-secondary)]';
+
+  const label =
+    status === 'published'
+      ? isEditorialRevision
+        ? 'Alterações não publicadas'
+        : 'Publicado'
+      : status === 'review'
+        ? 'Em revisão'
+        : status === 'archived'
+          ? 'Arquivado'
+          : 'Rascunho';
+
+  return (
+    <span className={cx('inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-[0.72rem] font-medium', tone)}>
+      {label}
+    </span>
+  );
+}
+
+/**
+ * Estado real de salvamento. Antes o texto era fixo e afirmava salvamento
+ * automático que não existe, o que induzia o redator a acreditar que já havia
+ * salvo.
+ */
+function EditorSaveIndicator({ saveState, isEditMode }: { saveState: SaveState; isEditMode: boolean }) {
+  if (saveState === 'saving') {
+    return <span className="shrink-0 text-xs text-[color:var(--minimal-text-tertiary)]">Salvando…</span>;
+  }
+  if (saveState === 'saved') {
+    return <span className="shrink-0 text-xs text-[color:var(--color-success-text)]">Alterações salvas</span>;
+  }
+  if (saveState === 'error') {
+    return <span className="shrink-0 text-xs font-medium text-[color:var(--danger)]">Falha ao salvar</span>;
+  }
+
+  return (
+    <span className="shrink-0 text-xs text-[color:var(--minimal-text-tertiary)]">
+      {isEditMode ? 'Alterações não salvas' : 'Rascunho não salvo'}
+    </span>
+  );
+}
+
 function RailCard({
   title,
   badge,
@@ -779,7 +840,10 @@ function renderEditorHtmlFromMarkdown(source: string, assets: Record<string, Mar
       }
 
       if (block.type === 'callout') {
-        return `<aside data-callout-tone="${block.tone}"><strong>${calloutLabel(block.tone)}</strong><p>${renderInlineMarkdown(block.text)}</p></aside>`;
+        // O rotulo do callout e cromo, nao conteudo: vem do CSS via
+        // data-callout-tone. Emiti-lo aqui fazia o TipTap reparsear o rotulo
+        // como texto e o renderHTML somar outro, triplicando "Atencao".
+        return `<aside data-callout-tone="${block.tone}"><p>${renderInlineMarkdown(block.text)}</p></aside>`;
       }
 
       if (block.type === 'youtube') {
@@ -1187,7 +1251,6 @@ const CalloutNode = TiptapNode.create({
     return [
       'aside',
       mergeAttributes(HTMLAttributes, { 'data-callout-tone': HTMLAttributes.tone }),
-      ['strong', {}, calloutLabel((HTMLAttributes.tone ?? 'info') as CalloutTone)],
       ['div', 0],
     ];
   },
@@ -1698,7 +1761,8 @@ function RichTextArticleEditor({
       <style>{`
         .knowledge-editor-card {
           min-width: 0;
-          overflow: visible;
+          overflow: hidden;
+          padding-top: 0;
           border: 1px solid #DCE4F2;
           border-radius: 22px;
           background: #FFFFFF;
@@ -1707,15 +1771,31 @@ function RichTextArticleEditor({
 
         .knowledge-editor-toolbar {
           position: sticky;
-          top: 92px;
+          top: 0;
           z-index: 50;
           display: flex;
+          /* A toolbar precisa caber no canvas. Sem wrap e sem limite de largura,
+             os botoes finais (desfazer/refazer) vazavam para fora do card. */
+          flex-wrap: wrap;
+          max-width: 100%;
+          min-width: 0;
+          row-gap: 4px;
           min-height: 48px;
           align-items: center;
           gap: 8px;
           border-bottom: 1px solid #E8EEF7;
           background: rgba(255, 255, 255, 0.96);
           padding: 8px 14px;
+        }
+
+        .knowledge-editor-card {
+          overflow: hidden;
+        }
+
+        /* O espacador so empurra o grupo final quando ha folga real na linha. */
+        .knowledge-toolbar-spacer {
+          flex: 1 1 0%;
+          min-width: 0;
         }
 
         .knowledge-toolbar-group {
@@ -2016,6 +2096,19 @@ function RichTextArticleEditor({
           padding: 15px 18px;
         }
 
+        /* Rotulo do callout: cromo gerado pelo tom, nao editavel. */
+        .knowledge-rich-editor .ProseMirror aside[data-callout-tone]::before {
+          display: block;
+          margin-bottom: 4px;
+          font-weight: 700;
+          font-size: 0.82rem;
+        }
+
+        .knowledge-rich-editor .ProseMirror aside[data-callout-tone="info"]::before { content: 'Nota'; }
+        .knowledge-rich-editor .ProseMirror aside[data-callout-tone="success"]::before { content: 'Importante'; }
+        .knowledge-rich-editor .ProseMirror aside[data-callout-tone="warning"]::before { content: 'Atenção'; }
+        .knowledge-rich-editor .ProseMirror aside[data-callout-tone="danger"]::before { content: 'Cuidado'; }
+
         .knowledge-rich-editor .ProseMirror aside[data-callout-tone] strong {
           grid-column: 1 / -1;
           font-size: 0.9rem;
@@ -2194,12 +2287,71 @@ function RichTextArticleEditor({
           .knowledge-editor-toolbar {
             align-items: flex-start;
             flex-wrap: wrap;
-            top: 86px;
+            top: 0;
           }
 
           .knowledge-rich-editor .ProseMirror {
             padding: 28px 32px 48px;
           }
+        }
+
+        /* Tema escuro: o canvas e a toolbar usavam cores fixas claras, o que
+           deixava o editor como uma ilha branca dentro do shell escuro e
+           tornava os rótulos da toolbar praticamente ilegíveis. */
+        [data-theme='dark'] .knowledge-editor-card {
+          border-color: var(--minimal-border);
+          background: var(--minimal-surface);
+          box-shadow: none;
+        }
+
+        [data-theme='dark'] .knowledge-editor-toolbar {
+          border-bottom-color: var(--minimal-border);
+          background: var(--minimal-sidebar);
+        }
+
+        [data-theme='dark'] .knowledge-toolbar-divider {
+          background: var(--minimal-border);
+        }
+
+        [data-theme='dark'] .knowledge-toolbar-button,
+        [data-theme='dark'] .knowledge-block-select {
+          border-color: var(--minimal-border);
+          background: var(--minimal-surface);
+          color: var(--minimal-text);
+        }
+
+        [data-theme='dark'] .knowledge-toolbar-button:hover,
+        [data-theme='dark'] .knowledge-block-select:hover {
+          background: var(--minimal-surface-muted);
+        }
+
+        [data-theme='dark'] .knowledge-toolbar-button[aria-pressed='true'],
+        [data-theme='dark'] .knowledge-toolbar-button.is-active {
+          background: var(--minimal-selection);
+          color: var(--minimal-selection-text);
+        }
+
+        [data-theme='dark'] .knowledge-rich-editor,
+        [data-theme='dark'] .knowledge-rich-editor .ProseMirror {
+          background: var(--minimal-surface);
+          color: var(--minimal-text);
+        }
+
+        [data-theme='dark'] .knowledge-rich-editor .ProseMirror h1,
+        [data-theme='dark'] .knowledge-rich-editor .ProseMirror h2,
+        [data-theme='dark'] .knowledge-rich-editor .ProseMirror h3,
+        [data-theme='dark'] .knowledge-rich-editor .ProseMirror strong {
+          color: var(--minimal-text);
+        }
+
+        [data-theme='dark'] .knowledge-rich-editor .ProseMirror code {
+          background: var(--minimal-surface-muted);
+          color: var(--minimal-text);
+        }
+
+        [data-theme='dark'] .knowledge-editor-statusbar {
+          border-top-color: var(--minimal-border);
+          color: var(--minimal-text-tertiary);
         }
       `}</style>
     </div>
@@ -2540,7 +2692,7 @@ function LegacyRichTextArticleEditor({
 
   function insertCallout(tone: CalloutTone) {
     insertBlockHtmlAtCursor(
-      `<aside data-callout-tone="${tone}"><strong>${calloutLabel(tone)}</strong><p>Escreva a observação do artigo.</p></aside>`,
+      `<aside data-callout-tone="${tone}"><p>Escreva a observação do artigo.</p></aside>`,
     );
   }
 
@@ -3275,7 +3427,17 @@ export function KnowledgeArticleEditorPage() {
     useState<KnowledgeReviewHumanConfirmations>({});
   const [tagDraft, setTagDraft] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
-  const [metadataCollapsed, setMetadataCollapsed] = useState(false);
+  const [propertiesOpen, setPropertiesOpen] = useState(false);
+
+  // Esc fecha o slide-over de propriedades, como em qualquer dialogo.
+  useEffect(() => {
+    if (!propertiesOpen) return undefined;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPropertiesOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [propertiesOpen]);
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const editorMarkdownInserterRef = useRef<((markdown: string) => string | null) | null>(null);
@@ -3286,6 +3448,12 @@ export function KnowledgeArticleEditorPage() {
   const isReadOnly = status === 'archived';
   const saveButtonLabel = 'Salvar alterações';
   const publishButtonLabel = 'Publicar agora';
+  // Ver o resultado público sem sair do editor. Só existe quando o artigo já
+  // está publicado como público e tem espaço e slug resolvidos.
+  const publicArticleHref =
+    status === 'published' && form.visibility === 'public' && selectedSpace?.slug && form.slug
+      ? `/help/${selectedSpace.slug}/articles/${form.slug}`
+      : null;
   const bodyPlain = getBodyWithoutMarkdown(form.bodyMd);
   const publishBlocker = publicPublishBlocker(advisory, form.visibility);
   const needsPublicEvidence = form.visibility === 'public';
@@ -3329,6 +3497,18 @@ export function KnowledgeArticleEditorPage() {
     },
   ];
   const publicationChecklistDone = publicationChecklist.filter((item) => item.done).length;
+  /**
+   * Pre-voo: apenas o que o sistema consegue verificar sozinho.
+   *
+   * Os antigos itens 'evidence' e 'publish-readiness' saíram daqui: eles não
+   * eram verificáveis nem marcáveis, só abriam um segundo checklist pedindo a
+   * mesma coisa. A confirmação humana agora existe num lugar só, dentro do
+   * fluxo de publicação.
+   */
+  const preflightChecklist = publicationChecklist.filter(
+    (item) => item.action !== 'evidence' && item.action !== 'publish-readiness',
+  );
+  const preflightDone = preflightChecklist.filter((item) => item.done).length;
   const missingRequired = [
     !checklist.title ? 'titulo claro' : null,
     !checklist.summary ? 'resumo curto' : null,
@@ -3894,8 +4074,10 @@ export function KnowledgeArticleEditorPage() {
     setFeedback(null);
 
     if (isEditorialRevision) {
+      // Caso de sucesso: usar `saved`, nao `error`. O banner vermelho anterior
+      // fazia uma operacao bem-sucedida parecer falha.
       await saveDraft();
-      setSubmitState('error');
+      setSubmitState('saved');
       setFeedback(
         'A revisão de artigo publicado foi salva. A publicação seguirá pelo fluxo editorial existente.',
       );
@@ -3914,9 +4096,16 @@ export function KnowledgeArticleEditorPage() {
       return;
     }
 
-    const savedArticleId = articleId ?? (await saveDraft());
+    // Sempre salvar antes de enviar: antes, um artigo ja existente ia para
+    // revisao com o conteudo antigo, porque o `??` pulava o saveDraft.
+    const savedArticleId = await saveDraft();
     if (!savedArticleId || !selectedSpace) {
       setSubmitState('error');
+      setFeedback(
+        !selectedSpace
+          ? 'Selecione um espaço público antes de enviar para revisão.'
+          : 'Não foi possível salvar o artigo antes de enviar para revisão.',
+      );
       return;
     }
 
@@ -3944,6 +4133,9 @@ export function KnowledgeArticleEditorPage() {
   function openPublicConfirmation() {
     const persisted = normalizeHumanConfirmations(advisory?.human_confirmations);
     setPublicConfirmation((current) => ({ ...current, ...persisted }));
+    // O painel de confirmacao vive dentro de Propriedades. Sem abrir os dois, o
+    // clique em Publicar parecia nao fazer nada.
+    setPropertiesOpen(true);
     setPublicConfirmationOpen(true);
     setReviewEvidenceState('idle');
     setFeedback(
@@ -3955,6 +4147,8 @@ export function KnowledgeArticleEditorPage() {
   async function preparePublicEvidenceForPublish(options: {
     articleId?: string;
     confirmations: KnowledgeReviewHumanConfirmations;
+    /** `handlePublishArticle` ja salvou; nao repetir o save no mesmo fluxo. */
+    alreadySaved?: boolean;
   }) {
     if (!selectedSpace) {
       setReviewEvidenceState('error');
@@ -3980,9 +4174,17 @@ export function KnowledgeArticleEditorPage() {
     setFeedbackActionHref(null);
 
     try {
-      const savedArticleId = options.articleId ?? articleId ?? (await saveDraft());
+      // A evidencia publica so pode ser preparada depois que a visibilidade
+      // "Publico" estiver PERSISTIDA. Antes, o `??` pulava o saveDraft quando o
+      // artigo ja existia: a mudanca ficava so no estado local e o backend
+      // respondia "knowledge article must be public before preparing public
+      // evidence", criando um impasse sem saida na interface.
+      const savedArticleId = options.alreadySaved
+        ? (options.articleId ?? articleId)
+        : await saveDraft();
       if (!savedArticleId) {
         setReviewEvidenceState('error');
+        setFeedback('Não foi possível salvar o artigo antes de preparar a evidência pública.');
         return null;
       }
 
@@ -4064,14 +4266,20 @@ export function KnowledgeArticleEditorPage() {
     let currentPublishBlocker = publicPublishBlocker(effectiveAdvisory, form.visibility);
     if (currentPublishBlocker && form.visibility === 'public') {
       if (!options?.confirmedPublicEvidence) {
-        setPublishState('error');
+        // Nao e falha: e a etapa de governanca. Abrir a confirmacao e dizer
+        // exatamente o que falta, em vez de sinalizar erro sem explicacao.
+        setPublishState('idle');
         openPublicConfirmation();
+        setFeedback(
+          'Último passo antes de publicar: confirme a revisão editorial abaixo e use "Confirmar e publicar".',
+        );
         return;
       }
 
       effectiveAdvisory = await preparePublicEvidenceForPublish({
         articleId: savedArticleId,
         confirmations: publicConfirmation,
+        alreadySaved: true,
       });
       if (!effectiveAdvisory) {
         setPublishState('error');
@@ -4082,7 +4290,7 @@ export function KnowledgeArticleEditorPage() {
 
     if (currentPublishBlocker) {
       setPublishState('error');
-      setFeedback(`${currentPublishBlocker} Próxima ação: revise a confirmação editorial e tente publicar novamente.`);
+      setFeedback(`${currentPublishBlocker}`);
       setPublicConfirmationOpen(form.visibility === 'public');
       return;
     }
@@ -4181,37 +4389,79 @@ export function KnowledgeArticleEditorPage() {
                 {isEditMode ? 'Editar artigo' : 'Novo artigo'}
               </span>
             </nav>
-            <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-lg font-semibold leading-tight tracking-[-0.02em] text-[color:var(--minimal-text)]">
-                  {isEditMode ? 'Editar artigo' : 'Novo artigo'}
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="truncate text-lg font-semibold leading-tight tracking-[-0.02em] text-[color:var(--minimal-text)]">
+                  {form.title.trim() || (isEditMode ? 'Editar artigo' : 'Novo artigo')}
                 </h1>
-                <span className="text-xs text-[color:var(--minimal-text-tertiary)]">
-                  {saveState === 'saved'
-                    ? 'Rascunho salvo agora'
-                    : 'Alterações salvas automaticamente'}
-                </span>
+                <EditorStatusBadge status={status} isEditorialRevision={isEditorialRevision} />
+                <EditorSaveIndicator saveState={saveState} isEditMode={isEditMode} />
               </div>
-              <p className="mt-1 text-[0.82rem] leading-5 text-[#6B7892]">
-                {isEditMode
-                  ? 'Atualize conteúdo da base de conhecimento com clareza e impacto.'
-                  : 'Crie conteúdo para a Central de Ajuda com clareza e impacto.'}
-              </p>
             </div>
           </div>
-          {articleId ? (
-            <div className="hidden flex-1 justify-center pt-9 text-[0.72rem] font-semibold text-[color:var(--color-muted)] xl:flex">
-              ID do artigo: {articleId}
-            </div>
-          ) : null}
-          <div className="flex shrink-0 flex-wrap justify-end gap-3">
-            <AppButton
-              className="h-9 rounded-md px-4 text-sm"
-              disabled={saveState === 'saving' || isReadOnly}
-              type="submit"
+          {/* Ações separadas por consequência: ler, guardar, publicar. */}
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            {publicArticleHref ? (
+              <a
+                className="inline-flex h-9 items-center rounded-md border border-[color:var(--minimal-border)] px-3 text-sm font-medium text-[color:var(--minimal-text-secondary)] transition hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)]"
+                href={publicArticleHref}
+                rel="noreferrer"
+                target="_blank"
+              >
+                Visualizar
+              </a>
+            ) : null}
+            <GhostButton
+              className="h-9 gap-2 rounded-md px-3 text-sm"
+              onClick={() => setPropertiesOpen(true)}
+              type="button"
             >
-              {saveState === 'saving' ? 'Salvando...' : saveButtonLabel}
-            </AppButton>
+              Propriedades
+              {missingRequired.length > 0 ? (
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[color:var(--color-warning-surface)] px-1.5 text-[0.68rem] font-semibold text-[color:var(--color-warning-text)]">
+                  {missingRequired.length}
+                </span>
+              ) : null}
+            </GhostButton>
+            <GhostButton
+              className="h-9 rounded-md px-3 text-sm"
+              disabled={saveState === 'saving' || isReadOnly}
+              onClick={() => void handleSaveDraft()}
+              type="button"
+            >
+              {saveState === 'saving' ? 'Salvando...' : 'Salvar rascunho'}
+            </GhostButton>
+            {status === 'draft' ? (
+              <AppButton
+                className="h-9 rounded-md px-4 text-sm"
+                disabled={submitState === 'saving' || isReadOnly}
+                onClick={() => void handleSubmitForReview()}
+                type="button"
+              >
+                {submitState === 'saving' ? 'Enviando...' : 'Enviar para revisão'}
+              </AppButton>
+            ) : (
+              <AppButton
+                className="h-9 rounded-md px-4 text-sm"
+                // Nao desabilitar por blocker: o usuario precisa receber o
+                // motivo. `handlePublishArticle` valida e explica o que falta.
+                disabled={publishState === 'saving' || isReadOnly}
+                onClick={() => {
+                  if (publishBlocker) {
+                    // Publicacao publica exige evidencia editorial: abre o
+                    // painel onde o checklist vive e diz o que falta.
+                    setPropertiesOpen(true);
+                    openPublicConfirmation();
+                    setFeedback(`Para publicar: ${publishBlocker}`);
+                    return;
+                  }
+                  void handlePublishArticle();
+                }}
+                type="button"
+              >
+                {publishState === 'saving' ? 'Publicando...' : publishButtonLabel}
+              </AppButton>
+            )}
           </div>
         </header>
 
@@ -4245,411 +4495,373 @@ export function KnowledgeArticleEditorPage() {
           </div>
         ) : null}
 
-        <div
-          className={cx(
-            'grid items-start',
-            metadataCollapsed
-              ? 'xl:grid-cols-[minmax(0,1fr)_64px]'
-              : 'xl:grid-cols-[minmax(0,1fr)_minmax(520px,50vw)]',
-          )}
-        >
-          <aside className="sticky top-[84px] order-2 max-h-[calc(100vh-84px)] overflow-hidden border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)]">
-            {metadataCollapsed ? (
-              <div className="flex h-full flex-col items-center gap-3 rounded-[22px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)] px-2 py-3 shadow-[0_18px_42px_rgba(20,31,71,0.06)]">
-                <button
-                  className="grid h-10 w-10 place-items-center rounded-2xl bg-[color:var(--color-brand-blue)] text-white shadow-[0_12px_28px_rgba(47,107,255,0.24)]"
-                  onClick={() => setMetadataCollapsed(false)}
-                  title="Expandir metadados"
-                  type="button"
-                >
-                  ›
+        {/* Escrita em pagina inteira: o canvas ocupa a superficie toda. */}
+        <main className="min-w-0 px-5 pb-10 pt-5">
+          <div className="mx-auto w-full max-w-[900px]">
+              <section className="min-w-0">
+                <input
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="hidden"
+                  disabled={isReadOnly}
+                  multiple
+                  onChange={(event) => {
+                    if (event.target.files) {
+                      void handleAssetFiles(event.target.files, 'upload');
+                    }
+                    event.target.value = '';
+                  }}
+                  ref={fileInputRef}
+                  type="file"
+                />
+                <RichTextArticleEditor
+                  assets={assetMap}
+                  assetState={assetState}
+                  bodyMd={form.bodyMd}
+                  isReadOnly={isReadOnly}
+                  onChange={(nextBodyMd) => updateForm({ bodyMd: nextBodyMd })}
+                  onDrop={handleAssetDrop}
+                  onImageButton={() => {
+                    if (!isReadOnly) {
+                      fileInputRef.current?.click();
+                    }
+                  }}
+                  onPaste={handleBodyPaste}
+                  relatedArticles={relatedArticles}
+                  onRegisterMarkdownInserter={(inserter) => {
+                    editorMarkdownInserterRef.current = inserter;
+                  }}
+                />
+              </section>
+          </div>
+        </main>
+
+        {/* Propriedades em slide-over: aberto sob demanda, ~50% da largura em
+            desktop, tela cheia no mobile. Antes era uma coluna fixa que
+            competia com a escrita e obrigava rolagem antes de publicar. */}
+        {propertiesOpen ? (
+          <div aria-labelledby="gso-article-properties-title" aria-modal="true" className="fixed inset-0 z-[60] flex justify-end" role="dialog">
+            <button aria-label="Fechar propriedades" className="absolute inset-0 cursor-default bg-[rgba(12,18,32,0.5)] backdrop-blur-sm" onClick={() => setPropertiesOpen(false)} tabIndex={-1} type="button" />
+            <aside className="relative flex h-full w-full flex-col border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] shadow-2xl sm:w-[92vw] lg:w-1/2 lg:min-w-[560px] lg:max-w-[760px]">
+              <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--minimal-border)] px-5 py-3.5">
+                <div className="min-w-0">
+                  <h2 className="text-base font-semibold text-[color:var(--minimal-text)]" id="gso-article-properties-title">Propriedades do artigo</h2>
+                  <p className="mt-0.5 text-xs text-[color:var(--minimal-text-secondary)]">Identidade, classificacao e publicacao.</p>
+                </div>
+                <button aria-label="Fechar propriedades" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[color:var(--minimal-text-tertiary)] transition hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)]" onClick={() => setPropertiesOpen(false)} type="button">
+                  <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17" /></svg>
                 </button>
-                {['✎', '✓', '🖼'].map((item) => (
-                  <span
-                    className="grid h-9 w-9 place-items-center rounded-2xl bg-[color:var(--color-surface)] text-[0.86rem] text-[color:var(--color-brand-navy)]"
-                    key={item}
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <div className="max-h-[calc(100vh-112px)] overflow-auto pr-1">
+              </header>
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
                 <div className="space-y-2.5">
-                  <RailCard title="Configurações editoriais">
-                    <div className="-mt-1 flex justify-end">
-                      <button
-                        className="rounded-full px-2 py-1 text-[0.72rem] font-medium text-[#2F6BFF] hover:bg-[#F4F7FC]"
-                        onClick={() => setMetadataCollapsed(true)}
-                        type="button"
-                      >
-                        Recolher
-                      </button>
-                    </div>
-                    <Field label="Título do artigo *">
-                      <TextInput
-                        disabled={isReadOnly}
-                        maxLength={TITLE_LIMIT + 20}
-                        onChange={handleTitleChange}
-                        placeholder="Título claro do artigo"
-                        value={form.title}
-                      />
-                      <CharacterCounter limit={TITLE_LIMIT} value={form.title} />
-                    </Field>
-                    <Field label="Slug *">
-                      <TextInput
-                        disabled={isReadOnly}
-                        maxLength={SLUG_LIMIT + 20}
-                        onChange={handleSlugChange}
-                        placeholder="slug-do-artigo"
-                        value={form.slug}
-                      />
-                      <CharacterCounter limit={SLUG_LIMIT} value={form.slug} />
-                    </Field>
-                    <Field label="Resumo curto *">
-                      <TextareaInput
-                        className="min-h-[96px] rounded-[14px] py-3 leading-[1.45]"
-                        disabled={isReadOnly}
-                        maxLength={SUMMARY_LIMIT + 40}
-                        onChange={(event) => updateForm({ summary: event.target.value })}
-                        placeholder="Explique em até 320 caracteres o que o artigo resolve."
-                        value={form.summary}
-                      />
-                      <CharacterCounter limit={SUMMARY_LIMIT} value={form.summary} />
-                    </Field>
-                    <Field label="Categoria *">
-                      <SelectInput
-                        disabled={isReadOnly}
-                        onChange={(event) => updateForm({ categoryId: event.target.value })}
-                        value={form.categoryId}
-                      >
-                        <option value="">Selecione uma categoria</option>
-                        {categories.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </SelectInput>
-                    </Field>
-                    <Field label="Tags">
-                      <div className="rounded-[16px] border border-[#DCE4F2] bg-[color:var(--color-surface-strong)] p-2">
-                        {form.keywords.length > 0 ? (
-                          <div className="mb-2 flex flex-wrap gap-1.5">
-                            {form.keywords.map((tag) => (
-                              <span
-                                className="inline-flex items-center gap-1 rounded-full bg-[#EEF2F7] px-2 py-1 text-[0.68rem] font-medium text-[#162443]"
-                                key={tag}
-                              >
-                                {tag}
-                                <button
-                                  className="text-[#6B7892] hover:text-[color:var(--color-danger-ink)]"
-                                  onClick={() => removeTag(tag)}
-                                  type="button"
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            ))}
-                          </div>
-                        ) : null}
-                        <div className="flex gap-2">
-                          <input
-                            className="min-h-9 min-w-0 flex-1 rounded-xl border border-[#DCE4F2] px-3 text-[0.78rem] font-semibold text-[#162443] outline-none focus:border-[#2F6BFF]"
-                            disabled={isReadOnly || form.keywords.length >= 10}
-                            onChange={(event) => setTagDraft(event.target.value)}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter') {
-                                event.preventDefault();
-                                addTag();
-                              }
-                            }}
-                            placeholder="Adicionar tag"
-                            value={tagDraft}
+                      <RailCard title="">
+                        <Field label="Título do artigo *">
+                          <TextInput
+                            disabled={isReadOnly}
+                            maxLength={TITLE_LIMIT + 20}
+                            onChange={handleTitleChange}
+                            placeholder="Título claro do artigo"
+                            value={form.title}
                           />
-                          <button
-                            className="rounded-xl bg-[#F4F7FC] px-3 text-[0.72rem] font-extrabold text-[#2F6BFF] disabled:opacity-40"
-                            disabled={!tagDraft.trim() || form.keywords.length >= 10}
-                            onClick={addTag}
-                            type="button"
+                          <CharacterCounter limit={TITLE_LIMIT} value={form.title} />
+                        </Field>
+                        <Field label="Slug *">
+                          <TextInput
+                            disabled={isReadOnly}
+                            maxLength={SLUG_LIMIT + 20}
+                            onChange={handleSlugChange}
+                            placeholder="slug-do-artigo"
+                            value={form.slug}
+                          />
+                          <CharacterCounter limit={SLUG_LIMIT} value={form.slug} />
+                        </Field>
+                        <Field label="Resumo curto *">
+                          <TextareaInput
+                            className="min-h-[96px] rounded-[14px] py-3 leading-[1.45]"
+                            disabled={isReadOnly}
+                            maxLength={SUMMARY_LIMIT + 40}
+                            onChange={(event) => updateForm({ summary: event.target.value })}
+                            placeholder="Explique em até 320 caracteres o que o artigo resolve."
+                            value={form.summary}
+                          />
+                          <CharacterCounter limit={SUMMARY_LIMIT} value={form.summary} />
+                        </Field>
+                        <Field label="Categoria *">
+                          <SelectInput
+                            disabled={isReadOnly}
+                            onChange={(event) => updateForm({ categoryId: event.target.value })}
+                            value={form.categoryId}
                           >
-                            +
-                          </button>
-                        </div>
-                        <div className="mt-1 flex justify-between text-[0.65rem] text-[#6B7892]">
-                          <span>As tags serão salvas junto com o artigo.</span>
-                          <span>{form.keywords.length}/10</span>
-                        </div>
-                      </div>
-                    </Field>
-                    <Field label="Visibilidade *">
-                      <SelectInput
-                        disabled={isReadOnly}
-                        onChange={(event) =>
-                          updateForm({
-                            visibility: event.target.value as KnowledgeVisibility,
-                          })
-                        }
-                        value={form.visibility}
-                      >
-                        <option value="internal">Interno</option>
-                        <option value="restricted">Restrito</option>
-                        <option value="public">Público</option>
-                      </SelectInput>
-                    </Field>
-                    <Field label="Espaço público *">
-                      <SelectInput
-                        disabled={isReadOnly}
-                        onChange={(event) => void handleSpaceChange(event.target.value)}
-                        value={selectedSpaceId}
-                      >
-                        {spaces.map((space) => (
-                          <option key={space.id} value={space.id}>
-                            {space.display_name}
-                          </option>
-                        ))}
-                      </SelectInput>
-                    </Field>
-                    <Field label="Status editorial">
-                      <div className="rounded-[16px] border border-[#DCE4F2] bg-[#F8FBFF] p-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="text-[0.68rem] font-extrabold uppercase tracking-[0.12em] text-[#6B7892]">
-                              Estado atual
-                            </p>
-                            <p className="mt-1 text-[0.9rem] font-extrabold text-[#162443]">
-                              {statusLabel(status)}
-                            </p>
-                          </div>
-                          <span
-                            className={cx(
-                              'rounded-full px-2.5 py-1 text-[0.66rem] font-extrabold',
-                              status === 'published'
-                                ? 'bg-[color:var(--color-success-surface)] text-[color:var(--color-success-ink)]'
-                                : status === 'review'
-                                  ? 'bg-[color:var(--color-info-surface)] text-[#2F6BFF]'
-                                  : status === 'archived'
-                                    ? 'bg-[color:var(--color-app-bg)] text-[color:var(--color-text-secondary)]'
-                                    : 'bg-[color:var(--color-warning-surface)] text-[color:var(--color-warning-ink)]',
-                            )}
-                          >
-                            Governado
-                          </span>
-                        </div>
-                        <p className="mt-2 text-[0.68rem] leading-4 text-[color:var(--color-muted)]">
-                          Status não é editado livremente. Cada avanço respeita a governança
-                          editorial.
-                        </p>
-                        <div className="mt-3 grid gap-2">
-                          {status === 'draft' && !isEditorialRevision ? (
-                            <GhostButton
-                              className="min-h-9 justify-center rounded-[12px] text-[0.72rem]"
-                              disabled={submitState === 'saving' || isReadOnly}
-                              onClick={() => void handleSubmitForReview()}
-                            >
-                              {submitState === 'saving' ? 'Enviando...' : 'Enviar para revisão'}
-                            </GhostButton>
-                          ) : null}
-                          {status !== 'archived' ? (
-                            <AppButton
-                              className="min-h-9 justify-center rounded-[12px] text-[0.72rem]"
-                              disabled={publishState === 'saving' || isReadOnly}
-                              onClick={() => void handlePublishArticle()}
-                            >
-                              {publishState === 'saving' ? 'Publicando...' : publishButtonLabel}
-                            </AppButton>
-                          ) : (
-                            <p className="rounded-xl bg-[color:var(--color-app-bg)] px-3 py-2 text-[0.68rem] leading-4 text-[color:var(--color-text-secondary)]">
-                              Artigo arquivado fica somente leitura até que a reativação esteja
-                              disponível.
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </Field>
-                  </RailCard>
-
-                  <RailCard
-                    badge={`${publicationChecklistDone}/${publicationChecklist.length}`}
-                    title="Checklist de publicação"
-                  >
-                    <ul className="space-y-2">
-                      {publicationChecklist.map((item) => (
-                        <ChecklistItem
-                          actionLabel={
-                            item.action === 'evidence' || item.action === 'publish-readiness'
-                              ? 'Confirmar'
-                              : 'Ajustar'
-                          }
-                          disabled={
-                            reviewEvidenceState === 'saving' ||
-                            (item.action !== 'evidence' &&
-                              item.action !== 'publish-readiness' &&
-                              isReadOnly)
-                          }
-                          done={item.done}
-                          key={item.label}
-                          label={item.label}
-                          onAction={
-                            item.action === 'evidence' || item.action === 'publish-readiness'
-                              ? openPublicConfirmation
-                              : () => {
-                                  if (item.action === 'body') {
-                                    document
-                                      .querySelector<HTMLElement>('.knowledge-rich-editor')
-                                      ?.focus();
-                                  } else {
-                                    setMetadataCollapsed(false);
-                                  }
-                                  setFeedback(
-                                    item.action === 'title'
-                                      ? 'Revise o título na coluna de configurações.'
-                                      : item.action === 'summary'
-                                        ? 'Revise o resumo curto na coluna de configurações.'
-                                        : item.action === 'category'
-                                          ? 'Selecione uma categoria na coluna de configurações.'
-                                          : item.action === 'visibility'
-                                            ? 'Confirme a visibilidade na coluna de configurações.'
-                                            : 'Complete o corpo principal do artigo.',
-                                  );
-                                }
-                          }
-                        />
-                      ))}
-                    </ul>
-                    {needsPublicEvidence && publishBlocker ? (
-                      <p className="rounded-2xl bg-[color:var(--color-warning-surface)] px-3 py-2 text-[0.7rem] leading-5 text-[color:var(--color-warning-ink)]">
-                        {publishBlocker}
-                      </p>
-                    ) : null}
-                    {needsPublicEvidence && publicConfirmationOpen ? (
-                      <div className="rounded-2xl border border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-surface)] p-3">
-                        <h3 className="text-[0.76rem] font-extrabold text-[#162443]">
-                          Confirmação editorial para publicação pública
-                        </h3>
-                        <p className="mt-1 text-[0.68rem] leading-4 text-[color:var(--color-warning-ink)]">
-                          Marque apenas após revisão humana real. Isso será registrado com
-                          segurança antes da tentativa de publicação.
-                        </p>
-                        <div className="mt-3 space-y-2">
-                          {PUBLIC_PUBLISH_CONFIRMATION_FIELDS.map((field) => (
-                            <label
-                              className="flex items-start gap-2 text-[0.72rem] leading-4 text-[#162443]"
-                              key={field.key}
-                            >
+                            <option value="">Selecione uma categoria</option>
+                            {categories.map((category) => (
+                              <option key={category.id} value={category.id}>
+                                {category.name}
+                              </option>
+                            ))}
+                          </SelectInput>
+                        </Field>
+                        <Field label="Tags">
+                          <div className="rounded-[16px] border border-[#DCE4F2] bg-[color:var(--color-surface-strong)] p-2">
+                            {form.keywords.length > 0 ? (
+                              <div className="mb-2 flex flex-wrap gap-1.5">
+                                {form.keywords.map((tag) => (
+                                  <span
+                                    className="inline-flex items-center gap-1 rounded-full bg-[#EEF2F7] px-2 py-1 text-[0.68rem] font-medium text-[#162443]"
+                                    key={tag}
+                                  >
+                                    {tag}
+                                    <button
+                                      className="text-[#6B7892] hover:text-[color:var(--color-danger-ink)]"
+                                      onClick={() => removeTag(tag)}
+                                      type="button"
+                                    >
+                                      ×
+                                    </button>
+                                  </span>
+                                ))}
+                              </div>
+                            ) : null}
+                            <div className="flex gap-2">
                               <input
-                                checked={publicConfirmation[field.key] === true}
-                                className="mt-0.5 h-4 w-4 rounded border-[#C8D4EA]"
-                                onChange={(event) =>
-                                  setPublicConfirmation((current) => ({
-                                    ...current,
-                                    [field.key]: event.target.checked,
-                                  }))
-                                }
-                                type="checkbox"
+                                className="min-h-9 min-w-0 flex-1 rounded-xl border border-[#DCE4F2] px-3 text-[0.78rem] font-semibold text-[#162443] outline-none focus:border-[#2F6BFF]"
+                                disabled={isReadOnly || form.keywords.length >= 10}
+                                onChange={(event) => setTagDraft(event.target.value)}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                    addTag();
+                                  }
+                                }}
+                                placeholder="Adicionar tag"
+                                value={tagDraft}
                               />
-                              <span>{field.label}</span>
-                            </label>
-                          ))}
-                        </div>
-                        <div className="mt-3 flex gap-2">
-                          <AppButton
-                            className="min-h-9 flex-1 justify-center rounded-[12px] text-[0.72rem]"
-                            disabled={
-                              reviewEvidenceState === 'saving' ||
-                              publishState === 'saving' ||
-                              !publicConfirmationReady
+                              <button
+                                className="rounded-xl bg-[#F4F7FC] px-3 text-[0.72rem] font-extrabold text-[#2F6BFF] disabled:opacity-40"
+                                disabled={!tagDraft.trim() || form.keywords.length >= 10}
+                                onClick={addTag}
+                                type="button"
+                              >
+                                +
+                              </button>
+                            </div>
+                            <div className="mt-1 flex justify-between text-[0.65rem] text-[#6B7892]">
+                              <span>As tags serão salvas junto com o artigo.</span>
+                              <span>{form.keywords.length}/10</span>
+                            </div>
+                          </div>
+                        </Field>
+                        <Field label="Visibilidade *">
+                          <SelectInput
+                            disabled={isReadOnly}
+                            onChange={(event) =>
+                              updateForm({
+                                visibility: event.target.value as KnowledgeVisibility,
+                              })
                             }
-                            onClick={() => void handleConfirmHumanReviewForPublicPublish()}
+                            value={form.visibility}
                           >
-                            {reviewEvidenceState === 'saving' || publishState === 'saving'
-                              ? 'Publicando...'
-                              : 'Confirmar e publicar'}
-                          </AppButton>
-                          <GhostButton
-                            className="min-h-9 rounded-[12px] px-3 text-[0.72rem]"
-                            disabled={reviewEvidenceState === 'saving' || publishState === 'saving'}
-                            onClick={() => setPublicConfirmationOpen(false)}
+                            <option value="internal">Interno</option>
+                            <option value="restricted">Restrito</option>
+                            <option value="public">Público</option>
+                          </SelectInput>
+                        </Field>
+                        <Field label="Espaço público *">
+                          <SelectInput
+                            disabled={isReadOnly}
+                            onChange={(event) => void handleSpaceChange(event.target.value)}
+                            value={selectedSpaceId}
                           >
-                            Cancelar
-                          </GhostButton>
-                        </div>
-                      </div>
-                    ) : needsPublicEvidence && publishBlocker ? (
-                      <GhostButton
-                        className="min-h-9 w-full justify-center rounded-[12px] text-[0.72rem]"
-                        disabled={reviewEvidenceState === 'saving'}
-                        onClick={openPublicConfirmation}
-                      >
-                        Abrir confirmação pública
-                      </GhostButton>
-                    ) : null}
-                  </RailCard>
+                            {spaces.map((space) => (
+                              <option key={space.id} value={space.id}>
+                                {space.display_name}
+                              </option>
+                            ))}
+                          </SelectInput>
+                        </Field>
+                        <Field label="Status editorial">
+                          <div className="rounded-[16px] border border-[#DCE4F2] bg-[#F8FBFF] p-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <p className="text-[0.68rem] font-extrabold uppercase tracking-[0.12em] text-[#6B7892]">
+                                  Estado atual
+                                </p>
+                                <p className="mt-1 text-[0.9rem] font-extrabold text-[#162443]">
+                                  {statusLabel(status)}
+                                </p>
+                              </div>
+                              <span
+                                className={cx(
+                                  'rounded-full px-2.5 py-1 text-[0.66rem] font-extrabold',
+                                  status === 'published'
+                                    ? 'bg-[color:var(--color-success-surface)] text-[color:var(--color-success-ink)]'
+                                    : status === 'review'
+                                      ? 'bg-[color:var(--color-info-surface)] text-[#2F6BFF]'
+                                      : status === 'archived'
+                                        ? 'bg-[color:var(--color-app-bg)] text-[color:var(--color-text-secondary)]'
+                                        : 'bg-[color:var(--color-warning-surface)] text-[color:var(--color-warning-ink)]',
+                                )}
+                              >
+                                Governado
+                              </span>
+                            </div>
+                            <p className="mt-2 text-[0.68rem] leading-4 text-[color:var(--color-muted)]">
+                              Status não é editado livremente. Cada avanço respeita a governança
+                              editorial.
+                            </p>
+                            <div className="mt-3 grid gap-2">
+                              {/* As acoes de avanco vivem no header do editor.
+                                  Duplica-las aqui criava dois pontos de decisao
+                                  para a mesma operacao. */}
+                              {status !== 'archived' ? (
+                                <p className="rounded-xl bg-[color:var(--color-app-bg)] px-3 py-2 text-[0.68rem] leading-4 text-[color:var(--color-text-secondary)]">
+                                  Use as ações no topo do editor para salvar, enviar para revisão ou
+                                  publicar.
+                                </p>
+                              ) : (
+                                <p className="rounded-xl bg-[color:var(--color-app-bg)] px-3 py-2 text-[0.68rem] leading-4 text-[color:var(--color-text-secondary)]">
+                                  Artigo arquivado fica somente leitura até que a reativação esteja
+                                  disponível.
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </Field>
+                      </RailCard>
 
-                  <RailCard title="Informações do artigo">
-                    <dl className="space-y-2 text-[0.72rem] leading-5">
-                      <div>
-                        <dt className="font-extrabold text-[color:var(--color-brand-navy)]">
-                          Última edição
-                        </dt>
-                        <dd className="text-[color:var(--color-muted)]">
-                          {articleDetail?.updated_at
-                            ? new Date(articleDetail.updated_at).toLocaleString('pt-BR')
-                            : 'Ainda não salvo'}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="font-extrabold text-[color:var(--color-brand-navy)]">
-                          Revisão
-                        </dt>
-                        <dd className="text-[color:var(--color-muted)]">
-                          {articleDetail?.current_revision_number
-                            ? `Rev. ${articleDetail.current_revision_number}`
-                            : 'Rascunho inicial'}
-                        </dd>
-                      </div>
-                    </dl>
-                  </RailCard>
+                      <RailCard
+                        badge={`${preflightDone}/${preflightChecklist.length}`}
+                        title="Pré-voo do artigo"
+                      >
+                        <ul className="space-y-2">
+                          {preflightChecklist.map((item) => (
+                            <ChecklistItem
+                              actionLabel="Ajustar"
+                              disabled={isReadOnly}
+                              done={item.done}
+                              key={item.label}
+                              label={item.label}
+                              onAction={
+                                () => {
+                                      if (item.action === 'body') {
+                                        document
+                                          .querySelector<HTMLElement>('.knowledge-rich-editor')
+                                          ?.focus();
+                                      } else {
+                                        setPropertiesOpen(true);
+                                      }
+                                      setFeedback(
+                                        item.action === 'title'
+                                          ? 'Revise o título na coluna de configurações.'
+                                          : item.action === 'summary'
+                                            ? 'Revise o resumo curto na coluna de configurações.'
+                                            : item.action === 'category'
+                                              ? 'Selecione uma categoria na coluna de configurações.'
+                                              : item.action === 'visibility'
+                                                ? 'Confirme a visibilidade na coluna de configurações.'
+                                                : 'Complete o corpo principal do artigo.',
+                                      );
+                                    }
+                              }
+                            />
+                          ))}
+                        </ul>
+                        {needsPublicEvidence && publishBlocker ? (
+                          <p className="rounded-2xl bg-[color:var(--color-warning-surface)] px-3 py-2 text-[0.7rem] leading-5 text-[color:var(--color-warning-ink)]">
+                            {publishBlocker}
+                          </p>
+                        ) : null}
+                        {needsPublicEvidence && publicConfirmationOpen ? (
+                          <div className="rounded-2xl border border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-surface)] p-3">
+                            <h3 className="text-[0.76rem] font-extrabold text-[#162443]">
+                              Confirmação editorial para publicação pública
+                            </h3>
+                            <p className="mt-1 text-[0.68rem] leading-4 text-[color:var(--color-warning-ink)]">
+                              Marque apenas após revisão humana real. Isso será registrado com
+                              segurança antes da tentativa de publicação.
+                            </p>
+                            <div className="mt-3 space-y-2">
+                              {PUBLIC_PUBLISH_CONFIRMATION_FIELDS.map((field) => (
+                                <label
+                                  className="flex items-start gap-2 text-[0.72rem] leading-4 text-[#162443]"
+                                  key={field.key}
+                                >
+                                  <input
+                                    checked={publicConfirmation[field.key] === true}
+                                    className="mt-0.5 h-4 w-4 rounded border-[#C8D4EA]"
+                                    onChange={(event) =>
+                                      setPublicConfirmation((current) => ({
+                                        ...current,
+                                        [field.key]: event.target.checked,
+                                      }))
+                                    }
+                                    type="checkbox"
+                                  />
+                                  <span>{field.label}</span>
+                                </label>
+                              ))}
+                            </div>
+                            <div className="mt-3 flex gap-2">
+                              <AppButton
+                                className="min-h-9 flex-1 justify-center rounded-[12px] text-[0.72rem]"
+                                disabled={
+                                  reviewEvidenceState === 'saving' ||
+                                  publishState === 'saving' ||
+                                  !publicConfirmationReady
+                                }
+                                onClick={() => void handleConfirmHumanReviewForPublicPublish()}
+                              >
+                                {reviewEvidenceState === 'saving' || publishState === 'saving'
+                                  ? 'Publicando...'
+                                  : 'Confirmar e publicar'}
+                              </AppButton>
+                              <GhostButton
+                                className="min-h-9 rounded-[12px] px-3 text-[0.72rem]"
+                                disabled={reviewEvidenceState === 'saving' || publishState === 'saving'}
+                                onClick={() => setPublicConfirmationOpen(false)}
+                              >
+                                Cancelar
+                              </GhostButton>
+                            </div>
+                          </div>
+                        ) : needsPublicEvidence && publishBlocker ? (
+                          <GhostButton
+                            className="min-h-9 w-full justify-center rounded-[12px] text-[0.72rem]"
+                            disabled={reviewEvidenceState === 'saving'}
+                            onClick={openPublicConfirmation}
+                          >
+                            Abrir confirmação pública
+                          </GhostButton>
+                        ) : null}
+                      </RailCard>
+
+                      <RailCard title="Informações do artigo">
+                        <dl className="space-y-2 text-[0.72rem] leading-5">
+                          <div>
+                            <dt className="font-extrabold text-[color:var(--color-brand-navy)]">
+                              Última edição
+                            </dt>
+                            <dd className="text-[color:var(--color-muted)]">
+                              {articleDetail?.updated_at
+                                ? new Date(articleDetail.updated_at).toLocaleString('pt-BR')
+                                : 'Ainda não salvo'}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="font-extrabold text-[color:var(--color-brand-navy)]">
+                              Revisão
+                            </dt>
+                            <dd className="text-[color:var(--color-muted)]">
+                              {articleDetail?.current_revision_number
+                                ? `Rev. ${articleDetail.current_revision_number}`
+                                : 'Rascunho inicial'}
+                            </dd>
+                          </div>
+                        </dl>
+                      </RailCard>
                 </div>
               </div>
-            )}
-          </aside>
-          <main className="order-1 min-w-0 p-5">
-            <section className="min-w-0">
-              <input
-                accept="image/png,image/jpeg,image/webp,image/gif"
-                className="hidden"
-                disabled={isReadOnly}
-                multiple
-                onChange={(event) => {
-                  if (event.target.files) {
-                    void handleAssetFiles(event.target.files, 'upload');
-                  }
-                  event.target.value = '';
-                }}
-                ref={fileInputRef}
-                type="file"
-              />
-              <RichTextArticleEditor
-                assets={assetMap}
-                assetState={assetState}
-                bodyMd={form.bodyMd}
-                isReadOnly={isReadOnly}
-                onChange={(nextBodyMd) => updateForm({ bodyMd: nextBodyMd })}
-                onDrop={handleAssetDrop}
-                onImageButton={() => {
-                  if (!isReadOnly) {
-                    fileInputRef.current?.click();
-                  }
-                }}
-                onPaste={handleBodyPaste}
-                relatedArticles={relatedArticles}
-                onRegisterMarkdownInserter={(inserter) => {
-                  editorMarkdownInserterRef.current = inserter;
-                }}
-              />
-            </section>
-          </main>
-        </div>
+            </aside>
+          </div>
+        ) : null}
       </div>
     </form>
   );
