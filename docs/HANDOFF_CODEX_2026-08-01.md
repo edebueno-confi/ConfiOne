@@ -119,9 +119,40 @@ recoloque sem publicar Suporte junto.
 ```
 Checkout canônico : C:\Projetos\GSO-old
 Branch            : claude/release-surface-visual-audit-20260731
-Base              : 68884bf (igual ao `main` local)
-Upstream          : NÃO CONFIGURADO
+HEAD              : 56c2c9d023bff8f5c2e4e1609662f35647251bf3
+Base do ramo      : 68884bf (igual ao `main` local)
+Commits do ciclo  : 9, todos locais
+Upstream          : NÃO CONFIGURADO — nada foi enviado para o remoto
+Árvore de trabalho: limpa, exceto package-lock.json (ver §8)
 ```
+
+## Os 9 commits deste ciclo
+
+```
+56c2c9d docs: passagem do projeto para o Codex
+bf363bf chore(integrations): preservar ajustes de escopo e watermark do HubSpot
+3f7503e refactor(settings): exibir apenas o que o perfil pode operar
+ab47abb fix(knowledge): romper o deadlock de publicacao e refatorar o editor
+b55aa88 feat(navigation): busca global "Pergunte ao Genio" no header
+9392d66 refactor(analytics): separar Suporte de Customer Success e padronizar filtros
+c206877 feat(release): manifesto central da superficie do primeiro release
+1e1dbf1 fix(local-qa): centralizar normalizacao do helper de SQL
+ac43d09 chore(repo): ignorar pacotes de evidencia e artefatos de agente
+```
+
+Cada mensagem explica o porquê da mudança, não apenas o quê. Política de
+trailers verificada: `node scripts/ci/check-commit-trailers.mjs` → exit 0, nenhum
+trailer de coautoria não autorizado.
+
+**Nada foi enviado para o remoto.** `git push` é decisão do Product Owner.
+
+## Um `index.lock` órfão bloqueava o repositório
+
+Havia um `.git/index.lock` de 30/07 20:19, com 0 bytes, sem nenhum `git.exe` em
+execução. Bloqueava qualquer operação de índice. Confirmei que era órfão pela
+idade, pelo tamanho e pela ausência de processo antes de removê-lo. Se o sintoma
+"Another git process seems to be running" voltar, verifique nessa ordem: processo
+ativo, idade do lock, tamanho.
 
 ## A base está 74 commits atrás de origin/main
 
@@ -435,9 +466,13 @@ investigação, não fonte da verdade — o que importa está destilado em
 Também corrigi um espaço em branco à direita em `AnalyticsCeoPage.tsx:94` que
 fazia `git diff --check` falhar.
 
-`package-lock.json` aparece como modificado, mas `git diff --stat` é vazio —
-provavelmente refresh de mtime, sem mudança real de conteúdo. **Não altere o
-`package-lock.json`.**
+`package-lock.json` continua marcado como modificado, mas **não tem alteração de
+conteúdo**: `git diff --numstat` retorna vazio e `git update-index --refresh` não
+consegue assentar o registro. É diferença de metadado, provavelmente filtro de
+fim de linha. Deixei intocado de propósito — alterar o `package-lock.json` está
+fora do escopo autorizado, e é a única entrada suja restante na árvore.
+
+**Não altere o `package-lock.json`.**
 
 ---
 
@@ -453,6 +488,7 @@ provavelmente refresh de mtime, sem mudança real de conteúdo. **Não altere o
 | `npx supabase test db --local` (pós-hydrate) | FAIL, 17 arquivos abortam (§6.1) |
 | `052_analytics_hubspot_pipe_alignment.sql` pós-hydrate | PASS, exit 0 |
 | `npm run local:qa:secret-scan` | exit 0, limpo |
+| `node scripts/ci/check-commit-trailers.mjs` | exit 0, 9 commits analisados |
 | `git diff --check` | limpo após a correção |
 | Rotas proibidas para `platform_admin` | 20/20 bloqueadas, verificado no navegador |
 | Publicação de artigo ponta a ponta | `published/public/rev 4`, advisory `reviewed` |
@@ -607,6 +643,102 @@ Registro honesto, porque cada um custou tempo:
 6. **Escrevi backtick dentro de template literal** em `hydrate.mjs`, quebrando o
    parse do arquivo. Comentário em SQL dentro de template JS não pode usar
    backtick.
+
+---
+
+# 14. Como conectar o Codex
+
+Para o Product Owner executar.
+
+## Passo 1 — apontar o Codex para o checkout correto
+
+```
+C:\Projetos\GSO-old
+```
+
+Não use outra pasta de `C:\Projetos`. As demais são worktrees de branches
+específicas do Codex, com HEAD diferente, e algumas em `detached HEAD`.
+
+## Passo 2 — confirmar que o ambiente sobe
+
+```
+npm run supabase:start
+.tmp\start-functions.cmd
+.tmp\start-web.cmd
+```
+
+Se as integrações derem 503, o segundo processo não subiu.
+
+## Passo 3 — prompt de abertura do Codex
+
+Cole exatamente isto na primeira mensagem:
+
+---
+
+Você assume o desenvolvimento do **Genius Support OS**, um SaaS operacional
+interno da Confi. O checkout correto é `C:\Projetos\GSO-old`. Não use outra pasta
+sem comprovar por histórico Git que é a fonte canônica.
+
+**Antes de escrever qualquer linha de código, leia integralmente:**
+
+1. `docs/HANDOFF_CODEX_2026-08-01.md` — passagem do projeto, estado atual, bugs
+   abertos, sujeira e ordem recomendada de execução
+2. `CLAUDE.md` e `AGENTS.md` — regras de execução
+3. `docs/PROJECT_STATE.md`, `docs/ARCHITECTURE_RULES.md`,
+   `docs/VIEW_RPC_CONTRACTS.md`, `docs/AUTH_CONTEXT_STRATEGY.md`
+4. `docs/reports/2026-08-01_ambiente_local_pgtap_e_sync_hubspot.md` — último ciclo
+
+**Sua primeira tarefa é de diagnóstico, não de implementação.**
+
+A branch atual `claude/release-surface-visual-audit-20260731` está **74 commits
+atrás de `origin/main`**, tem 9 commits locais não publicados e nenhum upstream
+configurado. Existem 10 worktrees ativos, 3 branches sem cópia remota e 3 com
+commits locais não publicados. Há um stash preservado.
+
+Faça o seguinte e **pare para reportar antes de executar qualquer alteração**:
+
+1. Inspecione `git status`, branch, HEAD, upstream, `git worktree list`,
+   `git branch -vv`, `git stash list` e a contagem
+   `git rev-list --left-right --count origin/main...HEAD`.
+2. Compare o conteúdo real dos 74 commits de `origin/main` com os 9 commits
+   locais desta branch. Identifique sobreposições e conflitos prováveis.
+3. Recomende uma estratégia de reconciliação: rebase, merge, ou reaplicação sobre
+   branch nova criada de `origin/main`. Justifique com evidência.
+4. Liste explicitamente o que se perde em cada opção.
+
+**Não execute** `git reset`, `git clean`, `git stash drop`, `git checkout --`
+amplo, `git worktree remove`, `git branch -D`, `git push`, rebase, merge ou
+cherry-pick sem autorização explícita do Product Owner. Preserve o trabalho
+existente e o trabalho do outro agente.
+
+**Regras que valem para todo o projeto:**
+
+- Backend, banco, views, RPCs e read models são a fonte da verdade. O frontend não
+  inventa regra de negócio nem dado.
+- Dado ausente é exibido como **indisponível**, nunca simulado.
+- Toda operação respeita tenant, RLS, permissão, auditoria e isolamento.
+- Nunca exponha `.env`, tokens, secrets, senhas, cookies, JWTs ou service role
+  keys.
+- Não declare tarefa concluída sem evidência objetiva. Diferencie validado,
+  parcialmente validado, não validado e dependente de credencial externa.
+- Alteração visual exige captura real das superfícies alteradas, não só typecheck.
+- Metodologia Spec-Driven Development: especificação, plano, implementação,
+  validação e documentação persistida no repositório.
+
+Responda em português do Brasil. Seja técnico, direto e objetivo. Ao encerrar um
+ciclo, informe arquivos alterados, o que foi implementado, decisões, comandos
+executados, testes que passaram, evidências, limitações, pendências, status do Git
+e próximo lote recomendado. Depois **pare** — não inicie o lote seguinte
+automaticamente.
+
+---
+
+## Passo 4 — decidir sobre o push
+
+Os 9 commits deste ciclo estão apenas locais. Publicar ou não é sua decisão.
+Recomendo **não publicar antes** da reconciliação com `origin/main`: enviar uma
+branch construída sobre base 74 commits atrás só transfere o problema para o
+remoto.
 
 ---
 
