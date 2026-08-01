@@ -5,6 +5,7 @@ import { GeniusMascot } from '../components/GeniusMascot';
 import { AppButton, GhostButton } from '../components/ui';
 import { AuthBootstrap } from '../features/auth/AuthBootstrap';
 import { AdminGate } from '../features/auth/AdminGate';
+import { ReleaseSurfaceGate } from '../features/auth/ReleaseSurfaceGate';
 
 const CHUNK_RECOVERY_KEY = 'genius.lazy-reload-once';
 
@@ -219,6 +220,11 @@ const HomePage = lazyRouteModule(
   'HomePage',
 );
 
+const PublicHomePage = lazyRouteModule(
+  () => import('../features/public-home/PublicHomePage'),
+  'PublicHomePage',
+);
+
 const InboxPage = lazyRouteModule(
   () => import('../features/inbox/InboxPage'),
   'InboxPage',
@@ -304,7 +310,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: '/',
-        element: <Navigate replace to="/admin" />,
+        element: withSuspense(<PublicHomePage />),
       },
       {
         path: '/login',
@@ -343,9 +349,11 @@ export const router = createBrowserRouter([
       {
         path: '/portal',
         element: withSuspense(
-          <CustomerPortalGate>
-            <CustomerPortalLayout />
-          </CustomerPortalGate>,
+          <ReleaseSurfaceGate>
+            <CustomerPortalGate>
+              <CustomerPortalLayout />
+            </CustomerPortalGate>
+          </ReleaseSurfaceGate>,
         ),
         children: [
           {
@@ -373,12 +381,14 @@ export const router = createBrowserRouter([
       {
         path: '/admin',
         element: (
-          <AdminGate>{withSuspense(<AdminConsoleShell />)}</AdminGate>
+          <ReleaseSurfaceGate>
+            <AdminGate>{withSuspense(<AdminConsoleShell />)}</AdminGate>
+          </ReleaseSurfaceGate>
         ),
         children: [
           {
             index: true,
-            element: <Navigate replace to="/admin/tenants" />,
+            element: <Navigate replace to="/admin/analytics" />,
           },
           {
             path: 'visao-geral',
@@ -437,9 +447,11 @@ export const router = createBrowserRouter([
       {
         path: '/cs',
         element: withSuspense(
-          <CsGate>
-            <CsWorkspaceShell />
-          </CsGate>,
+          <ReleaseSurfaceGate>
+            <CsGate>
+              <CsWorkspaceShell />
+            </CsGate>
+          </ReleaseSurfaceGate>,
         ),
         children: [
           {
@@ -455,9 +467,11 @@ export const router = createBrowserRouter([
       {
         path: '/support',
         element: withSuspense(
-          <SupportGate>
-            <SupportWorkspaceShell />
-          </SupportGate>,
+          <ReleaseSurfaceGate>
+            <SupportGate>
+              <SupportWorkspaceShell />
+            </SupportGate>
+          </ReleaseSurfaceGate>,
         ),
         children: [
           {
@@ -497,9 +511,11 @@ export const router = createBrowserRouter([
       {
         path: '/inicio',
         element: withSuspense(
-          <SupportGate>
-            <SupportWorkspaceShell />
-          </SupportGate>,
+          <ReleaseSurfaceGate>
+            <SupportGate>
+              <SupportWorkspaceShell />
+            </SupportGate>
+          </ReleaseSurfaceGate>,
         ),
         children: [
           {
@@ -511,9 +527,11 @@ export const router = createBrowserRouter([
       {
         path: '/engineering',
         element: withSuspense(
-          <SupportGate>
-            <SupportWorkspaceShell />
-          </SupportGate>,
+          <ReleaseSurfaceGate>
+            <SupportGate>
+              <SupportWorkspaceShell />
+            </SupportGate>
+          </ReleaseSurfaceGate>,
         ),
         children: [
           {
@@ -529,9 +547,11 @@ export const router = createBrowserRouter([
       {
         path: '/internal-actions',
         element: withSuspense(
-          <SupportGate>
-            <SupportWorkspaceShell />
-          </SupportGate>,
+          <ReleaseSurfaceGate>
+            <SupportGate>
+              <SupportWorkspaceShell />
+            </SupportGate>
+          </ReleaseSurfaceGate>,
         ),
         children: [
           {

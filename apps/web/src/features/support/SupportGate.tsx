@@ -50,7 +50,6 @@ export function SupportGate({ children }: { children: ReactNode }) {
         <StateFrame
           title="Sessão expirada"
           description="Sua sessão perdeu validade durante a operação. Entre novamente para continuar no suporte."
-          eyebrow="auth"
           tone="critical"
           actions={
             <>

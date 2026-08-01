@@ -568,7 +568,6 @@ export function CustomerPortalGate({ children }: { children: ReactNode }) {
         <StateFrame
           title="Sessão expirada"
           description="Entre novamente para continuar no portal cliente."
-          eyebrow="portal"
           tone="critical"
           actions={
             <>
@@ -662,7 +661,6 @@ export function CustomerPortalLayout() {
               : staleMessage ??
                 'O contexto do portal mudou e a conta anterior não está mais disponível para esta sessão.'
           }
-          eyebrow="portal"
           tone="default"
           actions={
             <AppButton disabled={isRefreshing} onClick={() => void refresh()}>
@@ -702,7 +700,6 @@ export function CustomerPortalLayout() {
             phaseMessage ??
             'Seu acesso ao portal foi revogado ou deixou de atender os requisitos desta conta.'
           }
-          eyebrow="portal"
           tone="critical"
         />
       </div>
@@ -718,7 +715,6 @@ export function CustomerPortalLayout() {
             phaseMessage ??
             'Nenhuma conta habilitada no portal está disponível para esta sessão agora.'
           }
-          eyebrow="portal"
           tone="default"
           actions={
             <AppButton disabled={isRefreshing} onClick={() => void refresh()}>

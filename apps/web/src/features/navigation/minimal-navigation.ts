@@ -1,4 +1,9 @@
 import type { InternalScreenKey, PlatformRole } from '../../contracts/admin-contracts';
+import {
+  PUBLIC_HELP_CENTER_HREF,
+  getReleaseSurfaceMode,
+  isScreenPublishedInRelease,
+} from '../../app/release-surface.mjs';
 
 export interface MinimalNavigationPermissions {
   isPlatformAdmin: boolean;
@@ -26,10 +31,12 @@ export interface MinimalNavigationItem {
   to: string;
   icon: MinimalNavigationIcon;
   matches: (pathname: string) => boolean;
+  /** Opens outside the authenticated shell, in a new tab. */
+  external?: boolean;
 }
 
 export interface MinimalNavigationSection {
-  id: 'workspace' | 'intelligence' | 'administration' | 'operations';
+  id: 'workspace' | 'intelligence' | 'administration' | 'operations' | 'knowledge';
   label: string;
   items: MinimalNavigationItem[];
 }
@@ -42,6 +49,92 @@ function hasAnyRole(roles: PlatformRole[], candidates: PlatformRole[]) {
   return candidates.some((candidate) => roles.includes(candidate));
 }
 
+/**
+ * Sidebar for the published release surface.
+ *
+ * An item only appears when the screen is published in the release AND the
+ * profile is authorized for it. Empty groups are dropped; nothing is rendered
+ * disabled or as "coming soon".
+ */
+function buildReleaseNavigation({
+  isPlatformAdmin,
+  screenKeys,
+}: {
+  isPlatformAdmin: boolean;
+  screenKeys: InternalScreenKey[];
+}): MinimalNavigationSection[] {
+  const allows = (screenKey: InternalScreenKey) =>
+    isScreenPublishedInRelease(screenKey) && (isPlatformAdmin || screenKeys.includes(screenKey));
+
+  const sections: MinimalNavigationSection[] = [];
+
+  if (allows('analytics')) {
+    sections.push({
+      id: 'intelligence',
+      label: 'Painel',
+      items: [
+        {
+          id: 'admin-analytics',
+          label: 'Dashboard gerencial',
+          to: '/admin/analytics',
+          icon: 'workflow',
+          matches: (path) => matchesBase(path, '/admin/analytics'),
+        },
+      ],
+    });
+  }
+
+  if (allows('knowledge')) {
+    sections.push({
+      id: 'knowledge',
+      label: 'Central de Ajuda',
+      items: [
+        {
+          id: 'admin-knowledge',
+          label: 'Artigos',
+          to: '/admin/knowledge',
+          icon: 'book',
+          matches: (path) =>
+            matchesBase(path, '/admin/knowledge') && !matchesBase(path, '/admin/knowledge/new'),
+        },
+        {
+          id: 'admin-knowledge-new',
+          label: 'Novo artigo',
+          to: '/admin/knowledge/new',
+          icon: 'document',
+          matches: (path) => matchesBase(path, '/admin/knowledge/new'),
+        },
+        {
+          id: 'public-help-center',
+          label: 'Abrir Central pública',
+          to: PUBLIC_HELP_CENTER_HREF,
+          icon: 'book',
+          matches: () => false,
+          external: true,
+        },
+      ],
+    });
+  }
+
+  if (allows('settings')) {
+    sections.push({
+      id: 'administration',
+      label: 'Configurações',
+      items: [
+        {
+          id: 'admin-settings',
+          label: 'Configurações',
+          to: '/admin/settings',
+          icon: 'settings',
+          matches: (path) => matchesBase(path, '/admin/settings'),
+        },
+      ],
+    });
+  }
+
+  return sections.filter((section) => section.items.length > 0);
+}
+
 export function buildMinimalNavigation({
   permissions,
 }: {
@@ -52,6 +145,13 @@ export function buildMinimalNavigation({
   const screenKeys = permissions.screenKeys ?? [];
   const isPlatformAdmin = permissions.isPlatformAdmin || roles.includes('platform_admin');
   const isDashboardViewer = !isPlatformAdmin && permissions.hasDashboardViewerAccess === true;
+
+  // While a reduced surface is published, the sidebar is derived from the
+  // release manifest intersected with the profile's permissions. The full
+  // navigation below is preserved untouched for the complete system.
+  if (getReleaseSurfaceMode() === 'first-release') {
+    return buildReleaseNavigation({ isPlatformAdmin, screenKeys });
+  }
 
   if (isDashboardViewer) {
     return [{

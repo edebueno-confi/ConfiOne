@@ -255,7 +255,7 @@ function FilterBar({
     'h-12 rounded-[9px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] px-4 text-sm font-semibold text-[#263B62] outline-none transition focus:border-[#1458E8] focus:ring-2 focus:ring-[#1458E8]/10';
 
   return (
-    <section className="grid gap-4 xl:grid-cols-[1fr_1fr_1fr_2fr]">
+    <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]">
       <select aria-label="Filtrar por fase" className={selectClass} onChange={(event) => onPhaseChange(event.target.value)} value={phase}>
         <option value="all">Todas as fases</option>
         {buildJournalTimelinePhases.map((item) => (
@@ -296,7 +296,7 @@ function TimelineCard({ phase }: { phase: TimelinePhase }) {
   const accent = accentClasses[phase.accent];
 
   return (
-    <article className="relative grid min-h-[156px] gap-5 rounded-[18px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-5 shadow-[0_14px_36px_rgba(31,67,125,0.06)] lg:grid-cols-[132px_1fr_170px_290px]">
+    <article className="relative grid min-h-[156px] gap-5 rounded-[18px] border border-[color:var(--border)] bg-[color:var(--surface)] p-5 shadow-[var(--shadow-sm)] lg:grid-cols-[132px_minmax(0,1fr)_170px_290px]">
       <div className="flex items-center gap-4 lg:justify-center">
         <span className={cx('absolute left-[32px] top-7 z-20 flex h-12 w-12 items-center justify-center rounded-full text-xl font-black text-white lg:left-[22px]', accent.bg)}>
           {phase.number}
@@ -628,7 +628,7 @@ function OverviewPanel({
         </div>
       </section>
 
-      <section className="grid gap-5 lg:grid-cols-[1.4fr_0.8fr]">
+      <section className="grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)]">
         <article className="rounded-[16px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
           <h2 className="text-xl font-black text-[#071641]">Arquitetura em camadas</h2>
           <p className="mt-1 text-sm font-semibold text-[#31476C]">Como os componentes se conectam para entregar valor</p>
@@ -665,7 +665,7 @@ function OverviewPanel({
       <section className="rounded-[16px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-6 shadow-[0_12px_30px_rgba(31,67,125,0.05)]">
         <h2 className="text-xl font-black text-[#071641]">IA na construção</h2>
         <p className="mt-1 text-sm font-semibold text-[#31476C]">Como ChatGPT e Codex aceleram a construção com responsabilidade</p>
-        <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_1fr_1fr_1.05fr]">
+        <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.05fr)]">
           {[
             ['ChatGPT', 'Raciocínio e estratégia', ['Visão do produto, arquitetura e decisões', 'Especificações, acordos e revisão crítica', 'Documentação, prompts e raciocínio'], 'teal', 'spark'],
             ['Codex', 'Execução e entrega', ['Implementação de código e refatoração', 'Testes automatizados e validação', 'Scripts, migrations e documentação técnica'], 'blue', 'code'],
@@ -753,7 +753,7 @@ function SimpleDocumentPanel({
 
   return (
     <section className="rounded-[18px] border border-[#D9E6F7] bg-[color:var(--color-surface-strong)] p-7 shadow-[0_14px_36px_rgba(31,67,125,0.06)]">
-      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <div>
           <span className="text-xs font-black uppercase tracking-[0.22em] text-[#1458E8]">Diário de Construção</span>
           <h2 className="mt-3 text-[1.6rem] font-black leading-tight text-[#071641]">{content.title}</h2>

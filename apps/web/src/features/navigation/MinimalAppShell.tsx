@@ -5,6 +5,7 @@ import { GeniusMascot } from '../../components/GeniusMascot';
 import { Avatar } from '../../components/Avatar';
 import { ThemeToggle } from '../../components/ThemeToggle';
 import { useAuthContext } from '../auth/auth-context';
+import { GeniusGlobalSearch } from './GeniusGlobalSearch';
 import {
   buildMinimalNavigation,
   resolveMinimalRouteLabel,
@@ -74,27 +75,51 @@ function ShellNavigation({
           {(collapsed || !collapsedSections[section.id] || section.items.some((item) => item.matches(pathname))) ? <div className="space-y-0.5">
             {section.items.filter((item) => collapsed || !collapsedSections[section.id] || item.matches(pathname)).map((item) => {
               const active = item.matches(pathname);
+              const linkClassName = cx(
+                'gso-nav-link flex min-h-11 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors duration-150',
+                collapsed && 'justify-center px-0',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]',
+                active
+                  ? 'gso-nav-link--active bg-[color:var(--minimal-selection)] font-medium text-[color:var(--minimal-selection-text)]'
+                  : 'text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)]',
+              );
+              const linkContent = (
+                <>
+                  <span className="inline-flex h-5 w-5 items-center justify-center">
+                    <NavigationGlyph icon={item.icon} />
+                  </span>
+                  {!collapsed ? <span className="truncate">{item.label}</span> : null}
+                </>
+              );
+
+              // External entries leave the authenticated shell (public Help
+              // Center), so they open in a new tab instead of routing.
+              if (item.external) {
+                return (
+                  <a
+                    className={linkClassName}
+                    href={item.to}
+                    key={item.id}
+                    onClick={onNavigate}
+                    rel="noreferrer"
+                    target="_blank"
+                    title={collapsed ? item.label : undefined}
+                  >
+                    {linkContent}
+                  </a>
+                );
+              }
 
               return (
                 <Link
                   aria-current={active ? 'page' : undefined}
-                  className={cx(
-                    'gso-nav-link flex min-h-11 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors duration-150',
-                    collapsed && 'justify-center px-0',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]',
-                    active
-                      ? 'gso-nav-link--active bg-[color:var(--minimal-selection)] font-medium text-[color:var(--minimal-selection-text)]'
-                      : 'text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)]',
-                  )}
+                  className={linkClassName}
                   key={item.id}
                   onClick={onNavigate}
                   to={item.to}
                   title={collapsed ? item.label : undefined}
                 >
-                  <span className="inline-flex h-5 w-5 items-center justify-center">
-                    <NavigationGlyph icon={item.icon} />
-                  </span>
-                  {!collapsed ? <span className="truncate">{item.label}</span> : null}
+                  {linkContent}
                 </Link>
               );
             })}
@@ -206,7 +231,7 @@ export function MinimalAppShell({
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <header className="gso-topbar flex h-14 shrink-0 items-center gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-3 sm:px-4">
+          <header className="gso-topbar relative flex h-14 shrink-0 items-center gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-3 sm:px-4">
             <button
               ref={mobileMenuButtonRef}
               aria-expanded={mobileNavigationOpen}
@@ -231,12 +256,22 @@ export function MinimalAppShell({
                 <path d={sidebarCollapsed ? 'm10 6 6 6-6 6' : 'm14 6-6 6 6 6'} />
               </svg>
             </button>
-            <p className="truncate text-sm text-[color:var(--minimal-text-secondary)]">
-              <span className="hidden text-[color:var(--minimal-text-tertiary)] sm:inline">
-                GeniusOS&nbsp;&nbsp;/&nbsp;&nbsp;
-              </span>
+            <p className="hidden max-w-[220px] truncate text-sm text-[color:var(--minimal-text-secondary)] lg:block">
               <span className="font-medium text-[color:var(--minimal-text)]">{routeLabel}</span>
             </p>
+            {/* Busca global do Genio: centralizada no header, em todas as telas.
+                Absoluta para ficar no centro otico independente da largura dos
+                clusters da esquerda e da direita. */}
+            <div className="pointer-events-none absolute left-1/2 top-1/2 hidden w-full max-w-xl -translate-x-1/2 -translate-y-1/2 justify-center px-4 md:flex">
+              <div className="pointer-events-auto w-full">
+                <GeniusGlobalSearch
+                  permissions={{
+                    isPlatformAdmin: permissions.isPlatformAdmin || (permissions.roles ?? []).includes('platform_admin'),
+                    screenKeys: permissions.screenKeys ?? [],
+                  }}
+                />
+              </div>
+            </div>
             <div className="ml-auto flex items-center gap-2">
               <ThemeToggle />
               <div className="hidden items-center gap-2 border-l border-[color:var(--minimal-border)] pl-3 sm:flex">

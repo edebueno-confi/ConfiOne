@@ -1,4 +1,8 @@
 import type { InternalScreenKey, PlatformRole } from '../../contracts/admin-contracts';
+import {
+  getReleaseLandingRoute,
+  isRoutePublishedInRelease,
+} from '../../app/release-surface.mjs';
 
 export interface InternalRouteContext {
   roles: PlatformRole[];
@@ -24,6 +28,13 @@ export function canOpenInternalRoute(
   redirectTo: string,
   context: InternalRouteContext,
 ) {
+  // Step 1 of the validation order: a surface that is not published in the
+  // current release is never reachable, regardless of the profile. This keeps
+  // `platform_admin` inside the reduced surface during the release phase.
+  if (!isRoutePublishedInRelease(redirectTo)) {
+    return false;
+  }
+
   if (matchesRoute(redirectTo, '/inicio')) {
     return (
       context.roles.includes('platform_admin') ||
@@ -115,7 +126,14 @@ export function canOpenInternalRoute(
 }
 
 export function getDefaultInternalLandingRoute(context: InternalRouteContext) {
-  if (context.roles.includes('platform_admin')) {
+  // While a reduced surface is published, the post-login destination must be a
+  // published route. The candidate list below stays intact for the full mode.
+  const releaseLanding = getReleaseLandingRoute();
+  if (releaseLanding && canOpenInternalRoute(releaseLanding, context)) {
+    return releaseLanding;
+  }
+
+  if (context.roles.includes('platform_admin') && isRoutePublishedInRelease('/inicio')) {
     return '/inicio';
   }
 
@@ -128,7 +146,10 @@ export function getDefaultInternalLandingRoute(context: InternalRouteContext) {
     ['internal_actions', '/internal-actions'],
     ['product', '/engineering'],
   ];
-  const screenLanding = preferredScreens.find(([screenKey]) => context.screenKeys?.includes(screenKey));
+  const screenLanding = preferredScreens.find(
+    ([screenKey, route]) =>
+      context.screenKeys?.includes(screenKey) && isRoutePublishedInRelease(route),
+  );
   if (screenLanding) {
     return screenLanding[1];
   }
@@ -137,23 +158,26 @@ export function getDefaultInternalLandingRoute(context: InternalRouteContext) {
     return '/admin/analytics';
   }
 
-  if (hasAnyRole(context.roles, ['support_manager', 'support_agent'])) {
+  if (hasAnyRole(context.roles, ['support_manager', 'support_agent']) && isRoutePublishedInRelease('/inicio')) {
     return '/inicio';
   }
 
-  if (context.hasCsPortfolioAccess) {
+  if (context.hasCsPortfolioAccess && isRoutePublishedInRelease('/cs/portfolio')) {
     return '/cs/portfolio';
   }
 
-  if (context.hasInternalActionAreaAccess) {
+  if (context.hasInternalActionAreaAccess && isRoutePublishedInRelease('/internal-actions')) {
     return '/internal-actions';
   }
 
-  if (hasAnyRole(context.roles, ['engineering_manager', 'engineering_member'])) {
+  if (
+    hasAnyRole(context.roles, ['engineering_manager', 'engineering_member']) &&
+    isRoutePublishedInRelease('/engineering')
+  ) {
     return '/engineering';
   }
 
-  if (context.hasCustomerPortalAccess) {
+  if (context.hasCustomerPortalAccess && isRoutePublishedInRelease('/portal')) {
     return '/portal';
   }
 

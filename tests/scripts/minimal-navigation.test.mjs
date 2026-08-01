@@ -7,6 +7,12 @@ import {
   buildMinimalNavigation,
   resolveMinimalRouteLabel,
 } from '../../apps/web/src/features/navigation/minimal-navigation.ts';
+import { setReleaseSurfaceModeForTests } from '../../apps/web/src/app/release-surface.mjs';
+
+// This suite describes the navigation of the complete system, which is preserved
+// in the repository. The reduced release sidebar is covered on its own by
+// tests/scripts/release-surface.test.mjs.
+setReleaseSurfaceModeForTests('full');
 
 function itemIds(navigation) {
   return navigation.flatMap((section) => section.items.map((item) => item.id));
