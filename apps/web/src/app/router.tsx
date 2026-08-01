@@ -156,11 +156,6 @@ const CustomerPortalAdminPage = lazyRouteModule(
   'CustomerPortalAdminPage',
 );
 
-const InternalAreasAdminPage = lazyRouteModule(
-  () => import('../features/admin/InternalAreasAdminPage'),
-  'InternalAreasAdminPage',
-);
-
 const BuildJournalPage = lazyRouteModule(
   () => import('../features/build-journal/BuildJournalPage'),
   'BuildJournalPage',
@@ -196,7 +191,7 @@ const HelpCenterArticlePage = lazyRouteModule(
   'HelpCenterArticlePage',
 );
 
-const AccessPage = lazyRouteModule(() => import('../features/access/AccessPage'), 'AccessPage');
+const AccessPage = lazyRouteModule(() => import('../features/access/InternalControlPlanePage'), 'InternalControlPlanePage');
 
 const SystemPage = lazyRouteModule(() => import('../features/system/SystemPage'), 'SystemPage');
 
@@ -420,7 +415,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'internal-areas',
-            element: withSuspense(<InternalAreasAdminPage />),
+            element: <Navigate replace to="/admin/access?tab=structure" />,
           },
           {
             path: 'build-journal',

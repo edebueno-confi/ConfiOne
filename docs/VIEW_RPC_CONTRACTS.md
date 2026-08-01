@@ -2137,3 +2137,24 @@ Para usuários sem papel global, uma rota só é considerada autorizada quando s
 # Atualização V1-D — catálogo inteligente de telas — 2026-07-22
 
 `vw_admin_internal_screen_catalog` passa a expor, além da tela e rota, `default_area_keys` e `dependency_screen_keys`. Esses metadados são apenas orientação governada: a autorização continua nos grants de vínculo/perfil. Triggers de banco mantêm o fechamento transitivo das dependências quando uma tela é concedida por RPC ou inserção controlada.
+# ACCESS-01 — Read models e RPCs de acesso — 2026-07-27
+
+- `vw_internal_actor_capability_context`: capacidades efetivas do ator interno.
+- `vw_admin_internal_invites`: convites sanitizados sem token bruto.
+- `rpc_admin_create_internal_invitation`: cria convite usando apenas hash de token.
+- `rpc_admin_revoke_internal_invitation`: revoga convite pendente/enviado.
+- `rpc_accept_internal_invitation`: valida hash, expiração e e-mail e provisiona o contexto interno.
+- `vw_internal_actor_workspace_context`: agora filtra por contexto interno ativo, capability e allowlist de release.
+## ACCESS-01.1 — Read models e comandos do control plane — 2026-07-27
+
+O control plane usa os read models `vw_admin_access_*` e não faz join de tabelas de
+identidade, perfis ou grants no browser. Os comandos administrativos versionados são:
+
+- usuários: `rpc_admin_list_internal_access_users`, `rpc_admin_get_internal_access_user`, `rpc_admin_update_internal_access_assignment`, `rpc_admin_set_internal_user_status`;
+- convites: `rpc_admin_list_internal_invites`, `rpc_admin_create_internal_invitation_v2`, `rpc_admin_revoke_internal_invitation`;
+- áreas/funções: `rpc_admin_list_internal_areas`, `rpc_admin_create_internal_area`, `rpc_admin_update_internal_area`, `rpc_admin_list_internal_functions`, `rpc_admin_create_internal_function`, `rpc_admin_update_internal_function`;
+- perfis/capacidades: `rpc_admin_create_internal_access_profile`, `rpc_admin_update_internal_access_profile`, `rpc_admin_replace_internal_profile_capabilities`;
+- overrides: `rpc_admin_upsert_internal_override`, `rpc_admin_remove_internal_override`.
+
+O token de convite é recebido somente como hash, não aparece em views ou retornos
+administrativos. A entrega de e-mail não é simulada pelo frontend.

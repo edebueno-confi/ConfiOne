@@ -41,6 +41,31 @@ export interface HubSpotRecord {
   properties: Record<string, string | null>;
 }
 
+export interface HubSpotTicketPipelineEvidence {
+  total: number | null;
+  pages: number;
+  complete: boolean;
+}
+
+export interface HubSpotTicketPageOptions {
+  cursor?: string | null;
+  rangeStartMs?: number;
+  rangeEndMs?: number;
+  updatedAfterMs?: number;
+}
+
+export interface HubSpotTicketPage {
+  records: HubSpotRecord[];
+  total: number | null;
+  nextCursor: string | null;
+}
+
+export interface HubSpotObjectPage {
+  records: HubSpotRecord[];
+  total: number | null;
+  nextCursor: string | null;
+}
+
 export interface HubSpotMergeResult {
   id?: string;
   archived?: boolean;
@@ -306,6 +331,21 @@ export async function fetchDealsByPipeline(
   return records;
 }
 
+export async function fetchDealsPageByPipeline(
+  pipelineId: string,
+  properties: string[],
+  tokenOverride?: string,
+  options: { cursor?: string | null; updatedAfterMs?: number } = {},
+): Promise<HubSpotObjectPage> {
+  const filters: Array<Record<string, string>> = [{ propertyName: 'pipeline', operator: 'EQ', value: pipelineId }];
+  if (options.updatedAfterMs !== undefined) filters.push({ propertyName: 'hs_lastmodifieddate', operator: 'GTE', value: String(options.updatedAfterMs) });
+  const body: Record<string, unknown> = { filterGroups: [{ filters }], properties, limit: 100, sorts: [{ propertyName: 'createdate', direction: 'ASCENDING' }] };
+  if (options.cursor) body.after = options.cursor;
+  const response = await hubspotFetch('/crm/v3/objects/deals/search', { method: 'POST', body: JSON.stringify(body) }, 0, tokenOverride);
+  const payload = await response.json() as { results?: HubSpotRecord[]; total?: number; paging?: { next?: { after?: string } } };
+  return { records: payload.results ?? [], total: Number.isFinite(Number(payload.total)) ? Number(payload.total) : null, nextCursor: nextHubSpotCursor(options.cursor, payload.paging?.next?.after, 'deals') };
+}
+
 // Tickets: Search API filtrada pelo pipe.
 // O total da conta (~27k) e grande, mas cada pipe operacional e menor que o
 // teto de 10k da Search API; filtrar no servidor evita varrer todos os tickets.
@@ -314,6 +354,7 @@ export async function fetchTicketsByPipeline(
   properties: string[],
   tokenOverride?: string,
   updatedAfterMs?: number,
+  evidence?: HubSpotTicketPipelineEvidence,
 ): Promise<HubSpotRecord[]> {
   // A Search API query cannot paginate beyond 10,000 matching records. The
   // main support pipeline currently exceeds that limit, so partition by the
@@ -373,6 +414,7 @@ export async function fetchTicketsByPipeline(
 
       if (firstPage) {
         total = Number.isFinite(Number(payload.total)) ? Number(payload.total) : null;
+        if (evidence) evidence.total = total;
         if (total !== null && total > searchMaxResults) {
           const midpoint = rangeStartMs + Math.floor((rangeEndMs - rangeStartMs) / 2);
           if (midpoint <= rangeStartMs || midpoint >= rangeEndMs) {
@@ -383,16 +425,19 @@ export async function fetchTicketsByPipeline(
           }
           const older = await fetchRange(rangeStartMs, midpoint);
           const newer = await fetchRange(midpoint, rangeEndMs);
+          if (evidence) evidence.complete = true;
           return [...older, ...newer];
         }
       }
 
       records.push(...(payload.results ?? []));
+      if (evidence) evidence.pages += 1;
       after = nextHubSpotCursor(after, payload.paging?.next?.after, 'tickets');
       firstPage = false;
       await sleep(150);
     } while (after);
 
+    if (evidence) evidence.complete = true;
     return records;
   }
 
@@ -422,12 +467,73 @@ export async function fetchTicketsByPipeline(
     }, 0, tokenOverride);
     const payload = await response.json() as TicketSearchPayload;
     total = total ?? (Number.isFinite(Number(payload.total)) ? Number(payload.total) : null);
+    if (evidence) evidence.total = total;
     if (total !== null && total > searchMaxResults) return fetchRange(startMs, endMs);
     recent.push(...(payload.results ?? []));
+    if (evidence) evidence.pages += 1;
     after = nextHubSpotCursor(after, payload.paging?.next?.after, 'tickets incremental');
     await sleep(150);
   } while (after);
+  if (evidence) evidence.complete = true;
   return recent;
+}
+
+// Página única para o runner assíncrono. O worker persiste o cursor antes de
+// encerrar a invocação; não deve ser substituída pela função full acima.
+export async function fetchTicketsPageByPipeline(
+  pipelineId: string,
+  properties: string[],
+  tokenOverride: string | undefined,
+  options: HubSpotTicketPageOptions = {},
+): Promise<HubSpotTicketPage> {
+  const rangeStartMs = options.rangeStartMs ?? 0;
+  const rangeEndMs = options.rangeEndMs ?? Date.UTC(2100, 0, 1);
+  const filters: Array<Record<string, string>> = [
+    { propertyName: 'hs_pipeline', operator: 'EQ', value: pipelineId },
+    { propertyName: 'createdate', operator: 'GTE', value: String(rangeStartMs) },
+    { propertyName: 'createdate', operator: 'LT', value: String(rangeEndMs) },
+  ];
+  if (options.updatedAfterMs !== undefined) {
+    filters.push({ propertyName: 'hs_lastmodifieddate', operator: 'GTE', value: String(options.updatedAfterMs) });
+  }
+  const body: Record<string, unknown> = {
+    filterGroups: [{ filters }],
+    properties,
+    limit: 100,
+    sorts: [{ propertyName: 'createdate', direction: 'ASCENDING' }],
+  };
+  if (options.cursor) body.after = options.cursor;
+  const response = await hubspotFetch('/crm/v3/objects/tickets/search', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  }, 0, tokenOverride);
+  const payload = await response.json() as {
+    results?: HubSpotRecord[];
+    total?: number;
+    paging?: { next?: { after?: string } };
+  };
+  return {
+    records: payload.results ?? [],
+    total: Number.isFinite(Number(payload.total)) ? Number(payload.total) : null,
+    nextCursor: payload.paging?.next?.after ? String(payload.paging.next.after) : null,
+  };
+}
+
+// Consulta somente o total autoritativo do Search API, sem baixar registros.
+// Usado pelo diagnóstico de origem; não grava nem expõe propriedades.
+export async function fetchTicketPipelineTotal(pipelineId: string, tokenOverride?: string): Promise<number> {
+  const response = await hubspotFetch('/crm/v3/objects/tickets/search', {
+    method: 'POST',
+    body: JSON.stringify({
+      filterGroups: [{ filters: [{ propertyName: 'hs_pipeline', operator: 'EQ', value: pipelineId }] }],
+      properties: [],
+      limit: 1,
+    }),
+  }, 0, tokenOverride);
+  const payload = await response.json() as { total?: unknown };
+  const total = Number(payload.total);
+  if (!Number.isFinite(total) || total < 0) throw new Error(`Total de tickets inválido para o pipeline ${pipelineId}.`);
+  return total;
 }
 
 // Empresas: cache completo para reconciliação read-only com fontes financeiras.

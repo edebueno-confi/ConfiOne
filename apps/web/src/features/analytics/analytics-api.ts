@@ -38,8 +38,49 @@ import {
   type ReconciliationQualityResult,
   type AnalyticsSourceConfig,
 } from './analytics-model';
+
+export interface HubspotCsDiagnosticPipeline {
+  label: string;
+  activeRecords: number;
+  archivedRecords: number | null;
+  configuredForSync: boolean;
+  stages: Array<{ label: string; closed: boolean }>;
+}
+
+export interface HubspotCsDiagnostic {
+  object: 'tickets';
+  endpoint: string;
+  filters: string[];
+  pages: number;
+  paginationComplete: boolean;
+  total: number;
+  sourceState: 'available' | 'empty_authoritative' | 'empty_unverified' | 'forbidden' | 'misconfigured' | 'partial' | 'failed';
+  scopesPresent: string[];
+  scopesAbsent: string[];
+  pipelines: HubspotCsDiagnosticPipeline[];
+}
+
+export async function runHubspotCsDiagnostic(): Promise<HubspotCsDiagnostic> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.functions.invoke('hubspot-cs-diagnostic', { body: {} });
+  if (error) throw new Error(error.message || 'Falha ao executar o diagnóstico de CS / Suporte.');
+  const payload = (data ?? {}) as Partial<HubspotCsDiagnostic>;
+  return {
+    object: 'tickets',
+    endpoint: payload.endpoint ?? 'HubSpot',
+    filters: Array.isArray(payload.filters) ? payload.filters : [],
+    pages: Number(payload.pages ?? 0),
+    paginationComplete: Boolean(payload.paginationComplete),
+    total: Number(payload.total ?? 0),
+    sourceState: payload.sourceState ?? 'failed',
+    scopesPresent: Array.isArray(payload.scopesPresent) ? payload.scopesPresent : [],
+    scopesAbsent: Array.isArray(payload.scopesAbsent) ? payload.scopesAbsent : [],
+    pipelines: Array.isArray(payload.pipelines) ? payload.pipelines : [],
+  };
+}
 import { aggregateLatestHubspotSyncRuns } from './analytics-sync-runs.mjs';
 import { formatAnalyticsSyncError } from './analytics-sync-errors.mjs';
+import { sanitizeCsSyncResult } from './analytics-cs-control.mjs';
 
 type Row = Record<string, unknown>;
 
@@ -154,6 +195,18 @@ export async function listHubspotSyncRuns(): Promise<SyncRun[]> {
     .limit(30);
   if (error) throw toAppError(error, 'Falha ao carregar os logs de sincronização HubSpot.');
   return (data ?? []).map((row) => mapSyncRun(row as Row)).filter((row): row is SyncRun => Boolean(row));
+}
+
+export async function getLatestCsSyncRun(): Promise<SyncRun | null> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client
+    .from('vw_analytics_dashboard_sync_status')
+    .select('*')
+    .eq('domain_key', 'cs')
+    .order('started_at', { ascending: false })
+    .limit(1);
+  if (error) throw toAppError(error, 'Falha ao carregar o status da sincronização de CS.');
+  return mapSyncRun((data?.[0] as Row) ?? null);
 }
 
 function rpcFilters(filters: AnalyticsFilters) {
@@ -506,75 +559,8 @@ export interface HubspotSyncResult {
   owners: number;
   stages: number;
   companies: number;
-}
-
-/**
- * Erro de gateway, não de negócio.
- *
- * A sincronização HubSpot é executada de forma síncrona e já foi medida em mais
- * de três minutos por etapa. O gateway encerra a conexão antes disso (502/504),
- * mas a Edge Function continua rodando e conclui normalmente — o resultado fica
- * registrado em `hubspot_sync_runs`.
- *
- * Tratar essa desconexão como falha produzia um falso negativo: a interface
- * dizia "a sincronização terminou com erro" sobre uma execução bem-sucedida.
- * Um status errado é pior que a demora, porque leva o operador a disparar a
- * sincronização de novo e criar execuções concorrentes.
- */
-function isGatewayTimeout(status: number) {
-  return status === 502 || status === 503 || status === 504;
-}
-
-const SYNC_POLL_INTERVAL_MS = 5_000;
-const SYNC_POLL_TIMEOUT_MS = 10 * 60 * 1000;
-
-/**
- * Acompanha uma execução já iniciada no servidor até ela terminar.
- *
- * Usa o read model existente (`vw_analytics_dashboard_sync_status`) em vez de
- * criar um contrato novo. Só é chamado quando a conexão caiu no gateway, ou
- * seja, quando o cliente perdeu a resposta mas o servidor não perdeu o trabalho.
- */
-async function awaitRunningHubspotSync(startedAfter: number): Promise<HubspotSyncResult> {
-  const deadline = Date.now() + SYNC_POLL_TIMEOUT_MS;
-
-  while (Date.now() < deadline) {
-    await new Promise((resolve) => setTimeout(resolve, SYNC_POLL_INTERVAL_MS));
-
-    let run: SyncRun | null = null;
-    try {
-      run = await getLatestSyncRun();
-    } catch {
-      // Falha de leitura durante o acompanhamento não é falha da sincronização.
-      continue;
-    }
-
-    // Descarta execuções anteriores ao disparo atual.
-    const startedAt = run?.startedAt ? Date.parse(run.startedAt) : Number.NaN;
-    if (!run || Number.isNaN(startedAt) || startedAt < startedAfter) continue;
-
-    if (run.status === 'running') continue;
-
-    if (run.status === 'error') {
-      throw new Error(
-        run.errorMessage?.trim() ||
-          'A sincronização com o HubSpot terminou com erro. Consulte Configurações > Histórico de sincronizações.',
-      );
-    }
-
-    return {
-      mode: 'incremental',
-      deals: run.dealsSynced ?? 0,
-      tickets: run.ticketsSynced ?? 0,
-      owners: run.ownersSynced ?? 0,
-      stages: run.stagesSynced ?? 0,
-      companies: run.companiesSynced ?? 0,
-    };
-  }
-
-  throw new Error(
-    'A sincronização continua em andamento no servidor e ultrapassou o tempo de acompanhamento. Não dispare novamente: acompanhe o resultado em Configurações > Histórico de sincronizações.',
-  );
+  status?: 'queued' | 'success' | 'partial';
+  runId?: string;
 }
 
 export async function triggerHubspotSync(
@@ -596,63 +582,93 @@ export async function triggerHubspotSync(
   }
 
   const baseUrl = config.config.supabaseUrl.replace(/\/$/, '');
-  const scopes: Array<'companies' | 'commercial' | 'cs' | undefined> =
-    options.phased === false || domain ? [undefined] : ['companies', 'commercial', 'cs'];
-  const aggregate: HubspotSyncResult = { mode: 'incremental', deals: 0, tickets: 0, owners: 0, stages: 0, companies: 0 };
-
-  for (const scope of scopes) {
-    // Marca de tempo anterior ao disparo: se a conexão cair, é por ela que
-    // identificamos a execução desta etapa e ignoramos execuções antigas.
-    const dispatchedAt = Date.now() - 1_000;
-
-    let response: Response;
-    try {
-      response = await fetch(`${baseUrl}/functions/v1/hubspot-sync`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          apikey: config.config.supabaseAnonKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...(domain ? { domain } : {}),
-          ...(scope ? { scope } : {}),
-          ...(options.full ? { full: true } : {}),
-        }),
-      });
-    } catch {
-      // A conexão caiu antes da resposta. O servidor continua trabalhando.
-      const observed = await awaitRunningHubspotSync(dispatchedAt);
-      aggregate.deals += observed.deals;
-      aggregate.tickets += observed.tickets;
-      aggregate.owners += observed.owners;
-      aggregate.stages += observed.stages;
-      aggregate.companies += observed.companies;
-      continue;
-    }
-
-    if (isGatewayTimeout(response.status)) {
-      const observed = await awaitRunningHubspotSync(dispatchedAt);
-      aggregate.deals += observed.deals;
-      aggregate.tickets += observed.tickets;
-      aggregate.owners += observed.owners;
-      aggregate.stages += observed.stages;
-      aggregate.companies += observed.companies;
-      continue;
-    }
+  const response = await fetch(`${baseUrl}/functions/v1/hubspot-orchestrator-start`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: config.config.supabaseAnonKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...(domain ? { domain } : {}),
+        ...(options.full ? { full: true } : {}),
+      }),
+    });
 
     const payload = (await response.json().catch(() => null)) as ({ error?: string; code?: string; message?: string } & Partial<HubspotSyncResult>) | null;
     if (!response.ok) {
-      const label = scope ? ` na etapa ${scope}` : '';
-      throw new Error(formatAnalyticsSyncError({ operation: `HubSpot${label}`, status: response.status, payload }));
+      throw new Error(formatAnalyticsSyncError({ operation: 'HubSpot', status: response.status, payload }));
     }
-    aggregate.mode = payload?.mode === 'full' ? 'full' : aggregate.mode;
-    aggregate.deals += Number(payload?.deals ?? 0);
-    aggregate.tickets += Number(payload?.tickets ?? 0);
-    aggregate.owners += Number(payload?.owners ?? 0);
-    aggregate.stages += Number(payload?.stages ?? 0);
-    aggregate.companies += Number(payload?.companies ?? 0);
-  }
+  const rawRunId = payload as (Partial<HubspotSyncResult> & { run_id?: string }) | null;
+  return { mode: rawRunId?.mode === 'full' ? 'full' : 'incremental', deals: 0, tickets: 0, owners: 0, stages: 0, companies: 0, status: 'queued', runId: rawRunId?.runId ?? rawRunId?.run_id };
+}
 
-  return aggregate;
+export interface CsSupportSyncResult {
+  status: 'queued' | 'success' | 'partial';
+  mode: 'full' | 'incremental';
+  correlationId: string | null;
+  tickets: number;
+  owners: number;
+  stages: number;
+}
+
+export interface CsSyncProgress {
+  runId: string;
+  status: SyncRun['status'];
+  pipelinesTotal: number;
+  pipelinesCompleted: number;
+  pages: number;
+  received: number;
+  accepted: number;
+  rejected: number;
+  promoted: number;
+  retries: number;
+  watermarkAdvanced: boolean;
+  lastActivity: string | null;
+  error: string | null;
+}
+
+export async function getCsSyncProgress(runId: string): Promise<CsSyncProgress | null> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.from('vw_analytics_hubspot_sync_progress').select('*').eq('run_id', runId).maybeSingle();
+  if (error) throw toAppError(error, 'Falha ao carregar o progresso da sincronização de CS.');
+  if (!data) return null;
+  const row = data as Record<string, unknown>;
+  return {
+    runId,
+    status: String(row.status ?? 'queued') as SyncRun['status'],
+    pipelinesTotal: Number(row.pipelines_total ?? 0),
+    pipelinesCompleted: Number(row.completed_items ?? row.pipelines_completed ?? 0),
+    pages: Number(row.source_pages ?? 0),
+    received: Number(row.source_records_received ?? 0),
+    accepted: Number(row.records_accepted ?? 0),
+    rejected: Number(row.records_rejected ?? 0),
+    promoted: Number(row.records_promoted ?? 0),
+    retries: Number(row.retries ?? 0),
+    watermarkAdvanced: row.watermark_advanced === true,
+    lastActivity: row.last_item_activity ? String(row.last_item_activity) : null,
+    error: row.error_message ? String(row.error_message) : null,
+  };
+}
+
+export async function triggerCsSupportSync(latestRun: SyncRun | null): Promise<CsSupportSyncResult> {
+  const config = readRuntimeConfig();
+  if (!config.ok) throw new Error('As funções seguras do Supabase não estão disponíveis neste ambiente.');
+  const client = requireSupabaseBrowserClient();
+  const { data: { session }, error: sessionError } = await client.auth.getSession();
+  if (sessionError || !session?.access_token) throw new Error('Sessão ativa indisponível para sincronizar CS / Suporte.');
+  const correlationId = crypto.randomUUID();
+  const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/hubspot-orchestrator-start`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      apikey: config.config.supabaseAnonKey,
+      'Content-Type': 'application/json',
+      'x-analytics-correlation-id': correlationId,
+    },
+    body: JSON.stringify({ domain: 'cs_support', correlationId }),
+  });
+  const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
+  if (!response.ok) throw new Error(formatAnalyticsSyncError({ operation: 'HubSpot CS / Suporte', status: response.status, payload }));
+  return { ...sanitizeCsSyncResult(payload), status: 'queued', mode: 'full' };
 }

@@ -18,7 +18,7 @@ function itemIds(navigation) {
   return navigation.flatMap((section) => section.items.map((item) => item.id));
 }
 
-test('shows the personal cockpit and CS workspace for a CS-authorized user', () => {
+test('keeps non-MVP CS workspace out of the primary shell', () => {
   const navigation = buildMinimalNavigation({
     pathname: '/cs/portfolio',
     permissions: {
@@ -28,10 +28,10 @@ test('shows the personal cockpit and CS workspace for a CS-authorized user', () 
     },
   });
 
-  assert.deepEqual(itemIds(navigation), ['home', 'cs-portfolio']);
+  assert.deepEqual(itemIds(navigation), []);
 });
 
-test('keeps support routes available inside an authorized support workspace', () => {
+test('keeps support routes out of the primary MVP shell', () => {
   const navigation = buildMinimalNavigation({
     pathname: '/support/queue',
     permissions: {
@@ -40,16 +40,10 @@ test('keeps support routes available inside an authorized support workspace', ()
     },
   });
 
-  assert.deepEqual(itemIds(navigation), [
-    'home',
-    'support-inbox',
-    'support-queue',
-    'support-tickets',
-    'support-customers',
-  ]);
+  assert.deepEqual(itemIds(navigation), []);
 });
 
-test('shows complete operational and governance navigation to platform admins', () => {
+test('shows only the MVP surfaces to platform admins', () => {
   const navigation = buildMinimalNavigation({
     pathname: '/admin/tenants',
     permissions: {
@@ -61,12 +55,10 @@ test('shows complete operational and governance navigation to platform admins', 
 
   const ids = itemIds(navigation);
 
-  assert.equal(ids.includes('admin-tenants'), true);
+  assert.deepEqual(ids, ['admin-analytics', 'admin-knowledge', 'admin-settings', 'admin-access']);
   assert.equal(ids.includes('admin-access'), true);
-  assert.equal(ids.includes('admin-system'), true);
-  assert.equal(ids.includes('admin-knowledge'), true);
-  assert.equal(ids.includes('support-queue'), true);
-  assert.equal(ids.includes('cs-portfolio'), true);
+  assert.equal(ids.includes('admin-tenants'), false);
+  assert.equal(ids.includes('support-queue'), false);
 });
 
 test('builds navigation from contextual screen grants for a non-admin user', () => {
@@ -80,12 +72,12 @@ test('builds navigation from contextual screen grants for a non-admin user', () 
   });
 
   const ids = itemIds(navigation);
-  assert.deepEqual(ids, ['home', 'admin-analytics', 'admin-overview', 'admin-knowledge', 'admin-product-docs']);
+  assert.deepEqual(ids, ['admin-analytics', 'admin-knowledge']);
 });
 
 test('resolves a short operational label for the current route', () => {
   assert.equal(resolveMinimalRouteLabel('/support/queue'), 'Fila operacional');
-  assert.equal(resolveMinimalRouteLabel('/admin/access'), 'Acessos');
+  assert.equal(resolveMinimalRouteLabel('/admin/access'), 'Acessos e áreas');
   assert.equal(resolveMinimalRouteLabel('/support/tickets/ticket-1'), 'Ticket');
 });
 

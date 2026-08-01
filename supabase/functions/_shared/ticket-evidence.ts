@@ -1,5 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
+import { resolveCorsOrigin, isAllowedCorsOrigin } from './cors-policy.mjs';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -53,8 +54,14 @@ export function jsonResponse(body: unknown, init?: ResponseInit) {
   });
 }
 
-export function optionsResponse() {
-  return new Response('ok', { headers: corsHeaders });
+export function optionsResponse(req?: Request) {
+  const origin = req?.headers.get('origin') ?? null;
+  const allowLocal = Deno.env.get('ALLOW_LOCAL_CORS') === 'true';
+  if (origin && !isAllowedCorsOrigin(origin, { allowedOrigins: Deno.env.get('ALLOWED_CORS_ORIGINS'), allowLocal })) {
+    return new Response('CORS origin not allowed', { status: 403, headers: { Vary: 'Origin' } });
+  }
+  const allowedOrigin = resolveCorsOrigin(origin, { allowedOrigins: Deno.env.get('ALLOWED_CORS_ORIGINS'), allowLocal });
+  return new Response('ok', { headers: { ...corsHeaders, ...(allowedOrigin ? { 'Access-Control-Allow-Origin': allowedOrigin, Vary: 'Origin' } : {}) } });
 }
 
 export function getAuthorizationHeader(req: Request) {

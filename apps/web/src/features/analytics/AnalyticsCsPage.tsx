@@ -18,12 +18,13 @@ import {
 } from './analytics-model';
 import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, KpiCard, MetricInfo } from './analytics-ui';
 import { AnalyticsFilters as AnalyticsFiltersBar } from './AnalyticsFilters';
+import { AnalyticsPipelineCombobox } from './AnalyticsPipelineCombobox';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import { TicketMonthlyChart, TicketStatusChart } from './charts/AnalyticsCharts';
 import { listAnalyticsSourceConfig } from './analytics-api';
 import type { AnalyticsPageProps } from './analytics-model';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
-import { AnalyticsPipelineFilter } from './AnalyticsPipelineFilter';
+import { AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
 
 type State =
   | { phase: 'loading' }
@@ -39,11 +40,13 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
   const [configuredPipelines, setConfiguredPipelines] = useState<AnalyticsSourceConfig[]>([]);
   const [excludedPipelineIds, setExcludedPipelineIds] = useState<string[]>([]);
 
-  useEffect(() => { setFilters((current) => ({ ...current, ...period })); }, [period.from, period.to]);
+  useEffect(() => {
+    setFilters((current) => current.from === period.from && current.to === period.to ? current : { ...current, ...period });
+  }, [period.from, period.to]);
 
   useEffect(() => {
     let cancelled = false;
-    setState({ phase: 'loading' });
+    setState((current) => current.phase === 'ready' ? current : { phase: 'loading' });
 
     Promise.all([getCsSnapshot(filters, excludedPipelineIds), listAnalyticsSourceConfig()])
       .then(([snapshot, configs]) => {
@@ -70,13 +73,11 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
   }, [filters, excludedPipelineIds]);
 
   if (state.phase === 'loading') {
-    return (
-      <AnalyticsLoadingState title="Carregando suporte" description="O Gênio está consultando os tickets sincronizados do HubSpot." />
-    );
+    return <AnalyticsHdDomainFrame title="Suporte" description="Tickets, backlog, prioridades e responsáveis." source="HubSpot · Tickets"><AnalyticsLoadingState title="Carregando suporte" description="O Gênio está consultando os tickets sincronizados do HubSpot." /></AnalyticsHdDomainFrame>;
   }
 
   if (state.phase === 'error') {
-    return <MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores de suporte estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
+    return <AnalyticsHdDomainFrame title="Suporte" description="Tickets, backlog, prioridades e responsáveis." source="HubSpot · Tickets"><MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores de suporte estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} /></AnalyticsHdDomainFrame>;
   }
 
   const { kpis, byStatus, monthly, bySource, byPipeline, byOwner, latestTicketCreatedAt, state: dataState } = state;
@@ -88,9 +89,9 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
   });
 
   return (
-    <div className="space-y-5">
-      <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} priorityOptions={priorityOptions} stageLabel="Status" />
-      {pipelineOptions.length > 0 ? <div className="flex justify-end"><AnalyticsPipelineFilter pipelines={pipelineOptions.map((pipeline) => ({ id: pipeline.id, pipelineId: pipeline.pipelineId, label: pipeline.label, hubspotLabel: pipeline.hubspotLabel, count: pipeline.ticketCount, info: <PipelineOriginHint pipeline={pipeline} /> }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} noun="os tickets" /></div> : null}
+    <AnalyticsHdDomainFrame title="Suporte" description="Tickets, backlog, prioridades e responsáveis." source="HubSpot · Tickets" state={dataState}>
+    <div className="gso-hd-domain-surface space-y-5">
+      <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} priorityOptions={priorityOptions} stageLabel="Status" extraFields={pipelineOptions.length > 0 ? <AnalyticsPipelineCombobox inline storageKey="analytics-cs-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.ticketCount }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null} />
       {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." /> : null}
       {dataState?.status !== 'empty' ? <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard state={dataState} temporalType="Fluxo no período" label="Tickets totais" value={kpis.totalTickets.toLocaleString('pt-BR')} hint="Nos pipelines de suporte" source="Total de tickets nos pipelines de suporte ativos, considerando o período e os filtros selecionados." />
@@ -121,6 +122,7 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
         <OwnerPipelineNote owners={byOwner.slice(0, 8)} />
       </ChartCard> : null}
     </div>
+    </AnalyticsHdDomainFrame>
   );
 }
 

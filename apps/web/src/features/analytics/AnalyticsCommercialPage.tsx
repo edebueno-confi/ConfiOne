@@ -16,11 +16,12 @@ import {
 } from './analytics-model';
 import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, KpiCard, MetricInfo, formatCountLabel } from './analytics-ui';
 import { AnalyticsFilters as AnalyticsFiltersBar } from './AnalyticsFilters';
+import { AnalyticsPipelineCombobox } from './AnalyticsPipelineCombobox';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import type { AnalyticsPageProps } from './analytics-model';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
 import { CommercialFunnelChart, CommercialMonthlyChart } from './charts/AnalyticsCharts';
-import { AnalyticsPipelineFilter } from './AnalyticsPipelineFilter';
+import { AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
 
 type State =
   | { phase: 'loading' }
@@ -42,11 +43,13 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
   const [configuredPipelines, setConfiguredPipelines] = useState<AnalyticsSourceConfig[]>([]);
   const [excludedPipelineIds, setExcludedPipelineIds] = useState<string[]>([]);
 
-  useEffect(() => { setFilters((current) => ({ ...current, ...period })); }, [period.from, period.to]);
+  useEffect(() => {
+    setFilters((current) => current.from === period.from && current.to === period.to ? current : { ...current, ...period });
+  }, [period.from, period.to]);
 
   useEffect(() => {
     let cancelled = false;
-    setState({ phase: 'loading' });
+    setState((current) => current.phase === 'ready' ? current : { phase: 'loading' });
 
     Promise.all([getCommercialSnapshot(filters, excludedPipelineIds), listAnalyticsSourceConfig()])
       .then(([snapshot, configs]) => {
@@ -72,13 +75,11 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
   }, [filters, excludedPipelineIds]);
 
   if (state.phase === 'loading') {
-    return (
-      <AnalyticsLoadingState title="Carregando comercial" description="O Gênio está consultando os negócios sincronizados do HubSpot." />
-    );
+    return <AnalyticsHdDomainFrame title="Comercial" description="Receita, pipeline e conversão para decisão comercial." source="HubSpot · Deals"><AnalyticsLoadingState title="Carregando comercial" description="O Gênio está consultando os negócios sincronizados do HubSpot." /></AnalyticsHdDomainFrame>;
   }
 
   if (state.phase === 'error') {
-    return <MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores comerciais estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} />;
+    return <AnalyticsHdDomainFrame title="Comercial" description="Receita, pipeline e conversão para decisão comercial." source="HubSpot · Deals"><MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores comerciais estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} /></AnalyticsHdDomainFrame>;
   }
 
   const { kpis, funnel, byPipeline, byOwner, monthly, state: dataState } = state;
@@ -90,9 +91,10 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
   });
 
   return (
-    <div className="space-y-5">
+    <AnalyticsHdDomainFrame title="Comercial" description="Receita, pipeline e conversão para decisão comercial." source="HubSpot · Deals" state={dataState}>
+    <div className="gso-hd-domain-surface space-y-5">
       <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} ownerOptions={ownerOptions} />
-      {pipelineOptions.length > 0 ? <div className="flex justify-end"><AnalyticsPipelineFilter pipelines={pipelineOptions.map((pipeline) => ({ id: pipeline.id, pipelineId: pipeline.pipelineId, label: pipeline.label, hubspotLabel: pipeline.hubspotLabel, count: pipeline.dealCount, info: <div className="space-y-2 text-left"><p className="font-semibold">Origem do pipeline</p><p>Objeto: Deal (Comercial).</p><p>Nome oficial: {pipeline.hubspotLabel || 'aguardando sincronização'}.</p><p>Alias exibido no painel: {pipeline.alias || 'usa o nome oficial do HubSpot'}.</p><p>ID imutável: {pipeline.pipelineId}.</p></div> }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} noun="os negócios" /></div> : null}
+      {pipelineOptions.length > 0 ? <AnalyticsPipelineCombobox storageKey="analytics-commercial-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.dealCount }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null}
       {dataState?.status === 'empty' ? (
         <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." />
       ) : null}
@@ -161,6 +163,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
         )}
       </ChartCard> : null}
     </div>
+    </AnalyticsHdDomainFrame>
   );
 }
 

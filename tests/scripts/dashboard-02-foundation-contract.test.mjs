@@ -5,6 +5,7 @@ import { classifyAnalyticsState, createAnalyticsMetricResult, hasInvalidAnalytic
 test('zero real permanece fresh e diferente de null', () => {
   assert.equal(parseAnalyticsNumber(0), 0);
   assert.equal(classifyAnalyticsState({ source: 'HubSpot', queried: true, received: 0 }), 'empty');
+  assert.equal(classifyAnalyticsState({ source: 'HubSpot', queried: true, received: 1, zeroReal: true }), 'zero');
   assert.equal(createAnalyticsMetricResult(0, { source: 'HubSpot', queried: true, received: 1 }).value, 0);
 });
 

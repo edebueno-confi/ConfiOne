@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 
 export const DEFAULT_ALLOWED_ROOT_FILES = new Set([
   '.env.example',
+  '.env.local',
   '.env.local.qa',
   '.env.local.qa.example',
   '.gitattributes',
@@ -21,17 +22,21 @@ export const DEFAULT_ALLOWED_ROOT_FILES = new Set([
   'PRODUCT.md',
   'README.md',
   'RECONSTRUCAO-DO-PRODUTO.md',
+  'vercel.json',
+  '.git',
 ]);
 
 export const DEFAULT_ALLOWED_ROOT_DIRECTORIES = new Set([
   '.agents',
   '.codex',
+  '.superdesign',
   '.git',
   '.github',
   '.playwright-cli',
   '.skills',
   '.superdesign',
   '.tmp',
+  '.vercel',
   'apps',
   'docs',
   'node_modules',

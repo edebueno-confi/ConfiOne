@@ -111,7 +111,7 @@ export interface CsOwnerPoint {
 export interface SyncRun {
   id: string;
   domainKey: string | null;
-  status: 'running' | 'success' | 'error';
+  status: 'queued' | 'running' | 'success' | 'succeeded' | 'partial' | 'error' | 'failed' | 'abandoned' | 'cancelled';
   startedAt: string;
   finishedAt: string | null;
   dealsSynced: number;
@@ -121,6 +121,17 @@ export interface SyncRun {
   companiesSynced: number;
   errorMessage: string | null;
   correlationId: string | null;
+  sourceTotal: number | null;
+  sourceState: string | null;
+  sourcePaginationComplete: boolean;
+  heartbeatAt: string | null;
+  recordsNormalized: number;
+  recordsAccepted: number;
+  recordsRejected: number;
+  recordsPromoted: number;
+  pipelinesTotal: number;
+  pipelinesCompleted: number;
+  errorCode: string | null;
 }
 
 export interface AnalyticsFilters {
@@ -215,10 +226,13 @@ export interface FinanceSourceStatus {
 
 export interface CeoSnapshot {
   commercial: { totalDeals: number; openDeals: number; wonDeals: number; lostDeals: number; openPipelineValue: number; wonRevenue: number; conversionRate: number; avgTicket: number; avgSalesCycleDays: number; unassignedDeals: number };
+  customerSuccess: { activeCustomers: number; assignedCustomers: number; customersWithoutOwner: number; healthAvailable: number; riskCustomers: number; source: string; state: AnalyticsBlockState };
   support: { totalTickets: number; createdTickets: number; openTickets: number; closedTickets: number; closedRate: number; highPriorityOpen: number; firstResponseSlaTracked: number; closeSlaTracked: number; sourceFilled: number; bySource: CsSourcePoint[]; byPipeline: CsPipelinePoint[]; byOwner: CsOwnerPoint[]; latestTicketCreatedAt: string | null };
   finance: { titles: number; netAmount: number; balance: number; overdueTitles: number; overdueBalance: number; matchedTitles: number; unmatchedTitles: number };
+  product: { status: AnalyticsDataStatus; source: string; reason: string };
+  development: { status: AnalyticsDataStatus; source: string; reason: string };
   financialAlerts: FinancialAlert[];
-  dataQuality: { financeTitles: number; matchedFinanceTitles: number; unmatchedFinanceTitles: number; ambiguousFinanceTitles: number; resolvedGroupTitles: number; financeSourceAt: string | null; hubspotSourceAt: string | null };
+  dataQuality: { financeTitles: number; matchedFinanceTitles: number; unmatchedFinanceTitles: number; ambiguousFinanceTitles: number; resolvedGroupTitles: number; supportUnassigned: number; supportWithoutSource: number; financeSourceAt: string | null; hubspotSourceAt: string | null };
   state?: AnalyticsBlockState;
 }
 
@@ -448,23 +462,35 @@ export function mapFinanceSourceStatus(value: unknown): FinanceSourceStatus {
 export function mapCeoSnapshot(value: unknown): CeoSnapshot {
   const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
   const section = (key: string) => (data[key] && typeof data[key] === 'object' ? data[key] : {}) as Record<string, unknown>;
-  const c = section('commercial'); const s = section('support'); const f = section('finance');
+  const c = section('commercial'); const cs = section('customer_success'); const s = section('support'); const f = section('finance');
+  const product = section('product'); const development = section('development');
   const financialAlerts = Array.isArray(data.financial_alerts) ? data.financial_alerts : [];
   const quality = section('data_quality');
   const received = toNumber(c.total_deals) + toNumber(s.total_tickets) + toNumber(f.titles);
   return {
     commercial: { totalDeals: toNumber(c.total_deals), openDeals: toNumber(c.open_deals), wonDeals: toNumber(c.won_deals), lostDeals: toNumber(c.lost_deals), openPipelineValue: toNumber(c.open_pipeline_value), wonRevenue: toNumber(c.won_revenue), conversionRate: toNumber(c.conversion_rate), avgTicket: toNumber(c.avg_ticket), avgSalesCycleDays: toNumber(c.avg_sales_cycle_days), unassignedDeals: toNumber(c.unassigned_deals) },
+    customerSuccess: {
+      activeCustomers: toNumber(cs.active_customers),
+      assignedCustomers: toNumber(cs.assigned_customers),
+      customersWithoutOwner: toNumber(cs.customers_without_owner),
+      healthAvailable: toNumber(cs.health_available),
+      riskCustomers: toNumber(cs.risk_customers),
+      source: toText(cs.source) || 'Carteira CS',
+      state: createSnapshotState(cs, toText(cs.source) || 'Carteira CS', toNumber(cs.active_customers), true),
+    },
     support: { totalTickets: toNumber(s.total_tickets), createdTickets: toNumber(s.created_tickets || s.total_tickets), openTickets: toNumber(s.open_tickets), closedTickets: toNumber(s.closed_tickets), closedRate: toNumber(s.closed_rate), highPriorityOpen: toNumber(s.high_priority_open), firstResponseSlaTracked: toNumber(s.first_response_sla_tracked), closeSlaTracked: toNumber(s.close_sla_tracked), sourceFilled: toNumber(s.source_filled), bySource: Array.isArray(s.by_source) ? s.by_source.map((row) => { const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>; return { label: toText(item.label) || 'Sem fonte', ticketCount: toNumber(item.ticket_count) }; }) : [], byPipeline: Array.isArray(s.by_pipeline) ? s.by_pipeline.map((row) => { const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>; return { pipelineId: toText(item.pipeline_id), label: toText(item.label) || 'Pipeline sem nome', ticketCount: toNumber(item.ticket_count) }; }) : [], byOwner: Array.isArray(s.by_owner) ? s.by_owner.map((row) => { const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>; return { ownerId: item.owner_id ? toText(item.owner_id) : null, ownerName: toText(item.owner_name) || 'Sem responsavel', ticketCount: toNumber(item.ticket_count) }; }) : [], latestTicketCreatedAt: s.latest_ticket_created_at ? toText(s.latest_ticket_created_at) : null },
     finance: { titles: toNumber(f.titles), netAmount: toNumber(f.net_amount), balance: toNumber(f.balance), overdueTitles: toNumber(f.overdue_titles), overdueBalance: toNumber(f.overdue_balance), matchedTitles: toNumber(f.matched_titles), unmatchedTitles: toNumber(f.unmatched_titles) },
+    product: { status: (toText(product.status) || 'not_configured') as AnalyticsDataStatus, source: toText(product.source) || 'Fonte ainda não conectada', reason: toText(product.reason) || 'Ainda não existe uma fonte confiável conectada para Produto.' },
+    development: { status: (toText(development.status) || 'not_configured') as AnalyticsDataStatus, source: toText(development.source) || 'Fonte ainda não conectada', reason: toText(development.reason) || 'Ainda não existe uma fonte confiável conectada para Desenvolvimento.' },
     financialAlerts: financialAlerts.map((row) => { const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>; return { alertKey: toText(item.alert_key), companyId: item.company_id ? toText(item.company_id) : null, companyName: toText(item.company_name) || 'Cliente não reconciliado', sourceClientName: toText(item.source_client_name), csOwnerId: item.cs_owner_id ? toText(item.cs_owner_id) : null, csOwnerName: toText(item.cs_owner_name), mrr: toNumber(item.mrr), clientStatus: toText(item.client_status), contractStatus: toText(item.contract_status), overdueBalance: toNumber(item.overdue_balance), overdueTitles: toNumber(item.overdue_titles), maxDaysOverdue: toNumber(item.max_days_overdue), oldestDueDate: item.oldest_due_date ? toText(item.oldest_due_date) : null, matchConfidence: toNumber(item.match_confidence), matchMethod: toText(item.match_method), candidateCount: toNumber(item.candidate_count) }; }),
-    dataQuality: { financeTitles: toNumber(quality.finance_titles), matchedFinanceTitles: toNumber(quality.matched_finance_titles), unmatchedFinanceTitles: toNumber(quality.unmatched_finance_titles), ambiguousFinanceTitles: toNumber(quality.ambiguous_finance_titles), resolvedGroupTitles: toNumber(quality.resolved_group_titles), financeSourceAt: quality.finance_source_at ? toText(quality.finance_source_at) : null, hubspotSourceAt: quality.hubspot_source_at ? toText(quality.hubspot_source_at) : null },
+    dataQuality: { financeTitles: toNumber(quality.finance_titles), matchedFinanceTitles: toNumber(quality.matched_finance_titles), unmatchedFinanceTitles: toNumber(quality.unmatched_finance_titles), ambiguousFinanceTitles: toNumber(quality.ambiguous_finance_titles), resolvedGroupTitles: toNumber(quality.resolved_group_titles), supportUnassigned: toNumber(quality.support_unassigned), supportWithoutSource: toNumber(quality.support_without_source), financeSourceAt: quality.finance_source_at ? toText(quality.finance_source_at) : null, hubspotSourceAt: quality.hubspot_source_at ? toText(quality.hubspot_source_at) : null },
     state: createSnapshotState(data, 'HubSpot + OMIE', received),
   };
 }
 
 function createSnapshotState(data: Record<string, unknown>, source: string, received: number, sourceConfigured = true): AnalyticsBlockState {
   const status = data.status;
-  const validStatus = typeof status === 'string' && ['fresh', 'stale', 'partial', 'empty', 'not_configured', 'syncing', 'unavailable', 'error'].includes(status);
+  const validStatus = typeof status === 'string' && ['fresh', 'stale', 'partial', 'empty', 'zero', 'not_configured', 'syncing', 'unavailable', 'error'].includes(status);
   const lastSuccessfulSyncAt = typeof data.last_successful_sync_at === 'string'
     ? data.last_successful_sync_at
     : typeof data.synced_at === 'string' ? data.synced_at : null;
@@ -681,6 +707,17 @@ export function mapSyncRun(row: Record<string, unknown> | null): SyncRun | null 
     companiesSynced: toNumber(row.companies_synced),
     errorMessage: row.error_message ? toText(row.error_message) : null,
     correlationId: row.correlation_id ? toText(row.correlation_id) : null,
+    sourceTotal: row.source_total === null || row.source_total === undefined ? null : toNumber(row.source_total),
+    sourceState: row.source_state ? toText(row.source_state) : null,
+    sourcePaginationComplete: row.source_pagination_complete === true,
+    heartbeatAt: row.heartbeat_at ? toText(row.heartbeat_at) : null,
+    recordsNormalized: toNumber(row.records_normalized),
+    recordsAccepted: toNumber(row.records_accepted),
+    recordsRejected: toNumber(row.records_rejected),
+    recordsPromoted: toNumber(row.records_promoted),
+    pipelinesTotal: toNumber(row.pipelines_total),
+    pipelinesCompleted: toNumber(row.pipelines_completed),
+    errorCode: row.error_code ? toText(row.error_code) : null,
   };
 }
 

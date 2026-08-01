@@ -4,14 +4,14 @@ import type { CeoSnapshot, CsPipelinePoint } from './analytics-model';
 export type ExecutivePipeline = {
   id: string;
   label: string;
-  domain: 'CS / Suporte';
+  domain: 'Suporte';
   count: number;
   href: string;
 };
 
 export type ExecutiveException = {
   key: string;
-  domain: 'Comercial' | 'CS / Suporte' | 'Financeiro' | 'Dados e integrações';
+  domain: 'Comercial' | 'Suporte' | 'Financeiro' | 'Dados e integrações';
   title: string;
   detail: string;
   action: string;
@@ -27,6 +27,7 @@ const STATUS_SEVERITY: Record<AnalyticsBlockState['status'], 1 | 2 | 3> = {
   stale: 2,
   syncing: 2,
   empty: 1,
+  zero: 1,
   fresh: 1,
 };
 
@@ -35,21 +36,21 @@ export function rankExecutivePipelines(rows: CsPipelinePoint[], limit = 5): Exec
     .filter((row) => row.pipelineId && row.ticketCount > 0)
     .sort((left, right) => right.ticketCount - left.ticketCount || left.label.localeCompare(right.label, 'pt-BR') || left.pipelineId.localeCompare(right.pipelineId))
     .slice(0, limit)
-    .map((row) => ({ id: row.pipelineId, label: row.label, domain: 'CS / Suporte', count: row.ticketCount, href: '/admin/analytics/cs' }));
+    .map((row) => ({ id: row.pipelineId, label: row.label, domain: 'Suporte', count: row.ticketCount, href: `/admin/analytics?tab=support&pipeline=${encodeURIComponent(row.pipelineId)}` }));
 }
 
 export function buildExecutiveExceptions(snapshot: CeoSnapshot): ExecutiveException[] {
   const exceptions: ExecutiveException[] = [];
   const state = snapshot.state;
   if (state && state.status !== 'fresh') {
-    const label = state.status === 'stale' ? 'Atualização atrasada' : state.status === 'partial' ? 'Dados incompletos' : state.status === 'syncing' ? 'Atualização em andamento' : state.status === 'empty' ? 'Sem dados no período' : state.status === 'not_configured' ? 'Integração não configurada' : 'Dados indisponíveis';
-    exceptions.push({ key: `source-${state.status}`, domain: 'Dados e integrações', title: label, detail: state.reason || 'A leitura executiva precisa ser interpretada com cautela.', action: 'Verificar fontes', href: '/admin/analytics/config', severity: STATUS_SEVERITY[state.status] });
+    const label = state.status === 'stale' ? 'Fonte com atualização atrasada' : state.status === 'partial' ? 'Fonte com cobertura parcial' : state.status === 'syncing' ? 'Fonte em atualização' : state.status === 'empty' ? 'Nenhum registro no recorte' : state.status === 'not_configured' ? 'Fonte ainda não configurada' : 'Fonte indisponível para leitura';
+    exceptions.push({ key: `source-${state.status}`, domain: 'Dados e integrações', title: label, detail: state.reason || 'A leitura executiva precisa ser interpretada com cautela.', action: 'Verificar fontes', href: '/admin/settings?section=analytics&panel=diagnostics', severity: STATUS_SEVERITY[state.status] });
   }
   if (snapshot.support.highPriorityOpen > 0) {
-    exceptions.push({ key: 'support-high-priority', domain: 'CS / Suporte', title: 'Tickets de alta prioridade em aberto', detail: `${snapshot.support.highPriorityOpen.toLocaleString('pt-BR')} ${snapshot.support.highPriorityOpen === 1 ? 'ticket exige' : 'tickets exigem'} acompanhamento.`, action: 'Abrir CS / Suporte', href: '/admin/analytics/cs', severity: 2 });
+    exceptions.push({ key: 'support-high-priority', domain: 'Suporte', title: 'Tickets de alta prioridade em aberto', detail: `${snapshot.support.highPriorityOpen.toLocaleString('pt-BR')} ${snapshot.support.highPriorityOpen === 1 ? 'ticket exige' : 'tickets exigem'} acompanhamento.`, action: 'Abrir Suporte', href: '/admin/analytics?tab=support', severity: 2 });
   }
   if (snapshot.finance.overdueBalance > 0) {
-    exceptions.push({ key: 'finance-overdue', domain: 'Financeiro', title: 'Saldo vencido identificado', detail: `${snapshot.finance.overdueTitles.toLocaleString('pt-BR')} ${snapshot.finance.overdueTitles === 1 ? 'título vencido' : 'títulos vencidos'} somam ${formatCurrency(snapshot.finance.overdueBalance)}.`, action: 'Abrir Financeiro', href: '/admin/analytics/finance', severity: 3 });
+    exceptions.push({ key: 'finance-overdue', domain: 'Financeiro', title: 'Saldo vencido identificado', detail: `${snapshot.finance.overdueTitles.toLocaleString('pt-BR')} ${snapshot.finance.overdueTitles === 1 ? 'título vencido' : 'títulos vencidos'} somam ${formatCurrency(snapshot.finance.overdueBalance)}.`, action: 'Abrir Financeiro', href: '/admin/analytics?tab=finance', severity: 3 });
   }
   return exceptions.sort((left, right) => right.severity - left.severity || left.key.localeCompare(right.key)).slice(0, 3);
 }

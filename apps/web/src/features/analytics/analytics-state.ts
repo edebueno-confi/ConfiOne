@@ -17,6 +17,7 @@ export type AnalyticsStateInput = {
   syncing?: boolean;
   unavailable?: boolean;
   partial?: boolean;
+  zeroReal?: boolean;
   error?: boolean;
   reason?: string | null;
 };
@@ -27,6 +28,7 @@ export function classifyAnalyticsState(input: AnalyticsStateInput): AnalyticsDat
   if (input.unavailable) return 'unavailable';
   if (input.sourceConfigured === false) return 'not_configured';
   if (input.partial) return 'partial';
+  if (input.zeroReal) return 'zero';
   if (input.lastSuccessfulSyncAt && input.staleAfterMinutes != null) {
     const now = Date.parse(input.now ?? new Date().toISOString());
     const last = Date.parse(input.lastSuccessfulSyncAt);
@@ -53,7 +55,10 @@ export function createAnalyticsBlockState(input: AnalyticsStateInput): Analytics
 }
 
 export function createAnalyticsMetricResult<T>(value: T | null, input: AnalyticsStateInput & { syncRunId?: string | null }): AnalyticsMetricResult<T> {
-  const state = createAnalyticsBlockState(input);
+  const state = createAnalyticsBlockState({
+    ...input,
+    zeroReal: input.zeroReal ?? (value === 0 && (input.received ?? 0) > 0),
+  });
   return { value, ...state, syncRunId: input.syncRunId ?? null };
 }
 

@@ -1,0 +1,58 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+export interface AnalyticsPipelineOption {
+  id: string;
+  pipelineId: string;
+  label: string;
+  hubspotLabel?: string | null;
+  count: number;
+}
+
+interface Props {
+  storageKey: string;
+  pipelines: AnalyticsPipelineOption[];
+  excludedPipelineIds: string[];
+  onChange: (next: string[]) => void;
+  inline?: boolean;
+}
+
+export function AnalyticsPipelineCombobox({ storageKey, pipelines, excludedPipelineIds, onChange, inline = false }: Props) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const rootRef = useRef<HTMLDivElement>(null);
+  const allIncluded = excludedPipelineIds.length === 0;
+  const filtered = useMemo(() => pipelines.filter((pipeline) => `${pipeline.label} ${pipeline.hubspotLabel ?? ''} ${pipeline.pipelineId}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR'))), [pipelines, query]);
+  const selected = pipelines.filter((pipeline) => !excludedPipelineIds.includes(pipeline.pipelineId));
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem(storageKey);
+    if (saved) {
+      try { onChange(JSON.parse(saved) as string[]); } catch { sessionStorage.removeItem(storageKey); }
+    }
+  // Restore only when the configured pipeline list becomes available.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey, pipelines.length]);
+
+  useEffect(() => { sessionStorage.setItem(storageKey, JSON.stringify(excludedPipelineIds)); }, [storageKey, excludedPipelineIds]);
+  useEffect(() => {
+    const close = (event: MouseEvent) => { if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', close); return () => document.removeEventListener('mousedown', close);
+  }, []);
+
+  const setAll = () => onChange([]);
+  const toggle = (id: string) => onChange(excludedPipelineIds.includes(id) ? excludedPipelineIds.filter((value) => value !== id) : [...excludedPipelineIds, id]);
+  const label = allIncluded ? 'Todos os pipelines' : selected.length === 1 ? selected[0].label : `${selected.length} pipelines selecionados`;
+
+  return <div ref={rootRef} className={inline ? 'relative min-w-[13rem] flex-1 basis-48' : 'relative min-w-0'} data-testid="analytics-pipeline-combobox">
+    <label className={`${inline ? 'mb-1.5' : 'mb-1'} block text-xs font-medium text-[color:var(--minimal-text-secondary)]`} htmlFor={`${storageKey}-trigger`}>Pipelines</label>
+    <button id={`${storageKey}-trigger`} type="button" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((value) => !value)} className={`flex ${inline ? 'h-9' : 'min-h-10'} w-full items-center justify-between gap-3 rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-3 py-2 text-left text-sm text-[color:var(--minimal-text)] hover:border-[color:var(--minimal-border-hover)] focus:outline-none focus:ring-2 focus:ring-[color:var(--minimal-action)]`}>
+      <span className="min-w-0 truncate">{label}</span><span aria-hidden="true" className="text-[color:var(--minimal-text-tertiary)]">⌄</span>
+    </button>
+    {open ? <div role="listbox" aria-label="Pipelines do Dashboard" className="absolute z-30 mt-2 max-h-80 w-full min-w-[16rem] overflow-auto rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] p-2 shadow-lg">
+      <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar pipeline" aria-label="Buscar pipeline" className="mb-2 w-full rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-2.5 py-2 text-sm text-[color:var(--minimal-text)] outline-none focus:ring-2 focus:ring-[color:var(--minimal-action)]" />
+      <button type="button" role="option" aria-selected={allIncluded} onClick={setAll} className={`flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-sm ${allIncluded ? 'bg-[color:var(--minimal-surface-muted)] font-medium text-[color:var(--minimal-text)]' : 'text-[color:var(--minimal-text-secondary)]'}`}><span>Todos os pipelines</span><span>{pipelines.reduce((sum, item) => sum + item.count, 0).toLocaleString('pt-BR')}</span></button>
+      {filtered.map((pipeline) => { const included = !excludedPipelineIds.includes(pipeline.pipelineId); return <button key={pipeline.id} type="button" role="option" aria-selected={included} onClick={() => toggle(pipeline.pipelineId)} className={`mt-1 flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-xs ${included ? 'bg-[color:var(--minimal-surface-muted)] text-[color:var(--minimal-text)]' : 'text-[color:var(--minimal-text-tertiary)]'}`}><span className="min-w-0 truncate"><span className="block truncate font-medium">{pipeline.label}</span><span className="block truncate text-[10px] opacity-70">{pipeline.hubspotLabel || 'Nome oficial aguardando sincronização'}</span></span><span className="shrink-0 tabular-nums">{pipeline.count.toLocaleString('pt-BR')}</span></button>; })}
+      {filtered.length === 0 ? <p className="px-2.5 py-3 text-xs text-[color:var(--minimal-text-tertiary)]">Nenhum pipeline encontrado.</p> : null}
+    </div> : null}
+  </div>;
+}

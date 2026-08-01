@@ -1,133 +1,866 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import type { AnalyticsDataStatus } from '@genius-support-os/contracts';
-import { getCeoHistory, getCeoSnapshot } from './analytics-api';
-import type { AnalyticsFilters, AnalyticsPageProps, CeoHistory, CeoSnapshot } from './analytics-model';
-import { DEFAULT_ANALYTICS_FILTERS } from './analytics-model';
-import { AnalyticsFilters as Filters } from './AnalyticsFilters';
-import { AnalyticsLoadingState, AnalyticsRetryAction, AnalyticsStateBadge, formatCountLabel } from './analytics-ui';
-import { resolveAnalyticsPeriod } from './analytics-periods';
-import { buildExecutiveExceptions, rankExecutivePipelines } from './analytics-executive';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import type {
+  AnalyticsDataStatus,
+  AnalyticsBlockState,
+} from "@genius-support-os/contracts";
+import { GeniusMascot } from "../../components/GeniusMascot";
+import { getCeoHistory, getCeoSnapshot } from "./analytics-api";
+import type {
+  AnalyticsFilters,
+  AnalyticsPageProps,
+  CeoHistory,
+  CeoSnapshot,
+} from "./analytics-model";
+import { DEFAULT_ANALYTICS_FILTERS } from "./analytics-model";
+import { AnalyticsFilters as Filters } from "./AnalyticsFilters";
+import {
+  AnalyticsLoadingState,
+  AnalyticsRetryAction,
+  formatCountLabel,
+} from "./analytics-ui";
+import { resolveAnalyticsPeriod } from "./analytics-periods";
+import {
+  buildExecutiveExceptions,
+  rankExecutivePipelines,
+} from "./analytics-executive";
+import { analyticsHref } from "./analytics-navigation";
 
 const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
-  fresh: 'Dados atualizados',
-  stale: 'Atualização atrasada',
-  partial: 'Dados incompletos',
-  empty: 'Sem dados no período',
-  not_configured: 'Integração não configurada',
-  syncing: 'Atualização em andamento',
-  unavailable: 'Dados indisponíveis',
-  error: 'Não foi possível atualizar',
+  fresh: "Dados atualizados",
+  stale: "Dados podem estar atrasados",
+  partial: "Cobertura parcial",
+  empty: "Sem registros no recorte",
+  zero: "Zero real no recorte",
+  not_configured: "Fonte não configurada",
+  syncing: "Sincronização em andamento",
+  unavailable: "Fonte indisponível",
+  error: "Falha na fonte",
 };
 
-type MetricDelta = { label: string; tone: 'positive' | 'negative' | 'neutral' } | null;
+type MetricDelta = {
+  label: string;
+  tone: "positive" | "negative" | "neutral";
+} | null;
+type DomainScope =
+  | "all"
+  | "commercial"
+  | "customer_success"
+  | "support"
+  | "finance"
+  | "product"
+  | "development";
 
-export function AnalyticsCeoPage({ sharedPeriod, onSharedPeriodChange, onRetry, isDashboardViewer = false }: AnalyticsPageProps) {
-  const period = sharedPeriod ?? resolveAnalyticsPeriod('month');
-  const [filters, setFilters] = useState<AnalyticsFilters>({ ...DEFAULT_ANALYTICS_FILTERS, ...period });
-  const [result, setResult] = useState<{ loading: boolean; data?: CeoSnapshot; history?: CeoHistory; error?: boolean }>({ loading: true });
+export function AnalyticsCeoPage({
+  sharedPeriod,
+  onSharedPeriodChange,
+  onRetry,
+  isDashboardViewer = false,
+}: AnalyticsPageProps) {
+  const period = sharedPeriod ?? resolveAnalyticsPeriod("month");
+  const [filters, setFilters] = useState<AnalyticsFilters>({
+    ...DEFAULT_ANALYTICS_FILTERS,
+    ...period,
+  });
+  const [result, setResult] = useState<{
+    loading: boolean;
+    data?: CeoSnapshot;
+    history?: CeoHistory;
+    error?: boolean;
+  }>({ loading: true });
   const [refreshing, setRefreshing] = useState(false);
+  const [domainScope, setDomainScope] = useState<DomainScope>("all");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  useEffect(() => setFilters((current) => ({ ...current, ...period })), [period.from, period.to]);
+  useEffect(
+    () => setFilters((current) => ({ ...current, ...period })),
+    [period.from, period.to],
+  );
   useEffect(() => {
     let cancelled = false;
     setRefreshing(true);
-    setResult((current) => current.data ? { ...current, loading: false, error: undefined } : { loading: true });
+    setResult((current) =>
+      current.data
+        ? { ...current, loading: false, error: undefined }
+        : { loading: true },
+    );
     Promise.all([getCeoSnapshot(filters), getCeoHistory(filters)])
-      .then(([data, history]) => { if (!cancelled) { setResult({ loading: false, data, history }); setRefreshing(false); } })
-      .catch(() => { if (!cancelled) { setResult((current) => ({ ...current, loading: false, error: true })); setRefreshing(false); } });
-    return () => { cancelled = true; };
+      .then(([data, history]) => {
+        if (!cancelled) {
+          setResult({ loading: false, data, history });
+          setRefreshing(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setResult((current) => ({ ...current, loading: false, error: true }));
+          setRefreshing(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [filters]);
 
-  if (result.loading && !result.data) return <AnalyticsLoadingState title="Conjurando seus dados" description="Estamos preparando sua visão executiva." />;
-  if (result.error || !result.data) return <StatePanel title="Não foi possível carregar a visão executiva" description="Os indicadores estão indisponíveis no momento. Tente novamente." onRetry={onRetry} />;
+  if (result.loading && !result.data)
+    return (
+      <AnalyticsLoadingState
+        title="Conjurando seus dados"
+        description="Estamos preparando sua visão executiva."
+      />
+    );
+  if (result.error || !result.data)
+    return (
+      <StatePanel
+        title="Não foi possível carregar a visão executiva"
+        description="Os indicadores estão indisponíveis no momento. Tente novamente."
+        onRetry={onRetry}
+      />
+    );
 
   const data = result.data;
   const state = data.state;
   const exceptions = buildExecutiveExceptions(data);
   const pipelines = rankExecutivePipelines(data.support.byPipeline);
-  const unavailable = state?.status === 'empty' || state?.status === 'unavailable' || state?.status === 'error' || state?.status === 'not_configured';
+  const unavailable = [
+    "empty",
+    "unavailable",
+    "error",
+    "not_configured",
+  ].includes(state?.status ?? "unavailable");
   const history = result.history;
-  const comparison = history && !unavailable ? {
-    revenue: buildDelta(data.commercial.wonRevenue, history.previous.commercial.wonRevenue, 'currency'),
-    deals: buildDelta(data.commercial.wonDeals, history.previous.commercial.wonDeals, 'count'),
-    conversion: buildPercentagePointDelta(data.commercial.conversionRate, history.previous.commercial.conversionRate, data.commercial.wonDeals + data.commercial.lostDeals, history.previous.commercial.wonDeals + history.previous.commercial.lostDeals),
-    tickets: buildDelta(data.support.createdTickets, history.previous.support.createdTickets, 'count'),
-  } : { revenue: null, deals: null, conversion: null, tickets: null };
+  const comparison =
+    history && !unavailable
+      ? {
+          revenue: buildDelta(
+            data.commercial.wonRevenue,
+            history.previous.commercial.wonRevenue,
+            "currency",
+          ),
+          deals: buildDelta(
+            data.commercial.wonDeals,
+            history.previous.commercial.wonDeals,
+            "count",
+          ),
+          conversion: buildPercentagePointDelta(
+            data.commercial.conversionRate,
+            history.previous.commercial.conversionRate,
+            data.commercial.wonDeals + data.commercial.lostDeals,
+            history.previous.commercial.wonDeals +
+              history.previous.commercial.lostDeals,
+          ),
+          tickets: buildDelta(
+            data.support.createdTickets,
+            history.previous.support.createdTickets,
+            "count",
+          ),
+        }
+      : { revenue: null, deals: null, conversion: null, tickets: null };
+  const applyFilters = (next: AnalyticsFilters) => {
+    setFilters(next);
+    onSharedPeriodChange?.({ from: next.from, to: next.to });
+    setMobileFiltersOpen(false);
+  };
+  const domainCards = buildDomainCards(data, unavailable);
 
-  const currentPosition = [
-    { label: 'Saldo vencido', value: unavailable ? 'Indisponível' : data.finance.overdueBalance > 0 ? formatCurrency(data.finance.overdueBalance) : 'R$ 0', hint: formatCountLabel(data.finance.overdueTitles, 'título vencido', 'títulos vencidos'), tone: data.finance.overdueBalance > 0 ? 'critical' as const : 'neutral' as const },
-    { label: 'Clientes com alerta', value: unavailable ? 'Indisponível' : data.financialAlerts.length.toLocaleString('pt-BR'), hint: 'Inadimplência reconciliada', tone: data.financialAlerts.length > 0 ? 'warning' as const : 'neutral' as const },
-    { label: 'Tickets em aberto', value: unavailable ? 'Indisponível' : data.support.openTickets.toLocaleString('pt-BR'), hint: formatCountLabel(data.support.highPriorityOpen, 'alta prioridade aberta', 'altas prioridades abertas'), tone: data.support.highPriorityOpen > 0 ? 'warning' as const : 'neutral' as const },
+  return (
+    <ExecutiveHdCanvas
+      data={data}
+      state={state}
+      filters={filters}
+      domainCards={domainCards}
+      exceptions={exceptions}
+      pipelines={pipelines}
+      comparison={comparison}
+      unavailable={unavailable}
+      refreshing={refreshing}
+      domainScope={domainScope}
+      setDomainScope={setDomainScope}
+      mobileFiltersOpen={mobileFiltersOpen}
+      setMobileFiltersOpen={setMobileFiltersOpen}
+      applyFilters={applyFilters}
+      isDashboardViewer={isDashboardViewer}
+    />
+  );
+}
+
+type DomainCard = {
+  key: string;
+  title: string;
+  description: string;
+  value: string;
+  details: string;
+  href: string;
+  state: AnalyticsBlockState | undefined;
+  tone: "blue" | "cyan" | "pink" | "green" | "muted";
+};
+
+function buildDomainCards(
+  data: CeoSnapshot,
+  unavailable: boolean,
+): DomainCard[] {
+  return [
+    {
+      key: "commercial",
+      title: "Comercial",
+      description: "Pipeline e conversão",
+      value: unavailable
+        ? "Indisponível"
+        : formatCurrency(data.commercial.openPipelineValue),
+      details: `${formatCountLabel(data.commercial.openDeals, "negócio aberto", "negócios abertos")} · ${data.commercial.avgSalesCycleDays > 0 ? `${Math.round(data.commercial.avgSalesCycleDays).toLocaleString("pt-BR")} dias de ciclo` : "ciclo indisponível"}`,
+      href: analyticsHref("commercial"),
+      state: data.state,
+      tone: "blue",
+    },
+    {
+      key: "customer_success",
+      title: "Customer Success",
+      description: "Carteira e cobertura",
+      value:
+        data.customerSuccess.state.status === "empty"
+          ? "Indisponível"
+          : formatCountLabel(
+              data.customerSuccess.activeCustomers,
+              "cliente ativo",
+              "clientes ativos",
+            ),
+      details: `${formatCountLabel(data.customerSuccess.customersWithoutOwner, "sem responsável", "sem responsáveis")} · ${formatCountLabel(data.customerSuccess.healthAvailable, "sinal disponível", "sinais disponíveis")}`,
+      href: analyticsHref("customer-success"),
+      state: data.customerSuccess.state,
+      tone: "pink",
+    },
+    {
+      key: "support",
+      title: "Suporte",
+      description: "Volume e risco da fila",
+      value: unavailable
+        ? "Indisponível"
+        : formatCountLabel(
+            data.support.highPriorityOpen,
+            "alta prioridade",
+            "altas prioridades",
+          ),
+      details: `${formatPercent(data.support.closedRate)} encerrados · ${formatCountLabel(data.support.closeSlaTracked, "SLA acompanhado", "SLAs acompanhados")}`,
+      href: analyticsHref("support"),
+      state: data.state,
+      tone: "cyan",
+    },
+    {
+      key: "finance",
+      title: "Financeiro",
+      description: "Fluxo e reconciliação",
+      value: unavailable
+        ? "Indisponível"
+        : formatCountLabel(
+            data.finance.unmatchedTitles,
+            "título sem correspondência",
+            "títulos sem correspondência",
+          ),
+      details: `${formatCurrency(data.finance.balance)} em posição atual`,
+      href: analyticsHref("finance"),
+      state: data.state,
+      tone: "green",
+    },
+    {
+      key: "product",
+      title: "Produto",
+      description: "Fonte operacional",
+      value: "Fonte ainda não conectada",
+      details: data.product.reason,
+      href: analyticsHref("product"),
+      state: undefined,
+      tone: "muted",
+    },
+    {
+      key: "development",
+      title: "Desenvolvimento",
+      description: "Fonte operacional",
+      value: "Fonte ainda não conectada",
+      details: data.development.reason,
+      href: analyticsHref("development"),
+      state: undefined,
+      tone: "muted",
+    },
   ];
+}
 
-  const periodMetrics = [
-    { label: 'Receita ganha', value: unavailable ? 'Indisponível' : formatCurrency(data.commercial.wonRevenue), hint: formatCountLabel(data.commercial.wonDeals, 'ganho', 'ganhos'), delta: comparison.revenue },
-    { label: 'Negócios ganhos', value: unavailable ? 'Indisponível' : data.commercial.wonDeals.toLocaleString('pt-BR'), hint: formatCountLabel(data.commercial.lostDeals, 'perdido', 'perdidos'), delta: comparison.deals },
-    { label: 'Conversão', value: unavailable || data.commercial.wonDeals + data.commercial.lostDeals === 0 ? 'Indisponível' : formatPercent(data.commercial.conversionRate), hint: 'Ganhos sobre ganhos e perdas', delta: comparison.conversion },
-    { label: 'Tickets criados', value: unavailable ? 'Indisponível' : data.support.createdTickets.toLocaleString('pt-BR'), hint: formatCountLabel(data.support.closedTickets, 'ticket encerrado', 'tickets encerrados'), delta: comparison.tickets },
+function ExecutiveHdCanvas({
+  data,
+  state,
+  filters,
+  domainCards,
+  exceptions,
+  pipelines,
+  comparison,
+  unavailable,
+  refreshing,
+  domainScope,
+  setDomainScope,
+  mobileFiltersOpen,
+  setMobileFiltersOpen,
+  applyFilters,
+  isDashboardViewer,
+}: {
+  data: CeoSnapshot;
+  state?: AnalyticsBlockState;
+  filters: AnalyticsFilters;
+  domainCards: DomainCard[];
+  exceptions: ReturnType<typeof buildExecutiveExceptions>;
+  pipelines: ReturnType<typeof rankExecutivePipelines>;
+  comparison: {
+    revenue: MetricDelta;
+    deals: MetricDelta;
+    conversion: MetricDelta;
+    tickets: MetricDelta;
+  };
+  unavailable: boolean;
+  refreshing: boolean;
+  domainScope: DomainScope;
+  setDomainScope: (value: DomainScope) => void;
+  mobileFiltersOpen: boolean;
+  setMobileFiltersOpen: (value: boolean) => void;
+  applyFilters: (next: AnalyticsFilters) => void;
+  isDashboardViewer: boolean;
+}) {
+  const periodLabel = formatPeriod(filters);
+  const sourceStates = [
+    { label: "HubSpot", state: data.commercial ? state : undefined },
+    { label: "OMIE", state: data.finance ? state : undefined },
+    { label: "CS", state: data.customerSuccess.state },
+    { label: "Produto", state: undefined, note: "não conectado" },
+    { label: "Desenvolvimento", state: undefined, note: "não conectado" },
   ];
+  const availableSources = sourceStates.filter((item) => item.state && ['fresh', 'stale', 'partial', 'syncing', 'zero'].includes(item.state.status)).length;
+  const sourceCoverage = (sourceState?: AnalyticsBlockState) => {
+    const expected = sourceState?.coverage.expected;
+    const received = sourceState?.coverage.received;
+    if (expected === null || expected === undefined || received === null || received === undefined) return null;
+    return `${received.toLocaleString("pt-BR")}/${expected.toLocaleString("pt-BR")}`;
+  };
+  const qualityExpected = state?.coverage.expected;
+  const qualityReceived = state?.coverage.received;
+  const qualityLabel =
+    qualityExpected !== null &&
+    qualityExpected !== undefined &&
+    qualityReceived !== null &&
+    qualityReceived !== undefined
+      ? `${qualityReceived.toLocaleString("pt-BR")}/${qualityExpected.toLocaleString("pt-BR")} recebidos`
+      : "Cobertura não informada";
 
-  const domainCards = [
-    { title: 'Comercial', description: 'Volume e capacidade de conversão', value: unavailable ? 'Indisponível' : formatCurrency(data.commercial.openPipelineValue), details: `${formatCountLabel(data.commercial.openDeals, 'negócio aberto', 'negócios abertos')} · ciclo médio ${data.commercial.avgSalesCycleDays > 0 ? `${Math.round(data.commercial.avgSalesCycleDays).toLocaleString('pt-BR')} dias` : 'indisponível'}`, href: '/admin/analytics/commercial' },
-    { title: 'CS / Suporte', description: 'Risco operacional da fila', value: unavailable ? 'Indisponível' : formatCountLabel(data.support.highPriorityOpen, 'alta prioridade', 'altas prioridades'), details: `${formatPercent(data.support.closedRate)} encerrados · ${formatCountLabel(data.support.closeSlaTracked, 'SLA acompanhado', 'SLAs acompanhados')}`, href: '/admin/analytics/cs' },
-    { title: 'Financeiro', description: 'Qualidade da reconciliação', value: unavailable ? 'Indisponível' : formatCountLabel(data.finance.unmatchedTitles, 'título sem correspondência', 'títulos sem correspondência'), details: `${formatCurrency(data.finance.balance)} em posição atual`, href: '/admin/analytics/finance' },
-  ];
+  return (
+    <div className="gso-hd-canvas gso-executive-canvas" data-testid="executive-dashboard">
+      <section className="gso-hd-pulse gso-executive-source-pulse" aria-label="Pulso das fontes">
+        <div className="gso-hd-pulse-label">
+          <span className="gso-hd-signal-dot" aria-hidden="true" />
+          Pulso das fontes
+        </div>
+        <div className="gso-hd-source-list">
+          {sourceStates.map((item) => (
+            <div key={item.label} className="gso-hd-source">
+              <span
+                className={`gso-hd-source-line ${item.state ? statusTone(item.state.status) : "muted"}`}
+                aria-hidden="true"
+              />
+              <span>{item.label}</span>
+              <small>{item.note ?? [shortStatus(item.state?.status), sourceCoverage(item.state)].filter(Boolean).join(" · ")}</small>
+            </div>
+          ))}
+        </div>
+        <span className="gso-hd-source-summary">{availableSources} de {sourceStates.length} fontes disponíveis</span>
+        <span className="gso-hd-pulse-meta">
+          {state?.lastSuccessfulSyncAt
+            ? `Última atualização ${formatRelativeSync(state.lastSuccessfulSyncAt)}`
+            : "Atualização não registrada"}
+        </span>
+      </section>
 
-  const qualityItems = [
-    { label: 'Títulos conciliados', value: data.dataQuality.financeTitles > 0 ? `${data.dataQuality.matchedFinanceTitles.toLocaleString('pt-BR')} / ${data.dataQuality.financeTitles.toLocaleString('pt-BR')}` : 'Indisponível', detail: data.dataQuality.financeTitles > 0 ? 'Cobertura financeira atual' : 'Sem base financeira no recorte' },
-    { label: 'Grupos econômicos resolvidos', value: data.dataQuality.financeTitles > 0 ? data.dataQuality.resolvedGroupTitles.toLocaleString('pt-BR') : 'Indisponível', detail: 'Resolução disponível no contrato atual' },
-    { label: 'Última leitura HubSpot', value: data.dataQuality.hubspotSourceAt ? formatRelativeSync(data.dataQuality.hubspotSourceAt) : 'Indisponível', detail: 'Fonte operacional' },
-  ];
-  const focus = exceptions[0];
-  const applyFilters = (next: AnalyticsFilters) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); setMobileFiltersOpen(false); };
+      <section className="gso-hd-context" aria-labelledby="executive-heading">
+        <div>
+          <p className="gso-hd-eyebrow">Visão Geral</p>
+          <div className="gso-hd-title-row">
+            <h2 id="executive-heading">Visão Geral</h2>
+            {state ? <HdStatus state={state} /> : null}
+          </div>
+          <p>
+            Desempenho no período, posição atual e sinais que merecem contexto.
+          </p>
+        </div>
+        <div className="gso-hd-context-side">
+          <GeniusMascot
+            size="sm"
+            pose={state?.status === "syncing" ? "magic" : "think"}
+            expression="happy"
+            alt="Gênio organizando a leitura das fontes"
+          />
+          <div>
+            <strong>
+              {state ? shortStatus(state.status) : "Fonte sem atualização"}
+            </strong>
+            <span>
+              {state?.reason ?? "Leitura factual das fontes conectadas."}
+            </span>
+          </div>
+        </div>
+      </section>
 
-  return <div className="gso-executive-focus space-y-4" data-testid="executive-dashboard">
-    <section className="gso-executive-hero" aria-labelledby="executive-heading">
-      <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--minimal-text-tertiary)]"><span>Genius OS</span><span aria-hidden="true" className="text-[color:var(--minimal-action)]">/</span><span>Leitura executiva</span></div>
-      <div className="mt-3 flex flex-wrap items-end justify-between gap-4"><div><h2 id="executive-heading" className="text-2xl font-semibold tracking-[-0.045em] text-[color:var(--minimal-text)] sm:text-[2rem]">Cockpit operacional</h2><p className="mt-1 max-w-2xl text-sm leading-6 text-[color:var(--minimal-text-secondary)]">Uma leitura focada no que pede decisão, no que está em movimento e no contexto para agir com segurança.</p></div><div className="flex items-center gap-2" role="status"><span className="gso-status-dot" aria-hidden="true" /><span className="text-xs font-medium text-[color:var(--minimal-text-secondary)]">{state ? formatStatusLabel(state.status, state.lastSuccessfulSyncAt) : 'Atualização ainda não registrada'}</span></div></div>
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--minimal-border)] pt-4"><div className="flex flex-wrap items-center gap-2 text-xs text-[color:var(--minimal-text-secondary)]"><span className="font-medium text-[color:var(--minimal-text)]">Período:</span><span>{formatPeriod(filters)}</span>{state?.lastSuccessfulSyncAt ? <span>· atualizado {formatRelativeSync(state.lastSuccessfulSyncAt)}</span> : null}{refreshing ? <span role="status" className="font-medium text-[color:var(--minimal-action)]">Atualizando...</span> : null}</div><div className="flex items-center gap-2"><button type="button" className="inline-flex h-9 items-center rounded-lg border border-[color:var(--minimal-border-strong)] px-3 text-sm font-medium text-[color:var(--minimal-text)] transition hover:bg-[color:var(--minimal-surface-muted)] sm:hidden" aria-expanded={mobileFiltersOpen} aria-controls="executive-filters-mobile" onClick={() => setMobileFiltersOpen((open) => !open)}>Filtros</button><span className="hidden text-xs text-[color:var(--minimal-text-tertiary)] sm:inline">{isDashboardViewer ? 'Visualização gerencial' : 'Dados contratuais do período'}</span></div></div>
-    </section>
+      <div className="gso-hd-filter-bar" aria-label="Filtros da análise">
+        <div className="gso-hd-filter-context">
+          <span>Recorte</span>
+          <strong>{periodLabel}</strong>
+          <em>
+            {domainScope === "all"
+              ? "Todos os domínios"
+              : domainCards.find((card) => card.key === domainScope)?.title}
+          </em>
+        </div>
+        <button
+          type="button"
+          className="gso-hd-mobile-filter-button"
+          aria-expanded={mobileFiltersOpen}
+          onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+        >
+          Filtros <span>{mobileFiltersOpen ? "−" : "+"}</span>
+        </button>
+        <div className={`gso-hd-filters ${mobileFiltersOpen ? "is-open" : ""}`}>
+          <label>
+            Domínio em foco
+            <select
+              value={domainScope}
+              onChange={(event) =>
+                setDomainScope(event.target.value as typeof domainScope)
+              }
+            >
+              <option value="all">Todos</option>
+              <option value="commercial">Comercial</option>
+              <option value="customer_success">Customer Success</option>
+              <option value="support">Suporte</option>
+              <option value="finance">Financeiro</option>
+              <option value="product">Produto</option>
+              <option value="development">Desenvolvimento</option>
+            </select>
+          </label>
+          <Filters value={filters} onApply={applyFilters} stageOptions={[]} />
+        </div>
+      </div>
+      {refreshing ? (
+        <p className="gso-hd-inline-status" role="status">
+          Atualizando o período selecionado…
+        </p>
+      ) : null}
+      {state?.status === "empty" ? (
+        <p className="gso-hd-inline-status is-warning" role="status">
+          Não há registros no período selecionado. O painel mantém a posição
+          atual separada e não transforma ausência em zero.
+        </p>
+      ) : null}
 
-    <section className="gso-period-strip" aria-labelledby="performance-heading"><div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--minimal-text-tertiary)]">Desempenho no período</p><h3 id="performance-heading" className="mt-1 text-sm font-semibold text-[color:var(--minimal-text)]">O recorte selecionado em quatro sinais</h3></div><span className="text-xs text-[color:var(--minimal-text-secondary)]">Comparações só aparecem com base válida</span></div><div className="grid gap-px overflow-hidden rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-border)] sm:grid-cols-2 xl:grid-cols-4">{periodMetrics.map((metric) => <div key={metric.label} className="bg-[color:var(--minimal-surface)] px-4 py-3.5"><p className="text-xs text-[color:var(--minimal-text-secondary)]">{metric.label}</p><p className="mt-2 text-xl font-semibold tabular-nums tracking-[-0.03em] text-[color:var(--minimal-text)]">{metric.value}</p><p className="mt-1 text-xs text-[color:var(--minimal-text-tertiary)]">{metric.hint}</p>{metric.delta ? <p className={`mt-2 text-[11px] font-semibold ${metric.delta.tone === 'negative' ? 'text-[color:var(--minimal-danger-text)]' : 'text-[color:var(--minimal-action)]'}`}>{metric.delta.label}</p> : null}</div>)}</div></section>
+      <section className="gso-hd-ribbon" aria-labelledby="performance-heading">
+        <HdSectionHeading
+          id="performance-heading"
+          title="Desempenho no período"
+          description="Sinais afetados pelo recorte selecionado."
+        />
+        <div className="gso-hd-metric-grid">
+          <HdMetric
+            label="Receita ganha"
+            value={
+              unavailable
+                ? "Indisponível"
+                : formatCurrency(data.commercial.wonRevenue)
+            }
+            detail={formatCountLabel(
+              data.commercial.wonDeals,
+              "negócio ganho",
+              "negócios ganhos",
+            )}
+            comparison={comparison.revenue?.label}
+          />
+          <HdMetric
+            label="Negócios ganhos"
+            value={
+              unavailable
+                ? "Indisponível"
+                : data.commercial.wonDeals.toLocaleString("pt-BR")
+            }
+            detail={formatCountLabel(
+              data.commercial.lostDeals,
+              "negócio perdido",
+              "negócios perdidos",
+            )}
+            comparison={comparison.deals?.label}
+          />
+          <HdMetric
+            label="Conversão"
+            value={
+              unavailable ||
+              data.commercial.wonDeals + data.commercial.lostDeals === 0
+                ? "Indisponível"
+                : formatPercent(data.commercial.conversionRate)
+            }
+            detail="Ganhos sobre ganhos e perdas"
+            comparison={comparison.conversion?.label}
+          />
+          <HdMetric
+            label="Tickets criados"
+            value={
+              unavailable
+                ? "Indisponível"
+                : data.support.createdTickets.toLocaleString("pt-BR")
+            }
+            detail={formatCountLabel(
+              data.support.closedTickets,
+              "ticket encerrado",
+              "tickets encerrados",
+            )}
+            comparison={comparison.tickets?.label}
+          />
+        </div>
+      </section>
 
-    <div id="executive-filters-mobile" className={`${mobileFiltersOpen ? 'block' : 'hidden'} sm:hidden`}><Filters value={filters} onApply={applyFilters} stageOptions={[]} /></div>
+      <section
+        className="gso-hd-current-strip"
+        aria-labelledby="current-heading"
+      >
+        <HdSectionHeading
+          id="current-heading"
+          title="Posição atual"
+          description="Posição atual, não afetada pelo período selecionado."
+        />
+        <div className="gso-hd-current-line">
+          <HdMetric
+            label="Saldo vencido"
+            value={
+              unavailable
+                ? "Indisponível"
+                : formatCurrency(data.finance.overdueBalance)
+            }
+            detail={formatCountLabel(
+              data.finance.overdueTitles,
+              "título vencido",
+              "títulos vencidos",
+            )}
+          />
+          <HdMetric
+            label="Clientes com alerta"
+            value={
+              unavailable
+                ? "Indisponível"
+                : data.financialAlerts.length.toLocaleString("pt-BR")
+            }
+            detail="Inadimplência reconciliada"
+          />
+          <HdMetric
+            label="Tickets em aberto"
+            value={
+              unavailable
+                ? "Indisponível"
+                : data.support.openTickets.toLocaleString("pt-BR")
+            }
+            detail={formatCountLabel(
+              data.support.highPriorityOpen,
+              "alta prioridade aberta",
+              "altas prioridades abertas",
+            )}
+          />
+        </div>
+      </section>
 
-    <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_344px]">
-      <main className="min-w-0 space-y-4">
-        <section className="gso-focus-panel" aria-labelledby="focus-heading"><div className="flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6"><div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--minimal-text-tertiary)]">Domínio em foco</p><h3 id="focus-heading" className="mt-2 text-xl font-semibold tracking-[-0.035em] text-[color:var(--minimal-text)]">{focus ? focus.title : 'A operação não tem alertas ativos'}</h3><p className="mt-1 max-w-2xl text-sm leading-6 text-[color:var(--minimal-text-secondary)]">{focus ? focus.detail : 'Nenhum registro no período selecionado. A posição atual continua disponível para consulta.'}</p></div>{focus && !isDashboardViewer ? <Link to={focus.href} className="inline-flex min-h-10 items-center justify-center rounded-lg bg-[color:var(--minimal-action)] px-4 text-sm font-semibold text-[color:var(--minimal-action-ink)] transition hover:opacity-90">{focus.action}</Link> : null}</div><div className="px-5 py-5 sm:px-6"><div className="mb-4 flex flex-wrap items-end justify-between gap-2"><div><h4 className="text-sm font-semibold text-[color:var(--minimal-text)]">Sinais operacionais separados da qualidade</h4><p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">Prioridades que merecem acompanhamento agora.</p></div>{state ? <AnalyticsStateBadge state={state} /> : null}</div>{exceptions.length > 0 ? <ol className="gso-focus-timeline" aria-label="Alertas operacionais">{exceptions.map((item, index) => <li key={item.key} className="gso-focus-event"><span className={`gso-focus-marker ${item.severity === 3 ? 'gso-focus-marker-critical' : item.severity === 2 ? 'gso-focus-marker-warning' : ''}`} aria-hidden="true">{index + 1}</span><div className="min-w-0 flex-1 rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-4 py-3 transition hover:border-[color:var(--minimal-border-strong)]"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--minimal-text-tertiary)]">{item.domain}</p><h5 className="mt-1 text-sm font-semibold text-[color:var(--minimal-text)]">{item.title}</h5></div>{!isDashboardViewer ? <Link to={item.href} className="shrink-0 text-xs font-semibold text-[color:var(--minimal-action)]">Ver análise</Link> : null}</div><p className="mt-2 text-sm leading-5 text-[color:var(--minimal-text-secondary)]">{item.detail}</p></div></li>)}</ol> : <div className="rounded-xl border border-dashed border-[color:var(--minimal-border-strong)] px-4 py-5 text-sm text-[color:var(--minimal-text-secondary)]" role="status">Nenhum alerta no período.</div>}</div></section>
+      <section
+        className="gso-hd-domain-matrix"
+        aria-labelledby="domains-heading"
+      >
+        <HdSectionHeading
+          id="domains-heading"
+          title="Mapa das áreas"
+          description="As áreas ativas ganham peso; Produto e Desenvolvimento permanecem conectados ao mapa sem inventar métricas."
+        />
+        <div className="gso-hd-domain-grid">
+          {domainCards
+            .filter((card) => domainScope === "all" || card.key === domainScope)
+            .map((card) => (
+              <HdDomain
+                key={card.key}
+                card={card}
+              />
+            ))}
+        </div>
+      </section>
 
-        <section className="gso-focus-panel" aria-labelledby="pipelines-heading"><div className="flex flex-wrap items-end justify-between gap-3 border-b border-[color:var(--minimal-border)] px-5 py-4 sm:px-6"><div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--minimal-text-tertiary)]">Fila observada</p><h3 id="pipelines-heading" className="mt-1 text-base font-semibold text-[color:var(--minimal-text)]">Pipelines de atendimento prioritários</h3></div><span className="text-xs text-[color:var(--minimal-text-secondary)]">{formatCountLabel(pipelines.length, 'pipeline', 'pipelines')} com atividade</span></div>{pipelines.length ? <ul className="divide-y divide-[color:var(--minimal-border)]">{pipelines.map((pipeline, index) => <li key={pipeline.id}><Link to={pipeline.href} className="flex items-center gap-3 px-5 py-3.5 transition hover:bg-[color:var(--minimal-surface-muted)] sm:px-6"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color:var(--minimal-selection)] text-xs font-semibold text-[color:var(--minimal-selection-text)]">{String(index + 1).padStart(2, '0')}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium text-[color:var(--minimal-text)]">{pipeline.label}</span><span className="text-xs text-[color:var(--minimal-text-secondary)]">{pipeline.domain}</span></span><span className="shrink-0 text-sm font-semibold tabular-nums text-[color:var(--minimal-text)]">{formatCountLabel(pipeline.count, 'ticket', 'tickets')}</span><span className="shrink-0 text-xs font-semibold text-[color:var(--minimal-action)]">Abrir</span></Link></li>)}</ul> : <div className="px-5 py-5 text-sm text-[color:var(--minimal-text-secondary)]">Nenhuma fila teve atividade no período.</div>}</section>
+      <div className="gso-hd-lower-grid">
+        <section
+          className="gso-hd-integrity"
+          aria-labelledby="integrity-heading"
+        >
+          <HdSectionHeading
+            id="integrity-heading"
+            title="Trilho de integridade"
+            description="Qualidade e cobertura sem uma caixa administrativa separada."
+          />
+          <div className="gso-hd-integrity-line">
+            <div>
+              <span className="gso-hd-integrity-value">{qualityLabel}</span>
+              <small>Cobertura geral do contrato</small>
+            </div>
+            <div>
+              <span className="gso-hd-integrity-value">
+                {data.dataQuality.unmatchedFinanceTitles.toLocaleString(
+                  "pt-BR",
+                )}
+              </span>
+              <small>Títulos sem correspondência</small>
+            </div>
+            <div>
+              <span className="gso-hd-integrity-value">
+                {data.dataQuality.supportUnassigned.toLocaleString("pt-BR")}
+              </span>
+              <small>Tickets sem responsável</small>
+            </div>
+          </div>
+        </section>
+        <section
+          className="gso-hd-exceptions"
+          aria-labelledby="exceptions-heading"
+        >
+          <HdSectionHeading
+            id="exceptions-heading"
+            title="Sinais gerenciais"
+            description="Sinais operacionais separados da qualidade e do frescor dos dados."
+          />
+          {exceptions.length ? (
+            <div className="gso-hd-signal-list">
+              {exceptions.slice(0, 3).map((item) =>
+                isDashboardViewer ? (
+                  <div key={item.key} className="gso-hd-signal">
+                    <span>{item.domain}</span>
+                    <strong>{item.title}</strong>
+                    <small>{item.detail}</small>
+                  </div>
+                ) : (
+                  <Link key={item.key} to={item.href} className="gso-hd-signal">
+                    <span>{item.domain}</span>
+                    <strong>{item.title}</strong>
+                    <small>{item.detail}</small>
+                  </Link>
+                ),
+              )}
+            </div>
+          ) : (
+            <p className="gso-hd-muted-row">
+              Nenhuma exceção determinística no recorte.
+            </p>
+          )}
+        </section>
+      </div>
 
-        <section aria-labelledby="domains-heading"><div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><h3 id="domains-heading" className="text-sm font-semibold text-[color:var(--minimal-text)]">Resumo por domínio</h3><p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">O sinal principal de cada área, sem misturar posição atual e desempenho do período.</p></div><span className="text-xs text-[color:var(--minimal-text-tertiary)]">Leitura comparável</span></div><div className="grid gap-3 md:grid-cols-3">{domainCards.map((card) => <div key={card.title} className="gso-domain-row"><div className="flex items-start justify-between gap-3"><div><h4 className="text-sm font-semibold text-[color:var(--minimal-text)]">{card.title}</h4><p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">{card.description}</p></div><span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--minimal-text-tertiary)]">Sinal</span></div><p className="mt-5 text-xl font-semibold tabular-nums tracking-[-0.03em] text-[color:var(--minimal-text)]">{card.value}</p><p className="mt-1 text-xs leading-5 text-[color:var(--minimal-text-secondary)]">{card.details}</p>{isDashboardViewer ? <span className="mt-4 inline-block text-xs text-[color:var(--minimal-text-tertiary)]">Detalhamento restrito ao perfil</span> : <Link to={card.href} className="mt-4 inline-block text-xs font-semibold text-[color:var(--minimal-action)]">Abrir domínio</Link>}</div>)}</div></section>
-      </main>
-
-      <aside className="min-w-0 space-y-4 xl:sticky xl:top-4"><section className="gso-context-panel hidden sm:block" aria-label="Filtros da análise"><div className="flex items-center justify-between gap-3"><div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--minimal-text-tertiary)]">Recorte</p><h3 className="mt-1 text-base font-semibold text-[color:var(--minimal-text)]">Período da leitura</h3></div><span className="text-xs text-[color:var(--minimal-text-secondary)]">{formatPeriod(filters)}</span></div><div className="mt-4"><Filters value={filters} onApply={applyFilters} stageOptions={[]} /></div></section><section className="gso-context-panel" aria-labelledby="current-heading"><div className="flex items-start justify-between gap-3"><div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--minimal-text-tertiary)]">Agora</p><h3 id="current-heading" className="mt-1 text-base font-semibold text-[color:var(--minimal-text)]">Posição atual</h3><p className="mt-1 text-xs leading-5 text-[color:var(--minimal-text-secondary)]">Posição atual, não afetada pelo período selecionado.</p></div><span className="text-xs font-medium text-[color:var(--minimal-text-tertiary)]">Ao vivo</span></div><div className="mt-4 divide-y divide-[color:var(--minimal-border)]">{currentPosition.map((item) => <div key={item.label} className="py-3 first:pt-0 last:pb-0"><div className="flex items-end justify-between gap-3"><p className="text-xs text-[color:var(--minimal-text-secondary)]">{item.label}</p><p className={`text-lg font-semibold tabular-nums ${item.tone === 'critical' ? 'text-[color:var(--minimal-danger-text)]' : item.tone === 'warning' ? 'text-[color:var(--minimal-warning-text)]' : 'text-[color:var(--minimal-text)]'}`}>{item.value}</p></div><p className="mt-1 text-right text-[11px] text-[color:var(--minimal-text-tertiary)]">{item.hint}</p></div>)}</div></section><section className="gso-context-panel" aria-labelledby="quality-heading"><div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--minimal-text-tertiary)]">Confiabilidade</p><h3 id="quality-heading" className="mt-1 text-base font-semibold text-[color:var(--minimal-text)]">Qualidade da leitura</h3><p className="mt-1 text-xs leading-5 text-[color:var(--minimal-text-secondary)]">Origem e cobertura que ajudam a interpretar os sinais.</p></div><div className="mt-4 divide-y divide-[color:var(--minimal-border)]">{qualityItems.map((item) => <div key={item.label} className="py-3 first:pt-0 last:pb-0"><div className="flex items-baseline justify-between gap-3"><p className="text-xs text-[color:var(--minimal-text-secondary)]">{item.label}</p><p className="text-sm font-semibold tabular-nums text-[color:var(--minimal-text)]">{item.value}</p></div><p className="mt-1 text-[11px] leading-4 text-[color:var(--minimal-text-tertiary)]">{item.detail}</p></div>)}</div></section>{isDashboardViewer ? <div className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-4 py-3 text-xs leading-5 text-[color:var(--minimal-text-secondary)]">Visualizador gerencial: leitura autorizada. Detalhamento restrito ao perfil.</div> : <details className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)]"><summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-[color:var(--minimal-text)]">Análises avançadas</summary><div className="border-t border-[color:var(--minimal-border)] px-4 py-3 text-xs leading-5 text-[color:var(--minimal-text-secondary)]">Aprofundamentos financeiros e históricos permanecem nos domínios correspondentes.</div></details>}</aside>
+      <section className="gso-hd-pipelines" aria-labelledby="pipelines-heading">
+        <div className="gso-hd-section-heading-inline">
+          <HdSectionHeading
+            id="pipelines-heading"
+            title="Pipelines de Suporte prioritários"
+            description="Composição do volume no período selecionado."
+          />
+          <span>
+            {pipelines.length
+              ? `${pipelines.length} encontrados`
+              : "Sem atividade"}
+          </span>
+        </div>
+        {pipelines.length ? (
+          <div className="gso-hd-pipeline-table">
+            <div className="gso-hd-pipeline-head">
+              <span>Pipeline</span>
+              <span>Domínio</span>
+              <span>Volume</span>
+            </div>
+            {pipelines.slice(0, 5).map((pipeline) => (
+              <Link
+                key={pipeline.id}
+                to={pipeline.href}
+                className="gso-hd-pipeline-row"
+              >
+                <strong>{pipeline.label}</strong>
+                <span>{pipeline.domain}</span>
+                <b>{formatCountLabel(pipeline.count, "ticket", "tickets")} →</b>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="gso-hd-muted-row">
+            Nenhum pipeline de Suporte com atividade no período selecionado.
+          </p>
+        )}
+      </section>
     </div>
-  </div>;
+  );
 }
 
-function StatePanel({ title, description, onRetry }: { title: string; description: string; onRetry?: () => void }) {
-  return <section className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-5 py-8 text-center" role="alert"><h2 className="text-base font-semibold text-[color:var(--minimal-text)]">{title}</h2><p className="mt-1 text-sm text-[color:var(--minimal-text-secondary)]">{description}</p><div className="mt-4 flex justify-center"><AnalyticsRetryAction onRetry={onRetry} /></div></section>;
+function HdStatus({ state }: { state: AnalyticsBlockState }) {
+  return (
+    <span className={`gso-hd-status ${statusTone(state.status)}`}>
+      <i aria-hidden="true" />
+      {shortStatus(state.status)}
+    </span>
+  );
 }
-
-function formatCurrency(value: number) { return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }); }
-function formatPercent(value: number) { return `${(value * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`; }
-function formatPeriod(filters: AnalyticsFilters) { return filters.from && filters.to ? `${formatDate(filters.from)} a ${formatDate(filters.to)}` : 'Período padrão'; }
-function formatDate(value: string) { return new Date(`${value}T12:00:00`).toLocaleDateString('pt-BR'); }
-function formatRelativeSync(value: string) { return new Date(value).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); }
-function formatStatusLabel(status: AnalyticsDataStatus, lastSuccessfulSyncAt: string | null) { return status === 'fresh' && !lastSuccessfulSyncAt ? 'Dados recebidos' : STATUS_LABELS[status]; }
-function buildDelta(current: number, previous: number, kind: 'currency' | 'count'): MetricDelta {
+function HdMetric({
+  label,
+  value,
+  detail,
+  comparison,
+}: {
+  label: string;
+  value: string;
+  detail?: string;
+  comparison?: string;
+}) {
+  return (
+    <div className="gso-hd-metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{detail ?? "Sem detalhe complementar"}</small>
+      {comparison ? <em>{comparison}</em> : null}
+    </div>
+  );
+}
+function HdDomain({
+  card,
+}: {
+  card: DomainCard;
+}) {
+  const body = (
+    <>
+      <div className="gso-hd-domain-top">
+        <span
+          className={`gso-hd-domain-mark ${card.tone}`}
+          aria-hidden="true"
+        />
+        <HdStatus
+          state={
+            card.state ?? {
+              status: "not_configured",
+              source: card.details,
+              asOf: null,
+              lastSuccessfulSyncAt: null,
+              syncRunId: null,
+              coverage: { expected: null, received: null },
+              reason: card.details,
+            }
+          }
+        />
+      </div>
+      <h3>{card.title}</h3>
+      <p>{card.description}</p>
+      <strong>{card.value}</strong>
+      <small>{card.details}</small>
+      <span className="gso-hd-domain-link">Abrir domínio →</span>
+    </>
+  );
+  return (
+    <Link
+      to={card.href}
+      className={`gso-hd-domain ${card.tone === "muted" ? "is-muted" : ""}`}
+    >
+      {body}
+    </Link>
+  );
+}
+function HdSectionHeading({
+  id,
+  title,
+  description,
+}: {
+  id: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="gso-hd-section-heading">
+      <div>
+        <h2 id={id}>{title}</h2>
+        <p>{description}</p>
+      </div>
+    </div>
+  );
+}
+function StatePanel({
+  title,
+  description,
+  onRetry,
+}: {
+  title: string;
+  description: string;
+  onRetry?: () => void;
+}) {
+  return (
+    <section className="gso-hd-state-panel" role="alert">
+      <h2>{title}</h2>
+      <p>{description}</p>
+      <AnalyticsRetryAction onRetry={onRetry} />
+    </section>
+  );
+}
+function statusTone(status?: AnalyticsDataStatus) {
+  if (status === "fresh" || status === "zero") return "fresh";
+  if (status === "stale" || status === "partial" || status === "syncing")
+    return "warning";
+  if (status === "error" || status === "unavailable") return "critical";
+  return "muted";
+}
+function shortStatus(status?: AnalyticsDataStatus) {
+  return status ? STATUS_LABELS[status] : "Não conectado";
+}
+function formatCurrency(value: number) {
+  return value.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  });
+}
+function formatPercent(value: number) {
+  return `${(value * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
+}
+function formatPeriod(filters: AnalyticsFilters) {
+  return filters.from && filters.to
+    ? `${formatDate(filters.from)} a ${formatDate(filters.to)}`
+    : "Período padrão";
+}
+function formatDate(value: string) {
+  return new Date(`${value}T12:00:00`).toLocaleDateString("pt-BR");
+}
+function formatRelativeSync(value: string) {
+  return new Date(value).toLocaleString("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
+}
+function buildDelta(
+  current: number,
+  previous: number,
+  kind: "currency" | "count",
+): MetricDelta {
   if (previous === 0) return null;
   const change = ((current - previous) / Math.abs(previous)) * 100;
-  const sign = change > 0 ? '+' : '';
-  const value = kind === 'currency' ? `${sign}${change.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%` : `${sign}${change.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
-  return { label: `${value} vs. período anterior`, tone: change > 0 ? 'positive' : change < 0 ? 'negative' : 'neutral' };
+  const sign = change > 0 ? "+" : "";
+  const value =
+    kind === "currency"
+      ? `${sign}${change.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`
+      : `${sign}${change.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
+  return {
+    label: `${value} vs. período anterior`,
+    tone: change > 0 ? "positive" : change < 0 ? "negative" : "neutral",
+  };
 }
-function buildPercentagePointDelta(current: number, previous: number, currentDenominator: number, previousDenominator: number): MetricDelta {
+function buildPercentagePointDelta(
+  current: number,
+  previous: number,
+  currentDenominator: number,
+  previousDenominator: number,
+): MetricDelta {
   if (currentDenominator === 0 || previousDenominator === 0) return null;
   const change = (current - previous) * 100;
-  const sign = change > 0 ? '+' : '';
-  return { label: `${sign}${change.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} p.p. vs. período anterior`, tone: change > 0 ? 'positive' : change < 0 ? 'negative' : 'neutral' };
+  const sign = change > 0 ? "+" : "";
+  return {
+    label: `${sign}${change.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} p.p. vs. período anterior`,
+    tone: change > 0 ? "positive" : change < 0 ? "negative" : "neutral",
+  };
 }

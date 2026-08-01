@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "release": "RELEASE-02.6",
+  "principle": "Allowlist explícita para superfícies externas; objetos internos não listados não são contrato público.",
+  "surfaces": [
+    {
+      "module": "knowledge",
+      "audience": ["anon", "authenticated"],
+      "objects": [
+        "public.vw_public_knowledge_space_resolver",
+        "public.vw_public_knowledge_navigation",
+        "public.vw_public_knowledge_articles_list",
+        "public.vw_public_knowledge_article_detail",
+        "public.vw_public_knowledge_article_assets",
+        "public.rpc_public_search_knowledge_articles(text,text,integer)",
+        "app_private.can_read_knowledge_article_asset(uuid,knowledge_visibility,knowledge_article_asset_review_status,boolean)"
+      ],
+      "constraints": [
+        "somente conteúdo published e public",
+        "assets aprovados pela policy e pelo helper de leitura",
+        "sem acesso direto às tabelas knowledge_* ou storage.objects"
+      ]
+    },
+    {
+      "module": "portal",
+      "audience": ["authenticated"],
+      "objects": ["public.vw_customer_portal_*", "public.rpc_customer_*"],
+      "constraints": ["tenant ativo, membership e entitlement validados pelo contrato do Portal"]
+    },
+    {
+      "module": "analytics",
+      "audience": ["authenticated"],
+      "objects": ["public.vw_analytics_*", "public.rpc_analytics_*"],
+      "constraints": ["papel efetivo e escopo analítico validados no backend; dashboard_viewer não recebe comandos administrativos"]
+    },
+    {
+      "module": "support",
+      "audience": ["authenticated"],
+      "objects": ["public.vw_support_*", "public.rpc_support_*"],
+      "constraints": ["escopo operacional e papel efetivo validados pelo backend; sem acesso anônimo"]
+    },
+    {
+      "module": "admin",
+      "audience": ["authenticated"],
+      "objects": ["public.vw_admin_*", "public.rpc_admin_*"],
+      "constraints": ["somente platform_admin ou gate contextual equivalente; sem acesso anônimo"]
+    }
+  ],
+  "explicit_denials": [
+    "public.rls_auto_enable()",
+    "public.analytics_finance_receivables_staging",
+    "public.analytics_spreadsheet_rows",
+    "public.cs_customer_portfolio_assignment_history",
+    "public.ticket_attachment_download_grants",
+    "public.ticket_attachment_upload_intents",
+    "public.rpc_admin_* para anon",
+    "public.rpc_support_* para anon"
+  ]
+}

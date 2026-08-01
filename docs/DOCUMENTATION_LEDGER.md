@@ -6754,3 +6754,19 @@ Cada registro deve informar:
 - Causa: perfis persistidos com nomes incompatíveis com a consulta original da seed, resultando em `0 telas`.
 - Correção: normalização dos nomes e reaplicação idempotente dos grants por perfil.
 - Evidência: banco local confirma cinco perfis com contagens de telas não nulas.
+# ACCESS-01 — Control plane interno — 2026-07-27
+
+Fundação aditiva local para contexto interno, capabilities, perfis, convites e allowlist
+de superfícies. A UI de `/admin/access` ainda requer separação da governança de memberships
+de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CONTROL_PLANE_2026-07-27.md`.
+## ACCESS-01.1 — Interface e CRUD administrativo interno — 2026-07-27
+
+- Migration: `supabase/migrations/20260727040334_access_01_1_admin_operational_crud.sql`.
+- Teste pgTAP: `supabase/tests/085_access_01_1_admin_operational_crud.sql`.
+- Teste Node: `tests/scripts/access-01-1-ui-contract.test.mjs`.
+- Resultado: `/admin/access` usa quatro tabs (usuários internos, convites, áreas/funções e perfis/permissões); clientes permanecem fora do control plane.
+- Gate remoto ainda não executado: push, PR, merge, migration remota, deploy e convite externo permanecem pendentes de autorização.
+## ACCESS-01.2 — Convites oficiais e navegação contextual — 2026-07-27
+
+- Relatório: `docs/reports/ACCESS_01_2_INVITES_SAGA_NAVIGATION_2026-07-27.md`.
+- Entrega: Edge Function oficial, aceite idempotente, compensação condicionada, rate limit, guarda do último administrador e URLs canônicas do Dashboard.

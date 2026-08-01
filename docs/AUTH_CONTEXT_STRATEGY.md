@@ -106,3 +106,25 @@ Permissões devem ser validadas no banco/RPC/policy, nunca apenas no frontend.
 - Não pode usar RPC administrativa.
 - Não pode criar membership.
 - Mantém apenas leitura e autoedição segura do próprio `profile`, sob RLS e trigger de proteção.
+# ACCESS-01 — Contexto interno explícito — 2026-07-27
+
+O contexto interno passa a ser representado por `public.user_actor_contexts` com
+`actor_type = internal`, status e primário. Membership de cliente não concede acesso
+interno; ausência de contexto interno ativo resulta em deny by default. A autorização
+efetiva combina release allowlist, capabilities e overrides auditáveis. O frontend
+consome os read models, mas não decide precedência.
+## ACCESS-01.1 — Control plane administrativo — 2026-07-27
+
+`/admin/access` administra apenas colaboradores com `user_actor_contexts.actor_type = internal`.
+Memberships de cliente, contatos HubSpot e usuários exclusivamente do Portal não entram
+na listagem interna. A atribuição de área, função, perfil e override é executada por RPC
+com capacidade `access.*.manage`, justificativa quando aplicável e auditoria de alteração.
+
+O catálogo `internal_organizational_areas` é deliberadamente separado do catálogo legado
+`internal_action_target_areas`: o primeiro organiza colaboradores; o segundo continua
+governando roteamento de acionamentos. A compatibilidade entre ambos é mantida por um
+`area_key` operacional seguro na membership, sem converter usuários clientes em internos.
+
+Read models administrativos: `vw_admin_access_internal_users`, `vw_admin_access_invites`,
+`vw_admin_access_areas`, `vw_admin_access_functions`, `vw_admin_access_profiles`,
+`vw_admin_access_overrides` e `vw_admin_access_capabilities`.

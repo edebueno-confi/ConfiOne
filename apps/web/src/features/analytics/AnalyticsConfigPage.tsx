@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { MinimalState } from '../../components/minimal-states';
 import { GeniusSyncOverlay } from '../../components/GeniusSyncOverlay';
-import { getIntegrationSchedule, listAnalyticsSourceConfig, listCsOpsImportRuns, runCsOpsMigration, runIntegrationNow, setIntegrationSchedule, triggerCsOpsSpreadsheetImport, triggerHubspotSync, upsertAnalyticsSourceConfig, type CsOpsImportRun, type CsOpsMigrationPreflight, type IntegrationSchedule } from './analytics-api';
-import type { AnalyticsSourceConfig } from './analytics-model';
+import { getCsSyncProgress, getIntegrationSchedule, getLatestCsSyncRun, listAnalyticsSourceConfig, listCsOpsImportRuns, runCsOpsMigration, runIntegrationNow, setIntegrationSchedule, triggerCsOpsSpreadsheetImport, triggerCsSupportSync, triggerHubspotSync, upsertAnalyticsSourceConfig, type CsOpsImportRun, type CsOpsMigrationPreflight, type IntegrationSchedule } from './analytics-api';
+import type { AnalyticsSourceConfig, SyncRun } from './analytics-model';
 import { ChartCard, MetricInfo } from './analytics-ui';
 import { useAuthContext } from '../auth/auth-context';
 import { canManageAnalyticsIntegration } from './analytics-permissions.mjs';
+import { HubspotCsDiagnosticCard } from './HubspotCsDiagnosticCard';
 
 type Draft = { id?: string; domainKey: 'commercial' | 'cs'; objectType: 'deal' | 'ticket'; pipelineId: string; alias: string; isActive: boolean };
 const EMPTY_DRAFT: Draft = { domainKey: 'cs', objectType: 'ticket', pipelineId: '', alias: '', isActive: true };
@@ -22,6 +24,9 @@ export function AnalyticsConfigPage() {
   const [scheduleBusy, setScheduleBusy] = useState(false);
   const [runningNow, setRunningNow] = useState(false);
   const [hubspotRunningNow, setHubspotRunningNow] = useState(false);
+  const [latestCsRun, setLatestCsRun] = useState<SyncRun | null>(null);
+  const [csControlBusy, setCsControlBusy] = useState(false);
+  const [csControlMsg, setCsControlMsg] = useState<string | null>(null);
   const [scheduleMsg, setScheduleMsg] = useState<string | null>(null);
   const [csOpsRuns, setCsOpsRuns] = useState<CsOpsImportRun[]>([]);
   const [csOpsFile, setCsOpsFile] = useState<File | null>(null);
@@ -29,29 +34,41 @@ export function AnalyticsConfigPage() {
   const [csOpsMsg, setCsOpsMsg] = useState<string | null>(null);
   const [csOpsPreflight, setCsOpsPreflight] = useState<CsOpsMigrationPreflight & { sourceImportRunId: string } | null>(null);
   const loadSchedule = () => { void getIntegrationSchedule().then(setSchedule).catch(() => setSchedule(null)); };
-  const patchSchedule = (patch: Partial<IntegrationSchedule>) => setSchedule((current) => {
-    const next = {
-      enabled: current?.enabled ?? false,
-      frequency: current?.frequency ?? 'off',
-      lastRunAt: current?.lastRunAt ?? null,
-      lastStatus: current?.lastStatus ?? null,
-      lastMessage: current?.lastMessage ?? null,
-      hubspotEnabled: current?.hubspotEnabled ?? false,
-      hubspotFrequency: current?.hubspotFrequency ?? 'off',
-      hubspotLastRunAt: current?.hubspotLastRunAt ?? null,
-      hubspotLastStatus: current?.hubspotLastStatus ?? null,
-      hubspotLastMessage: current?.hubspotLastMessage ?? null,
-      ...patch,
-    };
-    return {
-      ...next,
-      enabled: next.frequency === 'off' ? false : next.enabled,
-      hubspotEnabled: next.hubspotFrequency === 'off' ? false : next.hubspotEnabled,
-    };
-  });
-  const saveSchedule = async () => { setScheduleBusy(true); setScheduleMsg(null); try { const enabled = schedule?.frequency !== 'off' && schedule?.enabled === true; const hubspotEnabled = schedule?.hubspotFrequency !== 'off' && schedule?.hubspotEnabled === true; await setIntegrationSchedule(enabled, schedule?.frequency ?? 'off', hubspotEnabled, schedule?.hubspotFrequency ?? 'off'); loadSchedule(); setScheduleMsg('Agendamento salvo.'); } catch (error) { setScheduleMsg(error instanceof Error ? error.message : 'Falha ao salvar o agendamento.'); } finally { setScheduleBusy(false); } };
+  const loadLatestCsRun = () => { void getLatestCsSyncRun().then(setLatestCsRun).catch(() => setLatestCsRun(null)); };
+  const patchSchedule = (patch: Partial<IntegrationSchedule>) => setSchedule((current) => ({
+    enabled: current?.enabled ?? false,
+     frequency: current?.frequency ?? 'off',
+    lastRunAt: current?.lastRunAt ?? null,
+    lastStatus: current?.lastStatus ?? null,
+    lastMessage: current?.lastMessage ?? null,
+    hubspotEnabled: current?.hubspotEnabled ?? false,
+     hubspotFrequency: current?.hubspotFrequency ?? 'off',
+    hubspotLastRunAt: current?.hubspotLastRunAt ?? null,
+    hubspotLastStatus: current?.hubspotLastStatus ?? null,
+    hubspotLastMessage: current?.hubspotLastMessage ?? null,
+    ...patch,
+  }));
+  const saveSchedule = async () => { setScheduleBusy(true); setScheduleMsg(null); try { await setIntegrationSchedule(schedule?.enabled ?? false, schedule?.frequency ?? 'off', schedule?.hubspotEnabled ?? false, schedule?.hubspotFrequency ?? 'off'); loadSchedule(); setScheduleMsg('Agendamento salvo.'); } catch (error) { setScheduleMsg(error instanceof Error ? error.message : 'Falha ao salvar o agendamento.'); } finally { setScheduleBusy(false); } };
   const runNow = async () => { setScheduleBusy(true); setRunningNow(true); setScheduleMsg(null); try { const r = await runIntegrationNow(); setScheduleMsg(`${r.status === 'partial' ? 'Atenção: ' : ''}Sincronização concluída: ${r.omieTitles.toLocaleString('pt-BR')} títulos do OMIE e ${r.updated.toLocaleString('pt-BR')}/${r.companies.toLocaleString('pt-BR')} empresas atualizadas no HubSpot.${r.message ? ` ${r.message}` : ''}`); loadSchedule(); } catch (error) { setScheduleMsg(error instanceof Error ? error.message : 'Falha ao sincronizar agora.'); } finally { setRunningNow(false); setScheduleBusy(false); } };
-  const runHubspotNow = async () => { setScheduleBusy(true); setHubspotRunningNow(true); setScheduleMsg(null); try { const result = await triggerHubspotSync(undefined, { phased: false }); setScheduleMsg(`Sincronização HubSpot concluída: ${result.companies.toLocaleString('pt-BR')} empresas, ${result.deals.toLocaleString('pt-BR')} deals, ${result.tickets.toLocaleString('pt-BR')} tickets, ${result.owners.toLocaleString('pt-BR')} responsáveis e ${result.stages.toLocaleString('pt-BR')} estágios.`); loadSchedule(); } catch (error) { setScheduleMsg(error instanceof Error ? error.message : 'Falha ao sincronizar o HubSpot.'); } finally { setHubspotRunningNow(false); setScheduleBusy(false); } };
+  const runHubspotNow = async () => { setScheduleBusy(true); setHubspotRunningNow(true); setScheduleMsg(null); try { const result = await triggerHubspotSync(undefined, { phased: false }); setScheduleMsg(`Sincronização HubSpot iniciada: o orquestrador consultará as fontes configuradas e atualizará o Dashboard ao concluir. Execução: ${result.runId ?? 'indisponível'}.`); loadSchedule(); } catch (error) { setScheduleMsg(error instanceof Error ? error.message : 'Falha ao iniciar a sincronização do HubSpot.'); } finally { setHubspotRunningNow(false); setScheduleBusy(false); } };
+  const runCsSupport = async () => {
+    if (!canManageIntegration || csControlBusy) return;
+    const initial = latestCsRun?.status !== 'success';
+    const confirmation = initial
+      ? 'Executar uma única carga inicial de CS / Suporte do HubSpot? A ação consulta apenas tickets e não aciona Comercial ou OMIE.'
+      : 'Sincronizar CS / Suporte incrementalmente? A ação consulta apenas tickets e não aciona Comercial ou OMIE.';
+    if (!window.confirm(confirmation)) return;
+    setCsControlBusy(true); setCsControlMsg(null);
+    try {
+      const result = await triggerCsSupportSync(latestCsRun);
+      setCsControlMsg(result.status === 'queued'
+        ? `Carga de CS enfileirada (${result.mode}). O progresso será atualizado automaticamente. Correlação: ${result.correlationId ?? 'indisponível'}.`
+        : `${result.status === 'partial' ? 'Execução parcial' : 'Execução concluída'} (${result.mode}): ${result.tickets.toLocaleString('pt-BR')} tickets, ${result.owners.toLocaleString('pt-BR')} responsáveis e ${result.stages.toLocaleString('pt-BR')} estágios. Correlação: ${result.correlationId ?? 'indisponível'}.`);
+      loadLatestCsRun();
+    } catch (error) {
+      setCsControlMsg(error instanceof Error ? error.message : 'Falha ao executar CS / Suporte.');
+    } finally { setCsControlBusy(false); }
+  };
   const loadCsOps = () => { void listCsOpsImportRuns().then(setCsOpsRuns).catch(() => setCsOpsRuns([])); };
   const importCsOps = async () => {
     if (!canManageIntegration) { setCsOpsMsg('Somente administradores da plataforma podem importar CS Ops.'); return; }
@@ -65,7 +82,17 @@ export function AnalyticsConfigPage() {
     setCsOpsBusy(true); setCsOpsMsg(null);
     try { const result = await runCsOpsMigration(run.id, mode); const counts = result.counts; if (result.preflight) setCsOpsPreflight({ ...result.preflight, sourceImportRunId: result.sourceImportRunId }); setCsOpsMsg(`${mode === 'dry_run' ? 'Dry-run' : 'Migração'} concluído: ${Number(counts.total_rows ?? 0).toLocaleString('pt-BR')} linhas, ${Number(counts.update_rows ?? 0).toLocaleString('pt-BR')} atualizações, ${Number(counts.create_rows ?? 0).toLocaleString('pt-BR')} criações, ${Number(counts.ambiguous_rows ?? 0).toLocaleString('pt-BR')} ambiguidades. ${result.message}`); loadCsOps(); } catch (error) { setCsOpsMsg(error instanceof Error ? error.message : 'Falha ao processar a migração CS Ops.'); } finally { setCsOpsBusy(false); }
   };
-  useEffect(() => { load(); loadSchedule(); loadCsOps(); }, []);
+  useEffect(() => { load(); loadSchedule(); loadCsOps(); loadLatestCsRun(); }, []);
+  useEffect(() => {
+    if (!latestCsRun || !['queued', 'running', 'partial'].includes(latestCsRun.status)) return;
+    const timer = window.setInterval(() => {
+      void Promise.all([loadLatestCsRun(), getCsSyncProgress(latestCsRun.id)]).then(([, progress]) => {
+        if (progress?.error) setCsControlMsg(`Carga de CS: ${progress.error}`);
+        else if (progress) setCsControlMsg(`Carga de CS em andamento: ${progress.pipelinesCompleted}/${progress.pipelinesTotal} pipelines, ${progress.pages} páginas e ${progress.received.toLocaleString('pt-BR')} tickets recebidos.`);
+      });
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [latestCsRun?.id, latestCsRun?.status]);
   const save = async () => {
     if (!canManageIntegration) { setState((current) => ({ ...current, error: 'Somente administradores da plataforma podem alterar as fontes.' })); return; }
     if (!draft.pipelineId.trim() || !/^\d+$/.test(draft.pipelineId.trim())) { setState((current) => ({ ...current, error: 'Informe um ID numérico de pipeline.' })); return; }
@@ -76,7 +103,23 @@ export function AnalyticsConfigPage() {
   if (state.loading && rows.length === 0) return <MinimalState loading title="Carregando configuração" description="O Gênio está consultando os pipelines ativos do Dashboard Gerencial." />;
   if (state.error && rows.length === 0) return <MinimalState tone="critical" title="Não foi possível carregar" description={state.error} />;
   return <>
-    <div className="space-y-5">
+    <div className="gso-hd-domain-surface space-y-5">
+    <nav aria-label="Painéis de Dashboard e Analytics" className="flex flex-wrap items-center gap-2 rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-3 py-2 text-xs">
+      <span className="font-semibold text-[color:var(--minimal-text)]">Dashboard e Analytics</span>
+      {[['overview', 'Visão geral'], ['hubspot', 'HubSpot'], ['omie', 'OMIE'], ['schedules', 'Agendamentos'], ['pipelines', 'Pipelines'], ['history', 'Histórico'], ['diagnostics', 'Diagnóstico']].map(([panel, label]) => <Link key={panel} to={`/admin/settings?section=analytics&panel=${panel}`} className="rounded-md px-2 py-1 text-[color:var(--minimal-action)] hover:bg-[color:var(--minimal-surface)] hover:underline">{label}</Link>)}
+    </nav>
+    <HubspotCsDiagnosticCard enabled={canManageIntegration} />
+    {canManageIntegration ? <ChartCard title="Controle de CS / Suporte" description="Executa exclusivamente a leitura de tickets do HubSpot usando a sessão autenticada. Não aciona Comercial, OMIE ou alterações no HubSpot.">
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" disabled={csControlBusy} onClick={() => void runCsSupport()} className="h-9 rounded-md bg-[color:var(--minimal-action)] px-3 text-sm font-medium text-[color:var(--minimal-action-ink)] disabled:cursor-not-allowed disabled:opacity-60">
+          {csControlBusy ? 'Consultando CS / Suporte…' : latestCsRun?.status === 'success' ? 'Sincronizar CS / Suporte' : 'Executar carga inicial de CS / Suporte'}
+        </button>
+        <span className="text-xs text-[color:var(--minimal-text-tertiary)]">
+          {latestCsRun ? `Última execução: ${latestCsRun.status} · ${new Date(latestCsRun.finishedAt ?? latestCsRun.startedAt).toLocaleString('pt-BR')}${latestCsRun.pipelinesTotal > 0 ? ` · ${latestCsRun.pipelinesCompleted}/${latestCsRun.pipelinesTotal} pipelines` : ''}` : 'Nenhuma execução CS registrada.'}
+        </span>
+      </div>
+      {csControlMsg ? <p role="status" className="mt-3 text-xs text-[color:var(--minimal-text-secondary)]">{csControlMsg}</p> : null}
+    </ChartCard> : null}
     <ChartCard title="Sincronização automática do HubSpot" description="Atualiza todas as áreas conectadas: empresas, Comercial, CS / Suporte, responsáveis e estágios dos pipelines ativos.">
       {canManageIntegration ? <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1.5 text-xs font-medium text-[color:var(--minimal-text-secondary)]">Frequência
@@ -86,7 +129,7 @@ export function AnalyticsConfigPage() {
             <option value="daily">Diária</option>
           </select>
         </label>
-        <label className="flex h-9 items-center gap-2 rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-2.5 text-xs font-medium text-[color:var(--minimal-text-secondary)]"><input type="checkbox" checked={schedule?.hubspotFrequency !== 'off' && (schedule?.hubspotEnabled ?? false)} disabled={schedule?.hubspotFrequency === 'off'} onChange={(event) => patchSchedule({ hubspotEnabled: event.target.checked })} className="accent-[color:var(--minimal-text)]" /> Ativar atualizações</label>
+        <label className="flex h-9 items-center gap-2 rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-2.5 text-xs font-medium text-[color:var(--minimal-text-secondary)]"><input type="checkbox" checked={schedule?.hubspotEnabled ?? false} onChange={(event) => patchSchedule({ hubspotEnabled: event.target.checked })} className="accent-[color:var(--minimal-text)]" /> Ativa</label>
         <button type="button" disabled={scheduleBusy} onClick={() => void saveSchedule()} className="h-9 rounded-md bg-[color:var(--minimal-text)] px-3 text-sm font-medium text-[color:var(--minimal-surface)] disabled:opacity-60">Salvar</button>
         <button type="button" disabled={scheduleBusy} onClick={() => void runHubspotNow()} className="h-9 rounded-md border border-[color:var(--minimal-action)] px-3 text-sm font-medium text-[color:var(--minimal-action)] disabled:opacity-60">{hubspotRunningNow ? 'Processando...' : 'Rodar agora'}</button>
       </div> : <p className="rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-3 py-2 text-xs text-[color:var(--minimal-text-secondary)]">A configuração da sincronização está disponível somente para administradores da plataforma.</p>}
@@ -102,7 +145,7 @@ export function AnalyticsConfigPage() {
             <option value="daily">Diária</option>
           </select>
         </label>
-        <label className="flex h-9 items-center gap-2 rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-2.5 text-xs font-medium text-[color:var(--minimal-text-secondary)]"><input type="checkbox" checked={schedule?.frequency !== 'off' && (schedule?.enabled ?? false)} disabled={schedule?.frequency === 'off'} onChange={(event) => patchSchedule({ enabled: event.target.checked })} className="accent-[color:var(--minimal-text)]" /> Ativar atualizações</label>
+        <label className="flex h-9 items-center gap-2 rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-2.5 text-xs font-medium text-[color:var(--minimal-text-secondary)]"><input type="checkbox" checked={schedule?.enabled ?? false} onChange={(event) => patchSchedule({ enabled: event.target.checked })} className="accent-[color:var(--minimal-text)]" /> Ativa</label>
         <button type="button" disabled={scheduleBusy} onClick={() => void saveSchedule()} className="h-9 rounded-md bg-[color:var(--minimal-text)] px-3 text-sm font-medium text-[color:var(--minimal-surface)] disabled:opacity-60">Salvar</button>
         <button type="button" disabled={scheduleBusy} onClick={() => void runNow()} className="h-9 rounded-md border border-[color:var(--minimal-action)] px-3 text-sm font-medium text-[color:var(--minimal-action)] disabled:opacity-60">{scheduleBusy ? 'Processando...' : 'Rodar agora'}</button>
       </div> : <p className="rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-3 py-2 text-xs text-[color:var(--minimal-text-secondary)]">A configuração da integração e a execução manual estão disponíveis somente para administradores da plataforma.</p>}
@@ -111,7 +154,7 @@ export function AnalyticsConfigPage() {
       {scheduleMsg ? <p className="mt-2 text-xs text-[color:var(--minimal-text-secondary)]">{scheduleMsg}</p> : null}
     </ChartCard>
     <ChartCard title="Fontes de dados do Dashboard" description="Selecione quais pipelines do HubSpot compõem cada área e dê um alias interno legível. O alias aparece no dashboard e não altera o nome nem os tickets no HubSpot.">
-      {canManageIntegration ? <div className="mb-4 grid gap-3 rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1.6fr)_auto_auto] md:items-end">
+      {canManageIntegration ? <div className="mb-4 grid gap-3 rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] p-3 md:grid-cols-[1fr_1fr_1.2fr_1.6fr_auto_auto] md:items-end">
         <label className="flex flex-col gap-1.5 text-xs font-medium text-[color:var(--minimal-text-secondary)]">Área<select value={draft.domainKey} onChange={(event) => setDraft((current) => ({ ...current, domainKey: event.target.value as Draft['domainKey'], objectType: event.target.value === 'cs' ? 'ticket' : 'deal' }))} className={CONTROL}><option value="cs">CS / Suporte</option><option value="commercial">Comercial</option></select></label>
         <label className="flex flex-col gap-1.5 text-xs font-medium text-[color:var(--minimal-text-secondary)]">Tipo<select value={draft.objectType} onChange={(event) => setDraft((current) => ({ ...current, objectType: event.target.value as Draft['objectType'] }))} className={CONTROL}><option value="ticket">Ticket</option><option value="deal">Deal</option></select></label>
         <label className="flex flex-col gap-1.5 text-xs font-medium text-[color:var(--minimal-text-secondary)]">ID do pipeline<input inputMode="numeric" value={draft.pipelineId} onChange={(event) => setDraft((current) => ({ ...current, pipelineId: event.target.value.replace(/\D/g, '') }))} placeholder="Ex.: 5034314" className={CONTROL} /></label>

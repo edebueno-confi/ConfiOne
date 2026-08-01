@@ -50,6 +50,7 @@ temp/
 .vercel/
 .supabase/
 supabase/.temp/
+.superdesign/
 
 # Logs
 *.log

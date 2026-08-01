@@ -49,10 +49,7 @@ export async function fetchAdminActorContext() {
     .from('vw_admin_auth_context')
     .select('*')
     .maybeSingle(),
-    client
-      .from('vw_internal_actor_workspace_context')
-      .select('screen_key')
-      .order('sort_order', { ascending: true }),
+      client.rpc('rpc_internal_actor_workspace_context'),
   ]);
 
   if (error) {
@@ -91,7 +88,8 @@ export async function fetchAdminActorContext() {
   const isDashboardViewer = typedRoles.includes('dashboard_viewer');
   const screenKeys = Array.from(
     new Set(
-      (workspaceData ?? [])
+      [...(workspaceData ?? [])]
+        .sort((left, right) => Number(left.sort_order ?? 0) - Number(right.sort_order ?? 0))
         .map((row) => row.screen_key as InternalScreenKey)
         .filter(Boolean),
     ),
