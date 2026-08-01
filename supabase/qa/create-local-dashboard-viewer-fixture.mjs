@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { resolveSupabaseCliCommand } from '../../scripts/lib/supabase-cli-command.mjs';
+import { normalizeQueryResult } from '../../scripts/local-qa/sql.mjs';
 
 const email = 'qa.local.dashboard-viewer@genius.local';
 const password = process.env.DASHBOARD_VIEWER_QA_PASSWORD ?? `Local-QA-${randomBytes(24).toString('base64url')}`;
@@ -43,7 +44,13 @@ function query(sql) {
   const tempName = `.tmp-dashboard-viewer-${Date.now()}.sql`;
   writeFileSync(tempName, `${sql.trim()}\n`, 'utf8');
   try {
-    return JSON.parse(run(['db', 'query', '--local', '--file', tempName, '--output', 'json']));
+    // Delegates shape normalization to the shared helper instead of parsing
+    // the CLI payload locally, keeping a single source of truth for the
+    // `{ rows: [...] }` contract this fixture already relies on.
+    return normalizeQueryResult(
+      run(['db', 'query', '--local', '--file', tempName, '--output', 'json']),
+      { source: 'supabase db query --local (dashboard-viewer fixture)' },
+    );
   } finally {
     rmSync(tempName, { force: true });
   }

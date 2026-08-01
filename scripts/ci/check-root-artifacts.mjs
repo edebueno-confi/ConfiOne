@@ -30,6 +30,7 @@ export const DEFAULT_ALLOWED_ROOT_DIRECTORIES = new Set([
   '.github',
   '.playwright-cli',
   '.skills',
+  '.superdesign',
   '.tmp',
   'apps',
   'docs',
