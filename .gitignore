@@ -30,8 +30,17 @@ test-results/
 playwright-report/
 .playwright-mcp/
 .playwright-cli/
+.superdesign/tmp/
 .nyc_output/
-output/playwright/
+
+# Pacotes de evidência e artefatos de agente.
+#
+# `output/` acumula capturas, zips e logs de auditoria gerados a cada ciclo. São
+# insumos de investigação, não fonte da verdade: o que importa é destilado nos
+# relatórios em docs/reports/. Versioná-los inflaria o repositório sem ganho.
+output/
+.superdesign/
+.agents/
 
 # Local tooling
 .tmp/
