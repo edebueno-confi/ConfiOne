@@ -6,10 +6,10 @@ const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
   fresh: 'Atualizado',
   stale: 'Pode estar desatualizado',
   partial: 'Dados parciais',
-  empty: 'Nenhum registro no recorte',
+  empty: 'Sem dados no período',
   not_configured: 'Fonte não configurada',
   syncing: 'Sincronizando',
-  unavailable: 'Fonte indisponível',
+  unavailable: 'Dados indisponíveis',
   error: 'Erro na fonte',
 };
 

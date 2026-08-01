@@ -42,7 +42,7 @@ export function buildExecutiveExceptions(snapshot: CeoSnapshot): ExecutiveExcept
   const exceptions: ExecutiveException[] = [];
   const state = snapshot.state;
   if (state && state.status !== 'fresh') {
-    const label = state.status === 'stale' ? 'Fonte com atualização atrasada' : state.status === 'partial' ? 'Fonte com cobertura parcial' : state.status === 'syncing' ? 'Fonte em atualização' : state.status === 'empty' ? 'Nenhum registro no recorte' : state.status === 'not_configured' ? 'Fonte ainda não configurada' : 'Fonte indisponível para leitura';
+    const label = state.status === 'stale' ? 'Atualização atrasada' : state.status === 'partial' ? 'Dados incompletos' : state.status === 'syncing' ? 'Atualização em andamento' : state.status === 'empty' ? 'Sem dados no período' : state.status === 'not_configured' ? 'Integração não configurada' : 'Dados indisponíveis';
     exceptions.push({ key: `source-${state.status}`, domain: 'Dados e integrações', title: label, detail: state.reason || 'A leitura executiva precisa ser interpretada com cautela.', action: 'Verificar fontes', href: '/admin/analytics/config', severity: STATUS_SEVERITY[state.status] });
   }
   if (snapshot.support.highPriorityOpen > 0) {

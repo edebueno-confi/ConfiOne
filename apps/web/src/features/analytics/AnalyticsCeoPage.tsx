@@ -5,19 +5,19 @@ import { getCeoHistory, getCeoSnapshot } from './analytics-api';
 import type { AnalyticsFilters, AnalyticsPageProps, CeoHistory, CeoSnapshot } from './analytics-model';
 import { DEFAULT_ANALYTICS_FILTERS } from './analytics-model';
 import { AnalyticsFilters as Filters } from './AnalyticsFilters';
-import { AnalyticsLoadingState, AnalyticsRetryAction, AnalyticsStateBadge, KpiCard, formatCountLabel } from './analytics-ui';
+import { AnalyticsLoadingState, AnalyticsRetryAction, KpiCard, formatCountLabel } from './analytics-ui';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import { buildExecutiveExceptions, rankExecutivePipelines } from './analytics-executive';
 
 const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
   fresh: 'Dados atualizados',
-  stale: 'Dados podem estar atrasados',
-  partial: 'Cobertura parcial',
-  empty: 'Sem registros no recorte',
-  not_configured: 'Fonte não configurada',
-  syncing: 'Sincronização em andamento',
-  unavailable: 'Fonte indisponível',
-  error: 'Falha na fonte',
+  stale: 'Atualização atrasada',
+  partial: 'Dados incompletos',
+  empty: 'Sem dados no período',
+  not_configured: 'Integração não configurada',
+  syncing: 'Atualização em andamento',
+  unavailable: 'Dados indisponíveis',
+  error: 'Não foi possível atualizar',
 };
 
 type MetricDelta = { label: string; tone: 'positive' | 'negative' | 'neutral' } | null;
@@ -27,7 +27,6 @@ export function AnalyticsCeoPage({ sharedPeriod, onSharedPeriodChange, onRetry, 
   const [filters, setFilters] = useState<AnalyticsFilters>({ ...DEFAULT_ANALYTICS_FILTERS, ...period });
   const [result, setResult] = useState<{ loading: boolean; data?: CeoSnapshot; history?: CeoHistory; error?: boolean }>({ loading: true });
   const [refreshing, setRefreshing] = useState(false);
-  const [domainScope, setDomainScope] = useState<'all' | 'commercial' | 'cs' | 'finance'>('all');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   useEffect(() => setFilters((current) => ({ ...current, ...period })), [period.from, period.to]);
@@ -74,49 +73,45 @@ export function AnalyticsCeoPage({ sharedPeriod, onSharedPeriodChange, onRetry, 
   return <div className="space-y-5" data-testid="executive-dashboard">
     <section className="flex flex-col gap-2 border-b border-[color:var(--minimal-border)] pb-3 lg:flex-row lg:items-end lg:justify-between" aria-labelledby="executive-heading">
       <div>
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 id="executive-heading" className="text-base font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">Visão Executiva</h2>
-          {state ? <AnalyticsStateBadge state={state} /> : <span className="text-xs text-[color:var(--minimal-text-tertiary)]">Sem sincronização registrada</span>}
-        </div>
-        <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">Desempenho no período, posição atual e exceções que exigem atenção.</p>
+        <h2 id="executive-heading" className="text-base font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">Visão geral</h2>
+        <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">Resultados do período, posição atual e alertas para acompanhar.</p>
       </div>
       <div className="text-xs text-[color:var(--minimal-text-tertiary)]" role="status">
-        {state ? formatStatusLabel(state.status, state.lastSuccessfulSyncAt) : 'Fonte sem atualização registrada'}
+        {state ? formatStatusLabel(state.status, state.lastSuccessfulSyncAt) : 'Atualização ainda não registrada'}
         {state?.lastSuccessfulSyncAt ? ` · ${formatRelativeSync(state.lastSuccessfulSyncAt)}` : ''}
       </div>
     </section>
 
-    <div className="flex flex-wrap items-center gap-2" aria-label="Contexto e filtros da análise">
-      <span className="text-xs font-semibold text-[color:var(--minimal-text)]">Contexto:</span>
-      <span className="rounded-full bg-[color:var(--minimal-surface-muted)] px-2.5 py-1 text-xs text-[color:var(--minimal-text-secondary)]">{formatPeriod(filters)}</span>
-      <span className="rounded-full bg-[color:var(--minimal-surface-muted)] px-2.5 py-1 text-xs text-[color:var(--minimal-text-secondary)]">{domainScope === 'all' ? 'Todos os domínios' : domainScope === 'commercial' ? 'Comercial' : domainScope === 'cs' ? 'CS / Suporte' : 'Financeiro'}</span>
-      <button type="button" className="ml-auto inline-flex h-9 items-center rounded-lg border border-[color:var(--minimal-border-strong)] px-3 text-sm font-medium text-[color:var(--minimal-text)] sm:hidden" aria-expanded={mobileFiltersOpen} aria-controls="executive-filters-mobile" onClick={() => setMobileFiltersOpen((open) => !open)}>Filtros</button>
+    <div className="flex sm:hidden" aria-label="Filtros da análise">
+      <button type="button" className="ml-auto inline-flex h-9 items-center gap-2 rounded-lg border border-[color:var(--minimal-border-strong)] px-3 text-sm font-medium text-[color:var(--minimal-text)]" aria-expanded={mobileFiltersOpen} aria-controls="executive-filters-mobile" onClick={() => setMobileFiltersOpen((open) => !open)}>
+        Filtros
+        <span className="text-xs font-normal text-[color:var(--minimal-text-secondary)]">{formatPeriod(filters)}</span>
+      </button>
     </div>
 
     <div id="executive-filters-mobile" className={`${mobileFiltersOpen ? 'block' : 'hidden'} sm:block`}>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-        <div className="min-w-44"><label className="flex flex-col gap-1.5 text-xs font-medium text-[color:var(--minimal-text-secondary)]" htmlFor="executive-domain">Domínio em foco<select id="executive-domain" value={domainScope} onChange={(event) => setDomainScope(event.target.value as typeof domainScope)} className="h-9 rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-2.5 text-sm font-normal text-[color:var(--minimal-text)]"><option value="all">Todos os domínios</option><option value="commercial">Comercial</option><option value="cs">CS / Suporte</option><option value="finance">Financeiro</option></select></label></div>
         <div className="min-w-0 flex-1"><Filters value={filters} onApply={applyFilters} stageOptions={[]} /></div>
       </div>
     </div>
 
     {refreshing ? <p className="text-xs text-[color:var(--minimal-text-secondary)]" role="status">Atualizando o período selecionado...</p> : null}
-    {state?.status === 'empty' ? <p className="rounded-lg border border-dashed border-[color:var(--minimal-border-strong)] px-3 py-2 text-sm text-[color:var(--minimal-text-secondary)]" role="status">Não há registros no período selecionado. Os indicadores que dependem desse recorte ficam indisponíveis; a posição atual permanece separada.</p> : null}
+    {state?.status === 'empty' ? <p className="rounded-lg border border-dashed border-[color:var(--minimal-border-strong)] px-3 py-2 text-sm text-[color:var(--minimal-text-secondary)]" role="status">Nenhum dado encontrado neste período. A posição atual continua disponível.</p> : null}
 
-    <section aria-labelledby="performance-heading"><SectionHeading id="performance-heading" title="Desempenho no período" description="Indicadores afetados pelo recorte selecionado." /><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <KpiCard label="Receita ganha" value={unavailable ? 'Indisponível' : formatCurrency(data.commercial.wonRevenue)} hint={formatCountLabel(data.commercial.wonDeals, 'negócio ganho', 'negócios ganhos')} comparison={comparison.revenue ? comparison.revenue.label : undefined} temporalType="Período selecionado" state={state?.status !== 'fresh' ? state : undefined} />
-      <KpiCard label="Negócios ganhos" value={unavailable ? 'Indisponível' : data.commercial.wonDeals.toLocaleString('pt-BR')} hint={formatCountLabel(data.commercial.lostDeals, 'negócio perdido', 'negócios perdidos')} comparison={comparison.deals ? comparison.deals.label : undefined} temporalType="Período selecionado" state={state?.status !== 'fresh' ? state : undefined} />
-      <KpiCard label="Conversão" value={unavailable || data.commercial.wonDeals + data.commercial.lostDeals === 0 ? 'Indisponível' : formatPercent(data.commercial.conversionRate)} hint="Ganhos sobre ganhos e perdas" comparison={comparison.conversion ? comparison.conversion.label : undefined} temporalType="Período selecionado" state={state?.status !== 'fresh' ? state : undefined} />
-      <KpiCard label="Tickets criados" value={unavailable ? 'Indisponível' : data.support.createdTickets.toLocaleString('pt-BR')} hint={formatCountLabel(data.support.closedTickets, 'ticket encerrado', 'tickets encerrados')} comparison={comparison.tickets ? comparison.tickets.label : undefined} temporalType="Período selecionado" state={state?.status !== 'fresh' ? state : undefined} />
+    <section aria-labelledby="performance-heading"><SectionHeading id="performance-heading" title="Resultados do período" description="Indicadores do recorte selecionado." /><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <KpiCard label="Receita ganha" value={unavailable ? 'Indisponível' : formatCurrency(data.commercial.wonRevenue)} hint={formatCountLabel(data.commercial.wonDeals, 'negócio ganho', 'negócios ganhos')} comparison={comparison.revenue ? comparison.revenue.label : undefined} temporalType="Período selecionado" />
+      <KpiCard label="Negócios ganhos" value={unavailable ? 'Indisponível' : data.commercial.wonDeals.toLocaleString('pt-BR')} hint={formatCountLabel(data.commercial.lostDeals, 'negócio perdido', 'negócios perdidos')} comparison={comparison.deals ? comparison.deals.label : undefined} temporalType="Período selecionado" />
+      <KpiCard label="Conversão" value={unavailable || data.commercial.wonDeals + data.commercial.lostDeals === 0 ? 'Indisponível' : formatPercent(data.commercial.conversionRate)} hint="Ganhos sobre ganhos e perdas" comparison={comparison.conversion ? comparison.conversion.label : undefined} temporalType="Período selecionado" />
+      <KpiCard label="Tickets criados" value={unavailable ? 'Indisponível' : data.support.createdTickets.toLocaleString('pt-BR')} hint={formatCountLabel(data.support.closedTickets, 'ticket encerrado', 'tickets encerrados')} comparison={comparison.tickets ? comparison.tickets.label : undefined} temporalType="Período selecionado" />
     </div></section>
 
-    <section aria-labelledby="current-heading"><SectionHeading id="current-heading" title="Posição atual" description="Posição atual, não afetada pelo período selecionado." /><div className="grid gap-3 md:grid-cols-3">{currentPosition.map((item) => <KpiCard key={item.label} {...item} />)}</div></section>
+    <section aria-labelledby="current-heading"><SectionHeading id="current-heading" title="Posição atual" description="Valores e volumes que estão abertos agora." /><div className="grid gap-3 md:grid-cols-3">{currentPosition.map((item) => <KpiCard key={item.label} {...item} />)}</div></section>
 
-    {exceptions.length > 0 ? <section aria-labelledby="exceptions-heading"><SectionHeading id="exceptions-heading" title="Exceções que exigem atenção" description="Sinais operacionais separados da qualidade e do frescor dos dados." /><div className="grid gap-3 lg:grid-cols-3">{exceptions.map((item) => <ExceptionCard key={item.key} item={item} isDashboardViewer={isDashboardViewer} />)}</div></section> : <section className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-4 py-3" role="status"><p className="text-sm font-medium text-[color:var(--minimal-text)]">Nenhuma exceção determinística no recorte.</p></section>}
+    {exceptions.length > 0 ? <section aria-labelledby="exceptions-heading"><SectionHeading id="exceptions-heading" title="O que pede acompanhamento" description="Alertas operacionais do período." /><div className="grid gap-3 lg:grid-cols-3">{exceptions.map((item) => <ExceptionCard key={item.key} item={item} isDashboardViewer={isDashboardViewer} />)}</div></section> : <section className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-4 py-3" role="status"><p className="text-sm font-medium text-[color:var(--minimal-text)]">Nenhum alerta no período.</p></section>}
 
-    <section aria-labelledby="domains-heading"><SectionHeading id="domains-heading" title="Resumo por domínio" description={isDashboardViewer ? 'Resumo informativo das áreas operacionais.' : 'Cada domínio destaca um sinal complementar para orientar o próximo passo.'} /><div className="grid gap-3 lg:grid-cols-3">{domainCards.filter((card) => domainScope === 'all' || (domainScope === 'commercial' && card.title === 'Comercial') || (domainScope === 'cs' && card.title === 'CS / Suporte') || (domainScope === 'finance' && card.title === 'Financeiro')).map((card) => <div key={card.title} className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4"><h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">{card.title}</h3><p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">{card.description}</p><p className="mt-4 text-xl font-semibold tabular-nums text-[color:var(--minimal-text)]">{card.value}</p><p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">{card.details}</p>{isDashboardViewer ? <span className="mt-4 inline-block text-xs text-[color:var(--minimal-text-tertiary)]">Detalhamento restrito ao perfil</span> : <Link to={card.href} className="mt-4 inline-block text-xs font-semibold text-[color:var(--minimal-action)]">Abrir domínio <span aria-hidden="true">→</span></Link>}</div>)}</div></section>
+    <section aria-labelledby="domains-heading"><SectionHeading id="domains-heading" title="Resumo por área" description={isDashboardViewer ? 'Uma leitura rápida das áreas disponíveis.' : 'Veja o principal sinal de cada área e abra o detalhe quando precisar.'} /><div className="grid gap-3 lg:grid-cols-3">{domainCards.map((card) => <div key={card.title} className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4"><h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">{card.title}</h3><p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">{card.description}</p><p className="mt-4 text-xl font-semibold tabular-nums text-[color:var(--minimal-text)]">{card.value}</p><p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">{card.details}</p>{isDashboardViewer ? <span className="mt-4 inline-block text-xs text-[color:var(--minimal-text-tertiary)]">Acesso somente para consulta</span> : <Link to={card.href} className="mt-4 inline-block text-xs font-semibold text-[color:var(--minimal-action)]">Ver detalhes <span aria-hidden="true">→</span></Link>}</div>)}</div></section>
 
-    <section aria-labelledby="pipelines-heading"><SectionHeading id="pipelines-heading" title="Pipelines de atendimento prioritários" description="Pipelines de tickets com maior volume no período selecionado." />{pipelines.length ? <div className="overflow-hidden rounded-xl border border-[color:var(--minimal-border)]"><ul className="divide-y divide-[color:var(--minimal-border)]">{pipelines.map((pipeline) => <li key={pipeline.id}><Link to={pipeline.href} className="flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-[color:var(--minimal-surface-muted)]"><span className="min-w-0"><span className="block truncate text-sm font-medium text-[color:var(--minimal-text)]">{pipeline.label}</span><span className="text-xs text-[color:var(--minimal-text-secondary)]">{pipeline.domain}</span></span><span className="shrink-0 text-sm font-semibold tabular-nums text-[color:var(--minimal-text)]">{formatCountLabel(pipeline.count, 'ticket', 'tickets')} <span aria-hidden="true">→</span></span></Link></li>)}</ul></div> : <div className="rounded-xl border border-dashed border-[color:var(--minimal-border-strong)] px-4 py-5 text-sm text-[color:var(--minimal-text-secondary)]">Nenhum pipeline de atendimento com atividade no período selecionado.</div>}</section>
+    <section aria-labelledby="pipelines-heading"><SectionHeading id="pipelines-heading" title="Onde a fila está concentrada" description="Pipelines com maior volume no período." />{pipelines.length ? <div className="overflow-hidden rounded-xl border border-[color:var(--minimal-border)]"><ul className="divide-y divide-[color:var(--minimal-border)]">{pipelines.map((pipeline) => <li key={pipeline.id}><Link to={pipeline.href} className="flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-[color:var(--minimal-surface-muted)]"><span className="min-w-0"><span className="block truncate text-sm font-medium text-[color:var(--minimal-text)]">{pipeline.label}</span><span className="text-xs text-[color:var(--minimal-text-secondary)]">{pipeline.domain}</span></span><span className="shrink-0 text-sm font-semibold tabular-nums text-[color:var(--minimal-text)]">{formatCountLabel(pipeline.count, 'ticket', 'tickets')} <span aria-hidden="true">→</span></span></Link></li>)}</ul></div> : <div className="rounded-xl border border-dashed border-[color:var(--minimal-border-strong)] px-4 py-5 text-sm text-[color:var(--minimal-text-secondary)]">Nenhuma fila teve atividade no período.</div>}</section>
 
     {isDashboardViewer ? null : <details className="rounded-xl border border-[color:var(--minimal-border)]"><summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-[color:var(--minimal-text)]">Análises avançadas</summary><div className="border-t border-[color:var(--minimal-border)] px-4 py-3 text-xs text-[color:var(--minimal-text-secondary)]">Aprofundamentos financeiros e históricos permanecem disponíveis nos domínios correspondentes.</div></details>}
   </div>;

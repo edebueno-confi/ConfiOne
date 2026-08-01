@@ -29,20 +29,27 @@ export function AnalyticsConfigPage() {
   const [csOpsMsg, setCsOpsMsg] = useState<string | null>(null);
   const [csOpsPreflight, setCsOpsPreflight] = useState<CsOpsMigrationPreflight & { sourceImportRunId: string } | null>(null);
   const loadSchedule = () => { void getIntegrationSchedule().then(setSchedule).catch(() => setSchedule(null)); };
-  const patchSchedule = (patch: Partial<IntegrationSchedule>) => setSchedule((current) => ({
-    enabled: current?.enabled ?? false,
-     frequency: current?.frequency ?? 'off',
-    lastRunAt: current?.lastRunAt ?? null,
-    lastStatus: current?.lastStatus ?? null,
-    lastMessage: current?.lastMessage ?? null,
-    hubspotEnabled: current?.hubspotEnabled ?? false,
-     hubspotFrequency: current?.hubspotFrequency ?? 'off',
-    hubspotLastRunAt: current?.hubspotLastRunAt ?? null,
-    hubspotLastStatus: current?.hubspotLastStatus ?? null,
-    hubspotLastMessage: current?.hubspotLastMessage ?? null,
-    ...patch,
-  }));
-  const saveSchedule = async () => { setScheduleBusy(true); setScheduleMsg(null); try { await setIntegrationSchedule(schedule?.enabled ?? false, schedule?.frequency ?? 'off', schedule?.hubspotEnabled ?? false, schedule?.hubspotFrequency ?? 'off'); loadSchedule(); setScheduleMsg('Agendamento salvo.'); } catch (error) { setScheduleMsg(error instanceof Error ? error.message : 'Falha ao salvar o agendamento.'); } finally { setScheduleBusy(false); } };
+  const patchSchedule = (patch: Partial<IntegrationSchedule>) => setSchedule((current) => {
+    const next = {
+      enabled: current?.enabled ?? false,
+      frequency: current?.frequency ?? 'off',
+      lastRunAt: current?.lastRunAt ?? null,
+      lastStatus: current?.lastStatus ?? null,
+      lastMessage: current?.lastMessage ?? null,
+      hubspotEnabled: current?.hubspotEnabled ?? false,
+      hubspotFrequency: current?.hubspotFrequency ?? 'off',
+      hubspotLastRunAt: current?.hubspotLastRunAt ?? null,
+      hubspotLastStatus: current?.hubspotLastStatus ?? null,
+      hubspotLastMessage: current?.hubspotLastMessage ?? null,
+      ...patch,
+    };
+    return {
+      ...next,
+      enabled: next.frequency === 'off' ? false : next.enabled,
+      hubspotEnabled: next.hubspotFrequency === 'off' ? false : next.hubspotEnabled,
+    };
+  });
+  const saveSchedule = async () => { setScheduleBusy(true); setScheduleMsg(null); try { const enabled = schedule?.frequency !== 'off' && schedule?.enabled === true; const hubspotEnabled = schedule?.hubspotFrequency !== 'off' && schedule?.hubspotEnabled === true; await setIntegrationSchedule(enabled, schedule?.frequency ?? 'off', hubspotEnabled, schedule?.hubspotFrequency ?? 'off'); loadSchedule(); setScheduleMsg('Agendamento salvo.'); } catch (error) { setScheduleMsg(error instanceof Error ? error.message : 'Falha ao salvar o agendamento.'); } finally { setScheduleBusy(false); } };
   const runNow = async () => { setScheduleBusy(true); setRunningNow(true); setScheduleMsg(null); try { const r = await runIntegrationNow(); setScheduleMsg(`${r.status === 'partial' ? 'Atenção: ' : ''}Sincronização concluída: ${r.omieTitles.toLocaleString('pt-BR')} títulos do OMIE e ${r.updated.toLocaleString('pt-BR')}/${r.companies.toLocaleString('pt-BR')} empresas atualizadas no HubSpot.${r.message ? ` ${r.message}` : ''}`); loadSchedule(); } catch (error) { setScheduleMsg(error instanceof Error ? error.message : 'Falha ao sincronizar agora.'); } finally { setRunningNow(false); setScheduleBusy(false); } };
   const runHubspotNow = async () => { setScheduleBusy(true); setHubspotRunningNow(true); setScheduleMsg(null); try { const result = await triggerHubspotSync(undefined, { phased: false }); setScheduleMsg(`Sincronização HubSpot concluída: ${result.companies.toLocaleString('pt-BR')} empresas, ${result.deals.toLocaleString('pt-BR')} deals, ${result.tickets.toLocaleString('pt-BR')} tickets, ${result.owners.toLocaleString('pt-BR')} responsáveis e ${result.stages.toLocaleString('pt-BR')} estágios.`); loadSchedule(); } catch (error) { setScheduleMsg(error instanceof Error ? error.message : 'Falha ao sincronizar o HubSpot.'); } finally { setHubspotRunningNow(false); setScheduleBusy(false); } };
   const loadCsOps = () => { void listCsOpsImportRuns().then(setCsOpsRuns).catch(() => setCsOpsRuns([])); };
@@ -79,7 +86,7 @@ export function AnalyticsConfigPage() {
             <option value="daily">Diária</option>
           </select>
         </label>
-        <label className="flex h-9 items-center gap-2 rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-2.5 text-xs font-medium text-[color:var(--minimal-text-secondary)]"><input type="checkbox" checked={schedule?.hubspotEnabled ?? false} onChange={(event) => patchSchedule({ hubspotEnabled: event.target.checked })} className="accent-[color:var(--minimal-text)]" /> Ativa</label>
+        <label className="flex h-9 items-center gap-2 rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-2.5 text-xs font-medium text-[color:var(--minimal-text-secondary)]"><input type="checkbox" checked={schedule?.hubspotFrequency !== 'off' && (schedule?.hubspotEnabled ?? false)} disabled={schedule?.hubspotFrequency === 'off'} onChange={(event) => patchSchedule({ hubspotEnabled: event.target.checked })} className="accent-[color:var(--minimal-text)]" /> Ativar atualizações</label>
         <button type="button" disabled={scheduleBusy} onClick={() => void saveSchedule()} className="h-9 rounded-md bg-[color:var(--minimal-text)] px-3 text-sm font-medium text-[color:var(--minimal-surface)] disabled:opacity-60">Salvar</button>
         <button type="button" disabled={scheduleBusy} onClick={() => void runHubspotNow()} className="h-9 rounded-md border border-[color:var(--minimal-action)] px-3 text-sm font-medium text-[color:var(--minimal-action)] disabled:opacity-60">{hubspotRunningNow ? 'Processando...' : 'Rodar agora'}</button>
       </div> : <p className="rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-3 py-2 text-xs text-[color:var(--minimal-text-secondary)]">A configuração da sincronização está disponível somente para administradores da plataforma.</p>}
@@ -95,7 +102,7 @@ export function AnalyticsConfigPage() {
             <option value="daily">Diária</option>
           </select>
         </label>
-        <label className="flex h-9 items-center gap-2 rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-2.5 text-xs font-medium text-[color:var(--minimal-text-secondary)]"><input type="checkbox" checked={schedule?.enabled ?? false} onChange={(event) => patchSchedule({ enabled: event.target.checked })} className="accent-[color:var(--minimal-text)]" /> Ativa</label>
+        <label className="flex h-9 items-center gap-2 rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-2.5 text-xs font-medium text-[color:var(--minimal-text-secondary)]"><input type="checkbox" checked={schedule?.frequency !== 'off' && (schedule?.enabled ?? false)} disabled={schedule?.frequency === 'off'} onChange={(event) => patchSchedule({ enabled: event.target.checked })} className="accent-[color:var(--minimal-text)]" /> Ativar atualizações</label>
         <button type="button" disabled={scheduleBusy} onClick={() => void saveSchedule()} className="h-9 rounded-md bg-[color:var(--minimal-text)] px-3 text-sm font-medium text-[color:var(--minimal-surface)] disabled:opacity-60">Salvar</button>
         <button type="button" disabled={scheduleBusy} onClick={() => void runNow()} className="h-9 rounded-md border border-[color:var(--minimal-action)] px-3 text-sm font-medium text-[color:var(--minimal-action)] disabled:opacity-60">{scheduleBusy ? 'Processando...' : 'Rodar agora'}</button>
       </div> : <p className="rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-3 py-2 text-xs text-[color:var(--minimal-text-secondary)]">A configuração da integração e a execução manual estão disponíveis somente para administradores da plataforma.</p>}
@@ -104,7 +111,7 @@ export function AnalyticsConfigPage() {
       {scheduleMsg ? <p className="mt-2 text-xs text-[color:var(--minimal-text-secondary)]">{scheduleMsg}</p> : null}
     </ChartCard>
     <ChartCard title="Fontes de dados do Dashboard" description="Selecione quais pipelines do HubSpot compõem cada área e dê um alias interno legível. O alias aparece no dashboard e não altera o nome nem os tickets no HubSpot.">
-      {canManageIntegration ? <div className="mb-4 grid gap-3 rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] p-3 md:grid-cols-[1fr_1fr_1.2fr_1.6fr_auto_auto] md:items-end">
+      {canManageIntegration ? <div className="mb-4 grid gap-3 rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1.6fr)_auto_auto] md:items-end">
         <label className="flex flex-col gap-1.5 text-xs font-medium text-[color:var(--minimal-text-secondary)]">Área<select value={draft.domainKey} onChange={(event) => setDraft((current) => ({ ...current, domainKey: event.target.value as Draft['domainKey'], objectType: event.target.value === 'cs' ? 'ticket' : 'deal' }))} className={CONTROL}><option value="cs">CS / Suporte</option><option value="commercial">Comercial</option></select></label>
         <label className="flex flex-col gap-1.5 text-xs font-medium text-[color:var(--minimal-text-secondary)]">Tipo<select value={draft.objectType} onChange={(event) => setDraft((current) => ({ ...current, objectType: event.target.value as Draft['objectType'] }))} className={CONTROL}><option value="ticket">Ticket</option><option value="deal">Deal</option></select></label>
         <label className="flex flex-col gap-1.5 text-xs font-medium text-[color:var(--minimal-text-secondary)]">ID do pipeline<input inputMode="numeric" value={draft.pipelineId} onChange={(event) => setDraft((current) => ({ ...current, pipelineId: event.target.value.replace(/\D/g, '') }))} placeholder="Ex.: 5034314" className={CONTROL} /></label>

@@ -11,7 +11,11 @@ export function formatAnalyticsSyncError({ operation, status, payload }) {
   }
 
   if (status === 409 && ['OMIE_SYNC_IN_PROGRESS', 'OMIE_PROVIDER_BUSY'].includes(code)) {
-    return 'JÃ¡ existe uma sincronizaÃ§Ã£o OMIE em andamento ou o provedor estÃ¡ concluindo uma requisiÃ§Ã£o anterior. Aguarde alguns segundos e tente novamente.';
+    return 'Já existe uma sincronização OMIE em andamento ou o provedor está concluindo uma requisição anterior. Aguarde alguns segundos e tente novamente.';
+  }
+
+  if (status === 424 || code === 'INTEGRATION_CREDENTIALS_MISSING') {
+    return 'Configure as credenciais do OMIE e do HubSpot em Configurações → Integrações antes de sincronizar.';
   }
 
   const detail = typeof payload?.error === 'string' ? payload.error.trim() : '';

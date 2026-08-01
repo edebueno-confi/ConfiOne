@@ -2,6 +2,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import { formatDateTime } from '../../app/format';
 import { getLatestSyncRun, triggerHubspotSync } from './analytics-api';
 import { listEnabledAnalyticsDomains } from './analytics-domains';
+import { isAnalyticsDomainPublishedInRelease } from '../../app/release-surface.mjs';
 import type { SyncRun } from './analytics-model';
 import { useAuthContext } from '../auth/auth-context';
 import type { AnalyticsSharedPeriod } from './analytics-model';
@@ -14,14 +15,14 @@ const DOMAINS = listEnabledAnalyticsDomains();
 
 function SyncStatusLabel({ run, error }: { run: SyncRun | null; error?: string | null }) {
   if (error) {
-    return <span className="text-xs text-[color:var(--minimal-danger-text)]">Status da sincronização indisponível. Tente novamente mais tarde.</span>;
+    return <span className="text-xs text-[color:var(--danger)]">Status da sincronização indisponível. Tente novamente mais tarde.</span>;
   }
   if (!run) {
     return <span className="text-xs text-[color:var(--minimal-text-tertiary)]">Nenhuma sincronização registrada ainda.</span>;
   }
 
   const statusLabel = run.status === 'success' ? 'concluída' : run.status === 'error' ? 'com erro' : 'em andamento';
-  const toneClass = run.status === 'error' ? 'text-[color:var(--minimal-danger-text)]' : 'text-[color:var(--minimal-text-tertiary)]';
+  const toneClass = run.status === 'error' ? 'text-[color:var(--danger)]' : 'text-[color:var(--text-3)]';
 
   return (
     <span className={`text-xs ${toneClass}`}>
@@ -35,7 +36,12 @@ export function AnalyticsShell() {
   const { gate } = useAuthContext();
   const isPlatformAdmin = gate.actor?.is_platform_admin === true;
   const isDashboardViewer = !isPlatformAdmin && gate.actor?.roles.includes('dashboard_viewer') === true;
-  const visibleDomains = isDashboardViewer ? DOMAINS.filter((domain) => domain.key === 'ceo') : DOMAINS;
+  // Ordem de validação: superfície do release primeiro, permissão depois.
+  // `logs` e `config` saíram do Dashboard e passaram a viver em Configurações.
+  const releasedDomains = DOMAINS.filter((domain) => isAnalyticsDomainPublishedInRelease(domain.key));
+  const visibleDomains = isDashboardViewer
+    ? releasedDomains.filter((domain) => domain.key === 'ceo')
+    : releasedDomains;
   const [activeKey, setActiveKey] = useState(visibleDomains[0]?.key ?? 'commercial');
   const [reloadKey, setReloadKey] = useState(0);
   const [latestRun, setLatestRun] = useState<SyncRun | null>(null);
@@ -89,24 +95,26 @@ export function AnalyticsShell() {
       <header className="gso-screen-header gso-workspace-header border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
+            <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--text)]">
               Dashboard Gerencial
             </h1>
-            <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">
+            <p className="mt-1 text-xs text-[color:var(--text-2)]">
               Visão executiva integrada a HubSpot, OMIE e fontes operacionais.
             </p>
             {isDashboardViewer ? <p className="mt-1 text-xs font-medium text-[color:var(--minimal-text-tertiary)]">Visualizador gerencial · acesso ao Dashboard</p> : null}
           </div>
           <div className="flex flex-col items-end gap-1">
             <div className="flex flex-wrap justify-end gap-2">
-              {isPlatformAdmin ? <button type="button" onClick={() => setReportOpen(true)} className="inline-flex items-center rounded-lg border border-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action)] transition hover:bg-[color:var(--minimal-surface-muted)]">
+              {/* Sincronizar chama uma integração externa: fica como ação
+                  secundária, para não competir com a leitura do painel. */}
+              {isPlatformAdmin && activeKey === 'ceo' ? <button type="button" onClick={() => void handleSync()} disabled={syncing} className="inline-flex items-center rounded-lg border border-[color:var(--minimal-border)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-text-secondary)] transition hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)] disabled:cursor-not-allowed disabled:opacity-60">{syncing ? 'Sincronizando...' : 'Sincronizar HubSpot'}</button> : null}
+              {isPlatformAdmin ? <button type="button" onClick={() => setReportOpen(true)} className="inline-flex items-center rounded-lg bg-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action-ink)] transition hover:opacity-90">
                 Exportar relatório
               </button> : null}
-              {isPlatformAdmin && activeKey === 'ceo' ? <button type="button" onClick={() => void handleSync()} disabled={syncing} className="inline-flex items-center rounded-lg bg-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action-ink)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">{syncing ? 'Sincronizando...' : 'Sincronizar HubSpot'}</button> : null}
             </div>
               <SyncStatusLabel run={latestRun} error={syncStatusError} />
             {syncError ? (
-              <span className="text-xs text-[color:var(--minimal-danger-text)]">{syncError}</span>
+              <span role="alert" className="text-xs text-[color:var(--danger)]">{syncError}</span>
             ) : null}
             {syncMessage ? (
               <span role="status" className="max-w-[38rem] text-right text-xs text-[color:var(--minimal-text-tertiary)]">{syncMessage}</span>

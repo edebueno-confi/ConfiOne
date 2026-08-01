@@ -3,6 +3,8 @@ import type { AnalyticsPageProps } from './analytics-model';
 
 const AnalyticsCommercialPage = lazy(() => import('./AnalyticsCommercialPage').then((module) => ({ default: module.AnalyticsCommercialPage })));
 const AnalyticsCsPage = lazy(() => import('./AnalyticsCsPage').then((module) => ({ default: module.AnalyticsCsPage })));
+const AnalyticsCustomerSuccessPage = lazy(() => import('./AnalyticsCustomerSuccessPage').then((module) => ({ default: module.AnalyticsCustomerSuccessPage })));
+const AnalyticsSupportPage = lazy(() => import('./AnalyticsSupportPage').then((module) => ({ default: module.AnalyticsSupportPage })));
 const AnalyticsFinancePage = lazy(() => import('./AnalyticsFinancePage').then((module) => ({ default: module.AnalyticsFinancePage })));
 const AnalyticsCeoPage = lazy(() => import('./AnalyticsCeoPage').then((module) => ({ default: module.AnalyticsCeoPage })));
 const AnalyticsLogsPage = lazy(() => import('./AnalyticsLogsPage').then((module) => ({ default: module.AnalyticsLogsPage })));
@@ -42,10 +44,18 @@ export const ANALYTICS_DOMAINS: AnalyticsDomain[] = [
   },
   {
     key: 'cs',
-    label: 'CS / Suporte',
-    description: 'Tickets de suporte (HubSpot)',
+    label: 'Customer Success',
+    description: 'Carteira, saúde e relacionamento com clientes',
     syncDomain: 'cs',
-    Component: AnalyticsCsPage,
+    Component: AnalyticsCustomerSuccessPage,
+    enabled: true,
+  },
+  {
+    key: 'support',
+    label: 'Suporte',
+    description: 'Tickets, fila e tempo de atendimento (HubSpot)',
+    syncDomain: 'cs',
+    Component: AnalyticsSupportPage,
     enabled: true,
   },
   {

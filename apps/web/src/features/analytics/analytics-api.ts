@@ -508,6 +508,75 @@ export interface HubspotSyncResult {
   companies: number;
 }
 
+/**
+ * Erro de gateway, não de negócio.
+ *
+ * A sincronização HubSpot é executada de forma síncrona e já foi medida em mais
+ * de três minutos por etapa. O gateway encerra a conexão antes disso (502/504),
+ * mas a Edge Function continua rodando e conclui normalmente — o resultado fica
+ * registrado em `hubspot_sync_runs`.
+ *
+ * Tratar essa desconexão como falha produzia um falso negativo: a interface
+ * dizia "a sincronização terminou com erro" sobre uma execução bem-sucedida.
+ * Um status errado é pior que a demora, porque leva o operador a disparar a
+ * sincronização de novo e criar execuções concorrentes.
+ */
+function isGatewayTimeout(status: number) {
+  return status === 502 || status === 503 || status === 504;
+}
+
+const SYNC_POLL_INTERVAL_MS = 5_000;
+const SYNC_POLL_TIMEOUT_MS = 10 * 60 * 1000;
+
+/**
+ * Acompanha uma execução já iniciada no servidor até ela terminar.
+ *
+ * Usa o read model existente (`vw_analytics_dashboard_sync_status`) em vez de
+ * criar um contrato novo. Só é chamado quando a conexão caiu no gateway, ou
+ * seja, quando o cliente perdeu a resposta mas o servidor não perdeu o trabalho.
+ */
+async function awaitRunningHubspotSync(startedAfter: number): Promise<HubspotSyncResult> {
+  const deadline = Date.now() + SYNC_POLL_TIMEOUT_MS;
+
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, SYNC_POLL_INTERVAL_MS));
+
+    let run: SyncRun | null = null;
+    try {
+      run = await getLatestSyncRun();
+    } catch {
+      // Falha de leitura durante o acompanhamento não é falha da sincronização.
+      continue;
+    }
+
+    // Descarta execuções anteriores ao disparo atual.
+    const startedAt = run?.startedAt ? Date.parse(run.startedAt) : Number.NaN;
+    if (!run || Number.isNaN(startedAt) || startedAt < startedAfter) continue;
+
+    if (run.status === 'running') continue;
+
+    if (run.status === 'error') {
+      throw new Error(
+        run.errorMessage?.trim() ||
+          'A sincronização com o HubSpot terminou com erro. Consulte Configurações > Histórico de sincronizações.',
+      );
+    }
+
+    return {
+      mode: 'incremental',
+      deals: run.dealsSynced ?? 0,
+      tickets: run.ticketsSynced ?? 0,
+      owners: run.ownersSynced ?? 0,
+      stages: run.stagesSynced ?? 0,
+      companies: run.companiesSynced ?? 0,
+    };
+  }
+
+  throw new Error(
+    'A sincronização continua em andamento no servidor e ultrapassou o tempo de acompanhamento. Não dispare novamente: acompanhe o resultado em Configurações > Histórico de sincronizações.',
+  );
+}
+
 export async function triggerHubspotSync(
   domain?: 'commercial' | 'cs',
   options: { full?: boolean; phased?: boolean } = {},
@@ -532,19 +601,45 @@ export async function triggerHubspotSync(
   const aggregate: HubspotSyncResult = { mode: 'incremental', deals: 0, tickets: 0, owners: 0, stages: 0, companies: 0 };
 
   for (const scope of scopes) {
-    const response = await fetch(`${baseUrl}/functions/v1/hubspot-sync`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        apikey: config.config.supabaseAnonKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...(domain ? { domain } : {}),
-        ...(scope ? { scope } : {}),
-        ...(options.full ? { full: true } : {}),
-      }),
-    });
+    // Marca de tempo anterior ao disparo: se a conexão cair, é por ela que
+    // identificamos a execução desta etapa e ignoramos execuções antigas.
+    const dispatchedAt = Date.now() - 1_000;
+
+    let response: Response;
+    try {
+      response = await fetch(`${baseUrl}/functions/v1/hubspot-sync`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: config.config.supabaseAnonKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...(domain ? { domain } : {}),
+          ...(scope ? { scope } : {}),
+          ...(options.full ? { full: true } : {}),
+        }),
+      });
+    } catch {
+      // A conexão caiu antes da resposta. O servidor continua trabalhando.
+      const observed = await awaitRunningHubspotSync(dispatchedAt);
+      aggregate.deals += observed.deals;
+      aggregate.tickets += observed.tickets;
+      aggregate.owners += observed.owners;
+      aggregate.stages += observed.stages;
+      aggregate.companies += observed.companies;
+      continue;
+    }
+
+    if (isGatewayTimeout(response.status)) {
+      const observed = await awaitRunningHubspotSync(dispatchedAt);
+      aggregate.deals += observed.deals;
+      aggregate.tickets += observed.tickets;
+      aggregate.owners += observed.owners;
+      aggregate.stages += observed.stages;
+      aggregate.companies += observed.companies;
+      continue;
+    }
 
     const payload = (await response.json().catch(() => null)) as ({ error?: string; code?: string; message?: string } & Partial<HubspotSyncResult>) | null;
     if (!response.ok) {

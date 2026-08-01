@@ -20,6 +20,7 @@ import { resolveAnalyticsPeriod } from './analytics-periods';
 import type { AnalyticsPageProps } from './analytics-model';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
 import { CommercialFunnelChart, CommercialMonthlyChart } from './charts/AnalyticsCharts';
+import { AnalyticsPipelineFilter } from './AnalyticsPipelineFilter';
 
 type State =
   | { phase: 'loading' }
@@ -91,7 +92,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
   return (
     <div className="space-y-5">
       <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} ownerOptions={ownerOptions} />
-      {pipelineOptions.length > 0 ? <CommercialPipelineScopeFilter pipelines={pipelineOptions} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null}
+      {pipelineOptions.length > 0 ? <div className="flex justify-end"><AnalyticsPipelineFilter pipelines={pipelineOptions.map((pipeline) => ({ id: pipeline.id, pipelineId: pipeline.pipelineId, label: pipeline.label, hubspotLabel: pipeline.hubspotLabel, count: pipeline.dealCount, info: <div className="space-y-2 text-left"><p className="font-semibold">Origem do pipeline</p><p>Objeto: Deal (Comercial).</p><p>Nome oficial: {pipeline.hubspotLabel || 'aguardando sincronização'}.</p><p>Alias exibido no painel: {pipeline.alias || 'usa o nome oficial do HubSpot'}.</p><p>ID imutável: {pipeline.pipelineId}.</p></div> }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} noun="os negócios" /></div> : null}
       {dataState?.status === 'empty' ? (
         <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." />
       ) : null}

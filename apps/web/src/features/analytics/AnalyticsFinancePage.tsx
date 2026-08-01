@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { MinimalState } from '../../components/minimal-states';
 import { GeniusSyncOverlay } from '../../components/GeniusSyncOverlay';
 import { getFinanceSnapshot, getFinanceSourceStatus, getFinanceUnmatchedClients, triggerOmieSync, type FinanceUnmatchedClient } from './analytics-api';
@@ -130,7 +131,10 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
             : snapshot.source === 'spreadsheet' ? <Tag label="Fonte: planilha (fallback)" tone="warning" /> : <Tag label="Sem fonte financeira" tone="critical" />}
           {sourceStatus?.api.lastSyncAt ? <span className="text-xs text-[color:var(--minimal-text-tertiary)]">Última sincronização: {new Date(sourceStatus.api.lastSyncAt).toLocaleString('pt-BR')}</span> : null}
         </div>
-        <button type="button" disabled={syncingOmie || !sourceStatus?.api.configured} onClick={() => void syncOmie()} className="rounded-lg bg-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action-ink)] disabled:opacity-50">{syncingOmie ? 'Sincronizando...' : 'Sincronizar OMIE API'}</button>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Link to="/admin/settings?section=analytics" className="rounded-lg border border-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action)] hover:bg-[color:var(--minimal-surface-muted)]">Gerenciar OMIE</Link>
+          <button type="button" disabled={syncingOmie || !sourceStatus?.api.configured} onClick={() => void syncOmie()} className="rounded-lg bg-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action-ink)] disabled:opacity-50">{syncingOmie ? 'Sincronizando...' : 'Sincronizar OMIE API'}</button>
+        </div>
       </div>
       {!sourceStatus?.api.configured ? <p className="mt-2 text-xs text-[color:var(--minimal-warning-text)]">Configure a credencial OMIE em Configurações → Integrações para ativar a fonte ao vivo. O histórico de importações fica na aba Logs.</p> : null}
       {!sourceIsApi && snapshot.source === 'spreadsheet' ? <p className="mt-2 text-xs text-[color:var(--minimal-text-tertiary)]">Exibindo a planilha como fallback. Previsibilidade, aging por dias e cruzamento com CS ficam completos apenas com a API OMIE.</p> : null}
@@ -138,7 +142,7 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
     </section>
 
     {/* Filtros */}
-    <section className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4">
+    <section className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] p-4">
       <div className="grid gap-3 md:grid-cols-6">
         <label className="text-xs text-[color:var(--minimal-text-secondary)]">Período<select value={preset} onChange={(e) => applyPreset(e.target.value as AnalyticsPeriodPreset)} className={controlClass}><option value="">Personalizado</option>{ANALYTICS_PERIOD_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
         <label className="text-xs text-[color:var(--minimal-text-secondary)]">De<input type="date" value={draft.from} onChange={(e) => setDraft({ ...draft, from: e.target.value })} className={controlClass} /></label>
@@ -147,7 +151,7 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
         <label className="text-xs text-[color:var(--minimal-text-secondary)]">Aging<select value={draft.priority} onChange={(e) => setDraft({ ...draft, priority: e.target.value })} className={controlClass}><option value="">Todos</option>{AGING_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
         <label className="text-xs text-[color:var(--minimal-text-secondary)]">Cliente<input value={draft.clientQuery} onChange={(e) => setDraft({ ...draft, clientQuery: e.target.value })} placeholder="Nome ou CNPJ" className={controlClass} /></label>
       </div>
-      <div className="mt-3 flex gap-2"><button type="button" onClick={apply} className="rounded-lg bg-[color:var(--minimal-text)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-surface)]">Aplicar</button><button type="button" onClick={() => { const next = { ...DEFAULT_ANALYTICS_FILTERS, ...resolveAnalyticsPeriod('month'), clientQuery: '' }; setPreset('month'); setDraft(next); setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} className="rounded-lg border border-[color:var(--minimal-border-strong)] px-3 py-1.5 text-sm text-[color:var(--minimal-text)]">Limpar</button></div>
+      <div className="mt-3 flex justify-end gap-2"><button type="button" onClick={apply} className="rounded-lg bg-[color:var(--minimal-text)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-surface)]">Aplicar</button><button type="button" onClick={() => { const next = { ...DEFAULT_ANALYTICS_FILTERS, ...resolveAnalyticsPeriod('month'), clientQuery: '' }; setPreset('month'); setDraft(next); setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} className="rounded-lg border border-[color:var(--minimal-border-strong)] px-3 py-1.5 text-sm text-[color:var(--minimal-text)]">Limpar</button></div>
     </section>
 
     {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado financeiro" description="A fonte respondeu, mas não encontrou registros para este recorte." /> : <>

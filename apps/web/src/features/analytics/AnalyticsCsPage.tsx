@@ -23,6 +23,7 @@ import { TicketMonthlyChart, TicketStatusChart } from './charts/AnalyticsCharts'
 import { listAnalyticsSourceConfig } from './analytics-api';
 import type { AnalyticsPageProps } from './analytics-model';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
+import { AnalyticsPipelineFilter } from './AnalyticsPipelineFilter';
 
 type State =
   | { phase: 'loading' }
@@ -89,7 +90,7 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
   return (
     <div className="space-y-5">
       <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} priorityOptions={priorityOptions} stageLabel="Status" />
-      {pipelineOptions.length > 0 ? <PipelineScopeFilter pipelines={pipelineOptions} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null}
+      {pipelineOptions.length > 0 ? <div className="flex justify-end"><AnalyticsPipelineFilter pipelines={pipelineOptions.map((pipeline) => ({ id: pipeline.id, pipelineId: pipeline.pipelineId, label: pipeline.label, hubspotLabel: pipeline.hubspotLabel, count: pipeline.ticketCount, info: <PipelineOriginHint pipeline={pipeline} /> }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} noun="os tickets" /></div> : null}
       {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." /> : null}
       {dataState?.status !== 'empty' ? <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard state={dataState} temporalType="Fluxo no período" label="Tickets totais" value={kpis.totalTickets.toLocaleString('pt-BR')} hint="Nos pipelines de suporte" source="Total de tickets nos pipelines de suporte ativos, considerando o período e os filtros selecionados." />
