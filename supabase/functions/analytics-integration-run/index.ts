@@ -64,8 +64,10 @@ Deno.serve(async (req) => {
         omie_saldo_aberto: String(row.saldo_aberto ?? 0), omie_saldo_vencido: String(row.saldo_vencido ?? 0), omie_titulos_abertos: String(row.titulos_abertos ?? 0), omie_atraso_medio_dias: String(row.atraso_medio_dias ?? 0), omie_situacao_financeira: String(row.situacao ?? ''), omie_ultima_sincronizacao: new Date().toISOString().slice(0, 10),
       } })), await getSecret(client, 'hubspot'));
       hubspot = { updated, failed: rows.length - updated, companies: rows.length };
-    } catch {
+    } catch (error) {
       // O snapshot OMIE permanece valido; a etapa de enriquecimento pode ser reexecutada.
+      const message = error instanceof Error ? error.message : String(error);
+      if (/Credencial gerenciada .* indisponivel|Credencial.*indispon[ií]vel/i.test(message)) throw error;
       hubspot = { updated: 0, failed: 1, companies: 0 };
     }
     const status = hubspot.failed ? 'partial' : 'success';
@@ -75,6 +77,7 @@ Deno.serve(async (req) => {
     const message = error instanceof Error ? error.message : String(error);
     await client.rpc('rpc_service_mark_integration_run', { p_status: 'error', p_message: 'Falha na orquestracao das integracoes.' });
     if (/OMIE_SYNC_IN_PROGRESS|REDUNDANT|8020/i.test(message)) return jsonResponse({ error: 'A API Omie esta ocupada ou ja existe uma sincronizacao em andamento.', code: 'OMIE_PROVIDER_BUSY' }, { status: 409, headers: { 'retry-after': '30' } });
+    if (/Credencial gerenciada .* indisponivel|Credencial.*indispon[ií]vel/i.test(message)) return jsonResponse({ error: 'Configure as credenciais do OMIE e do HubSpot em Configurações → Integrações antes de sincronizar.', code: 'INTEGRATION_CREDENTIALS_MISSING', correlationId }, { status: 424 });
     return jsonResponse({ error: 'Falha na orquestracao das integracoes.', correlationId }, { status: 502 });
   }
 });

@@ -34,6 +34,7 @@ import {
   scopeObjectType,
   syncsCompanies,
   syncsPipelines,
+  usesDomainSyncWatermark,
 } from '../_shared/hubspot-sync-scope.mjs';
 
 const DEAL_PROPERTIES = [
@@ -432,6 +433,9 @@ Deno.serve(async (req) => {
       .eq('status', 'success')
       .not('finished_at', 'is', null)
       .order('finished_at', { ascending: false });
+    if (usesDomainSyncWatermark(scope)) {
+      previousSuccessQuery = previousSuccessQuery.eq('domain_key', scope);
+    }
     // O primeiro lote após uma execução legada pode não ter `domain_key`
     // preenchido por escopo. Um snapshot global bem-sucedido ainda é uma
     // fronteira válida para a janela incremental de empresas/tickets.
