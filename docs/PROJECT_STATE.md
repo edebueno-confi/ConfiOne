@@ -7,10 +7,10 @@ blocos históricos desta página:
 
 - Checkout canônico: `C:\Projetos\GSO-old`.
 - Branch atual: `codex/dashboard-runtime-stabilization-20260802`.
-- HEAD atual: `84dbbef`; worktree limpo; branch de estabilização sem upstream
-  configurado.
-- Divergência atual: `git rev-list --left-right --count origin/main...HEAD`
-  retorna `0 94`.
+- HEAD registrado neste fechamento: `82c4114`; branch de estabilização sem
+  upstream configurado.
+- Divergência: consultar `git rev-list --left-right --count origin/main...HEAD`
+  em tempo de leitura; a última leitura antes deste registro retornou `0 94`.
 - Lifecycle, reconciliação, status/frescor, sanitização, Histórico e Financeiro
   foram estabilizados e validados conforme
   `docs/reports/2026-08-02_dashboard-runtime-stabilization-final.md`.
