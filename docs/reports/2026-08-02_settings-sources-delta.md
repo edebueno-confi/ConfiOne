@@ -189,22 +189,15 @@ migrations de catálogo/histórico, teste pgTAP, contratos Node, `docs/spec.md` 
 
 ## 23. Commits
 
-Commits locais, sem push:
-
-- `9432ad6` shell e rotas canônicas;
-- `7ca344a` configuração de integrações;
-- `e6b26c7` fontes e histórico;
-- `be73634` catálogo HubSpot e migrations;
-- `f284cab` remoção segura do diagnóstico legado;
-- `a9a10cb` contratos Node e pgTAP;
-- `17a8730` estilos do control plane;
-- `7303cc3` documentação e QA empacotado.
-- `ac5ff3e` fechamento do estado Git.
+Commits locais, sem push, foram separados por shell/rotas, integrações,
+fontes/histórico, catálogo HubSpot, remoção segura, testes, estilos e
+documentação/QA. A evidência objetiva permanece no `git log --oneline` do
+checkout e no status final abaixo.
 
 ## 24. Estado Git final
 
-Lote encerrado com staging revisado, commits locais e worktree limpo. HEAD:
-`ac5ff3e`; branch `codex/dashboard-management-rebuild-20260802`; sem upstream;
+Lote encerrado com staging revisado, commits locais e worktree limpo. HEAD foi
+verificado no encerramento; branch `codex/dashboard-management-rebuild-20260802`; sem upstream;
 `git rev-list --left-right --count origin/main...HEAD` = `0 69`. Nenhum upstream
 foi criado e nenhum push foi feito.
 
