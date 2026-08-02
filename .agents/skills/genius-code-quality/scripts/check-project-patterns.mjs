@@ -301,7 +301,8 @@ function genericFindings({ file, content, mode, commit, layer }) {
     rule.regex.lastIndex = 0;
     const match = rule.regex.exec(content);
     if (!match) continue;
-    findings.push(makeFinding({ id: rule.id, category: rule.category, severity: rule.severity, status: rule.status, confidence: rule.confidence, file, line: lineOf(content, match.index), evidence: match[0], impact: rule.impact, recommendation: rule.recommendation, mode, commit, layer, occurrences: [...content.matchAll(new RegExp(rule.regex.source, rule.regex.flags.replace('g', '')))].length }));
+    const occurrenceFlags = rule.regex.flags.includes('g') ? rule.regex.flags : rule.regex.flags + 'g';
+    findings.push(makeFinding({ id: rule.id, category: rule.category, severity: rule.severity, status: rule.status, confidence: rule.confidence, file, line: lineOf(content, match.index), evidence: match[0], impact: rule.impact, recommendation: rule.recommendation, mode, commit, layer, occurrences: [...content.matchAll(new RegExp(rule.regex.source, occurrenceFlags))].length }));
   }
   return findings;
 }
@@ -400,7 +401,7 @@ function filesFromArguments(requested, requestedFiles) {
   if (!requestedFiles.length) return walk(requested);
   return requestedFiles.map((file) => path.resolve(root, file)).filter((file) => {
     const relative = path.relative(root, file);
-    return !relative.startsWith('..') && fs.existsSync(file) && sourceExtensions.has(path.extname(file).toLowerCase()) && !file.includes(`${path.sep}.agents${path.sep}skills${path.sep}genius-code-quality${path.sep}`);
+    return !relative.startsWith('..') && fs.existsSync(file) && sourceExtensions.has(path.extname(file).toLowerCase());
   });
 }
 

@@ -1,28 +1,43 @@
 # Modelo de saída de auditoria
 
-O formato Markdown segue `references/report-template.md`. A saída JSON opcional deve manter este contrato mínimo, sem secrets:
+O formato Markdown segue `references/report-template.md`. A saída JSON opcional deve manter este contrato, sem secrets:
 
 ```json
 {
   "summary": {
     "mode": "fast",
     "scope": "working tree",
-    "risk": "unknown",
-    "blockers": 0
+    "risk": "baixo",
+    "blockers": 0,
+    "verdict": "aprovado com observações"
   },
   "findings": [],
+  "findingGroups": [],
   "commands": [],
   "metrics": {
     "filesAnalyzed": 0,
-    "patternCandidates": 0
+    "totalFindings": 0,
+    "displayedFindings": 0,
+    "omittedFindings": 0,
+    "patternCandidates": 0,
+    "probableFindings": 0,
+    "confirmedFindings": 0
+  },
+  "truncation": {
+    "total": 0,
+    "displayed": 0,
+    "omitted": 0,
+    "rulesAffected": [],
+    "canHideCritical": false
   },
   "git": {
     "branch": "",
     "head": "",
-    "dirty": false
+    "dirty": false,
+    "baseComparison": "origin/main"
   },
-  "verdict": "não conclusivo"
+  "verdict": "aprovado com observações"
 }
 ```
 
-Os valores são amostra. O relatório real deve informar limitações e não deve afirmar aprovação apenas por gates verdes.
+Cada finding real deve conter camada, status contextual, aplicabilidade da regra e proveniência. O relatório deve informar limitações e nunca declarar aprovação apenas por gates verdes.

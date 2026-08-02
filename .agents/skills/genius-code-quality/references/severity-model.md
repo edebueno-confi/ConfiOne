@@ -1,21 +1,29 @@
-# Modelo de severidade
+# Modelo contextual de severidade
 
-Severidade mede impacto operacional, não quantidade de linhas ou preferência pessoal.
+Severidade mede impacto confirmado ou provável, não quantidade bruta de linhas. Status e severidade são dimensões independentes.
 
 | Severidade | Critério | Bloqueia merge/release |
 |---|---|---|
-| CRÍTICO | vulnerabilidade, vazamento, perda de dados, bypass de tenant/RLS, operação destrutiva, regra incorreta com impacto real ou escrita no destino errado | sim |
-| ALTO | bug provável, contrato inconsistente, autorização incompleta, erro silencioso, race condition relevante, duplicação estrutural perigosa ou módulo inseguro de manter | normalmente sim |
-| MÉDIO | complexidade, acoplamento, falta de teste, duplicação localizada, observabilidade insuficiente, documentação divergente ou acessibilidade relevante | depende do caminho afetado |
-| BAIXO | legibilidade, nomenclatura, simplificação ou consistência não bloqueante | não |
-| INFORMATIVO | oportunidade, recomendação futura, preferência técnica ou hipótese que exige medição | não |
+| CRÍTICO | problema confirmado com risco imediato, bypass de tenant/RLS, vazamento ou escrita indevida | sim |
+| ALTO | problema confirmado ou altamente provável com contrato, autorização ou segurança relevante | somente quando confirmado |
+| MÉDIO | risco provável, dúvida relevante ou contrato potencialmente instável | não automaticamente |
+| BAIXO | melhoria localizada ou candidato de baixo impacto | não |
+| INFORMATIVO | sinal heurístico, histórico corrigido ou hipótese que exige revisão | não |
 
-Cada achado também deve registrar:
+## Status obrigatório
 
-- confiança: `alta`, `média` ou `baixa`;
-- proveniência: `introduzido`, `existente`, `herdado/indeterminado` ou `externo`;
-- evidência: fato observável, comando/saída ou trecho preciso;
-- falso positivo: `não`, `possível` ou `provável`;
-- ação: correção recomendada e evidência que fecharia a incerteza.
+`candidate`, `probable`, `confirmed`, `dismissed`, `historical-fixed` e `requires-runtime-validation`.
 
-Não promova um candidato estático a erro confirmado sem revisar contrato, contexto e consumidor.
+Uma ocorrência textual nunca vira `confirmed` automaticamente. `historical-fixed` não deve gerar backlog para editar migration antiga; o contrato final deve ser auditado.
+
+## Campos obrigatórios
+
+Cada finding deve registrar:
+
+- `detector`, `ruleVersion`, `mode` e `layer`;
+- `ruleApplicability`, `status` e `contextStatus`;
+- arquivo, linha/trecho, evidência, impacto e recomendação;
+- confiança, `blocksMergeOrRelease` e `possibleFalsePositive`;
+- `provenance` com tipo de análise, commit, timestamp e base de comparação.
+
+O risco é calculado por findings `confirmed`, `probable` e candidatos ativos. A quantidade total de candidatos não pode, sozinha, produzir risco alto.

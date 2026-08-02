@@ -3,9 +3,10 @@
 ## 1. Resumo executivo
 
 - Escopo:
-- Resultado:
-- Risco geral:
-- Bloqueadores:
+- Veredito:
+- Risco contextual:
+- Blockers confirmados:
+- Findings totais/exibidos/omitidos:
 
 ## 2. Comandos executados
 
@@ -13,41 +14,46 @@
 |---|---|---:|---|
 |  |  |  |  |
 
-## 3. Achados bloqueantes
+## 3. Findings agrupados
 
-Liste CRÍTICO/ALTO com severidade, categoria, arquivo:linha, evidência, impacto, recomendação, confiança, proveniência, bloqueio e falso positivo.
+Agrupar por detector, camada, severidade e status. Preservar o JSON completo.
 
-## 4. Achados por categoria
+## 4. Findings relevantes
 
-Arquitetura; tipos; frontend; backend; banco; segurança; integrações; testes; documentação; dependências.
+Cada finding: severidade, status, categoria, arquivo/linha, evidência, impacto, recomendação, confiança, proveniência, bloqueio e falso positivo.
 
-## 5. Dívida técnica
+## 5. Auditoria do módulo
 
-| Item | Impacto | Esforço estimado | Prioridade |
-|---|---|---|---|
-|  |  |  |  |
+Quando aplicável: escopo direto, dependências, consumidores, contratos, testes, documentação, rotas, estados e itens não analisados.
 
-## 6. Pontos positivos
+## 6. Truncamento e completude
 
-Registre decisões corretas, contratos bem implementados e padrões consistentes.
+Informar total, exibidos, omitidos, regras afetadas e confirmar que críticos/altos confirmados não foram truncados.
 
-## 7. Falsos positivos e incertezas
+## 7. Dívida técnica e incertezas
 
-Registre candidatos não comprovados, dependências de ambiente e medições necessárias.
+Não converter candidatos automaticamente em backlog do produto.
 
-## 8. Plano de correção recomendado
+## 8. Pontos positivos
 
-- Lote imediato:
-- Curto prazo:
-- Médio prazo:
+Registrar gates verdes, contratos coerentes e padrões seguros observados.
 
-## 9. Estado Git
+## 9. Plano recomendado
+
+Registrar somente próxima validação necessária, sem executar correções não autorizadas.
+
+## 10. Estado Git
 
 - Branch:
 - HEAD:
+- Base de comparação:
 - Diff:
 - Arquivos analisados:
 
-## 10. Veredito
+## 11. Limitações
 
-`aprovado` | `aprovado com ressalvas` | `reprovado` | `não conclusivo`
+Declarar banco, navegador, runtime, credenciais, lint não configurado e integrações não executadas.
+
+## 12. Veredito
+
+`aprovado` | `aprovado com observações` | `reprovado` | `não conclusivo`

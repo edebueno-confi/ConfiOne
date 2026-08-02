@@ -1,43 +1,25 @@
-# Regras de qualidade
+# Regras de qualidade contextual
 
-Use esta lista como mapa de investigação, não como checklist cego. Só reporte um achado quando houver evidência suficiente e contexto do contrato.
+Use como mapa de investigação, não como checklist textual cego.
 
-## Tipos e correção
+## SECURITY DEFINER
 
-- Procure `any`, casts inseguros, `as unknown as`, `@ts-ignore`, `@ts-expect-error` sem justificativa e non-null assertions sem garantia.
-- Compare tipos locais com contratos compartilhados e respostas externas validadas.
-- Verifique `null`/`undefined`, unions completas, estados impossíveis e parsing de payloads.
+Aplicável a blocos de função em migrations SQL. Não reportar menções em comentários, testes ou documentação. `set search_path = ''` é conforme. `public`, `pg_temp`, grant amplo e SQL dinâmico exigem contexto; migration histórica corrigida depois deve ser marcada como `historical-fixed` quando comprovado.
 
-## Arquitetura
+## SELECT *
 
-- Frontend renderiza views/read models e chama RPCs/commands reais; não inventa regra, métrica ou fallback de negócio.
-- Procure acesso direto a tabelas onde há contrato de view/RPC, lógica de domínio em componentes, bypass de camadas, ciclos, imports cruzando domínios e fontes múltiplas de verdade.
-- Diferencie repetição legítima de abstração prematura e duplicação perigosa.
+Ignorar pgTAP, fixtures, `exists(select *)`, inspeções e scripts de auditoria. Gerar candidato contextual em views públicas, RPCs, read models e contratos serializados; scripts operacionais recebem apenas sinal informativo quando houver custo potencial.
 
-## Manutenção
+## Acesso direto a tabelas
 
-- Investigue responsabilidade, coesão, complexidade, aninhamento, efeitos colaterais, nomes vagos, branches impossíveis, magic strings/numbers, código morto e comentários divergentes.
-- Não condene arquivo por linhas isoladamente; demonstre impacto na compreensão ou mudança segura.
+- Frontend: candidato quando usa tabela interna sem view/RPC aprovada.
+- Edge/backend: não marcar pela existência de `.from()`; exigir evidência adicional de dado sensível, service role e autorização ausente.
+- Scripts e testes: classificar pela finalidade, sem tratar como frontend.
 
-## React e UX operacional
+## Tipos, React e async
 
-- Verifique hooks, estado derivado, closures, keys, promises, race conditions, unmount, loading, erro, vazio, retry, foco, teclado, semântica, contraste, responsividade e overflow.
-- Verifique se cores/tipografia/layout usam tokens e design system. Mudança visual requer screenshot.
-- Não proponha micro-otimização sem evidência de custo ou regressão.
+`any`, casts duplos, supressões TypeScript, HTML perigoso e catch vazio permanecem candidatos com camada e confiança. Estados, contratos, consumidores e observabilidade exigem confirmação semântica.
 
-## Async, observabilidade e integrações
+## Segurança e contratos
 
-- Procure promise ignorada, catch silencioso, erro convertido em vazio/zero, logs sensíveis, falta de correlação, retry sem limite, timeout sem distinção e jobs sem acompanhamento.
-- Em HubSpot/OMIE e integrações, verifique idempotência, watermark, paginação, rate limit, backoff, lease, concorrência, staging, reconciliação, dry-run e auditoria.
-
-## Segurança e dados
-
-- Nunca exponha secrets. Audite autenticação, autorização server-side, tenant scope, RLS, grants, RPCs, SQL dinâmico, HTML não sanitizado, URLs inseguras, service role e auditoria administrativa.
-- Em Supabase/Postgres, verifique RLS/policies por operação, funções `SECURITY DEFINER` com `set search_path = ''`, nomes qualificados, migrações auditáveis, índices críticos e contratos de retorno.
-- Não execute migrations ou banco destrutivo por padrão.
-
-## Testes, documentação e dependências
-
-- Procure mudança sem teste, caminho feliz único, permissões/erros não testados, mocks que escondem regra, flakiness, ordem/data/credencial externa e testes desabilitados.
-- Confira README/comandos, contratos públicos, RPCs/migrations, decisões arquiteturais e sincronidade com implementação. Histórico não prevalece sobre contrato real.
-- Audite dependências não usadas/duplicadas/vulneráveis, pacote pesado, artefato rastreado, lockfile sem justificativa e comandos incompatíveis com Windows.
+Auditar tenant scope, RLS, grants, RPCs, SQL dinâmico, service role, idempotência e retorno persistente. Backend/views/read models/RPCs são a fonte da verdade; frontend não inventa regra ou fallback.

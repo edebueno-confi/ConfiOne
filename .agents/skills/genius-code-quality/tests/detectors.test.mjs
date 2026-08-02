@@ -108,3 +108,13 @@ test('risk and verdict use contextual status instead of candidate volume', () =>
   assert.equal(confirmedSummary.verdict, 'reprovado');
   assert.equal(confirmedSummary.truncation.omitted, 0);
 });
+
+test('counts generic findings with a global occurrence pattern', () => {
+  const findings = analyzeSource({
+    file: 'apps/web/src/features/analytics/analytics-api.ts',
+    content: 'const first: any = value; const second: any = other;',
+    ...options,
+  });
+  const explicitAny = findings.find((finding) => finding.id === 'explicit-any');
+  assert.equal(explicitAny?.occurrences, 2);
+});
