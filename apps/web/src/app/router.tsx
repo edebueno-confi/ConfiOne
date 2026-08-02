@@ -1,5 +1,5 @@
 import { lazy, type ComponentType, type ReactNode, Suspense } from 'react';
-import { createBrowserRouter, Navigate, useRouteError } from 'react-router-dom';
+import { createBrowserRouter, Navigate, useRouteError, useSearchParams } from 'react-router-dom';
 import { ErrorState, LoadingState } from '../components/states';
 import { GeniusMascot } from '../components/GeniusMascot';
 import { AppButton, GhostButton } from '../components/ui';
@@ -199,6 +199,20 @@ const SettingsPage = lazyRouteModule(
   () => import('../features/settings/SettingsPage'),
   'SettingsPage',
 );
+
+function SettingsLegacyRedirect() {
+  const [searchParams] = useSearchParams();
+  const legacy = searchParams.get('section');
+  const target = ({
+    marcas: '/admin/settings/brands',
+    'central-ajuda': '/admin/settings/help-center',
+    analytics: '/admin/settings/integrations',
+    integracoes: '/admin/settings/integrations',
+    'dashboard-fontes': '/admin/settings/dashboard-sources',
+    'dashboard-historico': '/admin/settings/sync-history',
+  } as Record<string, string>)[legacy ?? ''] ?? '/admin/settings/integrations';
+  return <Navigate replace to={target} />;
+}
 
 const SupportWorkspaceShell = lazyRouteModule(
   () => import('../features/support/SupportWorkspaceShell'),
@@ -435,6 +449,26 @@ export const router = createBrowserRouter([
           },
           {
             path: 'settings',
+            element: <SettingsLegacyRedirect />,
+          },
+          {
+            path: 'settings/brands',
+            element: withSuspense(<SettingsPage />),
+          },
+          {
+            path: 'settings/help-center',
+            element: withSuspense(<SettingsPage />),
+          },
+          {
+            path: 'settings/integrations',
+            element: withSuspense(<SettingsPage />),
+          },
+          {
+            path: 'settings/dashboard-sources',
+            element: withSuspense(<SettingsPage />),
+          },
+          {
+            path: 'settings/sync-history',
             element: withSuspense(<SettingsPage />),
           },
         ],
