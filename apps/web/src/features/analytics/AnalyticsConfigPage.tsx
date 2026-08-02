@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MinimalState } from '../../components/minimal-states';
 import { GeniusSyncOverlay } from '../../components/GeniusSyncOverlay';
-import { getCsSyncProgress, getIntegrationSchedule, getLatestCsSyncRun, listAnalyticsSourceConfig, listCsOpsImportRuns, runCsOpsMigration, runIntegrationNow, setIntegrationSchedule, triggerCsOpsSpreadsheetImport, triggerCsSupportSync, triggerHubspotSync, upsertAnalyticsSourceConfig, type CsOpsImportRun, type CsOpsMigrationPreflight, type IntegrationSchedule } from './analytics-api';
+import { getCsSyncProgress, getIntegrationSchedule, getLatestCsSyncRun, listAnalyticsSourceConfig, runIntegrationNow, setIntegrationSchedule, triggerCsSupportSync, triggerHubspotSync, upsertAnalyticsSourceConfig, type IntegrationSchedule } from './analytics-api';
 import type { AnalyticsSourceConfig, SyncRun } from './analytics-model';
 import { ChartCard, MetricInfo } from './analytics-ui';
 import { useAuthContext } from '../auth/auth-context';
@@ -28,11 +28,6 @@ export function AnalyticsConfigPage() {
   const [csControlBusy, setCsControlBusy] = useState(false);
   const [csControlMsg, setCsControlMsg] = useState<string | null>(null);
   const [scheduleMsg, setScheduleMsg] = useState<string | null>(null);
-  const [csOpsRuns, setCsOpsRuns] = useState<CsOpsImportRun[]>([]);
-  const [csOpsFile, setCsOpsFile] = useState<File | null>(null);
-  const [csOpsBusy, setCsOpsBusy] = useState(false);
-  const [csOpsMsg, setCsOpsMsg] = useState<string | null>(null);
-  const [csOpsPreflight, setCsOpsPreflight] = useState<CsOpsMigrationPreflight & { sourceImportRunId: string } | null>(null);
   const loadSchedule = () => { void getIntegrationSchedule().then(setSchedule).catch(() => setSchedule(null)); };
   const loadLatestCsRun = () => { void getLatestCsSyncRun().then(setLatestCsRun).catch(() => setLatestCsRun(null)); };
   const patchSchedule = (patch: Partial<IntegrationSchedule>) => setSchedule((current) => ({
@@ -69,20 +64,7 @@ export function AnalyticsConfigPage() {
       setCsControlMsg(error instanceof Error ? error.message : 'Falha ao executar CS / Suporte.');
     } finally { setCsControlBusy(false); }
   };
-  const loadCsOps = () => { void listCsOpsImportRuns().then(setCsOpsRuns).catch(() => setCsOpsRuns([])); };
-  const importCsOps = async () => {
-    if (!canManageIntegration) { setCsOpsMsg('Somente administradores da plataforma podem importar CS Ops.'); return; }
-    if (!csOpsFile) { setCsOpsMsg('Escolha um arquivo XLSX ou CSV da planilha CS Ops.'); return; }
-    setCsOpsBusy(true); setCsOpsMsg(null);
-    try { await triggerCsOpsSpreadsheetImport(csOpsFile); setCsOpsFile(null); setCsOpsPreflight(null); setCsOpsMsg('Importação concluída. O lote está disponível para simulação auditada.'); loadCsOps(); } catch (error) { setCsOpsMsg(error instanceof Error ? error.message : 'Falha ao importar CS Ops.'); } finally { setCsOpsBusy(false); }
-  };
-  const simulateCsOps = async (run: CsOpsImportRun, mode: 'dry_run' | 'apply') => {
-    if (!canManageIntegration) { setCsOpsMsg('Somente administradores da plataforma podem processar a migração CS Ops.'); return; }
-    if (mode === 'apply' && !window.confirm('A aplicação atualizará empresas no HubSpot. Confirme somente após revisar o dry-run deste lote.')) return;
-    setCsOpsBusy(true); setCsOpsMsg(null);
-    try { const result = await runCsOpsMigration(run.id, mode); const counts = result.counts; if (result.preflight) setCsOpsPreflight({ ...result.preflight, sourceImportRunId: result.sourceImportRunId }); setCsOpsMsg(`${mode === 'dry_run' ? 'Dry-run' : 'Migração'} concluído: ${Number(counts.total_rows ?? 0).toLocaleString('pt-BR')} linhas, ${Number(counts.update_rows ?? 0).toLocaleString('pt-BR')} atualizações, ${Number(counts.create_rows ?? 0).toLocaleString('pt-BR')} criações, ${Number(counts.ambiguous_rows ?? 0).toLocaleString('pt-BR')} ambiguidades. ${result.message}`); loadCsOps(); } catch (error) { setCsOpsMsg(error instanceof Error ? error.message : 'Falha ao processar a migração CS Ops.'); } finally { setCsOpsBusy(false); }
-  };
-  useEffect(() => { load(); loadSchedule(); loadCsOps(); loadLatestCsRun(); }, []);
+  useEffect(() => { load(); loadSchedule(); loadLatestCsRun(); }, []);
   useEffect(() => {
     if (!latestCsRun || !['queued', 'running', 'partial'].includes(latestCsRun.status)) return;
     const timer = window.setInterval(() => {
@@ -172,18 +154,6 @@ export function AnalyticsConfigPage() {
         <p className="font-medium text-[color:var(--minimal-text)]">HubSpot é a fonte atual de CS</p>
         <p className="mt-1 text-xs">A planilha CS Ops pode continuar registrada no histórico técnico para auditoria e migração assistida, mas novas atualizações devem ocorrer no HubSpot.</p>
       </div>
-    </ChartCard>
-    <ChartCard title="Migração auditada da planilha CS Ops" description="Importe a aba BD_Clientes para staging, revise o dry-run e só então aplique alterações nas empresas HubSpot. Tickets de suporte não são alterados por este fluxo.">
-      {canManageIntegration ? <div className="flex flex-wrap items-end gap-3 rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] p-3">
-        <label className="flex min-w-[280px] flex-1 flex-col gap-1.5 text-xs font-medium text-[color:var(--minimal-text-secondary)]">Arquivo XLSX/CSV
-          <input type="file" accept=".xlsx,.csv" onChange={(event) => setCsOpsFile(event.target.files?.[0] ?? null)} className="block h-9 w-full rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-2 py-1.5 text-xs text-[color:var(--minimal-text)] file:mr-3 file:border-0 file:bg-transparent file:text-xs file:font-medium" />
-        </label>
-        <button type="button" disabled={csOpsBusy || !csOpsFile} onClick={() => void importCsOps()} className="h-9 rounded-md bg-[color:var(--minimal-text)] px-3 text-sm font-medium text-[color:var(--minimal-surface)] disabled:opacity-60">{csOpsBusy ? 'Processando...' : 'Importar CS Ops'}</button>
-      </div> : <p className="rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-3 py-2 text-xs text-[color:var(--minimal-text-secondary)]">A importação e a migração CS Ops são operações administrativas e estão disponíveis somente para administradores da plataforma.</p>}
-      <p className="mt-2 text-xs text-[color:var(--minimal-text-tertiary)]"><MetricInfo text="A importação só cria staging auditável. O dry-run resolve correspondências por ID, CNPJ e nome; ambiguidades ficam bloqueadas. A aplicação externa exige revisão humana." /> Fonte temporária para migração: o HubSpot continua sendo a fonte operacional após o corte.</p>
-      {csOpsMsg ? <p role="status" className="mt-3 rounded-md border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-3 py-2 text-xs text-[color:var(--minimal-text-secondary)]">{csOpsMsg}</p> : null}
-      {csOpsPreflight ? <div role="status" className={`mt-3 rounded-md border px-3 py-2 text-xs ${csOpsPreflight.requiresRehydrate ? 'border-[color:var(--minimal-danger-border)] bg-[color:var(--minimal-danger-surface)] text-[color:var(--minimal-danger-text)]' : 'border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] text-[color:var(--minimal-text-secondary)]'}`}><p className="font-semibold">Preflight do catálogo HubSpot</p><p className="mt-1">{csOpsPreflight.hubspotCompaniesLoaded.toLocaleString('pt-BR')} empresas e {csOpsPreflight.hubspotOwnersLoaded.toLocaleString('pt-BR')} responsáveis carregados da {csOpsPreflight.companyCatalog === 'local_cache' ? 'cache local' : 'consulta ao HubSpot'} para {csOpsPreflight.sourceRows.toLocaleString('pt-BR')} linhas de origem.</p>{csOpsPreflight.requiresRehydrate ? <p className="mt-1 font-medium">Aplicação bloqueada até uma sincronização HubSpot reidratar o catálogo local. O dry-run pode mostrar criações artificiais quando a cache está vazia.</p> : null}</div> : null}
-      <div className="mt-4 overflow-x-auto rounded-lg border border-[color:var(--minimal-border)]"><table className="w-full min-w-[760px] text-xs"><thead><tr className="border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]"><th className="px-3 py-2.5">Lote</th><th className="px-3 py-2.5">Status</th><th className="px-3 py-2.5">Linhas</th><th className="px-3 py-2.5">Criado em</th><th className="px-3 py-2.5 text-right">Ações</th></tr></thead><tbody>{csOpsRuns.length ? csOpsRuns.map((run) => <tr key={run.id} className="border-b border-[color:var(--minimal-border)] last:border-0"><td className="px-3 py-2.5 font-medium text-[color:var(--minimal-text)]">{run.originalFilename}</td><td className="px-3 py-2.5 text-[color:var(--minimal-text-secondary)]">{run.status}</td><td className="px-3 py-2.5 tabular-nums text-[color:var(--minimal-text-secondary)]">{run.acceptedRows.toLocaleString('pt-BR')} / {run.totalRows.toLocaleString('pt-BR')}</td><td className="px-3 py-2.5 text-[color:var(--minimal-text-secondary)]">{new Date(run.createdAt).toLocaleString('pt-BR')}</td><td className="px-3 py-2.5 text-right"><div className="flex justify-end gap-2"><button type="button" disabled={csOpsBusy || run.status === 'processing'} onClick={() => void simulateCsOps(run, 'dry_run')} className="rounded-md border border-[color:var(--minimal-border-strong)] px-2.5 py-1.5 font-medium text-[color:var(--minimal-text)] disabled:opacity-60">Dry-run</button><button type="button" disabled={csOpsBusy || run.status === 'processing'} onClick={() => void simulateCsOps(run, 'apply')} className="rounded-md border border-[color:var(--color-warning-border)] px-2.5 py-1.5 font-medium text-[color:var(--color-warning-text)] disabled:opacity-60">Aplicar</button></div></td></tr>) : <tr><td colSpan={5} className="px-3 py-5 text-center text-[color:var(--minimal-text-tertiary)]">Nenhum lote CS Ops importado neste ambiente.</td></tr>}</tbody></table></div>
     </ChartCard>
     </div>
     {runningNow ? <GeniusSyncOverlay source="OMIE" detail="O OMIE será sincronizado e os vínculos financeiros com o HubSpot serão recalculados." /> : null}

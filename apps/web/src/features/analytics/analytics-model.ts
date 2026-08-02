@@ -222,7 +222,6 @@ export interface FinanceSnapshot {
 
 export interface FinanceSourceStatus {
   api: { provider: string; resource: string; configured: boolean; lastSyncAt: string | null; lastStatus: string | null; metrics: string[]; fallback: string };
-  spreadsheet: { provider: string; available: boolean; lastImportAt: string | null };
 }
 
 export interface CeoSnapshot {
@@ -453,10 +452,8 @@ export function mapFinanceSnapshot(value: unknown): FinanceSnapshot {
 export function mapFinanceSourceStatus(value: unknown): FinanceSourceStatus {
   const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
   const api = (data.api && typeof data.api === 'object' ? data.api : {}) as Record<string, unknown>;
-  const spreadsheet = (data.spreadsheet && typeof data.spreadsheet === 'object' ? data.spreadsheet : {}) as Record<string, unknown>;
   return {
     api: { provider: toText(api.provider) || 'Omie', resource: toText(api.resource) || 'Contas a Receber', configured: Boolean(api.configured), lastSyncAt: api.last_sync_at ? toText(api.last_sync_at) : null, lastStatus: api.last_status ? toText(api.last_status) : null, metrics: Array.isArray(api.metrics) ? api.metrics.map(toText).filter(Boolean) : [], fallback: toText(api.fallback) },
-    spreadsheet: { provider: toText(spreadsheet.provider) || 'Planilha exportada do Omie', available: Boolean(spreadsheet.available), lastImportAt: spreadsheet.last_import_at ? toText(spreadsheet.last_import_at) : null },
   };
 }
 

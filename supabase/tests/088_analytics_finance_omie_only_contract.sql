@@ -78,9 +78,10 @@ select ok(
   'status da fonte financeira OMIE fixa search_path'
 );
 select ok(
-  pg_get_functiondef(to_regprocedure('public.rpc_analytics_finance_source_status()')) like '%Planilhas %'
-    and pg_get_functiondef(to_regprocedure('public.rpc_analytics_finance_source_status()')) not like '%continua sendo exibida%',
-  'status da fonte financeira não anuncia fallback de planilha'
+  pg_get_functiondef(to_regprocedure('public.rpc_analytics_finance_source_status()')) like '%''api'', jsonb_build_object%'
+    and pg_get_functiondef(to_regprocedure('public.rpc_analytics_finance_source_status()')) not like '%''spreadsheet''%'
+    and pg_get_functiondef(to_regprocedure('public.rpc_analytics_finance_source_status()')) not like '%analytics_spreadsheet_import_runs%',
+  'status da fonte financeira publica somente o contrato OMIE'
 );
 select ok(
   pg_get_functiondef(to_regprocedure('public.rpc_analytics_finance_snapshot(date,date,text,text,text)')) like '%when not v_api_configured then ''not_configured''%'
