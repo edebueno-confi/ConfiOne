@@ -7,7 +7,7 @@ blocos históricos desta página:
 
 - Checkout canônico: `C:\Projetos\GSO-old`.
 - Branch atual: `codex/dashboard-runtime-stabilization-20260802`.
-- HEAD de código registrado neste fechamento: `63c2574`; branch de
+- HEAD de código registrado neste fechamento: `cea53c7`; branch de
   estabilização sem upstream configurado.
 - Divergência: consultar `git rev-list --left-right --count origin/main...HEAD`
   em tempo de leitura; a última leitura antes deste registro retornou `0 94`.
