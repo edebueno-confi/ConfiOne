@@ -7,6 +7,7 @@
 ```text
 $genius-code-quality fast
 $genius-code-quality changed
+$genius-code-quality staged
 $genius-code-quality module apps/web/src/features/analytics
 $genius-code-quality full
 ```
@@ -37,6 +38,12 @@ Heurística textual não é confirmação. O risco usa apenas estados contextuai
 `fast` executa Git, padrões, lint quando configurado, typechecks e `npm run local:qa:secret-scan`. O package.json atual não possui script `lint`; isso é reportado como `not-configured`, sem instalação de dependência.
 
 `module` inventaria escopo direto, imports, contratos, consumidores, testes, documentação, rotas e estados `loading`, `empty`, `error` e `unavailable`. Não acessa banco ou navegador por padrão e declara itens não analisados.
+
+## Automacao do fluxo
+
+Os comandos npm `quality:fast`, `quality:changed`, `quality:staged`, `quality:module` e `quality:full` expoem os modos da skill no checkout. Execute `npm run quality:hooks:install` uma vez por checkout para configurar `core.hooksPath` localmente. Depois disso, `.githooks/pre-commit` roda `quality:staged` automaticamente antes de cada commit.
+
+O modo `staged` usa apenas arquivos do index, executa diff check, lint quando configurado, typechecks aplicaveis e secret scan seguro. Ele nao corrige produto, nao acessa banco/navegador e nao bloqueia por candidato ou provavel isolado. Para bypass emergencial, use `GENIUS_QUALITY_SKIP=1` junto com `GENIUS_QUALITY_SKIP_REASON`.
 
 ## Testes
 

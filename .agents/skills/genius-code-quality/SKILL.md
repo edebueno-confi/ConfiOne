@@ -30,6 +30,7 @@ Nao use `git reset`, `git clean`, `git stash`, `supabase db reset` ou `git check
 |---|---|
 | `$genius-code-quality fast` | Git, diff check, padroes, lint configurado, typechecks e secret scan existente; sem banco, navegador ou testes demorados. |
 | `$genius-code-quality changed` | staged, unstaged e untracked relevantes, com base real do working tree. |
+| `$genius-code-quality staged` | arquivos staged para pre-commit, com diff check do index e secret scan existente. |
 | `$genius-code-quality module <caminho>` | scanner contextual, typecheck/lint possivel e inventario de dependencias, contratos, consumidores, testes, docs, rotas e estados. |
 | `$genius-code-quality full` | auditoria ampla; pode usar validacoes autorizadas, mas nao corrige automaticamente. |
 
@@ -70,7 +71,13 @@ O JSON preserva todos os findings. O Markdown agrupa por regra, camada, severida
 - `scripts/validate-skill.mjs`: valida estrutura, frontmatter, campos contextuais e fixtures.
 - `tests/detectors.test.mjs`: regressao artificial dos detectores, sem banco, navegador ou API externa.
 
-Nenhum script edita arquivos, cria commits, altera Git, executa banco, sync, push, deploy ou operacao destrutiva.
+## Automacao local
+
+O repositorio expoe `quality:fast`, `quality:changed`, `quality:staged`, `quality:module` e `quality:full` no `package.json`. Uma vez por checkout, execute `npm run quality:hooks:install`; depois, o hook versionado `.githooks/pre-commit` executa `npm run quality:staged` automaticamente antes de cada commit.
+
+O hook analisa somente o index, nao altera arquivos e bloqueia apenas falhas de comando ou findings confirmados que sejam blockers. Candidatos e provaveis nao sao convertidos em correcao automatica. Em emergencia, o bypass exige `GENIUS_QUALITY_SKIP=1` e `GENIUS_QUALITY_SKIP_REASON`.
+
+O gate nao edita arquivos, cria commits, executa banco, sync, push, deploy ou operacao destrutiva. O instalador opcional altera somente `core.hooksPath` local para ativar o hook versionado.
 
 ## Correcao e parada
 

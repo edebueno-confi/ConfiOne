@@ -12,7 +12,7 @@ const modulePath = mode === 'module' ? argv[1] : undefined;
 const asJson = argv.includes('--json');
 const strict = argv.includes('--strict');
 const root = path.resolve(process.cwd());
-const validModes = new Set(['fast', 'changed', 'module', 'full']);
+const validModes = new Set(['fast', 'changed', 'staged', 'module', 'full']);
 const commands = [];
 
 function redact(value) {
@@ -55,11 +55,14 @@ function readGit() {
   const status = git(['status', '--short', '--branch']);
   const head = git(['rev-parse', 'HEAD']);
   const branch = git(['branch', '--show-current']);
-  const diffCheck = git(['diff', '--check']);
+  const diffCheck = mode === 'staged' ? git(['diff', '--cached', '--check']) : git(['diff', '--check']);
   const unstaged = git(['diff', '--name-only']);
   const staged = git(['diff', '--cached', '--name-only']);
   const untracked = git(['ls-files', '--others', '--exclude-standard']);
-  const changedFiles = [...unstaged.stdout.split(/\r?\n/), ...staged.stdout.split(/\r?\n/), ...untracked.stdout.split(/\r?\n/)].filter(Boolean).filter((file, index, all) => all.indexOf(file) === index);
+  const allChangedFiles = [...unstaged.stdout.split(/\r?\n/), ...staged.stdout.split(/\r?\n/), ...untracked.stdout.split(/\r?\n/)].filter(Boolean).filter((file, index, all) => all.indexOf(file) === index);
+  const changedFiles = mode === 'staged'
+    ? staged.stdout.split(/\r?\n/).filter(Boolean).filter((file, index, all) => all.indexOf(file) === index)
+    : allChangedFiles;
   return {
     status: status.stdout.trim(),
     branch: branch.stdout.trim(),
@@ -67,7 +70,7 @@ function readGit() {
     dirty: Boolean(status.stdout.replace(/^##[^\n]*\n?/, '').trim()),
     diffCheck: diffCheck.result,
     changedFiles,
-    baseComparison: mode === 'changed' ? 'working-tree' : 'origin/main',
+    baseComparison: mode === 'changed' ? 'working-tree' : mode === 'staged' ? 'index' : 'origin/main',
   };
 }
 
@@ -166,12 +169,12 @@ function moduleAudit(scope) {
 }
 
 function chooseGates() {
-  if (!validModes.has(mode) || (mode === 'module' && !modulePath)) throw new Error('Uso: fast | changed | module <caminho> | full [--json]');
+  if (!validModes.has(mode) || (mode === 'module' && !modulePath)) throw new Error('Uso: fast | changed | staged | module <caminho> | full [--json]');
   const gitState = globalThis.__gitState;
   const scope = mode === 'module' ? modulePath : undefined;
-  const patterns = runPatterns(scope, mode === 'fast' || mode === 'changed' ? gitState.changedFiles : []);
+  const patterns = runPatterns(scope, ['fast', 'changed', 'staged'].includes(mode) ? gitState.changedFiles : []);
   npmScript('lint');
-  if (mode === 'fast' || mode === 'full') npmScript('local:qa:secret-scan', 180000);
+  if (mode === 'fast' || mode === 'staged' || mode === 'full') npmScript('local:qa:secret-scan', 180000);
   if (mode === 'module' && scope?.startsWith('apps/web')) npmScript('web:typecheck');
   else if (mode === 'module' && scope?.startsWith('packages/contracts')) npmScript('contracts:typecheck');
   else if (mode !== 'module' || scope?.startsWith('apps')) {
@@ -202,15 +205,16 @@ try {
   if (mode === 'module') moduleInventory = moduleAudit(modulePath);
 } catch (caught) {
   error = caught instanceof Error ? caught.message : String(caught);
-  gitState ??= { branch: '', head: '', dirty: false, changedFiles: [], diffCheck: 'error', baseComparison: mode === 'changed' ? 'working-tree' : 'origin/main' };
+  gitState ??= { branch: '', head: '', dirty: false, changedFiles: [], diffCheck: 'error', baseComparison: mode === 'changed' ? 'working-tree' : mode === 'staged' ? 'index' : 'origin/main' };
   patterns ??= { scope: modulePath ?? '.', filesScanned: 0, findings: [], groups: [], summary: summarizeFindings([]), truncated: false };
 }
 
 const summary = summarizeFindings(patterns.findings ?? []);
 const failedCommands = commands.filter((command) => command.result === 'fail' || command.result === 'error').length;
 const unavailableCommands = commands.filter((command) => command.result === 'not-configured').map((command) => command.command);
+const diffCheckFailed = gitState.diffCheck !== 'pass';
 const blockers = summary.blockers;
-const verdict = error || failedCommands ? 'não conclusivo' : summary.verdict;
+const verdict = error || failedCommands || diffCheckFailed ? 'não conclusivo' : summary.verdict;
 const findings = patterns.findings ?? [];
 const displayedFindings = markdownFindings(findings);
 const truncation = {
@@ -222,7 +226,7 @@ const truncation = {
 };
 const reportCommands = commands.map(({ stdout, stderr, ...safe }) => safe);
 const report = {
-  summary: { mode, scope: modulePath ?? (mode === 'changed' ? 'working tree changes' : 'repository'), risk: summary.risk, blockers, verdict },
+  summary: { mode, scope: modulePath ?? (mode === 'changed' ? 'working tree changes' : mode === 'staged' ? 'staged changes' : 'repository'), risk: summary.risk, blockers, verdict },
   findings,
   findingGroups: summary.groups,
   moduleAudit: moduleInventory,
@@ -235,7 +239,7 @@ const report = {
     patternCandidates: findings.filter((finding) => finding.status === 'candidate').length,
     probableFindings: findings.filter((finding) => finding.status === 'probable').length,
     confirmedFindings: findings.filter((finding) => finding.status === 'confirmed').length,
-    failedCommands,
+    failedCommands: failedCommands + (diffCheckFailed ? 1 : 0),
     unavailableCommands,
   },
   truncation,
@@ -244,6 +248,7 @@ const report = {
     'Heurísticas permanecem candidatas até revisão contextual; somente findings confirmed bloqueiam merge/release.',
     'Banco, navegador, sync externo, migration remota e credenciais externas não são executados por padrão.',
     ...(unavailableCommands.length ? [`Comandos não configurados: ${unavailableCommands.join(', ')}`] : []),
+    ...(diffCheckFailed ? ['git diff --check falhou no escopo analisado.'] : []),
     ...(error ? [error] : []),
   ],
 };
@@ -318,4 +323,4 @@ if (asJson) {
   process.stdout.write(`${lines.join('\n')}\n`);
 }
 
-process.exitCode = error || failedCommands || blockers || (strict && findings.some((finding) => finding.status === 'probable' && ['crítico', 'alto'].includes(finding.severity))) ? 1 : 0;
+process.exitCode = error || failedCommands || diffCheckFailed || blockers || (strict && findings.some((finding) => finding.status === 'probable' && ['crítico', 'alto'].includes(finding.severity))) ? 1 : 0;
