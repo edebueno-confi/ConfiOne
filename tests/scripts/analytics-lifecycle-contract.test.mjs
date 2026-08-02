@@ -4,7 +4,7 @@ import test from 'node:test';
 
 const edge = await readFile(new URL('../../supabase/functions/analytics-sequential-sync/index.ts', import.meta.url), 'utf8');
 const omieService = await readFile(new URL('../../supabase/functions/_shared/omie-sync-service.ts', import.meta.url), 'utf8');
-const migration = await readFile(new URL('../../supabase/migrations/20260802130000_dashboard_runtime_truth_v3.sql', import.meta.url), 'utf8');
+const lifecycleMigration = await readFile(new URL('../../supabase/migrations/20260802160000_dashboard_sync_lifecycle_reconciliation_v1.sql', import.meta.url), 'utf8');
 
 test('falha de start ou dispatcher do HubSpot encerra a etapa do ciclo', () => {
   assert.match(edge, /started\.status >= 400[\s\S]+updateStep\(client, cycleId, 'hubspot', \{ status: 'failed'/);
@@ -19,7 +19,7 @@ test('abandono de OMIE preserva lifecycle interno e erro sanitizado', () => {
 });
 
 test('reconciliacao atualiza as etapas que ficaram pendentes', () => {
-  assert.match(migration, /update public\.analytics_sync_cycle_steps s/);
-  assert.match(migration, /c\.status = 'timed_out'/);
-  assert.match(migration, /r\.cycle_id = s\.cycle_id and r\.status = 'timed_out'/);
+  assert.match(lifecycleMigration, /update public\.analytics_sync_cycle_steps s/);
+  assert.match(lifecycleMigration, /c\.status = 'timed_out'/);
+  assert.match(lifecycleMigration, /r\.cycle_id = s\.cycle_id and r\.status = 'timed_out'/);
 });
