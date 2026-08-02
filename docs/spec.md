@@ -113,3 +113,52 @@ Quando nao houver dado real, o backend deve informar estado e motivo para a UI
 exibir `Indisponivel`, sem trocar ausencia por zero ou procurar uma planilha.
 O registro factual desta decisao e dos gaps de implementacao esta em
 `docs/reports/2026-08-02_dashboard-api-only-audit.md`.
+
+## Especificacao do macro-lote de Configuracoes - 2026-08-02
+
+Este lote refatora somente as superfícies administrativas de Configurações,
+Fontes do Dashboard e Histórico de sincronizações. As páginas analíticas do
+Dashboard permanecem fora do escopo visual e funcional.
+
+### Contrato de navegação
+
+- `AdminConsoleShell` é o único shell global.
+- Configurações possui um único menu lateral com Marcas, Central de Ajuda,
+  Integrações, Fontes do Dashboard e Histórico de sincronizações.
+- As rotas canônicas de operação são `/admin/settings/integrations`,
+  `/admin/settings/dashboard-sources` e `/admin/settings/sync-history`.
+- `/admin/settings` e URLs antigas com `section` redirecionam de forma segura,
+  sem renderizar uma segunda página para o mesmo conteúdo.
+
+### Contrato de integrações
+
+- A superfície publica somente HubSpot e OMIE.
+- HubSpot usa API e descreve a origem de dados comerciais, clientes e
+  atendimentos.
+- OMIE usa API e descreve dados financeiros e contas a receber.
+- OMIE recebe `APP_KEY` e `APP_SECRET` separadamente na interface; o backend
+  grava o par serializado no secret store e nunca devolve qualquer valor.
+- O campo de modo não é exibido. O modo persistido internamente permanece
+  `api` por compatibilidade até a retirada segura de consumidores.
+
+### Contrato de catálogo HubSpot
+
+- O worker consulta todos os pipelines não arquivados de deals e tickets.
+- Novos pipelines entram ativos por padrão e recebem nome oficial, tipo e
+  data de descoberta.
+- Pipelines ausentes/arquivados permanecem no histórico, são marcados como
+  arquivados e não entram nos cálculos.
+- Alias e classificação administrativa existentes são preservados.
+- As áreas administrativas são Comercial, Customer Success, Suporte, Chat e
+  A classificar.
+- Tickets sem classificação segura ficam em A classificar; essa categoria não
+  compõe silenciosamente KPIs de Customer Success, Suporte ou Chat.
+- Chat só compõe métricas após contrato confirmado.
+
+### Segurança e proveniência
+
+Todas as leituras passam por read models/RPCs existentes ou novos contratos
+forward-only com `platform_admin`, RLS, auditoria e erro sanitizado. A tela
+mostra origem, escopo funcional, status e última descoberta sem expor RPCs,
+tabelas, secrets ou detalhes de infraestrutura. Sincronização real, push,
+deploy, migration remota e fixtures pgTAP ficam fora deste lote.

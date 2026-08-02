@@ -6822,3 +6822,16 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - Evidencia visual: `docs/reports/visual-audit/design-qa.md` e capturas autenticadas em `docs/reports/visual-audit/screenshots/`.
 - Entrega: pulso HubSpot/OMIE, densidade visual padronizada, configuracao segura de integracoes, cadencia unica do ciclo completo e acoes manuais por fonte.
 - Limite: migrations forward-only, sincronizacao real e QA responsivo/dark ainda nao executados.
+
+## SETTINGS-SOURCES-V2 - Configuracoes, Fontes e Historico - 2026-08-02
+
+- Relatorios: `docs/reports/2026-08-02_settings-sources-delta.md`,
+  `docs/reports/2026-08-02_settings-ux-friction-audit.md` e
+  `docs/reports/2026-08-02_settings-design-report.md`.
+- Entrega: shell unico, rotas canonicas, Integracoes somente HubSpot/OMIE,
+  APP_KEY/APP_SECRET OMIE, catalogo vivo de pipelines, classificacao por area,
+  historico separado e remocao do diagnostico legado.
+- Evidencia: typechecks, build, testes Node 21/21, pgTAP focado 15/15, lint SQL,
+  secret scan e QA empacotado 18 capturas + 6 checks sem falhas.
+- Limites: nenhum sync real, push, deploy, reset, fixture pgTAP ou alteracao nas
+  paginas analiticas; denominador de Customer Success permanece pendente.

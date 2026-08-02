@@ -1,3 +1,32 @@
+# Estado corrente do checkout canônico — macro-lote Configurações — 2026-08-02
+
+Atualização do macro-lote de Configurações, Fontes do Dashboard e Histórico:
+
+- Checkout operacional único: `C:\Projetos\GSO-old`.
+- Branch: `codex/dashboard-management-rebuild-20260802`; nenhum upstream ou push.
+- Configurações usa shell único e rotas canônicas para Integrações, Fontes do
+  Dashboard e Histórico; redirects legados foram preservados.
+- Integrações publica somente HubSpot e OMIE. OMIE recebe `APP_KEY` e
+  `APP_SECRET` separados; credenciais não retornam para a interface e não há
+  controle visual de modo.
+- O catálogo HubSpot v2 descobre pipelines não arquivados, ativa novos por
+  padrão, preserva alias/classificação e arquiva ausentes sem apagar histórico.
+- A classificação separa Comercial, Customer Success, Suporte, Chat e A
+  classificar; o último não compõe silenciosamente os KPIs.
+- O diagnóstico legado foi removido após auditoria de consumidores; o histórico
+  agora é um read model separado por ciclo e origem.
+- Migration local forward-only aplicada sem reset. PgTAP focado 15/15; suíte
+  completa continua parcial por colisões de fixtures persistentes e um teste
+  legado de scheduler.
+- QA empacotado: 18 screenshots + 6 checks 1024×768, claro/escuro, sem erros de
+  console/página, request failure, resposta inesperada, overflow ou copy proibida.
+- A Visão Geral e as páginas analíticas não foram alteradas neste lote; o
+  redesign completo continua pendente de aprovação visual separada.
+- Evidências: `docs/reports/2026-08-02_settings-sources-delta.md`,
+  `docs/reports/2026-08-02_settings-ux-friction-audit.md`,
+  `docs/reports/2026-08-02_settings-design-report.md` e o manifesto ignorado
+  `output/settings-control-plane-v2-preview/manifest.json`.
+
 # Estado corrente do checkout canônico — 2026-08-02
 
 Atualização pós-lote (prevalece sobre o bloco histórico abaixo):

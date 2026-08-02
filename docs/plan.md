@@ -1843,3 +1843,31 @@ O relatório completo, incluindo evidências locais, contratos existentes, lacun
 - Validacao: build web, typecheck web/contratos, testes focados, quality gate e validador documental aprovados; QA autenticado e sync real permanecem dependentes de sessao/credencial externa.
 - Evidencia detalhada: `docs/reports/2026-08-02_dashboard-api-only-audit.md`.
 - Proximo gate: capturas autenticadas, pgTAP/migration sem reset, auditoria de zeros/indisponibilidade e decisao sobre scheduler.
+
+## Macro-lote Configuracoes e Fontes do Dashboard - 2026-08-02
+
+### Decidido
+
+- Não alterar as páginas analíticas do Dashboard nem executar sincronização real.
+- Consolidar Configurações em rotas próprias, com um único shell e sem a barra
+  interna “Dashboard e Analytics”.
+- Manter HubSpot e OMIE como únicas integrações publicadas; OMIE recebe
+  `APP_KEY` e `APP_SECRET` separados na UI e mantém o segredo somente no
+  secret store.
+- Descobrir pipelines via API, ativar novos não arquivados por padrão e
+  separar Comercial, Customer Success, Suporte, Chat e A classificar.
+
+### Em execução
+
+- Refatorar Integrações, Fontes do Dashboard e Histórico.
+- Auditar/remover diagnóstico somente após substituir seus testes por contratos
+  de ausência e confirmar todos os consumidores.
+- Registrar origem, cobertura e critério de classificação no read model e na UI.
+
+### Critério de parada
+
+- Typecheck, build, testes focados, quality gates e QA empacotado nas três rotas
+  de Configurações, em claro/escuro e nos quatro viewports definidos.
+- Worktree limpo, commits locais separados e relatório Delta persistido.
+- Aguardar aprovação visual do Product Owner; sem push, deploy, sync real ou
+  correção de fixtures pgTAP.
