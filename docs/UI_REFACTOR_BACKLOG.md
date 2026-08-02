@@ -13,6 +13,37 @@ Registrar o backlog oficial de polimento e evolucao de UX das superficies intern
 
 ## Fila adicionada em 2026-08-02 — Knowledge/editor, histórico e exportação
 
+### DASHBOARD-04 — Sincronização controlada na Visão Geral
+
+Status: pendente de implementação; item adicionado à fila em 02/08/2026.
+
+Adicionar na aba **Visão Geral** uma ação única e explícita para sincronizar as
+bases operacionais, usando o orquestrador real HubSpot → OMIE. A ação não deve
+criar uma regra paralela no frontend nem chamar diretamente os provedores.
+
+Escopo obrigatório:
+
+- apresentar a ação junto ao estado agregado das fontes, com destaque menor que
+  os KPIs;
+- exibir `Sincronizar bases` apenas para perfis autorizados pelo contrato real;
+- bloquear nova execução quando já houver ciclo `queued` ou `running`;
+- mostrar loading, sucesso, falha parcial, timeout e indisponibilidade de
+  credencial com mensagens sanitizadas;
+- registrar e exibir `cycle_id`, `correlation_id`, duração e contadores no
+  Histórico, sem expor tokens ou detalhes internos;
+- encaminhar a pessoa para o Histórico após iniciar ou concluir a execução;
+- preservar o modelo de fonte única: HubSpot para Comercial/CS/Suporte e OMIE
+  para Financeiro;
+- executar somente operações read-only nos provedores e nunca inventar métricas
+  durante a sincronização;
+- cobrir desktop/mobile, claro/escuro, teclado, foco, erro, vazio e overflow;
+- adicionar testes de contrato e captura visual real da Visão Geral alterada.
+
+Dependências: provisão autorizada de `ANALYTICS_SYNC_SECRET` no runtime das
+Edge Functions, ciclo sequencial validado, permissões/RLS auditadas e contrato
+de Histórico disponível. Não implementar enquanto o ciclo protegido não estiver
+validado.
+
 ### KNOWLEDGE-03 — Reconstrução do cockpit de Artigos
 
 Status: pendente de execução; item adicionado à fila, sem alteração funcional neste registro.
