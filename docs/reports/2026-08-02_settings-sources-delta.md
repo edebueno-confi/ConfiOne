@@ -196,10 +196,11 @@ checkout e no status final abaixo.
 
 ## 24. Estado Git final
 
-Lote encerrado com staging revisado, commits locais e worktree limpo. HEAD foi
-verificado no encerramento; branch `codex/dashboard-management-rebuild-20260802`; sem upstream;
-`git rev-list --left-right --count origin/main...HEAD` = `0 69`. Nenhum upstream
-foi criado e nenhum push foi feito.
+Lote encerrado com staging revisado, commits locais e worktree limpo. HEAD e a
+divergência foram verificados no encerramento; branch
+`codex/dashboard-management-rebuild-20260802`; sem upstream. Repetir
+`git rev-list --left-right --count origin/main...HEAD` para o valor atual. Nenhum
+upstream foi criado e nenhum push foi feito.
 
 ## 25. Limitações
 
