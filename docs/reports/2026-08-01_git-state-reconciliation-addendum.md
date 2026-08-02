@@ -13,7 +13,7 @@ fonte corrente.
 - Branch: `main`
 - HEAD no fechamento: o commit que contém este addendum; confirme com `git rev-parse HEAD`
 - Upstream: `origin/main`
-- Divergência no fechamento: `git rev-list --left-right --count origin/main...HEAD` = `0 39`
+- Divergência: confirme no fechamento com `git rev-list --left-right --count origin/main...HEAD`; `origin/main` permanece ancestral do `main`
 - Worktrees ativos: 1, somente o checkout canônico
 - Stash: preservado (`stash@{0}`)
 - Refs de arquivo: 24 em `refs/archive/gso-git-cleanup/`

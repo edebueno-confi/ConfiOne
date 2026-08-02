@@ -2,7 +2,7 @@
 
 - Checkout operacional único: `C:\Projetos\GSO-old`.
 - Branch: `main`, HEAD do commit que contém este bloco, upstream `origin/main`.
-- Divergência real no fechamento: `origin/main...HEAD = 0 39`; o histórico de `origin/main` está integralmente contido no checkout atual.
+- Divergência: `origin/main` é ancestral do `main`; confirme a contagem corrente com `git rev-list --left-right --count origin/main...HEAD`.
 - Worktrees ativos: 1; branches remotas não foram excluídas; stash e refs de arquivo de reconciliação permanecem preservados.
 - Superfície do primeiro release: Dashboard Gerencial, Configurações aprovadas, Central de Ajuda e Knowledge/editor. O restante do código permanece no repositório, porém fora da superfície publicada pelo manifesto de release.
 - Validação corrente do HEAD: contracts/web typecheck, build web, 266 testes Node, validadores de governança/qualidade, documentação interna e `git diff --check` passaram.

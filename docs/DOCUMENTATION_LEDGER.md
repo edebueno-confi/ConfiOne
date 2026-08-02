@@ -2,7 +2,7 @@
 
 - checkout canônico: `C:\Projetos\GSO-old`;
 - branch `main`, HEAD do commit que contém este bloco, upstream `origin/main`;
-- divergência real no fechamento: `origin/main...HEAD = 0 39`; `origin/main` é ancestral do checkout;
+- divergência: `origin/main` é ancestral do checkout; confirme a contagem corrente com `git rev-list --left-right --count origin/main...HEAD`;
 - um único worktree ativo, stash preservado e 24 refs de arquivo de reconciliação preservadas;
 - nenhuma branch remota foi apagada; branches sem upstream e commits locais não publicados permanecem preservados;
 - superfície publicada nesta fase: Dashboard, Configurações aprovadas, Central de Ajuda e Knowledge/editor;
