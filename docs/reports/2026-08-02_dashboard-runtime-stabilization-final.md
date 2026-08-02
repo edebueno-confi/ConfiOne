@@ -11,7 +11,9 @@ O runtime do Dashboard foi estabilizado em lifecycle, semântica de frescor,
 sanitização de erros, histórico, configurações, Fontes do Dashboard e estados
 visuais. Uma execução controlada local criou o ciclo pai e concluiu o OMIE
 read-only com 3.451 registros aceitos; o resultado geral foi `partial` porque
-o HubSpot recusou a autenticação.
+o HubSpot recusou a autenticação. O tratamento de erro foi endurecido para
+classificar autenticação, evitar retry indevido e impedir mensagem bruta no
+read model.
 
 ## 2. Estado Git inicial
 
@@ -77,8 +79,10 @@ do OMIE quando necessário.
 ## 11. Sanitização
 
 Views, RPCs e UI não retornam SOAP, stack trace, token, segredo ou mensagem
-interna. Falhas mostram mensagens operacionais sanitizadas e preservam o
-contexto técnico somente no armazenamento interno autorizado.
+interna. A migration `20260802190000_hubspot_error_sanitization_v1.sql` remove
+`run.error_message` do read model de progresso; falhas mostram mensagens
+operacionais sanitizadas e preservam o contexto técnico somente no
+armazenamento interno autorizado.
 
 ## 12. Contrato de status
 
@@ -141,9 +145,9 @@ não foram incluídos em código, relatório ou evidência.
 
 ## 22. Testes
 
-Os contratos focados terminaram em 10/10 após corrigir o teste para ler a
-migration forward-only. pgTAP focado terminou em 37/37. Typechecks, build e
-testes de contratos anteriores permanecem aprovados.
+Os contratos focados terminaram em 10/10. O pgTAP focado de runtime terminou em
+40/40 incluindo a barreira do read model sanitizado. Typechecks, build, secret
+scan e testes de contratos anteriores permanecem aprovados.
 
 ## 23. Code Quality
 
@@ -158,7 +162,9 @@ externa nos provedores:
 - ciclo: `c93a5302-39c9-475f-a927-ac90cdf51177`;
 - correlation: `faeadb22-1413-4666-92c5-59c05ab42f60`;
 - resultado: `partial`;
-- HubSpot: etapa `failed`, sem `run_id`, erro sanitizado `authentication required`;
+- HubSpot: etapa `failed`, sem `run_id`; a evidência original registrou
+  `authentication required`, agora classificado internamente como
+  `authentication_error` e exposto apenas como mensagem funcional sanitizada;
 - OMIE: etapa `succeeded`, run `a528656b-9800-4312-8ab5-a8b3f7304b29`, 3.451
   aceitos e 0 rejeitados;
 - snapshot financeiro: promovido;
@@ -183,9 +189,10 @@ de artigos permanece pendente por redirecionamento do preview para `/login`.
 
 ## 27. Arquivos alterados
 
-Principais arquivos do lote: funções de sincronização HubSpot/OMIE, migration
-forward-only de lifecycle, componentes de Analytics/Settings/Knowledge, CSS,
-testes focados e documentação em `docs/reports/`.
+Principais arquivos do lote: funções de sincronização HubSpot/OMIE, migrations
+forward-only de lifecycle e sanitização do read model, componentes de
+Analytics/Settings/Knowledge, CSS, testes focados e documentação em
+`docs/reports/`.
 
 ## 28. Commits
 
@@ -197,17 +204,21 @@ Commits locais relevantes:
 - `9d55204` — editor, Histórico e Financeiro;
 - `108ae6b` — limite de captura do editor;
 - `f9554d3` — contrato da migration de reconciliação atual.
+- `f5d4495` — classificação segura dos erros HubSpot e barreira do read model.
 
 ## 29. Estado Git final
 
 Branch atual: `codex/dashboard-runtime-stabilization-20260802`. HEAD:
-`f9554d3`. Worktree limpo. Divergência: `origin/main...HEAD = 0 89`.
+`f5d4495`. Worktree limpo no encerramento documental. A divergência deve ser
+consultada com `git rev-list --left-right --count origin/main...HEAD`.
 Não há upstream configurado e nenhum push foi executado.
 
 ## 30. Limitações
 
 O HubSpot ainda depende de credencial server-side válida; a integração aparece
 configurada no banco, mas a execução real retornou `authentication required`.
+O código agora classifica esse cenário como `authentication_error`, não faz
+retry automático e não repete o ciclo sem autorização.
 O denominador de Customer Success ainda depende de decisão de domínio. O
 rebuild completo de Artigos, categorias e exportação PNG/PDF profissional não
 foi iniciado neste lote.

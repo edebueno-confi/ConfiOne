@@ -7,13 +7,17 @@ blocos históricos desta página:
 
 - Checkout canônico: `C:\Projetos\GSO-old`.
 - Branch atual: `codex/dashboard-runtime-stabilization-20260802`.
-- HEAD registrado neste fechamento: `82c4114`; branch de estabilização sem
-  upstream configurado.
+- HEAD de código registrado neste fechamento: `f5d4495`; branch de
+  estabilização sem upstream configurado.
 - Divergência: consultar `git rev-list --left-right --count origin/main...HEAD`
   em tempo de leitura; a última leitura antes deste registro retornou `0 94`.
 - Lifecycle, reconciliação, status/frescor, sanitização, Histórico e Financeiro
   foram estabilizados e validados conforme
   `docs/reports/2026-08-02_dashboard-runtime-stabilization-final.md`.
+- Erros HubSpot agora são classificados server-side, autenticação não sofre
+  retry automático e `vw_analytics_hubspot_sync_progress` projeta somente
+  `sanitized_error`, conforme a migration forward-only
+  `20260802190000_hubspot_error_sanitization_v1.sql`.
 - QA empacotado do Dashboard: 20 capturas, sem erros de console, falhas de
   requisição, overflow ou contradições.
 - Uma execução controlada local foi realizada uma única vez: o OMIE read-only
