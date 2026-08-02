@@ -1,5 +1,28 @@
 # Estado corrente do checkout canônico — macro-lote Configurações — 2026-08-02
 
+## Precedência — Dashboard Runtime Stabilization — 2026-08-02
+
+O bloco abaixo é a atualização corrente deste checkout e prevalece sobre os
+blocos históricos desta página:
+
+- Checkout canônico: `C:\Projetos\GSO-old`.
+- Branch atual: `codex/dashboard-runtime-stabilization-20260802`.
+- HEAD atual: `f9554d3`; worktree limpo; sem upstream configurado.
+- Divergência atual: `git rev-list --left-right --count origin/main...HEAD`
+  retorna `0 89`.
+- Lifecycle, reconciliação, status/frescor, sanitização, Histórico e Financeiro
+  foram estabilizados e validados conforme
+  `docs/reports/2026-08-02_dashboard-runtime-stabilization-final.md`.
+- QA empacotado do Dashboard: 20 capturas, sem erros de console, falhas de
+  requisição, overflow ou contradições.
+- A execução OMIE read-only foi concluída com 3.451 registros aceitos e zero
+  rejeitados; o ciclo completo HubSpot → OMIE permanece pendente por ausência
+  de `ANALYTICS_SYNC_SECRET` no runtime server-side local.
+- Nenhum reset, clean, merge, rebase, cherry-pick, push, deploy, migration
+  remota ou escrita externa foi executado.
+- O estado do lote é **parcialmente validado**, aguardando a execução controlada
+  do ciclo sequencial e a revisão do Product Owner.
+
 Atualização do macro-lote de Configurações, Fontes do Dashboard e Histórico:
 
 - Checkout operacional único: `C:\Projetos\GSO-old`.

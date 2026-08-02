@@ -1,0 +1,216 @@
+# Relatório Delta — Dashboard Runtime Stabilization
+
+Data: 02/08/2026
+Checkout: `C:\Projetos\GSO-old`
+Branch: `codex/dashboard-runtime-stabilization-20260802`
+Status: **parcialmente validado**
+
+## 1. Resumo executivo
+
+O runtime do Dashboard foi estabilizado em lifecycle, semântica de frescor,
+sanitização de erros, histórico, configurações, Fontes do Dashboard e estados
+visuais. Uma execução OMIE read-only foi concluída com 3.451 registros aceitos.
+O ciclo completo HubSpot → OMIE não foi executado porque o runtime server-side
+local não possui `ANALYTICS_SYNC_SECRET`.
+
+## 2. Estado Git inicial
+
+O trabalho foi preservado na branch dedicada criada a partir do checkout
+canônico. Nenhum reset, clean, merge, rebase, cherry-pick, push ou alteração
+remota foi executado. O stash existente permaneceu preservado.
+
+## 3. Skills utilizadas
+
+Foram aplicadas as skills `frontend-design`, `gso-operational-design`,
+`web-design-guidelines`, `ux-friction-analyzer`, `ui-ux-specialist`,
+`data-analytics:design-kpis`, `genius-code-quality` e
+`artifact-template-design-report`, conforme registrado no relatório técnico
+principal.
+
+## 4. Reprodução dos erros
+
+Foram reproduzidos e tratados: run HubSpot preso em execução, estados
+contraditórios de fonte, falhas OMIE não sanitizadas, histórico excessivamente
+alongado, ausência de retry seguro e falhas de contrato causadas por referência
+à migration errada no teste de lifecycle.
+
+## 5. Runs órfãos encontrados
+
+Foi encontrado um run HubSpot órfão com status operacional inconsistente. Ele
+foi reconciliado para `timed_out`, preservando o snapshot válido anterior de
+36.315 registros promovidos.
+
+## 6. Lifecycle implementado
+
+O lifecycle agora distingue `queued`, `running`, `succeeded`, `failed`,
+`partial`, `timed_out`, `cancelled` e `abandoned`. A migration forward-only
+`20260802160000_dashboard_sync_lifecycle_reconciliation_v1.sql` também encerra
+etapas pendentes ligadas a ciclos ou runs expirados.
+
+## 7. Ciclo pai HubSpot → OMIE
+
+O orquestrador cria ciclo pai, correlation ID e etapas separadas. HubSpot é
+processado antes do OMIE; uma falha terminal do HubSpot não impede o Financeiro,
+mas o resultado do ciclo passa a `partial`. A execução real completa ainda não
+foi autorizada pelo runtime local.
+
+## 8. Causa raiz OMIE
+
+As falhas observadas foram delimitadas como respostas HTTP 429/5xx, timeout,
+rede, autenticação, payload inválido e concorrência do provedor (`8020`/
+`REDUNDANT`). O erro SOAP legado não é causa publicada na interface e não é
+mais exposto ao usuário.
+
+## 9. Correção OMIE
+
+O cliente OMIE classifica falhas por categoria, preserva contexto interno e
+publica apenas erro sanitizado. A execução read-only concluída registrou 3.451
+aceitos e zero rejeitados.
+
+## 10. Política de retry
+
+Não há retry direto na tela Financeiro. A atualização permanece centralizada em
+Fontes do Dashboard e o usuário é encaminhado ao Histórico ou à configuração
+do OMIE quando necessário.
+
+## 11. Sanitização
+
+Views, RPCs e UI não retornam SOAP, stack trace, token, segredo ou mensagem
+interna. Falhas mostram mensagens operacionais sanitizadas e preservam o
+contexto técnico somente no armazenamento interno autorizado.
+
+## 12. Contrato de status
+
+`rpc_analytics_source_status()` separa `currentRunStatus` do
+`publishedSourceStatus`, além de expor tentativa, último sucesso, última falha,
+contadores, frescor e existência de snapshot válido.
+
+## 13. Verdade das métricas
+
+Dados ausentes permanecem `Indisponível`. Conversão só é calculada quando há
+denominador válido. Customer Success continua indisponível até definição
+aprovada da carteira real; o catálogo geral de empresas não é usado como
+denominador inventado.
+
+## 14. Visão Geral
+
+A Visão Geral passou a usar estado agregado coerente de HubSpot e OMIE, sem
+duplicação de status nem filtro por domínio. A reconstrução visual ampla da
+Visão Geral não faz parte deste lote e permanece pendente de aprovação visual.
+
+## 15. Financeiro
+
+Financeiro usa OMIE como fonte exclusiva, não oferece retry direto e passou a
+compartilhar o grid editorial de KPIs do piloto Comercial. A ausência de
+snapshot e falhas do provedor são exibidas sem fabricar valores.
+
+## 16. Integrações
+
+A superfície foi reduzida a HubSpot e OMIE. HubSpot cobre empresas, Comercial,
+Customer Success e Suporte; OMIE cobre Financeiro. O modo permanece fixo como
+API, e as credenciais não retornam à interface.
+
+## 17. Fontes do Dashboard
+
+Fontes mantém catálogo configurável, ativação explícita, alias, área e origem.
+As ações são autenticadas e rastreáveis; a atualização manual permanece
+read-only em relação aos provedores externos.
+
+## 18. Catálogo de pipelines
+
+O catálogo local observado contém 37 itens não arquivados e ativos: 12 deals e
+25 tickets. Pipelines são inventariados sem apagar histórico; itens ausentes
+podem ser arquivados no catálogo conforme contrato.
+
+## 19. Histórico
+
+O Histórico agora mostra ciclos pai, etapas e execuções diretas sem ciclo. Os
+ciclos são recolhíveis para reduzir rolagem e preservar rastreabilidade.
+
+## 20. Hook de commit
+
+O hook `.githooks/pre-commit` executou normalmente. O commit final de teste foi
+criado sem `--no-verify` e passou pelo `quality:staged`.
+
+## 21. Segurança
+
+Não houve alteração de segredo, migração remota, deploy, push ou escrita externa
+no HubSpot/OMIE. Secret scan terminou sem correspondências. Tokens e credenciais
+não foram incluídos em código, relatório ou evidência.
+
+## 22. Testes
+
+Os contratos focados terminaram em 10/10 após corrigir o teste para ler a
+migration forward-only. pgTAP focado terminou em 37/37. Typechecks, build e
+testes de contratos anteriores permanecem aprovados.
+
+## 23. Code Quality
+
+`quality:changed`, módulos de Analytics/Settings/Knowledge e `quality:staged`
+foram aprovados sem blockers. O lint npm geral não é configurado no projeto.
+
+## 24. Execução real controlada
+
+OMIE read-only foi executado com sucesso. O preflight/ciclo sequencial completo
+HubSpot → OMIE permanece **não executado**: o endpoint sem autenticação retorna
+401/403 e a função exige `ANALYTICS_SYNC_SECRET` server-side, ausente no
+runtime local. Nenhum segredo foi criado ou alterado para contornar isso.
+
+## 25. QA Preview
+
+O preview empacotado do Dashboard produziu 20 capturas reais. O manifesto
+registrou zero erros de console, page errors, request failures, overflow,
+respostas inesperadas, cópia proibida, contradições ou retry financeiro direto.
+
+## 26. Screenshots
+
+Artefatos: `output/dashboard-runtime-v3-preview/manifest.json` e os PNGs da
+matriz de Visão Geral, Financeiro, Integrações, Fontes e Histórico em claro e
+escuro, nos viewports 1440×900 e 390×844. A captura visual autenticada do editor
+de artigos permanece pendente por redirecionamento do preview para `/login`.
+
+## 27. Arquivos alterados
+
+Principais arquivos do lote: funções de sincronização HubSpot/OMIE, migration
+forward-only de lifecycle, componentes de Analytics/Settings/Knowledge, CSS,
+testes focados e documentação em `docs/reports/`.
+
+## 28. Commits
+
+Commits locais relevantes:
+
+- `9da38ec` — lifecycle de falhas e abandonos;
+- `f25ed42` — reconciliação de etapas;
+- `205575c` — delta de estabilização;
+- `9d55204` — editor, Histórico e Financeiro;
+- `108ae6b` — limite de captura do editor;
+- `f9554d3` — contrato da migration de reconciliação atual.
+
+## 29. Estado Git final
+
+Branch atual: `codex/dashboard-runtime-stabilization-20260802`. HEAD:
+`f9554d3`. Worktree limpo. Divergência: `origin/main...HEAD = 0 89`.
+Não há upstream configurado e nenhum push foi executado.
+
+## 30. Limitações
+
+O ciclo completo depende de provisão server-side autorizada do segredo e de
+execução do Edge Runtime com essa configuração. O denominador de Customer
+Success ainda depende de decisão de domínio. O rebuild completo de Artigos,
+categorias e exportação PNG/PDF profissional não foi iniciado neste lote.
+
+## 31. Decisões pendentes
+
+1. Prover `ANALYTICS_SYNC_SECRET` por fluxo autorizado e executar uma única vez
+   o ciclo sequencial read-only.
+2. Aprovar o denominador operacional de Customer Success.
+3. Validar visualmente o editor autenticado.
+4. Iniciar, em lote separado, o rebuild da tela de Artigos, categorias e
+   exportação profissional PNG/PDF.
+
+## Critérios de aceite
+
+Os critérios de lifecycle, status, sanitização, Financeiro sem retry, catálogo,
+hook, testes focados, QA empacotado e Git limpo estão comprovados. O critério
+de execução sequencial real permanece pendente por dependência server-side; por
+isso o lote não é declarado concluído.
