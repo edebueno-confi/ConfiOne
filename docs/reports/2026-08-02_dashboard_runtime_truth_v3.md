@@ -182,3 +182,22 @@ Estado de dados observado após a validação: `analytics_sync_cycles` ainda nã
 O rebuild completo da tela de Artigos, o fluxo real de categorias e a exportação profissional PNG/PDF continuam na fila documentada em `docs/UI_REFACTOR_BACKLOG.md`; não foram misturados a este lote de estabilização.
 
 Nota de evidência: a validação visual empacotada específica do editor Knowledge não foi concluída porque o preview isolado redirecionou a sessão QA de volta para `/login`; nenhum bypass de autenticação foi usado. O editor tem typecheck, build e contrato estático aprovados, mas a captura visual dessa superfície permanece pendente.
+# Delta de execução controlada — 2026-08-02
+
+Este delta supersede apenas a afirmação anterior de que o ciclo sequencial não
+havia sido iniciado por ausência de `ANALYTICS_SYNC_SECRET`. Após autorização
+local, uma única execução autenticada foi realizada em runtime efêmero, sem
+escritas externas nos provedores:
+
+- ciclo `c93a5302-39c9-475f-a927-ac90cdf51177`, correlation
+  `faeadb22-1413-4666-92c5-59c05ab42f60`;
+- resultado geral `partial`, com duração observada de 43.090 ms;
+- HubSpot falhou com erro sanitizado `authentication required`, sem `run_id`;
+- OMIE concluiu com run `a528656b-9800-4312-8ab5-a8b3f7304b29`, 3.451 registros
+  aceitos, zero rejeitados e snapshot financeiro promovido;
+- um ciclo órfão anterior foi reconciliado como `timed_out` antes da execução;
+- o segredo temporário e o processo local de Functions foram removidos após o
+  teste.
+
+O estado permanece parcialmente validado. A causa pendente é a credencial
+server-side válida do HubSpot; não houve repetição automática do sincronismo.

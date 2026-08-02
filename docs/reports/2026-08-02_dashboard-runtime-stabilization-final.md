@@ -9,9 +9,9 @@ Status: **parcialmente validado**
 
 O runtime do Dashboard foi estabilizado em lifecycle, semântica de frescor,
 sanitização de erros, histórico, configurações, Fontes do Dashboard e estados
-visuais. Uma execução OMIE read-only foi concluída com 3.451 registros aceitos.
-O ciclo completo HubSpot → OMIE não foi executado porque o runtime server-side
-local não possui `ANALYTICS_SYNC_SECRET`.
+visuais. Uma execução controlada local criou o ciclo pai e concluiu o OMIE
+read-only com 3.451 registros aceitos; o resultado geral foi `partial` porque
+o HubSpot recusou a autenticação.
 
 ## 2. Estado Git inicial
 
@@ -51,8 +51,9 @@ etapas pendentes ligadas a ciclos ou runs expirados.
 
 O orquestrador cria ciclo pai, correlation ID e etapas separadas. HubSpot é
 processado antes do OMIE; uma falha terminal do HubSpot não impede o Financeiro,
-mas o resultado do ciclo passa a `partial`. A execução real completa ainda não
-foi autorizada pelo runtime local.
+mas o resultado do ciclo passa a `partial`. O ciclo real `c93a5302-39c9-475f-a927-ac90cdf51177`
+foi concluído em aproximadamente 43,09 s com correlation ID
+`faeadb22-1413-4666-92c5-59c05ab42f60`.
 
 ## 8. Causa raiz OMIE
 
@@ -151,10 +152,21 @@ foram aprovados sem blockers. O lint npm geral não é configurado no projeto.
 
 ## 24. Execução real controlada
 
-OMIE read-only foi executado com sucesso. O preflight/ciclo sequencial completo
-HubSpot → OMIE permanece **não executado**: o endpoint sem autenticação retorna
-401/403 e a função exige `ANALYTICS_SYNC_SECRET` server-side, ausente no
-runtime local. Nenhum segredo foi criado ou alterado para contornar isso.
+Foi executada uma única chamada autenticada no runtime local efêmero, sem escrita
+externa nos provedores:
+
+- ciclo: `c93a5302-39c9-475f-a927-ac90cdf51177`;
+- correlation: `faeadb22-1413-4666-92c5-59c05ab42f60`;
+- resultado: `partial`;
+- HubSpot: etapa `failed`, sem `run_id`, erro sanitizado `authentication required`;
+- OMIE: etapa `succeeded`, run `a528656b-9800-4312-8ab5-a8b3f7304b29`, 3.451
+  aceitos e 0 rejeitados;
+- snapshot financeiro: promovido;
+- duração observada pelo cliente: 43.090 ms.
+
+Antes dela, o ciclo órfão `e2e580d9-34be-474a-b359-a671f48440f2` foi
+reconciliado como `timed_out`, com suas etapas encerradas. O segredo local
+efêmero e o processo de Functions foram removidos após a execução.
 
 ## 25. QA Preview
 
@@ -194,15 +206,16 @@ Não há upstream configurado e nenhum push foi executado.
 
 ## 30. Limitações
 
-O ciclo completo depende de provisão server-side autorizada do segredo e de
-execução do Edge Runtime com essa configuração. O denominador de Customer
-Success ainda depende de decisão de domínio. O rebuild completo de Artigos,
-categorias e exportação PNG/PDF profissional não foi iniciado neste lote.
+O HubSpot ainda depende de credencial server-side válida; a integração aparece
+configurada no banco, mas a execução real retornou `authentication required`.
+O denominador de Customer Success ainda depende de decisão de domínio. O
+rebuild completo de Artigos, categorias e exportação PNG/PDF profissional não
+foi iniciado neste lote.
 
 ## 31. Decisões pendentes
 
-1. Prover `ANALYTICS_SYNC_SECRET` por fluxo autorizado e executar uma única vez
-   o ciclo sequencial read-only.
+1. Corrigir/provisionar a credencial server-side válida do HubSpot e autorizar
+   novo ciclo somente em lote separado; não repetir automaticamente.
 2. Aprovar o denominador operacional de Customer Success.
 3. Validar visualmente o editor autenticado.
 4. Iniciar, em lote separado, o rebuild da tela de Artigos, categorias e
