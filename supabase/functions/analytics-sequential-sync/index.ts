@@ -94,10 +94,24 @@ async function runHubspotToCompletion(
 ) {
   let run = await activeHubspotRun(client, correlationId);
   if (!run) {
-    const started = await callFunction(config.baseUrl, config.anonKey, config.secret, 'hubspot-orchestrator-start', correlationId, { correlationId });
-    if (started.status >= 400) return { runId: null, status: 'failed', recordsPromoted: 0, message: String(started.payload?.error ?? 'Falha ao iniciar o HubSpot.') };
+    let started: FunctionResult;
+    try {
+      started = await callFunction(config.baseUrl, config.anonKey, config.secret, 'hubspot-orchestrator-start', correlationId, { correlationId });
+    } catch (error) {
+      await updateStep(client, cycleId, 'hubspot', { status: 'failed', finished_at: new Date().toISOString(), sanitized_error: runnerMessage(error) });
+      return { runId: null, status: 'failed', recordsPromoted: 0, message: runnerMessage(error) };
+    }
+    if (started.status >= 400) {
+      const message = String(started.payload?.error ?? 'Falha ao iniciar o HubSpot.');
+      await updateStep(client, cycleId, 'hubspot', { status: 'failed', finished_at: new Date().toISOString(), sanitized_error: message });
+      return { runId: null, status: 'failed', recordsPromoted: 0, message };
+    }
     const runId = String(started.payload?.run_id ?? '');
-    if (!runId) return { runId: null, status: 'failed', recordsPromoted: 0, message: 'O HubSpot nao retornou o identificador da execucao.' };
+    if (!runId) {
+      const message = 'O HubSpot nao retornou o identificador da execucao.';
+      await updateStep(client, cycleId, 'hubspot', { status: 'failed', finished_at: new Date().toISOString(), sanitized_error: message });
+      return { runId: null, status: 'failed', recordsPromoted: 0, message };
+    }
     await client.from('hubspot_sync_runs').update({ cycle_id: cycleId }).eq('id', runId);
     run = { id: runId, status: String(started.payload?.status ?? 'queued'), correlation_id: correlationId };
   }
@@ -115,8 +129,18 @@ async function runHubspotToCompletion(
       return { runId: run.id, status: progress.status, recordsPromoted: Number(progress.records_promoted ?? 0) };
     }
 
-    const dispatched = await callFunction(config.baseUrl, config.anonKey, config.secret, 'hubspot-orchestrator-dispatcher', correlationId, {});
-    if (dispatched.status >= 400) return { runId: run.id, status: 'failed', recordsPromoted: 0, message: String(dispatched.payload?.error ?? 'Falha ao processar a fila HubSpot.') };
+    let dispatched: FunctionResult;
+    try {
+      dispatched = await callFunction(config.baseUrl, config.anonKey, config.secret, 'hubspot-orchestrator-dispatcher', correlationId, {});
+    } catch (error) {
+      await updateStep(client, cycleId, 'hubspot', { status: 'failed', finished_at: new Date().toISOString(), sanitized_error: runnerMessage(error) });
+      return { runId: run.id, status: 'failed', recordsPromoted: 0, message: runnerMessage(error) };
+    }
+    if (dispatched.status >= 400) {
+      const message = String(dispatched.payload?.error ?? 'Falha ao processar a fila HubSpot.');
+      await updateStep(client, cycleId, 'hubspot', { status: 'failed', finished_at: new Date().toISOString(), sanitized_error: message });
+      return { runId: run.id, status: 'failed', recordsPromoted: 0, message };
+    }
     await wait(250);
   }
 

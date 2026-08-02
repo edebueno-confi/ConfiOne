@@ -20,7 +20,17 @@ function rejectionCounts(rejected: Array<{ reasonCode: string }>) {
 
 export async function runOmieSnapshot(client: SupabaseClient, credentials: OmieCredentials, actorId: string | null, correlationId: string, cycleId: string | null = null) {
   const staleBefore = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-  const { error: abandonError } = await client.from('analytics_finance_sync_runs').update({ status: 'abandoned', error_message: 'Execucao abandonada pelo worker e encerrada automaticamente.', finished_at: new Date().toISOString() }).eq('status', 'processing').lt('started_at', staleBefore);
+  const abandonedAt = new Date().toISOString();
+  const { error: abandonError } = await client.from('analytics_finance_sync_runs').update({
+    status: 'abandoned',
+    error_message: 'Execucao abandonada pelo worker e encerrada automaticamente.',
+    internal_error_code: 'execution_abandoned',
+    internal_message: 'Execucao abandonada pelo worker e encerrada automaticamente.',
+    sanitized_error: 'A execucao do OMIE foi interrompida por falta de atualizacao do worker.',
+    error_occurred_at: abandonedAt,
+    last_heartbeat_at: abandonedAt,
+    finished_at: abandonedAt,
+  }).eq('status', 'processing').lt('started_at', staleBefore);
   if (abandonError) throw new Error(`Falha ao encerrar execucao OMIE antiga: ${abandonError.message}`);
   const { data: syncRun, error: syncRunError } = await client.from('analytics_finance_sync_runs').insert({ status: 'processing', triggered_by_user_id: actorId, correlation_id: correlationId, cycle_id: cycleId }).select('id').single();
   if (syncRunError?.code === '23505') { const error = new Error('Ja existe uma sincronizacao OMIE em andamento. Aguarde a conclusao antes de tentar novamente.'); Object.assign(error, { code: 'OMIE_SYNC_IN_PROGRESS' }); throw error; }
