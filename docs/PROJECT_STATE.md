@@ -3,7 +3,8 @@
 Atualização do macro-lote de Configurações, Fontes do Dashboard e Histórico:
 
 - Checkout operacional único: `C:\Projetos\GSO-old`.
-- Branch: `codex/dashboard-management-rebuild-20260802`; nenhum upstream ou push.
+- Branch: `codex/dashboard-management-rebuild-20260802`, HEAD `7303cc3`; nenhum upstream ou push.
+- Divergência atual: `git rev-list --left-right --count origin/main...HEAD` retorna `0 69`.
 - Configurações usa shell único e rotas canônicas para Integrações, Fontes do
   Dashboard e Histórico; redirects legados foram preservados.
 - Integrações publica somente HubSpot e OMIE. OMIE recebe `APP_KEY` e

@@ -189,14 +189,23 @@ migrations de catálogo/histórico, teste pgTAP, contratos Node, `docs/spec.md` 
 
 ## 23. Commits
 
-Os commits locais serão separados por arquitetura, integrações, fontes,
-descoberta, remoção segura, testes e documentação/QA, sem push. Os hashes finais
-serão registrados após os gates de staging.
+Commits locais, sem push:
+
+- `9432ad6` shell e rotas canônicas;
+- `7ca344a` configuração de integrações;
+- `e6b26c7` fontes e histórico;
+- `be73634` catálogo HubSpot e migrations;
+- `f284cab` remoção segura do diagnóstico legado;
+- `a9a10cb` contratos Node e pgTAP;
+- `17a8730` estilos do control plane;
+- `7303cc3` documentação e QA empacotado.
 
 ## 24. Estado Git final
 
-O lote só será encerrado após staging revisado, commits locais e confirmação de
-worktree limpo. Nenhum upstream será criado e nenhum push será feito.
+Lote encerrado com staging revisado, commits locais e worktree limpo. HEAD:
+`7303cc3`; branch `codex/dashboard-management-rebuild-20260802`; sem upstream;
+`git rev-list --left-right --count origin/main...HEAD` = `0 69`. Nenhum upstream
+foi criado e nenhum push foi feito.
 
 ## 25. Limitações
 
