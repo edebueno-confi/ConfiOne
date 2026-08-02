@@ -41,4 +41,20 @@
 
 final result: blocked
 
+## Atualização da matriz autenticada — 2026-08-02
+
+A matriz completa foi persistida em `dashboard-matrix-2026-08-02.md` e no
+manifesto JSON correspondente. Foram geradas 48 capturas reais das seis
+superfícies, nos quatro viewports solicitados e nos dois temas.
+
+- 48/48 sem modal sobreposto;
+- 48/48 sem overflow horizontal;
+- 48/48 sem erros de console ou de página;
+- 48/48 com o tema esperado aplicado;
+- 24 falhas de requisição do dev server para `AdminConsoleShell.tsx` em
+  viewport 768px, sem erro de renderização observável.
+
+Resultado desta rodada: `partially-validated`. A confirmação de rede deve ser
+repetida em servidor empacotado; isso não foi tratado como falha de layout.
+
 Motivo do bloqueio: a validação visual do estado de dados do Customer Success depende da aplicação da migration forward-only no banco autorizado; dimensões também não são idênticas às referências fornecidas.
