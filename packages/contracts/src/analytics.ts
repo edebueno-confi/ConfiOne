@@ -2,15 +2,49 @@ export const ANALYTICS_DATA_STATUSES = [
   'fresh',
   'stale',
   'partial',
+  'never_synced',
   'empty',
   'zero',
   'not_configured',
   'syncing',
   'unavailable',
+  'failed',
   'error',
 ] as const;
 
 export type AnalyticsDataStatus = (typeof ANALYTICS_DATA_STATUSES)[number];
+
+export const ANALYTICS_SOURCE_STATUSES = [
+  'never_synced',
+  'syncing',
+  'fresh',
+  'stale',
+  'partial',
+  'failed',
+  'unavailable',
+] as const;
+
+export type AnalyticsSourceStatus = (typeof ANALYTICS_SOURCE_STATUSES)[number];
+
+export interface AnalyticsSourceState {
+  key: string;
+  label: string;
+  status: AnalyticsSourceStatus;
+  lastAttemptAt: string | null;
+  lastSuccessAt: string | null;
+  durationMs: number | null;
+  processedCount: number | null;
+  error: string | null;
+  freshnessMinutes: number | null;
+  runId: string | null;
+  origin: string;
+}
+
+export interface AnalyticsSourceStatusPayload {
+  hubspot: AnalyticsSourceState;
+  omie: AnalyticsSourceState;
+  globalStatus: AnalyticsSourceStatus;
+}
 
 export type AnalyticsTemporalType = 'period_flow' | 'current_position' | 'snapshot' | 'accumulated';
 

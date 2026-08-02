@@ -21,8 +21,10 @@ export type ExecutiveException = {
 
 const STATUS_SEVERITY: Record<AnalyticsBlockState['status'], 1 | 2 | 3> = {
   error: 3,
+  failed: 3,
   unavailable: 3,
   not_configured: 3,
+  never_synced: 3,
   partial: 2,
   stale: 2,
   syncing: 2,

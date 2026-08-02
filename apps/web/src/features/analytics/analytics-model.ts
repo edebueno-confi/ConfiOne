@@ -1,4 +1,4 @@
-import type { AnalyticsBlockState, AnalyticsDataStatus } from '@genius-support-os/contracts';
+import type { AnalyticsBlockState, AnalyticsDataStatus, AnalyticsSourceStatus, AnalyticsSourceState, AnalyticsSourceStatusPayload } from '@genius-support-os/contracts';
 import { createAnalyticsBlockState, parseAnalyticsNumber } from './analytics-state';
 
 // Tipos e mapeadores do modulo Analytics/Dashboard Gerencial.
@@ -264,6 +264,64 @@ export interface FinanceSourceStatus {
   api: { provider: string; resource: string; configured: boolean; lastSyncAt: string | null; lastStatus: string | null; metrics: string[] };
 }
 
+export type DashboardSourceStatus = AnalyticsSourceState;
+
+export function mapAnalyticsSourceStatus(value: unknown): AnalyticsSourceStatusPayload {
+  const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  const valid: AnalyticsSourceStatus[] = ['never_synced', 'syncing', 'fresh', 'stale', 'partial', 'failed', 'unavailable'];
+  const map = (key: string, label: string): DashboardSourceStatus => {
+    const row = (data[key] && typeof data[key] === 'object' ? data[key] : {}) as Record<string, unknown>;
+    const status = toText(row.status);
+    return {
+      key,
+      label,
+      status: (valid.includes(status as AnalyticsSourceStatus) ? status : 'unavailable') as AnalyticsSourceStatus,
+      lastAttemptAt: row.lastAttemptAt ? toText(row.lastAttemptAt) : null,
+      lastSuccessAt: row.lastSuccessAt ? toText(row.lastSuccessAt) : null,
+      durationMs: row.durationMs == null ? null : toNumber(row.durationMs),
+      processedCount: row.processedCount == null ? null : toNumber(row.processedCount),
+      error: row.error ? toText(row.error) : null,
+      freshnessMinutes: row.freshnessMinutes == null ? null : toNumber(row.freshnessMinutes),
+      runId: row.runId ? toText(row.runId) : null,
+      origin: toText(row.origin) || key,
+    };
+  };
+  const globalStatus = toText(data.globalStatus);
+  return {
+    hubspot: map('hubspot', 'HubSpot'),
+    omie: map('omie', 'OMIE'),
+    globalStatus: (valid.includes(globalStatus as AnalyticsSourceStatus) ? globalStatus : 'unavailable') as AnalyticsSourceStatus,
+  };
+}
+
+export function analyticsSourceToBlockState(source: AnalyticsSourceState): AnalyticsBlockState {
+  return {
+    status: source.status,
+    source: source.label,
+    asOf: source.lastSuccessAt,
+    lastSuccessfulSyncAt: source.lastSuccessAt,
+    syncRunId: source.runId,
+    coverage: { expected: null, received: source.processedCount },
+    reason: source.error,
+  };
+}
+
+export function analyticsGlobalToBlockState(payload: AnalyticsSourceStatusPayload): AnalyticsBlockState {
+  const lastSuccessAt = [payload.hubspot.lastSuccessAt, payload.omie.lastSuccessAt].filter(Boolean).sort().at(-1) ?? null;
+  const reason = payload.globalStatus === 'failed'
+    ? [payload.hubspot.error, payload.omie.error].filter(Boolean).join(' ')
+    : null;
+  return {
+    status: payload.globalStatus,
+    source: 'HubSpot + OMIE',
+    asOf: lastSuccessAt,
+    lastSuccessfulSyncAt: lastSuccessAt,
+    syncRunId: null,
+    coverage: { expected: null, received: null },
+    reason: reason || null,
+  };
+}
+
 export interface OmieSyncRun {
   id: string;
   sourceKey: string;
@@ -418,6 +476,7 @@ export interface AnalyticsPageProps {
   onSharedPeriodChange?: (period: AnalyticsSharedPeriod) => void;
   onRetry?: () => void;
   isDashboardViewer?: boolean;
+  sourceStatus?: AnalyticsSourceStatusPayload;
 }
 
 export const EMPTY_COMMERCIAL_KPIS: CommercialKpis = {
@@ -582,7 +641,7 @@ export function mapCeoSnapshot(value: unknown): CeoSnapshot {
 
 function createSnapshotState(data: Record<string, unknown>, source: string, received: number, sourceConfigured = true): AnalyticsBlockState {
   const status = data.status;
-  const validStatus = typeof status === 'string' && ['fresh', 'stale', 'partial', 'empty', 'zero', 'not_configured', 'syncing', 'unavailable', 'error'].includes(status);
+  const validStatus = typeof status === 'string' && ['fresh', 'stale', 'partial', 'never_synced', 'empty', 'zero', 'not_configured', 'syncing', 'unavailable', 'failed', 'error'].includes(status);
   const lastSuccessfulSyncAt = typeof data.last_successful_sync_at === 'string'
     ? data.last_successful_sync_at
     : typeof data.synced_at === 'string' ? data.synced_at : null;

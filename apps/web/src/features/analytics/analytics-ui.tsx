@@ -6,12 +6,14 @@ const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
   fresh: 'Atualizado',
   stale: 'Pode estar desatualizado',
   partial: 'Dados parciais',
+  never_synced: 'Sincronização ainda não realizada',
   empty: 'Nenhum registro no recorte',
   zero: 'Zero real no recorte',
-  not_configured: 'Fonte não configurada',
+  not_configured: 'Fonte indisponível',
   syncing: 'Sincronizando',
   unavailable: 'Fonte indisponível',
-  error: 'Erro na fonte',
+  failed: 'Falha na sincronização',
+  error: 'Falha na sincronização',
 };
 
 function formatStateDate(value: string | null): string {
@@ -22,12 +24,12 @@ function formatStateDate(value: string | null): string {
 
 export function AnalyticsStateBadge({ state }: { state?: AnalyticsBlockState }) {
   if (!state) return null;
-  const tone = state.status === 'fresh' || state.status === 'zero' ? 'text-[color:var(--minimal-action)]' : state.status === 'stale' || state.status === 'partial' ? 'text-[color:var(--minimal-warning-text)]' : 'text-[color:var(--minimal-danger-text)]';
-  const statusLabel = state.status === 'fresh' && !state.lastSuccessfulSyncAt ? 'Dados recebidos' : STATUS_LABELS[state.status];
+  const tone = state.status === 'fresh' || state.status === 'zero' ? 'text-[color:var(--minimal-action)]' : state.status === 'stale' || state.status === 'partial' || state.status === 'never_synced' || state.status === 'syncing' ? 'text-[color:var(--minimal-warning-text)]' : 'text-[color:var(--minimal-danger-text)]';
+  const statusLabel = STATUS_LABELS[state.status];
+  const dateLabel = state.status === 'fresh' || state.status === 'stale' || state.status === 'partial' ? formatStateDate(state.lastSuccessfulSyncAt) : state.status === 'syncing' ? 'execução em andamento' : '';
   return <span className={`inline-flex flex-wrap items-center gap-1 text-[11px] ${tone}`} aria-label={`Estado dos dados: ${statusLabel}`}>
     <span className="font-semibold">{statusLabel}</span>
-    <span aria-hidden="true">·</span>
-    <span>{formatStateDate(state.lastSuccessfulSyncAt)}</span>
+    {dateLabel ? <><span aria-hidden="true">·</span><span>{dateLabel}</span></> : null}
     {state.coverage.expected != null && state.coverage.received != null ? <span>· cobertura {state.coverage.received}/{state.coverage.expected}</span> : null}
   </span>;
 }

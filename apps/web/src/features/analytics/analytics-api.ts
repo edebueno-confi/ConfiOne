@@ -41,7 +41,9 @@ import {
   mapAnalyticsSourceConfig,
   type ReconciliationQualityResult,
   type AnalyticsSourceConfig,
+  mapAnalyticsSourceStatus,
 } from './analytics-model';
+import type { AnalyticsSourceStatusPayload } from '@genius-support-os/contracts';
 
 export interface HubspotCsDiagnosticPipeline {
   label: string;
@@ -188,6 +190,13 @@ export async function getLatestSyncRun(): Promise<SyncRun | null> {
   }
 
   return latest;
+}
+
+export async function getAnalyticsSourceStatus(): Promise<AnalyticsSourceStatusPayload> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_analytics_source_status');
+  if (error) throw toAppError(error, 'Falha ao carregar o estado das fontes do dashboard.');
+  return mapAnalyticsSourceStatus(data);
 }
 
 export async function listHubspotSyncRuns(): Promise<SyncRun[]> {
