@@ -1,8 +1,8 @@
 # Relatório Delta — Dashboard e contratos de métricas
 
-Data: 2026-08-01/02  
-Checkout: `C:\Projetos\GSO-old`  
-Branch: `main`  
+Data: 2026-08-01/02
+Checkout: `C:\Projetos\GSO-old`
+Branch: `main`
 HEAD de referência: `3dabf7d`
 
 ## 1. Proveniência Git
