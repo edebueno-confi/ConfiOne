@@ -27,7 +27,7 @@ if (!/^---\nname:\s*genius-code-quality\ndescription:\s*Use when/m.test(skillTex
 for (const forbidden of ['git reset', 'git clean', 'git stash', 'supabase db reset', 'git checkout --']) {
   if (!skillText.includes(forbidden)) errors.push(`SKILL.md deve documentar proibição: ${forbidden}`);
 }
-for (const mode of ['fast', 'changed', 'module', 'full']) {
+for (const mode of ['fast', 'changed', 'staged', 'module', 'full']) {
   if (!skillText.includes(`$genius-code-quality ${mode}`)) errors.push(`modo não documentado: ${mode}`);
 }
 const detectorText = fs.readFileSync(path.join(skill, 'scripts', 'check-project-patterns.mjs'), 'utf8');
