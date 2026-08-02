@@ -6,6 +6,7 @@ const edge = await readFile(new URL('../../supabase/functions/analytics-sequenti
 const compatibility = await readFile(new URL('../../supabase/functions/analytics-integration-run/index.ts', import.meta.url), 'utf8');
 const omieEntry = await readFile(new URL('../../supabase/functions/omie-sync/index.ts', import.meta.url), 'utf8');
 const omieService = await readFile(new URL('../../supabase/functions/_shared/omie-sync-service.ts', import.meta.url), 'utf8');
+const serviceIdentityMigration = await readFile(new URL('../../supabase/migrations/20260802180000_dashboard_hubspot_service_identity_v2.sql', import.meta.url), 'utf8');
 const config = await readFile(new URL('../../apps/web/src/features/settings/DashboardSourcesSettingsPage.tsx', import.meta.url), 'utf8');
 const api = await readFile(new URL('../../apps/web/src/features/analytics/analytics-api.ts', import.meta.url), 'utf8');
 
@@ -53,4 +54,9 @@ test('run OMIE fica vinculado ao ciclo somente pelo orquestrador interno', () =>
   assert.match(omieEntry, /const cycleId = scheduled &&/);
   assert.match(omieEntry, /runOmieSnapshot\([^;]+cycleId\)/);
   assert.match(omieService, /cycle_id: cycleId/);
+});
+
+test('RPC HubSpot aceita identidade interna sem exigir sub de usuario', () => {
+  assert.match(serviceIdentityMigration, /v_is_service_role boolean := app_private\.is_internal_service_request\(\)/);
+  assert.doesNotMatch(serviceIdentityMigration, /v_is_service_role boolean := coalesce\(current_setting\('request\.jwt\.claim\.role'/);
 });
