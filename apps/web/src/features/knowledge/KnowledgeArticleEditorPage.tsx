@@ -1329,11 +1329,17 @@ function RichTextArticleEditor({
   onImageButton: () => void;
   onPaste: (event: ClipboardEvent<HTMLElement>) => void;
 }) {
+  type ValueDialogKind = 'link' | 'video';
+
   const [openToolbarMenu, setOpenToolbarMenu] = useState<
     'block' | 'text-color' | 'mark-color' | 'insert' | null
   >(null);
   const [relatedDraftOpen, setRelatedDraftOpen] = useState(false);
   const [relatedQuery, setRelatedQuery] = useState('');
+  const [valueDialog, setValueDialog] = useState<ValueDialogKind | null>(null);
+  const [valueDraft, setValueDraft] = useState('');
+  const [valueDialogError, setValueDialogError] = useState<string | null>(null);
+  const valueInputRef = useRef<HTMLInputElement | null>(null);
 
   const htmlContent = useMemo(
     () => renderEditorHtmlFromMarkdown(bodyMd, assets),
@@ -1404,6 +1410,14 @@ function RichTextArticleEditor({
 
     return () => onRegisterMarkdownInserter(null);
   }, [assets, editor, onRegisterMarkdownInserter]);
+
+  useEffect(() => {
+    if (!valueDialog) {
+      return;
+    }
+    valueInputRef.current?.focus();
+    valueInputRef.current?.select();
+  }, [valueDialog]);
 
   const wordCount = useMemo(() => {
     const text = editor?.getText() ?? bodyMd;
@@ -1480,41 +1494,67 @@ function RichTextArticleEditor({
     editor.chain().focus().setMark('markTone', { tone }).run();
   }
 
+  function openValueDialog(kind: ValueDialogKind, initialValue = '') {
+    setValueDraft(initialValue);
+    setValueDialogError(null);
+    setValueDialog(kind);
+    setOpenToolbarMenu(null);
+    setRelatedDraftOpen(false);
+  }
+
+  function closeValueDialog() {
+    setValueDialog(null);
+    setValueDraft('');
+    setValueDialogError(null);
+  }
+
+  function submitValueDialog(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editor || !valueDialog) {
+      return;
+    }
+
+    const value = valueDraft.trim();
+    if (valueDialog === 'link') {
+      if (!value) {
+        editor.chain().focus().unsetLink().run();
+        closeValueDialog();
+        return;
+      }
+      if (!isSafeEditorHref(value)) {
+        setValueDialogError('Use apenas links http, https ou mailto.');
+        return;
+      }
+      editor.chain().focus().extendMarkRange('link').setLink({ href: value }).run();
+      closeValueDialog();
+      return;
+    }
+
+    const videoId = extractYouTubeVideoId(value);
+    if (!videoId) {
+      setValueDialogError(
+        'Use apenas URLs youtube.com, youtu.be ou youtube-nocookie.com.',
+      );
+      return;
+    }
+    editor
+      .chain()
+      .focus()
+      .insertContent({ type: 'knowledgeYoutube', attrs: { videoId, size: 'medium' } })
+      .run();
+    closeValueDialog();
+  }
+
   function insertLink() {
     if (!editor) {
       return;
     }
     const previousHref = editor.getAttributes('link').href as string | undefined;
-    const href = window.prompt('Cole a URL segura do link', previousHref ?? 'https://');
-    if (href === null) {
-      return;
-    }
-    if (!href.trim()) {
-      editor.chain().focus().unsetLink().run();
-      return;
-    }
-    if (!isSafeEditorHref(href)) {
-      window.alert('Use apenas links http, https ou mailto.');
-      return;
-    }
-    editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
+    openValueDialog('link', previousHref ?? 'https://');
   }
 
   function insertVideo() {
-    const value = window.prompt('Cole uma URL do YouTube');
-    if (!value) {
-      return;
-    }
-    const videoId = extractYouTubeVideoId(value);
-    if (!videoId) {
-      window.alert('Use apenas URLs youtube.com, youtu.be ou youtube-nocookie.com.');
-      return;
-    }
-    editor
-      ?.chain()
-      .focus()
-      .insertContent({ type: 'knowledgeYoutube', attrs: { videoId, size: 'medium' } })
-      .run();
+    openValueDialog('video');
   }
 
   const relatedArticleOptions = useMemo(() => {
@@ -1745,6 +1785,63 @@ function RichTextArticleEditor({
       </div>
 
       <EditorContent className="knowledge-rich-editor" editor={editor} />
+
+      {valueDialog ? (
+        <div
+          aria-labelledby="knowledge-editor-value-dialog-title"
+          aria-modal="true"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgba(12,18,32,0.5)] p-4 backdrop-blur-sm"
+          role="dialog"
+        >
+          <form
+            className="w-full max-w-md rounded-2xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-5 shadow-2xl"
+            onSubmit={submitValueDialog}
+          >
+            <h2
+              className="text-base font-semibold text-[color:var(--minimal-text)]"
+              id="knowledge-editor-value-dialog-title"
+            >
+              {valueDialog === 'link' ? 'Inserir link' : 'Inserir vídeo do YouTube'}
+            </h2>
+            <p className="mt-1 text-sm leading-5 text-[color:var(--minimal-text-secondary)]">
+              {valueDialog === 'link'
+                ? 'Informe uma URL segura. Deixe vazio para remover o link da seleção.'
+                : 'Informe a URL do vídeo; o conteúdo será incorporado somente se o domínio for aceito.'}
+            </p>
+            <label className="mt-4 grid gap-2" htmlFor="knowledge-editor-value-input">
+              <span className="text-sm font-medium text-[color:var(--minimal-text)]">URL</span>
+              <input
+                aria-describedby={valueDialogError ? 'knowledge-editor-value-error' : undefined}
+                aria-invalid={Boolean(valueDialogError)}
+                className="h-10 rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-3.5 text-sm text-[color:var(--minimal-text)] outline-none transition-colors placeholder:text-[color:var(--minimal-text-tertiary)] focus:border-[color:var(--minimal-action)] focus:ring-2 focus:ring-[color:var(--minimal-focus)]"
+                id="knowledge-editor-value-input"
+                onChange={(event) => {
+                  setValueDraft(event.target.value);
+                  setValueDialogError(null);
+                }}
+                ref={valueInputRef}
+                type="text"
+                value={valueDraft}
+              />
+            </label>
+            {valueDialogError ? (
+              <p
+                className="mt-2 text-sm text-[color:var(--color-danger-ink)]"
+                id="knowledge-editor-value-error"
+                role="alert"
+              >
+                {valueDialogError}
+              </p>
+            ) : null}
+            <div className="mt-5 flex justify-end gap-2">
+              <GhostButton onClick={closeValueDialog} type="button">
+                Cancelar
+              </GhostButton>
+              <AppButton type="submit">Confirmar</AppButton>
+            </div>
+          </form>
+        </div>
+      ) : null}
 
       <div className="knowledge-editor-statusbar">
         <span>{wordCount} palavras · Edição local</span>
