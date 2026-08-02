@@ -13,6 +13,32 @@ export interface AnalyticsReportData {
   finance?: FinanceSnapshot;
 }
 
+const NON_EXPORTABLE_STATUSES = new Set([
+  'never_synced',
+  'syncing',
+  'unavailable',
+  'unavailable_source',
+  'unavailable_contract',
+  'not_configured',
+  'failed',
+  'error',
+]);
+
+function hasExportableSection(snapshot: { state?: { status: string } } | undefined) {
+  if (!snapshot) return false;
+  const status = snapshot.state?.status;
+  return status !== 'empty' && !NON_EXPORTABLE_STATUSES.has(status ?? '');
+}
+
+export function hasExportableAnalyticsData(data: AnalyticsReportData) {
+  return data.selected.some((section) => {
+    if (section === 'ceo') return hasExportableSection(data.ceo);
+    if (section === 'commercial') return hasExportableSection(data.commercial);
+    if (section === 'cs') return hasExportableSection(data.cs);
+    return hasExportableSection(data.finance);
+  });
+}
+
 function escapeHtml(value: unknown) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
