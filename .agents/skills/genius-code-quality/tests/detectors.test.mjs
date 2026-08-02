@@ -31,6 +31,8 @@ test('classifies representative source layers', () => {
 test('does not flag a SECURITY DEFINER function with an empty search_path', () => {
   const findings = analyzeSource({ file: 'supabase/migrations/secure.sql', content: safeSecurityDefiner, ...options });
   assert.equal(findings.filter((finding) => finding.id === 'security-definer-context').length, 0);
+  const inline = safeSecurityDefiner.replace("set search_path = ''\n", "set search_path = '' as $$\n");
+  assert.equal(analyzeSource({ file: 'supabase/migrations/secure-inline.sql', content: inline, ...options }).length, 0);
 });
 
 test('flags missing and unsafe SECURITY DEFINER search_path with contextual status', () => {

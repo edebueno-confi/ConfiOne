@@ -122,7 +122,7 @@ function securityFindings({ file, content, mode, commit, layer }) {
   for (const blockInfo of functionBlocks(content)) {
     const { block, start, name } = blockInfo;
     if (!/security\s+definer/i.test(block)) continue;
-    const searchPath = block.match(/set\s+(?:local\s+)?search_path\s*(?:=|to)\s*([^;\n]+)/i)?.[1]?.trim() ?? null;
+    const searchPath = block.match(/set\s+(?:local\s+)?search_path\s*(?:=|to)\s*(''|""|[^;\n]+?)(?=\s+as\b|;|\n)/i)?.[1]?.trim() ?? null;
     if (searchPath === "''" || searchPath === '""') continue;
     if (searchPath && /\bpublic\b|\bpg_temp\b/i.test(searchPath)) {
       findings.push(makeFinding({
@@ -324,7 +324,7 @@ export function enrichHistoricalFindings(findings, sources) {
     if (classifyLayer(source.file) !== 'sql-migration') continue;
     for (const block of functionBlocks(source.content)) {
       if (!/security\s+definer/i.test(block.block)) continue;
-      const searchPath = block.block.match(/set\s+(?:local\s+)?search_path\s*(?:=|to)\s*([^;\n]+)/i)?.[1]?.trim();
+      const searchPath = block.block.match(/set\s+(?:local\s+)?search_path\s*(?:=|to)\s*(''|""|[^;\n]+?)(?=\s+as\b|;|\n)/i)?.[1]?.trim();
       if (searchPath === "''" || searchPath === '""') safeDefinitions.set(block.name, source.file);
     }
   }
