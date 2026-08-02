@@ -24,7 +24,8 @@ test('acoes de sincronizacao ficam centralizadas em Configuracoes', () => {
   assert.doesNotMatch(shell, /Sincronizar (?:HubSpot|OMIE|CS)/);
   assert.match(config, /triggerSequentialAnalyticsSync/);
   assert.match(config, /triggerHubspotSync/);
-  assert.match(config, /triggerCsSupportSync/);
+  assert.match(config, /triggerOmieSync/);
+  assert.doesNotMatch(config, /triggerCsSupportSync/);
 });
 
 test('nenhum domínio do Analytics publica CTA de sincronização própria', () => {
@@ -41,10 +42,18 @@ test('Customer Success não reutiliza snapshot executivo nem dados de tickets', 
   const source = fs.readFileSync(path.join(analyticsDir, 'AnalyticsCustomerSuccessPage.tsx'), 'utf8');
 
   assert.doesNotMatch(source, /getCeoSnapshot|getCsSnapshot/);
-  assert.doesNotMatch(source, /KpiCard|AnalyticsRetryAction/);
-  assert.match(source, /Indicadores de Customer Success ainda não configurados/);
-  assert.match(source, /contrato de origem próprio/);
-  assert.match(source, /Nenhum indicador foi inferido .* tickets/);
+  assert.match(source, /getCustomerSuccessSnapshot/);
+  assert.match(source, /KpiCard|AnalyticsRetryAction/);
+  assert.match(source, /HubSpot/);
+  assert.doesNotMatch(source, /getCeoSnapshot|getCsSnapshot/);
+});
+
+test('integrações expõem configuração segura e escopo operacional explícito', () => {
+  const settings = fs.readFileSync(path.join(repoRoot, 'apps/web/src/features/settings/SettingsPage.tsx'), 'utf8');
+  assert.match(settings, /Substituir credencial no Vault/);
+  assert.match(settings, /Empresas, Comercial e CS \/ Suporte/);
+  assert.match(settings, /Fonte API exclusiva para Financeiro/);
+  assert.doesNotMatch(settings, /Planilhas CS e Comercial/);
 });
 
 test('modelo público financeiro não promove planilha a fonte de snapshot', () => {

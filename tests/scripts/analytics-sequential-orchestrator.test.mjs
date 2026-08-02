@@ -14,14 +14,15 @@ test('orquestrador executa HubSpot antes de OMIE', () => {
   assert.ok(dispatcher > start, 'a fila HubSpot precisa ser processada depois do start');
   assert.ok(omie > dispatcher, 'OMIE precisa aparecer depois do processamento HubSpot');
   assert.doesNotMatch(edge, /Promise\.all/, 'a sequência não pode iniciar as fontes em paralelo');
-  assert.match(edge, /hubspot\.status !== 'success' && hubspot\.status !== 'succeeded'/);
+  assert.match(edge, /hubspot\.status === 'running'/);
   assert.match(edge, /omie: \{ status: 'not_started' \}/);
 });
 
-test('falha ou processamento pendente do HubSpot impede OMIE', () => {
-  assert.match(edge, /if \(hubspot\.status !== 'success' && hubspot\.status !== 'succeeded'\)/);
+test('processamento pendente bloqueia OMIE, mas falha terminal preserva o ciclo parcial', () => {
+  assert.match(edge, /if \(hubspot\.status === 'running'\)/);
   assert.match(edge, /return jsonResponse\(\{[\s\S]*omie: \{ status: 'not_started' \}/);
   assert.match(edge, /callFunction\(config\.baseUrl, config\.anonKey, config\.secret, 'omie-sync'/);
+  assert.match(edge, /const status = hubspotOk && omieOk \? 'success' : 'partial'/);
 });
 
 test('Configuracoes usa o orquestrador novo', () => {

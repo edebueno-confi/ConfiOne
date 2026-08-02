@@ -67,8 +67,8 @@ const GROUPS: SettingsGroup[] = [
   { id: 'automacoes', label: 'Automações', description: 'Regras simples de roteamento (se isto, então aquilo).', controls: ['Condição (se)', 'Ação (então)'], usadoEm: 'Roteamento de demandas entre áreas', status: 'em_breve', nota: 'Exemplo: se o tipo for “bug”, então a área é “Produto”.' },
   { id: 'segmentos', label: 'Segmentos e clusters', description: 'Como os clientes são agrupados na carteira de CS.', controls: ['Nome do segmento', 'Cor', 'Ordem'], usadoEm: 'Carteira de CS (clusterização)', status: 'ativo', nota: 'Parâmetro gerenciável pela tela; base para a clusterização de CS.' },
   { id: 'canais', label: 'Canais', description: 'Por onde as mensagens entram e saem.', controls: ['Canal', 'Situação', 'Marca'], usadoEm: 'Entrada e saída de mensagens', status: 'existe_hoje', nota: 'Portal do cliente ativo; e-mail e WhatsApp são evolução futura.' },
-  { id: 'integracoes', label: 'Integrações', description: 'Fontes externas, credenciais e atualizações do dashboard gerencial.', controls: ['HubSpot', 'Planilhas CS e Comercial', 'Omie Financeiro', 'GitHub Produto'], usadoEm: 'Dashboard gerencial e ingestões operacionais', status: 'ativo', nota: 'Segredos ficam no Vault; o painel mostra apenas o estado configurado.' },
-  { id: 'dashboard-fontes', label: 'Fontes do Dashboard', description: 'Pipelines e fontes que alimentam o Dashboard Gerencial.', controls: ['Pipelines HubSpot', 'Fontes OMIE', 'Planilhas'], usadoEm: 'Dashboard Gerencial', status: 'ativo', nota: 'Antes ficava como aba dentro do Dashboard; parametro de sistema pertence a Configuracoes.' },
+  { id: 'integracoes', label: 'Integrações', description: 'Fontes externas, credenciais e atualizações do dashboard gerencial.', controls: ['HubSpot', 'OMIE Financeiro', 'Estado da credencial', 'Modo de execução'], usadoEm: 'Dashboard gerencial e ingestões operacionais', status: 'ativo', nota: 'Segredos ficam no Vault; a tela permite configurar o estado sem expor o valor armazenado.' },
+  { id: 'dashboard-fontes', label: 'Fontes do Dashboard', description: 'Pipelines e fontes que alimentam o Dashboard Gerencial.', controls: ['Pipelines HubSpot', 'Fonte OMIE API'], usadoEm: 'Dashboard Gerencial', status: 'ativo', nota: 'Pipelines e escopos operacionais permanecem separados da credencial da integração.' },
   { id: 'dashboard-historico', label: 'Historico de sincronizacoes', description: 'Execucoes, resultados e erros das integracoes gerenciais.', controls: ['Execucoes', 'Status', 'Erros'], usadoEm: 'Dashboard Gerencial', status: 'ativo', nota: 'Antes ficava como aba Logs dentro do Dashboard.' },
 ];
 
@@ -673,6 +673,93 @@ function TicketCategoriesPanel({ state }: { state: LoadState<TicketCategory> }) 
   );
 }
 
+function ManagedIntegrationPanel({
+  integrations,
+  mutating,
+  mutationError,
+  onSave,
+}: {
+  integrations: LoadState<ManagedIntegration>;
+  mutating: boolean;
+  mutationError: string | null;
+  onSave: (input: Parameters<typeof saveManagedIntegration>[0]) => Promise<void>;
+}) {
+  const [drafts, setDrafts] = useState<Record<string, { isEnabled: boolean; mode: ManagedIntegration['mode']; resource: string; secret: string }>>({});
+
+  if (integrations.phase !== 'ready') {
+    return integrations.phase === 'error'
+      ? <div className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] px-4 py-3 text-sm text-[color:var(--color-danger-text)]">Não foi possível carregar as integrações agora.</div>
+      : <p className="text-sm text-[color:var(--minimal-text-secondary)]">Carregando integrações…</p>;
+  }
+
+  const active = integrations.items.filter((item) => item.provider === 'hubspot' || item.provider === 'omie');
+  const draftFor = (item: ManagedIntegration) => drafts[item.integrationKey] ?? {
+    isEnabled: item.isEnabled,
+    mode: 'api',
+    resource: typeof item.config.resource === 'string' ? item.config.resource : item.provider === 'omie' ? 'contas_a_receber' : 'Empresas, Comercial e CS / Suporte',
+    secret: '',
+  };
+  const updateDraft = (item: ManagedIntegration, patch: Partial<ReturnType<typeof draftFor>>) => {
+    setDrafts((current) => ({ ...current, [item.integrationKey]: { ...draftFor(item), ...patch } }));
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-3 py-3 text-sm text-[color:var(--minimal-text-secondary)]">
+        HubSpot sincroniza empresas, Comercial e CS / Suporte. OMIE sincroniza somente o Financeiro. O valor da credencial é gravado no Vault e nunca retorna para a interface.
+      </div>
+      <div className="grid gap-4 xl:grid-cols-2">
+        {active.map((item) => {
+          const draft = draftFor(item);
+          const isHubspot = item.provider === 'hubspot';
+          return (
+            <section className="rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4" key={item.integrationKey}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[color:var(--minimal-action)]">{isHubspot ? 'HubSpot' : 'OMIE'}</p>
+                  <h3 className="mt-1 text-base font-semibold text-[color:var(--minimal-text)]">{item.label}</h3>
+                  <p className="mt-1 text-xs leading-5 text-[color:var(--minimal-text-secondary)]">{isHubspot ? 'Fonte única para empresas, Comercial e CS / Suporte.' : 'Fonte API exclusiva para Financeiro.'}</p>
+                </div>
+                <span className={item.hasCredentials ? 'rounded-full border border-[color:var(--color-success-border)] bg-[color:var(--color-success-surface)] px-2 py-1 text-[11px] font-medium text-[color:var(--color-success-text)]' : 'rounded-full border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-2 py-1 text-[11px] font-medium text-[color:var(--minimal-text-secondary)]'}>
+                  {item.hasCredentials ? 'Credencial configurada' : 'Credencial ausente'}
+                </span>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <label className="flex flex-col gap-1.5 text-xs font-medium text-[color:var(--minimal-text-secondary)]">
+                  Modo
+                  <select className={inputClass} defaultValue="api" aria-label={`Modo da integração ${item.label}`}>
+                    <option value="api">API</option>
+                  </select>
+                </label>
+                <label className="flex h-[42px] items-center gap-2 self-end rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-3 text-xs font-medium text-[color:var(--minimal-text-secondary)]">
+                  <input type="checkbox" checked={draft.isEnabled} onChange={(event) => updateDraft(item, { isEnabled: event.target.checked })} className="accent-[color:var(--minimal-action)]" />
+                  Integração ativa
+                </label>
+                <label className="flex flex-col gap-1.5 text-xs font-medium text-[color:var(--minimal-text-secondary)] sm:col-span-2">
+                  {isHubspot ? 'Escopo operacional' : 'Recurso da API'}
+                  <input className={inputClass} value={draft.resource} readOnly={isHubspot} onChange={(event) => updateDraft(item, { resource: event.target.value })} />
+                  <span className="text-[11px] font-normal leading-4 text-[color:var(--minimal-text-tertiary)]">{isHubspot ? 'O escopo é fixo: a sincronização cobre todas as áreas publicadas.' : 'A coleta ativa usa contas a receber do OMIE.'}</span>
+                </label>
+                <label className="flex flex-col gap-1.5 text-xs font-medium text-[color:var(--minimal-text-secondary)] sm:col-span-2">
+                  Substituir credencial no Vault
+                  <input className={inputClass} type="password" autoComplete="new-password" value={draft.secret} onChange={(event) => updateDraft(item, { secret: event.target.value })} placeholder={item.hasCredentials ? 'Deixe vazio para manter a credencial atual' : isHubspot ? 'Token privado do HubSpot' : 'JSON app_key/app_secret ou app_key|app_secret'} />
+                </label>
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <button type="button" disabled={mutating} onClick={() => void onSave({ integrationKey: item.integrationKey, label: item.label, provider: item.provider, mode: draft.mode, isEnabled: draft.isEnabled, config: { ...item.config, ...(isHubspot ? { domains: ['commercial', 'customer_success', 'support'], pipeline_selection: 'analytics_source_config' } : { resource: draft.resource }) }, secret: draft.secret })} className="inline-flex h-9 items-center rounded-lg bg-[color:var(--minimal-action)] px-3 text-sm font-medium text-[color:var(--minimal-action-ink)] disabled:cursor-not-allowed disabled:opacity-60">
+                  {mutating ? 'Salvando…' : 'Salvar configuração'}
+                </button>
+                <span className="text-xs text-[color:var(--minimal-text-tertiary)]">{item.lastRunAt ? `Última execução: ${new Date(item.lastRunAt).toLocaleString('pt-BR')}` : 'Nenhuma execução registrada'}</span>
+              </div>
+            </section>
+          );
+        })}
+      </div>
+      {mutationError ? <p role="alert" className="text-xs text-[color:var(--color-danger-text)]">{mutationError}</p> : null}
+    </div>
+  );
+}
+
 function GroupDetail({
   group,
   conversationTypes,
@@ -696,7 +783,7 @@ function GroupDetail({
   mutating,
   mutationError,
   integrations,
-  onSaveIntegration: _onSaveIntegration,
+  onSaveIntegration,
 }: {
   group: SettingsGroup;
   conversationTypes: LoadState<ConversationType>;
@@ -798,6 +885,7 @@ function GroupDetail({
                     </div>
                   ))}
                 </div>
+                <ManagedIntegrationPanel integrations={integrations} mutating={mutating} mutationError={mutationError} onSave={onSaveIntegration} />
                 <AnalyticsConfigPage />
               </>
             ) : integrations.phase === 'error' ? (

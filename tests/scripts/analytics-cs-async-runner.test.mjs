@@ -99,15 +99,22 @@ test('promoção é posterior à cobertura completa e usa chaves HubSpot estáve
 });
 
 test('schedule e compatibilidade usam somente o motor comum', () => {
-  assert.match(schedule, /hubspot-orchestrator-dispatcher/);
+  assert.match(schedule, /analytics-sequential-sync/);
   assert.doesNotMatch(schedule, /hubspot-cs-dispatcher/);
   assert.doesNotMatch(schedule, /analytics-integration-run/);
-  assert.match(schedule, /hubspot_enabled/);
-  assert.match(schedule, /hubspot_frequency/);
+  assert.match(schedule, /select\('enabled,frequency,last_run_at'\)/);
+  assert.match(schedule, /invokeFullCycle/);
   assert.doesNotMatch(compatibility, /fetchDealsByPipeline|fetchTicketsByPipeline|updateCompaniesBatch/);
   assert.match(compatibility, /rpc_analytics_hubspot_start_run/);
   assert.match(dispatcher, /hubspot-orchestrator-worker/);
   assert.match(api, /hubspot-orchestrator-start/);
+});
+
+test('cadência legada não cria um segundo ciclo HubSpot', async () => {
+  const fullCycleMigration = await readFile(new URL('../../supabase/migrations/20260802040000_analytics_full_cycle_scheduler_v1.sql', import.meta.url), 'utf8');
+  assert.match(fullCycleMigration, /hubspot_enabled = false/);
+  assert.match(fullCycleMigration, /hubspot_frequency = 'off'/);
+  assert.match(fullCycleMigration, /único ciclo automático/);
 });
 
 test('cron do HubSpot e idempotente, diario e separado do OMIE', () => {

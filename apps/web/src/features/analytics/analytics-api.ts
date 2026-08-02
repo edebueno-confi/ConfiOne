@@ -12,6 +12,7 @@ import {
   mapSyncRun,
   mapCommercialSnapshot,
   mapCsSnapshot,
+  mapCustomerSuccessSnapshot,
   type CommercialByOwner,
   type CommercialFunnelStage,
   type CommercialKpis,
@@ -23,6 +24,7 @@ import {
   type AnalyticsFilters,
   type CommercialSnapshot,
   type CsSnapshot,
+  type CustomerSuccessSnapshot,
   mapFinanceSnapshot,
   type FinanceSnapshot,
   mapFinanceSourceStatus,
@@ -240,6 +242,13 @@ export async function getCsSnapshot(filters: AnalyticsFilters, excludedPipelineI
   return mapCsSnapshot(data);
 }
 
+export async function getCustomerSuccessSnapshot(): Promise<CustomerSuccessSnapshot> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_analytics_customer_success_snapshot');
+  if (error) throw toAppError(error, 'Falha ao carregar a carteira de Customer Success.');
+  return mapCustomerSuccessSnapshot(data);
+}
+
 export async function getFinanceSnapshot(filters: AnalyticsFilters, clientQuery = ''): Promise<FinanceSnapshot> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client.rpc('rpc_analytics_finance_snapshot', {
@@ -356,11 +365,11 @@ export async function triggerSequentialAnalyticsSync(): Promise<{ status: 'succe
     headers: { Authorization: `Bearer ${session.access_token}`, apikey: config.config.supabaseAnonKey, 'Content-Type': 'application/json' },
     body: JSON.stringify({}),
   });
-  const payload = await response.json().catch(() => null) as { error?: string; status?: 'success' | 'blocked'; hubspot?: { runId?: string; recordsPromoted?: number }; omie?: { totalRows?: number }; message?: string } | null;
+  const payload = await response.json().catch(() => null) as { error?: string; status?: 'success' | 'partial' | 'blocked'; hubspot?: { runId?: string; recordsPromoted?: number }; omie?: { totalRows?: number; acceptedRows?: number }; message?: string } | null;
   if (!response.ok && response.status !== 202) throw new Error(formatAnalyticsSyncError({ operation: 'HubSpot -> OMIE', status: response.status, payload }));
   const blocked = payload?.status === 'blocked';
   return {
-    status: blocked ? 'partial' : 'success',
+    status: blocked || payload?.status === 'partial' ? 'partial' : 'success',
     updated: Number(payload?.hubspot?.recordsPromoted ?? 0),
     companies: 0,
     omieTitles: blocked ? 0 : Number(payload?.omie?.totalRows ?? 0),

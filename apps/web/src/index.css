@@ -4223,16 +4223,16 @@ table {
    pelos componentes acima; não cria dados nem regras de negócio locais. */
 .gso-executive-canvas {
   --executive-glow: color-mix(in srgb, var(--hd-accent) 11%, transparent);
-  background: color-mix(in srgb, var(--hd-canvas) 96%, var(--hd-accent));
-  border-top: 1px solid color-mix(in srgb, var(--hd-accent) 16%, var(--hd-border));
-  padding: 0.35rem 0.25rem 2rem;
+  background: var(--hd-canvas);
+  border-top: 0;
+  padding: 0 0 1rem;
 }
 .gso-executive-canvas > section,
 .gso-executive-canvas > .gso-hd-lower-grid {
   position: relative;
 }
 .gso-executive-canvas .gso-hd-pulse {
-  min-height: 3rem;
+  min-height: 2.5rem;
   border-bottom-color: color-mix(in srgb, var(--hd-accent) 24%, var(--hd-border));
   background: color-mix(in srgb, var(--hd-surface) 60%, transparent);
 }
@@ -4243,7 +4243,9 @@ table {
 .gso-executive-source-pulse .gso-hd-source-list {
   position: relative;
   isolation: isolate;
-  gap: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
 }
 .gso-executive-source-pulse .gso-hd-source-list::before {
   content: '';
@@ -4281,8 +4283,8 @@ table {
 }
 .gso-executive-source-pulse .gso-hd-source small { font-size: 0.6rem; }
 .gso-executive-canvas .gso-hd-context {
-  min-height: 5rem;
-  padding: 0.85rem 0 0.8rem;
+  min-height: auto;
+  padding: 0.65rem 0 0.7rem;
 }
 .gso-executive-canvas .gso-hd-context > div:first-child { max-width: 32rem; }
 .gso-executive-canvas .gso-hd-title-row h2 { font-size: clamp(1.35rem, 2.4vw, 2.05rem); }
@@ -4294,19 +4296,19 @@ table {
 }
 .gso-executive-canvas .gso-hd-ribbon,
 .gso-executive-canvas .gso-hd-current-strip {
-  padding: 0.7rem 0 0.9rem;
+  padding: 0.6rem 0 0.75rem;
 }
 .gso-executive-canvas .gso-hd-metric-grid {
   border-top: 0;
   border-bottom: 0;
   background: color-mix(in srgb, var(--hd-surface) 56%, transparent);
 }
-.gso-executive-canvas .gso-hd-metric { min-height: 5.5rem; }
+.gso-executive-canvas .gso-hd-metric { min-height: 4.9rem; }
 .gso-executive-canvas .gso-hd-metric:first-child {
   background: color-mix(in srgb, var(--hd-accent) 9%, var(--hd-surface));
   box-shadow: inset 3px 0 0 var(--hd-accent);
 }
-.gso-executive-canvas .gso-hd-domain-matrix { padding-top: 0.9rem; }
+.gso-executive-canvas .gso-hd-domain-matrix { padding-top: 0.65rem; }
 .gso-executive-canvas .gso-hd-domain-grid {
   grid-template-columns: 1.45fr 1.2fr 1.2fr 1.1fr 0.72fr 0.72fr;
   border-top: 1px solid color-mix(in srgb, var(--hd-accent) 20%, var(--hd-border));
@@ -4314,7 +4316,7 @@ table {
   background: color-mix(in srgb, var(--hd-surface) 52%, transparent);
 }
 .gso-executive-canvas .gso-hd-domain {
-  min-height: 7.8rem;
+  min-height: 7.1rem;
   border-right-color: color-mix(in srgb, var(--hd-border) 72%, transparent);
   background: transparent;
 }

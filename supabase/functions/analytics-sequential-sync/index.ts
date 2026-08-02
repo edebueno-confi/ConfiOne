@@ -72,9 +72,9 @@ async function runHubspotToCompletion(
   let run = await activeHubspotRun(client);
   if (!run) {
     const started = await callFunction(config.baseUrl, config.anonKey, config.secret, 'hubspot-orchestrator-start', correlationId, { correlationId });
-    if (started.status >= 400) throw new Error(String(started.payload?.error ?? 'Falha ao iniciar o HubSpot.'));
+    if (started.status >= 400) return { runId: null, status: 'failed', recordsPromoted: 0, message: String(started.payload?.error ?? 'Falha ao iniciar o HubSpot.') };
     const runId = String(started.payload?.run_id ?? '');
-    if (!runId) throw new Error('O HubSpot nao retornou o identificador da execucao.');
+    if (!runId) return { runId: null, status: 'failed', recordsPromoted: 0, message: 'O HubSpot nao retornou o identificador da execucao.' };
     run = { id: runId, status: String(started.payload?.status ?? 'queued'), correlation_id: correlationId };
   }
 
@@ -82,13 +82,13 @@ async function runHubspotToCompletion(
     const progress = await hubspotProgress(client, run.id);
     if (progress && TERMINAL_HUBSPOT_STATUSES.has(progress.status)) {
       if (progress.status !== 'success' && progress.status !== 'succeeded') {
-        throw new Error(progress.error_message || `A execucao HubSpot terminou com status ${progress.status}.`);
+        return { runId: run.id, status: 'failed', recordsPromoted: Number(progress.records_promoted ?? 0), message: progress.error_message || `A execucao HubSpot terminou com status ${progress.status}.` };
       }
       return { runId: run.id, status: progress.status, recordsPromoted: Number(progress.records_promoted ?? 0) };
     }
 
     const dispatched = await callFunction(config.baseUrl, config.anonKey, config.secret, 'hubspot-orchestrator-dispatcher', correlationId, {});
-    if (dispatched.status >= 400) throw new Error(String(dispatched.payload?.error ?? 'Falha ao processar a fila HubSpot.'));
+    if (dispatched.status >= 400) return { runId: run.id, status: 'failed', recordsPromoted: 0, message: String(dispatched.payload?.error ?? 'Falha ao processar a fila HubSpot.') };
     await wait(250);
   }
 
@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
     const correlationId = body.correlationId ?? crypto.randomUUID();
     const hubspot = await runHubspotToCompletion(client, config, correlationId);
 
-    if (hubspot.status !== 'success' && hubspot.status !== 'succeeded') {
+    if (hubspot.status === 'running') {
       return jsonResponse({
         status: 'blocked',
         correlationId,
@@ -118,10 +118,21 @@ Deno.serve(async (req) => {
       }, { status: 202 });
     }
 
-    // OMIE is intentionally called only after the HubSpot executor reaches a terminal success state.
-    const omie = await callFunction(config.baseUrl, config.anonKey, config.secret, 'omie-sync', correlationId, {});
-    if (omie.status >= 400) throw new Error(String(omie.payload?.error ?? 'Falha ao sincronizar o OMIE.'));
-    return jsonResponse({ status: 'success', correlationId, hubspot, omie: omie.payload ?? {} });
+    // HubSpot e OMIE são fontes independentes. Uma falha terminal do HubSpot
+    // não deve impedir a atualização financeira, mas o ciclo precisa retornar
+    // parcial para que a UI e o agendamento não confundam isso com sucesso.
+    const omie = await callFunction(config.baseUrl, config.anonKey, config.secret, 'omie-sync', correlationId, {}).catch((error) => ({
+      status: 503,
+      payload: { error: runnerMessage(error) },
+    }));
+    const omieOk = omie.status < 400;
+    const hubspotOk = hubspot.status === 'success' || hubspot.status === 'succeeded';
+    const status = hubspotOk && omieOk ? 'success' : 'partial';
+    const messages = [
+      !hubspotOk ? `HubSpot: ${hubspot.message ?? 'falha terminal'}.` : null,
+      !omieOk ? `OMIE: ${String(omie.payload?.error ?? 'falha ao sincronizar')}.` : null,
+    ].filter(Boolean).join(' ');
+    return jsonResponse({ status, correlationId, hubspot, omie: omie.payload ?? { status: 'error' }, message: messages || undefined }, { status: 200 });
   } catch (error) {
     return runnerError({ message: runnerMessage(error) }, 502);
   }

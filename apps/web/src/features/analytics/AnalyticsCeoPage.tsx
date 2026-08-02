@@ -304,7 +304,6 @@ function ExecutiveHdCanvas({
   const sourceStates: Array<{ label: string; state?: AnalyticsBlockState; note?: string }> = [
     { label: "HubSpot", state: data.commercial ? state : undefined },
     { label: "OMIE", state: data.finance ? state : undefined },
-    { label: "Customer Success", state: data.customerSuccess.state },
   ];
   const availableSources = sourceStates.filter((item) => item.state && ['fresh', 'stale', 'partial', 'syncing', 'zero'].includes(item.state.status)).length;
   const sourceCoverage = (sourceState?: AnalyticsBlockState) => {

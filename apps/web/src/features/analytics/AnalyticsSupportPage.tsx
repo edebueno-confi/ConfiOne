@@ -9,8 +9,8 @@ import type { AnalyticsPageProps } from './analytics-model';
  * os domínios, esse conteúdo pertence a Suporte.
  *
  * Reaproveita o componente existente em vez de duplicar a leitura: o contrato de
- * dados é o mesmo. Quando Customer Success ganhar contrato próprio, esta camada
- * continua válida e independente.
+ * tickets permanece próprio de Suporte, enquanto Customer Success usa seu read
+ * model de empresas HubSpot separado.
  */
 export function AnalyticsSupportPage(props: AnalyticsPageProps) {
   return <AnalyticsCsPage {...props} />;

@@ -162,6 +162,46 @@ export interface CsSnapshot {
   state?: AnalyticsBlockState;
 }
 
+export interface CustomerSuccessKpis {
+  companiesTotal: number;
+  clientStatusFilled: number;
+  contractStatusFilled: number;
+  withoutOwner: number;
+  mrrFilled: number;
+}
+
+export interface CustomerSuccessBreakdown {
+  key: string;
+  companyCount: number;
+}
+
+export interface CustomerSuccessOwner {
+  ownerId: string | null;
+  ownerName: string;
+  companyCount: number;
+}
+
+export interface CustomerSuccessCompany {
+  companyId: string;
+  companyName: string;
+  clientStatus: string | null;
+  contractStatus: string | null;
+  csOwnerId: string | null;
+  csOwnerName: string;
+  syncedAt: string | null;
+}
+
+export interface CustomerSuccessSnapshot {
+  kpis: CustomerSuccessKpis;
+  byOwner: CustomerSuccessOwner[];
+  byClientStatus: CustomerSuccessBreakdown[];
+  byContractStatus: CustomerSuccessBreakdown[];
+  companies: CustomerSuccessCompany[];
+  source: string;
+  limitations: string[];
+  state?: AnalyticsBlockState;
+}
+
 export interface FinanceKpis {
   totalTitles: number;
   netAmount: number;
@@ -420,6 +460,32 @@ export function mapCsSnapshot(value: unknown): CsSnapshot {
     byOwner: rows('by_owner').map((row) => ({ ownerId: row.owner_id ? toText(row.owner_id) : null, ownerName: toText(row.owner_name) || 'Sem responsavel', ticketCount: toNumber(row.ticket_count), pipelineBreakdown: mapCsPipelineBreakdown(row.pipeline_breakdown) })),
     latestTicketCreatedAt: data.latest_ticket_created_at ? toText(data.latest_ticket_created_at) : null,
     state: createSnapshotState(data, 'HubSpot / Tickets', toNumber(rawKpis.total_tickets)),
+  };
+}
+
+export function mapCustomerSuccessSnapshot(value: unknown): CustomerSuccessSnapshot {
+  const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  const rows = (key: string) => (Array.isArray(data[key]) ? data[key] : []) as Record<string, unknown>[];
+  const rawKpis = (data.kpis && typeof data.kpis === 'object' ? data.kpis : {}) as Record<string, unknown>;
+  const companies = rows('companies').map((row) => ({
+    companyId: toText(row.company_id),
+    companyName: toText(row.company_name) || 'Empresa sem nome',
+    clientStatus: row.client_status ? toText(row.client_status) : null,
+    contractStatus: row.contract_status ? toText(row.contract_status) : null,
+    csOwnerId: row.cs_owner_id ? toText(row.cs_owner_id) : null,
+    csOwnerName: toText(row.cs_owner_name) || 'Sem responsável',
+    syncedAt: row.synced_at ? toText(row.synced_at) : null,
+  }));
+  const breakdown = (key: string) => rows(key).map((row) => ({ key: toText(row.key) || 'Indisponível', companyCount: toNumber(row.company_count) }));
+  return {
+    kpis: { companiesTotal: toNumber(rawKpis.companies_total), clientStatusFilled: toNumber(rawKpis.client_status_filled), contractStatusFilled: toNumber(rawKpis.contract_status_filled), withoutOwner: toNumber(rawKpis.without_owner), mrrFilled: toNumber(rawKpis.mrr_filled) },
+    byOwner: rows('by_owner').map((row) => ({ ownerId: row.owner_id ? toText(row.owner_id) : null, ownerName: toText(row.owner_name) || 'Sem responsável', companyCount: toNumber(row.company_count) })),
+    byClientStatus: breakdown('by_client_status'),
+    byContractStatus: breakdown('by_contract_status'),
+    companies,
+    source: toText(data.source) || 'HubSpot',
+    limitations: Array.isArray(data.limitations) ? data.limitations.map(toText).filter(Boolean) : [],
+    state: createSnapshotState(data, toText(data.source) || 'HubSpot', toNumber(rawKpis.companies_total), true),
   };
 }
 

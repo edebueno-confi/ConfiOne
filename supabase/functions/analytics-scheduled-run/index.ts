@@ -1,8 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createServiceClient, jsonResponse, optionsResponse } from '../_shared/ticket-evidence.ts';
 
-const SYNC_FUNCTIONS = ['hubspot-orchestrator-start', 'hubspot-orchestrator-dispatcher'] as const;
-
 function isDue(frequency: string, lastRunAt: string | null) {
   if (!lastRunAt) return true;
   const last = Date.parse(lastRunAt);
@@ -10,6 +8,21 @@ function isDue(frequency: string, lastRunAt: string | null) {
   if (frequency === 'hourly') return Date.now() - last >= 55 * 60 * 1000;
   if (frequency === 'daily') return new Date(last).toISOString().slice(0, 10) !== new Date().toISOString().slice(0, 10);
   return false;
+}
+
+async function invokeFullCycle(baseUrl: string, anonKey: string, secret: string, correlationId: string) {
+  const response = await fetch(`${baseUrl}/functions/v1/analytics-sequential-sync`, {
+    method: 'POST',
+    headers: {
+      apikey: anonKey,
+      'Content-Type': 'application/json',
+      'x-analytics-sync-secret': secret,
+      'x-analytics-correlation-id': correlationId,
+    },
+    body: JSON.stringify({ correlationId }),
+  });
+  const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
+  return { status: response.status, payload };
 }
 
 Deno.serve(async (req) => {
@@ -29,47 +42,28 @@ Deno.serve(async (req) => {
   const client = createServiceClient();
   const { data: schedule, error: scheduleError } = await client
     .from('analytics_integration_schedule')
-    .select('hubspot_enabled,hubspot_frequency,hubspot_last_run_at')
+    .select('enabled,frequency,last_run_at')
     .limit(1)
     .maybeSingle();
-  if (scheduleError) return jsonResponse({ error: 'Nao foi possivel ler o agendamento do HubSpot.' }, { status: 503 });
-  if (!schedule?.hubspot_enabled || !isDue(String(schedule.hubspot_frequency ?? 'off'), schedule.hubspot_last_run_at ?? null)) {
-    return jsonResponse({ ok: true, skipped: true, reason: 'Agendamento HubSpot desativado ou ainda nao vencido.' });
+  if (scheduleError) return jsonResponse({ error: 'Nao foi possivel ler o agendamento do Dashboard.' }, { status: 503 });
+  if (!schedule?.enabled || !isDue(String(schedule.frequency ?? 'off'), schedule.last_run_at ?? null)) {
+    return jsonResponse({ ok: true, skipped: true, reason: 'Agendamento do Dashboard desativado ou ainda nao vencido.' });
   }
 
-  const results: Array<{ function: string; status: number; payload: unknown }> = [];
   const correlationId = crypto.randomUUID();
-  for (const functionName of SYNC_FUNCTIONS) {
-    try {
-      const body = functionName === 'hubspot-orchestrator-start'
-        ? JSON.stringify({ correlationId })
-        : '{}';
-      const response = await fetch(`${baseUrl}/functions/v1/${functionName}`, {
-        method: 'POST',
-        headers: {
-          apikey: anonKey,
-          'Content-Type': 'application/json',
-          'x-analytics-sync-secret': configuredSecret,
-          'x-analytics-correlation-id': correlationId,
-        },
-        body,
-      });
-      const payload = await response.json().catch(() => null);
-      results.push({ function: functionName, status: response.status, payload });
-    } catch (error) {
-      results.push({ function: functionName, status: 503, payload: { error: error instanceof Error ? error.message : String(error) } });
-    }
+  let cycle: { status: number; payload: Record<string, unknown> | null };
+  try {
+    cycle = await invokeFullCycle(baseUrl, anonKey, configuredSecret, correlationId);
+  } catch (error) {
+    cycle = { status: 503, payload: { status: 'error', error: error instanceof Error ? error.message : String(error) } };
   }
-
-  const failed = results.filter((result) => result.status >= 400);
-  const status = failed.length === 0 ? 'success' : results.some((result) => result.status === 409) ? 'blocked' : 'error';
-  const message = failed.length === 0
-    ? 'Agendamento incremental do HubSpot concluido.'
-    : `Falha no agendamento incremental do HubSpot (${failed.map((result) => result.function).join(', ')}).`;
+  const cycleStatus = String(cycle.payload?.status ?? (cycle.status >= 400 ? 'error' : 'success'));
+  const status = cycleStatus === 'success' ? 'success' : cycleStatus === 'blocked' ? 'partial' : 'partial';
+  const message = String(cycle.payload?.message ?? (status === 'success' ? 'Ciclo completo do Dashboard concluído.' : 'Ciclo completo concluído parcialmente; consulte o status de cada fonte.'));
   await client.from('analytics_integration_schedule').update({
-    hubspot_last_run_at: new Date().toISOString(),
-    hubspot_last_status: status,
-    hubspot_last_message: message,
+    last_run_at: new Date().toISOString(),
+    last_status: status,
+    last_message: message,
   }).eq('id', true);
-  return jsonResponse({ ok: failed.length === 0, correlationId, results }, { status: failed.length === 0 ? 200 : 502 });
+  return jsonResponse({ ok: status === 'success', correlationId, ...cycle.payload, scheduleStatus: status }, { status: cycle.status >= 500 ? 502 : 200 });
 });
