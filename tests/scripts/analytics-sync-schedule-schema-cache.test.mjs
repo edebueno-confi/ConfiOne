@@ -6,7 +6,6 @@ const root = resolve(import.meta.dirname, '../..');
 const files = [
   'apps/web/src/features/analytics/analytics-api.ts',
   'supabase/functions/analytics-integration-run/index.ts',
-  'supabase/functions/hubspot-sync/index.ts',
 ];
 
 for (const relativePath of files) {
@@ -22,6 +21,21 @@ for (const relativePath of files) {
     `${relativePath} não pode enviar o literal booleano para o filtro id`,
   );
 }
+
+const hubspotSync = await readFile(
+  resolve(root, 'supabase/functions/hubspot-sync/index.ts'),
+  'utf8',
+);
+assert.match(
+  hubspotSync,
+  /rpc\('rpc_analytics_hubspot_start_run'/,
+  'hubspot-sync deve delegar o início ao orquestrador assíncrono vigente',
+);
+assert.doesNotMatch(
+  hubspotSync,
+  /from\(['"]analytics_integration_schedule|vw_analytics_integration_schedule_read/,
+  'hubspot-sync não deve duplicar a decisão de agenda do orquestrador',
+);
 
 const migration = await readFile(
   resolve(root, 'supabase/migrations/20260720200000_analytics_integration_schedule_v1.sql'),

@@ -23,9 +23,10 @@ test('sidebar sections are independent, persisted and internally scrollable', ()
 });
 
 test('settings exposes analytics as the integration control plane', () => {
-  assert.match(settings, /section.*analytics|analytics.*section/);
+  assert.match(settings, /DASHBOARD_SECTION_IDS/);
   assert.match(settings, /AnalyticsConfigPage/);
-  assert.match(settings, /central-ajuda.*marcas|marcas.*central-ajuda/);
+  assert.match(settings, /id: 'marcas'/);
+  assert.match(settings, /id: 'central-ajuda'/);
 });
 
 test('dashboard shell exposes four domains and delegates integrations', () => {
