@@ -3,8 +3,8 @@
 Atualização pós-lote (prevalece sobre o bloco histórico abaixo):
 
 - Checkout operacional único: `C:\Projetos\GSO-old`.
-- Branch: `codex/dashboard-management-rebuild-20260802`, HEAD `890571f`; sem upstream configurado.
-- Divergência atual: `git rev-list --left-right --count origin/main...HEAD` retorna `0 56`; o ponto de entrada `b121b446` está preservado em `refs/archive/dashboard-rebuild-start-20260802`.
+- Branch: `codex/dashboard-management-rebuild-20260802`, HEAD `b47d603`; sem upstream configurado.
+- Divergência atual: `git rev-list --left-right --count origin/main...HEAD` retorna `0 58`; o ponto de entrada `b121b446` está preservado em `refs/archive/dashboard-rebuild-start-20260802`.
 - Worktrees ativos: 1; stash preservado; nenhum reset, clean, rebase, merge, cherry-pick ou push foi executado neste ciclo.
 - Migrations forward-only do Dashboard foram aplicadas no banco local persistente; nenhum reset foi executado. O cron legado local do HubSpot foi desativado pela migration de governança do ciclo.
 - Dashboard ativo: `ceo`, `commercial`, `customer_success`, `support` e `finance`. Produto e Desenvolvimento permanecem no código, fora da navegação ativa.

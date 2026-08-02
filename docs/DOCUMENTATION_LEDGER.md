@@ -3,8 +3,8 @@
 ## Atualização corrente do Dashboard Gerencial API-only — 2026-08-02
 
 - A verdade corrente está em `C:\Projetos\GSO-old`, branch
-  `codex/dashboard-management-rebuild-20260802`, HEAD `890571f`, sem upstream,
-  `origin/main...HEAD = 0 56`.
+  `codex/dashboard-management-rebuild-20260802`, HEAD `b47d603`, sem upstream,
+  `origin/main...HEAD = 0 58`.
 - O ponto de entrada `b121b446` foi preservado em
   `refs/archive/dashboard-rebuild-start-20260802`; o stash existente também
   permanece intacto.
