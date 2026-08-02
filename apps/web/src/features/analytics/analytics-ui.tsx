@@ -29,12 +29,23 @@ export function AnalyticsStateBadge({ state }: { state?: AnalyticsBlockState }) 
   if (!state) return null;
   const tone = state.status === 'fresh' || state.status === 'zero' ? 'text-[color:var(--minimal-action)]' : state.status === 'stale' || state.status === 'partial' || state.status === 'never_synced' || state.status === 'syncing' ? 'text-[color:var(--minimal-warning-text)]' : 'text-[color:var(--minimal-danger-text)]';
   const statusLabel = STATUS_LABELS[state.status];
-  const dateLabel = state.status === 'fresh' || state.status === 'stale' || state.status === 'partial' ? formatStateDate(state.lastSuccessfulSyncAt) : state.status === 'syncing' ? 'execução em andamento' : '';
+  const dateLabel = state.status === 'fresh' || state.status === 'stale' || state.status === 'partial'
+    ? formatStateDate(state.lastSuccessfulSyncAt)
+    : state.status === 'syncing'
+      ? 'execução em andamento'
+      : (state.status === 'failed' || state.status === 'error') && state.lastSuccessfulSyncAt
+        ? `últimos dados válidos ${formatStateDateValue(state.lastSuccessfulSyncAt)}`
+        : '';
   return <span className={`inline-flex flex-wrap items-center gap-1 text-[11px] ${tone}`} aria-label={`Estado dos dados: ${statusLabel}`}>
     <span className="font-semibold">{statusLabel}</span>
     {dateLabel ? <><span aria-hidden="true">·</span><span>{dateLabel}</span></> : null}
     {state.coverage.expected != null && state.coverage.received != null ? <span>· cobertura {state.coverage.received}/{state.coverage.expected}</span> : null}
   </span>;
+}
+
+function formatStateDateValue(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'sem data registrada' : date.toLocaleString('pt-BR');
 }
 
 export function formatCountLabel(

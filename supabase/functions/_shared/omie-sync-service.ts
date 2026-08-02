@@ -18,11 +18,11 @@ function rejectionCounts(rejected: Array<{ reasonCode: string }>) {
   return rejected.reduce<Record<string, number>>((result, item) => { result[item.reasonCode] = (result[item.reasonCode] ?? 0) + 1; return result; }, {});
 }
 
-export async function runOmieSnapshot(client: SupabaseClient, credentials: OmieCredentials, actorId: string | null, correlationId: string) {
+export async function runOmieSnapshot(client: SupabaseClient, credentials: OmieCredentials, actorId: string | null, correlationId: string, cycleId: string | null = null) {
   const staleBefore = new Date(Date.now() - 15 * 60 * 1000).toISOString();
   const { error: abandonError } = await client.from('analytics_finance_sync_runs').update({ status: 'abandoned', error_message: 'Execucao abandonada pelo worker e encerrada automaticamente.', finished_at: new Date().toISOString() }).eq('status', 'processing').lt('started_at', staleBefore);
   if (abandonError) throw new Error(`Falha ao encerrar execucao OMIE antiga: ${abandonError.message}`);
-  const { data: syncRun, error: syncRunError } = await client.from('analytics_finance_sync_runs').insert({ status: 'processing', triggered_by_user_id: actorId, correlation_id: correlationId }).select('id').single();
+  const { data: syncRun, error: syncRunError } = await client.from('analytics_finance_sync_runs').insert({ status: 'processing', triggered_by_user_id: actorId, correlation_id: correlationId, cycle_id: cycleId }).select('id').single();
   if (syncRunError?.code === '23505') { const error = new Error('Ja existe uma sincronizacao OMIE em andamento. Aguarde a conclusao antes de tentar novamente.'); Object.assign(error, { code: 'OMIE_SYNC_IN_PROGRESS' }); throw error; }
   if (syncRunError || !syncRun) throw new Error(syncRunError?.message ?? 'Nao foi possivel criar a execucao financeira.');
   const syncRunId = String(syncRun.id);

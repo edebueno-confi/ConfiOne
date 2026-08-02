@@ -30,8 +30,10 @@ Deno.serve(async (req) => {
 
   const rawCorrelation = req.headers.get('x-analytics-correlation-id')?.trim() ?? '';
   const correlationId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(rawCorrelation) ? rawCorrelation : crypto.randomUUID();
+  const rawCycleId = req.headers.get('x-analytics-cycle-id')?.trim() ?? '';
+  const cycleId = scheduled && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(rawCycleId) ? rawCycleId : null;
   try {
-    const result = await runOmieSnapshot(client, parseOmieCredentials(secret), scheduled ? null : actorId, correlationId);
+    const result = await runOmieSnapshot(client, parseOmieCredentials(secret), scheduled ? null : actorId, correlationId, cycleId);
     return jsonResponse({ ok: true, mode: scheduled ? 'scheduled' : 'api', ...result, message: 'Consulta Omie concluida e snapshot financeiro promovido.' });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

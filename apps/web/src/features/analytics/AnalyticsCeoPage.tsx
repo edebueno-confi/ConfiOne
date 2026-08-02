@@ -12,7 +12,11 @@ import type {
   CeoSnapshot,
 } from "./analytics-model";
 import type { AnalyticsSourceStatusPayload } from "@genius-support-os/contracts";
-import { analyticsGlobalToBlockState, DEFAULT_ANALYTICS_FILTERS } from "./analytics-model";
+import {
+  analyticsGlobalToBlockState,
+  analyticsSourceToBlockState,
+  DEFAULT_ANALYTICS_FILTERS,
+} from "./analytics-model";
 import { AnalyticsFilters as Filters } from "./AnalyticsFilters";
 import {
   AnalyticsLoadingState,
@@ -172,7 +176,12 @@ export function AnalyticsCeoPage({
     onSharedPeriodChange?.({ from: next.from, to: next.to });
     setMobileFiltersOpen(false);
   };
-  const domainCards = buildDomainCards(data, hubspotUnavailable, omieUnavailable);
+  const domainCards = buildDomainCards(
+    data,
+    hubspotUnavailable,
+    omieUnavailable,
+    currentSourceStatus,
+  );
 
   return (
     <ExecutiveHdCanvas
@@ -211,7 +220,15 @@ function buildDomainCards(
   data: CeoSnapshot,
   hubspotUnavailable: boolean,
   omieUnavailable: boolean,
+  sourceStatus?: AnalyticsSourceStatusPayload,
 ): DomainCard[] {
+  const hubspotState = sourceStatus
+    ? analyticsSourceToBlockState(sourceStatus.hubspot)
+    : data.state;
+  const omieState = sourceStatus
+    ? analyticsSourceToBlockState(sourceStatus.omie)
+    : data.state;
+
   return [
     {
       key: "commercial",
@@ -224,7 +241,7 @@ function buildDomainCards(
         ? "Dados comerciais indisponíveis"
         : `${formatCountLabel(data.commercial.openDeals, "negócio aberto", "negócios abertos")} · ${data.commercial.avgSalesCycleDays > 0 ? `${Math.round(data.commercial.avgSalesCycleDays).toLocaleString("pt-BR")} dias de ciclo` : "ciclo indisponível"}`,
       href: analyticsHref("commercial"),
-      state: data.state,
+      state: hubspotState,
       tone: "blue",
     },
     {
@@ -252,7 +269,7 @@ function buildDomainCards(
         ? "Dados de suporte indisponíveis"
         : `${formatPercent(data.support.closedRate)} encerrados · ${formatCountLabel(data.support.closeSlaTracked, "SLA acompanhado", "SLAs acompanhados")}`,
       href: analyticsHref("support"),
-      state: data.state,
+      state: hubspotState,
       tone: "cyan",
     },
     {
@@ -268,7 +285,7 @@ function buildDomainCards(
           ),
       details: omieUnavailable ? "Dados financeiros indisponíveis" : `${formatCurrency(data.finance.balance)} em posição atual`,
       href: analyticsHref("finance"),
-      state: data.state,
+      state: omieState,
       tone: "green",
     },
   ];
@@ -622,10 +639,13 @@ function ExecutiveHdCanvas({
 }
 
 function HdStatus({ state }: { state: AnalyticsBlockState }) {
+  const lastValidLabel = (state.status === "failed" || state.status === "error") && state.lastSuccessfulSyncAt
+    ? ` · dados válidos de ${new Date(state.lastSuccessfulSyncAt).toLocaleString("pt-BR")}`
+    : "";
   return (
     <span className={`gso-hd-status ${statusTone(state.status)}`}>
       <i aria-hidden="true" />
-      {shortStatus(state.status)}
+      {shortStatus(state.status)}{lastValidLabel}
     </span>
   );
 }

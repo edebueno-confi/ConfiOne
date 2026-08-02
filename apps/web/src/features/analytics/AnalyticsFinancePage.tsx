@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MinimalState } from '../../components/minimal-states';
 import { getFinanceSnapshot, getFinanceSourceStatus, getFinanceUnmatchedClients, type FinanceUnmatchedClient } from './analytics-api';
-import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, KpiCard, MetricInfo } from './analytics-ui';
-import { formatCurrencyBRL, formatMonthLabel, formatPercent, type AnalyticsFilters, DEFAULT_ANALYTICS_FILTERS, type FinanceBreakdown, type FinanceSnapshot, type FinanceSourceStatus } from './analytics-model';
+import { AnalyticsLoadingState, ChartCard, KpiCard, MetricInfo } from './analytics-ui';
+import { analyticsSourceToBlockState, formatCurrencyBRL, formatMonthLabel, formatPercent, type AnalyticsFilters, DEFAULT_ANALYTICS_FILTERS, type FinanceBreakdown, type FinanceSnapshot, type FinanceSourceStatus } from './analytics-model';
 import { ANALYTICS_PERIOD_OPTIONS, resolveAnalyticsPeriod, type AnalyticsPeriodPreset } from './analytics-periods';
 import type { AnalyticsPageProps } from './analytics-model';
 import { AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
@@ -39,6 +39,14 @@ function agingTone(bucket: string): 'positive' | 'warning' | 'critical' | 'neutr
   return 'neutral';
 }
 
+function HistoryLink() {
+  return <Link to="/admin/settings?section=analytics&panel=history" className="rounded-lg border border-[color:var(--minimal-border-strong)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-text)]">Ver histórico</Link>;
+}
+
+function FinanceSourceLinks() {
+  return <div className="flex flex-wrap items-center gap-2"><Link to="/admin/settings?section=analytics&panel=omie" className="rounded-lg border border-[color:var(--minimal-border-strong)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-text)]">Gerenciar OMIE</Link><HistoryLink /></div>;
+}
+
 function BreakdownTable({ rows, valueHeader, labelHeader, humanize, toneFor }: { rows: FinanceBreakdown[]; valueHeader: string; labelHeader: string; humanize?: boolean; toneFor?: (key: string) => 'positive' | 'warning' | 'critical' | 'neutral' }) {
   const total = rows.reduce((sum, row) => sum + row.balance, 0);
   if (rows.length === 0) return <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Sem dados neste recorte.</p>;
@@ -57,12 +65,12 @@ function BreakdownTable({ rows, valueHeader, labelHeader, humanize, toneFor }: {
   </div>;
 }
 
-export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRetry }: AnalyticsPageProps) {
+export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourceStatus: unifiedSourceStatus }: AnalyticsPageProps) {
   const period = sharedPeriod ?? resolveAnalyticsPeriod('month');
   const [filters, setFilters] = useState<FinanceFilters>({ ...DEFAULT_ANALYTICS_FILTERS, ...period, clientQuery: '' });
   const [draft, setDraft] = useState(filters);
   const [state, setState] = useState<{ phase: 'loading' } | { phase: 'ready'; snapshot: FinanceSnapshot } | { phase: 'error'; message: string }>({ phase: 'loading' });
-  const [sourceStatus, setSourceStatus] = useState<FinanceSourceStatus | null>(null);
+  const [financeSourceStatus, setFinanceSourceStatus] = useState<FinanceSourceStatus | null>(null);
   const [preset, setPreset] = useState<AnalyticsPeriodPreset | ''>('month');
   const [unmatched, setUnmatched] = useState<FinanceUnmatchedClient[] | null>(null);
   const [loadingUnmatched, setLoadingUnmatched] = useState(false);
@@ -89,7 +97,7 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
     return () => { cancelled = true; };
   }, [filters]);
 
-  useEffect(() => { getFinanceSourceStatus().then(setSourceStatus).catch(() => setSourceStatus(null)); }, []);
+  useEffect(() => { getFinanceSourceStatus().then(setFinanceSourceStatus).catch(() => setFinanceSourceStatus(null)); }, []);
 
   const applyPreset = (nextPreset: AnalyticsPeriodPreset) => {
     setPreset(nextPreset);
@@ -100,15 +108,20 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
   const apply = () => { if (draft.from && draft.to && draft.from > draft.to) return; setFilters(draft); onSharedPeriodChange?.({ from: draft.from, to: draft.to }); };
 
   if (state.phase === 'loading') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber"><AnalyticsLoadingState title="Carregando financeiro" description="O Gênio está consultando as Contas a Receber do OMIE." /></AnalyticsHdDomainFrame>;
-  if (state.phase === 'error') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber"><MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores financeiros estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} /></AnalyticsHdDomainFrame>;
+  if (state.phase === 'error') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber"><MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores financeiros estão indisponíveis no momento. Consulte o Histórico para ver o motivo." actions={<HistoryLink />} /></AnalyticsHdDomainFrame>;
   const { snapshot } = state;
   const { kpis } = snapshot;
-  const dataState = snapshot.state;
+  const dataState = unifiedSourceStatus ? analyticsSourceToBlockState(unifiedSourceStatus.omie) : snapshot.state;
   const sourceIsApi = snapshot.source === 'api';
-  if ((dataState?.status === 'error' || dataState?.status === 'failed' || dataState?.status === 'unavailable' || dataState?.status === 'unavailable_source') && !dataState.lastSuccessfulSyncAt) return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState tone="critical" title="Dados financeiros indisponíveis" description="A fonte financeira não respondeu. Tente novamente mais tarde." actions={<AnalyticsRetryAction onRetry={onRetry} />} /></AnalyticsHdDomainFrame>;
-  if (dataState?.status === 'not_configured') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState title="Fonte financeira não configurada" description="Configure a integração OMIE para consultar estes indicadores. Planilhas não são consideradas fonte financeira." actions={<AnalyticsRetryAction onRetry={onRetry} />} /></AnalyticsHdDomainFrame>;
-  if (snapshot.source !== 'api') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState tone="critical" title="Dados OMIE indisponíveis" description="O Financeiro publica somente dados de uma sincronização OMIE válida. A fonte disponível não é uma leitura OMIE confirmada; configure ou sincronize o OMIE para consultar os indicadores." actions={<div className="flex flex-wrap items-center gap-2"><Link to="/admin/settings?section=analytics&panel=omie" className="rounded-lg border border-[color:var(--minimal-border-strong)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-text)]">Gerenciar OMIE</Link><AnalyticsRetryAction onRetry={onRetry} /></div>} /></AnalyticsHdDomainFrame>;
+  if ((dataState?.status === 'error' || dataState?.status === 'failed' || dataState?.status === 'unavailable' || dataState?.status === 'unavailable_source') && !dataState.lastSuccessfulSyncAt) return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState tone="critical" title="Dados financeiros ainda não disponíveis" description="A última atualização do OMIE não foi concluída. Consulte o Histórico para ver o motivo." actions={<HistoryLink />} /></AnalyticsHdDomainFrame>;
+  if (dataState?.status === 'not_configured') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState title="Fonte financeira não configurada" description="Configure a integração OMIE para consultar estes indicadores. Planilhas não são consideradas fonte financeira." actions={<FinanceSourceLinks />} /></AnalyticsHdDomainFrame>;
+  if (snapshot.source !== 'api') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState tone="critical" title="Dados OMIE indisponíveis" description="O Financeiro publica somente dados de uma sincronização OMIE válida. A fonte disponível não é uma leitura OMIE confirmada; configure o OMIE e consulte o Histórico para acompanhar a execução." actions={<FinanceSourceLinks />} /></AnalyticsHdDomainFrame>;
   const controlClass = 'mt-1 block w-full rounded-lg border border-[color:var(--minimal-border-strong)] bg-transparent px-2 py-1.5 text-sm text-[color:var(--minimal-text)]';
+  const lastSuccessAt = unifiedSourceStatus?.omie.lastSuccessAt ?? snapshot.state?.lastSuccessfulSyncAt ?? null;
+  const sourceLabel = dataState?.status === 'failed' || dataState?.status === 'error'
+    ? lastSuccessAt ? `Últimos dados válidos em ${new Date(lastSuccessAt).toLocaleString('pt-BR')}` : 'Atualização não registrada'
+    : lastSuccessAt ? `Dados atualizados em ${new Date(lastSuccessAt).toLocaleString('pt-BR')}` : 'Atualização não registrada';
+  const sourceTag = dataState?.status === 'failed' || dataState?.status === 'error' ? 'Fonte: API OMIE · snapshot anterior' : 'Fonte: API OMIE';
 
   return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}>
     <div className="gso-hd-domain-surface space-y-5">
@@ -117,12 +130,12 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-sm font-semibold text-[color:var(--minimal-text)]">Fonte financeira</h2>
-          <Tag label="Fonte: API OMIE (ao vivo)" tone="positive" />
-          {sourceStatus?.api.lastSyncAt ? <span className="text-xs text-[color:var(--minimal-text-tertiary)]">Atualizada em {new Date(sourceStatus.api.lastSyncAt).toLocaleString('pt-BR')}</span> : null}
+          <Tag label={sourceTag} tone={dataState?.status === 'failed' || dataState?.status === 'error' ? 'warning' : 'positive'} />
+          <span className="text-xs text-[color:var(--minimal-text-tertiary)]">{sourceLabel}</span>
           <Link to="/admin/settings?section=analytics&panel=omie" className="text-xs font-medium text-[color:var(--minimal-action)] hover:underline">Gerenciar OMIE</Link>
         </div>
       </div>
-      {!sourceStatus?.api.configured ? <p className="mt-2 text-xs text-[color:var(--minimal-warning-text)]">Configure a credencial OMIE em Configurações → Integrações para ativar a fonte ao vivo. O histórico de sincronizações fica em Configurações → Histórico.</p> : null}
+      {!financeSourceStatus?.api.configured ? <p className="mt-2 text-xs text-[color:var(--minimal-warning-text)]">Configure a credencial OMIE em Configurações → Integrações para ativar a fonte. O histórico de sincronizações fica em Configurações → Histórico.</p> : null}
     </section>
 
     {/* Filtros */}

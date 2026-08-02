@@ -98,6 +98,7 @@ async function inspect(browser, surface, theme, viewport) {
       'Sincronizar CS / Suporte',
     ];
     const forbiddenFound = forbiddenCopy.filter((value) => bodyText.includes(value));
+    const financeDirectRetry = surface.key === 'finance' && bodyText.includes('Tentar novamente');
     const statusContradiction = bodyText.includes('Atualizada') && bodyText.includes('sincronização não registrada');
     const duplicateSourceStatus = surface.key === 'overview' && bodyText.includes('Pulso das fontes');
     const integrationFields = surface.key === 'integrations'
@@ -114,6 +115,7 @@ async function inspect(browser, surface, theme, viewport) {
       viewport,
       screenshot,
       forbiddenFound,
+      financeDirectRetry,
       statusContradiction,
       duplicateSourceStatus,
       integrationFields,
@@ -157,10 +159,11 @@ const manifest = {
   noUnexpectedResponses: captures.every((item) => item.unexpectedResponses.length === 0),
   noHorizontalOverflow: captures.every((item) => !item.overflow.horizontalOverflow),
   noForbiddenCopy: captures.every((item) => item.forbiddenFound.length === 0),
+  noFinanceDirectRetry: captures.every((item) => !item.financeDirectRetry),
   noStatusContradictions: captures.every((item) => !item.statusContradiction),
   noDuplicateSourceStatus: captures.every((item) => !item.duplicateSourceStatus),
   integrationsExposeRequiredFields: captures.filter((item) => item.surface === 'integrations').every((item) => item.integrationFields?.hasApplicationKey && item.integrationFields?.hasApplicationSecret && !item.integrationFields?.exposesInternalNames && !item.integrationFields?.hasModeField),
 };
 await writeFile(join(outputDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
-console.log(JSON.stringify({ output: join(outputDir, 'manifest.json'), screenshotTotal: manifest.screenshotTotal, noConsoleErrors: manifest.noConsoleErrors, noRequestFailures: manifest.noRequestFailures, noBlockingRequestFailures: manifest.noBlockingRequestFailures, abortedRequestFailureCount: manifest.abortedRequestFailureCount, noUnexpectedResponses: manifest.noUnexpectedResponses, noHorizontalOverflow: manifest.noHorizontalOverflow, noForbiddenCopy: manifest.noForbiddenCopy, noStatusContradictions: manifest.noStatusContradictions, noDuplicateSourceStatus: manifest.noDuplicateSourceStatus, integrationsExposeRequiredFields: manifest.integrationsExposeRequiredFields }));
-if (!manifest.noConsoleErrors || !manifest.noBlockingRequestFailures || !manifest.noUnexpectedResponses || !manifest.noHorizontalOverflow || !manifest.noForbiddenCopy || !manifest.noStatusContradictions || !manifest.noDuplicateSourceStatus || !manifest.integrationsExposeRequiredFields) process.exitCode = 1;
+console.log(JSON.stringify({ output: join(outputDir, 'manifest.json'), screenshotTotal: manifest.screenshotTotal, noConsoleErrors: manifest.noConsoleErrors, noRequestFailures: manifest.noRequestFailures, noBlockingRequestFailures: manifest.noBlockingRequestFailures, abortedRequestFailureCount: manifest.abortedRequestFailureCount, noUnexpectedResponses: manifest.noUnexpectedResponses, noHorizontalOverflow: manifest.noHorizontalOverflow, noForbiddenCopy: manifest.noForbiddenCopy, noFinanceDirectRetry: manifest.noFinanceDirectRetry, noStatusContradictions: manifest.noStatusContradictions, noDuplicateSourceStatus: manifest.noDuplicateSourceStatus, integrationsExposeRequiredFields: manifest.integrationsExposeRequiredFields }));
+if (!manifest.noConsoleErrors || !manifest.noBlockingRequestFailures || !manifest.noUnexpectedResponses || !manifest.noHorizontalOverflow || !manifest.noForbiddenCopy || !manifest.noFinanceDirectRetry || !manifest.noStatusContradictions || !manifest.noDuplicateSourceStatus || !manifest.integrationsExposeRequiredFields) process.exitCode = 1;

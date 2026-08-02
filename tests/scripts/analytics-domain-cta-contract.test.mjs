@@ -38,6 +38,22 @@ test('nenhum domínio do Analytics publica CTA de sincronização própria', () 
   }
 });
 
+test('Financeiro encaminha falhas para Histórico e não oferece retry direto', () => {
+  const finance = fs.readFileSync(path.join(analyticsDir, 'AnalyticsFinancePage.tsx'), 'utf8');
+  assert.match(finance, /panel=history/);
+  assert.match(finance, /FinanceSourceLinks/);
+  assert.doesNotMatch(finance, /AnalyticsRetryAction|Tentar novamente/);
+});
+
+test('Resumo usa o estado da fonte correspondente a cada área', () => {
+  const ceo = fs.readFileSync(path.join(analyticsDir, 'AnalyticsCeoPage.tsx'), 'utf8');
+  const ui = fs.readFileSync(path.join(analyticsDir, 'analytics-ui.tsx'), 'utf8');
+  assert.match(ceo, /analyticsSourceToBlockState/);
+  assert.match(ceo, /state: hubspotState/);
+  assert.match(ceo, /state: omieState/);
+  assert.match(ui, /últimos dados válidos/);
+});
+
 test('Customer Success não reutiliza snapshot executivo nem dados de tickets', () => {
   const source = fs.readFileSync(path.join(analyticsDir, 'AnalyticsCustomerSuccessPage.tsx'), 'utf8');
 

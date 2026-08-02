@@ -4,6 +4,8 @@ import test from 'node:test';
 
 const edge = await readFile(new URL('../../supabase/functions/analytics-sequential-sync/index.ts', import.meta.url), 'utf8');
 const compatibility = await readFile(new URL('../../supabase/functions/analytics-integration-run/index.ts', import.meta.url), 'utf8');
+const omieEntry = await readFile(new URL('../../supabase/functions/omie-sync/index.ts', import.meta.url), 'utf8');
+const omieService = await readFile(new URL('../../supabase/functions/_shared/omie-sync-service.ts', import.meta.url), 'utf8');
 const config = await readFile(new URL('../../apps/web/src/features/settings/DashboardSourcesSettingsPage.tsx', import.meta.url), 'utf8');
 const api = await readFile(new URL('../../apps/web/src/features/analytics/analytics-api.ts', import.meta.url), 'utf8');
 
@@ -19,6 +21,8 @@ test('orquestrador executa HubSpot antes de OMIE', () => {
   assert.match(edge, /omie: \{ status: 'not_started' \}/);
   assert.match(edge, /rpc_service_start_analytics_sync_cycle/);
   assert.match(edge, /analytics_sync_cycle_steps/);
+  assert.match(edge, /'x-analytics-cycle-id'/);
+  assert.match(edge, /run_id: omiePayload\.syncRunId/);
 });
 
 test('processamento pendente bloqueia OMIE, mas falha terminal preserva o ciclo parcial', () => {
@@ -39,4 +43,12 @@ test('Configuracoes usa o orquestrador novo', () => {
 test('facade legado do analytics permanece sem escrita externa', () => {
   assert.doesNotMatch(compatibility, /updateCompaniesBatch|hubspot-omie-property-sync|rpc_analytics_finance_company_rollup/);
   assert.match(compatibility, /nenhum write externo executado/);
+});
+
+test('run OMIE fica vinculado ao ciclo somente pelo orquestrador interno', () => {
+  assert.match(edge, /'x-analytics-cycle-id'/);
+  assert.match(edge, /run_id: omiePayload\.syncRunId/);
+  assert.match(omieEntry, /const cycleId = scheduled &&/);
+  assert.match(omieEntry, /runOmieSnapshot\([^;]+cycleId\)/);
+  assert.match(omieService, /cycle_id: cycleId/);
 });

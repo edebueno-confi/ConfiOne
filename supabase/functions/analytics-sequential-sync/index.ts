@@ -21,6 +21,7 @@ async function callFunction(
   functionName: string,
   correlationId: string,
   body: Record<string, unknown>,
+  cycleId?: string,
 ): Promise<FunctionResult> {
   const response = await fetch(`${baseUrl}/functions/v1/${functionName}`, {
     method: 'POST',
@@ -29,6 +30,7 @@ async function callFunction(
       'Content-Type': 'application/json',
       'x-analytics-sync-secret': secret,
       'x-analytics-correlation-id': correlationId,
+      ...(cycleId ? { 'x-analytics-cycle-id': cycleId } : {}),
     },
     body: JSON.stringify(body),
   });
@@ -157,7 +159,7 @@ Deno.serve(async (req) => {
     // parcial para que a UI e o agendamento não confundam isso com sucesso.
     await updateCycle(client, cycleId, { status: 'running', current_step: 'omie' });
     await updateStep(client, cycleId, 'omie', { status: 'running', started_at: new Date().toISOString() });
-    const omie = await callFunction(config.baseUrl, config.anonKey, config.secret, 'omie-sync', correlationId, {}).catch((error) => ({
+    const omie = await callFunction(config.baseUrl, config.anonKey, config.secret, 'omie-sync', correlationId, {}, cycleId).catch((error) => ({
       status: 503,
       payload: { error: runnerMessage(error) },
     }));
@@ -167,6 +169,7 @@ Deno.serve(async (req) => {
     const omiePayload = omie.payload ?? { status: 'error' };
     await updateStep(client, cycleId, 'omie', {
       status: omieOk ? 'succeeded' : 'failed',
+      run_id: omiePayload.syncRunId ?? null,
       finished_at: new Date().toISOString(),
       processed_count: Number(omiePayload.acceptedRows ?? 0),
       sanitized_error: omieOk ? null : 'A atualização do OMIE não foi concluída.',
