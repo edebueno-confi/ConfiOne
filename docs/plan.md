@@ -49,6 +49,21 @@ Relatório do diagnóstico: `docs/reports/2026-08-01_repository-and-release-surf
 - Especificações e backlog: `docs/specs/` e
   `docs/plans/analytics-macro-lote-0.4-backlog-v1.md`.
 
+## Fila adicionada após a estabilização visual — 2026-08-02
+
+- `UI-04`: hardening do dark mode/editor, reset limpo de `Novo artigo`,
+  histórico recolhível, padronização dos cards financeiros e avaliação de
+  teste read-only das integrações.
+- `KNOWLEDGE-03`: reconstrução completa do cockpit de Artigos, corrigindo
+  ações sem efeito e sobreposição da coluna de categorias.
+- `DASHBOARD-03`: exportação profissional de imagem e PDF a partir de fonte
+  estática, com proveniência, texto selecionável e verificação do artefato.
+- `KNOWLEDGE-04`: auditoria e cobertura dos contratos de categorias, filtros,
+  paginação e retorno contextual.
+
+Detalhamento e critérios: `docs/UI_REFACTOR_BACKLOG.md`. Nenhum item acima é
+declarado implementado por este registro documental.
+
 # Genius Support OS - Plano operacional vivo
 
 ## Smoke autenticado de release - 2026-07-23

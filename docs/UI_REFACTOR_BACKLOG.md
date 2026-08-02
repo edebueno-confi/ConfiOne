@@ -11,6 +11,82 @@ Registrar o backlog oficial de polimento e evolucao de UX das superficies intern
 
 ## Itens pendentes
 
+## Fila adicionada em 2026-08-02 — Knowledge/editor, histórico e exportação
+
+### KNOWLEDGE-03 — Reconstrução do cockpit de Artigos
+
+Status: pendente de execução; item adicionado à fila, sem alteração funcional neste registro.
+
+Escopo obrigatório:
+
+- reconstruir a tela de Artigos com a lista editorial como superfície dominante,
+  sem tentar remendar o layout atual;
+- corrigir a sobreposição da coluna de categorias, com comportamento responsivo
+  real em 390, 768, 1024 e 1440px, nos temas claro e escuro;
+- fazer `Gerenciar categorias` abrir uma superfície real baseada no contrato
+  existente de categorias, com permissão, RLS, auditoria e estados de erro/vazio;
+- fazer `Ver todas` produzir uma mudança observável e reversível de contexto
+  (filtro, rota ou drawer), sem botão sem efeito;
+- manter a origem factual dos artigos, categorias, status, visibilidade e
+  consumo; nenhum dado editorial deve ser inventado no frontend;
+- revisar a legibilidade do editor em dark mode e garantir que `Novo artigo`
+  sempre inicialize título, resumo, slug, corpo e metadados vazios, sem carregar
+  o artigo anteriormente aberto.
+
+Direção de design: cockpit editorial enxuto, lista dominante, ações de gestão em
+toolbar/drawer contextual, hierarquia tipográfica clara e uma única indicação
+de estado ativo. Usar `frontend-design` antes da implementação e
+`web-design-guidelines` depois do código.
+
+### DASHBOARD-03 — Exportação visual e PDF profissional
+
+Status: pendente de execução; depende de especificação curta da superfície
+exportada e validação dos dados disponíveis.
+
+- revisar a experiência de exportação de imagem e PDF, removendo shell, menus,
+  controles e estados internos do artefato final;
+- produzir uma fonte estática HTML com narrativa, indicadores, definições,
+  origem dos dados e limitações visíveis;
+- converter HTML para PDF por Chrome headless, preservando texto selecionável,
+  tabelas, gráficos e paginação profissional;
+- gerar PNG em viewport definida, com composição própria para leitura e sem
+  reduzir a página inteira a uma captura improvisada;
+- verificar PDF e PNG quanto a páginas em branco, cortes, overflow, dados
+  indisponíveis, controles indevidos e ausência de proveniência;
+- persistir manifesto/evidência de exportação fora do bundle de produção.
+
+Skills previstas: `data-analytics:build-report`, `report-to-pdf`,
+`artifact-template-design-report` e `web-design-guidelines`.
+
+### KNOWLEDGE-04 — Contratos de navegação e categorias
+
+Status: pendente de auditoria backend antes da implementação.
+
+- mapear o read model e os comandos reais de categoria antes de criar telas;
+- cobrir `Gerenciar categorias`, `Ver todas`, paginação, filtros e retorno para
+  a lista sem perder o contexto;
+- adicionar testes de contrato para impedir ações no-op e regressão de layout.
+
+### UI-04 — Hardening de superfícies já publicadas
+
+Status: pendente de execução; preserva o lote de estabilização em andamento.
+
+- corrigir o dark mode do editor rico, incluindo parágrafos, links, blocos,
+  callouts, popovers, seleção e mídia;
+- compactar o Histórico de atualizações com ciclos recolhíveis e abertura
+  inicial apenas do ciclo mais recente;
+- padronizar os cards de Financeiro com a mesma gramática visual de Comercial
+  e Suporte, mantendo estados de frescor e indisponibilidade;
+- avaliar um botão `Testar conexão` somente após existir contrato backend
+  read-only, autenticado, tenant-safe e com erro sanitizado. Não reutilizar uma
+  sincronização com escrita como se fosse teste de conectividade;
+- manter a correção do editor `/admin/knowledge/new` como requisito funcional,
+  não apenas visual.
+
+Critérios comuns de aceite: contratos reais preservados, sem secrets no
+frontend, sem mocks, typecheck/build/testes focados aprovados e capturas reais
+das superfícies alteradas em claro/escuro e nas larguras publicadas.
+
 ### 1. Polimento final do Support Workspace
 - calibrar ainda mais o rail do ticket para crescimento futuro de contexto
 - revisar densidade da conversa com volume real maior
