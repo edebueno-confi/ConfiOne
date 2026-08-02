@@ -32,6 +32,7 @@ Antes de alterar qualquer arquivo, leia o contexto local e priorize:
 - IA é assistente operacional; nunca é source of truth, nunca decide permissão e nunca executa ação customer-facing sem revisão humana.
 - Documentação histórica não deve ser usada como plano corrente se `PROJECT_STATE.md`, `ROADMAP_BUILDOUT_V3.md`, `OPERATIONAL_CONTROL_PLANE_V1.md` ou relatórios recentes apontarem outro estado.
 - Mudanças devem ser pequenas, auditáveis, alinhadas aos contratos reais e validadas com os scripts disponíveis.
+- Auditorias de qualidade devem usar `$genius-code-quality`; ela é read-only por padrão e correções exigem autorização explícita.
 
 ## Parar e pedir decisão humana
 
