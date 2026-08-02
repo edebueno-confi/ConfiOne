@@ -3,124 +3,156 @@
 Data: 2026-08-01/02
 Checkout: `C:\Projetos\GSO-old`
 Branch: `main`
-HEAD de referência: `3dabf7d`
+HEAD de base desta atualização: `b77698d`
 
 ## 1. Proveniência Git
 
 O checkout canônico continua sendo `C:\Projetos\GSO-old`. A branch `main`
-segue com upstream `origin/main`, divergência `0 15`, um worktree ativo, stash
-preservado e refs de arquivo da reconciliação anterior. O objetivo operacional
-foi atualizado para resolver o produto no HEAD atual sem apagar os commits
-históricos que ainda exigem decisão explícita de rebase/merge/cherry-pick.
+segue com upstream `origin/main`, sem commits atrás e com 21 commits locais à
+frente no início deste delta. Há um worktree ativo e o stash preservado. As
+refs de arquivo da reconciliação anterior continuam acessíveis; não houve
+reset, clean, rebase, merge, cherry-pick, push ou exclusão de histórico.
 
 ## 2. Correções implementadas
 
-- Customer Success deixou de reutilizar `getCeoSnapshot` como contrato próprio;
-  a aba agora declara contrato não publicado, dependências e ausência de
-  indicadores inferidos de tickets.
-- O modelo público de `FinanceSnapshot` aceita somente `api` ou `none`. Payload
-  histórico com `source = spreadsheet` não volta a ser publicado como fonte.
-- A migration `20260802004655_analytics_finance_omie_only_contract_v1.sql`
-  restringe snapshot, status da fonte e fila de não correspondências ao OMIE API
-  atual; planilhas permanecem históricas.
-- Ações de sincronização continuam centralizadas em Configurações; os domínios
-  não publicam CTAs próprios.
-- Configurações deixou de recriar `visibleGroups` em todo render. A memoização e
-  a guarda de `selectedId` eliminaram o loop `Maximum update depth exceeded`.
+- Customer Success deixou de reutilizar `getCeoSnapshot`; a aba própria declara
+  contrato não publicado, dependências e ausência de indicadores inferidos de
+  tickets.
+- `FinanceSnapshot` aceita somente `api` ou `none`; a migration OMIE-only
+  restringe snapshot, status e fila de não correspondências ao OMIE atual.
+- Ações de sincronização ficam centralizadas em Configurações; domínios não
+  publicam CTAs próprios.
+- Configurações deixou de recriar grupos visíveis em todo render; a guarda de
+  `selectedId` elimina o loop `Maximum update depth exceeded`.
 - Foram adicionados contratos estruturais de CTA, Customer Success, Financeiro
   e Configurações.
+- Foi criado `scripts/local-qa/dashboard-macro-lote-0.4.mjs`, que autentica
+  perfis locais, captura superfícies reais, mede overflow/rede/console e grava
+  `output/dashboard-macro-lote-0.4/summary.json`.
+- As especificações de CS, Suporte/Conversas, Comercial, Financeiro, matching e
+  backlog foram ampliadas sem implementar métricas ainda.
 
 ## 3. Diagnóstico local do Auth
 
-O login API autenticava em HTTP 200, mas o browser parava em `/login`. A captura
-sanitizada mostrou HTTP 404 para `POST /rest/v1/rpc/rpc_internal_actor_workspace_context`.
-O RPC existia no repositório, porém suas migrations anteriores não estavam
-aplicadas no container local. A sequência aditiva foi aplicada localmente:
+O primeiro browser QA reproduziu `401 JWT issued at future`/falha de contexto
+após login. A chamada API direta com a sessão recém-emitida retornou HTTP 200;
+o problema era sessão/browser local desatualizado durante a primeira captura,
+não um fallback de frontend. Após iniciar contextos limpos e aguardar a
+conclusão da navegação, todas as capturas autenticadas chegaram às rotas
+esperadas sem erro de contexto.
 
-1. `20260727033234_access_01_role_enum_values.sql`;
-2. `20260727033235_access_01_internal_control_plane.sql`;
-3. `20260727173000_access_01_3_workspace_context_runtime_hardening.sql`.
-
-Não houve reset, truncate, delete de dados, alteração remota ou uso de secrets.
+As migrations de Access já aplicadas localmente foram preservadas e são
+aditivas: `20260727033234`, `20260727033235` e `20260727173000`. Não houve reset,
+truncate, delete de dados, alteração remota ou exposição de secrets.
 
 ## 4. Financeiro
 
-Consulta agregada read-only do banco local: 10.317 empresas HubSpot, 108 chaves
-de CNPJ normalizadas duplicadas e zero títulos OMIE atuais. Portanto não existe
-amostra local válida para medir matching ou publicar números financeiros.
+Consulta agregada read-only local: 10.317 empresas HubSpot, 108 chaves de CNPJ
+normalizadas duplicadas e zero títulos OMIE atuais. Não existe amostra local
+válida para medir matching ou publicar números financeiros.
 
-O contrato novo diferencia `not_configured`, `syncing`, `error`, `empty`,
-`stale` e `fresh`. O teste persistido tem 20 asserções. A extensão pgTAP não
-estava instalada no container; o mesmo contrato foi validado por bloco SQL
-estrutural read-only com resultado `PASS`.
+O contrato diferencia `not_configured`, `syncing`, `error`, `empty`, `stale` e
+`fresh`. O QA visual 1440/1024 registrou `omie-unavailable`, sem valores
+fabricados. O teste pgTAP possui 20 asserções; a extensão pgTAP não está
+instalada no container local, e o contrato foi verificado por SQL estrutural
+read-only.
 
 ## 5. Customer Success
 
-O contrato próprio ainda não está publicado. A especificação separa carteira,
-health score, risco, renovação, expansão e onboarding de tickets e do snapshot
-executivo. A tela permanece honesta em estado indisponível.
+O contrato próprio continua não publicado. A especificação agora cobre clientes
+por CSM, sem CSM, contato recente, tickets críticos, inadimplência, renovação,
+onboarding, negócio ativo, risco, cobertura, cadência e health score, cada um
+com fórmula, grão, origem candidata, frescor, nulo, permissão, owner e status.
+O QA full-preview capturou a tela com `Contrato Customer Success não publicado`
+e `Indicadores de Customer Success ainda não configurados`.
 
 ## 6. Suporte e conversas
 
-Tickets continuam no contrato `rpc_analytics_cs_snapshot`/`vw_analytics_cs_*`.
-Conversas são backlog separado: threads, mensagens, atores, canais, cursor,
-deduplicação e escopos HubSpot ainda precisam de contrato e ingestão server-side.
+Tickets permanecem no contrato `rpc_analytics_cs_snapshot`/`vw_analytics_cs_*`.
+O catálogo separa Tickets, Conversas, Canais, SLA e Satisfação. Conversas
+continuam indisponíveis até confirmar produto, plano, escopos HubSpot, cursor,
+deduplicação, retenção e read model server-side. O suporte foi capturado em
+1440, 1280 e 1024px; em 1024px o filtro de pipeline quebra responsivamente para
+uma segunda linha, sem overflow, enquanto em 1440px todos os filtros e ações
+ficam alinhados.
 
 ## 7. Comercial
 
-KPIs, funil, owner e série mensal já usam read models HubSpot. Drill-down por
-deal ficou especificado como próximo lote, exigindo paginação, associações,
-qualidade e link contextual validado.
+KPIs, funil, owner e série mensal usam read models HubSpot. O drill-down ficou
+especificado como próximo lote, exigindo paginação, associações, qualidade,
+tenant/RLS e helper de link validado por portal + Deal ID. A captura autenticada
+do domínio Comercial foi feita como `platform_admin`; não houve chamada HubSpot
+direta nem implementação de detalhe neste delta.
 
 ## 8. Matching
 
-As regras atuais são read-only e usam CNPJ normalizado e nome como candidato.
-Duplicidade de CNPJ não autoriza merge; grupo econômico exige resolução humana.
-Sem títulos OMIE atuais, não foi fabricada taxa de matching.
+As regras atuais são read-only: normalização de CNPJ, `app_private.normalize_company_name`,
+`rpc_analytics_company_candidates`, reconciliação agrupada e resolução humana
+de grupo econômico. O mapa agora registra sinais exato/forte/provável,
+ambíguo/rejeitado, payload de dry-run, score versionado, fila e integridade.
+Com zero títulos OMIE atuais, não foi fabricada taxa de matching nem threshold.
 
 ## 9. Evidências visuais
 
-Capturas reais geradas em `output/local-qa/`, incluindo Dashboard desktop/mobile,
-Financeiro desktop/mobile e Configurações após a correção do loop. A captura
-autenticada do administrador chegou a `/admin/analytics` sem erro de console.
-Após a correção, Configurações carregou sem `Maximum update depth exceeded`.
-O smoke multi-persona completo não foi considerado aprovado porque a execução
-automática em 4175 não saiu da rota de login; o smoke de Auth das cinco personas,
-separado, passou.
+Artefatos reais em `output/dashboard-macro-lote-0.4/`:
+
+- executivo 1440px;
+- comercial 1440px;
+- suporte 1440/1280/1024px;
+- financeiro 1440/1024px;
+- Configurações/integrações 1440px;
+- Customer Success em `full-preview-only` 1440px.
+
+O `summary.json` registra rota, perfil, modo de release, estado da fonte,
+console, page errors, request failures, respostas inesperadas e overflow.
+Resultado: 9/9 autenticadas, zero erros de console, zero falhas de requisição,
+zero respostas inesperadas e zero overflow.
 
 ## 10. Validações executadas
 
+- `ALLOW_LOCAL_QA_RESET=true node --test tests/scripts/*.test.mjs` — 266/266;
 - `npm run contracts:typecheck` — passou;
 - `npm run web:typecheck` — passou;
-- `npm run web:build` — passou, 830 módulos;
-- testes focados de contratos — 16/16;
-- `node scripts/local-qa/smoke.mjs` — 5/5 autenticações;
-- bloco SQL estrutural do contrato financeiro — PASS;
-- `npm run documentation:validate:internal-docs` — 0 bloqueios, 9 alertas históricos;
+- `npm run web:build` — passou, 830 módulos transformados;
+- `npm run repository:check-root` — passou;
+- `npm run local:qa:secret-scan` — 1.683 arquivos rastreados, 0 matches;
+- `npm run documentation:validate:internal-docs` — 0 bloqueios, 9 alertas
+  documentais históricos;
+- `node --check scripts/local-qa/dashboard-macro-lote-0.4.mjs` — passou;
 - `git diff --check` — passou;
+- bloco SQL estrutural do contrato financeiro — passou;
 - pgTAP 088 — não executável localmente porque a extensão não está instalada.
 
 ## 11. Commits
 
-Nenhum commit ou push foi executado neste delta. As alterações herdadas e novas
-continuam separadas no working tree para revisão e commits objetivos autorizados.
+Os commits funcionais anteriores deste ciclo já estão em `main`, incluindo
+`8db7463`, `066f50f`, `4617b97`, `979d7e0`, `818bd6a` e `b77698d`. Este delta
+adiciona um commit separado para as especificações e o script de QA, sem incluir
+alterações staged de outro agente em `.agents/`, nem `AGENTS.md`, `.gitignore` ou
+`docs/engineering/`.
 
 ## 12. Git final do delta
 
-O working tree continua intencionalmente sujo, com alterações anteriores,
-correções deste lote, migration/testes novos, specs e evidências. O stash foi
-preservado. Nenhum histórico foi reescrito.
+O trabalho do usuário em `.agents/`, `AGENTS.md`, `.gitignore` e
+`docs/engineering/` foi preservado e não foi misturado. O commit deste delta é
+local; nenhum push foi executado. O stash, refs de arquivo e demais branches
+continuam preservados.
 
 ## 13. Próximos macro-lotes
 
-Seguir `docs/plans/analytics-macro-lote-0.4-backlog-v1.md`: primeiro fechar QA
-visual multi-persona e editor legado; depois publicar contrato próprio de CS,
-conversas, Comercial drill-down e matching após carga OMIE autorizada.
+Seguir `docs/plans/analytics-macro-lote-0.4-backlog-v1.md`: Lote 1 OMIE-only já
+tem contrato; os próximos lotes independentes são matching, Comercial
+drill-down, Tickets/SLA, Conversas/Chat, Customer Success e auditoria/observabilidade.
+O próximo lote recomendado é validar o editor legado e a governança de
+integrações em escopo isolado, sem iniciar CS ou Chat automaticamente.
 
 ## 14. Limitações e pendências
 
 - credenciais e tokens não foram lidos nem recuperados;
 - sync HubSpot/OMIE real, deploy, push e scheduler remoto não foram executados;
-- o banco local foi corrigido aditivamente, mas a extensão pgTAP continua ausente;
-- a sequência de migrations aplicada localmente precisa ser confirmada em um
-  banco reproduzido pela cadeia completa antes de qualquer promoção remota.
+- pgTAP continua ausente no container local;
+- o ambiente local não prova disponibilidade do OMIE real nem escopos/planos de
+  Conversations;
+- Customer Success continua indisponível por decisão honesta de contrato;
+- alterações não pertencentes a este lote permanecem no working tree e exigem
+  revisão própria antes de qualquer organização futura.
