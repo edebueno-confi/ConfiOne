@@ -28,14 +28,19 @@ export function canOpenInternalRoute(
   redirectTo: string,
   context: InternalRouteContext,
 ) {
+  // Access decisions are made against the pathname. Query parameters belong
+  // to the destination state (for example, an analytics tab) and must not
+  // turn an otherwise published route into a false denial.
+  const routePathname = redirectTo.split(/[?#]/, 1)[0] || '/';
+
   // Step 1 of the validation order: a surface that is not published in the
   // current release is never reachable, regardless of the profile. This keeps
   // `platform_admin` inside the reduced surface during the release phase.
-  if (!isRoutePublishedInRelease(redirectTo)) {
+  if (!isRoutePublishedInRelease(routePathname)) {
     return false;
   }
 
-  if (matchesRoute(redirectTo, '/inicio')) {
+  if (matchesRoute(routePathname, '/inicio')) {
     return (
       context.roles.includes('platform_admin') ||
       hasAnyRole(context.roles, [
@@ -53,19 +58,19 @@ export function canOpenInternalRoute(
     );
   }
 
-  if (matchesRoute(redirectTo, '/admin')) {
-    if (redirectTo === '/admin') {
+  if (matchesRoute(routePathname, '/admin')) {
+    if (routePathname === '/admin') {
       return (context.screenKeys ?? []).some((key) =>
         ['analytics', 'settings', 'knowledge', 'access'].includes(key),
       );
     }
 
     if (hasAnyRole(context.roles, ['support_manager', 'support_agent'])) {
-      return matchesRoute(redirectTo, '/admin/analytics') && hasScreen(context, 'analytics');
+      return matchesRoute(routePathname, '/admin/analytics') && hasScreen(context, 'analytics');
     }
 
     if (context.roles.includes('dashboard_viewer')) {
-      return matchesRoute(redirectTo, '/admin/analytics');
+      return matchesRoute(routePathname, '/admin/analytics');
     }
 
     const adminScreenByRoute: Array<[string, InternalScreenKey]> = [
@@ -80,27 +85,27 @@ export function canOpenInternalRoute(
       ['/admin/system', 'system'],
       ['/admin/product-docs', 'product_docs'],
     ];
-    const adminScreen = adminScreenByRoute.find(([path]) => matchesRoute(redirectTo, path));
+    const adminScreen = adminScreenByRoute.find(([path]) => matchesRoute(routePathname, path));
     if (adminScreen) {
       return hasScreen(context, adminScreen[1]);
     }
 
-    if (matchesRoute(redirectTo, '/admin/knowledge')) {
+    if (matchesRoute(routePathname, '/admin/knowledge')) {
       return context.roles.includes('knowledge_manager');
     }
 
-    if (matchesRoute(redirectTo, '/admin/system')) {
+    if (matchesRoute(routePathname, '/admin/system')) {
       return context.roles.includes('audit_reviewer');
     }
 
     return false;
   }
 
-  if (matchesRoute(redirectTo, '/cs')) {
+  if (matchesRoute(routePathname, '/cs')) {
     return hasScreen(context, 'cs_portfolio') || context.hasCsPortfolioAccess;
   }
 
-  if (matchesRoute(redirectTo, '/support')) {
+  if (matchesRoute(routePathname, '/support')) {
     return (
       context.roles.includes('platform_admin') ||
       hasAnyRole(context.roles, ['support_manager', 'support_agent']) ||
@@ -108,11 +113,11 @@ export function canOpenInternalRoute(
     );
   }
 
-  if (matchesRoute(redirectTo, '/internal-actions')) {
+  if (matchesRoute(routePathname, '/internal-actions')) {
     return hasScreen(context, 'internal_actions') || context.hasInternalActionAreaAccess;
   }
 
-  if (matchesRoute(redirectTo, '/engineering')) {
+  if (matchesRoute(routePathname, '/engineering')) {
     return (
       context.roles.includes('platform_admin') ||
       hasAnyRole(context.roles, ['engineering_manager', 'engineering_member']) ||
@@ -120,11 +125,11 @@ export function canOpenInternalRoute(
     );
   }
 
-  if (matchesRoute(redirectTo, '/portal')) {
+  if (matchesRoute(routePathname, '/portal')) {
     return context.hasCustomerPortalAccess;
   }
 
-  return matchesRoute(redirectTo, '/help');
+  return matchesRoute(routePathname, '/help');
 }
 
 export function getDefaultInternalLandingRoute(context: InternalRouteContext) {

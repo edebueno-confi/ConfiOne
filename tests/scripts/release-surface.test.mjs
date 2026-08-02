@@ -144,6 +144,12 @@ test('published routes are reachable in the release', () => {
   }
 });
 
+test('query parameters do not deny a published route', () => {
+  const context = platformAdminContext();
+  assert.equal(canOpenInternalRoute('/admin/analytics?tab=overview', context), true);
+  assert.equal(canOpenInternalRoute('/admin/settings?section=integracoes', context), true);
+});
+
 test('hidden routes are not reachable in the release', () => {
   for (const route of HIDDEN_ROUTES) {
     assert.equal(isRoutePublishedInRelease(route), false, route);
