@@ -9,7 +9,7 @@ Status: **parcialmente validado**
 
 ## Resumo executivo
 
-O lote estabilizou o ciclo de sincronização, separou estado de execução de estado do snapshot publicado, corrigiu a exposição de erros OMIE, tornou as ações de atualização rastreáveis e eliminou a contradição “dados atualizados” versus “snapshot inexistente” nas superfícies verificadas.
+O lote estabilizou o ciclo de sincronização, separou estado de execução de estado do snapshot publicado, corrigiu a exposição de erros OMIE, tornou as ações de atualização rastreáveis e eliminou a contradição “dados atualizados” versus “snapshot inexistente” nas superfícies verificadas. Nesta continuação, também foi fechada a ligação do run OMIE ao ciclo pai e o Financeiro deixou de oferecer retry direto.
 
 Uma execução OMIE real, iniciada pela tela autenticada de Fontes do Dashboard, concluiu localmente em 49 segundos com 3.451 registros aceitos e zero rejeitados. O provedor foi consultado em leitura; não houve escrita externa no OMIE ou HubSpot. A execução sequencial HubSpot → OMIE não foi iniciada porque o runtime local de Edge Functions não possui `ANALYTICS_SYNC_SECRET`; esse segredo não foi criado, alterado ou exposto.
 
@@ -21,6 +21,8 @@ Uma execução OMIE real, iniciada pela tela autenticada de Fontes do Dashboard,
 - Runs sem heartbeat dentro do limite passam a `timed_out` por `rpc_admin_reconcile_analytics_sync_runs(900)`.
 - O run HubSpot órfão encontrado no início do lote foi reconciliado como timeout, preservando o snapshot HubSpot válido anterior de 36.315 registros promovidos.
 - O novo orquestrador evita adotar um run de outra correlação e bloqueia ciclos concorrentes.
+- O orquestrador passa o `cycle_id` somente no caminho interno protegido; o serviço OMIE persiste a mesma correlação e a etapa do ciclo recebe o `run_id` retornado. Isso torna o histórico pai/etapas auditável após uma execução sequencial real.
+- A autorização de leitura do read model foi ajustada para reconhecer contexto interno `service_role` sem liberar acesso anônimo; o comportamento é coberto por pgTAP.
 
 ### 2. Contrato de status e frescor
 
@@ -31,7 +33,7 @@ O RPC `rpc_analytics_source_status()` agora publica simultaneamente:
 - `lastAttemptAt`, `lastSuccessAt`, `lastFailureAt`;
 - `processedCount`, `rejectedCount`, `sanitizedError` e `hasValidSnapshot`.
 
-Assim, uma falha posterior não apaga um snapshot anterior válido. A interface mostra “Falhou · snapshot anterior preservado”, sem afirmar que a tentativa atual está atualizada.
+Assim, uma falha posterior não apaga um snapshot anterior válido. A interface mostra a falha da tentativa atual e a data dos últimos dados válidos; o resumo separa o estado HubSpot do estado OMIE para não marcar Financeiro como falho quando apenas HubSpot falhou.
 
 ### 3. OMIE e erros
 
@@ -48,6 +50,7 @@ Assim, uma falha posterior não apaga um snapshot anterior válido. A interface 
 - O formulário mantém cada integração como uma unidade operacional, com ativação explícita, credencial mascarada e uma única ação de salvar. HubSpot cobre Comercial, Customer Success e Suporte; OMIE cobre Financeiro.
 - A view de histórico v2 passou a incluir também runs diretos sem ciclo pai. Isso evita que uma ação manual concluída desapareça da rastreabilidade.
 - O Histórico usa cópia “Execução direta” para esses runs, sem classificá-los falsamente como ciclo automático.
+- O Financeiro não oferece mais “Tentar novamente”; falhas e ausência de snapshot encaminham para Histórico e, quando aplicável, para a configuração do OMIE. A atualização permanece centralizada em Fontes do Dashboard.
 
 ### 5. Catálogo e origem dos dados
 
@@ -91,16 +94,22 @@ Resultado objetivo:
 - estados de fonte duplicados na Visão Geral: 0;
 - falhas bloqueantes de requisição: 0;
 - abortos `net::ERR_ABORTED` de assets durante navegação: 0;
+- retry direto na superfície Financeiro: 0;
 
 A matriz visual foi concluída objetivamente para as 20 capturas. O relatório geral permanece **parcialmente validado** por causa das limitações de domínio e da execução sequencial completa descritas abaixo.
 
 ## Validações executadas
 
-- `npx supabase test db --local supabase/tests/091_dashboard_runtime_truth_v3.sql` — 19/19;
-- `node --test tests/scripts/analytics-domain-cta-contract.test.mjs tests/scripts/settings-sources-v2-contract.test.mjs tests/scripts/analytics-sequential-orchestrator.test.mjs tests/scripts/omie-client.test.mjs tests/scripts/release-surface.test.mjs` — 67/67;
+- `npx --no-install supabase db lint --local` — aprovado, com warnings preexistentes de variáveis/parâmetro não usados;
+- `npx --no-install supabase test db --local supabase/tests/091_dashboard_runtime_truth_v3.sql` — 19/19;
+- `npx --no-install supabase test db --local supabase/tests/092_dashboard_runtime_cycle_behavior_v3.sql` — 18/18;
+- `node --test tests/scripts/analytics-domain-cta-contract.test.mjs tests/scripts/settings-sources-v2-contract.test.mjs tests/scripts/analytics-sequential-orchestrator.test.mjs tests/scripts/omie-client.test.mjs tests/scripts/release-surface.test.mjs` — 70/70;
 - `npm run contracts:typecheck` — aprovado;
 - `npm run web:typecheck` — aprovado;
 - `npm run web:build` — aprovado;
+- `npm run quality:module -- apps/web/src/features/analytics` — aprovado, sem findings;
+- `npm run quality:changed` — aprovado com uma observação candidata preexistente de `any` em `omie-sync-service.ts`;
+- `npm run local:qa:secret-scan` — 1.789 arquivos rastreados, 0 correspondências;
 - `git diff --check` — aprovado;
 - QA empacotado `node scripts/local-qa/dashboard-runtime-v3-preview.mjs` — 20 capturas, zero falhas de requisição, zero erros de console, zero overflow, zero cópia proibida, zero contradições e zero estados duplicados;
 - reconciliação local autorizada: HubSpot órfão encerrado como `timed_out`;
@@ -128,15 +137,21 @@ Prover o segredo server-side por fluxo autorizado, executar uma única vez o cic
 ## Apêndice — arquivos principais
 
 - `supabase/migrations/20260802130000_dashboard_runtime_truth_v3.sql`;
+- `supabase/migrations/20260802150000_dashboard_runtime_service_read_model_access_v4.sql`;
 - `supabase/tests/091_dashboard_runtime_truth_v3.sql`;
+- `supabase/tests/092_dashboard_runtime_cycle_behavior_v3.sql`;
 - `supabase/functions/_shared/omie.ts`;
 - `supabase/functions/_shared/omie-sync-service.ts`;
 - `supabase/functions/analytics-sequential-sync/index.ts`;
 - `supabase/functions/analytics-integration-run/index.ts`;
 - `apps/web/src/features/analytics/AnalyticsCeoPage.tsx`;
+- `apps/web/src/features/analytics/AnalyticsFinancePage.tsx`;
+- `apps/web/src/features/analytics/analytics-ui.tsx`;
 - `apps/web/src/features/settings/SettingsIntegrationsPanel.tsx`;
 - `apps/web/src/features/settings/SettingsPage.tsx`;
 - `apps/web/src/features/settings/DashboardSourcesSettingsPage.tsx`;
 - `apps/web/src/features/settings/SyncHistorySettingsPage.tsx`;
 - `apps/web/src/index.css`;
 - `scripts/local-qa/dashboard-runtime-v3-preview.mjs`.
+- `tests/scripts/analytics-domain-cta-contract.test.mjs`;
+- `tests/scripts/analytics-sequential-orchestrator.test.mjs`.
