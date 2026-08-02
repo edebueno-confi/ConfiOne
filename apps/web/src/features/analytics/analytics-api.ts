@@ -10,6 +10,7 @@ import {
   mapCsKpis,
   mapCsMonthly,
   mapSyncRun,
+  mapOmieSyncRun,
   mapCommercialSnapshot,
   mapCsSnapshot,
   mapCustomerSuccessSnapshot,
@@ -21,6 +22,7 @@ import {
   type CsKpis,
   type CsMonthlyPoint,
   type SyncRun,
+  type OmieSyncRun,
   type AnalyticsFilters,
   type CommercialSnapshot,
   type CsSnapshot,
@@ -197,6 +199,17 @@ export async function listHubspotSyncRuns(): Promise<SyncRun[]> {
     .limit(30);
   if (error) throw toAppError(error, 'Falha ao carregar os logs de sincronização HubSpot.');
   return (data ?? []).map((row) => mapSyncRun(row as Row)).filter((row): row is SyncRun => Boolean(row));
+}
+
+export async function listOmieSyncRuns(): Promise<OmieSyncRun[]> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client
+    .from('vw_analytics_finance_sync_runs_read')
+    .select('id,source_key,status,total_rows,accepted_rows,rejected_rows,started_at,finished_at,error_message,correlation_id')
+    .order('started_at', { ascending: false })
+    .limit(30);
+  if (error) throw toAppError(error, 'Falha ao carregar os logs de sincronização OMIE.');
+  return (data ?? []).map((row) => mapOmieSyncRun(row as Row));
 }
 
 export async function getLatestCsSyncRun(): Promise<SyncRun | null> {

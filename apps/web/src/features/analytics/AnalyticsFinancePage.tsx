@@ -122,7 +122,7 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
           <Link to="/admin/settings?section=analytics&panel=omie" className="text-xs font-medium text-[color:var(--minimal-action)] hover:underline">Gerenciar OMIE</Link>
         </div>
       </div>
-      {!sourceStatus?.api.configured ? <p className="mt-2 text-xs text-[color:var(--minimal-warning-text)]">Configure a credencial OMIE em Configurações → Integrações para ativar a fonte ao vivo. O histórico de importações fica na aba Logs.</p> : null}
+      {!sourceStatus?.api.configured ? <p className="mt-2 text-xs text-[color:var(--minimal-warning-text)]">Configure a credencial OMIE em Configurações → Integrações para ativar a fonte ao vivo. O histórico de sincronizações fica em Configurações → Histórico.</p> : null}
     </section>
 
     {/* Filtros */}

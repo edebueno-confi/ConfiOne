@@ -261,7 +261,20 @@ export interface FinanceSnapshot {
 }
 
 export interface FinanceSourceStatus {
-  api: { provider: string; resource: string; configured: boolean; lastSyncAt: string | null; lastStatus: string | null; metrics: string[]; fallback: string };
+  api: { provider: string; resource: string; configured: boolean; lastSyncAt: string | null; lastStatus: string | null; metrics: string[] };
+}
+
+export interface OmieSyncRun {
+  id: string;
+  sourceKey: string;
+  status: 'processing' | 'completed' | 'partial' | 'failed' | 'empty' | 'abandoned';
+  totalRows: number;
+  acceptedRows: number;
+  rejectedRows: number;
+  startedAt: string;
+  finishedAt: string | null;
+  errorMessage: string | null;
+  correlationId: string | null;
 }
 
 export interface CeoSnapshot {
@@ -519,7 +532,22 @@ export function mapFinanceSourceStatus(value: unknown): FinanceSourceStatus {
   const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
   const api = (data.api && typeof data.api === 'object' ? data.api : {}) as Record<string, unknown>;
   return {
-    api: { provider: toText(api.provider) || 'Omie', resource: toText(api.resource) || 'Contas a Receber', configured: Boolean(api.configured), lastSyncAt: api.last_sync_at ? toText(api.last_sync_at) : null, lastStatus: api.last_status ? toText(api.last_status) : null, metrics: Array.isArray(api.metrics) ? api.metrics.map(toText).filter(Boolean) : [], fallback: toText(api.fallback) },
+    api: { provider: toText(api.provider) || 'Omie', resource: toText(api.resource) || 'Contas a Receber', configured: Boolean(api.configured), lastSyncAt: api.last_sync_at ? toText(api.last_sync_at) : null, lastStatus: api.last_status ? toText(api.last_status) : null, metrics: Array.isArray(api.metrics) ? api.metrics.map(toText).filter(Boolean) : [] },
+  };
+}
+
+export function mapOmieSyncRun(row: Record<string, unknown>): OmieSyncRun {
+  return {
+    id: toText(row.id),
+    sourceKey: toText(row.source_key) || 'omie_receivables_api',
+    status: (toText(row.status) || 'failed') as OmieSyncRun['status'],
+    totalRows: toNumber(row.total_rows),
+    acceptedRows: toNumber(row.accepted_rows),
+    rejectedRows: toNumber(row.rejected_rows),
+    startedAt: toText(row.started_at),
+    finishedAt: row.finished_at ? toText(row.finished_at) : null,
+    errorMessage: row.error_message ? toText(row.error_message) : null,
+    correlationId: row.correlation_id ? toText(row.correlation_id) : null,
   };
 }
 

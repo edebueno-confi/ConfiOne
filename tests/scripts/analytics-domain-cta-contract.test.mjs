@@ -62,4 +62,26 @@ test('modelo público financeiro não promove planilha a fonte de snapshot', () 
   assert.match(model, /source: 'api' \| 'none'/);
   assert.match(model, /data\.source === 'api' \? 'api' : 'none'/);
   assert.doesNotMatch(model, /sourceValue === 'spreadsheet'/);
+  assert.doesNotMatch(model, /fallback: string/);
+});
+
+test('dashboard_viewer consulta as cinco áreas sem receber ações administrativas', () => {
+  const shell = fs.readFileSync(path.join(analyticsDir, 'AnalyticsShell.tsx'), 'utf8');
+  assert.match(shell, /isAnalyticsDomainPublishedInRelease\(domain\.key\)/);
+  assert.doesNotMatch(shell, /!isDashboardViewer \|\| domain\.key === 'ceo'/);
+  assert.doesNotMatch(shell, /trigger(?:Hubspot|Omie|Sequential)AnalyticsSync/);
+});
+
+test('histórico publicado separa runs HubSpot e OMIE', () => {
+  const logs = fs.readFileSync(path.join(analyticsDir, 'AnalyticsLogsPage.tsx'), 'utf8');
+  const api = fs.readFileSync(path.join(analyticsDir, 'analytics-api.ts'), 'utf8');
+  assert.match(logs, /listHubspotSyncRuns/);
+  assert.match(logs, /listOmieSyncRuns/);
+  assert.match(api, /vw_analytics_finance_sync_runs_read/);
+});
+
+test('superfície de integrações não apresenta provider legado nem componente morto', () => {
+  const settings = fs.readFileSync(path.join(repoRoot, 'apps/web/src/features/settings/SettingsPage.tsx'), 'utf8');
+  assert.match(settings, /filter\(\(item\) => \['hubspot', 'omie'\]/);
+  assert.equal(fs.existsSync(path.join(repoRoot, 'apps/web/src/features/settings/IntegrationSettingsPanel.tsx')), false);
 });

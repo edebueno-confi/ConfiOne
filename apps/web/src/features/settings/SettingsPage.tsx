@@ -877,7 +877,7 @@ function GroupDetail({
             integrations.phase === 'ready' ? (
               <>
                 <div className="gso-settings-integration-panorama" aria-label="Panorama das integrações">
-                  {integrations.items.filter((item) => ['hubspot', 'omie', 'github'].includes(item.provider)).map((item) => (
+                  {integrations.items.filter((item) => ['hubspot', 'omie'].includes(item.provider)).map((item) => (
                     <div className="gso-settings-integration-signal" key={item.id}>
                       <span>{item.provider === 'hubspot' ? 'HubSpot' : item.provider === 'omie' ? 'OMIE' : 'Produto'}</span>
                       <strong>{item.hasCredentials ? 'Configurado' : 'Aguardando configuração'}</strong>
