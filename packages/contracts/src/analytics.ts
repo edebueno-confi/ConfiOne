@@ -10,6 +10,9 @@ export const ANALYTICS_DATA_STATUSES = [
   'unavailable',
   'failed',
   'error',
+  'unavailable_source',
+  'unavailable_contract',
+  'unavailable_period',
 ] as const;
 
 export type AnalyticsDataStatus = (typeof ANALYTICS_DATA_STATUSES)[number];
@@ -26,6 +29,19 @@ export const ANALYTICS_SOURCE_STATUSES = [
 
 export type AnalyticsSourceStatus = (typeof ANALYTICS_SOURCE_STATUSES)[number];
 
+export const ANALYTICS_EXECUTION_STATUSES = [
+  'queued',
+  'running',
+  'succeeded',
+  'failed',
+  'partial',
+  'cancelled',
+  'timed_out',
+  'abandoned',
+] as const;
+
+export type AnalyticsExecutionStatus = (typeof ANALYTICS_EXECUTION_STATUSES)[number];
+
 export interface AnalyticsSourceState {
   key: string;
   label: string;
@@ -38,6 +54,13 @@ export interface AnalyticsSourceState {
   freshnessMinutes: number | null;
   runId: string | null;
   origin: string;
+  currentRunId: string | null;
+  currentRunStatus: AnalyticsExecutionStatus | null;
+  publishedSourceStatus: AnalyticsSourceStatus;
+  lastFailureAt: string | null;
+  rejectedCount: number | null;
+  sanitizedError: string | null;
+  hasValidSnapshot: boolean;
 }
 
 export interface AnalyticsSourceStatusPayload {

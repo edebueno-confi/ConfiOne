@@ -39,6 +39,9 @@ const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
   unavailable: "Fonte indisponível",
   failed: "Falha na sincronização",
   error: "Falha na sincronização",
+  unavailable_source: "Fonte indisponível",
+  unavailable_contract: "Contrato indisponível",
+  unavailable_period: "Período indisponível",
 };
 
 type MetricDelta = {
@@ -135,8 +138,8 @@ export function AnalyticsCeoPage({
     "error",
     "not_configured",
   ].includes(state?.status ?? "unavailable");
-  const hubspotUnavailable = currentSourceStatus ? !hasUsableSnapshot(currentSourceStatus.hubspot.status, currentSourceStatus.hubspot.lastSuccessAt) : snapshotUnavailable;
-  const omieUnavailable = currentSourceStatus ? !hasUsableSnapshot(currentSourceStatus.omie.status, currentSourceStatus.omie.lastSuccessAt) : snapshotUnavailable;
+  const hubspotUnavailable = currentSourceStatus ? !hasUsableSnapshot(currentSourceStatus.hubspot.status, currentSourceStatus.hubspot.lastSuccessAt, currentSourceStatus.hubspot.hasValidSnapshot) : snapshotUnavailable;
+  const omieUnavailable = currentSourceStatus ? !hasUsableSnapshot(currentSourceStatus.omie.status, currentSourceStatus.omie.lastSuccessAt, currentSourceStatus.omie.hasValidSnapshot) : snapshotUnavailable;
   const history = result.history;
   const comparison =
     history && !hubspotUnavailable
@@ -791,8 +794,8 @@ function statusTone(status?: AnalyticsDataStatus) {
   return "muted";
 }
 
-function hasUsableSnapshot(status: AnalyticsSourceStatusPayload['globalStatus'], lastSuccessAt: string | null) {
-  return Boolean(lastSuccessAt) && ['fresh', 'stale', 'partial', 'syncing'].includes(status);
+function hasUsableSnapshot(status: AnalyticsSourceStatusPayload['globalStatus'], lastSuccessAt: string | null, hasValidSnapshot = false) {
+  return Boolean(lastSuccessAt || hasValidSnapshot) && ['fresh', 'stale', 'partial', 'syncing', 'failed'].includes(status);
 }
 
 async function getAnalyticsSourceStatusSafe(): Promise<AnalyticsSourceStatusPayload | null> {

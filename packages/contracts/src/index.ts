@@ -33,6 +33,7 @@ export type {
   AnalyticsBlockState,
   AnalyticsCoverage,
   AnalyticsDataStatus,
+  AnalyticsExecutionStatus,
   AnalyticsSourceStatus,
   AnalyticsSourceState,
   AnalyticsSourceStatusPayload,

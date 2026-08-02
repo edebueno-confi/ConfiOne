@@ -25,9 +25,12 @@ function IntegrationCard({
   const [message, setMessage] = useState<string | null>(null);
   const status = credentialStatus({ ...item, isEnabled });
 
-  const save = async (withCredential: boolean) => {
+  const hasCredentialInput = isOmie ? Boolean(primary.trim() || secondary.trim()) : Boolean(primary.trim());
+
+  const save = async () => {
+    const withCredential = hasCredentialInput;
     if (withCredential && isOmie && Boolean(primary.trim()) !== Boolean(secondary.trim())) {
-      setMessage('Informe APP_KEY e APP_SECRET juntos para atualizar a credencial OMIE.');
+      setMessage('Informe a chave e o segredo da aplicação juntos para atualizar o OMIE.');
       return;
     }
     setMessage(null);
@@ -70,17 +73,17 @@ function IntegrationCard({
           <>
             <label className="gso-settings-field">
               <span>APP_KEY</span>
-              <input className={CONTROL} type="password" autoComplete="new-password" value={primary} onChange={(event) => setPrimary(event.target.value)} placeholder="Informe a APP_KEY" aria-describedby="omie-credential-help" />
+              <input className={CONTROL} type="password" autoComplete="new-password" value={primary} onChange={(event) => setPrimary(event.target.value)} placeholder="Informe o APP_KEY" aria-describedby="omie-credential-help" />
             </label>
             <label className="gso-settings-field">
               <span>APP_SECRET</span>
-              <input className={CONTROL} type="password" autoComplete="new-password" value={secondary} onChange={(event) => setSecondary(event.target.value)} placeholder="Informe a APP_SECRET" aria-describedby="omie-credential-help" />
+              <input className={CONTROL} type="password" autoComplete="new-password" value={secondary} onChange={(event) => setSecondary(event.target.value)} placeholder="Informe o APP_SECRET" aria-describedby="omie-credential-help" />
             </label>
           </>
         ) : (
           <label className="gso-settings-field gso-settings-field--wide">
-            <span>Token privado</span>
-            <input className={CONTROL} type="password" autoComplete="new-password" value={primary} onChange={(event) => setPrimary(event.target.value)} placeholder="Informe o token privado" aria-describedby="hubspot-credential-help" />
+            <span>Token de acesso</span>
+            <input className={CONTROL} type="password" autoComplete="new-password" value={primary} onChange={(event) => setPrimary(event.target.value)} placeholder="Informe o token de acesso" aria-describedby="hubspot-credential-help" />
           </label>
         )}
       </div>
@@ -88,8 +91,9 @@ function IntegrationCard({
       <p className="gso-settings-help" id={isOmie ? 'omie-credential-help' : 'hubspot-credential-help'}>Deixe em branco para manter a credencial atual. O valor nunca é exibido novamente.</p>
       {message ? <p className="gso-settings-inline-error" role="alert">{message}</p> : null}
       <footer className="gso-settings-card-actions">
-        <button className="gso-settings-button gso-settings-button--secondary" type="button" disabled={busy} onClick={() => void save(false)}>Salvar alterações</button>
-        <button className="gso-settings-button gso-settings-button--primary" type="button" disabled={busy || (isOmie ? !primary.trim() && !secondary.trim() : !primary.trim())} onClick={() => void save(true)}>Atualizar credencial</button>
+        <button className="gso-settings-button gso-settings-button--primary" type="button" disabled={busy} onClick={() => void save()}>
+          {busy ? 'Salvando…' : 'Salvar alterações'}
+        </button>
       </footer>
     </section>
   );
@@ -111,8 +115,8 @@ export function SettingsIntegrationsPanel({
   return (
     <div className="gso-settings-stack">
       <div className="gso-settings-intro-band">
-        <strong>Conexões oficiais</strong>
-        <span>HubSpot abastece a operação; OMIE abastece o Financeiro. Configure cada credencial sem sair desta página.</span>
+        <strong>Integrações do Dashboard</strong>
+        <span>HubSpot abastece Comercial, Customer Success e Suporte. OMIE abastece o Financeiro. Credenciais ficam protegidas e nunca são exibidas novamente.</span>
       </div>
       <div className="gso-settings-integration-grid">
         {published.map((item) => <IntegrationCard busy={busy} item={item} key={item.integrationKey} onSave={onSave} />)}

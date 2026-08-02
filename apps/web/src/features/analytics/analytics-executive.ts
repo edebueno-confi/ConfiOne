@@ -31,6 +31,9 @@ const STATUS_SEVERITY: Record<AnalyticsBlockState['status'], 1 | 2 | 3> = {
   empty: 1,
   zero: 1,
   fresh: 1,
+  unavailable_source: 3,
+  unavailable_contract: 3,
+  unavailable_period: 3,
 };
 
 export function rankExecutivePipelines(rows: CsPipelinePoint[], limit = 5): ExecutivePipeline[] {

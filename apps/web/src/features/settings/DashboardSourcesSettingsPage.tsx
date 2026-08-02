@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { MinimalState } from '../../components/minimal-states';
 import { useAuthContext } from '../auth/auth-context';
 import { canManageAnalyticsIntegration } from '../analytics/analytics-permissions.mjs';
@@ -32,6 +33,21 @@ function statusLabel(status: string) {
 
 function formatDate(value: string | null | undefined) {
   return value ? new Date(value).toLocaleString('pt-BR') : 'Indisponível';
+}
+
+function sourceDetail(source: AnalyticsSourceStatusPayload['hubspot']) {
+  if (source.status === 'syncing') {
+    return source.lastSuccessAt
+      ? `Atualização em andamento · último snapshot ${formatDate(source.lastSuccessAt)}`
+      : 'Atualização em andamento · ainda não há snapshot publicado.';
+  }
+  if (source.status === 'failed') {
+    return source.lastSuccessAt
+      ? `Última tentativa ${formatDate(source.lastFailureAt ?? source.lastAttemptAt)} · snapshot anterior preservado`
+      : source.sanitizedError ?? 'A última tentativa falhou e ainda não há snapshot publicado.';
+  }
+  if (source.lastSuccessAt) return `Último snapshot publicado: ${formatDate(source.lastSuccessAt)}`;
+  return source.sanitizedError ?? 'Ainda não há uma atualização concluída.';
 }
 
 function PipelineRow({ row, canEdit, busy, onSave }: { row: AnalyticsSourceConfig; canEdit: boolean; busy: boolean; onSave: (row: AnalyticsSourceConfig, areaKey: AnalyticsSourceConfig['areaKey'], alias: string, isActive: boolean) => Promise<void> }) {
@@ -156,7 +172,7 @@ export function DashboardSourcesSettingsPage() {
       </section>
 
       <section className="gso-settings-source-status-grid" aria-label="Estado das fontes">
-        {sourcePills.map((source) => <div className="gso-settings-source-status" key={source.key}><span>{source.label}</span><strong>{statusLabel(source.status)}</strong><small>{source.lastSuccessAt ? `Última atualização: ${formatDate(source.lastSuccessAt)}` : source.error ?? 'Ainda não há uma atualização concluída.'}</small></div>)}
+        {sourcePills.map((source) => <div className="gso-settings-source-status" key={source.key}><span>{source.label}</span><strong>{statusLabel(source.status)}</strong><small>{sourceDetail(source)}</small></div>)}
       </section>
 
       <section className="gso-settings-card gso-settings-schedule-card" aria-labelledby="schedule-title">
@@ -176,7 +192,7 @@ export function DashboardSourcesSettingsPage() {
 
       <section className="gso-settings-card" aria-labelledby="catalog-title">
         <div className="gso-settings-card-header"><div><p className="gso-settings-eyebrow">Catálogo vivo</p><h3 id="catalog-title">Pipelines usados por área</h3><p>O catálogo é descoberto no HubSpot. O nome oficial permanece visível; o alias é apenas uma ajuda interna.</p></div><label className="gso-settings-field gso-settings-filter"><span>Filtrar área</span><select className={CONTROL} value={areaFilter} onChange={(event) => setAreaFilter(event.target.value as typeof areaFilter)}><option value="all">Todas as áreas</option>{Object.entries(AREA_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label></div>
-        {message ? <p className="gso-settings-inline-message" role="status">{message}</p> : null}
+        {message ? <p className="gso-settings-inline-message" role="status">{message} <Link className="font-medium underline" to="/admin/settings/sync-history">Acompanhar no Histórico</Link></p> : null}
         {error ? <p className="gso-settings-inline-error" role="alert">{error}</p> : null}
         <ul className="gso-settings-pipeline-list">{filteredRows.map((row) => <PipelineRow busy={busy} canEdit={canEdit} key={row.id} onSave={savePipeline} row={row} />)}</ul>
         {!filteredRows.length ? <p className="gso-settings-empty">Nenhum pipeline nesta área.</p> : null}

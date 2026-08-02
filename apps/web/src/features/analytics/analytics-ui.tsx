@@ -14,6 +14,9 @@ const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
   unavailable: 'Fonte indisponível',
   failed: 'Falha na sincronização',
   error: 'Falha na sincronização',
+  unavailable_source: 'Fonte indisponível',
+  unavailable_contract: 'Contrato indisponível',
+  unavailable_period: 'Período indisponível',
 };
 
 function formatStateDate(value: string | null): string {

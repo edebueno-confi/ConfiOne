@@ -1,4 +1,4 @@
-import type { AnalyticsBlockState, AnalyticsDataStatus, AnalyticsSourceStatus, AnalyticsSourceState, AnalyticsSourceStatusPayload } from '@genius-support-os/contracts';
+import type { AnalyticsBlockState, AnalyticsDataStatus, AnalyticsExecutionStatus, AnalyticsSourceStatus, AnalyticsSourceState, AnalyticsSourceStatusPayload } from '@genius-support-os/contracts';
 import { createAnalyticsBlockState, parseAnalyticsNumber } from './analytics-state';
 
 // Tipos e mapeadores do modulo Analytics/Dashboard Gerencial.
@@ -269,6 +269,7 @@ export type DashboardSourceStatus = AnalyticsSourceState;
 export function mapAnalyticsSourceStatus(value: unknown): AnalyticsSourceStatusPayload {
   const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
   const valid: AnalyticsSourceStatus[] = ['never_synced', 'syncing', 'fresh', 'stale', 'partial', 'failed', 'unavailable'];
+  const executions: AnalyticsExecutionStatus[] = ['queued', 'running', 'succeeded', 'failed', 'partial', 'cancelled', 'timed_out', 'abandoned'];
   const map = (key: string, label: string): DashboardSourceStatus => {
     const row = (data[key] && typeof data[key] === 'object' ? data[key] : {}) as Record<string, unknown>;
     const status = toText(row.status);
@@ -284,6 +285,13 @@ export function mapAnalyticsSourceStatus(value: unknown): AnalyticsSourceStatusP
       freshnessMinutes: row.freshnessMinutes == null ? null : toNumber(row.freshnessMinutes),
       runId: row.runId ? toText(row.runId) : null,
       origin: toText(row.origin) || key,
+      currentRunId: row.currentRunId ? toText(row.currentRunId) : row.runId ? toText(row.runId) : null,
+      currentRunStatus: executions.includes(toText(row.currentRunStatus) as AnalyticsExecutionStatus) ? toText(row.currentRunStatus) as AnalyticsExecutionStatus : null,
+      publishedSourceStatus: (valid.includes(toText(row.publishedSourceStatus) as AnalyticsSourceStatus) ? toText(row.publishedSourceStatus) : (valid.includes(status as AnalyticsSourceStatus) ? status : 'unavailable')) as AnalyticsSourceStatus,
+      lastFailureAt: row.lastFailureAt ? toText(row.lastFailureAt) : null,
+      rejectedCount: row.rejectedCount == null ? null : toNumber(row.rejectedCount),
+      sanitizedError: row.sanitizedError ? toText(row.sanitizedError) : row.error ? toText(row.error) : null,
+      hasValidSnapshot: row.hasValidSnapshot === true,
     };
   };
   const globalStatus = toText(data.globalStatus);
@@ -472,9 +480,11 @@ export interface AnalyticsSourceConfig {
 }
 
 export interface AnalyticsSyncHistoryRow {
-  runId: string;
-  sourceKey: 'hubspot' | 'omie';
-  sourceLabel: 'HubSpot' | 'OMIE';
+  runId: string | null;
+  cycleId: string;
+  rowKind: 'cycle' | 'step';
+  sourceKey: 'hubspot' | 'omie' | null;
+  sourceLabel: string;
   status: string;
   startedAt: string;
   finishedAt: string | null;
@@ -482,7 +492,8 @@ export interface AnalyticsSyncHistoryRow {
   processedCount: number;
   errorMessage: string | null;
   correlationId: string | null;
-  triggerKind: 'manual' | 'automatic';
+  triggerKind: 'manual' | 'automatic' | 'diagnostic';
+  currentStep: string | null;
 }
 
 export interface AnalyticsSharedPeriod {
@@ -745,9 +756,11 @@ export function mapAnalyticsSourceConfig(row: Record<string, unknown>): Analytic
 
 export function mapAnalyticsSyncHistory(row: Record<string, unknown>): AnalyticsSyncHistoryRow {
   return {
-    runId: toText(row.run_id),
-    sourceKey: toText(row.source_key) === 'omie' ? 'omie' : 'hubspot',
-    sourceLabel: toText(row.source_label) === 'OMIE' ? 'OMIE' : 'HubSpot',
+    runId: row.run_id ? toText(row.run_id) : null,
+    cycleId: toText(row.cycle_id) || toText(row.correlation_id),
+    rowKind: toText(row.row_kind) === 'step' ? 'step' : 'cycle',
+    sourceKey: ['hubspot', 'omie'].includes(toText(row.source_key)) ? toText(row.source_key) as 'hubspot' | 'omie' : null,
+    sourceLabel: toText(row.source_label) || 'Ciclo de atualização',
     status: toText(row.status) || 'unknown',
     startedAt: toText(row.started_at),
     finishedAt: row.finished_at ? toText(row.finished_at) : null,
@@ -755,7 +768,8 @@ export function mapAnalyticsSyncHistory(row: Record<string, unknown>): Analytics
     processedCount: toNumber(row.processed_count),
     errorMessage: row.error_message ? toText(row.error_message) : null,
     correlationId: row.correlation_id ? toText(row.correlation_id) : null,
-    triggerKind: toText(row.trigger_kind) === 'manual' ? 'manual' : 'automatic',
+    triggerKind: (['manual', 'automatic', 'diagnostic'].includes(toText(row.trigger_kind)) ? toText(row.trigger_kind) : 'automatic') as AnalyticsSyncHistoryRow['triggerKind'],
+    currentStep: row.current_step ? toText(row.current_step) : null,
   };
 }
 

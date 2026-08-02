@@ -419,7 +419,7 @@ export async function updateAnalyticsPipelineConfig(input: { id: string; areaKey
 export async function listAnalyticsSyncHistory(): Promise<AnalyticsSyncHistoryRow[]> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client
-    .from('vw_admin_analytics_sync_history_v1')
+    .from('vw_admin_analytics_sync_history_v2')
     .select('*')
     .order('started_at', { ascending: false })
     .limit(100);
