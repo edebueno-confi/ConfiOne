@@ -155,3 +155,28 @@ Prover o segredo server-side por fluxo autorizado, executar uma única vez o cic
 - `scripts/local-qa/dashboard-runtime-v3-preview.mjs`.
 - `tests/scripts/analytics-domain-cta-contract.test.mjs`;
 - `tests/scripts/analytics-sequential-orchestrator.test.mjs`.
+
+## Delta de continuidade — 2026-08-02
+
+Este ciclo adicionou dois commits locais, sem push ou operação remota:
+
+- `9d55204 fix(ui): estabilizar editor historico e financeiro`;
+- `f25ed42 fix(db): reconciliar etapas de sincronizacao`.
+
+No frontend, a entrada em `/admin/knowledge/new` agora limpa o formulário e o estado editorial antes de carregar categorias; o canvas escuro do editor recebeu tokens para texto, links, código, callouts, cards relacionados e popovers; o Histórico de sincronizações usa ciclos recolhíveis; e Financeiro passou a compartilhar o grid editorial de KPIs do piloto Comercial.
+
+No lifecycle, falhas de start/dispatcher do HubSpot encerram a etapa do ciclo como `failed`, abandonos antigos do OMIE preservam código interno, mensagem interna, erro sanitizado e timestamps, e a reconciliação também encerra etapas `queued`/`running` vinculadas a ciclos ou runs expirados.
+
+A migration `20260802130000_dashboard_runtime_truth_v3.sql` permaneceu imutável. A correção de banco foi criada em `20260802160000_dashboard_sync_lifecycle_reconciliation_v1.sql` e aplicada somente ao Supabase local com `npx supabase migration up --local --yes`, sem reset. A lista local ficou alinhada até `20260802160000`.
+
+Evidências adicionais deste delta:
+
+- contratos UI-04: 15/15 testes;
+- contratos de lifecycle/orquestrador: 8/8 testes;
+- pgTAP focado `091` + `092`: 37/37;
+- `npm run web:typecheck`, `npm run web:build`, `npm run supabase:lint:db` e secret scan aprovados;
+- QA empacotado do Dashboard: 20/20 capturas, sem erros de console, respostas inesperadas, overflow, contradições ou cópia proibida.
+
+Estado de dados observado após a validação: `analytics_sync_cycles` ainda não possui ciclos persistidos; HubSpot tem 7 `success`, 1 `timed_out` e 1 `error`; OMIE tem 1 `completed` e 3 `failed`. Isso mantém o relatório como **parcialmente validado**: o ciclo sequencial HubSpot -> OMIE ainda depende do segredo server-side autorizado `ANALYTICS_SYNC_SECRET` e não foi executado neste delta.
+
+O rebuild completo da tela de Artigos, o fluxo real de categorias e a exportação profissional PNG/PDF continuam na fila documentada em `docs/UI_REFACTOR_BACKLOG.md`; não foram misturados a este lote de estabilização.
