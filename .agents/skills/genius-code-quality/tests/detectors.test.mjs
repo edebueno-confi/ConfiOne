@@ -5,6 +5,7 @@ import {
   analyzeSource,
   classifyLayer,
   enrichHistoricalFindings,
+  filesFromArguments,
   summarizeFindings,
 } from '../scripts/check-project-patterns.mjs';
 import {
@@ -26,6 +27,25 @@ test('classifies representative source layers', () => {
   assert.equal(classifyLayer('supabase/migrations/20260801000000_contract.sql'), 'sql-migration');
   assert.equal(classifyLayer('supabase/tests/001_contract.sql'), 'sql-test');
   assert.equal(classifyLayer('scripts/audit-contracts.mjs'), 'script/audit');
+});
+
+test('resolves explicit quality paths without falling back to a broad scan', () => {
+  const markdown = filesFromArguments(process.cwd(), ['docs/PROJECT_STATE.md']);
+  assert.equal(markdown.length, 1);
+  assert.match(markdown[0].replaceAll('\\', '/'), /docs\/PROJECT_STATE\.md$/);
+
+  const deleted = filesFromArguments(process.cwd(), ['apps/web/src/features/analytics/removed-file.ts']);
+  assert.deepEqual(deleted, []);
+
+  const removedDirectory = filesFromArguments(process.cwd(), ['apps/web/src/features/analytics/removed-directory']);
+  assert.deepEqual(removedDirectory, []);
+
+  const renamed = filesFromArguments(process.cwd(), [
+    'apps/web/src/features/analytics/old-name.ts',
+    'apps/web/src/features/auth/internal-route-access.ts',
+  ]);
+  assert.equal(renamed.length, 1);
+  assert.match(renamed[0].replaceAll('\\', '/'), /features\/auth\/internal-route-access\.ts$/);
 });
 
 test('does not flag a SECURITY DEFINER function with an empty search_path', () => {

@@ -56,8 +56,8 @@ function readGit() {
   const head = git(['rev-parse', 'HEAD']);
   const branch = git(['branch', '--show-current']);
   const diffCheck = mode === 'staged' ? git(['diff', '--cached', '--check']) : git(['diff', '--check']);
-  const unstaged = git(['diff', '--name-only']);
-  const staged = git(['diff', '--cached', '--name-only']);
+  const unstaged = git(['diff', '--name-only', '--diff-filter=ACMRTUXB']);
+  const staged = git(['diff', '--cached', '--name-only', '--diff-filter=ACMRTUXB']);
   const untracked = git(['ls-files', '--others', '--exclude-standard']);
   const allChangedFiles = [...unstaged.stdout.split(/\r?\n/), ...staged.stdout.split(/\r?\n/), ...untracked.stdout.split(/\r?\n/)].filter(Boolean).filter((file, index, all) => all.indexOf(file) === index);
   const changedFiles = mode === 'staged'

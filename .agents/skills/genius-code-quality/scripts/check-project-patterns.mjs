@@ -7,7 +7,7 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(process.cwd());
-const sourceExtensions = new Set(['.cjs', '.css', '.js', '.jsx', '.mjs', '.sql', '.ts', '.tsx']);
+const sourceExtensions = new Set(['.cjs', '.css', '.js', '.jsx', '.mjs', '.md', '.sql', '.ts', '.tsx']);
 const ignoredDirectories = new Set(['.git', '.next', '.turbo', 'coverage', 'dist', 'node_modules', 'output', 'tmp']);
 const RULE_VERSION = '2';
 
@@ -397,13 +397,15 @@ function walk(directory) {
   return files;
 }
 
-function filesFromArguments(requested, requestedFiles) {
+export function filesFromArguments(requested, requestedFiles) {
   if (!requestedFiles.length) return walk(requested);
   const selected = requestedFiles.map((file) => path.resolve(root, file)).filter((file) => {
     const relative = path.relative(root, file);
     return !relative.startsWith('..') && fs.existsSync(file) && sourceExtensions.has(path.extname(file).toLowerCase());
   });
-  return selected.length ? selected : walk(requested);
+  // An explicit file list comes from Git's index. Deleted paths and removed
+  // directories must produce no scan, never an implicit repository-wide scan.
+  return selected;
 }
 
 export function scanFiles(files, options = {}) {
