@@ -1,6 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createServiceClient, jsonResponse, optionsResponse } from '../_shared/ticket-evidence.ts';
-import { authorizeCsRunner, runnerError, runnerMessage } from '../_shared/hubspot-cs-runner.ts';
+import { authorizeCsRunner, classifyHubSpotError, runnerError } from '../_shared/hubspot-cs-runner.ts';
 
 type FunctionResult = { status: number; payload: Record<string, unknown> | null };
 
@@ -98,11 +98,12 @@ async function runHubspotToCompletion(
     try {
       started = await callFunction(config.baseUrl, config.anonKey, config.secret, 'hubspot-orchestrator-start', correlationId, { correlationId });
     } catch (error) {
-      await updateStep(client, cycleId, 'hubspot', { status: 'failed', finished_at: new Date().toISOString(), sanitized_error: runnerMessage(error) });
-      return { runId: null, status: 'failed', recordsPromoted: 0, message: runnerMessage(error) };
+      const classified = classifyHubSpotError(error);
+      await updateStep(client, cycleId, 'hubspot', { status: 'failed', finished_at: new Date().toISOString(), sanitized_error: classified.sanitizedMessage });
+      return { runId: null, status: 'failed', recordsPromoted: 0, message: classified.sanitizedMessage };
     }
     if (started.status >= 400) {
-      const message = String(started.payload?.error ?? 'Falha ao iniciar o HubSpot.');
+      const message = classifyHubSpotError(new Error(String(started.payload?.error ?? 'Falha ao iniciar o HubSpot.'))).sanitizedMessage;
       await updateStep(client, cycleId, 'hubspot', { status: 'failed', finished_at: new Date().toISOString(), sanitized_error: message });
       return { runId: null, status: 'failed', recordsPromoted: 0, message };
     }
@@ -133,11 +134,12 @@ async function runHubspotToCompletion(
     try {
       dispatched = await callFunction(config.baseUrl, config.anonKey, config.secret, 'hubspot-orchestrator-dispatcher', correlationId, {});
     } catch (error) {
-      await updateStep(client, cycleId, 'hubspot', { status: 'failed', finished_at: new Date().toISOString(), sanitized_error: runnerMessage(error) });
-      return { runId: run.id, status: 'failed', recordsPromoted: 0, message: runnerMessage(error) };
+      const classified = classifyHubSpotError(error);
+      await updateStep(client, cycleId, 'hubspot', { status: 'failed', finished_at: new Date().toISOString(), sanitized_error: classified.sanitizedMessage });
+      return { runId: run.id, status: 'failed', recordsPromoted: 0, message: classified.sanitizedMessage };
     }
     if (dispatched.status >= 400) {
-      const message = String(dispatched.payload?.error ?? 'Falha ao processar a fila HubSpot.');
+      const message = classifyHubSpotError(new Error(String(dispatched.payload?.error ?? 'Falha ao processar a fila HubSpot.'))).sanitizedMessage;
       await updateStep(client, cycleId, 'hubspot', { status: 'failed', finished_at: new Date().toISOString(), sanitized_error: message });
       return { runId: run.id, status: 'failed', recordsPromoted: 0, message };
     }

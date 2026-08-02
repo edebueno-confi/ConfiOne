@@ -8,6 +8,25 @@ export const CS_TICKET_PROPERTIES = [
 ];
 export const HUBSPOT_DEAL_PROPERTIES = ['pipeline','dealstage','hubspot_owner_id','amount_in_home_currency','dealtype','dealname','createdate','closedate','hs_lastmodifieddate'];
 
+export type HubSpotErrorCode =
+  | 'authentication_error'
+  | 'invalid_request'
+  | 'provider_validation_error'
+  | 'provider_transient_error'
+  | 'rate_limit'
+  | 'timeout'
+  | 'network_error'
+  | 'malformed_response'
+  | 'internal_error';
+
+export type HubSpotClassifiedError = {
+  code: HubSpotErrorCode;
+  providerCode: string | null;
+  retryable: boolean;
+  sanitizedMessage: string;
+  internalMessage: string;
+};
+
 export async function authorizeCsRunner(req: Request, client: SupabaseClient): Promise<string | null> {
   const configuredSecret = Deno.env.get('ANALYTICS_SYNC_SECRET')?.trim();
   const providedSecret = req.headers.get('x-analytics-sync-secret')?.trim();
@@ -39,10 +58,50 @@ export function runnerMessage(error: unknown): string {
       : String(error);
 }
 
+function httpStatusFromMessage(message: string): number | null {
+  const match = message.match(/\((\d{3})\)/);
+  return match ? Number(match[1]) : null;
+}
+
+function redactInternalMessage(message: string): string {
+  return message
+    .replace(/(Bearer\s+|pat-[A-Za-z0-9_-]+|sb_secret_[A-Za-z0-9_-]+)/gi, '[REDACTED]')
+    .replace(/(authorization|token|secret|app_secret)\s*[:=]\s*[^,\s}]+/gi, '$1=[REDACTED]')
+    .slice(0, 1000);
+}
+
+export function classifyHubSpotError(error: unknown): HubSpotClassifiedError {
+  const internalMessage = redactInternalMessage(runnerMessage(error));
+  const status = httpStatusFromMessage(internalMessage);
+  const providerCode = status ? String(status) : null;
+
+  if (status === 401 || status === 403 || /authentication credentials|authentication required|unauthorized|forbidden/i.test(internalMessage)) {
+    return { code: 'authentication_error', providerCode, retryable: false, sanitizedMessage: 'A autenticação do HubSpot foi recusada. Verifique a credencial configurada.', internalMessage };
+  }
+  if (status === 429 || /rate limit|too many requests/i.test(internalMessage)) {
+    return { code: 'rate_limit', providerCode, retryable: true, sanitizedMessage: 'O HubSpot limitou temporariamente a consulta. Tente novamente após o intervalo de segurança.', internalMessage };
+  }
+  if (status !== null && status >= 500) {
+    return { code: 'provider_transient_error', providerCode, retryable: true, sanitizedMessage: 'O HubSpot não concluiu a consulta neste momento.', internalMessage };
+  }
+  if (/abort|timeout|timed out|tempo limite/i.test(internalMessage)) {
+    return { code: 'timeout', providerCode, retryable: true, sanitizedMessage: 'O HubSpot demorou além do limite esperado.', internalMessage };
+  }
+  if (/network|fetch failed|falha de rede|conex[aã]o/i.test(internalMessage)) {
+    return { code: 'network_error', providerCode, retryable: true, sanitizedMessage: 'Não foi possível alcançar o HubSpot.', internalMessage };
+  }
+  if (status === 400 || /invalid|inválida|invalida|bad request/i.test(internalMessage)) {
+    return { code: 'invalid_request', providerCode, retryable: false, sanitizedMessage: 'A solicitação enviada ao HubSpot não foi aceita.', internalMessage };
+  }
+  if (/malformed|formato inesperado|resposta ausente/i.test(internalMessage)) {
+    return { code: 'malformed_response', providerCode, retryable: false, sanitizedMessage: 'O HubSpot respondeu em um formato inesperado.', internalMessage };
+  }
+  return { code: 'internal_error', providerCode, retryable: false, sanitizedMessage: 'Não foi possível concluir a leitura do HubSpot.', internalMessage };
+}
+
 export function runnerError(error: unknown, status = 502) {
-  const raw = runnerMessage(error);
-  const sanitized = raw.replace(/(Bearer\s+|pat-[A-Za-z0-9_-]+|sb_secret_[A-Za-z0-9_-]+)/gi, '[REDACTED]').slice(0, 500);
-  return jsonResponse({ error: sanitized }, { status });
+  const classified = classifyHubSpotError(error);
+  return jsonResponse({ error: classified.sanitizedMessage, code: classified.code }, { status });
 }
 
 function toIsoTimestamp(value: string | null | undefined): string | null {

@@ -1,13 +1,17 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createServiceClient, jsonResponse, optionsResponse } from '../_shared/ticket-evidence.ts';
 import { fetchDealsPageByPipeline, fetchTicketsPageByPipeline, fetchOwners, fetchPipelineDefinitions, fetchPipelineStages } from '../_shared/hubspot.ts';
-import { authorizeCsRunner, HUBSPOT_DEAL_PROPERTIES, CS_TICKET_PROPERTIES, resolveHubSpotToken, runnerError, runnerMessage, toDealStagingRow, toTicketStagingRow } from '../_shared/hubspot-cs-runner.ts';
+import { authorizeCsRunner, classifyHubSpotError, HUBSPOT_DEAL_PROPERTIES, CS_TICKET_PROPERTIES, resolveHubSpotToken, runnerError, toDealStagingRow, toTicketStagingRow } from '../_shared/hubspot-cs-runner.ts';
 
 function failure(error: unknown, attempts: number) {
-  const message = runnerMessage(error);
-  const match = message.match(/\((429|5\d\d)\)/);
+  const classified = classifyHubSpotError(error);
+  // Retryable classification is preserved while the public message remains sanitized.
+  const match = classified.retryable ? ['', 'TRANSIENT'] : null;
+  const message = classified.internalMessage;
   const retryable = Boolean(match) || /timeout|tempo limite|network|fetch failed|conex[aã]o/i.test(message);
-  return retryable && attempts < 5 ? { code: `RETRY_${match?.[1] ?? 'TRANSIENT'}`, message } : { code: match?.[1] === '403' ? 'FORBIDDEN' : 'PERMANENT_FAILURE', message };
+  return retryable && attempts < 5
+    ? { ...classified, code: `RETRY_${classified.code.toUpperCase()}` }
+    : classified;
 }
 
 Deno.serve(async (req) => {
@@ -78,7 +82,19 @@ Deno.serve(async (req) => {
       const { data: finalized, error: finalizeError } = await client.rpc('rpc_analytics_hubspot_finalize_run',{p_run_id:item.run_id}); if(finalizeError) throw finalizeError;
       return jsonResponse({status:nextCursor?'checkpointed':'completed',runId:item.run_id,workItemId:item.work_item_id,received:records.length,nextCursor,finalized});
     } catch (error) {
-      const f=failure(error,Number(item.attempts)); await client.rpc('rpc_analytics_hubspot_checkpoint_work_item',{p_work_item_id:item.work_item_id,p_worker_id:workerId,p_next_cursor:item.cursor,p_page_number:Number(item.page_number),p_received:0,p_accepted:0,p_rejected:0,p_completed:false,p_error_code:f.code,p_error_message:f.message}); await client.rpc('rpc_analytics_hubspot_finalize_run',{p_run_id:item.run_id}); return runnerError({message:f.message},f.code.startsWith('RETRY_')?503:422);
+      const f=failure(error,Number(item.attempts));
+      await client.rpc('rpc_analytics_hubspot_checkpoint_work_item',{p_work_item_id:item.work_item_id,p_worker_id:workerId,p_next_cursor:item.cursor,p_page_number:Number(item.page_number),p_received:0,p_accepted:0,p_rejected:0,p_completed:false,p_error_code:f.code,p_error_message:f.sanitizedMessage});
+      await client.rpc('rpc_analytics_hubspot_finalize_run',{p_run_id:item.run_id});
+      await client.from('hubspot_sync_runs').update({
+        error_code: f.code,
+        error_message: f.sanitizedMessage,
+        internal_error_code: f.code,
+        provider_code: f.providerCode,
+        internal_message: f.internalMessage,
+        sanitized_error: f.sanitizedMessage,
+        error_occurred_at: new Date().toISOString(),
+      }).eq('id', item.run_id);
+      return runnerError({message:f.internalMessage},f.code.startsWith('RETRY_')?503:422);
     }
   } catch (error) { return runnerError(error,500); }
 });
