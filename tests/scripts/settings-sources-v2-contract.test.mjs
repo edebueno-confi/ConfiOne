@@ -19,7 +19,9 @@ test('rotas canônicas e redirects legados existem', () => {
 test('integrações não misturam fontes, histórico ou modo técnico', () => {
   assert.match(integrations, /provider === 'hubspot' \|\| item\.provider === 'omie'/);
   assert.match(integrations, /Salvar alterações/);
-  assert.match(integrations, /Atualizar credencial/);
+  assert.match(integrations, /Chave da aplicação/);
+  assert.match(integrations, /Segredo da aplicação/);
+  assert.doesNotMatch(integrations, /Atualizar credencial/);
   assert.doesNotMatch(integrations, /Modo|Dashboard e Analytics|Diagnóstico|Histórico|contas_a_receber|Vault/);
 });
 

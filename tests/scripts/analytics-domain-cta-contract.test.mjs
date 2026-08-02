@@ -51,8 +51,9 @@ test('Customer Success não reutiliza snapshot executivo nem dados de tickets', 
 test('integrações expõem configuração segura e escopo operacional explícito', () => {
   const settings = fs.readFileSync(path.join(repoRoot, 'apps/web/src/features/settings/SettingsPage.tsx'), 'utf8');
   const integrations = fs.readFileSync(path.join(repoRoot, 'apps/web/src/features/settings/SettingsIntegrationsPanel.tsx'), 'utf8');
-  assert.match(integrations, /APP_KEY/);
-  assert.match(integrations, /APP_SECRET/);
+  assert.match(integrations, /Chave da aplicação/);
+  assert.match(integrations, /Segredo da aplicação/);
+  assert.match(integrations, /app_key_app_secret/);
   assert.match(integrations, /Fonte dos dados financeiros e contas a receber/);
   assert.match(integrations, /Fonte de dados comerciais, clientes e atendimentos/);
   assert.doesNotMatch(integrations, /Modo|contas_a_receber|Vault/);
@@ -80,7 +81,7 @@ test('histórico publicado separa ciclos HubSpot e OMIE', () => {
   const api = fs.readFileSync(path.join(analyticsDir, 'analytics-api.ts'), 'utf8');
   assert.match(logs, /listAnalyticsSyncHistory/);
   assert.match(logs, /correlationId/);
-  assert.match(api, /vw_admin_analytics_sync_history_v1/);
+  assert.match(api, /vw_admin_analytics_sync_history_v2/);
 });
 
 test('superfície de integrações não apresenta provider legado nem componente morto', () => {

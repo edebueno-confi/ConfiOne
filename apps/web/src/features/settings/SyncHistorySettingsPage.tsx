@@ -44,13 +44,16 @@ function HistoryGroup({ rows }: { rows: AnalyticsSyncHistoryRow[] }) {
         ? 'Diagnóstico'
         : 'Atualização automática';
   const hasFailure = rows.some((row) => ['failed', 'error', 'abandoned', 'timed_out', 'cancelled'].includes(row.status));
-  const status = hasFailure
-    ? 'failed'
+  const isParentCycle = cycle.rowKind === 'cycle';
+  const status = isParentCycle && cycle.status === 'partial'
+    ? 'partial'
     : rows.some((row) => ['running', 'queued'].includes(row.status))
       ? 'running'
-      : rows.some((row) => row.status === 'partial')
-        ? 'partial'
-        : cycle.status;
+      : hasFailure
+        ? 'failed'
+        : rows.some((row) => row.status === 'partial')
+          ? 'partial'
+          : cycle.status;
   const totalProcessed = steps.reduce((sum, row) => sum + row.processedCount, 0);
 
   return (

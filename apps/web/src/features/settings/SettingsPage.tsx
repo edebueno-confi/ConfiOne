@@ -81,7 +81,7 @@ const GROUPS: SettingsGroup[] = [
   { id: 'automacoes', label: 'Automações', description: 'Regras simples de roteamento (se isto, então aquilo).', controls: ['Condição (se)', 'Ação (então)'], usadoEm: 'Roteamento de demandas entre áreas', status: 'em_breve', nota: 'Exemplo: se o tipo for “bug”, então a área é “Produto”.' },
   { id: 'segmentos', label: 'Segmentos e clusters', description: 'Como os clientes são agrupados na carteira de CS.', controls: ['Nome do segmento', 'Cor', 'Ordem'], usadoEm: 'Carteira de CS (clusterização)', status: 'ativo', nota: 'Parâmetro gerenciável pela tela; base para a clusterização de CS.' },
   { id: 'canais', label: 'Canais', description: 'Por onde as mensagens entram e saem.', controls: ['Canal', 'Situação', 'Marca'], usadoEm: 'Entrada e saída de mensagens', status: 'existe_hoje', nota: 'Portal do cliente ativo; e-mail e WhatsApp são evolução futura.' },
-  { id: 'integracoes', label: 'Integrações', description: 'Fontes externas e credenciais do Dashboard Gerencial.', controls: ['HubSpot', 'OMIE Financeiro', 'Estado da credencial', 'Atualizar credencial'], usadoEm: 'Dashboard Gerencial e atualizações operacionais', status: 'ativo', nota: 'A tela mostra somente o estado da conexão. O valor da credencial nunca retorna para a interface.' },
+  { id: 'integracoes', label: 'Integrações', description: 'Fontes externas e credenciais do Dashboard Gerencial.', controls: ['HubSpot', 'OMIE Financeiro', 'Estado da credencial'], usadoEm: 'Dashboard Gerencial e atualizações operacionais', status: 'ativo', nota: 'A tela mostra somente o estado da conexão. O valor da credencial nunca retorna para a interface.' },
   { id: 'dashboard-fontes', label: 'Fontes do Dashboard', description: 'Pipelines e fontes que alimentam o Dashboard Gerencial.', controls: ['Pipelines HubSpot', 'Fonte OMIE API'], usadoEm: 'Dashboard Gerencial', status: 'ativo', nota: 'Pipelines e escopos operacionais permanecem separados da credencial da integração.' },
   { id: 'dashboard-historico', label: 'Histórico de sincronizações', description: 'Execuções, resultados e erros das integrações gerenciais.', controls: ['Execuções', 'Status', 'Erros'], usadoEm: 'Dashboard Gerencial', status: 'ativo', nota: 'O histórico fica separado das configurações e das ações de atualização.' },
 ];
@@ -770,20 +770,24 @@ function GroupDetail({
       </header>
 
       <div className="divide-y divide-[color:var(--minimal-border)]">
-        <section className="px-5 py-5 sm:px-6">
-          <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">O que este parâmetro define</h3>
-          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-            {group.controls.map((control: string) => (
-              <li className="rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-3 py-2 text-sm text-[color:var(--minimal-text)]" key={control}>{control}</li>
-            ))}
-          </ul>
-        </section>
+        {!isIntegrations ? (
+          <>
+            <section className="px-5 py-5 sm:px-6">
+              <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">O que este parâmetro define</h3>
+              <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                {group.controls.map((control: string) => (
+                  <li className="rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-3 py-2 text-sm text-[color:var(--minimal-text)]" key={control}>{control}</li>
+                ))}
+              </ul>
+            </section>
 
-        <section className="px-5 py-5 sm:px-6">
-          <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">Usado em</h3>
-          <p className="mt-2 text-sm text-[color:var(--minimal-text-secondary)]">{group.usadoEm}</p>
-          {group.nota ? <p className="mt-3 text-xs leading-5 text-[color:var(--minimal-text-tertiary)]">{group.nota}</p> : null}
-        </section>
+            <section className="px-5 py-5 sm:px-6">
+              <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">Usado em</h3>
+              <p className="mt-2 text-sm text-[color:var(--minimal-text-secondary)]">{group.usadoEm}</p>
+              {group.nota ? <p className="mt-3 text-xs leading-5 text-[color:var(--minimal-text-tertiary)]">{group.nota}</p> : null}
+            </section>
+          </>
+        ) : null}
 
         <section className="px-5 py-5 sm:px-6">
           {isConversationTypes ? (

@@ -71,13 +71,13 @@ function IntegrationCard({
 
         {isOmie ? (
           <>
-            <label className="gso-settings-field">
-              <span>APP_KEY</span>
-              <input className={CONTROL} type="password" autoComplete="new-password" value={primary} onChange={(event) => setPrimary(event.target.value)} placeholder="Informe o APP_KEY" aria-describedby="omie-credential-help" />
+            <label className="gso-settings-field gso-settings-field--wide">
+              <span>Chave da aplicação</span>
+              <input className={CONTROL} type="password" autoComplete="new-password" value={primary} onChange={(event) => setPrimary(event.target.value)} placeholder="Informe a chave da aplicação" aria-describedby="omie-credential-help" />
             </label>
-            <label className="gso-settings-field">
-              <span>APP_SECRET</span>
-              <input className={CONTROL} type="password" autoComplete="new-password" value={secondary} onChange={(event) => setSecondary(event.target.value)} placeholder="Informe o APP_SECRET" aria-describedby="omie-credential-help" />
+            <label className="gso-settings-field gso-settings-field--wide">
+              <span>Segredo da aplicação</span>
+              <input className={CONTROL} type="password" autoComplete="new-password" value={secondary} onChange={(event) => setSecondary(event.target.value)} placeholder="Informe o segredo da aplicação" aria-describedby="omie-credential-help" />
             </label>
           </>
         ) : (

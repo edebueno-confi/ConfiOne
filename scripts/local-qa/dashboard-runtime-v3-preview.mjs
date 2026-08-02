@@ -59,7 +59,10 @@ async function login(page, path) {
   await page.getByLabel('Senha').fill(account.password);
   await page.getByRole('button', { name: /entrar/i }).click();
   await page.waitForURL((url) => new URL(url).pathname !== '/login', { timeout: 20_000 });
-  await page.goto(`${baseUrl}${path}`, { waitUntil: 'domcontentloaded' });
+  const current = new URL(page.url());
+  if (current.pathname + current.search !== path) {
+    await page.goto(`${baseUrl}${path}`, { waitUntil: 'domcontentloaded' });
+  }
   await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
   await page.waitForTimeout(700);
 }
@@ -86,7 +89,9 @@ async function inspect(browser, surface, theme, viewport) {
     const forbiddenCopy = [
       'SOAP-ENV',
       'SOAP-ERROR',
-      'APP_SECRET:',
+      'APP_KEY',
+      'APP_SECRET',
+      'Token privado',
       'service_role',
       'Modo de execução',
       'Diagnóstico read-only',
@@ -94,8 +99,9 @@ async function inspect(browser, surface, theme, viewport) {
     ];
     const forbiddenFound = forbiddenCopy.filter((value) => bodyText.includes(value));
     const statusContradiction = bodyText.includes('Atualizada') && bodyText.includes('sincronização não registrada');
+    const duplicateSourceStatus = surface.key === 'overview' && bodyText.includes('Pulso das fontes');
     const integrationFields = surface.key === 'integrations'
-      ? { hasAppKey: bodyText.includes('APP_KEY'), hasAppSecret: bodyText.includes('APP_SECRET'), hasModeField: bodyText.includes('Modo') }
+      ? { hasApplicationKey: bodyText.includes('Chave da aplicação'), hasApplicationSecret: bodyText.includes('Segredo da aplicação'), exposesInternalNames: bodyText.includes('APP_KEY') || bodyText.includes('APP_SECRET'), hasModeField: bodyText.includes('Modo') }
       : null;
     const screenshot = `${surface.key}-${theme}-${viewport.name}.png`;
     await page.screenshot({ path: join(outputDir, screenshot), fullPage: true });
@@ -109,6 +115,7 @@ async function inspect(browser, surface, theme, viewport) {
       screenshot,
       forbiddenFound,
       statusContradiction,
+      duplicateSourceStatus,
       integrationFields,
       overflow,
       blockingRequestFailures,
@@ -151,8 +158,9 @@ const manifest = {
   noHorizontalOverflow: captures.every((item) => !item.overflow.horizontalOverflow),
   noForbiddenCopy: captures.every((item) => item.forbiddenFound.length === 0),
   noStatusContradictions: captures.every((item) => !item.statusContradiction),
-  integrationsExposeRequiredFields: captures.filter((item) => item.surface === 'integrations').every((item) => item.integrationFields?.hasAppKey && item.integrationFields?.hasAppSecret && !item.integrationFields?.hasModeField),
+  noDuplicateSourceStatus: captures.every((item) => !item.duplicateSourceStatus),
+  integrationsExposeRequiredFields: captures.filter((item) => item.surface === 'integrations').every((item) => item.integrationFields?.hasApplicationKey && item.integrationFields?.hasApplicationSecret && !item.integrationFields?.exposesInternalNames && !item.integrationFields?.hasModeField),
 };
 await writeFile(join(outputDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
-console.log(JSON.stringify({ output: join(outputDir, 'manifest.json'), screenshotTotal: manifest.screenshotTotal, noConsoleErrors: manifest.noConsoleErrors, noRequestFailures: manifest.noRequestFailures, noBlockingRequestFailures: manifest.noBlockingRequestFailures, abortedRequestFailureCount: manifest.abortedRequestFailureCount, noUnexpectedResponses: manifest.noUnexpectedResponses, noHorizontalOverflow: manifest.noHorizontalOverflow, noForbiddenCopy: manifest.noForbiddenCopy, noStatusContradictions: manifest.noStatusContradictions, integrationsExposeRequiredFields: manifest.integrationsExposeRequiredFields }));
-if (!manifest.noConsoleErrors || !manifest.noBlockingRequestFailures || !manifest.noUnexpectedResponses || !manifest.noHorizontalOverflow || !manifest.noForbiddenCopy || !manifest.noStatusContradictions || !manifest.integrationsExposeRequiredFields) process.exitCode = 1;
+console.log(JSON.stringify({ output: join(outputDir, 'manifest.json'), screenshotTotal: manifest.screenshotTotal, noConsoleErrors: manifest.noConsoleErrors, noRequestFailures: manifest.noRequestFailures, noBlockingRequestFailures: manifest.noBlockingRequestFailures, abortedRequestFailureCount: manifest.abortedRequestFailureCount, noUnexpectedResponses: manifest.noUnexpectedResponses, noHorizontalOverflow: manifest.noHorizontalOverflow, noForbiddenCopy: manifest.noForbiddenCopy, noStatusContradictions: manifest.noStatusContradictions, noDuplicateSourceStatus: manifest.noDuplicateSourceStatus, integrationsExposeRequiredFields: manifest.integrationsExposeRequiredFields }));
+if (!manifest.noConsoleErrors || !manifest.noBlockingRequestFailures || !manifest.noUnexpectedResponses || !manifest.noHorizontalOverflow || !manifest.noForbiddenCopy || !manifest.noStatusContradictions || !manifest.noDuplicateSourceStatus || !manifest.integrationsExposeRequiredFields) process.exitCode = 1;

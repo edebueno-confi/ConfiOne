@@ -44,7 +44,8 @@ Assim, uma falha posterior não apaga um snapshot anterior válido. A interface 
 
 - HubSpot continua sendo a fonte de Comercial, Customer Success e Suporte.
 - OMIE continua sendo a fonte exclusiva do Financeiro.
-- A tela de Integrações exibe token HubSpot e os campos `APP_KEY`/`APP_SECRET` do OMIE; o modo de execução não é mais uma escolha de produto e permanece fixo internamente como API.
+- A tela de Integrações exibe o token de acesso do HubSpot e os campos humanos “Chave da aplicação” e “Segredo da aplicação” do OMIE. Os nomes internos `app_key`/`app_secret` permanecem somente no payload protegido; o modo de execução não é uma escolha de produto e permanece fixo internamente como API.
+- O formulário mantém cada integração como uma unidade operacional, com ativação explícita, credencial mascarada e uma única ação de salvar. HubSpot cobre Comercial, Customer Success e Suporte; OMIE cobre Financeiro.
 - A view de histórico v2 passou a incluir também runs diretos sem ciclo pai. Isso evita que uma ação manual concluída desapareça da rastreabilidade.
 - O Histórico usa cópia “Execução direta” para esses runs, sem classificá-los falsamente como ciclo automático.
 
@@ -87,27 +88,28 @@ Resultado objetivo:
 - overflow horizontal: 0;
 - cópia sensível/proibida encontrada: 0;
 - contradições de status detectadas: 0;
+- estados de fonte duplicados na Visão Geral: 0;
 - falhas bloqueantes de requisição: 0;
-- abortos `net::ERR_ABORTED` de assets durante navegação: registrados no manifesto, sem serem convertidos em “sucesso limpo”.
+- abortos `net::ERR_ABORTED` de assets durante navegação: 0;
 
-Por causa desses abortos de navegação, a matriz é **parcialmente validada**, não totalmente concluída.
+A matriz visual foi concluída objetivamente para as 20 capturas. O relatório geral permanece **parcialmente validado** por causa das limitações de domínio e da execução sequencial completa descritas abaixo.
 
 ## Validações executadas
 
 - `npx supabase test db --local supabase/tests/091_dashboard_runtime_truth_v3.sql` — 19/19;
-- `node --test tests/scripts/analytics-sequential-orchestrator.test.mjs tests/scripts/omie-client.test.mjs tests/scripts/release-surface.test.mjs` — 52/52;
+- `node --test tests/scripts/analytics-domain-cta-contract.test.mjs tests/scripts/settings-sources-v2-contract.test.mjs tests/scripts/analytics-sequential-orchestrator.test.mjs tests/scripts/omie-client.test.mjs tests/scripts/release-surface.test.mjs` — 67/67;
 - `npm run contracts:typecheck` — aprovado;
 - `npm run web:typecheck` — aprovado;
 - `npm run web:build` — aprovado;
 - `git diff --check` — aprovado;
-- QA empacotado `node scripts/local-qa/dashboard-runtime-v3-preview.mjs` — 20 capturas, sem falha bloqueante;
+- QA empacotado `node scripts/local-qa/dashboard-runtime-v3-preview.mjs` — 20 capturas, zero falhas de requisição, zero erros de console, zero overflow, zero cópia proibida, zero contradições e zero estados duplicados;
 - reconciliação local autorizada: HubSpot órfão encerrado como `timed_out`;
 - execução OMIE real via sessão QA autenticada: concluída, 3.451 aceitos, 0 rejeitados.
 
 ## Skills e direção aplicada
 
 - `ux-friction-analyzer`: reduziu escolhas concorrentes e tornou a ação manual acompanhável no Histórico;
-- `ui-ux-specialist` e `frontend-design`: preservaram hierarquia operacional, alvos acionáveis e estados explícitos no escopo controlado; não foi feito redesign amplo das cinco áreas neste lote;
+- `ui-ux-specialist` e `frontend-design`: preservaram hierarquia operacional, alvos acionáveis e estados explícitos; removeram o pulso e o cartão contextual redundantes da Visão Geral, mantendo o estado agregado no shell compacto; não foi feito redesign amplo das cinco áreas neste lote;
 - `data-analytics:design-kpis`: separou métrica publicada, frescor e denominador; Customer Success continua sem regra inventada;
 - `genius-code-quality`: gate staged/changed/module, typechecks, secret scan e revisão contextual;
 - `web-design-guidelines`: QA real de viewport, overflow, estados e cópia;
@@ -117,8 +119,7 @@ Por causa desses abortos de navegação, a matriz é **parcialmente validada**, 
 
 1. O ciclo completo HubSpot → OMIE depende da provisão aprovada de `ANALYTICS_SYNC_SECRET` no runtime local de Functions. Não foi preenchido automaticamente.
 2. A definição de carteira/denominador de Customer Success ainda precisa ser decidida antes de validar os KPIs dessa área.
-3. A Visão Geral continua visualmente próxima do shell administrativo existente; o lote atual corrigiu verdade de dados, configurações e rastreabilidade, não a reconstrução visual ampla recomendada anteriormente.
-4. A matriz visual contém abortos de assets de navegação e permanece parcialmente validada.
+3. A Visão Geral continua visualmente próxima do shell administrativo existente; o lote atual corrigiu a duplicação de status, verdade de dados, configurações e rastreabilidade, mas não executou a reconstrução visual ampla recomendada anteriormente.
 
 ## Próximo lote recomendado
 
@@ -131,7 +132,11 @@ Prover o segredo server-side por fluxo autorizado, executar uma única vez o cic
 - `supabase/functions/_shared/omie.ts`;
 - `supabase/functions/_shared/omie-sync-service.ts`;
 - `supabase/functions/analytics-sequential-sync/index.ts`;
+- `supabase/functions/analytics-integration-run/index.ts`;
+- `apps/web/src/features/analytics/AnalyticsCeoPage.tsx`;
 - `apps/web/src/features/settings/SettingsIntegrationsPanel.tsx`;
+- `apps/web/src/features/settings/SettingsPage.tsx`;
 - `apps/web/src/features/settings/DashboardSourcesSettingsPage.tsx`;
 - `apps/web/src/features/settings/SyncHistorySettingsPage.tsx`;
+- `apps/web/src/index.css`;
 - `scripts/local-qa/dashboard-runtime-v3-preview.mjs`.

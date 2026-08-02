@@ -547,7 +547,7 @@
 .gso-settings-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; margin-top: 1rem; }
 .gso-settings-field { display: grid; gap: 0.4rem; min-width: 0; color: var(--minimal-text-secondary); font-size: 0.75rem; font-weight: 650; }
 .gso-settings-field--wide { grid-column: 1 / -1; }
-.gso-settings-field--toggle { min-height: 2.75rem; grid-template-columns: 1fr auto; align-items: center; border: 1px solid var(--minimal-border); padding: 0.6rem 0.75rem; background: var(--minimal-surface-muted); }
+.gso-settings-field--toggle { grid-column: 1 / -1; min-height: 2.75rem; grid-template-columns: 1fr auto; align-items: center; border: 1px solid var(--minimal-border); padding: 0.6rem 0.75rem; background: var(--minimal-surface-muted); }
 .gso-settings-field--toggle input { width: 1.1rem; height: 1.1rem; accent-color: var(--minimal-action); }
 .gso-settings-help { margin: 0.7rem 0 0; color: var(--minimal-text-tertiary); font-size: 0.72rem; line-height: 1.5; }
 .gso-settings-card-actions { display: flex; flex-wrap: wrap; gap: 0.65rem; margin-top: 1rem; }
