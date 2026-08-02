@@ -2,18 +2,6 @@ import type { ReactNode } from 'react';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
 import { AnalyticsStateBadge } from './analytics-ui';
 
-const STATUS_LABEL: Record<string, string> = {
-  fresh: 'Atualizado',
-  stale: 'Pode estar atrasado',
-  partial: 'Cobertura parcial',
-  empty: 'Sem registros no recorte',
-  zero: 'Zero real no recorte',
-  not_configured: 'Fonte não configurada',
-  syncing: 'Sincronizando',
-  unavailable: 'Fonte indisponível',
-  error: 'Falha na fonte',
-};
-
 export function AnalyticsHdDomainFrame({
   title,
   description,
@@ -37,7 +25,6 @@ export function AnalyticsHdDomainFrame({
         </div>
         {state ? (
           <div className="gso-hd-domain-frame-status">
-            <span>{STATUS_LABEL[state.status] ?? 'Estado da fonte'}</span>
             <AnalyticsStateBadge state={state} />
           </div>
         ) : null}

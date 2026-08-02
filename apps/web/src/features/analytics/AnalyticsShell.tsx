@@ -1,9 +1,9 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { formatDateTime } from '../../app/format';
-import { getLatestSyncRun } from './analytics-api';
+import { getAnalyticsSourceStatus } from './analytics-api';
 import { listEnabledAnalyticsDomains } from './analytics-domains';
-import type { SyncRun, AnalyticsSharedPeriod } from './analytics-model';
+import type { AnalyticsSharedPeriod } from './analytics-model';
+import type { AnalyticsSourceState, AnalyticsSourceStatus, AnalyticsSourceStatusPayload } from '@genius-support-os/contracts';
 import { useAuthContext } from '../auth/auth-context';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import { AnalyticsReportExport } from './AnalyticsReportExport';
@@ -13,11 +13,22 @@ import { isAnalyticsDomainPublishedInRelease } from '../../app/release-surface.m
 
 const DOMAINS = listEnabledAnalyticsDomains();
 
-function SyncStatusLabel({ run, error }: { run: SyncRun | null; error?: string | null }) {
-  if (error) return <span className="text-xs text-[color:var(--minimal-danger-text)]">Status da sincronização indisponível.</span>;
-  if (!run) return <span className="text-xs text-[color:var(--minimal-text-tertiary)]">Nenhuma sincronização registrada.</span>;
-  const statusLabel = run.status === 'success' ? 'concluída' : run.status === 'error' ? 'com erro' : 'em andamento';
-  return <span className={`text-xs ${run.status === 'error' ? 'text-[color:var(--minimal-danger-text)]' : 'text-[color:var(--minimal-text-tertiary)]'}`}>Última sincronização {statusLabel} · {formatDateTime(run.finishedAt ?? run.startedAt)}</span>;
+const SOURCE_STATUS_LABELS: Record<AnalyticsSourceStatus, string> = {
+  never_synced: 'Ainda não sincronizada',
+  syncing: 'Sincronizando',
+  fresh: 'Atualizada',
+  stale: 'Desatualizada',
+  partial: 'Parcial',
+  failed: 'Falhou',
+  unavailable: 'Indisponível',
+};
+
+function SourcePill({ source }: { source: AnalyticsSourceState }) {
+  return <span className={`gso-source-pill is-${source.status}`} title={source.error ?? SOURCE_STATUS_LABELS[source.status]}>
+    <i aria-hidden="true" />
+    <strong>{source.label}</strong>
+    <span>{SOURCE_STATUS_LABELS[source.status]}</span>
+  </span>;
 }
 
 export function AnalyticsShell() {
@@ -34,7 +45,7 @@ export function AnalyticsShell() {
   const urlParams = useMemo(() => normalizeAnalyticsSearch(location.search), [location.search]);
   const activeKey = analyticsDomainFromTab(urlParams.get('tab'));
   const [reloadKey, setReloadKey] = useState(0);
-  const [latestRun, setLatestRun] = useState<SyncRun | null>(null);
+  const [sourceStatus, setSourceStatus] = useState<AnalyticsSourceStatusPayload | null>(null);
   const [syncStatusError, setSyncStatusError] = useState<string | null>(null);
   const [sharedPeriod, setSharedPeriod] = useState<AnalyticsSharedPeriod>(() => {
     const fallback = resolveAnalyticsPeriod('month');
@@ -49,15 +60,15 @@ export function AnalyticsShell() {
   }, [urlParams]);
 
   const activeDomain = visibleDomains.find((domain) => domain.key === activeKey) ?? visibleDomains[0];
-  const refreshLatestRun = useCallback(() => {
+  const refreshSourceStatus = useCallback(() => {
     setSyncStatusError(null);
-    getLatestSyncRun().then(setLatestRun).catch(() => { setLatestRun(null); setSyncStatusError('unavailable'); });
+    getAnalyticsSourceStatus().then(setSourceStatus).catch(() => { setSourceStatus(null); setSyncStatusError('unavailable'); });
   }, []);
-  useEffect(() => { refreshLatestRun(); }, [refreshLatestRun]);
+  useEffect(() => { refreshSourceStatus(); }, [refreshSourceStatus]);
   const ActiveComponent = activeDomain?.Component;
 
   return (
-    <div className="gso-screen-frame gso-analytics-shell flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
+    <div className="gso-screen-frame gso-analytics-shell gso-pilot-shell flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
       <header className="gso-screen-header gso-workspace-header shrink-0 border-b border-[color:var(--minimal-border)] px-5 py-3 sm:px-6">
         <div className="flex min-h-12 flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <div className="min-w-0">
@@ -65,10 +76,12 @@ export function AnalyticsShell() {
             <p className="truncate text-xs text-[color:var(--minimal-text-secondary)]">Visão executiva integrada a HubSpot, OMIE e fontes operacionais.</p>
             {isDashboardViewer ? <span className="text-[11px] font-medium text-[color:var(--minimal-text-tertiary)]">Visualizador gerencial</span> : null}
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            {isPlatformAdmin ? <button type="button" onClick={() => setReportOpen(true)} className="inline-flex h-9 items-center rounded-lg border border-[color:var(--minimal-action)] px-3 text-sm font-medium text-[color:var(--minimal-action)] transition hover:bg-[color:var(--minimal-surface-muted)]">Exportar relatório</button> : null}
-            {isPlatformAdmin ? <Link to="/admin/settings?section=analytics" className="text-xs font-medium text-[color:var(--minimal-action)] hover:underline">Gerenciar integrações</Link> : null}
-            <SyncStatusLabel run={latestRun} error={syncStatusError} />
+          <div className="gso-shell-actions flex flex-wrap items-center justify-end gap-3">
+            <div className="gso-source-rail" aria-label="Estado das fontes">
+              {sourceStatus ? <><SourcePill source={sourceStatus.hubspot} /><SourcePill source={sourceStatus.omie} /></> : <span className="gso-source-rail-error">{syncStatusError ? 'Estado das fontes indisponível' : 'Consultando fontes…'}</span>}
+            </div>
+            {isPlatformAdmin ? <Link to="/admin/settings?section=analytics" className="gso-shell-secondary-action" title="Abrir configurações de integração">Integrações</Link> : null}
+            {isPlatformAdmin ? <button type="button" onClick={() => setReportOpen(true)} className="gso-shell-report-action">Exportar</button> : null}
           </div>
         </div>
         <nav className="gso-workspace-tabs gso-analytics-domain-tabs mt-2 flex max-w-full flex-nowrap gap-1 overflow-x-auto pb-1 pr-4" aria-label="Áreas do dashboard">
@@ -96,7 +109,7 @@ export function AnalyticsShell() {
       </header>
       <div className="gso-analytics-content min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
         <Suspense fallback={<MinimalState loading title="Carregando área do dashboard" description="Estamos preparando os indicadores deste recorte." />}>
-          {ActiveComponent ? <ActiveComponent key={`${activeKey}-${reloadKey}`} sharedPeriod={sharedPeriod} onSharedPeriodChange={setSharedPeriod} onRetry={() => setReloadKey((current) => current + 1)} isDashboardViewer={isDashboardViewer} /> : null}
+          {ActiveComponent ? <ActiveComponent key={`${activeKey}-${reloadKey}`} sharedPeriod={sharedPeriod} onSharedPeriodChange={setSharedPeriod} onRetry={() => setReloadKey((current) => current + 1)} isDashboardViewer={isDashboardViewer} sourceStatus={sourceStatus ?? undefined} /> : null}
         </Suspense>
       </div>
       <AnalyticsReportExport open={reportOpen} period={sharedPeriod} onClose={() => setReportOpen(false)} />

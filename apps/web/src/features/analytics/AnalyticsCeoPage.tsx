@@ -5,14 +5,15 @@ import type {
   AnalyticsBlockState,
 } from "@genius-support-os/contracts";
 import { GeniusMascot } from "../../components/GeniusMascot";
-import { getCeoHistory, getCeoSnapshot } from "./analytics-api";
+import { getAnalyticsSourceStatus, getCeoHistory, getCeoSnapshot } from "./analytics-api";
 import type {
   AnalyticsFilters,
   AnalyticsPageProps,
   CeoHistory,
   CeoSnapshot,
 } from "./analytics-model";
-import { DEFAULT_ANALYTICS_FILTERS } from "./analytics-model";
+import type { AnalyticsSourceStatusPayload } from "@genius-support-os/contracts";
+import { analyticsGlobalToBlockState, analyticsSourceToBlockState, DEFAULT_ANALYTICS_FILTERS } from "./analytics-model";
 import { AnalyticsFilters as Filters } from "./AnalyticsFilters";
 import {
   AnalyticsLoadingState,
@@ -30,12 +31,14 @@ const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
   fresh: "Dados atualizados",
   stale: "Dados podem estar atrasados",
   partial: "Cobertura parcial",
+  never_synced: "Sincronização ainda não realizada",
   empty: "Sem registros no recorte",
   zero: "Zero real no recorte",
   not_configured: "Fonte não configurada",
   syncing: "Sincronização em andamento",
   unavailable: "Fonte indisponível",
-  error: "Falha na fonte",
+  failed: "Falha na sincronização",
+  error: "Falha na sincronização",
 };
 
 type MetricDelta = {
@@ -54,6 +57,7 @@ export function AnalyticsCeoPage({
   onSharedPeriodChange,
   onRetry,
   isDashboardViewer = false,
+  sourceStatus,
 }: AnalyticsPageProps) {
   const period = sharedPeriod ?? resolveAnalyticsPeriod("month");
   const [filters, setFilters] = useState<AnalyticsFilters>({
@@ -64,6 +68,7 @@ export function AnalyticsCeoPage({
     loading: boolean;
     data?: CeoSnapshot;
     history?: CeoHistory;
+    sourceStatus?: AnalyticsSourceStatusPayload;
     error?: boolean;
   }>({ loading: true });
   const [refreshing, setRefreshing] = useState(false);
@@ -82,10 +87,10 @@ export function AnalyticsCeoPage({
         ? { ...current, loading: false, error: undefined }
         : { loading: true },
     );
-    Promise.all([getCeoSnapshot(filters), getCeoHistory(filters)])
-      .then(([data, history]) => {
+    Promise.all([getCeoSnapshot(filters), getCeoHistory(filters), sourceStatus ? Promise.resolve(sourceStatus) : getAnalyticsSourceStatusSafe()])
+      .then(([data, history, liveSourceStatus]) => {
         if (!cancelled) {
-          setResult({ loading: false, data, history });
+          setResult({ loading: false, data, history, sourceStatus: liveSourceStatus ?? sourceStatus });
           setRefreshing(false);
         }
       })
@@ -117,18 +122,24 @@ export function AnalyticsCeoPage({
     );
 
   const data = result.data;
-  const state = data.state;
+  const currentSourceStatus = result.sourceStatus ?? sourceStatus;
+  const state = currentSourceStatus ? analyticsGlobalToBlockState(currentSourceStatus) : data.state;
   const exceptions = buildExecutiveExceptions(data);
   const pipelines = rankExecutivePipelines(data.support.byPipeline);
-  const unavailable = [
+  const snapshotUnavailable = [
     "empty",
+    "never_synced",
+    "syncing",
     "unavailable",
+    "failed",
     "error",
     "not_configured",
   ].includes(state?.status ?? "unavailable");
+  const hubspotUnavailable = currentSourceStatus ? !hasUsableSnapshot(currentSourceStatus.hubspot.status, currentSourceStatus.hubspot.lastSuccessAt) : snapshotUnavailable;
+  const omieUnavailable = currentSourceStatus ? !hasUsableSnapshot(currentSourceStatus.omie.status, currentSourceStatus.omie.lastSuccessAt) : snapshotUnavailable;
   const history = result.history;
   const comparison =
-    history && !unavailable
+    history && !hubspotUnavailable
       ? {
           revenue: buildDelta(
             data.commercial.wonRevenue,
@@ -159,7 +170,7 @@ export function AnalyticsCeoPage({
     onSharedPeriodChange?.({ from: next.from, to: next.to });
     setMobileFiltersOpen(false);
   };
-  const domainCards = buildDomainCards(data, unavailable);
+  const domainCards = buildDomainCards(data, hubspotUnavailable, omieUnavailable);
 
   return (
     <ExecutiveHdCanvas
@@ -170,7 +181,9 @@ export function AnalyticsCeoPage({
       exceptions={exceptions}
       pipelines={pipelines}
       comparison={comparison}
-      unavailable={unavailable}
+      unavailable={hubspotUnavailable}
+      financeUnavailable={omieUnavailable}
+      sourceStatus={currentSourceStatus}
       refreshing={refreshing}
       domainScope={domainScope}
       setDomainScope={setDomainScope}
@@ -196,6 +209,7 @@ type DomainCard = {
 function buildDomainCards(
   data: CeoSnapshot,
   unavailable: boolean,
+  financeUnavailable: boolean,
 ): DomainCard[] {
   return [
     {
@@ -214,24 +228,17 @@ function buildDomainCards(
       key: "customer_success",
       title: "Customer Success",
       description: "Carteira e cobertura",
-      value:
-        data.customerSuccess.state.status === "empty"
-          ? "Indisponível"
-          : formatCountLabel(
-              data.customerSuccess.activeCustomers,
-              "cliente ativo",
-              "clientes ativos",
-            ),
-      details: `${formatCountLabel(data.customerSuccess.customersWithoutOwner, "sem responsável", "sem responsáveis")} · ${formatCountLabel(data.customerSuccess.healthAvailable, "sinal disponível", "sinais disponíveis")}`,
+      value: "Indisponível",
+      details: "Dados de carteira ainda não consolidados",
       href: analyticsHref("customer-success"),
-      state: data.customerSuccess.state,
+      state: { ...data.customerSuccess.state, status: "unavailable", reason: "O denominador de cliente ativo ainda não foi confirmado." },
       tone: "pink",
     },
     {
       key: "support",
       title: "Suporte",
       description: "Volume e risco da fila",
-      value: unavailable
+      value: financeUnavailable
         ? "Indisponível"
         : formatCountLabel(
             data.support.highPriorityOpen,
@@ -271,6 +278,8 @@ function ExecutiveHdCanvas({
   pipelines,
   comparison,
   unavailable,
+  financeUnavailable,
+  sourceStatus,
   refreshing,
   domainScope,
   setDomainScope,
@@ -292,6 +301,8 @@ function ExecutiveHdCanvas({
     tickets: MetricDelta;
   };
   unavailable: boolean;
+  financeUnavailable: boolean;
+  sourceStatus?: AnalyticsSourceStatusPayload;
   refreshing: boolean;
   domainScope: DomainScope;
   setDomainScope: (value: DomainScope) => void;
@@ -302,10 +313,10 @@ function ExecutiveHdCanvas({
 }) {
   const periodLabel = formatPeriod(filters);
   const sourceStates: Array<{ label: string; state?: AnalyticsBlockState; note?: string }> = [
-    { label: "HubSpot", state: data.commercial ? state : undefined },
-    { label: "OMIE", state: data.finance ? state : undefined },
+    { label: "HubSpot", state: sourceStatus ? analyticsSourceToBlockState(sourceStatus.hubspot) : state },
+    { label: "OMIE", state: sourceStatus ? analyticsSourceToBlockState(sourceStatus.omie) : state },
   ];
-  const availableSources = sourceStates.filter((item) => item.state && ['fresh', 'stale', 'partial', 'syncing', 'zero'].includes(item.state.status)).length;
+  const availableSources = sourceStates.filter((item) => item.state && ['fresh', 'stale', 'partial', 'syncing'].includes(item.state.status)).length;
   const sourceCoverage = (sourceState?: AnalyticsBlockState) => {
     const expected = sourceState?.coverage.expected;
     const received = sourceState?.coverage.received;
@@ -323,7 +334,7 @@ function ExecutiveHdCanvas({
       : "Cobertura não informada";
 
   return (
-    <div className="gso-hd-canvas gso-executive-canvas" data-testid="executive-dashboard">
+    <div className="gso-hd-canvas gso-pilot-summary gso-executive-canvas" data-testid="executive-dashboard">
       <section className="gso-hd-pulse gso-executive-source-pulse" aria-label="Pulso das fontes">
         <div className="gso-hd-pulse-label">
           <span className="gso-hd-signal-dot" aria-hidden="true" />
@@ -503,7 +514,7 @@ function ExecutiveHdCanvas({
           <HdMetric
             label="Saldo vencido"
             value={
-              unavailable
+              financeUnavailable
                 ? "Indisponível"
                 : formatCurrency(data.finance.overdueBalance)
             }
@@ -516,7 +527,7 @@ function ExecutiveHdCanvas({
           <HdMetric
             label="Clientes com alerta"
             value={
-              unavailable
+              financeUnavailable
                 ? "Indisponível"
                 : data.financialAlerts.length.toLocaleString("pt-BR")
             }
@@ -776,8 +787,20 @@ function statusTone(status?: AnalyticsDataStatus) {
   if (status === "fresh" || status === "zero") return "fresh";
   if (status === "stale" || status === "partial" || status === "syncing")
     return "warning";
-  if (status === "error" || status === "unavailable") return "critical";
+  if (status === "error" || status === "failed" || status === "unavailable" || status === "never_synced") return "critical";
   return "muted";
+}
+
+function hasUsableSnapshot(status: AnalyticsSourceStatusPayload['globalStatus'], lastSuccessAt: string | null) {
+  return Boolean(lastSuccessAt) && ['fresh', 'stale', 'partial', 'syncing'].includes(status);
+}
+
+async function getAnalyticsSourceStatusSafe(): Promise<AnalyticsSourceStatusPayload | null> {
+  try {
+    return await getAnalyticsSourceStatus();
+  } catch {
+    return null;
+  }
 }
 function shortStatus(status?: AnalyticsDataStatus) {
   return status ? STATUS_LABELS[status] : "Não conectado";
