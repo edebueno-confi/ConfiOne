@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GSO documentation governance registry",
+  "type": "object",
+  "required": ["documents"],
+  "properties": {
+    "documents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "title", "domain", "type", "status"],
+        "properties": {
+          "path": {"type": "string"},
+          "title": {"type": "string"},
+          "domain": {"type": "string"},
+          "type": {"type": "string"},
+          "status": {"type": "string"},
+          "canonicalFor": {"type": "array", "items": {"type": "string"}},
+          "supersedes": {"type": "array", "items": {"type": "string"}},
+          "supersededBy": {"type": "array", "items": {"type": "string"}},
+          "relatedCode": {"type": "array", "items": {"type": "string"}},
+          "relatedRoutes": {"type": "array", "items": {"type": "string"}},
+          "relatedDatabaseObjects": {"type": "array", "items": {"type": "string"}},
+          "audience": {"type": "array", "items": {"type": "string"}},
+          "sensitivity": {"type": "string"},
+          "lastVerifiedAt": {"type": "string"},
+          "lastVerifiedCommit": {"type": "string"}
+        }
+      }
+    }
+  }
+}
