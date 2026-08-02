@@ -54,6 +54,27 @@ test('Resumo usa o estado da fonte correspondente a cada área', () => {
   assert.match(ui, /últimos dados válidos/);
 });
 
+test('Visão Geral não filtra por domínio e mantém todos os cards executivos', () => {
+  const ceo = fs.readFileSync(path.join(analyticsDir, 'AnalyticsCeoPage.tsx'), 'utf8');
+  assert.doesNotMatch(ceo, /Domínio em foco|domainScope|setDomainScope/);
+  assert.match(ceo, /domainCards\.map/);
+});
+
+test('Comercial segue o padrão de filtros e KPIs de Suporte', () => {
+  const commercial = fs.readFileSync(path.join(analyticsDir, 'AnalyticsCommercialPage.tsx'), 'utf8');
+  assert.match(commercial, /extraFields=.*AnalyticsPipelineCombobox inline/);
+  assert.match(commercial, /grid-cols-2 gap-3 lg:grid-cols-4/);
+  assert.match(commercial, /state=\{displayState\}/);
+});
+
+test('Abas do dashboard usam um único destaque ativo', () => {
+  const css = fs.readFileSync(path.join(repoRoot, 'apps/web/src/index.css'), 'utf8');
+  const shell = fs.readFileSync(path.join(analyticsDir, 'AnalyticsShell.tsx'), 'utf8');
+  assert.match(css, /\.gso-workspace-tab\[aria-current='page'\]::after/);
+  assert.doesNotMatch(css, /\.gso-pilot-shell \.gso-workspace-tab\[aria-current='page'\].*(background|box-shadow):/);
+  assert.doesNotMatch(shell, /isActive \? 'bg-\[color:var\(--minimal-surface-muted\)\]/);
+});
+
 test('Customer Success não reutiliza snapshot executivo nem dados de tickets', () => {
   const source = fs.readFileSync(path.join(analyticsDir, 'AnalyticsCustomerSuccessPage.tsx'), 'utf8');
 

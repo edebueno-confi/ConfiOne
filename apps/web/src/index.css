@@ -646,7 +646,6 @@
 .gso-pilot-shell .gso-shell-report-action:hover { background: var(--hd-surface-muted); color: var(--hd-text); }
 .gso-pilot-shell .gso-analytics-domain-tabs { margin-top: 0.7rem; }
 .gso-pilot-shell .gso-workspace-tab { border-radius: 999px; padding-inline: 0.85rem; }
-.gso-pilot-shell .gso-workspace-tab[aria-current='page'] { background: color-mix(in srgb, var(--hd-accent) 11%, var(--hd-surface)); color: var(--hd-text); box-shadow: inset 0 -2px 0 var(--hd-pink); }
 
 .gso-pilot-summary { max-width: 118rem; gap: 1.35rem; }
 .gso-pilot-summary .gso-hd-pulse { min-height: 2.75rem; border: 1px solid var(--hd-border); border-radius: 0.8rem; background: color-mix(in srgb, var(--hd-surface-muted) 68%, transparent); padding: 0.55rem 0.8rem; }
@@ -681,7 +680,7 @@
 .gso-pilot-summary .gso-hd-pipeline-table { border-top: 1px solid var(--hd-border); }
 
 .gso-pilot-commercial { gap: 1.35rem; }
-.gso-pilot-commercial > .gso-pilot-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; }
+.gso-pilot-commercial > .gso-pilot-kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.8rem; }
 .gso-pilot-commercial > .gso-pilot-kpi-grid > div { min-height: 8.1rem; border: 0; border-top: 2px solid var(--hd-border-strong); border-radius: 0; background: color-mix(in srgb, var(--hd-surface) 72%, var(--hd-surface-muted)); padding: 1rem 1.1rem; box-shadow: none; }
 .gso-pilot-commercial > .gso-pilot-kpi-grid > div:first-child { border-top-color: var(--hd-accent); }
 .gso-pilot-commercial > .gso-pilot-kpi-grid > div:nth-child(5) { border-top-color: var(--hd-pink); }

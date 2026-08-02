@@ -51,13 +51,6 @@ type MetricDelta = {
   label: string;
   tone: "positive" | "negative" | "neutral";
 } | null;
-type DomainScope =
-  | "all"
-  | "commercial"
-  | "customer_success"
-  | "support"
-  | "finance";
-
 export function AnalyticsCeoPage({
   sharedPeriod,
   onSharedPeriodChange,
@@ -78,7 +71,6 @@ export function AnalyticsCeoPage({
     error?: boolean;
   }>({ loading: true });
   const [refreshing, setRefreshing] = useState(false);
-  const [domainScope, setDomainScope] = useState<DomainScope>("all");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   useEffect(
@@ -195,8 +187,6 @@ export function AnalyticsCeoPage({
       unavailable={hubspotUnavailable}
       financeUnavailable={omieUnavailable}
       refreshing={refreshing}
-      domainScope={domainScope}
-      setDomainScope={setDomainScope}
       mobileFiltersOpen={mobileFiltersOpen}
       setMobileFiltersOpen={setMobileFiltersOpen}
       applyFilters={applyFilters}
@@ -302,8 +292,6 @@ function ExecutiveHdCanvas({
   unavailable,
   financeUnavailable,
   refreshing,
-  domainScope,
-  setDomainScope,
   mobileFiltersOpen,
   setMobileFiltersOpen,
   applyFilters,
@@ -324,8 +312,6 @@ function ExecutiveHdCanvas({
   unavailable: boolean;
   financeUnavailable: boolean;
   refreshing: boolean;
-  domainScope: DomainScope;
-  setDomainScope: (value: DomainScope) => void;
   mobileFiltersOpen: boolean;
   setMobileFiltersOpen: (value: boolean) => void;
   applyFilters: (next: AnalyticsFilters) => void;
@@ -361,11 +347,6 @@ function ExecutiveHdCanvas({
         <div className="gso-hd-filter-context">
           <span>Recorte</span>
           <strong>{periodLabel}</strong>
-          <em>
-            {domainScope === "all"
-              ? "Todos os domínios"
-              : domainCards.find((card) => card.key === domainScope)?.title}
-          </em>
         </div>
         <button
           type="button"
@@ -376,21 +357,6 @@ function ExecutiveHdCanvas({
           Filtros <span>{mobileFiltersOpen ? "−" : "+"}</span>
         </button>
         <div className={`gso-hd-filters ${mobileFiltersOpen ? "is-open" : ""}`}>
-          <label>
-            Domínio em foco
-            <select
-              value={domainScope}
-              onChange={(event) =>
-                setDomainScope(event.target.value as typeof domainScope)
-              }
-            >
-              <option value="all">Todos</option>
-              <option value="commercial">Comercial</option>
-              <option value="customer_success">Customer Success</option>
-              <option value="support">Suporte & Chat</option>
-              <option value="finance">Financeiro</option>
-            </select>
-          </label>
           <Filters value={filters} onApply={applyFilters} stageOptions={[]} />
         </div>
       </div>
@@ -516,17 +482,12 @@ function ExecutiveHdCanvas({
         <HdSectionHeading
           id="domains-heading"
           title="Mapa das áreas"
-          description="As áreas ativas ganham peso; cada indicador mostra sua fonte e o estado do último snapshot válido."
+          description="Cada indicador mostra sua fonte e o estado do último snapshot válido."
         />
         <div className="gso-hd-domain-grid">
-          {domainCards
-            .filter((card) => domainScope === "all" || card.key === domainScope)
-            .map((card) => (
-              <HdDomain
-                key={card.key}
-                card={card}
-              />
-            ))}
+          {domainCards.map((card) => (
+            <HdDomain key={card.key} card={card} />
+          ))}
         </div>
       </section>
 

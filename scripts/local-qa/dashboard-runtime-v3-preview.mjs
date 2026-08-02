@@ -6,16 +6,22 @@ import { loadQaEnv } from './assert-local-supabase.mjs';
 
 const root = process.cwd();
 const baseUrl = process.env.GSO_PREVIEW_URL ?? 'http://127.0.0.1:4183';
-const outputDir = join(root, 'output', 'dashboard-runtime-v3-preview');
+const outputDir = join(root, process.env.GSO_PREVIEW_OUTPUT_DIR ?? 'output/dashboard-runtime-v3-preview');
 const qa = loadQaEnv();
 const account = { email: qa.LOCAL_QA_ADMIN_EMAIL, password: qa.LOCAL_QA_ADMIN_PASSWORD };
-const surfaces = [
+const surfaceCatalog = [
   { key: 'overview', path: '/admin/analytics?tab=overview' },
+  { key: 'commercial', path: '/admin/analytics?tab=commercial' },
   { key: 'finance', path: '/admin/analytics?tab=finance' },
   { key: 'integrations', path: '/admin/settings/integrations' },
   { key: 'dashboard-sources', path: '/admin/settings/dashboard-sources' },
   { key: 'sync-history', path: '/admin/settings/sync-history' },
 ];
+const requestedSurfaces = (process.env.GSO_PREVIEW_SURFACES ?? 'overview,finance,integrations,dashboard-sources,sync-history')
+  .split(',')
+  .map((value) => value.trim())
+  .filter(Boolean);
+const surfaces = surfaceCatalog.filter((surface) => requestedSurfaces.includes(surface.key));
 const viewports = [
   { name: 'desktop', width: 1440, height: 900 },
   { name: 'mobile', width: 390, height: 844 },
@@ -99,6 +105,13 @@ async function inspect(browser, surface, theme, viewport) {
     ];
     const forbiddenFound = forbiddenCopy.filter((value) => bodyText.includes(value));
     const financeDirectRetry = surface.key === 'finance' && bodyText.includes('Tentar novamente');
+    const overviewDomainFilterFound = surface.key === 'overview' && bodyText.includes('Domínio em foco');
+    const commercialFilterShape = surface.key === 'commercial'
+      ? {
+        hasPipelineFilter: await page.locator('[data-testid="analytics-pipeline-combobox"]').count() > 0,
+        hasExpectedKpis: await page.locator('.gso-pilot-commercial .gso-pilot-kpi-grid > div').count() === 6,
+      }
+      : null;
     const statusContradiction = bodyText.includes('Atualizada') && bodyText.includes('sincronização não registrada');
     const duplicateSourceStatus = surface.key === 'overview' && bodyText.includes('Pulso das fontes');
     const integrationFields = surface.key === 'integrations'
@@ -116,6 +129,8 @@ async function inspect(browser, surface, theme, viewport) {
       screenshot,
       forbiddenFound,
       financeDirectRetry,
+      overviewDomainFilterFound,
+      commercialFilterShape,
       statusContradiction,
       duplicateSourceStatus,
       integrationFields,
@@ -160,10 +175,12 @@ const manifest = {
   noHorizontalOverflow: captures.every((item) => !item.overflow.horizontalOverflow),
   noForbiddenCopy: captures.every((item) => item.forbiddenFound.length === 0),
   noFinanceDirectRetry: captures.every((item) => !item.financeDirectRetry),
+  overviewHasNoDomainFilter: captures.filter((item) => item.surface === 'overview').every((item) => !item.overviewDomainFilterFound),
+  commercialMatchesRequestedShape: captures.filter((item) => item.surface === 'commercial').every((item) => item.commercialFilterShape?.hasPipelineFilter && item.commercialFilterShape?.hasExpectedKpis),
   noStatusContradictions: captures.every((item) => !item.statusContradiction),
   noDuplicateSourceStatus: captures.every((item) => !item.duplicateSourceStatus),
   integrationsExposeRequiredFields: captures.filter((item) => item.surface === 'integrations').every((item) => item.integrationFields?.hasApplicationKey && item.integrationFields?.hasApplicationSecret && !item.integrationFields?.exposesInternalNames && !item.integrationFields?.hasModeField),
 };
 await writeFile(join(outputDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
-console.log(JSON.stringify({ output: join(outputDir, 'manifest.json'), screenshotTotal: manifest.screenshotTotal, noConsoleErrors: manifest.noConsoleErrors, noRequestFailures: manifest.noRequestFailures, noBlockingRequestFailures: manifest.noBlockingRequestFailures, abortedRequestFailureCount: manifest.abortedRequestFailureCount, noUnexpectedResponses: manifest.noUnexpectedResponses, noHorizontalOverflow: manifest.noHorizontalOverflow, noForbiddenCopy: manifest.noForbiddenCopy, noFinanceDirectRetry: manifest.noFinanceDirectRetry, noStatusContradictions: manifest.noStatusContradictions, noDuplicateSourceStatus: manifest.noDuplicateSourceStatus, integrationsExposeRequiredFields: manifest.integrationsExposeRequiredFields }));
-if (!manifest.noConsoleErrors || !manifest.noBlockingRequestFailures || !manifest.noUnexpectedResponses || !manifest.noHorizontalOverflow || !manifest.noForbiddenCopy || !manifest.noFinanceDirectRetry || !manifest.noStatusContradictions || !manifest.noDuplicateSourceStatus || !manifest.integrationsExposeRequiredFields) process.exitCode = 1;
+console.log(JSON.stringify({ output: join(outputDir, 'manifest.json'), screenshotTotal: manifest.screenshotTotal, noConsoleErrors: manifest.noConsoleErrors, noRequestFailures: manifest.noRequestFailures, noBlockingRequestFailures: manifest.noBlockingRequestFailures, abortedRequestFailureCount: manifest.abortedRequestFailureCount, noUnexpectedResponses: manifest.noUnexpectedResponses, noHorizontalOverflow: manifest.noHorizontalOverflow, noForbiddenCopy: manifest.noForbiddenCopy, noFinanceDirectRetry: manifest.noFinanceDirectRetry, overviewHasNoDomainFilter: manifest.overviewHasNoDomainFilter, commercialMatchesRequestedShape: manifest.commercialMatchesRequestedShape, noStatusContradictions: manifest.noStatusContradictions, noDuplicateSourceStatus: manifest.noDuplicateSourceStatus, integrationsExposeRequiredFields: manifest.integrationsExposeRequiredFields }));
+if (!manifest.noConsoleErrors || !manifest.noBlockingRequestFailures || !manifest.noUnexpectedResponses || !manifest.noHorizontalOverflow || !manifest.noForbiddenCopy || !manifest.noFinanceDirectRetry || !manifest.overviewHasNoDomainFilter || !manifest.commercialMatchesRequestedShape || !manifest.noStatusContradictions || !manifest.noDuplicateSourceStatus || !manifest.integrationsExposeRequiredFields) process.exitCode = 1;
