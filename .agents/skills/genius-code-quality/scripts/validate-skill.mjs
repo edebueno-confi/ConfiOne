@@ -14,7 +14,9 @@ const required = [
   'references/report-template.md',
   'assets/code-quality-report-template.md',
   'scripts/run-quality-gate.mjs',
-  'scripts/check-project-patterns.mjs'
+  'scripts/check-project-patterns.mjs',
+  'tests/detectors.test.mjs',
+  'tests/fixtures/detector-fixtures.mjs'
 ];
 const errors = [];
 for (const relative of required) {
@@ -27,6 +29,10 @@ for (const forbidden of ['git reset', 'git clean', 'git stash', 'supabase db res
 }
 for (const mode of ['fast', 'changed', 'module', 'full']) {
   if (!skillText.includes(`$genius-code-quality ${mode}`)) errors.push(`modo não documentado: ${mode}`);
+}
+const detectorText = fs.readFileSync(path.join(skill, 'scripts', 'check-project-patterns.mjs'), 'utf8');
+for (const requiredField of ['layer', 'contextStatus', 'provenance', 'status']) {
+  if (!detectorText.includes(requiredField)) errors.push(`campo contextual ausente no detector: ${requiredField}`);
 }
 const result = { valid: errors.length === 0, required, errors };
 process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
