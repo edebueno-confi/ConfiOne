@@ -46,7 +46,32 @@ Deno.serve(async (req) => {
         const companies = await (await import('../_shared/hubspot.ts')).fetchCompanies(['name','domain','cnpj','aftersale___mrr','status_do_cliente___aftersale','status_do_contrato','cs_owner___aftersale'], token);
         if (companies.length) { const rows = companies.map((r) => ({ company_id:r.id,name:r.properties.name??null,domain:r.properties.domain??null,tax_id:(r.properties.cnpj??'').replace(/\D/g,'')||null,mrr:Number(r.properties.aftersale___mrr??0)||0,client_status:r.properties.status_do_cliente___aftersale??null,contract_status:r.properties.status_do_contrato??null,cs_owner_id:r.properties.cs_owner___aftersale??null,raw:r.properties,synced_at:new Date().toISOString() })); for (let offset = 0; offset < rows.length; offset += 500) { const { error } = await client.from('hubspot_companies').upsert(rows.slice(offset, offset + 500),{onConflict:'company_id'}); if(error) throw error; } }
         const owners = await fetchOwners(token); if (owners.length) { const rows=owners.map((o)=>({owner_id:o.ownerId,email:o.email,first_name:o.firstName,last_name:o.lastName,full_name:o.fullName,archived:o.archived,raw:o.raw,synced_at:new Date().toISOString()})); const {error}=await client.from('hubspot_owners').upsert(rows,{onConflict:'owner_id'}); if(error) throw error; }
-        for (const objectType of ['deals','tickets'] as const) { const definitions=await fetchPipelineDefinitions(objectType,token); for(const p of definitions.filter((x)=>!x.archived)){ const domain=objectType==='deals'?'commercial':'cs'; await client.from('analytics_source_config').upsert({domain_key:domain,object_type:objectType==='deals'?'deal':'ticket',hubspot_pipeline_id:p.pipelineId,hubspot_pipeline_label:p.label,is_active:false},{onConflict:'domain_key,object_type,hubspot_pipeline_id',ignoreDuplicates:true}); for(const s of p.stages){ await client.from('hubspot_pipeline_stages').upsert({object_type:objectType==='deals'?'deal':'ticket',pipeline_id:p.pipelineId,stage_id:s.stageId,label:s.label,display_order:s.displayOrder,is_closed:s.isClosed,is_won:s.isWon,metadata:s.metadata,synced_at:new Date().toISOString()},{onConflict:'object_type,pipeline_id,stage_id'}); } } }
+        for (const objectType of ['deals', 'tickets'] as const) {
+          const definitions = await fetchPipelineDefinitions(objectType, token);
+          const activeDefinitions = definitions.filter((pipeline) => !pipeline.archived);
+          const catalogObjectType = objectType === 'deals' ? 'deal' : 'ticket';
+          const { error: catalogError } = await client.rpc('rpc_service_reconcile_hubspot_pipeline_catalog', {
+            p_object_type: catalogObjectType,
+            p_pipelines: activeDefinitions.map((pipeline) => ({ pipeline_id: pipeline.pipelineId, label: pipeline.label })),
+          });
+          if (catalogError) throw catalogError;
+          for (const pipeline of activeDefinitions) {
+            for (const stage of pipeline.stages) {
+              const { error } = await client.from('hubspot_pipeline_stages').upsert({
+                object_type: catalogObjectType,
+                pipeline_id: pipeline.pipelineId,
+                stage_id: stage.stageId,
+                label: stage.label,
+                display_order: stage.displayOrder,
+                is_closed: stage.isClosed,
+                is_won: stage.isWon,
+                metadata: stage.metadata,
+                synced_at: new Date().toISOString(),
+              }, { onConflict: 'object_type,pipeline_id,stage_id' });
+              if (error) throw error;
+            }
+          }
+        }
       }
       const { error: checkpointError } = await client.rpc('rpc_analytics_hubspot_checkpoint_work_item', { p_work_item_id:item.work_item_id,p_worker_id:workerId,p_next_cursor:nextCursor,p_page_number:Number(item.page_number)+1,p_received:records.length,p_accepted:records.length,p_rejected:0,p_completed:!nextCursor,p_error_code:null,p_error_message:null });
       if (checkpointError) throw checkpointError;
