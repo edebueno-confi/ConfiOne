@@ -232,10 +232,14 @@ Commits locais relevantes:
 Commit adicional deste fechamento: `32af69c` — preflight HubSpot protegido,
 somente leitura e sanitizado.
 
+Commit posterior de endurecimento da exportação: `caf7d80` — PNG/PDF ficam
+indisponíveis quando as abas selecionadas não possuem snapshot exportável,
+com guarda também nos handlers e teste de contrato.
+
 ## 29. Estado Git final
 
 Branch atual: `codex/dashboard-runtime-stabilization-20260802`. HEAD:
-`cea53c7`. Worktree será limpo após o commit documental. A divergência deve ser
+`caf7d80`. Worktree será limpo após o commit documental. A divergência deve ser
 consultada com `git rev-list --left-right --count origin/main...HEAD`.
 Não há upstream configurado e nenhum push foi executado.
 
@@ -248,8 +252,10 @@ repetida neste lote. O código classifica esse cenário como
 `authentication_error`, não faz retry automático e não repete o ciclo sem
 autorização.
 O denominador de Customer Success ainda depende de decisão de domínio. O
-rebuild completo de Artigos, categorias e exportação PNG/PDF profissional não
-foi iniciado neste lote.
+rebuild completo de Artigos e categorias não foi iniciado neste lote. A
+exportação PNG/PDF existente foi apenas endurecida para não oferecer arquivo
+quando não há dados exportáveis; a revisão visual profissional continua
+pendente.
 
 ## 31. Decisões pendentes
 
@@ -257,8 +263,8 @@ foi iniciado neste lote.
    preflight como gate e sem repetir automaticamente.
 2. Aprovar o denominador operacional de Customer Success.
 3. Validar visualmente o editor autenticado.
-4. Iniciar, em lote separado, o rebuild da tela de Artigos, categorias e
-   exportação profissional PNG/PDF.
+4. Iniciar, em lote separado, o rebuild da tela de Artigos, categorias e a
+   revisão visual da exportação profissional PNG/PDF.
 
 ## Critérios de aceite
 
