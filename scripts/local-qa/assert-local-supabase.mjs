@@ -16,9 +16,6 @@ export function loadQaEnv(path = '.env.local.qa') {
 }
 
 export function assertLocalSupabaseEnvironment(env = process.env, options = {}) {
-  if (env.ALLOW_LOCAL_QA_RESET !== 'true') {
-    throw new Error('LOCAL_QA_BLOCKED: ALLOW_LOCAL_QA_RESET=true é obrigatório.');
-  }
   const apiUrl = env.SUPABASE_URL ?? env.API_URL ?? '';
   const projectRef = env.SUPABASE_PROJECT_REF ?? env.PROJECT_REF ?? '';
   if (apiUrl && !/^https?:\/\/(127\.0\.0\.1|localhost):\d+(?:\/|$)/.test(apiUrl)) {

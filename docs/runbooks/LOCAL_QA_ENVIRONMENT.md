@@ -13,11 +13,13 @@ npm run local:qa:verify
 npm run local:qa:smoke
 ```
 
-`local:qa:reset` exige `ALLOW_LOCAL_QA_RESET=true`, inicia o Supabase local, executa o reset, hidrata e verifica. A hidratação é idempotente e os dados de negócio são aplicados em uma transação PostgreSQL única. O arquivo de contas fica em `output/local-qa/accounts.txt` e não é versionado nem incluído no pacote técnico.
+`local:qa:reset` é destrutivo e exige `ALLOW_LOCAL_DB_RESET=true` como confirmação separada. Ele inicia o Supabase local, executa o reset, hidrata e verifica. Não use esse comando para QA manual ou para preservar alterações. O arquivo de contas fica em `output/local-qa/accounts.txt` e não é versionado nem incluído no pacote técnico.
+
+QA local, smoke e testes de leitura não exigem variável de autorização para reset. O banco em execução é preservado e as alterações feitas pelos testes manuais permanecem disponíveis para inspeção.
 
 ## Proteção contra remoto
 
-O guard exige URL local em `localhost` ou `127.0.0.1`, banco local na porta 54322 e confirmação explícita; rejeita project ref remoto antes de qualquer reset ou hidratação.
+O guard exige URL local em `localhost` ou `127.0.0.1` e banco local na porta 54322; rejeita project ref remoto antes de qualquer leitura, hidratação ou reset. Apenas o comando explicitamente destrutivo exige a confirmação `ALLOW_LOCAL_DB_RESET=true`.
 
 ## Cenários
 

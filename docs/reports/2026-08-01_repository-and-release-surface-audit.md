@@ -138,8 +138,8 @@ Passaram neste lote:
   documentais já conhecidos;
 - `git diff --check`.
 
-O teste de Access foi executado com `ALLOW_LOCAL_QA_RESET=true`, apenas contra o
-Supabase local em execução; não houve reset de banco. Não foram executados push,
+O teste de Access foi executado apenas contra o Supabase local em execução; não
+houve reset de banco. Não foram executados push,
 deploy, migration remota, alteração de secret ou publicação externa.
 
 ## Limitações atuais

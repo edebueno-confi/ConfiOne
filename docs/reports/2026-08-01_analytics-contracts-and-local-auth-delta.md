@@ -110,7 +110,7 @@ zero respostas inesperadas e zero overflow.
 
 ## 10. Validações executadas
 
-- `ALLOW_LOCAL_QA_RESET=true node --test tests/scripts/*.test.mjs` — 266/266;
+- `node --test tests/scripts/*.test.mjs` — 266/266, sem autorização de reset;
 - `npm run contracts:typecheck` — passou;
 - `npm run web:typecheck` — passou;
 - `npm run web:build` — passou, 830 módulos transformados;

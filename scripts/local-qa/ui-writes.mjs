@@ -1,6 +1,5 @@
 import { chromium } from 'playwright';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { assertLocalSupabaseEnvironment, loadQaEnv, readLocalSupabaseStatus } from './assert-local-supabase.mjs';
@@ -135,16 +134,6 @@ try {
 } finally {
   await browser.close();
   rmSync(evidenceDir, { recursive: true, force: true });
-  const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-  const restore = spawnSync(npm, ['run', 'local:qa:reset'], {
-    cwd: process.cwd(),
-    env: { ...process.env, ALLOW_LOCAL_QA_RESET: 'true' },
-    encoding: 'utf8',
-    windowsHide: true,
-    timeout: 900000,
-    shell: process.platform === 'win32',
-  });
-  if (restore.status !== 0 && !testError) testError = new Error(`LOCAL_QA_UI_RESTORE_FAILED: ${restore.stderr || restore.stdout}`);
 }
 
 if (testError) throw testError;
