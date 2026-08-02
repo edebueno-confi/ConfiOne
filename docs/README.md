@@ -23,6 +23,11 @@ Fonte oficial da documentação do Genius Support OS.
 ## Visão e estado
 
 - [PROJECT_STATE.md](./PROJECT_STATE.md)
+- [reports/2026-08-01_repository-and-release-surface-audit.md](./reports/2026-08-01_repository-and-release-surface-audit.md)
+- [reports/2026-08-01_analytics-contracts-and-local-auth-delta.md](./reports/2026-08-01_analytics-contracts-and-local-auth-delta.md)
+- [reports/DESIGN_QA_ANALYTICS_COCKPIT_2026-08-01.md](./reports/DESIGN_QA_ANALYTICS_COCKPIT_2026-08-01.md)
+- [reports/2026-08-01_dashboard-metrics-and-integrations-discovery.md](./reports/2026-08-01_dashboard-metrics-and-integrations-discovery.md)
+- [reports/2026-08-01_ambiente_local_pgtap_e_sync_hubspot.md](./reports/2026-08-01_ambiente_local_pgtap_e_sync_hubspot.md)
 - [reports/HUBSPOT_OMIE_SYNC_HARDENING_2026-07-21.md](./reports/HUBSPOT_OMIE_SYNC_HARDENING_2026-07-21.md)
 - [reports/CODEX_CONTINUATION_HANDOFF_2026-07-17.md](./reports/CODEX_CONTINUATION_HANDOFF_2026-07-17.md)
 - [ANALYTICS_METRIC_CATALOG_V1.md](./ANALYTICS_METRIC_CATALOG_V1.md)

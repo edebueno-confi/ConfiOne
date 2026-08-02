@@ -1,3 +1,17 @@
+# Estado corrente do checkout canônico — 2026-08-01
+
+- Checkout operacional único: `C:\Projetos\GSO-old`.
+- Branch: `main`, HEAD `3dabf7d` antes do lote corrente, upstream `origin/main`.
+- Divergência: `origin/main...HEAD = 0 15`; o histórico de `origin/main` está integralmente contido no checkout atual.
+- Worktrees ativos: 1; branches remotas não foram excluídas; stash e refs de arquivo de reconciliação permanecem preservados.
+- Superfície do primeiro release: Dashboard Gerencial, Configurações aprovadas, Central de Ajuda e Knowledge/editor. O restante do código permanece no repositório, porém fora da superfície publicada pelo manifesto de release.
+- Validação corrente: typecheck de contratos e web, build web, testes focados 16/16, autenticação API 5/5, bloco SQL estrutural financeiro, higiene documental e diff check passaram.
+- QA browser do administrador em 4173 passou após aplicar localmente as migrations aditivas do contexto de workspace; o smoke automático multi-persona em 4175 continua não aprovado por falha de rota de login.
+- Pendências prioritárias: extensão pgTAP local ausente; remover o editor legado não referenciado; endurecer grants/DML de integrações; corrigir a colisão hydrate/pgTAP; validar sync real com credencial autorizada.
+- Relatórios detalhados: `docs/reports/2026-08-01_repository-and-release-surface-audit.md` e `docs/reports/2026-08-01_analytics-contracts-and-local-auth-delta.md`.
+
+As seções abaixo são histórico de execução. Em caso de conflito, este bloco e os documentos canônicos de arquitetura/contratos prevalecem.
+
 # Release urgente Dashboard + Central de Ajuda — 2026-07-23
 
 ## Encerramento formal da RELEASE-01 — 2026-07-24
@@ -2944,3 +2958,15 @@ Os perfis nomeados foram normalizados e receberam novamente seus grants de telas
 - A navegação da Visão Executiva usa URL como fonte canônica: `tab`, `pipeline`, `from`, `to`, `status` e `owner`.
 - Validações locais: 86 arquivos pgTAP / 1.390 testes; Node navegação, typechecks, build, secret scan, repository check e diff check aprovados.
 - Relatório: `docs/reports/ACCESS_01_2_INVITES_SAGA_NAVIGATION_2026-07-27.md`.
+# Estado corrente do checkout canônico — 2026-08-01
+
+- Checkout operacional único: `C:\Projetos\GSO-old`.
+- Branch: `main`, HEAD `3dabf7d` antes do lote corrente, upstream `origin/main`.
+- Divergência: `origin/main...HEAD = 0 15`; o histórico de `origin/main` está integralmente contido no checkout atual.
+- Worktrees ativos: 1; branches remotas não foram excluídas; stash e refs de arquivo de reconciliação permanecem preservados.
+- Superfície do primeiro release: Dashboard Gerencial, Configurações aprovadas, Central de Ajuda e Knowledge/editor. O restante do código permanece no repositório, porém fora da superfície publicada pelo manifesto de release.
+- Validação corrente: typecheck de contratos e web, build web, suíte Node 261/261, higiene da raiz, scanner de secrets e validação documental passaram.
+- Pendências prioritárias: QA browser autenticado com capturas reais; remover o editor legado não referenciado; endurecer grants/DML de integrações; corrigir a colisão hydrate/pgTAP e revalidar o contexto Auth local.
+- Relatório detalhado: `docs/reports/2026-08-01_repository-and-release-surface-audit.md`.
+
+As seções abaixo são histórico de execução. Em caso de conflito, este bloco e os documentos canônicos de arquitetura/contratos prevalecem.

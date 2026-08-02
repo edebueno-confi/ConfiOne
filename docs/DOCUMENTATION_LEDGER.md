@@ -1,3 +1,14 @@
+# Estado corrente — 2026-08-01
+
+- checkout canônico: `C:\Projetos\GSO-old`;
+- branch `main`, upstream `origin/main`, divergência `0 15`;
+- um único worktree ativo; cópias de release autorizadas foram enviadas à Lixeira e refs de arquivo preservam a proveniência;
+- superfície publicada nesta fase: Dashboard, Configurações aprovadas, Central de Ajuda e Knowledge/editor;
+- validação: suíte Node 261/261, typechecks, build, higiene da raiz, secret scan e validação documental aprovados;
+- fonte detalhada: `docs/reports/2026-08-01_repository-and-release-surface-audit.md`;
+- validação delta: QA browser do administrador em 4173 passou após aplicação local aditiva do contexto de workspace; Financeiro OMIE-only, Customer Success indisponível por contrato não publicado e loop de Configurações corrigido.
+- evidência delta: `docs/reports/2026-08-01_analytics-contracts-and-local-auth-delta.md`.
+
 # Encerramento formal da RELEASE-01 — 2026-07-24
 
 - desenvolvimento concluído: Central Pública de Ajuda, Dashboard Gerencial do piloto, migração Octadesk, Hub de Integrações e API, taxonomia, assets, normalização editorial, busca, navegação, responsividade, acessibilidade e CTA `/portal`;

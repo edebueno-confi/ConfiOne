@@ -1,3 +1,44 @@
+# Plano corrente — superfície operacional do primeiro release — 2026-08-01
+
+## Objetivo
+
+Publicar e evoluir no checkout único `C:\Projetos\GSO-old` somente o Dashboard Gerencial, Configurações aprovadas, Central de Ajuda e Knowledge/editor, sem remover módulos ainda não publicados e sem inventar dados no frontend.
+
+## Sequência de execução
+
+1. Fechar o inventário Git e manter a proveniência em refs de arquivo.
+2. Validar contratos, typechecks, build, suíte Node, higiene e secrets.
+3. Fazer QA browser autenticado real das quatro superfícies aprovadas.
+4. Remover o editor legado não referenciado em lote isolado.
+5. Endurecer a superfície de integrações no backend com grants/RLS/pgTAP.
+6. Resolver a colisão entre hydrate e pgTAP e revalidar Auth local.
+7. Preparar commits separados e só publicar após autorização explícita.
+
+## Critérios de aceite
+
+- uma única origem operacional: `C:\Projetos\GSO-old`;
+- `origin/main` preservado e contido no histórico local;
+- dashboard viewer limitado ao dashboard executivo;
+- dados ausentes exibidos como `Indisponível`;
+- editor sem `window.prompt/alert` no caminho ativo;
+- nenhuma credencial, segredo ou service role versionado;
+- captura real das superfícies alteradas e evidência persistida.
+
+Relatório do diagnóstico: `docs/reports/2026-08-01_repository-and-release-surface-audit.md`.
+
+## Delta executado neste ciclo
+
+- Customer Success agora declara indisponibilidade honesta até existir read
+  model próprio; não reutiliza snapshot executivo nem tickets.
+- Financeiro publica somente OMIE API, com estado de configuração, execução,
+  frescor e vazio; planilha histórica não é fallback.
+- Ações de sincronização permanecem em Configurações e o loop de render da
+  página foi corrigido.
+- RPC de contexto de workspace foi aplicado localmente após evidência HTTP 404;
+  não houve reset ou exclusão.
+- Especificações e backlog: `docs/specs/` e
+  `docs/plans/analytics-macro-lote-0.4-backlog-v1.md`.
+
 # Genius Support OS - Plano operacional vivo
 
 ## Smoke autenticado de release - 2026-07-23
