@@ -47,6 +47,8 @@ output/
 .agents/skills/*
 !.agents/skills/genius-code-quality/
 !.agents/skills/genius-code-quality/**
+!.agents/skills/genius-documentation-governance/
+!.agents/skills/genius-documentation-governance/**
 
 # Local tooling
 .tmp/

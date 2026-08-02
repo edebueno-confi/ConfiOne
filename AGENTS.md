@@ -33,6 +33,7 @@ Antes de alterar qualquer arquivo, leia o contexto local e priorize:
 - Documentação histórica não deve ser usada como plano corrente se `PROJECT_STATE.md`, `ROADMAP_BUILDOUT_V3.md`, `OPERATIONAL_CONTROL_PLANE_V1.md` ou relatórios recentes apontarem outro estado.
 - Mudanças devem ser pequenas, auditáveis, alinhadas aos contratos reais e validadas com os scripts disponíveis.
 - Auditorias de qualidade devem usar `$genius-code-quality`; ela é read-only por padrão e correções exigem autorização explícita.
+- Auditorias documentais devem usar `$genius-documentation-governance`; ela é read-only por padrão, aplica somente com escopo aprovado e nunca deixa histórico prevalecer sobre contratos reais.
 
 ## Parar e pedir decisão humana
 
