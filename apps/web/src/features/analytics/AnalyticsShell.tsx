@@ -61,7 +61,7 @@ export function AnalyticsShell() {
   const ActiveComponent = activeDomain?.Component;
 
   return (
-    <div className="gso-screen-frame gso-analytics-shell flex h-full min-h-0 flex-col overflow-y-auto bg-[color:var(--minimal-surface)]">
+    <div className="gso-screen-frame gso-analytics-shell flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
       <header className="gso-screen-header gso-workspace-header shrink-0 border-b border-[color:var(--minimal-border)] px-5 py-3 sm:px-6">
         <div className="flex min-h-12 flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <div className="min-w-0">
@@ -98,7 +98,7 @@ export function AnalyticsShell() {
           </select>
         </label>
       </header>
-      <div className="gso-analytics-content px-5 py-4 sm:px-6">
+      <div className="gso-analytics-content min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
         <Suspense fallback={<MinimalState loading title="Carregando área do dashboard" description="Estamos preparando os indicadores deste recorte." />}>
           {ActiveComponent ? <ActiveComponent key={`${activeKey}-${reloadKey}`} sharedPeriod={sharedPeriod} onSharedPeriodChange={setSharedPeriod} onRetry={() => setReloadKey((current) => current + 1)} isDashboardViewer={isDashboardViewer} /> : null}
         </Suspense>
