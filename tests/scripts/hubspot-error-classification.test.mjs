@@ -8,7 +8,7 @@ const migration = await readFile(new URL('../../supabase/migrations/202608021900
 
 test('HubSpot classifica autenticação sem expor erro bruto ao frontend', () => {
   assert.match(runner, /code: 'authentication_error'/);
-  assert.match(runner, /authentication credentials\|authentication required\|unauthorized\|forbidden/);
+  assert.match(runner, /authentication credentials\|authentication required\|unauthorized\|forbidden\|credencial\.\*hubspot/);
   assert.match(runner, /A autenticação do HubSpot foi recusada/);
   assert.match(runner, /jsonResponse\(\{ error: classified\.sanitizedMessage, code: classified\.code \}/);
   assert.doesNotMatch(runner, /jsonResponse\(\{ error: sanitized \}/);

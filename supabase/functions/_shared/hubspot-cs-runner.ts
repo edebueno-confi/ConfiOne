@@ -75,7 +75,7 @@ export function classifyHubSpotError(error: unknown): HubSpotClassifiedError {
   const status = httpStatusFromMessage(internalMessage);
   const providerCode = status ? String(status) : null;
 
-  if (status === 401 || status === 403 || /authentication credentials|authentication required|unauthorized|forbidden/i.test(internalMessage)) {
+  if (status === 401 || status === 403 || /authentication credentials|authentication required|unauthorized|forbidden|credencial.*hubspot|missing.*hubspot.*token|hubspot_private_app_token/i.test(internalMessage)) {
     return { code: 'authentication_error', providerCode, retryable: false, sanitizedMessage: 'A autenticação do HubSpot foi recusada. Verifique a credencial configurada.', internalMessage };
   }
   if (status === 429 || /rate limit|too many requests/i.test(internalMessage)) {
