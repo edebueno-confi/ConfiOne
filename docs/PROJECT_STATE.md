@@ -2961,13 +2961,13 @@ Os perfis nomeados foram normalizados e receberam novamente seus grants de telas
 # Estado corrente do checkout canônico — 2026-08-01, reconciliado pelo Codex
 
 - Checkout operacional único: `C:\Projetos\GSO-old`.
-- Branch: `main`, HEAD `884a7d3ebd749c8996f3ec4602b0ec15d72fd066`, upstream `origin/main`.
-- Divergência real: `git rev-list --left-right --count origin/main...HEAD = 0 32`; `origin/main` é ancestral integral do checkout atual.
+- Branch: `main`, HEAD do commit que contém este bloco, upstream `origin/main`.
+- Divergência real no fechamento: `git rev-list --left-right --count origin/main...HEAD = 0 34`; `origin/main` é ancestral integral do checkout atual.
 - Worktrees ativos: 1, somente `C:\Projetos\GSO-old`.
 - Stash preservado: `stash@{0}`. Refs de arquivo preservadas: 24 em `refs/archive/gso-git-cleanup/`.
 - Branches locais preservadas: 21; nenhuma branch remota foi apagada. Existem 3 branches sem upstream e 3 branches com commits locais ainda não publicados; elas não possuem worktree ativo.
 - Superfície do primeiro release: Dashboard Gerencial, Configurações aprovadas, Central de Ajuda e Knowledge/editor. O restante do código permanece no repositório, porém fora da superfície publicada pelo manifesto de release.
-- Estado funcional: o histórico de `origin/main` e os lotes locais consolidados permanecem no grafo Git; a árvore funcional está preservada. Os cinco commits mais recentes antes desta reconciliação são de governança documental.
+- Estado funcional: o histórico de `origin/main` e os lotes locais consolidados permanecem no grafo Git; a árvore funcional está preservada. Os commits de governança e de qualidade deste fechamento permanecem no histórico local.
 - Validações históricas disponíveis: contracts/web typecheck, build web, testes Node, secret scan, higiene da raiz, validação documental e `git diff --check`. A validação completa do HEAD atual deve ser repetida após o fechamento documental.
 - Pendências técnicas: QA browser autenticado com capturas reais das quatro superfícies; editor legado não referenciado; grants/DML de integrações; colisão de fixtures hydrate/pgTAP; revalidação Auth local; sincronização real dependente de credencial autorizada.
 - Relatório de reconciliação: `docs/reports/2026-08-01_git-state-reconciliation-addendum.md`.

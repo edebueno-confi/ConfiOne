@@ -11,9 +11,9 @@ fonte corrente.
 
 - Checkout: `C:\Projetos\GSO-old`
 - Branch: `main`
-- HEAD: `884a7d3ebd749c8996f3ec4602b0ec15d72fd066`
+- HEAD no fechamento: o commit que contém este addendum; confirme com `git rev-parse HEAD`
 - Upstream: `origin/main`
-- Divergência: `git rev-list --left-right --count origin/main...HEAD` = `0 32`
+- Divergência no fechamento: `git rev-list --left-right --count origin/main...HEAD` = `0 34`
 - Worktrees ativos: 1, somente o checkout canônico
 - Stash: preservado (`stash@{0}`)
 - Refs de arquivo: 24 em `refs/archive/gso-git-cleanup/`
@@ -41,10 +41,11 @@ válidas para seus respectivos momentos, mas não são mais o estado corrente.
 - O stash continua disponível.
 - As refs de arquivo continuam disponíveis.
 - O conjunto de qualidade de código também estava em trabalho local não
-  commitado: alteração em
-  `.agents/skills/genius-code-quality/scripts/check-project-patterns.mjs` e os
-  testes `.agents/skills/genius-code-quality/tests/`. Ele foi preservado,
-  auditado e incluído no commit deste lote; não foi apagado nem descartado.
+  commitado: alterações em `check-project-patterns.mjs` e
+  `run-quality-gate.mjs`, referências da skill, `validate-skill.mjs` e a
+  documentação de engenharia, além dos testes em
+  `.agents/skills/genius-code-quality/tests/`. Ele foi preservado, auditado e
+  incluído no fechamento; não foi apagado nem descartado.
 
 ## Pendências técnicas que permanecem reais
 

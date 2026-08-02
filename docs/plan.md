@@ -6,8 +6,8 @@ Publicar e evoluir no checkout único `C:\Projetos\GSO-old` somente o Dashboard 
 
 ## Estado Git reconciliado
 
-- `main` está em `884a7d3ebd749c8996f3ec4602b0ec15d72fd066` e acompanha `origin/main`.
-- `origin/main...HEAD = 0 32`; os commits da origem estão contidos no histórico local.
+- `main` acompanha `origin/main`; o HEAD exato do fechamento deve ser obtido com `git rev-parse HEAD`.
+- `origin/main...HEAD = 0 34` no fechamento; os commits da origem estão contidos no histórico local.
 - Há um único worktree ativo, stash preservado e refs de arquivo para a reconciliação anterior.
 - O drift anterior de `PROJECT_STATE.md` e `DOCUMENTATION_LEDGER.md` foi corrigido neste lote.
 - Nenhuma operação destrutiva, push, deploy, migration remota ou alteração de secret foi executada.

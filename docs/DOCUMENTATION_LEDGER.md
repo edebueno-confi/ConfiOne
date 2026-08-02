@@ -1,8 +1,8 @@
 # Estado corrente — 2026-08-01, reconciliado pelo Codex
 
 - checkout canônico: `C:\Projetos\GSO-old`;
-- branch `main`, HEAD `884a7d3ebd749c8996f3ec4602b0ec15d72fd066`, upstream `origin/main`;
-- divergência real: `origin/main...HEAD = 0 32`; `origin/main` é ancestral do checkout;
+- branch `main`, HEAD do commit que contém este bloco, upstream `origin/main`;
+- divergência real no fechamento: `origin/main...HEAD = 0 34`; `origin/main` é ancestral do checkout;
 - um único worktree ativo, stash preservado e 24 refs de arquivo de reconciliação preservadas;
 - nenhuma branch remota foi apagada; branches sem upstream e commits locais não publicados permanecem preservados;
 - superfície publicada nesta fase: Dashboard, Configurações aprovadas, Central de Ajuda e Knowledge/editor;
