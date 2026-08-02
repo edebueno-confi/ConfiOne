@@ -97,3 +97,21 @@ transforma status financeiro em inadimplência por heurística local.
   e conflito, impedir duplicação de empresas/tickets e permitir relatório de
   antes/depois. Valores de planilha só podem substituir valores do HubSpot em
   campos explicitamente aprovados e com trilha de auditoria.
+## Decisao vigente do Dashboard - 2026-08-02
+
+O Dashboard Gerencial publicado possui cinco areas: Resumo Gerencial,
+Comercial, Customer Success, Suporte & Chat e Financeiro. Produto e
+Desenvolvimento permanecem no repositorio para trabalho futuro, mas nao fazem
+parte da navegacao nem dos cards ativos desta superficie.
+
+HubSpot e a fonte oficial de empresas, deals, pipelines, stages, owners e
+tickets. Chat so e publicado quando houver contrato real de
+Conversations/Inbox/Chat. OMIE API e a unica fonte publicada para contas a
+receber, titulos, recebidos, abertos, aging, atraso e reconciliacao financeira.
+Planilhas permanecem apenas como historico de migracao, auditoria e QA; nao sao
+fonte, fallback ou contingencia do Dashboard.
+
+Quando nao houver dado real, o backend deve informar estado e motivo para a UI
+exibir `Indisponivel`, sem trocar ausencia por zero ou procurar uma planilha.
+O registro factual desta decisao e dos gaps de implementacao esta em
+`docs/reports/2026-08-02_dashboard-api-only-audit.md`.

@@ -160,3 +160,17 @@ como reconciliada entre HubSpot e planilha.
 - Planilha marcada como indisponível até o contrato A1 existir.
 - Próximo ciclo implementável sem depender de dado real ou secret.
 - Documento indexado e referenciado no handoff de continuidade.
+## Decisao de publicacao vigente - 2026-08-02
+
+- HubSpot e a fonte oficial de empresas, deals, pipelines, stages, owners e
+  tickets; Chat so e publicado quando existir contrato real de
+  Conversations/Inbox/Chat.
+- OMIE API e a fonte oficial de contas a receber, titulos, recebidos, abertos,
+  aging, atraso e reconciliacao.
+- Planilhas sao somente historico, staging de migracao, auditoria e QA. Nao
+  sao fonte, fallback ou contingencia de qualquer metrica do Dashboard.
+- Ausencia de fonte ou dado deve ser apresentada como `Indisponivel`, com
+  estado de frescor/execucao quando o contrato o fornecer.
+
+O inventario de consumidores e gaps esta em
+`docs/reports/2026-08-02_dashboard-api-only-audit.md`.
