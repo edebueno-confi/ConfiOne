@@ -399,10 +399,11 @@ function walk(directory) {
 
 function filesFromArguments(requested, requestedFiles) {
   if (!requestedFiles.length) return walk(requested);
-  return requestedFiles.map((file) => path.resolve(root, file)).filter((file) => {
+  const selected = requestedFiles.map((file) => path.resolve(root, file)).filter((file) => {
     const relative = path.relative(root, file);
     return !relative.startsWith('..') && fs.existsSync(file) && sourceExtensions.has(path.extname(file).toLowerCase());
   });
+  return selected.length ? selected : walk(requested);
 }
 
 export function scanFiles(files, options = {}) {
