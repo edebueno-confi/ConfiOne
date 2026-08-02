@@ -28,11 +28,15 @@ export function AnalyticsShell() {
   // ganhar ações administrativas. A autorização de rota e os read models
   // continuam sendo a fonte da permissão; aqui só evitamos esconder dados
   // aprovados da navegação.
-  const visibleDomains = DOMAINS.filter((domain) => isAnalyticsDomainPublishedInRelease(domain.key));
+  const visibleDomains = DOMAINS.filter(
+    (domain) =>
+      isAnalyticsDomainPublishedInRelease(domain.key) &&
+      (!isDashboardViewer || domain.key === 'ceo'),
+  );
   const location = useLocation();
   const navigate = useNavigate();
   const urlParams = useMemo(() => normalizeAnalyticsSearch(location.search), [location.search]);
-  const activeKey = analyticsDomainFromTab(urlParams.get('tab'));
+  const activeKey = isDashboardViewer ? 'ceo' : analyticsDomainFromTab(urlParams.get('tab'));
   const [reloadKey, setReloadKey] = useState(0);
   const [latestRun, setLatestRun] = useState<SyncRun | null>(null);
   const [syncStatusError, setSyncStatusError] = useState<string | null>(null);

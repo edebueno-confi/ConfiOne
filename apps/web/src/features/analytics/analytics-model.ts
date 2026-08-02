@@ -206,7 +206,8 @@ export interface FinanceCsBucket {
 }
 
 export interface FinanceSnapshot {
-  source: 'api' | 'spreadsheet' | 'none';
+  /** Somente OMIE API pode ser publicado no snapshot do Dashboard. */
+  source: 'api' | 'none';
   kpis: FinanceKpis;
   byStatus: FinanceBreakdown[];
   byAging: FinanceBreakdown[];
@@ -428,10 +429,10 @@ export function mapFinanceSnapshot(value: unknown): FinanceSnapshot {
   const rows = (key: string) => (Array.isArray(data[key]) ? data[key] : []) as Record<string, unknown>[];
   const recon = (data.cs_reconciliation && typeof data.cs_reconciliation === 'object' ? data.cs_reconciliation : {}) as Record<string, unknown>;
   const reconRows = (Array.isArray(recon.by_client_status) ? recon.by_client_status : []) as Record<string, unknown>[];
-  const sourceValue = data.source === 'api' || data.source === 'spreadsheet' ? data.source : 'none';
+  const sourceValue: FinanceSnapshot['source'] = data.source === 'api' ? 'api' : 'none';
   const rawKpis = (data.kpis && typeof data.kpis === 'object' ? data.kpis : {}) as Record<string, unknown>;
   return {
-    source: sourceValue as FinanceSnapshot['source'],
+    source: sourceValue,
     kpis: mapFinanceKpis(rawKpis),
     byStatus: rows('by_status').map((row) => mapFinanceBreakdown(row, 'status')),
     byAging: rows('by_aging').map((row) => mapFinanceBreakdown(row, 'bucket')),
@@ -445,7 +446,7 @@ export function mapFinanceSnapshot(value: unknown): FinanceSnapshot {
       unmatchedBalance: toNumber(recon.unmatched_balance),
       byClientStatus: reconRows.map((row) => ({ key: toText(row.key) || 'Indisponível', titles: toNumber(row.titles), balance: toNumber(row.balance), overdueBalance: toNumber(row.overdue_balance) })),
     },
-    state: createSnapshotState(data, sourceValue === 'none' ? 'OMIE / planilha' : sourceValue === 'api' ? 'OMIE API' : 'Planilha OMIE', toNumber(rawKpis.total_titles), sourceValue !== 'none'),
+    state: createSnapshotState(data, sourceValue === 'none' ? 'OMIE indisponível' : 'OMIE API', toNumber(rawKpis.total_titles), sourceValue !== 'none'),
   };
 }
 

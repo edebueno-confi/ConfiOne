@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { cx } from '../../components/ui';
 import {
@@ -828,7 +828,11 @@ export function SettingsPage() {
     isPlatformAdmin: gate.actor?.is_platform_admin === true,
     screenKeys: gate.actor?.screen_keys ?? [],
   };
-  const visibleGroups = GROUPS.filter((group) => canOpenSettingsSection(group.id, settingsPermissions));
+  const settingsScreenKeys = (gate.actor?.screen_keys ?? []).join('|');
+  const visibleGroups = useMemo(
+    () => GROUPS.filter((group) => canOpenSettingsSection(group.id, settingsPermissions)),
+    [gate.actor?.is_platform_admin, settingsScreenKeys],
+  );
   const requestedSection = searchParams.get('section') === 'analytics' ? 'integracoes' : searchParams.get('section');
   const [selectedId, setSelectedId] = useState<string>(() => {
     // A busca global do Genio deixa aqui a secao pedida.
@@ -858,8 +862,8 @@ export function SettingsPage() {
 
   useEffect(() => {
     const next = isDashboardViewer ? 'integracoes' : (searchParams.get('section') === 'analytics' ? 'integracoes' : searchParams.get('section'));
-    if (next && visibleGroups.some((group) => group.id === next)) setSelectedId(next);
-  }, [isDashboardViewer, searchParams, visibleGroups]);
+    if (next && visibleGroups.some((group) => group.id === next) && selectedId !== next) setSelectedId(next);
+  }, [isDashboardViewer, searchParams, selectedId, visibleGroups]);
 
   const selectGroup = (groupId: string) => {
     setSelectedId(groupId);
