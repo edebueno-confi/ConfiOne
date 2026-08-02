@@ -4,6 +4,16 @@
 
 Publicar e evoluir no checkout único `C:\Projetos\GSO-old` somente o Dashboard Gerencial, Configurações aprovadas, Central de Ajuda e Knowledge/editor, sem remover módulos ainda não publicados e sem inventar dados no frontend.
 
+## Estado Git reconciliado
+
+- `main` está em `884a7d3ebd749c8996f3ec4602b0ec15d72fd066` e acompanha `origin/main`.
+- `origin/main...HEAD = 0 32`; os commits da origem estão contidos no histórico local.
+- Há um único worktree ativo, stash preservado e refs de arquivo para a reconciliação anterior.
+- O drift anterior de `PROJECT_STATE.md` e `DOCUMENTATION_LEDGER.md` foi corrigido neste lote.
+- Nenhuma operação destrutiva, push, deploy, migration remota ou alteração de secret foi executada.
+
+Evidência: `docs/reports/2026-08-01_git-state-reconciliation-addendum.md`.
+
 ## Sequência de execução
 
 1. Fechar o inventário Git e manter a proveniência em refs de arquivo.

@@ -1,13 +1,14 @@
-# Estado corrente — 2026-08-01
+# Estado corrente — 2026-08-01, reconciliado pelo Codex
 
 - checkout canônico: `C:\Projetos\GSO-old`;
-- branch `main`, upstream `origin/main`, divergência `0 15`;
-- um único worktree ativo; cópias de release autorizadas foram enviadas à Lixeira e refs de arquivo preservam a proveniência;
+- branch `main`, HEAD `884a7d3ebd749c8996f3ec4602b0ec15d72fd066`, upstream `origin/main`;
+- divergência real: `origin/main...HEAD = 0 32`; `origin/main` é ancestral do checkout;
+- um único worktree ativo, stash preservado e 24 refs de arquivo de reconciliação preservadas;
+- nenhuma branch remota foi apagada; branches sem upstream e commits locais não publicados permanecem preservados;
 - superfície publicada nesta fase: Dashboard, Configurações aprovadas, Central de Ajuda e Knowledge/editor;
-- validação: suíte Node 261/261, typechecks, build, higiene da raiz, secret scan e validação documental aprovados;
-- fonte detalhada: `docs/reports/2026-08-01_repository-and-release-surface-audit.md`;
-- validação delta: QA browser do administrador em 4173 passou após aplicação local aditiva do contexto de workspace; Financeiro OMIE-only, Customer Success indisponível por contrato não publicado e loop de Configurações corrigido.
-- evidência delta: `docs/reports/2026-08-01_analytics-contracts-and-local-auth-delta.md`.
+- validações funcionais anteriores permanecem registradas como histórico; a rodada completa do HEAD atual ainda precisa ser repetida após esta atualização documental;
+- fonte de reconciliação: `docs/reports/2026-08-01_git-state-reconciliation-addendum.md`;
+- pendências atuais: QA autenticado com capturas, editor legado, grants/DML de integrações, colisão hydrate/pgTAP, Auth local e sync real dependente de credencial autorizada.
 
 # Encerramento formal da RELEASE-01 — 2026-07-24
 
