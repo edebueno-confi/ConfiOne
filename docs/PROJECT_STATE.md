@@ -1,5 +1,14 @@
 # Estado corrente do checkout canônico — 2026-08-02
 
+Atualização pós-lote (prevalece sobre o bloco histórico abaixo):
+
+- HEAD após o lote de código: `13ac83e`; a branch continua sem upstream e preserva o histórico local.
+- Migrations forward-only do Dashboard foram aplicadas no banco local persistente; nenhum reset foi executado.
+- Integrações na superfície ativa: somente HubSpot e OMIE; histórico separado e sem planilha como fallback.
+- Build, quality, typechecks e pgTAP focado 37/37 passaram; pgTAP completo é parcial por colisão de fixtures fixas no banco persistente.
+- QA autenticado sem erros de console em Visão Geral, Customer Success, Financeiro, Integrações e Histórico; capturas em `docs/reports/visual-audit/screenshots/`.
+- Limitações: servidor isolado `4180` sem sessão autenticada; sync real depende de credenciais autorizadas e não foi executado.
+
 - Checkout operacional único: `C:\Projetos\GSO-old`.
 - Branch: `codex/dashboard-management-rebuild-20260802`, HEAD `6fe26a9`; sem upstream configurado.
 - Divergência atual: `git rev-list --left-right --count origin/main...HEAD` retorna `0 52`; o HEAD inicial `b121b446` está preservado em `refs/archive/dashboard-rebuild-start-20260802`.

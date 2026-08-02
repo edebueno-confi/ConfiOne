@@ -1,5 +1,13 @@
 # Estado corrente — 2026-08-01, reconciliado pelo Codex
 
+## Atualização do lote Dashboard Gerencial API-only — 2026-08-02
+
+- Estado: implementado localmente e validado parcialmente; sem push, deploy, sync externo ou reset.
+- Escopo: cinco áreas publicadas, integrações HubSpot/OMIE, histórico separado, scheduler legado desativado localmente e preservação dos artefatos históricos de planilha.
+- Evidências: `docs/reports/2026-08-02_dashboard-reconstruction-audit.md`, `docs/reports/visual-audit/screenshots/` e `supabase/tests/089_dashboard_api_only_reconstruction.sql`.
+- Validação: build/typecheck/quality aprovados; pgTAP focado 37/37; suite completa parcial por colisão de fixtures no banco persistente sem reset.
+- Próximo gate: revisar a matriz visual completa e autorizar credenciais externas antes de qualquer sincronização real.
+
 - checkout canônico: `C:\Projetos\GSO-old`;
 - branch `main`, HEAD do commit que contém este bloco, upstream `origin/main`;
 - divergência: `origin/main` é ancestral do checkout; confirme a contagem corrente com `git rev-list --left-right --count origin/main...HEAD`;
