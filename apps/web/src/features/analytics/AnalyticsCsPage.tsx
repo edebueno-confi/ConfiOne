@@ -73,11 +73,11 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
   }, [filters, excludedPipelineIds]);
 
   if (state.phase === 'loading') {
-    return <AnalyticsHdDomainFrame title="Suporte" description="Tickets, backlog, prioridades e responsáveis." source="HubSpot · Tickets"><AnalyticsLoadingState title="Carregando suporte" description="O Gênio está consultando os tickets sincronizados do HubSpot." /></AnalyticsHdDomainFrame>;
+    return <AnalyticsHdDomainFrame title="Suporte & Chat" description="Tickets, backlog, prioridades e responsáveis; Chat somente quando confirmado." source="HubSpot · Tickets"><AnalyticsLoadingState title="Carregando suporte" description="O Gênio está consultando os tickets sincronizados do HubSpot." /></AnalyticsHdDomainFrame>;
   }
 
   if (state.phase === 'error') {
-    return <AnalyticsHdDomainFrame title="Suporte" description="Tickets, backlog, prioridades e responsáveis." source="HubSpot · Tickets"><MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores de suporte estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} /></AnalyticsHdDomainFrame>;
+    return <AnalyticsHdDomainFrame title="Suporte & Chat" description="Tickets, backlog, prioridades e responsáveis; Chat somente quando confirmado." source="HubSpot · Tickets"><MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores de suporte estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} /></AnalyticsHdDomainFrame>;
   }
 
   const { kpis, byStatus, monthly, bySource, byPipeline, byOwner, latestTicketCreatedAt, state: dataState } = state;
@@ -89,7 +89,7 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
   });
 
   return (
-    <AnalyticsHdDomainFrame title="Suporte" description="Tickets, backlog, prioridades e responsáveis." source="HubSpot · Tickets" state={dataState}>
+    <AnalyticsHdDomainFrame title="Suporte & Chat" description="Tickets, backlog, prioridades e responsáveis; Chat somente quando confirmado." source="HubSpot · Tickets" state={dataState}>
     <div className="gso-hd-domain-surface space-y-5">
       <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} priorityOptions={priorityOptions} stageLabel="Status" extraFields={pipelineOptions.length > 0 ? <AnalyticsPipelineCombobox inline storageKey="analytics-cs-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.ticketCount }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null} />
       {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." /> : null}
@@ -121,6 +121,9 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
         <div className="grid gap-4 lg:grid-cols-3"><Breakdown title="Por origem" rows={bySource.map((row) => ({ label: row.label, value: row.ticketCount }))} /><Breakdown title="Por pipeline" rows={byPipeline.map((row) => ({ label: row.label, value: row.ticketCount }))} /><Breakdown title="Por responsável" rows={byOwner.slice(0, 8).map((row) => ({ label: row.ownerName, value: row.ticketCount }))} /></div>
         <OwnerPipelineNote owners={byOwner.slice(0, 8)} />
       </ChartCard> : null}
+      <ChartCard title="Chat" description="O contrato atual confirma tickets do HubSpot, mas não confirma a origem em Conversations/Inbox/Chat.">
+        <MinimalState title="Chat indisponível" description="Nenhum read model de Conversations, Inbox ou Chat foi confirmado para este ambiente. Os rótulos de origem dos tickets permanecem apenas como evidência observada." />
+      </ChartCard>
     </div>
     </AnalyticsHdDomainFrame>
   );
