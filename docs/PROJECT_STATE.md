@@ -7,7 +7,7 @@ blocos históricos desta página:
 
 - Checkout canônico: `C:\Projetos\GSO-old`.
 - Branch atual: `codex/dashboard-runtime-stabilization-20260802`.
-- HEAD de código registrado neste fechamento: `18e1222`; branch de
+- HEAD de código registrado neste fechamento: `32af69c`; branch de
   estabilização sem upstream configurado.
 - Divergência: consultar `git rev-list --left-right --count origin/main...HEAD`
   em tempo de leitura; a última leitura antes deste registro retornou `0 94`.
@@ -38,6 +38,9 @@ blocos históricos desta página:
 - Qualificação posterior: o preflight confirmou a credencial server-side e o
   endpoint HubSpot local; permanece pendente apenas autorização para novo ciclo
   completo, sem reclassificar a execução anterior.
+- Cobertura de catálogo no preflight: 35 pipelines HubSpot não arquivados
+  (11 deals e 24 tickets), 0 arquivados, 35/35 presentes no catálogo local e
+  2 entradas `qa-local-*` adicionais preservadas para QA.
 
 Atualização do macro-lote de Configurações, Fontes do Dashboard e Histórico:
 
