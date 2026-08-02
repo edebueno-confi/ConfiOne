@@ -98,6 +98,46 @@ Auditar o catalogo de metricas e os contratos RPC/migrations exatos, depois
 implementar em commits pequenos: contrato/modelo, primitivas visuais, resumo,
 Comercial, CS, Suporte & Chat, Financeiro, remocao da UI de planilha,
 executores/orquestracao, testes e evidencias.
+
+## DASHBOARD-03 — padronização visual e integrações — 2026-08-02
+
+### Implementado
+
+- Visão Geral: pulso com somente HubSpot e OMIE; canvas executivo com padding e
+  densidade alinhados às abas Comercial e Suporte; preservada a hierarquia de
+  decisão executiva sem apresentar Customer Success como terceira fonte.
+- Integrações: campos administrativos seguros para modo, ativação, recurso ou
+  escopo e substituição de credencial no Vault. O segredo existente nunca é
+  retornado ou mostrado.
+- Sincronização: removida da superfície a ação de sincronizar somente CS / Suporte;
+  HubSpot passa a ser descrito como fonte de empresas, Comercial e CS / Suporte;
+  OMIE permanece exclusivo de Financeiro. A configuração apresenta uma única
+  cadência automática do ciclo completo e botões manuais por fonte.
+- Customer Success: publicado modelo TypeScript, mapeador, RPC dedicado e tela
+  baseada exclusivamente no cache de empresas HubSpot. Regras não confirmadas
+  de cliente ativo, health, risco e valor MRR continuam indisponíveis.
+- Orquestração: o scheduler passou a chamar o ciclo sequencial; falha terminal
+  do HubSpot não bloqueia OMIE, mas o resultado passa a ser parcial. Execução
+  ainda em processamento continua bloqueando OMIE.
+
+### Evidências
+
+- `docs/reports/visual-audit/design-qa.md` — comparação e limitações de QA.
+- `docs/reports/visual-audit/screenshots/dashboard-overview-2026-08-02.png` —
+  captura autenticada da Visão Geral, 1920x975, tema claro.
+- `docs/reports/visual-audit/screenshots/integrations-2026-08-02.png` — captura
+  autenticada de Integrações, 1920x975, tema claro.
+- Logs do navegador na janela observada: zero erros e zero avisos.
+
+### Limitações e próximo lote
+
+- A migration `20260802030000_dashboard_api_only_read_models_v2.sql` e a
+  migration de scheduler `20260802040000_analytics_full_cycle_scheduler_v1.sql`
+  foram apenas persistidas no checkout; não foram aplicadas ao banco.
+- A captura autenticada da aba Customer Success retornou o estado de erro
+  esperado enquanto o RPC ainda não existe no banco observado.
+- Não foram executados salvar configuração, sincronização real ou cron. O QA
+  visual em tema escuro e viewports responsivos segue pendente.
 ## Implementacao registrada neste ciclo
 
 - `9eb9ef2`: contrato e catalogo API-only do Dashboard.

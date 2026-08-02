@@ -1,15 +1,14 @@
 # Estado corrente do checkout canônico — 2026-08-02
 
 - Checkout operacional único: `C:\Projetos\GSO-old`.
-- Checkout operacional único: `C:\Projetos\GSO-old`.
-- Branch: `codex/dashboard-management-rebuild-20260802`, HEAD `b89fefb`; sem upstream configurado.
-- Divergência atual: `git rev-list --left-right --count origin/main...HEAD` retorna `0 50`; o HEAD inicial `b121b446` está preservado em `refs/archive/dashboard-rebuild-start-20260802`.
+- Branch: `codex/dashboard-management-rebuild-20260802`, HEAD `6fe26a9`; sem upstream configurado.
+- Divergência atual: `git rev-list --left-right --count origin/main...HEAD` retorna `0 52`; o HEAD inicial `b121b446` está preservado em `refs/archive/dashboard-rebuild-start-20260802`.
 - Worktrees ativos: 1; stash preservado; nenhum reset, clean, rebase, merge, cherry-pick ou push foi executado neste ciclo.
 - Dashboard ativo: `ceo`, `commercial`, `customer_success`, `support` e `finance`. Produto e Desenvolvimento permanecem no código, fora da navegação ativa.
 - Fonte operacional: views/read models/RPCs reais; planilhas permanecem apenas como histórico e não são fallback do Dashboard.
-- Implementado no ciclo: contrato/catalogo API-only, remoção da superfície de planilhas, executor sequencial HubSpot -> OMIE, Chat indisponível sem contrato confirmado e shell com rolagem confinada.
-- Validação: build web, typecheck web/contratos, testes focados, quality gate e validador documental aprovados; QA autenticado e sync real dependem de ambiente/credencial autorizados.
-- Pendências prioritárias: capturas autenticadas, pgTAP/migration forward-only sem reset, auditoria de zero versus indisponível, decisão sobre scheduler e sync real autorizado.
+- Implementado no ciclo: contrato/catalogo API-only, remoção da superfície de planilhas, executor sequencial HubSpot -> OMIE, Chat indisponível sem contrato confirmado, shell com rolagem confinada, pulso Visão Geral limitado a HubSpot/OMIE e configuração segura das integrações.
+- Validação: build web, typecheck web/contratos e 24 testes focados passaram; QA visual autenticado capturou Visão Geral e Integrações, sem erros de console. A página Customer Success permanece bloqueada até aplicação da migration forward-only do novo RPC.
+- Pendências prioritárias: aplicar/validar migrations forward-only no banco persistente autorizado sem reset, capturar matrizes light/dark e responsivas, validar sync real e revisar a mensagem de estado parcial do scheduler.
 - Relatório detalhado: `docs/reports/2026-08-02_dashboard-api-only-audit.md`.
 
 As seções abaixo são histórico de execução. Em caso de conflito, este bloco e os documentos canônicos de arquitetura/contratos prevalecem.

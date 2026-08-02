@@ -6789,3 +6789,10 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - Commits: `9eb9ef2`, `2578366`, `4d96bbb`, `4c6e314`, `22b3346`, `b89fefb`.
 - Validacao: build web, typecheck web/contratos, testes focados, quality gate e validador documental; QA autenticado e sync real ainda dependem de ambiente.
 - Limite: nenhuma migration foi aplicada e nenhum banco foi resetado.
+
+## DASHBOARD-03 - Visao Geral e Integracoes - 2026-08-02
+
+- Relatorio: `docs/reports/2026-08-02_dashboard-api-only-audit.md`.
+- Evidencia visual: `docs/reports/visual-audit/design-qa.md` e capturas autenticadas em `docs/reports/visual-audit/screenshots/`.
+- Entrega: pulso HubSpot/OMIE, densidade visual padronizada, configuracao segura de integracoes, cadencia unica do ciclo completo e acoes manuais por fonte.
+- Limite: migrations forward-only, sincronizacao real e QA responsivo/dark ainda nao executados.
