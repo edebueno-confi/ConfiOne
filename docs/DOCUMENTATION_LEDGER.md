@@ -6782,3 +6782,10 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 
 - Relatório: `docs/reports/ACCESS_01_2_INVITES_SAGA_NAVIGATION_2026-07-27.md`.
 - Entrega: Edge Function oficial, aceite idempotente, compensação condicionada, rate limit, guarda do último administrador e URLs canônicas do Dashboard.
+## DASHBOARD-API-ONLY - Reconstrucao do Dashboard Gerencial - 2026-08-02
+
+- Relatorio: `docs/reports/2026-08-02_dashboard-api-only-audit.md`.
+- Entrega: cinco areas ativas, planilhas fora da superficie operacional, Chat explicitamente indisponivel sem contrato confirmado e orquestracao sequencial HubSpot -> OMIE.
+- Commits: `9eb9ef2`, `2578366`, `4d96bbb`, `4c6e314`, `22b3346`, `b89fefb`.
+- Validacao: build web, typecheck web/contratos, testes focados, quality gate e validador documental; QA autenticado e sync real ainda dependem de ambiente.
+- Limite: nenhuma migration foi aplicada e nenhum banco foi resetado.

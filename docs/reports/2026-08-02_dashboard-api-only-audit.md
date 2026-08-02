@@ -98,3 +98,27 @@ Auditar o catalogo de metricas e os contratos RPC/migrations exatos, depois
 implementar em commits pequenos: contrato/modelo, primitivas visuais, resumo,
 Comercial, CS, Suporte & Chat, Financeiro, remocao da UI de planilha,
 executores/orquestracao, testes e evidencias.
+## Implementacao registrada neste ciclo
+
+- `9eb9ef2`: contrato e catalogo API-only do Dashboard.
+- `2578366`: cinco areas ativas no Dashboard; Produto e Desenvolvimento ficaram preservados no codigo, mas fora da navegacao publicada.
+- `4d96bbb`: planilhas retiradas da superficie operacional e status financeiro ativo limitado a OMIE API por migration forward-only nao aplicada neste ciclo.
+- `4c6e314`: novo executor sequencial HubSpot -> OMIE; OMIE nao inicia quando o ciclo HubSpot nao termina com sucesso.
+- `22b3346`: Chat marcado como indisponivel ate existir contrato Conversations, Inbox ou Chat confirmado.
+- `b89fefb`: rolagem confinada ao conteudo do Dashboard para preservar shell e sidebar fixos.
+
+## Validacao e limites
+
+- `npm run web:build`: aprovado.
+- `npm run quality:changed`: aprovado com observacoes, 0 blockers; o relatorio gerou candidatos de auditoria existentes e lint nao esta configurado.
+- `npm run documentation:validate:internal-docs`: aprovado sem bloqueios; avisos existentes foram mantidos e nao contem secrets expostos.
+- Typecheck web/contratos e testes focados de contratos/orquestracao: aprovados.
+- QA visual autenticado nao foi concluido: o ambiente local abriu a tela de login e nao havia sessao autorizada. Nao foram inferidos resultados de dados.
+- pgTAP/migrations e sincronizacao real HubSpot/OMIE nao foram executados; dependem de banco/credenciais autorizados. Nenhum reset de banco foi feito.
+
+## Backlog imediato
+
+1. Obter sessao QA autorizada e capturar as cinco superficies em light/dark e viewports definidos.
+2. Executar contratos pgTAP e migration forward-only contra banco local persistente, sem reset, quando houver autorizacao operacional.
+3. Auditar zeros versus indisponibilidade no catalogo/read models e revisar a integracao do scheduler com o orquestrador sequencial.
+4. Validar sincronizacao real HubSpot -> OMIE com credenciais externas sem expor valores no repositorio ou nos relatorios.

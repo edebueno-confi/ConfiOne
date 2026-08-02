@@ -1835,3 +1835,11 @@ O relatório completo, incluindo evidências locais, contratos existentes, lacun
 - Avaliação do Context Pack pelo chat oficial de direção.
 - Autorização explícita do próximo macro-lote.
 - Upload no chat oficial, caso a navegação/autenticação permita.
+## Atualizacao do macro-lote Dashboard API-only - 2026-08-02
+
+- Branch de trabalho: `codex/dashboard-management-rebuild-20260802`.
+- Escopo concluido: cinco areas ativas (`ceo`, `commercial`, `customer_success`, `support`, `finance`), sem Produto/Desenvolvimento na navegacao ativa e sem planilhas no caminho operacional.
+- Implementado: contrato/catalogo, surface de configuracao, Chat indisponivel sem contrato confirmado, executor sequencial HubSpot -> OMIE e shell com rolagem confinada.
+- Validacao: build web, typecheck web/contratos, testes focados, quality gate e validador documental aprovados; QA autenticado e sync real permanecem dependentes de sessao/credencial externa.
+- Evidencia detalhada: `docs/reports/2026-08-02_dashboard-api-only-audit.md`.
+- Proximo gate: capturas autenticadas, pgTAP/migration sem reset, auditoria de zeros/indisponibilidade e decisao sobre scheduler.

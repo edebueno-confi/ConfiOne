@@ -1,14 +1,16 @@
-# Estado corrente do checkout canônico — 2026-08-01
+# Estado corrente do checkout canônico — 2026-08-02
 
 - Checkout operacional único: `C:\Projetos\GSO-old`.
-- Branch: `main`, HEAD do commit que contém este bloco, upstream `origin/main`.
-- Divergência: `origin/main` é ancestral do `main`; confirme a contagem corrente com `git rev-list --left-right --count origin/main...HEAD`.
-- Worktrees ativos: 1; branches remotas não foram excluídas; stash e refs de arquivo de reconciliação permanecem preservados.
-- Superfície do primeiro release: Dashboard Gerencial, Configurações aprovadas, Central de Ajuda e Knowledge/editor. O restante do código permanece no repositório, porém fora da superfície publicada pelo manifesto de release.
-- Validação corrente do HEAD: contracts/web typecheck, build web, 266 testes Node, validadores de governança/qualidade, documentação interna e `git diff --check` passaram.
-- QA browser autenticado com capturas reais, revalidação Auth local e sincronização externa não foram executados neste ciclo; dependem de ambiente/credencial autorizados.
-- Pendências prioritárias: extensão pgTAP local ausente; remover o editor legado não referenciado; endurecer grants/DML de integrações; corrigir a colisão hydrate/pgTAP; validar sync real com credencial autorizada.
-- Relatórios detalhados: `docs/reports/2026-08-01_repository-and-release-surface-audit.md`, `docs/reports/2026-08-01_analytics-contracts-and-local-auth-delta.md` e `docs/reports/2026-08-01_git-state-reconciliation-addendum.md`.
+- Checkout operacional único: `C:\Projetos\GSO-old`.
+- Branch: `codex/dashboard-management-rebuild-20260802`, HEAD `b89fefb`; sem upstream configurado.
+- Divergência atual: `git rev-list --left-right --count origin/main...HEAD` retorna `0 50`; o HEAD inicial `b121b446` está preservado em `refs/archive/dashboard-rebuild-start-20260802`.
+- Worktrees ativos: 1; stash preservado; nenhum reset, clean, rebase, merge, cherry-pick ou push foi executado neste ciclo.
+- Dashboard ativo: `ceo`, `commercial`, `customer_success`, `support` e `finance`. Produto e Desenvolvimento permanecem no código, fora da navegação ativa.
+- Fonte operacional: views/read models/RPCs reais; planilhas permanecem apenas como histórico e não são fallback do Dashboard.
+- Implementado no ciclo: contrato/catalogo API-only, remoção da superfície de planilhas, executor sequencial HubSpot -> OMIE, Chat indisponível sem contrato confirmado e shell com rolagem confinada.
+- Validação: build web, typecheck web/contratos, testes focados, quality gate e validador documental aprovados; QA autenticado e sync real dependem de ambiente/credencial autorizados.
+- Pendências prioritárias: capturas autenticadas, pgTAP/migration forward-only sem reset, auditoria de zero versus indisponível, decisão sobre scheduler e sync real autorizado.
+- Relatório detalhado: `docs/reports/2026-08-02_dashboard-api-only-audit.md`.
 
 As seções abaixo são histórico de execução. Em caso de conflito, este bloco e os documentos canônicos de arquitetura/contratos prevalecem.
 
