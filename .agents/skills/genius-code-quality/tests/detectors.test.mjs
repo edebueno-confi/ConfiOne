@@ -73,6 +73,7 @@ test('marks an older SECURITY DEFINER finding as historical-fixed when a later d
 
 test('ignores pgTAP select-star and reports public view select-star', () => {
   assert.equal(analyzeSource({ file: 'supabase/tests/001_select_star.sql', content: pgTapSelectStar, ...options }).length, 0);
+  assert.equal(analyzeSource({ file: 'supabase/migrations/20260801000000_exists.sql', content: 'select exists(select * from public.tickets);', ...options }).length, 0);
   const findings = analyzeSource({ file: 'supabase/migrations/20260801000000_public_view.sql', content: publicViewSelectStar, ...options });
   assert.equal(findings.length, 1);
   assert.equal(findings[0].id, 'select-star-contract');
