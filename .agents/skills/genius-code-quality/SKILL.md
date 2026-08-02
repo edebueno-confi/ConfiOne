@@ -5,52 +5,73 @@ description: Use when auditing Genius Support OS code quality, architecture, sec
 
 # Genius Code Quality
 
-## Objetivo
+## Objetivo e limites
 
-Audite o código do Genius Support OS para revisão humana, handoff e decisões de release. A auditoria é read-only por padrão: inspecione, valide, classifique, explique e recomende; não altere código, testes, banco, dependências ou configuração sem autorização explícita.
+Audite o Genius Support OS para revisao humana, handoff e decisoes de release. O comportamento padrao e read-only: inspecione, valide, classifique, explique e recomende; nao altere produto, testes, banco, dependencias ou configuracao sem autorizacao explicita.
 
-**Lint é evidência parcial, não veredito.** Combine tooling existente, diff, contratos reais, arquitetura, segurança multi-tenant, testes, documentação e revisão semântica.
+Lint e typecheck sao evidencias parciais. Combine tooling existente, diff, contratos reais, arquitetura, seguranca multi-tenant, testes, documentacao e revisao semantica.
 
-## Acionamento e limites
+## Acionamento
 
-Use esta skill quando o pedido mencionar auditoria/revisão de código, qualidade técnica, dívida técnica, code review, handoff, revisão humana, pré-commit, release ou refatoração segura. Não use para implementar uma feature, redesenhar UI ou corrigir achados sem escopo aprovado.
+Use quando o pedido mencionar auditoria ou revisao de codigo, qualidade tecnica, divida tecnica, code review, handoff, pre-commit, release ou refatoracao segura. Nao use para feature, redesign de UI ou correcao de achados sem escopo aprovado.
 
 Antes de agir:
 
 1. Confirme cwd, branch, HEAD, status staged/unstaged/untracked e `git diff --check`.
-2. Leia os documentos canônicos aplicáveis, começando por `docs/PROJECT_STATE.md`, `docs/ARCHITECTURE_RULES.md`, `docs/VIEW_RPC_CONTRACTS.md` e `docs/VALIDATION_CHECKLIST.md`.
-3. Audite o tooling existente antes de propor pacote novo. Não altere `package.json` ou lockfile neste workflow.
-4. Nunca abra, imprima ou reproduza `.env`, tokens, cookies, JWTs, service roles ou credenciais.
+2. Leia os documentos canonicos aplicaveis, comecando por `docs/PROJECT_STATE.md`, `docs/ARCHITECTURE_RULES.md`, `docs/VIEW_RPC_CONTRACTS.md` e `docs/VALIDATION_CHECKLIST.md`.
+3. Audite o tooling existente antes de propor pacote novo.
+4. Nunca abra ou reproduza `.env`, tokens, cookies, JWTs, service roles ou credenciais.
 
-Não use `git reset`, `git clean`, `git stash`, `git checkout --`, push, deploy, sync externo, `supabase db reset`, migration remota ou escrita externa.
+Nao use `git reset`, `git clean`, `git stash`, `supabase db reset` ou `git checkout --` neste workflow.
 
 ## Modos
 
-| Invocação | Escopo | Conduta |
-|---|---|---|
-| `$genius-code-quality fast` | gate rápido antes de commit/encerramento | `git diff --check`, estado do diff, padrões locais e typechecks disponíveis; não executar banco, navegador ou testes demorados |
-| `$genius-code-quality changed` | staged, unstaged e untracked relevantes | identificar a base real, impacto em consumidores, contratos, testes e documentação; nunca presumir `main` |
-| `$genius-code-quality module <caminho ou domínio>` | módulo informado | arquitetura, dependências, contratos, segurança, testes, documentação e manutenção do recorte |
-| `$genius-code-quality full` | repositório inteiro | auditoria profunda; pode usar subagentes especializados, mas não corrige automaticamente nem expande o escopo |
+| Invocacao | Escopo |
+|---|---|
+| `$genius-code-quality fast` | Git, diff check, padroes, lint configurado, typechecks e secret scan existente; sem banco, navegador ou testes demorados. |
+| `$genius-code-quality changed` | staged, unstaged e untracked relevantes, com base real do working tree. |
+| `$genius-code-quality module <caminho>` | scanner contextual, typecheck/lint possivel e inventario de dependencias, contratos, consumidores, testes, docs, rotas e estados. |
+| `$genius-code-quality full` | auditoria ampla; pode usar validacoes autorizadas, mas nao corrige automaticamente. |
 
-Se houver alteração em contrato, auth, RLS, RPC, migration, manifesto ou pacote compartilhado, eleve o recorte e registre o motivo. Se o caminho não existir, pare com resultado `não conclusivo`.
+O modo `module` nao declara auditoria profunda: separa escopo direto, dependencias, consumidores, contratos, testes, documentacao e itens nao analisados.
 
-## Regras de análise
+## Modelo contextual
 
-Consulte [quality-rules.md](references/quality-rules.md), [severity-model.md](references/severity-model.md) e [project-architecture.md](references/project-architecture.md). Avalie, quando aplicável, tipos, limites arquiteturais, legibilidade, duplicação, React, async/erros/observabilidade, segurança, Supabase/Postgres/SQL, integrações, testes, documentação e dependências.
+Cada finding contem `layer`, `ruleApplicability`, `status`, `contextStatus`, `detector`, `ruleVersion`, `analysisType` e `provenance`.
 
-No Genius Support OS, backend/views/read models/RPCs são a fonte da verdade; frontend não inventa métrica, regra ou dado. Ausência deve aparecer como indisponível. Tenant, RLS, permissão e auditoria são obrigatórios. `platform_admin` não elimina auditoria. Contratos compartilhados prevalecem sobre tipos locais; módulos ocultos continuam bloqueados pelo manifesto; não duplique allowlists. HubSpot e OMIE devem ser idempotentes e observáveis. `SECURITY DEFINER` exige `set search_path = ''`. Superfície pública usa tema claro fixo; interface interna suporta claro/escuro; alteração visual exige screenshot.
+Camadas: frontend, contratos compartilhados, Edge Function/backend, migration SQL, teste SQL, script operacional, script de auditoria, fixture, teste Node/frontend, documentacao e configuracao.
 
-Separe explicitamente erro objetivo, regra violada, risco provável, dívida, oportunidade, preferência estilística e falso positivo. Métricas são sinais para investigação, não condenação automática. Destaque também decisões corretas e padrões consistentes.
+Status: `candidate`, `probable`, `confirmed`, `dismissed`, `historical-fixed` e `requires-runtime-validation`. Heuristica textual nunca vira `confirmed` automaticamente.
 
-## Evidência e relatório
+`SECURITY DEFINER` so e analisado em blocos de funcao SQL. `search_path = ''` e tratado como conforme; `public`/`pg_temp`, grants amplos e SQL dinamico exigem contexto. Migrations historicas nao sao editadas; hardening posterior pode classifica-las como `historical-fixed`.
 
-Cada achado exige severidade, categoria, arquivo, linha/trecho, evidência, impacto, recomendação, confiança, bloqueio de merge/release e indicação de falso positivo. Não atribua falha herdada ao lote atual: registre proveniência (`introduzido`, `existente`, `herdado/indeterminado` ou `externo`).
+`SELECT *` em pgTAP, fixtures, inspecoes e scripts de auditoria nao gera divida de contrato. Views publicas, RPCs e read models recebem candidato contextual.
 
-Produza o formato em [report-template.md](references/report-template.md): resumo, comandos/duração/limitações, bloqueadores, achados por categoria, dívida, pontos positivos, incertezas, plano, estado Git e veredito (`aprovado`, `aprovado com ressalvas`, `reprovado` ou `não conclusivo`). Gere JSON somente quando solicitado (`--json`), seguindo [assets/code-quality-report-template.md](assets/code-quality-report-template.md).
+`.from()` em frontend e candidato somente quando acessa tabela sem view/RPC aprovada. Edge Functions, scripts e testes nao sao marcados pela existencia do `.from()`; acesso backend sensivel com service role e sem autorizacao aparente e tratado como provavel.
 
-## Correção e parada
+## Severidade e veredito
 
-O modo padrão termina após relatório. Só aplique correções se o usuário autorizar explicitamente um lote de correção; mesmo assim, escopo, arquivos e validações devem ser confirmados antes de editar. Não altere testes para obter verde, não insira disables sem justificativa e não declare aprovação apenas porque lint/typecheck passou.
+- `CRITICO`: problema confirmado com risco imediato;
+- `ALTO`: problema confirmado ou provavel com impacto elevado;
+- `MEDIO`: risco provavel ou duvida relevante;
+- `BAIXO`: melhoria localizada;
+- `INFORMATIVO`: candidato ou sinal para revisao.
 
-Pare quando o modo solicitado, as verificações seguras e o relatório estiverem concluídos. Registre gates não executados e o motivo; não inicie outro macro-lote.
+O risco e calculado pelos estados contextuais, nao pela contagem bruta. Somente findings `confirmed` criticos/altos bloqueiam merge/release. Candidatos isolados geram `aprovado com observacoes`; comandos incompletos geram `nao conclusivo`; achados confirmados altos/criticos geram `reprovado`.
+
+## Saida e truncamento
+
+O JSON preserva todos os findings. O Markdown agrupa por regra, camada, severidade e status e pode omitir candidatos repetitivos apenas do resumo. O relatorio informa total, exibidos, omitidos, regras afetadas e garante que criticos/altos confirmados nunca sejam truncados.
+
+## Recursos e seguranca
+
+- `scripts/run-quality-gate.mjs`: orquestra Git, padroes, lint se configurado, typechecks e `local:qa:secret-scan` existente.
+- `scripts/check-project-patterns.mjs`: detector contextual read-only, com JSON completo.
+- `scripts/validate-skill.mjs`: valida estrutura, frontmatter, campos contextuais e fixtures.
+- `tests/detectors.test.mjs`: regressao artificial dos detectores, sem banco, navegador ou API externa.
+
+Nenhum script edita arquivos, cria commits, altera Git, executa banco, sync, push, deploy ou operacao destrutiva.
+
+## Correcao e parada
+
+So aplique correcoes em lote separado, com escopo e arquivos confirmados. Nao transforme candidates automaticamente em backlog do produto. Pare apos o modo solicitado, validacoes seguras e relatorio; nao inicie outro macro-lote.
