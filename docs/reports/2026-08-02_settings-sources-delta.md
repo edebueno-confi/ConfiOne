@@ -199,11 +199,12 @@ Commits locais, sem push:
 - `a9a10cb` contratos Node e pgTAP;
 - `17a8730` estilos do control plane;
 - `7303cc3` documentação e QA empacotado.
+- `ac5ff3e` fechamento do estado Git.
 
 ## 24. Estado Git final
 
 Lote encerrado com staging revisado, commits locais e worktree limpo. HEAD:
-`7303cc3`; branch `codex/dashboard-management-rebuild-20260802`; sem upstream;
+`ac5ff3e`; branch `codex/dashboard-management-rebuild-20260802`; sem upstream;
 `git rev-list --left-right --count origin/main...HEAD` = `0 69`. Nenhum upstream
 foi criado e nenhum push foi feito.
 
