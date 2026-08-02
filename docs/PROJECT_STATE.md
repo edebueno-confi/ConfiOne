@@ -7,7 +7,7 @@ blocos históricos desta página:
 
 - Checkout canônico: `C:\Projetos\GSO-old`.
 - Branch atual: `codex/dashboard-runtime-stabilization-20260802`.
-- HEAD de código registrado neste fechamento: `32af69c`; branch de
+- HEAD de código registrado neste fechamento: `63c2574`; branch de
   estabilização sem upstream configurado.
 - Divergência: consultar `git rev-list --left-right --count origin/main...HEAD`
   em tempo de leitura; a última leitura antes deste registro retornou `0 94`.
@@ -27,13 +27,13 @@ blocos históricos desta página:
   execução e não está versionado.
 - Preflight HubSpot somente leitura executado depois do ciclo: `ready`,
   credencial server-side configurada, endpoint alcançável, resposta válida e
-  11 pipelines retornados; `writesExternalData=false`. Nenhum ciclo foi criado
-  e nenhum valor de credencial foi exposto.
+  35 pipelines não arquivados retornados (11 deals e 24 tickets);
+  `writesExternalData=false`. Nenhum ciclo foi criado e nenhum valor de
+  credencial foi exposto.
 - Nenhum reset, clean, merge, rebase, cherry-pick, push, deploy, migration
   remota ou escrita externa foi executado.
-- O estado do lote é **parcialmente validado**, aguardando correção/provisão
-  autorizada da credencial server-side do HubSpot, eventual novo ciclo em lote
-  separado e revisão do Product Owner.
+- O estado do lote é **parcialmente validado**, aguardando autorização de novo
+  ciclo completo em lote separado e revisão do Product Owner.
 
 - Qualificação posterior: o preflight confirmou a credencial server-side e o
   endpoint HubSpot local; permanece pendente apenas autorização para novo ciclo

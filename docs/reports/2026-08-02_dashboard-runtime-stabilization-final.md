@@ -235,7 +235,7 @@ somente leitura e sanitizado.
 ## 29. Estado Git final
 
 Branch atual: `codex/dashboard-runtime-stabilization-20260802`. HEAD:
-`32af69c`. Worktree será limpo após o commit documental. A divergência deve ser
+`63c2574`. Worktree será limpo após o commit documental. A divergência deve ser
 consultada com `git rev-list --left-right --count origin/main...HEAD`.
 Não há upstream configurado e nenhum push foi executado.
 
