@@ -174,7 +174,7 @@ Opções:
 Não presuma que a pasta mais recente, a branch chamada `main` ou uma pasta
 chamada `release` é a fonte canônica sem comprovar por histórico Git.
 
-## Worktrees ativos
+## Worktrees ativos no início da auditoria
 
 Dez worktrees vivos, nove deles com trabalho do Codex:
 
@@ -190,6 +190,18 @@ C:/Projetos/GSO-integrations-04      0444bda  codex/settings-integrations-dashbo
 C:/Projetos/GSO-release-02-3         9ebd101  codex/release-02-production
 C:/Projetos/GSO-release-02-6         7a6afc2  codex/release-02-security-hardening-followup
 ```
+
+### Estado após a reorganização
+
+Em 2026-08-01, as nove cópias acima foram movidas para a Lixeira a partir de
+`C:\Projetos\BKP`, e o checkout intermediário `C:\Projetos\GSO-consolidation-01`
+também foi descartado. Os commits foram preservados antes da remoção em
+`refs/archive/gso-git-cleanup/`. O único worktree ativo agora é
+`C:\Projetos\GSO-old`, na branch local `main`, alinhada ao conteúdo consolidado
+com `origin/main` como ancestral.
+
+As listas abaixo registram o estado histórico anterior e não representam
+worktrees ou branches operacionais atuais.
 
 Duas branches **sem cópia remota** — perda irreversível se apagadas:
 

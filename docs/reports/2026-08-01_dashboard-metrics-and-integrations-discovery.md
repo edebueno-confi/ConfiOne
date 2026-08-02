@@ -5,7 +5,7 @@ Checkout final: `C:\Projetos\GSO-old`
 Branch final: `claude/release-surface-visual-audit-20260731`
 Escopo: Macro-lote 0.3 — correções imediatas de Dashboard e discovery de métricas/integrações.
 
-Nota de integração: este relatório foi produzido durante a consolidação intermediária e incorporado ao checkout principal. A pasta `C:\Projetos\GSO-consolidation-01` não é o destino operacional final.
+Nota de integração: este relatório foi produzido durante a consolidação intermediária e incorporado ao checkout principal. A pasta histórica `C:\Projetos\GSO-consolidation-01` foi enviada à Lixeira em 2026-08-01 e não é o destino operacional final.
 
 ## 1. Resumo executivo
 
@@ -115,7 +115,7 @@ As associações de relacionamento não são inferidas por nome ou repetição d
 
 ## 8. Screenshots e evidências
 
-O preview foi executado a partir de `C:\Projetos\GSO-consolidation-01\apps\web` em `127.0.0.1:4174`, após o build consolidado. As quatro capturas são reais, mas representam o estado de bloqueio de configuração antes da recuperação da configuração local:
+O preview histórico foi executado a partir de `C:\Projetos\GSO-consolidation-01\apps\web` em `127.0.0.1:4174`, após o build consolidado. O checkout foi posteriormente enviado à Lixeira; as quatro capturas são reais, mas representam o estado de bloqueio de configuração antes da recuperação da configuração local:
 
 - `output/playwright/dashboard-finance-unauthenticated.png` — SHA-256 `69FDA189285295354056566A4217CEE68BCB73E20C55C68D5551B440AC293E1C`
 - `output/playwright/dashboard-support-unauthenticated.png` — SHA-256 `5B6493A30BD4F13538D5EFA40BC7903AD8A430E7FE43B23D9DF1DC57ADCD7F7A`
@@ -183,3 +183,5 @@ O `GSO-old` partia de `68884bf`, enquanto `origin/main` estava em `66570c6`. A d
 A branch consolidada foi criada diretamente sobre `origin/main`; `git merge-base --is-ancestor origin/main codex/consolidation-origin-main-20260801` retornou verdadeiro. Portanto, os 74 commits não foram descartados nem reaplicados um a um: já fazem parte da base consolidada. Os 10 commits locais do `GSO-old` foram preservados no histórico e reaplicados seletivamente durante a consolidação.
 
 Após a revisão do fluxo operacional, o destino canônico voltou a ser `C:\Projetos\GSO-old`. A configuração ignorada `apps/web/.env.local` foi recuperada localmente para esse checkout e não entra em commit.
+
+Após a reorganização Git, a branch canônica local passou a ser `main`; as referências à branch de auditoria e à consolidação acima permanecem apenas como histórico e refs de arquivo.
