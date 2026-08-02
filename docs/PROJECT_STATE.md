@@ -7,10 +7,12 @@ blocos históricos desta página:
 
 - Checkout canônico: `C:\Projetos\GSO-old`.
 - Branch atual: `codex/dashboard-runtime-stabilization-20260802`.
-- HEAD de código registrado neste fechamento: `40aca38`; branch de
-  estabilização sem upstream configurado.
+- Último HEAD de código antes dos commits documentais: `caf7d80`; branch de
+  estabilização sem upstream configurado. O HEAD final deve ser lido com
+  `git rev-parse --short HEAD`.
 - Divergência: consultar `git rev-list --left-right --count origin/main...HEAD`
-  em tempo de leitura; a última leitura deste registro retornou `0 107`.
+  em tempo de leitura; a última leitura antes dos commits documentais retornou
+  `0 106`.
 - Lifecycle, reconciliação, status/frescor, sanitização, Histórico e Financeiro
   foram estabilizados e validados conforme
   `docs/reports/2026-08-02_dashboard-runtime-stabilization-final.md`.
@@ -44,7 +46,7 @@ blocos históricos desta página:
 - Exportação gerencial PNG/PDF bloqueia a ação quando as abas selecionadas
   não possuem snapshot exportável (`never_synced`, `syncing`, indisponível,
   falha ou vazio); a regra está coberta por teste de contrato e foi registrada
-  em `caf7d80` e documentada em `40aca38`.
+  em `caf7d80` e documentada nos commits documentais deste fechamento.
 
 Atualização do macro-lote de Configurações, Fontes do Dashboard e Histórico:
 
