@@ -180,3 +180,5 @@ Evidências adicionais deste delta:
 Estado de dados observado após a validação: `analytics_sync_cycles` ainda não possui ciclos persistidos; HubSpot tem 7 `success`, 1 `timed_out` e 1 `error`; OMIE tem 1 `completed` e 3 `failed`. Isso mantém o relatório como **parcialmente validado**: o ciclo sequencial HubSpot -> OMIE ainda depende do segredo server-side autorizado `ANALYTICS_SYNC_SECRET` e não foi executado neste delta.
 
 O rebuild completo da tela de Artigos, o fluxo real de categorias e a exportação profissional PNG/PDF continuam na fila documentada em `docs/UI_REFACTOR_BACKLOG.md`; não foram misturados a este lote de estabilização.
+
+Nota de evidência: a validação visual empacotada específica do editor Knowledge não foi concluída porque o preview isolado redirecionou a sessão QA de volta para `/login`; nenhum bypass de autenticação foi usado. O editor tem typecheck, build e contrato estático aprovados, mas a captura visual dessa superfície permanece pendente.
