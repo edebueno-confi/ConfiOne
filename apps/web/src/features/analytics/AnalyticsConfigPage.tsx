@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MinimalState } from '../../components/minimal-states';
 import { GeniusSyncOverlay } from '../../components/GeniusSyncOverlay';
-import { getCsSyncProgress, getIntegrationSchedule, getLatestCsSyncRun, listAnalyticsSourceConfig, runIntegrationNow, setIntegrationSchedule, triggerCsSupportSync, triggerHubspotSync, upsertAnalyticsSourceConfig, type IntegrationSchedule } from './analytics-api';
+import { getCsSyncProgress, getIntegrationSchedule, getLatestCsSyncRun, listAnalyticsSourceConfig, setIntegrationSchedule, triggerSequentialAnalyticsSync, triggerCsSupportSync, triggerHubspotSync, upsertAnalyticsSourceConfig, type IntegrationSchedule } from './analytics-api';
 import type { AnalyticsSourceConfig, SyncRun } from './analytics-model';
 import { ChartCard, MetricInfo } from './analytics-ui';
 import { useAuthContext } from '../auth/auth-context';
@@ -44,7 +44,7 @@ export function AnalyticsConfigPage() {
     ...patch,
   }));
   const saveSchedule = async () => { setScheduleBusy(true); setScheduleMsg(null); try { await setIntegrationSchedule(schedule?.enabled ?? false, schedule?.frequency ?? 'off', schedule?.hubspotEnabled ?? false, schedule?.hubspotFrequency ?? 'off'); loadSchedule(); setScheduleMsg('Agendamento salvo.'); } catch (error) { setScheduleMsg(error instanceof Error ? error.message : 'Falha ao salvar o agendamento.'); } finally { setScheduleBusy(false); } };
-  const runNow = async () => { setScheduleBusy(true); setRunningNow(true); setScheduleMsg(null); try { const r = await runIntegrationNow(); setScheduleMsg(`${r.status === 'partial' ? 'Atenção: ' : ''}Sincronização concluída: ${r.omieTitles.toLocaleString('pt-BR')} títulos do OMIE e ${r.updated.toLocaleString('pt-BR')}/${r.companies.toLocaleString('pt-BR')} empresas atualizadas no HubSpot.${r.message ? ` ${r.message}` : ''}`); loadSchedule(); } catch (error) { setScheduleMsg(error instanceof Error ? error.message : 'Falha ao sincronizar agora.'); } finally { setRunningNow(false); setScheduleBusy(false); } };
+  const runNow = async () => { setScheduleBusy(true); setRunningNow(true); setScheduleMsg(null); try { const r = await triggerSequentialAnalyticsSync(); setScheduleMsg(`${r.status === 'partial' ? 'Atenção: ' : ''}Sequência HubSpot → OMIE concluída. ${r.updated.toLocaleString('pt-BR')} registros HubSpot promovidos.${r.message ? ` ${r.message}` : ''}`); loadSchedule(); } catch (error) { setScheduleMsg(error instanceof Error ? error.message : 'Falha ao executar a sequência HubSpot → OMIE.'); } finally { setRunningNow(false); setScheduleBusy(false); } };
   const runHubspotNow = async () => { setScheduleBusy(true); setHubspotRunningNow(true); setScheduleMsg(null); try { const result = await triggerHubspotSync(undefined, { phased: false }); setScheduleMsg(`Sincronização HubSpot iniciada: o orquestrador consultará as fontes configuradas e atualizará o Dashboard ao concluir. Execução: ${result.runId ?? 'indisponível'}.`); loadSchedule(); } catch (error) { setScheduleMsg(error instanceof Error ? error.message : 'Falha ao iniciar a sincronização do HubSpot.'); } finally { setHubspotRunningNow(false); setScheduleBusy(false); } };
   const runCsSupport = async () => {
     if (!canManageIntegration || csControlBusy) return;

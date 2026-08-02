@@ -345,6 +345,29 @@ export async function runIntegrationNow(): Promise<{ status: 'success' | 'partia
   return { status: payload?.status === 'partial' ? 'partial' : 'success', updated: Number(payload?.updated ?? 0), companies: Number(payload?.companies ?? 0), omieTitles: Number(payload?.omieTitles ?? 0), message: payload?.message };
 }
 
+export async function triggerSequentialAnalyticsSync(): Promise<{ status: 'success' | 'partial'; updated: number; companies: number; omieTitles: number; message?: string }> {
+  const config = readRuntimeConfig();
+  if (!config.ok) throw new Error('As funcoes seguras do Supabase nao estao disponiveis neste ambiente.');
+  const client = requireSupabaseBrowserClient();
+  const { data: { session }, error: sessionError } = await client.auth.getSession();
+  if (sessionError || !session?.access_token) throw new Error('Sessao ativa indisponivel para sincronizar.');
+  const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/analytics-sequential-sync`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${session.access_token}`, apikey: config.config.supabaseAnonKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  const payload = await response.json().catch(() => null) as { error?: string; status?: 'success' | 'blocked'; hubspot?: { runId?: string; recordsPromoted?: number }; omie?: { totalRows?: number }; message?: string } | null;
+  if (!response.ok && response.status !== 202) throw new Error(formatAnalyticsSyncError({ operation: 'HubSpot -> OMIE', status: response.status, payload }));
+  const blocked = payload?.status === 'blocked';
+  return {
+    status: blocked ? 'partial' : 'success',
+    updated: Number(payload?.hubspot?.recordsPromoted ?? 0),
+    companies: 0,
+    omieTitles: blocked ? 0 : Number(payload?.omie?.totalRows ?? 0),
+    message: blocked ? `HubSpot ainda em processamento; OMIE nao iniciado. Execucao: ${payload?.hubspot?.runId ?? 'indisponivel'}.` : payload?.message,
+  };
+}
+
 export async function getCeoSnapshot(filters: AnalyticsFilters): Promise<CeoSnapshot> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client.rpc('rpc_analytics_ceo_snapshot', { ...rpcFilters(filters) });

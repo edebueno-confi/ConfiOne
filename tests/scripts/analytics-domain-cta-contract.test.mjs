@@ -22,7 +22,7 @@ test('acoes de sincronizacao ficam centralizadas em Configuracoes', () => {
 
   assert.match(shell, /Gerenciar integrações/);
   assert.doesNotMatch(shell, /Sincronizar (?:HubSpot|OMIE|CS)/);
-  assert.match(config, /runIntegrationNow/);
+  assert.match(config, /triggerSequentialAnalyticsSync/);
   assert.match(config, /triggerHubspotSync/);
   assert.match(config, /triggerCsSupportSync/);
 });
