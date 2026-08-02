@@ -20,15 +20,49 @@ Deno.serve(async (req) => {
   try {
     const token = await resolveHubSpotToken(client);
     credentialConfigured = true;
-    const pipelines = await fetchPipelineDefinitions('deals', token);
+    const [dealPipelines, ticketPipelines] = await Promise.all([
+      fetchPipelineDefinitions('deals', token),
+      fetchPipelineDefinitions('tickets', token),
+    ]);
+    const pipelines = [...dealPipelines, ...ticketPipelines];
+    const nonArchived = pipelines.filter((pipeline) => !pipeline.archived);
+    const archived = pipelines.filter((pipeline) => pipeline.archived);
+    const { data: localCatalog, error: catalogError } = await client
+      .from('analytics_source_config')
+      .select('object_type,hubspot_pipeline_id')
+      .eq('is_archived', false);
+    if (catalogError) throw new Error(`Falha ao ler cobertura local do catálogo: ${catalogError.message}`);
+    const liveKeys = new Set([
+      ...dealPipelines.filter((pipeline) => !pipeline.archived).map((pipeline) => `deal:${pipeline.pipelineId}`),
+      ...ticketPipelines.filter((pipeline) => !pipeline.archived).map((pipeline) => `ticket:${pipeline.pipelineId}`),
+    ]);
+    const localKeys = new Set((localCatalog ?? []).map((row) => `${row.object_type}:${row.hubspot_pipeline_id}`));
+    const missingFromCatalog = [...liveKeys].filter((key) => !localKeys.has(key)).length;
+    const localOnly = [...localKeys].filter((key) => !liveKeys.has(key)).length;
     return jsonResponse({
       status: 'ready',
       provider: 'hubspot',
       correlationId,
       credentialConfigured: true,
       endpointReachable: true,
-      responseValid: Array.isArray(pipelines),
+      responseValid: Array.isArray(dealPipelines) && Array.isArray(ticketPipelines),
       pipelinesCount: pipelines.length,
+      pipelineCounts: {
+        deals: dealPipelines.length,
+        tickets: ticketPipelines.length,
+      },
+      nonArchivedPipelineCounts: {
+        total: nonArchived.length,
+        deals: dealPipelines.filter((pipeline) => !pipeline.archived).length,
+        tickets: ticketPipelines.filter((pipeline) => !pipeline.archived).length,
+      },
+      archivedPipelineCount: archived.length,
+      catalogCoverage: {
+        liveNonArchived: liveKeys.size,
+        localNonArchived: localKeys.size,
+        missingFromLocalCatalog: missingFromCatalog,
+        localOnlyNonArchived: localOnly,
+      },
       writesExternalData: false,
     });
   } catch (error) {

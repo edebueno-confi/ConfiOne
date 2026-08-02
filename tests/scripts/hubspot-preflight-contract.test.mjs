@@ -8,8 +8,13 @@ test('preflight HubSpot é protegido, read-only e sanitizado', () => {
   assert.match(preflight, /authorizeCsRunner/);
   assert.match(preflight, /resolveHubSpotToken/);
   assert.match(preflight, /fetchPipelineDefinitions\('deals', token\)/);
+  assert.match(preflight, /fetchPipelineDefinitions\('tickets', token\)/);
+  assert.match(preflight, /pipelineCounts/);
+  assert.match(preflight, /catalogCoverage/);
+  assert.match(preflight, /analytics_source_config/);
   assert.match(preflight, /writesExternalData: false/);
   assert.match(preflight, /classifyHubSpotError/);
   assert.doesNotMatch(preflight, /rpc_analytics_hubspot_start_run|analytics_sync_cycles/);
   assert.doesNotMatch(preflight, /console\.log|token\s*[,}]/);
+  assert.doesNotMatch(preflight, /\.(insert|update|upsert|delete)\(/);
 });
