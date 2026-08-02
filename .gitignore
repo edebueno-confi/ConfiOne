@@ -41,6 +41,12 @@ playwright-report/
 output/
 .superdesign/
 .agents/
+!.agents/
+.agents/*
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/genius-code-quality/
+!.agents/skills/genius-code-quality/**
 
 # Local tooling
 .tmp/
