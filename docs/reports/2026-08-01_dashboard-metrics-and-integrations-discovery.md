@@ -18,11 +18,11 @@ Foram aplicadas correções pequenas e auditáveis no Dashboard:
 
 O discovery confirma que Backend, views/read models, RPCs e caches existentes são a fonte da verdade. Não foram criados indicadores, contratos, migrations, sincronizações, hidratações ou ações externas neste lote.
 
-## 2. Estado inicial
+## 2. Estado inicial do macro-lote
 
-- O checkout original `C:\Projetos\GSO-old` permaneceu congelado e não foi usado para executar alterações neste lote. O preview já existente nessa pasta, em `127.0.0.1:4173`, não foi usado como evidência do checkout consolidado.
+- O checkout original `C:\Projetos\GSO-old` estava congelado no início do macro-lote. O preview então existente nessa pasta, em `127.0.0.1:4173`, não foi usado como evidência do checkout consolidado.
 - O checkout trabalhado estava limpo em `fd687b0` (`docs(validation): registrar macro-lote 0.2`) e com `origin/main...HEAD = 0 11`: onze commits locais da consolidação acima de `origin/main`.
-- Não houve push, merge, rebase, cherry-pick, reset, limpeza ampla, operação de banco remoto, uso de credenciais ou sincronização real.
+- Naquele momento não houve push, merge, rebase, cherry-pick, reset, limpeza ampla, operação de banco remoto ou sincronização real.
 - O código anterior ainda tratava `spreadsheet` como fallback possível no modelo financeiro; essa possibilidade já existe nos RPCs/migrations legados e foi bloqueada somente na superfície do Dashboard neste lote.
 
 ## 3. Correções aplicadas
@@ -115,14 +115,14 @@ As associações de relacionamento não são inferidas por nome ou repetição d
 
 ## 8. Screenshots e evidências
 
-O preview foi executado a partir de `C:\Projetos\GSO-consolidation-01\apps\web` em `127.0.0.1:4174`, após o build consolidado. As quatro capturas são reais, mas representam o estado de bloqueio de configuração antes da autenticação:
+O preview foi executado a partir de `C:\Projetos\GSO-consolidation-01\apps\web` em `127.0.0.1:4174`, após o build consolidado. As quatro capturas são reais, mas representam o estado de bloqueio de configuração antes da recuperação da configuração local:
 
 - `output/playwright/dashboard-finance-unauthenticated.png` — SHA-256 `69FDA189285295354056566A4217CEE68BCB73E20C55C68D5551B440AC293E1C`
 - `output/playwright/dashboard-support-unauthenticated.png` — SHA-256 `5B6493A30BD4F13538D5EFA40BC7903AD8A430E7FE43B23D9DF1DC57ADCD7F7A`
 - `output/playwright/dashboard-cs-unauthenticated.png` — SHA-256 `519209F26974A28BD5F5D6E24ACE686E621F0015E60CD700B15175727FC236FD`
 - `output/playwright/dashboard-commercial-unauthenticated.png` — SHA-256 `D2D05D8944A67C4F6BBF6D5072CED62BEC2F0A22C6109B46F2687CE1A9A4B262`
 
-O bloqueio observado foi `Configuração de acesso indisponível — Variaveis ausentes: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY`. Por isso, as superfícies autenticadas não foram declaradas visualmente validadas. Não houve cópia de `.env`, cookies, JWTs ou credenciais do checkout original.
+O bloqueio observado foi `Configuração de acesso indisponível — Variaveis ausentes: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY`. Depois, a configuração ignorada de `GSO-old/apps/web/.env.local` foi copiada localmente para o checkout principal sem exibir valores e sem entrar no Git. O `4174` passou a chegar à tela de login; o preview foi encerrado para manter o `4173` como ambiente principal.
 
 ## 9. Backlog recomendado por fases
 
@@ -152,26 +152,25 @@ Somente após contratos e proveniência: priorizar métricas que tenham decisão
 
 ## 10. Git final
 
-Estado no fechamento da validação, antes do commit deste relatório:
+Estado no fechamento da integração:
 
 ```text
-## codex/consolidation-origin-main-20260801...origin/main [ahead 11]
-M apps/web/src/features/analytics/AnalyticsCsPage.tsx
-M apps/web/src/features/analytics/AnalyticsFilters.tsx
-M apps/web/src/features/analytics/AnalyticsFinancePage.tsx
-M apps/web/src/features/analytics/AnalyticsPipelineCombobox.tsx
-M apps/web/src/features/analytics/analytics-domains.ts
+## claude/release-surface-visual-audit-20260731
+HEAD 85c380c merge: integrar origin/main no checkout principal
+origin/main...HEAD = 0 13
+origin/main é ancestral de HEAD
+4173: C:\Projetos\GSO-old\node_modules\.bin\..\vite\bin\vite.js
 ```
 
 O diretório `output/playwright/` é ignorado pelo repositório conforme `.gitignore`; os caminhos e hashes acima preservam a rastreabilidade local das evidências sem adicionar artefatos de execução ao histórico.
 
 ## 11. Limitations
 
-- A validação funcional autenticada não foi possível por ausência de variáveis de acesso no checkout consolidado.
+- A validação funcional autenticada ainda não foi executada com uma conta QA; a configuração Supabase local já está presente no checkout principal, mas seus valores não são persistidos no Git nem expostos no relatório.
 - Não foram executadas consultas reais ao Supabase, RPCs remotos, OMIE ou HubSpot.
 - A correção de Financeiro é uma guarda de publicação na UI; o contrato legado server-side ainda pode produzir `spreadsheet` e requer a Fase 2 para eliminação estrutural da ambiguidade.
 - A descoberta de “chat” está limitada ao `source_type` sincronizado; não comprova inbox/conversação.
-- Nenhum dado ausente foi simulado e nenhuma credencial foi obtida ou exposta.
+- Nenhum dado ausente foi simulado; a configuração local foi reutilizada somente para inicializar o ambiente e nenhum valor de credencial foi exposto.
 
 ## 12. Reconciliação Git e destino canônico
 
