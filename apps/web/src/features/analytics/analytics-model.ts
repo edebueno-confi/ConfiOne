@@ -457,13 +457,32 @@ export interface ReconciliationQualityResult {
 
 export interface AnalyticsSourceConfig {
   id: string;
-  domainKey: 'commercial' | 'cs';
+  domainKey: 'commercial' | 'cs' | 'unclassified';
   objectType: 'deal' | 'ticket';
   pipelineId: string;
   hubspotLabel: string | null;
   alias: string | null;
   label: string;
   isActive: boolean;
+  areaKey: 'commercial' | 'customer_success' | 'support' | 'chat' | 'a_classificar';
+  classificationSource: 'legacy' | 'admin' | 'pending';
+  isArchived: boolean;
+  discoveryStatus: 'pending' | 'active' | 'archived';
+  lastDiscoveredAt: string | null;
+}
+
+export interface AnalyticsSyncHistoryRow {
+  runId: string;
+  sourceKey: 'hubspot' | 'omie';
+  sourceLabel: 'HubSpot' | 'OMIE';
+  status: string;
+  startedAt: string;
+  finishedAt: string | null;
+  durationMs: number;
+  processedCount: number;
+  errorMessage: string | null;
+  correlationId: string | null;
+  triggerKind: 'manual' | 'automatic';
 }
 
 export interface AnalyticsSharedPeriod {
@@ -701,8 +720,43 @@ export function mapReconciliationQuality(value: unknown): ReconciliationQualityR
 export function mapAnalyticsSourceConfig(row: Record<string, unknown>): AnalyticsSourceConfig {
   const pipelineId = toText(row.hubspot_pipeline_id);
   const hubspotLabel = row.hubspot_pipeline_label ? toText(row.hubspot_pipeline_label) : null;
-  const alias = row.label ? toText(row.label) : null;
-  return { id: toText(row.id), domainKey: toText(row.domain_key) as AnalyticsSourceConfig['domainKey'], objectType: toText(row.object_type) as AnalyticsSourceConfig['objectType'], pipelineId, hubspotLabel, alias, label: alias || hubspotLabel || pipelineId, isActive: Boolean(row.is_active) };
+  const label = row.label ? toText(row.label) : null;
+  const alias = row.has_alias === true
+    ? (row.alias ? toText(row.alias) : label)
+    : (label && hubspotLabel && label !== hubspotLabel ? label : null);
+  const areaKey = toText(row.area_key) as AnalyticsSourceConfig['areaKey'];
+  const discoveryStatus = toText(row.discovery_status) as AnalyticsSourceConfig['discoveryStatus'];
+  return {
+    id: toText(row.id),
+    domainKey: toText(row.domain_key) as AnalyticsSourceConfig['domainKey'],
+    objectType: toText(row.object_type) as AnalyticsSourceConfig['objectType'],
+    pipelineId,
+    hubspotLabel,
+    alias,
+    label: label || hubspotLabel || pipelineId,
+    isActive: Boolean(row.is_active),
+    areaKey: ['commercial', 'customer_success', 'support', 'chat', 'a_classificar'].includes(areaKey) ? areaKey : 'a_classificar',
+    classificationSource: (['legacy', 'admin', 'pending'].includes(toText(row.classification_source)) ? toText(row.classification_source) : 'pending') as AnalyticsSourceConfig['classificationSource'],
+    isArchived: Boolean(row.is_archived),
+    discoveryStatus: ['pending', 'active', 'archived'].includes(discoveryStatus) ? discoveryStatus : 'pending',
+    lastDiscoveredAt: row.last_discovered_at ? toText(row.last_discovered_at) : null,
+  };
+}
+
+export function mapAnalyticsSyncHistory(row: Record<string, unknown>): AnalyticsSyncHistoryRow {
+  return {
+    runId: toText(row.run_id),
+    sourceKey: toText(row.source_key) === 'omie' ? 'omie' : 'hubspot',
+    sourceLabel: toText(row.source_label) === 'OMIE' ? 'OMIE' : 'HubSpot',
+    status: toText(row.status) || 'unknown',
+    startedAt: toText(row.started_at),
+    finishedAt: row.finished_at ? toText(row.finished_at) : null,
+    durationMs: toNumber(row.duration_ms),
+    processedCount: toNumber(row.processed_count),
+    errorMessage: row.error_message ? toText(row.error_message) : null,
+    correlationId: row.correlation_id ? toText(row.correlation_id) : null,
+    triggerKind: toText(row.trigger_kind) === 'manual' ? 'manual' : 'automatic',
+  };
 }
 
 export function mapAmbiguousOverdueTitles(value: unknown): AmbiguousOverdueTitle[] {

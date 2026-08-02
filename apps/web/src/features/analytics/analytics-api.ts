@@ -41,49 +41,11 @@ import {
   mapAnalyticsSourceConfig,
   type ReconciliationQualityResult,
   type AnalyticsSourceConfig,
+  mapAnalyticsSyncHistory,
+  type AnalyticsSyncHistoryRow,
   mapAnalyticsSourceStatus,
 } from './analytics-model';
 import type { AnalyticsSourceStatusPayload } from '@genius-support-os/contracts';
-
-export interface HubspotCsDiagnosticPipeline {
-  label: string;
-  activeRecords: number;
-  archivedRecords: number | null;
-  configuredForSync: boolean;
-  stages: Array<{ label: string; closed: boolean }>;
-}
-
-export interface HubspotCsDiagnostic {
-  object: 'tickets';
-  endpoint: string;
-  filters: string[];
-  pages: number;
-  paginationComplete: boolean;
-  total: number;
-  sourceState: 'available' | 'empty_authoritative' | 'empty_unverified' | 'forbidden' | 'misconfigured' | 'partial' | 'failed';
-  scopesPresent: string[];
-  scopesAbsent: string[];
-  pipelines: HubspotCsDiagnosticPipeline[];
-}
-
-export async function runHubspotCsDiagnostic(): Promise<HubspotCsDiagnostic> {
-  const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.functions.invoke('hubspot-cs-diagnostic', { body: {} });
-  if (error) throw new Error(error.message || 'Falha ao executar o diagnóstico de CS / Suporte.');
-  const payload = (data ?? {}) as Partial<HubspotCsDiagnostic>;
-  return {
-    object: 'tickets',
-    endpoint: payload.endpoint ?? 'HubSpot',
-    filters: Array.isArray(payload.filters) ? payload.filters : [],
-    pages: Number(payload.pages ?? 0),
-    paginationComplete: Boolean(payload.paginationComplete),
-    total: Number(payload.total ?? 0),
-    sourceState: payload.sourceState ?? 'failed',
-    scopesPresent: Array.isArray(payload.scopesPresent) ? payload.scopesPresent : [],
-    scopesAbsent: Array.isArray(payload.scopesAbsent) ? payload.scopesAbsent : [],
-    pipelines: Array.isArray(payload.pipelines) ? payload.pipelines : [],
-  };
-}
 import { aggregateLatestHubspotSyncRuns } from './analytics-sync-runs.mjs';
 import { formatAnalyticsSyncError } from './analytics-sync-errors.mjs';
 import { sanitizeCsSyncResult } from './analytics-cs-control.mjs';
@@ -437,9 +399,32 @@ export async function getReconciliationQuality(input: { from?: string; to?: stri
 
 export async function listAnalyticsSourceConfig(): Promise<AnalyticsSourceConfig[]> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.from('vw_analytics_dashboard_pipeline_catalog').select('*').order('domain_key').order('label');
+  const { data, error } = await client.from('vw_admin_analytics_pipeline_catalog_v2').select('*').order('object_type').order('label');
   if (error) throw toAppError(error, 'Falha ao carregar as fontes configuradas do Dashboard.');
   return (data ?? []).map((row) => mapAnalyticsSourceConfig(row as Row));
+}
+
+export async function updateAnalyticsPipelineConfig(input: { id: string; areaKey: AnalyticsSourceConfig['areaKey']; alias: string; isActive: boolean }): Promise<AnalyticsSourceConfig> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_admin_update_analytics_pipeline_config', {
+    p_id: input.id,
+    p_area_key: input.areaKey,
+    p_alias: input.alias.trim() || null,
+    p_is_active: input.isActive,
+  });
+  if (error) throw toAppError(error, 'Falha ao salvar a configuração do pipeline.');
+  return mapAnalyticsSourceConfig((data as Row) ?? {});
+}
+
+export async function listAnalyticsSyncHistory(): Promise<AnalyticsSyncHistoryRow[]> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client
+    .from('vw_admin_analytics_sync_history_v1')
+    .select('*')
+    .order('started_at', { ascending: false })
+    .limit(100);
+  if (error) throw toAppError(error, 'Falha ao carregar o histórico de sincronizações.');
+  return (data ?? []).map((row) => mapAnalyticsSyncHistory(row as Row));
 }
 
 export async function upsertAnalyticsSourceConfig(input: { id?: string; domainKey: 'commercial' | 'cs'; objectType: 'deal' | 'ticket'; pipelineId: string; label: string; isActive: boolean }): Promise<AnalyticsSourceConfig> {
