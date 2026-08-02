@@ -50,7 +50,7 @@ async function activeHubspotRun(client: ReturnType<typeof createServiceClient>, 
     .eq('domain_key', 'all')
     .eq('correlation_id', correlationId)
     .in('status', ['queued', 'running', 'partial'])
-    .order('created_at', { ascending: false })
+    .order('started_at', { ascending: false })
     .limit(1)
     .maybeSingle();
   if (error) throw error;

@@ -23,6 +23,8 @@ test('orquestrador executa HubSpot antes de OMIE', () => {
   assert.match(edge, /analytics_sync_cycle_steps/);
   assert.match(edge, /'x-analytics-cycle-id'/);
   assert.match(edge, /run_id: omiePayload\.syncRunId/);
+  assert.match(edge, /\.order\('started_at', \{ ascending: false \}\)/);
+  assert.doesNotMatch(edge, /\.order\('created_at', \{ ascending: false \}\)/);
 });
 
 test('processamento pendente bloqueia OMIE, mas falha terminal preserva o ciclo parcial', () => {
