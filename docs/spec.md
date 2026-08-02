@@ -29,17 +29,17 @@ produto, não um dashboard paralelo no Looker.
 - Backend: Supabase/Postgres, Edge Functions e PostgREST.
 - Auth: Supabase Auth; áreas administrativas exigem `platform_admin`.
 - Fonte da verdade do produto: tabelas, views/read models, RPCs, RLS e auditoria.
-- Fonte operacional única do CS após o corte: HubSpot. A planilha atual do CS
-  será staging temporário de migração, reconciliação e auditoria; não haverá
-  operação concorrente permanente entre planilha e HubSpot.
+- Fonte operacional única do CS: HubSpot. A planilha histórica do CS pode ser
+  usada somente para migração, reconciliação, auditoria e QA versionados; não
+  existe operação concorrente permanente nem fallback de planilha.
 - Integração HubSpot existente: Edge Function `hubspot-sync`, tabelas locais
   `hubspot_*`, views `vw_analytics_*` e configuração de pipes em
   `analytics_source_config`.
-- Fontes financeiras e operacionais adicionais: planilhas CSV/XLSX importadas
-  manualmente; OMIE possui adapter read-only API-first e fallback de planilha.
-  A evidência local registra credencial gerenciada e sincronização confirmada;
-  publicação remota, scheduler e reconciliação no ambiente-alvo continuam
-  gates separados.
+- Fonte financeira publicada: OMIE por API-only, com read model de contas a
+  receber, títulos, recebimentos, aging e reconciliação. CSV/XLSX e exportações
+  antigas são apenas histórico, migração, auditoria e QA; não são fallback ou
+  contingência. Publicação remota, scheduler remoto e sync real continuam gates
+  separados.
 
 ## Multi-tenancy e autorização
 
@@ -59,12 +59,14 @@ Cada integração deve possuir configuração persistida e governada com:
   “configurado” sem retornar o valor;
 - atualização por RPC administrativa, auditoria e validação explícita;
 - última execução, status, frescor, contadores e erro sanitizado;
-- modo manual para planilha enquanto o conector direto não estiver habilitado.
+- ações manuais API-only (`Sincronizar HubSpot`, `Sincronizar OMIE` e ciclo
+  completo) em Configurações; não existe ação de sincronização por planilha.
 
 ## Dashboard gerencial
 
-O dashboard deve cobrir, progressivamente, Comercial, CS, Suporte, Produto,
-Financeiro e outras áreas aprovadas. Cada métrica precisa declarar fonte,
+O dashboard ativo deste lote cobre Resumo Gerencial, Comercial, Customer
+Success, Suporte & Chat e Financeiro. Produto e Desenvolvimento permanecem no
+código, fora da navegação ativa. Cada métrica precisa declarar fonte,
 grão, período, timezone, fórmula, cobertura, frescor e qualidade. O frontend
 renderiza contratos backend; não escolhe pipe atual, soma dados brutos nem
 transforma status financeiro em inadimplência por heurística local.
@@ -74,12 +76,8 @@ transforma status financeiro em inadimplência por heurística local.
 - HubSpot: Deals e Tickets; a auditoria de 2026-07-18 encontrou 2.015 Deals,
   incluindo 866 em `Pipe de Vendas` e 1.148 em `Piloto Aftersale`, além de 22
   pipes de Tickets.
-- CS: planilha consolidada com abas `Dashboard_CS`, `BD_Clientes`, `Clusters`,
-  `Contato_Inicial_CS` e `Dash_Data`.
-- Comercial: planilha com abas diárias variáveis; o parser existente não assume
-  nome fixo ou posição fixa de colunas.
-- Omie: exportação de Contas a Receber recebida em XLSX; API oficial disponível,
-  mas sem credenciais no momento.
+- CS, Comercial e OMIE: planilhas/exportações históricas foram inventariadas
+  como evidência de migração e QA; não são consumidores ativos do Dashboard.
 - Produto: GitHub é a fonte declarada pela área; acesso e repositório ainda
   precisam ser ligados a um contrato próprio.
 

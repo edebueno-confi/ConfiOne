@@ -2,23 +2,18 @@
 
 Atualização pós-lote (prevalece sobre o bloco histórico abaixo):
 
-- HEAD após o lote de código: `13ac83e`; a branch continua sem upstream e preserva o histórico local.
-- Migrations forward-only do Dashboard foram aplicadas no banco local persistente; nenhum reset foi executado.
-- Integrações na superfície ativa: somente HubSpot e OMIE; histórico separado e sem planilha como fallback.
-- Build, quality, typechecks e pgTAP focado 37/37 passaram; pgTAP completo é parcial por colisão de fixtures fixas no banco persistente.
-- QA autenticado sem erros de console em Visão Geral, Customer Success, Financeiro, Integrações e Histórico; capturas em `docs/reports/visual-audit/screenshots/`.
-- Limitações: servidor isolado `4180` sem sessão autenticada; sync real depende de credenciais autorizadas e não foi executado.
-
 - Checkout operacional único: `C:\Projetos\GSO-old`.
-- Branch: `codex/dashboard-management-rebuild-20260802`, HEAD `6fe26a9`; sem upstream configurado.
-- Divergência atual: `git rev-list --left-right --count origin/main...HEAD` retorna `0 52`; o HEAD inicial `b121b446` está preservado em `refs/archive/dashboard-rebuild-start-20260802`.
+- Branch: `codex/dashboard-management-rebuild-20260802`, HEAD `890571f`; sem upstream configurado.
+- Divergência atual: `git rev-list --left-right --count origin/main...HEAD` retorna `0 56`; o ponto de entrada `b121b446` está preservado em `refs/archive/dashboard-rebuild-start-20260802`.
 - Worktrees ativos: 1; stash preservado; nenhum reset, clean, rebase, merge, cherry-pick ou push foi executado neste ciclo.
+- Migrations forward-only do Dashboard foram aplicadas no banco local persistente; nenhum reset foi executado. O cron legado local do HubSpot foi desativado pela migration de governança do ciclo.
 - Dashboard ativo: `ceo`, `commercial`, `customer_success`, `support` e `finance`. Produto e Desenvolvimento permanecem no código, fora da navegação ativa.
-- Fonte operacional: views/read models/RPCs reais; planilhas permanecem apenas como histórico e não são fallback do Dashboard.
-- Implementado no ciclo: contrato/catalogo API-only, remoção da superfície de planilhas, executor sequencial HubSpot -> OMIE, Chat indisponível sem contrato confirmado, shell com rolagem confinada, pulso Visão Geral limitado a HubSpot/OMIE e configuração segura das integrações.
-- Validação: build web, typecheck web/contratos e 24 testes focados passaram; QA visual autenticado capturou Visão Geral e Integrações, sem erros de console. A página Customer Success permanece bloqueada até aplicação da migration forward-only do novo RPC.
-- Pendências prioritárias: aplicar/validar migrations forward-only no banco persistente autorizado sem reset, capturar matrizes light/dark e responsivas, validar sync real e revisar a mensagem de estado parcial do scheduler.
-- Relatório detalhado: `docs/reports/2026-08-02_dashboard-api-only-audit.md`.
+- Integrações publicadas: somente HubSpot e OMIE. HubSpot cobre empresas, Comercial, CS/Suporte e tickets confirmados; OMIE cobre o Financeiro. Planilhas permanecem apenas como histórico, migração, auditoria e QA, sem fallback operacional.
+- Implementado no ciclo: contrato/catalogo API-only, remoção da superfície ativa de planilhas, executor sequencial HubSpot -> OMIE, Chat indisponível sem contrato confirmado, shell com rolagem confinada, pulso limitado a HubSpot/OMIE e configuração segura das integrações.
+- Validação técnica: web typecheck, build, quality de módulo/alterados, auditoria documental e 30 testes Node focados passaram; pgTAP focado passou 37/37. A suíte pgTAP completa permanece parcial por colisão de fixtures UUID fixas no banco persistente sem reset.
+- QA visual autenticado: matriz de 48 capturas (cinco áreas e Integrações, light/dark, quatro viewports), 48/48 sem overflow horizontal, sem erro de console/página e com tema correspondente. Houve 24 falhas de requisição de módulo abortadas no servidor dev em `4180` durante os ciclos de 768px; por isso a rede fica parcialmente validada.
+- O servidor auxiliar `4180` foi encerrado após a captura; o servidor anterior `4173` não foi alterado. Sincronização real, diagnóstico externo e scheduler remoto não foram executados por dependerem de credenciais/autorização e writes externos.
+- Evidências: `docs/reports/visual-audit/dashboard-matrix-2026-08-02.md`, `docs/reports/visual-audit/screenshots/dashboard-matrix-2026-08-02.json` e `docs/reports/2026-08-02_dashboard-delta-final.md`.
 
 As seções abaixo são histórico de execução. Em caso de conflito, este bloco e os documentos canônicos de arquitetura/contratos prevalecem.
 

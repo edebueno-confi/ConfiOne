@@ -1,5 +1,23 @@
 # Estado corrente — 2026-08-01, reconciliado pelo Codex
 
+## Atualização corrente do Dashboard Gerencial API-only — 2026-08-02
+
+- A verdade corrente está em `C:\Projetos\GSO-old`, branch
+  `codex/dashboard-management-rebuild-20260802`, HEAD `890571f`, sem upstream,
+  `origin/main...HEAD = 0 56`.
+- O ponto de entrada `b121b446` foi preservado em
+  `refs/archive/dashboard-rebuild-start-20260802`; o stash existente também
+  permanece intacto.
+- O Dashboard publicado possui cinco áreas: Resumo Gerencial, Comercial,
+  Customer Success, Suporte & Chat e Financeiro. Produto e Desenvolvimento
+  permanecem fora da navegação ativa.
+- HubSpot e OMIE são as únicas integrações publicadas. Planilhas e conectores
+  antigos permanecem somente como histórico, migração, auditoria ou QA; não
+  devem ser reativados como fonte, fallback ou contingência.
+- Migrations locais forward-only foram aplicadas sem reset. Validações objetivas
+  e limitações estão registradas em
+  `docs/reports/2026-08-02_dashboard-delta-final.md` e na matriz visual.
+
 ## Atualização do lote Dashboard Gerencial API-only — 2026-08-02
 
 - Estado: implementado localmente e validado parcialmente; sem push, deploy, sync externo ou reset.

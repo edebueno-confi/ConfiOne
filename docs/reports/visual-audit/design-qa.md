@@ -39,7 +39,7 @@
 2. Inserida configuração segura HubSpot/OMIE e substituída a cadência dupla por ciclo completo + ações manuais por fonte.
 3. Capturadas as superfícies autenticadas e revisado o estado de erro do Customer Success.
 
-final result: blocked
+historical result: blocked
 
 ## Atualização da matriz autenticada — 2026-08-02
 

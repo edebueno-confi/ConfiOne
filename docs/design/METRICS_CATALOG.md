@@ -1,5 +1,11 @@
 # Catálogo de Métricas do Dashboard Gerencial — contrato para os conectores
 
+> **Nota de vigência:** este catálogo contém o desenho histórico do rollout e
+> referências de fallback de planilha. O contrato publicado em 2026-08-02 é
+> API-only: HubSpot para Comercial/CS/Suporte e OMIE para Financeiro. Planilhas
+> permanecem apenas como histórico, migração, auditoria e QA. Use o catálogo
+> Delta corrente em `docs/reports/2026-08-02_dashboard-delta-final.md`.
+
 Autor: Claude / Anthropic. Data: 2026-07-29.
 Público-alvo: Codex/OpenAI, responsável por implementar os conectores read-only via API (HubSpot e OMIE) e os read-models/RPCs que alimentam o Dashboard Gerencial.
 Objetivo: especificar **todas** as métricas do dashboard (4 abas: Resumo Gerencial, Financeiro/OMIE, Comercial/HubSpot, Suporte & Chat), com definição, fórmula, fonte, objeto/endpoint, campos necessários, janela de agregação e status de disponibilidade — para que o backend produza os números **sem inventar dado**.

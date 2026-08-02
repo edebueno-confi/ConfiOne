@@ -1,5 +1,10 @@
 # Catálogo de métricas do Analytics V1
 
+> **Status histórico:** as planilhas e amostras abaixo documentam a auditoria e
+> a migração anteriores ao corte. Elas não são fonte, fallback, contingência ou
+> consumidor ativo do Dashboard publicado em 2026-08-02. O contrato corrente
+> está em `docs/reports/2026-08-02_dashboard-delta-final.md`.
+
 Status: Ciclo A0 iniciado em 2026-07-17. Este documento descreve o contrato
 observado antes da inclusão de planilhas; não declara dados disponíveis que
 ainda não foram ingeridos.
