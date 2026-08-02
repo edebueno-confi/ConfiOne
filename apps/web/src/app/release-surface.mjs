@@ -90,7 +90,7 @@ const FIRST_RELEASE_LANDING_ROUTE = '/admin/analytics';
  */
 
 /** Domínios do Dashboard visíveis no release. `logs` e `config` migraram para Configurações. */
-const FIRST_RELEASE_ANALYTICS_DOMAINS = ['ceo', 'commercial', 'cs', 'support', 'finance'];
+const FIRST_RELEASE_ANALYTICS_DOMAINS = ['ceo', 'commercial', 'customer_success', 'support', 'finance'];
 
 /**
  * Seções de Configurações publicadas, cada uma com a capacidade exigida.

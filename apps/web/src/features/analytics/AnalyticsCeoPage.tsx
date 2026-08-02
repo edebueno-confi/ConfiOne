@@ -47,9 +47,7 @@ type DomainScope =
   | "commercial"
   | "customer_success"
   | "support"
-  | "finance"
-  | "product"
-  | "development";
+  | "finance";
 
 export function AnalyticsCeoPage({
   sharedPeriod,
@@ -261,26 +259,6 @@ function buildDomainCards(
       state: data.state,
       tone: "green",
     },
-    {
-      key: "product",
-      title: "Produto",
-      description: "Fonte operacional",
-      value: "Fonte ainda não conectada",
-      details: data.product.reason,
-      href: analyticsHref("product"),
-      state: undefined,
-      tone: "muted",
-    },
-    {
-      key: "development",
-      title: "Desenvolvimento",
-      description: "Fonte operacional",
-      value: "Fonte ainda não conectada",
-      details: data.development.reason,
-      href: analyticsHref("development"),
-      state: undefined,
-      tone: "muted",
-    },
   ];
 }
 
@@ -323,12 +301,10 @@ function ExecutiveHdCanvas({
   isDashboardViewer: boolean;
 }) {
   const periodLabel = formatPeriod(filters);
-  const sourceStates = [
+  const sourceStates: Array<{ label: string; state?: AnalyticsBlockState; note?: string }> = [
     { label: "HubSpot", state: data.commercial ? state : undefined },
     { label: "OMIE", state: data.finance ? state : undefined },
-    { label: "CS", state: data.customerSuccess.state },
-    { label: "Produto", state: undefined, note: "não conectado" },
-    { label: "Desenvolvimento", state: undefined, note: "não conectado" },
+    { label: "Customer Success", state: data.customerSuccess.state },
   ];
   const availableSources = sourceStates.filter((item) => item.state && ['fresh', 'stale', 'partial', 'syncing', 'zero'].includes(item.state.status)).length;
   const sourceCoverage = (sourceState?: AnalyticsBlockState) => {
@@ -433,10 +409,8 @@ function ExecutiveHdCanvas({
               <option value="all">Todos</option>
               <option value="commercial">Comercial</option>
               <option value="customer_success">Customer Success</option>
-              <option value="support">Suporte</option>
+              <option value="support">Suporte & Chat</option>
               <option value="finance">Financeiro</option>
-              <option value="product">Produto</option>
-              <option value="development">Desenvolvimento</option>
             </select>
           </label>
           <Filters value={filters} onApply={applyFilters} stageOptions={[]} />
