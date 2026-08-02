@@ -155,27 +155,6 @@ begin
     and coalesce(last_heartbeat_at, started_at) < timezone('utc', now()) - make_interval(secs => v_timeout);
   get diagnostics v_cycles = row_count;
 
-  update public.analytics_sync_cycle_steps s
-  set status = 'timed_out',
-      finished_at = coalesce(finished_at, timezone('utc', now())),
-      last_heartbeat_at = timezone('utc', now()),
-      sanitized_error = 'A etapa ultrapassou o tempo esperado e foi encerrada.'
-  where s.status in ('queued', 'running')
-    and (
-      exists (
-        select 1 from public.analytics_sync_cycles c
-        where c.id = s.cycle_id and c.status = 'timed_out'
-      )
-      or (s.step_key = 'hubspot' and exists (
-        select 1 from public.hubspot_sync_runs r
-        where r.cycle_id = s.cycle_id and r.status = 'timed_out'
-      ))
-      or (s.step_key = 'omie' and exists (
-        select 1 from public.analytics_finance_sync_runs r
-        where r.cycle_id = s.cycle_id and r.status = 'timed_out'
-      ))
-    );
-
   return jsonb_build_object('hubspot', v_hubspot, 'omie', v_omie, 'cycles', v_cycles, 'timeout_seconds', v_timeout);
 end;
 $$;
