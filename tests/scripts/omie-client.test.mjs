@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildOmieReceivablesRequest, parseOmieCredentials, extractOmieReceivablesPage, fetchOmieReceivables, fetchOmieReceivablesWithMetadata, normalizeOmieApiReceivables, buildOmieClientsRequest, extractOmieClientsPage, fetchOmieClientsIndex, enrichReceivablesWithClients, deriveOmieSourceRecordId } from '../../supabase/functions/_shared/omie.ts';
+import { buildOmieReceivablesRequest, parseOmieCredentials, extractOmieReceivablesPage, fetchOmieReceivables, fetchOmieReceivablesWithMetadata, normalizeOmieApiReceivables, buildOmieClientsRequest, extractOmieClientsPage, fetchOmieClientsIndex, enrichReceivablesWithClients, deriveOmieSourceRecordId, classifyOmieError, OmieProviderError } from '../../supabase/functions/_shared/omie.ts';
 import { stageOmieRowsInBatches, OMIE_STAGING_BATCH_SIZE } from '../../supabase/functions/_shared/omie-sync-service.ts';
 
 test('monta requisição paginada da API Omie sem expor segredo', () => {
@@ -15,6 +15,16 @@ test('aceita credencial Omie em JSON ou formato app_key|app_secret', () => {
   assert.deepEqual(parseOmieCredentials('{"app_key":"a","app_secret":"b"}'), { appKey: 'a', appSecret: 'b' });
   assert.deepEqual(parseOmieCredentials('a|b'), { appKey: 'a', appSecret: 'b' });
   assert.throws(() => parseOmieCredentials('incompleta'), /credencial/i);
+});
+
+test('classifica erro OMIE sem devolver detalhe sensível à camada de apresentação', () => {
+  const error = classifyOmieError(new Error('Omie Contas a Receber falhou (500): SOAP-ENV:Server SOAP-ERROR: Unexpected response from server.'));
+  assert.ok(error instanceof OmieProviderError);
+  assert.equal(error.code, 'provider_transient_error');
+  assert.equal(error.retryable, true);
+  assert.match(error.sanitizedMessage, /não concluiu/i);
+  assert.doesNotMatch(error.sanitizedMessage, /SOAP|endpoint|secret/i);
+  assert.match(error.internalMessage, /500/);
 });
 
 test('extrai página e metadados de contas a receber', () => {

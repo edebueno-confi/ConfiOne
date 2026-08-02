@@ -1,5 +1,5 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
-import { enrichReceivablesWithClients, fetchOmieClientsIndex, fetchOmieReceivablesWithMetadata, normalizeOmieApiReceivables, type OmieCredentials } from './omie.ts';
+import { classifyOmieError, enrichReceivablesWithClients, fetchOmieClientsIndex, fetchOmieReceivablesWithMetadata, normalizeOmieApiReceivables, type OmieCredentials } from './omie.ts';
 
 export const OMIE_STAGING_BATCH_SIZE = 500;
 
@@ -27,7 +27,20 @@ export async function runOmieSnapshot(client: SupabaseClient, credentials: OmieC
   if (syncRunError || !syncRun) throw new Error(syncRunError?.message ?? 'Nao foi possivel criar a execucao financeira.');
   const syncRunId = String(syncRun.id);
   const updateRun = async (patch: Record<string, unknown>) => { const { error } = await client.from('analytics_finance_sync_runs').update(patch).eq('id', syncRunId); if (error) throw new Error(`Falha ao registrar estado da execução OMIE: ${error.message}`); };
-  const failRun = async (status: string, message: string, patch: Record<string, unknown> = {}) => { await updateRun({ status, error_message: message.slice(0, 500), finished_at: new Date().toISOString(), ...patch }); };
+  const failRun = async (status: string, error: unknown, patch: Record<string, unknown> = {}) => {
+    const classified = classifyOmieError(error);
+    await updateRun({
+      status,
+      error_message: classified.internalMessage,
+      internal_error_code: classified.code,
+      provider_code: classified.providerCode,
+      internal_message: classified.internalMessage,
+      sanitized_error: status === 'empty' ? null : classified.sanitizedMessage,
+      error_occurred_at: new Date().toISOString(),
+      finished_at: new Date().toISOString(),
+      ...patch,
+    });
+  };
   try {
     const fetched = await fetchOmieReceivablesWithMetadata(credentials);
     if (fetched.rows.length === 0) {
@@ -56,9 +69,9 @@ export async function runOmieSnapshot(client: SupabaseClient, credentials: OmieC
     if (promotionError) throw new Error(`Falha ao promover snapshot Omie: ${promotionError.message}`);
     return { syncRunId, correlationId, totalRows: normalized.summary.received, acceptedRows: normalized.summary.accepted, rejectedRows: normalized.summary.rejected, enrichment, batchCount, status: 'completed', promotion };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const classified = classifyOmieError(error);
     const { error: cleanupError } = await client.from('analytics_finance_receivables_staging').delete().eq('sync_run_id', syncRunId);
-    await failRun('failed', cleanupError ? `${message}; OMIE_STAGING_CLEANUP_FAILED` : message, cleanupError ? { metadata: { cleanupError: 'OMIE_STAGING_CLEANUP_FAILED' } } : {});
-    throw Object.assign(new Error(message), { syncRunId });
+    await failRun('failed', cleanupError ? `${classified.internalMessage}; OMIE_STAGING_CLEANUP_FAILED` : classified, cleanupError ? { metadata: { cleanupError: 'OMIE_STAGING_CLEANUP_FAILED' } } : {});
+    throw Object.assign(new Error(classified.internalMessage), { syncRunId, omieError: classified });
   }
 }

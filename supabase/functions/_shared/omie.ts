@@ -5,6 +5,51 @@ const OMIE_BASE_URL = 'https://app.omie.com.br/api/v1/financas/contareceber/';
 
 export interface OmieCredentials { appKey: string; appSecret: string }
 
+export type OmieErrorCode =
+  | 'authentication_error'
+  | 'invalid_request'
+  | 'provider_validation_error'
+  | 'provider_transient_error'
+  | 'rate_limit'
+  | 'timeout'
+  | 'network_error'
+  | 'malformed_response'
+  | 'internal_error';
+
+export class OmieProviderError extends Error {
+  readonly code: OmieErrorCode;
+  readonly providerCode: string | null;
+  readonly httpStatus: number | null;
+  readonly retryable: boolean;
+  readonly sanitizedMessage: string;
+  readonly internalMessage: string;
+
+  constructor(input: { code: OmieErrorCode; providerCode?: string | null; httpStatus?: number | null; retryable?: boolean; sanitizedMessage: string; internalMessage: string }) {
+    super(input.internalMessage);
+    this.name = 'OmieProviderError';
+    this.code = input.code;
+    this.providerCode = input.providerCode ?? null;
+    this.httpStatus = input.httpStatus ?? null;
+    this.retryable = input.retryable ?? false;
+    this.sanitizedMessage = input.sanitizedMessage;
+    this.internalMessage = input.internalMessage.slice(0, 2000);
+  }
+}
+
+export function classifyOmieError(error: unknown): OmieProviderError {
+  if (error instanceof OmieProviderError) return error;
+  const message = error instanceof Error ? error.message : String(error);
+  const httpStatus = Number(message.match(/(?:HTTP\s*)?\b([45]\d{2})\b/i)?.[1] ?? 0) || null;
+  if (httpStatus === 429) return new OmieProviderError({ code: 'rate_limit', httpStatus, retryable: true, sanitizedMessage: 'A API OMIE está temporariamente limitada; tente novamente em instantes.', internalMessage: message });
+  if (httpStatus !== null && httpStatus >= 500) return new OmieProviderError({ code: 'provider_transient_error', httpStatus, retryable: true, sanitizedMessage: 'A API OMIE não concluiu a consulta neste momento.', internalMessage: message });
+  if (httpStatus === 401 || httpStatus === 403) return new OmieProviderError({ code: 'authentication_error', httpStatus, sanitizedMessage: 'A API OMIE recusou a autenticação da integração.', internalMessage: message });
+  if (/abort|timeout|timed out/i.test(message)) return new OmieProviderError({ code: 'timeout', retryable: true, sanitizedMessage: 'A API OMIE demorou além do limite esperado.', internalMessage: message });
+  if (/network|fetch failed|resposta ausente|falha de rede/i.test(message)) return new OmieProviderError({ code: 'network_error', retryable: true, sanitizedMessage: 'Não foi possível alcançar a API OMIE.', internalMessage: message });
+  if (/invalid|invalida|credencial/i.test(message)) return new OmieProviderError({ code: 'invalid_request', sanitizedMessage: 'A configuração enviada à API OMIE não foi aceita.', internalMessage: message });
+  if (/malformed|formato|pagina|progresso|COUNT_MISMATCH|EMPTY_PAGE/i.test(message)) return new OmieProviderError({ code: 'malformed_response', sanitizedMessage: 'A API OMIE respondeu em um formato inesperado.', internalMessage: message });
+  return new OmieProviderError({ code: 'internal_error', sanitizedMessage: 'Não foi possível concluir a leitura do OMIE.', internalMessage: message });
+}
+
 export function parseOmieCredentials(secret: string): OmieCredentials {
   const trimmed = secret.trim();
   try {
@@ -199,7 +244,7 @@ export async function fetchOmieReceivablesWithMetadata(
   const pageSize = 500;
   const timeoutMs = Math.max(options.timeoutMs ?? 15000, 1000);
   const maxRetries = Math.min(Math.max(options.maxRetries ?? 2, 0), 3);
-  const retriableStatus = new Set([429, 502, 503, 504]);
+  const retriableStatus = new Set([429, 500, 502, 503, 504]);
 
   async function fetchPage(page: number) {
     let response: Response | null = null;
@@ -217,7 +262,12 @@ export async function fetchOmieReceivablesWithMetadata(
         lastError = error;
         response = null;
         if (attempt === maxRetries) {
-          throw new Error(`Falha de rede na API Omie: ${error instanceof Error ? error.message : String(error)}`);
+          throw new OmieProviderError({
+            code: 'network_error',
+            retryable: true,
+            sanitizedMessage: 'Não foi possível alcançar a API OMIE.',
+            internalMessage: `Falha de rede na API Omie: ${error instanceof Error ? error.message : String(error)}`,
+          });
         }
       } finally {
         clearTimeout(timer);
@@ -226,7 +276,12 @@ export async function fetchOmieReceivablesWithMetadata(
       // Backoff progressivo antes de nova tentativa de status transitorio.
       await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
     }
-    if (!response) throw new Error(`Falha de rede na API Omie: ${lastError instanceof Error ? lastError.message : 'resposta ausente'}.`);
+    if (!response) throw new OmieProviderError({
+      code: 'network_error',
+      retryable: true,
+      sanitizedMessage: 'Não foi possível alcançar a API OMIE.',
+      internalMessage: `Falha de rede na API Omie: ${lastError instanceof Error ? lastError.message : 'resposta ausente'}.`,
+    });
     if (!response.ok) {
       // A resposta de erro do Omie traz faultstring/faultcode e nao inclui o app_secret.
       let detail = '';
@@ -237,10 +292,38 @@ export async function fetchOmieReceivablesWithMetadata(
           detail = fault.faultstring ? `${fault.faultcode ?? ''} ${fault.faultstring}`.trim() : body.slice(0, 300);
         } catch { detail = body.slice(0, 300); }
       } catch { /* corpo indisponivel */ }
-      throw new Error(`Omie Contas a Receber falhou (${response.status})${detail ? `: ${detail}` : ''}.`);
+      const code: OmieErrorCode = response.status === 429
+        ? 'rate_limit'
+        : response.status >= 500
+          ? 'provider_transient_error'
+          : response.status === 401 || response.status === 403
+            ? 'authentication_error'
+            : response.status === 400
+              ? 'invalid_request'
+              : 'provider_validation_error';
+      throw new OmieProviderError({
+        code,
+        httpStatus: response.status,
+        retryable: code === 'rate_limit' || code === 'provider_transient_error',
+        sanitizedMessage: code === 'authentication_error'
+          ? 'A API OMIE recusou a autenticação da integração.'
+          : code === 'invalid_request' || code === 'provider_validation_error'
+            ? 'A API OMIE recusou os parâmetros da consulta.'
+            : 'A API OMIE não concluiu a consulta neste momento.',
+        internalMessage: `Omie Contas a Receber falhou (${response.status})${detail ? `: ${detail}` : ''}.`,
+      });
     }
     const payload = await response.json();
-    if (payload && typeof payload === 'object' && ('faultstring' in payload || 'faultcode' in payload)) throw new Error('OMIE_FUNCTIONAL_FAULT');
+    if (payload && typeof payload === 'object' && ('faultstring' in payload || 'faultcode' in payload)) {
+      const fault = payload as { faultcode?: unknown; faultstring?: unknown };
+      throw new OmieProviderError({
+        code: 'provider_validation_error',
+        providerCode: fault.faultcode ? String(fault.faultcode).slice(0, 120) : null,
+        sanitizedMessage: 'A API OMIE recusou a consulta por validação do provedor.',
+        internalMessage: `OMIE_FUNCTIONAL_FAULT ${String(fault.faultcode ?? '')} ${String(fault.faultstring ?? '')}`,
+      });
+    }
+    if (!payload || typeof payload !== 'object') throw new OmieProviderError({ code: 'malformed_response', sanitizedMessage: 'A API OMIE respondeu em um formato inesperado.', internalMessage: 'OMIE_EMPTY_OR_NON_OBJECT_RESPONSE' });
     return extractOmieReceivablesPage(payload);
   }
 
@@ -311,7 +394,7 @@ export async function fetchOmieClientsIndex(
   const timeoutMs = Math.max(options.timeoutMs ?? 15000, 1000);
   const maxRetries = Math.min(Math.max(options.maxRetries ?? 2, 0), 3);
   const maxPages = Math.min(Math.max(options.maxPages ?? 60, 1), 200);
-  const retriableStatus = new Set([429, 502, 503, 504]);
+  const retriableStatus = new Set([429, 500, 502, 503, 504]);
 
   async function fetchPage(page: number) {
     let response: Response | null = null;
