@@ -1,14 +1,14 @@
 # Estado corrente do checkout canônico — 2026-08-01
 
 - Checkout operacional único: `C:\Projetos\GSO-old`.
-- Branch: `main`, HEAD `3dabf7d` antes do lote corrente, upstream `origin/main`.
-- Divergência: `origin/main...HEAD = 0 15`; o histórico de `origin/main` está integralmente contido no checkout atual.
+- Branch: `main`, HEAD do commit que contém este bloco, upstream `origin/main`.
+- Divergência real no fechamento: `origin/main...HEAD = 0 39`; o histórico de `origin/main` está integralmente contido no checkout atual.
 - Worktrees ativos: 1; branches remotas não foram excluídas; stash e refs de arquivo de reconciliação permanecem preservados.
 - Superfície do primeiro release: Dashboard Gerencial, Configurações aprovadas, Central de Ajuda e Knowledge/editor. O restante do código permanece no repositório, porém fora da superfície publicada pelo manifesto de release.
-- Validação corrente: typecheck de contratos e web, build web, testes focados 16/16, autenticação API 5/5, bloco SQL estrutural financeiro, higiene documental e diff check passaram.
-- QA browser do administrador em 4173 passou após aplicar localmente as migrations aditivas do contexto de workspace; o smoke automático multi-persona em 4175 continua não aprovado por falha de rota de login.
+- Validação corrente do HEAD: contracts/web typecheck, build web, 266 testes Node, validadores de governança/qualidade, documentação interna e `git diff --check` passaram.
+- QA browser autenticado com capturas reais, revalidação Auth local e sincronização externa não foram executados neste ciclo; dependem de ambiente/credencial autorizados.
 - Pendências prioritárias: extensão pgTAP local ausente; remover o editor legado não referenciado; endurecer grants/DML de integrações; corrigir a colisão hydrate/pgTAP; validar sync real com credencial autorizada.
-- Relatórios detalhados: `docs/reports/2026-08-01_repository-and-release-surface-audit.md` e `docs/reports/2026-08-01_analytics-contracts-and-local-auth-delta.md`.
+- Relatórios detalhados: `docs/reports/2026-08-01_repository-and-release-surface-audit.md`, `docs/reports/2026-08-01_analytics-contracts-and-local-auth-delta.md` e `docs/reports/2026-08-01_git-state-reconciliation-addendum.md`.
 
 As seções abaixo são histórico de execução. Em caso de conflito, este bloco e os documentos canônicos de arquitetura/contratos prevalecem.
 

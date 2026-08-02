@@ -13,7 +13,7 @@ fonte corrente.
 - Branch: `main`
 - HEAD no fechamento: o commit que contém este addendum; confirme com `git rev-parse HEAD`
 - Upstream: `origin/main`
-- Divergência no fechamento: `git rev-list --left-right --count origin/main...HEAD` = `0 34`
+- Divergência no fechamento: `git rev-list --left-right --count origin/main...HEAD` = `0 39`
 - Worktrees ativos: 1, somente o checkout canônico
 - Stash: preservado (`stash@{0}`)
 - Refs de arquivo: 24 em `refs/archive/gso-git-cleanup/`
@@ -49,7 +49,7 @@ válidas para seus respectivos momentos, mas não são mais o estado corrente.
 
 ## Pendências técnicas que permanecem reais
 
-1. Reexecutar a validação completa no HEAD atual após o fechamento documental.
+1. Reexecutar a validação completa no HEAD atual após qualquer novo commit local.
 2. QA autenticado das quatro superfícies do primeiro release com capturas reais.
 3. Remover o editor legado somente após confirmar ausência de referências.
 4. Endurecer grants/DML de `vw_admin_managed_integrations` com migration

@@ -2,11 +2,11 @@
 
 - checkout canônico: `C:\Projetos\GSO-old`;
 - branch `main`, HEAD do commit que contém este bloco, upstream `origin/main`;
-- divergência real no fechamento: `origin/main...HEAD = 0 34`; `origin/main` é ancestral do checkout;
+- divergência real no fechamento: `origin/main...HEAD = 0 39`; `origin/main` é ancestral do checkout;
 - um único worktree ativo, stash preservado e 24 refs de arquivo de reconciliação preservadas;
 - nenhuma branch remota foi apagada; branches sem upstream e commits locais não publicados permanecem preservados;
 - superfície publicada nesta fase: Dashboard, Configurações aprovadas, Central de Ajuda e Knowledge/editor;
-- validações funcionais anteriores permanecem registradas como histórico; a rodada completa do HEAD atual ainda precisa ser repetida após esta atualização documental;
+- validações do HEAD atual: contracts/web typecheck, build web, 266 testes Node, validadores de governança/qualidade, documentação interna e `git diff --check` passaram;
 - fonte de reconciliação: `docs/reports/2026-08-01_git-state-reconciliation-addendum.md`;
 - pendências atuais: QA autenticado com capturas, editor legado, grants/DML de integrações, colisão hydrate/pgTAP, Auth local e sync real dependente de credencial autorizada.
 
