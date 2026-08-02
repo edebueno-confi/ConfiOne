@@ -2441,8 +2441,64 @@ function RichTextArticleEditor({
           color: var(--minimal-text);
         }
 
+        [data-theme='dark'] .knowledge-rich-editor .ProseMirror p,
+        [data-theme='dark'] .knowledge-rich-editor .ProseMirror li {
+          color: var(--minimal-text-secondary);
+        }
+
+        [data-theme='dark'] .knowledge-rich-editor .ProseMirror blockquote {
+          border-left-color: var(--minimal-border-strong);
+          color: var(--minimal-text-secondary);
+        }
+
+        [data-theme='dark'] .knowledge-rich-editor .ProseMirror a {
+          color: var(--minimal-action);
+        }
+
         [data-theme='dark'] .knowledge-rich-editor .ProseMirror code {
           background: var(--minimal-surface-muted);
+          color: var(--minimal-text);
+        }
+
+        [data-theme='dark'] .knowledge-rich-editor .ProseMirror pre {
+          border-color: var(--minimal-border);
+          background: var(--minimal-sidebar);
+          color: var(--minimal-text-secondary);
+        }
+
+        [data-theme='dark'] .knowledge-rich-editor .ProseMirror hr {
+          border-color: var(--minimal-border);
+        }
+
+        [data-theme='dark'] .knowledge-rich-editor .ProseMirror mark {
+          background: var(--minimal-warning-surface);
+          color: var(--minimal-warning-text);
+        }
+
+        [data-theme='dark'] .knowledge-rich-editor .ProseMirror aside[data-callout-tone],
+        [data-theme='dark'] .knowledge-rich-editor .related-card {
+          border-color: var(--minimal-border-strong);
+          background: var(--minimal-surface-muted);
+          color: var(--minimal-text-secondary);
+        }
+
+        [data-theme='dark'] .knowledge-rich-editor .ProseMirror aside[data-callout-tone] p,
+        [data-theme='dark'] .knowledge-rich-editor .related-card p,
+        [data-theme='dark'] .knowledge-rich-editor .related-card small {
+          color: var(--minimal-text-secondary);
+        }
+
+        [data-theme='dark'] .knowledge-toolbar-popover {
+          border-color: var(--minimal-border-strong);
+          background: var(--minimal-sidebar);
+          color: var(--minimal-text);
+          box-shadow: 0 16px 36px rgb(0 0 0 / 24%);
+        }
+
+        [data-theme='dark'] .knowledge-toolbar-popover input,
+        [data-theme='dark'] .knowledge-toolbar-popover textarea {
+          border-color: var(--minimal-border);
+          background: var(--minimal-surface);
           color: var(--minimal-text);
         }
 
@@ -3630,6 +3686,27 @@ export function KnowledgeArticleEditorPage() {
 
     async function loadInitialData() {
       try {
+        setArticleId(null);
+        setArticleDetail(null);
+        setSourcePath(null);
+        setSourceHash(null);
+        setIsEditorialRevision(false);
+        setAdvisory(null);
+        setAssets([]);
+        setStatus('draft');
+        setSaveState('idle');
+        setSubmitState('idle');
+        setReviewEvidenceState('idle');
+        setAssetState('idle');
+        setPublishState('idle');
+        setFeedback(null);
+        setFeedbackActionHref(null);
+        setPublicConfirmationOpen(false);
+        setPublicConfirmation({});
+        setTagDraft('');
+        setSlugTouched(false);
+        setPropertiesOpen(false);
+        setForm(EMPTY_FORM);
         setPhase('loading');
         setErrorMessage(null);
         const loadedSpaces = await listAdminKnowledgeSpaces();
@@ -3729,13 +3806,11 @@ export function KnowledgeArticleEditorPage() {
         setStatus(nextStatus);
         setAssets(loadedAssets);
         setSlugTouched(Boolean(routeArticleId));
-        setForm((current) =>
-          nextForm
-            ? nextForm
-            : {
-                ...current,
-                categoryId: current.categoryId || loadedCategories[0]?.id || '',
-              },
+        setForm(
+          nextForm ?? {
+            ...EMPTY_FORM,
+            categoryId: loadedCategories[0]?.id || '',
+          },
         );
         setPhase('ready');
       } catch (error) {

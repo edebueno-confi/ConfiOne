@@ -33,7 +33,7 @@ function statusLabel(value: string) {
   } as Record<string, string>)[value] ?? 'Indisponível';
 }
 
-function HistoryGroup({ rows }: { rows: AnalyticsSyncHistoryRow[] }) {
+function HistoryGroup({ rows, isLatest = false }: { rows: AnalyticsSyncHistoryRow[]; isLatest?: boolean }) {
   const cycle = rows.find((row) => row.rowKind === 'cycle') ?? rows[0];
   const steps = rows.filter((row) => row.rowKind === 'step');
   const triggerLabel = cycle.sourceKey
@@ -57,16 +57,17 @@ function HistoryGroup({ rows }: { rows: AnalyticsSyncHistoryRow[] }) {
   const totalProcessed = steps.reduce((sum, row) => sum + row.processedCount, 0);
 
   return (
-    <li className="gso-settings-history-group">
-      <header className="gso-settings-history-summary">
+    <li>
+      <details className="gso-settings-history-group" open={isLatest}>
+        <summary className="gso-settings-history-summary">
         <div>
           <p className="gso-settings-eyebrow">{triggerLabel}</p>
           <h3>Ciclo de atualização</h3>
           <p>{formatDate(cycle.startedAt, cycle.status)} · {cycle.currentStep ? `etapa atual: ${cycle.currentStep}` : 'HubSpot → OMIE'}</p>
         </div>
         <span className={`gso-settings-status gso-settings-status--${status}`}>{statusLabel(status)}</span>
-      </header>
-      <div className="gso-settings-history-details">
+        </summary>
+        <div className="gso-settings-history-details">
         {steps.length ? steps.map((row) => (
           <div className="gso-settings-history-source" key={`${row.sourceKey}-${row.runId ?? row.cycleId}`}>
             <div><strong>{row.sourceLabel}</strong><span>{statusLabel(row.status)}</span></div>
@@ -79,8 +80,9 @@ function HistoryGroup({ rows }: { rows: AnalyticsSyncHistoryRow[] }) {
             {row.errorMessage ? <p className="gso-settings-history-error">{row.errorMessage}</p> : null}
           </div>
         )) : <p className="gso-settings-empty">As etapas deste ciclo ainda não foram publicadas.</p>}
-      </div>
+        </div>
       <footer className="gso-settings-history-footer">{totalProcessed ? `${totalProcessed} registros processados no ciclo.` : cycle.sourceKey ? 'Execução registrada; quantidade processada indisponível.' : 'Quantidade processada indisponível neste ciclo.'}</footer>
+        </details>
     </li>
   );
 }

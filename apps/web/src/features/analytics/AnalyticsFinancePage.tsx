@@ -124,7 +124,7 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
   const sourceTag = dataState?.status === 'failed' || dataState?.status === 'error' ? 'Fonte: API OMIE · snapshot anterior' : 'Fonte: API OMIE';
 
   return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}>
-    <div className="gso-hd-domain-surface space-y-5">
+    <div className="gso-hd-domain-surface gso-pilot-finance space-y-5">
     {/* Toolbar de fonte e sincronização */}
     <section className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -153,13 +153,13 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
 
     {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado financeiro" description="A fonte respondeu, mas não encontrou registros para este recorte." /> : <>
       {/* KPIs coloridos: conduzem o olho ao que importa */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="gso-pilot-kpi-grid grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard label="Saldo em aberto" value={formatCurrencyBRL(kpis.openBalance)} hint={`${kpis.openTitles.toLocaleString('pt-BR')} títulos a receber`} />
         <KpiCard label="Vencido" value={formatCurrencyBRL(kpis.overdueBalance)} hint={`${formatPercent(kpis.overdueRate)} da carteira · ${kpis.overdueTitles.toLocaleString('pt-BR')} títulos`} tone="critical" />
         <KpiCard label="A vencer em 30 dias" value={formatCurrencyBRL(kpis.due30)} hint="Previsão de entrada no mês" tone="warning" />
         <KpiCard label="Atraso médio" value={`${kpis.avgDaysOverdue.toLocaleString('pt-BR')} dias`} hint="Média ponderada dos vencidos" tone={kpis.avgDaysOverdue > 60 ? 'critical' : 'warning'} />
       </div>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="gso-pilot-kpi-grid grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard label="Recebido no período" value={formatCurrencyBRL(kpis.receivedAmount)} hint={`${formatPercent(kpis.receivedRate)} do valor faturado`} />
         <KpiCard label="A vencer em 60 dias" value={formatCurrencyBRL(kpis.due60)} hint="Acumulado até 60 dias" />
         <KpiCard label="A vencer em 90 dias" value={formatCurrencyBRL(kpis.due90)} hint="Acumulado até 90 dias" />
