@@ -7,7 +7,7 @@ blocos históricos desta página:
 
 - Checkout canônico: `C:\Projetos\GSO-old`.
 - Branch atual: `codex/dashboard-runtime-stabilization-20260802`.
-- HEAD de código registrado neste fechamento: `f5d4495`; branch de
+- HEAD de código registrado neste fechamento: `18e1222`; branch de
   estabilização sem upstream configurado.
 - Divergência: consultar `git rev-list --left-right --count origin/main...HEAD`
   em tempo de leitura; a última leitura antes deste registro retornou `0 94`.
@@ -25,11 +25,19 @@ blocos históricos desta página:
   terminou com erro sanitizado `authentication required`; o ciclo geral ficou
   `partial`. O segredo efêmero usado no runtime local foi removido após a
   execução e não está versionado.
+- Preflight HubSpot somente leitura executado depois do ciclo: `ready`,
+  credencial server-side configurada, endpoint alcançável, resposta válida e
+  11 pipelines retornados; `writesExternalData=false`. Nenhum ciclo foi criado
+  e nenhum valor de credencial foi exposto.
 - Nenhum reset, clean, merge, rebase, cherry-pick, push, deploy, migration
   remota ou escrita externa foi executado.
 - O estado do lote é **parcialmente validado**, aguardando correção/provisão
   autorizada da credencial server-side do HubSpot, eventual novo ciclo em lote
   separado e revisão do Product Owner.
+
+- Qualificação posterior: o preflight confirmou a credencial server-side e o
+  endpoint HubSpot local; permanece pendente apenas autorização para novo ciclo
+  completo, sem reclassificar a execução anterior.
 
 Atualização do macro-lote de Configurações, Fontes do Dashboard e Histórico:
 

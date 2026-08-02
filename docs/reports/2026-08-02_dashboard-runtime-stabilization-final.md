@@ -145,7 +145,7 @@ não foram incluídos em código, relatório ou evidência.
 
 ## 22. Testes
 
-Os contratos focados terminaram em 10/10. O pgTAP focado de runtime terminou em
+Os contratos focados terminaram em 11/11, incluindo o contrato do preflight. O pgTAP focado de runtime terminou em
 40/40 incluindo a barreira do read model sanitizado. Typechecks, build, secret
 scan e testes de contratos anteriores permanecem aprovados.
 
@@ -173,6 +173,21 @@ externa nos provedores:
 Antes dela, o ciclo órfão `e2e580d9-34be-474a-b359-a671f48440f2` foi
 reconciliado como `timed_out`, com suas etapas encerradas. O segredo local
 efêmero e o processo de Functions foram removidos após a execução.
+
+## 24.1 Preflight HubSpot somente leitura
+
+Após a execução controlada, foi executado um preflight autenticado em runtime
+local efêmero, sem iniciar ciclo, criar `run_id`, promover snapshot ou escrever
+no HubSpot. O resultado foi `ready`: credencial server-side configurada,
+endpoint alcançável, resposta válida e 11 definições de pipeline retornadas.
+O contrato também informou `writesExternalData=false`. O correlation ID foi
+`codex-preflight-20260802`. O processo de Functions e o arquivo temporário de
+ambiente foram removidos ao final; nenhum valor de credencial foi exibido ou
+versionado.
+
+O preflight confirma que a credencial atualmente acessível pelo runtime local
+responde ao endpoint de pipelines. Ele não reclassifica o ciclo anterior, que
+permanece `partial`, e não substitui uma nova execução sequencial autorizada.
 
 ## 25. QA Preview
 
@@ -206,27 +221,32 @@ Commits locais relevantes:
 - `f9554d3` — contrato da migration de reconciliação atual.
 - `f5d4495` — classificação segura dos erros HubSpot e barreira do read model.
 
+Commit adicional deste fechamento: `18e1222` — preflight HubSpot protegido,
+somente leitura e sanitizado.
+
 ## 29. Estado Git final
 
 Branch atual: `codex/dashboard-runtime-stabilization-20260802`. HEAD:
-`f5d4495`. Worktree limpo no encerramento documental. A divergência deve ser
+`18e1222`. Worktree será limpo após o commit documental. A divergência deve ser
 consultada com `git rev-list --left-right --count origin/main...HEAD`.
 Não há upstream configurado e nenhum push foi executado.
 
 ## 30. Limitações
 
-O HubSpot ainda depende de credencial server-side válida; a integração aparece
-configurada no banco, mas a execução real retornou `authentication required`.
-O código agora classifica esse cenário como `authentication_error`, não faz
-retry automático e não repete o ciclo sem autorização.
+O ciclo sequencial já executado permanece com falha de autenticação histórica,
+embora o preflight posterior tenha confirmado credencial server-side presente,
+endpoint alcançável e resposta válida. Uma nova execução completa não foi
+repetida neste lote. O código classifica esse cenário como
+`authentication_error`, não faz retry automático e não repete o ciclo sem
+autorização.
 O denominador de Customer Success ainda depende de decisão de domínio. O
 rebuild completo de Artigos, categorias e exportação PNG/PDF profissional não
 foi iniciado neste lote.
 
 ## 31. Decisões pendentes
 
-1. Corrigir/provisionar a credencial server-side válida do HubSpot e autorizar
-   novo ciclo somente em lote separado; não repetir automaticamente.
+1. Autorizar um novo ciclo completo HubSpot → OMIE em lote separado, usando o
+   preflight como gate e sem repetir automaticamente.
 2. Aprovar o denominador operacional de Customer Success.
 3. Validar visualmente o editor autenticado.
 4. Iniciar, em lote separado, o rebuild da tela de Artigos, categorias e
