@@ -5,7 +5,7 @@ import test from 'node:test';
 import { buildCsSyncPayload, resolveCsSyncMode, sanitizeCsSyncResult } from '../../apps/web/src/features/analytics/analytics-cs-control.mjs';
 
 const apiSource = await readFile(new URL('../../apps/web/src/features/analytics/analytics-api.ts', import.meta.url), 'utf8');
-const configSource = await readFile(new URL('../../apps/web/src/features/analytics/AnalyticsConfigPage.tsx', import.meta.url), 'utf8');
+const configSource = await readFile(new URL('../../apps/web/src/features/settings/DashboardSourcesSettingsPage.tsx', import.meta.url), 'utf8');
 const functionSource = await readFile(new URL('../../supabase/functions/hubspot-orchestrator-start/index.ts', import.meta.url), 'utf8');
 
 test('backend decide a janela CS e o frontend envia somente o escopo', () => {
@@ -23,8 +23,8 @@ test('resultado CS exibe somente contagens e correlation id sanitizado', () => {
 
 test('controle e runner mantêm o escopo CS isolado e autenticado', () => {
   assert.match(apiSource, /hubspot-orchestrator-start/);
-  assert.match(configSource, /Controle de CS \/ Suporte/);
-  assert.match(configSource, /triggerCsSupportSync\(latestCsRun\)/);
+  assert.match(configSource, /Atualizar HubSpot/);
+  assert.match(configSource, /triggerHubspotSync\(undefined/);
   assert.match(functionSource, /authorizeCsRunner/);
   assert.match(functionSource, /rpc_analytics_hubspot_start_run/);
   assert.doesNotMatch(apiSource, /service_role/i);
@@ -32,7 +32,7 @@ test('controle e runner mantêm o escopo CS isolado e autenticado', () => {
 });
 
 test('controle de CS não usa runner OMIE/Comercial e apresenta partial separadamente', () => {
-  assert.doesNotMatch(configSource, /runIntegrationNow\(\).*runCsSupport/);
-  assert.match(configSource, /result\.status === 'partial' \? 'Execução parcial'/);
+  assert.doesNotMatch(configSource, /triggerCsSupportSync/);
+  assert.match(configSource, /statusLabel\(source\.status\)/);
   assert.match(apiSource, /domain: 'cs_support'/);
 });

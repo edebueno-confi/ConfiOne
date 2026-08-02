@@ -18,9 +18,9 @@ const domainFiles = [
 
 test('acoes de sincronizacao ficam centralizadas em Configuracoes', () => {
   const shell = fs.readFileSync(path.join(analyticsDir, 'AnalyticsShell.tsx'), 'utf8');
-  const config = fs.readFileSync(path.join(analyticsDir, 'AnalyticsConfigPage.tsx'), 'utf8');
+  const config = fs.readFileSync(path.join(repoRoot, 'apps/web/src/features/settings/DashboardSourcesSettingsPage.tsx'), 'utf8');
 
-  assert.match(shell, /Gerenciar integrações/);
+  assert.match(shell, /Integrações/);
   assert.doesNotMatch(shell, /Sincronizar (?:HubSpot|OMIE|CS)/);
   assert.match(config, /triggerSequentialAnalyticsSync/);
   assert.match(config, /triggerHubspotSync/);
@@ -50,9 +50,12 @@ test('Customer Success não reutiliza snapshot executivo nem dados de tickets', 
 
 test('integrações expõem configuração segura e escopo operacional explícito', () => {
   const settings = fs.readFileSync(path.join(repoRoot, 'apps/web/src/features/settings/SettingsPage.tsx'), 'utf8');
-  assert.match(settings, /Substituir credencial no Vault/);
-  assert.match(settings, /Empresas, Comercial e CS \/ Suporte/);
-  assert.match(settings, /Fonte API exclusiva para Financeiro/);
+  const integrations = fs.readFileSync(path.join(repoRoot, 'apps/web/src/features/settings/SettingsIntegrationsPanel.tsx'), 'utf8');
+  assert.match(integrations, /APP_KEY/);
+  assert.match(integrations, /APP_SECRET/);
+  assert.match(integrations, /Fonte dos dados financeiros e contas a receber/);
+  assert.match(integrations, /Fonte de dados comerciais, clientes e atendimentos/);
+  assert.doesNotMatch(integrations, /Modo|contas_a_receber|Vault/);
   assert.doesNotMatch(settings, /Planilhas CS e Comercial/);
 });
 
@@ -72,16 +75,16 @@ test('dashboard_viewer consulta as cinco áreas sem receber ações administrati
   assert.doesNotMatch(shell, /trigger(?:Hubspot|Omie|Sequential)AnalyticsSync/);
 });
 
-test('histórico publicado separa runs HubSpot e OMIE', () => {
-  const logs = fs.readFileSync(path.join(analyticsDir, 'AnalyticsLogsPage.tsx'), 'utf8');
+test('histórico publicado separa ciclos HubSpot e OMIE', () => {
+  const logs = fs.readFileSync(path.join(repoRoot, 'apps/web/src/features/settings/SyncHistorySettingsPage.tsx'), 'utf8');
   const api = fs.readFileSync(path.join(analyticsDir, 'analytics-api.ts'), 'utf8');
-  assert.match(logs, /listHubspotSyncRuns/);
-  assert.match(logs, /listOmieSyncRuns/);
-  assert.match(api, /vw_analytics_finance_sync_runs_read/);
+  assert.match(logs, /listAnalyticsSyncHistory/);
+  assert.match(logs, /correlationId/);
+  assert.match(api, /vw_admin_analytics_sync_history_v1/);
 });
 
 test('superfície de integrações não apresenta provider legado nem componente morto', () => {
-  const settings = fs.readFileSync(path.join(repoRoot, 'apps/web/src/features/settings/SettingsPage.tsx'), 'utf8');
-  assert.match(settings, /filter\(\(item\) => \['hubspot', 'omie'\]/);
+  const settings = fs.readFileSync(path.join(repoRoot, 'apps/web/src/features/settings/SettingsIntegrationsPanel.tsx'), 'utf8');
+  assert.match(settings, /provider === 'hubspot' \|\| item\.provider === 'omie'/);
   assert.equal(fs.existsSync(path.join(repoRoot, 'apps/web/src/features/settings/IntegrationSettingsPanel.tsx')), false);
 });

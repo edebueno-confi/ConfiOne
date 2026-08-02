@@ -11,5 +11,5 @@ test('Configurações estabiliza grupos visíveis e não cria loop de recarga', 
   assert.match(settings, /useMemo/);
   assert.match(settings, /const visibleGroups = useMemo\(/);
   assert.match(settings, /selectedId !== next/);
-  assert.match(settings, /\[isDashboardViewer, searchParams, selectedId, visibleGroups\]/);
+  assert.match(settings, /\[isDashboardViewer, location\.pathname, selectedId, visibleGroups\]/);
 });
