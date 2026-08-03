@@ -121,9 +121,10 @@ autorização; nenhuma porta adicional ficou aberta.
 
 ## Git e preservação
 
-- HEAD do lote: `bb77c67` — `docs: fechar evidencias do lote high-density`.
-- Commits do lote: `0ec5865`, `7d93403`, `ee69642`, `21bc664`, `619dfa8` e
-  `bb77c67`.
+- HEAD corrente: consultar `git rev-parse --short HEAD` no checkout.
+- Último commit de evidências antes deste registro: `15511f4` — alinhamento do
+  HEAD documental; os commits anteriores do lote são `0ec5865`, `7d93403`,
+  `ee69642`, `21bc664`, `619dfa8` e `bb77c67`.
 - Commit documental anterior: `0ec5865` — definição da interface High-Density.
 - Branch: `codex/high-density-ui-rebuild-20260803`, sem upstream.
 - Ref de preservação: `refs/archive/high-density-ui-rebuild-start-20260803`.

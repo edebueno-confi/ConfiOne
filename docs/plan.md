@@ -2,7 +2,8 @@
 
 ## Fechamento do lote atual
 
-- Branch: `codex/high-density-ui-rebuild-20260803`; HEAD `bb77c67`.
+- Branch: `codex/high-density-ui-rebuild-20260803`; HEAD deve ser confirmado
+  com `git rev-parse --short HEAD`.
 - A especificação documental foi criada antes da implementação e o Blueprint
   V2 foi marcado como superado para implementação.
 - A camada visual High-Density foi aplicada ao shell, Dashboard e Configurações

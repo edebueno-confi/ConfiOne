@@ -2,7 +2,8 @@
 
 ## Registro corrente — fechamento High-Density — 2026-08-03
 
-- Branch: `codex/high-density-ui-rebuild-20260803`; HEAD `bb77c67`.
+- Branch: `codex/high-density-ui-rebuild-20260803`; HEAD deve ser confirmado
+  com `git rev-parse --short HEAD`.
 - Especificação: `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md`.
 - Relatório: `docs/reports/2026-08-03_high-density-ui-rebuild.md`.
 - Escopo: shell, Dashboard Gerencial, domínios analíticos, Configurações e
