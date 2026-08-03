@@ -6903,6 +6903,8 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 
 ## DASHBOARD-VISUAL-DENSITY-V1.1 - Densidade, tipografia e QA empacotado - 2026-08-03
 
+- Evidência adicional: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\ui05-final` registra 32 estados estáticos, 32 frames de movimento e 2 reduced-motion do componente real; o harness foi removido antes do build final.
+
 - Relatório: `docs/reports/2026-08-03_dashboard-visual-density-v1-1.md`.
 - Branch: `codex/dashboard-visual-density-v1-1-20260803`; base preservada em
   `refs/archive/dashboard-visual-density-v1-1-start-20260803`.

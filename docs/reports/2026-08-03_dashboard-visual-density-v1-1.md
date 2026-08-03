@@ -76,6 +76,8 @@ O histórico deixou de apresentar a linha do tempo decorativa. O cabeçalho foi 
 
 ## 17. UI-05
 
+O componente também representa falha, timeout e abandono sem animar o mascote e sem substituir o último snapshot publicado. O QA local renderizou o componente real por query temporária, sem iniciar sincronização nem escrever no banco.
+
 Delta final: o titulo do overlay/loading foi limitado a 24-30px no desktop e 21px no mobile.
 
 O copy do Gênio foi refinado para mensagens operacionais mais humanas: “O Gênio está abrindo caminho para os dados”, “puxando os fios do HubSpot”, “fazendo a conta fechar no OMIE” e “soltando a magia no painel”. A semântica de overlay bloqueante/banner não bloqueante foi preservada.
@@ -120,6 +122,8 @@ Este relatório é a evidência delta do macro-lote. O plano corrente, `PROJECT_
 
 ## 26. Testes
 
+- Regressão focada após UI-05: 25/26 passou; a falha restante é o contrato preexistente de `fresh` sem `lastSuccessfulSyncAt`, fora do escopo visual.
+
 - `npm run contracts:typecheck`: passou.
 - `npm run web:typecheck`: passou.
 - `npm run web:build`: passou.
@@ -163,6 +167,8 @@ Matriz final: 80/80 capturas; 0 falhas de carregamento; 0 HTTP ≥400; 0 overflo
 
 ## 31. Evidência de motion
 
+Em `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\ui05-final` foram capturados 32 estados estáticos (8 estados x 2 temas x 2 viewports), 32 frames de movimento nos estados ativos e 2 capturas reduced-motion. O manifesto registra `aria-busy=true` durante estados ativos, `aria-busy=false` em falha/timeout/abandono, overflow zero e `animationName: none` com reduced motion. O harness temporário foi removido antes do build final.
+
 Em `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\motion` foram capturados frames reais do loading do Dashboard em 0/250/500/750ms. O computed style registrou `genius-mascot-float`, `genius-mascot-magic`, `genius-mascot-arm-magic` e sparkles. Em reduced motion, nenhuma animação permaneceu. O overlay de ciclo ativo não foi acionado porque isso iniciaria sincronização externa.
 
 ## 32. Screenshots
@@ -172,6 +178,8 @@ Em `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\motion` for
 - Preview final: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\preview-final-2` — 80 PNGs e manifesto.
 - Zoom: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\zoom` — 16 PNGs, oito superfícies em 125% e 200%, sem overflow horizontal.
 - Motion: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\motion`.
+- UI-05: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\ui05-final` — manifesto, 32 estados estáticos, 32 frames de movimento e 2 reduced-motion.
+- Pacote atualizado para revisão: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05.zip`, 31.931.121 bytes, SHA-256 `46BFE028E99C297D75907B0CFA1311771814BACFABA7EC853EFFDDF9FE9F05BF`.
 - Pacote para revisão: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence.zip`, 16.266.594 bytes, SHA-256 `2B037C236CADBCB8FB9F86E5B282612EEE567F37C951AE8E8ECA0DC147E6935B`.
 
 ## 33. Arquivos
@@ -191,10 +199,11 @@ Removidos: status duplicado no título da Visão Geral, eyebrow duplicado, preen
 - `fff25ff refactor(ui): compactar hierarquia e estados visuais` — ajustes finais de overview, Financeiro, histórico, integrações e loading.
 - `dd26d09 docs(ui): fechar evidências do lote de densidade` — documentação, matriz final e limites.
 - `8dfed64 docs(ui): registrar commits e divergência finais` — fechamento do inventário Git.
+- `c0d1672 refactor(ui): fechar estados visuais do gênio` — estados permanentes de falha, timeout e abandono do UI-05.
 
 ## 36. Git final
 
-Branch: `codex/dashboard-visual-density-v1-1-20260803`. HEAD final: `8dfed64`; divergência `origin/main...HEAD = 0 129`. Worktree limpo após o fechamento documental.
+Branch: `codex/dashboard-visual-density-v1-1-20260803`. HEAD no fechamento deste ciclo: `c0d1672`; divergência `origin/main...HEAD = 0 131`. O worktree será limpo após o commit documental.
 
 ## 37. Limitações
 

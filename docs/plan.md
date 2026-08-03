@@ -20,8 +20,11 @@
 
 ## Estado de validação
 
-- Typechecks, build, secret scan, quality changed/module e suíte focada UI
-  passaram.
+- UI-05 foi validado localmente com estados ativos, falha, timeout, abandono e reduced-motion; o harness de captura foi removido antes do build final.
+
+- Typechecks, build, secret scan e quality changed/module passaram. A regressão
+  focada após UI-05 ficou em 25/26: uma falha contratual preexistente de
+  `fresh` sem `lastSuccessfulSyncAt` permanece fora do escopo visual.
 - A suíte Analytics ampla permanece parcial: 91/94, com três falhas fora do
   escopo visual e preexistentes no runner/diagnóstico/status.
 - Nenhuma sincronização externa foi acionada para produzir evidência.
