@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MinimalState } from '../../components/minimal-states';
-import { GeniusSyncOverlay } from '../../components/GeniusSyncOverlay';
+import { GeniusSyncOverlay, type SyncSource, type SyncVisualState } from '../../components/GeniusSyncOverlay';
 import { useAuthContext } from '../auth/auth-context';
 import { canManageAnalyticsIntegration } from '../analytics/analytics-permissions.mjs';
 import {
@@ -53,6 +53,14 @@ function sourceDetail(source: AnalyticsSourceStatusPayload['hubspot']) {
   return source.sanitizedError ?? 'Ainda não há uma atualização concluída.';
 }
 
+function terminalSyncState(status: AnalyticsSourceStatusPayload, kind: 'full' | 'hubspot' | 'omie'): SyncVisualState {
+  const sources = kind === 'full' ? [status.hubspot, status.omie] : [status[kind]];
+  if (sources.some((source) => source.currentRunStatus === 'timed_out')) return 'timed_out';
+  if (sources.some((source) => source.currentRunStatus === 'abandoned')) return 'abandoned';
+  if (sources.some((source) => source.currentRunStatus === 'failed' || source.status === 'failed')) return 'failed';
+  return 'publishing';
+}
+
 function PipelineRow({ row, canEdit, busy, onSave }: { row: AnalyticsSourceConfig; canEdit: boolean; busy: boolean; onSave: (row: AnalyticsSourceConfig, areaKey: AnalyticsSourceConfig['areaKey'], alias: string, isActive: boolean) => Promise<void> }) {
   const [areaKey, setAreaKey] = useState(row.areaKey);
   const [alias, setAlias] = useState(row.alias ?? '');
@@ -102,6 +110,7 @@ export function DashboardSourcesSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [syncingKind, setSyncingKind] = useState<'full' | 'hubspot' | 'omie' | null>(null);
+  const [syncFeedback, setSyncFeedback] = useState<{ source: SyncSource; state: SyncVisualState; detail?: string } | null>(null);
   const [syncProgress, setSyncProgress] = useState('Preparando a atualização das fontes.');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -148,16 +157,26 @@ export function DashboardSourcesSettingsPage() {
   };
 
   const run = async (kind: 'full' | 'hubspot' | 'omie') => {
-    setBusy(true); setSyncingKind(kind); setSyncProgress(kind === 'full' ? 'O Gênio está atualizando HubSpot e OMIE em sequência.' : `O Gênio está atualizando ${kind === 'hubspot' ? 'HubSpot' : 'OMIE'}.`); setError(null); setMessage(null);
+    const source: SyncSource = kind === 'full' ? 'painel' : kind === 'hubspot' ? 'HubSpot' : 'OMIE';
+    const activeState: SyncVisualState = kind === 'full' ? 'preparing' : kind === 'hubspot' ? 'syncing_hubspot' : 'syncing_omie';
+    const detail = kind === 'full' ? 'O Gênio está atualizando HubSpot e OMIE em sequência.' : `O Gênio está atualizando ${kind === 'hubspot' ? 'HubSpot' : 'OMIE'}.`;
+    setBusy(true); setSyncingKind(kind); setSyncFeedback({ source, state: activeState, detail }); setSyncProgress(detail); setError(null); setMessage(null);
     try {
       if (kind === 'full') await triggerSequentialAnalyticsSync();
       if (kind === 'hubspot') await triggerHubspotSync(undefined, { phased: false });
       if (kind === 'omie') await triggerOmieSync();
       const completion = await waitForAnalyticsSyncCompletion(kind);
       setSourceStatus(completion.status);
-      await load();
-      setMessage(completion.timedOut ? syncProgressLabel(kind, true) : `Atualização ${kind === 'full' ? 'do painel' : kind === 'hubspot' ? 'do HubSpot' : 'do OMIE'} concluída; o estado publicado foi confirmado.`);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível iniciar a atualização.'); } finally { setBusy(false); setSyncingKind(null); }
+      const finalState = completion.timedOut ? 'timed_out' : terminalSyncState(completion.status, kind);
+      setSyncFeedback({ source, state: finalState, detail: completion.timedOut ? syncProgressLabel(kind, true) : undefined });
+       await load();
+       if (finalState === 'publishing') setSyncFeedback(null);
+       setMessage(completion.timedOut ? syncProgressLabel(kind, true) : `Atualização ${kind === 'full' ? 'do painel' : kind === 'hubspot' ? 'do HubSpot' : 'do OMIE'} concluída; o estado publicado foi confirmado.`);
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : 'Não foi possível iniciar a atualização.';
+      setSyncFeedback({ source, state: 'failed', detail: message });
+      setError(message);
+    } finally { setBusy(false); setSyncingKind(null); }
   };
 
   const sourcePills = sourceStatus ? [sourceStatus.hubspot, sourceStatus.omie] : [];
@@ -166,7 +185,7 @@ export function DashboardSourcesSettingsPage() {
 
   return (
     <div className="gso-settings-sources gso-settings-stack gso-visual-v1-settings">
-      {syncingKind ? <GeniusSyncOverlay source={syncingKind === 'full' ? 'painel' : syncingKind === 'hubspot' ? 'HubSpot' : 'OMIE'} state={syncingKind === 'full' ? 'preparing' : syncingKind === 'hubspot' ? 'syncing_hubspot' : 'syncing_omie'} hasValidSnapshot={syncingKind === 'full' ? Boolean(sourceStatus?.hubspot.hasValidSnapshot && sourceStatus?.omie.hasValidSnapshot) : Boolean(sourceStatus?.[syncingKind]?.hasValidSnapshot)} detail={syncProgress} /> : null}
+      {syncFeedback ? <GeniusSyncOverlay source={syncFeedback.source} state={syncFeedback.state} hasValidSnapshot={syncFeedback.state === 'failed' || syncFeedback.state === 'timed_out' || syncFeedback.state === 'abandoned' ? Boolean(syncFeedback.source === 'painel' ? sourceStatus?.hubspot.hasValidSnapshot && sourceStatus?.omie.hasValidSnapshot : sourceStatus?.[syncFeedback.source.toLowerCase() as 'hubspot' | 'omie']?.hasValidSnapshot) : syncingKind === 'full' ? Boolean(sourceStatus?.hubspot.hasValidSnapshot && sourceStatus?.omie.hasValidSnapshot) : Boolean(sourceStatus?.[syncingKind ?? 'hubspot']?.hasValidSnapshot)} detail={syncFeedback.detail ?? syncProgress} /> : null}
       <section className="gso-settings-source-overview" aria-labelledby="sources-overview-title">
         <div>
           <p className="gso-settings-eyebrow">Mapa de origem</p>

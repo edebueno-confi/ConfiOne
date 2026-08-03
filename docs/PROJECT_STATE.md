@@ -17,10 +17,9 @@
   estados estão registradas em
   `docs/reports/2026-08-03_high-density-ui-rebuild.md`.
 - QA visual real: matriz base com 80 capturas nos cinco viewports e dois temas;
-  reteste de Configurações com 24 verificações e Overview com quatro capturas,
-  todos sem falhas de rede ou overflow. Os estados especiais do Gênio ainda
-  não estão no manifesto final. Não houve reset, hidratação ou alteração do
-  banco.
+  reteste de Configurações com 24 verificações, Overview com quatro capturas e
+  manifesto UI-05 com cinco estados do Gênio, todos sem falhas de rede ou
+  overflow. Não houve reset, hidratação ou alteração do banco.
 - Correção de QA: `SettingsPage` passou a carregar read models sob demanda,
   evitando 403 de `ticket_categories` fora da seção Categorias.
 - Referências visuais vigentes: `docs/design/blueprint/Dashboard PO/` e

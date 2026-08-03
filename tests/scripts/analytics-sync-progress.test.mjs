@@ -30,6 +30,14 @@ test('atualização dos dashboards mantém o Gênio animado até confirmar o est
   assert.match(sourcesPage, /waitForAnalyticsSyncCompletion\(kind\)/);
   assert.match(sourcesPage, /GeniusSyncOverlay/);
   assert.match(sourcesPage, /hasValidSnapshot/);
+  assert.match(sourcesPage, /terminalSyncState/);
+  assert.match(sourcesPage, /currentRunStatus === 'timed_out'/);
+  assert.match(sourcesPage, /currentRunStatus === 'abandoned'/);
+  assert.match(sourcesPage, /state: 'failed'/);
+  assert.match(sourcesPage, /if \(finalState === 'publishing'\) setSyncFeedback\(null\)/);
   assert.match(overlay, /O Gênio está organizando os dados do painel/);
+  assert.match(overlay, /O Gênio encontrou um desvio no caminho/);
+  assert.match(overlay, /O Gênio ainda está aguardando uma resposta/);
+  assert.match(overlay, /O Gênio interrompeu esta tentativa/);
   assert.doesNotMatch(overlay, /barra|progresso|countdown/i);
 });

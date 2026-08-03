@@ -1,7 +1,7 @@
 import { GeniusMascot } from './GeniusMascot';
 
-type SyncSource = 'HubSpot' | 'OMIE' | 'painel';
-type SyncVisualState = 'preparing' | 'syncing_hubspot' | 'syncing_omie' | 'publishing' | 'failed' | 'timed_out' | 'abandoned';
+export type SyncSource = 'HubSpot' | 'OMIE' | 'painel';
+export type SyncVisualState = 'preparing' | 'syncing_hubspot' | 'syncing_omie' | 'publishing' | 'failed' | 'timed_out' | 'abandoned';
 
 const COPY: Record<SyncVisualState, { title: string; description: string }> = {
   preparing: {

@@ -10,8 +10,8 @@ read models, métricas, integrações, sincronizações, permissões e banco.
 
 Status geral: **parcialmente validado**. A validação estrutural e automatizada
 passou. A matriz real de superfícies foi executada; permanecem pendentes apenas
-os quatro estados especiais do Gênio e a reconciliação de quatro contratos
-ampliados já conhecidos.
+a reconciliação de quatro contratos ampliados já conhecidos e a sincronização
+externa autorizada.
 
 ## Atualização do ciclo — 2026-08-03
 
@@ -19,7 +19,11 @@ ampliados já conhecidos.
 - A matriz inicial identificou um 403 repetido de `ticket_categories` em todas as 30 capturas de Configurações. A causa era o carregamento de todos os read models no mount, mesmo quando a seção aberta era Integrações, Fontes ou Histórico.
 - `SettingsPage.tsx` passou a carregar cada read model somente quando sua seção está efetivamente aberta. A reteste em `output/settings-control-plane-v2-preview/manifest.json` fez 24 verificações e 18 capturas, todas sem console errors, falhas de rede, HTTP inesperado, overflow ou cópia proibida.
 - A captura final do Overview em `output/high-density-overview-final-2/` confirmou o ajuste de alta densidade em claro/escuro, desktop/mobile; em 1440×900 o início de `Trilho de integridade` e `Sinais gerenciais` já aparece na primeira dobra.
+- O manifesto `C:\Projetos\GSO-artifacts\high-density-ui-rebuild-20260803\qa-genie-states\manifest.json` confirmou cinco estados UI-05: bloqueante, não bloqueante, falha, timeout, abandono e reduced-motion, sem console errors, falhas de rede, HTTP inesperado ou overflow.
 - Não houve alteração de banco, RLS, RPC, view, métrica, credencial, sincronização externa ou contrato de dados.
+- O feedback UI-05 agora preserva o banner terminal para falha, timeout ou
+  abandono, encerra o movimento contínuo e limpa o estado de publicação somente
+  depois de `load()` confirmar a leitura seguinte.
 
 ## Auditoria documental e skills
 
@@ -103,6 +107,9 @@ credenciais, fórmulas, fontes, denominadores ou fluxo de sincronização.
   **4/4 capturas**, sem erros de console, falhas de rede, respostas inesperadas
   ou overflow; sem filtro de domínio e sem contradição de status detectada pelo
   harness.
+- `node scripts/local-qa/genius-sync-ui-states.mjs` — **5/5 estados**, sem erros
+  de console, falhas de rede, HTTP inesperado ou overflow; reduced-motion
+  confirmado por duração de animação reduzida.
 
 ### Parcialmente validado
 
@@ -121,11 +128,10 @@ foram mascaradas nem corrigidas como parte de uma alteração visual.
 
 ### Não validado / dependente do ambiente
 
-A matriz de superfícies cobre os cinco viewports e dois temas, mas ainda não
-constitui o aceite final porque os estados UI-05 de bloqueio, não bloqueante,
-erro e `prefers-reduced-motion` não foram capturados no mesmo manifesto. A
-autenticação local também apresentou timeouts transitórios em uma primeira
-execução; a repetição autenticada passou sem contorno, reset ou hidratação.
+A matriz de superfícies cobre os cinco viewports e dois temas, e os estados
+UI-05 foram capturados em manifesto dedicado. A autenticação local apresentou
+timeouts transitórios em execuções isoladas; as repetições autenticadas
+passaram sem contorno, reset ou hidratação.
 
 Os quatro testes ampliados listados acima seguem pendentes de decisão de
 contrato. Uma execução externa read-only HubSpot → OMIE também permanece fora

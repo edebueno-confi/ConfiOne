@@ -1,7 +1,7 @@
 # UI-05 — Gênio em ação v1
 
-**Status:** aprovado conceitualmente pelo Product Owner; especificação pronta,
-sem implementação autorizada neste ciclo.
+**Status:** implementado no macro-lote `HIGH-DENSITY-01`; os estados terminais
+continuam sujeitos à captura QA dedicada antes do aceite final.
 
 ## 1. Objetivo
 

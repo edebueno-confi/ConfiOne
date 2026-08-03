@@ -11,10 +11,10 @@
 - Evidência automatizada: build, typechecks, secret scan, quality gates e
   98/98 testes focados aprovados.
 - QA real executado: matriz base com 80 capturas nos cinco viewports e dois
-  temas; reteste de Configurações com 24 verificações e Overview com quatro
-  capturas, sem falhas de rede, HTTP inesperado ou overflow. Os quatro estados
-  especiais do Gênio ainda precisam de manifesto dedicado. Quatro falhas
-  ampliadas preexistentes permanecem registradas no relatório.
+  temas; reteste de Configurações com 24 verificações, Overview com quatro
+  capturas e manifesto UI-05 com cinco estados do Gênio, sem falhas de rede,
+  HTTP inesperado ou overflow. Quatro falhas ampliadas preexistentes
+  permanecem registradas no relatório.
 - Correção registrada: leituras de Configurações passaram a ser sob demanda;
   o 403 repetido de `ticket_categories` fora da seção Categorias desapareceu.
 - Referências visuais vigentes: `docs/design/blueprint/Dashboard PO/` e

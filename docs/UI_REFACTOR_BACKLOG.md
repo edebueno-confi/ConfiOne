@@ -362,7 +362,8 @@ das superfícies alteradas em claro/escuro e nas larguras publicadas.
 
 Status: implementação frontend concluída na branch
 `codex/high-density-ui-rebuild-20260803`; validação visual parcial, pendente
-apenas dos estados especiais do Gênio e dos contratos ampliados já registrados.
+apenas dos contratos ampliados já registrados e de sincronização externa
+autorizada.
 
 Objetivo: implementar diretamente a direção visual das referências vigentes em
 `docs/design/blueprint/Dashboard PO/` e `docs/design/blueprint/Suporte e conversas/`.
