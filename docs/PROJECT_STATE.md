@@ -3152,3 +3152,18 @@ Os perfis nomeados foram normalizados e receberam novamente seus grants de telas
 - Relatório de reconciliação: `docs/reports/2026-08-01_git-state-reconciliation-addendum.md`.
 
 As seções abaixo são histórico de execução. Em caso de conflito, este bloco e os documentos canônicos de arquitetura/contratos prevalecem.
+## Atualização corrente — High-Density Interface V1 — 2026-08-03
+
+- Checkout canônico: `C:\Projetos\GSO-old`.
+- Branch dedicada: `codex/high-density-ui-rebuild-20260803`, sem upstream.
+- Preservação: `refs/archive/high-density-ui-rebuild-start-20260803` e bundle
+  verificado em `C:\Projetos\GSO-artifacts\high-density-ui-rebuild-20260803`.
+- Direção vigente: alta densidade funcional e baixa densidade perceptual,
+  conforme `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md`.
+- Referências visuais vigentes: `docs/design/blueprint/Dashboard PO/` e
+  `docs/design/blueprint/Suporte e conversas/`.
+- O Blueprint V2 anterior está superado para implementação; as exclusões de
+  referências antigas e zips foram preservadas como intencionais do usuário.
+- Nenhum contrato, read model, métrica, fonte, RPC, view, banco, integração,
+  sincronismo, credencial ou permissão foi alterado nesta etapa documental.
+- Implementação High-Density: ainda não iniciada; validação: não iniciada.

@@ -356,3 +356,29 @@ das superfícies alteradas em claro/escuro e nas larguras publicadas.
 
 ### 11. Role especifica de CS
 - avaliar se suporte e CS precisam de separacao formal de permissao e leitura
+## Próxima frente oficial — HIGH-DENSITY-01
+
+### HIGH-DENSITY-01 — Reconstrução High-Density do cockpit e superfícies administrativas
+
+Status: autorizado e em execução na branch `codex/high-density-ui-rebuild-20260803`.
+
+Objetivo: implementar diretamente a direção visual das referências vigentes em
+`docs/design/blueprint/Dashboard PO/` e `docs/design/blueprint/Suporte e conversas/`.
+O produto deve comunicar mais informação útil na tela Full HD, com baixa carga
+perceptual, sem alterar métricas, contratos, fontes, dados ou regras.
+
+Escopo: shell, Visão Geral, Comercial, Customer Success, Suporte & Chat,
+Financeiro, Integrações, Fontes, Histórico, temas, responsividade,
+acessibilidade e Gênio em ação.
+
+Especificação: `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md`.
+
+Critérios: títulos até 32px, KPIs compactos, filtros em linha, grids densos,
+blocos analíticos simultâneos, tabelas legíveis, sem overflow, dados ausentes
+como `Indisponível`, foco visível e QA real em cinco viewports e dois temas.
+
+### DASHBOARD-07 — Dashboard Blueprint System V2 completo
+
+Status: SUPERADO PARA IMPLEMENTAÇÃO em 03/08/2026. A direção V2 de novos
+blueprints não será implementada. A execução vigente é HIGH-DENSITY-01, baseada
+nas referências atuais já presentes no checkout.

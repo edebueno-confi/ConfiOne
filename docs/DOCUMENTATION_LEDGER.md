@@ -6919,3 +6919,14 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - Limites: sincronização real HubSpot/OMIE não executada; overlay de ciclo real,
   validação de denominador CS e três falhas amplas de Analytics permanecem fora
   deste lote.
+## Registro corrente — High-Density Interface V1 — 2026-08-03
+
+- Branch: `codex/high-density-ui-rebuild-20260803`, sem upstream.
+- Base preservada: `refs/archive/high-density-ui-rebuild-start-20260803`.
+- Bundle externo: `C:\Projetos\GSO-artifacts\high-density-ui-rebuild-20260803`.
+- Especificação: `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md`.
+- Referências vigentes: `docs/design/blueprint/Dashboard PO/` e
+  `docs/design/blueprint/Suporte e conversas/`.
+- Decisão: Blueprint V2 superado para implementação; nenhuma alteração de
+  backend, contrato, dado, integração, credencial, permissão ou sincronismo.
+- Estado: documentação concluída; implementação e validação ainda pendentes.

@@ -1961,3 +1961,23 @@ O relatório completo, incluindo evidências locais, contratos existentes, lacun
 - Worktree limpo, commits locais separados e relatório Delta persistido.
 - Aguardar aprovação visual do Product Owner; sem push, deploy, sync real ou
   correção de fixtures pgTAP.
+## Plano corrente — High-Density Interface V1 — 2026-08-03
+
+- Branch: `codex/high-density-ui-rebuild-20260803`, sem upstream.
+- Escopo: reconstrução visual direta baseada nas referências oficiais atuais,
+  cobrindo shell, Dashboard Gerencial, Configurações, Fontes, Histórico e Gênio.
+- Regra: somente frontend, documentação e validação; contratos, dados e backend
+  permanecem congelados.
+- Fase atual: documentação canônica concluída; implementação pendente.
+- Preservação: ref `refs/archive/high-density-ui-rebuild-start-20260803` e
+  bundle externo em `C:\Projetos\GSO-artifacts\high-density-ui-rebuild-20260803`.
+- Critério: validar visual real em cinco viewports, dois temas, teclado, foco,
+  reduced motion, requests, console e overflow antes de encerrar.
+
+### Sequência
+
+1. tokens/primitivos e shell compartilhado;
+2. Visão Geral, Comercial, Customer Success, Suporte e Financeiro;
+3. Integrações, Fontes, Histórico e estados do Gênio;
+4. responsividade, temas e acessibilidade;
+5. testes, QA visual real, correções e documentação final.

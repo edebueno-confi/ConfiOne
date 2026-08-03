@@ -1063,3 +1063,29 @@ suas configurações adotam uma única gramática de cockpit:
 O contrato visual não autoriza mudança de métrica, fonte, denominador, RPC,
 view, tabela, integração, credencial ou estado persistido. A implementação
 deve consumir os read models e handlers já existentes.
+## High-Density Interface V1
+
+Para o Dashboard Gerencial e suas superfícies administrativas, a referência de
+implementação passa a ser `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md`.
+High-Density combina alta densidade funcional com baixa densidade perceptual:
+header baixo, filtros em linha, 4–6 KPIs compactos no desktop amplo, análises
+lado a lado, tabelas visíveis e tipografia proporcional. Não usar zoom CSS,
+números gigantes, cards decorativos, grandes áreas vazias ou sequência de
+seções como landing page.
+
+Tokens de implementação:
+
+- título de página: 22–30px, máximo 32px;
+- título de domínio: 20–26px;
+- KPI: 24–34px;
+- padding da página: 20–28px;
+- padding de superfície: 12–16px;
+- gap: 12–18px;
+- header: 52–60px;
+- sidebar: 224–248px;
+- números com tabular nums;
+- foco visível, reduced motion e `color-scheme` coerente com o tema.
+
+O Blueprint V2 anterior fica superado para implementação quando conflitar com
+as referências atuais de `Dashboard PO` e `Suporte e conversas`. Métricas,
+contratos, read models, permissões e estados de dados permanecem imutáveis.
