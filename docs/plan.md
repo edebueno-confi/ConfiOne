@@ -82,6 +82,20 @@ declarado implementado por este registro documental.
   usar `source_type=CHAT` ou propriedade CSAT/NPS/CES isoladamente como prova de
   fonte autoritativa.
 
+# Recomendação do próximo macro-lote — Dashboard e Gênio em ação
+
+- Relatório: `docs/reports/2026-08-02_next-macro-lote-dashboard-genio.md`.
+- `UI-05`: remover a borda visual do card de loading e criar uma composição em
+  que o Gênio pareça voar e fazer magia, preservando o estado publicado real,
+  timeout, erro, acessibilidade e `prefers-reduced-motion`.
+- Copy recomendada: **O Gênio está tecendo a próxima visão**. Ele está fazendo
+  magia com as fontes conectadas para deixar o painel pronto para você. A tela
+  será liberada quando o estado publicado for confirmado.
+- O piloto deve combinar `DASHBOARD-05`, `DASHBOARD-06` e `UI-05` somente na
+  Visão Geral/CEO e aguardar aprovação visual antes de propagar o padrão.
+- Nenhuma métrica, contrato, RPC, RLS, integração ou sincronismo novo deve ser
+  implementado dentro deste lote visual.
+
 # Genius Support OS - Plano operacional vivo
 
 ## Smoke autenticado de release - 2026-07-23
