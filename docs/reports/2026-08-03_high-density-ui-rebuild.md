@@ -15,7 +15,7 @@ externa autorizada.
 
 ## Atualização do ciclo — 2026-08-03
 
-- A matriz base em `C:\Projetos\GSO-artifacts\high-density-ui-rebuild-20260803\qa-runtime-full-matrix\manifest.json` registrou 80 capturas autenticadas, nos oito roteiros, cinco viewports e dois temas. Analytics ficou sem console errors, falhas de rede ou respostas inesperadas.
+- A matriz final em `output/high-density-runtime-full-20260803/manifest.json` registrou 80 capturas autenticadas, nas oito superfícies, cinco viewports e dois temas. O manifesto confirmou zero erros de console, falhas de rede, respostas inesperadas, overflow horizontal e cópia proibida.
 - A matriz inicial identificou um 403 repetido de `ticket_categories` em todas as 30 capturas de Configurações. A causa era o carregamento de todos os read models no mount, mesmo quando a seção aberta era Integrações, Fontes ou Histórico.
 - `SettingsPage.tsx` passou a carregar cada read model somente quando sua seção está efetivamente aberta. A reteste em `output/settings-control-plane-v2-preview/manifest.json` fez 24 verificações e 18 capturas, todas sem console errors, falhas de rede, HTTP inesperado, overflow ou cópia proibida.
 - A captura final do Overview em `output/high-density-overview-final-2/` confirmou o ajuste de alta densidade em claro/escuro, desktop/mobile; em 1440×900 o início de `Trilho de integridade` e `Sinais gerenciais` já aparece na primeira dobra.
@@ -32,6 +32,9 @@ externa autorizada.
   `output/high-density-overview-sync-action-20260803/manifest.json` confirmou
   estado ativo não bloqueante com botão desabilitado, publicação posterior com
   botão liberado, zero erros de console, respostas inesperadas ou overflow.
+- O reteste do Financeiro em `output/high-density-finance-retake-20260803/manifest.json`
+  confirmou 10/10 capturas, nos cinco viewports e dois temas, sem erros de
+  console, falhas de rede, respostas inesperadas ou overflow.
 
 ## Auditoria documental e skills
 
@@ -116,10 +119,12 @@ credenciais, fórmulas, fontes, denominadores ou fluxo de sincronização.
 - `node scripts/local-qa/settings-control-plane-v2-preview.mjs` — **24/24
   verificações**, 18 capturas, sem erros de console, falhas de rede, respostas
   inesperadas ou overflow.
-- `node scripts/local-qa/dashboard-runtime-v3-preview.mjs` com Overview —
-  **4/4 capturas**, sem erros de console, falhas de rede, respostas inesperadas
-  ou overflow; sem filtro de domínio e sem contradição de status detectada pelo
-  harness.
+- `node scripts/local-qa/dashboard-runtime-v3-preview.mjs` — **80/80 capturas**,
+  oito superfícies, cinco viewports e dois temas, sem erros de console, falhas
+  de rede, respostas inesperadas ou overflow; sem filtro de domínio, contradição
+  de status ou modo de integração proibido detectados pelo harness.
+- Reteste direcionado do Financeiro — **10/10 capturas**, com a origem API OMIE
+  no mesmo nível do cabeçalho da área.
 - `node scripts/local-qa/genius-sync-ui-states.mjs` — **5/5 estados**, sem erros
   de console, falhas de rede, HTTP inesperado ou overflow; reduced-motion
   confirmado por duração de animação reduzida.

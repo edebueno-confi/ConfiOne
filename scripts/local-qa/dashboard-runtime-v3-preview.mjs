@@ -12,18 +12,23 @@ const account = { email: qa.LOCAL_QA_ADMIN_EMAIL, password: qa.LOCAL_QA_ADMIN_PA
 const surfaceCatalog = [
   { key: 'overview', path: '/admin/analytics?tab=overview' },
   { key: 'commercial', path: '/admin/analytics?tab=commercial' },
+  { key: 'customer-success', path: '/admin/analytics?tab=customer-success' },
+  { key: 'support', path: '/admin/analytics?tab=support' },
   { key: 'finance', path: '/admin/analytics?tab=finance' },
   { key: 'integrations', path: '/admin/settings/integrations' },
   { key: 'dashboard-sources', path: '/admin/settings/dashboard-sources' },
   { key: 'sync-history', path: '/admin/settings/sync-history' },
 ];
-const requestedSurfaces = (process.env.GSO_PREVIEW_SURFACES ?? 'overview,finance,integrations,dashboard-sources,sync-history')
+const requestedSurfaces = (process.env.GSO_PREVIEW_SURFACES ?? surfaceCatalog.map((surface) => surface.key).join(','))
   .split(',')
   .map((value) => value.trim())
   .filter(Boolean);
 const surfaces = surfaceCatalog.filter((surface) => requestedSurfaces.includes(surface.key));
 const viewports = [
+  { name: 'full-hd', width: 1920, height: 1080 },
   { name: 'desktop', width: 1440, height: 900 },
+  { name: 'tablet-landscape', width: 1024, height: 768 },
+  { name: 'tablet-portrait', width: 768, height: 1024 },
   { name: 'mobile', width: 390, height: 844 },
 ];
 
@@ -73,8 +78,17 @@ async function login(page, path) {
   await page.waitForTimeout(700);
 }
 
-async function inspect(browser, surface, theme, viewport) {
-  const context = await browser.newContext({ viewport, colorScheme: theme });
+async function createAuthenticatedState(browser) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'light' });
+  const page = await context.newPage();
+  await login(page, '/admin/analytics?tab=overview');
+  const storageState = await context.storageState();
+  await context.close();
+  return storageState;
+}
+
+async function inspect(browser, surface, theme, viewport, storageState) {
+  const context = await browser.newContext({ viewport, colorScheme: theme, storageState });
   await context.addInitScript(({ preferredTheme }) => {
     try { window.localStorage.setItem('genius.theme-preference', preferredTheme); } catch {}
   }, { preferredTheme: theme });
@@ -85,7 +99,9 @@ async function inspect(browser, surface, theme, viewport) {
   page.on('requestfailed', (request) => events.requestFailures.push(`${request.method()} ${request.url()} (${request.failure()?.errorText ?? 'unknown'})`));
   page.on('response', (response) => { if (response.status() >= 400) events.unexpectedResponses.push(`${response.status()} ${response.url()}`); });
   try {
-    await login(page, surface.path);
+    await page.goto(`${baseUrl}${surface.path}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+    await page.waitForTimeout(700);
     const bodyText = await page.locator('body').innerText();
     const overflow = await page.evaluate(() => ({
       documentScrollWidth: document.documentElement.scrollWidth,
@@ -149,9 +165,10 @@ let browser;
 try {
   await waitForPreview();
   browser = await chromium.launch({ headless: true });
+  const storageState = await createAuthenticatedState(browser);
   for (const surface of surfaces) {
     for (const theme of ['light', 'dark']) {
-      for (const viewport of viewports) captures.push(await inspect(browser, surface, theme, viewport));
+      for (const viewport of viewports) captures.push(await inspect(browser, surface, theme, viewport, storageState));
     }
   }
 } finally {

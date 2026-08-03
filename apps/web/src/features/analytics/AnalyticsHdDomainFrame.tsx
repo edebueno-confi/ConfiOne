@@ -7,12 +7,14 @@ export function AnalyticsHdDomainFrame({
   description,
   source,
   state,
+  headerAside,
   children,
 }: {
   title: string;
   description: string;
   source: string;
   state?: AnalyticsBlockState;
+  headerAside?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -23,11 +25,10 @@ export function AnalyticsHdDomainFrame({
           <h2 id={`analytics-domain-${title.toLowerCase().replace(/\W+/g, '-')}`}>{title}</h2>
           <p>{description}</p>
         </div>
-        {state ? (
-          <div className="gso-hd-domain-frame-status">
-            <AnalyticsStateBadge state={state} />
-          </div>
-        ) : null}
+        {headerAside || state ? <div className="gso-hd-domain-frame-aside">
+          {headerAside}
+          {state ? <div className="gso-hd-domain-frame-status"><AnalyticsStateBadge state={state} /></div> : null}
+        </div> : null}
       </header>
       {children}
     </section>

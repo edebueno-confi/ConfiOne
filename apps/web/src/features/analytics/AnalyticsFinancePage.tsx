@@ -113,31 +113,27 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
   const { kpis } = snapshot;
   const dataState = unifiedSourceStatus ? analyticsSourceToBlockState(unifiedSourceStatus.omie) : snapshot.state;
   const sourceIsApi = snapshot.source === 'api';
-  if ((dataState?.status === 'error' || dataState?.status === 'failed' || dataState?.status === 'unavailable' || dataState?.status === 'unavailable_source') && !dataState.lastSuccessfulSyncAt) return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState tone="critical" title="Dados financeiros ainda não disponíveis" description="A última atualização do OMIE não foi concluída. Consulte o Histórico para ver o motivo." actions={<HistoryLink />} /></AnalyticsHdDomainFrame>;
-  if (dataState?.status === 'not_configured') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState title="Fonte financeira não configurada" description="Configure a integração OMIE para consultar estes indicadores. Planilhas não são consideradas fonte financeira." actions={<FinanceSourceLinks />} /></AnalyticsHdDomainFrame>;
-  if (snapshot.source !== 'api') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState tone="critical" title="Dados OMIE indisponíveis" description="O Financeiro publica somente dados de uma sincronização OMIE válida. A fonte disponível não é uma leitura OMIE confirmada; configure o OMIE e consulte o Histórico para acompanhar a execução." actions={<FinanceSourceLinks />} /></AnalyticsHdDomainFrame>;
-  const controlClass = 'mt-1 block w-full rounded-lg border border-[color:var(--minimal-border-strong)] bg-transparent px-2 py-1.5 text-sm text-[color:var(--minimal-text)]';
   const lastSuccessAt = unifiedSourceStatus?.omie.lastSuccessAt ?? snapshot.state?.lastSuccessfulSyncAt ?? null;
   const sourceLabel = dataState?.status === 'failed' || dataState?.status === 'error'
     ? lastSuccessAt ? `Últimos dados válidos em ${new Date(lastSuccessAt).toLocaleString('pt-BR')}` : 'Atualização não registrada'
     : lastSuccessAt ? `Dados atualizados em ${new Date(lastSuccessAt).toLocaleString('pt-BR')}` : 'Atualização não registrada';
   const sourceTag = dataState?.status === 'failed' || dataState?.status === 'error' ? 'Fonte: API OMIE · snapshot anterior' : 'Fonte: API OMIE';
+  const financeSourceMeta = <div className="gso-finance-source-meta" aria-label="Fonte financeira">
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      <strong>Fonte financeira</strong>
+      <Tag label={sourceTag} tone={dataState?.status === 'failed' || dataState?.status === 'error' ? 'warning' : 'positive'} />
+      <span>{sourceLabel}</span>
+      <Link to="/admin/settings?section=analytics&panel=omie">Gerenciar OMIE</Link>
+    </div>
+    {!financeSourceStatus?.api.configured ? <p>Configure a credencial OMIE em Configurações → Integrações. O histórico fica em Configurações → Histórico.</p> : null}
+  </div>;
+  if ((dataState?.status === 'error' || dataState?.status === 'failed' || dataState?.status === 'unavailable' || dataState?.status === 'unavailable_source') && !dataState.lastSuccessfulSyncAt) return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState tone="critical" title="Dados financeiros ainda não disponíveis" description="A última atualização do OMIE não foi concluída. Consulte o Histórico para ver o motivo." actions={<HistoryLink />} /></AnalyticsHdDomainFrame>;
+  if (dataState?.status === 'not_configured') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState title="Fonte financeira não configurada" description="Configure a integração OMIE para consultar estes indicadores. Planilhas não são consideradas fonte financeira." actions={<FinanceSourceLinks />} /></AnalyticsHdDomainFrame>;
+  if (snapshot.source !== 'api') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState tone="critical" title="Dados OMIE indisponíveis" description="O Financeiro publica somente dados de uma sincronização OMIE válida. A fonte disponível não é uma leitura OMIE confirmada; configure o OMIE e consulte o Histórico para acompanhar a execução." actions={<FinanceSourceLinks />} /></AnalyticsHdDomainFrame>;
+  const controlClass = 'mt-1 block w-full rounded-lg border border-[color:var(--minimal-border-strong)] bg-transparent px-2 py-1.5 text-sm text-[color:var(--minimal-text)]';
 
-  return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}>
+  return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState} headerAside={financeSourceMeta}>
     <div className="gso-hd-domain-surface gso-pilot-finance space-y-5">
-    {/* Toolbar de fonte e sincronização */}
-    <section className="gso-finance-source-meta rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4" aria-label="Fonte financeira">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-sm font-semibold text-[color:var(--minimal-text)]">Fonte financeira</h2>
-          <Tag label={sourceTag} tone={dataState?.status === 'failed' || dataState?.status === 'error' ? 'warning' : 'positive'} />
-          <span className="text-xs text-[color:var(--minimal-text-tertiary)]">{sourceLabel}</span>
-          <Link to="/admin/settings?section=analytics&panel=omie" className="text-xs font-medium text-[color:var(--minimal-action)] hover:underline">Gerenciar OMIE</Link>
-        </div>
-      </div>
-      {!financeSourceStatus?.api.configured ? <p className="mt-2 text-xs text-[color:var(--minimal-warning-text)]">Configure a credencial OMIE em Configurações → Integrações para ativar a fonte. O histórico de sincronizações fica em Configurações → Histórico.</p> : null}
-    </section>
-
     {/* Filtros */}
     <section className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4">
       <div className="grid gap-3 md:grid-cols-8">

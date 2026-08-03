@@ -10,10 +10,12 @@
   sem tocar em métricas, fontes, contratos ou banco; a Visão Geral também recebeu
   a ação autorizada de sincronização que reutiliza o ciclo sequencial existente.
 - Typechecks, build, secret scan, quality gates e 98/98 testes focados passaram.
-- QA visual real foi executado: matriz base com 80 capturas nos cinco viewports
-  e dois temas, reteste de Configurações com 24 verificações, Overview com
-  quatro capturas e manifesto UI-05 com cinco estados do Gênio. Nenhum reset ou
-  hidratação foi executado.
+- QA visual real foi executado: matriz final com 80 capturas nas oito
+  superfícies, cinco viewports e dois temas; reteste do Financeiro com 10
+  capturas; reteste de Configurações com 24 verificações; e manifesto UI-05
+  com cinco estados do Gênio. Nenhum reset ou hidratação foi executado.
+- A origem financeira foi movida para o mesmo nível do cabeçalho `OMIE · Contas
+  a Receber`, preservando timestamp, estado e ação `Gerenciar OMIE`.
 - Relatório: `docs/reports/2026-08-03_high-density-ui-rebuild.md`.
 - QA da ação da Visão Geral: `output/high-density-overview-sync-action-20260803/manifest.json`.
 - Referências visuais consolidadas em `docs/design/blueprint/Dashboard PO/` e
@@ -26,7 +28,7 @@
    e credenciais provisionadas, conferindo o Histórico;
 2. reconciliar os quatro contratos preexistentes da suíte ampliada;
 3. aguardar aprovação visual antes de novos ajustes por domínio;
-3. executar sincronização externa somente com autorização e credenciais próprias.
+4. executar sincronização externa somente com autorização e credenciais próprias.
 
 ## Precedência
 

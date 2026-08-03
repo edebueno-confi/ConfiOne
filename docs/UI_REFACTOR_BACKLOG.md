@@ -159,7 +159,8 @@ antes da implementação e `web-design-guidelines` na revisão final.
 
 ### DASHBOARD-06 — Fonte financeira alinhada ao cabeçalho da aba Financeiro
 
-Status: backlog técnico de runtime e dados; não é item do próximo lote visual.
+Status: implementado no macro-lote `HIGH-DENSITY-01`; reteste visual final
+registrado em `output/high-density-finance-retake-20260803/manifest.json`.
 
 Superfície-alvo: aba **Financeiro** do Dashboard Gerencial.
 
@@ -177,6 +178,10 @@ Critérios de aceite:
 - revisar claro/escuro, 390, 768, 1024 e 1440px, teclado, foco e overflow;
 - capturar a aba Financeiro real após a alteração e validar que os cards e
   filtros continuam no fluxo correto.
+
+Implementação: a metadata de fonte, frescor e `Gerenciar OMIE` foi incorporada
+ao cabeçalho do frame `OMIE · Contas a Receber`; em mobile ela empilha abaixo do
+título sem criar overflow.
 
 ### KNOWLEDGE-03 — Reconstrução do cockpit de Artigos
 

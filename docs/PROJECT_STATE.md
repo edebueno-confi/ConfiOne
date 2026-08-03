@@ -19,15 +19,19 @@
 - Suíte ampliada: 117/121; quatro falhas preexistentes de contratos de runner e
   estados estão registradas em
   `docs/reports/2026-08-03_high-density-ui-rebuild.md`.
-- QA visual real: matriz base com 80 capturas nos cinco viewports e dois temas;
-  reteste de Configurações com 24 verificações, Overview com quatro capturas e
-  manifesto UI-05 com cinco estados do Gênio, todos sem falhas de rede ou
-  overflow. Não houve reset, hidratação ou alteração do banco.
+- QA visual real: matriz final com 80 capturas nas oito superfícies, cinco
+  viewports e dois temas, além de 10 capturas direcionadas do Financeiro;
+  reteste de Configurações com 24 verificações e manifesto UI-05 com cinco
+  estados do Gênio. Os manifestos finais não registraram falhas de rede,
+  respostas inesperadas ou overflow. Não houve reset, hidratação ou alteração
+  do banco.
 - QA adicional da ação da Visão Geral: estados ativo/publicado capturados em
   `output/high-density-overview-sync-action-20260803/manifest.json`, com ação
   bloqueada durante o ciclo, liberada após confirmação e sem overflow.
 - Correção de QA: `SettingsPage` passou a carregar read models sob demanda,
   evitando 403 de `ticket_categories` fora da seção Categorias.
+- Correção visual: a origem `Fonte financeira` agora compõe o mesmo cabeçalho
+  do frame `OMIE · Contas a Receber`, sem faixa vertical isolada.
 - Referências visuais vigentes: `docs/design/blueprint/Dashboard PO/` e
   `docs/design/blueprint/Suporte e conversas/`. A consolidação e as exclusões
   intencionais foram registradas nos commits `619dfa8` e `bb77c67`; o histórico anterior segue

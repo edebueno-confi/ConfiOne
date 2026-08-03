@@ -10,10 +10,11 @@
   estados visuais; sem alteração de backend, contratos, banco ou credenciais.
 - Evidência automatizada: build, typechecks, secret scan, quality gates e
   98/98 testes focados aprovados.
-- QA real executado: matriz base com 80 capturas nos cinco viewports e dois
-  temas; reteste de Configurações com 24 verificações, Overview com quatro
-  capturas e manifesto UI-05 com cinco estados do Gênio, sem falhas de rede,
-  HTTP inesperado ou overflow. Quatro falhas ampliadas preexistentes
+- QA real executado: matriz final com 80 capturas nas oito superfícies, cinco
+  viewports e dois temas; reteste direcionado do Financeiro com 10 capturas;
+  reteste de Configurações com 24 verificações e manifesto UI-05 com cinco
+  estados do Gênio, sem falhas de rede, HTTP inesperado ou overflow. Quatro
+  falhas ampliadas preexistentes
   permanecem registradas no relatório.
 - A Visão Geral agora expõe `Sincronizar bases` para administrador de plataforma,
   com bloqueio de ciclo concorrente e reuso do orquestrador sequencial. O fluxo

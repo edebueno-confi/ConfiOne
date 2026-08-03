@@ -53,6 +53,7 @@
 .gso-high-density-ui .gso-pilot-summary .gso-hd-pipelines { border-top: 1px solid var(--density-rule); padding-top: 0.65rem; }
 .gso-high-density-ui .gso-visual-v1-domain-frame { padding: 1rem 0 1.5rem; }
 .gso-high-density-ui .gso-visual-v1-domain-frame .gso-hd-domain-frame-header { align-items: center; border-bottom: 1px solid var(--density-rule); padding-bottom: 0.65rem; }
+.gso-high-density-ui .gso-visual-v1-domain-frame .gso-hd-domain-frame-aside { display: flex; min-width: 0; align-items: center; justify-content: flex-end; gap: 0.8rem; }
 .gso-high-density-ui .gso-visual-v1-domain-frame .gso-hd-domain-frame-heading h2 { font-size: clamp(1.35rem, 1.8vw, 1.75rem); line-height: 1.15; }
 .gso-high-density-ui .gso-visual-v1-domain-frame .gso-hd-domain-frame-heading p { margin-top: 0.2rem; font-size: 0.76rem; }
 .gso-high-density-ui .gso-hd-domain-surface,
@@ -68,7 +69,10 @@
 .gso-high-density-ui .genius-tech-card > header { margin-bottom: 0.55rem; }
 .gso-high-density-ui table th,
 .gso-high-density-ui table td { padding-block: 0.4rem; }
-.gso-high-density-ui .gso-finance-source-meta { margin: 0; border: 0; border-left: 2px solid var(--minimal-action); border-radius: 0; background: transparent; padding: 0.25rem 0 0.25rem 0.7rem; }
+.gso-high-density-ui .gso-finance-source-meta { max-width: 38rem; margin: 0; border-left: 2px solid var(--minimal-action); padding: 0.15rem 0 0.15rem 0.7rem; color: var(--minimal-text-secondary); font-size: 0.68rem; line-height: 1.35; }
+.gso-high-density-ui .gso-finance-source-meta strong { color: var(--minimal-text); font-size: 0.72rem; }
+.gso-high-density-ui .gso-finance-source-meta a { color: var(--minimal-action); font-weight: 650; }
+.gso-high-density-ui .gso-finance-source-meta p { margin-top: 0.2rem; color: var(--minimal-warning-text); }
 .gso-high-density-ui .gso-settings-nav { width: auto; }
 .gso-high-density-ui .gso-settings-integration-grid { gap: 0.75rem; }
 .gso-high-density-ui .gso-settings-integration-card,
@@ -122,6 +126,7 @@
   .gso-high-density-ui .gso-pilot-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .gso-high-density-ui .gso-pilot-summary .gso-hd-metric { min-height: 5.1rem; }
   .gso-high-density-ui .gso-visual-v1-domain-frame .gso-hd-domain-frame-header { align-items: flex-start; flex-direction: column; }
+  .gso-high-density-ui .gso-visual-v1-domain-frame .gso-hd-domain-frame-aside { width: 100%; align-items: flex-start; justify-content: flex-start; flex-direction: column; gap: 0.35rem; }
   .gso-high-density-ui .gso-pilot-summary .gso-hd-context-side--sync { display: flex; min-width: 0; width: 100%; align-items: flex-start; border-left: 0; border-top: 1px solid var(--density-rule); padding: 0.55rem 0 0; }
   .gso-high-density-ui .gso-settings-integration-grid { grid-template-columns: 1fr; }
 }
