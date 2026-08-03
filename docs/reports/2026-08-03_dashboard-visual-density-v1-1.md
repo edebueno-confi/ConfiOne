@@ -190,10 +190,11 @@ Removidos: status duplicado no título da Visão Geral, eyebrow duplicado, preen
 - `5f2186d docs(ui): atualizar contagem final de testes` — validação ampla corrigida.
 - `fff25ff refactor(ui): compactar hierarquia e estados visuais` — ajustes finais de overview, Financeiro, histórico, integrações e loading.
 - `dd26d09 docs(ui): fechar evidências do lote de densidade` — documentação, matriz final e limites.
+- `8dfed64 docs(ui): registrar commits e divergência finais` — fechamento do inventário Git.
 
 ## 36. Git final
 
-Branch: `codex/dashboard-visual-density-v1-1-20260803`. A divergência observada antes deste registro era `origin/main...HEAD = 0 128`; o HEAD final deve ser lido por `git rev-parse --short HEAD` após o commit documental.
+Branch: `codex/dashboard-visual-density-v1-1-20260803`. HEAD final: `8dfed64`; divergência `origin/main...HEAD = 0 129`. Worktree limpo após o fechamento documental.
 
 ## 37. Limitações
 
