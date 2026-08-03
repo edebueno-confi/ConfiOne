@@ -32,7 +32,7 @@ export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
   return (
     <AnalyticsHdDomainFrame title="Customer Success" description="Carteira HubSpot, cobertura de responsáveis e preenchimento dos campos operacionais." source={data.source} state={state}>
       {state?.status === 'empty' ? <MinimalState title="Nenhuma empresa disponível no recorte" description="O HubSpot não retornou empresas para esta leitura. Nenhum indicador foi inventado." /> : null}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="gso-pilot-kpi-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <KpiCard label="Empresas no HubSpot" value={value(data.kpis.companiesTotal)} hint="Registros no cache oficial" source="Contagem de empresas disponíveis no contrato HubSpot." state={state} />
         <KpiCard label="Status de cliente preenchido" value={value(data.kpis.clientStatusFilled)} hint="Empresas com o campo informado" source="Presença do campo; não interpreta a regra de cliente ativo." state={state} />
         <KpiCard label="Status contratual preenchido" value={value(data.kpis.contractStatusFilled)} hint="Empresas com o campo informado" source="Presença do campo no HubSpot." state={state} />

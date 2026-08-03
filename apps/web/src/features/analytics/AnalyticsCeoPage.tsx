@@ -106,8 +106,8 @@ export function AnalyticsCeoPage({
   if (result.loading && !result.data)
     return (
       <AnalyticsLoadingState
-        title="O Gênio está organizando os dados do painel"
-        description="A atualização está em andamento. Os novos dados aparecerão quando as fontes concluírem o processamento."
+        title="O Gênio está alinhando os sinais das fontes"
+        description="Ele está cruzando as leituras publicadas; o cockpit volta assim que houver um estado confiável."
       />
     );
   if (result.error || !result.data)

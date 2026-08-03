@@ -10,6 +10,7 @@ import { AnalyticsReportExport } from './AnalyticsReportExport';
 import { MinimalState } from '../../components/minimal-states';
 import { analyticsDomainFromTab, analyticsTabForDomain, normalizeAnalyticsSearch } from './analytics-navigation';
 import { isAnalyticsDomainPublishedInRelease } from '../../app/release-surface.mjs';
+import './high-density.css';
 
 const DOMAINS = listEnabledAnalyticsDomains();
 
@@ -68,7 +69,7 @@ export function AnalyticsShell() {
   const ActiveComponent = activeDomain?.Component;
 
   return (
-    <div className="gso-screen-frame gso-analytics-shell gso-pilot-shell gso-visual-v1-shell flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
+    <div className="gso-screen-frame gso-analytics-shell gso-pilot-shell gso-visual-v1-shell gso-high-density-ui flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
       <header className="gso-screen-header gso-workspace-header shrink-0 border-b border-[color:var(--minimal-border)] px-5 py-3 sm:px-6">
         <div className="flex min-h-12 flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <div className="min-w-0">

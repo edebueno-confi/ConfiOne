@@ -62,11 +62,11 @@ export function AnalyticsLoadingState({ title, description }: { title: string; d
     <section aria-busy="true" aria-label={title} className="gso-analytics-loading-state flex min-h-[170px] flex-col items-center justify-center gap-3 px-4 py-5 text-center sm:min-h-[240px]" role="status">
       <div className="gso-analytics-loading-state__mascot flex h-36 w-36 items-center justify-center sm:h-44 sm:w-44">
         <div className="scale-[0.7] sm:scale-[0.9]">
-          <GeniusMascot alt="Gênio organizando os dados do Dashboard" animated expression="happy" pose="magic" size="xl" surface="loading" />
+          <GeniusMascot alt="Gênio voando e alinhando os sinais do Dashboard" animated expression="happy" pose="magic" size="xl" surface="loading" />
         </div>
       </div>
       <div className="max-w-md">
-        <h2 className="text-base font-semibold text-[color:var(--minimal-text)]">{title || 'O Gênio está organizando os dados do painel'}</h2>
+        <h2 className="text-base font-semibold text-[color:var(--minimal-text)]">{title || 'O Gênio está alinhando os sinais das fontes'}</h2>
         <p className="mt-1 text-sm leading-6 text-[color:var(--minimal-text-secondary)]">{description}</p>
       </div>
     </section>
