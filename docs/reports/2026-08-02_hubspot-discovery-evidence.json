@@ -1,0 +1,104 @@
+{
+  "generatedAt": "2026-08-02",
+  "scope": "read_only_discovery",
+  "secretsPersisted": false,
+  "individualRecordsPersisted": false,
+  "externalWritesExecuted": false,
+  "gsoPreflight": {
+    "status": "ready",
+    "credentialConfigured": true,
+    "endpointReachable": true,
+    "responseValid": true,
+    "nonArchivedPipelines": 35,
+    "dealPipelines": 11,
+    "ticketPipelines": 24,
+    "localCatalogLiveCoverage": "35/35",
+    "localOnlyQaEntries": 2
+  },
+  "recordTotals": {
+    "companies": 10317,
+    "deals": 2021,
+    "tickets": 52975,
+    "contacts": 35025
+  },
+  "propertyTotals": {
+    "companies": 510,
+    "deals": 983,
+    "tickets": 1040
+  },
+  "candidateCoverage": {
+    "companiesAftersaleCustomer": { "count": 264, "denominator": 10317 },
+    "companiesStatusCliente": { "count": 320, "denominator": 10317 },
+    "companiesCsmOwner": { "count": 299, "denominator": 10317 },
+    "companiesMrrGreaterThanZero": { "count": 251, "denominator": 10317 },
+    "companiesAftersaleAndCsm": { "count": 99, "denominator": 10317 },
+    "companiesStatusClienteAndMrr": { "count": 205, "denominator": 10317 },
+    "ticketsCustomerSuccessPipeline": { "count": 11, "denominator": 52975 },
+    "ticketsAreaCs": { "count": 33, "denominator": 52975 },
+    "ticketsCsmOwner": { "count": 8855, "denominator": 52975 },
+    "ticketsSourceChat": { "count": 19138, "denominator": 52975 },
+    "ticketsCloseSlaOverdue": { "count": 5244, "denominator": 52975 }
+  },
+  "candidateProperties": {
+    "companies": [
+      "e_cliente_aftersale_",
+      "status_do_cliente___aftersale",
+      "cs_owner___aftersale",
+      "csm_owner___aftersale",
+      "aftersale___mrr",
+      "churn___aftersale",
+      "data_de_renovacao_do_contrato___cs___aftersale",
+      "hs_csm_sentiment",
+      "lifecyclestage"
+    ],
+    "deals": [
+      "pipeline",
+      "dealstage",
+      "amount",
+      "closedate",
+      "hs_is_closed_won",
+      "hs_is_closed_lost",
+      "csm_owner___aftersale",
+      "data_de_passagem_para_qualificacao_cs___expansao___aftersale",
+      "data_de_passagem_para_churn___retencao_churn___aftersale"
+    ],
+    "tickets": [
+      "hs_pipeline",
+      "hs_pipeline_stage",
+      "hs_ticket_priority",
+      "hubspot_owner_id",
+      "csm_owner___tiquete__aftersale",
+      "source_type",
+      "area_responsavel",
+      "hs_time_to_first_response_sla_status",
+      "hs_time_to_close_sla_status",
+      "hs_last_csat_rating",
+      "hs_feedback_last_nps_rating_number",
+      "hs_feedback_last_ces_rating"
+    ]
+  },
+  "activities": {
+    "calls": 12131,
+    "tasks": 74530,
+    "meetings": 10856,
+    "emails": 150187,
+    "notes": 14341,
+    "conversations": "not_exposed_by_current_connector",
+    "feedbackSubmissions": "not_exposed_by_current_connector",
+    "surveys": "not_exposed_by_current_connector"
+  },
+  "associationProbe": {
+    "executed": true,
+    "representative": false,
+    "sampleRecordIdsPersisted": false,
+    "associatedObjectsObserved": ["deal", "contact", "ticket"]
+  },
+  "openGaps": [
+    "cs_denominator_not_selected",
+    "conversation_thread_source_not_proven",
+    "feedback_authoritative_endpoint_not_exposed",
+    "pipeline_stage_mapping_incomplete",
+    "owner_pagination_global_total_inconclusive",
+    "authenticated_chrome_navigation_not_tested"
+  ]
+}

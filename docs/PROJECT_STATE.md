@@ -317,6 +317,25 @@ este bloco, este estado canônico atual prevalece; pendências antigas sobre
 - O bundle de exportação permanece como referência local ignorada pelo Git;
   o runtime usa somente componentes React e CSS do produto.
 
+# Discovery HubSpot somente leitura — 2026-08-02
+
+- O discovery autorizado confirmou o preflight real do GSO (`ready`), com
+  credencial server-side configurada, endpoint alcançável, resposta válida,
+  35 pipelines não arquivados e `writesExternalData=false`.
+- Os relatórios sanitizados de capacidades, operação CS, catálogo de métricas,
+  pipelines e evidência JSON estão em `docs/reports/2026-08-02_hubspot-*.md` e
+  `docs/reports/2026-08-02_hubspot-discovery-evidence.json`.
+- O catálogo observado foi 10.317 Companies, 2.021 Deals, 52.975 Tickets e
+  35.025 Contacts. Esses números não são carteira CS; seis alternativas de
+  denominador foram comparadas e nenhuma foi escolhida.
+- Conversas, inbox, mensagens, feedback e surveys não foram comprovados pelo
+  conector atual. Navegação autenticada no Chrome ficou `NOT_TESTED` por
+  indisponibilidade da ferramenta nesta tarefa.
+- Nenhuma escrita HubSpot, sincronização ampla, token, registro individual ou
+  dado pessoal foi persistido. O estado do discovery é **parcialmente validado**;
+  denominador CS, fonte de Conversas/Feedback e decisão de domínio permanecem
+  pendentes do Product Owner.
+
 # PROJECT_STATE.md
 
 ## Estado do lote 2026-07-23

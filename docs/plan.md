@@ -71,6 +71,17 @@ Relatório do diagnóstico: `docs/reports/2026-08-01_repository-and-release-surf
 Detalhamento e critérios: `docs/UI_REFACTOR_BACKLOG.md`. Nenhum item acima é
 declarado implementado por este registro documental.
 
+# Discovery HubSpot concluído como investigação — 2026-08-02
+
+- O discovery somente leitura foi registrado nos cinco relatórios
+  `docs/reports/2026-08-02_hubspot-*.md` e no JSON sanitizado correspondente.
+- Nenhuma métrica foi implementada e nenhum denominador CS foi selecionado.
+  A próxima especificação deve transformar o universo escolhido pelo Product
+  Owner em configuração auditável por área, sem descartar pipelines legados.
+- Conversas/Feedback e navegação autenticada no Chrome seguem pendentes; não
+  usar `source_type=CHAT` ou propriedade CSAT/NPS/CES isoladamente como prova de
+  fonte autoritativa.
+
 # Genius Support OS - Plano operacional vivo
 
 ## Smoke autenticado de release - 2026-07-23

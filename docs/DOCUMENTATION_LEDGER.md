@@ -210,6 +210,19 @@
 - limite: validacao local apenas; ainda nao houve reset controlado completo,
   migration remota, deploy ou push.
 
+# Discovery HubSpot somente leitura — 2026-08-02
+
+- Discovery autorizado executado sem escrita externa, sincronização ampla ou
+  persistência de token, payload, registro individual ou PII.
+- Preflight GSO real: `ready`, endpoint alcançável, credencial server-side
+  configurada, 35 pipelines não arquivados e `writesExternalData=false`.
+- Relatórios persistidos: matriz de capacidades, discovery operacional de CS,
+  catálogo de métricas, inventário de pipelines e evidência JSON sanitizada em
+  `docs/reports/2026-08-02_hubspot-*.md` e
+  `docs/reports/2026-08-02_hubspot-discovery-evidence.json`.
+- Resultado parcialmente validado: denominador CS, fonte autoritativa de
+  Conversas/Feedback e Chrome autenticado aguardam validação/decisão.
+
 # DOCUMENTATION_LEDGER.md
 
 ## Lote 2026-07-23 - pipelines comerciais, fila paginada e relacionamento B2B
