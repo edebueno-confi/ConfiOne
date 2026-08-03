@@ -171,10 +171,11 @@ Removidos: eyebrow duplicado de Visão Geral, preenchimento azul dominante do pr
 - `e8f5380 refactor(ui): reduzir densidade visual do dashboard` — código e CSS.
 - `6527c75 docs(ui): registrar densidade e QA do dashboard` — relatório e registros canônicos.
 - `0ed6f61 docs(ui): fechar relatório do lote visual` — HEAD/commits finais.
+- `5f2186d docs(ui): atualizar contagem final de testes` — validação ampla corrigida.
 
 ## 36. Git final
 
-Branch: `codex/dashboard-visual-density-v1-1-20260803`. O HEAD documental é `0ed6f61`; a árvore ficará limpa após o fechamento deste registro.
+Branch: `codex/dashboard-visual-density-v1-1-20260803`. O HEAD final da branch deve ser lido pelo comando `git rev-parse --short HEAD` no fechamento; o worktree está limpo após este registro.
 
 ## 37. Limitações
 
