@@ -58,6 +58,8 @@ O frame compartilhado mantém filtros, KPIs e gráficos. A mudança global evita
 
 ## 13. Financeiro
 
+Delta final: os oito KPIs foram agrupados em Posicao e risco e Movimentacao e previsao, sem alterar valores, formulas ou contrato.
+
 O bloco de fonte financeira foi transformado visualmente em metadata compacta, alinhada ao cabeçalho `OMIE · Contas a Receber`, preservando fonte, frescor, link de gerenciamento e estado real.
 
 ## 14. Integrações
@@ -70,9 +72,11 @@ A superfície de fontes continua responsável por ações operacionais existente
 
 ## 16. Histórico
 
-O histórico deixou de apresentar a linha do tempo decorativa. Os grupos continuam recolhíveis e agora exibem registro operacional, trigger, data e status em linhas mais compactas. A repetição de “Ciclo de atualização” foi removida.
+O histórico deixou de apresentar a linha do tempo decorativa. O cabeçalho foi reduzido a uma faixa operacional curta, sem o hero “Rastreabilidade”; os grupos continuam recolhíveis e agora exibem registro operacional, trigger, data e status em linhas mais compactas. A repetição de “Ciclo de atualização” foi removida.
 
 ## 17. UI-05
+
+Delta final: o titulo do overlay/loading foi limitado a 24-30px no desktop e 21px no mobile.
 
 O copy do Gênio foi refinado para mensagens operacionais mais humanas: “O Gênio está abrindo caminho para os dados”, “puxando os fios do HubSpot”, “fazendo a conta fechar no OMIE” e “soltando a magia no painel”. A semântica de overlay bloqueante/banner não bloqueante foi preservada.
 
@@ -82,6 +86,8 @@ A captura de 1920x1080 não aumenta mais o título proporcionalmente; a escala f
 
 ## 19. Responsividade
 
+Delta final: as 80 capturas foram feitas no preview empacotado estabilizado, sem overflow horizontal ou vertical.
+
 Foram capturados 80 estados: 8 superfícies × 5 viewports × 2 temas. Viewports: 1920x1080, 1440x900, 1024x768, 768x1024 e 390x844. Não foi observado overflow horizontal.
 
 ## 20. Temas
@@ -89,6 +95,8 @@ Foram capturados 80 estados: 8 superfícies × 5 viewports × 2 temas. Viewports
 Light e dark foram capturados em todas as superfícies. A troca de tema preserva contraste, status e densidade sem reintroduzir bordas ou fundos dominantes.
 
 ## 21. Acessibilidade
+
+Delta final: os campos de integracao passaram a estar em formularios e o probe browser encontrou foco visivel nos controles navegaveis.
 
 Typecheck e contratos passaram. Os controles e semântica existentes foram preservados; o histórico permanece com `<details>/<summary>`, fonte financeira recebeu `aria-label` e o overlay mantém `role=status`, `aria-live` e `aria-busy`.
 
@@ -98,6 +106,8 @@ Não houve alteração de chamadas, polling, sincronização, cache, read model 
 
 ## 23. Código/CSS
 
+Delta final: o escopo inclui agrupamento financeiro, formulários de integrações e escala do loading do Gênio.
+
 As correções foram concentradas em `index.css`, no frame executivo, no metadata financeiro, no histórico e no copy do overlay. Os limites foram expressos em regras CSS com tokens existentes, sem regra de negócio no frontend.
 
 ## 24. Qualidade
@@ -106,7 +116,7 @@ As correções foram concentradas em `index.css`, no frame executivo, no metadat
 
 ## 25. Governança documental
 
-Este relatório é a evidência delta do macro-lote. O plano corrente, `PROJECT_STATE.md` e `DOCUMENTATION_LEDGER.md` foram atualizados sem substituir o histórico anterior.
+Este relatório é a evidência delta do macro-lote. O plano corrente, `PROJECT_STATE.md` e `DOCUMENTATION_LEDGER.md` foram atualizados sem substituir o histórico anterior. A auditoria `run-documentation-audit.mjs changed` foi reexecutada e permaneceu `inconsistent` por contradições históricas globais, links legados e um achado de secret-assignment em documento histórico; nenhum valor sensível foi aberto ou reproduzido neste lote.
 
 ## 26. Testes
 
@@ -141,9 +151,13 @@ O finding visual principal foi confirmado no baseline: escala excessiva e compos
 
 ## 29. Correções
 
+Delta final: seis áreas de código foram cobertas: CSS visual, overview, Financeiro, histórico, formulários de integração e UI-05.
+
 Implementadas 4 áreas de código: CSS visual, overview, finance metadata e UI-05 copy/history. Não houve alteração em migrations, RPCs, views, read models, secrets, handlers de sincronização ou permissões.
 
 ## 30. QA final
+
+Delta final: preview empacotado 80/80, 0 falhas de rota, 0 HTTP >=400, 0 overflow, 0 login detectado e 0 mensagens de console na coleta final.
 
 Matriz final: 80/80 capturas; 0 falhas de carregamento; 0 HTTP ≥400; 0 overflow horizontal; 30 mensagens de console registradas para inspeção, sem falha de rota. Os títulos observados foram 32px, 28px e 24px conforme viewport.
 
@@ -155,16 +169,18 @@ Em `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\motion` for
 
 - Baseline: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\baseline-v1` — 80 PNGs e manifesto.
 - Final: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\final-v1-1` — 80 PNGs e manifesto.
+- Preview final: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\preview-final-2` — 80 PNGs e manifesto.
+- Zoom: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\zoom` — 16 PNGs, oito superfícies em 125% e 200%, sem overflow horizontal.
 - Motion: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\motion`.
 - Pacote para revisão: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence.zip`, 16.266.594 bytes, SHA-256 `2B037C236CADBCB8FB9F86E5B282612EEE567F37C951AE8E8ECA0DC147E6935B`.
 
 ## 33. Arquivos
 
-Alterados no código: `apps/web/src/index.css`, `apps/web/src/features/analytics/AnalyticsCeoPage.tsx`, `apps/web/src/features/analytics/AnalyticsFinancePage.tsx`, `apps/web/src/features/settings/SyncHistorySettingsPage.tsx`, `apps/web/src/components/GeniusSyncOverlay.tsx`. Documentação: este relatório, `docs/plan.md`, `docs/PROJECT_STATE.md` e `docs/DOCUMENTATION_LEDGER.md`.
+Alterados no código: `apps/web/src/index.css`, `apps/web/src/features/analytics/AnalyticsCeoPage.tsx`, `apps/web/src/features/analytics/AnalyticsFinancePage.tsx`, `apps/web/src/features/settings/SyncHistorySettingsPage.tsx`, `apps/web/src/features/settings/SettingsIntegrationsPanel.tsx`, `apps/web/src/components/GeniusSyncOverlay.tsx`. Documentação: este relatório, `docs/plan.md`, `docs/PROJECT_STATE.md` e `docs/DOCUMENTATION_LEDGER.md`.
 
 ## 34. Código removido
 
-Removidos: eyebrow duplicado de Visão Geral, preenchimento azul dominante do primeiro KPI, linha decorativa da timeline e texto repetitivo “Ciclo de atualização”. Nenhum código de integração ou fonte de dados foi removido.
+Removidos: status duplicado no título da Visão Geral, eyebrow duplicado, preenchimento azul dominante do primeiro KPI, linha decorativa da timeline e texto repetitivo “Ciclo de atualização”. Nenhum código de integração ou fonte de dados foi removido.
 
 ## 35. Commits
 
@@ -175,7 +191,7 @@ Removidos: eyebrow duplicado de Visão Geral, preenchimento azul dominante do pr
 
 ## 36. Git final
 
-Branch: `codex/dashboard-visual-density-v1-1-20260803`. O HEAD final da branch deve ser lido pelo comando `git rev-parse --short HEAD` no fechamento; o worktree está limpo após este registro.
+Branch: `codex/dashboard-visual-density-v1-1-20260803`. A divergência observada no fechamento desta revisão é `origin/main...HEAD = 0 126`; o HEAD final deve ser lido por `git rev-parse --short HEAD` após o commit documental.
 
 ## 37. Limitações
 

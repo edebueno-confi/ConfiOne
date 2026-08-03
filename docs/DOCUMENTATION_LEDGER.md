@@ -6900,3 +6900,18 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - Precedência: esta entrada e a especificação atualizada de UI-05 corrigem a
   dependência histórica de discovery HubSpot/denominador/catalogo para o lote
   visual; os relatórios históricos permanecem preservados.
+
+## DASHBOARD-VISUAL-DENSITY-V1.1 - Densidade, tipografia e QA empacotado - 2026-08-03
+
+- Relatório: `docs/reports/2026-08-03_dashboard-visual-density-v1-1.md`.
+- Branch: `codex/dashboard-visual-density-v1-1-20260803`; base preservada em
+  `refs/archive/dashboard-visual-density-v1-1-start-20260803`.
+- Entrega: tipografia limitada, overview sem status duplicado, filtros contíguos,
+  Financeiro agrupado semanticamente, histórico compacto, formulários de
+  integrações sem warning de password fora de form e UI-05 com copy/motion
+  preservados.
+- Evidência: preview empacotado 80/80, zoom 125/200 em oito superfícies, motion
+  real do loading e reduced motion sem animações.
+- Limites: sincronização real HubSpot/OMIE não executada; overlay de ciclo real,
+  validação de denominador CS e três falhas amplas de Analytics permanecem fora
+  deste lote.

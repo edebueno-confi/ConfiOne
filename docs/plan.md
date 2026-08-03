@@ -13,8 +13,10 @@
 - Evidência visual persistida fora do Git em
   `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803`.
 - Relatório: `docs/reports/2026-08-03_dashboard-visual-density-v1-1.md`.
-- QA final: 80/80 capturas, 0 falhas de rota, 0 HTTP ≥400 e 0 overflow
-  horizontal; títulos observados em 32/28/24px.
+- QA final no preview empacotado: 80/80 capturas, 0 falhas de rota, 0 HTTP >=400,
+  0 overflow horizontal/vertical e 0 login detectado; Visão Geral em 32px,
+  domínios até 27,36px e mobile em 24px. Zoom adicional: 16 capturas em 125%
+  e 200%, sem overflow horizontal.
 
 ## Estado de validação
 
