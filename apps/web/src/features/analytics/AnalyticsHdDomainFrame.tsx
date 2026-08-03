@@ -1,6 +1,43 @@
 import type { ReactNode } from 'react';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
 import { AnalyticsStateBadge } from './analytics-ui';
+import type { OmieSyncRun, SyncRun } from './analytics-model';
+
+export function AnalyticsExecutionMeta({
+  provider,
+  run,
+}: {
+  provider: 'HubSpot' | 'OMIE';
+  run: SyncRun | OmieSyncRun | null;
+}) {
+  const status = run?.status ?? 'not_registered';
+  const statusLabel = status === 'success' || status === 'succeeded' || status === 'completed'
+    ? 'Concluída'
+    : status === 'running' || status === 'processing'
+      ? 'Em andamento'
+      : status === 'failed' || status === 'error'
+        ? 'Falhou'
+        : status === 'partial'
+          ? 'Parcial'
+          : 'Não registrada';
+  const finishedAt = run?.finishedAt ?? run?.startedAt ?? null;
+  const rowCount = run && 'totalRows' in run
+    ? run.totalRows
+    : run && 'recordsPromoted' in run
+      ? (run.recordsPromoted || run.recordsAccepted || run.companiesSynced || run.dealsSynced || run.ticketsSynced)
+      : null;
+
+  return (
+    <div className="gso-analytics-execution-meta" aria-label={`Última execução ${provider}`}>
+      <span className="gso-analytics-execution-meta__label">Última execução</span>
+      <strong>{provider} · {statusLabel}</strong>
+      <span>
+        {finishedAt ? new Date(finishedAt).toLocaleString('pt-BR') : 'Atualização não registrada'}
+        {rowCount !== null && rowCount !== undefined ? ` · ${rowCount.toLocaleString('pt-BR')} registros` : ''}
+      </span>
+    </div>
+  );
+}
 
 export function AnalyticsHdDomainFrame({
   title,

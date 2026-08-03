@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MinimalState } from '../../components/minimal-states';
-import { getFinanceSnapshot, getFinanceSourceStatus, getFinanceUnmatchedClients, type FinanceUnmatchedClient } from './analytics-api';
+import { getFinanceSnapshot, getFinanceSourceStatus, getFinanceUnmatchedClients, listOmieSyncRuns, type FinanceUnmatchedClient } from './analytics-api';
 import { AnalyticsLoadingState, ChartCard, KpiCard, MetricInfo } from './analytics-ui';
 import { analyticsSourceToBlockState, formatCurrencyBRL, formatMonthLabel, formatPercent, type AnalyticsFilters, DEFAULT_ANALYTICS_FILTERS, type FinanceBreakdown, type FinanceSnapshot, type FinanceSourceStatus } from './analytics-model';
 import { ANALYTICS_PERIOD_OPTIONS, resolveAnalyticsPeriod, type AnalyticsPeriodPreset } from './analytics-periods';
 import type { AnalyticsPageProps } from './analytics-model';
-import { AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
+import { AnalyticsExecutionMeta, AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
 
 type FinanceFilters = AnalyticsFilters & { clientQuery: string };
 
@@ -71,6 +71,7 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
   const [draft, setDraft] = useState(filters);
   const [state, setState] = useState<{ phase: 'loading' } | { phase: 'ready'; snapshot: FinanceSnapshot } | { phase: 'error'; message: string }>({ phase: 'loading' });
   const [financeSourceStatus, setFinanceSourceStatus] = useState<FinanceSourceStatus | null>(null);
+  const [latestOmieRun, setLatestOmieRun] = useState<import('./analytics-model').OmieSyncRun | null>(null);
   const [preset, setPreset] = useState<AnalyticsPeriodPreset | ''>('month');
   const [unmatched, setUnmatched] = useState<FinanceUnmatchedClient[] | null>(null);
   const [loadingUnmatched, setLoadingUnmatched] = useState(false);
@@ -98,6 +99,7 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
   }, [filters]);
 
   useEffect(() => { getFinanceSourceStatus().then(setFinanceSourceStatus).catch(() => setFinanceSourceStatus(null)); }, []);
+  useEffect(() => { listOmieSyncRuns().then((runs) => setLatestOmieRun(runs[0] ?? null)).catch(() => setLatestOmieRun(null)); }, []);
 
   const applyPreset = (nextPreset: AnalyticsPeriodPreset) => {
     setPreset(nextPreset);
@@ -125,6 +127,7 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
       <span>{sourceLabel}</span>
       <Link to="/admin/settings?section=analytics&panel=omie">Gerenciar OMIE</Link>
     </div>
+    <AnalyticsExecutionMeta provider="OMIE" run={latestOmieRun} />
     {!financeSourceStatus?.api.configured ? <p>Configure a credencial OMIE em Configurações → Integrações. O histórico fica em Configurações → Histórico.</p> : null}
   </div>;
   if ((dataState?.status === 'error' || dataState?.status === 'failed' || dataState?.status === 'unavailable' || dataState?.status === 'unavailable_source') && !dataState.lastSuccessfulSyncAt) return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState tone="critical" title="Dados financeiros ainda não disponíveis" description="A última atualização do OMIE não foi concluída. Consulte o Histórico para ver o motivo." actions={<HistoryLink />} /></AnalyticsHdDomainFrame>;

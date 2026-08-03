@@ -343,8 +343,13 @@ function ExecutiveHdCanvas({
 
   return (
     <div className="gso-hd-canvas gso-pilot-summary gso-executive-canvas gso-visual-v1-overview" data-testid="executive-dashboard">
-      <section className="gso-hd-context" aria-labelledby="executive-heading">
-        <div>
+      <section className="gso-hd-context gso-overview-context" aria-labelledby="executive-heading">
+        <div className="gso-overview-context__source">
+          <strong>Estado das fontes</strong>
+          {state ? <AnalyticsStateBadge state={state} /> : null}
+          <span>HubSpot para operação; OMIE para Financeiro.</span>
+        </div>
+        <div className="gso-overview-context__heading">
           <div className="gso-hd-title-row">
             <h2 id="executive-heading">Visão Geral</h2>
           </div>
@@ -352,12 +357,7 @@ function ExecutiveHdCanvas({
             Desempenho no período, posição atual e sinais que merecem contexto.
           </p>
         </div>
-        <div className="gso-hd-context-side gso-hd-context-side--sync">
-          <div>
-            <strong>Estado das fontes</strong>
-            {state ? <AnalyticsStateBadge state={state} /> : null}
-            <span>HubSpot para operação; OMIE para Financeiro.</span>
-          </div>
+        <div className="gso-overview-context__action">
           {canSyncSources && syncSources ? (
             <button
               type="button"

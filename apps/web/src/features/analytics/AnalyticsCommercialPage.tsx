@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MinimalState } from '../../components/minimal-states';
-import { getCommercialSnapshot, listAnalyticsSourceConfig } from './analytics-api';
+import { getCommercialSnapshot, listAnalyticsSourceConfig, listHubspotSyncRuns } from './analytics-api';
 import {
   formatCurrencyBRL,
   formatPercent,
@@ -22,7 +22,7 @@ import { resolveAnalyticsPeriod } from './analytics-periods';
 import type { AnalyticsPageProps } from './analytics-model';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
 import { CommercialFunnelChart, CommercialMonthlyChart } from './charts/AnalyticsCharts';
-import { AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
+import { AnalyticsExecutionMeta, AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
 
 type State =
   | { phase: 'loading' }
@@ -43,6 +43,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
   const [filters, setFilters] = useState<AnalyticsFilters>({ ...DEFAULT_ANALYTICS_FILTERS, ...period });
   const [configuredPipelines, setConfiguredPipelines] = useState<AnalyticsSourceConfig[]>([]);
   const [excludedPipelineIds, setExcludedPipelineIds] = useState<string[]>([]);
+  const [latestHubspotRun, setLatestHubspotRun] = useState<import('./analytics-model').SyncRun | null>(null);
 
   useEffect(() => {
     setFilters((current) => current.from === period.from && current.to === period.to ? current : { ...current, ...period });
@@ -52,11 +53,12 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
     let cancelled = false;
     setState((current) => current.phase === 'ready' ? current : { phase: 'loading' });
 
-    Promise.all([getCommercialSnapshot(filters, excludedPipelineIds), listAnalyticsSourceConfig()])
-      .then(([snapshot, configs]) => {
+    Promise.all([getCommercialSnapshot(filters, excludedPipelineIds), listAnalyticsSourceConfig(), listHubspotSyncRuns()])
+      .then(([snapshot, configs, runs]) => {
         if (!cancelled) {
           const activeConfigs = configs.filter((config) => config.domainKey === 'commercial' && config.objectType === 'deal' && config.isActive);
           setConfiguredPipelines(activeConfigs);
+          setLatestHubspotRun(runs[0] ?? null);
           setState({ phase: 'ready', ...applyConfiguredPipelineLabels(snapshot, activeConfigs) });
         }
       })
@@ -93,7 +95,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
   });
 
   return (
-    <AnalyticsHdDomainFrame title="Comercial" description="Receita, pipeline e conversão para decisão comercial." source="HubSpot · Deals" state={displayState}>
+    <AnalyticsHdDomainFrame title="Comercial" description="Receita, pipeline e conversão para decisão comercial." source="HubSpot · Deals" state={displayState} headerAside={<AnalyticsExecutionMeta provider="HubSpot" run={latestHubspotRun} />}>
     <div className="gso-hd-domain-surface gso-pilot-commercial space-y-5">
       <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} ownerOptions={ownerOptions} extraFields={pipelineOptions.length > 0 ? <AnalyticsPipelineCombobox inline storageKey="analytics-commercial-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.dealCount }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null} />
       {dataState?.status === 'empty' ? (

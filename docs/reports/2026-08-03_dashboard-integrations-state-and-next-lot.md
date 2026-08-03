@@ -5,6 +5,29 @@
 **Branch:** `codex/high-density-ui-rebuild-20260803`
 **Escopo:** diagnóstico do Dashboard Gerencial e preparação do próximo lote controlado.
 
+## Adendo de verificação posterior — 03/08/2026
+
+Este adendo prevalece sobre as pendências visuais descritas abaixo:
+
+- A revisão confirmou que o header interno da Visão Geral ainda estava divergente, apesar de o shell externo já ser compartilhado.
+- A Visão Geral foi ajustada para uma composição de três zonas: estado das fontes à esquerda, título/contexto no centro e ação de sincronização à direita, preservando a altura compacta das demais áreas.
+- O cabeçalho Comercial passou a exibir a última execução real do HubSpot.
+- O cabeçalho Financeiro passou a exibir a última execução real do OMIE, ao lado da origem financeira.
+- A auditoria de métricas confirmou que SLA existe no read model executivo, mas não no RPC de detalhe da aba Suporte; portanto, não foi publicado nessa tela sem ampliar o contrato SQL.
+- O watermark de empresas compartilhadas e a correção de retries já estão implementados nos commits `38ec906` e `1473f89`; não são mais itens de implementação futura.
+
+### Integridade ainda não concluída
+
+O worker HubSpot agora lê empresas pelo watermark, mas ainda faz `upsert` direto em `hubspot_companies`, `hubspot_owners` e `hubspot_pipeline_stages` antes da promoção do run. Portanto, deals/tickets têm publicação staged/promovida, enquanto o bloco compartilhado não é atômico com o snapshot executivo. Também não há reconciliação comprovada de tombstones para empresas arquivadas/removidas.
+
+No OMIE, a promoção do snapshot é protegida e idempotente, mas a leitura de recebíveis e o índice de clientes continuam full + serial. Não existe ainda telemetria por request/endpoint suficiente para medir retries, 429/5xx e latência individual.
+
+### Estado de validação do adendo
+
+- **Validado:** teste estático de layout (4 casos) e `npm run web:typecheck` após a correção do header/logs.
+- **Parcialmente validado:** catálogo de métricas; SLA permanece disponível apenas no consolidado executivo e depende de extensão contratual para aparecer no detalhe de Suporte.
+- **Não validado:** smoke visual real em todos os viewports, nova execução externa HubSpot/OMIE, tombstones e telemetria por request.
+
 ## 1. Resumo executivo
 
 O pipeline local está operacional e o último ciclo publicado terminou com estado `fresh` nas duas fontes. Isso não significa que o fluxo esteja otimizado: a última execução levou aproximadamente **191 s**, com HubSpot processando **5.858 registros em 93 páginas** e OMIE processando **3.463 registros em 35 páginas seriais**.
@@ -24,8 +47,8 @@ As principais conclusões são:
 ### Validado
 
 - Worktree limpo no início do lote.
-- HEAD: `899b0af70880476040009ecdde51ae40a186f488`.
-- A branch está 156 commits à frente de `origin/main` e sem upstream configurado.
+- HEAD no início da correção visual: `1473f89`.
+- A branch está 160 commits à frente de `origin/main` e sem upstream configurado.
 - Nenhuma sincronização externa foi disparada neste lote.
 - Nenhuma credencial, token ou segredo foi lido ou exposto.
 
@@ -129,8 +152,8 @@ Rotas de Analytics verificadas estaticamente:
 - `/admin/analytics?tab=customer-success`
 - `/admin/analytics?tab=support`
 - `/admin/analytics?tab=finance`
-- `/admin/analytics?tab=product`
-- `/admin/analytics?tab=development`
+- `/admin/analytics?tab=product-development`
+- aliases legados `/admin/analytics?tab=product` e `/admin/analytics?tab=development`, normalizados para a aba combinada.
 
 Não há evidência atual de smoke visual completo de todas as rotas neste lote. O próximo QA deve cobrir desktop e viewport estreito, guards de permissão, loading, erro, vazio e overflow.
 

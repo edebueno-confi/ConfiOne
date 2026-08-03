@@ -7,6 +7,9 @@ const filters = await readFile(new URL('../../apps/web/src/features/analytics/An
 const domains = await readFile(new URL('../../apps/web/src/features/analytics/analytics-domains.ts', import.meta.url), 'utf8');
 const waiting = await readFile(new URL('../../apps/web/src/features/analytics/AnalyticsUnavailablePages.tsx', import.meta.url), 'utf8');
 const ceo = await readFile(new URL('../../apps/web/src/features/analytics/AnalyticsCeoPage.tsx', import.meta.url), 'utf8');
+const frame = await readFile(new URL('../../apps/web/src/features/analytics/AnalyticsHdDomainFrame.tsx', import.meta.url), 'utf8');
+const commercial = await readFile(new URL('../../apps/web/src/features/analytics/AnalyticsCommercialPage.tsx', import.meta.url), 'utf8');
+const finance = await readFile(new URL('../../apps/web/src/features/analytics/AnalyticsFinancePage.tsx', import.meta.url), 'utf8');
 const ui = await readFile(new URL('../../apps/web/src/features/analytics/analytics-ui.tsx', import.meta.url), 'utf8');
 const charts = await readFile(new URL('../../apps/web/src/features/analytics/charts/AnalyticsCharts.tsx', import.meta.url), 'utf8');
 
@@ -28,4 +31,14 @@ test('KPIs e gráficos compactos possuem semântica de leitura', () => {
   assert.match(ui, /gso-kpi-snapshot-marker/);
   assert.match(charts, /CompactSummary/);
   assert.match(charts, /CompactTemporalSummary/);
+});
+
+test('contexto executivo e logs de integraÃ§Ã£o permanecem localizados por Ã¡rea', () => {
+  assert.match(ceo, /gso-overview-context__source/);
+  assert.match(ceo, /overview-sync-sources/);
+  assert.match(frame, /AnalyticsExecutionMeta/);
+  assert.match(commercial, /listHubspotSyncRuns/);
+  assert.match(commercial, /provider="HubSpot"/);
+  assert.match(finance, /listOmieSyncRuns/);
+  assert.match(finance, /provider="OMIE"/);
 });

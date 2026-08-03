@@ -2042,3 +2042,11 @@ O relatório completo, incluindo evidências locais, contratos existentes, lacun
 3. Integrações, Fontes, Histórico e estados do Gênio;
 4. responsividade, temas e acessibilidade;
 5. testes, QA visual real, correções e documentação final.
+## Verificação do apontamento de header — 03/08/2026
+
+- Confirmado: a pendência visual registrada anteriormente ainda não estava implementada.
+- Corrigido: o estado das fontes agora fica na coluna esquerda do contexto da Visão Geral.
+- Corrigido: o cabeçalho Comercial consulta e mostra a última execução do HubSpot.
+- Corrigido: o cabeçalho Financeiro consulta e mostra a última execução do OMIE junto da origem financeira.
+- Não alterado: contratos de dados, RPCs, regras de frescor, RLS ou credenciais.
+- Pendências técnicas: telemetria por request, atomicidade do bloco compartilhado HubSpot, tombstones/arquivamentos e smoke visual autenticado em todos os viewports.
