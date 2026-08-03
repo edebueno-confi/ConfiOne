@@ -156,6 +156,7 @@ Em `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\motion` for
 - Baseline: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\baseline-v1` — 80 PNGs e manifesto.
 - Final: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\final-v1-1` — 80 PNGs e manifesto.
 - Motion: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\motion`.
+- Pacote para revisão: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence.zip`, 16.266.594 bytes, SHA-256 `2B037C236CADBCB8FB9F86E5B282612EEE567F37C951AE8E8ECA0DC147E6935B`.
 
 ## 33. Arquivos
 
@@ -169,10 +170,11 @@ Removidos: eyebrow duplicado de Visão Geral, preenchimento azul dominante do pr
 
 - `e8f5380 refactor(ui): reduzir densidade visual do dashboard` — código e CSS.
 - `6527c75 docs(ui): registrar densidade e QA do dashboard` — relatório e registros canônicos.
+- `0ed6f61 docs(ui): fechar relatório do lote visual` — HEAD/commits finais.
 
 ## 36. Git final
 
-Branch: `codex/dashboard-visual-density-v1-1-20260803`. O HEAD documental é `6527c75`; a árvore ficará limpa após o fechamento deste registro.
+Branch: `codex/dashboard-visual-density-v1-1-20260803`. O HEAD documental é `0ed6f61`; a árvore ficará limpa após o fechamento deste registro.
 
 ## 37. Limitações
 
