@@ -40,29 +40,38 @@ alongado, ausência de retry seguro e falhas de contrato causadas por referênci
 
 Foi encontrado um run HubSpot órfão com status operacional inconsistente. Ele
 foi reconciliado para `timed_out`, preservando o snapshot válido anterior de
-36.315 registros promovidos.
+36.315 registros promovidos. O run também mantinha 18 work items em estado
+ativo; a migration `20260802235035_dashboard_reconcile_hubspot_leases_v1.sql`
+os marcou como `abandoned`, removeu `lease_owner`/`lease_expires_at` e deixou o
+read model com `active_items=0`, sem apagar staging ou histórico.
 
 ## 6. Lifecycle implementado
 
 O lifecycle agora distingue `queued`, `running`, `succeeded`, `failed`,
 `partial`, `timed_out`, `cancelled` e `abandoned`. A migration forward-only
-`20260802160000_dashboard_sync_lifecycle_reconciliation_v1.sql` também encerra
-etapas pendentes ligadas a ciclos ou runs expirados.
+`20260802160000_dashboard_sync_lifecycle_reconciliation_v1.sql` encerra
+etapas pendentes ligadas a ciclos ou runs expirados. A migration posterior
+`20260802235035_dashboard_reconcile_hubspot_leases_v1.sql` também libera leases
+de work items associados a runs `timed_out` ou `abandoned`.
 
 ## 7. Ciclo pai HubSpot → OMIE
 
 O orquestrador cria ciclo pai, correlation ID e etapas separadas. HubSpot é
 processado antes do OMIE; uma falha terminal do HubSpot não impede o Financeiro,
-mas o resultado do ciclo passa a `partial`. O ciclo real `c93a5302-39c9-475f-a927-ac90cdf51177`
-foi concluído em aproximadamente 43,09 s com correlation ID
-`faeadb22-1413-4666-92c5-59c05ab42f60`.
+mas o resultado do ciclo passa a `partial`. O ciclo real anterior
+`c93a5302-39c9-475f-a927-ac90cdf51177` foi concluído em aproximadamente 43,09 s.
+Após o preflight e a reconciliação de leases, a única execução adicional
+autorizada foi o ciclo `5f5b8516-e4f7-4b29-8773-725c9682a4cd`, concluído em 50 s
+com HubSpot falho e OMIE concluído; o Histórico publicou o ciclo e as duas
+etapas relacionadas.
 
 ## 8. Causa raiz OMIE
 
 As falhas observadas foram delimitadas como respostas HTTP 429/5xx, timeout,
 rede, autenticação, payload inválido e concorrência do provedor (`8020`/
-`REDUNDANT`). O erro SOAP legado não é causa publicada na interface e não é
-mais exposto ao usuário.
+`REDUNDANT`). A execução atual do OMIE não reproduziu o erro SOAP: respondeu,
+normalizou, promoveu o snapshot e terminou com zero rejeitados. O erro SOAP
+legado não é causa publicada na interface e não é mais exposto ao usuário.
 
 ## 9. Correção OMIE
 
@@ -138,8 +147,10 @@ ciclos são recolhíveis para reduzir rolagem e preservar rastreabilidade.
 
 ## 20. Hook de commit
 
-O hook `.githooks/pre-commit` executou normalmente. O commit final de teste foi
-criado sem `--no-verify` e passou pelo `quality:staged`.
+O hook `.githooks/pre-commit` executou normalmente em commits reais sem
+`--no-verify` e passou pelo `quality:staged`. O teste dedicado cobre arquivo
+novo, alterado, removido, renomeado, Markdown, skill, diretório removido,
+nenhum staged e falha real do gate.
 
 ## 21. Segurança
 
@@ -149,9 +160,16 @@ não foram incluídos em código, relatório ou evidência.
 
 ## 22. Testes
 
-Os contratos focados terminaram em 11/11, incluindo o contrato do preflight. O pgTAP focado de runtime terminou em
-40/40 incluindo a barreira do read model sanitizado. Typechecks, build, secret
-scan e testes de contratos anteriores permanecem aprovados.
+Os contratos focados anteriores terminaram em 11/11, incluindo o preflight. O
+pgTAP focado de runtime terminou agora em 45/45 nos arquivos 091–094,
+incluindo a liberação das leases órfãs. O teste do hook terminou em 1/1 e o
+contrato de exportação em 1/1. Na matriz Node selecionada deste fechamento,
+105 de 108 testes passaram; os 3 restantes são contratos históricos
+incompatíveis com a semântica atual (`analytics-diagnostic-runtime` e dois
+casos antigos de estados do Dashboard-02), sem relação com a reconciliação
+implementada. Typecheck, build e secret scan passaram. O lint do banco retornou
+exit code 0, mas mantém diagnósticos preexistentes da extensão pgTAP e avisos
+legados de funções administrativas; nenhum aponta para a migration nova.
 
 ## 23. Code Quality
 
@@ -160,8 +178,9 @@ foram aprovados sem blockers. O lint npm geral não é configurado no projeto.
 
 ## 24. Execução real controlada
 
-Foi executada uma única chamada autenticada no runtime local efêmero, sem escrita
-externa nos provedores:
+Foram executadas duas chamadas autenticadas controladas no runtime local
+efêmero, sem escrita externa nos provedores. A segunda foi a única chamada
+adicional autorizada após o preflight; não houve repetição automática:
 
 - ciclo: `c93a5302-39c9-475f-a927-ac90cdf51177`;
 - correlation: `faeadb22-1413-4666-92c5-59c05ab42f60`;
@@ -173,6 +192,19 @@ externa nos provedores:
   aceitos e 0 rejeitados;
 - snapshot financeiro: promovido;
 - duração observada pelo cliente: 43.090 ms.
+
+Na segunda chamada controlada:
+
+- ciclo: `5f5b8516-e4f7-4b29-8773-725c9682a4cd`;
+- correlation: `33eace55-16ca-4178-86f2-018e946979b8`;
+- resultado: `partial`;
+- HubSpot: etapa `failed`, sem novo `run_id`, exposta apenas como
+  `Não foi possível concluir a leitura do HubSpot.`;
+- OMIE: etapa `succeeded`, run `493a5e9b-6618-48d7-9a7d-d2493bb7dafc`, 3.451
+  aceitos e 0 rejeitados;
+- snapshot financeiro: `fresh` e promovido;
+- duração observada pelo cliente: aproximadamente 50 s;
+- após a chamada: 0 ciclos ativos.
 
 Antes dela, o ciclo órfão `e2e580d9-34be-474a-b359-a671f48440f2` foi
 reconciliado como `timed_out`, com suas etapas encerradas. O segredo local
@@ -194,8 +226,10 @@ O preflight confirma que a credencial atualmente acessível pelo runtime local
 responde ao endpoint de pipelines. A cobertura do catálogo local foi de 35/35
 pipelines vivos, sem ausências; os 2 registros locais adicionais são entradas
 `qa-local-*` preservadas para QA e não representam pipelines externos. O
-preflight não reclassifica o ciclo anterior, que permanece `partial`, e não
-substitui uma nova execução sequencial autorizada.
+preflight não reclassificou o ciclo anterior, que permanece `partial`; a única
+execução adicional autorizada ocorreu depois dele e também terminou `partial`
+porque a inicialização do HubSpot falhou antes de criar novo run. Nenhum ciclo
+adicional foi repetido.
 
 ## 25. QA Preview
 
@@ -215,7 +249,10 @@ de artigos permanece pendente por redirecionamento do preview para `/login`.
 Principais arquivos do lote: funções de sincronização HubSpot/OMIE, migrations
 forward-only de lifecycle e sanitização do read model, componentes de
 Analytics/Settings/Knowledge, CSS, testes focados e documentação em
-`docs/reports/`.
+`docs/reports/`. O endurecimento final deste lote também inclui
+`supabase/migrations/20260802235035_dashboard_reconcile_hubspot_leases_v1.sql`,
+`supabase/tests/094_dashboard_runtime_reconcile_leases_v1.sql` e
+`tests/scripts/pre-commit-hook-contract.test.mjs`.
 
 ## 28. Commits
 
@@ -236,23 +273,26 @@ Commit posterior de endurecimento da exportação: `caf7d80` — PNG/PDF ficam
 indisponíveis quando as abas selecionadas não possuem snapshot exportável,
 com guarda também nos handlers e teste de contrato.
 
+Commits deste lote de estabilização: `078081d` — cobertura do hook real sem
+`--no-verify`; `3a748cd` — reconciliação e liberação de leases de runs órfãos.
+
 ## 29. Estado Git final
 
 Branch atual: `codex/dashboard-runtime-stabilization-20260802`. HEAD:
 o valor final deve ser consultado com `git rev-parse --short HEAD`. O último
-HEAD de código antes dos commits documentais foi `caf7d80`; o worktree será
+HEAD de código antes dos commits documentais foi `3a748cd`; o worktree será
 limpo após o commit documental. A divergência deve ser consultada com
 `git rev-list --left-right --count origin/main...HEAD`.
 Não há upstream configurado e nenhum push foi executado.
 
 ## 30. Limitações
 
-O ciclo sequencial já executado permanece com falha de autenticação histórica,
-embora o preflight posterior tenha confirmado credencial server-side presente,
-endpoint alcançável e resposta válida. Uma nova execução completa não foi
-repetida neste lote. O código classifica esse cenário como
-`authentication_error`, não faz retry automático e não repete o ciclo sem
-autorização.
+O ciclo sequencial mais recente permanece `partial`: o HubSpot falhou ao iniciar
+uma nova leitura, embora o preflight tenha confirmado credencial server-side
+presente, endpoint alcançável e resposta válida. O OMIE concluiu a leitura
+read-only e promoveu 3.451 registros. O código não faz retry automático nem
+repete o ciclo sem autorização; a causa delimitada da falha de inicialização do
+HubSpot ainda exige investigação do caminho de execução do worker.
 O denominador de Customer Success ainda depende de decisão de domínio. O
 rebuild completo de Artigos e categorias não foi iniciado neste lote. A
 exportação PNG/PDF existente foi apenas endurecida para não oferecer arquivo
@@ -261,8 +301,8 @@ pendente.
 
 ## 31. Decisões pendentes
 
-1. Autorizar um novo ciclo completo HubSpot → OMIE em lote separado, usando o
-   preflight como gate e sem repetir automaticamente.
+1. Investigar em lote delimitado a falha de inicialização do worker HubSpot,
+   preservando o guard de não repetição automática.
 2. Aprovar o denominador operacional de Customer Success.
 3. Validar visualmente o editor autenticado.
 4. Iniciar, em lote separado, o rebuild da tela de Artigos, categorias e a
@@ -271,6 +311,8 @@ pendente.
 ## Critérios de aceite
 
 Os critérios de lifecycle, status, sanitização, Financeiro sem retry, catálogo,
-hook, testes focados, QA empacotado e Git limpo estão comprovados. O critério
-de execução sequencial real permanece pendente por dependência server-side; por
-isso o lote não é declarado concluído.
+hook, testes focados, QA empacotado e Git limpo estão comprovados. A execução
+sequencial real foi representada e publicada como `partial`, com OMIE concluído
+e HubSpot falhando antes de novo run; como a causa da inicialização do HubSpot
+continua aberta e há pendências de domínio e QA visual, o lote permanece
+`parcialmente validado` e não é declarado concluído.

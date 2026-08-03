@@ -7,12 +7,12 @@ blocos históricos desta página:
 
 - Checkout canônico: `C:\Projetos\GSO-old`.
 - Branch atual: `codex/dashboard-runtime-stabilization-20260802`.
-- Último HEAD de código antes dos commits documentais: `caf7d80`; branch de
+- Último HEAD de código antes dos commits documentais: `3a748cd`; branch de
   estabilização sem upstream configurado. O HEAD final deve ser lido com
   `git rev-parse --short HEAD`.
 - Divergência: consultar `git rev-list --left-right --count origin/main...HEAD`
   em tempo de leitura; a última leitura antes dos commits documentais retornou
-  `0 106`.
+  `0 111`.
 - Lifecycle, reconciliação, status/frescor, sanitização, Histórico e Financeiro
   foram estabilizados e validados conforme
   `docs/reports/2026-08-02_dashboard-runtime-stabilization-final.md`.
@@ -47,6 +47,13 @@ blocos históricos desta página:
   não possuem snapshot exportável (`never_synced`, `syncing`, indisponível,
   falha ou vazio); a regra está coberta por teste de contrato e foi registrada
   em `caf7d80` e documentada nos commits documentais deste fechamento.
+- A execução controlada adicional do ciclo pai foi `5f5b8516-e4f7-4b29-8773-725c9682a4cd`:
+  resultado `partial`, HubSpot `failed` sem run novo e OMIE `succeeded` com
+  3.451 aceitos e zero rejeitados; não restaram ciclos ativos.
+- A migration forward-only
+  `20260802235035_dashboard_reconcile_hubspot_leases_v1.sql` liberou 18 work
+  items do run HubSpot `timed_out`; o read model passou a informar
+  `active_items=0`, sem apagar staging, snapshot ou histórico.
 
 Atualização do macro-lote de Configurações, Fontes do Dashboard e Histórico:
 
