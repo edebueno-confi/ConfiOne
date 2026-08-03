@@ -204,6 +204,7 @@ Em `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\motion` for
 - Pacote final desta revisão: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v3.zip`, 40.897.450 bytes, SHA-256 `68B48373D3AA4A785CA40FD38742B03DF628B5150BE02062DFE85A2D965DE78B`.
 - Pacote final após a correção do status: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v4.zip`, 40.897.554 bytes, SHA-256 `979B514BF2901473A447242A32A8FBB9BCA4EEC623B913445D6D8A47EE044986`.
 - Pacote final com a matriz ampliada: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v5.zip`, 40.897.769 bytes, SHA-256 `AC19DEC944B2C51F5673BB33FF4AD0C20B6E555258B4132D562ED11EC3BFA373`.
+- Pacote final com o handoff documental alinhado: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v6.zip`, 40.897.866 bytes, SHA-256 `4D95B60E89BBF222F6CF07DF2CE75899869E9EE167AE5C8BF9E5931E5E7309B3`.
 - Pacote para revisão: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence.zip`, 16.266.594 bytes, SHA-256 `2B037C236CADBCB8FB9F86E5B282612EEE567F37C951AE8E8ECA0DC147E6935B`.
 
 ## 33. Arquivos
