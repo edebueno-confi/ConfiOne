@@ -134,6 +134,10 @@ Rotas de Analytics verificadas estaticamente:
 
 Não há evidência atual de smoke visual completo de todas as rotas neste lote. O próximo QA deve cobrir desktop e viewport estreito, guards de permissão, loading, erro, vazio e overflow.
 
+### Pendência visual herdada: header da Visão Geral
+
+O shell externo é compartilhado, mas a composição interna da Visão Geral ainda diverge das demais abas. O estado agregado das fontes permanece no lado direito do contexto executivo e não existe log de execução HubSpot junto à operação Comercial nem log OMIE junto ao Financeiro. Essa adequação visual continua pendente e não foi declarada como corrigida neste lote.
+
 ## 8. Fusão Produto + Desenvolvimento
 
 Decisão técnica: **aprovada para execução UI-only neste lote**.
