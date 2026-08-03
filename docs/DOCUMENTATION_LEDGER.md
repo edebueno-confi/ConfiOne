@@ -15,6 +15,11 @@
   capturas e manifesto UI-05 com cinco estados do Gênio, sem falhas de rede,
   HTTP inesperado ou overflow. Quatro falhas ampliadas preexistentes
   permanecem registradas no relatório.
+- A Visão Geral agora expõe `Sincronizar bases` para administrador de plataforma,
+  com bloqueio de ciclo concorrente e reuso do orquestrador sequencial. O fluxo
+  foi exercitado em QA interceptado em
+  `output/high-density-overview-sync-action-20260803/manifest.json`; nenhuma
+  sincronização real foi executada.
 - Correção registrada: leituras de Configurações passaram a ser sob demanda;
   o 403 repetido de `ticket_categories` fora da seção Categorias desapareceu.
 - Referências visuais vigentes: `docs/design/blueprint/Dashboard PO/` e

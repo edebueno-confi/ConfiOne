@@ -5,6 +5,8 @@ import { areAnalyticsSourcesActive, isAnalyticsSourceActive, syncProgressLabel }
 
 const sourcesPage = await readFile(new URL('../../apps/web/src/features/settings/DashboardSourcesSettingsPage.tsx', import.meta.url), 'utf8');
 const overlay = await readFile(new URL('../../apps/web/src/components/GeniusSyncOverlay.tsx', import.meta.url), 'utf8');
+const analyticsShell = await readFile(new URL('../../apps/web/src/features/analytics/AnalyticsShell.tsx', import.meta.url), 'utf8');
+const analyticsOverview = await readFile(new URL('../../apps/web/src/features/analytics/AnalyticsCeoPage.tsx', import.meta.url), 'utf8');
 
 const source = (overrides = {}) => ({ status: 'fresh', currentRunStatus: null, ...overrides });
 
@@ -12,6 +14,16 @@ test('identifica execução ativa sem confundir falha publicada com sincronizaç
   assert.equal(isAnalyticsSourceActive(source({ status: 'syncing', currentRunStatus: 'running' })), true);
   assert.equal(isAnalyticsSourceActive(source({ status: 'failed', currentRunStatus: 'failed' })), false);
   assert.equal(isAnalyticsSourceActive(source({ status: 'fresh', currentRunStatus: 'queued' })), true);
+});
+
+test('Visão Geral oferece o ciclo protegido sem criar uma regra paralela', () => {
+  assert.match(analyticsShell, /triggerSequentialAnalyticsSync/);
+  assert.match(analyticsShell, /waitForAnalyticsSyncCompletion\('full'\)/);
+  assert.match(analyticsShell, /areAnalyticsSourcesActive\(currentStatus, 'full'\)/);
+  assert.match(analyticsShell, /canManageAnalyticsIntegration/);
+  assert.match(analyticsOverview, /data-testid="overview-sync-sources"/);
+  assert.match(analyticsOverview, /Sincronizar bases/);
+  assert.match(analyticsOverview, /canSyncSources/);
 });
 
 test('polling respeita a fonte solicitada e o ciclo completo', () => {
@@ -39,5 +51,6 @@ test('atualização dos dashboards mantém o Gênio animado até confirmar o est
   assert.match(overlay, /O Gênio encontrou um desvio no caminho/);
   assert.match(overlay, /O Gênio ainda está aguardando uma resposta/);
   assert.match(overlay, /O Gênio interrompeu esta tentativa/);
+  assert.match(overlay, /Acompanhar no Histórico/);
   assert.doesNotMatch(overlay, /barra|progresso|countdown/i);
 });

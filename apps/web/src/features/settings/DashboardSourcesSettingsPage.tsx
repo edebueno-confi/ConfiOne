@@ -185,7 +185,7 @@ export function DashboardSourcesSettingsPage() {
 
   return (
     <div className="gso-settings-sources gso-settings-stack gso-visual-v1-settings">
-      {syncFeedback ? <GeniusSyncOverlay source={syncFeedback.source} state={syncFeedback.state} hasValidSnapshot={syncFeedback.state === 'failed' || syncFeedback.state === 'timed_out' || syncFeedback.state === 'abandoned' ? Boolean(syncFeedback.source === 'painel' ? sourceStatus?.hubspot.hasValidSnapshot && sourceStatus?.omie.hasValidSnapshot : sourceStatus?.[syncFeedback.source.toLowerCase() as 'hubspot' | 'omie']?.hasValidSnapshot) : syncingKind === 'full' ? Boolean(sourceStatus?.hubspot.hasValidSnapshot && sourceStatus?.omie.hasValidSnapshot) : Boolean(sourceStatus?.[syncingKind ?? 'hubspot']?.hasValidSnapshot)} detail={syncFeedback.detail ?? syncProgress} /> : null}
+      {syncFeedback ? <GeniusSyncOverlay source={syncFeedback.source} state={syncFeedback.state} hasValidSnapshot={syncFeedback.state === 'failed' || syncFeedback.state === 'timed_out' || syncFeedback.state === 'abandoned' ? Boolean(syncFeedback.source === 'painel' ? sourceStatus?.hubspot.hasValidSnapshot && sourceStatus?.omie.hasValidSnapshot : sourceStatus?.[syncFeedback.source.toLowerCase() as 'hubspot' | 'omie']?.hasValidSnapshot) : syncingKind === 'full' ? Boolean(sourceStatus?.hubspot.hasValidSnapshot && sourceStatus?.omie.hasValidSnapshot) : Boolean(sourceStatus?.[syncingKind ?? 'hubspot']?.hasValidSnapshot)} detail={syncFeedback.detail ?? syncProgress} historyHref="/admin/settings/sync-history" /> : null}
       <section className="gso-settings-source-overview" aria-labelledby="sources-overview-title">
         <div>
           <p className="gso-settings-eyebrow">Mapa de origem</p>

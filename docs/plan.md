@@ -7,21 +7,25 @@
 - A especificação documental foi criada antes da implementação e o Blueprint
   V2 foi marcado como superado para implementação.
 - A camada visual High-Density foi aplicada ao shell, Dashboard e Configurações
-  sem tocar em métricas, fontes, contratos, sincronização ou banco.
+  sem tocar em métricas, fontes, contratos ou banco; a Visão Geral também recebeu
+  a ação autorizada de sincronização que reutiliza o ciclo sequencial existente.
 - Typechecks, build, secret scan, quality gates e 98/98 testes focados passaram.
 - QA visual real foi executado: matriz base com 80 capturas nos cinco viewports
   e dois temas, reteste de Configurações com 24 verificações, Overview com
   quatro capturas e manifesto UI-05 com cinco estados do Gênio. Nenhum reset ou
   hidratação foi executado.
 - Relatório: `docs/reports/2026-08-03_high-density-ui-rebuild.md`.
+- QA da ação da Visão Geral: `output/high-density-overview-sync-action-20260803/manifest.json`.
 - Referências visuais consolidadas em `docs/design/blueprint/Dashboard PO/` e
   `docs/design/blueprint/Suporte e conversas/`, com exclusões intencionais
   registradas nos commits `619dfa8` e `bb77c67`.
 
 ## Próximo lote recomendado
 
-1. reconciliar os quatro contratos preexistentes da suíte ampliada;
-2. aguardar aprovação visual antes de novos ajustes por domínio;
+1. executar sincronização real read-only HubSpot → OMIE somente com autorização
+   e credenciais provisionadas, conferindo o Histórico;
+2. reconciliar os quatro contratos preexistentes da suíte ampliada;
+3. aguardar aprovação visual antes de novos ajustes por domínio;
 3. executar sincronização externa somente com autorização e credenciais próprias.
 
 ## Precedência

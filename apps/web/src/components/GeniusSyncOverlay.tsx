@@ -1,4 +1,5 @@
 import { GeniusMascot } from './GeniusMascot';
+import { Link } from 'react-router-dom';
 
 export type SyncSource = 'HubSpot' | 'OMIE' | 'painel';
 export type SyncVisualState = 'preparing' | 'syncing_hubspot' | 'syncing_omie' | 'publishing' | 'failed' | 'timed_out' | 'abandoned';
@@ -39,11 +40,13 @@ export function GeniusSyncOverlay({
   state = source === 'HubSpot' ? 'syncing_hubspot' : source === 'OMIE' ? 'syncing_omie' : 'preparing',
   hasValidSnapshot = false,
   detail,
+  historyHref,
 }: {
   source: SyncSource;
   state?: SyncVisualState;
   hasValidSnapshot?: boolean;
   detail?: string;
+  historyHref?: string;
 }) {
   const copy = COPY[state];
   const active = !['failed', 'timed_out', 'abandoned'].includes(state);
@@ -59,6 +62,7 @@ export function GeniusSyncOverlay({
         <h2>{copy.title}</h2>
         <p>{copy.description}</p>
         {detail ? <small>{detail}</small> : null}
+        {historyHref ? <Link className="gso-genie-sync-history-link" to={historyHref}>Acompanhar no Histórico</Link> : null}
       </div>
     </div>
   );

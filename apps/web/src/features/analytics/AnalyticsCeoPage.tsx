@@ -57,6 +57,9 @@ export function AnalyticsCeoPage({
   onRetry,
   isDashboardViewer = false,
   sourceStatus,
+  canSyncSources = false,
+  syncSources,
+  syncBusy = false,
 }: AnalyticsPageProps) {
   const period = sharedPeriod ?? resolveAnalyticsPeriod("month");
   const [filters, setFilters] = useState<AnalyticsFilters>({
@@ -191,6 +194,9 @@ export function AnalyticsCeoPage({
       setMobileFiltersOpen={setMobileFiltersOpen}
       applyFilters={applyFilters}
       isDashboardViewer={isDashboardViewer}
+      canSyncSources={canSyncSources}
+      syncSources={syncSources}
+      syncBusy={syncBusy}
     />
   );
 }
@@ -296,6 +302,9 @@ function ExecutiveHdCanvas({
   setMobileFiltersOpen,
   applyFilters,
   isDashboardViewer,
+  canSyncSources,
+  syncSources,
+  syncBusy,
 }: {
   data: CeoSnapshot;
   state?: AnalyticsBlockState;
@@ -316,6 +325,9 @@ function ExecutiveHdCanvas({
   setMobileFiltersOpen: (value: boolean) => void;
   applyFilters: (next: AnalyticsFilters) => void;
   isDashboardViewer: boolean;
+  canSyncSources: boolean;
+  syncSources?: () => void;
+  syncBusy: boolean;
 }) {
   const periodLabel = formatPeriod(filters);
   const qualityExpected = state?.coverage.expected;
@@ -338,6 +350,23 @@ function ExecutiveHdCanvas({
           <p>
             Desempenho no período, posição atual e sinais que merecem contexto.
           </p>
+        </div>
+        <div className="gso-hd-context-side gso-hd-context-side--sync">
+          <div>
+            <strong>Estado das fontes</strong>
+            <span>HubSpot para operação; OMIE para Financeiro.</span>
+          </div>
+          {canSyncSources && syncSources ? (
+            <button
+              type="button"
+              className="gso-hd-sync-action"
+              disabled={syncBusy}
+              onClick={syncSources}
+              data-testid="overview-sync-sources"
+            >
+              {syncBusy ? "Atualizando…" : "Sincronizar bases"}
+            </button>
+          ) : null}
         </div>
       </section>
 

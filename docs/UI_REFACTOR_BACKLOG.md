@@ -92,7 +92,8 @@ histórica de implementar os três itens como um único macro-lote.
 
 ### DASHBOARD-04 — Sincronização controlada na Visão Geral
 
-Status: pendente de implementação; item adicionado à fila em 02/08/2026.
+Status: implementado no macro-lote `HIGH-DENSITY-01`; execução externa real ainda
+depende de credencial, autorização e validação do ciclo protegido.
 
 Adicionar na aba **Visão Geral** uma ação única e explícita para sincronizar as
 bases operacionais, usando o orquestrador real HubSpot → OMIE. A ação não deve
@@ -116,10 +117,10 @@ Escopo obrigatório:
 - cobrir desktop/mobile, claro/escuro, teclado, foco, erro, vazio e overflow;
 - adicionar testes de contrato e captura visual real da Visão Geral alterada.
 
-Dependências: provisão autorizada de `ANALYTICS_SYNC_SECRET` no runtime das
-Edge Functions, ciclo sequencial validado, permissões/RLS auditadas e contrato
-de Histórico disponível. Não implementar enquanto o ciclo protegido não estiver
-validado.
+Dependências preservadas: provisão autorizada de `ANALYTICS_SYNC_SECRET` no
+runtime das Edge Functions, ciclo sequencial validado, permissões/RLS auditadas
+e contrato de Histórico disponível. A interface foi implementada sem executar
+provedores reais; o aceite operacional permanece pendente.
 
 ### DASHBOARD-05 — Visão Gerencial HD na aba CEO
 
@@ -364,6 +365,10 @@ Status: implementação frontend concluída na branch
 `codex/high-density-ui-rebuild-20260803`; validação visual parcial, pendente
 apenas dos contratos ampliados já registrados e de sincronização externa
 autorizada.
+
+Atualização do ciclo: a Visão Geral agora expõe `Sincronizar bases` para
+administrador de plataforma, reutiliza o orquestrador sequencial real, bloqueia
+ciclos concorrentes e preserva estados de loading, terminal e erro sanitizado.
 
 Objetivo: implementar diretamente a direção visual das referências vigentes em
 `docs/design/blueprint/Dashboard PO/` e `docs/design/blueprint/Suporte e conversas/`.

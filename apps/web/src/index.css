@@ -860,6 +860,7 @@
 .gso-analytics-loading-state h2 { margin: 0; color: var(--minimal-text); font-size: clamp(1.5rem, 2vw, 1.875rem); letter-spacing: -0.04em; }
 .gso-genie-sync-copy p:not(.gso-genie-sync-kicker) { margin: 0.45rem 0 0; color: var(--minimal-text-secondary); font-size: 0.86rem; line-height: 1.55; }
 .gso-genie-sync-copy small { display: block; margin-top: 0.65rem; color: var(--minimal-text-tertiary); font-size: 0.72rem; line-height: 1.45; }
+.gso-genie-sync-history-link { display: inline-block; margin-top: 0.65rem; color: var(--minimal-action); font-size: 0.72rem; font-weight: 700; text-decoration: underline; text-underline-offset: 0.15em; }
 .gso-genie-sync-banner { margin-bottom: 1rem; }
 
 @media (max-width: 760px) {

@@ -507,6 +507,9 @@ export interface AnalyticsPageProps {
   onRetry?: () => void;
   isDashboardViewer?: boolean;
   sourceStatus?: AnalyticsSourceStatusPayload;
+  canSyncSources?: boolean;
+  syncSources?: () => void;
+  syncBusy?: boolean;
 }
 
 export const EMPTY_COMMERCIAL_KPIS: CommercialKpis = {

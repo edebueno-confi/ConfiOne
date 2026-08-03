@@ -11,6 +11,9 @@
 - Implementação visual High-Density aplicada ao shell, Analytics e
   Configurações sem alterar backend, banco, contratos, métricas, fontes,
   sincronizações, permissões ou credenciais.
+- A Visão Geral agora oferece `Sincronizar bases` somente a administrador de
+  plataforma; o shell reutiliza o ciclo sequencial real, bloqueia concorrência e
+  preserva feedback ativo/terminal sem executar provedor durante o QA.
 - Validação aprovada: contracts/web typecheck, build, secret scan, quality
   changed/module/staged e 98/98 testes focados.
 - Suíte ampliada: 117/121; quatro falhas preexistentes de contratos de runner e
@@ -20,6 +23,9 @@
   reteste de Configurações com 24 verificações, Overview com quatro capturas e
   manifesto UI-05 com cinco estados do Gênio, todos sem falhas de rede ou
   overflow. Não houve reset, hidratação ou alteração do banco.
+- QA adicional da ação da Visão Geral: estados ativo/publicado capturados em
+  `output/high-density-overview-sync-action-20260803/manifest.json`, com ação
+  bloqueada durante o ciclo, liberada após confirmação e sem overflow.
 - Correção de QA: `SettingsPage` passou a carregar read models sob demanda,
   evitando 403 de `ticket_categories` fora da seção Categorias.
 - Referências visuais vigentes: `docs/design/blueprint/Dashboard PO/` e

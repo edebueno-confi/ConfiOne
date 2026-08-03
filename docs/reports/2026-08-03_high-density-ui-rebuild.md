@@ -24,6 +24,14 @@ externa autorizada.
 - O feedback UI-05 agora preserva o banner terminal para falha, timeout ou
   abandono, encerra o movimento contínuo e limpa o estado de publicação somente
   depois de `load()` confirmar a leitura seguinte.
+- A Visão Geral recebeu `Sincronizar bases` no mesmo contexto do estado agregado
+  das fontes. A ação é restrita a administrador de plataforma, reutiliza o
+  orquestrador sequencial real, bloqueia ciclo `queued`/`running` e não inventa
+  contadores ou estado publicado.
+- O QA específico da nova ação em
+  `output/high-density-overview-sync-action-20260803/manifest.json` confirmou
+  estado ativo não bloqueante com botão desabilitado, publicação posterior com
+  botão liberado, zero erros de console, respostas inesperadas ou overflow.
 
 ## Auditoria documental e skills
 
@@ -63,6 +71,8 @@ existentes.
 - respeito a `prefers-reduced-motion`;
 - aplicação do mesmo tratamento visual a Comercial, Customer Success, Suporte,
   Financeiro, Integrações e Histórico por meio das classes já existentes.
+- ação de sincronização da Visão Geral com estados do Gênio compartilhados
+  pelo shell e captura real do estado ativo/publicado.
 
 Não foram alterados RPCs, views, schemas, migrations, RLS, Edge Functions,
 credenciais, fórmulas, fontes, denominadores ou fluxo de sincronização.
@@ -85,17 +95,20 @@ credenciais, fórmulas, fontes, denominadores ou fluxo de sincronização.
 - `npm run contracts:typecheck` — passou.
 - `npm run web:typecheck` — passou.
 - `npm run web:build` — passou; build Vite com 832 módulos.
-- `npm run local:qa:secret-scan` — passou; 1.839 arquivos rastreados, 0
+- `npm run local:qa:secret-scan` — passou; 1.824 arquivos rastreados, 0
   correspondências de segredo.
-- `npm run quality:changed` — aprovado, 0 findings.
+- `npm run quality:changed` — aprovado com 1 observação candidata histórica em
+  `docs/PROJECT_STATE.md`; 0 blockers.
 - `npm run quality:module -- apps/web/src/features/analytics` — aprovado,
   0 findings.
 - `npm run quality:module -- apps/web/src/features/settings` — aprovado com
   6 observações candidatas preexistentes em `settings-api.ts`, sem blocker.
-- `npm run quality:staged` — aprovado, 0 findings nos 7 arquivos do commit.
+- `npm run quality:staged` — aprovado com a mesma observação candidata histórica;
+  0 blockers nos 14 arquivos staged.
 - `git diff --check` e `git diff --cached --check` — passaram.
 - testes focados de Analytics, Configurações, navegação, exportação, estados,
-  Gênio e acessibilidade — **98/98 passaram**.
+  Gênio e acessibilidade — baseline **98/98 passou**; o subconjunto atual com a
+  ação da Visão Geral passou em **13/13**.
 - `node --test tests/scripts/settings-integrations-render-contract.test.mjs
   tests/scripts/settings-sources-v2-contract.test.mjs
   tests/scripts/analytics-settings-api-contract.test.mjs` — **8/8 passaram**
@@ -110,6 +123,9 @@ credenciais, fórmulas, fontes, denominadores ou fluxo de sincronização.
 - `node scripts/local-qa/genius-sync-ui-states.mjs` — **5/5 estados**, sem erros
   de console, falhas de rede, HTTP inesperado ou overflow; reduced-motion
   confirmado por duração de animação reduzida.
+- `node scripts/local-qa/overview-sync-action.mjs` — estados ativo e publicado
+  confirmados, botão bloqueado durante o ciclo, liberado após publicação, sem
+  erros de console, falhas de rede ou overflow.
 
 ### Parcialmente validado
 
@@ -159,10 +175,11 @@ autorização; nenhuma porta adicional ficou aberta.
 
 ## Próximo lote recomendado
 
-1. corrigir os quatro contratos preexistentes de estado/runner em lote técnico
-   separado, com revisão de contrato antes de editar implementação;
-2. resolver o relógio/sessão do ambiente local sem resetar o banco e repetir a
-   matriz de QA visual autenticada completa;
-3. revisar a captura visual com o Product Owner antes de ampliar mudanças;
-4. somente depois, decidir se a mesma gramática precisa de ajustes finos por
-   domínio.
+1. executar uma sincronização real read-only HubSpot → OMIE somente com
+   credencial/autorização autorizadas e conferir `cycle_id`, `correlation_id`,
+   duração e contadores no Histórico;
+2. reconciliar os quatro contratos preexistentes de estado/runner em lote
+   técnico separado, com revisão do contrato antes de editar implementação;
+3. apresentar as capturas High-Density ao Product Owner antes de ampliar
+   ajustes por domínio;
+4. manter `KNOWLEDGE-03`, `UI-04` e exportação PDF/PNG como filas separadas.
