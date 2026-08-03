@@ -1,4 +1,27 @@
-# Estado corrente do checkout canônico — Dashboard Visual System V1 — 2026-08-03
+# Estado corrente do checkout canônico — Dashboard Visual Density V1.1 — 2026-08-03
+
+## Atualização corrente — densidade, tipografia e QA visual — 2026-08-03
+
+- Checkout canônico: `C:\Projetos\GSO-old`.
+- Branch: `codex/dashboard-visual-density-v1-1-20260803`, sem upstream.
+- Base preservada em `refs/archive/dashboard-visual-density-v1-1-start-20260803`;
+  bundle externo verificado em `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803`.
+- A Visão Geral foi refinada: título limitado a 32px desktop, sem eyebrow
+  duplicado, KPIs até 36px, gaps compactos e sem primeiro card azul dominante.
+- Fonte financeira agora é metadata compacta junto do frame OMIE; histórico
+  não usa linha do tempo decorativa e não repete “Ciclo de atualização”.
+- UI-05 preserva os estados existentes e recebeu copy operacional mais criativo;
+  não houve sincronização externa durante este lote.
+- QA final: 80/80 capturas nos cinco viewports e dois temas, sem falha de rota,
+  HTTP ≥400 ou overflow horizontal.
+- Validação: contracts/web typecheck, build, secret scan, quality gates e 31
+  testes focados de UI passaram. A suíte Analytics ampla ficou 90/94 por quatro
+  falhas fora do escopo visual.
+- Relatório: `docs/reports/2026-08-03_dashboard-visual-density-v1-1.md`.
+
+## Precedência
+
+O bloco abaixo preserva o estado documentado do macro-lote V1 anterior:
 
 ## Atualização corrente — fechamento visual
 

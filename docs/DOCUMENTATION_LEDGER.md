@@ -1,3 +1,21 @@
+# Estado corrente — Dashboard Visual Density V1.1 — 2026-08-03
+
+## Registro corrente
+
+- Branch: `codex/dashboard-visual-density-v1-1-20260803`.
+- Base: `c75ec57b22985589a9f705c6bf2bbce908af1b92`.
+- Escopo documental: densidade/tipografia/shell/QA visual; sem mudança de
+  backend, contratos, métricas, fontes, sincronizações ou credenciais.
+- Relatório canônico: `docs/reports/2026-08-03_dashboard-visual-density-v1-1.md`.
+- Evidência externa: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803`.
+- Estado QA: 80/80 capturas, sem falha de rota, HTTP ≥400 ou overflow horizontal.
+- Suíte ampla Analytics: 90/94; quatro falhas fora do escopo visual permanecem
+  registradas como limitação, sem reclassificar o lote como totalmente validado.
+
+## Precedência histórica
+
+O registro abaixo preserva o estado anterior documentado.
+
 # Estado corrente — 2026-08-01, reconciliado pelo Codex
 
 ## Carregamento do Dashboard e fila visual — 2026-08-02

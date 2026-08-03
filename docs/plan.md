@@ -1,23 +1,32 @@
-# Plano corrente — Dashboard Visual System V1 — 2026-08-03
+# Plano corrente — Dashboard Visual Density V1.1 — 2026-08-03
 
-## Fechamento do macro-lote visual
+## Execução corrente do macro-lote visual
 
-- Branch de trabalho: `codex/dashboard-visual-system-v1-20260803`.
-- Escopo entregue: shell do Dashboard, cinco superfícies analíticas, estados
-  visuais de atualização/UI-05, Integrações, Fontes e Histórico.
-- A Visão Geral recebeu hierarquia editorial compacta para desktop de alta
-  resolução; títulos não usam escala maximalista e o filtro por domínio não
-  retorna como navegação duplicada.
+- Branch de trabalho: `codex/dashboard-visual-density-v1-1-20260803`.
+- Base preservada: `c75ec57b22985589a9f705c6bf2bbce908af1b92`.
+- Escopo: refinamento visual V1.1, com foco em densidade, tipografia, shell,
+  visão geral, domínios analíticos, configurações, histórico e UI-05.
+- A Visão Geral agora limita o título a 32px no desktop, remove o eyebrow
+  duplicado e usa KPIs compactos sem card azul dominante.
 - Nenhuma regra de negócio, métrica, denominador, origem, contrato, RPC,
   integração, sincronização ou credencial foi alterada.
 - Evidência visual persistida fora do Git em
-  `C:\Projetos\GSO-artifacts\dashboard-visual-system-v1-20260803`.
-- Relatório final: `docs/reports/2026-08-03_dashboard-visual-system-v1.md`.
-- QA visual: `docs/reports/visual-audit/design-qa.md`.
+  `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803`.
+- Relatório: `docs/reports/2026-08-03_dashboard-visual-density-v1-1.md`.
+- QA final: 80/80 capturas, 0 falhas de rota, 0 HTTP ≥400 e 0 overflow
+  horizontal; títulos observados em 32/28/24px.
+
+## Estado de validação
+
+- Typechecks, build, secret scan, quality changed/module e suíte focada UI
+  passaram.
+- A suíte Analytics ampla permanece parcial: 90/94, com quatro falhas fora do
+  escopo visual e preexistentes no runner/diagnóstico/status.
+- Nenhuma sincronização externa foi acionada para produzir evidência.
 
 ## Próximo lote recomendado
 
-1. discovery e decisão do denominador de Customer Success;
+1. aprovação visual do V1.1 e, depois, discovery e decisão do denominador de Customer Success;
 2. catálogo executivo de métricas, antes de qualquer novo redesenho;
 3. lote técnico separado para status/frescor OMIE e observabilidade do fluxo;
 4. micro-lote isolado para testes de integração somente quando houver contrato
