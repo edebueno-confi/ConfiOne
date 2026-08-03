@@ -960,20 +960,20 @@ export function SettingsPage() {
   }, []);
 
   useEffect(() => {
-    const hasGroup = (id: string) => visibleGroups.some((group) => group.id === id);
-
     // Cada read model só é consultado quando a seção correspondente está
-    // publicada e autorizada. Isso evita chamadas inúteis a tabelas de módulos
-    // ocultos, que além de poluírem o console podem receber 403 da RLS.
-    if (hasGroup('tipos-conversa')) void loadTypes();
-    if (hasGroup('prioridades')) void loadPriorities();
-    if (hasGroup('respostas-rapidas')) void loadQuickReplies();
-    if (hasGroup('segmentos')) void loadSegments();
-    if (hasGroup('marcas')) void loadBrands();
-    if (hasGroup('central-ajuda')) void loadHelpCenterSupportContacts();
-    if (hasGroup('categorias')) void loadCategories();
-    if (hasGroup('integracoes')) void loadIntegrations();
-  }, [visibleGroups, loadTypes, loadPriorities, loadQuickReplies, loadSegments, loadBrands, loadHelpCenterSupportContacts, loadCategories, loadIntegrations]);
+    // realmente aberta e autorizada. Carregar todas as configurações no mount
+    // disparava leituras de módulos que o operador não está usando e gerava
+    // 403 de RLS (por exemplo, categorias ao abrir Integrações).
+    if (!selected) return;
+    if (selected.id === 'tipos-conversa') void loadTypes();
+    if (selected.id === 'prioridades') void loadPriorities();
+    if (selected.id === 'respostas-rapidas') void loadQuickReplies();
+    if (selected.id === 'segmentos') void loadSegments();
+    if (selected.id === 'marcas') void loadBrands();
+    if (selected.id === 'central-ajuda') void loadHelpCenterSupportContacts();
+    if (selected.id === 'categorias') void loadCategories();
+    if (selected.id === 'integracoes') void loadIntegrations();
+  }, [selected, loadTypes, loadPriorities, loadQuickReplies, loadSegments, loadBrands, loadHelpCenterSupportContacts, loadCategories, loadIntegrations]);
 
   const handleSaveIntegration = useCallback(
     async (input: Parameters<typeof saveManagedIntegration>[0]) => {

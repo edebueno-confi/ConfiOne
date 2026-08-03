@@ -16,10 +16,13 @@
 - Suíte ampliada: 117/121; quatro falhas preexistentes de contratos de runner e
   estados estão registradas em
   `docs/reports/2026-08-03_high-density-ui-rebuild.md`.
-- QA visual autenticado: parcialmente tentado. O smoke oficial em `4178` foi
-  redirecionado para `/access-denied` por ausência de memberships QA; contextos
-  Playwright isolados posteriores encontraram `JWT issued at future` no fluxo
-  de sessão da aplicação. Não houve reset, hidratação ou alteração do banco.
+- QA visual real: matriz base com 80 capturas nos cinco viewports e dois temas;
+  reteste de Configurações com 24 verificações e Overview com quatro capturas,
+  todos sem falhas de rede ou overflow. Os estados especiais do Gênio ainda
+  não estão no manifesto final. Não houve reset, hidratação ou alteração do
+  banco.
+- Correção de QA: `SettingsPage` passou a carregar read models sob demanda,
+  evitando 403 de `ticket_categories` fora da seção Categorias.
 - Referências visuais vigentes: `docs/design/blueprint/Dashboard PO/` e
   `docs/design/blueprint/Suporte e conversas/`. A consolidação e as exclusões
   intencionais foram registradas nos commits `619dfa8` e `bb77c67`; o histórico anterior segue

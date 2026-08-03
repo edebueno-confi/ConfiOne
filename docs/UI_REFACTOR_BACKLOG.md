@@ -360,7 +360,9 @@ das superfícies alteradas em claro/escuro e nas larguras publicadas.
 
 ### HIGH-DENSITY-01 — Reconstrução High-Density do cockpit e superfícies administrativas
 
-Status: autorizado e em execução na branch `codex/high-density-ui-rebuild-20260803`.
+Status: implementação frontend concluída na branch
+`codex/high-density-ui-rebuild-20260803`; validação visual parcial, pendente
+apenas dos estados especiais do Gênio e dos contratos ampliados já registrados.
 
 Objetivo: implementar diretamente a direção visual das referências vigentes em
 `docs/design/blueprint/Dashboard PO/` e `docs/design/blueprint/Suporte e conversas/`.
@@ -376,6 +378,8 @@ Especificação: `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md`.
 Critérios: títulos até 32px, KPIs compactos, filtros em linha, grids densos,
 blocos analíticos simultâneos, tabelas legíveis, sem overflow, dados ausentes
 como `Indisponível`, foco visível e QA real em cinco viewports e dois temas.
+O reteste de Configurações também confirmou carregamento sob demanda sem 403
+de read model fora da seção aberta.
 
 ### DASHBOARD-07 — Dashboard Blueprint System V2 completo
 

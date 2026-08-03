@@ -10,9 +10,13 @@
   estados visuais; sem alteração de backend, contratos, banco ou credenciais.
 - Evidência automatizada: build, typechecks, secret scan, quality gates e
   98/98 testes focados aprovados.
-- Limitação: smoke oficial em `4178` encontrou `/access-denied` porque a matriz
-  QA não está hidratada; sessões posteriores encontraram `JWT issued at future`.
-  Quatro falhas ampliadas preexistentes permanecem registradas no relatório.
+- QA real executado: matriz base com 80 capturas nos cinco viewports e dois
+  temas; reteste de Configurações com 24 verificações e Overview com quatro
+  capturas, sem falhas de rede, HTTP inesperado ou overflow. Os quatro estados
+  especiais do Gênio ainda precisam de manifesto dedicado. Quatro falhas
+  ampliadas preexistentes permanecem registradas no relatório.
+- Correção registrada: leituras de Configurações passaram a ser sob demanda;
+  o 403 repetido de `ticket_categories` fora da seção Categorias desapareceu.
 - Referências visuais vigentes: `docs/design/blueprint/Dashboard PO/` e
   `docs/design/blueprint/Suporte e conversas/`; a consolidação e as exclusões
   intencionais foram commitadas em `619dfa8` e documentadas em `bb77c67`, sem

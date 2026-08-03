@@ -9,8 +9,17 @@ perceptual ao shell, Dashboard Gerencial e Configurações, preservando contrato
 read models, métricas, integrações, sincronizações, permissões e banco.
 
 Status geral: **parcialmente validado**. A validação estrutural e automatizada
-passou; a captura visual autenticada completa ficou dependente do ambiente local
-de autenticação.
+passou. A matriz real de superfícies foi executada; permanecem pendentes apenas
+os quatro estados especiais do Gênio e a reconciliação de quatro contratos
+ampliados já conhecidos.
+
+## Atualização do ciclo — 2026-08-03
+
+- A matriz base em `C:\Projetos\GSO-artifacts\high-density-ui-rebuild-20260803\qa-runtime-full-matrix\manifest.json` registrou 80 capturas autenticadas, nos oito roteiros, cinco viewports e dois temas. Analytics ficou sem console errors, falhas de rede ou respostas inesperadas.
+- A matriz inicial identificou um 403 repetido de `ticket_categories` em todas as 30 capturas de Configurações. A causa era o carregamento de todos os read models no mount, mesmo quando a seção aberta era Integrações, Fontes ou Histórico.
+- `SettingsPage.tsx` passou a carregar cada read model somente quando sua seção está efetivamente aberta. A reteste em `output/settings-control-plane-v2-preview/manifest.json` fez 24 verificações e 18 capturas, todas sem console errors, falhas de rede, HTTP inesperado, overflow ou cópia proibida.
+- A captura final do Overview em `output/high-density-overview-final-2/` confirmou o ajuste de alta densidade em claro/escuro, desktop/mobile; em 1440×900 o início de `Trilho de integridade` e `Sinais gerenciais` já aparece na primeira dobra.
+- Não houve alteração de banco, RLS, RPC, view, métrica, credencial, sincronização externa ou contrato de dados.
 
 ## Auditoria documental e skills
 
@@ -83,6 +92,17 @@ credenciais, fórmulas, fontes, denominadores ou fluxo de sincronização.
 - `git diff --check` e `git diff --cached --check` — passaram.
 - testes focados de Analytics, Configurações, navegação, exportação, estados,
   Gênio e acessibilidade — **98/98 passaram**.
+- `node --test tests/scripts/settings-integrations-render-contract.test.mjs
+  tests/scripts/settings-sources-v2-contract.test.mjs
+  tests/scripts/analytics-settings-api-contract.test.mjs` — **8/8 passaram**
+  após o carregamento sob demanda.
+- `node scripts/local-qa/settings-control-plane-v2-preview.mjs` — **24/24
+  verificações**, 18 capturas, sem erros de console, falhas de rede, respostas
+  inesperadas ou overflow.
+- `node scripts/local-qa/dashboard-runtime-v3-preview.mjs` com Overview —
+  **4/4 capturas**, sem erros de console, falhas de rede, respostas inesperadas
+  ou overflow; sem filtro de domínio e sem contradição de status detectada pelo
+  harness.
 
 ### Parcialmente validado
 
@@ -101,17 +121,15 @@ foram mascaradas nem corrigidas como parte de uma alteração visual.
 
 ### Não validado / dependente do ambiente
 
-A captura autenticada real nas dimensões 1920x1080, 1440x900, 1024x768,
-768x1024 e 390x844, nos temas claro e escuro, não pôde ser concluída. O acesso
-local foi tentado no smoke oficial em um servidor isolado na porta 4178. A
-autenticação renovou, mas o usuário QA `platform_admin` foi redirecionado para
-`/access-denied`. A verificação somente leitura mostrou que os usuários QA
-administrativo e dashboard viewer existem e têm seus papéis globais, porém não
-possuem memberships de tenant no banco atualmente em execução. A matriz QA
-esperada não está hidratada: `local:qa:verify` encontrou 3 deals, 3 tickets
-HubSpot, 6 recebíveis, 4 roles e 0 schedules desligados, em vez dos valores da
-fixture. Não houve reset, hidratação, alteração de banco, uso de credencial
-privilegiada, sincronização externa ou tentativa de contorno.
+A matriz de superfícies cobre os cinco viewports e dois temas, mas ainda não
+constitui o aceite final porque os estados UI-05 de bloqueio, não bloqueante,
+erro e `prefers-reduced-motion` não foram capturados no mesmo manifesto. A
+autenticação local também apresentou timeouts transitórios em uma primeira
+execução; a repetição autenticada passou sem contorno, reset ou hidratação.
+
+Os quatro testes ampliados listados acima seguem pendentes de decisão de
+contrato. Uma execução externa read-only HubSpot → OMIE também permanece fora
+do aceite deste lote por depender de credencial e autorização próprias.
 
 O servidor local já existente em `127.0.0.1:4173` permaneceu preservado; nenhum
 novo servidor em `4174` foi iniciado neste lote.

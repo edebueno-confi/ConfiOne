@@ -9,10 +9,10 @@
 - A camada visual High-Density foi aplicada ao shell, Dashboard e Configurações
   sem tocar em métricas, fontes, contratos, sincronização ou banco.
 - Typechecks, build, secret scan, quality gates e 98/98 testes focados passaram.
-- QA visual autenticado está parcialmente tentado: o smoke encontrou ausência
-  de memberships na matriz QA e sessões posteriores encontraram `JWT issued at
-  future`. Nenhum reset ou hidratação foi executado; a limitação está detalhada
-  no relatório corrente.
+- QA visual real foi executado: matriz base com 80 capturas nos cinco viewports
+  e dois temas, reteste de Configurações com 24 verificações e reteste do
+  Overview com quatro capturas. Os quatro estados especiais do Gênio ainda não
+  estão no manifesto final; nenhum reset ou hidratação foi executado.
 - Relatório: `docs/reports/2026-08-03_high-density-ui-rebuild.md`.
 - Referências visuais consolidadas em `docs/design/blueprint/Dashboard PO/` e
   `docs/design/blueprint/Suporte e conversas/`, com exclusões intencionais
@@ -20,10 +20,9 @@
 
 ## Próximo lote recomendado
 
-1. reconciliar os quatro contratos preexistentes da suíte ampliada;
-2. corrigir o ambiente de sessão local sem resetar dados;
-3. executar QA visual real em cinco viewports e dois temas;
-4. aguardar aprovação visual antes de novos ajustes por domínio.
+1. capturar os quatro estados especiais do Gênio no mesmo manifesto QA;
+2. reconciliar os quatro contratos preexistentes da suíte ampliada;
+3. aguardar aprovação visual antes de novos ajustes por domínio.
 
 ## Precedência
 

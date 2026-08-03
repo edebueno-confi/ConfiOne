@@ -89,6 +89,25 @@
   .gso-high-density-ui .gso-pilot-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .gso-high-density-ui .gso-pilot-summary .gso-hd-domain-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+@media (min-width: 1101px) {
+  /* No desktop, a primeira dobra deve comportar contexto, KPIs e o início
+     das zonas analíticas. A densidade vem da composição, não de números
+     gigantes nem de zoom artificial. */
+  .gso-high-density-ui .gso-pilot-summary .gso-hd-context { padding-block: 0.65rem 0.45rem; }
+  .gso-high-density-ui .gso-pilot-summary .gso-hd-filter-bar { min-height: 2.65rem; padding-block: 0.3rem; }
+  .gso-high-density-ui .gso-pilot-summary .gso-hd-section-heading { margin-bottom: 0.3rem; }
+  .gso-high-density-ui .gso-pilot-summary .gso-hd-metric { min-height: 4.9rem; padding-block: 0.5rem 0.4rem; }
+  .gso-high-density-ui .gso-pilot-summary .gso-hd-current-line { padding-top: 0.3rem; }
+  .gso-high-density-ui .gso-pilot-summary .gso-hd-current-line .gso-hd-metric { min-height: 4.35rem; }
+  .gso-high-density-ui .gso-pilot-summary .gso-hd-domain { min-height: 5.9rem; padding-block: 0.45rem 0.35rem; }
+  .gso-high-density-ui .gso-pilot-summary .gso-hd-domain h3 { margin-top: 0.35rem; }
+  .gso-high-density-ui .gso-pilot-summary .gso-hd-domain > p { margin-top: 0.12rem; line-height: 1.2; }
+  .gso-high-density-ui .gso-pilot-summary .gso-hd-domain > strong { margin-top: 0.3rem; }
+  .gso-high-density-ui .gso-pilot-summary .gso-hd-domain > small,
+  .gso-high-density-ui .gso-pilot-summary .gso-hd-domain .gso-hd-domain-link { display: inline; margin-top: 0.18rem; }
+  .gso-high-density-ui .gso-pilot-summary .gso-hd-domain .gso-hd-domain-link { margin-left: 0.45rem; }
+  .gso-high-density-ui .gso-pilot-summary .gso-hd-lower-grid { padding-top: 0.2rem; }
+}
 @media (max-width: 760px) {
   .gso-high-density-ui .gso-analytics-content { padding-inline: 0.75rem; }
   .gso-high-density-ui .gso-pilot-summary .gso-hd-title-row h2 { font-size: 1.5rem; }
