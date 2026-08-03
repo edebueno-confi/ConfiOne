@@ -126,7 +126,7 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
   return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}>
     <div className="gso-hd-domain-surface gso-pilot-finance space-y-5">
     {/* Toolbar de fonte e sincronização */}
-    <section className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4">
+    <section className="gso-finance-source-meta rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4" aria-label="Fonte financeira">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-sm font-semibold text-[color:var(--minimal-text)]">Fonte financeira</h2>

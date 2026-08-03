@@ -5,19 +5,19 @@ type SyncVisualState = 'preparing' | 'syncing_hubspot' | 'syncing_omie' | 'publi
 
 const COPY: Record<SyncVisualState, { title: string; description: string }> = {
   preparing: {
-    title: 'O Gênio está organizando os dados do painel',
-    description: 'A atualização está em andamento. Os novos dados aparecerão quando as fontes concluírem o processamento.',
+    title: 'O Gênio está abrindo caminho para os dados',
+    description: 'O Gênio está organizando os dados do painel e alinhando as fontes para uma leitura única e confiável.',
   },
   syncing_hubspot: {
-    title: 'O Gênio está atualizando os dados do HubSpot',
+    title: 'O Gênio está puxando os fios do HubSpot',
     description: 'Clientes, negócios e atendimentos estão sendo organizados para o Dashboard.',
   },
   syncing_omie: {
-    title: 'O Gênio está organizando os dados financeiros do OMIE',
+    title: 'O Gênio está fazendo a conta fechar no OMIE',
     description: 'As informações financeiras estão sendo processadas para publicação.',
   },
   publishing: {
-    title: 'O Gênio está finalizando a atualização',
+    title: 'O Gênio está soltando a magia no painel',
     description: 'As fontes foram processadas e o painel está preparando a nova versão dos dados.',
   },
 };

@@ -332,7 +332,6 @@ function ExecutiveHdCanvas({
     <div className="gso-hd-canvas gso-pilot-summary gso-executive-canvas gso-visual-v1-overview" data-testid="executive-dashboard">
       <section className="gso-hd-context" aria-labelledby="executive-heading">
         <div>
-          <p className="gso-hd-eyebrow">Visão Geral</p>
           <div className="gso-hd-title-row">
             <h2 id="executive-heading">Visão Geral</h2>
             {state ? <HdStatus state={state} /> : null}

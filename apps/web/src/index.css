@@ -695,9 +695,9 @@
   color: var(--hd-accent, var(--minimal-action));
 }
 .gso-visual-v1-overview .gso-hd-title-row h2 {
-  font-size: clamp(2.2rem, 4.4vw, 4.3rem);
-  letter-spacing: -0.075em;
-  line-height: 0.98;
+  font-size: clamp(1.75rem, 2.6vw, 2rem);
+  letter-spacing: -0.055em;
+  line-height: 1.08;
 }
 .gso-visual-v1-overview .gso-hd-context p:not(.gso-hd-eyebrow) {
   max-width: 42rem;
@@ -725,12 +725,12 @@
 .gso-visual-v1-overview .gso-hd-section-heading p { color: var(--visual-muted); font-size: 0.76rem; }
 .gso-visual-v1-overview .gso-hd-metric-grid {
   grid-template-columns: 1.35fr repeat(3, 1fr);
-  gap: clamp(0.9rem, 2vw, 2.1rem);
+  gap: 1rem;
   border: 0;
   background: transparent;
 }
 .gso-visual-v1-overview .gso-hd-metric {
-  min-height: 8.8rem;
+  min-height: 6.5rem;
   border: 0;
   border-top: 2px solid var(--overview-rule);
   background: transparent;
@@ -743,7 +743,7 @@
   padding-inline: 1rem;
 }
 .gso-visual-v1-overview .gso-hd-metric > span { color: var(--visual-muted); font-size: 0.68rem; font-weight: 750; letter-spacing: 0.06em; text-transform: uppercase; }
-.gso-visual-v1-overview .gso-hd-metric > strong { font-size: clamp(1.8rem, 3.1vw, 3.15rem); letter-spacing: -0.07em; }
+.gso-visual-v1-overview .gso-hd-metric > strong { font-size: clamp(1.75rem, 2.5vw, 2.25rem); letter-spacing: -0.055em; }
 .gso-visual-v1-overview .gso-hd-metric > small { color: var(--visual-muted); }
 .gso-visual-v1-overview .gso-hd-current-line {
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -761,7 +761,7 @@
   background: transparent;
 }
 .gso-visual-v1-overview .gso-hd-domain {
-  min-height: 10rem;
+  min-height: 7.5rem;
   border: 0;
   border-top: 2px solid var(--hd-accent, var(--minimal-action));
   background: transparent;
@@ -789,11 +789,11 @@
   border-bottom: 1px solid var(--visual-border);
   padding: 0 0 1.15rem;
 }
-.gso-visual-v1-domain-frame .gso-hd-domain-frame-heading h2 { font-size: clamp(1.9rem, 3vw, 3rem); letter-spacing: -0.07em; }
+.gso-visual-v1-domain-frame .gso-hd-domain-frame-heading h2 { font-size: clamp(1.5rem, 1.9vw, 1.75rem); letter-spacing: -0.045em; }
 .gso-visual-v1-domain-frame .gso-hd-domain-frame-heading p { font-size: 0.88rem; line-height: 1.5; }
 .gso-visual-v1-domain-frame .gso-hd-domain-surface { gap: 1.5rem; }
 .gso-visual-v1-domain-frame .gso-visual-v1-kpi {
-  min-height: 8rem;
+  min-height: 6.5rem;
   border: 0;
   border-top: 2px solid var(--visual-border);
   border-radius: 0;
@@ -820,9 +820,9 @@
 .gso-visual-v1-settings .gso-settings-history-group { border-color: var(--visual-border); border-left: 2px solid var(--visual-border); border-radius: 0.55rem; }
 .gso-visual-v1-settings .gso-settings-history-summary { border-bottom: 0; padding: 0.9rem 1rem; }
 .gso-visual-v1-settings .gso-settings-history-list { position: relative; gap: 0.85rem; padding-left: 1.15rem; }
-.gso-visual-v1-settings .gso-settings-history-list::before { position: absolute; top: 0.8rem; bottom: 0.8rem; left: 0.32rem; width: 1px; background: var(--visual-border, var(--minimal-border)); content: ''; }
+.gso-visual-v1-settings .gso-settings-history-list::before { display: none; }
 .gso-visual-v1-settings .gso-settings-history-list > li { position: relative; }
-.gso-visual-v1-settings .gso-settings-history-list > li::before { position: absolute; top: 1.15rem; left: -1.03rem; width: 0.48rem; height: 0.48rem; border: 2px solid var(--hd-accent, var(--minimal-action)); border-radius: 999px; background: var(--minimal-canvas); content: ''; }
+.gso-visual-v1-settings .gso-settings-history-list > li::before { display: none; }
 .gso-visual-v1-settings .gso-settings-history-group { border-left: 2px solid var(--visual-border, var(--minimal-border)); border-radius: 0.55rem; }
 .gso-visual-v1-settings .gso-settings-history-group[open] { border-left-color: var(--hd-accent, var(--minimal-action)); }
 .gso-visual-v1-settings .gso-settings-history-details { padding: 0 1rem 0.85rem; }
@@ -5085,22 +5085,23 @@ table {
 .gso-visual-v1-shell.gso-pilot-shell .gso-workspace-tab[aria-current='page']::after {
   background: var(--hd-pink, var(--accent-500));
 }
-.gso-visual-v1-overview.gso-executive-canvas { gap: 2rem; padding: 0.25rem 0 3rem; background: var(--visual-canvas, var(--minimal-canvas)); }
-.gso-visual-v1-overview.gso-executive-canvas .gso-hd-context { border-bottom: 1px solid var(--overview-rule, var(--minimal-border)); padding: 2rem 0 1.35rem; }
-.gso-visual-v1-overview.gso-executive-canvas .gso-hd-title-row h2 { font-size: clamp(1.8rem, 2.8vw, 2.7rem); letter-spacing: -0.055em; line-height: 1.04; }
-.gso-visual-v1-overview.gso-executive-canvas .gso-hd-filter-bar { border-top: 0; border-bottom: 1px solid var(--overview-rule, var(--minimal-border)); padding-block: 0.95rem; }
+.gso-visual-v1-overview.gso-executive-canvas { gap: 1.5rem; padding: 0.25rem 0 2.25rem; background: var(--visual-canvas, var(--minimal-canvas)); }
+.gso-visual-v1-overview.gso-executive-canvas .gso-hd-context { border-bottom: 1px solid var(--overview-rule, var(--minimal-border)); padding: 1.25rem 0 0.9rem; }
+.gso-visual-v1-overview.gso-executive-canvas .gso-hd-title-row h2 { font-size: clamp(1.75rem, 2.6vw, 2rem); letter-spacing: -0.055em; line-height: 1.08; }
+.gso-visual-v1-overview.gso-executive-canvas .gso-hd-filter-bar { border-top: 0; border-bottom: 1px solid var(--overview-rule, var(--minimal-border)); padding-block: 0.65rem; }
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-ribbon,
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-current-strip,
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-domain-matrix,
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-integrity,
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-exceptions,
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-pipelines { border: 0; padding-inline: 0; }
-.gso-visual-v1-overview.gso-executive-canvas .gso-hd-metric-grid { grid-template-columns: 1.35fr repeat(3, 1fr); gap: clamp(0.9rem, 2vw, 2.1rem); border: 0; background: transparent; }
-.gso-visual-v1-overview.gso-executive-canvas .gso-hd-metric { min-height: 8.8rem; border: 0; border-top: 2px solid var(--overview-rule, var(--minimal-border)); background: transparent; padding: 1rem 0.15rem 0.8rem; box-shadow: none; }
-.gso-visual-v1-overview.gso-executive-canvas .gso-hd-metric:first-child { border-top-color: var(--hd-accent, var(--minimal-action)); background: color-mix(in srgb, var(--hd-accent, var(--minimal-action)) 8%, transparent); padding-inline: 1rem; }
-.gso-visual-v1-overview.gso-executive-canvas .gso-hd-current-line { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1rem, 3vw, 3rem); border: 0; border-top: 1px solid var(--overview-rule, var(--minimal-border)); padding-top: 0.75rem; }
-.gso-visual-v1-overview.gso-executive-canvas .gso-hd-domain-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.2rem; border: 0; background: transparent; }
-.gso-visual-v1-overview.gso-executive-canvas .gso-hd-domain { min-height: 10rem; border: 0; border-top: 2px solid var(--hd-accent, var(--minimal-action)); background: transparent; padding: 1rem 0.35rem 0.75rem 0; }
+.gso-visual-v1-overview.gso-executive-canvas .gso-hd-metric-grid { grid-template-columns: 1.35fr repeat(3, 1fr); gap: 1rem; border: 0; background: transparent; }
+.gso-visual-v1-overview.gso-executive-canvas .gso-hd-metric { min-height: 6.5rem; border: 0; border-top: 2px solid var(--overview-rule, var(--minimal-border)); background: transparent; padding: 0.8rem 0.15rem 0.65rem; box-shadow: none; }
+.gso-visual-v1-overview.gso-executive-canvas .gso-hd-metric:first-child { border-top-color: var(--hd-accent, var(--minimal-action)); background: transparent; padding-inline: 0.15rem; }
+.gso-visual-v1-overview.gso-executive-canvas .gso-hd-metric > strong { font-size: clamp(1.75rem, 2.5vw, 2.25rem); letter-spacing: -0.055em; }
+.gso-visual-v1-overview.gso-executive-canvas .gso-hd-current-line { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; border: 0; border-top: 1px solid var(--overview-rule, var(--minimal-border)); padding-top: 0.65rem; }
+.gso-visual-v1-overview.gso-executive-canvas .gso-hd-domain-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; border: 0; background: transparent; }
+.gso-visual-v1-overview.gso-executive-canvas .gso-hd-domain { min-height: 7.5rem; border: 0; border-top: 2px solid var(--hd-accent, var(--minimal-action)); background: transparent; padding: 0.8rem 0.25rem 0.65rem 0; }
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-domain:nth-child(2) { border-top-color: var(--hd-pink, var(--accent-500)); }
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-domain:nth-child(3) { border-top-color: var(--hd-cyan, var(--minimal-action)); }
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-domain:nth-child(4) { border-top-color: var(--hd-success, var(--color-success-text)); }
@@ -5108,16 +5109,32 @@ table {
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-integrity,
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-exceptions { border-top: 1px solid var(--overview-rule, var(--minimal-border)); padding-top: 1rem; }
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-pipelines { border-top: 1px solid var(--overview-rule, var(--minimal-border)); padding-top: 1rem; }
-.gso-visual-v1-domain-frame.gso-hd-domain-frame { gap: 1.45rem; padding: 1.7rem 0 3rem; }
-.gso-visual-v1-domain-frame.gso-hd-domain-frame .gso-hd-domain-frame-header { border-bottom: 1px solid var(--visual-border, var(--minimal-border)); padding-bottom: 1.15rem; }
-.gso-visual-v1-domain-frame.gso-hd-domain-frame .gso-hd-domain-frame-heading h2 { font-size: clamp(1.55rem, 2.2vw, 2.2rem); letter-spacing: -0.05em; }
+.gso-visual-v1-domain-frame.gso-hd-domain-frame { gap: 1.15rem; padding: 1.25rem 0 2.25rem; }
+.gso-visual-v1-domain-frame.gso-hd-domain-frame .gso-hd-domain-frame-header { border-bottom: 1px solid var(--visual-border, var(--minimal-border)); padding-bottom: 0.8rem; }
+.gso-visual-v1-domain-frame.gso-hd-domain-frame .gso-hd-domain-frame-heading h2 { font-size: clamp(1.5rem, 1.9vw, 1.75rem); letter-spacing: -0.045em; }
+.gso-visual-v1-domain-frame.gso-hd-domain-frame .gso-visual-v1-kpi > p:first-child { font-size: clamp(1.75rem, 2.3vw, 2rem); letter-spacing: -0.045em; }
+.gso-visual-v1-shell .gso-analytics-content { padding-inline: clamp(1rem, 2.5vw, 2.5rem); }
+.gso-finance-source-meta { margin-bottom: -0.35rem; border: 0 !important; border-left: 2px solid var(--hd-accent, var(--minimal-action)) !important; border-radius: 0 !important; background: transparent !important; padding: 0.25rem 0 0.25rem 0.75rem !important; }
+.gso-finance-source-meta h2 { font-size: 0.78rem; }
+.gso-finance-source-meta p { margin-top: 0.35rem !important; }
+.gso-visual-v1-settings .gso-settings-intro-band,
+.gso-visual-v1-settings .gso-settings-source-overview { padding-block: 0.65rem; }
+.gso-visual-v1-settings .gso-settings-history-list { gap: 0.5rem; padding-left: 0; }
+.gso-visual-v1-settings .gso-settings-history-group { border-left-width: 2px; border-radius: 0.35rem; }
+.gso-visual-v1-settings .gso-settings-history-summary { min-height: 4.25rem; padding: 0.7rem 0.85rem; }
+.gso-visual-v1-settings .gso-settings-history-details { gap: 0.5rem; padding: 0.65rem 0.85rem; }
+.gso-visual-v1-settings .gso-settings-history-source { padding: 0.55rem 0.65rem; }
+.gso-visual-v1-settings .gso-settings-history-footer { padding: 0 0.85rem 0.65rem; }
+.gso-settings-history > .gso-settings-source-overview { align-items: center; gap: 1rem; }
+.gso-settings-history > .gso-settings-source-overview h3 { font-size: 1.25rem; }
+.gso-settings-history > .gso-settings-source-overview p:not(.gso-settings-eyebrow) { max-width: 58rem; font-size: 0.78rem; line-height: 1.45; }
 
 @media (max-width: 1100px) {
   .gso-visual-v1-overview.gso-executive-canvas .gso-hd-metric-grid,
   .gso-visual-v1-overview.gso-executive-canvas .gso-hd-domain-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 760px) {
-  .gso-visual-v1-overview.gso-executive-canvas .gso-hd-title-row h2 { font-size: 2.1rem; }
+  .gso-visual-v1-overview.gso-executive-canvas .gso-hd-title-row h2 { font-size: 1.5rem; }
   .gso-visual-v1-overview.gso-executive-canvas .gso-hd-metric-grid,
   .gso-visual-v1-overview.gso-executive-canvas .gso-hd-current-line,
   .gso-visual-v1-overview.gso-executive-canvas .gso-hd-domain-grid { grid-template-columns: 1fr; gap: 0.85rem; }

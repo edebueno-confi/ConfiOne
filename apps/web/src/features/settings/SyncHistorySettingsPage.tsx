@@ -61,8 +61,8 @@ function HistoryGroup({ rows, isLatest = false }: { rows: AnalyticsSyncHistoryRo
       <details className="gso-settings-history-group" open={isLatest}>
         <summary className="gso-settings-history-summary">
         <div>
-          <p className="gso-settings-eyebrow">{triggerLabel}</p>
-          <h3>Ciclo de atualização</h3>
+          <p className="gso-settings-eyebrow">Registro operacional</p>
+          <h3>{triggerLabel}</h3>
           <p>{formatDate(cycle.startedAt, cycle.status)} · {cycle.currentStep ? `etapa atual: ${cycle.currentStep}` : 'HubSpot → OMIE'}</p>
         </div>
         <span className={`gso-settings-status gso-settings-status--${status}`}>{statusLabel(status)}</span>
