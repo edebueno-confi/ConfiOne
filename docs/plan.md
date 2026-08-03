@@ -2,7 +2,7 @@
 
 ## Fechamento do lote atual
 
-- Branch: `codex/high-density-ui-rebuild-20260803`; HEAD `619dfa8`.
+- Branch: `codex/high-density-ui-rebuild-20260803`; HEAD `bb77c67`.
 - A especificação documental foi criada antes da implementação e o Blueprint
   V2 foi marcado como superado para implementação.
 - A camada visual High-Density foi aplicada ao shell, Dashboard e Configurações
@@ -15,7 +15,7 @@
 - Relatório: `docs/reports/2026-08-03_high-density-ui-rebuild.md`.
 - Referências visuais consolidadas em `docs/design/blueprint/Dashboard PO/` e
   `docs/design/blueprint/Suporte e conversas/`, com exclusões intencionais
-  registradas no commit `619dfa8`.
+  registradas nos commits `619dfa8` e `bb77c67`.
 
 ## Próximo lote recomendado
 

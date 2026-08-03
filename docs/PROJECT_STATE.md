@@ -4,7 +4,7 @@
 
 - Checkout canônico: `C:\Projetos\GSO-old`.
 - Branch: `codex/high-density-ui-rebuild-20260803`, sem upstream; HEAD
-  `619dfa8`.
+  `bb77c67`.
 - Preservação: `refs/archive/high-density-ui-rebuild-start-20260803` e bundle
   externo em `C:\Projetos\GSO-artifacts\high-density-ui-rebuild-20260803`.
 - Especificação corrente: `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md`.
@@ -22,7 +22,7 @@
   de sessão da aplicação. Não houve reset, hidratação ou alteração do banco.
 - Referências visuais vigentes: `docs/design/blueprint/Dashboard PO/` e
   `docs/design/blueprint/Suporte e conversas/`. A consolidação e as exclusões
-  intencionais foram registradas no commit `619dfa8`; o histórico anterior segue
+  intencionais foram registradas nos commits `619dfa8` e `bb77c67`; o histórico anterior segue
   preservado.
 
 ## Precedência

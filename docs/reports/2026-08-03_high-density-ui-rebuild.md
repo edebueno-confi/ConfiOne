@@ -121,14 +121,15 @@ autorização; nenhuma porta adicional ficou aberta.
 
 ## Git e preservação
 
-- HEAD do lote: `619dfa8` — `chore: consolidar referencias visuais do dashboard`.
-- Commits do lote: `0ec5865`, `7d93403`, `ee69642`, `21bc664` e `619dfa8`.
+- HEAD do lote: `bb77c67` — `docs: fechar evidencias do lote high-density`.
+- Commits do lote: `0ec5865`, `7d93403`, `ee69642`, `21bc664`, `619dfa8` e
+  `bb77c67`.
 - Commit documental anterior: `0ec5865` — definição da interface High-Density.
 - Branch: `codex/high-density-ui-rebuild-20260803`, sem upstream.
 - Ref de preservação: `refs/archive/high-density-ui-rebuild-start-20260803`.
 - Bundle externo: `C:\Projetos\GSO-artifacts\high-density-ui-rebuild-20260803\gso-old-pre-ui-rebuild.bundle`.
 - A consolidação das referências visuais foi commitada separadamente em
-  `619dfa8`; não houve reset, limpeza ampla, reescrita de histórico, push ou
+  `619dfa8` e `bb77c67`; não houve reset, limpeza ampla, reescrita de histórico, push ou
   alteração de backend/banco.
 
 ## Próximo lote recomendado
