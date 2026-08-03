@@ -1,6 +1,6 @@
-export type AnalyticsUrlTab = 'ceo' | 'commercial' | 'customer-success' | 'support' | 'finance' | 'product' | 'development';
+export type AnalyticsUrlTab = 'ceo' | 'commercial' | 'customer-success' | 'support' | 'finance' | 'product-development' | 'product' | 'development';
 
-const allowedTabs = new Set<AnalyticsUrlTab>(['ceo', 'commercial', 'customer-success', 'support', 'finance', 'product', 'development']);
+const allowedTabs = new Set<AnalyticsUrlTab>(['ceo', 'commercial', 'customer-success', 'support', 'finance', 'product-development', 'product', 'development']);
 const allowedKeys = new Set(['tab', 'pipeline', 'from', 'to', 'status', 'owner', 'priority', 'stage']);
 
 export function normalizeAnalyticsSearch(search: string) {
@@ -9,7 +9,7 @@ export function normalizeAnalyticsSearch(search: string) {
   for (const [key, value] of input.entries()) {
     if (!allowedKeys.has(key) || !value.trim()) continue;
     if (key === 'tab') {
-      const tab = value === 'cs' || value === 'cs-support' ? 'support' : value;
+      const tab = value === 'cs' || value === 'cs-support' ? 'support' : value === 'product' || value === 'development' ? 'product-development' : value;
       if (!allowedTabs.has(tab as AnalyticsUrlTab)) continue;
       output.set('tab', tab);
     } else if (key === 'from' || key === 'to') {
@@ -30,7 +30,11 @@ export function normalizeAnalyticsSearch(search: string) {
 }
 
 export function analyticsDomainFromTab(tab: string | null) {
-  if (tab === 'commercial' || tab === 'customer-success' || tab === 'support' || tab === 'finance' || tab === 'product' || tab === 'development') return tab === 'support' ? 'support' : tab.replace('customer-success', 'customer_success');
+  if (tab === 'commercial' || tab === 'customer-success' || tab === 'support' || tab === 'finance' || tab === 'product-development' || tab === 'product' || tab === 'development') {
+    if (tab === 'support') return 'support';
+    if (tab === 'product' || tab === 'development') return 'product-development';
+    return tab.replace('customer-success', 'customer_success');
+  }
   return 'ceo';
 }
 

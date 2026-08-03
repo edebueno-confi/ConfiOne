@@ -9,29 +9,20 @@ type WaitingArea = {
   decision: string;
 };
 
-const PRODUCT: WaitingArea = {
-  title: 'Produto',
-  description: 'Visão executiva do que está sendo entregue, dos temas observados e do impacto esperado para o cliente.',
-  value: 'Roadmap e entregas',
-  categories: ['Roadmap', 'Entregas', 'Incidentes', 'Bugs', 'Temas reportados', 'Releases', 'Lead time'],
-  decision: 'Definir a fonte operacional e o contrato de leitura antes de publicar indicadores de produto.',
+const PRODUCT_DEVELOPMENT: WaitingArea = {
+  title: 'Produto e Desenvolvimento',
+  description: 'Visão executiva correlacionada de roadmap, entregas, fluxo técnico, estabilidade e bloqueios da plataforma.',
+  value: 'Roadmap, entregas e fluxo técnico',
+  categories: ['Roadmap', 'Entregas', 'Releases', 'Pull requests', 'Lead time', 'Throughput', 'Incidentes', 'Bugs', 'Bloqueios', 'Ambientes'],
+  decision: 'Definir a fonte GitHub e o contrato de leitura antes de publicar indicadores reais.',
 };
 
-const DEVELOPMENT: WaitingArea = {
-  title: 'Desenvolvimento',
-  description: 'Visão executiva da capacidade de entrega, do fluxo técnico, da estabilidade e dos bloqueios da plataforma.',
-  value: 'Fluxo e estabilidade',
-  categories: ['Deploys', 'Pull requests', 'Lead time', 'Throughput', 'Incidentes', 'Bugs', 'Bloqueios', 'Ambientes', 'Releases'],
-  decision: 'Definir a integração futura e o contrato de leitura antes de publicar indicadores técnicos.',
-};
-
-export function AnalyticsProductPage(_props: AnalyticsPageProps) {
-  return <WaitingAreaPage area={PRODUCT} />;
+export function AnalyticsProductDevelopmentPage(_props: AnalyticsPageProps) {
+  return <WaitingAreaPage area={PRODUCT_DEVELOPMENT} />;
 }
 
-export function AnalyticsDevelopmentPage(_props: AnalyticsPageProps) {
-  return <WaitingAreaPage area={DEVELOPMENT} />;
-}
+export const AnalyticsProductPage = AnalyticsProductDevelopmentPage;
+export const AnalyticsDevelopmentPage = AnalyticsProductDevelopmentPage;
 
 function WaitingAreaPage({ area }: { area: WaitingArea }) {
   return (

@@ -16,9 +16,8 @@ test('dashboard por domínio não renderiza container global nem filtro de domí
   assert.match(ceo, /AnalyticsStateBadge/);
 });
 
-test('navegação publica Produto e Desenvolvimento em espera por integração', () => {
-  assert.match(domains, /key: 'product'[\s\S]*enabled: true/);
-  assert.match(domains, /key: 'development'[\s\S]*enabled: true/);
+test('navegação publica Produto e Desenvolvimento em uma única aba de espera', () => {
+  assert.match(domains, /key: 'product-development'[\s\S]*enabled: true/);
   assert.match(waiting, /Modo de espera por integração/);
   assert.match(waiting, /GitHub/);
   assert.doesNotMatch(waiting, /fetch\(|supabase|axios|XMLHttpRequest/);
