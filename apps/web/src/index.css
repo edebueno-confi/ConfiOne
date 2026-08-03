@@ -856,10 +856,16 @@
 .gso-genie-sync-halo { position: absolute; inset: 12%; border-radius: 999px; background: radial-gradient(circle, color-mix(in srgb, var(--hd-cyan, var(--minimal-action)) 38%, transparent), transparent 68%); opacity: 0.45; }
 .gso-genie-sync-copy { min-width: 0; }
 .gso-genie-sync-kicker { margin: 0 0 0.35rem; color: var(--hd-accent, var(--minimal-action)); font-size: 0.68rem; font-weight: 750; letter-spacing: 0.1em; text-transform: uppercase; }
-.gso-genie-sync-copy h2 { margin: 0; color: var(--minimal-text); font-size: clamp(1.1rem, 2vw, 1.55rem); letter-spacing: -0.04em; }
+.gso-genie-sync-copy h2,
+.gso-analytics-loading-state h2 { margin: 0; color: var(--minimal-text); font-size: clamp(1.5rem, 2vw, 1.875rem); letter-spacing: -0.04em; }
 .gso-genie-sync-copy p:not(.gso-genie-sync-kicker) { margin: 0.45rem 0 0; color: var(--minimal-text-secondary); font-size: 0.86rem; line-height: 1.55; }
 .gso-genie-sync-copy small { display: block; margin-top: 0.65rem; color: var(--minimal-text-tertiary); font-size: 0.72rem; line-height: 1.45; }
 .gso-genie-sync-banner { margin-bottom: 1rem; }
+
+@media (max-width: 760px) {
+  .gso-genie-sync-copy h2,
+  .gso-analytics-loading-state h2 { font-size: 1.3125rem; }
+}
 
 @media (max-width: 1100px) {
   .gso-visual-v1-shell .gso-workspace-tabs { overflow-x: auto; }
@@ -5089,6 +5095,9 @@ table {
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-context { border-bottom: 1px solid var(--overview-rule, var(--minimal-border)); padding: 1.25rem 0 0.9rem; }
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-title-row h2 { font-size: clamp(1.75rem, 2.6vw, 2rem); letter-spacing: -0.055em; line-height: 1.08; }
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-filter-bar { border-top: 0; border-bottom: 1px solid var(--overview-rule, var(--minimal-border)); padding-block: 0.65rem; }
+.gso-visual-v1-overview.gso-executive-canvas .gso-hd-filters { justify-content: flex-start; }
+.gso-visual-v1-overview.gso-executive-canvas .gso-hd-filters > section { flex: 0 1 auto; width: 100%; }
+.gso-visual-v1-overview.gso-executive-canvas .gso-hd-filters > section > div { justify-content: flex-start; }
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-ribbon,
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-current-strip,
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-domain-matrix,
@@ -5117,17 +5126,22 @@ table {
 .gso-finance-source-meta { margin-bottom: -0.35rem; border: 0 !important; border-left: 2px solid var(--hd-accent, var(--minimal-action)) !important; border-radius: 0 !important; background: transparent !important; padding: 0.25rem 0 0.25rem 0.75rem !important; }
 .gso-finance-source-meta h2 { font-size: 0.78rem; }
 .gso-finance-source-meta p { margin-top: 0.35rem !important; }
+.gso-finance-kpi-groups { display: grid; gap: 1.25rem; }
+.gso-finance-kpi-group { display: grid; gap: 0.55rem; }
+.gso-finance-kpi-group h3 { margin: 0; color: var(--minimal-text-secondary); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }
+.gso-finance-kpi-group .gso-pilot-kpi-grid { gap: 0.75rem; }
 .gso-visual-v1-settings .gso-settings-intro-band,
 .gso-visual-v1-settings .gso-settings-source-overview { padding-block: 0.65rem; }
 .gso-visual-v1-settings .gso-settings-history-list { gap: 0.5rem; padding-left: 0; }
 .gso-visual-v1-settings .gso-settings-history-group { border-left-width: 2px; border-radius: 0.35rem; }
-.gso-visual-v1-settings .gso-settings-history-summary { min-height: 4.25rem; padding: 0.7rem 0.85rem; }
+.gso-visual-v1-settings .gso-settings-history-summary { min-height: 3.75rem; padding: 0.6rem 0.85rem; }
 .gso-visual-v1-settings .gso-settings-history-details { gap: 0.5rem; padding: 0.65rem 0.85rem; }
 .gso-visual-v1-settings .gso-settings-history-source { padding: 0.55rem 0.65rem; }
 .gso-visual-v1-settings .gso-settings-history-footer { padding: 0 0.85rem 0.65rem; }
 .gso-settings-history > .gso-settings-source-overview { align-items: center; gap: 1rem; }
-.gso-settings-history > .gso-settings-source-overview h3 { font-size: 1.25rem; }
+.gso-settings-history > .gso-settings-source-overview h3 { font-size: 1.05rem; }
 .gso-settings-history > .gso-settings-source-overview p:not(.gso-settings-eyebrow) { max-width: 58rem; font-size: 0.78rem; line-height: 1.45; }
+.gso-settings-history > .gso-settings-source-overview { border-left-width: 2px; background: transparent; }
 
 @media (max-width: 1100px) {
   .gso-visual-v1-overview.gso-executive-canvas .gso-hd-metric-grid,

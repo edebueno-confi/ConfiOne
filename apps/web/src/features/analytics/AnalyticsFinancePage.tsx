@@ -152,18 +152,26 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
     </section>
 
     {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado financeiro" description="A fonte respondeu, mas não encontrou registros para este recorte." /> : <>
-      {/* KPIs coloridos: conduzem o olho ao que importa */}
+      {/* KPIs agrupados por leitura operacional */}
+      <div className="gso-finance-kpi-groups">
+      <section className="gso-finance-kpi-group" aria-labelledby="finance-position-heading">
+      <h3 id="finance-position-heading">Posição e risco</h3>
       <div className="gso-pilot-kpi-grid grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard label="Saldo em aberto" value={formatCurrencyBRL(kpis.openBalance)} hint={`${kpis.openTitles.toLocaleString('pt-BR')} títulos a receber`} />
         <KpiCard label="Vencido" value={formatCurrencyBRL(kpis.overdueBalance)} hint={`${formatPercent(kpis.overdueRate)} da carteira · ${kpis.overdueTitles.toLocaleString('pt-BR')} títulos`} tone="critical" />
         <KpiCard label="A vencer em 30 dias" value={formatCurrencyBRL(kpis.due30)} hint="Previsão de entrada no mês" tone="warning" />
         <KpiCard label="Atraso médio" value={`${kpis.avgDaysOverdue.toLocaleString('pt-BR')} dias`} hint="Média ponderada dos vencidos" tone={kpis.avgDaysOverdue > 60 ? 'critical' : 'warning'} />
       </div>
+      </section>
+      <section className="gso-finance-kpi-group" aria-labelledby="finance-period-heading">
+      <h3 id="finance-period-heading">Movimentação e previsão</h3>
       <div className="gso-pilot-kpi-grid grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard label="Recebido no período" value={formatCurrencyBRL(kpis.receivedAmount)} hint={`${formatPercent(kpis.receivedRate)} do valor faturado`} />
         <KpiCard label="A vencer em 60 dias" value={formatCurrencyBRL(kpis.due60)} hint="Acumulado até 60 dias" />
         <KpiCard label="A vencer em 90 dias" value={formatCurrencyBRL(kpis.due90)} hint="Acumulado até 90 dias" />
         <KpiCard label="Faturado (período)" value={formatCurrencyBRL(kpis.netAmount)} hint={`${kpis.totalTitles.toLocaleString('pt-BR')} títulos no recorte`} />
+      </div>
+      </section>
       </div>
 
       {/* Previsibilidade + Aging por faixa */}

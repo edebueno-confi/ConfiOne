@@ -63,6 +63,7 @@ function IntegrationCard({
         <span className={`gso-settings-status ${status.className}`}>{status.label}</span>
       </header>
 
+      <form className="gso-settings-form" onSubmit={(event) => { event.preventDefault(); void save(); }}>
       <div className="gso-settings-form-grid">
         <label className="gso-settings-field gso-settings-field--toggle">
           <span>Integração ativa</span>
@@ -91,10 +92,11 @@ function IntegrationCard({
       <p className="gso-settings-help" id={isOmie ? 'omie-credential-help' : 'hubspot-credential-help'}>Deixe em branco para manter a credencial atual. O valor nunca é exibido novamente.</p>
       {message ? <p className="gso-settings-inline-error" role="alert">{message}</p> : null}
       <footer className="gso-settings-card-actions">
-        <button className="gso-settings-button gso-settings-button--primary" type="button" disabled={busy} onClick={() => void save()}>
+        <button className="gso-settings-button gso-settings-button--primary" type="submit" disabled={busy}>
           {busy ? 'Salvando…' : 'Salvar alterações'}
         </button>
       </footer>
+      </form>
     </section>
   );
 }

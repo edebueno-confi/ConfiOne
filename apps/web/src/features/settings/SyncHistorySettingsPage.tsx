@@ -122,9 +122,9 @@ export function SyncHistorySettingsPage() {
     <div className="gso-settings-stack gso-settings-history gso-visual-v1-settings">
       <section className="gso-settings-source-overview">
         <div>
-          <p className="gso-settings-eyebrow">Rastreabilidade</p>
-          <h3>Histórico de atualizações</h3>
-          <p>Cada ciclo mostra HubSpot, OMIE, etapa atual, resultado e quantidade processada. Erros são resumidos e nunca expõem credenciais ou detalhes internos.</p>
+          <p className="gso-settings-eyebrow">Histórico operacional</p>
+          <h3>Atualizações</h3>
+          <p>HubSpot e OMIE por execução, etapa, resultado e quantidade processada.</p>
         </div>
         <button className="gso-settings-button gso-settings-button--secondary" type="button" onClick={() => void load()} disabled={loading}>Atualizar histórico</button>
       </section>

@@ -334,7 +334,6 @@ function ExecutiveHdCanvas({
         <div>
           <div className="gso-hd-title-row">
             <h2 id="executive-heading">Visão Geral</h2>
-            {state ? <HdStatus state={state} /> : null}
           </div>
           <p>
             Desempenho no período, posição atual e sinais que merecem contexto.
