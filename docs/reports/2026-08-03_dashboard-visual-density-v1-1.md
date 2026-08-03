@@ -137,11 +137,11 @@ As correções foram concentradas em `index.css`, no frame executivo, no metadat
 
 ## 25. Governança documental
 
-Este relatório é a evidência delta do macro-lote. O plano corrente, `PROJECT_STATE.md` e `DOCUMENTATION_LEDGER.md` foram atualizados sem substituir o histórico anterior. A auditoria `run-documentation-audit.mjs changed` foi reexecutada e permaneceu `inconsistent` por contradições históricas globais, links legados e um achado de secret-assignment em documento histórico; nenhum valor sensível foi aberto ou reproduzido neste lote.
+Este relatório é a evidência delta do macro-lote. O plano corrente, `PROJECT_STATE.md` e `DOCUMENTATION_LEDGER.md` foram atualizados sem substituir o histórico anterior. A auditoria `run-documentation-audit.mjs changed` foi executada durante a revisão documental e identificou candidatos históricos globais; o inventário final, com worktree limpo, retornou `consistent`, sem documentos pendentes para análise. Nenhum valor sensível foi aberto ou reproduzido neste lote.
 
 ## 26. Testes
 
-- Regressão focada após UI-05: 25/26 passou; a falha restante é o contrato preexistente de `fresh` sem `lastSuccessfulSyncAt`, fora do escopo visual.
+- Regressão focada: 26/26 passou após alinhar o badge visual ao normalizador canônico de status; a ausência de `lastSuccessfulSyncAt` permanece tratada como `never_synced` na camada de estado.
 
 - `npm run contracts:typecheck`: passou.
 - `npm run web:typecheck`: passou.

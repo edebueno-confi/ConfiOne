@@ -29,7 +29,7 @@ function formatStateDate(value: string | null): string {
 export function AnalyticsStateBadge({ state }: { state?: AnalyticsBlockState }) {
   if (!state) return null;
   const tone = state.status === 'fresh' || state.status === 'zero' ? 'text-[color:var(--minimal-action)]' : state.status === 'stale' || state.status === 'partial' || state.status === 'never_synced' || state.status === 'syncing' ? 'text-[color:var(--minimal-warning-text)]' : 'text-[color:var(--minimal-danger-text)]';
-  const statusLabel = state.status === 'fresh' && !state.lastSuccessfulSyncAt ? 'Dados disponíveis' : STATUS_LABELS[state.status];
+  const statusLabel = STATUS_LABELS[state.status];
   const dateLabel = state.status === 'fresh' || state.status === 'stale' || state.status === 'partial'
     ? formatStateDate(state.lastSuccessfulSyncAt)
     : state.status === 'syncing'
