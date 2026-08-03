@@ -11,6 +11,61 @@ Registrar o backlog oficial de polimento e evolucao de UX das superficies intern
 
 ## Itens pendentes
 
+### DASHBOARD-07 — Dashboard Blueprint System V2 completo
+
+Status: enfileirado em 03/08/2026; não iniciado neste registro.
+
+Objetivo: criar uma nova direção visual e analítica para o Dashboard Gerencial,
+sem copiar a composição atual e sem alterar o V1.1 até a aprovação individual
+dos blueprints pelo Product Owner.
+
+Escopo do macro-lote:
+
+- auditar o baseline V1.1 nas cinco áreas analíticas, telas administrativas e
+  estados do Gênio;
+- documentar a arquitetura de leitura em quatro camadas: leitura instantânea,
+  evolução, composição e ação/detalhe;
+- definir temporalidade única: curto prazo com KPIs e microtendências, médio
+  prazo com séries semanais e longo prazo com séries mensais/trimestrais;
+- produzir blueprints individuais desktop e referências mobile para Visão Geral,
+  Comercial, Customer Success, Suporte & Chat, Financeiro, Integrações, Fontes,
+  Histórico e estados do Gênio;
+- manter Customer Success honesto sobre denominadores e dados ainda não
+  consolidados;
+- tratar Integrações, Fontes e Histórico como operação administrativa, não como
+  analytics decorativo;
+- consolidar a identidade do Gênio como avatar técnico, sólido e amigável,
+  sem linguagem sobrenatural ou aparência fantasmagórica;
+- criar a especificação canônica, matriz de KPIs/temporalidade, índice de
+  artefatos, revisão crítica e manifesto de validação.
+
+Restrições:
+
+- não alterar `apps/web`, contratos, banco, migrations, RPCs, views, métricas,
+  fórmulas, integrações, dados, rotas ou CSS runtime;
+- não executar reset, clean, merge, rebase, cherry-pick, stash apply/pop, push,
+  deploy, migration ou sincronização HubSpot/OMIE;
+- não usar dados pessoais ou dados reais identificáveis nos blueprints;
+- não declarar conclusão sem inspeção visual individual, dimensões, links,
+  spelling, secret scan, documentação e qualidade validados.
+
+Entregáveis esperados:
+
+- `docs/specs/DASHBOARD_BLUEPRINT_SYSTEM_V2.md`;
+- `docs/specs/DASHBOARD_KPI_TEMPORAL_MATRIX_V1.md`;
+- `docs/design/blueprint/dashboard-v2/README.md`;
+- imagens individuais em `desktop/`, `mobile/` e `genio/`;
+- relatório Delta com auditoria, decisões, revisão crítica, validação, limites
+  e commits locais separados por frente, sem push.
+
+Dependências: leitura dos documentos canônicos e do baseline V1.1; confirmação
+do HEAD real e do estado Git inicial; uso efetivo das skills de design,
+analytics, UX, documentação, qualidade e validação previstas na autorização.
+
+Critério de parada: entregar especificação, matriz, blueprints individuais,
+referências mobile, revisão crítica, relatório e manifesto; então parar e
+aguardar aprovação individual do Product Owner antes de implementar o frontend.
+
 ## Decisão do Product Owner — separação de escopos — 2026-08-02
 
 O relatório anterior que agrupava `UI-05`, `DASHBOARD-05` e `DASHBOARD-06` está
