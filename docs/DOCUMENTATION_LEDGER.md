@@ -1,4 +1,18 @@
-# Estado corrente — Dashboard Visual Density V1.1 — 2026-08-03
+# Estado corrente — Interface High-Density V1 — 2026-08-03
+
+## Registro corrente — fechamento High-Density — 2026-08-03
+
+- Branch: `codex/high-density-ui-rebuild-20260803`; HEAD `7d93403`.
+- Especificação: `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md`.
+- Relatório: `docs/reports/2026-08-03_high-density-ui-rebuild.md`.
+- Escopo: shell, Dashboard Gerencial, domínios analíticos, Configurações e
+  estados visuais; sem alteração de backend, contratos, banco ou credenciais.
+- Evidência automatizada: build, typechecks, secret scan, quality gates e
+  98/98 testes focados aprovados.
+- Limitação: QA visual autenticado bloqueado por `JWT issued at future`; quatro
+  falhas ampliadas preexistentes permanecem registradas no relatório.
+
+## Precedência
 
 ## Registro corrente
 

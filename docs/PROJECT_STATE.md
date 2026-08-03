@@ -1,4 +1,25 @@
-# Estado corrente do checkout canônico — Dashboard Visual Density V1.1 — 2026-08-03
+# Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
+
+## Fechamento corrente — implementação High-Density — 2026-08-03
+
+- Checkout canônico: `C:\Projetos\GSO-old`.
+- Branch: `codex/high-density-ui-rebuild-20260803`, sem upstream; HEAD
+  `7d93403`.
+- Preservação: `refs/archive/high-density-ui-rebuild-start-20260803` e bundle
+  externo em `C:\Projetos\GSO-artifacts\high-density-ui-rebuild-20260803`.
+- Especificação corrente: `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md`.
+- Implementação visual High-Density aplicada ao shell, Analytics e
+  Configurações sem alterar backend, banco, contratos, métricas, fontes,
+  sincronizações, permissões ou credenciais.
+- Validação aprovada: contracts/web typecheck, build, secret scan, quality
+  changed/module/staged e 98/98 testes focados.
+- Suíte ampliada: 117/121; quatro falhas preexistentes de contratos de runner e
+  estados estão registradas em
+  `docs/reports/2026-08-03_high-density-ui-rebuild.md`.
+- QA visual autenticado: não concluído por `JWT issued at future` no ambiente
+  local; não houve reset ou alteração do banco.
+
+## Precedência
 
 ## Atualização corrente — densidade, tipografia e QA visual — 2026-08-03
 

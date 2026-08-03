@@ -1,4 +1,25 @@
-# Plano corrente — Dashboard Visual Density V1.1 — 2026-08-03
+# Plano corrente — Interface High-Density V1 — 2026-08-03
+
+## Fechamento do lote atual
+
+- Branch: `codex/high-density-ui-rebuild-20260803`; HEAD `7d93403`.
+- A especificação documental foi criada antes da implementação e o Blueprint
+  V2 foi marcado como superado para implementação.
+- A camada visual High-Density foi aplicada ao shell, Dashboard e Configurações
+  sem tocar em métricas, fontes, contratos, sincronização ou banco.
+- Typechecks, build, secret scan, quality gates e 98/98 testes focados passaram.
+- QA visual autenticado está pendente por `JWT issued at future`, sem reset de
+  banco; a limitação está detalhada no relatório corrente.
+- Relatório: `docs/reports/2026-08-03_high-density-ui-rebuild.md`.
+
+## Próximo lote recomendado
+
+1. reconciliar os quatro contratos preexistentes da suíte ampliada;
+2. corrigir o ambiente de sessão local sem resetar dados;
+3. executar QA visual real em cinco viewports e dois temas;
+4. aguardar aprovação visual antes de novos ajustes por domínio.
+
+## Precedência
 
 ## Execução corrente do macro-lote visual
 
