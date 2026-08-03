@@ -24,6 +24,25 @@ O V1 tinha regras concorrentes para overview, pilot e domínio. O título podia 
 
 Foram aplicadas as orientações de `gso-operational-design`, `frontend-design`, `ui-ux-specialist`, `ux-friction-analyzer`, `design-kpis`, `tailwind-patterns`, `web-design-guidelines`, `genius-code-quality`, `genius-documentation-governance`, `playwright`, `screenshot` e `verification-before-completion`. A revisão atualizada das Web Interface Guidelines reforça foco visível, reduced motion, tipografia compacta e ausência de `transition: all`. [Web Interface Guidelines](https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md)
 
+Registro obrigatório de uso:
+
+| Skill e path | Orientação relevante | Ação tomada | Orientação rejeitada e justificativa |
+|---|---|---|---|
+| `artifact-template-cockpit-operacional-genius-os` — `C:\Users\edebu\.codex\skills\artifact-template-cockpit-operacional-genius-os\SKILL.md` | Preservar linguagem editorial-operacional e não inventar fatos. | Usada como referência de composição do cockpit e hierarquia de sinais. | Não copiar literalmente o template, pois o lote refinou uma implementação existente. |
+| `gso-operational-design` — `C:\Users\edebu\.codex\skills\gso-operational-design\SKILL.md` | Priorizar ação segura, densidade, tokens e estados factuais. | Aplicados agrupamento semântico, filtros compactos, status e indisponibilidade honesta. | Não usar mascote como decoração dominante. |
+| `product-design:index` — `C:\Users\edebu\.codex\plugins\cache\openai-curated-remote\product-design\0.1.52\skills\index\SKILL.md` | Roteiar auditoria e crítica de produto antes da implementação. | Usada para estruturar a auditoria visual V1 e a revisão crítica. | Não criar protótipo paralelo, pois o escopo exigia corrigir a base atual. |
+| `data-analytics:design-kpis` — `C:\Users\edebu\.codex\plugins\cache\openai-curated-remote\data-analytics\0.2.8-13ceeea1f599\skills\design-kpis\SKILL.md` | Tratar fonte, definição e denominador como autoridade do dado. | Aplicada somente à hierarquia visual e agrupamento de KPIs. | Não redefinir métricas, fontes ou denominadores por escopo congelado. |
+| `tailwind-patterns` — `C:\Projetos\GSO-old\.agents\skills\tailwind-patterns\SKILL.md` | Preferir tokens e padrões consistentes, evitando medidas arbitrárias. | Revisadas regras CSS e tokens existentes, sem criar configuração Tailwind paralela. | Não migrar CSS global para Tailwind, pois seria mudança metodológica desnecessária. |
+| `genius-code-quality` — `C:\Projetos\GSO-old\.agents\skills\genius-code-quality\SKILL.md` | Auditar diff, contratos, segurança, testes e manutenção sem autoalteração silenciosa. | Executados `changed`, `module` e `staged`, todos sem findings confirmados. | Não aplicar correções automáticas fora do escopo visual. |
+| `genius-documentation-governance` — `C:\Projetos\GSO-old\.agents\skills\genius-documentation-governance\SKILL.md` | Dar precedência ao código e documentos canônicos e preservar histórico. | Executado `changed`; relatório, plano e ledger canônicos foram atualizados. | Não reescrever documentos históricos conflitantes nem reproduzir o achado sensível. |
+| `frontend-design` — `C:\Users\edebu\.codex\skills\frontend-design\SKILL.md` | Definir direção editorial explícita e evitar estética genérica de IA. | Mantida direção operacional editorial, compacta e não maximalista. | Rejeitada direção promocional/landing page por incompatibilidade com o produto interno. |
+| `ui-ux-specialist` — `C:\Users\edebu\.codex\skills\ui-ux-specialist\SKILL.md` | Semântica, teclado, foco, contraste, labels e estados de erro. | Preservados landmarks, `aria-live`, `aria-busy`, foco e reduced motion. | Não criar elementos decorativos que competissem com conteúdo operacional. |
+| `ux-friction-analyzer` — `C:\Users\edebu\.codex\skills\ux-friction-analyzer\SKILL.md` | Progressive disclosure e redução de carga cognitiva. | Aplicados filtros compactos, histórico recolhível e redução de repetição. | Não esconder dados essenciais atrás de múltiplos níveis de navegação. |
+| `web-design-guidelines` — `C:\Projetos\GSO-old\.agents\skills\web-design-guidelines\SKILL.md` | Foco visível, reduced motion, sem `transition: all`, sem overflow e semântica. | Guidelines atualizadas foram consultadas e os probes foram executados no preview. | Não usar animação baseada em layout ou cores como único canal de status. |
+| `playwright` — `C:\Users\edebu\.codex\skills\playwright\SKILL.md` | Automatizar navegador real para navegação, screenshots e extração. | Usado no preview 4183 com sessão QA local e cinco viewports. | Não usar sincronização real nem escrever dados externos. |
+| `screenshot` — `C:\Users\edebu\.codex\skills\screenshot\SKILL.md` | Preferir captura específica da ferramenta e salvar evidência rastreável. | Capturas Playwright e inspeção `view_image` foram persistidas no pacote externo. | Não substituir captura real por typecheck ou mock visual. |
+| `verification-before-completion` — `C:\Users\edebu\.codex\skills\verification-before-completion\SKILL.md` | Exigir evidência fresca antes de declarar conclusão. | Matriz final, builds, gates, manifestos e Git foram reexecutados. | Não declarar aprovação total enquanto o auditor documental permanece inconsistente. |
+
 ## 6. Tipografia
 
 - Título de página: máximo observado 32px desktop; 28px intermediário; 24px mobile.
@@ -88,7 +107,7 @@ A captura de 1920x1080 não aumenta mais o título proporcionalmente; a escala f
 
 ## 19. Responsividade
 
-Delta final: as 80 capturas foram feitas no preview empacotado estabilizado, sem overflow horizontal ou vertical.
+Delta final: as 80 capturas foram refeitas no preview empacotado estabilizado, sem overflow horizontal ou vertical.
 
 Foram capturados 80 estados: 8 superfícies × 5 viewports × 2 temas. Viewports: 1920x1080, 1440x900, 1024x768, 768x1024 e 390x844. Não foi observado overflow horizontal.
 
@@ -161,9 +180,9 @@ Implementadas 4 áreas de código: CSS visual, overview, finance metadata e UI-0
 
 ## 30. QA final
 
-Delta final: preview empacotado 80/80, 0 falhas de rota, 0 HTTP >=400, 0 overflow, 0 login detectado e 0 mensagens de console na coleta final.
+Delta final: preview empacotado 80/80, 0 falhas de rota, 0 HTTP >=400, 0 overflow, 0 login detectado, 0 console errors e 0 request failures na coleta final.
 
-Matriz final: 80/80 capturas; 0 falhas de carregamento; 0 HTTP ≥400; 0 overflow horizontal; 30 mensagens de console registradas para inspeção, sem falha de rota. Os títulos observados foram 32px, 28px e 24px conforme viewport.
+Matriz final: 80/80 capturas em 1920x1080, 1440x900, 1024x768, 768x1024 e 390x844, nos temas claro e escuro; 0 falhas de carregamento; 0 HTTP ≥400; 0 overflow horizontal; 0 console errors; 0 request failures. Os títulos observados foram 32px, 28px e 24px conforme viewport, e os KPIs ficaram dentro do limite de 40px.
 
 ## 31. Evidência de motion
 
@@ -176,10 +195,13 @@ Em `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\motion` for
 - Baseline: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\baseline-v1` — 80 PNGs e manifesto.
 - Final: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\final-v1-1` — 80 PNGs e manifesto.
 - Preview final: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\preview-final-2` — 80 PNGs e manifesto.
+- Preview final atual: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\preview-final-3` — 80 PNGs e manifesto, HEAD `f055723`.
 - Zoom: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\zoom` — 16 PNGs, oito superfícies em 125% e 200%, sem overflow horizontal.
 - Motion: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\motion`.
 - UI-05: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\ui05-final` — manifesto, 32 estados estáticos, 32 frames de movimento e 2 reduced-motion.
 - Pacote atualizado para revisão: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05.zip`, 31.931.121 bytes, SHA-256 `46BFE028E99C297D75907B0CFA1311771814BACFABA7EC853EFFDDF9FE9F05BF`.
+- Pacote final atualizado: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v2.zip`, 40.895.876 bytes, SHA-256 `054641874E4E0878A1F56A4574B1202157434F73207450DC8BA6B18512CDAABC`.
+- Pacote final desta revisão: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v3.zip`, 40.897.450 bytes, SHA-256 `68B48373D3AA4A785CA40FD38742B03DF628B5150BE02062DFE85A2D965DE78B`.
 - Pacote para revisão: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence.zip`, 16.266.594 bytes, SHA-256 `2B037C236CADBCB8FB9F86E5B282612EEE567F37C951AE8E8ECA0DC147E6935B`.
 
 ## 33. Arquivos
