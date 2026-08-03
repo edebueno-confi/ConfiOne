@@ -1,7 +1,7 @@
 import { GeniusMascot } from './GeniusMascot';
 
 type SyncSource = 'HubSpot' | 'OMIE' | 'painel';
-type SyncVisualState = 'preparing' | 'syncing_hubspot' | 'syncing_omie' | 'publishing';
+type SyncVisualState = 'preparing' | 'syncing_hubspot' | 'syncing_omie' | 'publishing' | 'failed' | 'timed_out' | 'abandoned';
 
 const COPY: Record<SyncVisualState, { title: string; description: string }> = {
   preparing: {
@@ -20,6 +20,18 @@ const COPY: Record<SyncVisualState, { title: string; description: string }> = {
     title: 'O Gênio está soltando a magia no painel',
     description: 'As fontes foram processadas e o painel está preparando a nova versão dos dados.',
   },
+  failed: {
+    title: 'O Gênio encontrou um desvio no caminho',
+    description: 'A atualização foi encerrada. O painel mantém o último estado publicado disponível.',
+  },
+  timed_out: {
+    title: 'O Gênio ainda está aguardando uma resposta',
+    description: 'A atualização demorou mais que o esperado. Consulte o Histórico antes de tentar novamente.',
+  },
+  abandoned: {
+    title: 'O Gênio interrompeu esta tentativa',
+    description: 'A atualização foi encerrada sem substituir o estado publicado anterior.',
+  },
 };
 
 export function GeniusSyncOverlay({
@@ -34,12 +46,13 @@ export function GeniusSyncOverlay({
   detail?: string;
 }) {
   const copy = COPY[state];
-  const blocking = !hasValidSnapshot;
+  const active = !['failed', 'timed_out', 'abandoned'].includes(state);
+  const blocking = active && !hasValidSnapshot;
   const content = (
     <div className="gso-genie-sync-content">
       <div className="gso-genie-sync-mascot" aria-hidden="true">
         <span className="gso-genie-sync-halo" />
-        <GeniusMascot alt="" animated expression="happy" pose="magic" size={blocking ? 'xl' : 'lg'} surface="loading" />
+        <GeniusMascot alt="" animated={active} expression="happy" pose="magic" size={blocking ? 'xl' : 'lg'} surface="loading" />
       </div>
       <div className="gso-genie-sync-copy">
         <p className="gso-genie-sync-kicker">{source === 'painel' ? 'Atualização do painel' : source}</p>
@@ -54,5 +67,5 @@ export function GeniusSyncOverlay({
     return <div className="gso-genie-sync-overlay" aria-busy="true" aria-live="polite" role="status">{content}</div>;
   }
 
-  return <div className="gso-genie-sync-banner" aria-busy="true" aria-live="polite" role="status">{content}</div>;
+  return <div className="gso-genie-sync-banner" aria-busy={active} aria-live="polite" role="status">{content}</div>;
 }
