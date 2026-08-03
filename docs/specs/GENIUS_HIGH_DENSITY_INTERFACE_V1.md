@@ -1,7 +1,6 @@
 # Genius Support OS — Interface High-Density V1
 
-Status: especificação canônica para implementação local, aprovada pelo Product
-Owner em 03/08/2026.
+Status: direção autorizada e implementação pendente de aprovação visual final.
 
 Esta especificação substitui a direção de implementação do `Dashboard Blueprint
 System V2`. O Blueprint V2 permanece apenas como histórico quando ainda existir
@@ -48,10 +47,12 @@ Implementar, nesta ordem:
 4. Customer Success;
 5. Suporte & Chat;
 6. Financeiro;
-7. Integrações;
-8. Fontes do Dashboard;
-9. Histórico de sincronizações;
-10. Gênio em ação e seus estados.
+7. Produto em espera por integração;
+8. Desenvolvimento em espera por integração;
+9. Integrações;
+10. Fontes do Dashboard;
+11. Histórico de sincronizações;
+12. Gênio em ação e seus estados.
 
 ## 6. Fora de escopo
 
@@ -102,9 +103,11 @@ suportar esse padrão.
 
 ## 12. Visão Geral
 
-É um cockpit executivo compacto: faixa de fontes, título curto, filtro de
-período, KPIs de desempenho e posição, mapa de áreas e duas zonas analíticas.
-Evitar sequência vertical de seções e cards com preenchimento decorativo.
+É um cockpit executivo compacto: título curto, filtro de período, KPIs de
+desempenho e posição, mapa de áreas e duas zonas analíticas. O contexto de
+fonte aparece localizado na página quando necessário; não existe container
+global de fontes acima dos filtros. Evitar sequência vertical de seções e cards
+com preenchimento decorativo.
 
 ## 13. Comercial
 
@@ -145,6 +148,23 @@ Sidebar navy consistente, header baixo, navegação por links semânticos e áre
 de conteúdo que ocupa a largura real. Não criar segunda navegação redundante
 dentro do Dashboard ou de Configurações.
 
+## 18.1 Navegação e filtros por domínio
+
+As abas e as rotas são a única navegação entre áreas. Nenhuma página exibe
+filtro de domínio, “Todos os domínios” ou seletor equivalente. Filtros são
+específicos da área: pipelines aparecem somente em Comercial, Suporte e CS
+quando retornados por contrato real; a Visão executiva, Financeiro, Produto e
+Desenvolvimento não exibem pipeline como filtro.
+
+O container global de fontes operacionais não aparece nas páginas de domínio.
+Falhas, snapshots antigos e indisponibilidade permanecem nos contratos e são
+apresentados uma única vez, em contexto compacto da própria página.
+
+Produto e Desenvolvimento possuem composição própria em modo de espera por
+integração. GitHub é hipótese futura: não há chamada, token, secret, contrato
+ou métrica de GitHub nesta etapa. A Visão executiva consolida os sinais
+publicados das áreas sem copiar integralmente seus KPIs.
+
 ## 19. Cards e superfícies
 
 Cards são leves: borda suave, raio pequeno, sombra discreta, padding de
@@ -177,11 +197,13 @@ execução válida correspondente.
 
 ## 23. Gênio em ação
 
-O Gênio deve parecer suspenso, voando e fazendo mágica: halo leve, partículas
-controladas e movimento de flutuação. A animação não simula progresso. Copy
-criativa e operacional, por exemplo: `O Gênio está alinhando os sinais das
-fontes` e `Assim que a leitura publicada estiver pronta, o cockpit volta para
-você.` Respeitar `prefers-reduced-motion`.
+O Gênio é um avatar sólido do sistema. Sua atividade deve comunicar consulta,
+organização, processamento e publicação de dados. Movimento discreto é
+permitido somente quando representar atividade operacional. Não usar estética
+sobrenatural ou infantilizada. Não usar voo contínuo, magia, partículas
+dominantes ou halo teatral. Copy deve permanecer factual, curta e orientada à
+atividade atual. Respeitar `prefers-reduced-motion` e manter o avatar estático
+nesse modo.
 
 ## 24. Acessibilidade e comportamento
 
@@ -191,6 +213,13 @@ inputs mantêm contraste em light/dark. Não usar `transition: all`. Longos
 conteúdos devem truncar ou quebrar com intenção; não criar overflow global.
 
 ## 25. Densidade cognitiva e semântica de decisão
+
+Regras canônicas desta revisão: erro sistêmico aparece uma vez; KPI secundário
+tem peso visual inferior; gráfico perde área quando não há densidade; ausência
+de dados gera orientação factual, não uma parede de “Indisponível”; cor
+semântica é localizada; um problema não domina a tela; densidade também é
+medida verticalmente; e a primeira tabela ou lista operacional começa antes
+quando o gráfico não justifica sua área.
 
 High-Density combina alta densidade funcional com baixa densidade perceptiva.
 Espaço negativo é mantido quando separa grupos ou melhora o escaneamento; só é

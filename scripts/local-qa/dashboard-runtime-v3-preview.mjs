@@ -15,6 +15,8 @@ const surfaceCatalog = [
   { key: 'customer-success', path: '/admin/analytics?tab=customer-success' },
   { key: 'support', path: '/admin/analytics?tab=support' },
   { key: 'finance', path: '/admin/analytics?tab=finance' },
+  { key: 'product', path: '/admin/analytics?tab=product' },
+  { key: 'development', path: '/admin/analytics?tab=development' },
   { key: 'integrations', path: '/admin/settings/integrations' },
   { key: 'dashboard-sources', path: '/admin/settings/dashboard-sources' },
   { key: 'sync-history', path: '/admin/settings/sync-history' },

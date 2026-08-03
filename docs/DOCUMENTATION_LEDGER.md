@@ -1,5 +1,19 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## Registro corrente — Dashboard por domínios — 2026-08-03
+
+- **Especificação:** `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md` recebeu as
+  regras do adendo de navegação, filtros, Produto/Desenvolvimento e estados do
+  Gênio.
+- **Design system:** `docs/design/GENIUS_SUPPORT_OS_DESIGN_SYSTEM.md` registra
+  as sete áreas, a ausência do container global de fontes e a regra de não usar
+  voo/magia como estado operacional.
+- **Código:** shell, páginas analíticas, estados de espera e componentes de KPI
+  foram alinhados sem tocar em contratos de dados ou execução de sincronização.
+- **Evidência prevista:** relatório corrente em
+  `docs/reports/2026-08-03_dashboard-visual-density-v1-1.md`, complementado
+  pelos comandos e manifestos executados no fechamento deste lote.
+
 ## Registro corrente — fechamento High-Density — 2026-08-03
 
 - Branch: `codex/high-density-ui-rebuild-20260803`; HEAD deve ser confirmado

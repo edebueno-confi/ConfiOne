@@ -1043,18 +1043,19 @@ suas configurações adotam uma única gramática de cockpit:
 
 - o shell administrativo é único; analytics não repete uma segunda navegação em
   Configurações;
-- a ordem das áreas é Visão Geral, Comercial, Customer Success, Suporte & Chat e
-  Financeiro;
-- estado da fonte e frescor aparecem em uma faixa semântica curta, sem mensagens
-  contraditórias entre header, card e domínio;
+- a ordem das áreas é Visão Geral, Comercial, Customer Success, Suporte & Chat,
+  Financeiro, Produto e Desenvolvimento;
+- não existe container global de fontes nem filtro de domínio dentro das páginas;
+  estado da fonte e frescor aparecem localmente, sem mensagens contraditórias;
 - filtros, KPIs e evidência pertencem à mesma composição, com a ação principal
   subordinada à leitura;
 - superfícies abertas e separadores discretos substituem caixas aninhadas;
 - `Indisponível` permanece indisponível e nenhum layout pode preencher lacunas
   com zero, texto genérico ou dado inventado;
 - a Visão Geral é o cockpit executivo, não um mosaico de cards administrativos;
-- o Gênio em ação usa suspensão, halo e movimento controlado, sem barra de
-  progresso fictícia, contagem regressiva ou explicação técnica;
+- o Gênio em ação é um avatar sólido do sistema: consulta, organiza, processa e
+  publica dados com movimento operacional discreto; a pose `magic` é contextual
+  ao carregamento e não deve virar decoração dominante, voo contínuo ou halo teatral;
 - snapshot válido mantém o Dashboard navegável durante atualização; sem snapshot
   válido, a UI pode bloquear somente durante ciclo real ou aguardando publicação;
 - toda nova composição deve ser validada em light/dark, 1440, 1024, 768 e 390px,

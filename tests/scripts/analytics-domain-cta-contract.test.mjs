@@ -106,11 +106,12 @@ test('modelo público financeiro não promove planilha a fonte de snapshot', () 
   assert.doesNotMatch(model, /fallback: string/);
 });
 
-test('dashboard_viewer consulta as cinco áreas sem receber ações administrativas', () => {
+test('dashboard_viewer consulta as áreas publicadas sem receber ações administrativas', () => {
   const shell = fs.readFileSync(path.join(analyticsDir, 'AnalyticsShell.tsx'), 'utf8');
   assert.match(shell, /isAnalyticsDomainPublishedInRelease\(domain\.key\)/);
   assert.doesNotMatch(shell, /!isDashboardViewer \|\| domain\.key === 'ceo'/);
-  assert.doesNotMatch(shell, /trigger(?:Hubspot|Omie|Sequential)AnalyticsSync/);
+  assert.match(shell, /const canSyncSources = canManageAnalyticsIntegration\(gate\.actor\)/);
+  assert.match(shell, /canSyncSources=\{activeKey === 'ceo' && canSyncSources && Boolean\(sourceStatus\)\}/);
 });
 
 test('histórico publicado separa ciclos HubSpot e OMIE', () => {

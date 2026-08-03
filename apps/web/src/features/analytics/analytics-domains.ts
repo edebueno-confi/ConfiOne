@@ -24,8 +24,8 @@ export const ANALYTICS_DOMAINS: AnalyticsDomain[] = [
   { key: 'customer_success', label: 'Customer Success', description: 'Carteira e relacionamento com clientes', syncDomain: null, Component: AnalyticsCustomerSuccessPage, enabled: true },
   { key: 'support', label: 'Suporte & Chat', description: 'Tickets, atendimento e Chat com contrato confirmado', syncDomain: 'cs', Component: AnalyticsCsPage, enabled: true },
   { key: 'finance', label: 'Financeiro', description: 'Contas a receber da integração OMIE', syncDomain: null, Component: AnalyticsFinancePage, enabled: true },
-  { key: 'product', label: 'Produto', description: 'Fonte de produto ainda não conectada', syncDomain: null, Component: AnalyticsProductPage, enabled: false },
-  { key: 'development', label: 'Desenvolvimento', description: 'Fonte de desenvolvimento ainda não conectada', syncDomain: null, Component: AnalyticsDevelopmentPage, enabled: false },
+  { key: 'product', label: 'Produto', description: 'Modo de espera por integração de produto', syncDomain: null, Component: AnalyticsProductPage, enabled: true },
+  { key: 'development', label: 'Desenvolvimento', description: 'Modo de espera por integração de desenvolvimento', syncDomain: null, Component: AnalyticsDevelopmentPage, enabled: true },
 ];
 
 export function listEnabledAnalyticsDomains() {

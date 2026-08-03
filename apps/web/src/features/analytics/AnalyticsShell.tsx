@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getAnalyticsSourceStatus, triggerSequentialAnalyticsSync, waitForAnalyticsSyncCompletion } from './analytics-api';
 import { listEnabledAnalyticsDomains } from './analytics-domains';
 import type { AnalyticsSharedPeriod } from './analytics-model';
-import type { AnalyticsSourceState, AnalyticsSourceStatus, AnalyticsSourceStatusPayload } from '@genius-support-os/contracts';
+import type { AnalyticsSourceStatusPayload } from '@genius-support-os/contracts';
 import { useAuthContext } from '../auth/auth-context';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import { AnalyticsReportExport } from './AnalyticsReportExport';
@@ -16,24 +16,6 @@ import { areAnalyticsSourcesActive, syncProgressLabel } from './analytics-sync-p
 import './high-density.css';
 
 const DOMAINS = listEnabledAnalyticsDomains();
-
-const SOURCE_STATUS_LABELS: Record<AnalyticsSourceStatus, string> = {
-  never_synced: 'Ainda não sincronizada',
-  syncing: 'Sincronizando',
-  fresh: 'Atualizada',
-  stale: 'Desatualizada',
-  partial: 'Parcial',
-  failed: 'Falhou',
-  unavailable: 'Indisponível',
-};
-
-function SourcePill({ source }: { source: AnalyticsSourceState }) {
-  return <span className={`gso-source-pill is-${source.status}`} title={source.error ?? SOURCE_STATUS_LABELS[source.status]}>
-    <i aria-hidden="true" />
-    <strong>{source.label}</strong>
-    <span>{SOURCE_STATUS_LABELS[source.status]}</span>
-  </span>;
-}
 
 function terminalSyncState(status: AnalyticsSourceStatusPayload): SyncVisualState {
   const sources = [status.hubspot, status.omie];
@@ -59,7 +41,6 @@ export function AnalyticsShell() {
   const activeKey = analyticsDomainFromTab(urlParams.get('tab'));
   const [reloadKey, setReloadKey] = useState(0);
   const [sourceStatus, setSourceStatus] = useState<AnalyticsSourceStatusPayload | null>(null);
-  const [syncStatusError, setSyncStatusError] = useState<string | null>(null);
   const [sharedPeriod, setSharedPeriod] = useState<AnalyticsSharedPeriod>(() => {
     const fallback = resolveAnalyticsPeriod('month');
     return { ...fallback, from: urlParams.get('from') ?? fallback.from, to: urlParams.get('to') ?? fallback.to };
@@ -76,14 +57,12 @@ export function AnalyticsShell() {
 
   const activeDomain = visibleDomains.find((domain) => domain.key === activeKey) ?? visibleDomains[0];
   const refreshSourceStatus = useCallback(async () => {
-    setSyncStatusError(null);
     try {
       const next = await getAnalyticsSourceStatus();
       setSourceStatus(next);
       return next;
     } catch {
       setSourceStatus(null);
-      setSyncStatusError('unavailable');
       return null;
     }
   }, []);
@@ -127,9 +106,6 @@ export function AnalyticsShell() {
             {isDashboardViewer ? <span className="text-[11px] font-medium text-[color:var(--minimal-text-tertiary)]">Visualizador gerencial</span> : null}
           </div>
           <div className="gso-shell-actions flex flex-wrap items-center justify-end gap-3">
-            <div className="gso-source-rail" aria-label="Estado das fontes">
-              {sourceStatus ? <><SourcePill source={sourceStatus.hubspot} /><SourcePill source={sourceStatus.omie} /></> : <span className="gso-source-rail-error">{syncStatusError ? 'Estado das fontes indisponível' : 'Consultando fontes…'}</span>}
-            </div>
             {isPlatformAdmin ? <Link to="/admin/settings?section=analytics" className="gso-shell-secondary-action" title="Abrir configurações de integração">Integrações</Link> : null}
             {isPlatformAdmin ? <button type="button" onClick={() => setReportOpen(true)} className="gso-shell-report-action">Exportar</button> : null}
           </div>

@@ -33,8 +33,8 @@ test('Customer Success não publica catálogo como carteira', () => {
 
 test('o shell lê status agregado de HubSpot e OMIE', () => {
   assert.match(shell, /getAnalyticsSourceStatus/);
-  assert.match(shell, /sourceStatus\.hubspot/);
-  assert.match(shell, /sourceStatus\.omie/);
+  assert.match(shell, /sourceStatus\?\.hubspot/);
+  assert.match(shell, /sourceStatus\?\.omie/);
   assert.doesNotMatch(shell, /getLatestSyncRun/);
 });
 

@@ -1,5 +1,28 @@
 # Plano corrente — Interface High-Density V1 — 2026-08-03
 
+## Adendo corrente — reestruturação por domínio — 2026-08-03
+
+- Direção: usar `docs/design/blueprint/Dashboard PO` como referência visual,
+  mantendo títulos compactos, filtros em linha, KPIs legíveis e zonas analíticas
+  densas.
+- Implementação autorizada: retirar o container global de fontes e filtros de
+  domínio; preservar pipelines apenas nos domínios com contrato real; consolidar
+  a Visão Geral; publicar Produto e Desenvolvimento como espera por integração.
+- Limite: nenhum sync, API externa, mudança de métrica, backend, banco, RPC,
+  view, contrato, RLS ou credencial neste lote.
+- Próxima validação: typecheck, build, testes focados, qualidade, secret scan e
+  matriz visual dos sete domínios em cinco viewports e dois temas. O fechamento
+  deve registrar limitações sem promover dados indisponíveis a atualizados.
+
+### Ajuste de cabeçalho adicionado à fila
+
+- Igualar a altura e a densidade do header da Visão Geral às demais áreas.
+- Mover o estado das fontes para a coluna esquerda do contexto executivo.
+- Contextualizar o log de execução do HubSpot junto da operação correspondente
+  e posicionar o log do OMIE com o Financeiro, alinhado ao estado das fontes.
+- Não duplicar status nem alterar o contrato dos read models; a mudança é de
+  composição visual e localização contextual do estado publicado.
+
 ## Fechamento do lote atual
 
 - Branch: `codex/high-density-ui-rebuild-20260803`; HEAD deve ser confirmado

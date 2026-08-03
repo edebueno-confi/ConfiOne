@@ -49,6 +49,19 @@ function formatStateDateValue(value: string): string {
   return Number.isNaN(date.getTime()) ? 'sem data registrada' : date.toLocaleString('pt-BR');
 }
 
+function AnalyticsKpiStateMarker({ state }: { state?: AnalyticsBlockState }) {
+  if (!state || ['fresh', 'zero', 'empty'].includes(state.status)) return null;
+  const isProblem = ['failed', 'error', 'stale', 'partial'].includes(state.status);
+  const label = isProblem
+    ? 'Snapshot anterior'
+    : state.status === 'syncing'
+      ? 'Atualização em andamento'
+      : 'Sem snapshot publicado';
+  return <span className={`gso-kpi-snapshot-marker ${isProblem ? 'is-caution' : 'is-neutral'}`} aria-label={`Estado do snapshot: ${label}`}>
+    <span aria-hidden="true" />{label}
+  </span>;
+}
+
 export function formatCountLabel(
   count: number,
   singular: string,
@@ -62,7 +75,7 @@ export function AnalyticsLoadingState({ title, description }: { title: string; d
     <section aria-busy="true" aria-label={title} className="gso-analytics-loading-state flex min-h-[170px] flex-col items-center justify-center gap-3 px-4 py-5 text-center sm:min-h-[240px]" role="status">
       <div className="gso-analytics-loading-state__mascot flex h-36 w-36 items-center justify-center sm:h-44 sm:w-44">
         <div className="scale-[0.7] sm:scale-[0.9]">
-          <GeniusMascot alt="Gênio voando e alinhando os sinais do Dashboard" animated expression="happy" pose="magic" size="xl" surface="loading" />
+          <GeniusMascot alt="Gênio organizando os dados do Dashboard" animated expression="happy" pose="think" size="xl" surface="loading" />
         </div>
       </div>
       <div className="max-w-md">
@@ -77,16 +90,19 @@ export function AnalyticsRetryAction({ onRetry }: { onRetry?: () => void }) {
   return onRetry ? <button type="button" onClick={onRetry} className="rounded-lg bg-[color:var(--minimal-text)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-surface)]">Tentar novamente</button> : null;
 }
 
-export function KpiCard({ label, value, hint, source, tone = 'neutral', className = '', state, temporalType, comparison }: { label: string; value: string; hint?: string; source?: string; tone?: 'neutral' | 'warning' | 'critical'; className?: string; state?: AnalyticsBlockState; temporalType?: string; comparison?: string }) {
+export type KpiSemantic = 'primary' | 'secondary' | 'warning' | 'stale' | 'unavailable';
+
+export function KpiCard({ label, value, hint, source, tone = 'neutral', semantic = 'primary', className = '', state, temporalType, comparison }: { label: string; value: string; hint?: string; source?: string; tone?: 'neutral' | 'warning' | 'critical'; semantic?: KpiSemantic; className?: string; state?: AnalyticsBlockState; temporalType?: string; comparison?: string }) {
   const toneClass = tone === 'critical' ? 'border-[color:var(--minimal-danger-border)] bg-[color:var(--minimal-danger-surface)]' : tone === 'warning' ? 'border-[color:var(--minimal-warning-border)] bg-[color:var(--minimal-warning-surface)]' : 'border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)]';
   const valueClass = tone === 'critical' ? 'text-[color:var(--minimal-danger-text)]' : tone === 'warning' ? 'text-[color:var(--minimal-warning-text)]' : 'text-[color:var(--minimal-text)]';
-  return <div className={`gso-visual-v1-kpi rounded-xl border px-4 py-3.5 ${toneClass} ${className}`}>
+  const resolvedSemantic = className.includes('gso-kpi-secondary') ? 'secondary' : semantic;
+  return <div className={`gso-visual-v1-kpi gso-kpi-${resolvedSemantic} rounded-xl border px-4 py-3.5 ${toneClass} ${className}`} data-kpi-role={resolvedSemantic}>
     <p className={`text-2xl font-semibold tabular-nums leading-none ${valueClass}`}>{value}</p>
     <div className="mt-2.5 flex items-center gap-1.5"><p className={`text-sm font-medium ${valueClass}`}>{label}</p>{source ? <MetricInfo text={source} /> : null}</div>
     {hint ? <p className="mt-0.5 text-xs text-[color:var(--minimal-text-tertiary)]">{hint}</p> : null}
     {comparison ? <p className="mt-1 text-xs font-medium text-[color:var(--minimal-action)]">{comparison}</p> : null}
     {temporalType ? <p className="mt-2 text-[11px] text-[color:var(--minimal-text-secondary)]">{temporalType}</p> : null}
-    <div className="mt-1"><AnalyticsStateBadge state={state} /></div>
+    <div className="mt-1"><AnalyticsKpiStateMarker state={state} /></div>
   </div>;
 }
 

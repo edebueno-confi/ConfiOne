@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; }
+  @keyframes rayspin { to { transform:rotate(360deg) } }
+  @keyframes auraPulse { 0%,100%{ transform:translate(-50%,-50%) scale(.9); opacity:.55 } 50%{ transform:translate(-50%,-50%) scale(1.12); opacity:.9 } }
+  @keyframes ringPulse { 0%{ transform:translate(-50%,-50%) scale(.7); opacity:.7 } 100%{ transform:translate(-50%,-50%) scale(1.7); opacity:0 } }
+  @keyframes cloudRise { 0%{ opacity:0; transform:translate(-50%,40px) scale(.6) } 25%{ opacity:.7 } 100%{ opacity:0; transform:translate(-50%,-150px) scale(1.5) } }
+  @keyframes dustRise { 0%{ opacity:0; transform:translateY(0) scale(.4) } 15%{ opacity:1 } 100%{ opacity:0; transform:translateY(-320px) scale(1) } }
+  @keyframes dotPulse { 0%,80%,100%{ opacity:.2; transform:scale(.7) } 40%{ opacity:1; transform:scale(1) } }
+  @keyframes barShimmer { 0%{ transform:translateX(-100%) } 100%{ transform:translateX(320%) } }
+  @keyframes floatCopy { 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-5px) } }
+</style>
+</helmet>
+<div ref="{{ rootRef }}" style="{{ rootStyle }}" role="status" aria-label="{{ message }}">
+
+  <!-- rotating light rays -->
+  <div style="position:absolute;top:44%;left:50%;width:150vh;height:150vh;transform-origin:center;translate:-50% -50%;background:conic-gradient(from 0deg, transparent 0deg, var(--ray) 8deg, transparent 20deg, transparent 45deg, var(--ray) 53deg, transparent 65deg, transparent 90deg, var(--ray) 98deg, transparent 110deg, transparent 135deg, var(--ray) 143deg, transparent 155deg, transparent 180deg, var(--ray) 188deg, transparent 200deg, transparent 225deg, var(--ray) 233deg, transparent 245deg, transparent 270deg, var(--ray) 278deg, transparent 290deg, transparent 315deg, var(--ray) 323deg, transparent 335deg);animation:rayspin calc(46s / var(--spd)) linear infinite;pointer-events:none;opacity:var(--ray-op);"></div>
+
+  <!-- aura glow behind genie -->
+  <div style="position:absolute;top:44%;left:50%;width:min(60vh,520px);height:min(60vh,520px);border-radius:50%;background:radial-gradient(circle, var(--glow) 0%, transparent 70%);animation:auraPulse calc(4.5s / var(--spd)) ease-in-out infinite;pointer-events:none;"></div>
+  <div style="position:absolute;top:44%;left:50%;width:min(46vh,400px);height:min(46vh,400px);border-radius:50%;border:2px solid var(--glow);animation:ringPulse calc(3.6s / var(--spd)) ease-out infinite;pointer-events:none;"></div>
+  <div style="position:absolute;top:44%;left:50%;width:min(46vh,400px);height:min(46vh,400px);border-radius:50%;border:2px solid var(--glow);animation:ringPulse calc(3.6s / var(--spd)) ease-out infinite;animation-delay:calc(-1.8s / var(--spd));pointer-events:none;"></div>
+
+  <!-- billowing smoke clouds rising from the lamp -->
+  <div style="position:absolute;bottom:6%;left:calc(50% - 30px);width:240px;height:240px;border-radius:50%;background:radial-gradient(circle, var(--smoke) 0%, transparent 66%);filter:blur(4px);animation:cloudRise calc(6.5s / var(--spd)) ease-in infinite;pointer-events:none;mix-blend-mode:screen;"></div>
+  <div style="position:absolute;bottom:6%;left:calc(50% + 24px);width:190px;height:190px;border-radius:50%;background:radial-gradient(circle, var(--smoke) 0%, transparent 66%);filter:blur(4px);animation:cloudRise calc(6.5s / var(--spd)) ease-in infinite;animation-delay:calc(-2.2s / var(--spd));pointer-events:none;mix-blend-mode:screen;"></div>
+  <div style="position:absolute;bottom:6%;left:50%;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle, var(--smoke) 0%, transparent 66%);filter:blur(6px);animation:cloudRise calc(6.5s / var(--spd)) ease-in infinite;animation-delay:calc(-4.3s / var(--spd));pointer-events:none;mix-blend-mode:screen;"></div>
+
+  <!-- rising magic dust -->
+  <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
+    <sc-for list="{{ dust }}" as="d" hint-placeholder-count="14">
+      <span style="{{ d.style }}"></span>
+    </sc-for>
+  </div>
+
+  <!-- the genie -->
+  <div style="position:relative;z-index:3;width:min(52vh,420px);height:min(66vh,540px);filter:drop-shadow(0 24px 40px rgba(10,20,60,.35));">
+    <dc-import name="GeniusGenie" pose="{{ geniePose }}" expression="{{ genieExpression }}" interactive="{{ genieInteractive }}" hint-size="100%,100%" style="width:100%;height:100%;"></dc-import>
+  </div>
+
+  <!-- copy -->
+  <div style="position:relative;z-index:4;text-align:center;margin-top:-8px;animation:floatCopy calc(5s / var(--spd)) ease-in-out infinite;">
+    <div style="font-family:'Fredoka',sans-serif;font-weight:600;font-size:clamp(22px,3.4vh,30px);color:#fff;letter-spacing:.01em;display:flex;align-items:center;justify-content:center;gap:3px;text-shadow:0 2px 16px rgba(0,0,0,.35);">
+      <span>{{ message }}</span>
+      <span style="display:inline-flex;gap:5px;margin-left:8px;">
+        <span style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dotPulse 1.4s infinite;"></span>
+        <span style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dotPulse 1.4s .2s infinite;"></span>
+        <span style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dotPulse 1.4s .4s infinite;"></span>
+      </span>
+    </div>
+    <div style="margin:18px auto 0;width:min(280px,60vw);height:6px;border-radius:99px;background:rgba(255,255,255,.18);overflow:hidden;position:relative;">
+      <div style="position:absolute;top:0;left:0;height:100%;width:38%;border-radius:99px;background:linear-gradient(90deg, transparent, var(--accent), transparent);animation:barShimmer calc(1.8s / var(--spd)) ease-in-out infinite;"></div>
+    </div>
+    <div style="margin-top:14px;font-family:'DM Sans',sans-serif;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.55);">{{ subtitle }}</div>
+  </div>
+
+  <!-- corner wordmark -->
+  <div style="position:absolute;top:26px;left:28px;z-index:4;display:flex;align-items:center;gap:9px;">
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5c.9 3.6 2.4 5.1 6 6-3.6.9-5.1 2.4-6 6-.9-3.6-2.4-5.1-6-6 3.6-.9 5.1-2.4 6-6Z" fill="var(--accent)"></path></svg>
+    <span style="font-family:'Fredoka',sans-serif;font-weight:700;font-size:19px;color:#fff;">Genius</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:960,&quot;height&quot;:620},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;royal&quot;,&quot;mystic&quot;,&quot;sunset&quot;],&quot;default&quot;:&quot;mystic&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Feel&quot;},&quot;magic&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0,&quot;max&quot;:100,&quot;step&quot;:5,&quot;default&quot;:15,&quot;unit&quot;:&quot;%&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Feel&quot;},&quot;speed&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0.5,&quot;max&quot;:2,&quot;step&quot;:0.1,&quot;default&quot;:1,&quot;unit&quot;:&quot;×&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Feel&quot;},&quot;message&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Realizando seu pedido&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Copy&quot;},&quot;subtitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot; Em breve a mágica acontece&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Copy&quot;},&quot;pose&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;welcome&quot;,&quot;present&quot;,&quot;think&quot;,&quot;celebrate&quot;,&quot;magic&quot;,&quot;shrug&quot;],&quot;default&quot;:&quot;celebrate&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Mascote&quot;},&quot;expression&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;happy&quot;,&quot;wink&quot;,&quot;wow&quot;],&quot;default&quot;:&quot;happy&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Mascote&quot;},&quot;interactive&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Mascote&quot;}}">
+class Component extends DCLogic {
+  themes = {
+    royal:  { bg:'radial-gradient(130% 120% at 50% 12%, #4a90ef 0%, #2f6fd6 34%, #1c4fae 60%, #10224f 100%)', accent:'#ff2fb0', glow:'rgba(150,214,255,.55)', smoke:'rgba(143,220,234,.85)', ray:'rgba(180,225,255,.10)' },
+    mystic: { bg:'radial-gradient(130% 120% at 50% 12%, #8a5cf0 0%, #6a3fd8 32%, #3d1f8f 60%, #150a38 100%)', accent:'#ff69cf', glow:'rgba(200,160,255,.55)', smoke:'rgba(190,150,255,.85)', ray:'rgba(210,180,255,.11)' },
+    sunset: { bg:'radial-gradient(130% 120% at 50% 12%, #ff9a5c 0%, #f5527f 34%, #b3236f 62%, #40103f 100%)', accent:'#ffd15c', glow:'rgba(255,190,150,.55)', smoke:'rgba(255,180,150,.82)', ray:'rgba(255,210,170,.12)' },
+  };
+
+  renderVals() {
+    const themeKey = this.themes[this.props.theme] ? this.props.theme : 'royal';
+    const t = this.themes[themeKey];
+    const magic = Math.max(0, Math.min(100, Number(this.props.magic ?? 65)));
+    const spd = Math.max(0.5, Math.min(2, Number(this.props.speed ?? 1)));
+    const message = this.props.message || 'Conjurando seus dados';
+    const subtitle = this.props.subtitle || 'Um instante — a mágica acontece';
+
+    const rayOp = (0.4 + magic / 100 * 0.6).toFixed(2);
+
+    const rootStyle = [
+      'position:relative', 'width:100%', 'height:100%', 'min-height:560px',
+      'display:flex', 'flex-direction:column', 'align-items:center', 'justify-content:center',
+      'overflow:hidden', "font-family:'DM Sans',sans-serif",
+      'background:' + t.bg,
+      '--accent:' + t.accent, '--glow:' + t.glow, '--smoke:' + t.smoke, '--ray:' + t.ray,
+      '--ray-op:' + rayOp, '--spd:' + spd,
+    ].join(';');
+
+    // rising magic dust — count scales with intensity
+    const count = Math.round(6 + magic / 100 * 20);
+    const rnd = (seed) => { const x = Math.sin(seed * 999.7) * 43758.5453; return x - Math.floor(x); };
+    const dust = Array.from({ length: count }, (_, i) => {
+      const left = (rnd(i + 1) * 100).toFixed(1);
+      const size = (2 + rnd(i + 2) * 4).toFixed(1);
+      const dur = (5 + rnd(i + 3) * 5) / spd;
+      const delay = (rnd(i + 4) * dur).toFixed(2);
+      const bottom = (rnd(i + 5) * 18).toFixed(1);
+      const star = rnd(i + 6) > 0.62;
+      const op = (0.4 + magic / 100 * 0.6).toFixed(2);
+      const shape = star
+        ? 'background:var(--accent);clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%);'
+        : 'background:#fff;border-radius:50%;box-shadow:0 0 8px var(--glow);';
+      const style = `position:absolute;bottom:${bottom}%;left:${left}%;width:${size*(star?2.6:1)}px;height:${size*(star?2.6:1)}px;opacity:${op};${shape}animation:dustRise ${dur.toFixed(2)}s ease-in ${delay}s infinite;`;
+      return { style };
+    });
+
+    return {
+      rootRef: (el) => { this._root = el; },
+      rootStyle, message, subtitle, dust,
+      geniePose: this.props.pose || 'magic',
+      genieExpression: this.props.expression || 'happy',
+      genieInteractive: String(this.props.interactive) !== 'false' ? 'true' : 'false',
+    };
+  }
+}
+</script>
+</body>
+</html>

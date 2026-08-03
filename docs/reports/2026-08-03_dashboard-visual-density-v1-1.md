@@ -1,5 +1,39 @@
 # Relatório Delta — Dashboard Visual Density V1.1
 
+## Adendo — reestruturação das páginas por domínio — 2026-08-03
+
+### Objetivo
+
+Alinhar o Dashboard aos blueprints de `docs/design/blueprint/Dashboard PO` e à
+direção High-Density V1.1: leitura gerencial compacta, filtros sem redundância,
+zonas analíticas isoladas e estados factuais. O lote não executa sincronização,
+não chama APIs externas e não altera backend, banco, views, RPCs, contratos,
+RLS, permissões, auditoria, fontes ou métricas.
+
+### Decisões de produto aplicadas
+
+- remover o container global de fontes operacionais das páginas;
+- remover filtros de domínio; a Visão Geral consolida as áreas publicadas;
+- manter seleção de pipelines somente em Comercial, Suporte e Customer Success
+  quando a fonte contratual disponibilizar opções reais;
+- manter Financeiro sem pipeline e Produto/Desenvolvimento sem pipeline, em modo
+  de espera por integração, sem simular dados ou afirmar conexão com GitHub;
+- reduzir repetição de estados nos KPIs, preservar indisponibilidade factual e
+  deixar a movimentação do Gênio operacional e discreta.
+
+### Referências observadas
+
+Foram observados os sete blueprints de `Dashboard PO`, a especificação
+`docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md`, o design system e os contratos
+de views/RPCs. As imagens de Produto e Desenvolvimento foram tratadas como
+referência de composição; seus números demonstrativos não foram incorporados.
+
+### Estado da validação
+
+Esta seção será fechada com os comandos, resultados, manifestos e limitações
+reais após a execução da validação do lote. Nenhuma evidência futura deve ser
+interpretada como validação concluída antes desse registro.
+
 ## 1. Resumo executivo
 
 Macro-lote visual executado na branch `codex/dashboard-visual-density-v1-1-20260803`. O foco foi reduzir a escala tipográfica e a densidade excessiva do Dashboard sem alterar backend, banco, contratos, métricas, fontes ou sincronizações.
@@ -99,7 +133,9 @@ O componente também representa falha, timeout e abandono sem animar o mascote e
 
 Delta final: o titulo do overlay/loading foi limitado a 24-30px no desktop e 21px no mobile.
 
-O copy do Gênio foi refinado para mensagens operacionais mais humanas: “O Gênio está abrindo caminho para os dados”, “puxando os fios do HubSpot”, “fazendo a conta fechar no OMIE” e “soltando a magia no painel”. A semântica de overlay bloqueante/banner não bloqueante foi preservada.
+O copy do Gênio foi refinado para mensagens operacionais mais humanas: consulta do HubSpot, organização dos dados financeiros e preparação da visão publicada. A semântica de overlay bloqueante/banner não bloqueante foi preservada.
+
+O avatar foi alinhado à origem atualizada em `avatar/GeniusGenie.dc.html`: a pose `magic` é contextual ao carregamento, com braço direito elevado e sem moldura de card. O runtime continua inline para preservar poses e expressões dinâmicas.
 
 ## 18. Alta resolução
 

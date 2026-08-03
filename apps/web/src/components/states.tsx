@@ -11,18 +11,6 @@ interface StateFrameProps {
   mascotSurface?: GeniusMascotSurface;
 }
 
-function toneClasses(tone: StateFrameProps['tone']) {
-  if (tone === 'critical') {
-    return 'border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)]';
-  }
-
-  if (tone === 'positive') {
-    return 'border-[color:var(--color-success-border)] bg-[color:var(--color-success-surface)]';
-  }
-
-  return 'border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)]';
-}
-
 export function StateFrame({
   title,
   description,
@@ -34,9 +22,7 @@ export function StateFrame({
 }: StateFrameProps) {
   return (
     <section
-      className={`w-full border p-6 sm:p-7 ${toneClasses(
-        tone,
-      )}`}
+      className="w-full p-6 sm:p-7"
       role={tone === 'critical' ? 'alert' : 'status'}
     >
       <div className={`flex ${compact ? 'max-w-xl' : 'max-w-2xl'} flex-col gap-4 sm:flex-row sm:items-start`}>

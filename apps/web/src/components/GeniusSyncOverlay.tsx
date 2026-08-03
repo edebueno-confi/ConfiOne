@@ -7,11 +7,11 @@ export type SyncVisualState = 'preparing' | 'syncing_hubspot' | 'syncing_omie' |
 const COPY: Record<SyncVisualState, { title: string; description: string }> = {
   preparing: {
     title: 'O Gênio está abrindo caminho para os dados',
-    description: 'O Gênio está organizando os dados do painel e alinhando as fontes para uma leitura única e confiável.',
+    description: 'Ele está alinhando as fontes para preparar uma leitura confiável.',
   },
   syncing_hubspot: {
     title: 'O Gênio está puxando os fios do HubSpot',
-    description: 'Clientes, negócios e atendimentos estão sendo organizados para o Dashboard.',
+    description: 'Clientes, negócios e atendimentos estão sendo organizados para o painel.',
   },
   syncing_omie: {
     title: 'O Gênio está fazendo a conta fechar no OMIE',

@@ -1,5 +1,23 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+## Adendo corrente — Dashboard por domínios — 2026-08-03
+
+- A direção ativa deste lote é a reestruturação das sete páginas do Dashboard
+  conforme `docs/design/blueprint/Dashboard PO`, com alta densidade de leitura e
+  sem ampliação maximalista de títulos ou KPIs.
+- O container global de fontes operacionais foi retirado do shell das páginas;
+  estados de fonte permanecem apenas no contexto local em que são necessários.
+  O filtro global de domínio não existe mais. Pipelines permanecem somente em
+  Comercial, Suporte e Customer Success quando o contrato publicar opções reais.
+- Visão Geral é o compilado das áreas publicadas, sem filtro de pipeline. Produto
+  e Desenvolvimento têm estrutura própria em modo de espera por integração,
+  sem chamada ao GitHub, token, segredo, métrica ou dado inventado.
+- Este lote é exclusivamente de apresentação, navegação e estados visuais:
+  não altera sincronização, backend, banco, views, RPCs, contratos, RLS,
+  permissões, auditoria, fontes ou métricas.
+- Validação final e commit local ainda são pendentes neste ponto do documento;
+  registrar abaixo somente os resultados efetivamente executados.
+
 ## Fechamento corrente — implementação High-Density — 2026-08-03
 
 - Checkout canônico: `C:\Projetos\GSO-old`.

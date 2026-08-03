@@ -21,6 +21,7 @@ import { AnalyticsFilters as Filters } from "./AnalyticsFilters";
 import {
   AnalyticsLoadingState,
   AnalyticsRetryAction,
+  AnalyticsStateBadge,
   formatCountLabel,
 } from "./analytics-ui";
 import { resolveAnalyticsPeriod } from "./analytics-periods";
@@ -354,6 +355,7 @@ function ExecutiveHdCanvas({
         <div className="gso-hd-context-side gso-hd-context-side--sync">
           <div>
             <strong>Estado das fontes</strong>
+            {state ? <AnalyticsStateBadge state={state} /> : null}
             <span>HubSpot para operação; OMIE para Financeiro.</span>
           </div>
           {canSyncSources && syncSources ? (
