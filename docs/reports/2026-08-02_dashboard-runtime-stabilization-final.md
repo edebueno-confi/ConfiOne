@@ -9,11 +9,10 @@ Status: **parcialmente validado**
 
 O runtime do Dashboard foi estabilizado em lifecycle, semântica de frescor,
 sanitização de erros, histórico, configurações, Fontes do Dashboard e estados
-visuais. Uma execução controlada local criou o ciclo pai e concluiu o OMIE
-read-only com 3.451 registros aceitos; o resultado geral foi `partial` porque
-o HubSpot recusou a autenticação. O tratamento de erro foi endurecido para
-classificar autenticação, evitar retry indevido e impedir mensagem bruta no
-read model.
+visuais. No ciclo controlado final, o HubSpot concluiu 38/38 work items e
+promoveu 92 registros. O OMIE read-only falhou com HTTP 500/SOAP do provedor;
+o ciclo geral foi corretamente publicado como `partial`, preservando o último
+snapshot válido de 3.451 registros.
 
 ## 2. Estado Git inicial
 
@@ -54,6 +53,14 @@ etapas pendentes ligadas a ciclos ou runs expirados. A migration posterior
 `20260802235035_dashboard_reconcile_hubspot_leases_v1.sql` também libera leases
 de work items associados a runs `timed_out` ou `abandoned`.
 
+O enfileiramento do HubSpot foi corrigido pela migration
+`20260803000635_dashboard_hubspot_start_source_state_v1.sql`: `source_state`
+permanece nulo até que o worker produza evidência real, sem misturar estado de
+execução com frescor publicado. A reconciliação do catálogo foi corrigida pela
+`20260803001447_dashboard_hubspot_catalog_service_identity_v1.sql`, usando
+`app_private.is_internal_service_request()` e mantendo o RPC concedido apenas
+ao `service_role`.
+
 ## 7. Ciclo pai HubSpot → OMIE
 
 O orquestrador cria ciclo pai, correlation ID e etapas separadas. HubSpot é
@@ -65,19 +72,29 @@ autorizada foi o ciclo `5f5b8516-e4f7-4b29-8773-725c9682a4cd`, concluído em 50 
 com HubSpot falho e OMIE concluído; o Histórico publicou o ciclo e as duas
 etapas relacionadas.
 
+Após as duas correções forward-only, o ciclo final
+`ef24b317-d7c4-4b2f-a869-871ef162d8a5` publicou HubSpot sucedido no run
+`773a0c55-3f5a-4c6a-8356-2c8a40f0c7b4`, com 38/38 work items e 92 registros
+promovidos. O OMIE falhou no run `34f67644-ebc0-49cb-bba4-e04482194cd3` com
+`provider_transient_error`; o ciclo ficou `partial` e não restaram itens ativos.
+
 ## 8. Causa raiz OMIE
 
-As falhas observadas foram delimitadas como respostas HTTP 429/5xx, timeout,
-rede, autenticação, payload inválido e concorrência do provedor (`8020`/
-`REDUNDANT`). A execução atual do OMIE não reproduziu o erro SOAP: respondeu,
-normalizou, promoveu o snapshot e terminou com zero rejeitados. O erro SOAP
-legado não é causa publicada na interface e não é mais exposto ao usuário.
+O endpoint oficial `financas/contareceber`, método `ListarContasReceber`,
+payload paginado e credenciais server-side foram confirmados. A execução final
+falhou com HTTP 500 e corpo SOAP `Unexpected response from server`; o código
+classificou isso como `provider_transient_error`. Como execuções anteriores
+concluíram 3.451/3.451, a evidência delimita uma instabilidade transitória do
+provedor, não uma falha de autenticação ou escrita externa. A causa não foi
+remediada no provedor e não houve nova tentativa fora da política limitada.
 
 ## 9. Correção OMIE
 
-O cliente OMIE classifica falhas por categoria, preserva contexto interno e
-publica apenas erro sanitizado. A execução read-only concluída registrou 3.451
-aceitos e zero rejeitados.
+O cliente OMIE classifica falhas por categoria, faz no máximo três tentativas
+por chamada para HTTP 429/5xx, timeout ou rede, preserva contexto interno e
+publica apenas erro sanitizado. Na execução final, as tentativas foram
+esgotadas sem promover dados; o snapshot válido anterior de 3.451 registros
+permaneceu preservado.
 
 ## 10. Política de retry
 
@@ -98,6 +115,12 @@ armazenamento interno autorizado.
 `rpc_analytics_source_status()` separa `currentRunStatus` do
 `publishedSourceStatus`, além de expor tentativa, último sucesso, última falha,
 contadores, frescor e existência de snapshot válido.
+
+Após o ciclo final, HubSpot aparece como execução sucedida e fonte `fresh`, com
+snapshot válido e 92 registros promovidos. OMIE aparece como execução falha e
+fonte `failed`, mas com snapshot válido, último sucesso de 3.451 registros e
+erro sanitizado. Não há ciclo ativo; não há combinação de “dados atualizados”
+com “sincronização não registrada”.
 
 ## 13. Verdade das métricas
 
@@ -161,8 +184,9 @@ não foram incluídos em código, relatório ou evidência.
 ## 22. Testes
 
 Os contratos focados anteriores terminaram em 11/11, incluindo o preflight. O
-pgTAP focado de runtime terminou agora em 45/45 nos arquivos 091–094,
-incluindo a liberação das leases órfãs. O teste do hook terminou em 1/1 e o
+pgTAP focado de runtime terminou agora em 55/55 nos arquivos 091–096,
+incluindo a liberação das leases órfãs, o enfileiramento correto do HubSpot e a
+identidade interna do catálogo. O teste do hook terminou em 1/1 e o
 contrato de exportação em 1/1. Na matriz Node selecionada deste fechamento,
 105 de 108 testes passaram; os 3 restantes são contratos históricos
 incompatíveis com a semântica atual (`analytics-diagnostic-runtime` e dois
@@ -170,6 +194,8 @@ casos antigos de estados do Dashboard-02), sem relação com a reconciliação
 implementada. Typecheck, build e secret scan passaram. O lint do banco retornou
 exit code 0, mas mantém diagnósticos preexistentes da extensão pgTAP e avisos
 legados de funções administrativas; nenhum aponta para a migration nova.
+Na matriz focada final desta continuação, 63/63 testes Node passaram; o pgTAP
+correto dos arquivos 091–096 passou em 55/55.
 
 ## 23. Code Quality
 
@@ -205,6 +231,18 @@ Na segunda chamada controlada:
 - snapshot financeiro: `fresh` e promovido;
 - duração observada pelo cliente: aproximadamente 50 s;
 - após a chamada: 0 ciclos ativos.
+
+Na execução final após as duas migrations:
+
+- ciclo: `ef24b317-d7c4-4b2f-a869-871ef162d8a5`;
+- correlation: `3f03ab59-c54f-44cd-8d91-d93a8d30a67d`;
+- HubSpot: run `773a0c55-3f5a-4c6a-8356-2c8a40f0c7b4`, `success`, 38/38 work
+  items e 92 registros promovidos;
+- OMIE: run `34f67644-ebc0-49cb-bba4-e04482194cd3`, `failed`,
+  `provider_transient_error`, HTTP 500/SOAP interno, 0/0/0 nesta tentativa;
+- ciclo geral: `partial`, sem ciclos ou work items ativos;
+- o read model expôs apenas o erro sanitizado e conservou o snapshot OMIE
+  anterior de 3.451 registros.
 
 Antes dela, o ciclo órfão `e2e580d9-34be-474a-b359-a671f48440f2` foi
 reconciliado como `timed_out`, com suas etapas encerradas. O segredo local
@@ -254,6 +292,12 @@ Analytics/Settings/Knowledge, CSS, testes focados e documentação em
 `supabase/tests/094_dashboard_runtime_reconcile_leases_v1.sql` e
 `tests/scripts/pre-commit-hook-contract.test.mjs`.
 
+As duas correções finais também incluem
+`supabase/migrations/20260803000635_dashboard_hubspot_start_source_state_v1.sql`,
+`supabase/tests/095_dashboard_hubspot_start_source_state_v1.sql`,
+`supabase/migrations/20260803001447_dashboard_hubspot_catalog_service_identity_v1.sql`
+e `supabase/tests/096_dashboard_hubspot_catalog_service_identity_v1.sql`.
+
 ## 28. Commits
 
 Commits locais relevantes:
@@ -276,23 +320,29 @@ com guarda também nos handlers e teste de contrato.
 Commits deste lote de estabilização: `078081d` — cobertura do hook real sem
 `--no-verify`; `3a748cd` — reconciliação e liberação de leases de runs órfãos.
 
+Commits técnicos finais: `7dadc60` — corrigir o enfileiramento de `source_state`
+do HubSpot; `d099d75` — alinhar a identidade interna do catálogo HubSpot.
+
 ## 29. Estado Git final
 
 Branch atual: `codex/dashboard-runtime-stabilization-20260802`. HEAD:
 o valor final deve ser consultado com `git rev-parse --short HEAD`. O último
-HEAD de código antes dos commits documentais foi `3a748cd`; o worktree será
+HEAD de código antes dos commits documentais foi `d099d75`; o worktree será
 limpo após o commit documental. A divergência deve ser consultada com
 `git rev-list --left-right --count origin/main...HEAD`.
-Não há upstream configurado e nenhum push foi executado.
+Não há upstream configurado e nenhum push foi executado. Após os commits
+técnicos, o worktree contém apenas a atualização documental deste relatório e
+de `docs/PROJECT_STATE.md`, que será registrada separadamente.
 
 ## 30. Limitações
 
-O ciclo sequencial mais recente permanece `partial`: o HubSpot falhou ao iniciar
-uma nova leitura, embora o preflight tenha confirmado credencial server-side
-presente, endpoint alcançável e resposta válida. O OMIE concluiu a leitura
-read-only e promoveu 3.451 registros. O código não faz retry automático nem
-repete o ciclo sem autorização; a causa delimitada da falha de inicialização do
-HubSpot ainda exige investigação do caminho de execução do worker.
+O ciclo sequencial mais recente permanece `partial`: o HubSpot concluiu a
+leitura com 92 registros promovidos; o OMIE falhou com HTTP 500/SOAP após as
+tentativas limitadas. A falha está delimitada como `provider_transient_error` do
+provedor externo, com mensagem SOAP protegida e mensagem sanitizada na UI. O
+snapshot OMIE anterior de 3.451 registros permanece preservado. Não haverá nova
+tentativa automática nem novo ciclo sem autorização; a recuperação do provedor
+externo depende de disponibilidade/credencial externa.
 O denominador de Customer Success ainda depende de decisão de domínio. O
 rebuild completo de Artigos e categorias não foi iniciado neste lote. A
 exportação PNG/PDF existente foi apenas endurecida para não oferecer arquivo
@@ -301,8 +351,8 @@ pendente.
 
 ## 31. Decisões pendentes
 
-1. Investigar em lote delimitado a falha de inicialização do worker HubSpot,
-   preservando o guard de não repetição automática.
+1. Acompanhar a disponibilidade do provedor OMIE e executar nova leitura apenas
+   em lote autorizado, sem retry automático.
 2. Aprovar o denominador operacional de Customer Success.
 3. Validar visualmente o editor autenticado.
 4. Iniciar, em lote separado, o rebuild da tela de Artigos, categorias e a
@@ -311,8 +361,8 @@ pendente.
 ## Critérios de aceite
 
 Os critérios de lifecycle, status, sanitização, Financeiro sem retry, catálogo,
-hook, testes focados, QA empacotado e Git limpo estão comprovados. A execução
-sequencial real foi representada e publicada como `partial`, com OMIE concluído
-e HubSpot falhando antes de novo run; como a causa da inicialização do HubSpot
-continua aberta e há pendências de domínio e QA visual, o lote permanece
+hook e testes focados estão comprovados. O ciclo sequencial real foi
+representado e publicado como `partial`, com HubSpot sucedido e OMIE falhando
+por HTTP 500 externo; a causa foi delimitada, mas a recuperação do provedor e
+a rodada final de QA empacotado continuam pendentes. O lote permanece
 `parcialmente validado` e não é declarado concluído.

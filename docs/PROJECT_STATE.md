@@ -6,13 +6,14 @@ O bloco abaixo é a atualização corrente deste checkout e prevalece sobre os
 blocos históricos desta página:
 
 - Checkout canônico: `C:\Projetos\GSO-old`.
-- Branch atual: `codex/dashboard-runtime-stabilization-20260802`.
-- Último HEAD de código antes dos commits documentais: `3a748cd`; branch de
-  estabilização sem upstream configurado. O HEAD final deve ser lido com
-  `git rev-parse --short HEAD`.
+- Branch atual: `codex/dashboard-runtime-stabilization-20260802`, sem upstream
+  configurado.
+- Último HEAD de código antes dos commits documentais: `d099d75`; o HEAD final
+  deve ser lido com `git rev-parse --short HEAD`.
 - Divergência: consultar `git rev-list --left-right --count origin/main...HEAD`
   em tempo de leitura; a última leitura antes dos commits documentais retornou
-  `0 111`.
+  `0 111` antes dos dois commits técnicos; consultar o valor atual com
+  `git rev-list --left-right --count origin/main...HEAD`.
 - Lifecycle, reconciliação, status/frescor, sanitização, Histórico e Financeiro
   foram estabilizados e validados conforme
   `docs/reports/2026-08-02_dashboard-runtime-stabilization-final.md`.
@@ -20,13 +21,18 @@ blocos históricos desta página:
   retry automático e `vw_analytics_hubspot_sync_progress` projeta somente
   `sanitized_error`, conforme a migration forward-only
   `20260802190000_hubspot_error_sanitization_v1.sql`.
-- QA empacotado do Dashboard: 20 capturas, sem erros de console, falhas de
-  requisição, overflow ou contradições.
-- Uma execução controlada local foi realizada uma única vez: o OMIE read-only
-  concluiu com 3.451 registros aceitos e zero rejeitados, enquanto o HubSpot
-  terminou com erro sanitizado `authentication required`; o ciclo geral ficou
-  `partial`. O segredo efêmero usado no runtime local foi removido após a
-  execução e não está versionado.
+- QA empacotado final do Dashboard: 20 capturas reais após as duas correções,
+  sem erros de console, falhas de requisição, overflow ou contradições; o
+  manifesto também confirma ausência de retry financeiro direto, filtro de
+  domínio e copy proibida.
+- O ciclo controlado final foi `ef24b317-d7c4-4b2f-a869-871ef162d8a5`, com
+  correlation `3f03ab59-c54f-44cd-8d91-d93a8d30a67d`: HubSpot sucedeu no run
+  `773a0c55-3f5a-4c6a-8356-2c8a40f0c7b4`, 38/38 work items e 92 registros
+  promovidos; OMIE falhou no run `34f67644-ebc0-49cb-bba4-e04482194cd3` com
+  `provider_transient_error`/HTTP 500 SOAP interno. O ciclo ficou `partial`.
+- O snapshot OMIE anterior de 3.451 registros permanece válido e preservado.
+  A interface expõe somente `A API OMIE não concluiu a consulta neste momento.`;
+  a mensagem SOAP permanece protegida no armazenamento interno autorizado.
 - Preflight HubSpot somente leitura executado depois do ciclo: `ready`,
   credencial server-side configurada, endpoint alcançável, resposta válida e
   35 pipelines não arquivados retornados (11 deals e 24 tickets);
@@ -34,8 +40,8 @@ blocos históricos desta página:
   credencial foi exposto.
 - Nenhum reset, clean, merge, rebase, cherry-pick, push, deploy, migration
   remota ou escrita externa foi executado.
-- O estado do lote é **parcialmente validado**, aguardando autorização de novo
-  ciclo completo em lote separado e revisão do Product Owner.
+- O estado do lote é **parcialmente validado**: HubSpot está funcional no ciclo
+  final; a recuperação do OMIE depende da disponibilidade do provedor externo.
 
 - Qualificação posterior: o preflight confirmou a credencial server-side e o
   endpoint HubSpot local; permanece pendente apenas autorização para novo ciclo
@@ -47,9 +53,12 @@ blocos históricos desta página:
   não possuem snapshot exportável (`never_synced`, `syncing`, indisponível,
   falha ou vazio); a regra está coberta por teste de contrato e foi registrada
   em `caf7d80` e documentada nos commits documentais deste fechamento.
-- A execução controlada adicional do ciclo pai foi `5f5b8516-e4f7-4b29-8773-725c9682a4cd`:
-  resultado `partial`, HubSpot `failed` sem run novo e OMIE `succeeded` com
-  3.451 aceitos e zero rejeitados; não restaram ciclos ativos.
+- As migrations `20260803000635_dashboard_hubspot_start_source_state_v1.sql`
+  e `20260803001447_dashboard_hubspot_catalog_service_identity_v1.sql`
+  corrigem, respectivamente, o enfileiramento de `source_state` e a identidade
+  interna do RPC de reconciliação do catálogo; ambas têm testes pgTAP dedicados.
+- Não foi disparada nova tentativa OMIE após o HTTP 500; não restaram ciclos
+  ou work items ativos.
 - A migration forward-only
   `20260802235035_dashboard_reconcile_hubspot_leases_v1.sql` liberou 18 work
   items do run HubSpot `timed_out`; o read model passou a informar
