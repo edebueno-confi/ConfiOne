@@ -51,6 +51,13 @@ Relatório do diagnóstico: `docs/reports/2026-08-01_repository-and-release-surf
 
 ## Fila adicionada após a estabilização visual — 2026-08-02
 
+- `DASHBOARD-05`: reconstrução visual HD da aba CEO (`/admin/analytics?tab=ceo`),
+  com cards padronizados, hierarquia executiva, melhor uso da largura e QA
+  responsivo claro/escuro. A execução fica separada da correção de sincronismo
+  em andamento e aguarda aprovação visual antes de ser propagada às demais abas.
+- `DASHBOARD-06`: alinhar o container de fonte financeira da aba Financeiro ao
+  cabeçalho `OMIE · Contas a Receber`, mantendo origem, frescor e gerenciamento
+  no mesmo nível visual dos demais elementos da área.
 - `UI-04`: hardening do dark mode/editor, reset limpo de `Novo artigo`,
   histórico recolhível, padronização dos cards financeiros e avaliação de
   teste read-only das integrações.

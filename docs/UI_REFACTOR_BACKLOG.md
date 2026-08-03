@@ -44,6 +44,60 @@ Edge Functions, ciclo sequencial validado, permissões/RLS auditadas e contrato
 de Histórico disponível. Não implementar enquanto o ciclo protegido não estiver
 validado.
 
+### DASHBOARD-05 — Visão Gerencial HD na aba CEO
+
+Status: pendente de execução; item adicionado à fila em 02/08/2026.
+
+Superfície-alvo: `/admin/analytics?tab=ceo`.
+
+Reconstruir a apresentação da visão gerencial para que os indicadores executivos
+sejam a superfície dominante, com leitura limpa em desktop e adaptação real para
+notebook e mobile. O lote deve revisar os cards hoje desalinhados em relação às
+abas Comercial, Customer Success, Suporte & Chat e Financeiro.
+
+Escopo obrigatório:
+
+- padronizar a gramática dos cards: hierarquia de título, valor, unidade,
+  contexto, estado de frescor e indisponibilidade;
+- diferenciar visualmente posição atual, desempenho no período, mapa das áreas,
+  trilha de integridade e sinais gerenciais, sem transformar cada bloco em uma
+  caixa administrativa pesada;
+- aproveitar melhor a largura disponível, evitando cards estreitos, linhas
+  quebradas desnecessárias e espaços mortos;
+- preservar a origem factual dos indicadores e exibir `Indisponível` quando o
+  contrato não fornecer um valor, sem fabricar dados para preencher o layout;
+- manter a ação de sincronização subordinada aos indicadores, com estado
+  agregado das fontes e mensagens sanitizadas;
+- revisar light/dark, 390, 768, 1024 e 1440px, teclado, foco, loading, erro,
+  vazio e overflow horizontal;
+- capturar a tela real antes/depois e registrar decisões de design, contratos
+  consumidos e limitações de dados.
+
+Critério de parada: aprovação visual do Product Owner antes de propagar o padrão
+para as demais áreas do Dashboard. Usar `frontend-design` antes da implementação
+e `web-design-guidelines` na revisão final.
+
+### DASHBOARD-06 — Fonte financeira alinhada ao cabeçalho da aba Financeiro
+
+Status: pendente de execução; item adicionado à fila em 02/08/2026.
+
+Superfície-alvo: aba **Financeiro** do Dashboard Gerencial.
+
+Reposicionar o container que informa `Fonte financeira · Fonte: API OMIE` para o
+mesmo nível horizontal e hierárquico do cabeçalho `OMIE · Contas a Receber`,
+`Financeiro` e `Recebíveis, aging e posição financeira atual`. A informação deve
+continuar factual e legível, mas deixar de ocupar uma faixa vertical isolada
+entre o cabeçalho e os filtros.
+
+Critérios de aceite:
+
+- manter origem, timestamp de atualização, estado de frescor e ação `Gerenciar
+  OMIE` sem duplicar dados;
+- alinhar a composição com a gramática visual das demais abas;
+- revisar claro/escuro, 390, 768, 1024 e 1440px, teclado, foco e overflow;
+- capturar a aba Financeiro real após a alteração e validar que os cards e
+  filtros continuam no fluxo correto.
+
 ### KNOWLEDGE-03 — Reconstrução do cockpit de Artigos
 
 Status: pendente de execução; item adicionado à fila, sem alteração funcional neste registro.

@@ -1,5 +1,16 @@
 # Estado corrente do checkout canônico — macro-lote Configurações — 2026-08-02
 
+## Atualização corrente — carregamento do Dashboard e fila visual — 2026-08-02
+
+- O carregamento pós-sincronização agora mantém o Gênio animado até confirmar o
+  estado publicado das fontes; timeout e erro não são apresentados como sucesso.
+- A correção foi validada com 32 testes focados, typechecks, build, secret scan,
+  quality gate e QA empacotado de 20 capturas sem falhas de rede/console ou
+  overflow. Evidência: `docs/reports/2026-08-02_dashboard-sync-loading-stabilization.md`.
+- A visão gerencial HD da aba CEO (`DASHBOARD-05`) e o alinhamento da fonte
+  financeira ao cabeçalho OMIE (`DASHBOARD-06`) foram somente adicionados à fila;
+  não foram implementados neste lote.
+
 ## Precedência — Dashboard Runtime Stabilization — 2026-08-02
 
 O bloco abaixo é a atualização corrente deste checkout e prevalece sobre os

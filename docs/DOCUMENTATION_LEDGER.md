@@ -1,5 +1,16 @@
 # Estado corrente — 2026-08-01, reconciliado pelo Codex
 
+## Carregamento do Dashboard e fila visual — 2026-08-02
+
+- Implementado o aguardo do estado publicado após iniciar sincronização, com
+  Gênio animado durante o processamento e timeout honesto.
+- Validações: 32 testes focados, typecheck web/contratos, build, secret scan,
+  quality gate e QA empacotado com 20 capturas aprovados.
+- Evidência: `docs/reports/2026-08-02_dashboard-sync-loading-stabilization.md`.
+- Fila registrada: `DASHBOARD-05` (visão gerencial HD da aba CEO) e `DASHBOARD-06`
+  (fonte financeira alinhada ao cabeçalho OMIE). Nenhum dos dois itens foi
+  implementado neste ciclo.
+
 ## Atualização corrente do Dashboard Gerencial API-only — 2026-08-02
 
 - A verdade corrente está em `C:\Projetos\GSO-old`, branch

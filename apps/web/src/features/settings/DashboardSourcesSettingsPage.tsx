@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MinimalState } from '../../components/minimal-states';
+import { GeniusMascot } from '../../components/GeniusMascot';
 import { useAuthContext } from '../auth/auth-context';
 import { canManageAnalyticsIntegration } from '../analytics/analytics-permissions.mjs';
 import {
@@ -11,11 +12,13 @@ import {
   triggerHubspotSync,
   triggerOmieSync,
   triggerSequentialAnalyticsSync,
+  waitForAnalyticsSyncCompletion,
   updateAnalyticsPipelineConfig,
   type IntegrationSchedule,
 } from '../analytics/analytics-api';
 import type { AnalyticsSourceConfig } from '../analytics/analytics-model';
 import type { AnalyticsSourceStatusPayload } from '@genius-support-os/contracts';
+import { syncProgressLabel } from '../analytics/analytics-sync-progress.mjs';
 
 const CONTROL = 'gso-settings-control w-full rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-3 py-2.5 text-sm text-[color:var(--minimal-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]';
 
@@ -98,6 +101,8 @@ export function DashboardSourcesSettingsPage() {
   const [areaFilter, setAreaFilter] = useState<'all' | AnalyticsSourceConfig['areaKey']>('all');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [syncingKind, setSyncingKind] = useState<'full' | 'hubspot' | 'omie' | null>(null);
+  const [syncProgress, setSyncProgress] = useState('Preparando a atualização das fontes.');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -143,14 +148,16 @@ export function DashboardSourcesSettingsPage() {
   };
 
   const run = async (kind: 'full' | 'hubspot' | 'omie') => {
-    setBusy(true); setError(null); setMessage(null);
+    setBusy(true); setSyncingKind(kind); setSyncProgress(kind === 'full' ? 'O Gênio está atualizando HubSpot e OMIE em sequência.' : `O Gênio está atualizando ${kind === 'hubspot' ? 'HubSpot' : 'OMIE'}.`); setError(null); setMessage(null);
     try {
       if (kind === 'full') await triggerSequentialAnalyticsSync();
       if (kind === 'hubspot') await triggerHubspotSync(undefined, { phased: false });
       if (kind === 'omie') await triggerOmieSync();
-      setMessage(kind === 'full' ? 'Atualização do painel iniciada.' : `Atualização ${kind === 'hubspot' ? 'HubSpot' : 'OMIE'} iniciada.`);
+      const completion = await waitForAnalyticsSyncCompletion(kind);
+      setSourceStatus(completion.status);
       await load();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível iniciar a atualização.'); } finally { setBusy(false); }
+      setMessage(completion.timedOut ? syncProgressLabel(kind, true) : `Atualização ${kind === 'full' ? 'do painel' : kind === 'hubspot' ? 'do HubSpot' : 'do OMIE'} concluída; o estado publicado foi confirmado.`);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível iniciar a atualização.'); } finally { setBusy(false); setSyncingKind(null); }
   };
 
   const sourcePills = sourceStatus ? [sourceStatus.hubspot, sourceStatus.omie] : [];
@@ -159,6 +166,7 @@ export function DashboardSourcesSettingsPage() {
 
   return (
     <div className="gso-settings-sources gso-settings-stack">
+      {syncingKind ? <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm" role="status" aria-live="polite" aria-busy="true"><div className="w-full max-w-md rounded-2xl border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] p-6 text-center shadow-2xl"><div className="mx-auto flex h-44 w-44 items-center justify-center"><div className="scale-[0.9]"><GeniusMascot alt="Gênio atualizando os dados do Dashboard" expression="happy" pose="magic" size="xl" surface="loading" /></div></div><h2 className="text-lg font-semibold text-[color:var(--minimal-text)]">Atualizando o Dashboard</h2><p className="mt-2 text-sm leading-6 text-[color:var(--minimal-text-secondary)]">{syncProgress}</p><p className="mt-3 text-xs text-[color:var(--minimal-text-tertiary)]">A tela será liberada somente após confirmar o estado publicado das fontes.</p></div></div> : null}
       <section className="gso-settings-source-overview" aria-labelledby="sources-overview-title">
         <div>
           <p className="gso-settings-eyebrow">Mapa de origem</p>

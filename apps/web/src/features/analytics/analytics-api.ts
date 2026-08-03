@@ -49,6 +49,7 @@ import type { AnalyticsSourceStatusPayload } from '@genius-support-os/contracts'
 import { aggregateLatestHubspotSyncRuns } from './analytics-sync-runs.mjs';
 import { formatAnalyticsSyncError } from './analytics-sync-errors.mjs';
 import { sanitizeCsSyncResult } from './analytics-cs-control.mjs';
+import { areAnalyticsSourcesActive } from './analytics-sync-progress.mjs';
 
 type Row = Record<string, unknown>;
 
@@ -159,6 +160,21 @@ export async function getAnalyticsSourceStatus(): Promise<AnalyticsSourceStatusP
   const { data, error } = await client.rpc('rpc_analytics_source_status');
   if (error) throw toAppError(error, 'Falha ao carregar o estado das fontes do dashboard.');
   return mapAnalyticsSourceStatus(data);
+}
+
+export async function waitForAnalyticsSyncCompletion(
+  kind: 'full' | 'hubspot' | 'omie',
+  options: { pollMs?: number; timeoutMs?: number } = {},
+): Promise<{ status: AnalyticsSourceStatusPayload; timedOut: boolean }> {
+  const pollMs = Math.max(options.pollMs ?? 1500, 250);
+  const timeoutMs = Math.max(options.timeoutMs ?? 5 * 60 * 1000, pollMs);
+  const startedAt = Date.now();
+  let status = await getAnalyticsSourceStatus();
+  while (areAnalyticsSourcesActive(status, kind) && Date.now() - startedAt < timeoutMs) {
+    await new Promise((resolve) => setTimeout(resolve, pollMs));
+    status = await getAnalyticsSourceStatus();
+  }
+  return { status, timedOut: areAnalyticsSourcesActive(status, kind) };
 }
 
 export async function listHubspotSyncRuns(): Promise<SyncRun[]> {
