@@ -8,7 +8,7 @@
   backend, contratos, métricas, fontes, sincronizações ou credenciais.
 - Relatório canônico: `docs/reports/2026-08-03_dashboard-visual-density-v1-1.md`.
 - Evidência externa: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803`.
-- Estado QA: 80/80 capturas no `preview-final-3`, sem falha de rota, HTTP ≥400,
+- Estado QA: 80/80 capturas no `final-head-bcebf1c`, HEAD `bcebf1c`, sem falha de rota, HTTP ≥400,
   console errors, request failures ou overflow horizontal.
 - Regressão focada: 26/26. Suíte ampliada Analytics + Settings: 103/105;
   duas falhas fora do escopo visual permanecem registradas como limitação,

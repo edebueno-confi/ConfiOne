@@ -182,7 +182,7 @@ Implementadas 4 áreas de código: CSS visual, overview, finance metadata e UI-0
 
 Delta final: preview empacotado 80/80, 0 falhas de rota, 0 HTTP >=400, 0 overflow, 0 login detectado, 0 console errors e 0 request failures na coleta final.
 
-Matriz final: 80/80 capturas em 1920x1080, 1440x900, 1024x768, 768x1024 e 390x844, nos temas claro e escuro; 0 falhas de carregamento; 0 HTTP ≥400; 0 overflow horizontal; 0 console errors; 0 request failures. Os títulos observados foram 32px, 28px e 24px conforme viewport, e os KPIs ficaram dentro do limite de 40px.
+Matriz final atual: 80/80 capturas no HEAD `bcebf1c`, em 1920x1080, 1440x900, 1024x768, 768x1024 e 390x844, nos temas claro e escuro; 0 falhas de carregamento; 0 HTTP ≥400; 0 overflow horizontal/vertical; 0 console errors; 0 request failures. Os títulos observados foram 32px, 28px e 24px conforme viewport, e os KPIs ficaram dentro do limite de 40px.
 
 ## 31. Evidência de motion
 
@@ -196,6 +196,7 @@ Em `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\motion` for
 - Final: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\final-v1-1` — 80 PNGs e manifesto.
 - Preview final: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\preview-final-2` — 80 PNGs e manifesto.
 - Preview final atual: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\preview-final-3` — 80 PNGs e manifesto, HEAD `f055723`.
+- Matriz final no HEAD atual: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\final-head-bcebf1c` — 80 PNGs e manifesto válido, 0 falhas após rechecagem isolada de Histórico 1920x1080 claro.
 - Zoom: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\zoom` — 16 PNGs, oito superfícies em 125% e 200%, sem overflow horizontal.
 - Motion: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\motion`.
 - UI-05: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\ui05-final` — manifesto, 32 estados estáticos, 32 frames de movimento e 2 reduced-motion.
@@ -205,11 +206,12 @@ Em `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\motion` for
 - Pacote final após a correção do status: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v4.zip`, 40.897.554 bytes, SHA-256 `979B514BF2901473A447242A32A8FBB9BCA4EEC623B913445D6D8A47EE044986`.
 - Pacote final com a matriz ampliada: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v5.zip`, 40.897.769 bytes, SHA-256 `AC19DEC944B2C51F5673BB33FF4AD0C20B6E555258B4132D562ED11EC3BFA373`.
 - Pacote final com o handoff documental alinhado: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v6.zip`, 40.897.866 bytes, SHA-256 `4D95B60E89BBF222F6CF07DF2CE75899869E9EE167AE5C8BF9E5931E5E7309B3`.
+- Pacote final da matriz no HEAD `bcebf1c`: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v7.zip`, 52.368.340 bytes, SHA-256 `DAA02849C9C0AEAD7E6A5FC4A2F24CEEA9E157FC6091C43432D4A15B444A0BD4`, 532 arquivos.
 - Pacote para revisão: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence.zip`, 16.266.594 bytes, SHA-256 `2B037C236CADBCB8FB9F86E5B282612EEE567F37C951AE8E8ECA0DC147E6935B`.
 
 ## 33. Arquivos
 
-Alterados no código: `apps/web/src/index.css`, `apps/web/src/features/analytics/AnalyticsCeoPage.tsx`, `apps/web/src/features/analytics/AnalyticsFinancePage.tsx`, `apps/web/src/features/settings/SyncHistorySettingsPage.tsx`, `apps/web/src/features/settings/SettingsIntegrationsPanel.tsx`, `apps/web/src/components/GeniusSyncOverlay.tsx`. Documentação: este relatório, `docs/plan.md`, `docs/PROJECT_STATE.md` e `docs/DOCUMENTATION_LEDGER.md`.
+Alterados no código: `apps/web/src/index.css`, `apps/web/src/features/analytics/AnalyticsCeoPage.tsx`, `apps/web/src/features/analytics/AnalyticsFinancePage.tsx`, `apps/web/src/features/analytics/analytics-ui.tsx`, `apps/web/src/features/settings/SyncHistorySettingsPage.tsx`, `apps/web/src/features/settings/SettingsIntegrationsPanel.tsx`, `apps/web/src/components/GeniusSyncOverlay.tsx`. Documentação: este relatório, `docs/plan.md`, `docs/PROJECT_STATE.md` e `docs/DOCUMENTATION_LEDGER.md`.
 
 ## 34. Código removido
 
@@ -227,6 +229,10 @@ Removidos: status duplicado no título da Visão Geral, eyebrow duplicado, preen
 - `c0d1672 refactor(ui): fechar estados visuais do gênio` — estados permanentes de falha, timeout e abandono do UI-05.
 - `6446dfc docs(ui): registrar QA final do UI-05` — manifesto, reduced-motion e pacote atualizado.
 - `ee71719 docs(ui): fixar estado final do lote` — alinhamento do relatório ao fechamento documental.
+- `ff107bc fix(ui): alinhar badge ao status canônico` — consumo direto do status normalizado.
+- `867de49 docs(ui): atualizar pacote final de evidências` — pacote pós-correção.
+- `220399f docs(ui): registrar matriz ampliada de testes` — resultados Analytics + Settings.
+- `bcebf1c docs(ui): alinhar handoff de validação` — plano, ledger e limitações atuais.
 
 ## 36. Git final
 
@@ -234,7 +240,7 @@ Branch: `codex/dashboard-visual-density-v1-1-20260803`. O handoff final deve con
 
 ## 37. Limitações
 
-Não foi executada sincronização HubSpot/OMIE, não foram usadas credenciais, não foi feito deploy/push e não foi validado o overlay com um ciclo externo real. A suíte ampla tem três falhas fora do delta.
+Não foi executada sincronização HubSpot/OMIE, não foram usadas credenciais externas, não foi feito deploy/push e não foi validado o overlay com um ciclo externo real. A suíte ampliada tem duas falhas fora do delta, em contratos de Edge Functions/diagnóstico.
 
 ## 38. Backlog residual
 
