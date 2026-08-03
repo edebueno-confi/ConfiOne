@@ -119,7 +119,7 @@ export function SyncHistorySettingsPage() {
   if (error && !rows.length) return <MinimalState tone="critical" title="Não foi possível carregar o histórico" description={error} />;
 
   return (
-    <div className="gso-settings-stack gso-settings-history">
+    <div className="gso-settings-stack gso-settings-history gso-visual-v1-settings">
       <section className="gso-settings-source-overview">
         <div>
           <p className="gso-settings-eyebrow">Rastreabilidade</p>

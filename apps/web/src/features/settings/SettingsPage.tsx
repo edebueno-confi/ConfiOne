@@ -1177,7 +1177,7 @@ export function SettingsPage() {
   );
 
   return (
-    <div className="gso-settings-shell flex h-full min-h-0 flex-col bg-[color:var(--minimal-surface)]">
+    <div className="gso-settings-shell gso-visual-v1-settings-shell flex h-full min-h-0 flex-col bg-[color:var(--minimal-surface)]">
       <header className="gso-workspace-header shrink-0 border-b border-[color:var(--minimal-border)] px-5 py-4 sm:px-6">
         <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">Configurações</h1>
         <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">

@@ -106,8 +106,8 @@ export function AnalyticsCeoPage({
   if (result.loading && !result.data)
     return (
       <AnalyticsLoadingState
-        title="Conjurando seus dados"
-        description="Estamos preparando sua visão executiva."
+        title="O Gênio está organizando os dados do painel"
+        description="A atualização está em andamento. Os novos dados aparecerão quando as fontes concluírem o processamento."
       />
     );
   if (result.error || !result.data)
@@ -329,7 +329,7 @@ function ExecutiveHdCanvas({
       : "Cobertura não informada";
 
   return (
-    <div className="gso-hd-canvas gso-pilot-summary gso-executive-canvas" data-testid="executive-dashboard">
+    <div className="gso-hd-canvas gso-pilot-summary gso-executive-canvas gso-visual-v1-overview" data-testid="executive-dashboard">
       <section className="gso-hd-context" aria-labelledby="executive-heading">
         <div>
           <p className="gso-hd-eyebrow">Visão Geral</p>
@@ -343,7 +343,7 @@ function ExecutiveHdCanvas({
         </div>
       </section>
 
-      <div className="gso-hd-filter-bar" aria-label="Filtros da análise">
+          <div className="gso-hd-filter-bar gso-hd-pulse" aria-label="Filtros da análise">
         <div className="gso-hd-filter-context">
           <span>Recorte</span>
           <strong>{periodLabel}</strong>

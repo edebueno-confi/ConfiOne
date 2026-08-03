@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MinimalState } from '../../components/minimal-states';
-import { GeniusMascot } from '../../components/GeniusMascot';
+import { GeniusSyncOverlay } from '../../components/GeniusSyncOverlay';
 import { useAuthContext } from '../auth/auth-context';
 import { canManageAnalyticsIntegration } from '../analytics/analytics-permissions.mjs';
 import {
@@ -165,8 +165,8 @@ export function DashboardSourcesSettingsPage() {
   if (error && rows.length === 0) return <MinimalState tone="critical" title="Não foi possível carregar" description={error} />;
 
   return (
-    <div className="gso-settings-sources gso-settings-stack">
-      {syncingKind ? <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm" role="status" aria-live="polite" aria-busy="true"><div className="w-full max-w-md rounded-2xl border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] p-6 text-center shadow-2xl"><div className="mx-auto flex h-44 w-44 items-center justify-center"><div className="scale-[0.9]"><GeniusMascot alt="Gênio atualizando os dados do Dashboard" expression="happy" pose="magic" size="xl" surface="loading" /></div></div><h2 className="text-lg font-semibold text-[color:var(--minimal-text)]">Atualizando o Dashboard</h2><p className="mt-2 text-sm leading-6 text-[color:var(--minimal-text-secondary)]">{syncProgress}</p><p className="mt-3 text-xs text-[color:var(--minimal-text-tertiary)]">A tela será liberada somente após confirmar o estado publicado das fontes.</p></div></div> : null}
+    <div className="gso-settings-sources gso-settings-stack gso-visual-v1-settings">
+      {syncingKind ? <GeniusSyncOverlay source={syncingKind === 'full' ? 'painel' : syncingKind === 'hubspot' ? 'HubSpot' : 'OMIE'} state={syncingKind === 'full' ? 'preparing' : syncingKind === 'hubspot' ? 'syncing_hubspot' : 'syncing_omie'} hasValidSnapshot={syncingKind === 'full' ? Boolean(sourceStatus?.hubspot.hasValidSnapshot && sourceStatus?.omie.hasValidSnapshot) : Boolean(sourceStatus?.[syncingKind]?.hasValidSnapshot)} detail={syncProgress} /> : null}
       <section className="gso-settings-source-overview" aria-labelledby="sources-overview-title">
         <div>
           <p className="gso-settings-eyebrow">Mapa de origem</p>

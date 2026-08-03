@@ -16,7 +16,7 @@ export function AnalyticsHdDomainFrame({
   children: ReactNode;
 }) {
   return (
-    <section className="gso-hd-domain-frame" aria-labelledby={`analytics-domain-${title.toLowerCase().replace(/\W+/g, '-')}`}>
+    <section className="gso-hd-domain-frame gso-visual-v1-domain-frame" aria-labelledby={`analytics-domain-${title.toLowerCase().replace(/\W+/g, '-')}`}>
       <header className="gso-hd-domain-frame-header">
         <div className="gso-hd-domain-frame-heading">
           <span className="gso-hd-domain-frame-source">{source}</span>

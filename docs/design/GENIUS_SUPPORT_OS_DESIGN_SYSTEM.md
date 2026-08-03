@@ -1033,3 +1033,33 @@ Uma tela só é aprovada se:
 Não basta estar “melhor”.
 
 Precisa estar correta para a operação.
+
+---
+
+## 26. Dashboard Visual System V1 — cockpit editorial de decisão
+
+Para o macro-lote visual de 2026-08-03, as superfícies do Dashboard Gerencial e
+suas configurações adotam uma única gramática de cockpit:
+
+- o shell administrativo é único; analytics não repete uma segunda navegação em
+  Configurações;
+- a ordem das áreas é Visão Geral, Comercial, Customer Success, Suporte & Chat e
+  Financeiro;
+- estado da fonte e frescor aparecem em uma faixa semântica curta, sem mensagens
+  contraditórias entre header, card e domínio;
+- filtros, KPIs e evidência pertencem à mesma composição, com a ação principal
+  subordinada à leitura;
+- superfícies abertas e separadores discretos substituem caixas aninhadas;
+- `Indisponível` permanece indisponível e nenhum layout pode preencher lacunas
+  com zero, texto genérico ou dado inventado;
+- a Visão Geral é o cockpit executivo, não um mosaico de cards administrativos;
+- o Gênio em ação usa suspensão, halo e movimento controlado, sem barra de
+  progresso fictícia, contagem regressiva ou explicação técnica;
+- snapshot válido mantém o Dashboard navegável durante atualização; sem snapshot
+  válido, a UI pode bloquear somente durante ciclo real ou aguardando publicação;
+- toda nova composição deve ser validada em light/dark, 1440, 1024, 768 e 390px,
+  com teclado, foco, contraste, reduced motion e ausência de overflow.
+
+O contrato visual não autoriza mudança de métrica, fonte, denominador, RPC,
+view, tabela, integração, credencial ou estado persistido. A implementação
+deve consumir os read models e handlers já existentes.

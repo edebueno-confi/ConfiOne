@@ -1,60 +1,62 @@
-# Design QA — Dashboard e Integrações — 2026-08-02
+# Design QA — Dashboard Visual System V1
+
+**Data:** 2026-08-03
+**Checkout:** `C:\Projetos\GSO-old`
+**Branch:** `codex/dashboard-visual-system-v1-20260803`
+**Servidor:** `http://127.0.0.1:4173`
+**Método:** sessão autenticada local, navegador Chrome via Playwright persistente.
 
 ## Escopo
 
-- Visão Geral do Dashboard Gerencial: pulso limitado às fontes HubSpot e OMIE, redução de espaçamento vertical e alinhamento dos blocos ao frame das demais abas.
-- Configurações > Integrações: campos editáveis de modo, ativação, recurso/escopo e substituição segura de credencial no Vault.
-- Configurações > Dashboard e Analytics: uma cadência automática do ciclo completo e ações manuais separadas por fonte.
+Revisão visual do shell, cinco áreas analíticas, Integrações, Fontes do
+Dashboard, Histórico e estados compartilhados de loading/UI-05. Não houve
+clique em ação de sincronização nem chamada externa nova.
 
-## Fontes visuais
+## Evidências
 
-- Visão Geral fornecida pelo usuário: `C:\Users\edebu\AppData\Local\Temp\codex-clipboard-62ad57f2-0ffb-4e76-ab24-7d64f7467f83.png` — 1899x1124.
-- Comercial fornecida pelo usuário: `C:\Users\edebu\AppData\Local\Temp\codex-clipboard-5db65aa5-7820-4958-b15e-92cabfe4fec6.png` — 1904x1037.
-- Suporte fornecida pelo usuário: `C:\Users\edebu\AppData\Local\Temp\codex-clipboard-ea734bde-dd93-4edd-983e-0653a7b91f65.png` — 1897x1033.
+Capturas reais fora do Git:
 
-## Capturas da implementação
+- `C:\Projetos\GSO-artifacts\dashboard-visual-system-v1-20260803\final-dev-light-1440\overview-loaded.png`
+- `C:\Projetos\GSO-artifacts\dashboard-visual-system-v1-20260803\final-dev-light-1440\finance-stable.png`
+- `C:\Projetos\GSO-artifacts\dashboard-visual-system-v1-20260803\final-dev-light-1440\integrations-route.png`
+- `C:\Projetos\GSO-artifacts\dashboard-visual-system-v1-20260803\final-dev-light-1440\history-route.png`
+- pasta `final-dev-light-1440`: shell, Visão Geral, Comercial, Customer
+  Success, Suporte, Financeiro, Integrações, Fontes e Histórico;
+- pasta `final-dev-dark-1440`: as mesmas oito superfícies em tema escuro;
+- `responsive-390-overview.png`, `responsive-390-finance.png` e
+  `responsive-390-history.png` para viewport móvel.
 
-- Visão Geral atualizada: `C:\Projetos\GSO-old\docs\reports\visual-audit\screenshots\dashboard-overview-2026-08-02.png` — 1920x975, Chrome autenticado como QA Local Administrador, tema claro, `http://127.0.0.1:4173/admin/analytics?tab=ceo`.
-- Integrações atualizada: `C:\Projetos\GSO-old\docs\reports\visual-audit\screenshots\integrations-2026-08-02.png` — 1920x975, Chrome autenticado como QA Local Administrador, tema claro, `http://127.0.0.1:4173/admin/settings?section=analytics`.
+## Resultado por critério
 
-## Comparação e achados
+| Critério | Resultado | Evidência |
+|---|---|---|
+| título da Visão Geral proporcional | passed | `overview-loaded.png`; título compacto em desktop |
+| navegação sem seletor de domínio duplicado | passed | teste de contrato + captura do shell |
+| cinco áreas publicadas preservadas | passed | testes `mvp-ux-02-*` + capturas |
+| estado ausente sem dado inventado | passed | `Indisponível`/estados existentes mantidos |
+| UI-05 sem progresso fictício | passed | teste `analytics-sync-progress` + implementação |
+| overlay condicionado a snapshot | passed | `GeniusSyncOverlay.tsx` + teste focado |
+| reduced motion e foco | passed | CSS e teste de contrato |
+| claro/escuro | passed | pastas `final-dev-light-1440` e `final-dev-dark-1440` |
+| responsividade | passed | 1440x900 e 390x844, `scrollWidth === innerWidth` |
+| console/page errors | passed | 0 erros no recorte final |
+| request failures | passed | 0 falhas no recorte final |
 
-- P0: nenhum bloqueio visual observado na Visão Geral ou na tela de Integrações.
-- P1: a Visão Geral mantém uma hierarquia executiva própria, mas agora usa a mesma cadência de espaçamento e o mesmo canvas horizontal das abas de domínio.
-- P1: o pulso agora apresenta somente HubSpot e OMIE; Customer Success continua disponível como aba de domínio, mas não é apresentado como fonte separada.
-- P1: o Customer Success autenticado entrou em estado de erro no ambiente observado porque o RPC `rpc_analytics_customer_success_snapshot` ainda não foi aplicado no banco. Isso é dependência de migração, não evidência de dado ausente ou falha visual.
-- P2: a captura da implementação usa viewport 1920x975, diferente das imagens de referência. Não foi afirmada equivalência pixel a pixel.
-- P2: os botões de salvar/sincronizar não foram acionados na captura para não criar alteração externa ou substituir credenciais sem uma ação específica de configuração.
+## Observações
 
-## Interações e console
+- O servidor local já estava em execução; não foi reiniciado nem interrompido.
+- A captura inicial de algumas rotas ocorreu durante loading e foi repetida
+  após estabilização; os arquivos `*-stable.png`/`*-route.png` são a evidência
+  final dessas superfícies.
+- A semântica de status não fabrica data: estado `fresh` sem timestamp é
+  exibido como `Dados disponíveis`, e datas inválidas não geram rótulo de
+  atualização.
+- A revisão aplicou as regras de acessibilidade, foco, reduced motion,
+  semântica de navegação e animação compositor-friendly da
+  [Web Interface Guidelines](https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md).
 
-- Navegação autenticada observada em `/admin/analytics?tab=ceo`, `/admin/settings?section=analytics` e `/admin/analytics?tab=customer-success`.
-- A tela de Integrações expôs os campos esperados e não exibiu valores de segredos existentes.
-- Logs do navegador: nenhum erro ou aviso capturado na janela observada.
-- Não houve reset, limpeza do banco, sincronização real, alteração de credencial ou disparo de cron.
+## Veredito
 
-## Iteração
-
-1. Removido Customer Success do pulso e reduzida a altura/padding do canvas executivo.
-2. Inserida configuração segura HubSpot/OMIE e substituída a cadência dupla por ciclo completo + ações manuais por fonte.
-3. Capturadas as superfícies autenticadas e revisado o estado de erro do Customer Success.
-
-historical result: blocked
-
-## Atualização da matriz autenticada — 2026-08-02
-
-A matriz completa foi persistida em `dashboard-matrix-2026-08-02.md` e no
-manifesto JSON correspondente. Foram geradas 48 capturas reais das seis
-superfícies, nos quatro viewports solicitados e nos dois temas.
-
-- 48/48 sem modal sobreposto;
-- 48/48 sem overflow horizontal;
-- 48/48 sem erros de console ou de página;
-- 48/48 com o tema esperado aplicado;
-- 24 falhas de requisição do dev server para `AdminConsoleShell.tsx` em
-  viewport 768px, sem erro de renderização observável.
-
-Resultado desta rodada: `partially-validated`. A confirmação de rede deve ser
-repetida em servidor empacotado; isso não foi tratado como falha de layout.
-
-Motivo do bloqueio: a validação visual do estado de dados do Customer Success depende da aplicação da migration forward-only no banco autorizado; dimensões também não são idênticas às referências fornecidas.
+passed — validação visual e comportamental concluída para o escopo local deste
+macro-lote. A validação não inclui sincronização externa, credenciais ou
+contratos de dados.

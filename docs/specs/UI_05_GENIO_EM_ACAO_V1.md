@@ -180,8 +180,11 @@ o fluxo de sincronismo, não modifica o asset e não autoriza nova biblioteca.
 
 ## 17. Relação com DASHBOARD-05
 
-`DASHBOARD-05` é uma frente posterior de arquitetura visual e hierarquia
-executiva. Não deve ser implementado no mesmo micro-lote de `UI-05`.
+`DASHBOARD-05` e `UI-05` podem ser implementados no mesmo macro-lote visual
+quando houver autorização explícita do Product Owner. A composição da Visão
+Geral não cria dependência de discovery HubSpot, denominador de Customer
+Success ou catálogo de métricas: esses contratos permanecem congelados e a UI
+deve apenas apresentá-los com honestidade.
 
 ## 18. Relação com DASHBOARD-06
 
@@ -191,16 +194,22 @@ deste micro-lote.
 
 ## 19. Dependências
 
-- conclusão do discovery HubSpot;
-- decisão do denominador de Customer Success;
-- aprovação do catálogo de métricas executivas;
-- contratos atuais de status/frescor e snapshot;
-- direção visual aprovada antes da implementação piloto;
-- `frontend-design`, `gso-operational-design` e `web-design-guidelines` usados
-  somente no lote de especificação/implementação autorizado.
+O componente depende somente de:
+
+- lifecycle corrente exposto pela aplicação;
+- estado publicado atual das fontes;
+- snapshot válido, quando existir;
+- asset vigente do Gênio;
+- tokens visuais correntes e suporte a reduced motion.
+
+Não são dependências de UI-05: discovery HubSpot, decisão do denominador de
+Customer Success, catálogo de métricas, execução de sincronização, credenciais,
+RPCs novos ou alteração de contrato.
 
 ## 20. Condição de implementação
 
-Não implementar antes da conclusão das dependências acima e de nova autorização
-do Product Owner. Quando autorizado, executar como micro-lote isolado, validar
-visualmente e parar para aprovação antes de iniciar `DASHBOARD-05`.
+Esta especificação está autorizada para o macro-lote `DASHBOARD VISUAL SYSTEM
+V1`, em branch dedicada e com escopo somente frontend/documentação/testes.
+Implementar contra os estados e snapshots existentes, validar visualmente em
+light/dark, quatro breakpoints, teclado e reduced motion, e registrar qualquer
+limitação de runtime sem mascará-la na interface.

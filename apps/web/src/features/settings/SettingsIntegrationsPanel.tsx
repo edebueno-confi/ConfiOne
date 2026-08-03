@@ -113,7 +113,7 @@ export function SettingsIntegrationsPanel({
   const published = integrations.filter((item) => item.provider === 'hubspot' || item.provider === 'omie');
   if (!published.length) return <p className="gso-settings-empty">Nenhuma integração disponível neste ambiente.</p>;
   return (
-    <div className="gso-settings-stack">
+    <div className="gso-settings-stack gso-visual-v1-settings">
       <div className="gso-settings-intro-band">
         <strong>Integrações do Dashboard</strong>
         <span>HubSpot abastece Comercial, Customer Success e Suporte. OMIE abastece o Financeiro. Credenciais ficam protegidas e nunca são exibidas novamente.</span>

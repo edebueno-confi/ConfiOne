@@ -20,15 +20,16 @@ const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
 };
 
 function formatStateDate(value: string | null): string {
-  if (!value) return 'sincronização não registrada';
+  if (!value) return '';
   const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
   return Number.isNaN(date.getTime()) ? 'sincronização não registrada' : `última atualização ${date.toLocaleString('pt-BR')}`;
 }
 
 export function AnalyticsStateBadge({ state }: { state?: AnalyticsBlockState }) {
   if (!state) return null;
   const tone = state.status === 'fresh' || state.status === 'zero' ? 'text-[color:var(--minimal-action)]' : state.status === 'stale' || state.status === 'partial' || state.status === 'never_synced' || state.status === 'syncing' ? 'text-[color:var(--minimal-warning-text)]' : 'text-[color:var(--minimal-danger-text)]';
-  const statusLabel = STATUS_LABELS[state.status];
+  const statusLabel = state.status === 'fresh' && !state.lastSuccessfulSyncAt ? 'Dados disponíveis' : STATUS_LABELS[state.status];
   const dateLabel = state.status === 'fresh' || state.status === 'stale' || state.status === 'partial'
     ? formatStateDate(state.lastSuccessfulSyncAt)
     : state.status === 'syncing'
@@ -58,14 +59,14 @@ export function formatCountLabel(
 
 export function AnalyticsLoadingState({ title, description }: { title: string; description: string }) {
   return (
-    <section aria-busy="true" aria-label={title} className="flex min-h-[170px] flex-col items-center justify-center gap-3 px-4 py-5 text-center sm:min-h-[240px]" role="status">
-      <div className="flex h-36 w-36 items-center justify-center sm:h-44 sm:w-44">
+    <section aria-busy="true" aria-label={title} className="gso-analytics-loading-state flex min-h-[170px] flex-col items-center justify-center gap-3 px-4 py-5 text-center sm:min-h-[240px]" role="status">
+      <div className="gso-analytics-loading-state__mascot flex h-36 w-36 items-center justify-center sm:h-44 sm:w-44">
         <div className="scale-[0.7] sm:scale-[0.9]">
-          <GeniusMascot alt="Gênio consultando os dados do Dashboard" expression="happy" pose="magic" size="xl" surface="loading" />
+          <GeniusMascot alt="Gênio organizando os dados do Dashboard" animated expression="happy" pose="magic" size="xl" surface="loading" />
         </div>
       </div>
       <div className="max-w-md">
-        <h2 className="text-base font-semibold text-[color:var(--minimal-text)]">{title}</h2>
+        <h2 className="text-base font-semibold text-[color:var(--minimal-text)]">{title || 'O Gênio está organizando os dados do painel'}</h2>
         <p className="mt-1 text-sm leading-6 text-[color:var(--minimal-text-secondary)]">{description}</p>
       </div>
     </section>
@@ -79,7 +80,7 @@ export function AnalyticsRetryAction({ onRetry }: { onRetry?: () => void }) {
 export function KpiCard({ label, value, hint, source, tone = 'neutral', className = '', state, temporalType, comparison }: { label: string; value: string; hint?: string; source?: string; tone?: 'neutral' | 'warning' | 'critical'; className?: string; state?: AnalyticsBlockState; temporalType?: string; comparison?: string }) {
   const toneClass = tone === 'critical' ? 'border-[color:var(--minimal-danger-border)] bg-[color:var(--minimal-danger-surface)]' : tone === 'warning' ? 'border-[color:var(--minimal-warning-border)] bg-[color:var(--minimal-warning-surface)]' : 'border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)]';
   const valueClass = tone === 'critical' ? 'text-[color:var(--minimal-danger-text)]' : tone === 'warning' ? 'text-[color:var(--minimal-warning-text)]' : 'text-[color:var(--minimal-text)]';
-  return <div className={`rounded-xl border px-4 py-3.5 ${toneClass} ${className}`}>
+  return <div className={`gso-visual-v1-kpi rounded-xl border px-4 py-3.5 ${toneClass} ${className}`}>
     <p className={`text-2xl font-semibold tabular-nums leading-none ${valueClass}`}>{value}</p>
     <div className="mt-2.5 flex items-center gap-1.5"><p className={`text-sm font-medium ${valueClass}`}>{label}</p>{source ? <MetricInfo text={source} /> : null}</div>
     {hint ? <p className="mt-0.5 text-xs text-[color:var(--minimal-text-tertiary)]">{hint}</p> : null}
@@ -95,7 +96,7 @@ export function MetricInfo({ text, content, ariaLabel = 'Como esta métrica é c
 }
 
 export function ChartCard({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
-  return <section className="genius-tech-card rounded-xl border border-[color:var(--minimal-border)] px-5 py-4">
+  return <section className="gso-visual-v1-chart genius-tech-card rounded-xl border border-[color:var(--minimal-border)] px-5 py-4">
     <header className="mb-4"><h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">{title}</h3>{description ? <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">{description}</p> : null}</header>
     {children}
   </section>;

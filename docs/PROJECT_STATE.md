@@ -1,4 +1,31 @@
-# Estado corrente do checkout canônico — macro-lote Configurações — 2026-08-02
+# Estado corrente do checkout canônico — Dashboard Visual System V1 — 2026-08-03
+
+## Atualização corrente — fechamento visual
+
+- Checkout canônico: `C:\Projetos\GSO-old`.
+- Branch de trabalho: `codex/dashboard-visual-system-v1-20260803`.
+- O shell analítico foi consolidado em uma única gramática de navegação; as
+  cinco áreas publicadas permanecem separadas e os dados continuam vindo dos
+  contratos/read models existentes.
+- A Visão Geral foi compactada para leitura executiva em alta resolução, com
+  títulos e espaçamentos proporcionais, sem inventar métricas ou filtros.
+- UI-05 usa estados de snapshot já existentes: overlay somente sem snapshot
+  válido e banner não bloqueante quando há dados anteriores válidos.
+- Integrações, Fontes do Dashboard e Histórico receberam tratamento visual
+  compartilhado, sem execução real de sincronização neste lote.
+- Validação objetiva: typechecks de contracts/web, build web, 32 testes
+  focados, quality gate changed, secret scan, `git diff --check` e QA browser
+  autenticado em claro/escuro. Responsividade verificada em 1440x900 e
+  390x844, sem overflow no recorte capturado.
+- Limitação: o QA não autoriza nem executa sincronização externa; estados de
+  ciclo ativo foram cobertos por contrato estático e pela implementação de
+  UI-05, não por nova chamada HubSpot/OMIE.
+- Relatórios: `docs/reports/2026-08-03_dashboard-visual-system-v1.md` e
+  `docs/reports/visual-audit/design-qa.md`.
+
+## Precedência histórica
+
+O bloco abaixo preserva o estado documentado do macro-lote anterior:
 
 ## Atualização corrente — carregamento do Dashboard e fila visual — 2026-08-02
 

@@ -6870,3 +6870,15 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
   secret scan e QA empacotado 18 capturas + 6 checks sem falhas.
 - Limites: nenhum sync real, push, deploy, reset, fixture pgTAP ou alteracao nas
   paginas analiticas; denominador de Customer Success permanece pendente.
+
+## DASHBOARD-VISUAL-SYSTEM-V1 - Shell, superfícies e Gênio em ação - 2026-08-03
+
+- Auditoria inicial: `docs/reports/2026-08-03_dashboard-visual-system-v1-audit.md`.
+- Branch dedicada: `codex/dashboard-visual-system-v1-20260803`.
+- Escopo: reconstrução visual frontend, estados honestos, acessibilidade,
+  responsividade, performance localizada, testes focados e QA empacotado.
+- Limites: nenhum backend, banco, RPC, view, contrato, métrica, denominador,
+  integração, credencial, sincronização real ou dado persistido.
+- Precedência: esta entrada e a especificação atualizada de UI-05 corrigem a
+  dependência histórica de discovery HubSpot/denominador/catalogo para o lote
+  visual; os relatórios históricos permanecem preservados.

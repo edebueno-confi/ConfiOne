@@ -1,4 +1,31 @@
-# Plano corrente — superfície operacional do primeiro release — 2026-08-01
+# Plano corrente — Dashboard Visual System V1 — 2026-08-03
+
+## Fechamento do macro-lote visual
+
+- Branch de trabalho: `codex/dashboard-visual-system-v1-20260803`.
+- Escopo entregue: shell do Dashboard, cinco superfícies analíticas, estados
+  visuais de atualização/UI-05, Integrações, Fontes e Histórico.
+- A Visão Geral recebeu hierarquia editorial compacta para desktop de alta
+  resolução; títulos não usam escala maximalista e o filtro por domínio não
+  retorna como navegação duplicada.
+- Nenhuma regra de negócio, métrica, denominador, origem, contrato, RPC,
+  integração, sincronização ou credencial foi alterada.
+- Evidência visual persistida fora do Git em
+  `C:\Projetos\GSO-artifacts\dashboard-visual-system-v1-20260803`.
+- Relatório final: `docs/reports/2026-08-03_dashboard-visual-system-v1.md`.
+- QA visual: `docs/reports/visual-audit/design-qa.md`.
+
+## Próximo lote recomendado
+
+1. discovery e decisão do denominador de Customer Success;
+2. catálogo executivo de métricas, antes de qualquer novo redesenho;
+3. lote técnico separado para status/frescor OMIE e observabilidade do fluxo;
+4. micro-lote isolado para testes de integração somente quando houver contrato
+   e autorização para chamada externa read-only.
+
+Após este fechamento, parar e aguardar revisão visual do Product Owner.
+
+# Plano histórico — superfície operacional do primeiro release — 2026-08-01
 
 ## Objetivo
 

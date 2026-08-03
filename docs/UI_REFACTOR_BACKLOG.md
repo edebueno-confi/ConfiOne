@@ -18,15 +18,15 @@ superado. Os itens abaixo têm naturezas, dependências e lotes diferentes.
 
 ### UI-05 — Gênio em ação
 
-Status: aprovado conceitualmente; aguardando conclusão do discovery HubSpot e
-autorização de implementação.
+Status: autorizado para implementação no macro-lote `DASHBOARD VISUAL SYSTEM
+V1`, somente frontend/documentação/testes.
 
 - micro-lote isolado de design system, motion, loading e feedback de sistema;
 - especificação executável: `docs/specs/UI_05_GENIO_EM_ACAO_V1.md`;
-- implementar somente depois de concluir o discovery, decidir o denominador de
-  Customer Success e aprovar o catálogo de métricas executivas;
-- validar visualmente o piloto antes de iniciar `DASHBOARD-05`;
-- não alterar backend, contratos, integrações, assets ou CSS neste ciclo.
+- depende somente do lifecycle atual, estado publicado, snapshot válido, asset
+  vigente e tokens visuais;
+- validar estados de snapshot, falha, timeout, abandono, reduced motion e ARIA;
+- não alterar backend, contratos, integrações, assets ou dados neste ciclo.
 
 ### Regra de precedência
 
@@ -68,8 +68,8 @@ validado.
 
 ### DASHBOARD-05 — Visão Gerencial HD na aba CEO
 
-Status: não autorizado neste momento; depende da conclusão do discovery HubSpot,
-do denominador de Customer Success e do catálogo de métricas executivas.
+Status: autorizado para reconstrução visual no macro-lote `DASHBOARD VISUAL
+SYSTEM V1`; contratos, métricas, denominadores e fontes permanecem congelados.
 
 Superfície-alvo: `/admin/analytics?tab=ceo`.
 
@@ -96,9 +96,10 @@ Escopo obrigatório:
 - capturar a tela real antes/depois e registrar decisões de design, contratos
   consumidos e limitações de dados.
 
-Critério de parada: aprovação visual do Product Owner antes de propagar o padrão
-para as demais áreas do Dashboard. Usar `frontend-design` antes da implementação
-e `web-design-guidelines` na revisão final.
+Critério de parada: concluir a reconstrução do shell, Visão Geral, Comercial e
+as superfícies autorizadas, executar duas rodadas de QA visual e registrar as
+limitações antes da revisão visual do Product Owner. Usar `frontend-design`
+antes da implementação e `web-design-guidelines` na revisão final.
 
 ### DASHBOARD-06 — Fonte financeira alinhada ao cabeçalho da aba Financeiro
 

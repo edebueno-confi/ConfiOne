@@ -68,7 +68,7 @@ export function AnalyticsShell() {
   const ActiveComponent = activeDomain?.Component;
 
   return (
-    <div className="gso-screen-frame gso-analytics-shell gso-pilot-shell flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
+    <div className="gso-screen-frame gso-analytics-shell gso-pilot-shell gso-visual-v1-shell flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
       <header className="gso-screen-header gso-workspace-header shrink-0 border-b border-[color:var(--minimal-border)] px-5 py-3 sm:px-6">
         <div className="flex min-h-12 flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <div className="min-w-0">
@@ -90,22 +90,6 @@ export function AnalyticsShell() {
             return <button key={domain.key} type="button" onClick={() => { const next = normalizeAnalyticsSearch(location.search); next.set('tab', analyticsTabForDomain(domain.key)); if (domain.key !== 'support') next.delete('pipeline'); navigate({ pathname: '/admin/analytics', search: `?${next.toString()}` }); }} aria-current={isActive ? 'page' : undefined} title={domain.description} className={`gso-workspace-tab flex-none whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-action)] focus-visible:ring-offset-2 ${isActive ? 'text-[color:var(--minimal-text)]' : 'text-[color:var(--minimal-text-secondary)] hover:text-[color:var(--minimal-text)]'}`}>{domain.label}</button>;
           })}
         </nav>
-        <label className="gso-analytics-domain-select mt-2">
-          <span>Área do dashboard</span>
-          <select
-            value={activeDomain?.key ?? ''}
-            onChange={(event) => {
-              const domain = visibleDomains.find((item) => item.key === event.target.value);
-              if (!domain) return;
-              const next = normalizeAnalyticsSearch(location.search);
-              next.set('tab', analyticsTabForDomain(domain.key));
-              if (domain.key !== 'support') next.delete('pipeline');
-              navigate({ pathname: '/admin/analytics', search: `?${next.toString()}` });
-            }}
-          >
-            {visibleDomains.map((domain) => <option key={domain.key} value={domain.key}>{domain.label}</option>)}
-          </select>
-        </label>
       </header>
       <div className="gso-analytics-content min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
         <Suspense fallback={<MinimalState loading title="Carregando área do dashboard" description="Estamos preparando os indicadores deste recorte." />}>

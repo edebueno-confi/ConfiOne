@@ -13,10 +13,10 @@ test('MVP-UX-02 mantém os domínios executivos separados', () => {
   assert.match(page, /Pipelines de Suporte prioritários/);
 });
 
-test('Produto e Desenvolvimento são honestamente não configurados', () => {
+test('Produto e Desenvolvimento permanecem fora da superfície publicada', () => {
   assert.match(migration, /'product'.*'not_configured'/s);
   assert.match(migration, /'development'.*'not_configured'/s);
-  assert.match(page, /Fonte ainda não conectada/);
+  assert.doesNotMatch(page, /Produto|Desenvolvimento/);
 });
 
 test('contrato de estado diferencia zero real de vazio', () => {
