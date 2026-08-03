@@ -9,6 +9,8 @@ const csGuard = await read('supabase/migrations/20260802100100_dashboard_cs_deno
 const state = await read('apps/web/src/features/analytics/analytics-state.ts');
 const ui = await read('apps/web/src/features/analytics/analytics-ui.tsx');
 const shell = await read('apps/web/src/features/analytics/AnalyticsShell.tsx');
+const retryMetric = await read('supabase/migrations/20260803120000_dashboard_hubspot_retry_count_v1.sql');
+const hubspotWorker = await read('supabase/functions/hubspot-orchestrator-worker/index.ts');
 
 test('o contrato publica somente estados canônicos das fontes', () => {
   for (const status of ['never_synced', 'syncing', 'fresh', 'stale', 'partial', 'failed', 'unavailable']) {
@@ -36,6 +38,15 @@ test('o shell lê status agregado de HubSpot e OMIE', () => {
   assert.match(shell, /sourceStatus\?\.hubspot/);
   assert.match(shell, /sourceStatus\?\.omie/);
   assert.doesNotMatch(shell, /getLatestSyncRun/);
+});
+
+test('progresso do HubSpot conta somente retries adicionais', () => {
+  assert.match(retryMetric, /sum\(greatest\(item\.attempts - 1, 0\)\)/);
+  assert.doesNotMatch(retryMetric, /sum\(item\.attempts\)/);
+});
+
+test('empresas compartilhadas respeitam o watermark incremental do HubSpot', () => {
+  assert.match(hubspotWorker, /fetchCompanies\([\s\S]*item\.source_updated_after_ms/);
 });
 
 console.log('analytics-source-status-contract: ok');

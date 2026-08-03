@@ -47,7 +47,11 @@ Deno.serve(async (req) => {
         const rows = records.map((r) => toDealStagingRow(r, item.pipeline_id, item.run_id, Number(item.page_number)));
         if (rows.length) { const { error } = await client.from('analytics_hubspot_deal_staging').upsert(rows, { onConflict: 'parent_run_id,deal_id' }); if (error) throw error; }
       } else if (item.object_type === 'shared') {
-        const companies = await (await import('../_shared/hubspot.ts')).fetchCompanies(['name','domain','cnpj','aftersale___mrr','status_do_cliente___aftersale','status_do_contrato','cs_owner___aftersale'], token);
+        const companies = await (await import('../_shared/hubspot.ts')).fetchCompanies(
+          ['name','domain','cnpj','aftersale___mrr','status_do_cliente___aftersale','status_do_contrato','cs_owner___aftersale'],
+          token,
+          item.source_updated_after_ms ? Number(item.source_updated_after_ms) : undefined,
+        );
         if (companies.length) { const rows = companies.map((r) => ({ company_id:r.id,name:r.properties.name??null,domain:r.properties.domain??null,tax_id:(r.properties.cnpj??'').replace(/\D/g,'')||null,mrr:Number(r.properties.aftersale___mrr??0)||0,client_status:r.properties.status_do_cliente___aftersale??null,contract_status:r.properties.status_do_contrato??null,cs_owner_id:r.properties.cs_owner___aftersale??null,raw:r.properties,synced_at:new Date().toISOString() })); for (let offset = 0; offset < rows.length; offset += 500) { const { error } = await client.from('hubspot_companies').upsert(rows.slice(offset, offset + 500),{onConflict:'company_id'}); if(error) throw error; } }
         const owners = await fetchOwners(token); if (owners.length) { const rows=owners.map((o)=>({owner_id:o.ownerId,email:o.email,first_name:o.firstName,last_name:o.lastName,full_name:o.fullName,archived:o.archived,raw:o.raw,synced_at:new Date().toISOString()})); const {error}=await client.from('hubspot_owners').upsert(rows,{onConflict:'owner_id'}); if(error) throw error; }
         for (const objectType of ['deals', 'tickets'] as const) {
