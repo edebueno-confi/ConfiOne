@@ -15,7 +15,7 @@
 - QA final: 80/80 capturas nos cinco viewports e dois temas, sem falha de rota,
   HTTP ≥400 ou overflow horizontal.
 - Validação: contracts/web typecheck, build, secret scan, quality gates e 31
-  testes focados de UI passaram. A suíte Analytics ampla ficou 90/94 por quatro
+  testes focados de UI passaram. A suíte Analytics ampla ficou 91/94 por três
   falhas fora do escopo visual.
 - Relatório: `docs/reports/2026-08-03_dashboard-visual-density-v1-1.md`.
 

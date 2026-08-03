@@ -20,7 +20,7 @@
 
 - Typechecks, build, secret scan, quality changed/module e suíte focada UI
   passaram.
-- A suíte Analytics ampla permanece parcial: 90/94, com quatro falhas fora do
+- A suíte Analytics ampla permanece parcial: 91/94, com três falhas fora do
   escopo visual e preexistentes no runner/diagnóstico/status.
 - Nenhuma sincronização externa foi acionada para produzir evidência.
 

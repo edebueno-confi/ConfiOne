@@ -115,7 +115,7 @@ Este relatório é a evidência delta do macro-lote. O plano corrente, `PROJECT_
 - `npm run web:build`: passou.
 - `npm run local:qa:secret-scan`: passou, 0 matches.
 - Suíte focada UI: 31/31 passou.
-- Suíte Analytics ampla: 90/94 passou; quatro falhas são anteriores ao delta visual e estão fora do escopo (runner, diagnóstico, status sem sucesso e contrato de origem). Nenhuma falha foi causada por backend alterado neste lote.
+- Suíte Analytics ampla: 91/94 passou; três falhas permanecem fora do escopo visual (runner, diagnóstico e status sem sucesso). Nenhuma falha foi causada por backend alterado neste lote.
 - `npm run supabase:lint:db`: passou com warnings não bloqueantes preexistentes.
 
 ## 27. Matriz inicial
@@ -178,12 +178,12 @@ Branch: `codex/dashboard-visual-density-v1-1-20260803`. O HEAD documental é `0e
 
 ## 37. Limitações
 
-Não foi executada sincronização HubSpot/OMIE, não foram usadas credenciais, não foi feito deploy/push e não foi validado o overlay com um ciclo externo real. A suíte ampla tem quatro falhas preexistentes fora do delta.
+Não foi executada sincronização HubSpot/OMIE, não foram usadas credenciais, não foi feito deploy/push e não foi validado o overlay com um ciclo externo real. A suíte ampla tem três falhas fora do delta.
 
 ## 38. Backlog residual
 
 1. Autorizar e executar uma sincronização real read-only controlada para validar o fluxo completo e o overlay UI-05.
-2. Resolver as quatro falhas de contratos amplos em lote técnico separado.
+2. Resolver as três falhas de contratos amplos em lote técnico separado.
 3. Validar denominador de Customer Success e documentação de origem dos dados.
 4. Aprovar visualmente V1.1 antes de propagar ajustes adicionais a outras superfícies.
 
