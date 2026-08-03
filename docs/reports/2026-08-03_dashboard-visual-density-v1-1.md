@@ -133,7 +133,7 @@ As correções foram concentradas em `index.css`, no frame executivo, no metadat
 
 ## 24. Qualidade
 
-`quality:changed`, `quality:module` para Analytics e Components passaram com zero findings confirmados. O lint de banco passou com warnings preexistentes de variáveis/parâmetro não lidos.
+`quality:changed`, `quality:module` para Analytics e Components passaram com zero findings confirmados. Settings passou com seis candidatos arquiteturais preexistentes de acesso direto a tabelas, sem blocker confirmado. O lint de banco passou com warnings preexistentes de variáveis/parâmetro não lidos.
 
 ## 25. Governança documental
 
@@ -148,7 +148,7 @@ Este relatório é a evidência delta do macro-lote. O plano corrente, `PROJECT_
 - `npm run web:build`: passou.
 - `npm run local:qa:secret-scan`: passou, 0 matches.
 - Suíte focada UI: 31/31 passou.
-- Suíte Analytics ampla: 91/94 passou; três falhas permanecem fora do escopo visual (runner, diagnóstico e status sem sucesso). Nenhuma falha foi causada por backend alterado neste lote.
+- Suíte ampliada Analytics + Settings: 103/105 passou. As duas falhas reproduzidas isoladamente são `analytics-cs-async-runner.test.mjs` (expectativa de `runnerMessage(error)` em Edge Function) e `analytics-diagnostic-runtime.test.mjs` (expectativa de `runnerMessage(error)` no diagnóstico); ambas estão fora do escopo visual e não foram alteradas para preservar o congelamento de backend.
 - `npm run supabase:lint:db`: passou com warnings não bloqueantes preexistentes.
 
 ## 27. Matriz inicial
@@ -203,6 +203,7 @@ Em `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\motion` for
 - Pacote final atualizado: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v2.zip`, 40.895.876 bytes, SHA-256 `054641874E4E0878A1F56A4574B1202157434F73207450DC8BA6B18512CDAABC`.
 - Pacote final desta revisão: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v3.zip`, 40.897.450 bytes, SHA-256 `68B48373D3AA4A785CA40FD38742B03DF628B5150BE02062DFE85A2D965DE78B`.
 - Pacote final após a correção do status: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v4.zip`, 40.897.554 bytes, SHA-256 `979B514BF2901473A447242A32A8FBB9BCA4EEC623B913445D6D8A47EE044986`.
+- Pacote final com a matriz ampliada: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v5.zip`, 40.897.769 bytes, SHA-256 `AC19DEC944B2C51F5673BB33FF4AD0C20B6E555258B4132D562ED11EC3BFA373`.
 - Pacote para revisão: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence.zip`, 16.266.594 bytes, SHA-256 `2B037C236CADBCB8FB9F86E5B282612EEE567F37C951AE8E8ECA0DC147E6935B`.
 
 ## 33. Arquivos
