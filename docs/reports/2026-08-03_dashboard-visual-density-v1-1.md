@@ -188,10 +188,12 @@ Removidos: status duplicado no título da Visão Geral, eyebrow duplicado, preen
 - `6527c75 docs(ui): registrar densidade e QA do dashboard` — relatório e registros canônicos.
 - `0ed6f61 docs(ui): fechar relatório do lote visual` — HEAD/commits finais.
 - `5f2186d docs(ui): atualizar contagem final de testes` — validação ampla corrigida.
+- `fff25ff refactor(ui): compactar hierarquia e estados visuais` — ajustes finais de overview, Financeiro, histórico, integrações e loading.
+- `dd26d09 docs(ui): fechar evidências do lote de densidade` — documentação, matriz final e limites.
 
 ## 36. Git final
 
-Branch: `codex/dashboard-visual-density-v1-1-20260803`. A divergência observada no fechamento desta revisão é `origin/main...HEAD = 0 126`; o HEAD final deve ser lido por `git rev-parse --short HEAD` após o commit documental.
+Branch: `codex/dashboard-visual-density-v1-1-20260803`. A divergência observada antes deste registro era `origin/main...HEAD = 0 128`; o HEAD final deve ser lido por `git rev-parse --short HEAD` após o commit documental.
 
 ## 37. Limitações
 
