@@ -8,8 +8,10 @@
 - A camada visual High-Density foi aplicada ao shell, Dashboard e Configurações
   sem tocar em métricas, fontes, contratos, sincronização ou banco.
 - Typechecks, build, secret scan, quality gates e 98/98 testes focados passaram.
-- QA visual autenticado está pendente por `JWT issued at future`, sem reset de
-  banco; a limitação está detalhada no relatório corrente.
+- QA visual autenticado está parcialmente tentado: o smoke encontrou ausência
+  de memberships na matriz QA e sessões posteriores encontraram `JWT issued at
+  future`. Nenhum reset ou hidratação foi executado; a limitação está detalhada
+  no relatório corrente.
 - Relatório: `docs/reports/2026-08-03_high-density-ui-rebuild.md`.
 
 ## Próximo lote recomendado

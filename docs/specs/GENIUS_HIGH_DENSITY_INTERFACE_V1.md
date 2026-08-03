@@ -190,14 +190,58 @@ associados, botões reais para ações e links reais para navegação. Selects e
 inputs mantêm contraste em light/dark. Não usar `transition: all`. Longos
 conteúdos devem truncar ou quebrar com intenção; não criar overflow global.
 
-## 25. Responsividade
+## 25. Densidade cognitiva e semântica de decisão
+
+High-Density combina alta densidade funcional com baixa densidade perceptiva.
+Espaço negativo é mantido quando separa grupos ou melhora o escaneamento; só é
+removido quando não possui função. A leitura segue orientação, resultado,
+explicação e ação/detalhe, com apenas um ponto dominante e poucos elementos
+secundários.
+
+KPIs primários respondem à pergunta central e recebem o maior contraste.
+Indicadores secundários apoiam a interpretação; contexto, diagnóstico e
+qualidade ficam próximos da métrica ou em detalhe. Não usar seis KPIs apenas
+porque há espaço, nem transformar todos os indicadores em elementos dominantes.
+
+Cor é semântica: azul informa ou orienta ação, verde indica resultado válido ou
+positivo, vermelho indica falha/perda/risco, âmbar indica atenção e magenta
+assina a marca ou destaca um ponto. Ganhos, perdas e variações dependem do
+significado do KPI, não apenas do sinal matemático. Alertas devem explicar o
+que ocorreu, sua gravidade, contexto e ação possível.
+
+Gráficos preservam as regras de granularidade e temporalidade existentes. A
+paleta de cada gráfico é limitada e tabelas usam cor apenas para status,
+prioridade, risco, resultado ou ação pendente. A interface deve responder em
+até 30 segundos onde estou, o que mudou, o que exige atenção e onde agir.
+
+## 26. Performance
+
+O sistema visual não adiciona biblioteca pesada, não usa `transform: scale()`
+nem animação como simulador de progresso. CSS compartilhado deve ser carregado
+junto das superfícies que o utilizam; transições são específicas e
+`prefers-reduced-motion` desativa movimento não essencial. Nenhum dado,
+consulta, polling ou chamada de integração é criado pela camada visual.
+
+## 27. Critérios de revisão visual
+
+Para cada superfície, a revisão deve responder: o olho sabe onde começar; o
+estado geral é compreendido; os elementos prioritários estão claros; há
+competição excessiva; há respiro; a cor aponta para algo relevante; o alerta
+tem ação; a primeira dobra responde à pergunta central; a tabela é escaneável;
+o usuário sabe onde agir; e a tela parece madura, humana e não genérica.
+
+Problemas P0, P1 e P2 devem ser corrigidos antes do aceite. P3 é registrado no
+backlog. A revisão considera simultaneamente densidade, carga cognitiva,
+contraste, acessibilidade, overflow, console, requests e estados reais.
+
+## 28. Responsividade
 
 Em tablet, reduzir colunas sem esconder informação crítica. Em mobile, ordenar
 conteúdo por prioridade, transformar tabelas em linhas legíveis ou rolagem
 interna controlada e preservar ações essenciais. Não duplicar shell nem criar
 scroll horizontal da página.
 
-## 26. Validação e evidência
+## 29. Validação e evidência
 
 Obrigatórios: contracts typecheck, web typecheck, build, testes focados
 existentes, secret scan, `git diff --check`, quality changed/module/staged e
@@ -205,14 +249,43 @@ QA browser real nas cinco larguras em light/dark. Registrar screenshots reais,
 rotas, console, requests, overflow, teclado, foco e reduced motion. Separar
 validado, parcialmente validado, não validado e dependente de credencial.
 
-## 27. Sequência de commits
+## 30. Skills e método aplicados
+
+As skills aplicáveis foram lidas antes da implementação e orientaram o lote:
+
+- `C:\Users\edebu\.codex\skills\frontend-design\SKILL.md` — composição
+  frontend e implementação direta; aplicado.
+- `C:\Users\edebu\.codex\skills\gso-operational-design\SKILL.md` — densidade
+  operacional e fonte factual; aplicado.
+- `C:\Users\edebu\.codex\skills\ux-friction-analyzer\SKILL.md` — fricções,
+  carga cognitiva e estados; aplicado.
+- `C:\Users\edebu\.codex\plugins\cache\openai-curated-remote\product-design\0.1.52\skills\index\SKILL.md` —
+  routing de design e revisão; aplicado.
+- `C:\Projetos\GSO-old\.agents\skills\web-design-guidelines\SKILL.md` —
+  semântica, foco, motion e overflow; aplicado.
+- `C:\Projetos\GSO-old\.agents\skills\genius-code-quality\SKILL.md` —
+  quality gates e separação de findings; aplicado.
+- `C:\Projetos\GSO-old\.agents\skills\genius-documentation-governance\SKILL.md` —
+  precedência documental e auditoria; aplicado.
+- `C:\Users\edebu\.codex\plugins\cache\openai-curated-remote\data-analytics\0.2.8-13ceeea1f599\skills\design-kpis\SKILL.md` —
+  hierarquia de KPI e leitura executiva; aplicado.
+- `C:\Users\edebu\.codex\skills\screenshot\SKILL.md` e
+  `C:\Users\edebu\.codex\skills\playwright\SKILL.md` — evidência real e
+  QA browser; aplicados na tentativa oficial, limitada pela autorização local.
+- `C:\Users\edebu\.codex\skills\verification-before-completion\SKILL.md` —
+  distinção entre validado, parcial e bloqueado; aplicado.
+
+Não foram usadas skills/ferramentas de geração de imagem, prototipação,
+blueprint ou mockup: rejeitadas por decisão explícita do Product Owner.
+
+## 31. Sequência de commits
 
 Separar somente por tema real: direção documental; tokens/primitivos; shell;
 Dashboard; Configurações; responsividade/temas; acessibilidade/testes; QA e
 documentação final. Não criar commits artificiais e não incluir exclusões ou
 referências preexistentes sem revisão explícita do diff.
 
-## 28. Critério de conclusão
+## 32. Critério de conclusão
 
 O lote só termina quando a implementação estiver coerente com as referências,
 os dados continuarem contratuais, as validações objetivas forem executadas e

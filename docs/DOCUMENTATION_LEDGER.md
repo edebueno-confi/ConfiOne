@@ -9,8 +9,9 @@
   estados visuais; sem alteração de backend, contratos, banco ou credenciais.
 - Evidência automatizada: build, typechecks, secret scan, quality gates e
   98/98 testes focados aprovados.
-- Limitação: QA visual autenticado bloqueado por `JWT issued at future`; quatro
-  falhas ampliadas preexistentes permanecem registradas no relatório.
+- Limitação: smoke oficial em `4178` encontrou `/access-denied` porque a matriz
+  QA não está hidratada; sessões posteriores encontraram `JWT issued at future`.
+  Quatro falhas ampliadas preexistentes permanecem registradas no relatório.
 
 ## Precedência
 

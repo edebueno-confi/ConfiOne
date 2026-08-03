@@ -1086,6 +1086,28 @@ Tokens de implementação:
 - números com tabular nums;
 - foco visível, reduced motion e `color-scheme` coerente com o tema.
 
+Adendo canônico — densidade cognitiva e semântica: High-Density é alta
+densidade funcional com baixa densidade perceptiva. O espaço negativo que
+separa grupos permanece intencional; não se preenche a tela apenas para
+aumentar a contagem de elementos. A leitura segue orientação, resultado,
+explicação e ação/detalhe, com apenas um ponto dominante e poucos elementos
+secundários.
+
+KPIs primários respondem à pergunta central. Secundários, contexto, diagnóstico
+e qualidade de dados ficam subordinados e próximos do indicador relacionado.
+Azul informa/orienta, verde indica positivo/válido, vermelho indica falha/perda,
+âmbar indica atenção e magenta é assinatura da marca. A cor precisa explicar
+por que o elemento merece atenção; não substitui texto, rótulo ou ícone.
+
+Ganhos, perdas e variações são coloridos pelo significado do KPI, não pelo
+sinal matemático. Alertas devem informar ocorrência, gravidade, contexto e
+ação. Gráficos preservam as regras de temporalidade e granularidade vigentes,
+usando paleta limitada; tabelas reservam cor para status, prioridade, risco,
+resultado ou ação pendente. Na revisão visual, verificar início do olhar,
+estado geral, hierarquia, competição, respiro, semântica de cor, ação
+contextual, primeira dobra, escaneabilidade e percepção humana. P0/P1/P2 são
+corrigidos antes do aceite; P3 entra no backlog.
+
 O Blueprint V2 anterior fica superado para implementação quando conflitar com
 as referências atuais de `Dashboard PO` e `Suporte e conversas`. Métricas,
 contratos, read models, permissões e estados de dados permanecem imutáveis.

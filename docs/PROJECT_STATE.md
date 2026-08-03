@@ -4,7 +4,7 @@
 
 - Checkout canônico: `C:\Projetos\GSO-old`.
 - Branch: `codex/high-density-ui-rebuild-20260803`, sem upstream; HEAD
-  `7d93403`.
+  `ee69642` antes deste fechamento documental.
 - Preservação: `refs/archive/high-density-ui-rebuild-start-20260803` e bundle
   externo em `C:\Projetos\GSO-artifacts\high-density-ui-rebuild-20260803`.
 - Especificação corrente: `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md`.
@@ -16,8 +16,10 @@
 - Suíte ampliada: 117/121; quatro falhas preexistentes de contratos de runner e
   estados estão registradas em
   `docs/reports/2026-08-03_high-density-ui-rebuild.md`.
-- QA visual autenticado: não concluído por `JWT issued at future` no ambiente
-  local; não houve reset ou alteração do banco.
+- QA visual autenticado: parcialmente tentado. O smoke oficial em `4178` foi
+  redirecionado para `/access-denied` por ausência de memberships QA; contextos
+  Playwright isolados posteriores encontraram `JWT issued at future` no fluxo
+  de sessão da aplicação. Não houve reset, hidratação ou alteração do banco.
 
 ## Precedência
 

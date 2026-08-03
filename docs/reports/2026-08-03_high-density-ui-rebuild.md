@@ -12,6 +12,30 @@ Status geral: **parcialmente validado**. A validação estrutural e automatizada
 passou; a captura visual autenticada completa ficou dependente do ambiente local
 de autenticação.
 
+## Auditoria documental e skills
+
+`genius-documentation-governance changed` terminou como **consistente com
+ressalvas**, sem bloqueadores. As ressalvas são contradições históricas entre
+README de contratos e relatórios antigos; não afetam a especificação High-Density
+nem foram reescritas neste lote.
+
+Skills aplicadas, com orientação incorporada:
+
+- `frontend-design` — implementação direta da composição frontend;
+- `gso-operational-design` — leitura operacional e dados factuais;
+- `ux-friction-analyzer` — carga cognitiva, estados e fricções;
+- `product-design:index` — roteamento e revisão de design;
+- `web-design-guidelines` — semântica, foco, motion, overflow e contraste;
+- `data-analytics:design-kpis` — hierarquia e prioridade de KPIs;
+- `genius-code-quality` — gates de qualidade e findings;
+- `genius-documentation-governance` — precedência, auditoria e ressalvas;
+- `playwright` e `screenshot` — tentativa de QA real;
+- `verification-before-completion` — classificação objetiva de validação.
+
+Skills de geração de imagem, blueprint, mockup e prototipação foram rejeitadas
+porque o Product Owner determinou implementação direta usando as referências
+existentes.
+
 ## Escopo implementado
 
 - stylesheet High-Density V1 compartilhado por Analytics e Configurações;
@@ -78,12 +102,21 @@ foram mascaradas nem corrigidas como parte de uma alteração visual.
 
 A captura autenticada real nas dimensões 1920x1080, 1440x900, 1024x768,
 768x1024 e 390x844, nos temas claro e escuro, não pôde ser concluída. O acesso
-local autenticado retornou `JWT issued at future`, e a documentação local de QA
-não possui credencial operacional válida. Não houve reset, alteração de banco,
-uso de credencial privilegiada, sincronização externa ou tentativa de contorno.
+local foi tentado no smoke oficial em um servidor isolado na porta 4178. A
+autenticação renovou, mas o usuário QA `platform_admin` foi redirecionado para
+`/access-denied`. A verificação somente leitura mostrou que os usuários QA
+administrativo e dashboard viewer existem e têm seus papéis globais, porém não
+possuem memberships de tenant no banco atualmente em execução. A matriz QA
+esperada não está hidratada: `local:qa:verify` encontrou 3 deals, 3 tickets
+HubSpot, 6 recebíveis, 4 roles e 0 schedules desligados, em vez dos valores da
+fixture. Não houve reset, hidratação, alteração de banco, uso de credencial
+privilegiada, sincronização externa ou tentativa de contorno.
 
 O servidor local já existente em `127.0.0.1:4173` permaneceu preservado; nenhum
 novo servidor em `4174` foi iniciado neste lote.
+
+O smoke oficial em `4178` foi encerrado automaticamente após a falha de
+autorização; nenhuma porta adicional ficou aberta.
 
 ## Git e preservação
 
