@@ -200,10 +200,11 @@ Removidos: status duplicado no título da Visão Geral, eyebrow duplicado, preen
 - `dd26d09 docs(ui): fechar evidências do lote de densidade` — documentação, matriz final e limites.
 - `8dfed64 docs(ui): registrar commits e divergência finais` — fechamento do inventário Git.
 - `c0d1672 refactor(ui): fechar estados visuais do gênio` — estados permanentes de falha, timeout e abandono do UI-05.
+- `6446dfc docs(ui): registrar QA final do UI-05` — manifesto, reduced-motion e pacote atualizado.
 
 ## 36. Git final
 
-Branch: `codex/dashboard-visual-density-v1-1-20260803`. HEAD no fechamento deste ciclo: `c0d1672`; divergência `origin/main...HEAD = 0 131`. O worktree será limpo após o commit documental.
+Branch: `codex/dashboard-visual-density-v1-1-20260803`. HEAD final deste ciclo: `6446dfc`; divergência `origin/main...HEAD = 0 132`. Worktree limpo após o fechamento documental.
 
 ## 37. Limitações
 
