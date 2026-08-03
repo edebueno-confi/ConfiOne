@@ -11,6 +11,28 @@ Registrar o backlog oficial de polimento e evolucao de UX das superficies intern
 
 ## Itens pendentes
 
+## Decisão do Product Owner — separação de escopos — 2026-08-02
+
+O relatório anterior que agrupava `UI-05`, `DASHBOARD-05` e `DASHBOARD-06` está
+superado. Os itens abaixo têm naturezas, dependências e lotes diferentes.
+
+### UI-05 — Gênio em ação
+
+Status: aprovado conceitualmente; aguardando conclusão do discovery HubSpot e
+autorização de implementação.
+
+- micro-lote isolado de design system, motion, loading e feedback de sistema;
+- especificação executável: `docs/specs/UI_05_GENIO_EM_ACAO_V1.md`;
+- implementar somente depois de concluir o discovery, decidir o denominador de
+  Customer Success e aprovar o catálogo de métricas executivas;
+- validar visualmente o piloto antes de iniciar `DASHBOARD-05`;
+- não alterar backend, contratos, integrações, assets ou CSS neste ciclo.
+
+### Regra de precedência
+
+O bloco acima e a especificação UI-05 prevalecem sobre qualquer recomendação
+histórica de implementar os três itens como um único macro-lote.
+
 ## Fila adicionada em 2026-08-02 — Knowledge/editor, histórico e exportação
 
 ### DASHBOARD-04 — Sincronização controlada na Visão Geral
@@ -46,7 +68,8 @@ validado.
 
 ### DASHBOARD-05 — Visão Gerencial HD na aba CEO
 
-Status: pendente de execução; item adicionado à fila em 02/08/2026.
+Status: não autorizado neste momento; depende da conclusão do discovery HubSpot,
+do denominador de Customer Success e do catálogo de métricas executivas.
 
 Superfície-alvo: `/admin/analytics?tab=ceo`.
 
@@ -79,7 +102,7 @@ e `web-design-guidelines` na revisão final.
 
 ### DASHBOARD-06 — Fonte financeira alinhada ao cabeçalho da aba Financeiro
 
-Status: pendente de execução; item adicionado à fila em 02/08/2026.
+Status: backlog técnico de runtime e dados; não é item do próximo lote visual.
 
 Superfície-alvo: aba **Financeiro** do Dashboard Gerencial.
 
@@ -122,6 +145,68 @@ Direção de design: cockpit editorial enxuto, lista dominante, ações de gest�
 toolbar/drawer contextual, hierarquia tipográfica clara e uma única indicação
 de estado ativo. Usar `frontend-design` antes da implementação e
 `web-design-guidelines` depois do código.
+
+### KNOWLEDGE-03.1 — Propriedades do artigo em dark mode
+
+Status: pendente de execução; item adicionado à fila em 02/08/2026 a partir de
+evidência visual da rota `/admin/knowledge/new`.
+
+Superfície-alvo: drawer/painel **Propriedades do artigo**, incluindo os campos
+de categoria, tags, visibilidade, espaço público, status editorial, pré-visualização
+e informações do artigo.
+
+Problema observado: no modo escuro, a composição mistura superfícies claras e
+escuras e deixa textos auxiliares, labels e estados com contraste insuficiente;
+o painel não parece seguir de forma consistente os tokens do tema dark.
+
+Critérios de aceite:
+
+- usar tokens semânticos do design system para fundo, borda, texto primário,
+  texto secundário, foco, seleção, erro e estado editorial;
+- garantir contraste legível em todos os campos, contadores, helper text,
+  badges, cards de status e seções de pré-visualização;
+- revisar select, input de tags, botão `+`, estados desabilitados, hover, foco
+  por teclado e scrollbar no modo dark;
+- manter a mesma semântica e hierarquia no modo claro, sem regressão de responsividade
+  em 390, 768, 1024 e 1440px;
+- validar a rota com captura real antes/depois e testes focados de acessibilidade,
+  sem alterar contratos, permissões, RLS ou inventar dados editoriais.
+
+### KNOWLEDGE-03.2 — Editor e propriedades em composição persistente
+
+Status: pendente de execução; item adicionado à fila em 02/08/2026 a partir de
+evidência visual da tela `/admin/knowledge/new`.
+
+Direção de design: cockpit editorial de densidade controlada, com o editor
+deslocado para a esquerda e as **Propriedades do artigo** sempre visíveis em
+uma coluna lateral fixa/sticky à direita. O painel não deve depender de drawer
+sobreposto para revelar campos essenciais nem exigir rolagem para alcançar o
+conjunto de propriedades.
+
+Escopo:
+
+- substituir a abertura modal/sobreposta de propriedades por layout persistente
+  de duas colunas quando houver largura suficiente;
+- reservar largura real para categoria, tags, visibilidade, espaço público,
+  status editorial, pré-visualização e informações do artigo;
+- permitir que o editor ocupe a coluna esquerda integralmente, com toolbar e
+  área de edição sem ficar comprimido pelo painel;
+- manter ações de salvar/revisar no cabeçalho sem sobreposição e preservar foco,
+  teclado, acessibilidade e contratos existentes;
+- definir comportamento responsivo explícito para 1024, 768, 390 e 1440px,
+  sem criar uma segunda fonte de verdade para os metadados.
+
+Critérios de aceite:
+
+- em 1440px e 1024px, propriedades essenciais ficam visíveis simultaneamente
+  ao editor, sem drawer obrigatório e sem scroll interno para descobrir campos;
+- o editor permanece utilizável com título, corpo e toolbar visíveis, sem
+  sobreposição horizontal ou perda de foco;
+- em larguras menores, o comportamento de degradação é deliberado e acessível,
+  documentado antes da implementação, sem simplesmente esconder propriedades;
+- validar claro/escuro, foco por teclado, contraste, overflow e capturas reais
+  antes/depois; usar `frontend-design` antes do código e registrar a decisão
+  visual no lote.
 
 ### DASHBOARD-03 — Exportação visual e PDF profissional
 

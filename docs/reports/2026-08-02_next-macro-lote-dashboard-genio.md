@@ -1,5 +1,12 @@
 # Relatório de recomendação do próximo macro-lote — Dashboard e Gênio em ação
 
+> **Documento superado pela decisão do Product Owner de 2026-08-02.**
+> Este relatório registra a recomendação anterior apenas para proveniência. Não
+> executar o macro-lote combinado descrito abaixo. A ordem vigente e a
+> especificação executável estão em
+> `docs/reports/2026-08-02_ui-05-specification-delta.md` e
+> `docs/specs/UI_05_GENIO_EM_ACAO_V1.md`.
+
 ## 1. Resumo executivo
 
 - **Escopo recomendado:** macro-lote controlado de direção visual para o

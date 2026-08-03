@@ -223,16 +223,16 @@
 - Resultado parcialmente validado: denominador CS, fonte autoritativa de
   Conversas/Feedback e Chrome autenticado aguardam validação/decisão.
 
-# Recomendação do próximo macro-lote visual — 2026-08-02
+# Revisão do próximo macro-lote visual — decisão do Product Owner — 2026-08-02
 
-- Relatório persistido: `docs/reports/2026-08-02_next-macro-lote-dashboard-genio.md`.
-- Item sugerido: `UI-05`, removendo a borda do card do Gênio em ação e propondo
-  voo, halo e partículas mágicas com alternativa para redução de movimento.
-- Copy sugerida: **O Gênio está tecendo a próxima visão**; o texto auxiliar
-  preserva a confirmação do estado publicado como condição de liberação.
-- Direção: piloto restrito à Visão Geral/CEO, junto de `DASHBOARD-05` e
-  `DASHBOARD-06`, com aprovação visual antes de propagar o padrão.
-- Status: proposta documental; não implementado e não aprovado visualmente.
+- Delta persistido: `docs/reports/2026-08-02_ui-05-specification-delta.md`.
+- Especificação única: `docs/specs/UI_05_GENIO_EM_ACAO_V1.md`.
+- `UI-05` foi aprovado conceitualmente como micro-lote isolado, sem
+  implementação neste ciclo. A copy anterior foi substituída pela copy aprovada.
+- `DASHBOARD-05` depende do discovery HubSpot, denominador de CS e catálogo de
+  métricas; `DASHBOARD-06` foi separado para backlog técnico de runtime/dados.
+- Ordem registrada: discovery, denominadores, catálogo, UI-05, aprovação visual,
+  DASHBOARD-05 e depois DASHBOARD-06 em lote próprio.
 
 # DOCUMENTATION_LEDGER.md
 

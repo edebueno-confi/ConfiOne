@@ -82,19 +82,20 @@ declarado implementado por este registro documental.
   usar `source_type=CHAT` ou propriedade CSAT/NPS/CES isoladamente como prova de
   fonte autoritativa.
 
-# Recomendação do próximo macro-lote — Dashboard e Gênio em ação
+# Revisão do próximo macro-lote — decisão do Product Owner — 2026-08-02
 
-- Relatório: `docs/reports/2026-08-02_next-macro-lote-dashboard-genio.md`.
-- `UI-05`: remover a borda visual do card de loading e criar uma composição em
-  que o Gênio pareça voar e fazer magia, preservando o estado publicado real,
-  timeout, erro, acessibilidade e `prefers-reduced-motion`.
-- Copy recomendada: **O Gênio está tecendo a próxima visão**. Ele está fazendo
-  magia com as fontes conectadas para deixar o painel pronto para você. A tela
-  será liberada quando o estado publicado for confirmado.
-- O piloto deve combinar `DASHBOARD-05`, `DASHBOARD-06` e `UI-05` somente na
-  Visão Geral/CEO e aguardar aprovação visual antes de propagar o padrão.
-- Nenhuma métrica, contrato, RPC, RLS, integração ou sincronismo novo deve ser
-  implementado dentro deste lote visual.
+- Delta e especificação: `docs/reports/2026-08-02_ui-05-specification-delta.md`
+  e `docs/specs/UI_05_GENIO_EM_ACAO_V1.md`.
+- `UI-05` é um micro-lote isolado de design system, motion, loading e feedback
+  de sincronização. Está aprovado conceitualmente, mas não autorizado para
+  implementação neste ciclo.
+- `DASHBOARD-05` fica bloqueado até a conclusão do discovery HubSpot, decisão do
+  denominador de Customer Success e aprovação do catálogo de métricas.
+- `DASHBOARD-06` sai do lote visual e permanece no backlog técnico de runtime e
+  dados, por depender da consistência entre OMIE, status, snapshot e read model.
+- Ordem obrigatória: discovery HubSpot, denominador CS, catálogo de métricas,
+  micro-lote UI-05, aprovação visual, especificação/implementação DASHBOARD-05
+  e, separadamente, DASHBOARD-06.
 
 # Genius Support OS - Plano operacional vivo
 
