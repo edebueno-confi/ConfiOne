@@ -60,9 +60,10 @@ credenciais, fórmulas, fontes, denominadores ou fluxo de sincronização.
 - Design system atualizado: `docs/design/GENIUS_SUPPORT_OS_DESIGN_SYSTEM.md`.
 - Backlog e plano atualizados para tratar Blueprint V2 como
   `SUPERADO PARA IMPLEMENTAÇÃO`.
-- As referências existentes em `docs/design/blueprint` foram preservadas como
-  estado do worktree; as exclusões e novas referências visuais anteriores a este
-  lote não foram incluídas nos commits.
+- As referências vigentes foram consolidadas em `docs/design/blueprint/Dashboard PO/`
+  e `docs/design/blueprint/Suporte e conversas/` no commit `619dfa8`.
+- Os diretórios visuais antigos foram removidos do índice conforme decisão do
+  Product Owner; o histórico Git permanece preservado.
 
 ## Validação executada
 
@@ -120,13 +121,15 @@ autorização; nenhuma porta adicional ficou aberta.
 
 ## Git e preservação
 
-- HEAD do lote: `7d93403` — `feat(ui): aplicar interface high-density ao cockpit`.
+- HEAD do lote: `619dfa8` — `chore: consolidar referencias visuais do dashboard`.
+- Commits do lote: `0ec5865`, `7d93403`, `ee69642`, `21bc664` e `619dfa8`.
 - Commit documental anterior: `0ec5865` — definição da interface High-Density.
 - Branch: `codex/high-density-ui-rebuild-20260803`, sem upstream.
 - Ref de preservação: `refs/archive/high-density-ui-rebuild-start-20260803`.
 - Bundle externo: `C:\Projetos\GSO-artifacts\high-density-ui-rebuild-20260803\gso-old-pre-ui-rebuild.bundle`.
-- As exclusões e os diretórios de referências visuais que já estavam no worktree
-  foram deixados fora dos commits deste lote.
+- A consolidação das referências visuais foi commitada separadamente em
+  `619dfa8`; não houve reset, limpeza ampla, reescrita de histórico, push ou
+  alteração de backend/banco.
 
 ## Próximo lote recomendado
 

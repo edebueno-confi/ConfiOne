@@ -2,7 +2,7 @@
 
 ## Registro corrente — fechamento High-Density — 2026-08-03
 
-- Branch: `codex/high-density-ui-rebuild-20260803`; HEAD `7d93403`.
+- Branch: `codex/high-density-ui-rebuild-20260803`; HEAD `619dfa8`.
 - Especificação: `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md`.
 - Relatório: `docs/reports/2026-08-03_high-density-ui-rebuild.md`.
 - Escopo: shell, Dashboard Gerencial, domínios analíticos, Configurações e
@@ -12,6 +12,9 @@
 - Limitação: smoke oficial em `4178` encontrou `/access-denied` porque a matriz
   QA não está hidratada; sessões posteriores encontraram `JWT issued at future`.
   Quatro falhas ampliadas preexistentes permanecem registradas no relatório.
+- Referências visuais vigentes: `docs/design/blueprint/Dashboard PO/` e
+  `docs/design/blueprint/Suporte e conversas/`; a consolidação e as exclusões
+  intencionais foram commitadas em `619dfa8`, sem reescrita do histórico.
 
 ## Precedência
 
