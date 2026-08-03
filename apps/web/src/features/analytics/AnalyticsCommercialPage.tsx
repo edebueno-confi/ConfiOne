@@ -104,8 +104,8 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
         <KpiCard state={displayState} temporalType="Posição dos registros" label="Em aberto" value={kpis.openDeals.toLocaleString('pt-BR')} hint="Ainda não fechados" source="Negócios que ainda não chegaram a um estágio de fechado (nem ganho, nem perdido)." />
         <KpiCard state={displayState} temporalType="Fluxo no período" label="Ganhos" value={kpis.wonDeals.toLocaleString('pt-BR')} hint={formatCountLabel(kpis.lostDeals, 'perdido', 'perdidos')} source="Negócios fechados como ganhos no período." />
         <KpiCard state={displayState} temporalType="Fluxo no período" label="Receita ganha" value={formatCurrencyBRL(kpis.wonRevenue)} hint="Negócios ganhos" source="Soma do valor dos negócios ganhos no período." />
-        <KpiCard state={displayState} temporalType="Fluxo no período" label="Conversão" value={formatPercent(kpis.conversionRate)} hint="Ganhos sobre fechados" source="Negócios ganhos divididos pelo total de negócios fechados (ganhos mais perdidos). Os em aberto não entram na conta." tone={kpis.conversionRate >= 0.3 ? 'neutral' : 'warning'} />
-        <KpiCard state={displayState} temporalType="Fluxo no período" label="Ticket médio" value={formatCurrencyBRL(kpis.avgTicket)} hint="Por negócio ganho" source="Receita ganha dividida pela quantidade de negócios ganhos no período." />
+        <KpiCard className="gso-kpi-secondary" state={displayState} temporalType="Fluxo no período" label="Conversão" value={formatPercent(kpis.conversionRate)} hint="Ganhos sobre fechados" source="Negócios ganhos divididos pelo total de negócios fechados (ganhos mais perdidos). Os em aberto não entram na conta." tone={kpis.conversionRate >= 0.3 ? 'neutral' : 'warning'} />
+        <KpiCard className="gso-kpi-secondary" state={displayState} temporalType="Fluxo no período" label="Ticket médio" value={formatCurrencyBRL(kpis.avgTicket)} hint="Por negócio ganho" source="Receita ganha dividida pela quantidade de negócios ganhos no período." />
       </div> : null}
 
       {dataState?.status !== 'empty' ? <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">

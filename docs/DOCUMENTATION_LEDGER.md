@@ -9,7 +9,8 @@
 - Escopo: shell, Dashboard Gerencial, domínios analíticos, Configurações e
   estados visuais; sem alteração de backend, contratos, banco ou credenciais.
 - Evidência automatizada: build, typechecks, secret scan, quality gates e
-  98/98 testes focados aprovados.
+  `git diff --check` aprovados. A reexecução focal de contratos terminou em
+  111/114, com três falhas estruturais conhecidas registradas no relatório.
 - QA real executado: matriz final com 80 capturas nas oito superfícies, cinco
   viewports e dois temas; reteste direcionado do Financeiro com 10 capturas;
   reteste de Configurações com 24 verificações e manifesto UI-05 com cinco
@@ -21,6 +22,10 @@
   foi exercitado em QA interceptado em
   `output/high-density-overview-sync-action-20260803/manifest.json`; nenhuma
   sincronização real foi executada.
+- O Comercial diferencia quatro KPIs primários de Conversão/Ticket médio como
+  indicadores secundários, sem alterar cálculos ou contratos.
+- A seção 25 da especificação canônica registra o adendo de densidade cognitiva,
+  seus dez eixos e quinze perguntas de revisão visual.
 - Correção registrada: leituras de Configurações passaram a ser sob demanda;
   o 403 repetido de `ticket_categories` fora da seção Categorias desapareceu.
 - Referências visuais vigentes: `docs/design/blueprint/Dashboard PO/` e

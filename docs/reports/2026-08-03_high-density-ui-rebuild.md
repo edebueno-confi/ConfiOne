@@ -35,6 +35,11 @@ externa autorizada.
 - O reteste do Financeiro em `output/high-density-finance-retake-20260803/manifest.json`
   confirmou 10/10 capturas, nos cinco viewports e dois temas, sem erros de
   console, falhas de rede, respostas inesperadas ou overflow.
+- Após a revisão do adendo, o reteste do Comercial em
+  `output/high-density-commercial-retake-20260803/manifest.json` confirmou
+  10/10 capturas, nos cinco viewports e dois temas, sem erros de console,
+  falhas de rede, respostas inesperadas ou overflow; a hierarquia visual dos
+  quatro KPIs primários e dois secundários ficou registrada nas capturas.
 
 ## Auditoria documental e skills
 
@@ -59,6 +64,32 @@ Skills aplicadas, com orientação incorporada:
 Skills de geração de imagem, blueprint, mockup e prototipação foram rejeitadas
 porque o Product Owner determinou implementação direta usando as referências
 existentes.
+
+## Revisão crítica do adendo de densidade cognitiva
+
+A revisão foi aplicada às oito superfícies da matriz final, nos estados light e
+dark, usando as capturas reais de `output/high-density-runtime-full-20260803/`.
+As quinze perguntas canônicas foram respondidas para cada superfície: início do
+olhar, estado, prioridades, competição, respiro, cor, alerta, peso do KPI
+secundário, utilidade do gráfico, esforço de leitura, contexto da primeira
+dobra, clareza em 30 segundos, ação, maturidade humana e classificação P0/P1/P2/P3.
+
+| Superfície | Leitura dominante | Tratamento de densidade | Resultado da revisão |
+| --- | --- | --- | --- |
+| Shell | título, estado das fontes e navegação | header baixo; uma aba ativa; ações administrativas subordinadas | sem P0/P1/P2; P3 de refinamento permanece no backlog |
+| Visão Geral | estado agregado, KPIs de período e posição | duas faixas de KPI, mapa de áreas e integridade sem empilhamento ornamental | sem P0/P1/P2; sincronização fica junto do estado das fontes |
+| Comercial | filtros, quatro KPIs primários e dois secundários | Conversão e Ticket médio têm menor escala/peso visual; análises lado a lado | sem P0/P1/P2 confirmado após reteste |
+| Customer Success | disponibilidade da fonte e limites do contrato | valores ausentes permanecem “Indisponível”; denominador não aprovado é explicitado | sem P0/P1/P2; validação de denominador segue pendente de produto/dados |
+| Suporte & Chat | fila, abertos/encerrados e tendência | quatro KPIs compactos, filtros em linha e origem abaixo | sem P0/P1/P2 confirmado |
+| Financeiro | posição/risco e movimentação/previsão | oito KPIs em dois grupos; origem OMIE no mesmo nível do cabeçalho | sem P0/P1/P2 após reteste 10/10 |
+| Integrações | provider, estado da credencial e campos de configuração | duas fontes em paralelo; segredo nunca volta para a interface | sem P0/P1/P2 confirmado |
+| Fontes e Histórico | origem, frescor e rastreabilidade | ações e registros agrupados; detalhe progressivo no histórico | sem P0/P1/P2 confirmado; execução externa segue fora do lote |
+
+Conclusão visual: a interface entrega alta densidade funcional sem preencher a
+tela artificialmente. Há um ponto dominante e poucos apoios por superfície; azul,
+verde, âmbar, vermelho e magenta continuam semânticos; gráficos e tabelas
+preservam a granularidade e a temporalidade existentes. O adendo foi incorporado
+à especificação canônica, não criado como documento paralelo.
 
 ## Escopo implementado
 
@@ -110,8 +141,9 @@ credenciais, fórmulas, fontes, denominadores ou fluxo de sincronização.
   0 blockers nos 14 arquivos staged.
 - `git diff --check` e `git diff --cached --check` — passaram.
 - testes focados de Analytics, Configurações, navegação, exportação, estados,
-  Gênio e acessibilidade — baseline **98/98 passou**; o subconjunto atual com a
-  ação da Visão Geral passou em **13/13**.
+  Gênio e acessibilidade — baseline histórico **98/98 passou**; o subconjunto
+  da ação da Visão Geral passou em **13/13**. A reexecução focal ampliada desta
+  etapa está registrada abaixo como **111/114**.
 - `node --test tests/scripts/settings-integrations-render-contract.test.mjs
   tests/scripts/settings-sources-v2-contract.test.mjs
   tests/scripts/analytics-settings-api-contract.test.mjs` — **8/8 passaram**
@@ -131,6 +163,24 @@ credenciais, fórmulas, fontes, denominadores ou fluxo de sincronização.
 - `node scripts/local-qa/overview-sync-action.mjs` — estados ativo e publicado
   confirmados, botão bloqueado durante o ciclo, liberado após publicação, sem
   erros de console, falhas de rede ou overflow.
+
+### Reteste focal de contratos
+
+A reexecução focal nesta etapa terminou em **111/114**: 111 testes passaram e
+três falhas estruturais permaneceram. Elas não foram mascaradas como sucesso:
+
+1. o contrato do worker ainda procura `runnerMessage(error)` dentro do worker,
+   embora a implementação atual use `runnerError` e mantenha `runnerMessage`
+   no módulo compartilhado;
+2. o contrato do diagnóstico ainda procura a normalização de arrays opcionais
+   em `analytics-api.ts`, embora o comportamento atual esteja em outro ponto do
+   fluxo;
+3. o contrato do `dashboard_viewer` rejeita a presença textual do handler
+   administrativo no shell, mesmo com a ação protegida por permissão e só
+   exposta ao administrador de plataforma.
+
+As três falhas permanecem pendentes para reconciliação de contratos e não
+alteram a classificação da matriz visual real.
 
 ### Parcialmente validado
 

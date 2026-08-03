@@ -15,9 +15,11 @@
   plataforma; o shell reutiliza o ciclo sequencial real, bloqueia concorrência e
   preserva feedback ativo/terminal sem executar provedor durante o QA.
 - Validação aprovada: contracts/web typecheck, build, secret scan, quality
-  changed/module/staged e 98/98 testes focados.
-- Suíte ampliada: 117/121; quatro falhas preexistentes de contratos de runner e
-  estados estão registradas em
+  changed/module/staged e `git diff --check`. A reexecução focal de contratos
+  terminou em 111/114, com três falhas estruturais já conhecidas e registradas
+  no relatório; elas não foram mascaradas.
+- Suíte ampliada histórica: 117/121; quatro falhas preexistentes de contratos de
+  runner e estados estão registradas em
   `docs/reports/2026-08-03_high-density-ui-rebuild.md`.
 - QA visual real: matriz final com 80 capturas nas oito superfícies, cinco
   viewports e dois temas, além de 10 capturas direcionadas do Financeiro;
@@ -32,6 +34,10 @@
   evitando 403 de `ticket_categories` fora da seção Categorias.
 - Correção visual: a origem `Fonte financeira` agora compõe o mesmo cabeçalho
   do frame `OMIE · Contas a Receber`, sem faixa vertical isolada.
+- Correção visual adicional: no Comercial, quatro KPIs permanecem primários e
+  Conversão/Ticket médio recebem peso secundário, preservando valores e cálculos.
+- O adendo de densidade cognitiva foi incorporado à seção 25 da especificação
+  canônica, com dez eixos e quinze perguntas de revisão visual.
 - Referências visuais vigentes: `docs/design/blueprint/Dashboard PO/` e
   `docs/design/blueprint/Suporte e conversas/`. A consolidação e as exclusões
   intencionais foram registradas nos commits `619dfa8` e `bb77c67`; o histórico anterior segue

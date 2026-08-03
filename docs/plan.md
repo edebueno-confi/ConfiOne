@@ -9,13 +9,19 @@
 - A camada visual High-Density foi aplicada ao shell, Dashboard e Configurações
   sem tocar em métricas, fontes, contratos ou banco; a Visão Geral também recebeu
   a ação autorizada de sincronização que reutiliza o ciclo sequencial existente.
-- Typechecks, build, secret scan, quality gates e 98/98 testes focados passaram.
+- Typechecks, build, secret scan, quality gates e `git diff --check` passaram.
+  A reexecução focal de contratos terminou em 111/114, com três falhas
+  estruturais conhecidas documentadas; a matriz visual continua sem falhas.
 - QA visual real foi executado: matriz final com 80 capturas nas oito
   superfícies, cinco viewports e dois temas; reteste do Financeiro com 10
   capturas; reteste de Configurações com 24 verificações; e manifesto UI-05
   com cinco estados do Gênio. Nenhum reset ou hidratação foi executado.
 - A origem financeira foi movida para o mesmo nível do cabeçalho `OMIE · Contas
   a Receber`, preservando timestamp, estado e ação `Gerenciar OMIE`.
+- No Comercial, quatro KPIs são primários e Conversão/Ticket médio são
+  visualmente secundários, preservando o estudo de métricas e temporalidade.
+- O adendo de densidade cognitiva foi incorporado à especificação canônica na
+  seção 25, com dez eixos e quinze perguntas de revisão.
 - Relatório: `docs/reports/2026-08-03_high-density-ui-rebuild.md`.
 - QA da ação da Visão Geral: `output/high-density-overview-sync-action-20260803/manifest.json`.
 - Referências visuais consolidadas em `docs/design/blueprint/Dashboard PO/` e

@@ -61,6 +61,9 @@
 .gso-high-density-ui .gso-pilot-finance { gap: 0.9rem; }
 .gso-high-density-ui .gso-pilot-kpi-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.55rem; }
 .gso-high-density-ui .gso-pilot-kpi-grid > .gso-visual-v1-kpi { min-height: 5.9rem; border-width: 1px; border-radius: 0.45rem; padding: 0.7rem 0.75rem; box-shadow: none; }
+.gso-high-density-ui .gso-pilot-commercial .gso-pilot-kpi-grid > .gso-kpi-secondary { min-height: 5.35rem; border-top-color: var(--density-rule); background: color-mix(in srgb, var(--minimal-surface) 72%, transparent); }
+.gso-high-density-ui .gso-pilot-commercial .gso-pilot-kpi-grid > .gso-kpi-secondary > p:first-child { font-size: clamp(1.15rem, 1.45vw, 1.55rem); letter-spacing: -0.035em; }
+.gso-high-density-ui .gso-pilot-commercial .gso-pilot-kpi-grid > .gso-kpi-secondary [class~="mt-2.5"] p { font-size: 0.78rem; }
 .gso-high-density-ui .gso-pilot-kpi-grid > .gso-visual-v1-kpi > p:first-child { font-size: clamp(1.35rem, 1.8vw, 1.9rem); letter-spacing: -0.045em; }
 .gso-high-density-ui .gso-pilot-kpi-grid > .gso-visual-v1-kpi .mt-2\.5 { margin-top: 0.35rem; }
 .gso-high-density-ui .gso-visual-v1-chart,

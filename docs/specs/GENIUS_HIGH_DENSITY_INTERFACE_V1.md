@@ -214,6 +214,99 @@ paleta de cada gráfico é limitada e tabelas usam cor apenas para status,
 prioridade, risco, resultado ou ação pendente. A interface deve responder em
 até 30 segundos onde estou, o que mudou, o que exige atenção e onde agir.
 
+### 25.1 Densidade funcional versus densidade perceptiva
+
+Densidade funcional mede quantas respostas operacionais cabem na área visível;
+densidade perceptiva mede o esforço para encontrá-las. O alvo é aumentar a
+primeira e reduzir a segunda com grids eficientes, tipografia proporcional,
+agrupamento e rótulos curtos. Não usar zoom, números maximalistas, ornamento ou
+preenchimento artificial de espaço.
+
+### 25.2 Modelo de leitura humana
+
+Cada superfície deve oferecer quatro camadas, nesta ordem: orientação (onde
+estou e qual fonte está ativa), resultado (o que aconteceu), explicação (por
+que o indicador tem esse valor) e ação/detalhe (onde agir ou investigar). A
+primeira dobra deve responder à pergunta central do domínio sem exigir leitura
+linear da página.
+
+### 25.3 Hierarquia de KPIs
+
+KPIs primários respondem à decisão principal e recebem maior contraste ou
+posição. Secundários refinam a leitura e podem usar menor escala, contraste ou
+altura. Contexto, diagnóstico e qualidade do dado ficam próximos do indicador
+relacionado. A ordem e o tratamento devem preservar o estudo de KPI e
+temporalidade existente; a camada visual não altera fórmulas, denominadores ou
+períodos.
+
+### 25.4 Controle de peso visual
+
+Cada tela deve ter no máximo um ponto dominante e dois ou três apoios. Ações
+administrativas, exportação, metadados e estados de fonte não podem competir
+com o resultado executivo. Seis KPIs podem coexistir, mas não devem parecer
+seis decisões igualmente urgentes.
+
+### 25.5 Uso de espaço negativo
+
+Espaço negativo é intencional quando separa grupos, marca mudança de leitura ou
+reduz colisão. É reduzido somente quando não tem função e impede a visão
+simultânea de contexto, indicador e análise. O resultado esperado é compacto,
+respirável e não maximalista.
+
+### 25.6 Semântica de cores
+
+Azul orienta ou informa; verde indica resultado válido/positivo; vermelho
+indica falha, perda ou risco; âmbar indica atenção; magenta assina a marca ou
+destaca um ponto. Cor não substitui texto, rótulo ou estado e não deve colorir
+um elemento apenas para decorá-lo.
+
+### 25.7 Ganhos, perdas e divergências
+
+Variação positiva não é automaticamente verde e variação negativa não é
+automaticamente vermelha: a cor depende do significado operacional do KPI.
+Alertas devem informar ocorrência, gravidade, contexto e ação possível.
+Contradições entre estado de fonte, frescor e dado publicado são defeitos P0/P1
+de confiabilidade visual e devem bloquear aceite.
+
+### 25.8 Ações recomendadas
+
+A ação principal fica no contexto do estado que ela altera; detalhes e
+diagnósticos ficam acessíveis sem dominar a tela. Ações indisponíveis explicam
+o motivo. O frontend apenas chama handlers e read models existentes, sem
+inventar operação ou estado.
+
+### 25.9 Limites de carga cognitiva
+
+Revisar se o olho sabe onde começar, se o estado geral é compreendido, se as
+prioridades competem, se a primeira dobra responde à pergunta central, se a
+tabela é escaneável e se o usuário encontra onde agir em até 30 segundos.
+Texto técnico repetido, alertas simultâneos e controles sem efeito devem ser
+tratados como carga cognitiva, mesmo quando não quebram o layout.
+
+### 25.10 Critérios de revisão visual
+
+Para cada superfície, registrar respostas às quinze perguntas da revisão:
+
+1. Onde o olho começa?
+2. Qual é o estado geral?
+3. Quais são as prioridades?
+4. Existe competição visual excessiva?
+5. Há respiro funcional?
+6. A cor aponta para algo relevante?
+7. O alerta explica ação e gravidade?
+8. O KPI secundário está subordinado?
+9. O gráfico acrescenta decisão?
+10. A leitura exige esforço desnecessário?
+11. A primeira dobra dá contexto suficiente?
+12. A tela é clara em 30 segundos?
+13. O usuário sabe onde agir?
+14. O conjunto parece maduro e humano?
+15. Existe algum P0, P1, P2 ou apenas melhoria P3?
+
+P0, P1 e P2 devem ser corrigidos antes do aceite; P3 entra no backlog com
+evidência. A revisão deve ser feita em light/dark e nas cinco larguras
+definidas nesta especificação.
+
 ## 26. Performance
 
 O sistema visual não adiciona biblioteca pesada, não usa `transform: scale()`
