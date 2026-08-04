@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useEffectEvent, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useOutletContext, useSearchParams } from 'react-router';
 import { AppButton, GhostButton } from '../../components/ui';
 import { GeniusMascot } from '../../components/GeniusMascot';
@@ -12,13 +12,15 @@ import type { HelpCenterSpaceContext } from './context';
 import { searchPublicKnowledgeArticles } from './public-api';
 import { buildHelpCenterCategoryHref } from './help-center-navigation';
 import {
-  formatRelativePublicDate,
-  getPublicCategoryLabel,
-  getCategoryVisuals,
   HelpIcon,
   PublicIconBadge,
   PublicSearchStateCard,
 } from './public-ui';
+import {
+  formatRelativePublicDate,
+  getCategoryVisuals,
+  getPublicCategoryLabel,
+} from './public-presentation';
 
 type SearchPhase = 'idle' | 'loading' | 'ready' | 'empty' | 'contract-unavailable' | 'error';
 
@@ -286,7 +288,9 @@ export function HelpCenterHomePage() {
   const heroMascot = heroMascotByState[heroAssistantState];
   const topArticles = context.articles.slice(0, 3);
 
-  const loadSearch = useEffectEvent(async (query: string) => {
+  // Busca usada pelo Effect da query e pelo botão de nova tentativa. Depende do
+  // espaço de conhecimento da rota pública, então ele entra nas dependências.
+  const loadSearch = useCallback(async (query: string) => {
     try {
       const results = await searchPublicKnowledgeArticles(
         context.primaryRoute.knowledge_space_slug,
@@ -305,7 +309,7 @@ export function HelpCenterHomePage() {
       setSearchMessage(classified.message);
       setSearchPhase(classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error');
     }
-  });
+  }, [context.primaryRoute.knowledge_space_slug]);
 
   useEffect(() => {
     setSearchInput(searchParams.get('q') ?? '');
@@ -328,7 +332,7 @@ export function HelpCenterHomePage() {
 
     setSearchPhase('loading');
     void loadSearch(activeQuery);
-  }, [activeQuery, context.primaryRoute.knowledge_space_slug]);
+  }, [activeQuery, loadSearch]);
 
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

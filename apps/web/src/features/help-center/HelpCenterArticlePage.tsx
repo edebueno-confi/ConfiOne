@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router';
 import {
   ContractUnavailableState,
@@ -23,9 +23,11 @@ import {
   HelpIcon,
   PublicBreadcrumb,
   PublicSearchStateCard,
+} from './public-ui';
+import {
   formatRelativePublicDate,
   getPublicCategoryLabel,
-} from './public-ui';
+} from './public-presentation';
 
 type DetailPhase = 'loading' | 'ready' | 'empty' | 'contract-unavailable' | 'error';
 type ArticleAssetPhase = 'not-required' | 'ready' | 'unavailable';
@@ -221,7 +223,10 @@ export function HelpCenterArticlePage() {
   const [articleAssets, setArticleAssets] = useState<PublicKnowledgeArticleAssetRow[]>([]);
   const [articleAssetPhase, setArticleAssetPhase] = useState<ArticleAssetPhase>('not-required');
 
-  const loadArticle = useEffectEvent(
+  // Carregador usado tanto pelo Effect de rota quanto pelo botão de nova
+  // tentativa. Não captura valor reativo: só parâmetros, setters e funções de
+  // módulo. Por isso a lista de dependências é vazia e a referência é estável.
+  const loadArticle = useCallback(
     async (targetSpaceSlug: string, targetArticleSlug: string) => {
       try {
         const data = await getPublicKnowledgeArticle(
@@ -273,6 +278,7 @@ export function HelpCenterArticlePage() {
         );
       }
     },
+    [],
   );
 
   useEffect(() => {
@@ -282,7 +288,7 @@ export function HelpCenterArticlePage() {
 
     setPhase('loading');
     void loadArticle(spaceSlug, articleSlug);
-  }, [articleSlug, spaceSlug]);
+  }, [articleSlug, loadArticle, spaceSlug]);
 
   const articleMetaTitle = article
     ? `${article.title} | ${context.primaryRoute.brand_name}`

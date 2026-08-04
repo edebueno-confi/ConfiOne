@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, Outlet, useLocation, useParams } from 'react-router';
 import {
   ContractUnavailableState,
@@ -26,8 +26,8 @@ import {
   PublicBreadcrumb,
   PublicHelpFooter,
   PublicHelpHeader,
-  isPublicNavigationCategory,
 } from './public-ui';
+import { isPublicNavigationCategory } from './public-presentation';
 
 type LoadPhase = 'loading' | 'ready' | 'empty' | 'contract-unavailable' | 'error';
 
@@ -103,7 +103,9 @@ export function HelpCenterPage() {
       'Documentação oficial para clientes B2B, com centrais públicas de configuração, operação e resolução de dúvidas.',
   });
 
-  const loadSpaces = useEffectEvent(async () => {
+  // Carregador do diretório público, usado pelo Effect inicial e pelos botões de
+  // nova tentativa. Não captura valor reativo, então a referência é estável.
+  const loadSpaces = useCallback(async () => {
     try {
       const rows = await listPublicKnowledgeSpaces();
       const nextSpaces = groupSpaceSummaries(rows);
@@ -122,7 +124,7 @@ export function HelpCenterPage() {
           : 'error',
       );
     }
-  });
+  }, []);
 
   useEffect(() => {
     if (didLoadRef.current) {
@@ -131,7 +133,7 @@ export function HelpCenterPage() {
 
     didLoadRef.current = true;
     void loadSpaces();
-  }, []);
+  }, [loadSpaces]);
 
   if (phase === 'loading') {
     return <PublicHelpLoadingSurface />;
@@ -250,7 +252,9 @@ export function HelpCenterSpaceLayout() {
   const [context, setContext] = useState<HelpCenterSpaceContext | null>(null);
   const [availableSpaces, setAvailableSpaces] = useState<HelpCenterSpaceSummary[]>([]);
 
-  const loadSpace = useEffectEvent(async (targetSpaceSlug: string) => {
+  // Carregador da central selecionada, usado pelo Effect de rota e pelo botão de
+  // nova tentativa. Não captura valor reativo: só o parâmetro e setters.
+  const loadSpace = useCallback(async (targetSpaceSlug: string) => {
     try {
       const [routes, navigation, articles, directory] = await Promise.all([
         getPublicKnowledgeSpace(targetSpaceSlug),
@@ -305,7 +309,7 @@ export function HelpCenterSpaceLayout() {
           : 'error',
       );
     }
-  });
+  }, []);
 
   useEffect(() => {
     if (!spaceSlug) {
@@ -314,7 +318,7 @@ export function HelpCenterSpaceLayout() {
 
     setPhase('loading');
     void loadSpace(spaceSlug);
-  }, [spaceSlug]);
+  }, [loadSpace, spaceSlug]);
 
   const space = context?.primaryRoute ?? null;
   const seoDefaults = useMemo(
