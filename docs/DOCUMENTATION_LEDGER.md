@@ -7018,3 +7018,23 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - Riscos restantes: `eslint.config.js` fora da allowlist da raiz e 256 avisos
   legados de lint.
 - Impacto futuro na FAQ: nenhum. Não houve mudança de comportamento de produto.
+
+## QUALITY-LINT-01 — Higiene da raiz e primeiro lote de dívida de lint — 2026-08-04
+
+- Relatório: `docs/reports/2026-08-04_lint-debt-lote-1-e-higiene-raiz.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Entrega: `eslint.config.js` classificado na allowlist de higiene da raiz;
+  `no-duplicate-imports` zerado em 10 arquivos; 3 imports mortos removidos.
+- Efeito medido: `repository:check-root` de 1 violação para OK; lint de 256 para
+  240 avisos, mantendo 0 erros.
+- Evidência: check-root, teste de higiene 3/3, lint, web/contracts typecheck,
+  build, secret scan, quality gate sem findings e QA no navegador em
+  `4173/login` e `4174/help/genius`.
+- Decisão registrada: código morto maior, como `LegacyRichTextArticleEditor` e
+  handlers de anexo desconectados, não foi apagado. A triagem exige decisão
+  humana e está tabelada no relatório.
+- Limites: nenhuma regra de ESLint afrouxada, nenhum `eslint-disable`, nenhum
+  backend, banco, contrato, permissão ou dado alterado; superfícies autenticadas
+  não verificadas no navegador.
+- Riscos restantes: 240 avisos, sendo 73 de hooks que exigem QA autenticado.
+- Impacto futuro na FAQ: nenhum.

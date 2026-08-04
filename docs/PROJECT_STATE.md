@@ -3336,3 +3336,20 @@ Relatório corrente: `docs/reports/2026-08-04_mvp-closure-status.md`.
 - Trabalho vive em `codex/react-router-v8-migration-20260804`. O merge em `main`
   depende de decisão humana.
 - Relatório: `docs/reports/2026-08-04_react-router-v8-migration.md`.
+
+## Atualização corrente — Higiene da raiz e dívida de lint, lote 1 — 2026-08-04
+
+- `npm run repository:check-root` volta a sair limpo. `eslint.config.js` foi
+  classificado como entrada canônica de tooling na allowlist da raiz.
+- Lint saiu de 256 para 240 avisos, mantendo 0 erros. `no-duplicate-imports`
+  está zerado; 3 imports mortos foram removidos.
+- Nenhuma regra de ESLint foi afrouxada, nenhum `eslint-disable` foi inserido e
+  nenhuma lógica, contrato, rota, permissão, backend ou dado mudou.
+- A dívida restante está triada por risco no relatório: 145 `no-unused-vars`,
+  46 `rules-of-hooks`, 27 `exhaustive-deps`, 19 `react-refresh`, 2 `no-autofocus`
+  e 1 `no-unused-vars` em JS. `SupportWorkspacePage.tsx` e `KnowledgePage.tsx`
+  concentram 131 desses avisos.
+- Código morto maior, como `LegacyRichTextArticleEditor` e handlers de anexo
+  desconectados no editor de conhecimento, não foi apagado: a decisão de apagar
+  ou religar é humana e está tabelada no relatório.
+- Relatório: `docs/reports/2026-08-04_lint-debt-lote-1-e-higiene-raiz.md`.

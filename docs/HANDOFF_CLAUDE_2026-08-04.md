@@ -97,6 +97,8 @@ Eles estão visíveis, mas não bloqueiam o comando geral neste momento. A limpe
 
 ## Próxima ação segura
 
-A migração para `react-router@8` está concluída e validada na branch dedicada. As próximas ações seguras são: decidir o merge em `main`, normalizar `eslint.config.js` na allowlist de higiene da raiz e iniciar a limpeza incremental dos 256 avisos de lint por módulo.
+A migração para `react-router@8` está concluída e validada na branch dedicada. A higiene da raiz está limpa e o primeiro lote da dívida de lint foi entregue: 256 avisos passaram para 240, com `no-duplicate-imports` zerado. Relatório: `docs/reports/2026-08-04_lint-debt-lote-1-e-higiene-raiz.md`.
+
+As próximas ações seguras são: decidir o merge em `main`, triar o código morto tabelado no relatório do lote de lint e atacar `SupportWorkspacePage.tsx` e `KnowledgePage.tsx`, que concentram 131 dos 240 avisos. Avisos de hooks só devem ser tratados com QA autenticado disponível.
 
 Em qualquer caso, manter as instâncias locais acessíveis nas portas 4173 e 4174 e preservar o banco local existente.
