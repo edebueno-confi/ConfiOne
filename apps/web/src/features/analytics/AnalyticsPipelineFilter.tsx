@@ -1,5 +1,4 @@
-import type { ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { MetricInfo } from './analytics-ui';
 
 export interface AnalyticsPipelineFilterOption {

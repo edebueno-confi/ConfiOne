@@ -3,19 +3,17 @@ import { Link } from "react-router";
 import type {
   AnalyticsDataStatus,
   AnalyticsBlockState,
+  AnalyticsSourceStatusPayload,
 } from "@genius-support-os/contracts";
 import { getAnalyticsSourceStatus, getCeoHistory, getCeoSnapshot } from "./analytics-api";
-import type {
-  AnalyticsFilters,
-  AnalyticsPageProps,
-  CeoHistory,
-  CeoSnapshot,
-} from "./analytics-model";
-import type { AnalyticsSourceStatusPayload } from "@genius-support-os/contracts";
 import {
   analyticsGlobalToBlockState,
   analyticsSourceToBlockState,
   DEFAULT_ANALYTICS_FILTERS,
+  type AnalyticsFilters,
+  type AnalyticsPageProps,
+  type CeoHistory,
+  type CeoSnapshot,
 } from "./analytics-model";
 import { AnalyticsFilters as Filters } from "./AnalyticsFilters";
 import {

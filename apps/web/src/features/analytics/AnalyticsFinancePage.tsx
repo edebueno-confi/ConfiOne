@@ -3,9 +3,8 @@ import { Link } from 'react-router';
 import { MinimalState } from '../../components/minimal-states';
 import { getFinanceSnapshot, getFinanceSourceStatus, getFinanceUnmatchedClients, listOmieSyncRuns, type FinanceUnmatchedClient } from './analytics-api';
 import { AnalyticsLoadingState, ChartCard, KpiCard, MetricInfo } from './analytics-ui';
-import { analyticsSourceToBlockState, formatCurrencyBRL, formatMonthLabel, formatPercent, type AnalyticsFilters, DEFAULT_ANALYTICS_FILTERS, type FinanceBreakdown, type FinanceSnapshot, type FinanceSourceStatus } from './analytics-model';
+import { analyticsSourceToBlockState, formatCurrencyBRL, formatMonthLabel, formatPercent, type AnalyticsFilters, DEFAULT_ANALYTICS_FILTERS, type AnalyticsPageProps, type FinanceBreakdown, type FinanceSnapshot, type FinanceSourceStatus } from './analytics-model';
 import { ANALYTICS_PERIOD_OPTIONS, resolveAnalyticsPeriod, type AnalyticsPeriodPreset } from './analytics-periods';
-import type { AnalyticsPageProps } from './analytics-model';
 import { AnalyticsExecutionMeta, AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
 
 type FinanceFilters = AnalyticsFilters & { clientQuery: string };

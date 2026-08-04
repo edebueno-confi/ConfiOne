@@ -1,8 +1,7 @@
 import { Outlet } from 'react-router';
 import type { ReactNode } from 'react';
 import { ThemeProvider } from '../../app/theme-context';
-import { AuthProvider } from './auth-context';
-import { useAuthContext } from './auth-context';
+import { AuthProvider, useAuthContext } from './auth-context';
 
 function AuthenticatedTheme({ children }: { children: ReactNode }) {
   const { phase } = useAuthContext();

@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { MinimalState } from '../../components/minimal-states';
-import { getCsSnapshot } from './analytics-api';
+import { getCsSnapshot, listAnalyticsSourceConfig } from './analytics-api';
 import {
   formatPercent,
+  type AnalyticsPageProps,
   type CsByStatus,
   type CsKpis,
   type CsMonthlyPoint,
@@ -21,8 +21,6 @@ import { AnalyticsFilters as AnalyticsFiltersBar } from './AnalyticsFilters';
 import { AnalyticsPipelineCombobox } from './AnalyticsPipelineCombobox';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import { TicketMonthlyChart, TicketStatusChart } from './charts/AnalyticsCharts';
-import { listAnalyticsSourceConfig } from './analytics-api';
-import type { AnalyticsPageProps } from './analytics-model';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
 import { AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
 

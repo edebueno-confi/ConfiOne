@@ -11,13 +11,14 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type {
-  CommercialFunnelStage,
-  CommercialMonthlyPoint,
-  CsByStatus,
-  CsMonthlyPoint,
+import {
+  formatCurrencyBRL,
+  formatMonthLabel,
+  type CommercialFunnelStage,
+  type CommercialMonthlyPoint,
+  type CsByStatus,
+  type CsMonthlyPoint,
 } from '../analytics-model';
-import { formatCurrencyBRL, formatMonthLabel } from '../analytics-model';
 
 const PALETTE = {
   primary: 'var(--color-brand-blue)',

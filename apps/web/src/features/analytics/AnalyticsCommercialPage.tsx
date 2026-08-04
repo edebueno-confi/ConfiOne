@@ -11,6 +11,7 @@ import {
   type CommercialByPipeline,
   type CommercialSnapshot,
   type AnalyticsFilters,
+  type AnalyticsPageProps,
   type AnalyticsSourceConfig,
   DEFAULT_ANALYTICS_FILTERS,
   analyticsSourceToBlockState,
@@ -19,7 +20,6 @@ import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, KpiCard, Metric
 import { AnalyticsFilters as AnalyticsFiltersBar } from './AnalyticsFilters';
 import { AnalyticsPipelineCombobox } from './AnalyticsPipelineCombobox';
 import { resolveAnalyticsPeriod } from './analytics-periods';
-import type { AnalyticsPageProps } from './analytics-model';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
 import { CommercialFunnelChart, CommercialMonthlyChart } from './charts/AnalyticsCharts';
 import { AnalyticsExecutionMeta, AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';

@@ -1,5 +1,11 @@
-import type { CeoSnapshot, CommercialSnapshot, CsSnapshot, FinanceSnapshot } from './analytics-model';
-import { formatCurrencyBRL, formatPercent } from './analytics-model';
+import {
+  formatCurrencyBRL,
+  formatPercent,
+  type CeoSnapshot,
+  type CommercialSnapshot,
+  type CsSnapshot,
+  type FinanceSnapshot,
+} from './analytics-model';
 
 export type AnalyticsReportSection = 'ceo' | 'commercial' | 'cs' | 'finance';
 
