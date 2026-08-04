@@ -6331,3 +6331,55 @@ table {
 .gso-sidebar .gso-sidebar-nav .gso-nav-group-toggle { color: var(--minimal-text-secondary) !important; }
 .gso-sidebar .gso-sidebar-search .gso-genius-trigger > span { color: var(--minimal-text-secondary) !important; }
 .gso-sidebar .gso-sidebar-search .gso-genius-trigger > kbd { color: var(--minimal-text-secondary) !important; border-color: var(--minimal-border) !important; background: var(--minimal-surface) !important; }
+
+/* Ajustes finais de densidade e contraste.
+   O cartão da conta é apenas o gatilho do menu; não deve reservar a altura
+   dos atalhos antigos que não são exibidos. O cabeçalho do dashboard também
+   não cria uma segunda área de rolagem para as abas. */
+.gso-sidebar {
+  border-color: color-mix(in srgb, var(--minimal-border) 56%, transparent) !important;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--minimal-text) 5%, transparent) !important;
+}
+.gso-sidebar .gso-sidebar-account-card {
+  min-height: 0 !important;
+  padding: 8px 10px !important;
+  border-color: color-mix(in srgb, var(--minimal-border) 62%, transparent) !important;
+}
+.gso-sidebar .gso-sidebar-account-trigger {
+  height: 40px !important;
+  min-height: 40px !important;
+  padding-inline: 2px !important;
+  align-items: center !important;
+}
+.gso-sidebar .gso-sidebar-account-identity {
+  align-self: center;
+  gap: 0;
+}
+.gso-sidebar .gso-sidebar-account-identity strong,
+.gso-sidebar .gso-sidebar-account-identity small {
+  display: block;
+  margin: 0;
+}
+.gso-sidebar .gso-sidebar-account-menu {
+  border-color: color-mix(in srgb, var(--minimal-border) 62%, transparent) !important;
+}
+:root[data-theme='dark'] .gso-sidebar {
+  border-color: rgba(148, 163, 184, 0.09) !important;
+}
+
+.gso-analytics-shell > .gso-workspace-header {
+  min-width: 0;
+  overflow: hidden;
+}
+.gso-analytics-shell .gso-analytics-domain-tabs {
+  min-width: 0;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.gso-analytics-shell .gso-analytics-domain-tabs::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
