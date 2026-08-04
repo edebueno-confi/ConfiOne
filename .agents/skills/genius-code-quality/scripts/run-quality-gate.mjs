@@ -175,6 +175,7 @@ function chooseGates() {
   const patterns = runPatterns(scope, ['fast', 'changed', 'staged'].includes(mode) ? gitState.changedFiles : []);
   npmScript('lint');
   if (mode === 'fast' || mode === 'staged' || mode === 'full') npmScript('local:qa:secret-scan', 180000);
+  if (mode === 'fast' || mode === 'staged' || mode === 'full') npmScript('security:audit:prod', 180000);
   if (mode === 'module' && scope?.startsWith('apps/web')) npmScript('web:typecheck');
   else if (mode === 'module' && scope?.startsWith('packages/contracts')) npmScript('contracts:typecheck');
   else if (mode !== 'module' || scope?.startsWith('apps')) {
