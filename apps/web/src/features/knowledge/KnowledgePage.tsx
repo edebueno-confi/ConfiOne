@@ -244,18 +244,6 @@ function normalizeOptionalText(value: string) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-function toneForSpaceStatus(status: AdminKnowledgeSpaceRow['status']) {
-  if (status === 'active') {
-    return 'positive' as const;
-  }
-
-  if (status === 'archived') {
-    return 'critical' as const;
-  }
-
-  return 'warning' as const;
-}
-
 function toneForArticleStatus(status: KnowledgeArticleStatus) {
   if (status === 'published') {
     return 'positive' as const;
@@ -267,26 +255,6 @@ function toneForArticleStatus(status: KnowledgeArticleStatus) {
 
   if (status === 'archived') {
     return 'critical' as const;
-  }
-
-  return 'default' as const;
-}
-
-function toneForReviewStatus(status: KnowledgeArticleReviewStatus) {
-  if (status === 'reviewed') {
-    return 'positive' as const;
-  }
-
-  if (status === 'ready_for_publish' || status === 'ready_for_review') {
-    return 'accent' as const;
-  }
-
-  if (status === 'needs_changes') {
-    return 'critical' as const;
-  }
-
-  if (status === 'in_review') {
-    return 'warning' as const;
   }
 
   return 'default' as const;
@@ -314,46 +282,6 @@ function displayReviewStatus(status: KnowledgeArticleReviewStatus) {
   }
 
   return 'Pendente';
-}
-
-function toneForAdvisoryClassification(
-  classification: KnowledgeAdvisoryClassification,
-) {
-  if (classification === 'public') {
-    return 'positive' as const;
-  }
-
-  if (classification === 'internal') {
-    return 'accent' as const;
-  }
-
-  if (classification === 'obsolete' || classification === 'duplicate') {
-    return 'warning' as const;
-  }
-
-  return 'critical' as const;
-}
-
-function displayAdvisoryClassification(
-  classification: KnowledgeAdvisoryClassification,
-) {
-  if (classification === 'public') {
-    return 'Público';
-  }
-
-  if (classification === 'internal') {
-    return 'Interno';
-  }
-
-  if (classification === 'restricted') {
-    return 'Restrito';
-  }
-
-  if (classification === 'obsolete') {
-    return 'Obsoleto';
-  }
-
-  return 'Duplicado';
 }
 
 function toneForVisibility(visibility: KnowledgeVisibility) {
@@ -406,44 +334,6 @@ function compactStatusBadgeLabel(status: KnowledgeArticleStatus) {
   return 'Rascunho';
 }
 
-function displayArticleStatus(status: KnowledgeArticleStatus) {
-  if (status === 'published') {
-    return 'Publicado';
-  }
-
-  if (status === 'review') {
-    return 'Em revisão';
-  }
-
-  if (status === 'archived') {
-    return 'Arquivado';
-  }
-
-  return 'Rascunho';
-}
-
-function displayVisibility(visibility: KnowledgeVisibility) {
-  if (visibility === 'public') {
-    return 'Público na central de ajuda';
-  }
-
-  if (visibility === 'restricted') {
-    return 'Restrito';
-  }
-
-  return 'Interno';
-}
-
-function humanizeRiskFlag(flag: string) {
-  const normalized = flag.replace(/[_-]+/g, ' ').trim();
-
-  if (!normalized) {
-    return 'Risco editorial';
-  }
-
-  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
-}
-
 function shortVisibilityLabel(visibility: KnowledgeVisibility) {
   if (visibility === 'public') {
     return 'Público';
@@ -464,26 +354,10 @@ function articleContributorName(article: AdminKnowledgeArticleListItemV2Row) {
   );
 }
 
-function articleContributorNameFromDetail(article: AdminKnowledgeArticleDetailV2Row) {
-  return (
-    article.updated_by_full_name ??
-    article.created_by_full_name ??
-    'Indisponível'
-  );
-}
-
-function formatOptionalDate(value: string | null) {
-  return value ? formatDateTime(value) : 'Indisponível';
-}
-
 function categoryDisplayName(category: AdminKnowledgeCategoryV2Row) {
   return category.parent_name
     ? `${category.parent_name} / ${category.name}`
     : category.name;
-}
-
-function noticeTone(message: string) {
-  return /sucesso|concluida/i.test(message) ? 'positive' : 'critical';
 }
 
 function categoryBadgeClass(name: string | null | undefined) {
@@ -542,16 +416,6 @@ function displayFilterCategoryLabel(name: string | null | undefined) {
   }
 
   return name ?? 'Indisponível';
-}
-
-function estimateReadingTime(body: string | null | undefined) {
-  const words = (body ?? '').trim().split(/\s+/).filter(Boolean).length;
-
-  if (words === 0) {
-    return 'Indisponível';
-  }
-
-  return `${Math.max(1, Math.ceil(words / 180))} min de leitura`;
 }
 
 function buildSourceHashCounts(articles: AdminKnowledgeArticleListItemV2Row[]) {

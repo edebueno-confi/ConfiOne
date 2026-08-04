@@ -156,30 +156,6 @@ function buildArticleFormFromEditorialDraft(
   };
 }
 
-function formatFileSize(bytes: number) {
-  if (bytes >= 1024 * 1024) {
-    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-  }
-
-  if (bytes >= 1024) {
-    return `${Math.round(bytes / 1024)} KB`;
-  }
-
-  return `${bytes} B`;
-}
-
-function visibilityLabel(visibility: KnowledgeVisibility) {
-  if (visibility === 'public') {
-    return 'Público';
-  }
-
-  if (visibility === 'restricted') {
-    return 'Restrito';
-  }
-
-  return 'Interno';
-}
-
 function statusLabel(status: ArticleEditorStatus) {
   if (status === 'review') {
     return 'Em revisão';
@@ -576,19 +552,6 @@ function parseVisualMediaSize(value?: string | null): VisualImageSize {
 function renderYoutubeFigure(videoId: string, size: VisualImageSize = 'large') {
   const safeVideoId = escapeHtml(videoId);
   return `<figure draggable="true" data-youtube-id="${safeVideoId}" data-size="${size}" contenteditable="false" tabindex="0"><div class="youtube-card"><span class="youtube-card__play">▶</span><strong>Vídeo YouTube</strong><small>youtube-nocookie.com/embed/${safeVideoId}</small></div></figure>`;
-}
-
-function calloutLabel(tone: CalloutTone) {
-  if (tone === 'warning') {
-    return 'Atenção';
-  }
-  if (tone === 'success') {
-    return 'Importante';
-  }
-  if (tone === 'danger') {
-    return 'Cuidado';
-  }
-  return 'Nota';
 }
 
 function normalizeLegacyVisualTokens(source: string) {

@@ -158,30 +158,6 @@ function membershipSituation(membership: AdminTenantMembershipRow): UserSituatio
   return 'active';
 }
 
-function situationLabel(situation: UserSituation) {
-  if (situation === 'active') {
-    return 'Ativo';
-  }
-
-  if (situation === 'inactive') {
-    return 'Inativo';
-  }
-
-  return 'Bloqueado';
-}
-
-function toneForSituation(situation: UserSituation) {
-  if (situation === 'active') {
-    return 'positive' as const;
-  }
-
-  if (situation === 'inactive') {
-    return 'warning' as const;
-  }
-
-  return 'critical' as const;
-}
-
 function membershipStateLabel(membership: AdminTenantMembershipRow) {
   if (membership.status === 'invited') {
     return 'Convite pendente';

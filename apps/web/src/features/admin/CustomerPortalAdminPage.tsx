@@ -92,12 +92,6 @@ function roleLabel(role: CustomerPortalRole) {
   return role === 'customer_manager' ? 'Gestão cliente' : 'Usuário cliente';
 }
 
-function roleHelper(role: CustomerPortalRole) {
-  return role === 'customer_manager'
-    ? 'Acesso amplo ao portal da conta, incluindo tickets permitidos.'
-    : 'Acesso operacional vinculado ao contato do cliente.';
-}
-
 function accessLabel(status: CustomerPortalAccessStatus) {
   if (status === 'active') {
     return 'Ativo';
@@ -146,25 +140,6 @@ function tenantStatusTone(status: AdminCustomerPortalTenantAccessRow['tenant_sta
   return 'critical' as const;
 }
 
-function entitlementStatusLabel(status: CustomerPortalEntitlementStatus) {
-  return status === 'active' ? 'Ativo' : 'Arquivado';
-}
-
-function scopeLabel(scope: CustomerPortalEntitlementScope) {
-  return scope === 'tenant' ? 'Conta inteira' : 'Portal autenticado';
-}
-
-function membershipStatusLabel(status: MembershipStatus) {
-  if (status === 'active') {
-    return 'Ativo';
-  }
-
-  if (status === 'invited') {
-    return 'Convite pendente';
-  }
-
-  return 'Revogado';
-}
 
 function normalizeLookup(value: string) {
   return value.trim().toLocaleLowerCase('pt-BR');

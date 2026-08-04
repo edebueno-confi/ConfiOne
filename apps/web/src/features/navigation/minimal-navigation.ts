@@ -36,10 +36,6 @@ function matchesBase(pathname: string, basePath: string) {
   return pathname === basePath || pathname.startsWith(`${basePath}/`);
 }
 
-function hasAnyRole(roles: PlatformRole[], candidates: PlatformRole[]) {
-  return candidates.some((candidate) => roles.includes(candidate));
-}
-
 /**
  * Sidebar for the published release surface.
  *
