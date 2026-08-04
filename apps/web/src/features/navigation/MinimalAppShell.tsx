@@ -237,7 +237,7 @@ function GeniusSidebar({
         <ShellNavigation collapsed={collapsed} onNavigate={onNavigate} pathname={pathname} permissions={permissions} />
       </div>
 
-      <div className="gso-sidebar-account" data-collapsed={collapsed}>
+      <div className="gso-sidebar-account" data-collapsed={collapsed} data-menu-open={accountMenuOpen}>
         <div className="gso-sidebar-account-card">
           <button
             aria-expanded={accountMenuOpen}

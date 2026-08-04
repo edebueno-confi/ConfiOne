@@ -6363,6 +6363,22 @@ table {
 .gso-sidebar .gso-sidebar-account-menu {
   border-color: color-mix(in srgb, var(--minimal-border) 62%, transparent) !important;
 }
+.gso-sidebar-account[data-menu-open='true'] .gso-sidebar-account-card {
+  visibility: hidden;
+  pointer-events: none;
+}
+.gso-sidebar-account[data-menu-open='true'] .gso-sidebar-account-menu {
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: none;
+}
+.gso-sidebar-account[data-collapsed='true'][data-menu-open='true'] .gso-sidebar-account-menu {
+  right: auto;
+  bottom: 0;
+  left: calc(100% + 8px);
+  width: min(240px, calc(100vw - 32px));
+}
 :root[data-theme='dark'] .gso-sidebar {
   border-color: rgba(148, 163, 184, 0.09) !important;
 }
