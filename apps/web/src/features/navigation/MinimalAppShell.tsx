@@ -169,19 +169,6 @@ function SidebarIconButton({
   );
 }
 
-function SidebarQuickAction({
-  label,
-  children,
-  onClick,
-}: {
-  label: string;
-  children: ReactNode;
-  onClick?: () => void;
-}) {
-  const className = 'gso-sidebar-quick-action';
-  return <button className={className} onClick={onClick} type="button">{children}<span>{label}</span></button>;
-}
-
 function GeniusSidebar({
   collapsed,
   onCollapse,
@@ -207,6 +194,27 @@ function GeniusSidebar({
 }) {
   const navigate = useNavigate();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!accountMenuOpen) return undefined;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Node && accountMenuRef.current?.contains(target)) return;
+      setAccountMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAccountMenuOpen(false);
+    };
+
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePointer);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [accountMenuOpen]);
 
   return (
     <aside
@@ -237,7 +245,7 @@ function GeniusSidebar({
         <ShellNavigation collapsed={collapsed} onNavigate={onNavigate} pathname={pathname} permissions={permissions} />
       </div>
 
-      <div className="gso-sidebar-account" data-collapsed={collapsed} data-menu-open={accountMenuOpen}>
+      <div ref={accountMenuRef} className="gso-sidebar-account" data-collapsed={collapsed} data-menu-open={accountMenuOpen}>
         <div className="gso-sidebar-account-card">
           <button
             aria-expanded={accountMenuOpen}
@@ -251,13 +259,12 @@ function GeniusSidebar({
             {!collapsed ? <span className="gso-sidebar-account-identity"><strong>{userTitle}</strong><small>{userSubtitle}</small></span> : null}
             {!collapsed ? <svg aria-hidden="true" className={cx('gso-sidebar-chevron', accountMenuOpen && 'rotate-180')} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" /></svg> : null}
           </button>
-          {!collapsed ? <div className="gso-sidebar-quick-actions">
-            <SidebarQuickAction label="Preferências" onClick={() => navigate('/admin/settings')}><span aria-hidden="true">⚙</span></SidebarQuickAction>
-            <SidebarQuickAction label="Sair" onClick={() => void signOut()}><span aria-hidden="true">↪</span></SidebarQuickAction>
-          </div> : null}
         </div>
         {accountMenuOpen ? <div className="gso-sidebar-account-menu" role="menu">
-          <p className="gso-sidebar-menu-caption">Aparência e conta</p>
+          <div className="gso-sidebar-menu-heading">
+            <p className="gso-sidebar-menu-caption">Aparência e conta</p>
+            <button aria-label="Fechar menu da conta" className="gso-sidebar-menu-close" onClick={() => setAccountMenuOpen(false)} type="button">×</button>
+          </div>
           <ThemeToggle className="w-full justify-center" />
           <button className="gso-sidebar-menu-action" onClick={() => navigate('/admin/settings')} role="menuitem" type="button">Preferências</button>
           <button className="gso-sidebar-menu-action gso-sidebar-menu-action--danger" onClick={() => void signOut()} role="menuitem" type="button">Encerrar sessão</button>

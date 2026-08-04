@@ -6346,10 +6346,98 @@ table {
   border-color: color-mix(in srgb, var(--minimal-border) 62%, transparent) !important;
 }
 .gso-sidebar .gso-sidebar-account-trigger {
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
   height: 40px !important;
   min-height: 40px !important;
   padding-inline: 2px !important;
   align-items: center !important;
+}
+
+/* O painel de conta tem um unico estado visivel por vez. Quando o menu abre,
+   o cartao-base nao pode deixar uma faixa fantasma nem competir com o popover. */
+.gso-sidebar .gso-sidebar-account-card {
+  min-height: 0 !important;
+  padding: 4px !important;
+  border-color: transparent !important;
+  background: transparent !important;
+}
+.gso-sidebar-account[data-menu-open='true'] .gso-sidebar-account-card {
+  display: none !important;
+}
+.gso-sidebar-account-menu {
+  z-index: 80 !important;
+}
+.gso-sidebar-account[data-menu-open='true'] .gso-sidebar-account-menu {
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+}
+.gso-sidebar-account[data-collapsed='true'][data-menu-open='true'] .gso-sidebar-account-menu {
+  right: auto !important;
+  bottom: 0 !important;
+  left: calc(100% + 8px) !important;
+  width: min(240px, calc(100vw - 32px)) !important;
+}
+
+/* Editor editorial: titulo e slug ocupam a coluna estreita em sequencia;
+   o resumo recebe a coluna larga e comporta o limite editorial sem scroll. */
+@media (min-width: 901px) {
+  .knowledge-editor-page .knowledge-editor-meta-grid {
+    grid-template-columns: minmax(15rem, 0.78fr) minmax(0, 1.22fr) !important;
+    grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
+    height: 164px !important;
+    min-height: 164px !important;
+    gap: 6px 14px !important;
+    padding: 10px 14px 8px !important;
+  }
+  .knowledge-editor-page .knowledge-editor-meta-grid > label {
+    display: grid !important;
+    min-height: 0 !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+  }
+  .knowledge-editor-page .knowledge-editor-meta-grid > label:nth-child(1) {
+    grid-area: 1 / 1 / 2 / 2 !important;
+  }
+  .knowledge-editor-page .knowledge-editor-meta-grid > label:nth-child(2) {
+    grid-area: 2 / 1 / 3 / 2 !important;
+  }
+  .knowledge-editor-page .knowledge-editor-meta-grid > label:nth-child(3) {
+    grid-area: 1 / 2 / 3 / 3 !important;
+  }
+  .knowledge-editor-page .knowledge-editor-summary-input {
+    min-height: 112px !important;
+    height: 112px !important;
+    max-height: 112px !important;
+    overflow: hidden !important;
+    font-size: 0.78rem !important;
+    line-height: 1.35 !important;
+  }
+  .knowledge-editor-page .knowledge-editor-content-grid {
+    grid-template-rows: 164px minmax(0, 1fr) !important;
+  }
+  .knowledge-editor-page .gso-knowledge-editor-shell {
+    grid-template-columns: minmax(0, 1fr) 344px !important;
+    gap: 20px !important;
+    padding-inline: 16px !important;
+  }
+  .knowledge-editor-page .knowledge-rich-editor .ProseMirror {
+    width: min(100%, 64rem) !important;
+    max-width: 64rem !important;
+    margin-inline: auto !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .knowledge-editor-page .knowledge-editor-summary-input {
+    min-height: 96px !important;
+    height: 96px !important;
+    max-height: 96px !important;
+    overflow: hidden !important;
+  }
 }
 .gso-sidebar .gso-sidebar-account-identity {
   align-self: center;
@@ -6362,6 +6450,36 @@ table {
 }
 .gso-sidebar .gso-sidebar-account-menu {
   border-color: color-mix(in srgb, var(--minimal-border) 62%, transparent) !important;
+}
+.gso-sidebar-menu-heading {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.gso-sidebar-menu-heading .gso-sidebar-menu-caption {
+  margin-bottom: 0;
+}
+.gso-sidebar-menu-close {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--minimal-text-secondary);
+  font-size: 20px;
+  line-height: 1;
+}
+.gso-sidebar-menu-close:hover {
+  border-color: var(--minimal-border);
+  background: var(--minimal-selection);
+  color: var(--minimal-selection-text);
+}
+.gso-sidebar-menu-close:focus-visible {
+  outline: 2px solid var(--minimal-focus);
+  outline-offset: 2px;
 }
 .gso-sidebar-account[data-menu-open='true'] .gso-sidebar-account-card {
   visibility: hidden;
