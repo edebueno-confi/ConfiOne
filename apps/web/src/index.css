@@ -906,6 +906,26 @@
   line-height: 1.35;
 }
 
+/* O resumo curto Ã© um campo editorial de leitura, nÃ£o um input de uma linha. */
+.knowledge-editor-page .knowledge-editor-summary-input {
+  box-sizing: border-box;
+  min-height: 72px !important;
+  height: 72px !important;
+  max-height: 72px;
+  overflow-y: auto;
+  resize: none;
+  line-height: 1.4 !important;
+}
+
+.knowledge-editor-page .knowledge-editor-meta-grid {
+  min-height: 128px;
+  height: 128px;
+}
+
+.knowledge-editor-page .knowledge-editor-content-grid {
+  grid-template-rows: 128px minmax(0, 1fr);
+}
+
 /* Shell V3: conta, tema e encerramento ficam no rodape da sidebar, como no
    blueprint. Em desktop a sidebar tambem concentra a busca global. */
 .gso-sidebar-account {
@@ -1084,6 +1104,8 @@
 .gso-sidebar--collapsed .gso-sidebar-account-menu { right: auto; bottom: 0; left: calc(100% + 8px); }
 .gso-sidebar-menu-caption { margin: 0 0 8px; color: rgba(226,232,240,0.62); font-size: 11px; line-height: 16px; text-transform: uppercase; letter-spacing: .08em; }
 .gso-sidebar-menu-action { display: flex; width: 100%; min-height: 36px; align-items: center; padding: 0 10px; border-radius: 9px; color: rgba(226,232,240,0.8); font-size: 13px; text-align: left; }
+.gso-sidebar-menu-action { gap: 9px; }
+.gso-sidebar-menu-action > span:first-child { width: 16px; flex: 0 0 16px; text-align: center; }
 .gso-sidebar-menu-action:hover { background: rgba(99,102,241,0.14); color: #fff; }
 .gso-sidebar-menu-action--danger:hover { background: rgba(244,63,94,0.14); color: #fda4af; }
 .gso-sidebar--collapsed .gso-sidebar-account-card { display: flex; min-height: 56px; align-items: center; justify-content: center; padding: 8px; }
@@ -1540,6 +1562,53 @@
   background: var(--minimal-surface) !important;
   color: var(--minimal-text-secondary) !important;
 }
+
+/* Popovers do editor: os estilos legados definiam texto navy e fundo branco. */
+:root[data-theme='dark'] .knowledge-toolbar-popover,
+:root[data-theme='dark'] .knowledge-toolbar-popover strong,
+:root[data-theme='dark'] .knowledge-toolbar-popover p,
+:root[data-theme='dark'] .knowledge-toolbar-popover button,
+:root[data-theme='dark'] .knowledge-toolbar-popover small,
+:root[data-theme='dark'] .knowledge-toolbar-popover label {
+  color: var(--minimal-text) !important;
+  opacity: 1 !important;
+}
+:root[data-theme='dark'] .knowledge-toolbar-popover {
+  border-color: var(--minimal-border-strong) !important;
+  background: var(--minimal-sidebar) !important;
+  box-shadow: 0 18px 42px rgb(0 0 0 / 38%) !important;
+}
+:root[data-theme='dark'] .knowledge-toolbar-popover button {
+  background: transparent !important;
+}
+:root[data-theme='dark'] .knowledge-toolbar-popover button:hover,
+:root[data-theme='dark'] .knowledge-toolbar-popover button:focus-visible {
+  background: var(--minimal-surface-muted) !important;
+  color: var(--minimal-text) !important;
+}
+:root[data-theme='dark'] .knowledge-related-popover p,
+:root[data-theme='dark'] .knowledge-related-popover small,
+:root[data-theme='dark'] .knowledge-related-empty {
+  color: var(--minimal-text-secondary) !important;
+}
+:root[data-theme='dark'] .knowledge-related-popover input,
+:root[data-theme='dark'] .knowledge-related-popover textarea {
+  border-color: var(--minimal-border-strong) !important;
+  background: var(--minimal-surface-muted) !important;
+  color: var(--minimal-text) !important;
+}
+:root[data-theme='dark'] .knowledge-related-popover input::placeholder,
+:root[data-theme='dark'] .knowledge-related-popover textarea::placeholder {
+  color: var(--minimal-text-tertiary) !important;
+}
+:root[data-theme='dark'] .knowledge-related-list button {
+  border-color: var(--minimal-border) !important;
+  background: var(--minimal-surface-muted) !important;
+  color: var(--minimal-text) !important;
+}
+
+/* AÃ§Ãµes de conta aparecem no menu do usuÃ¡rio, nÃ£o em uma segunda faixa. */
+.gso-sidebar .gso-sidebar-quick-actions { display: none !important; }
 
 @media (max-width: 1023px) {
   .gso-settings-cockpit-nav { position: static; max-height: none; border-right: 0; border-bottom: 1px solid var(--minimal-border); }
