@@ -138,6 +138,8 @@ export interface SyncRun {
   providerErrorCount: number | null;
   failedRequestCount: number | null;
   requestDurationMs: number | null;
+  requestAverageDurationMs: number | null;
+  requestSuccessRatePercent: number | null;
   lastRequestAt: string | null;
 }
 
@@ -354,6 +356,8 @@ export interface OmieSyncRun {
   providerErrorCount: number | null;
   failedRequestCount: number | null;
   requestDurationMs: number | null;
+  requestAverageDurationMs: number | null;
+  requestSuccessRatePercent: number | null;
   lastRequestAt: string | null;
   enrichmentCacheSource: 'cache' | 'api' | 'stale_cache' | 'api_partial' | 'unavailable' | null;
   enrichmentCacheAgeSeconds: number | null;
@@ -663,6 +667,8 @@ export function mapOmieSyncRun(row: Record<string, unknown>): OmieSyncRun {
     providerErrorCount: row.provider_error_count == null ? null : toNumber(row.provider_error_count),
     failedRequestCount: row.failed_request_count == null ? null : toNumber(row.failed_request_count),
     requestDurationMs: row.request_duration_ms == null ? null : toNumber(row.request_duration_ms),
+    requestAverageDurationMs: row.request_average_duration_ms == null ? null : toNumber(row.request_average_duration_ms),
+    requestSuccessRatePercent: row.request_success_rate_percent == null ? null : toNumber(row.request_success_rate_percent),
     lastRequestAt: row.last_request_at ? toText(row.last_request_at) : null,
     enrichmentCacheSource: row.enrichment_cache_source ? toText(row.enrichment_cache_source) as OmieSyncRun['enrichmentCacheSource'] : null,
     enrichmentCacheAgeSeconds: row.enrichment_cache_age_seconds == null ? null : toNumber(row.enrichment_cache_age_seconds),
@@ -973,6 +979,8 @@ export function mapSyncRun(row: Record<string, unknown> | null): SyncRun | null 
     providerErrorCount: row.provider_error_count == null ? null : toNumber(row.provider_error_count),
     failedRequestCount: row.failed_request_count == null ? null : toNumber(row.failed_request_count),
     requestDurationMs: row.request_duration_ms == null ? null : toNumber(row.request_duration_ms),
+    requestAverageDurationMs: row.request_average_duration_ms == null ? null : toNumber(row.request_average_duration_ms),
+    requestSuccessRatePercent: row.request_success_rate_percent == null ? null : toNumber(row.request_success_rate_percent),
     lastRequestAt: row.last_request_at ? toText(row.last_request_at) : null,
   };
 }

@@ -338,6 +338,41 @@ export async function fetchOwners(tokenOverride?: string, observer?: HubSpotRequ
   return owners.filter((owner) => owner.ownerId.length > 0);
 }
 
+export interface HubSpotOwnerPage {
+  records: HubSpotOwner[];
+  nextCursor: string | null;
+}
+
+// Página única de owners para que o worker assíncrono não mantenha toda a
+// coleção em memória nem perca telemetria ao atingir o limite do runtime.
+export async function fetchOwnersPage(
+  tokenOverride?: string,
+  options: { cursor?: string | null; observer?: HubSpotRequestObserver } = {},
+): Promise<HubSpotOwnerPage> {
+  const query = new URLSearchParams({ limit: '100' });
+  if (options.cursor) query.set('after', options.cursor);
+  const response = await hubspotFetch(`/crm/v3/owners?${query.toString()}`, {}, 0, tokenOverride, options.observer);
+  const payload = await response.json() as {
+    results?: Array<Record<string, unknown>>;
+    paging?: { next?: { after?: string } };
+  };
+  const records = (payload.results ?? []).map((raw) => {
+    const firstName = (raw.firstName as string | undefined) ?? null;
+    const lastName = (raw.lastName as string | undefined) ?? null;
+    const fullName = [firstName, lastName].filter(Boolean).join(' ').trim() || null;
+    return {
+      ownerId: String(raw.id ?? ''),
+      email: (raw.email as string | undefined) ?? null,
+      firstName,
+      lastName,
+      fullName,
+      archived: Boolean(raw.archived ?? false),
+      raw,
+    } satisfies HubSpotOwner;
+  }).filter((owner) => owner.ownerId.length > 0);
+  return { records, nextCursor: nextHubSpotCursor(options.cursor, payload.paging?.next?.after, 'owners page') };
+}
+
 // Deals: Search API com filtro de pipeline (volume atual ~1.100, abaixo do teto de 10k).
 export async function fetchDealsByPipeline(
   pipelineId: string,
@@ -393,6 +428,41 @@ export async function fetchDealsPageByPipeline(
   const response = await hubspotFetch('/crm/v3/objects/deals/search', { method: 'POST', body: JSON.stringify(body) }, 0, tokenOverride, options.telemetry);
   const payload = await response.json() as { results?: HubSpotRecord[]; total?: number; paging?: { next?: { after?: string } } };
   return { records: payload.results ?? [], total: Number.isFinite(Number(payload.total)) ? Number(payload.total) : null, nextCursor: nextHubSpotCursor(options.cursor, payload.paging?.next?.after, 'deals') };
+}
+
+export interface HubSpotCompaniesPage {
+  records: HubSpotRecord[];
+  nextCursor: string | null;
+}
+
+// Página única de empresas. O cursor é persistido pelo work item para que a
+// leitura incremental/full possa ser retomada sem repetir a coleção inteira.
+export async function fetchCompaniesPage(
+  properties: string[],
+  tokenOverride?: string,
+  options: { cursor?: string | null; updatedAfterMs?: number; observer?: HubSpotRequestObserver } = {},
+): Promise<HubSpotCompaniesPage> {
+  const cursor = options.cursor ?? null;
+  const response = options.updatedAfterMs !== undefined
+    ? await hubspotFetch('/crm/v3/objects/companies/search', {
+      method: 'POST',
+      body: JSON.stringify({
+        filterGroups: [{ filters: [{ propertyName: 'hs_lastmodifieddate', operator: 'GTE', value: String(options.updatedAfterMs) }] }],
+        properties,
+        limit: 100,
+        sorts: [{ propertyName: 'hs_lastmodifieddate', direction: 'ASCENDING' }],
+        ...(cursor ? { after: cursor } : {}),
+      }),
+    }, 0, tokenOverride, options.observer)
+    : await hubspotFetch(`/crm/v3/objects/companies?${new URLSearchParams({ limit: '100', properties: properties.join(','), ...(cursor ? { after: cursor } : {}) }).toString()}`, {}, 0, tokenOverride, options.observer);
+  const payload = await response.json() as {
+    results?: HubSpotRecord[];
+    paging?: { next?: { after?: string } };
+  };
+  return {
+    records: payload.results ?? [],
+    nextCursor: nextHubSpotCursor(cursor, payload.paging?.next?.after, 'companies page'),
+  };
 }
 
 // Tickets: Search API filtrada pelo pipe.

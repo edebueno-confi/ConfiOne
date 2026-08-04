@@ -2203,6 +2203,59 @@ export function KnowledgePage() {
     );
   }
 
+  function renderCategoryManagerSurface() {
+    return (
+      <div className="gso-knowledge-category-manager space-y-3">
+        <section className="flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--minimal-border)] pb-3">
+          <div>
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-brand-blue)]">Organização da central</p>
+            <h1 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[color:var(--minimal-text)]">Gerenciar categorias</h1>
+            <p className="mt-1 max-w-2xl text-sm text-[color:var(--minimal-text-secondary)]">Crie e organize as categorias usadas pelos artigos desta central.</p>
+          </div>
+          <GhostButton className="h-9 rounded-md px-3 text-xs" onClick={() => setPanelMode('detail')}>Voltar para artigos</GhostButton>
+        </section>
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+          <form className="rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4" onSubmit={handleCreateCategory}>
+            <h2 className="text-sm font-semibold text-[color:var(--minimal-text)]">Nova categoria</h2>
+            <div className="mt-3 grid gap-3">
+              <Field label="Nome">
+                <TextInput required value={categoryForm.name} onChange={(event) => setCategoryForm((current) => ({ ...current, name: event.target.value }))} />
+              </Field>
+              <Field label="Slug">
+                <TextInput value={categoryForm.slug} onChange={(event) => setCategoryForm((current) => ({ ...current, slug: slugify(event.target.value) }))} placeholder="geral" />
+              </Field>
+              <Field label="Categoria pai">
+                <SelectInput value={categoryForm.parentCategoryId} onChange={(event) => setCategoryForm((current) => ({ ...current, parentCategoryId: event.target.value }))}>
+                  <option value="">Sem categoria pai</option>
+                  {sortedCategories.map((category) => <option key={category.id} value={category.id}>{categoryDisplayName(category)}</option>)}
+                </SelectInput>
+              </Field>
+              <Field label="Visibilidade">
+                <SelectInput value={categoryForm.visibility} onChange={(event) => setCategoryForm((current) => ({ ...current, visibility: event.target.value as KnowledgeVisibility }))}>
+                  {KNOWLEDGE_VISIBILITIES.map((visibility) => <option key={visibility} value={visibility}>{visibility}</option>)}
+                </SelectInput>
+              </Field>
+              <Field label="Descrição">
+                <TextareaInput value={categoryForm.description} onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))} />
+              </Field>
+              {categoryFormMessage ? <InlineNotice tone="critical">{categoryFormMessage}</InlineNotice> : null}
+              <AppButton disabled={categoryFormSubmitting || !selectedSpace} type="submit">{categoryFormSubmitting ? 'Salvando...' : 'Criar categoria'}</AppButton>
+            </div>
+          </form>
+          <section className="rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div><h2 className="text-sm font-semibold text-[color:var(--minimal-text)]">Categorias cadastradas</h2><p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">{sortedCategories.length} categoria(s) nesta central.</p></div>
+              <GhostButton className="h-8 rounded-md px-2.5 text-xs" onClick={() => setPanelMode('detail')}>Concluir</GhostButton>
+            </div>
+            <ul className="mt-3 divide-y divide-[color:var(--minimal-border)]">
+              {sortedCategories.map((category) => <li className="flex items-center justify-between gap-3 py-2.5" key={category.id}><div className="min-w-0"><strong className="block truncate text-sm text-[color:var(--minimal-text)]">{categoryDisplayName(category)}</strong><span className="text-xs text-[color:var(--minimal-text-secondary)]">{category.article_count} artigo(s) · {category.visibility}</span></div><span className="text-xs text-[color:var(--minimal-text-tertiary)]">{category.slug}</span></li>)}
+            </ul>
+          </section>
+        </div>
+      </div>
+    );
+  }
+
   if (backendDenied) {
     return <Navigate replace state={{ reason: 'missing-authorized-workspace' }} to="/access-denied" />;
   }
@@ -2255,6 +2308,10 @@ export function KnowledgePage() {
     return renderArticleEditorSurface();
   }
 
+  if (panelMode === 'create-category') {
+    return renderCategoryManagerSurface();
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
       <section className="shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4">
@@ -2281,8 +2338,8 @@ export function KnowledgePage() {
       </section>
 
       <div className="min-h-0 flex-1 overflow-hidden">
-        <div className="grid h-full min-h-0 xl:grid-cols-[minmax(0,1fr)_300px]">
-          <main className="flex min-h-0 flex-col overflow-hidden">
+        <div className="grid h-full min-h-0 min-w-0 xl:grid-cols-[minmax(0,1fr)_260px]">
+          <main className="flex min-h-0 min-w-0 flex-col overflow-hidden">
             <section className="grid shrink-0 gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] px-4 py-3 md:grid-cols-3 xl:grid-cols-[minmax(0,1fr)_168px_168px_168px]">
               <div className="md:col-span-3 xl:col-span-1">
                 <Field label="Busca global de conhecimento">
@@ -2515,7 +2572,7 @@ export function KnowledgePage() {
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col">
                   <div className="min-h-0 flex-1 overflow-auto">
-                    <table className="w-full table-fixed border-separate border-spacing-0">
+                    <table className="w-full min-w-[760px] table-fixed border-separate border-spacing-0">
                       <colgroup>
                         <col />
                         <col className="hidden w-[19%] md:table-column" />
@@ -2661,7 +2718,7 @@ export function KnowledgePage() {
             </section>
           </main>
 
-          <aside className="hidden min-h-0 flex-col overflow-y-auto overflow-x-hidden border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] xl:flex">
+          <aside className="hidden min-h-0 min-w-0 flex-col overflow-y-auto overflow-x-hidden border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] xl:flex">
             <section className="border-b border-[color:var(--minimal-border)] px-4 py-4">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-[0.9rem] font-semibold text-[color:var(--color-ink)]">

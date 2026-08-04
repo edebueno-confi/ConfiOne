@@ -18,7 +18,7 @@ import {
 } from '../analytics/analytics-api';
 import type { AnalyticsSourceConfig } from '../analytics/analytics-model';
 import type { AnalyticsSourceStatusPayload } from '@genius-support-os/contracts';
-import { syncProgressLabel } from '../analytics/analytics-sync-progress.mjs';
+import { areAnalyticsSourcesActive, syncProgressLabel } from '../analytics/analytics-sync-progress.mjs';
 
 const CONTROL = 'gso-settings-control w-full rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-3 py-2.5 text-sm text-[color:var(--minimal-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]';
 
@@ -157,6 +157,11 @@ export function DashboardSourcesSettingsPage() {
   };
 
   const run = async (kind: 'full' | 'hubspot' | 'omie') => {
+    const latestStatus = sourceStatus ?? await getAnalyticsSourceStatus();
+    if (areAnalyticsSourcesActive(latestStatus, kind)) {
+      setError('Já existe uma atualização em andamento. Aguarde a conclusão antes de iniciar outra.');
+      return;
+    }
     const source: SyncSource = kind === 'full' ? 'painel' : kind === 'hubspot' ? 'HubSpot' : 'OMIE';
     const activeState: SyncVisualState = kind === 'full' ? 'preparing' : kind === 'hubspot' ? 'syncing_hubspot' : 'syncing_omie';
     const detail = kind === 'full' ? 'O Gênio está atualizando HubSpot e OMIE em sequência.' : `O Gênio está atualizando ${kind === 'hubspot' ? 'HubSpot' : 'OMIE'}.`;

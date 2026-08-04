@@ -2038,6 +2038,24 @@ O relatório completo, incluindo evidências locais, contratos existentes, lacun
 ### Sequência
 
 1. tokens/primitivos e shell compartilhado;
+### Fila COPY-01 e cockpit operacional
+
+- Revisar e padronizar o copy de todas as telas e dominios, incluindo titulos,
+  descricoes, labels, acoes, tooltips e estados de carregamento, vazio, erro,
+  parcial e indisponivel.
+- A interface deve conversar com o usuario final e nao expor RPCs, APIs, read
+  models, tokens, nomes de implementacao, detalhes de desenvolvimento ou
+  mensagens de infraestrutura.
+- Refatorar Conhecimento e Configuracoes como superficies operacionais densas,
+  acionaveis e sem bordas pesadas; preservar contratos e dados reais.
+- Corrigir o motion de sincronizacao: bloquear durante o ciclo, oferecer
+  segundo plano apos 60 segundos e impedir nova solicitacao enquanto houver
+  execucao ativa.
+- Registrar inventario de strings, vocabulario aprovado, matriz de estados,
+  implementacao e QA real das superficies alteradas. A origem e o frescor
+  continuam definidos pelo backend/read model e sao traduzidos para linguagem
+  de produto.
+
 2. Visão Geral, Comercial, Customer Success, Suporte e Financeiro;
 3. Integrações, Fontes, Histórico e estados do Gênio;
 4. responsividade, temas e acessibilidade;

@@ -44,7 +44,7 @@ test('catálogo descobre, ativa e arquiva pipelines sem apagar histórico', () =
   assert.match(migration, /is_active = case when v_existing.classification_source = 'pending' then true/);
   assert.match(migration, /is_archived = true/);
   assert.match(migration, /not exists/);
-  assert.match(worker, /rpc_service_reconcile_hubspot_pipeline_catalog/);
+  assert.match(worker, /rpc_analytics_hubspot_finalize_run/);
 });
 
 test('áreas e classificação segura são contratos explícitos', () => {

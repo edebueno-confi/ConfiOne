@@ -46,7 +46,7 @@ test('progresso do HubSpot conta somente retries adicionais', () => {
 });
 
 test('empresas compartilhadas respeitam o watermark incremental do HubSpot', () => {
-  assert.match(hubspotWorker, /fetchCompanies\([\s\S]*item\.source_updated_after_ms/);
+  assert.match(hubspotWorker, /fetchCompaniesPage\([\s\S]*item\.source_updated_after_ms/);
 });
 
 console.log('analytics-source-status-contract: ok');

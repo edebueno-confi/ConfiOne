@@ -52,5 +52,8 @@ test('atualização dos dashboards mantém o Gênio animado até confirmar o est
   assert.match(overlay, /O Gênio ainda está aguardando uma resposta/);
   assert.match(overlay, /O Gênio interrompeu esta tentativa/);
   assert.match(overlay, /Acompanhar no Histórico/);
+  assert.match(overlay, /backgroundAfterMs = 60_000/);
+  assert.match(overlay, /Continuar em segundo plano/);
+  assert.match(overlay, /Não solicite outra sincronização/);
   assert.doesNotMatch(overlay, /barra|progresso|countdown/i);
 });

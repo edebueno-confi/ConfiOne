@@ -1,5 +1,35 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+## Adendo corrente — sincronização, qualidade e superfícies — 2026-08-04
+
+- O checkout canônico continua sendo `C:\Projetos\GSO-old`, na branch `main`,
+  sem push ou deploy remoto neste ciclo.
+- HubSpot e OMIE foram exercitados em ciclo local autenticado read-only. O
+  HubSpot concluiu em modo incremental com watermark, staging isolado e
+  promoção atômica; o OMIE concluiu com paginação serial, cache de clientes e
+  zero rejeições no ciclo validado.
+- A telemetria por requisição agora está persistida e publicada em read model
+  sanitizado, com requests, retries, erros, duração média e taxa de sucesso.
+  Evidência detalhada: `docs/reports/2026-08-04_estado-geral-integracoes-metricas.md`.
+- O worker HubSpot foi particionado em unidades compartilhadas retomáveis
+  (`shared_companies`, `shared_owners`, `shared_catalog`) para reduzir tempo de
+  execução e risco de limite do runtime. A reconciliação do catálogo permanece
+  na finalização atômica, não no worker parcial.
+- Produto e Desenvolvimento permanecem fundidos em uma única aba, em espera
+  honesta por contrato GitHub; nenhum KPI foi inventado.
+- A UI recebeu bloqueio de sincronização concorrente, motion do Gênio com
+  continuidade em segundo plano após 60 segundos, modo escuro para controles
+  nativos, Configurações/Fontes mais compactas, Knowledge sem sobreposição e
+  menos bordas pesadas. Rolagem fica restrita a listas/tabelas que excedem a
+  área disponível; não foi usado scroll artificial para compensar layout.
+- Validação deste adendo: 106 testes Node focados, typechecks de contratos e
+  web, build web, lint SQL, secret scan e quality gate aprovados. A suíte pgTAP
+  completa não é um sinal limpo enquanto o banco local preserva dados dos
+  ciclos manuais; os testes focados 097–101 passaram no mesmo comando.
+- Pendências: tombstones/arquivamentos HubSpot, denominador de Customer Success,
+  contrato GitHub, QA visual autenticado das superfícies alteradas e validação
+  remota/deploy das Edge Functions.
+
 ## Adendo corrente — Dashboard por domínios — 2026-08-03
 
 - A direção ativa deste lote é a reestruturação das sete páginas do Dashboard

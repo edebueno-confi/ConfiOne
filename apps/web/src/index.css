@@ -363,6 +363,16 @@
   --radius-lg: 16px;
 }
 
+/* Controles nativos tambem precisam seguir o tema; sem isso o menu de
+   selecao pode abrir com fundo claro e texto claro no modo escuro. */
+:root[data-theme='dark'] select,
+:root[data-theme='dark'] option,
+:root[data-theme='dark'] optgroup {
+  color-scheme: dark;
+  background-color: var(--minimal-surface);
+  color: var(--minimal-text);
+}
+
 /* Canvas Gerencial Gênio HD — composição de alta densidade para Analytics. */
 :root {
   --hd-canvas: var(--minimal-canvas);

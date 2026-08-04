@@ -6,6 +6,7 @@ const read = (path) => readFile(new URL(`../../${path}`, import.meta.url), 'utf8
 const telemetryMigration = await read('supabase/migrations/20260803140000_dashboard_sync_request_telemetry_v1.sql');
 const stagingMigration = await read('supabase/migrations/20260803143000_dashboard_hubspot_shared_staging_atomic_v1.sql');
 const metricsMigration = await read('supabase/migrations/20260803145000_dashboard_sync_request_metrics_contract_v1.sql');
+const qualityMetricsMigration = await read('supabase/migrations/20260804100000_dashboard_sync_quality_metrics_v1.sql');
 const telemetry = await read('supabase/functions/_shared/sync-request-telemetry.ts');
 const hubspot = await read('supabase/functions/_shared/hubspot.ts');
 const omie = await read('supabase/functions/_shared/omie.ts');
@@ -26,6 +27,8 @@ test('retries e falhas são agregados por execução sem contar a tentativa inic
   assert.match(telemetryMigration, /status_code = 429/);
   assert.match(metricsMigration, /request_retry_count/);
   assert.match(metricsMigration, /request_duration_ms/);
+  assert.match(qualityMetricsMigration, /average_duration_ms/);
+  assert.match(qualityMetricsMigration, /success_rate_percent/);
   assert.match(metricsMigration, /last_request_at/);
 });
 
@@ -38,6 +41,8 @@ test('HubSpot e OMIE registram cada tentativa sem alterar o resultado do provedo
   assert.match(worker, /await flushTelemetry\(\)/);
   assert.match(omieService, /createSyncRequestTelemetryBuffer/);
   assert.match(telemetry, /must not trigger a duplicate/);
+  assert.match(hubspot, /export async function fetchCompaniesPage/);
+  assert.match(hubspot, /export async function fetchOwnersPage/);
 });
 
 test('bloco compartilhado do HubSpot só grava staging antes da promoção atômica', () => {

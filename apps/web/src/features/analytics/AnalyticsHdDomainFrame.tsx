@@ -28,8 +28,10 @@ export function AnalyticsExecutionMeta({
       : null;
   const requestCount = run?.requestCount ?? null;
   const requestRetryCount = run?.requestRetryCount ?? null;
+  const requestAverageDurationMs = run?.requestAverageDurationMs ?? null;
+  const requestSuccessRatePercent = run?.requestSuccessRatePercent ?? null;
   const telemetrySummary = requestCount !== null
-    ? ` · ${requestCount.toLocaleString('pt-BR')} chamadas${requestRetryCount ? ` · ${requestRetryCount.toLocaleString('pt-BR')} retries` : ''}`
+    ? ` · ${requestCount.toLocaleString('pt-BR')} chamadas${requestRetryCount ? ` · ${requestRetryCount.toLocaleString('pt-BR')} retries` : ''}${requestAverageDurationMs !== null ? ` · ${requestAverageDurationMs.toLocaleString('pt-BR')} ms/call` : ''}${requestSuccessRatePercent !== null ? ` · ${requestSuccessRatePercent.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}% sucesso` : ''}`
     : '';
   const enrichmentSummary = provider === 'OMIE' && run && 'enrichmentCacheSource' in run && run.enrichmentCacheSource
     ? ` · índice clientes: ${run.enrichmentCacheSource === 'stale_cache' ? 'cache antigo' : run.enrichmentCacheSource === 'cache' ? 'cache vigente' : run.enrichmentCacheSource === 'api' ? 'API' : 'parcial'}`

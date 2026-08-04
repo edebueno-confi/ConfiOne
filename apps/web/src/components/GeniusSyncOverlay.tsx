@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { GeniusMascot } from './GeniusMascot';
 import { Link } from 'react-router-dom';
 
@@ -38,19 +39,35 @@ const COPY: Record<SyncVisualState, { title: string; description: string }> = {
 export function GeniusSyncOverlay({
   source,
   state = source === 'HubSpot' ? 'syncing_hubspot' : source === 'OMIE' ? 'syncing_omie' : 'preparing',
-  hasValidSnapshot = false,
   detail,
   historyHref,
+  onContinueInBackground,
+  backgroundAfterMs = 60_000,
 }: {
   source: SyncSource;
   state?: SyncVisualState;
   hasValidSnapshot?: boolean;
   detail?: string;
   historyHref?: string;
+  onContinueInBackground?: () => void;
+  backgroundAfterMs?: number;
 }) {
+  const [background, setBackground] = useState(false);
+  const [canContinueInBackground, setCanContinueInBackground] = useState(false);
   const copy = COPY[state];
   const active = !['failed', 'timed_out', 'abandoned'].includes(state);
-  const blocking = active && !hasValidSnapshot;
+  useEffect(() => {
+    setBackground(false);
+    setCanContinueInBackground(false);
+    if (!active) return undefined;
+    const timer = window.setTimeout(() => setCanContinueInBackground(true), Math.max(0, backgroundAfterMs));
+    return () => window.clearTimeout(timer);
+  }, [active, backgroundAfterMs, source, state]);
+  const blocking = active && !background;
+  const continueInBackground = () => {
+    setBackground(true);
+    onContinueInBackground?.();
+  };
   const content = (
     <div className="gso-genie-sync-content">
       <div className="gso-genie-sync-mascot" aria-hidden="true">
@@ -62,6 +79,8 @@ export function GeniusSyncOverlay({
         <h2>{copy.title}</h2>
         <p>{copy.description}</p>
         {detail ? <small>{detail}</small> : null}
+        {active && background ? <small className="gso-genie-sync-background-warning">A atualização continua em segundo plano. Não solicite outra sincronização até ela terminar.</small> : null}
+        {active && canContinueInBackground && !background ? <button type="button" className="gso-genie-sync-background-action" onClick={continueInBackground}>Continuar em segundo plano</button> : null}
         {historyHref ? <Link className="gso-genie-sync-history-link" to={historyHref}>Acompanhar no Histórico</Link> : null}
       </div>
     </div>
