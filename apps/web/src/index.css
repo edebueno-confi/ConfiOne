@@ -6517,3 +6517,145 @@ table {
   width: 0;
   height: 0;
 }
+
+/* Login compartilhado: clientes e colaboradores usam a mesma porta de entrada. */
+.gso-login-page {
+  padding: 32px !important;
+  background:
+    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--brand-500) 10%, transparent), transparent 30%),
+    radial-gradient(circle at 88% 84%, color-mix(in srgb, var(--accent-500) 8%, transparent), transparent 28%),
+    var(--minimal-canvas) !important;
+}
+.gso-login-shell {
+  display: grid;
+  width: min(1180px, 100%);
+  grid-template-columns: minmax(0, 1.22fr) minmax(350px, 0.78fr);
+  gap: 16px;
+  align-items: stretch;
+}
+.gso-login-brand-panel {
+  display: grid;
+  min-height: 620px;
+  grid-template-rows: auto 1fr auto;
+  gap: 36px;
+  padding: 42px;
+  border: 1px solid color-mix(in srgb, var(--brand-500) 28%, transparent);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(79, 110, 247, 0.32), transparent 28%),
+    linear-gradient(145deg, #071b50 0%, #0b2c73 100%);
+  box-shadow: 0 24px 54px rgba(4, 19, 61, 0.22);
+  color: #f7f9ff;
+}
+.gso-login-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.gso-login-brand-lockup .genius-mascot {
+  flex: 0 0 auto;
+}
+.gso-login-brand-name {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+.gso-login-brand-name span {
+  color: #ff6cbe;
+}
+.gso-login-brand-caption {
+  margin: 2px 0 0;
+  color: rgba(235, 241, 255, 0.74);
+  font-size: 0.78rem;
+}
+.gso-login-brand-copy {
+  align-self: center;
+  max-width: 33rem;
+}
+.gso-login-eyebrow {
+  margin: 0 0 12px;
+  color: #74d2e7;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+.gso-login-brand-copy h1 {
+  max-width: 12ch;
+  margin: 0;
+  color: inherit;
+  font-size: clamp(2.15rem, 4vw, 3.55rem);
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+}
+.gso-login-brand-copy > p:last-child {
+  max-width: 34rem;
+  margin: 18px 0 0;
+  color: rgba(235, 241, 255, 0.82);
+  font-size: 1.02rem;
+  line-height: 1.65;
+}
+.gso-login-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.gso-login-feature {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid rgba(180, 203, 255, 0.2);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.gso-login-feature-icon {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  margin-bottom: 12px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #4f8cff, #ff6cbe);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 800;
+}
+.gso-login-feature h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+.gso-login-feature p {
+  margin: 7px 0 0;
+  color: rgba(235, 241, 255, 0.72);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+.gso-login-form-panel {
+  display: flex;
+  align-items: center;
+}
+.gso-login-form-surface {
+  padding: 42px 38px !important;
+  border-radius: 24px !important;
+  background: var(--minimal-surface) !important;
+  box-shadow: 0 24px 54px rgba(23, 37, 61, 0.12) !important;
+}
+.gso-login-form-surface form {
+  gap: 22px;
+}
+.gso-login-form-surface .gso-minimal-button {
+  min-height: 44px;
+  border-radius: 999px;
+}
+@media (max-width: 860px) {
+  .gso-login-page { padding: 20px !important; }
+  .gso-login-shell { grid-template-columns: 1fr; }
+  .gso-login-brand-panel { min-height: auto; padding: 28px; gap: 28px; }
+  .gso-login-brand-copy h1 { max-width: 16ch; font-size: clamp(2rem, 8vw, 3rem); }
+  .gso-login-feature-grid { grid-template-columns: 1fr; }
+  .gso-login-feature { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: center; }
+  .gso-login-feature-icon { grid-row: span 2; margin: 0; }
+  .gso-login-feature p { margin-top: 3px; }
+  .gso-login-form-surface { padding: 28px 24px !important; }
+}

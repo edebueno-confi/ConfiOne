@@ -7,7 +7,7 @@ import type {
 } from '../../contracts/public-contracts';
 
 const SAFE_URL_PATTERN = /^(https?:\/\/|\/)[^\s]+$/i;
-const SAFE_EMAIL_PATTERN = /^[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}$/i;
+const SAFE_EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
 const SAFE_CSS_PATTERN = /^[#(),.%\-+\s\w/]+$/;
 const HELP_CENTER_FALLBACK_IMAGE = '/favicon.svg';
 

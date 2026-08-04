@@ -46,6 +46,8 @@
     "documentation:sync:internal-docs": "node scripts/documentation/sync-internal-documents.mjs",
     "documentation:sync:internal-docs:apply": "node scripts/documentation/sync-internal-documents.mjs --apply",
     "documentation:sync:internal-docs:local": "node scripts/documentation/sync-internal-documents-local.mjs",
+    "lint": "npm run lint --workspaces --if-present",
+    "lint:fix": "npm run lint --workspaces --if-present -- --fix",
     "quality:fast": "node .agents/skills/genius-code-quality/scripts/run-quality-gate.mjs fast",
     "quality:changed": "node .agents/skills/genius-code-quality/scripts/run-quality-gate.mjs changed",
     "quality:staged": "node .agents/skills/genius-code-quality/scripts/run-quality-gate.mjs staged",
@@ -58,7 +60,14 @@
   },
   "devDependencies": {
     "playwright": "^1.61.0",
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
     "supabase": "^2.105.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.48.0"
   }
 }
