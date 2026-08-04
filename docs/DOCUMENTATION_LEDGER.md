@@ -7081,3 +7081,26 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
   smoke; `local:qa:writes` não foi executado; nenhum backend, banco, contrato,
   permissão ou dado alterado.
 - Impacto futuro na FAQ: nenhum.
+
+## QUALITY-QA-02 — Smoke estendido, hooks públicos e Fast Refresh — 2026-08-04
+
+- Relatório: `docs/reports/2026-08-04_smoke-estendido-hooks-publicos-e-fast-refresh.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Entrega 1: `scripts/local-qa/browser-smoke.mjs` com `extraRoutes` por persona,
+  cobrindo `/admin/knowledge` e `/admin/access` para `platform_admin`, com
+  captura e bloco `internalRoutes` na saída.
+- Entrega 2: Central Pública sem `rules-of-hooks`. `loadSpaces`, `loadSpace`,
+  `loadArticle` e `loadSearch` migraram de `useEffectEvent` para `useCallback`,
+  com dependências explícitas e comportamento preservado.
+- Entrega 3: novo `apps/web/src/features/help-center/public-presentation.ts` com
+  os quatro helpers puros que ficavam em `public-ui.tsx`, zerando
+  `react-refresh/only-export-components` na área pública.
+- Efeito medido: lint de 196 para 187 avisos, sempre com 0 erros.
+- Evidência: smoke com 10 cenários e 2 rotas internas, QA manual da Central
+  Pública em busca, artigo e diretório, lint, typecheck, build, secret scan e
+  quality gate sem findings.
+- Achado registrado: `/admin/customer-portal` depende da screen key
+  `customer_portal_admin`, ausente na fixture local; superfície fora do QA local.
+- Limites: 41 avisos de hooks seguem em superfícies internas; nenhum backend,
+  banco, contrato, permissão ou dado alterado.
+- Impacto futuro na FAQ: nenhum.

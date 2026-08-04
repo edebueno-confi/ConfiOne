@@ -103,6 +103,8 @@ O lote 2 da dívida de lint também está entregue: 24 specifiers de import mort
 
 Também estão entregues: QA autenticado local destravado com o harness oficial (5 papéis por API e 10 cenários visuais aprovados, runbook em `docs/LOCAL_QA_AUTH.md`), auditoria de dependência de produção no quality gate via `npm run security:audit:prod`, e remoção de 21 helpers de apresentação órfãos, deixando o lint em 196 avisos. Relatório: `docs/reports/2026-08-04_qa-autenticado-audit-no-gate-e-lint-lote-3.md`.
 
-As próximas ações seguras são: decidir o merge em `main`; estender o harness de smoke com cenários autenticados para Conhecimento, Access e Portal Admin; e decidir produto sobre os filtros meio ligados de `KnowledgePage.tsx` e sobre a superfície legada do editor. Com o harness estendido, os 73 avisos de hooks passam a ter caminho real de verificação.
+O harness de smoke já foi estendido para `/admin/knowledge` e `/admin/access`, a Central Pública ficou sem `rules-of-hooks` e sem `react-refresh`, e o lint está em 187 avisos. Relatório: `docs/reports/2026-08-04_smoke-estendido-hooks-publicos-e-fast-refresh.md`.
+
+As próximas ações seguras são: decidir o merge em `main`; decidir se a fixture local passa a conceder a screen key `customer_portal_admin`, hoje o único bloqueio para cobrir `/admin/customer-portal` no smoke; atacar `rules-of-hooks` em `TenantsPage.tsx`, com 15 avisos, antes de `SupportWorkspacePage.tsx`; e decidir produto sobre os filtros meio ligados de `KnowledgePage.tsx` e a superfície legada do editor.
 
 Em qualquer caso, manter as instâncias locais acessíveis nas portas 4173 e 4174 e preservar o banco local existente.

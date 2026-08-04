@@ -3394,3 +3394,27 @@ Relatório corrente: `docs/reports/2026-08-04_mvp-closure-status.md`.
 - Continuam pendentes de decisão de produto: filtros meio ligados de
   `KnowledgePage.tsx`, superfície legada do editor e componentes órfãos.
 - Relatório: `docs/reports/2026-08-04_qa-autenticado-audit-no-gate-e-lint-lote-3.md`.
+
+## Atualização corrente — Smoke estendido, hooks públicos e Fast Refresh — 2026-08-04
+
+- O smoke autenticado passou a cobrir superfícies internas: além de
+  `/admin/analytics`, o `platform_admin` visita `/admin/knowledge` e
+  `/admin/access` em desktop, com validação de rota alcançada, ausência de
+  overflow e captura de evidência. A saída ganhou o bloco `internalRoutes`.
+- Achado de permissão: `/admin/customer-portal` exige a screen key
+  `customer_portal_admin`, que a fixture local de QA não concede. A resposta
+  `/access-denied` é contrato funcionando, não defeito; a superfície fica fora do
+  QA local até haver grant.
+- Central Pública sem `rules-of-hooks`: `loadSpaces`, `loadSpace`, `loadArticle` e
+  `loadSearch` saíram de `useEffectEvent` para `useCallback`, porque eram
+  chamados também por botão de nova tentativa. Comportamento idêntico; as funções
+  não capturavam estado reativo, exceto `loadSearch`, cuja dependência real já
+  constava no Effect.
+- Central Pública sem `react-refresh`: os helpers puros de apresentação saíram de
+  `public-ui.tsx` para o novo `public-presentation.ts`, sem alteração de lógica e
+  preservando o texto visível.
+- Lint saiu de 196 para 187 avisos, mantendo 0 erros. Restam 41 avisos de hooks,
+  concentrados em `SupportWorkspacePage.tsx` e `TenantsPage.tsx` com 15 cada.
+- QA real: smoke com 10 cenários e 2 rotas internas, mais verificação manual da
+  Central Pública em busca, artigo e diretório, todas com console limpo.
+- Relatório: `docs/reports/2026-08-04_smoke-estendido-hooks-publicos-e-fast-refresh.md`.

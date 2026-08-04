@@ -146,6 +146,12 @@ Saída esperada: 10 cenários, 5 papéis em desktop e mobile, com `consoleErrors
    local e depende dos IDs atuais da fixture.
 
 Cobertura atual do smoke: Dashboard Gerencial autenticado, escopo de
-`dashboard_viewer`, bloqueio de rota administrativa para suporte e cliente, e
-bloqueio de rota interna para `customer_user`. Conhecimento, Access e Portal Admin
-ainda não têm cenário próprio.
+`dashboard_viewer`, bloqueio de rota administrativa para suporte e cliente,
+bloqueio de rota interna para `customer_user` e, desde 2026-08-04, as superfícies
+internas `/admin/knowledge` e `/admin/access` para `platform_admin` em desktop,
+declaradas em `extraRoutes` dentro de `scripts/local-qa/browser-smoke.mjs`.
+
+`/admin/customer-portal` não entra no smoke porque exige a screen key
+`customer_portal_admin`, que a fixture local não concede. Nesse estado a rota
+responde `/access-denied` por contrato. Para cobrir essa superfície é preciso
+conceder o grant na fixture primeiro.
