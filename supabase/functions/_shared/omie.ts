@@ -1,4 +1,6 @@
 // Cliente read-only da API oficial Omie - Contas a Receber.
+import type { SyncRequestTelemetryEvent } from './sync-request-telemetry.ts';
+
 // A credencial chega do Vault como JSON { app_key, app_secret } ou app_key|app_secret.
 
 const OMIE_BASE_URL = 'https://app.omie.com.br/api/v1/financas/contareceber/';
@@ -15,6 +17,14 @@ export type OmieErrorCode =
   | 'network_error'
   | 'malformed_response'
   | 'internal_error';
+
+export type OmieRequestObserver = {
+  record(event: SyncRequestTelemetryEvent): void;
+};
+
+function recordOmieRequest(observer: OmieRequestObserver | undefined, event: SyncRequestTelemetryEvent) {
+  try { observer?.record(event); } catch { /* observabilidade não interrompe o sync */ }
+}
 
 export class OmieProviderError extends Error {
   readonly code: OmieErrorCode;
@@ -239,7 +249,7 @@ export function normalizeOmieApiReceivables(rows: unknown[], syncRunId: string):
 export async function fetchOmieReceivablesWithMetadata(
   credentials: OmieCredentials,
   fetchImpl: typeof fetch = fetch,
-  options: { timeoutMs?: number; maxRetries?: number } = {},
+  options: { timeoutMs?: number; maxRetries?: number; observer?: OmieRequestObserver } = {},
 ) {
   const pageSize = 500;
   const timeoutMs = Math.max(options.timeoutMs ?? 15000, 1000);
@@ -250,6 +260,7 @@ export async function fetchOmieReceivablesWithMetadata(
     let response: Response | null = null;
     let lastError: unknown = null;
     for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+      const startedAt = Date.now();
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
@@ -261,6 +272,15 @@ export async function fetchOmieReceivablesWithMetadata(
       } catch (error) {
         lastError = error;
         response = null;
+        recordOmieRequest(options.observer, {
+          endpoint: 'financas.contareceber.listar',
+          method: 'POST',
+          attempt: attempt + 1,
+          statusCode: null,
+          durationMs: Date.now() - startedAt,
+          pageNumber: page,
+          errorCode: error instanceof DOMException && error.name === 'AbortError' ? 'timeout' : 'network_error',
+        });
         if (attempt === maxRetries) {
           throw new OmieProviderError({
             code: 'network_error',
@@ -271,6 +291,20 @@ export async function fetchOmieReceivablesWithMetadata(
         }
       } finally {
         clearTimeout(timer);
+      }
+      if (response) {
+        const retryAfterHeader = response.headers.get('Retry-After');
+        const retryAfterMs = retryAfterHeader ? Number(retryAfterHeader) * 1000 : null;
+        recordOmieRequest(options.observer, {
+          endpoint: 'financas.contareceber.listar',
+          method: 'POST',
+          attempt: attempt + 1,
+          statusCode: response.status,
+          durationMs: Date.now() - startedAt,
+          retryAfterMs: Number.isFinite(retryAfterMs) ? retryAfterMs : null,
+          pageNumber: page,
+          errorCode: response.status === 429 ? 'rate_limit' : response.status >= 500 ? 'provider_transient_error' : response.ok ? null : 'provider_error',
+        });
       }
       if (response && (response.ok || !retriableStatus.has(response.status) || attempt === maxRetries)) break;
       // Backoff progressivo antes de nova tentativa de status transitorio.
@@ -387,7 +421,7 @@ export function normalizeOmieClientCode(row: Record<string, unknown>): string | 
 export async function fetchOmieClientsIndex(
   credentials: OmieCredentials,
   fetchImpl: typeof fetch = fetch,
-  options: { timeoutMs?: number; maxRetries?: number; maxPages?: number } = {},
+  options: { timeoutMs?: number; maxRetries?: number; maxPages?: number; observer?: OmieRequestObserver } = {},
 ): Promise<Map<string, OmieClientInfo>> {
   const index = new Map<string, OmieClientInfo>();
   const pageSize = 500;
@@ -399,6 +433,7 @@ export async function fetchOmieClientsIndex(
   async function fetchPage(page: number) {
     let response: Response | null = null;
     for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+      const startedAt = Date.now();
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
@@ -407,10 +442,33 @@ export async function fetchOmieClientsIndex(
           body: JSON.stringify(buildOmieClientsRequest(credentials, page, pageSize)),
           signal: controller.signal,
         });
-      } catch {
+      } catch (error) {
         response = null;
+        recordOmieRequest(options.observer, {
+          endpoint: 'geral.clientes_resumido.listar',
+          method: 'POST',
+          attempt: attempt + 1,
+          statusCode: null,
+          durationMs: Date.now() - startedAt,
+          pageNumber: page,
+          errorCode: error instanceof DOMException && error.name === 'AbortError' ? 'timeout' : 'network_error',
+        });
       } finally {
         clearTimeout(timer);
+      }
+      if (response) {
+        const retryAfterHeader = response.headers.get('Retry-After');
+        const retryAfterMs = retryAfterHeader ? Number(retryAfterHeader) * 1000 : null;
+        recordOmieRequest(options.observer, {
+          endpoint: 'geral.clientes_resumido.listar',
+          method: 'POST',
+          attempt: attempt + 1,
+          statusCode: response.status,
+          durationMs: Date.now() - startedAt,
+          retryAfterMs: Number.isFinite(retryAfterMs) ? retryAfterMs : null,
+          pageNumber: page,
+          errorCode: response.status === 429 ? 'rate_limit' : response.status >= 500 ? 'provider_transient_error' : response.ok ? null : 'provider_error',
+        });
       }
       if (response && (response.ok || !retriableStatus.has(response.status) || attempt === maxRetries)) break;
       await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));

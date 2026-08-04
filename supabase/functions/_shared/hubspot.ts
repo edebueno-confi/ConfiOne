@@ -4,6 +4,7 @@
 // crm.objects.owners.read, crm.schemas.deals.read, crm.schemas.tickets.read.
 
 import { buildHubSpotCompanyBatchUpdatePayload, chunkCompanyUpdates } from './hubspot-company-batch.mjs';
+import type { SyncRequestTelemetryEvent } from './sync-request-telemetry.ts';
 
 const HUBSPOT_BASE_URL = 'https://api.hubapi.com';
 const HUBSPOT_REQUEST_TIMEOUT_MS = 20_000;
@@ -52,7 +53,12 @@ export interface HubSpotTicketPageOptions {
   rangeStartMs?: number;
   rangeEndMs?: number;
   updatedAfterMs?: number;
+  telemetry?: HubSpotRequestObserver;
 }
+
+export type HubSpotRequestObserver = {
+  record(event: SyncRequestTelemetryEvent): void;
+};
 
 export interface HubSpotTicketPage {
   records: HubSpotRecord[];
@@ -89,6 +95,25 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function hubSpotEndpointKey(path: string) {
+  const pathname = path.split('?')[0];
+  if (pathname.includes('/objects/deals/search')) return 'crm.objects.deals.search';
+  if (pathname.includes('/objects/tickets/search')) return 'crm.objects.tickets.search';
+  if (pathname.includes('/objects/companies/search')) return 'crm.objects.companies.search';
+  if (pathname.includes('/objects/companies/batch/update')) return 'crm.objects.companies.batch_update';
+  if (pathname.includes('/objects/companies/merge')) return 'crm.objects.companies.merge';
+  if (pathname.includes('/objects/companies')) return 'crm.objects.companies';
+  if (pathname.includes('/pipelines/')) return 'crm.pipelines';
+  if (pathname.includes('/owners')) return 'crm.owners';
+  if (pathname.includes('/properties/companies/groups')) return 'crm.properties.companies.groups';
+  if (pathname.includes('/properties/companies')) return 'crm.properties.companies';
+  return 'hubspot.unknown';
+}
+
+function recordRequest(observer: HubSpotRequestObserver | undefined, event: SyncRequestTelemetryEvent) {
+  try { observer?.record(event); } catch { /* observabilidade não interrompe o sync */ }
+}
+
 export function nextHubSpotCursor(previous: string | undefined | null, candidate: unknown, context: string): string | null {
   if (candidate === undefined || candidate === null || candidate === '') return null;
   const next = String(candidate).trim();
@@ -102,10 +127,13 @@ async function hubspotFetch(
   init: RequestInit = {},
   attempt = 0,
   tokenOverride?: string,
+  observer?: HubSpotRequestObserver,
 ): Promise<Response> {
   const token = readToken(tokenOverride);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), HUBSPOT_REQUEST_TIMEOUT_MS);
+  const startedAt = Date.now();
+  const method = init.method ?? 'GET';
   let response: Response;
   try {
     response = await fetch(`${HUBSPOT_BASE_URL}${path}`, {
@@ -118,26 +146,45 @@ async function hubspotFetch(
       },
     });
   } catch (error) {
+    recordRequest(observer, {
+      endpoint: hubSpotEndpointKey(path),
+      method,
+      attempt: attempt + 1,
+      statusCode: null,
+      durationMs: Date.now() - startedAt,
+      errorCode: error instanceof DOMException && error.name === 'AbortError' ? 'timeout' : 'network_error',
+    });
     if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new Error(`HubSpot ${init.method ?? 'GET'} ${path} excedeu o tempo limite de ${HUBSPOT_REQUEST_TIMEOUT_MS / 1000}s.`);
+      throw new Error(`HubSpot ${method} ${path} excedeu o tempo limite de ${HUBSPOT_REQUEST_TIMEOUT_MS / 1000}s.`);
     }
     throw error;
   } finally {
     clearTimeout(timeout);
   }
 
+  const retryAfterHeader = response.headers.get('Retry-After');
+  const retryAfterMs = retryAfterHeader ? Number(retryAfterHeader) * 1000 : null;
+  recordRequest(observer, {
+    endpoint: hubSpotEndpointKey(path),
+    method,
+    attempt: attempt + 1,
+    statusCode: response.status,
+    durationMs: Date.now() - startedAt,
+    retryAfterMs: Number.isFinite(retryAfterMs) ? retryAfterMs : null,
+    errorCode: response.status === 429 ? 'rate_limit' : response.status >= 500 ? 'provider_transient_error' : response.ok ? null : 'provider_error',
+  });
+
   if ((response.status === 429 || response.status >= 500) && attempt < 6) {
-    const retryAfterHeader = response.headers.get('Retry-After');
-    const retryAfterMs = retryAfterHeader
+    const waitMs = retryAfterHeader
       ? Number(retryAfterHeader) * 1000
       : Math.min(2 ** attempt * 500, 8000);
-    await sleep(Number.isFinite(retryAfterMs) ? retryAfterMs : 1000);
-    return hubspotFetch(path, init, attempt + 1, tokenOverride);
+    await sleep(Number.isFinite(waitMs) ? waitMs : 1000);
+    return hubspotFetch(path, init, attempt + 1, tokenOverride, observer);
   }
 
   if (!response.ok) {
     const body = await response.text().catch(() => '');
-    throw new Error(`HubSpot ${init.method ?? 'GET'} ${path} falhou (${response.status}): ${body.slice(0, 400)}`);
+    throw new Error(`HubSpot ${method} ${path} falhou (${response.status}): ${body.slice(0, 400)}`);
   }
 
   return response;
@@ -148,8 +195,9 @@ export async function fetchPipelineStages(
   objectType: 'deals' | 'tickets',
   pipelineId: string,
   tokenOverride?: string,
+  observer?: HubSpotRequestObserver,
 ): Promise<HubSpotStage[]> {
-  const response = await hubspotFetch(`/crm/v3/pipelines/${objectType}/${pipelineId}`, {}, 0, tokenOverride);
+  const response = await hubspotFetch(`/crm/v3/pipelines/${objectType}/${pipelineId}`, {}, 0, tokenOverride, observer);
   const payload = (await response.json()) as {
     stages?: Array<{
       id: string;
@@ -191,8 +239,9 @@ export async function fetchPipelineStages(
 export async function fetchPipelineDefinitions(
   objectType: 'deals' | 'tickets',
   tokenOverride?: string,
+  observer?: HubSpotRequestObserver,
 ): Promise<HubSpotPipelineDefinition[]> {
-  const response = await hubspotFetch(`/crm/v3/pipelines/${objectType}`, {}, 0, tokenOverride);
+  const response = await hubspotFetch(`/crm/v3/pipelines/${objectType}`, {}, 0, tokenOverride, observer);
   const payload = (await response.json()) as {
     results?: Array<{
       id?: string;
@@ -254,14 +303,14 @@ export async function fetchPipelineLabel(
 }
 
 // GET /crm/v3/owners -> resolve hubspot_owner_id em nome/email. Paginado.
-export async function fetchOwners(tokenOverride?: string): Promise<HubSpotOwner[]> {
+export async function fetchOwners(tokenOverride?: string, observer?: HubSpotRequestObserver): Promise<HubSpotOwner[]> {
   const owners: HubSpotOwner[] = [];
   let after: string | null = null;
 
   do {
     const query = new URLSearchParams({ limit: '100' });
     if (after) query.set('after', after);
-    const response = await hubspotFetch(`/crm/v3/owners?${query.toString()}`, {}, 0, tokenOverride);
+    const response = await hubspotFetch(`/crm/v3/owners?${query.toString()}`, {}, 0, tokenOverride, observer);
     const payload = (await response.json()) as {
       results?: Array<Record<string, unknown>>;
       paging?: { next?: { after?: string } };
@@ -335,13 +384,13 @@ export async function fetchDealsPageByPipeline(
   pipelineId: string,
   properties: string[],
   tokenOverride?: string,
-  options: { cursor?: string | null; updatedAfterMs?: number } = {},
+  options: { cursor?: string | null; updatedAfterMs?: number; telemetry?: HubSpotRequestObserver } = {},
 ): Promise<HubSpotObjectPage> {
   const filters: Array<Record<string, string>> = [{ propertyName: 'pipeline', operator: 'EQ', value: pipelineId }];
   if (options.updatedAfterMs !== undefined) filters.push({ propertyName: 'hs_lastmodifieddate', operator: 'GTE', value: String(options.updatedAfterMs) });
   const body: Record<string, unknown> = { filterGroups: [{ filters }], properties, limit: 100, sorts: [{ propertyName: 'createdate', direction: 'ASCENDING' }] };
   if (options.cursor) body.after = options.cursor;
-  const response = await hubspotFetch('/crm/v3/objects/deals/search', { method: 'POST', body: JSON.stringify(body) }, 0, tokenOverride);
+  const response = await hubspotFetch('/crm/v3/objects/deals/search', { method: 'POST', body: JSON.stringify(body) }, 0, tokenOverride, options.telemetry);
   const payload = await response.json() as { results?: HubSpotRecord[]; total?: number; paging?: { next?: { after?: string } } };
   return { records: payload.results ?? [], total: Number.isFinite(Number(payload.total)) ? Number(payload.total) : null, nextCursor: nextHubSpotCursor(options.cursor, payload.paging?.next?.after, 'deals') };
 }
@@ -506,7 +555,7 @@ export async function fetchTicketsPageByPipeline(
   const response = await hubspotFetch('/crm/v3/objects/tickets/search', {
     method: 'POST',
     body: JSON.stringify(body),
-  }, 0, tokenOverride);
+  }, 0, tokenOverride, options.telemetry);
   const payload = await response.json() as {
     results?: HubSpotRecord[];
     total?: number;
@@ -542,6 +591,7 @@ export async function fetchCompanies(
   properties: string[],
   tokenOverride?: string,
   updatedAfterMs?: number,
+  observer?: HubSpotRequestObserver,
 ): Promise<HubSpotRecord[]> {
   const records: HubSpotRecord[] = [];
   let after: string | undefined;
@@ -558,7 +608,7 @@ export async function fetchCompanies(
       const response = await hubspotFetch('/crm/v3/objects/companies/search', {
         method: 'POST',
         body: JSON.stringify(body),
-      }, 0, tokenOverride);
+      }, 0, tokenOverride, observer);
       const payload = (await response.json()) as {
         results?: HubSpotRecord[];
         paging?: { next?: { after?: string } };
@@ -574,7 +624,7 @@ export async function fetchCompanies(
   do {
     const query = new URLSearchParams({ limit: '100', properties: properties.join(',') });
     if (after) query.set('after', after);
-    const response = await hubspotFetch(`/crm/v3/objects/companies?${query.toString()}`, {}, 0, tokenOverride);
+    const response = await hubspotFetch(`/crm/v3/objects/companies?${query.toString()}`, {}, 0, tokenOverride, observer);
     const payload = (await response.json()) as {
       results?: HubSpotRecord[];
       paging?: { next?: { after?: string } };

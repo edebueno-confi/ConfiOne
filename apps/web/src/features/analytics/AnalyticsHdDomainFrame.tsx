@@ -26,6 +26,11 @@ export function AnalyticsExecutionMeta({
     : run && 'recordsPromoted' in run
       ? (run.recordsPromoted || run.recordsAccepted || run.companiesSynced || run.dealsSynced || run.ticketsSynced)
       : null;
+  const requestCount = run?.requestCount ?? null;
+  const requestRetryCount = run?.requestRetryCount ?? null;
+  const telemetrySummary = requestCount !== null
+    ? ` · ${requestCount.toLocaleString('pt-BR')} chamadas${requestRetryCount ? ` · ${requestRetryCount.toLocaleString('pt-BR')} retries` : ''}`
+    : '';
 
   return (
     <div className="gso-analytics-execution-meta" aria-label={`Última execução ${provider}`}>
@@ -34,6 +39,7 @@ export function AnalyticsExecutionMeta({
       <span>
         {finishedAt ? new Date(finishedAt).toLocaleString('pt-BR') : 'Atualização não registrada'}
         {rowCount !== null && rowCount !== undefined ? ` · ${rowCount.toLocaleString('pt-BR')} registros` : ''}
+        {telemetrySummary}
       </span>
     </div>
   );

@@ -132,6 +132,13 @@ export interface SyncRun {
   pipelinesTotal: number;
   pipelinesCompleted: number;
   errorCode: string | null;
+  requestCount: number | null;
+  requestRetryCount: number | null;
+  rateLimitCount: number | null;
+  providerErrorCount: number | null;
+  failedRequestCount: number | null;
+  requestDurationMs: number | null;
+  lastRequestAt: string | null;
 }
 
 export interface AnalyticsFilters {
@@ -341,6 +348,13 @@ export interface OmieSyncRun {
   finishedAt: string | null;
   errorMessage: string | null;
   correlationId: string | null;
+  requestCount: number | null;
+  requestRetryCount: number | null;
+  rateLimitCount: number | null;
+  providerErrorCount: number | null;
+  failedRequestCount: number | null;
+  requestDurationMs: number | null;
+  lastRequestAt: string | null;
 }
 
 export interface CeoSnapshot {
@@ -640,6 +654,13 @@ export function mapOmieSyncRun(row: Record<string, unknown>): OmieSyncRun {
     finishedAt: row.finished_at ? toText(row.finished_at) : null,
     errorMessage: row.error_message ? toText(row.error_message) : null,
     correlationId: row.correlation_id ? toText(row.correlation_id) : null,
+    requestCount: row.request_count == null ? null : toNumber(row.request_count),
+    requestRetryCount: row.request_retry_count == null ? null : toNumber(row.request_retry_count),
+    rateLimitCount: row.rate_limit_count == null ? null : toNumber(row.rate_limit_count),
+    providerErrorCount: row.provider_error_count == null ? null : toNumber(row.provider_error_count),
+    failedRequestCount: row.failed_request_count == null ? null : toNumber(row.failed_request_count),
+    requestDurationMs: row.request_duration_ms == null ? null : toNumber(row.request_duration_ms),
+    lastRequestAt: row.last_request_at ? toText(row.last_request_at) : null,
   };
 }
 
@@ -940,6 +961,13 @@ export function mapSyncRun(row: Record<string, unknown> | null): SyncRun | null 
     pipelinesTotal: toNumber(row.pipelines_total),
     pipelinesCompleted: toNumber(row.pipelines_completed),
     errorCode: row.error_code ? toText(row.error_code) : null,
+    requestCount: row.request_count == null ? null : toNumber(row.request_count),
+    requestRetryCount: row.request_retry_count == null ? null : toNumber(row.request_retry_count),
+    rateLimitCount: row.rate_limit_count == null ? null : toNumber(row.rate_limit_count),
+    providerErrorCount: row.provider_error_count == null ? null : toNumber(row.provider_error_count),
+    failedRequestCount: row.failed_request_count == null ? null : toNumber(row.failed_request_count),
+    requestDurationMs: row.request_duration_ms == null ? null : toNumber(row.request_duration_ms),
+    lastRequestAt: row.last_request_at ? toText(row.last_request_at) : null,
   };
 }
 

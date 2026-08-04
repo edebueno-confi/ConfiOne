@@ -1,5 +1,6 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { classifyOmieError, enrichReceivablesWithClients, fetchOmieClientsIndex, fetchOmieReceivablesWithMetadata, normalizeOmieApiReceivables, type OmieCredentials } from './omie.ts';
+import { createSyncRequestTelemetryBuffer } from './sync-request-telemetry.ts';
 
 export const OMIE_STAGING_BATCH_SIZE = 500;
 
@@ -36,6 +37,11 @@ export async function runOmieSnapshot(client: SupabaseClient, credentials: OmieC
   if (syncRunError?.code === '23505') { const error = new Error('Ja existe uma sincronizacao OMIE em andamento. Aguarde a conclusao antes de tentar novamente.'); Object.assign(error, { code: 'OMIE_SYNC_IN_PROGRESS' }); throw error; }
   if (syncRunError || !syncRun) throw new Error(syncRunError?.message ?? 'Nao foi possivel criar a execucao financeira.');
   const syncRunId = String(syncRun.id);
+  const telemetry = createSyncRequestTelemetryBuffer({ provider: 'omie', omieRunId: syncRunId, cycleId, correlationId });
+  const flushTelemetry = async () => {
+    const result = await telemetry.flush(client);
+    if (result.error) console.warn(`Falha ao persistir telemetria OMIE: ${result.error}`);
+  };
   const updateRun = async (patch: Record<string, unknown>) => { const { error } = await client.from('analytics_finance_sync_runs').update(patch).eq('id', syncRunId); if (error) throw new Error(`Falha ao registrar estado da execução OMIE: ${error.message}`); };
   const failRun = async (status: string, error: unknown, patch: Record<string, unknown> = {}) => {
     const classified = classifyOmieError(error);
@@ -52,7 +58,7 @@ export async function runOmieSnapshot(client: SupabaseClient, credentials: OmieC
     });
   };
   try {
-    const fetched = await fetchOmieReceivablesWithMetadata(credentials);
+    const fetched = await fetchOmieReceivablesWithMetadata(credentials, fetch, { observer: telemetry.observer });
     if (fetched.rows.length === 0) {
       if (fetched.metadata.totalRecords === 0) { await failRun('empty', 'Resposta autoritativa vazia; snapshot anterior preservado.', { total_rows: 0, metadata: { ...fetched.metadata, authoritativeEmpty: true } }); return { syncRunId, correlationId, totalRows: 0, acceptedRows: 0, rejectedRows: 0, status: 'empty', promotion: null }; }
       const code = fetched.metadata.totalRecords === null ? 'OMIE_EMPTY_RESPONSE_WITHOUT_AUTHORITATIVE_TOTAL' : 'OMIE_TOTAL_RECORDS_WITHOUT_ROWS';
@@ -70,18 +76,22 @@ export async function runOmieSnapshot(client: SupabaseClient, credentials: OmieC
     for (const row of normalized.accepted) { const key = `${row.source_key}:${row.source_record_id}`; if (identityKeys.has(key)) collisions += 1; identityKeys.add(key); }
     if (collisions > 0) { const code = 'identity_collision'; const reasons = { ...counts, [code]: collisions }; await failRun('failed', 'OMIE_IDENTITY_COLLISION', { rejected_rows: normalized.rejected.length + collisions, rejected_by_reason: reasons, metadata: { ...fetched.metadata, collisionCount: collisions } }); return { syncRunId, correlationId, totalRows: normalized.summary.received, acceptedRows: 0, rejectedRows: normalized.rejected.length + collisions, status: 'failed', errorCode: 'OMIE_IDENTITY_COLLISION', promotion: null }; }
     const enrichment = { status: 'unavailable', matched: 0, unmatched: normalized.accepted.length, fieldsUpdated: 0, errors: 0 } as { status: 'complete'|'partial'|'unavailable'; matched: number; unmatched: number; fieldsUpdated: number; errors: number };
-    try { const clients = await fetchOmieClientsIndex(credentials); const result = enrichReceivablesWithClients(normalized.accepted as any, clients); enrichment.matched = result.stats.matched; enrichment.unmatched = result.stats.unmatched; enrichment.fieldsUpdated = result.stats.fieldsUpdated; enrichment.status = enrichment.unmatched ? 'partial' : 'complete'; } catch { enrichment.errors = 1; }
+    try { const clients = await fetchOmieClientsIndex(credentials, fetch, { observer: telemetry.observer }); const result = enrichReceivablesWithClients(normalized.accepted as any, clients); enrichment.matched = result.stats.matched; enrichment.unmatched = result.stats.unmatched; enrichment.fieldsUpdated = result.stats.fieldsUpdated; enrichment.status = enrichment.unmatched ? 'partial' : 'complete'; } catch { enrichment.errors = 1; }
     const staged = await stageOmieRowsInBatches(client, normalized.accepted);
     const batchCount = staged.batchCount;
     const coverage = { normalization: 'complete', enrichment: enrichment.status, received: normalized.summary.received, accepted: normalized.summary.accepted, rejected: normalized.summary.rejected, enriched: enrichment.matched, unmatched: enrichment.unmatched, errors: enrichment.errors };
     await updateRun({ staged_rows: normalized.accepted.length, batch_count: batchCount, enrichment, coverage, metadata: fetched.metadata });
     const { data: promotion, error: promotionError } = await client.rpc('rpc_service_promote_omie_snapshot', { p_sync_run_id: syncRunId });
     if (promotionError) throw new Error(`Falha ao promover snapshot Omie: ${promotionError.message}`);
+    await flushTelemetry();
     return { syncRunId, correlationId, totalRows: normalized.summary.received, acceptedRows: normalized.summary.accepted, rejectedRows: normalized.summary.rejected, enrichment, batchCount, status: 'completed', promotion };
   } catch (error) {
+    await flushTelemetry();
     const classified = classifyOmieError(error);
     const { error: cleanupError } = await client.from('analytics_finance_receivables_staging').delete().eq('sync_run_id', syncRunId);
     await failRun('failed', cleanupError ? `${classified.internalMessage}; OMIE_STAGING_CLEANUP_FAILED` : classified, cleanupError ? { metadata: { cleanupError: 'OMIE_STAGING_CLEANUP_FAILED' } } : {});
     throw Object.assign(new Error(classified.internalMessage), { syncRunId, omieError: classified });
+  } finally {
+    await flushTelemetry();
   }
 }

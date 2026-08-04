@@ -28,6 +28,31 @@ No OMIE, a promoção do snapshot é protegida e idempotente, mas a leitura de r
 - **Parcialmente validado:** catálogo de métricas; SLA permanece disponível apenas no consolidado executivo e depende de extensão contratual para aparecer no detalhe de Suporte.
 - **Não validado:** execução externa HubSpot/OMIE, tombstones e telemetria por request. O login automatizado foi limitado por `JWT issued at future` no Supabase local; a leitura visual foi feita com o estado local que o app conseguiu carregar, sem expor credenciais.
 
+## Adendo técnico de observabilidade e publicação — 03/08/2026
+
+Este adendo substitui as pendências de telemetria e atomicidade descritas no diagnóstico inicial:
+
+- Foi criada a tabela privada `analytics_sync_request_attempts`, com RLS, acesso de inserção somente para `service_role` e apenas campos sanitizados: provedor, endpoint lógico, método, tentativa, status, duração, `Retry-After`, página e código de erro. URL completa, payload, resposta e credenciais não entram no ledger.
+- HubSpot e OMIE agora registram cada tentativa de chamada; o retry é contado somente quando `attempt_number > 1`. A falha de persistência da telemetria é registrada para diagnóstico e não invalida uma execução válida nem dispara chamada duplicada.
+- O read model `vw_analytics_sync_request_metrics_read` agrega chamadas, retries, 429, 5xx, falhas, duração total e última chamada por execução. Os read models de histórico/status expõem esses agregados sem alterar o contrato de origem dos dados.
+- O bloco compartilhado do HubSpot deixou de publicar diretamente empresas, owners, pipelines e stages. O worker grava staging privado; `rpc_analytics_hubspot_finalize_run` promove deals, tickets e o bloco compartilhado em uma única transação, reconcilia o catálogo, avança o watermark somente após a promoção e limpa o staging da execução concluída ou falha.
+- Execuções abandonadas por timeout ainda exigem uma rotina de limpeza de staging antigo e reconciliação de tombstones/arquivamentos de objetos. Isso permanece pendente e não foi mascarado como concluído.
+
+### Validação técnica deste adendo
+
+- `node --test tests/scripts/analytics-sync-telemetry-contract.test.mjs`: 5/5.
+- Suíte Analytics focada (`093` a `098`): 40/40 pgTAP.
+- `npm run web:typecheck`: aprovado.
+- `npm run web:build`: aprovado.
+- `npm run supabase:lint:db`: concluído com avisos históricos de variáveis não utilizadas; nenhum erro novo reportado.
+- `npm run supabase:test:db`: não passou como suíte completa por colisões de fixtures existentes (IDs determinísticos já presentes, divergência de grants) e timeout do PostHog do runner. Esses erros não ocorreram nos testes Analytics focados; não foram usados reset ou limpeza para contorná-los.
+
+### Verificação específica solicitada sobre o header da Visão Geral
+
+A revisão do histórico mostra que o commit `2315462` alterou a estrutura JSX para três zonas e o commit `efb1a55` apenas atualizou o relatório. Porém, a implementação atual ainda não comprova integralmente a decisão visual de “mesma altura das demais abas”: os novos hooks `.gso-overview-context__source`, `.gso-overview-context__heading` e `.gso-overview-context__action` não têm regras próprias no CSS; o layout ainda depende das regras genéricas de `.gso-hd-context`. Portanto, a afirmação anterior de header plenamente alinhado foi prematura.
+
+O estado/log por fonte existe nos domínios: Comercial recebe a última execução HubSpot e Financeiro recebe a última execução OMIE. Isso não elimina a pendência de normalizar, com captura visual real, altura, alinhamento vertical e densidade do header executivo contra `AnalyticsHdDomainFrame`. A correção visual deve ser tratada como próximo lote, não declarada fechada por este relatório técnico.
+
 ## 1. Resumo executivo
 
 O pipeline local está operacional e o último ciclo publicado terminou com estado `fresh` nas duas fontes. Isso não significa que o fluxo esteja otimizado: a última execução levou aproximadamente **191 s**, com HubSpot processando **5.858 registros em 93 páginas** e OMIE processando **3.463 registros em 35 páginas seriais**.
