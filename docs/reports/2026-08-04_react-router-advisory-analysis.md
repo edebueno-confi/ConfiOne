@@ -134,3 +134,17 @@ Fonte: https://reactrouter.com/upgrading/v7
 - Buscas de conteúdo em `apps/` por `unstable_`, RSC, SSR, `useFetcher`,
   `loader:` e `action:`: nenhuma ocorrência relevante de router de dados.
 - `http://127.0.0.1:4173/` e `http://127.0.0.1:4174/`: HTTP 200 preservados.
+
+## Atualização — 2026-08-04, mesmo dia
+
+A decisão de postergar foi superada por autorização explícita: a migração foi
+tratada como meta e executada em branch dedicada
+`codex/react-router-v8-migration-20260804`.
+
+Resultado: `react-router@8.3.0` instalado, `react-router-dom` removido, React em
+`19.2.8` e `npm audit --omit=dev` em 0 vulnerabilidades.
+
+Relatório da execução: `docs/reports/2026-08-04_react-router-v8-migration.md`.
+
+Esta análise permanece válida como registro do advisory, da faixa afetada, da
+prova de não exploração e do plano que foi seguido.

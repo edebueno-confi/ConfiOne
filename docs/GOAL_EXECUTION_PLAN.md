@@ -302,3 +302,16 @@ Entrega:
 - atualizar documentação necessária
 - gerar relatório final com arquivos alterados, validações, lacunas, recomendação, git status e indicação se houve commit
 ```
+
+## Execução concluída: Migração react-router 8 e fechamento de advisory
+
+- fechamento: `2026-08-04`
+- objetivo: eliminar o advisory GHSA-qwww-vcr4-c8h2 sem alterar backend,
+  contrato, banco ou comportamento de produto.
+- resultado: concluído. `react-router@8.3.0` substituiu `react-router-dom@7.18.0`
+  e `npm audit --omit=dev` saiu de 2 vulnerabilidades altas para 0.
+- evidência: `docs/reports/2026-08-04_react-router-v8-migration.md` e análise
+  anterior em `docs/reports/2026-08-04_react-router-advisory-analysis.md`.
+- validações: lint, web typecheck, contracts typecheck, build, secret scan,
+  quality gate, `git diff --check` e QA real no navegador em 4173 e 4174.
+- operações não realizadas: banco, deploy, push, merge e QA autenticado.

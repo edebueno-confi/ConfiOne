@@ -3315,3 +3315,24 @@ Relatório corrente: `docs/reports/2026-08-04_mvp-closure-status.md`.
 - Limitação vigente: o audit continuará reportando 2 altas até a migração para a
   linha 8. Nenhum gate de CI ou script local executa `npm audit`.
 - Relatório: `docs/reports/2026-08-04_react-router-advisory-analysis.md`.
+
+## Atualização corrente — react-router 8 migrado e advisory fechado — 2026-08-04
+
+- Supera o bloco anterior do mesmo dia sobre o advisory do react-router.
+- O frontend passou a usar `react-router@8.3.0`; `react-router-dom` foi removido.
+  `RouterProvider` vem de `react-router/dom`. React e ReactDOM em `19.2.8`.
+- 48 arquivos de `apps/web/src` tiveram apenas o módulo de import alterado.
+  Nenhum símbolo, contrato, rota, gate, permissão ou comportamento mudou.
+- `npm audit --omit=dev` está em 0 vulnerabilidades; o advisory
+  GHSA-qwww-vcr4-c8h2 está fechado.
+- Estado de validação: lint 0 erros e 256 avisos legados, web typecheck,
+  contracts typecheck, build, secret scan, quality gate sem blockers e QA real
+  no navegador nas portas 4173 e 4174 cobrindo redirect de raiz, rota pública,
+  navegação por `Link`, `useParams`, gate de rota protegida, catch-all e
+  `useSearchParams`.
+- Nenhum backend, banco, migration, RPC, view, contrato, RLS, permissão,
+  integração ou dado foi alterado. QA autenticado permanece pendente por falta de
+  credencial autorizada no ambiente.
+- Trabalho vive em `codex/react-router-v8-migration-20260804`. O merge em `main`
+  depende de decisão humana.
+- Relatório: `docs/reports/2026-08-04_react-router-v8-migration.md`.

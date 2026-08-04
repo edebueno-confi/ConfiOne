@@ -6997,3 +6997,24 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - Riscos restantes: `npm audit --omit=dev` continua reportando 2 altas até a
   migração para a linha 8; nenhum gate de CI executa `npm audit`.
 - Impacto futuro na FAQ: nenhum. Não há mudança de comportamento de produto.
+
+## SECURITY-DEP-02 — Migração react-router 8 — 2026-08-04
+
+- Relatório: `docs/reports/2026-08-04_react-router-v8-migration.md`.
+- Branch: `codex/react-router-v8-migration-20260804`. Base preservada em
+  `refs/archive/react-router-v8-migration-start-20260804`.
+- Entrega: `react-router@8.3.0` no lugar de `react-router-dom@7.18.0`,
+  `RouterProvider` importado de `react-router/dom`, React e ReactDOM em
+  `19.2.8`, 48 arquivos de `apps/web/src` com import migrado.
+- Efeito de segurança: advisory GHSA-qwww-vcr4-c8h2 fechado;
+  `npm audit --omit=dev` saiu de 2 altas para 0.
+- Evidência: lint 0 erros, web/contracts typecheck, build, secret scan,
+  quality gate sem blockers e QA real no navegador em 4173/4174 cobrindo
+  redirect de raiz, rota pública, navegação por `Link`, `useParams`, gate de
+  rota protegida, catch-all e `useSearchParams`.
+- Limites: nenhum backend, banco, contrato, view, RPC, permissão, integração ou
+  dado alterado; QA autenticado não executado por ausência de credencial
+  autorizada; sem push e sem merge.
+- Riscos restantes: `eslint.config.js` fora da allowlist da raiz e 256 avisos
+  legados de lint.
+- Impacto futuro na FAQ: nenhum. Não houve mudança de comportamento de produto.

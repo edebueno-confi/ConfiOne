@@ -40,7 +40,22 @@ Não reiniciar nem resetar o banco sem verificar os processos e sem autorizaçã
 - `git diff --cached --check` — passou.
 - Worktree estava limpo após o commit anterior; este arquivo é a única alteração pendente deste handoff.
 
-## Pendência de segurança: analisada, correção não aplicada
+## Segurança: advisory fechado em 2026-08-04
+
+A migração foi executada em `codex/react-router-v8-migration-20260804`:
+`react-router@8.3.0` no lugar de `react-router-dom@7.18.0`, `RouterProvider`
+vindo de `react-router/dom`, React e ReactDOM em `19.2.8` e 48 imports migrados.
+`npm audit --omit=dev` está em 0 vulnerabilidades.
+
+Relatório da execução: `docs/reports/2026-08-04_react-router-v8-migration.md`.
+
+Merge em `main` e push continuam pendentes de decisão humana.
+
+Atenção operacional: em shell automatizado, confirme `NODE_ENV` antes de rodar
+`npm install` ou subir o Vite. Com `NODE_ENV=production` o npm remove
+`devDependencies` e o dev server sobe sem React Refresh.
+
+## Histórico da análise que originou o lote
 
 `npm audit --omit=dev` reporta 2 vulnerabilidades altas em `react-router`/`react-router-dom`.
 
@@ -82,6 +97,6 @@ Eles estão visíveis, mas não bloqueiam o comando geral neste momento. A limpe
 
 ## Próxima ação segura
 
-A análise do advisory do `react-router` está concluída e documentada. O próximo lote seguro é a migração para `react-router@8` em branch dedicada, seguindo o plano de 9 passos do relatório `docs/reports/2026-08-04_react-router-advisory-analysis.md`, ou a limpeza incremental dos 256 avisos de lint por módulo.
+A migração para `react-router@8` está concluída e validada na branch dedicada. As próximas ações seguras são: decidir o merge em `main`, normalizar `eslint.config.js` na allowlist de higiene da raiz e iniciar a limpeza incremental dos 256 avisos de lint por módulo.
 
 Em qualquer caso, manter as instâncias locais acessíveis nas portas 4173 e 4174 e preservar o banco local existente.
