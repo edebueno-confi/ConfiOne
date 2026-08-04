@@ -99,6 +99,8 @@ Eles estão visíveis, mas não bloqueiam o comando geral neste momento. A limpe
 
 A migração para `react-router@8` está concluída e validada na branch dedicada. A higiene da raiz está limpa e o primeiro lote da dívida de lint foi entregue: 256 avisos passaram para 240, com `no-duplicate-imports` zerado. Relatório: `docs/reports/2026-08-04_lint-debt-lote-1-e-higiene-raiz.md`.
 
-As próximas ações seguras são: decidir o merge em `main`, triar o código morto tabelado no relatório do lote de lint e atacar `SupportWorkspacePage.tsx` e `KnowledgePage.tsx`, que concentram 131 dos 240 avisos. Avisos de hooks só devem ser tratados com QA autenticado disponível.
+O lote 2 da dívida de lint também está entregue: 24 specifiers de import mortos removidos, com lint em 216 avisos e 0 erros. A triagem completa dos 122 itens de código declarado e nunca usado está em `docs/reports/2026-08-04_lint-debt-lote-2-imports-mortos-e-triagem.md`, com arquivo, linha, símbolo e natureza.
+
+As próximas ações seguras são: decidir o merge em `main`; remover os helpers de apresentação órfãos, que são o subconjunto de menor risco da triagem; e decidir produto sobre os filtros meio ligados de `KnowledgePage.tsx` e sobre a superfície legada do editor de conhecimento. Avisos de hooks só devem ser tratados com QA autenticado disponível.
 
 Em qualquer caso, manter as instâncias locais acessíveis nas portas 4173 e 4174 e preservar o banco local existente.

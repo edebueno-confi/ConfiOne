@@ -3353,3 +3353,22 @@ Relatório corrente: `docs/reports/2026-08-04_mvp-closure-status.md`.
   desconectados no editor de conhecimento, não foi apagado: a decisão de apagar
   ou religar é humana e está tabelada no relatório.
 - Relatório: `docs/reports/2026-08-04_lint-debt-lote-1-e-higiene-raiz.md`.
+
+## Atualização corrente — Dívida de lint, lote 2 — 2026-08-04
+
+- Lint saiu de 240 para 216 avisos, mantendo 0 erros. Acumulado do dia: 256 para
+  216.
+- Foram removidos 24 specifiers de import mortos, sendo 21 em
+  `features/support/SupportWorkspacePage.tsx`, rastro de refatoração anterior, e
+  1 em cada: `app/router.tsx`, `features/admin/CustomerPortalAdminPage.tsx` e
+  `features/knowledge/KnowledgePage.tsx`.
+- Nenhuma declaração local, componente, handler ou prop foi apagado. Os 122 itens
+  restantes de código declarado e nunca usado estão triados por arquivo, linha,
+  símbolo e natureza no relatório do lote.
+- Padrões identificados na triagem: filtros meio ligados em `KnowledgePage.tsx`
+  com setters de estado nunca chamados; superfície legada preservada como
+  `LegacyRichTextArticleEditor` e handlers de anexo do editor; helpers de
+  apresentação órfãos de telas reescritas.
+- Nenhum aviso de `react-hooks` foi tocado. Nenhuma regra de ESLint foi
+  afrouxada e nenhum `eslint-disable` foi inserido.
+- Relatório: `docs/reports/2026-08-04_lint-debt-lote-2-imports-mortos-e-triagem.md`.

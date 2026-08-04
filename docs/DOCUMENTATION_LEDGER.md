@@ -7038,3 +7038,23 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
   não verificadas no navegador.
 - Riscos restantes: 240 avisos, sendo 73 de hooks que exigem QA autenticado.
 - Impacto futuro na FAQ: nenhum.
+
+## QUALITY-LINT-02 — Imports mortos e triagem do código morto — 2026-08-04
+
+- Relatório: `docs/reports/2026-08-04_lint-debt-lote-2-imports-mortos-e-triagem.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Entrega: classificação dos 146 avisos de variável não usada em specifier de
+  import morto (24), declaração local morta (118) e prop/parâmetro (4); remoção
+  apenas dos 24 specifiers, com verificação prévia de que nenhuma declaração
+  `import` ficaria vazia.
+- Efeito medido: lint de 240 para 216 avisos, mantendo 0 erros.
+- Evidência: lint, web typecheck, build, secret scan, quality gate sem findings,
+  check-root OK e QA no navegador em `4173/login` e
+  `4174/help/genius/articles?page=3`.
+- Decisão registrada: os 122 itens restantes não foram apagados. A triagem por
+  arquivo, linha, símbolo e natureza está no relatório e exige decisão de
+  produto, principalmente nos filtros meio ligados de Conhecimento e na
+  superfície legada do editor.
+- Limites: nenhuma regra afrouxada, nenhum `eslint-disable`, nenhum aviso de
+  hooks tocado, nenhum backend, banco, contrato, permissão ou dado alterado.
+- Impacto futuro na FAQ: nenhum.
