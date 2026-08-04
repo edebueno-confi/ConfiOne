@@ -40,21 +40,24 @@ Não reiniciar nem resetar o banco sem verificar os processos e sem autorizaçã
 - `git diff --cached --check` — passou.
 - Worktree estava limpo após o commit anterior; este arquivo é a única alteração pendente deste handoff.
 
-## Pendência de segurança que não foi aplicada
+## Pendência de segurança: analisada, correção não aplicada
 
-`npm audit --omit=dev` encontrou 2 vulnerabilidades altas em `react-router`/`react-router-dom`.
+`npm audit --omit=dev` reporta 2 vulnerabilidades altas em `react-router`/`react-router-dom`.
 
-O caminho sugerido automaticamente pelo npm é `npm audit fix --force`, que instala `react-router-dom@7.11.0` e implica downgrade potencialmente incompatível. Não executar automaticamente.
+Análise concluída em 2026-08-04. Relatório completo: `docs/reports/2026-08-04_react-router-advisory-analysis.md`.
 
-Próximo procedimento recomendado:
+Resumo objetivo:
 
-1. Auditar a origem do advisory e a versão corrigida disponível.
-2. Comparar a API usada no projeto com `react-router-dom@7.11.0`.
-3. Criar branch isolada para o downgrade ou atualização segura.
-4. Rodar typecheck, build, lint, smoke auth e QA de navegação.
-5. Só então decidir o commit da correção.
+- Advisory: GHSA-qwww-vcr4-c8h2, High, CVSS 7.1, CWE-352, sem CVE atribuído.
+- Faixa afetada: `>= 7.12.0`, `< 8.3.0`. Instalado: `7.18.0`.
+- Única versão corrigida: `react-router@8.3.0`. Não existe patch na linha 7, e `react-router-dom` não tem linha 8; latest é `7.18.2`.
+- O advisory só afeta aplicações que usam as APIs RSC instáveis. O projeto não usa: nenhuma ocorrência de `unstable_`, RSC, SSR, `entry.server`, `createStaticHandler`, `ServerRouter`, `useFetcher` ou route `loader`/`action`.
+- APIs realmente usadas nos 48 arquivos: `createBrowserRouter`, `RouterProvider`, `Link`, `Navigate`, `Outlet`, `useLocation`, `useNavigate`, `useParams`, `useSearchParams`, `useOutletContext`, `useRouteError`.
+- Corrigir exige migração major: trocar `react-router-dom` por `react-router`, mover `RouterProvider` para `react-router/dom` e subir React de `19.2.5` para `>= 19.2.7`.
 
-Não usar `npm audit fix --force` sem aprovação e sem validação de breaking changes.
+Decisão: risco aceito de forma explícita neste lote, com plano de migração registrado no relatório. Nenhum gate de CI ou script local executa `npm audit`, portanto a pendência não produz falso verde nem bloqueia build.
+
+`npm audit fix --force` permanece proibido: instala `react-router-dom@7.11.0`, que é downgrade de 7 versões menores e continua sem corrigir o advisory.
 
 ## Dívida conhecida do lint
 
@@ -79,4 +82,6 @@ Eles estão visíveis, mas não bloqueiam o comando geral neste momento. A limpe
 
 ## Próxima ação segura
 
-Começar pela análise isolada do advisory do `react-router`, sem downgrade automático. Em paralelo, manter as instâncias locais acessíveis nas portas 4173 e 4174 e preservar o banco local existente.
+A análise do advisory do `react-router` está concluída e documentada. O próximo lote seguro é a migração para `react-router@8` em branch dedicada, seguindo o plano de 9 passos do relatório `docs/reports/2026-08-04_react-router-advisory-analysis.md`, ou a limpeza incremental dos 256 avisos de lint por módulo.
+
+Em qualquer caso, manter as instâncias locais acessíveis nas portas 4173 e 4174 e preservar o banco local existente.

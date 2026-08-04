@@ -6979,3 +6979,21 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - Decisão: Blueprint V2 superado para implementação; nenhuma alteração de
   backend, contrato, dado, integração, credencial, permissão ou sincronismo.
 - Estado: documentação concluída; implementação e validação ainda pendentes.
+
+## SECURITY-DEP-01 — Advisory react-router — 2026-08-04
+
+- Relatório: `docs/reports/2026-08-04_react-router-advisory-analysis.md`.
+- Branch: `main`. Nenhuma dependência, lockfile, código de aplicação, contrato,
+  view, RPC, banco, permissão ou integração foi alterado.
+- Escopo: investigação do advisory GHSA-qwww-vcr4-c8h2 em
+  `react-router`/`react-router-dom`, faixa afetada `>= 7.12.0 < 8.3.0`,
+  instalado `7.18.0`.
+- Decisão: não aplicar correção neste lote. A única versão corrigida é
+  `react-router@8.3.0` e `react-router-dom` não tem linha 8, o que torna a
+  correção uma migração major em 48 arquivos com bump de React.
+- Evidência de não exploração: o advisory depende das APIs RSC instáveis;
+  o projeto usa apenas o data router client-side, sem `unstable_`, RSC, SSR,
+  route `loader`/`action` ou `useFetcher`.
+- Riscos restantes: `npm audit --omit=dev` continua reportando 2 altas até a
+  migração para a linha 8; nenhum gate de CI executa `npm audit`.
+- Impacto futuro na FAQ: nenhum. Não há mudança de comportamento de produto.

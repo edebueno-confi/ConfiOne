@@ -3294,3 +3294,24 @@ mantém artigos e categorias em colunas independentes no desktop, e o Control
 Plane usa copy segura para estados vazios e erros de permissão.
 
 Relatório corrente: `docs/reports/2026-08-04_mvp-closure-status.md`.
+
+## Atualização corrente — Advisory react-router analisado — 2026-08-04
+
+- `npm audit --omit=dev` reporta 2 vulnerabilidades altas em
+  `react-router`/`react-router-dom` (GHSA-qwww-vcr4-c8h2, faixa
+  `>= 7.12.0 < 8.3.0`, instalado `7.18.0`).
+- A vulnerabilidade só afeta aplicações que usam as APIs RSC instáveis. O
+  frontend usa exclusivamente o data router client-side
+  (`createBrowserRouter` + `RouterProvider`), sem RSC, SSR, route
+  `loader`/`action` ou `useFetcher`. O vetor descrito não existe na superfície
+  atual.
+- A única versão corrigida é `react-router@8.3.0`; `react-router-dom` não possui
+  linha 8. Corrigir é migração major: troca de pacote em 48 arquivos,
+  `RouterProvider` vindo de `react-router/dom` e React de `19.2.5` para
+  `>= 19.2.7`.
+- Estado: risco aceito de forma explícita neste lote, com plano de migração
+  registrado. Nenhum código de aplicação, dependência, lockfile, contrato, view,
+  RPC, banco, permissão ou integração foi alterado.
+- Limitação vigente: o audit continuará reportando 2 altas até a migração para a
+  linha 8. Nenhum gate de CI ou script local executa `npm audit`.
+- Relatório: `docs/reports/2026-08-04_react-router-advisory-analysis.md`.
