@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
@@ -20,6 +21,11 @@ import {
   getDefaultInternalLandingRoute,
 } from '../../apps/web/src/features/auth/internal-route-access.ts';
 import { buildMinimalNavigation } from '../../apps/web/src/features/navigation/minimal-navigation.ts';
+
+const postLoginSource = await readFile(
+  new URL('../../apps/web/src/features/auth/post-login-redirect.ts', import.meta.url),
+  'utf8',
+);
 
 const PUBLISHED_ROUTES = [
   '/admin/analytics',
@@ -176,6 +182,13 @@ test('the full mode restores the complete system', () => {
 test('technical entry points redirect to a published surface', () => {
   assert.equal(resolveReleaseRedirect('/inicio'), '/admin/analytics');
   assert.equal(resolveReleaseRedirect('/admin'), '/admin/analytics');
+});
+
+test('post-login normalizes technical entry points before permission checks', () => {
+  assert.match(postLoginSource, /export function normalizePostLoginRedirectTarget/);
+  assert.match(postLoginSource, /const technicalTarget = resolveReleaseRedirect\(pathname\)/);
+  assert.match(postLoginSource, /const redirectTo = normalizePostLoginRedirectTarget\(rawRedirectTo\)/);
+  assert.match(postLoginSource, /return `\$\{technicalTarget\}\$\{match\?\.\[2\] \?\? ''\}`/);
 });
 
 test('forbidden product routes are not turned into silent redirects', () => {

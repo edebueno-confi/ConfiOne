@@ -76,11 +76,13 @@ async function waitForPathChange(page, originalPath, timeoutMs = 20_000) {
 }
 
 const accounts = [
-  { role: 'platform_admin', email: qa.LOCAL_QA_ADMIN_EMAIL, password: qa.LOCAL_QA_ADMIN_PASSWORD, desktop: '/inicio', mobile: '/inicio' },
+  // `/inicio` is a retained technical entry point; the first-release manifest
+  // intentionally lands platform administrators on the published dashboard.
+  { role: 'platform_admin', email: qa.LOCAL_QA_ADMIN_EMAIL, password: qa.LOCAL_QA_ADMIN_PASSWORD, desktop: '/admin/analytics', mobile: '/admin/analytics' },
   { role: 'dashboard_viewer', email: qa.LOCAL_QA_DASHBOARD_VIEWER_EMAIL, password: qa.LOCAL_QA_DASHBOARD_VIEWER_PASSWORD, desktop: '/admin/analytics', mobile: '/admin/analytics' },
-  { role: 'support_manager', email: qa.LOCAL_QA_SUPPORT_MANAGER_EMAIL, password: qa.LOCAL_QA_SUPPORT_MANAGER_PASSWORD, desktop: '/support/queue', mobile: '/support/queue' },
-  { role: 'support_agent', email: qa.LOCAL_QA_SUPPORT_AGENT_EMAIL, password: qa.LOCAL_QA_SUPPORT_AGENT_PASSWORD, desktop: '/support/queue', mobile: '/support/queue' },
-  { role: 'customer_user', email: qa.LOCAL_QA_CLIENT_EMAIL, password: qa.LOCAL_QA_CLIENT_PASSWORD, desktop: '/portal', mobile: '/portal' },
+  { role: 'support_manager', email: qa.LOCAL_QA_SUPPORT_MANAGER_EMAIL, password: qa.LOCAL_QA_SUPPORT_MANAGER_PASSWORD, desktop: '/support/queue', mobile: '/support/queue', expectedDesktop: '/access-denied', expectedMobile: '/access-denied' },
+  { role: 'support_agent', email: qa.LOCAL_QA_SUPPORT_AGENT_EMAIL, password: qa.LOCAL_QA_SUPPORT_AGENT_PASSWORD, desktop: '/support/queue', mobile: '/support/queue', expectedDesktop: '/access-denied', expectedMobile: '/access-denied' },
+  { role: 'customer_user', email: qa.LOCAL_QA_CLIENT_EMAIL, password: qa.LOCAL_QA_CLIENT_PASSWORD, desktop: '/portal', mobile: '/portal', expectedDesktop: '/access-denied', expectedMobile: '/access-denied' },
 ];
 
 for (const account of accounts) {
@@ -121,7 +123,9 @@ try {
       await page.getByRole('button', { name: /entrar/i }).click();
       const loginPath = await waitForPathChange(page, '/login', 20_000);
       if (loginPath === '/login') throw new Error(`LOCAL_QA_LOGIN_ROUTE_FAILED: ${account.role} ${viewport.name}`);
-      const expectedPath = viewport.name === 'desktop' ? account.desktop : account.mobile;
+      const expectedPath = viewport.name === 'desktop'
+        ? (account.expectedDesktop ?? account.desktop)
+        : (account.expectedMobile ?? account.mobile);
       if (!page.url().includes(expectedPath)) throw new Error(`LOCAL_QA_ROUTE_FAILED: ${account.role} expected ${expectedPath}, got ${page.url()}`);
       await page.waitForLoadState('networkidle', { timeout: 8_000 }).catch(() => {});
       await page.waitForTimeout(500);

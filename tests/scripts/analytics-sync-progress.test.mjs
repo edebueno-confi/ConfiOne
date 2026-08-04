@@ -47,7 +47,7 @@ test('atualização dos dashboards mantém o Gênio animado até confirmar o est
   assert.match(sourcesPage, /currentRunStatus === 'abandoned'/);
   assert.match(sourcesPage, /state: 'failed'/);
   assert.match(sourcesPage, /if \(finalState === 'publishing'\) setSyncFeedback\(null\)/);
-  assert.match(overlay, /O Gênio está organizando os dados do painel/);
+  assert.match(overlay, /O Gênio está soltando a magia no painel/);
   assert.match(overlay, /O Gênio encontrou um desvio no caminho/);
   assert.match(overlay, /O Gênio ainda está aguardando uma resposta/);
   assert.match(overlay, /O Gênio interrompeu esta tentativa/);
