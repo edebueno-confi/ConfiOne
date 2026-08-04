@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router';
 import { Mark, Node as TiptapNode, mergeAttributes } from '@tiptap/core';
 import {
   EditorContent,

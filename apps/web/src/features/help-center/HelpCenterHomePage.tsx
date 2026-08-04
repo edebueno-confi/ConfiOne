@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useEffectEvent, useMemo, useState } from 'react';
-import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
+import { Link, useOutletContext, useSearchParams } from 'react-router';
 import { AppButton, GhostButton } from '../../components/ui';
 import { GeniusMascot } from '../../components/GeniusMascot';
 import type {

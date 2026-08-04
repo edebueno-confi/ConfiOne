@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { cx } from '../../components/ui';
 import { GeniusLamp } from '../../components/GeniusLamp';
 import { Avatar } from '../../components/Avatar';

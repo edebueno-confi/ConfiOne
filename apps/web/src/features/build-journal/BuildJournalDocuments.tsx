@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { cx } from '../../components/ui';
 import { EmptyState, ErrorState, LoadingState } from '../../components/states';
 import type {

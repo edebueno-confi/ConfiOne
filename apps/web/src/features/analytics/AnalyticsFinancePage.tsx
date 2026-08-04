@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { MinimalState } from '../../components/minimal-states';
 import { getFinanceSnapshot, getFinanceSourceStatus, getFinanceUnmatchedClients, listOmieSyncRuns, type FinanceUnmatchedClient } from './analytics-api';
 import { AnalyticsLoadingState, ChartCard, KpiCard, MetricInfo } from './analytics-ui';

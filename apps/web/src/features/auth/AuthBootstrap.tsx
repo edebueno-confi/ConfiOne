@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router';
 import type { ReactNode } from 'react';
 import { ThemeProvider } from '../../app/theme-context';
 import { AuthProvider } from './auth-context';

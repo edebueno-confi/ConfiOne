@@ -1,5 +1,5 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { getAnalyticsSourceStatus, triggerSequentialAnalyticsSync, waitForAnalyticsSyncCompletion } from './analytics-api';
 import { listEnabledAnalyticsDomains } from './analytics-domains';
 import type { AnalyticsSharedPeriod } from './analytics-model';

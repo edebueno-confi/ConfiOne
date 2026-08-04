@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 import { cx } from '../../components/ui';
 import { GeniusLamp } from '../../components/GeniusLamp';
 import type { InternalScreenKey } from '../../contracts/admin-contracts';

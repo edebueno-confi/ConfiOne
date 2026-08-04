@@ -5,7 +5,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router';
 import { formatDateTime } from '../../app/format';
 import {
   AppButton,

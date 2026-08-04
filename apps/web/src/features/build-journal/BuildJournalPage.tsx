@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import heroMountainUrl from '../../assets/build-journal/build-journal-hero-mountain-path.png';
 import { cx } from '../../components/ui';
 import { BuildJournalArchitecture } from './BuildJournalArchitecture';

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { GeniusMascot } from './GeniusMascot';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 export type SyncSource = 'HubSpot' | 'OMIE' | 'painel';
 export type SyncVisualState = 'preparing' | 'syncing_hubspot' | 'syncing_omie' | 'publishing' | 'failed' | 'timed_out' | 'abandoned';

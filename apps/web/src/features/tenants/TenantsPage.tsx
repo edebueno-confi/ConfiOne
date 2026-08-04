@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router';
 import { formatDateTime } from '../../app/format';
 import { sanitizeOperationalVisibleText } from '../../lib/operational-copy';
 import {

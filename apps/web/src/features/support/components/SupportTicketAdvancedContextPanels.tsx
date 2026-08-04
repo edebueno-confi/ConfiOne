@@ -5,7 +5,7 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { formatDateTime, humanizeToken } from '../../../app/format';
 import { LoadingState } from '../../../components/states';
 import {

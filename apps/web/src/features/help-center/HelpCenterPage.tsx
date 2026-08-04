@@ -1,5 +1,5 @@
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
-import { Link, Navigate, Outlet, useLocation, useParams } from 'react-router-dom';
+import { Link, Navigate, Outlet, useLocation, useParams } from 'react-router';
 import {
   ContractUnavailableState,
   EmptyState,

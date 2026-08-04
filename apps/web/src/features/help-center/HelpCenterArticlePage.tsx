@@ -1,5 +1,5 @@
 import { useEffect, useEffectEvent, useMemo, useState } from 'react';
-import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom';
+import { Link, useNavigate, useOutletContext, useParams } from 'react-router';
 import {
   ContractUnavailableState,
   EmptyState,

@@ -1,5 +1,5 @@
 import { FormEvent, useMemo, useState } from 'react';
-import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
+import { Link, useOutletContext, useSearchParams } from 'react-router';
 import { GhostButton } from '../../components/ui';
 import type { PublicKnowledgeNavigationRow } from '../../contracts/public-contracts';
 import type { HelpCenterSpaceContext } from './context';

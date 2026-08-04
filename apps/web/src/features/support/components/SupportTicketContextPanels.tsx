@@ -1,5 +1,5 @@
 import type { FormEvent, ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { formatDateTime } from '../../../app/format';
 import {
   AppButton,
