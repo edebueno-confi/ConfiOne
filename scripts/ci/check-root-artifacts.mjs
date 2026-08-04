@@ -15,6 +15,7 @@ export const DEFAULT_ALLOWED_ROOT_FILES = new Set([
   'CRIAR-USUARIOS-DE-TESTE.bat',
   'DESIGN.md',
   'DIAGNOSTICO-E-PLANO-DE-SIMPLIFICACAO.md',
+  'eslint.config.js',
   'INICIAR-GENIUS.bat',
   'LEIA-PRIMEIRO.md',
   'package-lock.json',
