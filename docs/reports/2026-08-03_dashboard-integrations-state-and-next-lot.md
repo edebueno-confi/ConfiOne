@@ -48,7 +48,7 @@ Este adendo prevalece sobre as pendências visuais descritas abaixo:
 
 ### Integridade ainda não concluída
 
-O worker HubSpot agora lê empresas pelo watermark e o bloco compartilhado passa por staging privado antes da promoção transacional do run. Ainda não há reconciliação comprovada de tombstones para empresas arquivadas/removidas, nem limpeza de staging de execuções abandonadas.
+O worker HubSpot agora lê empresas pelo watermark e o bloco compartilhado passa por staging privado antes da promoção transacional do run. Ainda não há reconciliação comprovada de tombstones para empresas arquivadas/removidas. A limpeza segura de staging abandonado foi implementada neste lote; ela não apaga snapshots, histórico ou tabelas canônicas.
 
 No OMIE, a promoção do snapshot é protegida e idempotente; a leitura de recebíveis e o índice de clientes continuam full + serial. A telemetria por request/endpoint agora existe no ledger sanitizado, mas ainda não há execução externa nova para medir a distribuição real.
 
@@ -56,7 +56,7 @@ No OMIE, a promoção do snapshot é protegida e idempotente; a leitura de receb
 
 - **Validado:** teste estático de layout (5 casos), `npm run web:typecheck` e captura real das oito rotas Analytics em desktop/mobile no servidor isolado 4175.
 - **Parcialmente validado:** catálogo de métricas; SLA permanece disponível apenas no consolidado executivo e depende de extensão contratual para aparecer no detalhe de Suporte.
-- **Não validado:** execução externa HubSpot/OMIE, tombstones e limpeza de staging abandonado. O login automatizado foi limitado por `JWT issued at future` no Supabase local; a leitura visual foi feita com o estado local que o app conseguiu carregar, sem expor credenciais.
+- **Não validado:** execução externa HubSpot/OMIE, tombstones e guards de permissão em sessão autenticada. O login automatizado foi limitado por `JWT issued at future` no Supabase local; a leitura visual foi feita com o estado local que o app conseguiu carregar, sem expor credenciais.
 
 ## Adendo técnico de observabilidade e publicação — 03/08/2026
 
@@ -66,7 +66,8 @@ Este adendo substitui as pendências de telemetria e atomicidade descritas no di
 - HubSpot e OMIE agora registram cada tentativa de chamada; o retry é contado somente quando `attempt_number > 1`. A falha de persistência da telemetria é registrada para diagnóstico e não invalida uma execução válida nem dispara chamada duplicada.
 - O read model `vw_analytics_sync_request_metrics_read` agrega chamadas, retries, 429, 5xx, falhas, duração total e última chamada por execução. Os read models de histórico/status expõem esses agregados sem alterar o contrato de origem dos dados.
 - O bloco compartilhado do HubSpot deixou de publicar diretamente empresas, owners, pipelines e stages. O worker grava staging privado; `rpc_analytics_hubspot_finalize_run` promove deals, tickets e o bloco compartilhado em uma única transação, reconcilia o catálogo, avança o watermark somente após a promoção e limpa o staging da execução concluída ou falha.
-- Execuções abandonadas por timeout ainda exigem uma rotina de limpeza de staging antigo e reconciliação de tombstones/arquivamentos de objetos. Isso permanece pendente e não foi mascarado como concluído.
+- Foi adicionada `rpc_admin_cleanup_hubspot_staging(integer)`, com retenção padrão de 7 dias, limites de 1 hora a 30 dias, seleção apenas de runs terminais sem work items ativos e remoção somente das seis tabelas privadas de staging HubSpot. O reconciliador passou a chamá-la de forma idempotente.
+- Execuções abandonadas ainda exigem reconciliação de tombstones/arquivamentos de objetos. Isso permanece pendente e não foi mascarado como concluído.
 
 ### Validação técnica deste adendo
 
@@ -75,6 +76,8 @@ Este adendo substitui as pendências de telemetria e atomicidade descritas no di
 - `npm run web:typecheck`: aprovado.
 - `npm run web:build`: aprovado.
 - `npm run supabase:lint:db`: concluído com avisos históricos de variáveis não utilizadas; nenhum erro novo reportado.
+- Migração local `20260803152000_dashboard_hubspot_staging_gc_v1.sql`: aplicada com sucesso.
+- Suíte Analytics focada (`093` a `099`): 54/54 pgTAP.
 - `npm run supabase:test:db`: não passou como suíte completa por colisões de fixtures existentes (IDs determinísticos já presentes, divergência de grants) e timeout do PostHog do runner. Esses erros não ocorreram nos testes Analytics focados; não foram usados reset ou limpeza para contorná-los.
 
 ### Verificação específica solicitada sobre o header da Visão Geral
@@ -82,6 +85,19 @@ Este adendo substitui as pendências de telemetria e atomicidade descritas no di
 A revisão corrigida confirma que o commit `2315462` alterou a estrutura JSX e também adicionou as regras específicas em `high-density.css`; o commit `efb1a55` atualizou o relatório. O header não depende somente das regras genéricas de `.gso-hd-context`: os três hooks possuem regras próprias e breakpoint responsivo. A captura atual comprova a altura compacta e o alinhamento estrutural com as demais abas. A aprovação estética final continua sendo decisão do Product Owner, não uma pendência técnica mascarada.
 
 O estado/log por fonte existe nos domínios: Comercial recebe a última execução HubSpot e Financeiro recebe a última execução OMIE. A estrutura e a densidade do header executivo foram verificadas contra `AnalyticsHdDomainFrame` por captura desktop/mobile e por teste estrutural. O que permanece é somente a aprovação estética final do Product Owner, não uma falha técnica de implementação.
+
+### Matriz dos apontamentos visuais solicitados
+
+| Apontamento | Situação verificada |
+|---|---|
+| Header da Visão Geral na mesma altura das demais abas | Implementado estruturalmente; captura desktop/mobile e teste CSS específicos comprovam a composição compacta. |
+| Estado das fontes no lado esquerdo | Implementado no header executivo. |
+| Log HubSpot no Comercial e OMIE no Financeiro | Implementado por `AnalyticsExecutionMeta`, junto à origem financeira no Financeiro. |
+| Remover a faixa global redundante de fontes sobre os filtros | Implementado no shell de alta densidade; o source rail global é ocultado nessa superfície. |
+| Densidade sem títulos maximalistas | Implementado no sistema de alta densidade; a proporção visual final ainda depende de aprovação do Product Owner. |
+| Evidência real das alterações | Capturas presentes em `output/playwright/analytics-route-*.png`; não foram substituídas por typecheck. |
+
+Portanto, os apontamentos acima não estão ignorados no estado atual. O que pode ter causado a impressão contrária foi a existência de relatórios intermediários com diagnóstico desatualizado e a diferença entre validação estrutural e aprovação estética. A decisão visual final continua aberta até o Product Owner aprovar as capturas.
 
 ## 1. Resumo executivo
 
@@ -232,7 +248,7 @@ Isso reduz a fragmentação da navegação sem mascarar a ausência de dados.
 ### Lote A — qualidade do sincronismo
 
 1. Definir retenção e limpeza do ledger de telemetria sem exposição de payload ou credencial.
-2. Implementar limpeza segura de staging de runs abandonados e verificar tombstones/arquivamentos de objetos HubSpot.
+2. Implementar reconciliação de tombstones/arquivamentos de objetos HubSpot. A limpeza de staging abandonado já foi entregue neste lote.
 3. Reproduzir o atraso observado com dados controlados e comparar os agregados por endpoint antes de qualquer paralelização.
 4. Verificar se o OMIE suporta consulta incremental; se não, otimizar apenas cache/enriquecimento seguro.
 
@@ -252,9 +268,9 @@ Isso reduz a fragmentação da navegação sem mascarar a ausência de dados.
 
 ## 10. Status do relatório
 
-- **Validado:** estado Git, leitura dos contratos, auditoria estática dos workers, read models e RPCs, contagens locais do último ciclo, evidência de estado `fresh`, captura das oito rotas em desktop/mobile, estrutura CSS específica e correção do header da Visão Geral.
+- **Validado:** estado Git, leitura dos contratos, auditoria estática dos workers, read models e RPCs, contagens locais do último ciclo, evidência de estado `fresh`, captura das oito rotas em desktop/mobile, estrutura CSS específica e correção do header da Visão Geral, migração local e limpeza segura de staging com 54/54 pgTAP focados.
 - **Parcialmente validado:** idempotência externa e carga de API; a telemetria está validada estruturalmente, mas sem nova execução externa para validar a distribuição real.
-- **Não validado:** nova execução real neste lote, consulta incremental OMIE, tombstones, limpeza de staging abandonado, guards de permissão em sessão autenticada e aprovação do denominador de CS.
+- **Não validado:** nova execução real neste lote, consulta incremental OMIE, tombstones, guards de permissão em sessão autenticada e aprovação do denominador de CS.
 - **Dependente de credencial externa:** qualquer sincronização real futura depende de credenciais válidas e autorização explícita para executar chamadas de provider.
 
 ## 11. Implementação realizada neste lote
@@ -267,10 +283,11 @@ Isso reduz a fragmentação da navegação sem mascarar a ausência de dados.
 - Foram atualizados os testes estáticos do contrato de navegação, do read model e da folha de alta densidade do header.
 - Foi adicionada telemetria sanitizada por tentativa para HubSpot e OMIE, com read model agregado de chamadas, retries, 429/5xx e duração.
 - A promoção HubSpot passou a incluir o bloco compartilhado em staging e transação atômica.
+- Foi adicionada limpeza idempotente de staging HubSpot expirado, integrada ao reconciliador e coberta por pgTAP.
 
 ### Validação desta implementação
 
-- 40 testes pgTAP focados (093–098) e 5 testes estáticos do contrato de layout: aprovados.
+- 54 testes pgTAP focados (093–099) e testes estáticos do contrato de layout: aprovados.
 - `npm run web:typecheck`: aprovado.
 - `npm run web:build`: aprovado.
 - QA visual real das rotas: capturado em 1440×1000 e 390×844 no servidor isolado 4175; autenticação plena ficou limitada por `JWT issued at future` no Supabase local.
