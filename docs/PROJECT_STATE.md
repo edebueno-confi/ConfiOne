@@ -3372,3 +3372,25 @@ Relatório corrente: `docs/reports/2026-08-04_mvp-closure-status.md`.
 - Nenhum aviso de `react-hooks` foi tocado. Nenhuma regra de ESLint foi
   afrouxada e nenhum `eslint-disable` foi inserido.
 - Relatório: `docs/reports/2026-08-04_lint-debt-lote-2-imports-mortos-e-triagem.md`.
+
+## Atualização corrente — QA autenticado, auditoria no gate e lint lote 3 — 2026-08-04
+
+- QA autenticado local deixou de ser limitação. O harness oficial funciona:
+  `npm run local:qa:smoke:auth` autentica 5 papéis e `npm run local:qa:smoke`
+  aprova 10 cenários autenticados em desktop e mobile, com 0 erro de console,
+  0 erro de página e 0 falha de request, gravando capturas em `output/local-qa/`.
+  Isso fecha com evidência autenticada a lacuna de QA da migração para
+  `react-router@8`.
+- Requisitos operacionais do harness: porta 4173 livre, porque ele sobe o próprio
+  Vite, e `NODE_ENV=development`. Runbook validado em `docs/LOCAL_QA_AUTH.md`.
+- O quality gate passou a auditar dependência de produção. Novo
+  `npm run security:audit:prod` roda em `fast`, `staged` e `full`, falha só com
+  vulnerabilidade alta ou crítica e reporta `INDISPONÍVEL` quando não consegue
+  auditar, em vez de passar em falso. Cobertura por
+  `tests/scripts/dependency-advisories.test.mjs`, 3 casos.
+- Lint saiu de 216 para 196 avisos com a remoção de 21 helpers de apresentação
+  órfãos em Conhecimento, editor de conhecimento, Portal Admin, Access e
+  navegação. Nenhum componente, handler, estado ou prop foi tocado.
+- Continuam pendentes de decisão de produto: filtros meio ligados de
+  `KnowledgePage.tsx`, superfície legada do editor e componentes órfãos.
+- Relatório: `docs/reports/2026-08-04_qa-autenticado-audit-no-gate-e-lint-lote-3.md`.

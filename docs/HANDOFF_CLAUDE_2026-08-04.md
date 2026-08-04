@@ -101,6 +101,8 @@ A migração para `react-router@8` está concluída e validada na branch dedicad
 
 O lote 2 da dívida de lint também está entregue: 24 specifiers de import mortos removidos, com lint em 216 avisos e 0 erros. A triagem completa dos 122 itens de código declarado e nunca usado está em `docs/reports/2026-08-04_lint-debt-lote-2-imports-mortos-e-triagem.md`, com arquivo, linha, símbolo e natureza.
 
-As próximas ações seguras são: decidir o merge em `main`; remover os helpers de apresentação órfãos, que são o subconjunto de menor risco da triagem; e decidir produto sobre os filtros meio ligados de `KnowledgePage.tsx` e sobre a superfície legada do editor de conhecimento. Avisos de hooks só devem ser tratados com QA autenticado disponível.
+Também estão entregues: QA autenticado local destravado com o harness oficial (5 papéis por API e 10 cenários visuais aprovados, runbook em `docs/LOCAL_QA_AUTH.md`), auditoria de dependência de produção no quality gate via `npm run security:audit:prod`, e remoção de 21 helpers de apresentação órfãos, deixando o lint em 196 avisos. Relatório: `docs/reports/2026-08-04_qa-autenticado-audit-no-gate-e-lint-lote-3.md`.
+
+As próximas ações seguras são: decidir o merge em `main`; estender o harness de smoke com cenários autenticados para Conhecimento, Access e Portal Admin; e decidir produto sobre os filtros meio ligados de `KnowledgePage.tsx` e sobre a superfície legada do editor. Com o harness estendido, os 73 avisos de hooks passam a ter caminho real de verificação.
 
 Em qualquer caso, manter as instâncias locais acessíveis nas portas 4173 e 4174 e preservar o banco local existente.

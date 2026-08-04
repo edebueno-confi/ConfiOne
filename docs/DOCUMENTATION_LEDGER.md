@@ -7058,3 +7058,26 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - Limites: nenhuma regra afrouxada, nenhum `eslint-disable`, nenhum aviso de
   hooks tocado, nenhum backend, banco, contrato, permissão ou dado alterado.
 - Impacto futuro na FAQ: nenhum.
+
+## QUALITY-QA-01 — QA autenticado, auditoria no gate e lint lote 3 — 2026-08-04
+
+- Relatório: `docs/reports/2026-08-04_qa-autenticado-audit-no-gate-e-lint-lote-3.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Entrega 1: QA autenticado local destravado com o harness oficial. 5 papéis
+  autenticados por API e 10 cenários visuais aprovados em desktop e mobile, com
+  capturas em `output/local-qa/`. Runbook validado adicionado a
+  `docs/LOCAL_QA_AUTH.md`, incluindo os requisitos de porta 4173 livre e
+  `NODE_ENV=development`.
+- Entrega 2: auditoria de dependência de produção no quality gate. Novo
+  `scripts/ci/check-dependency-advisories.mjs` e script
+  `npm run security:audit:prod`, executado nos modos `fast`, `staged` e `full`,
+  com 3 testes em `tests/scripts/dependency-advisories.test.mjs`. Indisponibilidade
+  é reportada como `INDISPONÍVEL`, nunca como aprovação.
+- Entrega 3: remoção de 21 helpers de apresentação órfãos em Conhecimento, editor,
+  Portal Admin, Access e navegação. Lint de 216 para 196 avisos.
+- Evidência: smoke auth, smoke visual, security audit, testes 3/3, lint,
+  typecheck, build, secret scan e quality gate sem findings.
+- Limites: Conhecimento, Access e Portal Admin ainda não têm cenário próprio no
+  smoke; `local:qa:writes` não foi executado; nenhum backend, banco, contrato,
+  permissão ou dado alterado.
+- Impacto futuro na FAQ: nenhum.
