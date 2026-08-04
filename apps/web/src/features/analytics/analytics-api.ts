@@ -192,7 +192,7 @@ export async function listOmieSyncRuns(): Promise<OmieSyncRun[]> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client
     .from('vw_analytics_finance_sync_runs_read')
-    .select('id,source_key,status,total_rows,accepted_rows,rejected_rows,started_at,finished_at,error_message,correlation_id,request_count,request_retry_count,rate_limit_count,provider_error_count,failed_request_count,request_duration_ms,last_request_at')
+    .select('id,source_key,status,total_rows,accepted_rows,rejected_rows,started_at,finished_at,error_message,correlation_id,request_count,request_retry_count,rate_limit_count,provider_error_count,failed_request_count,request_duration_ms,last_request_at,enrichment_cache_source,enrichment_cache_age_seconds,enrichment_cache_rows')
     .order('started_at', { ascending: false })
     .limit(30);
   if (error) throw toAppError(error, 'Falha ao carregar os logs de sincronização OMIE.');

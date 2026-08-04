@@ -292,3 +292,23 @@ Isso reduz a fragmentação da navegação sem mascarar a ausência de dados.
 - `npm run web:build`: aprovado.
 - QA visual real das rotas: capturado em 1440×1000 e 390×844 no servidor isolado 4175; autenticação plena ficou limitada por `JWT issued at future` no Supabase local.
 - Execução real de sincronização: não executada neste lote.
+
+## 12. Adendo — cache seguro do índice de clientes OMIE
+
+Para reduzir chamadas repetidas sem mascarar cobertura, o índice de clientes usado apenas no enriquecimento dos recebíveis passou a usar snapshots privados com ponteiro atômico:
+
+- TTL de 15 minutos para reutilização de um índice completo;
+- publicação somente quando a paginação termina sem erro, página vazia intermediária ou limite prematuro;
+- snapshot anterior preservado quando a leitura nova é parcial;
+- recebíveis continuam sendo lidos da API em cada execução; o cache não substitui a fonte financeira;
+- o read model expõe origem do enriquecimento (`cache`, `api`, `stale_cache` ou `api_partial`), idade e quantidade de registros;
+- a interface mostra essa origem no metadado da execução OMIE.
+
+Validação adicional deste adendo:
+
+- `node --test tests/scripts/omie-client.test.mjs`: 23/23 aprovados;
+- pgTAP `100_dashboard_omie_client_index_cache.sql` e `101_dashboard_omie_client_index_metrics.sql`: 16/16 aprovados;
+- TypeScript e build web: aprovados;
+- quality gate: aprovado com uma observação heurística de baixo risco sobre `any` já existente no adaptador OMIE; nenhum blocker confirmado.
+
+Esse adendo reduz custo de enriquecimento, mas não comprova consulta incremental do endpoint financeiro principal. A execução autenticada HubSpot/OMIE continua dependente de credenciais externas válidas e autorização operacional.

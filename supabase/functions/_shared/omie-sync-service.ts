@@ -1,8 +1,57 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
-import { classifyOmieError, enrichReceivablesWithClients, fetchOmieClientsIndex, fetchOmieReceivablesWithMetadata, normalizeOmieApiReceivables, type OmieCredentials } from './omie.ts';
+import { classifyOmieError, enrichReceivablesWithClients, fetchOmieClientsIndexWithMetadata, fetchOmieReceivablesWithMetadata, normalizeOmieApiReceivables, type OmieClientInfo, type OmieCredentials } from './omie.ts';
 import { createSyncRequestTelemetryBuffer } from './sync-request-telemetry.ts';
 
 export const OMIE_STAGING_BATCH_SIZE = 500;
+export const OMIE_CLIENT_INDEX_CACHE_TTL_MS = 15 * 60 * 1000;
+
+type OmieClientIndexCache = {
+  index: Map<string, OmieClientInfo>;
+  cachedAt: string | null;
+  ageMs: number | null;
+  fresh: boolean;
+};
+
+async function readOmieClientIndexCache(client: SupabaseClient, nowMs = Date.now()): Promise<OmieClientIndexCache | null> {
+  const { data: state, error: stateError } = await client
+    .from('analytics_finance_client_index_state')
+    .select('current_snapshot_id,cached_at,row_count,complete')
+    .eq('cache_key', 'omie_clients')
+    .maybeSingle();
+  if (stateError || !state?.complete || !state.current_snapshot_id) return null;
+
+  const { data: rows, error: rowsError } = await client
+    .from('analytics_finance_client_index_cache')
+    .select('client_code,client_name,client_tax_id,client_trade_name')
+    .eq('snapshot_id', state.current_snapshot_id);
+  if (rowsError || !Array.isArray(rows)) return null;
+
+  const index = new Map<string, OmieClientInfo>();
+  for (const row of rows as Array<{ client_code?: string; client_name?: string | null; client_tax_id?: string | null; client_trade_name?: string | null }>) {
+    const code = String(row.client_code ?? '').trim();
+    if (!code) continue;
+    index.set(code, { name: row.client_name ?? null, taxId: row.client_tax_id ?? null, tradeName: row.client_trade_name ?? null });
+  }
+  const cachedAt = typeof state.cached_at === 'string' ? state.cached_at : null;
+  const ageMs = cachedAt ? Math.max(0, nowMs - Date.parse(cachedAt)) : null;
+  return { index, cachedAt, ageMs, fresh: ageMs !== null && Number.isFinite(ageMs) && ageMs <= OMIE_CLIENT_INDEX_CACHE_TTL_MS };
+}
+
+async function publishOmieClientIndexCache(client: SupabaseClient, syncRunId: string, index: Map<string, OmieClientInfo>, fetchedAt: string) {
+  const rows = [...index.entries()].map(([clientCode, info]) => ({
+    client_code: clientCode,
+    client_name: info.name,
+    client_tax_id: info.taxId,
+    client_trade_name: info.tradeName,
+  }));
+  const { error } = await client.rpc('rpc_service_publish_omie_client_index', {
+    p_source_run_id: syncRunId,
+    p_rows: rows,
+    p_fetched_at: fetchedAt,
+  });
+  if (error) throw new Error(`Falha ao publicar cache de clientes OMIE: ${error.message}`);
+  return rows.length;
+}
 
 export async function stageOmieRowsInBatches(client: SupabaseClient, rows: Array<Record<string, unknown>>) {
   let batchCount = 0;
@@ -75,11 +124,59 @@ export async function runOmieSnapshot(client: SupabaseClient, credentials: OmieC
     let collisions = 0;
     for (const row of normalized.accepted) { const key = `${row.source_key}:${row.source_record_id}`; if (identityKeys.has(key)) collisions += 1; identityKeys.add(key); }
     if (collisions > 0) { const code = 'identity_collision'; const reasons = { ...counts, [code]: collisions }; await failRun('failed', 'OMIE_IDENTITY_COLLISION', { rejected_rows: normalized.rejected.length + collisions, rejected_by_reason: reasons, metadata: { ...fetched.metadata, collisionCount: collisions } }); return { syncRunId, correlationId, totalRows: normalized.summary.received, acceptedRows: 0, rejectedRows: normalized.rejected.length + collisions, status: 'failed', errorCode: 'OMIE_IDENTITY_COLLISION', promotion: null }; }
-    const enrichment = { status: 'unavailable', matched: 0, unmatched: normalized.accepted.length, fieldsUpdated: 0, errors: 0 } as { status: 'complete'|'partial'|'unavailable'; matched: number; unmatched: number; fieldsUpdated: number; errors: number };
-    try { const clients = await fetchOmieClientsIndex(credentials, fetch, { observer: telemetry.observer }); const result = enrichReceivablesWithClients(normalized.accepted as any, clients); enrichment.matched = result.stats.matched; enrichment.unmatched = result.stats.unmatched; enrichment.fieldsUpdated = result.stats.fieldsUpdated; enrichment.status = enrichment.unmatched ? 'partial' : 'complete'; } catch { enrichment.errors = 1; }
+    const enrichment = {
+      status: 'unavailable',
+      matched: 0,
+      unmatched: normalized.accepted.length,
+      fieldsUpdated: 0,
+      errors: 0,
+      cacheSource: 'unavailable',
+      cacheAgeSeconds: null as number | null,
+      cacheRows: 0,
+    } as { status: 'complete'|'partial'|'stale'|'unavailable'; matched: number; unmatched: number; fieldsUpdated: number; errors: number; cacheSource: 'cache'|'api'|'stale_cache'|'api_partial'|'unavailable'; cacheAgeSeconds: number | null; cacheRows: number };
+    try {
+      const cache = await readOmieClientIndexCache(client);
+      enrichment.cacheAgeSeconds = cache?.ageMs === null || cache?.ageMs === undefined ? null : Math.round(cache.ageMs / 1000);
+      if (cache?.fresh) {
+        const result = enrichReceivablesWithClients(normalized.accepted as any, cache.index);
+        enrichment.matched = result.stats.matched;
+        enrichment.unmatched = result.stats.unmatched;
+        enrichment.fieldsUpdated = result.stats.fieldsUpdated;
+        enrichment.cacheRows = cache.index.size;
+        enrichment.cacheSource = 'cache';
+        enrichment.status = enrichment.unmatched ? 'partial' : 'complete';
+      } else {
+        const fetchedClients = await fetchOmieClientsIndexWithMetadata(credentials, fetch, { observer: telemetry.observer });
+        if (fetchedClients.complete) {
+          enrichment.cacheRows = await publishOmieClientIndexCache(client, syncRunId, fetchedClients.index, new Date().toISOString());
+          const result = enrichReceivablesWithClients(normalized.accepted as any, fetchedClients.index);
+          enrichment.matched = result.stats.matched;
+          enrichment.unmatched = result.stats.unmatched;
+          enrichment.fieldsUpdated = result.stats.fieldsUpdated;
+          enrichment.cacheSource = 'api';
+          enrichment.status = enrichment.unmatched ? 'partial' : 'complete';
+        } else if (cache) {
+          const result = enrichReceivablesWithClients(normalized.accepted as any, cache.index);
+          enrichment.matched = result.stats.matched;
+          enrichment.unmatched = result.stats.unmatched;
+          enrichment.fieldsUpdated = result.stats.fieldsUpdated;
+          enrichment.cacheRows = cache.index.size;
+          enrichment.cacheSource = 'stale_cache';
+          enrichment.status = 'stale';
+        } else {
+          enrichment.cacheSource = 'api_partial';
+          const result = enrichReceivablesWithClients(normalized.accepted as any, fetchedClients.index);
+          enrichment.matched = result.stats.matched;
+          enrichment.unmatched = result.stats.unmatched;
+          enrichment.fieldsUpdated = result.stats.fieldsUpdated;
+          enrichment.cacheRows = fetchedClients.index.size;
+          enrichment.status = 'partial';
+        }
+      }
+    } catch { enrichment.errors = 1; }
     const staged = await stageOmieRowsInBatches(client, normalized.accepted);
     const batchCount = staged.batchCount;
-    const coverage = { normalization: 'complete', enrichment: enrichment.status, received: normalized.summary.received, accepted: normalized.summary.accepted, rejected: normalized.summary.rejected, enriched: enrichment.matched, unmatched: enrichment.unmatched, errors: enrichment.errors };
+    const coverage = { normalization: 'complete', enrichment: enrichment.status, enrichmentCache: enrichment.cacheSource, enrichmentCacheAgeSeconds: enrichment.cacheAgeSeconds, enrichmentCacheRows: enrichment.cacheRows, received: normalized.summary.received, accepted: normalized.summary.accepted, rejected: normalized.summary.rejected, enriched: enrichment.matched, unmatched: enrichment.unmatched, errors: enrichment.errors };
     await updateRun({ staged_rows: normalized.accepted.length, batch_count: batchCount, enrichment, coverage, metadata: fetched.metadata });
     const { data: promotion, error: promotionError } = await client.rpc('rpc_service_promote_omie_snapshot', { p_sync_run_id: syncRunId });
     if (promotionError) throw new Error(`Falha ao promover snapshot Omie: ${promotionError.message}`);

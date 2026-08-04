@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildOmieReceivablesRequest, parseOmieCredentials, extractOmieReceivablesPage, fetchOmieReceivables, fetchOmieReceivablesWithMetadata, normalizeOmieApiReceivables, buildOmieClientsRequest, extractOmieClientsPage, fetchOmieClientsIndex, enrichReceivablesWithClients, deriveOmieSourceRecordId, classifyOmieError, OmieProviderError } from '../../supabase/functions/_shared/omie.ts';
+import { buildOmieReceivablesRequest, parseOmieCredentials, extractOmieReceivablesPage, fetchOmieReceivables, fetchOmieReceivablesWithMetadata, normalizeOmieApiReceivables, buildOmieClientsRequest, extractOmieClientsPage, fetchOmieClientsIndex, fetchOmieClientsIndexWithMetadata, enrichReceivablesWithClients, deriveOmieSourceRecordId, classifyOmieError, OmieProviderError } from '../../supabase/functions/_shared/omie.ts';
 import { stageOmieRowsInBatches, OMIE_STAGING_BATCH_SIZE } from '../../supabase/functions/_shared/omie-sync-service.ts';
 
 test('monta requisição paginada da API Omie sem expor segredo', () => {
@@ -197,4 +197,28 @@ test('falha em lote intermediário ou final não envia lotes seguintes', async (
     await assert.rejects(stageOmieRowsInBatches(client, rows), new RegExp(`falha lote ${failingBatch}`));
     assert.equal(calls, failingBatch);
   }
+});
+test('indice OMIE parcial nunca e classificado como snapshot completo', async () => {
+  const result = await fetchOmieClientsIndexWithMetadata({ appKey: 'a', appSecret: 'b' }, async (_url, init) => {
+    const page = JSON.parse(String(init?.body ?? '{}')).param[0].pagina;
+    if (page === 1) {
+      return new Response(JSON.stringify({ pagina: 1, total_de_paginas: 2, clientes_cadastro_resumido: [{ codigo_cliente: 1, razao_social: 'Cliente 1' }] }), { status: 200 });
+    }
+    return new Response('falha controlada', { status: 503 });
+  }, { timeoutMs: 1000, maxRetries: 0, maxPages: 10 });
+
+  assert.equal(result.complete, false);
+  assert.equal(result.pages, 1);
+  assert.deepEqual([...result.index.keys()], ['1']);
+});
+
+test('pagina OMIE vazia antes do fim invalida o snapshot do indice', async () => {
+  const result = await fetchOmieClientsIndexWithMetadata({ appKey: 'a', appSecret: 'b' }, async (_url, init) => {
+    const page = JSON.parse(String(init?.body ?? '{}')).param[0].pagina;
+    return new Response(JSON.stringify({ pagina: page, total_de_paginas: 2, clientes_cadastro_resumido: [] }), { status: 200 });
+  }, { timeoutMs: 1000, maxRetries: 0, maxPages: 10 });
+
+  assert.equal(result.complete, false);
+  assert.equal(result.pages, 1);
+  assert.equal(result.records, 0);
 });

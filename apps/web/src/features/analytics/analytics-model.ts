@@ -355,6 +355,9 @@ export interface OmieSyncRun {
   failedRequestCount: number | null;
   requestDurationMs: number | null;
   lastRequestAt: string | null;
+  enrichmentCacheSource: 'cache' | 'api' | 'stale_cache' | 'api_partial' | 'unavailable' | null;
+  enrichmentCacheAgeSeconds: number | null;
+  enrichmentCacheRows: number | null;
 }
 
 export interface CeoSnapshot {
@@ -661,6 +664,9 @@ export function mapOmieSyncRun(row: Record<string, unknown>): OmieSyncRun {
     failedRequestCount: row.failed_request_count == null ? null : toNumber(row.failed_request_count),
     requestDurationMs: row.request_duration_ms == null ? null : toNumber(row.request_duration_ms),
     lastRequestAt: row.last_request_at ? toText(row.last_request_at) : null,
+    enrichmentCacheSource: row.enrichment_cache_source ? toText(row.enrichment_cache_source) as OmieSyncRun['enrichmentCacheSource'] : null,
+    enrichmentCacheAgeSeconds: row.enrichment_cache_age_seconds == null ? null : toNumber(row.enrichment_cache_age_seconds),
+    enrichmentCacheRows: row.enrichment_cache_rows == null ? null : toNumber(row.enrichment_cache_rows),
   };
 }
 

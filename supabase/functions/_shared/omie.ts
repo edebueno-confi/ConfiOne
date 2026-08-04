@@ -418,17 +418,26 @@ export function normalizeOmieClientCode(row: Record<string, unknown>): string | 
 }
 
 // Best-effort: em caso de falha o enriquecimento e ignorado sem quebrar o sync.
-export async function fetchOmieClientsIndex(
+export interface OmieClientsIndexFetchResult {
+  index: Map<string, OmieClientInfo>;
+  complete: boolean;
+  pages: number;
+  records: number;
+}
+
+export async function fetchOmieClientsIndexWithMetadata(
   credentials: OmieCredentials,
   fetchImpl: typeof fetch = fetch,
   options: { timeoutMs?: number; maxRetries?: number; maxPages?: number; observer?: OmieRequestObserver } = {},
-): Promise<Map<string, OmieClientInfo>> {
+): Promise<OmieClientsIndexFetchResult> {
   const index = new Map<string, OmieClientInfo>();
   const pageSize = 500;
   const timeoutMs = Math.max(options.timeoutMs ?? 15000, 1000);
   const maxRetries = Math.min(Math.max(options.maxRetries ?? 2, 0), 3);
   const maxPages = Math.min(Math.max(options.maxPages ?? 60, 1), 200);
   const retriableStatus = new Set([429, 500, 502, 503, 504]);
+  let pages = 0;
+  let records = 0;
 
   async function fetchPage(page: number) {
     let response: Response | null = null;
@@ -490,19 +499,32 @@ export async function fetchOmieClientsIndex(
   }
 
   const firstPage = await fetchPage(1);
-  if (!firstPage) return index;
+  if (!firstPage) return { index, complete: false, pages, records };
+  pages += 1;
+  records += firstPage.rows.length;
   addPageRows(firstPage.rows);
-  if (firstPage.page >= firstPage.totalPages || firstPage.rows.length === 0) return index;
+  if (firstPage.page >= firstPage.totalPages) return { index, complete: true, pages, records };
+  if (firstPage.rows.length === 0) return { index, complete: false, pages, records };
 
   const totalPages = Math.min(Math.max(firstPage.totalPages, firstPage.page), maxPages);
   for (let page = 2; page <= totalPages; page += 1) {
     const result = await fetchPage(page);
-    if (!result) return index;
+    if (!result) return { index, complete: false, pages, records };
+    pages += 1;
+    records += result.rows.length;
     addPageRows(result.rows);
-    if (result.rows.length === 0) break;
+    if (result.rows.length === 0) return { index, complete: false, pages, records };
   }
 
-  return index;
+  return { index, complete: pages >= totalPages, pages, records };
+}
+
+export async function fetchOmieClientsIndex(
+  credentials: OmieCredentials,
+  fetchImpl: typeof fetch = fetch,
+  options: { timeoutMs?: number; maxRetries?: number; maxPages?: number; observer?: OmieRequestObserver } = {},
+): Promise<Map<string, OmieClientInfo>> {
+  return (await fetchOmieClientsIndexWithMetadata(credentials, fetchImpl, options)).index;
 }
 
 export function enrichReceivablesWithClients<T extends { client_name: string | null; client_tax_id: string | null; client_trade_name?: string | null; raw_payload: unknown }>(

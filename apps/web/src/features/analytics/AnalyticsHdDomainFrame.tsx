@@ -31,6 +31,9 @@ export function AnalyticsExecutionMeta({
   const telemetrySummary = requestCount !== null
     ? ` · ${requestCount.toLocaleString('pt-BR')} chamadas${requestRetryCount ? ` · ${requestRetryCount.toLocaleString('pt-BR')} retries` : ''}`
     : '';
+  const enrichmentSummary = provider === 'OMIE' && run && 'enrichmentCacheSource' in run && run.enrichmentCacheSource
+    ? ` · índice clientes: ${run.enrichmentCacheSource === 'stale_cache' ? 'cache antigo' : run.enrichmentCacheSource === 'cache' ? 'cache vigente' : run.enrichmentCacheSource === 'api' ? 'API' : 'parcial'}`
+    : '';
 
   return (
     <div className="gso-analytics-execution-meta" aria-label={`Última execução ${provider}`}>
@@ -39,7 +42,7 @@ export function AnalyticsExecutionMeta({
       <span>
         {finishedAt ? new Date(finishedAt).toLocaleString('pt-BR') : 'Atualização não registrada'}
         {rowCount !== null && rowCount !== undefined ? ` · ${rowCount.toLocaleString('pt-BR')} registros` : ''}
-        {telemetrySummary}
+        {telemetrySummary}{enrichmentSummary}
       </span>
     </div>
   );
