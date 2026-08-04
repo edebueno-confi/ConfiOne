@@ -78,7 +78,19 @@ async function waitForPathChange(page, originalPath, timeoutMs = 20_000) {
 const accounts = [
   // `/inicio` is a retained technical entry point; the first-release manifest
   // intentionally lands platform administrators on the published dashboard.
-  { role: 'platform_admin', email: qa.LOCAL_QA_ADMIN_EMAIL, password: qa.LOCAL_QA_ADMIN_PASSWORD, desktop: '/admin/analytics', mobile: '/admin/analytics' },
+  {
+    role: 'platform_admin',
+    email: qa.LOCAL_QA_ADMIN_EMAIL,
+    password: qa.LOCAL_QA_ADMIN_PASSWORD,
+    desktop: '/admin/analytics',
+    mobile: '/admin/analytics',
+    // Superfícies internas cobertas apenas em desktop: o objetivo é detectar erro
+    // de runtime, request falho e overflow horizontal em tela autenticada real.
+    // `/admin/customer-portal` fica fora porque exige a screen key
+    // `customer_portal_admin`, que a fixture local de QA não concede; nesse
+    // estado a rota responde `/access-denied` por contrato, não por defeito.
+    extraRoutes: ['/admin/knowledge', '/admin/access'],
+  },
   { role: 'dashboard_viewer', email: qa.LOCAL_QA_DASHBOARD_VIEWER_EMAIL, password: qa.LOCAL_QA_DASHBOARD_VIEWER_PASSWORD, desktop: '/admin/analytics', mobile: '/admin/analytics' },
   { role: 'support_manager', email: qa.LOCAL_QA_SUPPORT_MANAGER_EMAIL, password: qa.LOCAL_QA_SUPPORT_MANAGER_PASSWORD, desktop: '/support/queue', mobile: '/support/queue', expectedDesktop: '/access-denied', expectedMobile: '/access-denied' },
   { role: 'support_agent', email: qa.LOCAL_QA_SUPPORT_AGENT_EMAIL, password: qa.LOCAL_QA_SUPPORT_AGENT_PASSWORD, desktop: '/support/queue', mobile: '/support/queue', expectedDesktop: '/access-denied', expectedMobile: '/access-denied' },
@@ -95,6 +107,7 @@ if (await isPortOccupied(port)) {
 const server = startWebServer();
 const results = [];
 const screenshots = [];
+const extraRouteResults = [];
 let browser;
 try {
   await waitForWebServer();
@@ -139,6 +152,25 @@ try {
       }
       await page.screenshot({ path: join(logDir, `browser-${account.role}-${viewport.name}.png`), fullPage: true });
       screenshots.push(`browser-${account.role}-${viewport.name}.png`);
+      if (viewport.name === 'desktop' && account.extraRoutes?.length) {
+        for (const extraRoute of account.extraRoutes) {
+          await page.goto(`${baseUrl}${extraRoute}`, { waitUntil: 'domcontentloaded' });
+          await page.waitForLoadState('networkidle', { timeout: 8_000 }).catch(() => {});
+          await page.waitForTimeout(500);
+          const reachedPath = new URL(page.url()).pathname;
+          if (reachedPath === '/login' || reachedPath === '/access-denied') {
+            throw new Error(`LOCAL_QA_INTERNAL_ROUTE_UNREACHABLE: ${account.role} ${extraRoute} -> ${reachedPath}`);
+          }
+          const extraOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+          if (extraOverflow) {
+            throw new Error(`LOCAL_QA_HORIZONTAL_OVERFLOW: ${account.role} ${extraRoute}`);
+          }
+          const slug = extraRoute.replace(/^\//, '').replaceAll('/', '-');
+          await page.screenshot({ path: join(logDir, `browser-${account.role}-${slug}-desktop.png`), fullPage: true });
+          screenshots.push(`browser-${account.role}-${slug}-desktop.png`);
+          extraRouteResults.push({ role: account.role, route: extraRoute, reachedPath });
+        }
+      }
       if (account.role === 'dashboard_viewer') {
         await page.goto(`${baseUrl}/admin/settings`, { waitUntil: 'domcontentloaded' });
         const deniedPath = await waitForPathChange(page, '/admin/settings', 20_000);
@@ -174,4 +206,4 @@ try {
 
 const failures = results.filter((item) => item.consoleErrors || item.pageErrors || item.requestFailures || item.unexpectedResponses);
 if (failures.length) throw new Error(`LOCAL_QA_BROWSER_SMOKE_FAILED: ${JSON.stringify(failures)}`);
-console.log(JSON.stringify({ environment: 'local', framework: 'playwright', server_started_automatically: true, healthcheck: true, personas: results, screenshots }));
+console.log(JSON.stringify({ environment: 'local', framework: 'playwright', server_started_automatically: true, healthcheck: true, personas: results, internalRoutes: extraRouteResults, screenshots }));
