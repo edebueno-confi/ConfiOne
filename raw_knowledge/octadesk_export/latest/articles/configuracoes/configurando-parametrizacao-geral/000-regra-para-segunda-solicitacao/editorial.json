@@ -1,0 +1,5 @@
+{
+  "title": "Regra para segunda solicitação",
+  "summary": "COMO CONFIGURAR REGRA PARA SEGUNDA SOLICITAO",
+  "body_md": "### Como configurar regra para segunda solicitação\n\n- Acesse a área administrativa da plataforma.\n- No menu, clique em Configurações > Parametrização Geral.\n- Localize a funcionalidade Regra para segunda solicitação do mesmo Pedido.\n\nDetermine se o cliente poderá ou não continuar com uma segunda solicitação para o mesmo pedido ou item (SKU). Configure conforme necessário para o seu processo.\n\n![Imagem do artigo Regra para segunda solicitação](knowledge-asset-source:octa-static-tenants/o205658-f7a/knowledgebase/2025-02-21/h1we1sensxw8aejtttaz8.com)\n\n::related como-cadastrar-motivos-para-troca-ou-devolucao\nComo cadastrar motivos para troca ou devolução\nCADASTRANDO MOTIVOS PARA TROCA E DEVOLUO\n::"
+}

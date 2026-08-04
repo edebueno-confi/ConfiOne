@@ -1,0 +1,5 @@
+{
+  "title": "Configurando a funcionalidade Fique com o Item",
+  "summary": "Fique com o Item",
+  "body_md": "### Fique com o Item\n\nPara configurar os padrões de segurança da sua plataforma, siga os passos abaixo:\n\n- Acesse a área administrativa da plataforma.\n- No menu, clique em Configurações > Parametrização Geral.\n- Localize a funcionalidade Fique com o item.\n\nNessa funcionalidade, o e-commerce pode configurar regras para não necessitar de logística reversa em determinados casos de troca ou devolução, como:\n\n- Tipo de solicitação\n- Percentual de custo da logística reversa\n- Quantidade mensal de \"Fique com o Item\" por cliente\n\n![Imagem do artigo Configurando a funcionalidade Fique com o Item](knowledge-asset-source:octa-static-tenants/o205658-f7a/knowledgebase/2025-02-21/876lrrjqyxqo-nccng4cm.com)\n\n::related como-cadastrar-motivos-para-troca-ou-devolucao\nComo cadastrar motivos para troca ou devolução\nCADASTRANDO MOTIVOS PARA TROCA E DEVOLUO\n::"
+}

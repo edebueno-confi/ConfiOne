@@ -1,5 +1,131 @@
 # Plano corrente — Interface High-Density V1 — 2026-08-03
 
+## Fila consolidada para o MVP de deploy — Product Owner — 2026-08-03
+
+Esta é a fila única de execução para encerrar o MVP local sem perder conteúdo
+ou transformar estados indefinidos em sucesso. Itens só podem ser marcados como
+concluídos com evidência objetiva e permanecem dependentes dos contratos reais
+de views, read models, RPCs, RLS, permissões e auditoria.
+
+### Lote 0 — preservação e diagnóstico obrigatório
+
+- Confirmar `C:\Projetos\GSO-old` como checkout canônico, branch/HEAD/upstream,
+  worktrees, stash e divergência de `origin/main`.
+- Inventariar todas as branches e commits exclusivos; comparar conteúdo real,
+  preservar referências/bundles e consolidar somente trabalho comprovadamente
+  aplicável. Nenhuma branch ou commit será apagado por contagem ou aparência.
+- Registrar o estado atual do banco local persistente, sem reset, sem limpeza
+  destrutiva e sem expor secrets.
+
+### Lote 1 — Central de Ajuda e artigos OctaDesk
+
+- Localizar o diretório canônico dos artigos OctaDesk já editados e confirmar,
+  por hash/metadado, que cada corpo e asset é a versão editorial tratada; não
+  publicar exportação bruta, rascunho sem revisão ou artigo sem origem.
+- Ler o corpus, corrigir/confirmar títulos e recategorizar os artigos nas
+  categorias operacionais da Central de Ajuda; criar categorias ausentes e
+  permitir editar as existentes pela tela de organização.
+- Vincular cada artigo à categoria correta e publicar somente os itens com
+  evidência editorial, asset renderizável quando aplicável e visibilidade
+  permitida pelo contrato. Duplicatas, temas sensíveis e itens sem decisão
+  permanecem indisponíveis, nunca são publicados por inferência.
+- Refatorar o cockpit de Conhecimento para que categorias não sobreponham a
+  tabela nem cubram o botão Editar; `Ver todas` e `Gerenciar categorias` devem
+  abrir superfícies reais; corrigir paginação, filtros, estados vazios e dark
+  mode. `Novo artigo` sempre inicia editor limpo.
+- Manter o editor rico e os artigos editados com imagens/estrutura; validar
+  exportação profissional em PNG/PDF apenas quando houver dados publicáveis.
+
+**Evidência executada em 2026-08-03:** o corpus editorial tem 54 artigos com
+`editorial.json` e `content.editorial.md` válidos; 42 foram publicados por RPC
+editorial e 12 ficaram bloqueados por revisão crítica. Os 42 públicos estão
+categorizados, com 97 assets aprovados no bucket público, 97 objetos físicos
+existentes, zero referências quebradas e zero assets sem texto alternativo.
+A Central Pública foi exercitada em `http://127.0.0.1:4173/help/genius`, em
+lista, filtro de categoria e artigo com nove imagens carregadas progressivamente.
+O refactor visual/funcional do cockpit administrativo e a gestão de categorias
+continuam pendentes de QA autenticado dedicado.
+
+### Lote 2 — acesso, usuários e perfis
+
+- Expor gestão de usuários apenas para super administrador ou capability
+  autorizada, usando os read models/RPCs de acesso existentes.
+- Permitir cadastro/convite por link ou e-mail sem devolver token bruto,
+  action link, senha ou payload de Auth ao browser; convites devem ser
+  revogáveis, expirados, auditáveis e idempotentes.
+- Associar cada usuário a grupos/perfis/capabilities e áreas; aplicar os
+  limites de ação no backend com tenant scope, RLS, permissões e auditoria.
+- Permitir ativar/inativar e atualizar atribuições pelos contratos existentes,
+  preservando a regra de último administrador e impedindo escalada de privilégio.
+
+### Lote 3 — sincronização e verdade operacional
+
+- Validar o fluxo completo HubSpot → OMIE em ambiente local autenticado, sem
+  executar deploy remoto ou escrever em provedor externo sem autorização.
+- Garantir consulta incremental com watermark/cursor e paginação; nunca reler
+  a base inteira em cada atualização. Medir chamadas, retries, duração,
+  rate-limit, erro sanitizado, itens processados e promoção atômica.
+- Manter lock de execução: uma segunda sincronização deve ser bloqueada enquanto
+  houver ciclo ativo. O motion do Gênio abre ao solicitar atualização, permanece
+  até o estado terminal publicado e, após 60 segundos, oferece continuar em
+  segundo plano com aviso explícito de que não se deve iniciar outro ciclo.
+- HubSpot deve alimentar as áreas contratadas; OMIE deve alimentar Financeiro.
+  Produto/Desenvolvimento aguarda contrato GitHub e Customer Success aguarda
+  denominador/read model próprio; ambos devem aparecer como indisponíveis.
+- Corrigir a semântica de status/frescor: não combinar “dados atualizados” com
+  sincronização não registrada, fonte sem resposta ou execução inexistente.
+
+### Lote 4 — Dashboard Gerencial essencial
+
+- Manter Visão Geral, Comercial, Financeiro e Suporte & Chat funcionais com
+  dados reais; Visão Geral é o compilado das áreas publicadas e não possui
+  filtro de domínio.
+- Remover o container global de fontes operacionais e o filtro de domínio de
+  todas as telas; exibir pipelines somente onde houver contrato e seleção real.
+- Igualar o header da Visão Geral à altura/densidade das demais abas: estado das
+  fontes à esquerda, log HubSpot no contexto operacional correspondente e log
+  OMIE alinhado ao Financeiro, sem duplicidade.
+- Padronizar cards, filtros, KPIs, tipografia, margens e espaçamentos; títulos
+  compactos, leitura HD/densa, bordas leves, sem maximalismo, sem efeitos de
+  foco duplicados e sem rolagem desnecessária. Comercial deve seguir a gramática
+  de Suporte & Chat; Financeiro deve usar o mesmo sistema de cards.
+- Corrigir dark mode em todo o app, incluindo editor, selects nativos, overlays,
+  estados de erro/loading/vazio e componentes de configuração.
+- Reduzir Configurações a um cockpit operacional escalável, sem bordas pesadas
+  e sem empilhar seções desnecessariamente; manter Integrações API-only,
+  HubSpot completo e OMIE financeiro, com `APP_KEY`/`APP_SECRET` e botão de
+  teste read-only quando o contrato permitir.
+- Atualizar o avatar original em todos os estados/telas a partir de
+  `C:\Projetos\GSO-old\avatar\Genius Mascote.dc.html`, preservando a versão
+  SVG correta, braços e transparência; remover fundo/borda do container e usar
+  motion do Gênio com copy humana, sem vazar detalhes técnicos.
+- Revisar todo o copy da interface: falar com o usuário, explicar estado e
+  próxima ação, sem mencionar implementação, mocks, tokens, RPCs ou detalhes
+  internos.
+
+### Lote 5 — validação e fechamento para deploy
+
+- Executar typecheck, build, testes focados, pgTAP focado sem reset, lint SQL,
+  secret scan, quality gate e QA visual/funcional autenticado em claro/escuro,
+  com evidência real das superfícies alteradas.
+- Confirmar que artigos publicados aparecem na Central, que categorias e
+  vínculos persistem, que convites/perfis respeitam autorização e que o sync
+  termina sem ciclo órfão ou execução concorrente.
+- Atualizar `PROJECT_STATE.md`, ledger e relatório final com arquivos,
+  comandos, testes, evidências, limitações e critérios ainda dependentes de
+  credencial externa.
+- Deixar o worktree limpo e a branch principal coerente com `origin/main`,
+  preservando refs de arquivo para qualquer commit não consolidado. Push,
+  deploy, migração remota e exclusão permanente ficam fora deste lote até
+  autorização explícita.
+
+### Critério de entrega do MVP
+
+Entrega local somente quando os Lotes 0–5 tiverem evidência. Produto e
+Desenvolvimento e Customer Success podem permanecer em espera honesta, mas
+Visão Geral, Comercial, Financeiro, Suporte & Chat, Central de Ajuda, acesso de
+usuários e sincronização HubSpot/OMIE precisam estar funcionais e auditáveis.
+
 ## Adendo corrente — reestruturação por domínio — 2026-08-03
 
 - Direção: usar `docs/design/blueprint/Dashboard PO` como referência visual,

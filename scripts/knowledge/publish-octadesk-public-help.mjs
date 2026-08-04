@@ -627,7 +627,7 @@ function writeReport(plan, args, applyResult) {
   const lines = [
     '# Octadesk Publication Execution Report',
     '',
-    'Data: `2026-05-21`',
+    `Data: \`${new Date().toISOString().slice(0, 10)}\``,
     '',
     '## Resumo',
     '',

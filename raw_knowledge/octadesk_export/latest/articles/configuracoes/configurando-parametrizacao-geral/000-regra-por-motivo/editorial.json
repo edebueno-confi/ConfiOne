@@ -1,0 +1,5 @@
+{
+  "title": "Regra por motivo",
+  "summary": "Como habilitar uma regra para um motivo específico?",
+  "body_md": "### Como habilitar uma regra para um motivo específico?\n\nPara configurar regras aplicáveis apenas a um motivo específico, siga estas etapas:\n\n- Acesse Configurações > Ambiente > Motivos.\n- Encontre o motivo já cadastrado na lista.\n- Selecione a opção desejada para habilitar a ação apenas para esse motivo, conforme o exemplo abaixo.\n\nIsso garantirá que a regra se aplique exclusivamente ao motivo selecionado.\n\n![Imagem do artigo Regra por motivo](knowledge-asset-source:octa-static-tenants/o205658-f7a/knowledgebase/2025-03-19/cbjxtrg9zmg9kofdi-oxz.com)\n\n::related como-cadastrar-motivos-para-troca-ou-devolucao\nComo cadastrar motivos para troca ou devolução\nCADASTRANDO MOTIVOS PARA TROCA E DEVOLUO\n::"
+}

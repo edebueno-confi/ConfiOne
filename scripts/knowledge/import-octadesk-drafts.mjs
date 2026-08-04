@@ -21,6 +21,7 @@ function parseArgs(argv) {
     spaceSlug: null,
     knowledgeSpaceId: null,
     allowlist: null,
+    editorialOnly: false,
     root: join(
       process.cwd(),
       'raw_knowledge',
@@ -64,6 +65,11 @@ function parseArgs(argv) {
     if (value === '--allowlist') {
       args.allowlist = argv[index + 1] ?? null;
       index += 1;
+      continue;
+    }
+
+    if (value === '--editorial-only') {
+      args.editorialOnly = true;
       continue;
     }
 
@@ -348,17 +354,23 @@ function applyAllowlist(rows, allowlistEntries) {
   return selected;
 }
 
-function buildInventory(root, limit = null, allowlistEntries = null) {
+function buildInventory(root, limit = null, allowlistEntries = null, editorialOnly = false) {
   const dirs = discoverArticles(root);
   const draftRows = [];
 
   for (const dir of dirs) {
     const article = JSON.parse(readFileSync(join(dir, 'article.json'), 'utf8'));
+    let editorial = null;
+    const editorialPath = join(dir, 'editorial.json');
+    if (existsSync(editorialPath)) {
+      editorial = JSON.parse(readFileSync(editorialPath, 'utf8'));
+    }
     const contentPath = join(dir, 'content.txt');
     const rawContent = existsSync(contentPath)
       ? readFileSync(contentPath, 'utf8')
       : article.plainText || '';
-    const body = cleanBody(article.title, rawContent);
+    const title = editorial?.title || article.title;
+    const body = editorial?.body_md || cleanBody(title, rawContent);
     const relDir = relative(process.cwd(), dir).replace(/\\/g, '/');
     const bodyHash = hashText(rawContent.trim());
     const rootSlug = normalizeSlug(article.categoryUrl, rootCategoryName(article));
@@ -369,8 +381,10 @@ function buildInventory(root, limit = null, allowlistEntries = null) {
 
     draftRows.push({
       article,
+      hasEditorial: Boolean(editorial),
       body,
-      summary: summarizeBody(body),
+      title,
+      summary: editorial?.summary || summarizeBody(body),
       sourcePath: relDir,
       sourceHash: bodyHash,
       rootCategoryName: rootCategoryName(article),
@@ -395,7 +409,10 @@ function buildInventory(root, limit = null, allowlistEntries = null) {
     initialVisibility: classifySensitivity(row.article, row.body, duplicateMap.get(row.sourceHash) ?? 1),
   }));
 
-  const filtered = applyAllowlist(enriched, allowlistEntries);
+  const editorialFiltered = editorialOnly
+    ? enriched.filter((row) => row.hasEditorial)
+    : enriched;
+  const filtered = applyAllowlist(editorialFiltered, allowlistEntries);
 
   return typeof limit === 'number' && Number.isFinite(limit) && limit > 0
     ? filtered.slice(0, limit)
@@ -415,7 +432,7 @@ function buildSummary(rows) {
   const duplicates = rows
     .filter((row) => row.duplicateCount > 1)
     .map((row) => ({
-      title: row.article.title,
+      title: row.title,
       sourcePath: row.sourcePath,
       sourceHash: row.sourceHash,
       duplicateCount: row.duplicateCount,
@@ -424,7 +441,7 @@ function buildSummary(rows) {
   const sensitive = rows
     .filter((row) => row.initialVisibility === 'restricted')
     .map((row) => ({
-      title: row.article.title,
+      title: row.title,
       sourcePath: row.sourcePath,
       visibility: row.initialVisibility,
     }));
@@ -484,7 +501,17 @@ function writeSqlAndExecute(rows, actorUserId, args) {
     null
   );${sectionCategorySql}
 
-  select *
+  select
+    ka.id,
+    ka.status,
+    ka.title,
+    ka.summary,
+    ka.body_md,
+    ka.category_id,
+    ka.visibility,
+    ka.source_path,
+    ka.source_hash,
+    ka.created_at
   into v_existing
   from public.vw_admin_knowledge_article_detail_v2 as ka
   where ka.knowledge_space_id = v_target_space_id
@@ -497,9 +524,9 @@ function writeSqlAndExecute(rows, actorUserId, args) {
     ka.created_at asc
   limit 1;
 
-  if v_existing.id is null then
+    if v_existing.id is null then
     perform public.rpc_admin_create_knowledge_article_draft_v2(
-      '${sqlEscape(row.article.title)}',
+      '${sqlEscape(row.title)}',
       '${sqlEscape(row.articleSlug)}',
       ${row.summary ? `'${sqlEscape(row.summary)}'` : 'null'},
       '${sqlEscape(row.body)}',
@@ -511,7 +538,7 @@ function writeSqlAndExecute(rows, actorUserId, args) {
       '${sqlEscape(row.sourceHash)}'
     );
   elsif v_existing.status = 'draft'::public.knowledge_article_status then
-    if v_existing.title is distinct from '${sqlEscape(row.article.title)}'
+    if v_existing.title is distinct from '${sqlEscape(row.title)}'
        or v_existing.summary is distinct from ${row.summary ? `'${sqlEscape(row.summary)}'` : 'null'}
        or v_existing.body_md is distinct from '${sqlEscape(row.body)}'
        or v_existing.category_id is distinct from v_section.id
@@ -521,7 +548,7 @@ function writeSqlAndExecute(rows, actorUserId, args) {
       perform public.rpc_admin_update_knowledge_article_draft_v2(
         v_existing.id,
         v_target_space_id,
-        '${sqlEscape(row.article.title)}',
+        '${sqlEscape(row.title)}',
         '${sqlEscape(row.articleSlug)}',
         ${row.summary ? `'${sqlEscape(row.summary)}'` : 'null'},
         '${sqlEscape(row.body)}',
@@ -559,7 +586,7 @@ function main() {
   readStatusEnv();
 
   const allowlistEntries = readAllowlist(args.allowlist);
-  const rows = buildInventory(args.root, args.limit, allowlistEntries);
+  const rows = buildInventory(args.root, args.limit, allowlistEntries, args.editorialOnly);
   const summary = buildSummary(rows);
 
   if (!args.apply) {
@@ -570,9 +597,10 @@ function main() {
           knowledge_space_slug: args.spaceSlug,
           knowledge_space_id: args.knowledgeSpaceId,
           allowlist: args.allowlist,
+          editorialOnly: args.editorialOnly,
           root: relative(process.cwd(), args.root).replace(/\\/g, '/'),
           selectedArticles: rows.map((row) => ({
-            title: row.article.title,
+            title: row.title,
             sourcePath: row.sourcePath,
             sourceHash: row.sourceHash,
             visibility: row.initialVisibility,

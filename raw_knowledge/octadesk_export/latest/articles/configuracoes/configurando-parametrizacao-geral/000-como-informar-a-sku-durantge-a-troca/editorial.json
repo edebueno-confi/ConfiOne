@@ -1,0 +1,5 @@
+{
+  "title": "Como informar a SKU durante a troca",
+  "summary": "Como informar a SKU durantge a troca",
+  "body_md": "### Como informar a SKU durantge a troca\n\nPara que o consumiror envie a SKU durante sua solicitação é necessario configurar essa permissão do envio da troca por texto, caso necessário.\n\n### Habilitando ou não que o cliente ao invés de selecionar o item de troca, escreva ou cole o link do item que deseja trocar\n\n- Acesse a área administrativa da plataforma.\n- No menu, clique em Configurações > Parametrização Geral.\n- Localize a funcionalidade Informar SKU de Troca por Texto\n\nSegue imagem abaixo\n\n![Imagem do artigo Como informar a SKU durantge a troca](knowledge-asset-source:octa-static-tenants/o205658-f7a/knowledgebase/2025-02-19/_fsvu8gqyfktan6anlgqm.com)\n\n.\n\n::related como-configurar-o-blocklist\nComo configurar o BlockList?\nAcesse a área administrativa da plataforma.\n::"
+}
