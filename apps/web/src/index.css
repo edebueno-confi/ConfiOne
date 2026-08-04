@@ -144,7 +144,7 @@
   --shell-sidebar-width: 304px;
   --shell-sidebar-collapsed: 88px;
   --shell-sidebar-outer-gap: 8px;
-  --shell-sidebar-radius: 20px;
+  --shell-sidebar-radius: 0px;
   --shell-sidebar-padding: 14px;
   --shell-sidebar-collapsed-padding: 12px;
   --shell-sidebar-header-height: 56px;
@@ -6250,3 +6250,15 @@ table {
 .gso-sidebar .gso-sidebar-account-menu { z-index: 100; background: var(--minimal-surface) !important; color: var(--minimal-text); box-shadow: var(--minimal-shadow); }
 .gso-sidebar .gso-sidebar-menu-action--danger:hover { background: var(--minimal-danger-surface); color: var(--color-danger-text); }
 :root[data-theme='dark'] .gso-sidebar { background: linear-gradient(180deg, #08142e 0%, #061128 100%) !important; border-color: rgba(148, 163, 184, 0.14) !important; }
+:root:not([data-theme='dark']) .gso-sidebar {
+  --minimal-text: oklch(0.27 0.035 255);
+  --minimal-text-secondary: oklch(0.39 0.025 255);
+  --minimal-text-tertiary: oklch(0.49 0.02 255);
+  --minimal-border: oklch(0.82 0.018 255);
+  --minimal-border-strong: oklch(0.72 0.03 255);
+  --minimal-selection: oklch(0.91 0.045 258);
+  --minimal-selection-text: oklch(0.32 0.13 258);
+}
+.gso-sidebar .gso-sidebar-nav .gso-nav-group-toggle { color: var(--minimal-text-secondary) !important; }
+.gso-sidebar .gso-sidebar-search .gso-genius-trigger > span { color: var(--minimal-text-secondary) !important; }
+.gso-sidebar .gso-sidebar-search .gso-genius-trigger > kbd { color: var(--minimal-text-secondary) !important; border-color: var(--minimal-border) !important; background: var(--minimal-surface) !important; }
