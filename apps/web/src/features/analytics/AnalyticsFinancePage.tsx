@@ -119,12 +119,8 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
   const sourceLabel = dataState?.status === 'failed' || dataState?.status === 'error'
     ? lastSuccessAt ? `Últimos dados válidos em ${new Date(lastSuccessAt).toLocaleString('pt-BR')}` : 'Atualização não registrada'
     : lastSuccessAt ? `Dados atualizados em ${new Date(lastSuccessAt).toLocaleString('pt-BR')}` : 'Atualização não registrada';
-  const sourceTag = dataState?.status === 'failed' || dataState?.status === 'error' ? 'Fonte: API OMIE · snapshot anterior' : 'Fonte: API OMIE';
-  const financeSourceMeta = <div className="gso-finance-source-meta" aria-label="Fonte financeira">
-    <div className="flex flex-wrap items-center justify-start gap-2">
-      <strong>Fonte financeira</strong>
-      <Tag label={sourceTag} tone={dataState?.status === 'failed' || dataState?.status === 'error' ? 'warning' : 'positive'} />
-      <span>{sourceLabel}</span>
+  const financeSourceMeta = <div className="gso-finance-source-meta" aria-label={sourceLabel}>
+    <div className="flex flex-wrap items-center justify-start gap-x-2 gap-y-1">
       <Link to="/admin/settings?section=analytics&panel=omie">Gerenciar OMIE</Link>
     </div>
     <AnalyticsExecutionMeta provider="OMIE" run={latestOmieRun} />

@@ -185,7 +185,7 @@ título sem criar overflow.
 
 ### KNOWLEDGE-03 — Reconstrução do cockpit de Artigos
 
-Status: pendente de execução; item adicionado à fila, sem alteração funcional neste registro.
+Status: implementação frontend concluída nesta fase; validação visual final pendente.
 
 Escopo obrigatório:
 
@@ -210,8 +210,8 @@ de estado ativo. Usar `frontend-design` antes da implementação e
 
 ### KNOWLEDGE-03.1 — Propriedades do artigo em dark mode
 
-Status: pendente de execução; item adicionado à fila em 02/08/2026 a partir de
-evidência visual da rota `/admin/knowledge/new`.
+Status: implementação frontend concluída nesta fase; validação de contraste e
+capturas finais pendente na rota `/admin/knowledge/new`.
 
 Superfície-alvo: drawer/painel **Propriedades do artigo**, incluindo os campos
 de categoria, tags, visibilidade, espaço público, status editorial, pré-visualização
@@ -236,8 +236,8 @@ Critérios de aceite:
 
 ### KNOWLEDGE-03.2 — Editor e propriedades em composição persistente
 
-Status: pendente de execução; item adicionado à fila em 02/08/2026 a partir de
-evidência visual da tela `/admin/knowledge/new`.
+Status: implementação frontend concluída nesta fase; validação responsiva e
+capturas finais pendentes.
 
 Direção de design: cockpit editorial de densidade controlada, com o editor
 deslocado para a esquerda e as **Propriedades do artigo** sempre visíveis em
@@ -292,7 +292,8 @@ Skills previstas: `data-analytics:build-report`, `report-to-pdf`,
 
 ### KNOWLEDGE-04 — Contratos de navegação e categorias
 
-Status: pendente de auditoria backend antes da implementação.
+Status: implementação frontend inicial concluída nesta fase; auditoria de
+contratos e testes de regressão pendentes.
 
 - mapear o read model e os comandos reais de categoria antes de criar telas;
 - cobrir `Gerenciar categorias`, `Ver todas`, paginação, filtros e retorno para
@@ -301,7 +302,7 @@ Status: pendente de auditoria backend antes da implementação.
 
 ### UI-04 — Hardening de superfícies já publicadas
 
-Status: pendente de execução; preserva o lote de estabilização em andamento.
+Status: parcialmente implementado nesta fase; validação visual ampla pendente.
 
 - corrigir o dark mode do editor rico, incluindo parágrafos, links, blocos,
   callouts, popovers, seleção e mídia;
@@ -397,3 +398,80 @@ de read model fora da seção aberta.
 Status: SUPERADO PARA IMPLEMENTAÇÃO em 03/08/2026. A direção V2 de novos
 blueprints não será implementada. A execução vigente é HIGH-DENSITY-01, baseada
 nas referências atuais já presentes no checkout.
+
+## Lote final MVP — acesso, configurações e Central de Ajuda
+
+Estado: implementação em fechamento neste ciclo.
+
+- `/` deixa de ser landing page e encaminha para o login único; a escolha de
+  tema só fica disponível depois da autenticação.
+- A Central de Ajuda monta categorias a partir do catálogo publicado ou dos
+  artigos realmente recebidos, sem categorias ou contagens inventadas.
+- O botão do portal comunica que o espaço está em preparação, com o Gênio, sem
+  fingir que o portal já está disponível.
+- Configurações e Fontes do Dashboard usam navegação compacta, agrupamento por
+  área e histórico recolhível, evitando duas barras de rolagem concorrentes.
+- O Control Plane usa o catálogo e os RPCs existentes para liberar telas por
+  perfil e por vínculo individual, além de convite, área e função.
+- O editor mantém propriedades à direita em telas largas e conteúdo à esquerda;
+  a mudança de artigo remonta o editor para limpar o rascunho anterior.
+
+Pendências de fechamento: QA autenticado das rotas administrativas em claro e
+escuro, validação da migração local de permissões quando aplicável, typecheck,
+build, testes focados e registro das capturas reais.
+
+## Fechamento validado em 04/08/2026
+
+Este ciclo validou as rotas administrativas em claro e escuro com sessão local,
+além de typecheck, build, scanner de segredos, diff e gate de qualidade. O
+cockpit de Configurações/Fontes foi reconstruído com navegação agrupada e
+catálogo recolhível; a lista editorial foi reorganizada sem sobreposição da
+coluna de ação; o editor rico recebeu contraste semântico no tema escuro; e o
+módulo existente de Acessos e Áreas foi publicado no primeiro release, com
+Usuários, Convites, Estrutura e Perfis acessíveis conforme permissão.
+
+A validação externa de sincronização e qualquer alteração remota continuam
+dependentes de credenciais e autorização operacional.
+
+## Adendo de fila — DESIGN-SYSTEM-01 e SYNC-QUALITY-01
+
+### DESIGN-SYSTEM-01 — reprodução fiel das referências administrativas
+
+Prioridade: antes do fechamento visual do MVP.
+
+Reproduzir, com fidelidade controlada, as referências em
+docs/design/blueprint/admin/ e as telas de Access, Knowledge, editor e login
+fornecidas pelo Product Owner. A implementação deve usar um único sistema de
+tokens para claro/escuro, sidebar expandida/colapsada, grids, tipografia,
+estados, espaçamento, foco e alertas. O copy da tela de login e das superfícies
+compartilháveis deve permanecer institucional e não expor detalhes internos.
+
+Critérios: não criar uma segunda linguagem visual; não sobrepor colunas;
+manter ações próximas do contexto; evitar rolagem global desnecessária; validar
+desktop, mobile, teclado, foco, overflow, contraste e capturas reais após cada
+superfície relevante.
+
+### DESIGN-V3-02 — fechamento visual do MVP
+
+Prioridade: bloqueador antes da entrega.
+
+- Editor de artigo abre com Propriedades visiveis por padrao; o botao superior redundante foi removido e o fechamento continua disponivel no proprio painel.
+- Financeiro preserva fonte, frescor, ultima execucao e telemetria, mas elimina a repeticao do rótulo da fonte no bloco lateral; a informacao permanece tokenizada e alinhada ao cabecalho das demais areas.
+- A validacao final deve repetir claro/escuro, contraste do menu de blocos do editor, altura dos cabecalhos, filtros e capturas reais do Dashboard e Knowledge.
+
+### SYNC-QUALITY-01 — fechar o diagnóstico de custo e incrementalidade
+
+Prioridade: bloqueador operacional antes do deploy.
+
+HubSpot: preservar e comprovar watermark incremental, cursor, leases, retries,
+limite de concorrência e telemetria sem payload ou segredo.
+
+OMIE: manter paginação serial, cache do índice de clientes, retries limitados,
+telemetria e bloqueio de concorrência; investigar e documentar um marcador
+incremental real para ListarContasReceber. Até existir contrato confirmado do
+provedor e uma implementação testada, a carga financeira deve ser classificada
+honestamente como paginada completa, nunca como incremental.
+
+Motion: permanecer bloqueante até concluir; após 60 segundos oferecer fechar e
+continuar em segundo plano, avisar que uma nova sincronização não deve ser
+solicitada e manter o bloqueio de concorrência no backend.

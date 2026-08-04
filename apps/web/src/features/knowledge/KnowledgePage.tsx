@@ -385,7 +385,7 @@ function compactStatusBadgeClass(
   }
 
   if (tone === 'accent') {
-    return 'border-[rgba(225,0,152,0.18)] bg-[rgba(225,0,152,0.1)] text-[color:var(--color-brand-magenta)]';
+    return 'border-[color:color-mix(in_srgb,var(--color-brand-magenta)_34%,transparent)] bg-[color:color-mix(in_srgb,var(--color-brand-magenta)_14%,var(--color-surface))] text-[color:var(--color-brand-magenta)]';
   }
 
   return 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-ink)]';
@@ -491,22 +491,22 @@ function categoryBadgeClass(name: string | null | undefined) {
   const normalized = (name ?? '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
   if (normalized.includes('integr')) {
-    return 'border-[rgba(216,70,153,0.24)] bg-[rgba(225,0,152,0.09)] text-[color:var(--color-brand-magenta)]';
+    return 'border-[color:color-mix(in_srgb,var(--color-brand-magenta)_34%,transparent)] bg-[color:color-mix(in_srgb,var(--color-brand-magenta)_14%,var(--color-surface))] text-[color:var(--color-brand-magenta)]';
   }
 
   if (normalized.includes('operac') || normalized.includes('reversa')) {
-    return 'border-[rgba(237,173,64,0.26)] bg-[rgba(255,239,204,0.88)] text-[color:var(--color-warning-ink)]';
+    return 'border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-surface)] text-[color:var(--color-warning-ink)]';
   }
 
   if (normalized.includes('primeir')) {
-    return 'border-[rgba(182,154,255,0.28)] bg-[rgba(237,230,255,0.9)] text-[rgb(113,78,204)]';
+    return 'border-[color:color-mix(in_srgb,var(--color-brand-blue)_34%,transparent)] bg-[color:color-mix(in_srgb,var(--color-brand-blue)_14%,var(--color-surface))] text-[color:var(--color-brand-blue)]';
   }
 
   if (normalized.includes('verifica')) {
-    return 'border-[rgba(92,184,194,0.28)] bg-[rgba(224,248,250,0.9)] text-[rgb(30,126,136)]';
+    return 'border-[color:var(--color-success-border)] bg-[color:var(--color-success-surface)] text-[color:var(--color-success-ink)]';
   }
 
-  return 'border-[rgba(72,133,237,0.22)] bg-[rgba(232,242,255,0.92)] text-[rgb(35,92,176)]';
+  return 'border-[color:color-mix(in_srgb,var(--color-brand-blue)_28%,transparent)] bg-[color:color-mix(in_srgb,var(--color-brand-blue)_12%,var(--color-surface))] text-[color:var(--color-brand-blue)]';
 }
 
 function compactCategoryLabel(name: string | null | undefined) {
@@ -761,6 +761,7 @@ export function KnowledgePage() {
   const [articleFormSubmitting, setArticleFormSubmitting] = useState(false);
   const [articleFormMessage, setArticleFormMessage] = useState<string | null>(null);
   const [categoryForm, setCategoryForm] = useState<CategoryFormState>(emptyCategoryForm);
+  const [categoryEditingId, setCategoryEditingId] = useState<string | null>(null);
   const [categoryFormSubmitting, setCategoryFormSubmitting] = useState(false);
   const [categoryFormMessage, setCategoryFormMessage] = useState<string | null>(null);
   const [articleActionSubmitting, setArticleActionSubmitting] = useState(false);
@@ -1384,7 +1385,22 @@ export function KnowledgePage() {
 
   function openCreateCategory() {
     setPanelMode('create-category');
+    setCategoryEditingId(null);
     setCategoryForm(emptyCategoryForm());
+    setCategoryFormMessage(null);
+    setArticleActionFeedback(null);
+  }
+
+  function openEditCategory(category: AdminKnowledgeCategoryV2Row) {
+    setPanelMode('create-category');
+    setCategoryEditingId(category.id);
+    setCategoryForm({
+      name: category.name,
+      slug: category.slug,
+      description: category.description ?? '',
+      visibility: category.visibility,
+      parentCategoryId: category.parent_category_id ?? '',
+    });
     setCategoryFormMessage(null);
     setArticleActionFeedback(null);
   }
@@ -1530,8 +1546,9 @@ export function KnowledgePage() {
       });
 
       await refreshSelectedSpace();
+      setCategoryEditingId(null);
       setCategoryForm(emptyCategoryForm());
-      setCategoryFormMessage('Categoria sincronizada com sucesso.');
+      setCategoryFormMessage(categoryEditingId ? 'Categoria atualizada com sucesso.' : 'Categoria criada com sucesso.');
     } catch (error) {
       const classified = classifyAdminError(
         error,
@@ -2205,8 +2222,8 @@ export function KnowledgePage() {
 
   function renderCategoryManagerSurface() {
     return (
-      <div className="gso-knowledge-category-manager space-y-3">
-        <section className="flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--minimal-border)] pb-3">
+      <div className="gso-knowledge-category-manager gso-knowledge-manager-page flex min-h-0 flex-1 flex-col overflow-auto bg-[color:var(--minimal-surface)]">
+        <section className="gso-knowledge-manager-header flex shrink-0 flex-wrap items-start justify-between gap-4 border-b border-[color:var(--minimal-border)] px-5 py-4">
           <div>
             <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-brand-blue)]">Organização da central</p>
             <h1 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[color:var(--minimal-text)]">Gerenciar categorias</h1>
@@ -2214,22 +2231,23 @@ export function KnowledgePage() {
           </div>
           <GhostButton className="h-9 rounded-md px-3 text-xs" onClick={() => setPanelMode('detail')}>Voltar para artigos</GhostButton>
         </section>
-        <div className="grid gap-3 xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-          <form className="rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4" onSubmit={handleCreateCategory}>
-            <h2 className="text-sm font-semibold text-[color:var(--minimal-text)]">Nova categoria</h2>
+        <div className="gso-knowledge-manager-content grid min-h-0 flex-1 gap-4 overflow-auto p-5">
+          <form className="gso-knowledge-category-form grid gap-3 rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4" onSubmit={handleCreateCategory}>
+            <h2 className="text-sm font-semibold text-[color:var(--minimal-text)]">{categoryEditingId ? 'Editar categoria' : 'Nova categoria'}</h2>
             <div className="mt-3 grid gap-3">
               <Field label="Nome">
                 <TextInput required value={categoryForm.name} onChange={(event) => setCategoryForm((current) => ({ ...current, name: event.target.value }))} />
               </Field>
               <Field label="Slug">
-                <TextInput value={categoryForm.slug} onChange={(event) => setCategoryForm((current) => ({ ...current, slug: slugify(event.target.value) }))} placeholder="geral" />
+                <TextInput disabled={Boolean(categoryEditingId)} value={categoryForm.slug} onChange={(event) => setCategoryForm((current) => ({ ...current, slug: slugify(event.target.value) }))} placeholder="geral" />
               </Field>
               <Field label="Categoria pai">
-                <SelectInput value={categoryForm.parentCategoryId} onChange={(event) => setCategoryForm((current) => ({ ...current, parentCategoryId: event.target.value }))}>
+                <SelectInput disabled={Boolean(categoryEditingId)} value={categoryForm.parentCategoryId} onChange={(event) => setCategoryForm((current) => ({ ...current, parentCategoryId: event.target.value }))}>
                   <option value="">Sem categoria pai</option>
-                  {sortedCategories.map((category) => <option key={category.id} value={category.id}>{categoryDisplayName(category)}</option>)}
+                  {sortedCategories.filter((category) => category.id !== categoryEditingId).map((category) => <option key={category.id} value={category.id}>{categoryDisplayName(category)}</option>)}
                 </SelectInput>
               </Field>
+              {categoryEditingId ? <p className="-mt-1 text-xs leading-5 text-[color:var(--minimal-text-tertiary)]">A categoria pai permanece fixa durante a edição para manter o vínculo dos artigos.</p> : null}
               <Field label="Visibilidade">
                 <SelectInput value={categoryForm.visibility} onChange={(event) => setCategoryForm((current) => ({ ...current, visibility: event.target.value as KnowledgeVisibility }))}>
                   {KNOWLEDGE_VISIBILITIES.map((visibility) => <option key={visibility} value={visibility}>{visibility}</option>)}
@@ -2238,17 +2256,24 @@ export function KnowledgePage() {
               <Field label="Descrição">
                 <TextareaInput value={categoryForm.description} onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))} />
               </Field>
-              {categoryFormMessage ? <InlineNotice tone="critical">{categoryFormMessage}</InlineNotice> : null}
-              <AppButton disabled={categoryFormSubmitting || !selectedSpace} type="submit">{categoryFormSubmitting ? 'Salvando...' : 'Criar categoria'}</AppButton>
+              {categoryFormMessage ? (
+                <InlineNotice tone={categoryFormMessage.includes('sucesso') ? 'positive' : 'critical'}>
+                  {categoryFormMessage}
+                </InlineNotice>
+              ) : null}
+              <div className="flex flex-wrap items-center gap-2">
+                <AppButton disabled={categoryFormSubmitting || !selectedSpace} type="submit">{categoryFormSubmitting ? 'Salvando...' : categoryEditingId ? 'Salvar alterações' : 'Criar categoria'}</AppButton>
+                {categoryEditingId ? <GhostButton onClick={openCreateCategory} type="button">Cancelar edição</GhostButton> : null}
+              </div>
             </div>
           </form>
-          <section className="rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4">
+          <section className="gso-knowledge-category-list rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4">
             <div className="flex items-center justify-between gap-3">
               <div><h2 className="text-sm font-semibold text-[color:var(--minimal-text)]">Categorias cadastradas</h2><p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">{sortedCategories.length} categoria(s) nesta central.</p></div>
               <GhostButton className="h-8 rounded-md px-2.5 text-xs" onClick={() => setPanelMode('detail')}>Concluir</GhostButton>
             </div>
             <ul className="mt-3 divide-y divide-[color:var(--minimal-border)]">
-              {sortedCategories.map((category) => <li className="flex items-center justify-between gap-3 py-2.5" key={category.id}><div className="min-w-0"><strong className="block truncate text-sm text-[color:var(--minimal-text)]">{categoryDisplayName(category)}</strong><span className="text-xs text-[color:var(--minimal-text-secondary)]">{category.article_count} artigo(s) · {category.visibility}</span></div><span className="text-xs text-[color:var(--minimal-text-tertiary)]">{category.slug}</span></li>)}
+              {sortedCategories.map((category) => <li className="flex items-center justify-between gap-3 py-2.5" key={category.id}><div className="min-w-0"><strong className="block truncate text-sm text-[color:var(--minimal-text)]">{categoryDisplayName(category)}</strong><span className="text-xs text-[color:var(--minimal-text-secondary)]">{category.article_count} artigo(s) · {category.visibility}</span></div><div className="flex shrink-0 items-center gap-2"><span className="hidden text-xs text-[color:var(--minimal-text-tertiary)] sm:inline">{category.slug}</span><GhostButton className="h-8 rounded-md px-2.5 text-xs" onClick={() => openEditCategory(category)} type="button">Editar</GhostButton></div></li>)}
             </ul>
           </section>
         </div>
@@ -2313,8 +2338,8 @@ export function KnowledgePage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
-      <section className="shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4">
+    <div className="gso-knowledge-cockpit flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
+      <section className="gso-knowledge-cockpit-header shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
@@ -2338,9 +2363,9 @@ export function KnowledgePage() {
       </section>
 
       <div className="min-h-0 flex-1 overflow-hidden">
-        <div className="grid h-full min-h-0 min-w-0 xl:grid-cols-[minmax(0,1fr)_260px]">
-          <main className="flex min-h-0 min-w-0 flex-col overflow-hidden">
-            <section className="grid shrink-0 gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] px-4 py-3 md:grid-cols-3 xl:grid-cols-[minmax(0,1fr)_168px_168px_168px]">
+        <div className="gso-knowledge-cockpit-grid grid h-full min-h-0 min-w-0 xl:grid-cols-[minmax(0,1fr)_290px]">
+          <main className="gso-knowledge-articles-pane flex min-h-0 min-w-0 flex-col overflow-hidden">
+            <section className="gso-knowledge-filter-deck grid shrink-0 gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] px-4 py-3 md:grid-cols-3 xl:grid-cols-[minmax(0,1fr)_168px_168px_168px]">
               <div className="md:col-span-3 xl:col-span-1">
                 <Field label="Busca global de conhecimento">
                   <div className="relative">
@@ -2507,7 +2532,7 @@ export function KnowledgePage() {
               </article>
             </section>
 
-            <section className="min-h-0 flex-1 overflow-hidden bg-[color:var(--minimal-surface)]">
+            <section className="gso-knowledge-table-panel min-h-0 flex-1 overflow-hidden bg-[color:var(--minimal-surface)]">
               <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--color-border)] px-4 py-3">
                 <div>
                   <h2 className="text-[1.05rem] font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
@@ -2571,15 +2596,15 @@ export function KnowledgePage() {
                 </div>
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col">
-                  <div className="min-h-0 flex-1 overflow-auto">
-                    <table className="w-full min-w-[760px] table-fixed border-separate border-spacing-0">
+                  <div className="gso-knowledge-table-scroll min-h-0 flex-1 overflow-auto">
+                    <table className="gso-knowledge-article-table w-full table-fixed border-separate border-spacing-0">
                       <colgroup>
                         <col />
                         <col className="hidden w-[19%] md:table-column" />
                         <col className="hidden w-[19%] lg:table-column" />
                         <col className="hidden w-[12%] xl:table-column" />
                         <col className="hidden w-[8%] xl:table-column" />
-                        <col className="w-[76px]" />
+                        <col className="w-[7rem]" />
                       </colgroup>
                       <thead className="sticky top-0 z-10 bg-[color:var(--color-surface)]">
                         <tr className="text-left text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
@@ -2676,6 +2701,7 @@ export function KnowledgePage() {
                                   className="h-8 rounded-md px-2.5 text-xs font-medium"
                                   disabled={articleActionSubmitting}
                                   onClick={() => void openArticleEditorFromCockpit(article.id)}
+                                  aria-label={`Editar artigo ${article.title || 'sem título'}`}
                                 >
                                   Editar
                                 </GhostButton>
@@ -2718,13 +2744,15 @@ export function KnowledgePage() {
             </section>
           </main>
 
-          <aside className="hidden min-h-0 min-w-0 flex-col overflow-y-auto overflow-x-hidden border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] xl:flex">
+          <aside className="gso-knowledge-category-rail hidden min-h-0 min-w-0 flex-col overflow-y-auto overflow-x-hidden border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] xl:flex">
             <section className="border-b border-[color:var(--minimal-border)] px-4 py-4">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-[0.9rem] font-semibold text-[color:var(--color-ink)]">
                   Categorias
                 </h2>
                 <button
+                  aria-expanded={showAllCategories}
+                  aria-controls="knowledge-category-rail-list"
                   className="text-[0.75rem] font-semibold text-[color:var(--color-brand-blue)]"
                   onClick={() => setShowAllCategories((current) => !current)}
                   type="button"
@@ -2732,7 +2760,7 @@ export function KnowledgePage() {
                   {showAllCategories ? 'Ver menos' : 'Ver todas'}
                 </button>
               </div>
-              <div className="mt-4 space-y-2">
+              <div className="mt-4 space-y-2" id="knowledge-category-rail-list">
                 {(showAllCategories ? sortedCategories : categoryRailItems).map((category, index) => (
                   <button
                     className={cx(
@@ -2749,7 +2777,10 @@ export function KnowledgePage() {
                       <span className="grid h-5 w-5 shrink-0 place-items-center rounded-[6px] bg-[rgba(47,107,255,0.1)] text-[0.68rem] font-semibold">
                         {index + 1}
                       </span>
-                      <span className="truncate text-[0.8rem] font-medium">
+                      <span
+                        className="gso-knowledge-category-label truncate text-[0.8rem] font-medium"
+                        title={displayFilterCategoryLabel(category.name)}
+                      >
                         {displayFilterCategoryLabel(category.name)}
                       </span>
                     </span>
@@ -2759,6 +2790,11 @@ export function KnowledgePage() {
                   </button>
                 ))}
               </div>
+              {showAllCategories ? (
+                <p className="mt-3 text-[0.72rem] leading-5 text-[color:var(--minimal-text-tertiary)]">
+                  Todas as categorias desta central estão visíveis.
+                </p>
+              ) : null}
               <GhostButton
                 className="mt-4 h-10 w-full justify-center rounded-[12px] text-[0.8rem] font-semibold"
                 onClick={openCreateCategory}

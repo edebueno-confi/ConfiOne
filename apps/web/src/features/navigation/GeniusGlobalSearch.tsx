@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cx } from '../../components/ui';
-import { GeniusMascot } from '../../components/GeniusMascot';
+import { GeniusLamp } from '../../components/GeniusLamp';
 import type { InternalScreenKey } from '../../contracts/admin-contracts';
 import {
   canOpenSettingsSection,
@@ -28,16 +28,6 @@ type ArticleLoadState = 'idle' | 'loading' | 'ready' | 'error';
 
 const SETTINGS_SECTION_STORAGE_KEY = 'genius.settings-section';
 
-function Sparkles() {
-  return (
-    <span aria-hidden="true" className="gso-genius-sparkles">
-      <span />
-      <span />
-      <span />
-    </span>
-  );
-}
-
 /**
  * Busca global do Gênio.
  *
@@ -48,7 +38,13 @@ function Sparkles() {
  * Nenhum destino é oferecido sem passar pelo manifesto da superfície do release
  * e pela permissão do perfil, na mesma ordem usada pelos gates de rota.
  */
-export function GeniusGlobalSearch({ permissions }: { permissions: GeniusGlobalSearchPermissions }) {
+export function GeniusGlobalSearch({
+  permissions,
+  compact = false,
+}: {
+  permissions: GeniusGlobalSearchPermissions;
+  compact?: boolean;
+}) {
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -230,15 +226,17 @@ export function GeniusGlobalSearch({ permissions }: { permissions: GeniusGlobalS
       <button
         ref={triggerRef}
         aria-haspopup="dialog"
-        className="gso-genius-trigger group hidden w-full items-center gap-2.5 rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-3 py-1.5 text-left transition hover:border-[color:var(--minimal-action)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] md:flex"
+        className={cx(
+          'gso-genius-trigger group hidden w-full items-center gap-2.5 rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-3 py-1.5 text-left transition hover:border-[color:var(--minimal-action)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] md:flex',
+          compact && 'gso-genius-trigger--compact justify-center px-1.5',
+        )}
         onClick={() => setOpen(true)}
         title="Pergunte ao Gênio · Ctrl+K"
         type="button"
       >
-        <span className="relative inline-flex h-5 w-5 shrink-0 items-center justify-center">
-          <GeniusMascot alt="" expression="happy" pose="magic" size="sm" surface="default" />
-          <Sparkles />
-        </span>
+        <svg aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-[color:var(--minimal-action)]" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" viewBox="0 0 24 24">
+          <path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13ZM15.5 15.5 20 20" />
+        </svg>
         <span className="truncate text-sm text-[color:var(--minimal-text-tertiary)]">
           Pergunte ao Gênio
         </span>
@@ -276,10 +274,7 @@ export function GeniusGlobalSearch({ permissions }: { permissions: GeniusGlobalS
           <div className="gso-genius-panel relative w-full max-w-2xl overflow-hidden rounded-2xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] shadow-2xl">
             <div className="gso-genius-panel-glow" aria-hidden="true" />
             <div className="relative flex items-center gap-3 border-b border-[color:var(--minimal-border)] px-4 py-3">
-              <span className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center">
-                <GeniusMascot alt="Gênio" expression="happy" pose="magic" size="sm" surface="default" />
-                <Sparkles />
-              </span>
+              <GeniusLamp alt="Lâmpada do GeniusOS" size="md" />
               <input
                 ref={inputRef}
                 aria-label="Pergunte ao Gênio"

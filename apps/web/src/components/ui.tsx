@@ -470,10 +470,21 @@ export function InlineNotice({
       ? 'border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-surface)] text-[color:var(--color-warning-ink)]'
       : tone === 'critical'
         ? 'border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] text-[color:var(--color-danger-ink)]'
-        : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-muted)]';
+      : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-muted)]';
+
+  const toneIcon =
+    tone === 'positive' ? '✓' : tone === 'warning' ? '!' : tone === 'critical' ? '!' : 'i';
 
   return (
-    <div className={cx('rounded-2xl border px-4 py-3 text-sm leading-6', toneClass)}>
+    <div
+      aria-atomic="true"
+      aria-live={tone === 'critical' ? 'assertive' : 'polite'}
+      className={cx('flex items-start gap-2 rounded-xl border px-4 py-3 text-sm leading-6', toneClass)}
+      role={tone === 'critical' ? 'alert' : 'status'}
+    >
+      <span aria-hidden="true" className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border border-current text-xs font-bold">
+        {toneIcon}
+      </span>
       {children}
     </div>
   );

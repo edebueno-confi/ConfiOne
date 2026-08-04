@@ -41,15 +41,15 @@ function formatDate(value: string | null | undefined) {
 function sourceDetail(source: AnalyticsSourceStatusPayload['hubspot']) {
   if (source.status === 'syncing') {
     return source.lastSuccessAt
-      ? `Atualização em andamento · último snapshot ${formatDate(source.lastSuccessAt)}`
-      : 'Atualização em andamento · ainda não há snapshot publicado.';
+      ? `Atualização em andamento · última atualização publicada ${formatDate(source.lastSuccessAt)}`
+      : 'Atualização em andamento · ainda não há atualização publicada.';
   }
   if (source.status === 'failed') {
     return source.lastSuccessAt
-      ? `Última tentativa ${formatDate(source.lastFailureAt ?? source.lastAttemptAt)} · snapshot anterior preservado`
-      : source.sanitizedError ?? 'A última tentativa falhou e ainda não há snapshot publicado.';
+      ? `Última tentativa ${formatDate(source.lastFailureAt ?? source.lastAttemptAt)} · dados anteriores preservados`
+      : source.sanitizedError ?? 'A última tentativa falhou e ainda não há atualização publicada.';
   }
-  if (source.lastSuccessAt) return `Último snapshot publicado: ${formatDate(source.lastSuccessAt)}`;
+  if (source.lastSuccessAt) return `Última atualização publicada: ${formatDate(source.lastSuccessAt)}`;
   return source.sanitizedError ?? 'Ainda não há uma atualização concluída.';
 }
 
@@ -133,6 +133,7 @@ export function DashboardSourcesSettingsPage() {
   useEffect(() => { void load(); }, [load]);
 
   const filteredRows = useMemo(() => areaFilter === 'all' ? rows : rows.filter((row) => row.areaKey === areaFilter), [areaFilter, rows]);
+  const groupedRows = useMemo(() => Object.entries(filteredRows.reduce<Record<string, AnalyticsSourceConfig[]>>((groups, row) => { (groups[row.areaKey] ??= []).push(row); return groups; }, {})), [filteredRows]);
   const pendingCount = rows.filter((row) => !row.isArchived && row.areaKey === 'a_classificar').length;
   const activeCount = rows.filter((row) => row.isActive && !row.isArchived).length;
 
@@ -191,11 +192,12 @@ export function DashboardSourcesSettingsPage() {
   return (
     <div className="gso-settings-sources gso-settings-stack gso-visual-v1-settings">
       {syncFeedback ? <GeniusSyncOverlay source={syncFeedback.source} state={syncFeedback.state} hasValidSnapshot={syncFeedback.state === 'failed' || syncFeedback.state === 'timed_out' || syncFeedback.state === 'abandoned' ? Boolean(syncFeedback.source === 'painel' ? sourceStatus?.hubspot.hasValidSnapshot && sourceStatus?.omie.hasValidSnapshot : sourceStatus?.[syncFeedback.source.toLowerCase() as 'hubspot' | 'omie']?.hasValidSnapshot) : syncingKind === 'full' ? Boolean(sourceStatus?.hubspot.hasValidSnapshot && sourceStatus?.omie.hasValidSnapshot) : Boolean(sourceStatus?.[syncingKind ?? 'hubspot']?.hasValidSnapshot)} detail={syncFeedback.detail ?? syncProgress} historyHref="/admin/settings/sync-history" /> : null}
-      <section className="gso-settings-source-overview" aria-labelledby="sources-overview-title">
+      <section className="gso-settings-source-overview gso-settings-cockpit-overview" aria-labelledby="sources-overview-title">
         <div>
           <p className="gso-settings-eyebrow">Mapa de origem</p>
           <h3 id="sources-overview-title">Dados do Dashboard, com contexto</h3>
           <p>Os indicadores leem o HubSpot para Comercial, Customer Success e Suporte. O Financeiro lê o OMIE. Pipelines novos ficam ativos, mas aguardam classificação antes de compor uma área específica.</p>
+          <small className="gso-settings-help">Cada atualização avança a partir do último ponto seguro disponível. Quando a origem não informa esse ponto, o sistema confirma a leitura completa e registra volume, duração e chamadas no Histórico.</small>
         </div>
         <div className="gso-settings-source-summary">
           <strong>{activeCount}</strong><span>fontes ativas</span>
@@ -203,12 +205,13 @@ export function DashboardSourcesSettingsPage() {
         </div>
       </section>
 
-      <section className="gso-settings-source-status-grid" aria-label="Estado das fontes">
+      <section className="gso-settings-source-status-grid gso-settings-cockpit-status" aria-label="Estado das fontes">
         {sourcePills.map((source) => <div className="gso-settings-source-status" key={source.key}><span>{source.label}</span><strong>{statusLabel(source.status)}</strong><small>{sourceDetail(source)}</small></div>)}
+        <button className="gso-settings-button gso-settings-button--primary gso-settings-cockpit-refresh" type="button" disabled={!canEdit || busy} onClick={() => void run('full')}>Atualizar painel completo</button>
       </section>
 
       <section className="gso-settings-card gso-settings-schedule-card" aria-labelledby="schedule-title">
-        <div className="gso-settings-card-header"><div><p className="gso-settings-eyebrow">Ritmo de atualização</p><h3 id="schedule-title">Atualização automática do Dashboard</h3><p>O Dashboard atualiza primeiro o HubSpot e, em seguida, os dados financeiros do OMIE.</p></div><button className="gso-settings-button gso-settings-button--primary" type="button" disabled={!canEdit || busy} onClick={() => void run('full')}>Atualizar painel completo</button></div>
+        <div className="gso-settings-card-header"><div><p className="gso-settings-eyebrow">Ritmo de atualização</p><h3 id="schedule-title">Atualização automática do Dashboard</h3><p>O Dashboard atualiza primeiro o HubSpot e, em seguida, os dados financeiros do OMIE.</p></div></div>
         <div className="gso-settings-form-grid gso-settings-schedule-controls">
           <label className="gso-settings-field"><span>Frequência</span><select className={CONTROL} disabled={!canEdit || busy} value={schedule?.frequency ?? 'off'} onChange={(event) => setSchedule((current) => ({ ...(current ?? { enabled: false, frequency: 'off', lastRunAt: null, lastStatus: null, lastMessage: null, hubspotEnabled: false, hubspotFrequency: 'off', hubspotLastRunAt: null, hubspotLastStatus: null, hubspotLastMessage: null }), frequency: event.target.value as IntegrationSchedule['frequency'] }))}><option value="off">Desativada</option><option value="hourly">De hora em hora</option><option value="daily">Diária</option></select></label>
           <label className="gso-settings-field gso-settings-field--toggle"><span>Atualização ativa</span><input type="checkbox" disabled={!canEdit || busy} checked={schedule?.enabled ?? false} onChange={(event) => setSchedule((current) => current ? { ...current, enabled: event.target.checked } : current)} /></label>
@@ -223,11 +226,14 @@ export function DashboardSourcesSettingsPage() {
       </section>
 
       <section className="gso-settings-card" aria-labelledby="catalog-title">
-        <div className="gso-settings-card-header"><div><p className="gso-settings-eyebrow">Catálogo vivo</p><h3 id="catalog-title">Pipelines usados por área</h3><p>O catálogo é descoberto no HubSpot. O nome oficial permanece visível; o alias é apenas uma ajuda interna.</p></div><label className="gso-settings-field gso-settings-filter"><span>Filtrar área</span><select className={CONTROL} value={areaFilter} onChange={(event) => setAreaFilter(event.target.value as typeof areaFilter)}><option value="all">Todas as áreas</option>{Object.entries(AREA_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label></div>
+        <div className="gso-settings-card-header"><div><p className="gso-settings-eyebrow">Catálogo vivo</p><h3 id="catalog-title">Pipelines usados por área</h3><p>Organize as fontes por área sem alterar o nome oficial que aparece na origem.</p></div><label className="gso-settings-field gso-settings-filter"><span>Filtrar área</span><select className={CONTROL} value={areaFilter} onChange={(event) => setAreaFilter(event.target.value as typeof areaFilter)}><option value="all">Todas as áreas</option>{Object.entries(AREA_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label></div>
         {message ? <p className="gso-settings-inline-message" role="status">{message} <Link className="font-medium underline" to="/admin/settings/sync-history">Acompanhar no Histórico</Link></p> : null}
         {error ? <p className="gso-settings-inline-error" role="alert">{error}</p> : null}
-        <ul className="gso-settings-pipeline-list">{filteredRows.map((row) => <PipelineRow busy={busy} canEdit={canEdit} key={row.id} onSave={savePipeline} row={row} />)}</ul>
-        {!filteredRows.length ? <p className="gso-settings-empty">Nenhum pipeline nesta área.</p> : null}
+        <details className="gso-settings-catalog-details" open={areaFilter !== 'all' || filteredRows.length <= 12}>
+          <summary className="gso-settings-catalog-summary"><span>Editar classificação das fontes</span><small>{filteredRows.length} pipelines encontrados</small></summary>
+          <div className="gso-settings-source-groups">{groupedRows.map(([areaKey, areaRows]) => <details className="gso-settings-source-group" key={areaKey} open={areaFilter !== 'all' || areaRows.length <= 8}><summary><span>{AREA_LABELS[areaKey as AnalyticsSourceConfig['areaKey']] ?? 'A classificar'}</span><small>{areaRows.length} fontes</small></summary><ul className="gso-settings-pipeline-list">{areaRows.map((row) => <PipelineRow busy={busy} canEdit={canEdit} key={row.id} onSave={savePipeline} row={row} />)}</ul></details>)}</div>
+          {!filteredRows.length ? <p className="gso-settings-empty">Nenhum pipeline nesta área.</p> : null}
+        </details>
       </section>
 
       <section className="gso-settings-source-note"><strong>Como ler este catálogo</strong><p>“A classificar” significa que o HubSpot trouxe o pipeline, mas ainda não há decisão administrativa segura sobre a área. Esses registros permanecem carregados e ativos, porém não entram silenciosamente nos indicadores de Customer Success, Suporte ou Chat.</p></section>

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
   geniusReturnsIntegrationLinks,
@@ -108,6 +108,42 @@ function mediaSizeClass(size?: Block['mediaSize']) {
   }
 
   return 'max-w-[680px]';
+}
+
+function PublicArticleImage({
+  alt,
+  asset,
+}: {
+  alt: string;
+  asset: MarkdownAsset;
+}) {
+  const [failed, setFailed] = useState(false);
+  const resolvedAlt = asset.alt_text?.trim() || alt.trim() || 'Imagem de apoio do artigo';
+
+  if (failed) {
+    return (
+      <div
+        aria-label={`${resolvedAlt}. Imagem indisponível.`}
+        className="grid min-h-28 place-items-center bg-[var(--help-content-note)] px-5 py-6 text-center text-sm leading-6 text-[color:var(--help-muted)]"
+        role="img"
+      >
+        Imagem indisponível no momento. O conteúdo do artigo continua disponível em texto.
+      </div>
+    );
+  }
+
+  return (
+    <img
+      alt={resolvedAlt}
+      className="h-auto max-h-[780px] w-full object-contain"
+      decoding="async"
+      height={asset.height ?? undefined}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      src={asset.signed_url ?? undefined}
+      width={asset.width ?? undefined}
+    />
+  );
 }
 
 function parseMediaSize(value?: string) {
@@ -284,17 +320,6 @@ function parseMarkdown(source: string, categoryName?: string) {
       continue;
     }
 
-    const headingMatch = /^(#{1,6})\s+(.+)$/.exec(trimmed);
-    if (headingMatch) {
-      blocks.push({
-        type: 'heading',
-        level: headingMatch[1].length as Block['level'],
-        text: headingMatch[2].trim(),
-      });
-      index += 1;
-      continue;
-    }
-
     if (trimmed.startsWith('> ')) {
       const quoteLines: string[] = [];
       while (index < lines.length && lines[index].trim().startsWith('> ')) {
@@ -305,7 +330,9 @@ function parseMarkdown(source: string, categoryName?: string) {
       continue;
     }
 
-    const imageMatch = /^!\[([^\]]*)\]\((knowledge-asset:[^)]+)\)$/.exec(trimmed);
+    const imageMatch = /^!\[([^\]]*)\]\((knowledge-asset:[^)]+)\)$/.exec(
+      trimmed.replace(/^#{1,6}\s+/, ''),
+    );
     if (imageMatch) {
       const imageAlt = parseImageAlt(imageMatch[1].trim());
       blocks.push({
@@ -313,6 +340,17 @@ function parseMarkdown(source: string, categoryName?: string) {
         alt: imageAlt.alt,
         imageSize: imageAlt.imageSize,
         assetId: imageMatch[2].replace(/^knowledge-asset:/, '').trim(),
+      });
+      index += 1;
+      continue;
+    }
+
+    const headingMatch = /^(#{1,6})\s+(.+)$/.exec(trimmed);
+    if (headingMatch) {
+      blocks.push({
+        type: 'heading',
+        level: headingMatch[1].length as Block['level'],
+        text: headingMatch[2].trim(),
       });
       index += 1;
       continue;
@@ -417,7 +455,7 @@ function parseMarkdown(source: string, categoryName?: string) {
           candidate,
         ) ||
         /^(#{1,6})\s+/.test(candidate) ||
-        /^!\[([^\]]*)\]\((knowledge-asset:[^)]+)\)$/.test(candidate) ||
+        /^(?:#{1,6}\s+)?!\[([^\]]*)\]\((knowledge-asset:[^)]+)\)$/.test(candidate) ||
         candidate.startsWith('> ') ||
         /^[-*]\s+/.test(candidate) ||
         /^\d+[.)]\s+/.test(candidate) ||
@@ -792,7 +830,7 @@ export function MarkdownDocument({
                 key={key}
               className="max-w-[78ch] rounded-[18px] border border-dashed border-[var(--help-content-note-border)] bg-[var(--help-content-note)] px-4 py-4 text-sm leading-6 text-[color:var(--help-muted)]"
               >
-                Imagem indisponível para publicação. Revise o asset antes de liberar este conteúdo.
+                A imagem não está disponível no momento. O conteúdo do artigo continua disponível em texto.
               </div>
             );
           }
@@ -802,14 +840,7 @@ export function MarkdownDocument({
               key={key}
               className={`${imageSizeClass(block.imageSize)} overflow-hidden rounded-[24px] border border-[var(--help-content-rule)] bg-[color:var(--help-surface-strong)] shadow-[var(--help-content-shadow)]`}
             >
-              <img
-                alt={asset.alt_text ?? block.alt ?? ''}
-                className="h-auto max-h-[780px] w-full object-contain"
-                height={asset.height ?? undefined}
-                loading="lazy"
-                src={asset.signed_url}
-                width={asset.width ?? undefined}
-              />
+              <PublicArticleImage alt={block.alt ?? ''} asset={asset} />
               {asset.caption ? (
                 <figcaption className="border-t border-[var(--help-content-rule)] bg-[var(--help-content-note)] px-4 py-3 text-sm leading-6 text-[color:var(--help-muted)]">
                   {asset.caption}

@@ -87,8 +87,8 @@ export function AnalyticsShell() {
         await refreshSourceStatus();
         setSyncFeedback(null);
       }
-    } catch (cause) {
-      setSyncFeedback({ source: 'painel', state: 'failed', detail: cause instanceof Error ? cause.message : 'N\u00e3o foi poss\u00edvel iniciar a atualiza\u00e7\u00e3o.' });
+    } catch {
+      setSyncFeedback({ source: 'painel', state: 'failed', detail: 'N\u00e3o foi poss\u00edvel concluir a atualiza\u00e7\u00e3o. O painel preservou os \u00faltimos dados publicados.' });
     } finally {
       setSyncBusy(false);
     }

@@ -34,7 +34,7 @@ export function AnalyticsExecutionMeta({
     ? ` · ${requestCount.toLocaleString('pt-BR')} chamadas${requestRetryCount ? ` · ${requestRetryCount.toLocaleString('pt-BR')} retries` : ''}${requestAverageDurationMs !== null ? ` · ${requestAverageDurationMs.toLocaleString('pt-BR')} ms/call` : ''}${requestSuccessRatePercent !== null ? ` · ${requestSuccessRatePercent.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}% sucesso` : ''}`
     : '';
   const enrichmentSummary = provider === 'OMIE' && run && 'enrichmentCacheSource' in run && run.enrichmentCacheSource
-    ? ` · índice clientes: ${run.enrichmentCacheSource === 'stale_cache' ? 'cache antigo' : run.enrichmentCacheSource === 'cache' ? 'cache vigente' : run.enrichmentCacheSource === 'api' ? 'API' : 'parcial'}`
+    ? ` · cadastro de clientes: ${run.enrichmentCacheSource === 'stale_cache' ? 'dados antigos' : run.enrichmentCacheSource === 'cache' ? 'dados atuais' : run.enrichmentCacheSource === 'api' ? 'fonte conectada' : 'parcial'}`
     : '';
 
   return (

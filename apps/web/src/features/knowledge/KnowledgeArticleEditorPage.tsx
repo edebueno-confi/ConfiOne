@@ -1857,37 +1857,73 @@ function RichTextArticleEditor({
 
       <style>{`
         .knowledge-editor-card {
+          display: grid;
+          grid-template-rows: 44px minmax(0, 1fr) 52px;
+          height: 100%;
+          min-height: 0;
           min-width: 0;
           overflow: hidden;
           padding-top: 0;
-          border: 1px solid #DCE4F2;
-          border-radius: 22px;
+          border: 1px solid var(--minimal-border);
+          border-radius: 12px;
           background: #FFFFFF;
           box-shadow: 0 18px 50px rgba(22, 36, 67, 0.06);
         }
 
+        .knowledge-editor-meta-grid {
+          display: grid;
+          grid-template-columns: 1.15fr .95fr .95fr;
+          gap: 12px;
+          height: 116px;
+          min-height: 0;
+          margin-bottom: 0;
+          padding: 12px 16px 8px;
+          border: 1px solid var(--minimal-border);
+          border-radius: 12px;
+          background: #FFFFFF;
+        }
+
+        .knowledge-editor-content-grid {
+          display: grid;
+          grid-template-rows: 116px minmax(0, 1fr);
+          gap: 12px;
+          height: 100%;
+        }
+
+        .knowledge-editor-meta-grid > label {
+          min-width: 0;
+        }
+
         .knowledge-editor-toolbar {
-          position: sticky;
-          top: 0;
+          position: relative;
+          top: auto;
           z-index: 50;
           display: flex;
           /* A toolbar precisa caber no canvas. Sem wrap e sem limite de largura,
              os botoes finais (desfazer/refazer) vazavam para fora do card. */
-          flex-wrap: wrap;
+          flex-wrap: nowrap;
           max-width: 100%;
           min-width: 0;
-          row-gap: 4px;
-          min-height: 48px;
+          height: 44px;
+          min-height: 44px;
           align-items: center;
           gap: 8px;
           border-bottom: 1px solid #E8EEF7;
           background: rgba(255, 255, 255, 0.96);
-          padding: 8px 14px;
+          padding: 6px 10px;
         }
 
-        .knowledge-editor-card {
-          overflow: hidden;
-        }
+         .knowledge-editor-card { overflow: hidden; }
+
+         .knowledge-rich-editor {
+           min-height: 0;
+           overflow-y: auto;
+           overflow-x: hidden;
+         }
+
+         .knowledge-rich-editor .ProseMirror {
+           min-height: 100%;
+         }
 
         /* O espacador so empurra o grupo final quando ha folga real na linha. */
         .knowledge-toolbar-spacer {
@@ -2373,7 +2409,9 @@ function RichTextArticleEditor({
           border-top: 1px solid #E8EEF7;
           color: #6B7892;
           font-size: 0.75rem;
-          padding: 12px 16px;
+          height: 52px;
+          align-items: center;
+          padding: 8px 12px;
         }
 
         .knowledge-editor-statusbar span:last-child {
@@ -2381,14 +2419,34 @@ function RichTextArticleEditor({
         }
 
         @media (max-width: 1280px) {
+          .knowledge-editor-meta-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+
+          .knowledge-editor-meta-grid > label:last-child {
+            grid-column: 1 / -1;
+          }
+
           .knowledge-editor-toolbar {
             align-items: flex-start;
             flex-wrap: wrap;
-            top: 0;
+            top: var(--knowledge-editor-toolbar-offset-compact, 6.75rem);
           }
 
           .knowledge-rich-editor .ProseMirror {
             padding: 28px 32px 48px;
+          }
+        }
+
+        @media (max-width: 767px) {
+          .knowledge-editor-meta-grid {
+            grid-template-columns: 1fr;
+            gap: 10px;
+            padding: 12px;
+          }
+
+          .knowledge-editor-meta-grid > label:last-child {
+            grid-column: auto;
           }
         }
 
@@ -2399,6 +2457,11 @@ function RichTextArticleEditor({
           border-color: var(--minimal-border);
           background: var(--minimal-surface);
           box-shadow: none;
+        }
+
+        [data-theme='dark'] .knowledge-editor-meta-grid {
+          border-color: var(--minimal-border);
+          background: var(--minimal-surface-muted);
         }
 
         [data-theme='dark'] .knowledge-editor-toolbar {
@@ -3414,10 +3477,98 @@ function LegacyRichTextArticleEditor({
             .toolbar-swatch.mark-pink { background: #FCE7F3; }
             .toolbar-swatch.mark-purple { background: #F3E8FF; }
             .toolbar-swatch.mark-gray { background: #EEF2F7; }
+
+            /* O editor foi originalmente desenhado apenas para o tema claro.
+               Estes tokens mantêm a leitura e os controles consistentes no dark,
+               sem alterar as cores semânticas das mídias incorporadas. */
+            :root[data-theme='dark'] .knowledge-editor-card {
+              border-color: var(--minimal-border);
+              background: var(--minimal-surface);
+              box-shadow: var(--minimal-shadow);
+            }
+            :root[data-theme='dark'] .knowledge-editor-toolbar {
+              border-bottom-color: var(--minimal-border);
+              background: color-mix(in srgb, var(--minimal-sidebar) 94%, transparent);
+            }
+            :root[data-theme='dark'] .knowledge-toolbar-divider,
+            :root[data-theme='dark'] .knowledge-rich-editor hr {
+              background: var(--minimal-border);
+            }
+            :root[data-theme='dark'] .knowledge-toolbar-button,
+            :root[data-theme='dark'] .knowledge-block-select,
+            :root[data-theme='dark'] .knowledge-block-menu button,
+            :root[data-theme='dark'] .knowledge-color-menu button,
+            :root[data-theme='dark'] .knowledge-color-menu strong,
+            :root[data-theme='dark'] .knowledge-related-popover strong,
+            :root[data-theme='dark'] .knowledge-related-popover input,
+            :root[data-theme='dark'] .knowledge-related-popover textarea,
+            :root[data-theme='dark'] .knowledge-related-list button {
+              color: var(--minimal-text);
+            }
+            :root[data-theme='dark'] .knowledge-block-select,
+            :root[data-theme='dark'] .knowledge-toolbar-popover,
+            :root[data-theme='dark'] .knowledge-related-popover input,
+            :root[data-theme='dark'] .knowledge-related-popover textarea,
+            :root[data-theme='dark'] .knowledge-related-list button,
+            :root[data-theme='dark'] .knowledge-media-node,
+            :root[data-theme='dark'] .knowledge-media-toolbar {
+              border-color: var(--minimal-border);
+              background: var(--minimal-surface-muted);
+            }
+            :root[data-theme='dark'] .knowledge-toolbar-popover,
+            :root[data-theme='dark'] .knowledge-related-list button {
+              box-shadow: var(--minimal-shadow);
+            }
+            :root[data-theme='dark'] .knowledge-toolbar-button:hover,
+            :root[data-theme='dark'] .knowledge-block-select:hover,
+            :root[data-theme='dark'] .knowledge-toolbar-button.is-active,
+            :root[data-theme='dark'] .knowledge-block-menu button:hover,
+            :root[data-theme='dark'] .knowledge-color-menu button:hover,
+            :root[data-theme='dark'] .knowledge-related-list button:hover {
+              border-color: var(--minimal-border-hover);
+              background: var(--minimal-surface);
+            }
+            :root[data-theme='dark'] .knowledge-related-popover p,
+            :root[data-theme='dark'] .knowledge-related-list small,
+            :root[data-theme='dark'] .knowledge-related-empty,
+            :root[data-theme='dark'] .knowledge-rich-editor figcaption {
+              color: var(--minimal-text-secondary);
+            }
+            :root[data-theme='dark'] .knowledge-rich-editor,
+            :root[data-theme='dark'] .knowledge-rich-editor .ProseMirror,
+            :root[data-theme='dark'] .knowledge-rich-editor .ProseMirror p,
+            :root[data-theme='dark'] .knowledge-rich-editor .ProseMirror li {
+              color: var(--minimal-text);
+            }
+            :root[data-theme='dark'] .knowledge-rich-editor .ProseMirror h1,
+            :root[data-theme='dark'] .knowledge-rich-editor .ProseMirror h2,
+            :root[data-theme='dark'] .knowledge-rich-editor .ProseMirror h3,
+            :root[data-theme='dark'] .knowledge-rich-editor .ProseMirror blockquote,
+            :root[data-theme='dark'] .knowledge-rich-editor .ProseMirror code {
+              color: var(--minimal-text);
+            }
+            :root[data-theme='dark'] .knowledge-rich-editor .ProseMirror blockquote,
+            :root[data-theme='dark'] .knowledge-rich-editor .ProseMirror code,
+            :root[data-theme='dark'] .knowledge-rich-editor .knowledge-media-node {
+              background: var(--minimal-surface-muted);
+              border-color: var(--minimal-border);
+            }
+            :root[data-theme='dark'] .knowledge-rich-editor .ProseMirror a,
+            :root[data-theme='dark'] .knowledge-rich-editor [data-text-tone='blue'] {
+              color: var(--minimal-action);
+            }
+            :root[data-theme='dark'] .knowledge-rich-editor [data-mark-tone='blue'] {
+              background: color-mix(in srgb, var(--minimal-action) 22%, transparent);
+            }
+            :root[data-theme='dark'] .toolbar-swatch,
+            :root[data-theme='dark'] .knowledge-tone-dot,
+            :root[data-theme='dark'] .knowledge-mark-swatch {
+              border-color: var(--minimal-border-strong);
+            }
           `}
         </style>
         <div
-          className="knowledge-rich-editor min-h-[680px] max-w-[980px] px-10 py-8 text-[#24324F] outline-none xl:px-12"
+          className="knowledge-rich-editor min-h-[680px] max-w-[980px] px-10 py-8 text-[color:var(--minimal-text)] outline-none xl:px-12"
           contentEditable={!isReadOnly}
           onBlur={rememberSelection}
           onClick={(event) => {
@@ -3580,7 +3731,11 @@ export function KnowledgeArticleEditorPage() {
     useState<KnowledgeReviewHumanConfirmations>({});
   const [tagDraft, setTagDraft] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
-  const [propertiesOpen, setPropertiesOpen] = useState(false);
+  // As propriedades fazem parte do fluxo editorial: entram abertas para que
+  // categoria, visibilidade e publicação fiquem visíveis desde o primeiro
+  // contato. Em telas menores, o painel pode ser recolhido pelo fundo do
+  // diálogo, sem adicionar um botão extra ao cabeçalho.
+  const [propertiesOpen, setPropertiesOpen] = useState(true);
 
   // Esc fecha o slide-over de propriedades, como em qualquer dialogo.
   useEffect(() => {
@@ -3705,7 +3860,9 @@ export function KnowledgeArticleEditorPage() {
         setPublicConfirmation({});
         setTagDraft('');
         setSlugTouched(false);
-        setPropertiesOpen(false);
+        // O editor deve iniciar com o contexto editorial disponivel. O painel
+        // pode ser recolhido pelo fundo do dialogo ou pela tecla Escape.
+        setPropertiesOpen(true);
         setForm(EMPTY_FORM);
         setPhase('loading');
         setErrorMessage(null);
@@ -4542,11 +4699,11 @@ export function KnowledgeArticleEditorPage() {
 
   return (
     <form
-      className="h-full min-h-screen overflow-y-auto bg-[color:var(--minimal-surface)]"
+      className="knowledge-editor-page h-full min-h-0 overflow-hidden bg-[color:var(--minimal-surface)]"
       onSubmit={handleSaveDraft}
     >
-      <div>
-        <header className="sticky top-0 z-20 flex items-start justify-between gap-5 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-3">
+      <div className="flex h-full min-h-0 flex-col">
+        <header className="knowledge-editor-header z-20 flex h-[52px] shrink-0 items-center justify-between gap-5 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-2">
           <div className="min-w-0 space-y-2">
             <nav className="flex items-center gap-2 text-xs font-semibold text-[color:var(--color-muted)]">
               <Link className="hover:text-[color:var(--color-brand-blue)]" to="/admin/knowledge">
@@ -4583,18 +4740,6 @@ export function KnowledgeArticleEditorPage() {
                 Visualizar
               </a>
             ) : null}
-            <GhostButton
-              className="h-9 gap-2 rounded-md px-3 text-sm"
-              onClick={() => setPropertiesOpen(true)}
-              type="button"
-            >
-              Propriedades
-              {missingRequired.length > 0 ? (
-                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[color:var(--color-warning-surface)] px-1.5 text-[0.68rem] font-semibold text-[color:var(--color-warning-text)]">
-                  {missingRequired.length}
-                </span>
-              ) : null}
-            </GhostButton>
             <GhostButton
               className="h-9 rounded-md px-3 text-sm"
               disabled={saveState === 'saving' || isReadOnly}
@@ -4657,7 +4802,7 @@ export function KnowledgeArticleEditorPage() {
               <span>{feedback}</span>
               {feedbackActionHref ? (
                 <Link
-                  className="ml-3 inline-flex rounded-full bg-[color:var(--color-surface-strong)] px-3 py-1 text-[0.72rem] font-extrabold text-[#2F6BFF] underline-offset-2 hover:underline"
+                  className="ml-3 inline-flex rounded-full bg-[color:var(--minimal-surface-muted)] px-3 py-1 text-[0.72rem] font-extrabold text-[color:var(--minimal-action)] underline-offset-2 hover:underline"
                   to={feedbackActionHref}
                 >
                   Ver na Central de Ajuda
@@ -4667,10 +4812,11 @@ export function KnowledgeArticleEditorPage() {
           </div>
         ) : null}
 
-        {/* Escrita em pagina inteira: o canvas ocupa a superficie toda. */}
-        <main className="min-w-0 px-5 pb-10 pt-5">
-          <div className="mx-auto w-full max-w-[900px]">
-              <section className="min-w-0">
+        {/* Em desktop, escrita e propriedades compartilham a mesma superfície. */}
+        <div className={cx('gso-knowledge-editor-shell grid min-h-0 w-full flex-1 px-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-4', propertiesOpen ? '' : 'xl:grid-cols-1')}>
+        <main className="min-h-0 min-w-0 pb-4 pt-3 xl:grid xl:grid-rows-[minmax(0,1fr)]">
+          <div className="contents">
+              <section className="knowledge-editor-content-grid min-h-0 min-w-0">
                 <input
                   accept="image/png,image/jpeg,image/webp,image/gif"
                   className="hidden"
@@ -4685,7 +4831,41 @@ export function KnowledgeArticleEditorPage() {
                   ref={fileInputRef}
                   type="file"
                 />
+                <section aria-label="Identidade do artigo" className="knowledge-editor-meta-grid">
+                  <Field label="Título do artigo *">
+                    <TextInput
+                      disabled={isReadOnly}
+                      maxLength={TITLE_LIMIT + 20}
+                      onChange={handleTitleChange}
+                      placeholder="Título claro do artigo"
+                      value={form.title}
+                    />
+                    <CharacterCounter limit={TITLE_LIMIT} value={form.title} />
+                  </Field>
+                  <Field label="Slug *">
+                    <TextInput
+                      disabled={isReadOnly}
+                      maxLength={SLUG_LIMIT + 20}
+                      onChange={handleSlugChange}
+                      placeholder="slug-do-artigo"
+                      value={form.slug}
+                    />
+                    <CharacterCounter limit={SLUG_LIMIT} value={form.slug} />
+                  </Field>
+                  <Field label="Resumo curto *">
+                    <TextareaInput
+                      className="knowledge-editor-summary-input min-h-[64px] rounded-[10px] py-2.5 leading-[1.35]"
+                      disabled={isReadOnly}
+                      maxLength={SUMMARY_LIMIT + 40}
+                      onChange={(event) => updateForm({ summary: event.target.value })}
+                      placeholder="Explique em até 320 caracteres o que o artigo resolve."
+                      value={form.summary}
+                    />
+                    <CharacterCounter limit={SUMMARY_LIMIT} value={form.summary} />
+                  </Field>
+                </section>
                 <RichTextArticleEditor
+                  key={`article-editor-${routeArticleId ?? 'new'}`}
                   assets={assetMap}
                   assetState={assetState}
                   bodyMd={form.bodyMd}
@@ -4707,56 +4887,25 @@ export function KnowledgeArticleEditorPage() {
           </div>
         </main>
 
-        {/* Propriedades em slide-over: aberto sob demanda, ~50% da largura em
-            desktop, tela cheia no mobile. Antes era uma coluna fixa que
-            competia com a escrita e obrigava rolagem antes de publicar. */}
-        {propertiesOpen ? (
-          <div aria-labelledby="gso-article-properties-title" aria-modal="true" className="fixed inset-0 z-[60] flex justify-end" role="dialog">
-            <button aria-label="Fechar propriedades" className="absolute inset-0 cursor-default bg-[rgba(12,18,32,0.5)] backdrop-blur-sm" onClick={() => setPropertiesOpen(false)} tabIndex={-1} type="button" />
-            <aside className="relative flex h-full w-full flex-col border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] shadow-2xl sm:w-[92vw] lg:w-1/2 lg:min-w-[560px] lg:max-w-[760px]">
+        {/* Propriedades ficam persistentes no desktop; em telas menores viram
+            slide-over para manter o editor utilizável sem esconder campos. */}
+        <div
+          aria-labelledby="gso-article-properties-title"
+          aria-modal={propertiesOpen ? true : undefined}
+           className={propertiesOpen ? 'fixed inset-0 z-[60] flex justify-end xl:static xl:block xl:inset-auto xl:z-auto' : 'hidden'}
+          role={propertiesOpen ? 'dialog' : undefined}
+        >
+            {propertiesOpen ? <button aria-label="Fechar propriedades" className="absolute inset-0 cursor-default bg-[rgba(12,18,32,0.5)] backdrop-blur-sm xl:hidden" onClick={() => setPropertiesOpen(false)} tabIndex={-1} type="button" /> : null}
+            <aside className="gso-knowledge-editor-properties relative flex h-full w-full flex-col border-l border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] shadow-2xl sm:w-[92vw] lg:w-1/2 lg:min-w-[440px] lg:max-w-[620px] xl:sticky xl:top-0 xl:h-full xl:w-full xl:min-w-0 xl:max-w-none xl:shadow-none">
               <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--minimal-border)] px-5 py-3.5">
                 <div className="min-w-0">
-                  <h2 className="text-base font-semibold text-[color:var(--minimal-text)]" id="gso-article-properties-title">Propriedades do artigo</h2>
-                  <p className="mt-0.5 text-xs text-[color:var(--minimal-text-secondary)]">Identidade, classificacao e publicacao.</p>
+                  <h2 className="text-base font-semibold text-[color:var(--minimal-text)]" id="gso-article-properties-title">Configurações editoriais</h2>
+                  <p className="mt-0.5 text-xs text-[color:var(--minimal-text-secondary)]">Classificação, publicação e revisão.</p>
                 </div>
-                <button aria-label="Fechar propriedades" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[color:var(--minimal-text-tertiary)] transition hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)]" onClick={() => setPropertiesOpen(false)} type="button">
-                  <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17" /></svg>
-                </button>
               </header>
-              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+              <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2 xl:overflow-hidden">
                 <div className="space-y-2.5">
                       <RailCard title="">
-                        <Field label="Título do artigo *">
-                          <TextInput
-                            disabled={isReadOnly}
-                            maxLength={TITLE_LIMIT + 20}
-                            onChange={handleTitleChange}
-                            placeholder="Título claro do artigo"
-                            value={form.title}
-                          />
-                          <CharacterCounter limit={TITLE_LIMIT} value={form.title} />
-                        </Field>
-                        <Field label="Slug *">
-                          <TextInput
-                            disabled={isReadOnly}
-                            maxLength={SLUG_LIMIT + 20}
-                            onChange={handleSlugChange}
-                            placeholder="slug-do-artigo"
-                            value={form.slug}
-                          />
-                          <CharacterCounter limit={SLUG_LIMIT} value={form.slug} />
-                        </Field>
-                        <Field label="Resumo curto *">
-                          <TextareaInput
-                            className="min-h-[96px] rounded-[14px] py-3 leading-[1.45]"
-                            disabled={isReadOnly}
-                            maxLength={SUMMARY_LIMIT + 40}
-                            onChange={(event) => updateForm({ summary: event.target.value })}
-                            placeholder="Explique em até 320 caracteres o que o artigo resolve."
-                            value={form.summary}
-                          />
-                          <CharacterCounter limit={SUMMARY_LIMIT} value={form.summary} />
-                        </Field>
                         <Field label="Categoria *">
                           <SelectInput
                             disabled={isReadOnly}
@@ -4772,17 +4921,17 @@ export function KnowledgeArticleEditorPage() {
                           </SelectInput>
                         </Field>
                         <Field label="Tags">
-                          <div className="rounded-[16px] border border-[#DCE4F2] bg-[color:var(--color-surface-strong)] p-2">
+                          <div className="rounded-[16px] border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-2">
                             {form.keywords.length > 0 ? (
                               <div className="mb-2 flex flex-wrap gap-1.5">
                                 {form.keywords.map((tag) => (
                                   <span
-                                    className="inline-flex items-center gap-1 rounded-full bg-[#EEF2F7] px-2 py-1 text-[0.68rem] font-medium text-[#162443]"
+                                    className="inline-flex items-center gap-1 rounded-full bg-[color:var(--minimal-surface-muted)] px-2 py-1 text-[0.68rem] font-medium text-[color:var(--minimal-text)]"
                                     key={tag}
                                   >
                                     {tag}
                                     <button
-                                      className="text-[#6B7892] hover:text-[color:var(--color-danger-ink)]"
+                                      className="text-[color:var(--minimal-text-tertiary)] hover:text-[color:var(--color-danger-ink)]"
                                       onClick={() => removeTag(tag)}
                                       type="button"
                                     >
@@ -4794,7 +4943,7 @@ export function KnowledgeArticleEditorPage() {
                             ) : null}
                             <div className="flex gap-2">
                               <input
-                                className="min-h-9 min-w-0 flex-1 rounded-xl border border-[#DCE4F2] px-3 text-[0.78rem] font-semibold text-[#162443] outline-none focus:border-[#2F6BFF]"
+                                className="min-h-9 min-w-0 flex-1 rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-3 text-[0.78rem] font-semibold text-[color:var(--minimal-text)] outline-none focus:border-[color:var(--minimal-action)]"
                                 disabled={isReadOnly || form.keywords.length >= 10}
                                 onChange={(event) => setTagDraft(event.target.value)}
                                 onKeyDown={(event) => {
@@ -4807,7 +4956,7 @@ export function KnowledgeArticleEditorPage() {
                                 value={tagDraft}
                               />
                               <button
-                                className="rounded-xl bg-[#F4F7FC] px-3 text-[0.72rem] font-extrabold text-[#2F6BFF] disabled:opacity-40"
+                                className="rounded-xl bg-[color:var(--minimal-surface-muted)] px-3 text-[0.72rem] font-extrabold text-[color:var(--minimal-action)] disabled:opacity-40"
                                 disabled={!tagDraft.trim() || form.keywords.length >= 10}
                                 onClick={addTag}
                                 type="button"
@@ -4815,7 +4964,7 @@ export function KnowledgeArticleEditorPage() {
                                 +
                               </button>
                             </div>
-                            <div className="mt-1 flex justify-between text-[0.65rem] text-[#6B7892]">
+                            <div className="mt-1 flex justify-between text-[0.65rem] text-[color:var(--minimal-text-tertiary)]">
                               <span>As tags serão salvas junto com o artigo.</span>
                               <span>{form.keywords.length}/10</span>
                             </div>
@@ -4850,13 +4999,13 @@ export function KnowledgeArticleEditorPage() {
                           </SelectInput>
                         </Field>
                         <Field label="Status editorial">
-                          <div className="rounded-[16px] border border-[#DCE4F2] bg-[#F8FBFF] p-3">
+                          <div className="rounded-[16px] border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] p-3">
                             <div className="flex items-center justify-between gap-3">
                               <div>
-                                <p className="text-[0.68rem] font-extrabold uppercase tracking-[0.12em] text-[#6B7892]">
+                                <p className="text-[0.68rem] font-extrabold uppercase tracking-[0.12em] text-[color:var(--minimal-text-tertiary)]">
                                   Estado atual
                                 </p>
-                                <p className="mt-1 text-[0.9rem] font-extrabold text-[#162443]">
+                                <p className="mt-1 text-[0.9rem] font-extrabold text-[color:var(--minimal-text)]">
                                   {statusLabel(status)}
                                 </p>
                               </div>
@@ -4866,7 +5015,7 @@ export function KnowledgeArticleEditorPage() {
                                   status === 'published'
                                     ? 'bg-[color:var(--color-success-surface)] text-[color:var(--color-success-ink)]'
                                     : status === 'review'
-                                      ? 'bg-[color:var(--color-info-surface)] text-[#2F6BFF]'
+                                      ? 'bg-[color:var(--color-info-surface)] text-[color:var(--minimal-action)]'
                                       : status === 'archived'
                                         ? 'bg-[color:var(--color-app-bg)] text-[color:var(--color-text-secondary)]'
                                         : 'bg-[color:var(--color-warning-surface)] text-[color:var(--color-warning-ink)]',
@@ -4943,7 +5092,7 @@ export function KnowledgeArticleEditorPage() {
                         ) : null}
                         {needsPublicEvidence && publicConfirmationOpen ? (
                           <div className="rounded-2xl border border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-surface)] p-3">
-                            <h3 className="text-[0.76rem] font-extrabold text-[#162443]">
+                            <h3 className="text-[0.76rem] font-extrabold text-[color:var(--minimal-text)]">
                               Confirmação editorial para publicação pública
                             </h3>
                             <p className="mt-1 text-[0.68rem] leading-4 text-[color:var(--color-warning-ink)]">
@@ -4953,12 +5102,12 @@ export function KnowledgeArticleEditorPage() {
                             <div className="mt-3 space-y-2">
                               {PUBLIC_PUBLISH_CONFIRMATION_FIELDS.map((field) => (
                                 <label
-                                  className="flex items-start gap-2 text-[0.72rem] leading-4 text-[#162443]"
+                                  className="flex items-start gap-2 text-[0.72rem] leading-4 text-[color:var(--minimal-text)]"
                                   key={field.key}
                                 >
                                   <input
                                     checked={publicConfirmation[field.key] === true}
-                                    className="mt-0.5 h-4 w-4 rounded border-[#C8D4EA]"
+                                    className="mt-0.5 h-4 w-4 rounded border-[color:var(--minimal-border-strong)]"
                                     onChange={(event) =>
                                       setPublicConfirmation((current) => ({
                                         ...current,
@@ -5032,8 +5181,8 @@ export function KnowledgeArticleEditorPage() {
                 </div>
               </div>
             </aside>
-          </div>
-        ) : null}
+        </div>
+        </div>
       </div>
     </form>
   );

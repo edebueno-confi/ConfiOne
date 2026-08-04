@@ -66,6 +66,16 @@ function sanitizeAdminMessage(message: string, fallbackMessage: string) {
   }
 
   if (
+    lowered.includes('edge function') ||
+    lowered.includes('non-2xx') ||
+    lowered.includes('status code') ||
+    lowered.includes('http 4') ||
+    lowered.includes('http 5')
+  ) {
+    return fallbackMessage;
+  }
+
+  if (
     lowered.includes('constraint') ||
     lowered.includes('postgres') ||
     lowered.includes('sql') ||
@@ -101,7 +111,7 @@ export function classifyAdminError(
     if (error.code === 'permission-denied') {
       return {
         kind: 'permission-denied',
-        message: error.message,
+        message: 'Sua conta não tem permissão para concluir esta ação agora.',
       };
     }
 

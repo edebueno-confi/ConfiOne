@@ -87,6 +87,25 @@ const GROUPS: SettingsGroup[] = [
   { id: 'dashboard-historico', label: 'Histórico de sincronizações', description: 'Execuções, resultados e erros das integrações gerenciais.', controls: ['Execuções', 'Status', 'Erros'], usadoEm: 'Dashboard Gerencial', status: 'ativo', nota: 'O histórico fica separado das configurações e das ações de atualização.' },
 ];
 
+const SETTINGS_NAV_ORDER = [
+  'integracoes',
+  'dashboard-fontes',
+  'dashboard-historico',
+  'marcas',
+  'central-ajuda',
+  'tipos-conversa',
+  'categorias',
+  'prioridades',
+  'respostas-rapidas',
+  'status-fluxos',
+  'slas',
+  'canais',
+  'areas',
+  'papeis',
+  'segmentos',
+  'automacoes',
+];
+
 
 function ColorPill({ token, label }: { token: string | null; label: string }) {
   const map: Record<string, string> = {
@@ -640,7 +659,7 @@ function HelpCenterSupportContactForm({
       </div>
       {mutationError ? <p className="mt-3 text-xs text-[color:var(--color-danger-text)]">{mutationError}</p> : null}
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Salvo por RPC auditada; o conteúdo original dos artigos permanece como proveniência.</p>
+        <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Salvo com registro de segurança; o conteúdo original dos artigos permanece como referência.</p>
         <button className="inline-flex items-center rounded-lg border border-transparent bg-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action-ink)] disabled:opacity-60" disabled={mutating} onClick={() => void onSave(form)} type="button">
           {mutating ? 'Salvando…' : 'Salvar contatos'}
         </button>
@@ -683,7 +702,7 @@ function TicketCategoriesPanel({ state }: { state: LoadState<TicketCategory> }) 
           </tbody>
         </table>
       </div>
-      <p className="mt-3 text-xs leading-5 text-[color:var(--minimal-text-tertiary)]">Edição de categorias entra num próximo ciclo; hoje a consulta é centralizada aqui.</p>
+      <p className="mt-3 text-xs leading-5 text-[color:var(--minimal-text-tertiary)]">As categorias exibidas aqui orientam a classificação do atendimento e podem ser arquivadas quando deixarem de ser usadas.</p>
     </div>
   );
 }
@@ -747,7 +766,7 @@ function GroupDetail({
   const isIntegrations = group.id === 'integracoes';
 
   return (
-    <article className="min-h-0 overflow-y-auto bg-[color:var(--minimal-surface)]">
+    <article className="min-h-0 bg-[color:var(--minimal-surface)]">
       {DASHBOARD_SECTION_IDS.includes(group.id) ? (
         <>
           <header className="border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6">
@@ -773,19 +792,13 @@ function GroupDetail({
       <div className="divide-y divide-[color:var(--minimal-border)]">
         {!isIntegrations ? (
           <>
-            <section className="px-5 py-5 sm:px-6">
-              <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">O que este parâmetro define</h3>
-              <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-                {group.controls.map((control: string) => (
-                  <li className="rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-3 py-2 text-sm text-[color:var(--minimal-text)]" key={control}>{control}</li>
-                ))}
-              </ul>
-            </section>
-
-            <section className="px-5 py-5 sm:px-6">
-              <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">Usado em</h3>
-              <p className="mt-2 text-sm text-[color:var(--minimal-text-secondary)]">{group.usadoEm}</p>
-              {group.nota ? <p className="mt-3 text-xs leading-5 text-[color:var(--minimal-text-tertiary)]">{group.nota}</p> : null}
+            <section className="gso-settings-context-strip px-5 py-3 sm:px-6" aria-label="Resumo da configuração">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <span className="text-xs font-semibold text-[color:var(--minimal-text)]">Nesta área</span>
+                <div className="flex flex-wrap gap-1.5">{group.controls.map((control: string) => <span className="gso-settings-context-chip" key={control}>{control}</span>)}</div>
+                <span className="text-xs text-[color:var(--minimal-text-secondary)]">Usado em: {group.usadoEm}</span>
+              </div>
+              {group.nota ? <p className="mt-1 text-[11px] leading-4 text-[color:var(--minimal-text-tertiary)]">{group.nota}</p> : null}
             </section>
           </>
         ) : null}
@@ -837,6 +850,7 @@ export function SettingsPage() {
     isPlatformAdmin: gate.actor?.is_platform_admin === true,
     screenKeys: gate.actor?.screen_keys ?? [],
   };
+  const canManageAccess = settingsPermissions.isPlatformAdmin || settingsPermissions.screenKeys.includes('access');
   const settingsScreenKeys = (gate.actor?.screen_keys ?? []).join('|');
   const visibleGroups = useMemo(
     () => GROUPS.filter((group) => canOpenSettingsSection(group.id, settingsPermissions)),
@@ -1188,30 +1202,41 @@ export function SettingsPage() {
         </p>
       </header>
 
-      <div className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="gso-settings-nav min-h-0 overflow-y-auto border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)]">
-          {visibleGroups.map((group: SettingsGroup) => {
-            const active = group.id === selectedId;
-            return (
+      <div className="gso-settings-cockpit-layout grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[220px_minmax(0,1fr)]">
+        <aside className="gso-settings-nav gso-settings-cockpit-nav min-h-0 bg-[color:var(--minimal-sidebar)]">
+          <nav aria-label="Seções de configurações" className="gso-settings-nav-groups">
+            {canManageAccess ? (
               <button
-                aria-pressed={active}
-                className={cx(
-                  'gso-nav-link flex w-full items-center justify-between gap-2 border-b border-[color:var(--minimal-border)] px-4 py-3 text-left transition-colors duration-150',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--minimal-focus)]',
-                  active ? 'gso-nav-link--active bg-[color:var(--minimal-selection)]' : 'bg-transparent hover:bg-[color:var(--minimal-surface-muted)]',
-                )}
-                key={group.id}
-                onClick={() => selectGroup(group.id)}
+                aria-current={location.pathname.startsWith('/admin/access') ? 'page' : undefined}
+                className={cx('gso-settings-nav-item', location.pathname.startsWith('/admin/access') && 'is-active')}
+                onClick={() => navigate('/admin/access')}
                 type="button"
               >
-                <span className={cx('truncate text-sm font-medium', active ? 'text-[color:var(--minimal-selection-text)]' : 'text-[color:var(--minimal-text)]')}>{group.label}</span>
-
+                <span>Usuários e acesso</span>
+                {location.pathname.startsWith('/admin/access') ? <span aria-hidden="true" className="gso-settings-nav-marker" /> : null}
               </button>
-            );
-          })}
+            ) : null}
+            {SETTINGS_NAV_ORDER.map((id) => visibleGroups.find((group) => group.id === id)).filter((group): group is SettingsGroup => Boolean(group)).map((group) => {
+              const active = group.id === selectedId;
+              const nestedUnderDashboardSources = group.id === 'dashboard-historico';
+              return (
+                <button
+                  aria-current={active ? 'page' : undefined}
+                  className={cx('gso-settings-nav-item', nestedUnderDashboardSources && 'gso-settings-nav-item--nested', active && 'is-active')}
+                  key={group.id}
+                  onClick={() => selectGroup(group.id)}
+                  type="button"
+                >
+                  <span>{group.label}</span>
+                  {active ? <span aria-hidden="true" className="gso-settings-nav-marker" /> : null}
+                </button>
+              );
+            })}
+          </nav>
         </aside>
 
-        <GroupDetail
+        <main className="gso-settings-cockpit-main">
+          <GroupDetail
           conversationTypes={conversationTypes}
           group={selected}
           mutating={mutating}
@@ -1235,7 +1260,8 @@ export function SettingsPage() {
           quickReplies={quickReplies}
           integrations={integrations}
           onSaveIntegration={handleSaveIntegration}
-        />
+          />
+        </main>
       </div>
     </div>
   );

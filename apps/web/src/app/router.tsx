@@ -229,11 +229,6 @@ const HomePage = lazyRouteModule(
   'HomePage',
 );
 
-const PublicHomePage = lazyRouteModule(
-  () => import('../features/public-home/PublicHomePage'),
-  'PublicHomePage',
-);
-
 const InboxPage = lazyRouteModule(
   () => import('../features/inbox/InboxPage'),
   'InboxPage',
@@ -319,7 +314,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: '/',
-        element: withSuspense(<PublicHomePage />),
+        element: <Navigate replace to="/login" />,
       },
       {
         path: '/login',

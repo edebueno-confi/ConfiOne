@@ -56,8 +56,8 @@ function AnalyticsKpiStateMarker({ state }: { state?: AnalyticsBlockState }) {
     ? 'Snapshot anterior'
     : state.status === 'syncing'
       ? 'Atualização em andamento'
-      : 'Sem snapshot publicado';
-  return <span className={`gso-kpi-snapshot-marker ${isProblem ? 'is-caution' : 'is-neutral'}`} aria-label={`Estado do snapshot: ${label}`}>
+      : 'Sem atualização publicada';
+  return <span className={`gso-kpi-snapshot-marker ${isProblem ? 'is-caution' : 'is-neutral'}`} aria-label={`Estado da atualização: ${label}`}>
     <span aria-hidden="true" />{label}
   </span>;
 }

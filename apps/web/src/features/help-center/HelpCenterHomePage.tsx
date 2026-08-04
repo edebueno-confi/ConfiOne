@@ -156,90 +156,105 @@ function buildCategoryCards(
 ) {
   if (rootCategories.length > 0) return buildTaxonomyCategoryCards(spaceSlug, rootCategories);
 
-  const definitions: Array<Omit<CategoryCard, 'count' | 'to'> & { query: string; patterns: string[] }> = [
-    {
-      id: 'integracoes',
-      title: 'Integrações e API',
-      description: 'Conecte sua loja, ERPs e plataformas ao Genius Returns.',
-      query: 'integração',
-      patterns: ['integr'],
-      icon: 'puzzle',
-      tone: 'blue',
-    },
-    {
-      id: 'configuracoes',
-      title: 'Configurações',
-      description: 'Ajustes essenciais para deixar o sistema do seu jeito.',
-      query: 'configuração',
-      patterns: ['config', 'primeiro passo', 'primeiros passos'],
-      icon: 'gear',
-      tone: 'pink',
-    },
-    {
-      id: 'operacao-reversa',
-      title: 'Operação reversa',
-      description: 'Fluxos de devolução, regras, etiquetas e transportadoras.',
-      query: 'operação reversa',
-      patterns: ['oper', 'reversa', 'logistica'],
-      icon: 'truck',
-      tone: 'blue',
-    },
-    {
-      id: 'erros-e-solucoes',
-      title: 'Erros e soluções',
-      description: 'Diagnósticos, correções e caminhos para resolver ocorrências.',
-      query: 'erro',
-      patterns: ['erro', 'pendencia', 'solucao'],
-      icon: 'chart',
-      tone: 'pink',
-    },
-    {
-      id: 'boas-praticas',
-      title: 'Boas práticas',
-      description: 'Recomendações para melhorar a operação no dia a dia.',
-      query: 'boas práticas',
-      patterns: ['boa pratica', 'boas praticas', 'melhor pratica', 'suporte tecnico'],
-      icon: 'cap',
-      tone: 'blue',
-    },
-  ];
+  // O catálogo de navegação é a fonte principal. Se ele estiver vazio, ainda
+  // podemos montar a home somente com as categorias que vieram nos artigos;
+  // nunca criamos categorias ou contagens de exemplo no cliente.
+  const byCategory = new Map<string, { name: string; slug: string | null; count: number }>();
+  for (const article of articles) {
+    const categoryId = article.category_id ?? article.category_name ?? null;
+    if (!categoryId || !article.category_name) continue;
+    const current = byCategory.get(categoryId);
+    byCategory.set(categoryId, {
+      name: current?.name ?? article.category_name,
+      slug: current?.slug ?? article.category_slug ?? null,
+      count: (current?.count ?? 0) + 1,
+    });
+  }
 
-  return definitions.map(({ patterns, query, ...definition }) => {
-    const category = rootCategories.find((entry) =>
-      patterns.some((pattern) => normalize(entry.category_name).includes(pattern)),
-    );
-    const count = category?.subtree_article_count ?? articles.filter((article) => {
-      const haystack = normalize([article.category_name, article.title, article.summary].join(' '));
-      return patterns.some((pattern) => haystack.includes(pattern));
-    }).length;
-
+  return [...byCategory.entries()].map(([id, category], index) => {
+    const visual = resolveCategoryVisual({ category_id: id, category_name: category.name, category_slug: category.slug ?? id } as PublicKnowledgeNavigationRow, index);
     return {
-      ...definition,
-      count,
-      to: buildHelpCenterCategoryHref(spaceSlug, category?.category_id, query),
+      id,
+      title: getPublicCategoryLabel(category.name),
+      description: visual.description,
+      count: category.count,
+      icon: visual.icon,
+      tone: visual.tone,
+      to: buildHelpCenterCategoryHref(spaceSlug, id, category.slug ?? category.name),
     } satisfies CategoryCard;
-  }).filter((card) => card.count > 0);
+  });
+}
+
+const categoryVisualDefinitions: Array<{
+  patterns: string[];
+  description: string;
+  icon: CategoryCard['icon'];
+  tone: CategoryCard['tone'];
+}> = [
+  {
+    patterns: ['integr', 'api', 'conect'],
+    description: 'Conecte seus canais e mantenha a operação em ordem.',
+    icon: 'puzzle',
+    tone: 'blue',
+  },
+  {
+    patterns: ['config', 'parametr', 'cadastro'],
+    description: 'Encontre orientações para preparar e ajustar a operação.',
+    icon: 'gear',
+    tone: 'pink',
+  },
+  {
+    patterns: ['troca', 'devolu', 'reversa', 'logistic'],
+    description: 'Acompanhe as etapas dos fluxos de troca e devolução.',
+    icon: 'truck',
+    tone: 'blue',
+  },
+  {
+    patterns: ['erro', 'solu', 'pend', 'proble'],
+    description: 'Resolva ocorrências com orientações claras e práticas.',
+    icon: 'chart',
+    tone: 'pink',
+  },
+  {
+    patterns: ['seller', 'loja', 'canal'],
+    description: 'Organize lojas, sellers e os canais da sua operação.',
+    icon: 'cap',
+    tone: 'blue',
+  },
+];
+
+function resolveCategoryVisual(category: PublicKnowledgeNavigationRow, index: number) {
+  const haystack = normalize([category.category_slug, category.category_name].join(' '));
+  const matched = categoryVisualDefinitions.find((definition) =>
+    definition.patterns.some((pattern) => haystack.includes(pattern)),
+  );
+
+  if (matched) return matched;
+
+  return {
+    description: 'Explore as orientações disponíveis para esta frente.',
+    icon: index % 2 === 0 ? 'puzzle' : 'gear',
+    tone: index % 2 === 0 ? 'blue' : 'pink',
+  } satisfies Pick<CategoryCard, 'description' | 'icon' | 'tone'>;
 }
 
 function buildTaxonomyCategoryCards(
   spaceSlug: string,
   rootCategories: PublicKnowledgeNavigationRow[],
 ) {
-  const definitions: Array<Omit<CategoryCard, 'count' | 'to'> & { categorySlug: string }> = [
-    { id: 'integracoes', title: 'Integra\u00e7\u00f5es e API', description: 'Conecte sua loja, ERPs e plataformas ao Genius Returns.', categorySlug: 'integracoes', icon: 'puzzle', tone: 'blue' },
-    { id: 'configuracoes', title: 'Configura\u00e7\u00e3o da opera\u00e7\u00e3o', description: 'Organize par\u00e2metros, regras, estornos e comunica\u00e7\u00e3o com o cliente.', categorySlug: 'configuracao-da-operacao', icon: 'gear', tone: 'pink' },
-    { id: 'operacao-reversa', title: 'Trocas e devolu\u00e7\u00f5es', description: 'Acompanhe solicita\u00e7\u00f5es e entenda cada etapa da log\u00edstica reversa.', categorySlug: 'operacao-de-trocas-e-devolucoes', icon: 'truck', tone: 'blue' },
-    { id: 'erros-e-solucoes', title: 'Solu\u00e7\u00e3o de problemas', description: 'Encontre diagn\u00f3sticos, corre\u00e7\u00f5es e caminhos de recupera\u00e7\u00e3o.', categorySlug: 'solucao-de-problemas', icon: 'chart', tone: 'pink' },
-    { id: 'sellers-e-lojas', title: 'Sellers e lojas', description: 'Configure lojas, sellers e os canais que participam da opera\u00e7\u00e3o.', categorySlug: 'sellers-e-lojas', icon: 'cap', tone: 'blue' },
-  ];
+  return rootCategories
+    .map((category, index) => {
+      const visual = resolveCategoryVisual(category, index);
+      const count = category.subtree_article_count ?? category.article_count ?? 0;
 
-  return definitions
-    .map(({ categorySlug, ...definition }) => {
-      const category = rootCategories.find((entry) => entry.category_slug === categorySlug);
       return {
-        ...definition,
-        count: category?.subtree_article_count ?? 0,
-        to: buildHelpCenterCategoryHref(spaceSlug, category?.category_id, categorySlug),
+        id: category.category_id,
+        title: getPublicCategoryLabel(category.category_name),
+        description: category.category_description?.trim() || visual.description,
+        count,
+        icon: visual.icon,
+        tone: visual.tone,
+        to: buildHelpCenterCategoryHref(spaceSlug, category.category_id, category.category_slug),
       } satisfies CategoryCard;
     })
     .filter((card) => card.count > 0);

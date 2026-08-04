@@ -54,33 +54,39 @@ export function GeniusSyncOverlay({
 }) {
   const [background, setBackground] = useState(false);
   const [canContinueInBackground, setCanContinueInBackground] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const copy = COPY[state];
   const active = !['failed', 'timed_out', 'abandoned'].includes(state);
+  const problem = !active;
   useEffect(() => {
     setBackground(false);
     setCanContinueInBackground(false);
+    setDismissed(false);
     if (!active) return undefined;
     const timer = window.setTimeout(() => setCanContinueInBackground(true), Math.max(0, backgroundAfterMs));
     return () => window.clearTimeout(timer);
   }, [active, backgroundAfterMs, source, state]);
+  if (dismissed) return null;
   const blocking = active && !background;
   const continueInBackground = () => {
     setBackground(true);
     onContinueInBackground?.();
   };
   const content = (
-    <div className="gso-genie-sync-content">
+    <div className={`gso-genie-sync-content ${problem ? 'is-problem' : ''}`}>
       <div className="gso-genie-sync-mascot" aria-hidden="true">
         <span className="gso-genie-sync-halo" />
         <GeniusMascot alt="" animated={active} expression="happy" pose="magic" size={blocking ? 'xl' : 'lg'} surface="loading" />
       </div>
       <div className="gso-genie-sync-copy">
+        {problem ? <span className="gso-genie-sync-state-icon" aria-hidden="true">!</span> : null}
+        {problem ? <button type="button" className="gso-genie-sync-dismiss" aria-label="Fechar aviso de atualização" onClick={() => setDismissed(true)}>Fechar</button> : null}
         <p className="gso-genie-sync-kicker">{source === 'painel' ? 'Atualização do painel' : source}</p>
         <h2>{copy.title}</h2>
         <p>{copy.description}</p>
         {detail ? <small>{detail}</small> : null}
-        {active && background ? <small className="gso-genie-sync-background-warning">A atualização continua em segundo plano. Não solicite outra sincronização até ela terminar.</small> : null}
-        {active && canContinueInBackground && !background ? <button type="button" className="gso-genie-sync-background-action" onClick={continueInBackground}>Continuar em segundo plano</button> : null}
+        {active && background ? <small className="gso-genie-sync-background-warning">A atualização continua em segundo plano. Não solicite outra sincronização até ela terminar; o sistema já bloqueia uma nova execução.</small> : null}
+        {active && canContinueInBackground && !background ? <button type="button" className="gso-genie-sync-background-action" onClick={continueInBackground}>Fechar e continuar em segundo plano</button> : null}
         {historyHref ? <Link className="gso-genie-sync-history-link" to={historyHref}>Acompanhar no Histórico</Link> : null}
       </div>
     </div>
@@ -90,5 +96,5 @@ export function GeniusSyncOverlay({
     return <div className="gso-genie-sync-overlay" aria-busy="true" aria-live="polite" role="status">{content}</div>;
   }
 
-  return <div className="gso-genie-sync-banner" aria-busy={active} aria-live="polite" role="status">{content}</div>;
+  return <div className={`gso-genie-sync-banner ${problem ? 'is-problem' : ''}`} aria-busy={active} aria-live="polite" role={problem ? 'alert' : 'status'} data-state={state}>{content}</div>;
 }

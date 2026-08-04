@@ -511,7 +511,7 @@ function ExecutiveHdCanvas({
         <HdSectionHeading
           id="domains-heading"
           title="Mapa das áreas"
-          description="Cada indicador mostra sua fonte e o estado do último snapshot válido."
+          description="Cada indicador mostra sua fonte e o estado da última atualização válida."
         />
         <div className="gso-hd-domain-grid">
           {domainCards.map((card) => (

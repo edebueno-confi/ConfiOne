@@ -129,16 +129,16 @@ function buildPortalKnowledgePath(slug: string) {
 }
 
 function sanitizeCustomerFacingText(value: string | null | undefined) {
-  return (value ?? 'IndisponÃ­vel')
+  return (value ?? 'Indisponível')
     .replace(/\bfixture local sanitizada\b/gi, 'Registro operacional')
     .replace(/\bfixture\b/gi, 'registro operacional')
     .replace(/\btenant\b/gi, 'cliente')
-    .replace(/\bbackend\b/gi, 'operaÃ§Ã£o')
-    .replace(/\bprovider\b/gi, 'serviÃ§o externo')
+    .replace(/\bbackend\b/gi, 'operação')
+    .replace(/\bprovider\b/gi, 'serviço externo')
     .replace(/\bcontratos?\b/gi, 'acordos operacionais')
     .replace(/\bRPCs?\b/g, 'rotina operacional')
     .replace(/\bRLS\b/g, 'regra de acesso')
-    .replace(/\bpayload\b/gi, 'conteÃºdo tÃ©cnico');
+    .replace(/\bpayload\b/gi, 'conteúdo técnico');
 }
 
 function buildPortalHelpSearchPath(params: {

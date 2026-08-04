@@ -37,7 +37,7 @@ const INTERNAL_ROUTE_FAMILIES = [
 ];
 
 /** Screens published in the first release. */
-const FIRST_RELEASE_SCREEN_KEYS = ['analytics', 'knowledge', 'settings'];
+const FIRST_RELEASE_SCREEN_KEYS = ['analytics', 'knowledge', 'settings', 'access'];
 
 /**
  * Internal routes published in the first release.
@@ -64,6 +64,12 @@ const FIRST_RELEASE_ROUTES = [
     screenKey: 'settings',
     rationale:
       'Configuracoes necessarias ao Dashboard, a Central de Ajuda e as integracoes autorizadas.',
+  },
+  {
+    path: '/admin/access',
+    screenKey: 'access',
+    rationale:
+      'Administracao de usuarios, convites, areas e permissoes para perfis autorizados.',
   },
 ];
 

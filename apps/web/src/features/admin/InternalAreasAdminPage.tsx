@@ -214,8 +214,7 @@ function ScreenGrantPicker({
   if (catalog.length === 0) {
     return (
       <InlineNotice>
-        O catálogo de telas ainda não está disponível. A configuração não pode ser concluída sem um
-        contrato de telas carregado pelo backend.
+        A lista de telas ainda não está disponível. Tente novamente em instantes para concluir a configuração.
       </InlineNotice>
     );
   }
@@ -267,12 +266,9 @@ function ScreenGrantPicker({
                   <span className="block text-[12px] font-semibold text-[color:var(--color-ink)]">
                     {screen.display_name}
                   </span>
-                  <span className="mt-0.5 block truncate text-[10px] text-[color:var(--color-muted)]">
-                    {screen.route_path}
-                  </span>
                   {recommended.has(screen.screen_key) ? (
                     <span className="mt-1 block text-[10px] font-medium text-[color:var(--genius-site-blue)]">
-                      Recomendada para esta Ã¡rea
+                      Recomendada para esta área
                     </span>
                   ) : null}
                 </span>

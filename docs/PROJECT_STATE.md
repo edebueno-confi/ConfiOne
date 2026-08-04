@@ -3260,3 +3260,37 @@ As seções abaixo são histórico de execução. Em caso de conflito, este bloc
 - Nenhum contrato, read model, métrica, fonte, RPC, view, banco, integração,
   sincronismo, credencial ou permissão foi alterado nesta etapa documental.
 - Implementação High-Density: ainda não iniciada; validação: não iniciada.
+
+## Atualização corrente — Lote final MVP de acesso, configurações e Central — 2026-08-04
+
+- A rota pública raiz encaminha para o login único; a landing page deixou de ser
+  uma superfície publicada.
+- A sessão anônima permanece clara e a escolha de tema só é aplicada após a
+  autenticação, preservando a mesma porta de entrada para colaboradores e
+  clientes.
+- Categorias da Central Pública são derivadas dos read models publicados ou
+  dos artigos que realmente chegaram à listagem; não há fallback de categorias
+  ou contagens inventadas.
+- Configurações e Fontes do Dashboard receberam navegação compacta, agrupamento
+  por área e histórico em ciclos recolhíveis, sem dois contêineres concorrentes
+  de rolagem.
+- A UI de acesso interno passou a carregar o catálogo de telas e os grants
+  existentes para permitir liberação por perfil e por vínculo individual,
+  usando os RPCs canônicos já presentes.
+- Validação deste lote permanece pendente até o fechamento: typecheck, build,
+  testes focados, QA autenticado em claro/escuro e revisão final de copy.
+
+## Correção de evidência — fechamento MVP em andamento — 2026-08-04
+
+No estado corrente, typecheck, build, contratos focados, testes de sincronismo,
+`git diff --check` e quality gate foram executados com sucesso. Capturas
+autenticadas reais em claro/escuro não foram concluídas porque o ambiente local
+redirecionou para autenticação e a credencial externa não foi provisionada
+neste ciclo. Nenhum segredo foi lido ou exposto.
+
+A navegação de Configurações foi simplificada no código para uma lista plana,
+sem renderizar os agrupamentos artificiais de cockpit. A tela de Knowledge
+mantém artigos e categorias em colunas independentes no desktop, e o Control
+Plane usa copy segura para estados vazios e erros de permissão.
+
+Relatório corrente: `docs/reports/2026-08-04_mvp-closure-status.md`.

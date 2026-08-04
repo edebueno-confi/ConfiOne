@@ -123,6 +123,22 @@ function buildReleaseNavigation({
     });
   }
 
+  if (allows('access') && !allows('settings')) {
+    sections.push({
+      id: 'administration',
+      label: 'Administração',
+      items: [
+        {
+          id: 'admin-access',
+          label: 'Usuários e acessos',
+          to: '/admin/access',
+          icon: 'shield',
+          matches: (path) => matchesBase(path, '/admin/access') || matchesBase(path, '/admin/internal-areas'),
+        },
+      ],
+    });
+  }
+
   return sections.filter((section) => section.items.length > 0);
 }
 
@@ -176,7 +192,7 @@ export function buildMinimalNavigation({
   if (isPlatformAdmin || hasScreen('settings')) {
     administration.push({ id: 'admin-settings', label: 'Configurações', to: '/admin/settings', icon: 'settings', matches: (path) => matchesBase(path, '/admin/settings') });
   }
-  if (isPlatformAdmin || hasScreen('access')) {
+  if ((isPlatformAdmin || hasScreen('access')) && !(isPlatformAdmin || hasScreen('settings'))) {
     administration.push({ id: 'admin-access', label: 'Acessos e áreas', to: '/admin/access', icon: 'shield', matches: (path) => matchesBase(path, '/admin/access') || matchesBase(path, '/admin/internal-areas') });
   }
   if (administration.length) sections.push({ id: 'administration', label: 'Administração', items: administration });

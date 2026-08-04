@@ -9,7 +9,6 @@ import {
   MinimalTextInput,
 } from '../../components/minimal-ui';
 import { MinimalState } from '../../components/minimal-states';
-import { ThemeToggle } from '../../components/ThemeToggle';
 import { GeniusMascot } from '../../components/GeniusMascot';
 import { signInWithPassword } from '../auth/auth-api';
 import { acceptAdminInternalInvitation } from '../admin/admin-api';
@@ -192,7 +191,6 @@ export function LoginPage() {
               </p>
             </div>
           </div>
-          <ThemeToggle />
         </div>
 
         <MinimalSurface>
@@ -202,7 +200,7 @@ export function LoginPage() {
                 Entrar
               </h1>
               <p className="mt-1 text-sm text-[color:var(--minimal-text-secondary)]">
-                Use sua conta autorizada para acessar a operação.
+                Entre com seu e-mail e senha para continuar.
               </p>
             </div>
 

@@ -18,10 +18,10 @@ export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
   useEffect(() => { load(); }, []);
 
   if (result.loading && !result.data) {
-    return <AnalyticsLoadingState title="Carregando Customer Success" description="Estamos consultando o cache oficial de empresas do HubSpot." />;
+    return <AnalyticsHdDomainFrame title="Customer Success" description="Carteira HubSpot, cobertura de responsáveis e preenchimento dos campos operacionais." source="HubSpot · Empresas"><AnalyticsLoadingState title="Carregando Customer Success" description="Estamos preparando a leitura desta área." /></AnalyticsHdDomainFrame>;
   }
   if (result.error || !result.data) {
-    return <MinimalState tone="critical" title="Não foi possível carregar Customer Success" description="A leitura do HubSpot está indisponível agora." actions={<AnalyticsRetryAction onRetry={onRetry ?? load} />} />;
+    return <AnalyticsHdDomainFrame title="Customer Success" description="Carteira HubSpot, cobertura de responsáveis e preenchimento dos campos operacionais." source="HubSpot · Empresas"><MinimalState tone="critical" title="Não foi possível carregar Customer Success" description="A leitura desta área está indisponível agora." actions={<AnalyticsRetryAction onRetry={onRetry ?? load} />} /></AnalyticsHdDomainFrame>;
   }
 
   const data = result.data;
@@ -33,10 +33,10 @@ export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
     <AnalyticsHdDomainFrame title="Customer Success" description="Carteira HubSpot, cobertura de responsáveis e preenchimento dos campos operacionais." source={data.source} state={state}>
       {state?.status === 'empty' ? <MinimalState title="Nenhuma empresa disponível no recorte" description="O HubSpot não retornou empresas para esta leitura. Nenhum indicador foi inventado." /> : null}
       <div className="gso-pilot-kpi-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <KpiCard label="Empresas no HubSpot" value={value(data.kpis.companiesTotal)} hint="Registros no cache oficial" source="Contagem de empresas disponíveis no contrato HubSpot." state={state} />
+        <KpiCard label="Empresas no HubSpot" value={value(data.kpis.companiesTotal)} hint="Registros disponíveis para a análise" source="Contagem de empresas fornecida pelo HubSpot." state={state} />
         <KpiCard label="Status de cliente preenchido" value={value(data.kpis.clientStatusFilled)} hint="Empresas com o campo informado" source="Presença do campo; não interpreta a regra de cliente ativo." state={state} />
         <KpiCard label="Status contratual preenchido" value={value(data.kpis.contractStatusFilled)} hint="Empresas com o campo informado" source="Presença do campo no HubSpot." state={state} />
-        <KpiCard label="Sem responsável" value={value(data.kpis.withoutOwner)} hint="Empresas sem owner associado" source="Owner ausente no cache HubSpot." state={state} tone={data.kpis.withoutOwner > 0 ? 'warning' : 'neutral'} />
+        <KpiCard label="Sem responsável" value={value(data.kpis.withoutOwner)} hint="Empresas sem responsável associado" source="Responsável ausente no cadastro do HubSpot." state={state} tone={data.kpis.withoutOwner > 0 ? 'warning' : 'neutral'} />
         <KpiCard label="MRR observado" value={data.kpis.mrrFilled > 0 ? value(data.kpis.mrrFilled) : 'Indisponível'} hint={data.kpis.mrrFilled > 0 ? 'Empresas com campo preenchido' : 'O valor de MRR não é publicado neste contrato'} source="O read model informa presença do campo, não um valor financeiro utilizável." state={state} />
       </div>
       <div className="grid gap-4 xl:grid-cols-2">

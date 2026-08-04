@@ -31,6 +31,7 @@ import type {
   AdminInternalMembershipScreenGrantRow,
   AdminInternalScreenCatalogRow,
   InternalActorWorkspaceContextRow,
+  InternalScreenKey,
   AdminCustomerPortalAccessOverviewRow,
   AdminCustomerPortalArticleCandidateRow,
   AdminCustomerPortalTicketCandidateRow,
@@ -1574,6 +1575,25 @@ export async function listAdminInternalMembershipScreenGrants() {
   }
 
   return (data ?? []) as AdminInternalMembershipScreenGrantRow[];
+}
+
+export async function listAdminInternalAccessProfileScreenGrants() {
+  const client = requireClient();
+  const { data, error } = await client
+    .from('vw_admin_internal_access_profile_screen_grants')
+    .select('access_profile_id, screen_key');
+  if (error) throw toAppError(error, 'Falha ao carregar as telas dos perfis.');
+  return (data ?? []).map((row) => ({ access_profile_id: String(row.access_profile_id), screen_key: String(row.screen_key) as InternalScreenKey }));
+}
+
+export async function replaceAdminInternalAccessProfileScreens(profileId: string, screenKeys: InternalScreenKey[]) {
+  const client = requireClient();
+  const { data, error } = await client.rpc('rpc_admin_replace_internal_access_profile_screens', {
+    p_access_profile_id: profileId,
+    p_screen_keys: screenKeys,
+  });
+  if (error) throw toAppError(error, 'Falha ao atualizar as telas do perfil.');
+  return data;
 }
 
 export async function listInternalActorWorkspaceContext() {

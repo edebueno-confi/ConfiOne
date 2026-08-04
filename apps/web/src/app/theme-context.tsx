@@ -27,7 +27,7 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export function ThemeProvider({ children, enabled = true }: { children: ReactNode; enabled?: boolean }) {
   const [preference, setPreferenceState] = useState<ThemePreference>(() =>
     readStoredThemePreference(),
   );
@@ -60,8 +60,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [preference, systemPrefersDark]);
 
   useEffect(() => {
-    applyResolvedTheme(resolvedTheme);
-  }, [resolvedTheme]);
+    applyResolvedTheme(enabled ? resolvedTheme : 'light');
+  }, [enabled, resolvedTheme]);
 
   const setPreference = useCallback((next: ThemePreference) => {
     setPreferenceState(next);
