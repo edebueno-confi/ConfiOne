@@ -8,6 +8,7 @@ const domains = await readFile(new URL('../../apps/web/src/features/analytics/an
 const waiting = await readFile(new URL('../../apps/web/src/features/analytics/AnalyticsUnavailablePages.tsx', import.meta.url), 'utf8');
 const ceo = await readFile(new URL('../../apps/web/src/features/analytics/AnalyticsCeoPage.tsx', import.meta.url), 'utf8');
 const frame = await readFile(new URL('../../apps/web/src/features/analytics/AnalyticsHdDomainFrame.tsx', import.meta.url), 'utf8');
+const density = await readFile(new URL('../../apps/web/src/features/analytics/high-density.css', import.meta.url), 'utf8');
 const commercial = await readFile(new URL('../../apps/web/src/features/analytics/AnalyticsCommercialPage.tsx', import.meta.url), 'utf8');
 const finance = await readFile(new URL('../../apps/web/src/features/analytics/AnalyticsFinancePage.tsx', import.meta.url), 'utf8');
 const ui = await readFile(new URL('../../apps/web/src/features/analytics/analytics-ui.tsx', import.meta.url), 'utf8');
@@ -41,4 +42,13 @@ test('contexto executivo e logs de integraÃ§Ã£o permanecem localizados por �
   assert.match(commercial, /provider="HubSpot"/);
   assert.match(finance, /listOmieSyncRuns/);
   assert.match(finance, /provider="OMIE"/);
+});
+
+test('header executivo usa a folha de alta densidade e quebra sem depender do shell generico', () => {
+  assert.match(density, /\.gso-high-density-ui \.gso-overview-context \{[\s\S]*display: grid;/);
+  assert.match(density, /\.gso-high-density-ui \.gso-overview-context__source \{/);
+  assert.match(density, /\.gso-high-density-ui \.gso-overview-context__heading \{/);
+  assert.match(density, /\.gso-high-density-ui \.gso-overview-context__action \{/);
+  assert.match(density, /@media \(max-width: 760px\)[\s\S]*\.gso-high-density-ui \.gso-overview-context \{/);
+  assert.match(density, /\.gso-high-density-ui \.gso-visual-v1-domain-frame \.gso-hd-domain-frame-header/);
 });

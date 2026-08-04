@@ -5,11 +5,41 @@
 **Branch:** `codex/high-density-ui-rebuild-20260803`
 **Escopo:** diagnóstico do Dashboard Gerencial e preparação do próximo lote controlado.
 
+## Correção da auditoria do header — 03/08/2026
+
+A conclusão anterior de que os hooks `.gso-overview-context__source`,
+`.gso-overview-context__heading` e `.gso-overview-context__action` não tinham
+CSS específico estava incorreta. A busca havia considerado `index.css`, mas o
+shell do Analytics importa `apps/web/src/features/analytics/high-density.css`,
+que contém as regras específicas e o breakpoint mobile.
+
+Estado verificado no checkout:
+
+- `AnalyticsCeoPage.tsx` compõe o header em três zonas: fontes à esquerda,
+  título/contexto no centro e sincronização à direita;
+- `high-density.css` define o grid, os espaçamentos, a divisão visual da zona
+  de fontes, o botão de ação e a quebra responsiva;
+- `AnalyticsCommercialPage.tsx` injeta `AnalyticsExecutionMeta` com
+  `provider="HubSpot"`;
+- `AnalyticsFinancePage.tsx` injeta `AnalyticsExecutionMeta` com
+  `provider="OMIE"` junto ao bloco de origem financeira;
+- o shell aplica `gso-high-density-ui`, e o source rail global está oculto
+  nessa superfície.
+
+As capturas atuais em `output/playwright/analytics-route-*.png` mostram a
+composição no desktop e a quebra no mobile. Portanto, esse apontamento visual
+não estava ignorado nem pendente de implementação no estado atual; o que estava
+errado era o diagnóstico documental posterior. O teste estrutural agora também
+verifica a folha correta para evitar nova falsa pendência.
+
+Limitação: a captura comprova a hierarquia e o comportamento responsivo, mas
+não substitui uma aprovação visual do Product Owner sobre proporções finas.
+
 ## Adendo de verificação posterior — 03/08/2026
 
 Este adendo prevalece sobre as pendências visuais descritas abaixo:
 
-- A revisão confirmou que o header interno da Visão Geral ainda estava divergente, apesar de o shell externo já ser compartilhado.
+- A revisão inicial confirmou que o header interno da Visão Geral estava divergente, apesar de o shell externo já ser compartilhado; a estrutura foi corrigida no commit `2315462` e sua folha de alta densidade é validada pelo teste atualizado.
 - A Visão Geral foi ajustada para uma composição de três zonas: estado das fontes à esquerda, título/contexto no centro e ação de sincronização à direita, preservando a altura compacta das demais áreas.
 - O cabeçalho Comercial passou a exibir a última execução real do HubSpot.
 - O cabeçalho Financeiro passou a exibir a última execução real do OMIE, ao lado da origem financeira.
@@ -18,15 +48,15 @@ Este adendo prevalece sobre as pendências visuais descritas abaixo:
 
 ### Integridade ainda não concluída
 
-O worker HubSpot agora lê empresas pelo watermark, mas ainda faz `upsert` direto em `hubspot_companies`, `hubspot_owners` e `hubspot_pipeline_stages` antes da promoção do run. Portanto, deals/tickets têm publicação staged/promovida, enquanto o bloco compartilhado não é atômico com o snapshot executivo. Também não há reconciliação comprovada de tombstones para empresas arquivadas/removidas.
+O worker HubSpot agora lê empresas pelo watermark e o bloco compartilhado passa por staging privado antes da promoção transacional do run. Ainda não há reconciliação comprovada de tombstones para empresas arquivadas/removidas, nem limpeza de staging de execuções abandonadas.
 
-No OMIE, a promoção do snapshot é protegida e idempotente, mas a leitura de recebíveis e o índice de clientes continuam full + serial. Não existe ainda telemetria por request/endpoint suficiente para medir retries, 429/5xx e latência individual.
+No OMIE, a promoção do snapshot é protegida e idempotente; a leitura de recebíveis e o índice de clientes continuam full + serial. A telemetria por request/endpoint agora existe no ledger sanitizado, mas ainda não há execução externa nova para medir a distribuição real.
 
 ### Estado de validação do adendo
 
-- **Validado:** teste estático de layout (4 casos), `npm run web:typecheck` e captura real das oito rotas Analytics em desktop/mobile no servidor isolado 4175.
+- **Validado:** teste estático de layout (5 casos), `npm run web:typecheck` e captura real das oito rotas Analytics em desktop/mobile no servidor isolado 4175.
 - **Parcialmente validado:** catálogo de métricas; SLA permanece disponível apenas no consolidado executivo e depende de extensão contratual para aparecer no detalhe de Suporte.
-- **Não validado:** execução externa HubSpot/OMIE, tombstones e telemetria por request. O login automatizado foi limitado por `JWT issued at future` no Supabase local; a leitura visual foi feita com o estado local que o app conseguiu carregar, sem expor credenciais.
+- **Não validado:** execução externa HubSpot/OMIE, tombstones e limpeza de staging abandonado. O login automatizado foi limitado por `JWT issued at future` no Supabase local; a leitura visual foi feita com o estado local que o app conseguiu carregar, sem expor credenciais.
 
 ## Adendo técnico de observabilidade e publicação — 03/08/2026
 
@@ -49,9 +79,9 @@ Este adendo substitui as pendências de telemetria e atomicidade descritas no di
 
 ### Verificação específica solicitada sobre o header da Visão Geral
 
-A revisão do histórico mostra que o commit `2315462` alterou a estrutura JSX para três zonas e o commit `efb1a55` apenas atualizou o relatório. Porém, a implementação atual ainda não comprova integralmente a decisão visual de “mesma altura das demais abas”: os novos hooks `.gso-overview-context__source`, `.gso-overview-context__heading` e `.gso-overview-context__action` não têm regras próprias no CSS; o layout ainda depende das regras genéricas de `.gso-hd-context`. Portanto, a afirmação anterior de header plenamente alinhado foi prematura.
+A revisão corrigida confirma que o commit `2315462` alterou a estrutura JSX e também adicionou as regras específicas em `high-density.css`; o commit `efb1a55` atualizou o relatório. O header não depende somente das regras genéricas de `.gso-hd-context`: os três hooks possuem regras próprias e breakpoint responsivo. A captura atual comprova a altura compacta e o alinhamento estrutural com as demais abas. A aprovação estética final continua sendo decisão do Product Owner, não uma pendência técnica mascarada.
 
-O estado/log por fonte existe nos domínios: Comercial recebe a última execução HubSpot e Financeiro recebe a última execução OMIE. Isso não elimina a pendência de normalizar, com captura visual real, altura, alinhamento vertical e densidade do header executivo contra `AnalyticsHdDomainFrame`. A correção visual deve ser tratada como próximo lote, não declarada fechada por este relatório técnico.
+O estado/log por fonte existe nos domínios: Comercial recebe a última execução HubSpot e Financeiro recebe a última execução OMIE. A estrutura e a densidade do header executivo foram verificadas contra `AnalyticsHdDomainFrame` por captura desktop/mobile e por teste estrutural. O que permanece é somente a aprovação estética final do Product Owner, não uma falha técnica de implementação.
 
 ## 1. Resumo executivo
 
@@ -62,7 +92,7 @@ As principais conclusões são:
 - HubSpot possui incrementalidade real para negócios e tickets, com watermark e retomada por itens.
 - O item compartilhado de empresas já recebe `updatedAfterMs`; owners e definições de pipeline ainda são relidos integralmente.
 - OMIE opera corretamente como snapshot completo e serial, mas sempre percorre todos os recebíveis e ainda faz uma leitura completa do índice de clientes para enriquecimento.
-- A publicação OMIE tem proteção transacional, lock, identidade única e repetição segura após conclusão; o staging é idempotente dentro do `sync_run_id`, mas não há telemetria suficiente para provar eficiência de chamadas.
+- A publicação OMIE tem proteção transacional, lock, identidade única e repetição segura após conclusão; o staging é idempotente dentro do `sync_run_id` e as chamadas agora possuem telemetria sanitizada por tentativa.
 - O read model de fonte separa ciclo em execução de snapshot publicado; a contagem de `retries` já foi corrigida para contar apenas tentativas adicionais.
 - Customer Success ainda não pode publicar métricas de carteira: o denominador atual é o catálogo geral de empresas do HubSpot, não uma carteira aprovada.
 - Produto e Desenvolvimento não têm fonte publicada nem contrato de leitura. É seguro unificar as duas áreas em uma aba de espera, desde que nenhuma métrica seja inventada e os links antigos continuem funcionando.
@@ -72,8 +102,8 @@ As principais conclusões são:
 ### Validado
 
 - Worktree limpo no início do lote.
-- HEAD no início da correção visual: `1473f89`.
-- A branch está 161 commits à frente de `origin/main` e sem upstream configurado.
+- HEAD do fechamento técnico: `0c48043`.
+- A branch está 163 commits à frente de `origin/main` e sem upstream configurado.
 - Nenhuma sincronização externa foi disparada neste lote.
 - Nenhuma credencial, token ou segredo foi lido ou exposto.
 
@@ -97,7 +127,7 @@ As principais conclusões são:
 ### Gargalos encontrados
 
 1. Owners e definições de pipeline são consultados integralmente em cada ciclo.
-2. A granularidade atual de observabilidade é run/item/página/registro. Não há chamada por endpoint, latência, quantidade de 429/5xx, `Retry-After`, bytes ou custo por objeto.
+2. A telemetria por endpoint/tentativa já foi adicionada, com status, latência, retries adicionais, 429/5xx e `Retry-After`; ainda não mede bytes ou custo por objeto.
 3. O watermark é global por execução, com janela de sobreposição de cinco minutos. É seguro contra perda por borda, mas menos eficiente do que watermarks por objeto/fonte.
 4. Não foi encontrada reconciliação explícita de tombstones para objetos removidos/arquivados do HubSpot. O catálogo de pipelines arquiva ausentes, mas o comportamento dos objetos deve ser comprovado antes de ser considerado completo.
 
@@ -121,8 +151,8 @@ O HubSpot é **funcional e parcialmente incremental**, mas não pode ser classif
 
 1. A leitura de recebíveis é full snapshot em todas as execuções; não há filtro incremental visível no contrato usado.
 2. Cada sincronização faz uma leitura completa do índice de clientes para enriquecimento.
-3. O staging usa `insert` em lotes por execução. A constraint impede identidade duplicada dentro do mesmo run, mas não existe telemetria para distinguir chamada repetida de página, retry do provedor e repetição de execução.
-4. O tempo de 33 s para 3.463 registros/35 páginas é compatível com paginação serial, mas a qualidade real só pode ser medida com contagem e latência por chamada.
+3. O staging usa `insert` em lotes por execução. A constraint impede identidade duplicada dentro do mesmo run, e o ledger distingue chamada, página, retry do provedor e repetição de execução por endpoint/tentativa.
+4. O tempo de 33 s para 3.463 registros/35 páginas é compatível com paginação serial; a mediana e a distribuição por endpoint ainda dependem de uma execução externa válida.
 
 ### Conclusão
 
@@ -132,9 +162,9 @@ O OMIE tem boas barreiras de integridade e isolamento, mas a carga é previsivel
 
 ### Veredicto
 
-**HubSpot:** idempotência forte na promoção por identificador externo e retomada por item; incrementalidade parcial; falta reconciliação de remoções e telemetria de request.
+**HubSpot:** idempotência forte na promoção por identificador externo e retomada por item; incrementalidade parcial; falta reconciliação de remoções e expurgo comprovado de staging abandonado.
 
-**OMIE:** idempotência forte na publicação do snapshot e repetição segura da RPC já concluída; staging protegido por identidade única dentro do run; não há prova suficiente de idempotência de chamadas externas porque não existe request ledger/telemetria por página.
+**OMIE:** idempotência forte na publicação do snapshot e repetição segura da RPC já concluída; staging protegido por identidade única dentro do run; chamadas externas possuem request ledger sanitizado, mas ainda não há execução externa nova para medir o comportamento real.
 
 ### Riscos que permanecem
 
@@ -201,11 +231,10 @@ Isso reduz a fragmentação da navegação sem mascarar a ausência de dados.
 
 ### Lote A — qualidade do sincronismo
 
-1. Instrumentar telemetria sanitizada por provedor/endpoint: chamadas, páginas, duração, retries adicionais, 429/5xx, registros e resultado.
-2. Definir retenção e read model de telemetria sem exposição de payload ou credencial.
-3. Verificar tombstones/arquivamentos de objetos HubSpot e tornar a promoção do bloco compartilhado atômica com o snapshot.
+1. Definir retenção e limpeza do ledger de telemetria sem exposição de payload ou credencial.
+2. Implementar limpeza segura de staging de runs abandonados e verificar tombstones/arquivamentos de objetos HubSpot.
+3. Reproduzir o atraso observado com dados controlados e comparar os agregados por endpoint antes de qualquer paralelização.
 4. Verificar se o OMIE suporta consulta incremental; se não, otimizar apenas cache/enriquecimento seguro.
-5. Reproduzir o atraso observado com dados controlados e medir o tempo por endpoint antes de paralelizar qualquer chamada.
 
 ### Lote B — métricas
 
@@ -223,9 +252,9 @@ Isso reduz a fragmentação da navegação sem mascarar a ausência de dados.
 
 ## 10. Status do relatório
 
-- **Validado:** estado Git, leitura dos contratos, auditoria estática dos workers, read models e RPCs, contagens locais do último ciclo, evidência de estado `fresh`, captura das oito rotas em desktop/mobile e correção do header da Visão Geral.
-- **Parcialmente validado:** idempotência externa e carga de API; faltam request telemetry e prova de tombstones.
-- **Não validado:** nova execução real neste lote, consulta incremental OMIE, tombstones, telemetria por request, guards de permissão em sessão autenticada e aprovação do denominador de CS.
+- **Validado:** estado Git, leitura dos contratos, auditoria estática dos workers, read models e RPCs, contagens locais do último ciclo, evidência de estado `fresh`, captura das oito rotas em desktop/mobile, estrutura CSS específica e correção do header da Visão Geral.
+- **Parcialmente validado:** idempotência externa e carga de API; a telemetria está validada estruturalmente, mas sem nova execução externa para validar a distribuição real.
+- **Não validado:** nova execução real neste lote, consulta incremental OMIE, tombstones, limpeza de staging abandonado, guards de permissão em sessão autenticada e aprovação do denominador de CS.
 - **Dependente de credencial externa:** qualquer sincronização real futura depende de credenciais válidas e autorização explícita para executar chamadas de provider.
 
 ## 11. Implementação realizada neste lote
@@ -235,11 +264,13 @@ Isso reduz a fragmentação da navegação sem mascarar a ausência de dados.
 - A tela combinada permanece em modo de espera por integração GitHub e não publica KPIs inventados.
 - O read model de progresso HubSpot passou a contar retries adicionais com `greatest(attempts - 1, 0)`.
 - O worker HubSpot passou a repassar o watermark incremental para a leitura de empresas compartilhadas.
-- Foram atualizados os testes estáticos do contrato de navegação e do read model.
+- Foram atualizados os testes estáticos do contrato de navegação, do read model e da folha de alta densidade do header.
+- Foi adicionada telemetria sanitizada por tentativa para HubSpot e OMIE, com read model agregado de chamadas, retries, 429/5xx e duração.
+- A promoção HubSpot passou a incluir o bloco compartilhado em staging e transação atômica.
 
 ### Validação desta implementação
 
-- 40 testes estáticos focados: aprovados.
+- 40 testes pgTAP focados (093–098) e 5 testes estáticos do contrato de layout: aprovados.
 - `npm run web:typecheck`: aprovado.
 - `npm run web:build`: aprovado.
 - QA visual real das rotas: capturado em 1440×1000 e 390×844 no servidor isolado 4175; autenticação plena ficou limitada por `JWT issued at future` no Supabase local.
