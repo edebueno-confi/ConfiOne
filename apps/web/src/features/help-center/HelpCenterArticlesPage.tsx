@@ -7,9 +7,11 @@ import {
   HelpIcon,
   PublicBreadcrumb,
   PublicSearchStateCard,
+} from './public-ui';
+import {
   formatRelativePublicDate,
   getPublicCategoryLabel,
-} from './public-ui';
+} from './public-presentation';
 
 function buildCategoryMap(navigation: PublicKnowledgeNavigationRow[]) {
   return new Map(
