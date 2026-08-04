@@ -1,6 +1,6 @@
 import { lazy, type ComponentType, type ReactNode, Suspense } from 'react';
 import { createBrowserRouter, Navigate, useRouteError, useSearchParams } from 'react-router';
-import { ErrorState, LoadingState } from '../components/states';
+import { ErrorState } from '../components/states';
 import { GeniusMascot } from '../components/GeniusMascot';
 import { AppButton, GhostButton } from '../components/ui';
 import { AuthBootstrap } from '../features/auth/AuthBootstrap';

@@ -58,7 +58,6 @@ import {
 } from '../admin/admin-api';
 import { classifyAdminError } from '../admin/admin-errors';
 import {
-  KNOWLEDGE_ARTICLE_REVIEW_STATUSES,
   KNOWLEDGE_VISIBILITIES,
 } from '../../contracts/admin-contracts';
 import { useAuthContext } from '../auth/auth-context';

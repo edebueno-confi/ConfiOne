@@ -21,7 +21,6 @@ import {
   GhostButton,
   InlineNotice,
   SelectInput,
-  StatusPill,
   TextInput,
   TextareaInput,
   cx,
