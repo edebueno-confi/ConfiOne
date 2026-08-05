@@ -7104,3 +7104,26 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - Limites: 41 avisos de hooks seguem em superfícies internas; nenhum backend,
   banco, contrato, permissão ou dado alterado.
 - Impacto futuro na FAQ: nenhum.
+
+## QUALITY-QA-03 — Mapa de superfícies, hooks do Access e padrão de carregamento — 2026-08-05
+
+- Relatório: `docs/reports/2026-08-05_mapa-de-superficies-hooks-access-e-padrao-de-carregamento.md`.
+- Documento novo: `docs/FRONTEND_DATA_LOADING_PATTERNS.md`, indexado no
+  `docs/README.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Entrega 1: `probeRoutes` no harness de smoke, com o mapa de 11 superfícies
+  internas da fixture local, e promoção de `/admin/settings` para cobertura com
+  asserção. A sondagem roda após o veredito do persona porque rota sem screen key
+  produz 401 esperado em `vw_admin_auth_context`.
+- Entrega 2: `features/access/AccessPage.tsx` sem `rules-of-hooks`. `loadSurface`
+  virou `useCallback` com dependência estável, verificado pelo smoke na rota
+  `/admin/access`.
+- Entrega 3: padrão canônico de carregamento documentado em três casos, com a
+  decisão explícita de congelar 38 avisos de hooks, 35 deles em telas sem QA
+  local possível.
+- Efeito medido: lint de 187 para 184 avisos, sempre com 0 erros.
+- Evidência: lint, typecheck, build, secret scan, quality gate e smoke com 10
+  personas, 3 rotas internas asseguradas e 7 sondadas.
+- Limites: nenhum backend, banco, contrato, permissão ou dado alterado; sondagem
+  cobre apenas a persona `platform_admin`.
+- Impacto futuro na FAQ: nenhum.

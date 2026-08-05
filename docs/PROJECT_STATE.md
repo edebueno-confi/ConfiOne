@@ -3418,3 +3418,29 @@ Relatório corrente: `docs/reports/2026-08-04_mvp-closure-status.md`.
 - QA real: smoke com 10 cenários e 2 rotas internas, mais verificação manual da
   Central Pública em busca, artigo e diretório, todas com console limpo.
 - Relatório: `docs/reports/2026-08-04_smoke-estendido-hooks-publicos-e-fast-refresh.md`.
+
+## Atualização corrente — Mapa de superfícies, hooks do Access e padrão de carregamento — 2026-08-05
+
+- O harness de smoke ganhou sondagem sem asserção (`probeRoutes`) e produziu o
+  mapa real de acesso da fixture local para `platform_admin`: alcançáveis
+  `/admin/analytics`, `/admin/knowledge`, `/admin/access` e `/admin/settings`
+  (que redireciona para `/admin/settings/integrations`); negadas por falta de
+  screen key `/admin/visao-geral`, `/admin/tenants`, `/admin/system`,
+  `/admin/internal-areas`, `/admin/product-docs`, `/admin/build-journal` e
+  `/admin/customer-portal`.
+- `/admin/settings` passou de sondagem para cobertura com asserção. O smoke agora
+  exige três superfícies internas.
+- Achado tratado: navegar para rota sem screen key faz o app tentar ler
+  `vw_admin_auth_context` e receber 401, comportamento esperado para usuário sem
+  grant. A sondagem passou a rodar depois do veredito do persona para não
+  contaminar a asserção.
+- `features/access/AccessPage.tsx` ficou sem `rules-of-hooks`: `loadSurface`
+  passou de `useEffectEvent` para `useCallback` com dependência em
+  `markSessionExpired`, que é estável no provider. A tela é coberta pelo smoke,
+  então a mudança tem verificação autenticada real.
+- Lint saiu de 187 para 184 avisos, mantendo 0 erros.
+- Novo documento `docs/FRONTEND_DATA_LOADING_PATTERNS.md` define o padrão
+  canônico de carregadores e registra a decisão de congelar os 38 avisos
+  restantes de hooks, sendo 35 em telas que hoje respondem `/access-denied` para
+  as personas da fixture e por isso não têm caminho de verificação.
+- Relatório: `docs/reports/2026-08-05_mapa-de-superficies-hooks-access-e-padrao-de-carregamento.md`.

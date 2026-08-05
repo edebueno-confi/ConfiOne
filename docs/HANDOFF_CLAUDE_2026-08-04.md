@@ -105,6 +105,8 @@ Também estão entregues: QA autenticado local destravado com o harness oficial 
 
 O harness de smoke já foi estendido para `/admin/knowledge` e `/admin/access`, a Central Pública ficou sem `rules-of-hooks` e sem `react-refresh`, e o lint está em 187 avisos. Relatório: `docs/reports/2026-08-04_smoke-estendido-hooks-publicos-e-fast-refresh.md`.
 
-As próximas ações seguras são: decidir o merge em `main`; decidir se a fixture local passa a conceder a screen key `customer_portal_admin`, hoje o único bloqueio para cobrir `/admin/customer-portal` no smoke; atacar `rules-of-hooks` em `TenantsPage.tsx`, com 15 avisos, antes de `SupportWorkspacePage.tsx`; e decidir produto sobre os filtros meio ligados de `KnowledgePage.tsx` e a superfície legada do editor.
+Em 2026-08-05 o harness passou a inventariar as superfícies internas e revelou que a fixture local alcança apenas `/admin/analytics`, `/admin/knowledge`, `/admin/access` e `/admin/settings`; as outras sete respondem `/access-denied` por falta de screen key. `AccessPage.tsx` ficou sem `rules-of-hooks` e o lint está em 184 avisos. O padrão canônico de carregadores está em `docs/FRONTEND_DATA_LOADING_PATTERNS.md`, com a decisão de congelar os 38 avisos restantes de hooks, 35 deles em telas sem QA local possível. Relatório: `docs/reports/2026-08-05_mapa-de-superficies-hooks-access-e-padrao-de-carregamento.md`.
+
+As próximas ações seguras são: decidir o merge em `main`; decidir se a fixture local passa a conceder as screen keys que faltam, porque sem isso sete superfícies internas seguem sem QA; aplicar o token de recarga do Caso 3 em `KnowledgePage.tsx`, o único caso publicado da lista; e decidir produto sobre os filtros meio ligados de Conhecimento e a superfície legada do editor.
 
 Em qualquer caso, manter as instâncias locais acessíveis nas portas 4173 e 4174 e preservar o banco local existente.
