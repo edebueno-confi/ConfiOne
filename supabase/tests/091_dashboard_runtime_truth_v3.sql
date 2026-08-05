@@ -9,7 +9,12 @@ select ok(has_table_privilege('authenticated', 'public.vw_admin_analytics_sync_h
 
 select ok(to_regprocedure('public.rpc_admin_reconcile_analytics_sync_runs(integer)') is not null, 'RPC de reconciliação de órfãos existe');
 select ok(to_regprocedure('public.rpc_service_start_analytics_sync_cycle(text,uuid)') is not null, 'RPC de início do ciclo existe');
-select ok(has_function_privilege('service_role', 'public.rpc_service_start_analytics_sync_cycle(text,uuid)', 'execute') and not has_function_privilege('anon', 'public.rpc_service_start_analytics_sync_cycle(text,uuid)', 'execute'), 'início do ciclo não é anônimo');
+select ok(
+  has_function_privilege('service_role', 'public.rpc_service_start_analytics_sync_cycle(text,uuid)', 'execute')
+    and not has_function_privilege('anon', 'public.rpc_service_start_analytics_sync_cycle(text,uuid)', 'execute')
+    and not has_function_privilege('authenticated', 'public.rpc_service_start_analytics_sync_cycle(text,uuid)', 'execute'),
+  'início do ciclo é restrito ao service_role'
+);
 select ok(pg_get_functiondef('public.rpc_admin_reconcile_analytics_sync_runs(integer)'::regprocedure) like '%timed_out%' and pg_get_functiondef('public.rpc_admin_reconcile_analytics_sync_runs(integer)'::regprocedure) like '%last_heartbeat_at%', 'reconciliação encerra execução por heartbeat');
 
 select ok((select count(*) from information_schema.columns where table_schema = 'public' and table_name = 'hubspot_sync_runs' and column_name in ('cycle_id', 'internal_error_code', 'provider_code', 'internal_message', 'sanitized_error')) = 5, 'HubSpot persiste erro interno e mensagem sanitizada separadamente');
