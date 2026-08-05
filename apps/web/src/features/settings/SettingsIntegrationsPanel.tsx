@@ -219,7 +219,6 @@ export function SettingsIntegrationsPanel({
           </button>
         }
         description="Credenciais e estado das fontes externas que abastecem o Dashboard Gerencial."
-        eyebrow="Configurações"
         meta={summary.updatedAt ? `Última alteração registrada em ${formatDateTime(summary.updatedAt)}` : 'Nenhuma alteração registrada'}
         title="Integrações"
         titleId="settings-integrations-title"

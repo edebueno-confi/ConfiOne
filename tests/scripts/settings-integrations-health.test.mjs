@@ -73,6 +73,6 @@ test('ausência de execução mantém o campo nulo para a interface exibir indis
 test('tons reutilizam as classes publicadas de Configurações', () => {
   assert.equal(toneClassName('danger'), 'gso-settings-status--failed');
   assert.equal(toneClassName('desconhecido'), 'gso-settings-status--muted');
-  assert.equal(toneTextClassName('warning'), 'gso-int-tone-warning');
-  assert.equal(toneTextClassName('desconhecido'), 'gso-int-tone-muted');
+  assert.equal(toneTextClassName('warning'), 'gso-settings-tone-warning');
+  assert.equal(toneTextClassName('desconhecido'), 'gso-settings-tone-muted');
 });

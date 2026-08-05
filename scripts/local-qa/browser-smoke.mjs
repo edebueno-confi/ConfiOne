@@ -360,6 +360,33 @@ try {
           credentialFields: credentialCount,
           credentialsPrefilled: false,
         });
+        // Histórico de sincronizações: a barra de filtros precisa existir e ter
+        // efeito. O cenário troca o recorte para "Com falha" e confirma que a
+        // faixa de indicadores acompanha a lista.
+        await page.goto(`${baseUrl}/admin/settings/sync-history`, { waitUntil: 'domcontentloaded' });
+        await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+        await page.waitForTimeout(700);
+        const historyHeading = page.getByRole('heading', { name: 'Histórico de sincronizações', level: 2, exact: true });
+        if (!(await historyHeading.count())) throw new Error('LOCAL_QA_SETTINGS_HISTORY_MISSING_HEADER');
+        const historyFilters = page.locator('.gso-settings-toolbar select');
+        const historyFilterCount = await historyFilters.count();
+        if (historyFilterCount < 4) throw new Error(`LOCAL_QA_SETTINGS_HISTORY_FILTERS: ${historyFilterCount}`);
+        const historyOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+        if (historyOverflow) throw new Error('LOCAL_QA_HORIZONTAL_OVERFLOW: platform_admin settings-sync-history 1920');
+        await page.screenshot({ path: join(logDir, 'browser-platform_admin-settings-sync-history-1920.png'), fullPage: true });
+        screenshots.push('browser-platform_admin-settings-sync-history-1920.png');
+        const metricsBefore = await page.locator('.gso-settings-metrics .gso-settings-metric strong').first().innerText();
+        await historyFilters.nth(2).selectOption('failed');
+        await page.waitForTimeout(400);
+        const metricsAfter = await page.locator('.gso-settings-metrics .gso-settings-metric strong').first().innerText();
+        deepScenarios.push({
+          role: account.role,
+          scenario: 'settings-sync-history',
+          viewport: '1920x1080',
+          filters: historyFilterCount,
+          totalBefore: metricsBefore,
+          totalAfterFailedFilter: metricsAfter,
+        });
         await page.setViewportSize({ width: viewport.width, height: viewport.height });
       }
       // A sondagem roda por último, depois do veredito do persona, porque visita

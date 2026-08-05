@@ -8,21 +8,8 @@
    composição desta tela mantém o próprio ritmo vertical. */
 .gso-int-surface.gso-visual-v1-settings { gap: 0.95rem; }
 
-.gso-int-tone-success { color: var(--color-success-text); }
-.gso-int-tone-warning { color: var(--color-warning-text); }
-.gso-int-tone-danger { color: var(--color-danger-text); }
-.gso-int-tone-muted { color: var(--minimal-text-tertiary); }
-
-/* Resumo das integrações */
-.gso-int-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid color-mix(in srgb, var(--minimal-border) 76%, transparent); background: var(--minimal-surface); }
-.gso-int-summary-item { min-width: 0; padding: 0.68rem 0.85rem; border-right: 1px solid color-mix(in srgb, var(--minimal-border) 55%, transparent); }
-.gso-int-summary-item:last-child { border-right: 0; }
-.gso-int-summary-item > span { display: block; color: var(--minimal-text-tertiary); font-size: 0.63rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-.gso-int-summary-item > strong { display: block; margin-top: 0.26rem; font-family: 'Space Grotesk', 'Instrument Sans', sans-serif; font-size: 1.15rem; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
-.gso-int-summary-item > small { display: block; margin-top: 0.16rem; color: var(--minimal-text-secondary); font-size: 0.68rem; line-height: 1.4; }
-.gso-int-summary-item--health { border-left: 2px solid var(--minimal-action); }
-.gso-int-summary-item--health > strong { font-size: 0.95rem; letter-spacing: -0.015em; }
-.gso-int-summary-item--text > strong { font-size: 0.95rem; letter-spacing: -0.015em; }
+/* A faixa de indicadores e os tons de estado moram em settings-shell.css,
+   compartilhados com as demais telas de Configurações. */
 
 /* Corpo: coluna de cards + rail de governança */
 .gso-int-body { display: grid; grid-template-columns: minmax(0, 1fr) 19.5rem; align-items: start; gap: 0.95rem; }
@@ -76,9 +63,6 @@
 }
 
 @media (max-width: 1024px) {
-  .gso-int-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .gso-int-summary-item:nth-child(2n) { border-right: 0; }
-  .gso-int-summary-item:nth-child(-n + 2) { border-bottom: 1px solid color-mix(in srgb, var(--minimal-border) 55%, transparent); }
   .gso-int-cards { grid-template-columns: 1fr; }
   .gso-int-footer { grid-template-columns: 1fr; }
   .gso-int-footer-item { border-right: 0; border-bottom: 1px solid color-mix(in srgb, var(--minimal-border) 45%, transparent); }
@@ -86,8 +70,5 @@
 }
 
 @media (max-width: 760px) {
-  .gso-int-summary { grid-template-columns: 1fr; }
-  .gso-int-summary-item { border-right: 0; border-bottom: 1px solid color-mix(in srgb, var(--minimal-border) 55%, transparent); }
-  .gso-int-summary-item:last-child { border-bottom: 0; }
   .gso-int-card-meta { grid-template-columns: 1fr; }
 }

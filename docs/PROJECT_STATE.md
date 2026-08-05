@@ -3534,3 +3534,29 @@ Relatório corrente: `docs/reports/2026-08-04_mvp-closure-status.md`.
   autenticada, exige `dark` em `/admin/analytics` e `light` em `/help/genius`, com
   erros dedicados para cada violação.
 - Relatório: `docs/reports/2026-08-05_regra-de-superficie-do-tema.md`.
+
+## Atualização corrente — Configurações → Integrações (nova composição) — 2026-08-05
+
+- A seção Integrações passou a ter composição própria: cabeçalho de página,
+  resumo, cards por provedor, rail de governança e faixa inferior. A sidebar
+  global e a navegação local de Configurações foram reutilizadas, não recriadas.
+- Contratos de dados inalterados: nenhuma migration, RPC ou view foi tocada. A
+  gravação continua em `rpc_admin_upsert_managed_integration` com o mesmo
+  payload por provedor.
+- Limitação real registrada: não existe verificação de conexão sob demanda no
+  backend (`testConnection|test_connection|rpc_admin_test` = 0 ocorrências). A
+  tela declara isso em vez de simular teste; a ação real disponível é reler o
+  estado.
+- Limitação real registrada: não existe tela de políticas de segurança. O bloco
+  de segurança do rail exibe apenas fatos comprovados na migration
+  `20260718034735_managed_integrations_v1.sql`, e afirma explicitamente que
+  rotação automática e monitoramento contínuo não fazem parte desta versão.
+- Segurança da credencial preservada: campos nascem vazios, `secret` só viaja
+  quando o operador digita, nada de `console`, `localStorage` ou `sessionStorage`.
+  Coberto por contrato em `tests/scripts/settings-sources-v2-contract.test.mjs`.
+- Regressão automatizada: cenário `settings-integrations` no smoke, em
+  1920×1080, exige os blocos da composição, três campos de credencial vazios e
+  ausência de overflow horizontal.
+- Lint manteve 0 erros e 181 avisos; build, typechecks, secret scan e
+  `quality:changed` aprovados.
+- Relatório: `docs/reports/2026-08-05_configuracoes-integracoes-nova-composicao.md`.

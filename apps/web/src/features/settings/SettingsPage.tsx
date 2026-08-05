@@ -50,7 +50,9 @@ type LoadState<T> = { phase: 'idle' | 'loading' } | { phase: 'ready'; items: T[]
 import { canOpenSettingsSection } from '../../app/release-surface.mjs';
 import { DashboardSourcesSettingsPage } from './DashboardSourcesSettingsPage';
 import { SettingsIntegrationsPanel } from './SettingsIntegrationsPanel';
+import { SettingsNavIcon } from './settings-nav-icons';
 import '../analytics/high-density.css';
+import './settings-shell.css';
 import { SyncHistorySettingsPage } from './SyncHistorySettingsPage';
 
 const DASHBOARD_SECTION_IDS = ['dashboard-fontes', 'dashboard-historico'];
@@ -769,14 +771,19 @@ function GroupDetail({
 
   return (
     <article className="min-h-0 bg-[color:var(--minimal-surface)]">
-      {DASHBOARD_SECTION_IDS.includes(group.id) ? (
+      {group.id === 'dashboard-historico' ? (
+        // A tela traz o próprio cabeçalho de página, com breadcrumb e ações.
+        <div className="px-5 py-5 sm:px-6">
+          <SyncHistorySettingsPage />
+        </div>
+      ) : DASHBOARD_SECTION_IDS.includes(group.id) ? (
         <>
           <header className="border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6">
             <h2 className="text-xl font-semibold tracking-[-0.025em] text-[color:var(--minimal-text)]">{group.label}</h2>
             <p className="mt-1 text-sm text-[color:var(--minimal-text-secondary)]">{group.description}</p>
           </header>
           <div className="px-5 py-5 sm:px-6">
-            {group.id === 'dashboard-fontes' ? <DashboardSourcesSettingsPage /> : <SyncHistorySettingsPage />}
+            <DashboardSourcesSettingsPage />
           </div>
         </>
       ) : isIntegrations ? (
@@ -1218,6 +1225,7 @@ export function SettingsPage() {
                 onClick={() => navigate('/admin/access')}
                 type="button"
               >
+                <SettingsNavIcon section="access" />
                 <span>Usuários e acesso</span>
                 {location.pathname.startsWith('/admin/access') ? <span aria-hidden="true" className="gso-settings-nav-marker" /> : null}
               </button>
@@ -1233,6 +1241,7 @@ export function SettingsPage() {
                   onClick={() => selectGroup(group.id)}
                   type="button"
                 >
+                  <SettingsNavIcon section={group.id} />
                   <span>{group.label}</span>
                   {active ? <span aria-hidden="true" className="gso-settings-nav-marker" /> : null}
                 </button>

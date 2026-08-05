@@ -15,10 +15,10 @@ const TONE_CLASS = {
 };
 
 const TONE_TEXT_CLASS = {
-  success: 'gso-int-tone-success',
-  warning: 'gso-int-tone-warning',
-  danger: 'gso-int-tone-danger',
-  muted: 'gso-int-tone-muted',
+  success: 'gso-settings-tone-success',
+  warning: 'gso-settings-tone-warning',
+  danger: 'gso-settings-tone-danger',
+  muted: 'gso-settings-tone-muted',
 };
 
 /**
