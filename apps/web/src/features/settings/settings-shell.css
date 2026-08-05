@@ -44,6 +44,19 @@
 .gso-settings-toolbar-reset:hover { text-decoration: underline; }
 .gso-settings-toolbar-reset:disabled { color: var(--minimal-text-tertiary); text-decoration: none; }
 
+/* Tabela operacional */
+.gso-settings-table-frame { min-width: 0; overflow-x: auto; border: 1px solid color-mix(in srgb, var(--minimal-border) 76%, transparent); background: var(--minimal-surface); }
+.gso-settings-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.gso-settings-table thead th { position: sticky; top: 0; border-bottom: 1px solid var(--minimal-border); background: var(--minimal-surface-muted); padding: 0.55rem 0.75rem; color: var(--minimal-text-tertiary); font-size: 0.63rem; font-weight: 700; letter-spacing: 0.07em; text-align: left; text-transform: uppercase; white-space: nowrap; }
+.gso-settings-table tbody td { border-bottom: 1px solid color-mix(in srgb, var(--minimal-border) 45%, transparent); padding: 0.6rem 0.75rem; color: var(--minimal-text-secondary); vertical-align: top; }
+.gso-settings-table tbody tr:last-child td { border-bottom: 0; }
+.gso-settings-table tbody tr:hover td { background: color-mix(in srgb, var(--minimal-action) 4%, transparent); }
+.gso-settings-table td strong { display: block; color: var(--minimal-text); font-size: 0.82rem; }
+.gso-settings-table td small { display: block; margin-top: 0.12rem; color: var(--minimal-text-tertiary); font-size: 0.68rem; }
+.gso-settings-table-numeric { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gso-settings-table-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: flex-end; }
+.gso-settings-table-caption { margin: 0.5rem 0 0; color: var(--minimal-text-tertiary); font-size: 0.7rem; }
+
 /* Paginação */
 .gso-settings-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; border-top: 1px solid color-mix(in srgb, var(--minimal-border) 55%, transparent); padding-top: 0.6rem; color: var(--minimal-text-secondary); font-size: 0.72rem; }
 .gso-settings-pagination-controls { display: flex; align-items: center; gap: 0.4rem; }

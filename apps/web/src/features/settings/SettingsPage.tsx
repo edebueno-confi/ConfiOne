@@ -771,21 +771,12 @@ function GroupDetail({
 
   return (
     <article className="min-h-0 bg-[color:var(--minimal-surface)]">
-      {group.id === 'dashboard-historico' ? (
-        // A tela traz o próprio cabeçalho de página, com breadcrumb e ações.
+      {DASHBOARD_SECTION_IDS.includes(group.id) ? (
+        // As duas telas do eixo de dados trazem o próprio cabeçalho de página,
+        // com breadcrumb, metadado de leitura e ações da seção.
         <div className="px-5 py-5 sm:px-6">
-          <SyncHistorySettingsPage />
+          {group.id === 'dashboard-fontes' ? <DashboardSourcesSettingsPage /> : <SyncHistorySettingsPage />}
         </div>
-      ) : DASHBOARD_SECTION_IDS.includes(group.id) ? (
-        <>
-          <header className="border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6">
-            <h2 className="text-xl font-semibold tracking-[-0.025em] text-[color:var(--minimal-text)]">{group.label}</h2>
-            <p className="mt-1 text-sm text-[color:var(--minimal-text-secondary)]">{group.description}</p>
-          </header>
-          <div className="px-5 py-5 sm:px-6">
-            <DashboardSourcesSettingsPage />
-          </div>
-        </>
       ) : isIntegrations ? (
         // Integrações traz o próprio cabeçalho de página: título, contexto de
         // leitura e a ação de reler o estado ficam na composição da tela.

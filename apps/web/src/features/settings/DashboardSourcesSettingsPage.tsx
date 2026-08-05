@@ -19,6 +19,8 @@ import {
 import type { AnalyticsSourceConfig } from '../analytics/analytics-model';
 import type { AnalyticsSourceStatusPayload } from '@genius-support-os/contracts';
 import { areAnalyticsSourcesActive, syncProgressLabel } from '../analytics/analytics-sync-progress.mjs';
+import { SettingsPageHeader } from './SettingsPageHeader';
+import './settings-shell.css';
 
 const CONTROL = 'gso-settings-control w-full rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-3 py-2.5 text-sm text-[color:var(--minimal-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]';
 
@@ -36,6 +38,21 @@ function statusLabel(status: string) {
 
 function formatDate(value: string | null | undefined) {
   return value ? new Date(value).toLocaleString('pt-BR') : 'Indisponível';
+}
+
+/** Selo do estado publicado da fonte, reaproveitando os tons de Configurações. */
+function sourceStatusToneClass(status: string) {
+  if (status === 'fresh') return 'gso-settings-status--success';
+  if (status === 'syncing') return 'gso-settings-status--running';
+  if (status === 'failed') return 'gso-settings-status--failed';
+  if (status === 'partial' || status === 'stale') return 'gso-settings-status--warning';
+  return 'gso-settings-status--muted';
+}
+
+/** Frequência da atualização automática, sem inventar valor quando está desligada. */
+function scheduleFrequencyLabel(schedule: IntegrationSchedule | null) {
+  if (!schedule || !schedule.enabled || schedule.frequency === 'off') return 'Desativada';
+  return schedule.frequency === 'hourly' ? 'De hora em hora' : 'Diária';
 }
 
 function sourceDetail(source: AnalyticsSourceStatusPayload['hubspot']) {
@@ -134,7 +151,8 @@ export function DashboardSourcesSettingsPage() {
 
   const filteredRows = useMemo(() => areaFilter === 'all' ? rows : rows.filter((row) => row.areaKey === areaFilter), [areaFilter, rows]);
   const groupedRows = useMemo(() => Object.entries(filteredRows.reduce<Record<string, AnalyticsSourceConfig[]>>((groups, row) => { (groups[row.areaKey] ??= []).push(row); return groups; }, {})), [filteredRows]);
-  const pendingCount = rows.filter((row) => !row.isArchived && row.areaKey === 'a_classificar').length;
+  const pendingRows = useMemo(() => rows.filter((row) => !row.isArchived && row.areaKey === 'a_classificar'), [rows]);
+  const pendingCount = pendingRows.length;
   const activeCount = rows.filter((row) => row.isActive && !row.isArchived).length;
 
   const savePipeline = async (row: AnalyticsSourceConfig, areaKey: AnalyticsSourceConfig['areaKey'], alias: string, isActive: boolean) => {
@@ -192,22 +210,151 @@ export function DashboardSourcesSettingsPage() {
   return (
     <div className="gso-settings-sources gso-settings-stack gso-visual-v1-settings">
       {syncFeedback ? <GeniusSyncOverlay source={syncFeedback.source} state={syncFeedback.state} hasValidSnapshot={syncFeedback.state === 'failed' || syncFeedback.state === 'timed_out' || syncFeedback.state === 'abandoned' ? Boolean(syncFeedback.source === 'painel' ? sourceStatus?.hubspot.hasValidSnapshot && sourceStatus?.omie.hasValidSnapshot : sourceStatus?.[syncFeedback.source.toLowerCase() as 'hubspot' | 'omie']?.hasValidSnapshot) : syncingKind === 'full' ? Boolean(sourceStatus?.hubspot.hasValidSnapshot && sourceStatus?.omie.hasValidSnapshot) : Boolean(sourceStatus?.[syncingKind ?? 'hubspot']?.hasValidSnapshot)} detail={syncFeedback.detail ?? syncProgress} historyHref="/admin/settings/sync-history" /> : null}
-      <section className="gso-settings-source-overview gso-settings-cockpit-overview" aria-labelledby="sources-overview-title">
-        <div>
-          <p className="gso-settings-eyebrow">Mapa de origem</p>
-          <h3 id="sources-overview-title">Dados do Dashboard, com contexto</h3>
-          <p>Os indicadores leem o HubSpot para Comercial, Customer Success e Suporte. O Financeiro lê o OMIE. Pipelines novos ficam ativos, mas aguardam classificação antes de compor uma área específica.</p>
-          <small className="gso-settings-help">Cada atualização avança a partir do último ponto seguro disponível. Quando a origem não informa esse ponto, o sistema confirma a leitura completa e registra volume, duração e chamadas no Histórico.</small>
+      <SettingsPageHeader
+        actions={
+          <>
+            <button className="gso-settings-button gso-settings-button--secondary" disabled={busy || loading} onClick={() => void load()} type="button">
+              {loading ? 'Lendo…' : 'Reler estado'}
+            </button>
+            <button className="gso-settings-button gso-settings-button--primary" disabled={!canEdit || busy} onClick={() => void run('full')} type="button">
+              Atualizar painel completo
+            </button>
+          </>
+        }
+        description="Fontes externas que alimentam o Dashboard Gerencial, com o estado publicado de cada uma e a classificação dos pipelines por área."
+        meta={`${rows.length} pipelines no catálogo`}
+        title="Fontes do Dashboard"
+        titleId="settings-sources-title"
+      />
+
+      <section aria-label="Resumo das fontes" className="gso-settings-metrics">
+        <div className="gso-settings-metric gso-settings-metric--accent">
+          <span>Fontes ativas</span>
+          <strong>{activeCount}</strong>
+          <small>pipelines compondo indicadores</small>
         </div>
-        <div className="gso-settings-source-summary">
-          <strong>{activeCount}</strong><span>fontes ativas</span>
-          <strong className={pendingCount ? 'gso-settings-number--warning' : ''}>{pendingCount}</strong><span>aguardando classificação</span>
+        <div className="gso-settings-metric">
+          <span>Aguardando classificação</span>
+          <strong className={pendingCount ? 'gso-settings-tone-warning' : undefined}>{pendingCount}</strong>
+          <small>{pendingCount ? 'sem área definida ainda' : 'nenhuma pendência de área'}</small>
+        </div>
+        <div className="gso-settings-metric gso-settings-metric--text">
+          <span>Atualização automática</span>
+          <strong>{scheduleFrequencyLabel(schedule)}</strong>
+          <small>{schedule?.enabled ? 'HubSpot e depois OMIE' : 'atualização apenas manual'}</small>
+        </div>
+        <div className="gso-settings-metric gso-settings-metric--text">
+          <span>Última carga automática</span>
+          <strong>{formatDate(schedule?.lastRunAt)}</strong>
+          <small>{schedule?.lastStatus ? `resultado: ${schedule.lastStatus}` : 'sem execução automática registrada'}</small>
         </div>
       </section>
 
-      <section className="gso-settings-source-status-grid gso-settings-cockpit-status" aria-label="Estado das fontes">
-        {sourcePills.map((source) => <div className="gso-settings-source-status" key={source.key}><span>{source.label}</span><strong>{statusLabel(source.status)}</strong><small>{sourceDetail(source)}</small></div>)}
-        <button className="gso-settings-button gso-settings-button--primary gso-settings-cockpit-refresh" type="button" disabled={!canEdit || busy} onClick={() => void run('full')}>Atualizar painel completo</button>
+      <section aria-labelledby="sources-table-title" className="gso-settings-card">
+        <div className="gso-settings-card-header">
+          <div>
+            <p className="gso-settings-eyebrow">Conexões</p>
+            <h3 id="sources-table-title">Fontes ativas</h3>
+            <p>HubSpot abastece Comercial, Customer Success e Suporte. OMIE abastece o Financeiro.</p>
+          </div>
+        </div>
+        <div className="gso-settings-table-frame">
+          <table className="gso-settings-table">
+            <thead>
+              <tr>
+                <th scope="col">Fonte</th>
+                <th scope="col">Domínios atendidos</th>
+                <th scope="col">Estado publicado</th>
+                <th scope="col">Última atualização</th>
+                <th scope="col">Volume da última carga</th>
+                <th scope="col">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sourcePills.length ? sourcePills.map((source) => {
+                const kind = source.key === 'omie' ? 'omie' : 'hubspot';
+                return (
+                  <tr key={source.key}>
+                    <td>
+                      <strong>{source.label}</strong>
+                      <small>{kind === 'omie' ? 'Financeiro · API' : 'Operação · API'}</small>
+                    </td>
+                    <td>{kind === 'omie' ? 'Financeiro' : 'Comercial, Customer Success e Suporte'}</td>
+                    <td>
+                      <span className={`gso-settings-status ${sourceStatusToneClass(source.status)}`}>{statusLabel(source.status)}</span>
+                      <small>{sourceDetail(source)}</small>
+                    </td>
+                    <td className="gso-settings-table-numeric">{formatDate(source.lastSuccessAt ?? source.lastAttemptAt)}</td>
+                    <td className="gso-settings-table-numeric">
+                      {source.processedCount ? source.processedCount.toLocaleString('pt-BR') : 'Indisponível'}
+                      {source.rejectedCount ? <small>{source.rejectedCount.toLocaleString('pt-BR')} recusados</small> : null}
+                    </td>
+                    <td>
+                      <div className="gso-settings-table-actions">
+                        <button
+                          aria-label={kind === 'omie' ? 'Atualizar OMIE' : 'Atualizar HubSpot'}
+                          className="gso-settings-button gso-settings-button--secondary"
+                          disabled={!canEdit || busy}
+                          onClick={() => void run(kind)}
+                          type="button"
+                        >
+                          Atualizar
+                        </button>
+                        <Link className="gso-settings-button gso-settings-button--secondary" to="/admin/settings/integrations">
+                          Credencial
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              }) : (
+                <tr>
+                  <td colSpan={6}>Estado das fontes indisponível nesta leitura.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <p className="gso-settings-table-caption">
+          Cada atualização avança a partir do último ponto seguro disponível. Quando a origem não informa esse ponto, o sistema confirma a leitura completa e registra volume, duração e chamadas no Histórico.
+        </p>
+      </section>
+
+      <section aria-labelledby="pending-sources-title" className="gso-settings-card">
+        <div className="gso-settings-card-header">
+          <div>
+            <p className="gso-settings-eyebrow">Triagem</p>
+            <h3 id="pending-sources-title">Aguardando classificação</h3>
+            <p>Pipelines que o HubSpot trouxe e que ainda não têm decisão administrativa de área.</p>
+          </div>
+        </div>
+        {pendingRows.length ? (
+          <div className="gso-settings-table-frame">
+            <table className="gso-settings-table">
+              <thead>
+                <tr>
+                  <th scope="col">Pipeline</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Descoberto em</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingRows.map((row) => (
+                  <tr key={row.id}>
+                    <td>
+                      <strong>{row.label}</strong>
+                      <small>ID {row.pipelineId}</small>
+                    </td>
+                    <td>{row.objectType === 'deal' ? 'Negócio' : 'Ticket'}</td>
+                    <td className="gso-settings-table-numeric">{formatDate(row.lastDiscoveredAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="gso-settings-empty">Nenhuma fonte aguardando classificação. Todas as fontes descobertas já têm área definida.</p>
+        )}
       </section>
 
       <section className="gso-settings-card gso-settings-schedule-card" aria-labelledby="schedule-title">
@@ -218,11 +365,6 @@ export function DashboardSourcesSettingsPage() {
           <button className="gso-settings-button gso-settings-button--secondary gso-settings-schedule-save" type="button" disabled={!canEdit || busy} onClick={() => void saveSchedule()}>Salvar</button>
         </div>
         {!canEdit ? <p className="gso-settings-help">Seu perfil pode consultar as fontes, mas não pode alterar configurações ou iniciar atualizações.</p> : null}
-      </section>
-
-      <section className="gso-settings-card" aria-labelledby="manual-title">
-        <div className="gso-settings-card-header"><div><p className="gso-settings-eyebrow">Ações manuais</p><h3 id="manual-title">Atualizar uma fonte</h3><p>Use uma ação real para atualizar o recorte escolhido e acompanhar o resultado no Histórico.</p></div></div>
-        <div className="gso-settings-action-grid"><button className="gso-settings-action-card" type="button" disabled={!canEdit || busy} onClick={() => void run('hubspot')}><strong>Atualizar HubSpot</strong><span>Atualiza clientes, Comercial, Customer Success e Suporte.</span></button><button className="gso-settings-action-card" type="button" disabled={!canEdit || busy} onClick={() => void run('omie')}><strong>Atualizar OMIE</strong><span>Atualiza os dados financeiros e contas a receber.</span></button></div>
       </section>
 
       <section className="gso-settings-card" aria-labelledby="catalog-title">

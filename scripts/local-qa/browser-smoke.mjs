@@ -360,6 +360,26 @@ try {
           credentialFields: credentialCount,
           credentialsPrefilled: false,
         });
+        // Fontes do Dashboard: composição e ausência de overflow em 1920. A rota
+        // fica neste bloco, depois do veredito do persona, porque o acesso direto
+        // por URL faz o app reler o contexto administrativo e receber 401 — o
+        // mesmo efeito já documentado para as rotas sondadas.
+        await page.goto(`${baseUrl}/admin/settings/dashboard-sources`, { waitUntil: 'domcontentloaded' });
+        await page.waitForLoadState('networkidle', { timeout: 12_000 }).catch(() => {});
+        await page.waitForTimeout(900);
+        const sourcesHeading = page.getByRole('heading', { name: 'Fontes do Dashboard', level: 2, exact: true });
+        if (!(await sourcesHeading.count())) throw new Error('LOCAL_QA_SETTINGS_SOURCES_MISSING_HEADER');
+        const sourcesRows = await page.locator('.gso-settings-table tbody tr').count();
+        const sourcesOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+        if (sourcesOverflow) throw new Error('LOCAL_QA_HORIZONTAL_OVERFLOW: platform_admin settings-dashboard-sources 1920');
+        await page.screenshot({ path: join(logDir, 'browser-platform_admin-settings-dashboard-sources-1920.png'), fullPage: true });
+        screenshots.push('browser-platform_admin-settings-dashboard-sources-1920.png');
+        deepScenarios.push({
+          role: account.role,
+          scenario: 'settings-dashboard-sources',
+          viewport: '1920x1080',
+          tableRows: sourcesRows,
+        });
         // Histórico de sincronizações: a barra de filtros precisa existir e ter
         // efeito. O cenário troca o recorte para "Com falha" e confirma que a
         // faixa de indicadores acompanha a lista.
