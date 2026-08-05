@@ -236,6 +236,46 @@ try {
         await page.screenshot({ path: join(logDir, 'browser-platform_admin-knowledge-editor-desktop.png'), fullPage: true });
         screenshots.push('browser-platform_admin-knowledge-editor-desktop.png');
         deepScenarios.push({ role: account.role, scenario: 'knowledge-editor', reachedPath: editorPath });
+
+        // Escrita real em Conhecimento: edita o título do artigo, salva, confirma
+        // persistência após recarregar e restaura o valor original. O marcador é
+        // sanitizado e o cenário limpa o que escreveu.
+        const marker = ' [QA SMOKE]';
+        const titleField = page.getByLabel('Título do artigo *');
+        await titleField.waitFor({ state: 'visible', timeout: 15_000 });
+        const originalTitle = (await titleField.inputValue()).replace(marker, '');
+        await titleField.fill(originalTitle + marker);
+        await page.getByRole('button', { name: /Salvar rascunho/i }).click();
+        await page.waitForTimeout(1_800);
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+        const persistedTitle = await page
+          .getByLabel('Título do artigo *')
+          .inputValue();
+        if (!persistedTitle.includes(marker)) {
+          throw new Error(
+            `LOCAL_QA_KNOWLEDGE_WRITE_NOT_PERSISTED: valor lido apos reload nao contem o marcador`,
+          );
+        }
+        await page.getByLabel('Título do artigo *').fill(originalTitle);
+        await page.getByRole('button', { name: /Salvar rascunho/i }).click();
+        await page.waitForTimeout(1_800);
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+        const restoredTitle = await page
+          .getByLabel('Título do artigo *')
+          .inputValue();
+        if (restoredTitle.includes(marker)) {
+          throw new Error(
+            'LOCAL_QA_KNOWLEDGE_WRITE_NOT_RESTORED: marcador de QA continua no titulo',
+          );
+        }
+        deepScenarios.push({
+          role: account.role,
+          scenario: 'knowledge-write',
+          persisted: true,
+          restored: true,
+        });
       }
       // A sondagem roda por último, depois do veredito do persona, porque visita
       // rotas sem screen key de propósito. Nesse caminho o app tenta ler o read
