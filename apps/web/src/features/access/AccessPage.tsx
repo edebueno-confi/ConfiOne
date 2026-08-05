@@ -1,8 +1,8 @@
 import {
   type FormEvent,
+  useCallback,
   useDeferredValue,
   useEffect,
-  useEffectEvent,
   useRef,
   useState,
 } from 'react';
@@ -320,7 +320,10 @@ export function AccessPage() {
   const [lookupMessage, setLookupMessage] = useState<string | null>(null);
   const deferredQuery = useDeferredValue(query);
 
-  const loadSurface = useEffectEvent(async () => {
+  // Carregador usado pelo bootstrap, pelos handlers de escrita e pelo botão de
+  // nova tentativa. `markSessionExpired` é estável no provider de auth, então a
+  // referência não muda entre renders.
+  const loadSurface = useCallback(async () => {
     try {
       const [tenantRows, membershipRows, userRows] = await Promise.all([
         listAdminTenants(),
@@ -363,7 +366,7 @@ export function AccessPage() {
         classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
       );
     }
-  });
+  }, [markSessionExpired]);
 
   const dashboardUsers = accessUsers.filter((user) => {
     if (!deferredQuery.trim()) return true;
@@ -402,7 +405,7 @@ export function AccessPage() {
 
     didBootstrapRef.current = true;
     void loadSurface();
-  }, []);
+  }, [loadSurface]);
 
   const filteredMemberships = memberships.filter((membership) => {
     const situation = membershipSituation(membership);
