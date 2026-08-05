@@ -846,15 +846,19 @@ export function SettingsPage() {
   const isDashboardViewer = gate.actor?.roles.includes('dashboard_viewer') === true && gate.actor?.is_platform_admin !== true;
   // Ordem de validacao: superficie do release primeiro, permissao do perfil
   // depois. Configuracoes passa a exibir apenas o que o usuario pode operar.
-  const settingsPermissions = {
-    isPlatformAdmin: gate.actor?.is_platform_admin === true,
-    screenKeys: gate.actor?.screen_keys ?? [],
-  };
+  // Referência estável a partir do contexto de auth: evita recalcular os memos
+  // que dependem de permissão a cada render e deixa a dependência explícita.
+  const settingsPermissions = useMemo(
+    () => ({
+      isPlatformAdmin: gate.actor?.is_platform_admin === true,
+      screenKeys: gate.actor?.screen_keys ?? [],
+    }),
+    [gate.actor?.is_platform_admin, gate.actor?.screen_keys],
+  );
   const canManageAccess = settingsPermissions.isPlatformAdmin || settingsPermissions.screenKeys.includes('access');
-  const settingsScreenKeys = (gate.actor?.screen_keys ?? []).join('|');
   const visibleGroups = useMemo(
     () => GROUPS.filter((group) => canOpenSettingsSection(group.id, settingsPermissions)),
-    [gate.actor?.is_platform_admin, settingsScreenKeys],
+    [settingsPermissions],
   );
   const requestedSection = sectionFromPathname(location.pathname) ?? 'integracoes';
   const [selectedId, setSelectedId] = useState<string>(() => {

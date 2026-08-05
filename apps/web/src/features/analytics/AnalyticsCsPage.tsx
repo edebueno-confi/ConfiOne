@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { MinimalState } from '../../components/minimal-states';
 import { getCsSnapshot, listAnalyticsSourceConfig } from './analytics-api';
 import {
@@ -33,14 +33,20 @@ type PipelineFilterOption = AnalyticsSourceConfig & Pick<CsPipelinePoint, 'ticke
 
 export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }: AnalyticsPageProps) {
   const [state, setState] = useState<State>({ phase: 'loading' });
-  const period = sharedPeriod ?? resolveAnalyticsPeriod('month');
+  // Referência estável: sem o memo, `resolveAnalyticsPeriod` devolve um objeto
+  // novo a cada render e a dependência do Effect precisaria ser desmembrada em
+  // `period.from` e `period.to`, o que esconde a dependência real.
+  const period = useMemo(
+    () => sharedPeriod ?? resolveAnalyticsPeriod('month'),
+    [sharedPeriod],
+  );
   const [filters, setFilters] = useState<AnalyticsFilters>({ ...DEFAULT_ANALYTICS_FILTERS, ...period });
   const [configuredPipelines, setConfiguredPipelines] = useState<AnalyticsSourceConfig[]>([]);
   const [excludedPipelineIds, setExcludedPipelineIds] = useState<string[]>([]);
 
   useEffect(() => {
     setFilters((current) => current.from === period.from && current.to === period.to ? current : { ...current, ...period });
-  }, [period.from, period.to]);
+  }, [period]);
 
   useEffect(() => {
     let cancelled = false;
