@@ -151,7 +151,20 @@ bloqueio de rota interna para `customer_user` e, desde 2026-08-04, as superfíci
 internas `/admin/knowledge` e `/admin/access` para `platform_admin` em desktop,
 declaradas em `extraRoutes` dentro de `scripts/local-qa/browser-smoke.mjs`.
 
-`/admin/customer-portal` não entra no smoke porque exige a screen key
-`customer_portal_admin`, que a fixture local não concede. Nesse estado a rota
-responde `/access-denied` por contrato. Para cobrir essa superfície é preciso
-conceder o grant na fixture primeiro.
+As telas internas fora do primeiro release não entram no smoke porque dependem de
+três camadas em série: `release_enabled` no `internal_screen_catalog`, grant de
+tela e capability. O `platform_admin` da fixture já tem grant de tela para todas
+elas; faltam release e capability.
+
+Para a camada de release existe ferramenta local:
+
+```bash
+npm run supabase:qa:local-release-preview:status
+npm run supabase:qa:local-release-preview -- --screens=tenants
+npm run supabase:qa:local-release-preview:disable
+```
+
+Ela altera somente o banco local, guarda o estado original em
+`output/local-qa/release-preview-backup.json` e exige lista explícita de telas.
+Ligar o catálogo inteiro faz o smoke falhar com 401 em `vw_admin_auth_context`.
+A camada de capability não é aberta por script de QA por decisão explícita.

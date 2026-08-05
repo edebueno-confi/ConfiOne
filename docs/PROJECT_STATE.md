@@ -3468,3 +3468,28 @@ Relatório corrente: `docs/reports/2026-08-04_mvp-closure-status.md`.
 - Nenhuma linha de catálogo, grant ou membership foi alterada. A consulta ao banco
   local foi somente leitura.
 - Relatório: `docs/reports/2026-08-05_release-manifest-cenario-do-editor-e-token-de-recarga.md`.
+
+## Atualização corrente — Preview de release local e três camadas de autorização — 2026-08-05
+
+- Decisão registrada: as telas com `release_enabled = false` não serão publicadas
+  para viabilizar QA. `release_enabled` é contrato de release e não deve ser ligado
+  em migration versionada por conveniência de teste.
+- Novo `supabase/qa/local-release-preview.mjs` com três scripts
+  (`status`, `--screens=<lista>`, `disable`). Ele liga o flag somente no banco
+  local, guarda o estado original das 18 telas em
+  `output/local-qa/release-preview-backup.json`, restaura sob demanda e exige lista
+  explícita de telas. Nenhuma migration é tocada.
+- Motivo da lista explícita: ligar o catálogo inteiro mudou a superfície navegável
+  e fez o smoke autenticado falhar com 401 em `vw_admin_auth_context`. O estado foi
+  restaurado e o script passou a bloquear esse uso.
+- Mapeamento verificado: uma tela interna depende de três camadas em série,
+  `release_enabled`, grant de tela e capability. `platform_admin` já tem grant de
+  tela para todas as internas; o que falta é release e capability. Ligar só o
+  release não faz a tela aparecer.
+- Limite deliberado: o preview não concede capability. Esse é o controle mais
+  sensível do control plane e não será aberto por script de QA.
+- Consequência assumida: os 37 avisos de `rules-of-hooks` das telas fora do release
+  seguem congelados, com a causa completa documentada em
+  `docs/FRONTEND_DATA_LOADING_PATTERNS.md`.
+- O banco local terminou o lote no estado original, conferido por `--status`.
+- Relatório: `docs/reports/2026-08-05_preview-de-release-local-e-tres-camadas-de-autorizacao.md`.

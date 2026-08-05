@@ -7146,3 +7146,25 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - Limites: cobertura de escrita em Conhecimento continua inexistente; 37 avisos de
   hooks seguem congelados, 35 deles por decisão de release.
 - Impacto futuro na FAQ: nenhum.
+
+## QUALITY-QA-05 — Preview de release local e três camadas de autorização — 2026-08-05
+
+- Relatório: `docs/reports/2026-08-05_preview-de-release-local-e-tres-camadas-de-autorizacao.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Decisão: não publicar telas para viabilizar QA. Em vez disso, pré-visualização
+  restrita ao banco local, reversível, fora de `supabase/migrations/`.
+- Entrega: `supabase/qa/local-release-preview.mjs` mais scripts `status`,
+  `--screens=<lista>` e `disable`, com backup do estado original, asserção de
+  ambiente local e bloqueio contra ligar o catálogo inteiro.
+- Achado: autorização de tela interna tem três camadas em série, `release_enabled`,
+  grant de tela e capability. `platform_admin` já tem grant de tela para todas as
+  internas; faltam release e capability. Documentado em
+  `FRONTEND_DATA_LOADING_PATTERNS`.
+- Limite deliberado: o script não concede capability, por ser o controle mais
+  sensível do control plane.
+- Evidência: ciclo status/enable/smoke/disable/status com estado final idêntico ao
+  inicial; lint, typecheck e secret scan aprovados.
+- Limites: telas fora do release seguem sem QA local; cenário de escrita em
+  Conhecimento continua pendente; nenhuma migration, contrato, view ou RPC
+  alterado.
+- Impacto futuro na FAQ: nenhum.

@@ -76,10 +76,22 @@ chama `requestReload()` em vez de chamar o carregador diretamente.
 
 ## Por que a maior parte da dívida está bloqueada
 
-A causa não é falta de grant na fixture local, como se supôs antes de consultar o
-banco. É o manifesto do primeiro release: `public.internal_screen_catalog` tem a
-coluna `release_enabled`, e `rpc_internal_actor_workspace_context` só devolve
-telas com `release_enabled = true`.
+Uma tela interna só aparece para o usuário quando **três camadas** independentes
+liberam, conforme `rpc_internal_actor_workspace_context` e
+`app_private.has_internal_capability`:
+
+1. **Release**: `public.internal_screen_catalog.release_enabled = true`.
+2. **Grant de tela**: `internal_role_screen_grants` para a role global do usuário,
+   ou `internal_area_membership_screen_grants` para a membership.
+3. **Capability**: `internal_role_capability_grants` para a role, grant de perfil
+   de acesso, ou override de usuário. A capability exigida é a de
+   `internal_screen_capability_requirements` quando existe, senão o padrão
+   derivado `screen.<screen_key>.view`.
+
+Verificado no banco local em 2026-08-05: `platform_admin` **tem** grant de tela
+para `tenants`, `system`, `customer_portal_admin` e as demais internas, mas as
+telas seguem invisíveis porque falham na camada 1 e, mesmo publicadas, na
+camada 3. Ou seja, ligar o flag de release não é suficiente.
 
 Estado do catálogo local em 2026-08-05:
 
@@ -89,9 +101,18 @@ Estado do catálogo local em 2026-08-05:
   `customers_b2b`, `home`, `internal_actions`, `product`, `support_inbox`,
   `support_queue`, `support_tickets`
 
-Ou seja, ligar essas telas em QA local exigiria publicá-las no release, que é
-decisão de produto e não ajuste de infraestrutura de teste. Conceder screen key
-por role não muda nada enquanto `release_enabled` for `false`.
+Existe ferramenta local para a camada 1:
+`npm run supabase:qa:local-release-preview -- --screens=<lista>` liga
+`release_enabled` somente no banco local, guarda o estado anterior em
+`output/local-qa/release-preview-backup.json` e restaura com
+`npm run supabase:qa:local-release-preview:disable`. Ela exige lista explícita de
+telas: ligar o catálogo inteiro de uma vez mudou a superfície navegável e fez o
+smoke autenticado falhar com 401 em `vw_admin_auth_context`.
+
+A ferramenta não destrava a camada 3 de propósito. Conceder capability é o
+controle mais sensível do control plane e não deve ser aberto para conveniência de
+teste. Enquanto a decisão de publicar essas telas não existir, a dívida de hooks
+nelas permanece congelada.
 
 ## Estado atual da dívida
 

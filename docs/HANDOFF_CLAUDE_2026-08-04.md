@@ -111,6 +111,8 @@ Correção importante da orientação anterior: o bloqueio de QA nas telas inter
 
 Também entregues em 2026-08-05: cenário profundo no smoke que abre o editor de artigo real, e token de recarga no bootstrap de `KnowledgePage.tsx`, com o lint em 183 avisos. Relatório: `docs/reports/2026-08-05_release-manifest-cenario-do-editor-e-token-de-recarga.md`.
 
-As próximas ações seguras são: decidir o merge em `main`; decidir produto sobre publicar as telas com `release_enabled = false`, que hoje bloqueiam 35 avisos de hooks e a cobertura visual dessas superfícies; criar cenário de escrita em Conhecimento no harness para destravar os dois avisos restantes de `KnowledgePage.tsx`; e seguir com `exhaustive-deps` nas telas publicadas.
+Decisão registrada sobre o release: as telas com `release_enabled = false` não serão publicadas para viabilizar QA. Em vez disso existe `npm run supabase:qa:local-release-preview`, que liga o flag somente no banco local, com backup e restauração, exigindo lista explícita de telas. Descoberta associada: autorização de tela interna tem três camadas em série, `release_enabled`, grant de tela e capability; o `platform_admin` da fixture já tem grant de tela, faltam release e capability. O script não concede capability por decisão explícita. Relatório: `docs/reports/2026-08-05_preview-de-release-local-e-tres-camadas-de-autorizacao.md`.
+
+As próximas ações seguras são: decidir o merge em `main`; criar o cenário de escrita em Conhecimento no harness, já autorizado, para destravar os dois avisos restantes de `KnowledgePage.tsx`; e seguir com `exhaustive-deps` nas telas publicadas, que somam 27 avisos e podem esconder dado velho em tela.
 
 Em qualquer caso, manter as instâncias locais acessíveis nas portas 4173 e 4174 e preservar o banco local existente.
