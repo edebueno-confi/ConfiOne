@@ -3515,3 +3515,22 @@ Relatório corrente: `docs/reports/2026-08-04_mvp-closure-status.md`.
   `sourceStatus` exigem leitura de fluxo.
 - Lint saiu de 183 para 181 avisos, mantendo 0 erros.
 - Relatório: `docs/reports/2026-08-05_qa-de-escrita-em-conhecimento-e-deps-estaveis.md`.
+
+## Atualização corrente — Regra de superfície do tema — 2026-08-05
+
+- Regra vigente: tema escuro é recurso do ambiente autenticado. Central Pública,
+  login e telas anônimas são sempre claras, inclusive para usuário autenticado.
+  Superfícies públicas: `/`, `/login`, `/help*`, `/access-denied`.
+- Defeito corrigido: o script anti-flash de `index.html` aplicava a preferência
+  salva em qualquer rota, então a Central Pública abria escura para quem tinha
+  preferência escura. Também foi corrigido `setPreference` em `theme-context.tsx`,
+  que aplicava o tema ignorando o parâmetro `enabled`.
+- Fonte única da regra: `isPublicSurfacePath` em `apps/web/src/lib/theme.ts`,
+  consumida por `AuthBootstrap` e replicada no script anti-flash, que roda antes
+  do bundle.
+- Evidência manual: com `genius.theme-preference = dark`, `/login` resolveu
+  `data-theme=light`; `/help/genius/articles` passou de escuro para claro.
+- Regressão automatizada: cenário `theme-surface` no smoke, dentro da sessão
+  autenticada, exige `dark` em `/admin/analytics` e `light` em `/help/genius`, com
+  erros dedicados para cada violação.
+- Relatório: `docs/reports/2026-08-05_regra-de-superficie-do-tema.md`.
