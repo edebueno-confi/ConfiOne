@@ -89,7 +89,21 @@ const accounts = [
     // `/admin/customer-portal` fica fora porque exige a screen key
     // `customer_portal_admin`, que a fixture local de QA não concede; nesse
     // estado a rota responde `/access-denied` por contrato, não por defeito.
-    extraRoutes: ['/admin/knowledge', '/admin/access'],
+    extraRoutes: ['/admin/knowledge', '/admin/access', '/admin/settings'],
+    // Sondagem sem asserção: registra qual superfície interna a fixture alcança
+    // hoje. Em 2026-08-05 estas responderam `/access-denied` por falta de screen
+    // key na fixture local, o que é contrato funcionando e não defeito. Mantidas
+    // aqui como inventário vivo: quando uma delas passar a abrir, promova para
+    // `extraRoutes`.
+    probeRoutes: [
+      '/admin/visao-geral',
+      '/admin/tenants',
+      '/admin/system',
+      '/admin/internal-areas',
+      '/admin/product-docs',
+      '/admin/build-journal',
+      '/admin/customer-portal',
+    ],
   },
   { role: 'dashboard_viewer', email: qa.LOCAL_QA_DASHBOARD_VIEWER_EMAIL, password: qa.LOCAL_QA_DASHBOARD_VIEWER_PASSWORD, desktop: '/admin/analytics', mobile: '/admin/analytics' },
   { role: 'support_manager', email: qa.LOCAL_QA_SUPPORT_MANAGER_EMAIL, password: qa.LOCAL_QA_SUPPORT_MANAGER_PASSWORD, desktop: '/support/queue', mobile: '/support/queue', expectedDesktop: '/access-denied', expectedMobile: '/access-denied' },
@@ -108,6 +122,7 @@ const server = startWebServer();
 const results = [];
 const screenshots = [];
 const extraRouteResults = [];
+const probeResults = [];
 let browser;
 try {
   await waitForWebServer();
@@ -171,6 +186,7 @@ try {
           extraRouteResults.push({ role: account.role, route: extraRoute, reachedPath });
         }
       }
+
       if (account.role === 'dashboard_viewer') {
         await page.goto(`${baseUrl}/admin/settings`, { waitUntil: 'domcontentloaded' });
         const deniedPath = await waitForPathChange(page, '/admin/settings', 20_000);
@@ -196,6 +212,22 @@ try {
       }
       if (events.administrativeRequests.length) throw new Error(`LOCAL_QA_VIEWER_ADMIN_REQUEST: ${events.administrativeRequests.join(', ')}`);
       results.push({ role: account.role, viewport: viewport.name, path: expectedPath, consoleErrors: events.consoleErrors.length, pageErrors: events.pageErrors.length, requestFailures: events.requestFailures.length, requestFailureDetails: events.requestFailures, unexpectedResponses: events.unexpectedResponses.length, unexpectedResponseDetails: events.unexpectedResponses, expectedForbidden: events.expectedForbidden, administrativeRequests: events.administrativeRequests.length });
+      // A sondagem roda por último, depois do veredito do persona, porque visita
+      // rotas sem screen key de propósito. Nesse caminho o app tenta ler o read
+      // model de contexto administrativo e recebe 401, o que é esperado para
+      // usuário sem grant e não deve contaminar a asserção do cenário coberto.
+      if (viewport.name === 'desktop' && account.probeRoutes?.length) {
+        for (const probeRoute of account.probeRoutes) {
+          await page.goto(`${baseUrl}${probeRoute}`, { waitUntil: 'domcontentloaded' });
+          await page.waitForLoadState('networkidle', { timeout: 8_000 }).catch(() => {});
+          await page.waitForTimeout(400);
+          probeResults.push({
+            role: account.role,
+            route: probeRoute,
+            reachedPath: new URL(page.url()).pathname,
+          });
+        }
+      }
       await context.close();
     }
   }
@@ -206,4 +238,4 @@ try {
 
 const failures = results.filter((item) => item.consoleErrors || item.pageErrors || item.requestFailures || item.unexpectedResponses);
 if (failures.length) throw new Error(`LOCAL_QA_BROWSER_SMOKE_FAILED: ${JSON.stringify(failures)}`);
-console.log(JSON.stringify({ environment: 'local', framework: 'playwright', server_started_automatically: true, healthcheck: true, personas: results, internalRoutes: extraRouteResults, screenshots }));
+console.log(JSON.stringify({ environment: 'local', framework: 'playwright', server_started_automatically: true, healthcheck: true, personas: results, internalRoutes: extraRouteResults, probedRoutes: probeResults, screenshots }));
