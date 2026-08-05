@@ -1,5 +1,6 @@
 import {
   type FormEvent,
+  useCallback,
   useEffect,
   useEffectEvent,
   useRef,
@@ -586,6 +587,10 @@ export function KnowledgePage() {
   const navigate = useNavigate();
   const { markSessionExpired } = useAuthContext();
   const didBootstrapRef = useRef(false);
+  const [spacesReloadToken, setSpacesReloadToken] = useState(0);
+  const requestSpacesReload = useCallback(() => {
+    setSpacesReloadToken((current) => current + 1);
+  }, []);
   const [backendDenied, setBackendDenied] = useState(false);
   const [pagePhase, setPagePhase] = useState<PagePhase>('loading');
   const [pageMessage, setPageMessage] = useState<string | null>(null);
@@ -1161,14 +1166,18 @@ export function KnowledgePage() {
     }
   });
 
+  // Token de recarga do Caso 3 de `docs/FRONTEND_DATA_LOADING_PATTERNS.md`.
+  // `loadKnowledgeSpaces` lê seleção e filtros atuais, então segue como Effect
+  // Event; a UI apenas sinaliza a intenção de recarregar e o Effect continua
+  // sendo o único chamador.
   useEffect(() => {
-    if (didBootstrapRef.current) {
+    if (spacesReloadToken === 0 && didBootstrapRef.current) {
       return;
     }
 
     didBootstrapRef.current = true;
     void loadKnowledgeSpaces();
-  }, []);
+  }, [spacesReloadToken]);
 
   useEffect(() => {
     setPanelMode('detail');
@@ -2163,7 +2172,7 @@ export function KnowledgePage() {
             pageMessage ??
             'Não foi possível carregar as centrais editoriais neste ambiente.'
           }
-        action={<AppButton onClick={() => void loadKnowledgeSpaces()}>Tentar novamente</AppButton>}
+        action={<AppButton onClick={requestSpacesReload}>Tentar novamente</AppButton>}
       />
     );
   }
