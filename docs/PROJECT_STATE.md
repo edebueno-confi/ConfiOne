@@ -3493,3 +3493,25 @@ Relatório corrente: `docs/reports/2026-08-04_mvp-closure-status.md`.
   `docs/FRONTEND_DATA_LOADING_PATTERNS.md`.
 - O banco local terminou o lote no estado original, conferido por `--status`.
 - Relatório: `docs/reports/2026-08-05_preview-de-release-local-e-tres-camadas-de-autorizacao.md`.
+
+## Atualização corrente — QA de escrita em Conhecimento e dependências estáveis — 2026-08-05
+
+- O smoke passou a executar escrita real em Conhecimento: grava marcador
+  sanitizado no título do artigo pelo editor, salva, confirma persistência após
+  recarregar, restaura o valor original e falha explicitamente se a persistência
+  ou a restauração não acontecer. Execução real com `persisted: true` e
+  `restored: true`.
+- A cobertura de escrita é do editor de artigo. Categoria, revisão editorial e os
+  handlers de recarga da listagem seguem sem cobertura, então os dois avisos de
+  `rules-of-hooks` de `KnowledgePage.tsx` continuam congelados pelo mesmo critério
+  já documentado.
+- `exhaustive-deps` medido: 9 dos 27 avisos estão em telas publicadas. Dois foram
+  corrigidos com referência estável, sem `eslint-disable`:
+  `AnalyticsCsPage.tsx` memoiza `period` sobre `sharedPeriod`, e
+  `SettingsPage.tsx` memoiza `settingsPermissions` sobre o contexto de auth.
+  Ambas as telas são cobertas pelo smoke.
+- Restam 7 avisos de `exhaustive-deps` em telas publicadas, listados no relatório.
+  Três seguem o mesmo padrão de `period` já validado; `load`, `grantedKeys` e
+  `sourceStatus` exigem leitura de fluxo.
+- Lint saiu de 183 para 181 avisos, mantendo 0 erros.
+- Relatório: `docs/reports/2026-08-05_qa-de-escrita-em-conhecimento-e-deps-estaveis.md`.

@@ -7168,3 +7168,23 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
   Conhecimento continua pendente; nenhuma migration, contrato, view ou RPC
   alterado.
 - Impacto futuro na FAQ: nenhum.
+
+## QUALITY-QA-06 — QA de escrita em Conhecimento e dependências estáveis — 2026-08-05
+
+- Relatório: `docs/reports/2026-08-05_qa-de-escrita-em-conhecimento-e-deps-estaveis.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Entrega 1: cenário `knowledge-write` no smoke, autorizado pelo usuário. Escreve
+  marcador sanitizado no título pelo editor, valida persistência após reload e
+  restaura o valor original, com erros dedicados para falha de persistência e de
+  restauração.
+- Entrega 2: dependências estáveis em duas telas publicadas.
+  `AnalyticsCsPage.tsx` memoiza `period`; `SettingsPage.tsx` memoiza
+  `settingsPermissions` e remove a assinatura duplicada de screen keys. Nenhum
+  `eslint-disable` usado.
+- Efeito medido: lint de 183 para 181 avisos, sempre com 0 erros.
+- Evidência: smoke com 10 personas, 3 rotas internas, 2 cenários profundos e 7
+  sondadas; lint, typecheck, build e secret scan aprovados.
+- Limites: escrita coberta apenas no editor de artigo; 7 avisos de
+  `exhaustive-deps` seguem abertos em telas publicadas, listados no relatório;
+  nenhum backend, contrato, RPC, view ou permissão alterado.
+- Impacto futuro na FAQ: nenhum.

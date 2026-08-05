@@ -113,6 +113,8 @@ Também entregues em 2026-08-05: cenário profundo no smoke que abre o editor de
 
 Decisão registrada sobre o release: as telas com `release_enabled = false` não serão publicadas para viabilizar QA. Em vez disso existe `npm run supabase:qa:local-release-preview`, que liga o flag somente no banco local, com backup e restauração, exigindo lista explícita de telas. Descoberta associada: autorização de tela interna tem três camadas em série, `release_enabled`, grant de tela e capability; o `platform_admin` da fixture já tem grant de tela, faltam release e capability. O script não concede capability por decisão explícita. Relatório: `docs/reports/2026-08-05_preview-de-release-local-e-tres-camadas-de-autorizacao.md`.
 
-As próximas ações seguras são: decidir o merge em `main`; criar o cenário de escrita em Conhecimento no harness, já autorizado, para destravar os dois avisos restantes de `KnowledgePage.tsx`; e seguir com `exhaustive-deps` nas telas publicadas, que somam 27 avisos e podem esconder dado velho em tela.
+O cenário de escrita em Conhecimento já está no smoke: grava marcador sanitizado no título pelo editor, confirma persistência após reload e restaura o valor original. Também foram corrigidos dois `exhaustive-deps` em telas publicadas com referência estável, deixando o lint em 181 avisos. Relatório: `docs/reports/2026-08-05_qa-de-escrita-em-conhecimento-e-deps-estaveis.md`.
+
+As próximas ações seguras são: decidir o merge em `main`; replicar o padrão de `period` memoizado em `AnalyticsCeoPage`, `AnalyticsCommercialPage` e `AnalyticsFinancePage`; tratar `load`, `grantedKeys` e `sourceStatus` com leitura de fluxo; e estender o cenário de escrita para categoria e revisão editorial, que é o que destrava os dois avisos de hooks de `KnowledgePage.tsx`.
 
 Em qualquer caso, manter as instâncias locais acessíveis nas portas 4173 e 4174 e preservar o banco local existente.
