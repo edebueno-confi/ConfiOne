@@ -7127,3 +7127,22 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - Limites: nenhum backend, banco, contrato, permissão ou dado alterado; sondagem
   cobre apenas a persona `platform_admin`.
 - Impacto futuro na FAQ: nenhum.
+
+## QUALITY-QA-04 — Manifesto de release, cenário do editor e token de recarga — 2026-08-05
+
+- Relatório: `docs/reports/2026-08-05_release-manifest-cenario-do-editor-e-token-de-recarga.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Entrega 1: causa do bloqueio de QA interno confirmada por consulta somente
+  leitura ao `internal_screen_catalog`. É `release_enabled = false`, não falta de
+  grant. Correção propagada para handoff, `FRONTEND_DATA_LOADING_PATTERNS` e
+  comentários do harness.
+- Entrega 2: cenário profundo `knowledgeEditorScenario` no smoke, cobrindo a
+  montagem do editor de artigo real com dado do banco local.
+- Entrega 3: token de recarga no bootstrap de `KnowledgePage.tsx`, primeiro uso do
+  Caso 3 do padrão canônico, com o botão de nova tentativa apenas sinalizando.
+- Efeito medido: lint de 184 para 183 avisos, sempre com 0 erros.
+- Evidência: lint, typecheck, build, secret scan, quality gate e smoke com 10
+  personas, 3 rotas internas, 1 cenário profundo e 7 rotas sondadas.
+- Limites: cobertura de escrita em Conhecimento continua inexistente; 37 avisos de
+  hooks seguem congelados, 35 deles por decisão de release.
+- Impacto futuro na FAQ: nenhum.

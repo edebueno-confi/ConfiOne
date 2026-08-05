@@ -107,6 +107,10 @@ O harness de smoke já foi estendido para `/admin/knowledge` e `/admin/access`, 
 
 Em 2026-08-05 o harness passou a inventariar as superfícies internas e revelou que a fixture local alcança apenas `/admin/analytics`, `/admin/knowledge`, `/admin/access` e `/admin/settings`; as outras sete respondem `/access-denied` por falta de screen key. `AccessPage.tsx` ficou sem `rules-of-hooks` e o lint está em 184 avisos. O padrão canônico de carregadores está em `docs/FRONTEND_DATA_LOADING_PATTERNS.md`, com a decisão de congelar os 38 avisos restantes de hooks, 35 deles em telas sem QA local possível. Relatório: `docs/reports/2026-08-05_mapa-de-superficies-hooks-access-e-padrao-de-carregamento.md`.
 
-As próximas ações seguras são: decidir o merge em `main`; decidir se a fixture local passa a conceder as screen keys que faltam, porque sem isso sete superfícies internas seguem sem QA; aplicar o token de recarga do Caso 3 em `KnowledgePage.tsx`, o único caso publicado da lista; e decidir produto sobre os filtros meio ligados de Conhecimento e a superfície legada do editor.
+Correção importante da orientação anterior: o bloqueio de QA nas telas internas não é falta de grant na fixture. É `release_enabled = false` em `public.internal_screen_catalog`, e `rpc_internal_actor_workspace_context` só devolve tela publicada. Hoje só `analytics`, `knowledge`, `access` e `settings` estão com `release_enabled = true`. Destravar QA das outras é decisão de produto sobre o escopo do release.
+
+Também entregues em 2026-08-05: cenário profundo no smoke que abre o editor de artigo real, e token de recarga no bootstrap de `KnowledgePage.tsx`, com o lint em 183 avisos. Relatório: `docs/reports/2026-08-05_release-manifest-cenario-do-editor-e-token-de-recarga.md`.
+
+As próximas ações seguras são: decidir o merge em `main`; decidir produto sobre publicar as telas com `release_enabled = false`, que hoje bloqueiam 35 avisos de hooks e a cobertura visual dessas superfícies; criar cenário de escrita em Conhecimento no harness para destravar os dois avisos restantes de `KnowledgePage.tsx`; e seguir com `exhaustive-deps` nas telas publicadas.
 
 Em qualquer caso, manter as instâncias locais acessíveis nas portas 4173 e 4174 e preservar o banco local existente.

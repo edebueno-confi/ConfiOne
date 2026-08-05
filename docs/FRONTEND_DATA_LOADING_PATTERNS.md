@@ -74,9 +74,28 @@ useEffect(() => {
 Para recarregar depois de uma escrita bem-sucedida, o handler de submit também
 chama `requestReload()` em vez de chamar o carregador diretamente.
 
+## Por que a maior parte da dívida está bloqueada
+
+A causa não é falta de grant na fixture local, como se supôs antes de consultar o
+banco. É o manifesto do primeiro release: `public.internal_screen_catalog` tem a
+coluna `release_enabled`, e `rpc_internal_actor_workspace_context` só devolve
+telas com `release_enabled = true`.
+
+Estado do catálogo local em 2026-08-05:
+
+- `release_enabled = true`: `analytics`, `knowledge`, `access`, `settings`
+- `release_enabled = false`: `admin_overview`, `tenants`, `system`,
+  `internal_areas`, `product_docs`, `customer_portal_admin`, `cs_portfolio`,
+  `customers_b2b`, `home`, `internal_actions`, `product`, `support_inbox`,
+  `support_queue`, `support_tickets`
+
+Ou seja, ligar essas telas em QA local exigiria publicá-las no release, que é
+decisão de produto e não ajuste de infraestrutura de teste. Conceder screen key
+por role não muda nada enquanto `release_enabled` for `false`.
+
 ## Estado atual da dívida
 
-Em 2026-08-05 restam 38 avisos de `rules-of-hooks`, todos do Caso 3, concentrados
+Em 2026-08-05 restam 37 avisos de `rules-of-hooks`, todos do Caso 3, concentrados
 em telas que hoje estão fora da superfície publicada do primeiro release:
 
 | Arquivo | Avisos | Situação da superfície |
@@ -85,13 +104,17 @@ em telas que hoje estão fora da superfície publicada do primeiro release:
 | `features/tenants/TenantsPage.tsx` | 15 | `/admin/tenants` responde `/access-denied` |
 | `features/system/SystemPage.tsx` | 3 | `/admin/system` responde `/access-denied` |
 | `features/admin/CustomerPortalAdminPage.tsx` | 2 | `/admin/customer-portal` responde `/access-denied` |
-| `features/knowledge/KnowledgePage.tsx` | 3 | publicada, mas os carregadores dependem de filtros e seleção |
+| `features/knowledge/KnowledgePage.tsx` | 2 | publicada; o token de recarga já cobre o bootstrap, faltam os dois pontos que recarregam depois de escrita |
 
 Decisão registrada: esses casos ficam congelados até haver caminho de verificação
 real. Refatorar fluxo de recarga sem QA de escrita na tela afetada troca dívida de
-lint por risco de comportamento, o que é pior. `KnowledgePage.tsx` é o único
-publicado da lista e deve ser o primeiro a receber o token de recarga, com QA
-autenticado da tela antes e depois.
+lint por risco de comportamento, o que é pior.
+
+Em `KnowledgePage.tsx` o token de recarga já foi aplicado ao bootstrap das
+centrais, que é verificável pelo smoke. Os dois avisos restantes estão em
+`refreshSelectedSpace` e `refreshArticleDetail`, chamados por handlers de escrita
+de artigo, categoria e revisão editorial. Eles só devem ser convertidos quando
+existir QA de escrita para Conhecimento, porque é exatamente o caminho que muda.
 
 ## Como verificar antes de fechar o lote
 

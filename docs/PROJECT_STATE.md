@@ -3444,3 +3444,27 @@ Relatório corrente: `docs/reports/2026-08-04_mvp-closure-status.md`.
   restantes de hooks, sendo 35 em telas que hoje respondem `/access-denied` para
   as personas da fixture e por isso não têm caminho de verificação.
 - Relatório: `docs/reports/2026-08-05_mapa-de-superficies-hooks-access-e-padrao-de-carregamento.md`.
+
+## Atualização corrente — Manifesto de release, cenário do editor e token de recarga — 2026-08-05
+
+- Causa confirmada do bloqueio de QA nas telas internas: `release_enabled` em
+  `public.internal_screen_catalog`. `rpc_internal_actor_workspace_context` só
+  devolve tela publicada. Hoje `release_enabled = true` apenas para `analytics`,
+  `knowledge`, `access` e `settings`. Conceder screen key por role não muda nada
+  enquanto a tela estiver fora do release, portanto destravar QA dessas telas é
+  decisão de produto, não ajuste de fixture. A recomendação anterior, que falava
+  em conceder grants, foi corrigida.
+- O smoke ganhou cenário profundo de Conhecimento: abre a listagem, clica em
+  `Editar` e confirma que o editor de artigo real monta sem erro de console, com
+  captura `browser-platform_admin-knowledge-editor-desktop.png`. Isso passa a
+  cobrir `KnowledgeArticleEditorPage.tsx`, que tem cerca de 5.100 linhas e antes
+  só tinha typecheck e build.
+- Primeiro uso do Caso 3 do padrão canônico: `KnowledgePage.tsx` recebeu token de
+  recarga no bootstrap das centrais. `loadKnowledgeSpaces` segue como Effect Event
+  e o botão de nova tentativa apenas sinaliza a recarga.
+- Lint saiu de 184 para 183 avisos, mantendo 0 erros. Restam 37 avisos de hooks,
+  sendo 35 em telas com `release_enabled = false` e 2 em `KnowledgePage.tsx`, que
+  dependem de QA de escrita.
+- Nenhuma linha de catálogo, grant ou membership foi alterada. A consulta ao banco
+  local foi somente leitura.
+- Relatório: `docs/reports/2026-08-05_release-manifest-cenario-do-editor-e-token-de-recarga.md`.
