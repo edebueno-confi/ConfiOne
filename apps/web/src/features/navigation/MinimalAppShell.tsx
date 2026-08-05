@@ -5,6 +5,7 @@ import { GeniusLamp } from '../../components/GeniusLamp';
 import { Avatar } from '../../components/Avatar';
 import { ThemeToggle } from '../../components/ThemeToggle';
 import { useAuthContext } from '../auth/auth-context';
+import { SettingsNavIcon } from '../settings/settings-nav-icons';
 import { GeniusGlobalSearch } from './GeniusGlobalSearch';
 import {
   buildMinimalNavigation,
@@ -103,7 +104,9 @@ function ShellNavigation({
               const linkContent = (
                 <>
                   <span className="inline-flex h-5 w-5 items-center justify-center">
-                    <NavigationGlyph icon={item.icon} />
+                    {/* Subitens de Configurações reaproveitam os ícones lineares
+                        já desenhados para as seções da tela. */}
+                    {item.settingsSection ? <SettingsNavIcon section={item.settingsSection} /> : <NavigationGlyph icon={item.icon} />}
                   </span>
                   {!collapsed ? <span className="truncate">{item.label}</span> : null}
                 </>

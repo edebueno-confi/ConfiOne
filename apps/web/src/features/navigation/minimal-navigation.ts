@@ -1,6 +1,7 @@
 import type { InternalScreenKey, PlatformRole } from '../../contracts/admin-contracts';
 import {
   PUBLIC_HELP_CENTER_HREF,
+  canOpenSettingsSection,
   getReleaseSurfaceMode,
   isScreenPublishedInRelease,
 } from '../../app/release-surface.mjs';
@@ -21,6 +22,11 @@ export interface MinimalNavigationItem {
   label: string;
   to: string;
   icon: MinimalNavigationIcon;
+  /**
+   * Seção de Configurações representada pelo item. Quando presente, o shell
+   * desenha o ícone linear da seção em vez do glifo genérico da sidebar.
+   */
+  settingsSection?: string;
   matches: (pathname: string) => boolean;
   /** Opens outside the authenticated shell, in a new tab. */
   external?: boolean;
@@ -35,6 +41,31 @@ export interface MinimalNavigationSection {
 function matchesBase(pathname: string, basePath: string) {
   return pathname === basePath || pathname.startsWith(`${basePath}/`);
 }
+
+/**
+ * Submenu de Configurações na sidebar global.
+ *
+ * As seções reais da tela de Configurações — as mesmas rotas que o roteador já
+ * publica — passam a ser itens da sidebar. Antes a tela repetia esta navegação
+ * numa segunda coluna interna, duplicando o nível de navegação e roubando
+ * largura do conteúdo.
+ *
+ * Cada entrada continua sujeita à mesma decisão do release usada pela tela
+ * (`canOpenSettingsSection`): publicação no release primeiro, permissão do
+ * perfil depois. Nada é declarado aqui que a tela não saiba renderizar.
+ */
+const RELEASE_SETTINGS_SUBMENU: ReadonlyArray<{
+  id: string;
+  sectionId: string;
+  label: string;
+  to: string;
+}> = [
+  { id: 'admin-settings-integrations', sectionId: 'integracoes', label: 'Integrações', to: '/admin/settings/integrations' },
+  { id: 'admin-settings-dashboard-sources', sectionId: 'dashboard-fontes', label: 'Fontes do Dashboard', to: '/admin/settings/dashboard-sources' },
+  { id: 'admin-settings-sync-history', sectionId: 'dashboard-historico', label: 'Histórico de sincronizações', to: '/admin/settings/sync-history' },
+  { id: 'admin-settings-brands', sectionId: 'marcas', label: 'Marcas', to: '/admin/settings/brands' },
+  { id: 'admin-settings-help-center', sectionId: 'central-ajuda', label: 'Central de ajuda', to: '/admin/settings/help-center' },
+];
 
 /**
  * Sidebar for the published release surface.
@@ -103,35 +134,40 @@ function buildReleaseNavigation({
     });
   }
 
-  if (allows('settings')) {
-    sections.push({
-      id: 'administration',
-      label: 'Configurações',
-      items: [
-        {
-          id: 'admin-settings',
-          label: 'Configurações',
-          to: '/admin/settings',
-          icon: 'settings',
-          matches: (path) => matchesBase(path, '/admin/settings'),
-        },
-      ],
+  // Um único nível de navegação para Configurações: o cabeçalho da seção
+  // expande/recolhe e cada subitem navega direto para a rota da seção.
+  const administration: MinimalNavigationItem[] = [];
+
+  if (allows('access')) {
+    administration.push({
+      id: 'admin-access',
+      label: 'Usuários e acesso',
+      to: '/admin/access',
+      icon: 'shield',
+      settingsSection: 'access',
+      matches: (path) => matchesBase(path, '/admin/access') || matchesBase(path, '/admin/internal-areas'),
     });
   }
 
-  if (allows('access') && !allows('settings')) {
+  if (allows('settings')) {
+    for (const entry of RELEASE_SETTINGS_SUBMENU) {
+      if (!canOpenSettingsSection(entry.sectionId, { isPlatformAdmin, screenKeys })) continue;
+      administration.push({
+        id: entry.id,
+        label: entry.label,
+        to: entry.to,
+        icon: 'settings',
+        settingsSection: entry.sectionId,
+        matches: (path) => path === entry.to,
+      });
+    }
+  }
+
+  if (administration.length > 0) {
     sections.push({
       id: 'administration',
-      label: 'Administração',
-      items: [
-        {
-          id: 'admin-access',
-          label: 'Usuários e acessos',
-          to: '/admin/access',
-          icon: 'shield',
-          matches: (path) => matchesBase(path, '/admin/access') || matchesBase(path, '/admin/internal-areas'),
-        },
-      ],
+      label: allows('settings') ? 'Configurações' : 'Administração',
+      items: administration,
     });
   }
 

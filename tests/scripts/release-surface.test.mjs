@@ -33,6 +33,8 @@ const PUBLISHED_ROUTES = [
   '/admin/knowledge/new',
   '/admin/knowledge/1f0d9b6e-0000-4000-8000-000000000000/edit',
   '/admin/settings',
+  // `/admin/access` passou a ser publicada no manifesto (tela `access`).
+  '/admin/access',
 ];
 
 const HIDDEN_ROUTES = [
@@ -54,7 +56,8 @@ const HIDDEN_ROUTES = [
   '/internal-actions',
   '/internal-actions/abc',
   '/admin/tenants',
-  '/admin/access',
+  // `/admin/access` saiu daqui: passou a ser rota publicada no manifesto.
+  // `/admin/internal-areas` continua oculta — nao e prefixo de nenhuma rota publicada.
   '/admin/internal-areas',
   '/admin/system',
   '/admin/customer-portal',
@@ -112,12 +115,15 @@ test('manifest has no internal inconsistency', () => {
   assert.deepEqual(findReleaseSurfaceInconsistencies(), []);
 });
 
-test('publishes exactly the three approved screens', () => {
-  assert.deepEqual([...listPublishedScreenKeys()], ['analytics', 'knowledge', 'settings']);
-  for (const key of ['analytics', 'knowledge', 'settings']) {
+// A tela `access` passou a integrar o release: usuarios, convites e permissoes
+// sao necessarios para operar as demais telas publicadas.
+test('publishes exactly the four approved screens', () => {
+  assert.deepEqual([...listPublishedScreenKeys()], ['analytics', 'knowledge', 'settings', 'access']);
+  for (const key of ['analytics', 'knowledge', 'settings', 'access']) {
     assert.equal(isScreenPublishedInRelease(key), true, key);
   }
-  for (const key of ['tenants', 'access', 'system', 'support_queue', 'cs_portfolio', 'product_docs']) {
+  // `access` saiu desta lista de negados junto com a publicacao da tela.
+  for (const key of ['tenants', 'system', 'support_queue', 'cs_portfolio', 'product_docs']) {
     assert.equal(isScreenPublishedInRelease(key), false, key);
   }
 });
@@ -125,7 +131,8 @@ test('publishes exactly the three approved screens', () => {
 test('publishes exactly the approved internal routes', () => {
   assert.deepEqual(
     listReleaseRoutes().map((route) => route.path),
-    ['/admin/analytics', '/admin/knowledge', '/admin/settings'],
+    // `/admin/access` acompanha a publicacao da tela `access`.
+    ['/admin/analytics', '/admin/knowledge', '/admin/settings', '/admin/access'],
   );
 });
 
@@ -134,6 +141,8 @@ test('every published route resolves to its screen key', () => {
   assert.equal(resolveReleaseRouteScreenKey('/admin/knowledge/new'), 'knowledge');
   assert.equal(resolveReleaseRouteScreenKey('/admin/knowledge/abc/edit'), 'knowledge');
   assert.equal(resolveReleaseRouteScreenKey('/admin/settings'), 'settings');
+  // Rota publicada nova: precisa resolver para a propria tela `access`.
+  assert.equal(resolveReleaseRouteScreenKey('/admin/access'), 'access');
   assert.equal(resolveReleaseRouteScreenKey('/admin/tenants'), null);
 });
 
@@ -237,7 +246,9 @@ test('dashboard_viewer reaches the dashboard', () => {
 
 test('dashboard_viewer stays blocked on authoring and configuration', () => {
   const context = dashboardViewerContext();
-  for (const route of ['/admin/knowledge', '/admin/knowledge/new', '/admin/settings']) {
+  // `/admin/access` migrou de HIDDEN_ROUTES para ca: agora e publicada, e a
+  // negacao para este perfil passa a ser garantida pela permissao de tela.
+  for (const route of ['/admin/knowledge', '/admin/knowledge/new', '/admin/settings', '/admin/access']) {
     assert.equal(canOpenInternalRoute(route, context), false, route);
   }
 });
@@ -271,12 +282,19 @@ test('platform_admin sidebar shows only the released surfaces', () => {
   });
 
   assert.deepEqual(navigation.map((section) => section.id), ['intelligence', 'knowledge', 'administration']);
+  // O item generico `admin-settings` deu lugar ao submenu real de Configuracoes
+  // na sidebar global; a segunda coluna de navegacao dentro da tela foi removida.
   assert.deepEqual(itemIds(navigation), [
     'admin-analytics',
     'admin-knowledge',
     'admin-knowledge-new',
     'public-help-center',
-    'admin-settings',
+    'admin-access',
+    'admin-settings-integrations',
+    'admin-settings-dashboard-sources',
+    'admin-settings-sync-history',
+    'admin-settings-brands',
+    'admin-settings-help-center',
   ]);
 });
 
@@ -288,10 +306,14 @@ test('sidebar never exposes a hidden module', () => {
   });
   const targets = navigation.flatMap((section) => section.items.map((item) => item.to));
 
+  // A invariante permanece: toda rota exibida na sidebar precisa estar
+  // publicada no release. Agora ela cobre tambem os subitens de Configuracoes.
   for (const target of targets) {
     assert.equal(isRoutePublishedInRelease(target), true, target);
   }
-  for (const forbidden of ['/inicio', '/support/queue', '/admin/tenants', '/admin/access', '/admin/system', '/cs/portfolio']) {
+  // `/admin/access` saiu da lista de proibidos porque passou a ser publicada e
+  // e o unico ponto de entrada da tela de usuarios. As demais seguem ocultas.
+  for (const forbidden of ['/inicio', '/support/queue', '/admin/tenants', '/admin/internal-areas', '/admin/system', '/cs/portfolio']) {
     assert.equal(targets.includes(forbidden), false, forbidden);
   }
 });

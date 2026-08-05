@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation } from 'react-router';
 import { cx } from '../../components/ui';
 import {
   archiveConversationType,
@@ -50,7 +50,6 @@ type LoadState<T> = { phase: 'idle' | 'loading' } | { phase: 'ready'; items: T[]
 import { canOpenSettingsSection } from '../../app/release-surface.mjs';
 import { DashboardSourcesSettingsPage } from './DashboardSourcesSettingsPage';
 import { SettingsIntegrationsPanel } from './SettingsIntegrationsPanel';
-import { SettingsNavIcon } from './settings-nav-icons';
 import '../analytics/high-density.css';
 import './settings-shell.css';
 import { SyncHistorySettingsPage } from './SyncHistorySettingsPage';
@@ -88,26 +87,6 @@ const GROUPS: SettingsGroup[] = [
   { id: 'dashboard-fontes', label: 'Fontes do Dashboard', description: 'Pipelines e fontes que alimentam o Dashboard Gerencial.', controls: ['Pipelines HubSpot', 'Fonte OMIE API'], usadoEm: 'Dashboard Gerencial', status: 'ativo', nota: 'Pipelines e escopos operacionais permanecem separados da credencial da integração.' },
   { id: 'dashboard-historico', label: 'Histórico de sincronizações', description: 'Execuções, resultados e erros das integrações gerenciais.', controls: ['Execuções', 'Status', 'Erros'], usadoEm: 'Dashboard Gerencial', status: 'ativo', nota: 'O histórico fica separado das configurações e das ações de atualização.' },
 ];
-
-const SETTINGS_NAV_ORDER = [
-  'integracoes',
-  'dashboard-fontes',
-  'dashboard-historico',
-  'marcas',
-  'central-ajuda',
-  'tipos-conversa',
-  'categorias',
-  'prioridades',
-  'respostas-rapidas',
-  'status-fluxos',
-  'slas',
-  'canais',
-  'areas',
-  'papeis',
-  'segmentos',
-  'automacoes',
-];
-
 
 function ColorPill({ token, label }: { token: string | null; label: string }) {
   const map: Record<string, string> = {
@@ -842,7 +821,6 @@ function GroupDetail({
 export function SettingsPage() {
   const { gate } = useAuthContext();
   const location = useLocation();
-  const navigate = useNavigate();
   const isDashboardViewer = gate.actor?.roles.includes('dashboard_viewer') === true && gate.actor?.is_platform_admin !== true;
   // Ordem de validacao: superficie do release primeiro, permissao do perfil
   // depois. Configuracoes passa a exibir apenas o que o usuario pode operar.
@@ -855,7 +833,6 @@ export function SettingsPage() {
     }),
     [gate.actor?.is_platform_admin, gate.actor?.screen_keys],
   );
-  const canManageAccess = settingsPermissions.isPlatformAdmin || settingsPermissions.screenKeys.includes('access');
   const visibleGroups = useMemo(
     () => GROUPS.filter((group) => canOpenSettingsSection(group.id, settingsPermissions)),
     [settingsPermissions],
@@ -891,11 +868,6 @@ export function SettingsPage() {
     const next = isDashboardViewer ? 'integracoes' : sectionFromPathname(location.pathname);
     if (next && visibleGroups.some((group) => group.id === next) && selectedId !== next) setSelectedId(next);
   }, [isDashboardViewer, location.pathname, selectedId, visibleGroups]);
-
-  const selectGroup = (groupId: string) => {
-    setSelectedId(groupId);
-    navigate(SETTINGS_ROUTES[groupId] ?? '/admin/settings/integrations', { replace: true });
-  };
 
   const loadTypes = useCallback(async () => {
     setConversationTypes({ phase: 'loading' });
@@ -1197,51 +1169,11 @@ export function SettingsPage() {
 
   return (
     <div className="gso-settings-shell gso-visual-v1-settings-shell gso-high-density-ui flex h-full min-h-0 flex-col bg-[color:var(--minimal-surface)]">
-      <header className="gso-workspace-header shrink-0 border-b border-[color:var(--minimal-border)] px-5 py-4 sm:px-6">
-        <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">Configurações</h1>
-        <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">
-          {isDashboardViewer
-            ? 'Credenciais e fontes usadas pelo Dashboard Gerencial.'
-            : 'Gerencie integrações, fontes de dados e configurações do sistema.'}
-        </p>
-      </header>
-
-      <div className="gso-settings-cockpit-layout grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[220px_minmax(0,1fr)]">
-        <aside className="gso-settings-nav gso-settings-cockpit-nav min-h-0 bg-[color:var(--minimal-sidebar)]">
-          <nav aria-label="Seções de configurações" className="gso-settings-nav-groups">
-            {canManageAccess ? (
-              <button
-                aria-current={location.pathname.startsWith('/admin/access') ? 'page' : undefined}
-                className={cx('gso-settings-nav-item', location.pathname.startsWith('/admin/access') && 'is-active')}
-                onClick={() => navigate('/admin/access')}
-                type="button"
-              >
-                <SettingsNavIcon section="access" />
-                <span>Usuários e acesso</span>
-                {location.pathname.startsWith('/admin/access') ? <span aria-hidden="true" className="gso-settings-nav-marker" /> : null}
-              </button>
-            ) : null}
-            {SETTINGS_NAV_ORDER.map((id) => visibleGroups.find((group) => group.id === id)).filter((group): group is SettingsGroup => Boolean(group)).map((group) => {
-              const active = group.id === selectedId;
-              const nestedUnderDashboardSources = group.id === 'dashboard-historico';
-              return (
-                <button
-                  aria-current={active ? 'page' : undefined}
-                  className={cx('gso-settings-nav-item', nestedUnderDashboardSources && 'gso-settings-nav-item--nested', active && 'is-active')}
-                  key={group.id}
-                  onClick={() => selectGroup(group.id)}
-                  type="button"
-                >
-                  <SettingsNavIcon section={group.id} />
-                  <span>{group.label}</span>
-                  {active ? <span aria-hidden="true" className="gso-settings-nav-marker" /> : null}
-                </button>
-              );
-            })}
-          </nav>
-        </aside>
-
-        <main className="gso-settings-cockpit-main">
+      {/* A navegação das seções de Configurações vive na sidebar global. Aqui
+          resta apenas o conteúdo da seção pedida pela rota, em uma coluna
+          única, e cada seção responde pelo próprio cabeçalho. */}
+      <div className="gso-settings-cockpit-layout flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <main className="gso-settings-cockpit-main min-w-0 flex-1">
           <GroupDetail
           conversationTypes={conversationTypes}
           group={selected}
