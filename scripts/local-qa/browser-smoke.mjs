@@ -86,15 +86,15 @@ const accounts = [
     mobile: '/admin/analytics',
     // Superfícies internas cobertas apenas em desktop: o objetivo é detectar erro
     // de runtime, request falho e overflow horizontal em tela autenticada real.
-    // `/admin/customer-portal` fica fora porque exige a screen key
-    // `customer_portal_admin`, que a fixture local de QA não concede; nesse
-    // estado a rota responde `/access-denied` por contrato, não por defeito.
+    // Só entram aqui as telas com `release_enabled = true` no
+    // `internal_screen_catalog`. As demais respondem `/access-denied` porque
+    // estão fora do manifesto do primeiro release, o que é contrato funcionando
+    // e não falta de grant na fixture.
     extraRoutes: ['/admin/knowledge', '/admin/access', '/admin/settings'],
-    // Sondagem sem asserção: registra qual superfície interna a fixture alcança
-    // hoje. Em 2026-08-05 estas responderam `/access-denied` por falta de screen
-    // key na fixture local, o que é contrato funcionando e não defeito. Mantidas
-    // aqui como inventário vivo: quando uma delas passar a abrir, promova para
-    // `extraRoutes`.
+    knowledgeEditorScenario: true,
+    // Sondagem sem asserção: inventário vivo das telas com
+    // `release_enabled = false`. Elas respondem `/access-denied` por decisão de
+    // release. Quando uma for publicada, promova para `extraRoutes`.
     probeRoutes: [
       '/admin/visao-geral',
       '/admin/tenants',
@@ -123,6 +123,7 @@ const results = [];
 const screenshots = [];
 const extraRouteResults = [];
 const probeResults = [];
+const deepScenarios = [];
 let browser;
 try {
   await waitForWebServer();
@@ -212,6 +213,30 @@ try {
       }
       if (events.administrativeRequests.length) throw new Error(`LOCAL_QA_VIEWER_ADMIN_REQUEST: ${events.administrativeRequests.join(', ')}`);
       results.push({ role: account.role, viewport: viewport.name, path: expectedPath, consoleErrors: events.consoleErrors.length, pageErrors: events.pageErrors.length, requestFailures: events.requestFailures.length, requestFailureDetails: events.requestFailures, unexpectedResponses: events.unexpectedResponses.length, unexpectedResponseDetails: events.unexpectedResponses, expectedForbidden: events.expectedForbidden, administrativeRequests: events.administrativeRequests.length });
+      // Cenário profundo de Conhecimento: a listagem já é coberta por
+      // `extraRoutes`, aqui o objetivo é entrar no editor de artigo real, que é o
+      // arquivo mais pesado da superfície publicada, e verificar que ele monta
+      // sem erro de runtime com dado real.
+      if (viewport.name === 'desktop' && account.knowledgeEditorScenario) {
+        await page.goto(`${baseUrl}/admin/knowledge`, { waitUntil: 'domcontentloaded' });
+        await page.waitForLoadState('networkidle', { timeout: 8_000 }).catch(() => {});
+        const editButton = page.getByRole('button', { name: 'Editar' }).first();
+        await editButton.waitFor({ state: 'visible', timeout: 15_000 });
+        await editButton.click();
+        const editorPath = await waitForPathChange(page, '/admin/knowledge', 20_000);
+        if (!/^\/admin\/knowledge\/.+\/edit$/.test(editorPath)) {
+          throw new Error(`LOCAL_QA_KNOWLEDGE_EDITOR_ROUTE_FAILED: ${editorPath}`);
+        }
+        await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+        await page.waitForTimeout(700);
+        const editorOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+        if (editorOverflow) {
+          throw new Error('LOCAL_QA_HORIZONTAL_OVERFLOW: platform_admin knowledge-editor');
+        }
+        await page.screenshot({ path: join(logDir, 'browser-platform_admin-knowledge-editor-desktop.png'), fullPage: true });
+        screenshots.push('browser-platform_admin-knowledge-editor-desktop.png');
+        deepScenarios.push({ role: account.role, scenario: 'knowledge-editor', reachedPath: editorPath });
+      }
       // A sondagem roda por último, depois do veredito do persona, porque visita
       // rotas sem screen key de propósito. Nesse caminho o app tenta ler o read
       // model de contexto administrativo e recebe 401, o que é esperado para
@@ -238,4 +263,4 @@ try {
 
 const failures = results.filter((item) => item.consoleErrors || item.pageErrors || item.requestFailures || item.unexpectedResponses);
 if (failures.length) throw new Error(`LOCAL_QA_BROWSER_SMOKE_FAILED: ${JSON.stringify(failures)}`);
-console.log(JSON.stringify({ environment: 'local', framework: 'playwright', server_started_automatically: true, healthcheck: true, personas: results, internalRoutes: extraRouteResults, probedRoutes: probeResults, screenshots }));
+console.log(JSON.stringify({ environment: 'local', framework: 'playwright', server_started_automatically: true, healthcheck: true, personas: results, internalRoutes: extraRouteResults, deepScenarios, probedRoutes: probeResults, screenshots }));
