@@ -83,12 +83,15 @@
 /* -------------------------------------------------------------------------
    1. UiPage — o canvas da tela
    ------------------------------------------------------------------------- */
+/* Densidade: em FullHD a tela precisa caber com o mínimo de rolagem, então o
+   respiro entre blocos é curto e o padding do canvas é assimétrico (menos em
+   cima, porque o cabeçalho já traz folga própria). */
 .gso-ui-page {
   display: grid;
-  gap: 1.25rem;
+  gap: 1rem;
   align-content: start;
   min-width: 0;
-  padding: 1.5rem;
+  padding: 1.15rem 1.5rem 1.5rem;
   background: var(--ui-canvas);
 }
 
@@ -128,8 +131,10 @@
   line-height: 1.15;
 }
 .gso-ui-header-heading > p {
-  margin: 0.4rem 0 0;
-  max-width: 64ch;
+  margin: 0.35rem 0 0;
+  /* Largura folgada de propósito: em 1920 uma descrição de 64ch quebrava em duas
+     linhas sem necessidade e empurrava a tela inteira para baixo. */
+  max-width: 92ch;
   color: var(--ui-text-secondary);
   font-size: 0.88rem;
   line-height: 1.55;
@@ -155,16 +160,16 @@
    ------------------------------------------------------------------------- */
 .gso-ui-card {
   min-width: 0;
-  padding: 1.25rem;
+  padding: 1.1rem 1.25rem;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius-lg);
   background: var(--ui-surface);
   box-shadow: var(--ui-shadow);
 }
 .gso-ui-card--flush { padding: 0; overflow: hidden; }
-.gso-ui-card--flush > .gso-ui-card-header { padding: 1.25rem 1.25rem 1rem; }
-.gso-ui-card--flush > .gso-ui-card-foot { padding: 0.85rem 1.25rem 1.1rem; }
-.gso-ui-card--flush > .gso-ui-empty { margin: 0 1.25rem 1.25rem; }
+.gso-ui-card--flush > .gso-ui-card-header { padding: 1.1rem 1.25rem 0.9rem; }
+.gso-ui-card--flush > .gso-ui-card-foot { padding: 0.7rem 1.25rem 0.95rem; }
+.gso-ui-card--flush > .gso-ui-empty { margin: 0 1.25rem 1.1rem; }
 
 .gso-ui-card-header {
   display: grid;
@@ -197,7 +202,7 @@
   gap: 0.5rem;
   justify-content: flex-end;
 }
-.gso-ui-card-body { margin-top: 1.1rem; }
+.gso-ui-card-body { margin-top: 0.9rem; }
 
 @media (max-width: 760px) {
   .gso-ui-card-header,
@@ -237,18 +242,22 @@
   background: var(--ui-surface);
   box-shadow: var(--ui-shadow);
 }
+/* O ladrilho fica ao lado do valor, não acima dele: é o mesmo arranjo de
+   `.gso-ui-runlist` e `.gso-ui-feature` e economiza a altura de uma linha
+   inteira por célula, o que em FullHD é a diferença entre caber e rolar. */
 .gso-ui-metric {
   display: grid;
-  gap: 0.6rem;
-  align-content: start;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.85rem;
   min-width: 0;
-  padding: 1.15rem 1.25rem;
+  padding: 0.95rem 1.15rem;
 }
 .gso-ui-metric + .gso-ui-metric { border-left: 1px solid var(--ui-border); }
 .gso-ui-metric-value {
   display: block;
   color: var(--ui-text);
-  font-size: 2rem;
+  font-size: 1.7rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
@@ -258,7 +267,7 @@
 .gso-ui-metric--text .gso-ui-metric-value { font-size: 1.05rem; letter-spacing: -0.015em; line-height: 1.3; }
 .gso-ui-metric-label {
   display: block;
-  margin-top: 0.3rem;
+  margin-top: 0.2rem;
   color: var(--ui-text);
   font-size: 0.82rem;
   font-weight: 600;
@@ -411,7 +420,7 @@
   font-weight: 550;
 }
 .gso-ui-toggle input { width: 1.1rem; height: 1.1rem; accent-color: var(--ui-primary); }
-.gso-ui-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.1rem; }
+.gso-ui-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.9rem; }
 .gso-ui-note { margin: 0.85rem 0 0; color: var(--ui-text-secondary); font-size: 0.78rem; line-height: 1.55; }
 .gso-ui-alert { margin: 0.85rem 0 0; font-size: 0.8rem; font-weight: 600; line-height: 1.5; }
 .gso-ui-alert--error { color: var(--ui-danger-ink); }
@@ -430,7 +439,7 @@
   align-items: flex-end;
   gap: 0.75rem;
   min-width: 0;
-  padding: 1rem 1.1rem;
+  padding: 0.85rem 1.1rem;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius-lg);
   background: var(--ui-surface);
@@ -524,12 +533,15 @@
 /* -------------------------------------------------------------------------
    13. UiEmptyState
    ------------------------------------------------------------------------- */
+/* Estado vazio não é ilustração: ocupa a altura do que precisa dizer. Com 2rem
+   de padding o card de "Aguardando classificação" desperdiçava quase 300px em
+   branco em FullHD. */
 .gso-ui-empty {
   display: grid;
   justify-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   margin: 0;
-  padding: 2rem 1.25rem;
+  padding: 1.35rem 1.25rem;
   text-align: center;
 }
 .gso-ui-empty strong { color: var(--ui-text); font-size: 0.95rem; font-weight: 600; letter-spacing: -0.015em; }
@@ -583,7 +595,7 @@
   align-items: start;
   gap: 0.9rem;
   min-width: 0;
-  padding: 1.1rem 1.25rem;
+  padding: 0.9rem 1.15rem;
   border-radius: var(--ui-radius-lg);
   background: var(--ui-accent-soft);
   color: var(--ui-text);
@@ -783,7 +795,7 @@
 }
 
 /* Ciclos do Histórico: um card por execução, com as etapas dentro. */
-.gso-ui-historylist { display: grid; gap: 0.9rem; margin: 0; padding: 0; list-style: none; }
+.gso-ui-historylist { display: grid; gap: 0.7rem; margin: 0; padding: 0; list-style: none; }
 .gso-ui-historygroup {
   overflow: hidden;
   min-width: 0;
@@ -799,7 +811,7 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.9rem;
-  padding: 1.1rem 1.25rem;
+  padding: 0.85rem 1.15rem;
 }
 .gso-ui-historysummary > div { min-width: 0; }
 .gso-ui-historysummary h3 { margin: 0; color: var(--ui-text); font-size: 0.95rem; font-weight: 600; letter-spacing: -0.02em; }
@@ -809,7 +821,7 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.9rem;
   border-top: 1px solid var(--ui-border);
-  padding: 1.1rem 1.25rem;
+  padding: 0.9rem 1.15rem;
 }
 .gso-ui-historysource {
   min-width: 0;

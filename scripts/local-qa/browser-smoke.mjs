@@ -337,7 +337,7 @@ try {
             throw new Error(`LOCAL_QA_SETTINGS_INTEGRATIONS_MISSING_BLOCK: ${name}`);
           }
         }
-        const credentialFields = page.locator('.gso-int-card input[type="password"]');
+        const credentialFields = page.locator('.gso-ui-card input[type="password"]');
         const credentialCount = await credentialFields.count();
         if (credentialCount < 3) {
           throw new Error(`LOCAL_QA_SETTINGS_INTEGRATIONS_CREDENTIAL_FIELDS: ${credentialCount}`);
@@ -369,7 +369,7 @@ try {
         await page.waitForTimeout(900);
         const sourcesHeading = page.getByRole('heading', { name: 'Fontes do Dashboard', level: 2, exact: true });
         if (!(await sourcesHeading.count())) throw new Error('LOCAL_QA_SETTINGS_SOURCES_MISSING_HEADER');
-        const sourcesRows = await page.locator('.gso-settings-table tbody tr').count();
+        const sourcesRows = await page.locator('.gso-ui-table tbody tr').count();
         const sourcesOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
         if (sourcesOverflow) throw new Error('LOCAL_QA_HORIZONTAL_OVERFLOW: platform_admin settings-dashboard-sources 1920');
         await page.screenshot({ path: join(logDir, 'browser-platform_admin-settings-dashboard-sources-1920.png'), fullPage: true });
@@ -388,17 +388,17 @@ try {
         await page.waitForTimeout(700);
         const historyHeading = page.getByRole('heading', { name: 'Histórico de sincronizações', level: 2, exact: true });
         if (!(await historyHeading.count())) throw new Error('LOCAL_QA_SETTINGS_HISTORY_MISSING_HEADER');
-        const historyFilters = page.locator('.gso-settings-toolbar select');
+        const historyFilters = page.locator('.gso-ui-toolbar select');
         const historyFilterCount = await historyFilters.count();
         if (historyFilterCount < 4) throw new Error(`LOCAL_QA_SETTINGS_HISTORY_FILTERS: ${historyFilterCount}`);
         const historyOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
         if (historyOverflow) throw new Error('LOCAL_QA_HORIZONTAL_OVERFLOW: platform_admin settings-sync-history 1920');
         await page.screenshot({ path: join(logDir, 'browser-platform_admin-settings-sync-history-1920.png'), fullPage: true });
         screenshots.push('browser-platform_admin-settings-sync-history-1920.png');
-        const metricsBefore = await page.locator('.gso-settings-metrics .gso-settings-metric strong').first().innerText();
+        const metricsBefore = await page.locator('.gso-ui-metrics .gso-ui-metric .gso-ui-metric-value').first().innerText();
         await historyFilters.nth(2).selectOption('failed');
         await page.waitForTimeout(400);
-        const metricsAfter = await page.locator('.gso-settings-metrics .gso-settings-metric strong').first().innerText();
+        const metricsAfter = await page.locator('.gso-ui-metrics .gso-ui-metric .gso-ui-metric-value').first().innerText();
         deepScenarios.push({
           role: account.role,
           scenario: 'settings-sync-history',
@@ -414,8 +414,8 @@ try {
         await page.waitForTimeout(900);
         const brandsHeading = page.getByRole('heading', { name: 'Marcas', level: 2, exact: true });
         if (!(await brandsHeading.count())) throw new Error('LOCAL_QA_SETTINGS_BRANDS_MISSING_HEADER');
-        const brandsRows = await page.locator('.gso-settings-table tbody tr').count();
-        const brandsDetail = await page.locator('.gso-settings-split aside').count();
+        const brandsRows = await page.locator('.gso-ui-table tbody tr').count();
+        const brandsDetail = await page.locator('.gso-ui-split aside').count();
         const brandsOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
         if (brandsOverflow) throw new Error('LOCAL_QA_HORIZONTAL_OVERFLOW: platform_admin settings-brands 1920');
         await page.screenshot({ path: join(logDir, 'browser-platform_admin-settings-brands-1920.png'), fullPage: true });
@@ -434,8 +434,8 @@ try {
         await page.waitForTimeout(900);
         const helpCenterHeading = page.getByRole('heading', { name: 'Central de ajuda', level: 2, exact: true });
         if (!(await helpCenterHeading.count())) throw new Error('LOCAL_QA_SETTINGS_HELP_CENTER_MISSING_HEADER');
-        const helpCenterCards = await page.locator('.gso-settings-card').count();
-        const helpCenterFields = await page.locator('.gso-settings-form-grid input').count();
+        const helpCenterCards = await page.locator('.gso-ui-card').count();
+        const helpCenterFields = await page.locator('.gso-ui-grid input').count();
         const helpCenterOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
         if (helpCenterOverflow) throw new Error('LOCAL_QA_HORIZONTAL_OVERFLOW: platform_admin settings-help-center 1920');
         await page.screenshot({ path: join(logDir, 'browser-platform_admin-settings-help-center-1920.png'), fullPage: true });
