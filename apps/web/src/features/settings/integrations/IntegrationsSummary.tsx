@@ -1,5 +1,8 @@
 import { formatDateTime } from '../../../app/format';
-import { UNAVAILABLE_LABEL, toneTextClassName, type IntegrationsHealthSummary } from './integration-health.mjs';
+import { UiMetric } from '../ui/UiMetric';
+import { UiMetricRow } from '../ui/UiMetricRow';
+import { uiToneOf, uiValueToneOf } from '../ui/ui-tone-map';
+import { UNAVAILABLE_LABEL, type IntegrationsHealthSummary } from './integration-health.mjs';
 
 /**
  * Resumo das integracoes publicadas. Todos os numeros vem do read model; nada e
@@ -10,31 +13,39 @@ import { UNAVAILABLE_LABEL, toneTextClassName, type IntegrationsHealthSummary } 
  */
 export function IntegrationsSummary({ summary }: { summary: IntegrationsHealthSummary }) {
   return (
-    <section aria-label="Resumo das integrações" className="gso-settings-metrics">
-      <div className="gso-settings-metric">
-        <span>Integrações ativas</span>
-        <strong>
-          {summary.enabled} de {summary.total}
-        </strong>
-        <small>Fontes publicadas nesta versão</small>
-      </div>
-      <div className="gso-settings-metric">
-        <span>Credenciais gravadas</span>
-        <strong>
-          {summary.withCredentials} de {summary.total}
-        </strong>
-        <small>{summary.pendingCredentials ? `${summary.pendingCredentials} ativa(s) sem credencial` : 'Nenhuma pendência entre as ativas'}</small>
-      </div>
-      <div className="gso-settings-metric gso-settings-metric--text">
-        <span>Última execução</span>
-        <strong>{summary.lastRunAt ? formatDateTime(summary.lastRunAt) : UNAVAILABLE_LABEL}</strong>
-        <small>{summary.lastRunLabel ?? 'Nenhuma execução registrada até agora'}</small>
-      </div>
-      <div className="gso-settings-metric gso-settings-metric--text gso-settings-metric--accent">
-        <span>Estado geral</span>
-        <strong className={toneTextClassName(summary.tone)}>{summary.healthLabel}</strong>
-        <small>{summary.healthDetail}</small>
-      </div>
-    </section>
+    <UiMetricRow label="Resumo das integrações">
+      <UiMetric
+        icon="plug"
+        label="Integrações ativas"
+        sub="Fontes publicadas nesta versão"
+        tone="primary"
+        value={`${summary.enabled} de ${summary.total}`}
+      />
+      <UiMetric
+        icon="key"
+        label="Credenciais gravadas"
+        sub={summary.pendingCredentials ? `${summary.pendingCredentials} ativa(s) sem credencial` : 'Nenhuma pendência entre as ativas'}
+        tone={summary.pendingCredentials ? 'warning' : 'neutral'}
+        value={`${summary.withCredentials} de ${summary.total}`}
+        valueTone={summary.pendingCredentials ? 'warning' : undefined}
+      />
+      <UiMetric
+        icon="clock"
+        label="Última execução"
+        sub={summary.lastRunLabel ?? 'Nenhuma execução registrada até agora'}
+        text
+        tone="neutral"
+        value={summary.lastRunAt ? formatDateTime(summary.lastRunAt) : UNAVAILABLE_LABEL}
+      />
+      <UiMetric
+        icon="activity"
+        label="Estado geral"
+        sub={summary.healthDetail}
+        text
+        tone={uiToneOf(summary.tone)}
+        value={summary.healthLabel}
+        valueTone={uiValueToneOf(summary.tone)}
+      />
+    </UiMetricRow>
   );
 }

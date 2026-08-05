@@ -40,7 +40,7 @@ export function SettingsNavIcon({ section }: { section: string }) {
   const paths = PATHS[section];
   if (!paths) return null;
   return (
-    <svg {...BASE} className="gso-settings-nav-icon">
+    <svg {...BASE}>
       {paths.map((path) => <path d={path} key={path} />)}
     </svg>
   );

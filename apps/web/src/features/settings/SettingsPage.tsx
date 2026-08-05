@@ -53,7 +53,7 @@ import { DashboardSourcesSettingsPage } from './DashboardSourcesSettingsPage';
 import { HelpCenterSettingsPage } from './HelpCenterSettingsPage';
 import { SettingsIntegrationsPanel } from './SettingsIntegrationsPanel';
 import '../analytics/high-density.css';
-import './settings-shell.css';
+import './settings-ui.css';
 import { SyncHistorySettingsPage } from './SyncHistorySettingsPage';
 
 const DASHBOARD_SECTION_IDS = ['dashboard-fontes', 'dashboard-historico'];

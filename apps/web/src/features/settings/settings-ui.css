@@ -1,0 +1,840 @@
+/* Sistema visual das telas de Configurações.
+ *
+ * Camada de apresentação própria: tokens declarados em `.gso-ui` e
+ * sobrescritos em `[data-theme='dark'] .gso-ui`. O tema escuro do ambiente
+ * autenticado continua sendo a fonte da verdade — aqui ele só é derivado.
+ *
+ * Onde existe token equivalente já publicado em index.css, o token novo o
+ * consome com `var(--token, fallback)`. Valores literais aparecem apenas na
+ * declaração do token, nunca espalhados pelas regras.
+ */
+
+.gso-ui {
+  /* Superfícies e traço */
+  --ui-canvas: #F8F9FB;
+  --ui-surface: #FFFFFF;
+  --ui-surface-muted: #F5F6F8;
+  --ui-border: #E8EAF0;
+  --ui-border-strong: #D7DAE3;
+
+  /* Texto */
+  --ui-text: #111827;
+  --ui-text-secondary: #4B5563;
+  --ui-text-tertiary: #9AA1AE;
+
+  /* Tons. O sufixo `-ink` é a cor do texto/ícone sobre o fundo tonal: no claro
+     coincide com o tom, no escuro é clareado para manter contraste. */
+  --ui-primary: #2563EB;
+  --ui-primary-soft: #EEF2FF;
+  --ui-primary-ink: var(--ui-primary);
+  --ui-accent: #7C3AED;
+  --ui-accent-soft: #F3E8FF;
+  --ui-accent-ink: var(--ui-accent);
+  --ui-success: var(--success, #16A34A);
+  --ui-success-soft: var(--success-weak, #DCFCE7);
+  --ui-success-ink: var(--ui-success);
+  --ui-warning: #D97706;
+  --ui-warning-soft: var(--warning-weak, #FEF3C7);
+  --ui-warning-ink: var(--ui-warning);
+  --ui-danger: var(--danger, #DC2626);
+  --ui-danger-soft: var(--danger-weak, #FEE2E2);
+  --ui-danger-ink: var(--ui-danger);
+  --ui-neutral-soft: var(--ui-surface-muted);
+  --ui-neutral-ink: var(--ui-text-secondary);
+
+  /* Geometria e elevação */
+  --ui-radius-sm: var(--radius-sm, 8px);
+  --ui-radius: var(--radius, 12px);
+  --ui-radius-lg: var(--radius-lg, 16px);
+  --ui-shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 1px 3px rgba(16, 24, 40, .06);
+  --ui-shadow-lifted: 0 4px 12px rgba(16, 24, 40, .06);
+  --ui-focus: color-mix(in srgb, var(--ui-primary) 34%, transparent);
+
+  min-width: 0;
+  color: var(--ui-text);
+  font-family: 'Instrument Sans', 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Tema escuro: superfícies, traço e texto vêm dos tokens `--minimal-*` que o
+   ThemeProvider já alterna; os tons continuam sendo os mesmos do claro, com o
+   fundo tonal virando mistura translúcida e a tinta clareada. */
+[data-theme='dark'] .gso-ui {
+  --ui-canvas: var(--minimal-canvas);
+  --ui-surface: var(--minimal-surface);
+  --ui-surface-muted: var(--minimal-surface-muted);
+  --ui-border: var(--minimal-border);
+  --ui-border-strong: var(--minimal-border-strong);
+
+  --ui-text: var(--minimal-text);
+  --ui-text-secondary: var(--minimal-text-secondary);
+  --ui-text-tertiary: var(--minimal-text-tertiary);
+
+  --ui-primary-soft: color-mix(in srgb, var(--ui-primary) 24%, transparent);
+  --ui-primary-ink: var(--minimal-selection-text, #9DBBFF);
+  --ui-accent-soft: color-mix(in srgb, var(--ui-accent) 22%, transparent);
+  --ui-accent-ink: color-mix(in srgb, var(--ui-accent) 42%, #FFFFFF);
+  --ui-warning: var(--warning, #F59E0B);
+  --ui-neutral-soft: var(--minimal-surface-muted);
+
+  --ui-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, .4));
+  --ui-shadow-lifted: var(--shadow-md, 0 8px 24px -8px rgba(0, 0, 0, .5));
+}
+
+/* -------------------------------------------------------------------------
+   1. UiPage — o canvas da tela
+   ------------------------------------------------------------------------- */
+.gso-ui-page {
+  display: grid;
+  gap: 1.25rem;
+  align-content: start;
+  min-width: 0;
+  padding: 1.5rem;
+  background: var(--ui-canvas);
+}
+
+@media (max-width: 760px) {
+  .gso-ui-page { gap: 1rem; padding: 1rem; }
+}
+
+/* -------------------------------------------------------------------------
+   2. UiPageHeader — trilha, título grande, descrição e ações
+   ------------------------------------------------------------------------- */
+.gso-ui-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  min-width: 0;
+}
+.gso-ui-header-heading { min-width: 0; }
+.gso-ui-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ui-text-tertiary);
+  font-size: 0.78rem;
+}
+.gso-ui-crumbs a { color: var(--ui-text-secondary); border-radius: var(--ui-radius-sm); }
+.gso-ui-crumbs a:hover { color: var(--ui-primary-ink); text-decoration: underline; }
+.gso-ui-crumbs [aria-current='page'] { color: var(--ui-primary-ink); font-weight: 600; }
+.gso-ui-header-heading h2 {
+  margin: 0.35rem 0 0;
+  color: var(--ui-text);
+  font-family: inherit;
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.gso-ui-header-heading > p {
+  margin: 0.4rem 0 0;
+  max-width: 64ch;
+  color: var(--ui-text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+.gso-ui-header-side { display: grid; justify-items: end; gap: 0.5rem; }
+.gso-ui-header-meta {
+  margin: 0;
+  color: var(--ui-text-tertiary);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  text-align: right;
+}
+.gso-ui-header-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+@media (max-width: 900px) {
+  .gso-ui-header { display: grid; grid-template-columns: 1fr; align-items: start; gap: 0.9rem; }
+  .gso-ui-header-side { justify-items: start; }
+  .gso-ui-header-meta { text-align: left; }
+}
+
+/* -------------------------------------------------------------------------
+   3-5. UiCard, UiCardHeader, UiIconTile
+   ------------------------------------------------------------------------- */
+.gso-ui-card {
+  min-width: 0;
+  padding: 1.25rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+  box-shadow: var(--ui-shadow);
+}
+.gso-ui-card--flush { padding: 0; overflow: hidden; }
+.gso-ui-card--flush > .gso-ui-card-header { padding: 1.25rem 1.25rem 1rem; }
+.gso-ui-card--flush > .gso-ui-card-foot { padding: 0.85rem 1.25rem 1.1rem; }
+.gso-ui-card--flush > .gso-ui-empty { margin: 0 1.25rem 1.25rem; }
+
+.gso-ui-card-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.9rem;
+  min-width: 0;
+}
+.gso-ui-card-header--plain { grid-template-columns: minmax(0, 1fr) auto; }
+.gso-ui-card-header-text { min-width: 0; }
+.gso-ui-card-header-text h3 {
+  margin: 0;
+  color: var(--ui-text);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.gso-ui-card-header-text p {
+  margin: 0.3rem 0 0;
+  max-width: 72ch;
+  color: var(--ui-text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+.gso-ui-card-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+.gso-ui-card-body { margin-top: 1.1rem; }
+
+@media (max-width: 760px) {
+  .gso-ui-card-header,
+  .gso-ui-card-header--plain { grid-template-columns: auto minmax(0, 1fr); }
+  .gso-ui-card-header-actions { grid-column: 1 / -1; justify-content: flex-start; }
+}
+
+/* Ladrilho de ícone: é o que dá o ar premium do sistema. */
+.gso-ui-tile {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border-radius: var(--ui-radius);
+  background: var(--ui-neutral-soft);
+  color: var(--ui-neutral-ink);
+}
+.gso-ui-tile--sm { width: 2rem; height: 2rem; border-radius: var(--ui-radius-sm); }
+.gso-ui-tile--primary { background: var(--ui-primary-soft); color: var(--ui-primary-ink); }
+.gso-ui-tile--accent { background: var(--ui-accent-soft); color: var(--ui-accent-ink); }
+.gso-ui-tile--success { background: var(--ui-success-soft); color: var(--ui-success-ink); }
+.gso-ui-tile--warning { background: var(--ui-warning-soft); color: var(--ui-warning-ink); }
+.gso-ui-tile--danger { background: var(--ui-danger-soft); color: var(--ui-danger-ink); }
+.gso-ui-tile--neutral { background: var(--ui-neutral-soft); color: var(--ui-neutral-ink); }
+
+/* -------------------------------------------------------------------------
+   6. UiMetricRow / UiMetric — um card branco com células internas
+   ------------------------------------------------------------------------- */
+.gso-ui-metrics {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  min-width: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+  box-shadow: var(--ui-shadow);
+}
+.gso-ui-metric {
+  display: grid;
+  gap: 0.6rem;
+  align-content: start;
+  min-width: 0;
+  padding: 1.15rem 1.25rem;
+}
+.gso-ui-metric + .gso-ui-metric { border-left: 1px solid var(--ui-border); }
+.gso-ui-metric-value {
+  display: block;
+  color: var(--ui-text);
+  font-size: 2rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.gso-ui-metric--text .gso-ui-metric-value { font-size: 1.05rem; letter-spacing: -0.015em; line-height: 1.3; }
+.gso-ui-metric-label {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--ui-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.gso-ui-metric-sub { display: block; margin-top: 0.15rem; color: var(--ui-text-secondary); font-size: 0.78rem; line-height: 1.45; }
+.gso-ui-metric-value--success { color: var(--ui-success-ink); }
+.gso-ui-metric-value--warning { color: var(--ui-warning-ink); }
+.gso-ui-metric-value--danger { color: var(--ui-danger-ink); }
+.gso-ui-metric-value--primary { color: var(--ui-primary-ink); }
+
+@media (max-width: 1024px) {
+  .gso-ui-metrics { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-columns: auto; }
+  .gso-ui-metric + .gso-ui-metric { border-left: 0; }
+  .gso-ui-metric:nth-child(even) { border-left: 1px solid var(--ui-border); }
+  .gso-ui-metric:nth-child(n + 3) { border-top: 1px solid var(--ui-border); }
+}
+@media (max-width: 640px) {
+  .gso-ui-metrics { grid-template-columns: 1fr; }
+  .gso-ui-metric:nth-child(even) { border-left: 0; }
+  .gso-ui-metric + .gso-ui-metric { border-top: 1px solid var(--ui-border); }
+}
+
+/* -------------------------------------------------------------------------
+   7. UiBadge — pill tonal
+   ------------------------------------------------------------------------- */
+.gso-ui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 1.55rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--ui-neutral-soft);
+  color: var(--ui-neutral-ink);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.gso-ui-badge--primary { background: var(--ui-primary-soft); color: var(--ui-primary-ink); }
+.gso-ui-badge--accent { background: var(--ui-accent-soft); color: var(--ui-accent-ink); }
+.gso-ui-badge--success { background: var(--ui-success-soft); color: var(--ui-success-ink); }
+.gso-ui-badge--warning { background: var(--ui-warning-soft); color: var(--ui-warning-ink); }
+.gso-ui-badge--danger { background: var(--ui-danger-soft); color: var(--ui-danger-ink); }
+.gso-ui-badge--neutral { background: var(--ui-neutral-soft); color: var(--ui-neutral-ink); }
+.gso-ui-badge-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: currentcolor;
+}
+
+/* -------------------------------------------------------------------------
+   8. UiButton
+   ------------------------------------------------------------------------- */
+.gso-ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  padding: 0 0.9rem;
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius-sm);
+  background: transparent;
+  color: var(--ui-text);
+  font-family: inherit;
+  font-size: 0.83rem;
+  font-weight: 600;
+  text-align: center;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+.gso-ui-button:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: 2px; }
+.gso-ui-button:disabled { cursor: not-allowed; opacity: 0.55; }
+.gso-ui-button > svg { flex: 0 0 auto; }
+.gso-ui-button--primary { border-color: var(--ui-primary); background: var(--ui-primary); color: #FFFFFF; }
+.gso-ui-button--primary:not(:disabled):hover { background: color-mix(in srgb, var(--ui-primary) 86%, #000000); }
+.gso-ui-button--secondary { border-color: var(--ui-border-strong); background: var(--ui-surface); color: var(--ui-text); }
+.gso-ui-button--secondary:not(:disabled):hover { background: var(--ui-surface-muted); }
+.gso-ui-button--ghost { border-color: transparent; background: transparent; color: var(--ui-text-secondary); }
+.gso-ui-button--ghost:not(:disabled):hover { background: var(--ui-surface-muted); color: var(--ui-text); }
+.gso-ui-button--danger { border-color: var(--ui-danger); background: transparent; color: var(--ui-danger-ink); }
+.gso-ui-button--danger:not(:disabled):hover { background: var(--ui-danger-soft); }
+.gso-ui-button--compact { min-height: 2.15rem; padding: 0 0.7rem; font-size: 0.78rem; }
+.gso-ui-linkbutton {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--ui-primary-ink);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.gso-ui-linkbutton:hover { text-decoration: underline; }
+.gso-ui-linkbutton:disabled { color: var(--ui-text-tertiary); cursor: not-allowed; text-decoration: none; }
+
+/* -------------------------------------------------------------------------
+   9. UiField — rótulo em caixa normal, controle, apoio e erro
+   ------------------------------------------------------------------------- */
+.gso-ui-field { display: grid; gap: 0.35rem; min-width: 0; }
+.gso-ui-field-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  color: var(--ui-text);
+  font-size: 0.8rem;
+  font-weight: 550;
+}
+.gso-ui-field-label > svg { flex: 0 0 auto; color: var(--ui-text-tertiary); }
+.gso-ui-field-label small { color: var(--ui-text-tertiary); font-size: 0.75rem; font-weight: 400; }
+.gso-ui-field-hint { color: var(--ui-text-secondary); font-size: 0.78rem; line-height: 1.45; }
+.gso-ui-field-error { color: var(--ui-danger-ink); font-size: 0.78rem; font-weight: 600; }
+.gso-ui-control {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+.gso-ui-control::placeholder { color: var(--ui-text-tertiary); }
+.gso-ui-control:hover:not(:disabled) { border-color: var(--ui-border-strong); }
+.gso-ui-control:focus-visible {
+  border-color: var(--ui-primary);
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 0;
+}
+.gso-ui-control:disabled { background: var(--ui-surface-muted); color: var(--ui-text-tertiary); cursor: not-allowed; }
+.gso-ui-control[aria-invalid='true'] { border-color: var(--ui-danger); }
+.gso-ui-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; }
+.gso-ui-grid--wide > .gso-ui-field--wide { grid-column: 1 / -1; }
+.gso-ui-field--wide { grid-column: 1 / -1; }
+.gso-ui-toggle {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-muted);
+  color: var(--ui-text);
+  font-size: 0.8rem;
+  font-weight: 550;
+}
+.gso-ui-toggle input { width: 1.1rem; height: 1.1rem; accent-color: var(--ui-primary); }
+.gso-ui-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.1rem; }
+.gso-ui-note { margin: 0.85rem 0 0; color: var(--ui-text-secondary); font-size: 0.78rem; line-height: 1.55; }
+.gso-ui-alert { margin: 0.85rem 0 0; font-size: 0.8rem; font-weight: 600; line-height: 1.5; }
+.gso-ui-alert--error { color: var(--ui-danger-ink); }
+.gso-ui-alert--success { color: var(--ui-success-ink); }
+
+@media (max-width: 760px) {
+  .gso-ui-grid { grid-template-columns: 1fr; }
+}
+
+/* -------------------------------------------------------------------------
+   10. UiToolbar — barra de filtros
+   ------------------------------------------------------------------------- */
+.gso-ui-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+  box-shadow: var(--ui-shadow);
+}
+.gso-ui-toolbar-field { flex: 1 1 10rem; min-width: 9rem; }
+.gso-ui-toolbar-field--wide { flex: 2 1 18rem; }
+.gso-ui-toolbar-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-left: auto; }
+.gso-ui-search { position: relative; display: block; }
+.gso-ui-search > svg {
+  position: absolute;
+  top: 50%;
+  left: 0.7rem;
+  color: var(--ui-text-tertiary);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.gso-ui-search > .gso-ui-control { padding-left: 2.2rem; }
+.gso-ui-select { appearance: none; padding-right: 2rem; font-weight: 550; }
+
+@media (max-width: 760px) {
+  .gso-ui-toolbar-actions { margin-left: 0; }
+}
+
+/* -------------------------------------------------------------------------
+   11. UiTable — dentro de UiCard --flush
+   ------------------------------------------------------------------------- */
+.gso-ui-table-frame { min-width: 0; overflow-x: auto; }
+.gso-ui-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+.gso-ui-table thead th {
+  border-bottom: 1px solid var(--ui-border);
+  background: var(--ui-surface-muted);
+  padding: 0.7rem 1rem;
+  color: var(--ui-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+.gso-ui-table tbody td {
+  border-top: 1px solid var(--ui-border);
+  padding: 0.8rem 1rem;
+  color: var(--ui-text-secondary);
+  vertical-align: top;
+}
+.gso-ui-table tbody tr:first-child td { border-top: 0; }
+.gso-ui-table tbody tr:hover td { background: var(--ui-surface-muted); }
+.gso-ui-table tbody tr.is-selected td { background: var(--ui-primary-soft); }
+.gso-ui-table strong { display: block; color: var(--ui-text); font-size: 0.85rem; font-weight: 600; }
+.gso-ui-table small { display: block; margin-top: 0.15rem; color: var(--ui-text-tertiary); font-size: 0.76rem; }
+.gso-ui-table-numeric { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gso-ui-table-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: flex-end; }
+.gso-ui-table-actions--head { text-align: right; }
+.gso-ui-card-foot { margin: 0; color: var(--ui-text-tertiary); font-size: 0.78rem; line-height: 1.5; }
+.gso-ui-rowselect {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--ui-text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+}
+.gso-ui-rowselect:hover { color: var(--ui-primary-ink); text-decoration: underline; }
+
+/* -------------------------------------------------------------------------
+   12. UiTabs — sublinhado de 2px na aba ativa (primitiva de CSS)
+   ------------------------------------------------------------------------- */
+.gso-ui-tabs { display: flex; flex-wrap: wrap; gap: 0.25rem; border-bottom: 1px solid var(--ui-border); }
+.gso-ui-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--ui-text-secondary);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 550;
+}
+.gso-ui-tab:hover { color: var(--ui-text); }
+.gso-ui-tab[aria-current='page'],
+.gso-ui-tab[aria-selected='true'] { border-bottom-color: var(--ui-primary); color: var(--ui-primary-ink); font-weight: 600; }
+
+/* -------------------------------------------------------------------------
+   13. UiEmptyState
+   ------------------------------------------------------------------------- */
+.gso-ui-empty {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 2rem 1.25rem;
+  text-align: center;
+}
+.gso-ui-empty strong { color: var(--ui-text); font-size: 0.95rem; font-weight: 600; letter-spacing: -0.015em; }
+.gso-ui-empty p { margin: 0; max-width: 48ch; color: var(--ui-text-secondary); font-size: 0.82rem; line-height: 1.55; }
+.gso-ui-empty .gso-ui-tile { margin-bottom: 0.25rem; }
+
+/* -------------------------------------------------------------------------
+   14. UiDetailList — rótulo à esquerda, valor à direita
+   ------------------------------------------------------------------------- */
+.gso-ui-details { display: grid; gap: 0; margin: 0; }
+.gso-ui-details > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.6rem 0;
+}
+.gso-ui-details > div + div { border-top: 1px solid var(--ui-border); }
+.gso-ui-details dt {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  color: var(--ui-text-secondary);
+  font-size: 0.8rem;
+}
+.gso-ui-details dt > svg { flex: 0 0 auto; color: var(--ui-text-tertiary); }
+.gso-ui-details dd {
+  margin: 0;
+  color: var(--ui-text);
+  font-size: 0.83rem;
+  font-weight: 550;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.gso-ui-details--columns { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 1.5rem; }
+.gso-ui-details--columns > div + div { border-top: 1px solid var(--ui-border); }
+.gso-ui-details--columns > div:nth-child(2) { border-top: 0; }
+
+@media (max-width: 760px) {
+  .gso-ui-details--columns { grid-template-columns: 1fr; }
+  .gso-ui-details--columns > div:nth-child(2) { border-top: 1px solid var(--ui-border); }
+}
+
+/* -------------------------------------------------------------------------
+   15. UiHintBand — faixa de contexto, sem borda dura
+   ------------------------------------------------------------------------- */
+.gso-ui-hint {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.9rem;
+  min-width: 0;
+  padding: 1.1rem 1.25rem;
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-accent-soft);
+  color: var(--ui-text);
+}
+.gso-ui-hint-figure { display: inline-grid; flex: 0 0 auto; place-items: center; color: var(--ui-accent-ink); }
+.gso-ui-hint-text { min-width: 0; }
+.gso-ui-hint-text strong { display: block; font-size: 0.9rem; font-weight: 600; letter-spacing: -0.015em; }
+.gso-ui-hint-text p { margin: 0.35rem 0 0; max-width: 84ch; color: var(--ui-text-secondary); font-size: 0.82rem; line-height: 1.6; }
+
+/* -------------------------------------------------------------------------
+   Composições reutilizadas pelas telas
+   ------------------------------------------------------------------------- */
+
+/* Identidade: monograma (ou logo) + nome + contexto + selo. */
+.gso-ui-identity { display: flex; align-items: center; gap: 0.85rem; min-width: 0; }
+.gso-ui-identity > div { flex: 1 1 auto; min-width: 0; }
+.gso-ui-identity h3 { margin: 0; font-size: 1rem; font-weight: 600; letter-spacing: -0.02em; }
+.gso-ui-identity p { margin: 0.2rem 0 0; color: var(--ui-text-secondary); font-size: 0.8rem; overflow-wrap: anywhere; }
+.gso-ui-monogram {
+  display: inline-grid;
+  overflow: hidden;
+  flex: 0 0 auto;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border-radius: var(--ui-radius);
+  background: var(--ui-primary-soft);
+  color: var(--ui-primary-ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.gso-ui-monogram img { width: 100%; height: 100%; object-fit: contain; }
+
+/* Confirmação inline de ação destrutiva. */
+.gso-ui-confirm {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: var(--ui-radius);
+  background: var(--ui-danger-soft);
+}
+.gso-ui-confirm strong { display: block; color: var(--ui-danger-ink); font-size: 0.85rem; font-weight: 600; }
+.gso-ui-confirm p { margin: 0.35rem 0 0; color: var(--ui-text-secondary); font-size: 0.8rem; line-height: 1.55; }
+.gso-ui-confirm .gso-ui-actions { margin-top: 0.85rem; }
+
+/* Paginação da tabela / lista. */
+.gso-ui-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  color: var(--ui-text-secondary);
+  font-size: 0.8rem;
+}
+.gso-ui-pagination-controls { display: flex; align-items: center; gap: 0.5rem; }
+.gso-ui-pagination-controls .gso-ui-control { width: auto; min-width: 9rem; }
+.gso-ui-page-button {
+  display: inline-grid;
+  width: 2.35rem;
+  height: 2.35rem;
+  place-items: center;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.gso-ui-page-button:not(:disabled):hover { background: var(--ui-surface-muted); }
+.gso-ui-page-button:disabled { color: var(--ui-text-tertiary); cursor: not-allowed; opacity: 0.6; }
+
+/* Lista + detalhe (Marcas). */
+.gso-ui-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 21rem); align-items: start; gap: 1.25rem; min-width: 0; }
+.gso-ui-split > * { min-width: 0; }
+.gso-ui-stack { display: grid; gap: 1.25rem; min-width: 0; align-content: start; }
+
+/* Corpo da tela de Integrações: cards + coluna de governança. */
+.gso-ui-body { display: grid; grid-template-columns: minmax(0, 1fr) 21rem; align-items: start; gap: 1.25rem; min-width: 0; }
+.gso-ui-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; min-width: 0; }
+.gso-ui-rail { display: grid; align-content: start; gap: 1.25rem; min-width: 0; }
+.gso-ui-facts { display: grid; gap: 0.5rem; margin: 1rem 0 0; padding: 0; list-style: none; }
+.gso-ui-facts li {
+  position: relative;
+  padding-left: 1rem;
+  color: var(--ui-text-secondary);
+  font-size: 0.79rem;
+  line-height: 1.55;
+}
+.gso-ui-facts li::before {
+  content: '';
+  position: absolute;
+  top: 0.5rem;
+  left: 0;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: var(--ui-primary);
+}
+.gso-ui-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.9rem;
+  color: var(--ui-primary-ink);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.gso-ui-link:hover { text-decoration: underline; }
+.gso-ui-runlist { display: grid; gap: 0.6rem; margin: 1rem 0 0; padding: 0; list-style: none; }
+.gso-ui-runlist li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.15rem 0.75rem;
+  min-width: 0;
+}
+.gso-ui-runlist .gso-ui-tile { grid-row: span 2; }
+.gso-ui-runlist strong { color: var(--ui-text); font-size: 0.83rem; font-weight: 600; }
+.gso-ui-runlist span { color: var(--ui-text-secondary); font-size: 0.78rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+/* Faixa de garantias da tela de Integrações. */
+.gso-ui-featurerow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
+.gso-ui-feature { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 0.15rem 0.85rem; min-width: 0; }
+.gso-ui-feature .gso-ui-tile { grid-row: span 2; }
+.gso-ui-feature strong { color: var(--ui-text); font-size: 0.85rem; font-weight: 600; }
+.gso-ui-feature span { color: var(--ui-text-secondary); font-size: 0.79rem; line-height: 1.5; }
+
+@media (max-width: 1440px) {
+  .gso-ui-cards { grid-template-columns: 1fr; }
+}
+@media (max-width: 1180px) {
+  .gso-ui-body { grid-template-columns: 1fr; }
+  .gso-ui-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gso-ui-split { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 1024px) {
+  .gso-ui-cards { grid-template-columns: 1fr; }
+  .gso-ui-featurerow { grid-template-columns: 1fr; }
+}
+
+/* Bloco expansível (catálogo de fontes) e linha editável dentro dele. */
+.gso-ui-disclosure { border-top: 1px solid var(--ui-border); margin-top: 1.1rem; }
+.gso-ui-disclosure > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2.75rem;
+  cursor: pointer;
+  list-style: none;
+  color: var(--ui-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.gso-ui-disclosure > summary::-webkit-details-marker { display: none; }
+.gso-ui-disclosure > summary::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-right: 1.6px solid var(--ui-primary);
+  border-bottom: 1.6px solid var(--ui-primary);
+  transform: rotate(-45deg);
+  transition: transform 150ms ease;
+}
+.gso-ui-disclosure[open] > summary::before { transform: rotate(45deg); }
+.gso-ui-disclosure > summary > span { flex: 1 1 auto; min-width: 0; }
+.gso-ui-disclosure > summary > small { color: var(--ui-text-tertiary); font-size: 0.78rem; font-weight: 400; }
+.gso-ui-groups { display: grid; gap: 0.5rem; padding-bottom: 0.75rem; }
+.gso-ui-rowlist { display: grid; gap: 0.6rem; margin: 0.6rem 0 0.9rem; padding: 0; list-style: none; }
+.gso-ui-rowcard {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+}
+.gso-ui-rowcard--archived { opacity: 0.66; }
+.gso-ui-rowcard-main { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.gso-ui-rowcard-main strong { color: var(--ui-text); font-size: 0.88rem; font-weight: 600; }
+.gso-ui-rowcard-main p { margin: 0.25rem 0 0; color: var(--ui-text-secondary); font-size: 0.78rem; }
+.gso-ui-rowcard-controls { display: grid; grid-template-columns: minmax(9rem, 0.7fr) minmax(12rem, 1fr) auto auto; align-items: end; gap: 0.75rem; }
+.gso-ui-rowcard-controls .gso-ui-toggle { grid-column: auto; min-height: 2.5rem; }
+.gso-ui-rowcard-meta { display: flex; flex-wrap: wrap; gap: 0.5rem 1.4rem; color: var(--ui-text-tertiary); font-size: 0.76rem; }
+.gso-ui-rowcard-save { white-space: nowrap; }
+
+@media (max-width: 1024px) {
+  .gso-ui-rowcard-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gso-ui-rowcard-save { justify-self: start; }
+}
+@media (max-width: 760px) {
+  .gso-ui-rowcard-controls { grid-template-columns: 1fr; }
+  .gso-ui-rowcard-save { justify-self: stretch; }
+  .gso-ui-rowcard-main { display: grid; grid-template-columns: 1fr; }
+}
+
+/* Ciclos do Histórico: um card por execução, com as etapas dentro. */
+.gso-ui-historylist { display: grid; gap: 0.9rem; margin: 0; padding: 0; list-style: none; }
+.gso-ui-historygroup {
+  overflow: hidden;
+  min-width: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+  box-shadow: var(--ui-shadow);
+}
+.gso-ui-historygroup > summary { list-style: none; cursor: pointer; }
+.gso-ui-historygroup > summary::-webkit-details-marker { display: none; }
+.gso-ui-historysummary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1.1rem 1.25rem;
+}
+.gso-ui-historysummary > div { min-width: 0; }
+.gso-ui-historysummary h3 { margin: 0; color: var(--ui-text); font-size: 0.95rem; font-weight: 600; letter-spacing: -0.02em; }
+.gso-ui-historysummary p { margin: 0.25rem 0 0; color: var(--ui-text-secondary); font-size: 0.79rem; }
+.gso-ui-historybody {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  border-top: 1px solid var(--ui-border);
+  padding: 1.1rem 1.25rem;
+}
+.gso-ui-historysource {
+  min-width: 0;
+  padding: 0.9rem 1rem;
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface-muted);
+}
+.gso-ui-historysource-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.gso-ui-historysource-head strong { color: var(--ui-text); font-size: 0.85rem; font-weight: 600; }
+.gso-ui-historysource dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; margin: 0.85rem 0 0; }
+.gso-ui-historysource dt { color: var(--ui-text-secondary); font-size: 0.75rem; }
+.gso-ui-historysource dd { margin: 0.1rem 0 0; color: var(--ui-text); font-size: 0.8rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.gso-ui-historysource-error { margin: 0.85rem 0 0; color: var(--ui-danger-ink); font-size: 0.78rem; line-height: 1.5; }
+.gso-ui-historyfoot {
+  border-top: 1px solid var(--ui-border);
+  padding: 0.85rem 1.25rem;
+  color: var(--ui-text-tertiary);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .gso-ui-historybody { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .gso-ui-historysummary { grid-template-columns: auto minmax(0, 1fr); }
+  .gso-ui-historysummary > .gso-ui-badge { grid-column: 2; justify-self: start; }
+}

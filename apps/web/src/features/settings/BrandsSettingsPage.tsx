@@ -1,12 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
-import { SettingsPageHeader } from './SettingsPageHeader';
 import { profileForSlug, useKnowledgeSpaceProfiles } from './knowledge-space-profiles';
 import type { Brand } from './settings-api';
-import './settings-shell.css';
+import { UiBadge } from './ui/UiBadge';
+import { UiButton } from './ui/UiButton';
+import { UiCard } from './ui/UiCard';
+import { UiCardHeader } from './ui/UiCardHeader';
+import { UiDetailList } from './ui/UiDetailList';
+import { UiEmptyState } from './ui/UiEmptyState';
+import { UiField } from './ui/UiField';
+import { UiMetric } from './ui/UiMetric';
+import { UiMetricRow } from './ui/UiMetricRow';
+import { UiPage } from './ui/UiPage';
+import { UiPageHeader } from './ui/UiPageHeader';
+import { UiSearchField } from './ui/UiSearchField';
+import { UiTable } from './ui/UiTable';
+import { UiToolbar } from './ui/UiToolbar';
+import './settings-ui.css';
 
 const UNAVAILABLE = 'Indisponível';
-const CONTROL =
-  'w-full rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-2.5 py-2 text-sm text-[color:var(--minimal-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]';
 
 /**
  * Mesmo formato de estado de carga usado por SettingsPage. A tela nao faz
@@ -151,17 +162,12 @@ export function BrandsSettingsPage({
   };
 
   return (
-    <div className="gso-settings-page gso-visual-v1-settings">
-      <SettingsPageHeader
+    <UiPage>
+      <UiPageHeader
         actions={
-          <button
-            className="gso-settings-button gso-settings-button--primary"
-            disabled={mutating || creating}
-            onClick={startCreate}
-            type="button"
-          >
+          <UiButton disabled={mutating || creating} icon="plus" onClick={startCreate} variant="primary">
             Nova marca
-          </button>
+          </UiButton>
         }
         description="As marcas atendidas na plataforma e a central de ajuda que cada uma publica para o cliente."
         meta={`${activeBrands.length} marcas ativas`}
@@ -169,253 +175,249 @@ export function BrandsSettingsPage({
         titleId="settings-brands-title"
       />
 
-      <section aria-label="Resumo das marcas" className="gso-settings-metrics">
-        <div className="gso-settings-metric gso-settings-metric--accent">
-          <span>Marcas ativas</span>
-          <strong>{activeBrands.length}</strong>
-          <small>atendidas na plataforma</small>
-        </div>
-        <div className="gso-settings-metric">
-          <span>Com central de ajuda</span>
-          <strong>{linkedCount}</strong>
-          <small>{linkedCount === activeBrands.length ? 'todas as marcas ativas' : 'marcas com central vinculada'}</small>
-        </div>
+      <UiMetricRow label="Resumo das marcas">
+        <UiMetric icon="brand" label="Marcas ativas" sub="atendidas na plataforma" tone="primary" value={activeBrands.length} />
+        <UiMetric
+          icon="help"
+          label="Com central de ajuda"
+          sub={linkedCount === activeBrands.length ? 'todas as marcas ativas' : 'marcas com central vinculada'}
+          tone="accent"
+          value={linkedCount}
+        />
         {publishedArticles === null ? null : (
-          <div className="gso-settings-metric">
-            <span>Artigos publicados</span>
-            <strong>{publishedArticles}</strong>
-            <small>somando as centrais vinculadas</small>
-          </div>
+          <UiMetric icon="list" label="Artigos publicados" sub="somando as centrais vinculadas" tone="neutral" value={publishedArticles} />
         )}
-      </section>
+      </UiMetricRow>
 
-      {feedback ? <p className="gso-settings-inline-message" role="status">{feedback}</p> : null}
-      {mutationError ? <p className="gso-settings-inline-error" role="alert">{mutationError}</p> : null}
+      {feedback ? <p className="gso-ui-alert gso-ui-alert--success" role="status">{feedback}</p> : null}
+      {mutationError ? <p className="gso-ui-alert gso-ui-alert--error" role="alert">{mutationError}</p> : null}
 
       {state.phase === 'idle' || state.phase === 'loading' ? (
-        <p className="gso-settings-empty">Carregando as marcas cadastradas…</p>
+        <UiCard>
+          <UiEmptyState icon="brand" title="Carregando as marcas cadastradas…" />
+        </UiCard>
       ) : state.phase === 'error' ? (
-        <p className="gso-settings-inline-error" role="alert">
+        <p className="gso-ui-alert gso-ui-alert--error" role="alert">
           Não foi possível carregar as marcas agora. Atualize a página e tente novamente.
         </p>
       ) : (
-        <div className="gso-settings-split">
-          <div className="gso-settings-page">
-            <section aria-label="Busca de marcas" className="gso-settings-toolbar">
-              <label className="gso-settings-toolbar-field gso-settings-toolbar-field--wide">
-                <span>Buscar por nome ou endereço da central</span>
-                <input
-                  className={CONTROL}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Ex.: After Sale ou after-sale"
-                  type="search"
-                  value={search}
-                />
-              </label>
-              <div className="gso-settings-toolbar-actions">
-                <button className="gso-settings-toolbar-reset" disabled={!search} onClick={() => setSearch('')} type="button">
+        <div className="gso-ui-split">
+          <div className="gso-ui-stack">
+            <UiToolbar
+              actions={
+                <button className="gso-ui-linkbutton" disabled={!search} onClick={() => setSearch('')} type="button">
                   Limpar busca
                 </button>
+              }
+              label="Busca de marcas"
+            >
+              <div className="gso-ui-toolbar-field gso-ui-toolbar-field--wide">
+                <UiField label="Buscar por nome ou endereço da central">
+                  <UiSearchField
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Ex.: After Sale ou after-sale"
+                    value={search}
+                  />
+                </UiField>
               </div>
-            </section>
+            </UiToolbar>
 
             {!brands.length ? (
-              <p className="gso-settings-empty">
-                Nenhuma marca cadastrada. Use “Nova marca” para cadastrar a primeira marca atendida.
-              </p>
+              <UiCard>
+                <UiEmptyState
+                  description="Use “Nova marca” para cadastrar a primeira marca atendida."
+                  icon="brand"
+                  title="Nenhuma marca cadastrada"
+                />
+              </UiCard>
             ) : !visibleBrands.length ? (
-              <p className="gso-settings-empty">
-                Nenhuma marca corresponde a “{search}”.{' '}
-                <button className="gso-settings-toolbar-reset" onClick={() => setSearch('')} type="button">
-                  Limpar busca
-                </button>
-              </p>
+              <UiCard>
+                <UiEmptyState
+                  action={
+                    <button className="gso-ui-linkbutton" onClick={() => setSearch('')} type="button">
+                      Limpar busca
+                    </button>
+                  }
+                  description={`Nenhuma marca corresponde a “${search}”.`}
+                  icon="search"
+                  title="Nada nesta busca"
+                />
+              </UiCard>
             ) : (
-              <>
-                <div className="gso-settings-table-frame">
-                  <table className="gso-settings-table">
-                    <thead>
-                      <tr>
-                        <th scope="col">Marca</th>
-                        <th scope="col">Central de ajuda</th>
-                        <th scope="col">Situação</th>
-                        <th scope="col">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {visibleBrands.map((brand) => {
-                        const profile = profileForSlug(profiles, brand.helpCenterSlug);
-                        return (
-                          <tr className={brand.id === selectedId ? 'is-selected' : undefined} key={brand.id}>
-                            <td>
-                              <button
-                                aria-current={brand.id === selectedId ? 'true' : undefined}
-                                className="gso-settings-row-select"
-                                onClick={() => { setSelectedId(brand.id); setCreating(false); }}
-                                type="button"
-                              >
-                                {brand.label}
-                              </button>
-                            </td>
-                            <td>
-                              {brand.helpCenterSlug ? `/${brand.helpCenterSlug}` : UNAVAILABLE}
-                              {profile ? <small>{profile.displayName}</small> : null}
-                            </td>
-                            <td>
-                              <span className={`gso-settings-status ${brand.isActive ? 'gso-settings-status--success' : 'gso-settings-status--muted'}`}>
-                                {brand.isActive ? 'Ativa' : 'Arquivada'}
-                              </span>
-                            </td>
-                            <td>
-                              <div className="gso-settings-table-actions">
-                                {brand.isActive ? (
-                                  <button
-                                    className="gso-settings-button gso-settings-button--secondary"
-                                    disabled={mutating}
-                                    onClick={() => { setSelectedId(brand.id); setCreating(false); setConfirmingArchive(true); }}
-                                    type="button"
-                                  >
-                                    Arquivar
-                                  </button>
-                                ) : (
-                                  <span className="gso-settings-tone-muted">Sem ações</span>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="gso-settings-table-caption">
+              <UiCard flush label="Marcas cadastradas">
+                <UiTable label="Marcas cadastradas">
+                  <thead>
+                    <tr>
+                      <th scope="col">Marca</th>
+                      <th scope="col">Central de ajuda</th>
+                      <th scope="col">Situação</th>
+                      <th className="gso-ui-table-actions--head" scope="col">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleBrands.map((brand) => {
+                      const profile = profileForSlug(profiles, brand.helpCenterSlug);
+                      return (
+                        <tr className={brand.id === selectedId ? 'is-selected' : undefined} key={brand.id}>
+                          <td>
+                            <button
+                              aria-current={brand.id === selectedId ? 'true' : undefined}
+                              className="gso-ui-rowselect"
+                              onClick={() => { setSelectedId(brand.id); setCreating(false); }}
+                              type="button"
+                            >
+                              {brand.label}
+                            </button>
+                          </td>
+                          <td>
+                            {brand.helpCenterSlug ? `/${brand.helpCenterSlug}` : UNAVAILABLE}
+                            {profile ? <small>{profile.displayName}</small> : null}
+                          </td>
+                          <td>
+                            <UiBadge dot tone={brand.isActive ? 'success' : 'neutral'}>
+                              {brand.isActive ? 'Ativa' : 'Arquivada'}
+                            </UiBadge>
+                          </td>
+                          <td>
+                            <div className="gso-ui-table-actions">
+                              {brand.isActive ? (
+                                <UiButton
+                                  compact
+                                  disabled={mutating}
+                                  icon="archive"
+                                  onClick={() => { setSelectedId(brand.id); setCreating(false); setConfirmingArchive(true); }}
+                                >
+                                  Arquivar
+                                </UiButton>
+                              ) : (
+                                <span>Sem ações</span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </UiTable>
+                <p className="gso-ui-card-foot">
                   Marcas arquivadas continuam listadas para consulta, mas deixam de ser oferecidas nas superfícies que usam marca.
                 </p>
-              </>
+              </UiCard>
             )}
           </div>
 
-          <aside aria-label="Detalhe da marca" className="gso-settings-card">
+          <aside aria-label="Detalhe da marca" className="gso-ui-card">
             {creating ? (
               <>
-                <div className="gso-settings-card-header">
-                  <div>
-                    <p className="gso-settings-eyebrow">Cadastro</p>
-                    <h3>Nova marca</h3>
-                    <p>Informe o nome da marca e, quando ela já tiver central de ajuda, o endereço dessa central.</p>
+                <UiCardHeader
+                  description="Informe o nome da marca e, quando ela já tiver central de ajuda, o endereço dessa central."
+                  icon="plus"
+                  title="Nova marca"
+                  tone="primary"
+                />
+                <div className="gso-ui-card-body">
+                  <div className="gso-ui-grid">
+                    <UiField error={labelError} errorId="new-brand-label-error" label="Nome da marca" wide>
+                      <input
+                        aria-describedby={labelError ? 'new-brand-label-error' : undefined}
+                        aria-invalid={labelError ? true : undefined}
+                        className="gso-ui-control"
+                        onChange={(event) => setNewLabel(event.target.value)}
+                        placeholder="Ex.: After Sale"
+                        value={newLabel}
+                      />
+                    </UiField>
+                    <UiField
+                      error={slugError}
+                      errorId="new-brand-slug-error"
+                      label={<>Central de ajuda <small>(opcional)</small></>}
+                      wide
+                    >
+                      <input
+                        aria-describedby={slugError ? 'new-brand-slug-error' : undefined}
+                        aria-invalid={slugError ? true : undefined}
+                        className="gso-ui-control"
+                        onChange={(event) => setNewSlug(event.target.value)}
+                        placeholder="Ex.: after-sale"
+                        value={newSlug}
+                      />
+                    </UiField>
                   </div>
                 </div>
-                <div className="gso-settings-form-grid">
-                  <label className="gso-settings-field gso-settings-field--wide">
-                    <span>Nome da marca</span>
-                    <input
-                      aria-describedby={labelError ? 'new-brand-label-error' : undefined}
-                      aria-invalid={labelError ? true : undefined}
-                      className={CONTROL}
-                      onChange={(event) => setNewLabel(event.target.value)}
-                      placeholder="Ex.: After Sale"
-                      value={newLabel}
-                    />
-                    {labelError ? <span className="gso-settings-field-error" id="new-brand-label-error">{labelError}</span> : null}
-                  </label>
-                  <label className="gso-settings-field gso-settings-field--wide">
-                    <span>Central de ajuda <small>(opcional)</small></span>
-                    <input
-                      aria-describedby={slugError ? 'new-brand-slug-error' : undefined}
-                      aria-invalid={slugError ? true : undefined}
-                      className={CONTROL}
-                      onChange={(event) => setNewSlug(event.target.value)}
-                      placeholder="Ex.: after-sale"
-                      value={newSlug}
-                    />
-                    {slugError ? <span className="gso-settings-field-error" id="new-brand-slug-error">{slugError}</span> : null}
-                  </label>
-                </div>
-                <div className="gso-settings-card-actions">
-                  <button className="gso-settings-button gso-settings-button--primary" disabled={mutating} onClick={() => void submitCreate()} type="button">
+                <div className="gso-ui-actions">
+                  <UiButton disabled={mutating} icon="check" onClick={() => void submitCreate()} variant="primary">
                     {mutating ? 'Salvando…' : 'Salvar marca'}
-                  </button>
-                  <button className="gso-settings-button gso-settings-button--secondary" disabled={mutating} onClick={() => setCreating(false)} type="button">
+                  </UiButton>
+                  <UiButton disabled={mutating} onClick={() => setCreating(false)} variant="ghost">
                     Cancelar
-                  </button>
+                  </UiButton>
                 </div>
               </>
             ) : selected ? (
               <>
-                <div className="gso-settings-identity">
-                  <span aria-hidden="true" className="gso-settings-monogram">
+                <div className="gso-ui-identity">
+                  <span aria-hidden="true" className="gso-ui-monogram">
                     {selectedProfile?.logoUrl ? <img alt="" src={selectedProfile.logoUrl} /> : monogramOf(selected.label)}
                   </span>
                   <div>
-                    <p className="gso-settings-eyebrow">Marca</p>
                     <h3>{selected.label}</h3>
+                    <p>{selected.helpCenterSlug ? `/${selected.helpCenterSlug}` : UNAVAILABLE}</p>
                   </div>
-                  <span className={`gso-settings-status ${selected.isActive ? 'gso-settings-status--success' : 'gso-settings-status--muted'}`}>
+                  <UiBadge dot tone={selected.isActive ? 'success' : 'neutral'}>
                     {selected.isActive ? 'Ativa' : 'Arquivada'}
-                  </span>
+                  </UiBadge>
                 </div>
 
-                <dl className="gso-settings-definition">
-                  <div>
-                    <dt>Central de ajuda</dt>
-                    <dd>{selected.helpCenterSlug ? `/${selected.helpCenterSlug}` : UNAVAILABLE}</dd>
-                  </div>
-                  <div>
-                    <dt>Idioma padrão</dt>
-                    <dd>{selectedProfile?.defaultLocale ?? UNAVAILABLE}</dd>
-                  </div>
-                  <div>
-                    <dt>Domínio principal</dt>
-                    <dd>{selectedProfile?.primaryDomain ?? UNAVAILABLE}</dd>
-                  </div>
-                  <div>
-                    <dt>Artigos publicados</dt>
-                    <dd>{selectedProfile?.publishedArticleCount ?? UNAVAILABLE}</dd>
-                  </div>
-                  <div>
-                    <dt>Categorias</dt>
-                    <dd>{selectedProfile?.categoryCount ?? UNAVAILABLE}</dd>
-                  </div>
-                </dl>
+                <div className="gso-ui-card-body">
+                  <UiDetailList
+                    items={[
+                      { icon: 'help', label: 'Central de ajuda', value: selected.helpCenterSlug ? `/${selected.helpCenterSlug}` : UNAVAILABLE },
+                      { icon: 'globe', label: 'Idioma padrão', value: selectedProfile?.defaultLocale ?? UNAVAILABLE },
+                      { icon: 'link', label: 'Domínio principal', value: selectedProfile?.primaryDomain ?? UNAVAILABLE },
+                      { icon: 'list', label: 'Artigos publicados', value: selectedProfile?.publishedArticleCount ?? UNAVAILABLE },
+                      { icon: 'tag', label: 'Categorias', value: selectedProfile?.categoryCount ?? UNAVAILABLE },
+                    ]}
+                  />
+                </div>
 
-                <p className="gso-settings-help">
+                <p className="gso-ui-note">
                   {profiles.status === 'unavailable'
                     ? 'O perfil da central desta marca não está disponível para o seu acesso, por isso idioma, domínio e volume de conteúdo aparecem como indisponíveis.'
                     : 'Idioma, domínio e volume de conteúdo são definidos na própria central de ajuda e não são editáveis aqui.'}
                 </p>
 
                 {!selected.isActive ? (
-                  <p className="gso-settings-help">Esta marca está arquivada e não é oferecida nas superfícies que usam marca.</p>
+                  <p className="gso-ui-note">Esta marca está arquivada e não é oferecida nas superfícies que usam marca.</p>
                 ) : confirmingArchive ? (
-                  <div className="gso-settings-confirm" role="group">
+                  <div className="gso-ui-confirm" role="group">
                     <strong>Arquivar “{selected.label}”?</strong>
                     <p>
                       A marca deixa de aparecer entre as marcas ativas e não será mais oferecida nas superfícies que usam
                       marca. O conteúdo já publicado permanece como está.
                     </p>
-                    <div className="gso-settings-card-actions">
-                      <button className="gso-settings-button gso-settings-button--primary" disabled={mutating} onClick={() => void submitArchive()} type="button">
+                    <div className="gso-ui-actions">
+                      <UiButton disabled={mutating} icon="archive" onClick={() => void submitArchive()} variant="danger">
                         {mutating ? 'Arquivando…' : 'Confirmar arquivamento'}
-                      </button>
-                      <button className="gso-settings-button gso-settings-button--secondary" disabled={mutating} onClick={() => setConfirmingArchive(false)} type="button">
+                      </UiButton>
+                      <UiButton disabled={mutating} onClick={() => setConfirmingArchive(false)} variant="ghost">
                         Cancelar
-                      </button>
+                      </UiButton>
                     </div>
                   </div>
                 ) : (
-                  <div className="gso-settings-card-actions">
-                    <button className="gso-settings-button gso-settings-button--secondary" disabled={mutating} onClick={() => setConfirmingArchive(true)} type="button">
+                  <div className="gso-ui-actions">
+                    <UiButton disabled={mutating} icon="archive" onClick={() => setConfirmingArchive(true)} variant="danger">
                       Arquivar marca
-                    </button>
+                    </UiButton>
                   </div>
                 )}
               </>
             ) : (
-              <p className="gso-settings-empty">Escolha uma marca na lista para ver o detalhe dela aqui.</p>
+              <UiEmptyState icon="brand" title="Escolha uma marca na lista para ver o detalhe dela aqui." />
             )}
           </aside>
         </div>
       )}
-    </div>
+    </UiPage>
   );
 }

@@ -1,3 +1,6 @@
+import { UiCard } from '../ui/UiCard';
+import { UiCardHeader } from '../ui/UiCardHeader';
+
 /**
  * Resumo de protecao das credenciais.
  *
@@ -10,16 +13,15 @@
  */
 export function IntegrationSecuritySummary() {
   return (
-    <article aria-labelledby="integration-rail-security" className="gso-int-rail-block">
-      <p className="gso-settings-eyebrow">Governança</p>
-      <h3 id="integration-rail-security">Proteção das credenciais</h3>
-      <ul className="gso-int-rail-facts">
+    <UiCard labelledBy="integration-rail-security">
+      <UiCardHeader icon="shield" title="Proteção das credenciais" titleId="integration-rail-security" tone="accent" />
+      <ul className="gso-ui-facts">
         <li>O valor da credencial fica guardado em cofre no banco de dados e não retorna para a tela: a interface recebe apenas o indicador de credencial configurada.</li>
         <li>Campo em branco mantém a credencial atual. Um novo valor só é enviado quando você digita no campo.</li>
         <li>A gravação passa por uma função do banco que recusa quem não tem acesso ao Dashboard Gerencial.</li>
         <li>A data em Credencial atualizada em só avança quando uma nova credencial é gravada.</li>
       </ul>
-      <p className="gso-int-rail-note">Rotação automática e monitoramento contínuo de credenciais não fazem parte desta versão.</p>
-    </article>
+      <p className="gso-ui-note">Rotação automática e monitoramento contínuo de credenciais não fazem parte desta versão.</p>
+    </UiCard>
   );
 }

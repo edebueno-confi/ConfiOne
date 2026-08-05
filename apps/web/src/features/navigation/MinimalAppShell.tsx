@@ -7,6 +7,9 @@ import { ThemeToggle } from '../../components/ThemeToggle';
 import { useAuthContext } from '../auth/auth-context';
 import { SettingsNavIcon } from '../settings/settings-nav-icons';
 import { GeniusGlobalSearch } from './GeniusGlobalSearch';
+// A sidebar veste o mesmo sistema visual das telas de Configuracoes: a classe
+// raiz `gso-ui` publica os tokens e o CSS abaixo aplica a linguagem nova.
+import '../settings/settings-ui.css';
 import {
   buildMinimalNavigation,
   resolveMinimalRouteLabel,
@@ -96,6 +99,8 @@ function ShellNavigation({
               const linkClassName = cx(
                 'gso-nav-link flex min-h-11 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors duration-150',
                 collapsed && 'justify-center px-0',
+                // Subitens de Configuracoes ficam recuados sob o rotulo do grupo.
+                !collapsed && item.settingsSection && 'gso-nav-link--nested',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]',
                 active
                   ? 'gso-nav-link--active bg-[color:var(--minimal-selection)] font-medium text-[color:var(--minimal-selection-text)]'
@@ -222,7 +227,7 @@ function GeniusSidebar({
   return (
     <aside
       aria-label="Navegação principal"
-      className={cx('gso-sidebar hidden shrink-0 lg:grid', collapsed ? 'gso-sidebar--collapsed' : 'gso-sidebar--open')}
+      className={cx('gso-ui gso-sidebar hidden shrink-0 lg:grid', collapsed ? 'gso-sidebar--collapsed' : 'gso-sidebar--open')}
       data-collapsed={collapsed}
     >
       <div className="gso-sidebar-header">
@@ -496,7 +501,7 @@ export function MinimalAppShell({
           {mobileNavigationOpen ? (
             <div className="fixed inset-0 z-40 lg:hidden" id="gso-mobile-navigation">
               <button aria-label="Fechar navegação" className="absolute inset-0 bg-[color:var(--minimal-overlay)]" onClick={() => setMobileNavigationOpen(false)} type="button" />
-              <aside aria-label="Menu principal mobile" aria-modal="true" className="relative flex h-full w-[min(19rem,86vw)] flex-col border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] shadow-[var(--minimal-drawer-shadow)]" role="dialog">
+              <aside aria-label="Menu principal mobile" aria-modal="true" className="gso-ui gso-sidebar-drawer relative flex h-full w-[min(19rem,86vw)] flex-col border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] shadow-[var(--minimal-drawer-shadow)]" role="dialog">
                 <div className="flex h-14 items-center justify-between border-b border-[color:var(--minimal-border)] px-4">
                   <p className="flex items-center gap-2 text-sm font-semibold"><GeniusLamp size="sm" />Genius<span className="text-[color:var(--genius-site-pink)]">OS</span></p>
                   <button ref={mobileCloseButtonRef} aria-label="Fechar navegação" className="inline-flex h-11 w-11 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]" onClick={() => { setMobileNavigationOpen(false); mobileMenuButtonRef.current?.focus(); }} type="button">

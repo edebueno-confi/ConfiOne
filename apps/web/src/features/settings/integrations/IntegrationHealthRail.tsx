@@ -9,7 +9,7 @@ import { IntegrationSyncStatus } from './IntegrationSyncStatus';
  */
 export function IntegrationHealthRail({ integrations }: { integrations: ManagedIntegration[] }) {
   return (
-    <aside aria-label="Governança das integrações" className="gso-int-rail">
+    <aside aria-label="Governança das integrações" className="gso-ui-rail">
       <IntegrationSyncStatus integrations={integrations} />
       <IntegrationSecuritySummary />
     </aside>

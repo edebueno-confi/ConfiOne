@@ -1,15 +1,17 @@
 import { useMemo, useState } from 'react';
 import { formatDateTime } from '../../app/format';
-import { SettingsPageHeader } from './SettingsPageHeader';
 import { IntegrationHealthRail } from './integrations/IntegrationHealthRail';
 import { IntegrationProviderCard } from './integrations/IntegrationProviderCard';
 import { IntegrationsSummary } from './integrations/IntegrationsSummary';
 import { SettingsBenefitsFooter } from './integrations/SettingsBenefitsFooter';
 import { summarizeIntegrations } from './integrations/integration-health.mjs';
 import { saveManagedIntegration, type ManagedIntegration } from './settings-api';
-import './integrations/settings-integrations.css';
-
-const CONTROL = 'gso-settings-control w-full rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-3 py-2.5 text-sm text-[color:var(--minimal-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]';
+import { UiButton } from './ui/UiButton';
+import { UiEmptyState } from './ui/UiEmptyState';
+import { UiField } from './ui/UiField';
+import { UiPage } from './ui/UiPage';
+import { UiPageHeader } from './ui/UiPageHeader';
+import './settings-ui.css';
 
 type SaveIntegrationInput = Parameters<typeof saveManagedIntegration>[0];
 
@@ -46,37 +48,35 @@ function HubSpotIntegrationForm({ busy, item, onSave }: ProviderFormProps) {
 
   return (
     <form
-      className="gso-settings-form"
       onSubmit={(event) => {
         event.preventDefault();
         void submit();
       }}
     >
-      <div className="gso-settings-form-grid">
-        <label className="gso-settings-field gso-settings-field--toggle">
+      <div className="gso-ui-grid">
+        <label className="gso-ui-toggle">
           <span>Integração ativa</span>
           <input checked={isEnabled} onChange={(event) => setIsEnabled(event.target.checked)} type="checkbox" />
         </label>
-        <label className="gso-settings-field gso-settings-field--wide">
-          <span>Token de acesso</span>
+        <UiField label="Token de acesso" wide>
           <input
             aria-describedby="hubspot-credential-help"
             autoComplete="new-password"
-            className={CONTROL}
+            className="gso-ui-control"
             onChange={(event) => setToken(event.target.value)}
             placeholder="Informe o token de acesso"
             type="password"
             value={token}
           />
-        </label>
+        </UiField>
       </div>
-      <p className="gso-settings-help" id="hubspot-credential-help">
+      <p className="gso-ui-note" id="hubspot-credential-help">
         Deixe em branco para manter a credencial atual. O valor nunca é exibido novamente.
       </p>
-      <footer className="gso-settings-card-actions">
-        <button className="gso-settings-button gso-settings-button--primary" disabled={busy} type="submit">
+      <footer className="gso-ui-actions">
+        <UiButton disabled={busy} icon="check" type="submit" variant="primary">
           {busy ? 'Salvando…' : 'Salvar alterações'}
-        </button>
+        </UiButton>
       </footer>
     </form>
   );
@@ -113,54 +113,51 @@ function OmieIntegrationForm({ busy, item, onSave }: ProviderFormProps) {
 
   return (
     <form
-      className="gso-settings-form"
       onSubmit={(event) => {
         event.preventDefault();
         void submit();
       }}
     >
-      <div className="gso-settings-form-grid">
-        <label className="gso-settings-field gso-settings-field--toggle">
+      <div className="gso-ui-grid">
+        <label className="gso-ui-toggle">
           <span>Integração ativa</span>
           <input checked={isEnabled} onChange={(event) => setIsEnabled(event.target.checked)} type="checkbox" />
         </label>
-        <label className="gso-settings-field gso-settings-field--wide">
-          <span>Chave da aplicação</span>
+        <UiField label="Chave da aplicação" wide>
           <input
             aria-describedby="omie-credential-help"
             autoComplete="new-password"
-            className={CONTROL}
+            className="gso-ui-control"
             onChange={(event) => setAppKey(event.target.value)}
             placeholder="Informe a chave da aplicação"
             type="password"
             value={appKey}
           />
-        </label>
-        <label className="gso-settings-field gso-settings-field--wide">
-          <span>Segredo da aplicação</span>
+        </UiField>
+        <UiField label="Segredo da aplicação" wide>
           <input
             aria-describedby="omie-credential-help"
             autoComplete="new-password"
-            className={CONTROL}
+            className="gso-ui-control"
             onChange={(event) => setAppSecret(event.target.value)}
             placeholder="Informe o segredo da aplicação"
             type="password"
             value={appSecret}
           />
-        </label>
+        </UiField>
       </div>
-      <p className="gso-settings-help" id="omie-credential-help">
+      <p className="gso-ui-note" id="omie-credential-help">
         Deixe em branco para manter a credencial atual. O valor nunca é exibido novamente.
       </p>
       {message ? (
-        <p className="gso-settings-inline-error" role="alert">
+        <p className="gso-ui-alert gso-ui-alert--error" role="alert">
           {message}
         </p>
       ) : null}
-      <footer className="gso-settings-card-actions">
-        <button className="gso-settings-button gso-settings-button--primary" disabled={busy} type="submit">
+      <footer className="gso-ui-actions">
+        <UiButton disabled={busy} icon="check" type="submit" variant="primary">
           {busy ? 'Salvando…' : 'Salvar alterações'}
-        </button>
+        </UiButton>
       </footer>
     </form>
   );
@@ -203,20 +200,21 @@ export function SettingsIntegrationsPanel({
     }
   };
 
-  if (!published.length) return <p className="gso-settings-empty">Nenhuma integração disponível neste ambiente.</p>;
+  if (!published.length) {
+    return (
+      <UiPage>
+        <UiEmptyState icon="plug" title="Nenhuma integração disponível neste ambiente." />
+      </UiPage>
+    );
+  }
 
   return (
-    <div className="gso-int-surface gso-visual-v1-settings">
-      <SettingsPageHeader
+    <UiPage>
+      <UiPageHeader
         actions={
-          <button
-            className="gso-settings-button gso-settings-button--secondary"
-            disabled={busy || reloading}
-            onClick={() => void reload()}
-            type="button"
-          >
+          <UiButton disabled={busy || reloading} icon="refresh" onClick={() => void reload()}>
             {reloading ? 'Atualizando…' : 'Atualizar estado'}
-          </button>
+          </UiButton>
         }
         description="Credenciais e estado das fontes externas que abastecem o Dashboard Gerencial."
         meta={summary.updatedAt ? `Última alteração registrada em ${formatDateTime(summary.updatedAt)}` : 'Nenhuma alteração registrada'}
@@ -226,8 +224,8 @@ export function SettingsIntegrationsPanel({
 
       <IntegrationsSummary summary={summary} />
 
-      <div className="gso-int-body">
-        <div className="gso-int-cards">
+      <div className="gso-ui-body">
+        <div className="gso-ui-cards">
           {published.map((item) =>
             item.provider === 'omie' ? (
               <IntegrationProviderCard
@@ -259,12 +257,12 @@ export function SettingsIntegrationsPanel({
       </div>
 
       {error ? (
-        <p className="gso-settings-inline-error" role="alert">
+        <p className="gso-ui-alert gso-ui-alert--error" role="alert">
           {error}
         </p>
       ) : null}
 
       <SettingsBenefitsFooter />
-    </div>
+    </UiPage>
   );
 }

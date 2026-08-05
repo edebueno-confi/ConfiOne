@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MinimalState } from '../../components/minimal-states';
 import { listAnalyticsSyncHistory } from '../analytics/analytics-api';
 import type { AnalyticsSyncHistoryRow } from '../analytics/analytics-model';
-import { SettingsPageHeader } from './SettingsPageHeader';
 import {
   DEFAULT_HISTORY_FILTERS,
   PERIOD_OPTIONS,
@@ -10,7 +9,6 @@ import {
   STATUS_OPTIONS,
   TRIGGER_OPTIONS,
   UNAVAILABLE_LABEL,
-  bucketTone,
   cycleRowOf,
   filterHistoryGroups,
   groupHistoryRows,
@@ -21,10 +19,34 @@ import {
   statusLabel,
   type HistoryFilters,
 } from './history/sync-history-view.mjs';
-import './settings-shell.css';
+import { UiBadge } from './ui/UiBadge';
+import { UiButton } from './ui/UiButton';
+import { UiCard } from './ui/UiCard';
+import { UiEmptyState } from './ui/UiEmptyState';
+import { UiField } from './ui/UiField';
+import { UiIcon } from './ui/UiIcon';
+import { UiIconTile } from './ui/UiIconTile';
+import { UiMetric } from './ui/UiMetric';
+import { UiMetricRow } from './ui/UiMetricRow';
+import { UiPage } from './ui/UiPage';
+import { UiPageHeader } from './ui/UiPageHeader';
+import { UiToolbar } from './ui/UiToolbar';
+import type { UiTone } from './ui/ui-types';
+import './settings-ui.css';
 
-const CONTROL = 'w-full rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-2.5 py-2 text-sm text-[color:var(--minimal-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]';
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
+
+/** Tom visual de cada balde operacional publicado pela leitura do histórico. */
+const BUCKET_TONE: Record<string, UiTone> = {
+  success: 'success',
+  partial: 'warning',
+  failed: 'danger',
+  running: 'primary',
+};
+
+function bucketTone(bucket: string): UiTone {
+  return BUCKET_TONE[bucket] ?? 'neutral';
+}
 
 function formatDate(value: string | null, status?: string) {
   if (value) return new Date(value).toLocaleString('pt-BR');
@@ -51,38 +73,46 @@ function HistoryGroup({ rows, isLatest = false }: { rows: AnalyticsSyncHistoryRo
   const cycle = cycleRowOf(rows);
   const steps = rows.filter((row) => row.rowKind === 'step');
   const status = resolveGroupStatus(rows);
+  const tone = bucketTone(statusBucket(status));
   const totalProcessed = steps.reduce((sum, row) => sum + row.processedCount, 0);
 
   return (
     <li>
-      <details className="gso-settings-history-group" open={isLatest}>
-        <summary className="gso-settings-history-summary">
-        <div>
-          <p className="gso-settings-eyebrow">Registro operacional</p>
-          <h3>{triggerLabelOf(cycle)}</h3>
-          <p>{formatDate(cycle.startedAt, cycle.status)} · {cycle.currentStep ? `etapa atual: ${cycle.currentStep}` : 'HubSpot → OMIE'}</p>
-        </div>
-        <span className={`gso-settings-status gso-settings-status--${statusBucket(status) === 'failed' ? 'failed' : status}`}>{statusLabel(status)}</span>
-        </summary>
-        <div className="gso-settings-history-details">
-        {steps.length ? steps.map((row) => (
-          <div className="gso-settings-history-source" key={`${row.sourceKey}-${row.runId ?? row.cycleId}`}>
-            <div><strong>{row.sourceLabel}</strong><span>{statusLabel(row.status)}</span></div>
-            <dl>
-              <div><dt>Início</dt><dd>{formatDate(row.startedAt, row.status)}</dd></div>
-              <div><dt>Fim</dt><dd>{formatDate(row.finishedAt, row.status)}</dd></div>
-              <div><dt>Duração</dt><dd>{formatDuration(row.durationMs)}</dd></div>
-              <div><dt>Registros lidos</dt><dd>{row.processedCount || UNAVAILABLE_LABEL}</dd></div>
-            </dl>
-            {row.errorMessage ? <p className="gso-settings-history-error">{row.errorMessage}</p> : null}
+      <details className="gso-ui-historygroup" open={isLatest}>
+        <summary>
+          <div className="gso-ui-historysummary">
+            <UiIconTile icon={cycle.sourceKey ? 'refresh' : 'clock'} tone={tone} />
+            <div>
+              <h3>{triggerLabelOf(cycle)}</h3>
+              <p>{formatDate(cycle.startedAt, cycle.status)} · {cycle.currentStep ? `etapa atual: ${cycle.currentStep}` : 'HubSpot → OMIE'}</p>
+            </div>
+            <UiBadge dot tone={tone}>{statusLabel(status)}</UiBadge>
           </div>
-        )) : <p className="gso-settings-empty">As etapas deste ciclo ainda não foram publicadas.</p>}
+        </summary>
+        <div className="gso-ui-historybody">
+          {steps.length ? steps.map((row) => (
+            <div className="gso-ui-historysource" key={`${row.sourceKey}-${row.runId ?? row.cycleId}`}>
+              <div className="gso-ui-historysource-head">
+                <strong>{row.sourceLabel}</strong>
+                <UiBadge tone={bucketTone(statusBucket(row.status))}>{statusLabel(row.status)}</UiBadge>
+              </div>
+              <dl>
+                <div><dt>Início</dt><dd>{formatDate(row.startedAt, row.status)}</dd></div>
+                <div><dt>Fim</dt><dd>{formatDate(row.finishedAt, row.status)}</dd></div>
+                <div><dt>Duração</dt><dd>{formatDuration(row.durationMs)}</dd></div>
+                <div><dt>Registros lidos</dt><dd>{row.processedCount || UNAVAILABLE_LABEL}</dd></div>
+              </dl>
+              {row.errorMessage ? <p className="gso-ui-historysource-error">{row.errorMessage}</p> : null}
+            </div>
+          )) : (
+            <UiEmptyState icon="list" title="As etapas deste ciclo ainda não foram publicadas." />
+          )}
         </div>
-      <footer className="gso-settings-history-footer">
-        {totalProcessed ? `${totalProcessed} registros processados no ciclo.` : cycle.sourceKey ? 'Execução registrada; quantidade processada indisponível.' : 'Quantidade processada indisponível neste ciclo.'}
-        {cycle.correlationId ? ` Correlação: ${cycle.correlationId}.` : ''}
-      </footer>
-        </details>
+        <footer className="gso-ui-historyfoot">
+          {totalProcessed ? `${totalProcessed} registros processados no ciclo.` : cycle.sourceKey ? 'Execução registrada; quantidade processada indisponível.' : 'Quantidade processada indisponível neste ciclo.'}
+          {cycle.correlationId ? ` Correlação: ${cycle.correlationId}.` : ''}
+        </footer>
+      </details>
     </li>
   );
 }
@@ -152,12 +182,12 @@ export function SyncHistorySettingsPage() {
   if (error && !rows.length) return <MinimalState tone="critical" title="Não foi possível carregar o histórico" description={error} />;
 
   return (
-    <div className="gso-settings-page gso-settings-history gso-visual-v1-settings">
-      <SettingsPageHeader
+    <UiPage>
+      <UiPageHeader
         actions={
-          <button className="gso-settings-button gso-settings-button--secondary" disabled={loading} onClick={() => void load()} type="button">
+          <UiButton disabled={loading} icon="refresh" onClick={() => void load()}>
             {loading ? 'Atualizando…' : 'Atualizar'}
-          </button>
+          </UiButton>
         }
         description="Ciclos e etapas registrados pelas atualizações do Dashboard, por fonte, resultado e quantidade processada."
         meta={`${rows.length} execuções carregadas${loadedAtMs ? ` · leitura de ${new Date(loadedAtMs).toLocaleTimeString('pt-BR')}` : ''}`}
@@ -165,130 +195,121 @@ export function SyncHistorySettingsPage() {
         titleId="settings-sync-history-title"
       />
 
-      <section aria-label="Filtros do histórico" className="gso-settings-toolbar">
-        <label className="gso-settings-toolbar-field">
-          <span>Período</span>
-          <select className={CONTROL} onChange={(event) => updateFilter('period', event.target.value)} value={filters.period}>
-            {PERIOD_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
-        <label className="gso-settings-toolbar-field">
-          <span>Fonte</span>
-          <select className={CONTROL} onChange={(event) => updateFilter('source', event.target.value)} value={filters.source}>
-            {SOURCE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
-        <label className="gso-settings-toolbar-field">
-          <span>Resultado</span>
-          <select className={CONTROL} onChange={(event) => updateFilter('status', event.target.value)} value={filters.status}>
-            {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
-        <label className="gso-settings-toolbar-field">
-          <span>Gatilho</span>
-          <select className={CONTROL} onChange={(event) => updateFilter('trigger', event.target.value)} value={filters.trigger}>
-            {TRIGGER_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
-        <div className="gso-settings-toolbar-actions">
-          <button className="gso-settings-toolbar-reset" disabled={!filtersActive} onClick={resetFilters} type="button">
+      <UiToolbar
+        actions={
+          <button className="gso-ui-linkbutton" disabled={!filtersActive} onClick={resetFilters} type="button">
             Limpar filtros
           </button>
+        }
+        label="Filtros do histórico"
+      >
+        <div className="gso-ui-toolbar-field">
+          <UiField label="Período">
+            <select className="gso-ui-control gso-ui-select" onChange={(event) => updateFilter('period', event.target.value)} value={filters.period}>
+              {PERIOD_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </UiField>
         </div>
-      </section>
+        <div className="gso-ui-toolbar-field">
+          <UiField label="Fonte">
+            <select className="gso-ui-control gso-ui-select" onChange={(event) => updateFilter('source', event.target.value)} value={filters.source}>
+              {SOURCE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </UiField>
+        </div>
+        <div className="gso-ui-toolbar-field">
+          <UiField label="Resultado">
+            <select className="gso-ui-control gso-ui-select" onChange={(event) => updateFilter('status', event.target.value)} value={filters.status}>
+              {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </UiField>
+        </div>
+        <div className="gso-ui-toolbar-field">
+          <UiField label="Gatilho">
+            <select className="gso-ui-control gso-ui-select" onChange={(event) => updateFilter('trigger', event.target.value)} value={filters.trigger}>
+              {TRIGGER_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </UiField>
+        </div>
+      </UiToolbar>
 
-      <section aria-label="Resumo do recorte" className="gso-settings-metrics">
-        <div className="gso-settings-metric gso-settings-metric--accent">
-          <span>No recorte</span>
-          <strong>{counts.total}</strong>
-          <small>execuções visíveis</small>
-        </div>
-        <div className="gso-settings-metric">
-          <span>Concluídas</span>
-          <strong className={counts.success ? bucketToneClass('success') : undefined}>{counts.success}</strong>
-          <small>sem falha nas etapas</small>
-        </div>
-        <div className="gso-settings-metric">
-          <span>Parciais</span>
-          <strong className={counts.partial ? bucketToneClass('partial') : undefined}>{counts.partial}</strong>
-          <small>parte da carga concluída</small>
-        </div>
-        <div className="gso-settings-metric">
-          <span>Com falha</span>
-          <strong className={counts.failed ? bucketToneClass('failed') : undefined}>{counts.failed}</strong>
-          <small>etapa interrompida ou recusada</small>
-        </div>
-        <div className="gso-settings-metric">
-          <span>Em andamento</span>
-          <strong className={counts.running ? bucketToneClass('running') : undefined}>{counts.running}</strong>
-          <small>ciclo ainda aberto</small>
-        </div>
-      </section>
+      <UiMetricRow label="Resumo do recorte">
+        <UiMetric icon="list" label="No recorte" sub="execuções visíveis" tone="primary" value={counts.total} />
+        <UiMetric icon="check" label="Concluídas" sub="sem falha nas etapas" tone="success" value={counts.success} valueTone={counts.success ? 'success' : undefined} />
+        <UiMetric icon="alert" label="Parciais" sub="parte da carga concluída" tone="warning" value={counts.partial} valueTone={counts.partial ? 'warning' : undefined} />
+        <UiMetric icon="x" label="Com falha" sub="etapa interrompida ou recusada" tone="danger" value={counts.failed} valueTone={counts.failed ? 'danger' : undefined} />
+        <UiMetric icon="clock" label="Em andamento" sub="ciclo ainda aberto" tone="primary" value={counts.running} valueTone={counts.running ? 'primary' : undefined} />
+      </UiMetricRow>
 
-      {error ? <p className="gso-settings-inline-error" role="alert">{error}</p> : null}
+      {error ? <p className="gso-ui-alert gso-ui-alert--error" role="alert">{error}</p> : null}
 
       {!groups.length ? (
-        <p className="gso-settings-empty">Nenhuma atualização registrada neste ambiente.</p>
+        <UiCard>
+          <UiEmptyState icon="clock" title="Nenhuma atualização registrada neste ambiente." />
+        </UiCard>
       ) : !visibleGroups.length ? (
-        <p className="gso-settings-empty">
-          Nenhuma execução corresponde aos filtros escolhidos.{' '}
-          <button className="gso-settings-toolbar-reset" onClick={resetFilters} type="button">Limpar filtros</button>
-        </p>
+        <UiCard>
+          <UiEmptyState
+            action={
+              <button className="gso-ui-linkbutton" onClick={resetFilters} type="button">
+                Limpar filtros
+              </button>
+            }
+            description="Nenhuma execução corresponde aos filtros escolhidos."
+            icon="filter"
+            title="Nada neste recorte"
+          />
+        </UiCard>
       ) : (
         <>
-          <ol className="gso-settings-history-list">
+          <ol className="gso-ui-historylist">
             {pageInfo.slice.map((group, index) => (
               <HistoryGroup isLatest={pageInfo.page === 1 && index === 0} key={cycleRowOf(group).cycleId} rows={group} />
             ))}
           </ol>
-          <footer className="gso-settings-pagination">
-            <span>
-              Exibindo {pageInfo.from} a {pageInfo.to} de {pageInfo.total} execuções
-            </span>
-            <div className="gso-settings-pagination-controls">
-              <label className="gso-settings-toolbar-field">
-                <span className="sr-only">Execuções por página</span>
+          <UiCard>
+            <footer className="gso-ui-pagination">
+              <span>
+                Exibindo {pageInfo.from} a {pageInfo.to} de {pageInfo.total} execuções
+              </span>
+              <div className="gso-ui-pagination-controls">
                 <select
                   aria-label="Execuções por página"
-                  className={CONTROL}
+                  className="gso-ui-control gso-ui-select"
                   onChange={(event) => { setPageSize(Number(event.target.value)); setPage(1); }}
                   value={pageSize}
                 >
                   {PAGE_SIZE_OPTIONS.map((option) => <option key={option} value={option}>{option} por página</option>)}
                 </select>
-              </label>
-              <button
-                aria-label="Página anterior"
-                className="gso-settings-pagination-button"
-                disabled={pageInfo.page <= 1}
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
-                type="button"
-              >
-                ‹
-              </button>
-              <span>
-                {pageInfo.page} / {pageInfo.pageCount}
-              </span>
-              <button
-                aria-label="Próxima página"
-                className="gso-settings-pagination-button"
-                disabled={pageInfo.page >= pageInfo.pageCount}
-                onClick={() => setPage((current) => current + 1)}
-                type="button"
-              >
-                ›
-              </button>
-            </div>
-          </footer>
-          <p className="gso-settings-help">
-            O histórico lê as 100 execuções mais recentes registradas. Recortes mais antigos não estão disponíveis nesta tela.
-          </p>
+                <button
+                  aria-label="Página anterior"
+                  className="gso-ui-page-button"
+                  disabled={pageInfo.page <= 1}
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  type="button"
+                >
+                  <UiIcon name="chevron-left" />
+                </button>
+                <span>
+                  {pageInfo.page} / {pageInfo.pageCount}
+                </span>
+                <button
+                  aria-label="Próxima página"
+                  className="gso-ui-page-button"
+                  disabled={pageInfo.page >= pageInfo.pageCount}
+                  onClick={() => setPage((current) => current + 1)}
+                  type="button"
+                >
+                  <UiIcon name="chevron-right" />
+                </button>
+              </div>
+            </footer>
+            <p className="gso-ui-note">
+              O histórico lê as 100 execuções mais recentes registradas. Recortes mais antigos não estão disponíveis nesta tela.
+            </p>
+          </UiCard>
         </>
       )}
-    </div>
+    </UiPage>
   );
-}
-
-function bucketToneClass(bucket: 'success' | 'partial' | 'failed' | 'running') {
-  return `gso-settings-tone-${bucketTone(bucket)}`;
 }

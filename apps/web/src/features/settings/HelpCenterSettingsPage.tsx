@@ -1,18 +1,26 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { PUBLIC_HELP_CENTER_HREF } from '../../app/release-surface.mjs';
-import { SettingsPageHeader } from './SettingsPageHeader';
 import {
   profileForSlug,
   useKnowledgeSpaceProfiles,
   type KnowledgeSpaceProfilesState,
 } from './knowledge-space-profiles';
 import type { HelpCenterSupportContacts } from './settings-api';
-import './settings-shell.css';
+import { UiBadge } from './ui/UiBadge';
+import { UiButton } from './ui/UiButton';
+import { UiCard } from './ui/UiCard';
+import { UiCardHeader } from './ui/UiCardHeader';
+import { UiDetailList } from './ui/UiDetailList';
+import { UiEmptyState } from './ui/UiEmptyState';
+import { UiField } from './ui/UiField';
+import { UiHintBand } from './ui/UiHintBand';
+import { UiIcon } from './ui/UiIcon';
+import { UiPage } from './ui/UiPage';
+import { UiPageHeader } from './ui/UiPageHeader';
+import './settings-ui.css';
 
 const UNAVAILABLE = 'Indisponível';
-const CONTROL =
-  'w-full rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-2.5 py-2 text-sm text-[color:var(--minimal-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]';
 
 /** Mesmo formato de estado de carga usado por SettingsPage. */
 type ContactsState =
@@ -22,11 +30,11 @@ type ContactsState =
 
 /** Os cinco canais que o backend realmente grava, nesta ordem. */
 const CONTACT_FIELDS = [
-  ['email', 'E-mail de suporte', 'email', 'atendimento@suamarca.com.br'],
-  ['whatsapp', 'WhatsApp de suporte', 'tel', '(41) 98765-2115'],
-  ['websiteUrl', 'Site ou portal', 'url', 'https://www.suamarca.com.br'],
-  ['statusPageUrl', 'Página de status', 'url', 'https://status.suamarca.com.br'],
-  ['docsUrl', 'Link alternativo da Central', 'url', 'https://ajuda.suamarca.com.br'],
+  ['email', 'E-mail de suporte', 'email', 'atendimento@suamarca.com.br', 'mail'],
+  ['whatsapp', 'WhatsApp de suporte', 'tel', '(41) 98765-2115', 'phone'],
+  ['websiteUrl', 'Site ou portal', 'url', 'https://www.suamarca.com.br', 'globe'],
+  ['statusPageUrl', 'Página de status', 'url', 'https://status.suamarca.com.br', 'activity'],
+  ['docsUrl', 'Link alternativo da Central', 'url', 'https://ajuda.suamarca.com.br', 'link'],
 ] as const;
 
 type ContactField = (typeof CONTACT_FIELDS)[number][0];
@@ -110,84 +118,83 @@ function HelpCenterCard({
   };
 
   return (
-    <section aria-label={`Central de ajuda ${item.brandName}`} className="gso-settings-card">
-      <div className="gso-settings-identity">
-        <span aria-hidden="true" className="gso-settings-monogram">
+    <UiCard label={`Central de ajuda ${item.brandName}`}>
+      <div className="gso-ui-identity">
+        <span aria-hidden="true" className="gso-ui-monogram">
           {profile?.logoUrl ? <img alt="" src={profile.logoUrl} /> : monogramOf(item.brandName)}
         </span>
         <div>
-          <p className="gso-settings-eyebrow">Central de ajuda</p>
           <h3>{item.brandName}</h3>
           <p>/{item.knowledgeSpaceSlug}</p>
         </div>
-        <span className={`gso-settings-status ${published ? 'gso-settings-status--success' : 'gso-settings-status--warning'}`}>
+        <UiBadge dot tone={published ? 'success' : 'warning'}>
           {published ? 'Contato publicado' : 'Sem contato publicado'}
-        </span>
+        </UiBadge>
       </div>
 
-      <p className="gso-settings-help">
+      <p className="gso-ui-note">
         Identidade desta central, definida no espaço de conhecimento correspondente. Não é editável nesta tela.
       </p>
-      <dl className="gso-settings-definition gso-settings-definition--columns">
-        <div>
-          <dt>Nome de exibição</dt>
-          <dd>{item.knowledgeSpaceDisplayName}</dd>
-        </div>
-        <div>
-          <dt>Endereço da central</dt>
-          <dd>/{item.knowledgeSpaceSlug}</dd>
-        </div>
-        <div>
-          <dt>Idioma padrão</dt>
-          <dd>{profile?.defaultLocale ?? UNAVAILABLE}</dd>
-        </div>
-        <div>
-          <dt>Domínio principal</dt>
-          <dd>{profile?.primaryDomain ?? UNAVAILABLE}</dd>
-        </div>
-      </dl>
+      <div className="gso-ui-card-body">
+        <UiDetailList
+          columns
+          items={[
+            { icon: 'brand', label: 'Nome de exibição', value: item.knowledgeSpaceDisplayName },
+            { icon: 'help', label: 'Endereço da central', value: `/${item.knowledgeSpaceSlug}` },
+            { icon: 'globe', label: 'Idioma padrão', value: profile?.defaultLocale ?? UNAVAILABLE },
+            { icon: 'link', label: 'Domínio principal', value: profile?.primaryDomain ?? UNAVAILABLE },
+          ]}
+        />
+      </div>
 
-      <div className="gso-settings-card-header gso-settings-card-header--section">
-        <div>
-          <p className="gso-settings-eyebrow">Canais de contato</p>
-          <p>Aparecem no rodapé público desta central. Deixe em branco o canal que a marca não oferece.</p>
+      <div className="gso-ui-card-body">
+        <UiCardHeader
+          description="Aparecem no rodapé público desta central. Deixe em branco o canal que a marca não oferece."
+          icon="mail"
+          title="Canais de contato"
+          tone="primary"
+        />
+      </div>
+
+      <div className="gso-ui-card-body">
+        <div className="gso-ui-grid">
+          {CONTACT_FIELDS.map(([field, label, type, placeholder, icon]) => {
+            const error = errors[field];
+            const errorId = `${item.knowledgeSpaceId}-${field}-error`;
+            return (
+              <UiField
+                error={error}
+                errorId={errorId}
+                key={field}
+                label={<><UiIcon name={icon} />{label}</>}
+              >
+                <input
+                  aria-describedby={error ? errorId : undefined}
+                  aria-invalid={error ? true : undefined}
+                  className="gso-ui-control"
+                  disabled={mutating}
+                  onChange={(event) => update(field, event.target.value)}
+                  placeholder={placeholder}
+                  type={type}
+                  value={form[field] ?? ''}
+                />
+              </UiField>
+            );
+          })}
         </div>
       </div>
 
-      <div className="gso-settings-form-grid">
-        {CONTACT_FIELDS.map(([field, label, type, placeholder]) => {
-          const error = errors[field];
-          const errorId = `${item.knowledgeSpaceId}-${field}-error`;
-          return (
-            <label className="gso-settings-field" key={field}>
-              <span>{label}</span>
-              <input
-                aria-describedby={error ? errorId : undefined}
-                aria-invalid={error ? true : undefined}
-                className={CONTROL}
-                disabled={mutating}
-                onChange={(event) => update(field, event.target.value)}
-                placeholder={placeholder}
-                type={type}
-                value={form[field] ?? ''}
-              />
-              {error ? <span className="gso-settings-field-error" id={errorId}>{error}</span> : null}
-            </label>
-          );
-        })}
-      </div>
-
-      {mutationError ? <p className="gso-settings-inline-error" role="alert">{mutationError}</p> : null}
+      {mutationError ? <p className="gso-ui-alert gso-ui-alert--error" role="alert">{mutationError}</p> : null}
       {saved && !mutationError ? (
-        <p className="gso-settings-inline-message" role="status">Canais de contato salvos e já publicados na central.</p>
+        <p className="gso-ui-alert gso-ui-alert--success" role="status">Canais de contato salvos e já publicados na central.</p>
       ) : null}
 
-      <div className="gso-settings-card-actions">
-        <button className="gso-settings-button gso-settings-button--primary" disabled={mutating} onClick={() => void submit()} type="button">
+      <div className="gso-ui-actions">
+        <UiButton disabled={mutating} icon="check" onClick={() => void submit()} variant="primary">
           {mutating ? 'Salvando…' : 'Salvar canais de contato'}
-        </button>
+        </UiButton>
       </div>
-    </section>
+    </UiCard>
   );
 }
 
@@ -213,15 +220,16 @@ export function HelpCenterSettingsPage({
   const items = state.phase === 'ready' ? state.items : [];
 
   return (
-    <div className="gso-settings-page gso-visual-v1-settings">
-      <SettingsPageHeader
+    <UiPage>
+      <UiPageHeader
         actions={
           <Link
-            className="gso-settings-button gso-settings-button--secondary"
+            className="gso-ui-button gso-ui-button--secondary"
             rel="noreferrer"
             target="_blank"
             to={PUBLIC_HELP_CENTER_HREF}
           >
+            <UiIcon name="external" />
             Abrir central pública
           </Link>
         }
@@ -232,15 +240,21 @@ export function HelpCenterSettingsPage({
       />
 
       {state.phase === 'idle' || state.phase === 'loading' ? (
-        <p className="gso-settings-empty">Carregando as centrais de ajuda…</p>
+        <UiCard>
+          <UiEmptyState icon="help" title="Carregando as centrais de ajuda…" />
+        </UiCard>
       ) : state.phase === 'error' ? (
-        <p className="gso-settings-inline-error" role="alert">
+        <p className="gso-ui-alert gso-ui-alert--error" role="alert">
           Não foi possível carregar as centrais de ajuda agora. Atualize a página e tente novamente.
         </p>
       ) : !items.length ? (
-        <p className="gso-settings-empty">
-          Nenhuma central de ajuda ativa foi encontrada. Vincule uma marca a uma central para configurar os canais de contato.
-        </p>
+        <UiCard>
+          <UiEmptyState
+            description="Vincule uma marca a uma central para configurar os canais de contato."
+            icon="help"
+            title="Nenhuma central de ajuda ativa foi encontrada"
+          />
+        </UiCard>
       ) : (
         items.map((item) => (
           <HelpCenterCard
@@ -254,13 +268,10 @@ export function HelpCenterSettingsPage({
         ))
       )}
 
-      <section className="gso-settings-source-note">
-        <strong>O que ainda não é ajustável aqui</strong>
-        <p>
-          Nesta versão você define os canais de contato de cada central. Os textos de apresentação, a organização das
-          categorias e o comportamento da busca pública seguem o padrão da plataforma e não são editáveis nesta tela.
-        </p>
-      </section>
-    </div>
+      <UiHintBand
+        description="Nesta versão você define os canais de contato de cada central. Os textos de apresentação, a organização das categorias e o comportamento da busca pública seguem o padrão da plataforma e não são editáveis nesta tela."
+        title="O que ainda não é ajustável aqui"
+      />
+    </UiPage>
   );
 }
