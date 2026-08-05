@@ -63,12 +63,17 @@ export function ThemeProvider({ children, enabled = true }: { children: ReactNod
     applyResolvedTheme(enabled ? resolvedTheme : 'light');
   }, [enabled, resolvedTheme]);
 
-  const setPreference = useCallback((next: ThemePreference) => {
-    setPreferenceState(next);
-    persistThemePreference(next);
-    // Aplica imediatamente para evitar qualquer defasagem visual.
-    applyResolvedTheme(resolveTheme(next));
-  }, []);
+  const setPreference = useCallback(
+    (next: ThemePreference) => {
+      setPreferenceState(next);
+      persistThemePreference(next);
+      // Aplica imediatamente para evitar qualquer defasagem visual, respeitando
+      // a regra de superfície: fora do ambiente autenticado o tema segue claro,
+      // mesmo que a preferência salva seja escura.
+      applyResolvedTheme(enabled ? resolveTheme(next) : 'light');
+    },
+    [enabled],
+  );
 
   const value = useMemo<ThemeContextValue>(
     () => ({ preference, resolvedTheme, setPreference }),
