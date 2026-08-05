@@ -92,6 +92,7 @@ const accounts = [
     // e não falta de grant na fixture.
     extraRoutes: ['/admin/knowledge', '/admin/access', '/admin/settings'],
     knowledgeEditorScenario: true,
+    themeSurfaceScenario: true,
     // Sondagem sem asserção: inventário vivo das telas com
     // `release_enabled = false`. Elas respondem `/access-denied` por decisão de
     // release. Quando uma for publicada, promova para `extraRoutes`.
@@ -275,6 +276,43 @@ try {
           scenario: 'knowledge-write',
           persisted: true,
           restored: true,
+        });
+      }
+      // Regra de superfície do tema: com preferência escura salva, o ambiente
+      // autenticado precisa ficar escuro e a Central Pública precisa continuar
+      // clara. A verificação roda dentro da mesma sessão autenticada.
+      if (viewport.name === 'desktop' && account.themeSurfaceScenario) {
+        await page.evaluate(() => {
+          window.localStorage.setItem('genius.theme-preference', 'dark');
+        });
+        await page.goto(`${baseUrl}/admin/analytics`, { waitUntil: 'domcontentloaded' });
+        await page.waitForTimeout(600);
+        const internalTheme = await page.evaluate(() =>
+          document.documentElement.getAttribute('data-theme'),
+        );
+        if (internalTheme !== 'dark') {
+          throw new Error(
+            `LOCAL_QA_THEME_INTERNAL_NOT_DARK: /admin/analytics resolveu ${internalTheme}`,
+          );
+        }
+        await page.goto(`${baseUrl}/help/genius`, { waitUntil: 'domcontentloaded' });
+        await page.waitForTimeout(600);
+        const publicTheme = await page.evaluate(() =>
+          document.documentElement.getAttribute('data-theme'),
+        );
+        if (publicTheme !== 'light') {
+          throw new Error(
+            `LOCAL_QA_THEME_PUBLIC_NOT_LIGHT: /help/genius resolveu ${publicTheme}`,
+          );
+        }
+        await page.evaluate(() => {
+          window.localStorage.removeItem('genius.theme-preference');
+        });
+        deepScenarios.push({
+          role: account.role,
+          scenario: 'theme-surface',
+          internalTheme,
+          publicTheme,
         });
       }
       // A sondagem roda por último, depois do veredito do persona, porque visita
