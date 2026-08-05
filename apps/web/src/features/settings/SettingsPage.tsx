@@ -48,7 +48,9 @@ interface SettingsGroup {
 type LoadState<T> = { phase: 'idle' | 'loading' } | { phase: 'ready'; items: T[] } | { phase: 'error' };
 
 import { canOpenSettingsSection } from '../../app/release-surface.mjs';
+import { BrandsSettingsPage } from './BrandsSettingsPage';
 import { DashboardSourcesSettingsPage } from './DashboardSourcesSettingsPage';
+import { HelpCenterSettingsPage } from './HelpCenterSettingsPage';
 import { SettingsIntegrationsPanel } from './SettingsIntegrationsPanel';
 import '../analytics/high-density.css';
 import './settings-shell.css';
@@ -474,181 +476,6 @@ function CustomerSegmentsPanel({
   );
 }
 
-function BrandsPanel({
-  state,
-  onCreate,
-  onArchive,
-  mutating,
-  mutationError,
-}: {
-  state: LoadState<Brand>;
-  onCreate: (input: { label: string; helpCenterSlug: string; sortOrder: number }) => Promise<boolean>;
-  onArchive: (id: string) => Promise<void>;
-  mutating: boolean;
-  mutationError: string | null;
-}) {
-  const [showForm, setShowForm] = useState(false);
-  const [label, setLabel] = useState('');
-  const [slug, setSlug] = useState('');
-  const items = state.phase === 'ready' ? state.items.filter((item: Brand) => item.isActive) : [];
-
-  async function handleSave() {
-    if (!label.trim()) return;
-    const ok = await onCreate({ label, helpCenterSlug: slug, sortOrder: (items.length + 1) * 10 });
-    if (ok) {
-      setLabel('');
-      setSlug('');
-      setShowForm(false);
-    }
-  }
-
-  return (
-    <div>
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">Marcas cadastradas</h3>
-        {!showForm ? (
-          <button className="inline-flex items-center rounded-lg border border-[color:var(--minimal-border)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-text)] hover:bg-[color:var(--minimal-surface-muted)]" onClick={() => setShowForm(true)} type="button">
-            Adicionar marca
-          </button>
-        ) : null}
-      </div>
-      {showForm ? (
-        <div className="mb-4 rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] p-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="text-xs font-medium text-[color:var(--minimal-text-secondary)]">
-              Nome da marca
-              <input className={cx(inputClass, 'mt-1')} onChange={(event) => setLabel(event.target.value)} placeholder="Ex.: After Sale" value={label} />
-            </label>
-            <label className="text-xs font-medium text-[color:var(--minimal-text-secondary)]">
-              Central de ajuda (slug)
-              <input className={cx(inputClass, 'mt-1')} onChange={(event) => setSlug(event.target.value)} placeholder="ex.: after-sale" value={slug} />
-            </label>
-          </div>
-          {mutationError ? <p className="mt-2 text-xs text-[color:var(--color-danger-text)]">{mutationError}</p> : null}
-          <div className="mt-3 flex items-center gap-2">
-            <button className="inline-flex items-center rounded-lg border border-transparent bg-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action-ink)] disabled:opacity-60" disabled={mutating || !label.trim()} onClick={() => void handleSave()} type="button">
-              {mutating ? 'Salvando…' : 'Salvar'}
-            </button>
-            <button className="inline-flex items-center rounded-lg border border-[color:var(--minimal-border)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-text-secondary)]" onClick={() => { setShowForm(false); setLabel(''); setSlug(''); }} type="button">
-              Cancelar
-            </button>
-          </div>
-        </div>
-      ) : null}
-      {state.phase === 'loading' || state.phase === 'idle' ? (
-        <p className="text-sm text-[color:var(--minimal-text-secondary)]">Carregando marcas…</p>
-      ) : state.phase === 'error' ? (
-        <div className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] px-4 py-3 text-sm text-[color:var(--color-danger-text)]">Não foi possível carregar agora. Atualize a página e tente novamente.</div>
-      ) : items.length === 0 ? (
-        <p className="text-sm text-[color:var(--minimal-text-secondary)]">Nenhuma marca cadastrada.</p>
-      ) : (
-        <div className="overflow-hidden rounded-lg border border-[color:var(--minimal-border)]">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] text-xs text-[color:var(--minimal-text-tertiary)]">
-              <tr><th className="px-3 py-2 font-medium">Marca</th><th className="px-3 py-2 font-medium">Central de ajuda</th><th className="px-3 py-2 text-right font-medium">Ação</th></tr>
-            </thead>
-            <tbody>
-              {items.map((item: Brand) => (
-                <tr className="border-b border-[color:var(--minimal-border)] last:border-b-0" key={item.id}>
-                  <td className="px-3 py-2.5 font-medium text-[color:var(--minimal-text)]">{item.label}</td>
-                  <td className="px-3 py-2.5 text-[color:var(--minimal-text-secondary)]">{item.helpCenterSlug ?? '—'}</td>
-                  <td className="px-3 py-2.5 text-right">
-                    <button className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--minimal-text-tertiary)] hover:text-[color:var(--color-danger-text)] disabled:opacity-60" disabled={mutating} onClick={() => void onArchive(item.id)} type="button">Arquivar</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function HelpCenterSupportContactsPanel({
-  state,
-  onSave,
-  mutating,
-  mutationError,
-}: {
-  state: LoadState<HelpCenterSupportContacts>;
-  onSave: (input: HelpCenterSupportContacts) => Promise<void>;
-  mutating: boolean;
-  mutationError: string | null;
-}) {
-  if (state.phase === 'loading' || state.phase === 'idle') {
-    return <p className="text-sm text-[color:var(--minimal-text-secondary)]">Carregando configurações da Central de Ajuda…</p>;
-  }
-  if (state.phase === 'error') {
-    return <div className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] px-4 py-3 text-sm text-[color:var(--color-danger-text)]">Não foi possível carregar os contatos da Central agora.</div>;
-  }
-  const items = state.phase === 'ready' ? state.items : [];
-  if (items.length === 0) {
-    return <p className="text-sm text-[color:var(--minimal-text-secondary)]">Nenhuma Central de Ajuda ativa foi encontrada.</p>;
-  }
-
-  return (
-    <div className="grid gap-4">
-      <div className="rounded-lg border border-[color:var(--color-info-border)] bg-[color:var(--color-info-surface)] px-4 py-3 text-sm leading-6 text-[color:var(--color-info-text)]">
-        Estes dados aparecem no rodapé público da Central. Alterações aqui não exigem editar artigo por artigo.
-      </div>
-      {items.map((item: HelpCenterSupportContacts) => (
-        <HelpCenterSupportContactForm item={item} key={item.knowledgeSpaceId} mutating={mutating} mutationError={mutationError} onSave={onSave} />
-      ))}
-    </div>
-  );
-}
-
-function HelpCenterSupportContactForm({
-  item,
-  onSave,
-  mutating,
-  mutationError,
-}: {
-  item: HelpCenterSupportContacts;
-  onSave: (input: HelpCenterSupportContacts) => Promise<void>;
-  mutating: boolean;
-  mutationError: string | null;
-}) {
-  const [form, setForm] = useState(item);
-  const update = (key: keyof HelpCenterSupportContacts, value: string) => {
-    setForm((current) => ({ ...current, [key]: value }));
-  };
-
-  return (
-    <div className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">{item.brandName}</h3>
-          <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">/{item.knowledgeSpaceSlug} · {item.knowledgeSpaceDisplayName}</p>
-        </div>
-        <span className="rounded-full border border-[color:var(--minimal-border)] px-2 py-1 text-[11px] text-[color:var(--minimal-text-tertiary)]">Fonte única pública</span>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {([
-          ['email', 'E-mail de suporte', 'ede.oliveira@confi.com.vc', 'email'],
-          ['whatsapp', 'WhatsApp de suporte', '(41) 98765-2115', 'text'],
-          ['websiteUrl', 'Site/portal', 'https://www.geniusreturns.com.br/', 'url'],
-          ['statusPageUrl', 'Página de status', 'https://status.exemplo.com', 'url'],
-          ['docsUrl', 'Link alternativo da Central', 'https://...', 'url'],
-        ] as const).map(([key, label, placeholder, type]) => (
-          <label className="text-xs font-medium text-[color:var(--minimal-text-secondary)]" key={key}>
-            {label}
-            <input className={cx(inputClass, 'mt-1')} onChange={(event) => update(key, event.target.value)} placeholder={placeholder} type={type} value={form[key] ?? ''} />
-          </label>
-        ))}
-      </div>
-      {mutationError ? <p className="mt-3 text-xs text-[color:var(--color-danger-text)]">{mutationError}</p> : null}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Salvo com registro de segurança; o conteúdo original dos artigos permanece como referência.</p>
-        <button className="inline-flex items-center rounded-lg border border-transparent bg-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action-ink)] disabled:opacity-60" disabled={mutating} onClick={() => void onSave(form)} type="button">
-          {mutating ? 'Salvando…' : 'Salvar contatos'}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function TicketCategoriesPanel({ state }: { state: LoadState<TicketCategory> }) {
   const items = state.phase === 'ready' ? state.items : [];
   if (state.phase === 'loading' || state.phase === 'idle') {
@@ -768,6 +595,18 @@ function GroupDetail({
             <p className="text-sm text-[color:var(--minimal-text-secondary)]">Carregando integrações…</p>
           )}
         </div>
+      ) : isBrands ? (
+        // Marcas traz o próprio cabeçalho de página: título, contagem de marcas
+        // ativas e a ação de cadastro ficam na composição da tela.
+        <div className="px-5 py-5 sm:px-6">
+          <BrandsSettingsPage mutating={mutating} mutationError={mutationError} onArchive={onArchiveBrand} onCreate={onCreateBrand} state={brands} />
+        </div>
+      ) : isHelpCenter ? (
+        // Central de ajuda também responde pelo próprio cabeçalho, com a ação de
+        // abrir a central pública.
+        <div className="px-5 py-5 sm:px-6">
+          <HelpCenterSettingsPage mutating={mutating} mutationError={mutationError} onSave={onSaveHelpCenterSupportContacts} state={helpCenterSupportContacts} />
+        </div>
       ) : (
       <>
       <header className="border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6">
@@ -799,10 +638,6 @@ function GroupDetail({
             <QuickRepliesPanel mutating={mutating} mutationError={mutationError} onArchive={onArchiveQuickReply} onCreate={onCreateQuickReply} state={quickReplies} />
           ) : isSegments ? (
             <CustomerSegmentsPanel mutating={mutating} mutationError={mutationError} onArchive={onArchiveSegment} onCreate={onCreateSegment} state={customerSegments} />
-          ) : isBrands ? (
-            <BrandsPanel mutating={mutating} mutationError={mutationError} onArchive={onArchiveBrand} onCreate={onCreateBrand} state={brands} />
-          ) : isHelpCenter ? (
-            <HelpCenterSupportContactsPanel mutating={mutating} mutationError={mutationError} onSave={onSaveHelpCenterSupportContacts} state={helpCenterSupportContacts} />
           ) : isCategorias ? (
             <TicketCategoriesPanel state={ticketCategories} />
           ) : group.status === 'existe_hoje' ? (

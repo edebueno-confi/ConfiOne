@@ -76,3 +76,49 @@
   .gso-settings-metric:last-child { border-bottom: 0; }
   .gso-settings-toolbar-actions { margin-left: 0; }
 }
+
+/* Composição lista + detalhe (Marcas). A coluna de detalhe é fixa em telas
+   largas e empilha abaixo de 1180px, onde a tabela precisa da largura toda. */
+.gso-settings-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 20rem); align-items: start; gap: 0.75rem; min-width: 0; }
+.gso-settings-split > * { min-width: 0; }
+
+/* Identidade de uma marca ou central: monograma (ou logo) + nome + contexto. */
+.gso-settings-identity { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+.gso-settings-identity > div { flex: 1 1 auto; min-width: 0; }
+.gso-settings-identity h3 { margin: 0; font-size: 1rem; letter-spacing: -0.02em; }
+.gso-settings-identity p { margin: 0.15rem 0 0; color: var(--minimal-text-tertiary); font-size: 0.7rem; overflow-wrap: anywhere; }
+.gso-settings-monogram { display: inline-flex; overflow: hidden; flex: 0 0 auto; width: 2.9rem; height: 2.9rem; align-items: center; justify-content: center; border: 1px solid color-mix(in srgb, var(--minimal-border) 76%, transparent); background: color-mix(in srgb, var(--minimal-action) 10%, var(--minimal-surface-muted)); color: var(--minimal-action); font-family: 'Space Grotesk', 'Instrument Sans', sans-serif; font-size: 0.95rem; font-weight: 750; letter-spacing: -0.02em; }
+.gso-settings-monogram img { width: 100%; height: 100%; object-fit: contain; }
+
+/* Lista de definição: rótulo à esquerda, valor real (ou "Indisponível") à direita. */
+.gso-settings-definition { display: grid; gap: 0.45rem; margin: 0.8rem 0 0; }
+.gso-settings-definition > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 0.35rem 0.75rem; border-bottom: 1px solid color-mix(in srgb, var(--minimal-border) 45%, transparent); padding-bottom: 0.42rem; }
+.gso-settings-definition > div:last-child { border-bottom: 0; padding-bottom: 0; }
+.gso-settings-definition dt { color: var(--minimal-text-tertiary); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.gso-settings-definition dd { margin: 0; color: var(--minimal-text); font-size: 0.78rem; text-align: right; overflow-wrap: anywhere; }
+.gso-settings-definition--columns { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.45rem 1.4rem; }
+
+/* Seleção de linha da tabela: o nome é o alvo clicável, sem linha clicável inteira. */
+.gso-settings-row-select { display: block; width: 100%; border: 0; background: none; padding: 0; text-align: left; color: var(--minimal-text); font-size: 0.82rem; font-weight: 650; }
+.gso-settings-row-select:hover { color: var(--minimal-action); text-decoration: underline; }
+.gso-settings-table tbody tr.is-selected td { background: color-mix(in srgb, var(--minimal-action) 8%, transparent); }
+.gso-settings-table tbody tr.is-selected td:first-child { box-shadow: inset 2px 0 0 var(--minimal-action); }
+
+/* Confirmação inline de ação destrutiva, no lugar de diálogo do navegador. */
+.gso-settings-confirm { margin-top: 0.8rem; border: 1px solid var(--color-danger-border); border-left-width: 2px; background: var(--color-danger-surface); padding: 0.7rem 0.8rem; }
+.gso-settings-confirm strong { display: block; color: var(--color-danger-text); font-size: 0.8rem; }
+.gso-settings-confirm p { margin: 0.3rem 0 0; color: var(--minimal-text-secondary); font-size: 0.74rem; line-height: 1.5; }
+
+/* Erro de validação preso ao campo que o originou. */
+.gso-settings-field-error { margin: 0; color: var(--color-danger-text); font-size: 0.7rem; font-weight: 600; }
+
+@media (max-width: 1180px) {
+  .gso-settings-split { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 760px) {
+  .gso-settings-definition--columns { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Segundo bloco dentro de um card: separa leitura de edição sem criar abas. */
+.gso-settings-card-header--section { margin-top: 0.9rem; border-top: 1px solid color-mix(in srgb, var(--minimal-border) 55%, transparent); padding-top: 0.75rem; }
