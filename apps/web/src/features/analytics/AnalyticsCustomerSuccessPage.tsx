@@ -1,51 +1,64 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import type { AnalyticsDataStatus } from '@genius-support-os/contracts';
-import { MinimalState } from '../../components/minimal-states';
-import { getCeoSnapshot } from './analytics-api';
-import type { AnalyticsPageProps, CeoSnapshot } from './analytics-model';
-import { AnalyticsLoadingState, AnalyticsRetryAction, AnalyticsStateBadge, KpiCard } from './analytics-ui';
-import { resolveAnalyticsPeriod } from './analytics-periods';
-import { analyticsHref } from './analytics-navigation';
+import type { AnalyticsPageProps, CustomerSuccessSnapshot } from './analytics-model';
+import { getCustomerSuccessSnapshot } from './analytics-api';
 import { AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
+import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, KpiCard } from './analytics-ui';
+import { MinimalState } from '../../components/minimal-states';
 
-const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
-  fresh: 'Carteira atualizada', stale: 'Carteira pode estar atrasada', partial: 'Cobertura parcial', empty: 'Carteira sem registros', zero: 'Zero real no recorte', not_configured: 'Fonte não configurada', syncing: 'Sincronizando', unavailable: 'Fonte indisponível', error: 'Falha na fonte',
-};
+export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
+  const [result, setResult] = useState<{ loading: boolean; data?: CustomerSuccessSnapshot; error?: boolean }>({ loading: true });
 
-export function AnalyticsCustomerSuccessPage({ sharedPeriod, onRetry }: AnalyticsPageProps) {
-  const period = sharedPeriod ?? resolveAnalyticsPeriod('month');
-  const [state, setState] = useState<{ phase: 'loading' } | { phase: 'ready'; data: CeoSnapshot } | { phase: 'error' }>({ phase: 'loading' });
+  const load = () => {
+    setResult((current) => current.data ? { ...current, loading: true, error: undefined } : { loading: true });
+    void getCustomerSuccessSnapshot()
+      .then((data) => setResult({ loading: false, data }))
+      .catch(() => setResult((current) => ({ ...current, loading: false, error: true })));
+  };
 
-  useEffect(() => {
-    let cancelled = false;
-    setState({ phase: 'loading' });
-    getCeoSnapshot({ from: period.from, to: period.to, ownerId: '', stageId: '', priority: '' })
-      .then((data) => { if (!cancelled) setState({ phase: 'ready', data }); })
-      .catch(() => { if (!cancelled) setState({ phase: 'error' }); });
-    return () => { cancelled = true; };
-  }, [period.from, period.to]);
+  useEffect(() => { load(); }, []);
 
-  if (state.phase === 'loading') return <AnalyticsHdDomainFrame title="Customer Success" description="Carteira, cobertura de responsáveis e qualidade do relacionamento." source="HubSpot · Empresas"><AnalyticsLoadingState title="Consultando Customer Success" description="Estamos organizando a carteira e os sinais disponíveis para a gestão." /></AnalyticsHdDomainFrame>;
-  if (state.phase === 'error') return <AnalyticsHdDomainFrame title="Customer Success" description="Carteira, cobertura de responsáveis e qualidade do relacionamento." source="HubSpot · Empresas"><section role="alert" className="rounded-xl border border-[color:var(--minimal-danger-border)] bg-[color:var(--minimal-danger-surface)] px-5 py-6"><h2 className="text-base font-semibold text-[color:var(--minimal-danger-text)]">Não foi possível carregar Customer Success</h2><p className="mt-1 text-sm text-[color:var(--minimal-text-secondary)]">A carteira não está disponível neste momento.</p><div className="mt-4"><AnalyticsRetryAction onRetry={onRetry} /></div></section></AnalyticsHdDomainFrame>;
+  if (result.loading && !result.data) {
+    return <AnalyticsHdDomainFrame title="Customer Success" description="Carteira HubSpot, cobertura de responsáveis e preenchimento dos campos operacionais." source="HubSpot · Empresas"><AnalyticsLoadingState title="Carregando Customer Success" description="Estamos preparando a leitura desta área." /></AnalyticsHdDomainFrame>;
+  }
+  if (result.error || !result.data) {
+    return <AnalyticsHdDomainFrame title="Customer Success" description="Carteira HubSpot, cobertura de responsáveis e preenchimento dos campos operacionais." source="HubSpot · Empresas"><MinimalState tone="critical" title="Não foi possível carregar Customer Success" description="A leitura desta área está indisponível agora." actions={<AnalyticsRetryAction onRetry={onRetry ?? load} />} /></AnalyticsHdDomainFrame>;
+  }
 
-  const data = state.data.customerSuccess;
-  const isUnavailable = ['empty', 'unavailable', 'error', 'not_configured'].includes(data.state.status);
-  const statusLabel = STATUS_LABELS[data.state.status];
-  return <AnalyticsHdDomainFrame title="Customer Success" description="Carteira, cobertura de responsáveis e qualidade do relacionamento." source="HubSpot · Empresas" state={data.state}><div className="gso-hd-domain-surface space-y-5" data-testid="customer-success-dashboard">
-    <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[color:var(--minimal-border)] pb-3">
-      <div><h2 className="text-base font-semibold text-[color:var(--minimal-text)]">Customer Success</h2><p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">Carteira, relacionamento e sinais de saúde disponíveis.</p></div>
-      <div className="text-right"><span className="text-xs font-medium text-[color:var(--minimal-text-secondary)]">{statusLabel}</span><AnalyticsStateBadge state={data.state} /></div>
-    </header>
-    <section aria-labelledby="cs-executive-context"><h3 id="cs-executive-context" className="text-sm font-semibold text-[color:var(--minimal-text)]">Leitura da carteira</h3><p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">A área usa a carteira estruturada disponível no Genius OS. Health score, renovação e expansão permanecem indisponíveis quando não há contrato de origem.</p></section>
-    {!isUnavailable ? <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <KpiCard label="Clientes ativos" value={data.activeCustomers.toLocaleString('pt-BR')} hint="Com contexto de produto ou operação" temporalType="Posição atual" state={data.state} />
-      <KpiCard label="Com responsável" value={data.assignedCustomers.toLocaleString('pt-BR')} hint="Atribuição de carteira registrada" temporalType="Posição atual" state={data.state} />
-      <KpiCard label="Sem responsável" value={data.customersWithoutOwner.toLocaleString('pt-BR')} hint="Exige revisão de cobertura" temporalType="Posição atual" state={data.state} tone={data.customersWithoutOwner > 0 ? 'warning' : 'neutral'} />
-      <KpiCard label="Health disponível" value={data.healthAvailable.toLocaleString('pt-BR')} hint="Sem score inventado quando ausente" temporalType="Posição atual" state={data.state} />
-    </div> : <MinimalState title="Carteira indisponível no recorte" description={data.state.reason || 'A fonte de Customer Success ainda não possui registros confiáveis para esta leitura.'} />}
-    <section className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-4 py-3"><div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">Aprofundar a leitura</h3><p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">A operação detalhada da carteira continua em sua superfície própria.</p></div><Link to="/cs/portfolio" className="text-xs font-semibold text-[color:var(--minimal-action)]">Abrir carteira CS <span aria-hidden="true">→</span></Link></div></section>
-    <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Fonte: {data.source}. Esta tela não substitui a operação de carteira nem inventa sinais de risco.</p>
-    <Link to={analyticsHref('ceo')} className="inline-flex text-xs font-semibold text-[color:var(--minimal-action)]">Voltar à Visão Geral <span aria-hidden="true">→</span></Link>
-  </div></AnalyticsHdDomainFrame>;
+  const data = result.data;
+  const state = data.state;
+  const unavailable = ['unavailable', 'error', 'not_configured'].includes(state?.status ?? 'unavailable');
+  const value = (amount: number, suffix = '') => unavailable ? 'Indisponível' : `${amount.toLocaleString('pt-BR')}${suffix}`;
+
+  return (
+    <AnalyticsHdDomainFrame title="Customer Success" description="Carteira HubSpot, cobertura de responsáveis e preenchimento dos campos operacionais." source={data.source} state={state}>
+      {state?.status === 'empty' ? <MinimalState title="Nenhuma empresa disponível no recorte" description="O HubSpot não retornou empresas para esta leitura. Nenhum indicador foi inventado." /> : null}
+      <div className="gso-pilot-kpi-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <KpiCard label="Empresas no HubSpot" value={value(data.kpis.companiesTotal)} hint="Registros disponíveis para a análise" source="Contagem de empresas fornecida pelo HubSpot." state={state} />
+        <KpiCard label="Status de cliente preenchido" value={value(data.kpis.clientStatusFilled)} hint="Empresas com o campo informado" source="Presença do campo; não interpreta a regra de cliente ativo." state={state} />
+        <KpiCard label="Status contratual preenchido" value={value(data.kpis.contractStatusFilled)} hint="Empresas com o campo informado" source="Presença do campo no HubSpot." state={state} />
+        <KpiCard label="Sem responsável" value={value(data.kpis.withoutOwner)} hint="Empresas sem responsável associado" source="Responsável ausente no cadastro do HubSpot." state={state} tone={data.kpis.withoutOwner > 0 ? 'warning' : 'neutral'} />
+        <KpiCard label="MRR observado" value={data.kpis.mrrFilled > 0 ? value(data.kpis.mrrFilled) : 'Indisponível'} hint={data.kpis.mrrFilled > 0 ? 'Empresas com campo preenchido' : 'O valor de MRR não é publicado neste contrato'} source="O read model informa presença do campo, não um valor financeiro utilizável." state={state} />
+      </div>
+      <div className="grid gap-4 xl:grid-cols-2">
+        <ChartCard title="Carteira por responsável" description="Distribuição factual das empresas que possuem owner no HubSpot.">
+          <SimpleRows rows={data.byOwner.map((row) => ({ label: row.ownerName, value: row.companyCount }))} empty="Nenhum responsável informado." />
+        </ChartCard>
+        <ChartCard title="Status operacional" description="Campos exibidos como foram recebidos; ausência permanece indisponível.">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <SimpleRows rows={data.byClientStatus.map((row) => ({ label: row.key, value: row.companyCount }))} empty="Status de cliente indisponível." />
+            <SimpleRows rows={data.byContractStatus.map((row) => ({ label: row.key, value: row.companyCount }))} empty="Status contratual indisponível." />
+          </div>
+        </ChartCard>
+      </div>
+      <ChartCard title="Empresas consultadas" description="Amostra limitada pelo contrato; health score, regra de cliente ativo e risco não são inferidos.">
+        {data.companies.length === 0 ? <p className="text-sm text-[color:var(--minimal-text-secondary)]">Nenhuma empresa disponível.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-xs"><thead className="border-b border-[color:var(--minimal-border)] text-[color:var(--minimal-text-tertiary)]"><tr><th className="px-2 py-2 font-medium">Empresa</th><th className="px-2 py-2 font-medium">Status cliente</th><th className="px-2 py-2 font-medium">Status contratual</th><th className="px-2 py-2 font-medium">Responsável</th><th className="px-2 py-2 font-medium">Atualização</th></tr></thead><tbody>{data.companies.map((row) => <tr className="border-b border-[color:var(--minimal-border)] last:border-0" key={row.companyId}><td className="px-2 py-2 font-medium text-[color:var(--minimal-text)]">{row.companyName}</td><td className="px-2 py-2 text-[color:var(--minimal-text-secondary)]">{row.clientStatus ?? 'Indisponível'}</td><td className="px-2 py-2 text-[color:var(--minimal-text-secondary)]">{row.contractStatus ?? 'Indisponível'}</td><td className="px-2 py-2 text-[color:var(--minimal-text-secondary)]">{row.csOwnerName}</td><td className="px-2 py-2 text-[color:var(--minimal-text-tertiary)]">{row.syncedAt ? new Date(row.syncedAt).toLocaleString('pt-BR') : 'Indisponível'}</td></tr>)}</tbody></table></div>}
+      </ChartCard>
+      {data.limitations.length > 0 ? <p className="text-xs leading-5 text-[color:var(--minimal-text-tertiary)]">Limitações do contrato: {data.limitations.join(' ')}</p> : null}
+    </AnalyticsHdDomainFrame>
+  );
+}
+
+function SimpleRows({ rows, empty }: { rows: Array<{ label: string; value: number }>; empty: string }) {
+  if (rows.length === 0) return <p className="text-sm text-[color:var(--minimal-text-secondary)]">{empty}</p>;
+  return <div className="divide-y divide-[color:var(--minimal-border)]">{rows.map((row) => <div className="flex items-center justify-between gap-3 py-2 text-sm" key={row.label}><span className="min-w-0 truncate text-[color:var(--minimal-text-secondary)]">{row.label}</span><strong className="tabular-nums text-[color:var(--minimal-text)]">{row.value.toLocaleString('pt-BR')}</strong></div>)}</div>;
 }

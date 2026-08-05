@@ -20,9 +20,25 @@
     />
     <script>
       // Aplica o tema antes da primeira pintura para evitar flash de tema.
-      // Mantido em sincronia com src/lib/theme.ts (mesma chave e marcacao).
+      // Mantido em sincronia com src/lib/theme.ts (mesma chave, mesma marcacao e
+      // mesma lista de superficies publicas). Superficie publica e sempre clara:
+      // o tema escuro pertence ao ambiente autenticado.
       (function () {
         try {
+          var path = window.location.pathname;
+          var publicPrefixes = ['/help', '/login', '/access-denied'];
+          var isPublicSurface =
+            path === '/' ||
+            publicPrefixes.some(function (prefix) {
+              return path === prefix || path.indexOf(prefix + '/') === 0;
+            });
+
+          if (isPublicSurface) {
+            document.documentElement.setAttribute('data-theme', 'light');
+            document.documentElement.style.colorScheme = 'light';
+            return;
+          }
+
           var stored = window.localStorage.getItem('genius.theme-preference');
           var prefersDark =
             window.matchMedia &&
@@ -41,7 +57,7 @@
         }
       })();
     </script>
-    <title>GeniusOS — atendimento Genius e After Sale</title>
+    <title>GeniusOS — suporte, conhecimento e operação</title>
     <meta
       name="description"
       content="Operacao B2B tecnica do Genius Support OS para suporte, conhecimento e documentacao publica controlada."

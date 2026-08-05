@@ -1,4 +1,4 @@
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router';
 import { MinimalState } from '../../components/minimal-states';
 import { MinimalButton, MinimalPage } from '../../components/minimal-ui';
 import { useAuthContext } from './auth-context';

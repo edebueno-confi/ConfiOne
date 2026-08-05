@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { MinimalState } from '../../components/minimal-states';
 import { MinimalTextInput } from '../../components/minimal-ui';
 import { cx } from '../../components/ui';

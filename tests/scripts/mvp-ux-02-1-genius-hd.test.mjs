@@ -12,7 +12,7 @@ const shell = fs.readFileSync(
   "utf8",
 );
 
-test("Canvas HD mantém as camadas gerenciais e os seis domínios", () => {
+test("Canvas executivo mantém as camadas gerenciais e as áreas publicadas", () => {
   for (const layer of [
     "gso-hd-pulse",
     "gso-hd-context",
@@ -24,17 +24,10 @@ test("Canvas HD mantém as camadas gerenciais e os seis domínios", () => {
     "gso-hd-pipelines",
   ])
     assert.match(page, new RegExp(layer));
-  for (const domain of [
-    "Comercial",
-    "Customer Success",
-    "Suporte",
-    "Financeiro",
-    "Produto",
-    "Desenvolvimento",
-  ])
+  for (const domain of ["Comercial", "Customer Success", "Suporte", "Financeiro"])
     assert.match(page, new RegExp(domain));
-  assert.match(page, /GeniusMascot/);
-  assert.match(page, /Fonte ainda não conectada/);
+  assert.match(page, /AnalyticsLoadingState/);
+  assert.match(page, /Fonte indisponível/);
 });
 
 test("Canvas HD não fabrica indicadores e separa posição atual do recorte", () => {

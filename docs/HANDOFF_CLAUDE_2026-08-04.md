@@ -1,0 +1,124 @@
+# Handoff para Claude — Genius Support OS
+
+Data: 2026-08-04  
+Checkout canônico: `C:\Projetos\GSO-old`  
+Branch: `main`  
+HEAD: `836b9e3 feat: configurar lint e atualizar acesso GeniusOS`
+
+## Estado operacional
+
+A instância local já está em pé e foi verificada:
+
+- `http://127.0.0.1:4173/` — HTTP 200
+- `http://127.0.0.1:4174/` — HTTP 200
+
+Não reiniciar nem resetar o banco sem verificar os processos e sem autorização explícita para operação destrutiva. Nenhum segredo, token ou credencial está registrado neste handoff.
+
+## O que foi concluído neste ciclo
+
+- Login reposicionado para o produto GeniusOS, sem menção a After Sale.
+- Copy do login ajustado para uso compartilhado por clientes e colaboradores.
+- Título HTML atualizado para suporte, conhecimento e operação.
+- ESLint flat config criado em `eslint.config.js`.
+- Scripts adicionados:
+  - `npm run lint`
+  - `npm run lint:fix`
+  - `npm run lint --workspace @genius-support-os/web`
+  - `npm run lint --workspace @genius-support-os/contracts`
+- Regras cobrindo TypeScript, React Hooks, Fast Refresh, JSX accessibility, imports duplicados, loops inalcançáveis, constantes suspeitas e interpolação inválida.
+- Diretórios gerados e dependências foram excluídos da análise.
+- Regex de e-mail corrigida após o lint identificar escapes desnecessários.
+
+## Validações realizadas
+
+- `npm run lint` — passou com 0 erros e 256 avisos legados.
+- `npm run web:typecheck` — passou.
+- `npm run contracts:typecheck` — passou.
+- `npm run web:build` — passou; 833 módulos transformados.
+- `npm run local:qa:secret-scan` — passou; 0 correspondências.
+- `npm run quality:staged` — aprovado, 0 findings.
+- `git diff --cached --check` — passou.
+- Worktree estava limpo após o commit anterior; este arquivo é a única alteração pendente deste handoff.
+
+## Segurança: advisory fechado em 2026-08-04
+
+A migração foi executada em `codex/react-router-v8-migration-20260804`:
+`react-router@8.3.0` no lugar de `react-router-dom@7.18.0`, `RouterProvider`
+vindo de `react-router/dom`, React e ReactDOM em `19.2.8` e 48 imports migrados.
+`npm audit --omit=dev` está em 0 vulnerabilidades.
+
+Relatório da execução: `docs/reports/2026-08-04_react-router-v8-migration.md`.
+
+Merge em `main` e push continuam pendentes de decisão humana.
+
+Atenção operacional: em shell automatizado, confirme `NODE_ENV` antes de rodar
+`npm install` ou subir o Vite. Com `NODE_ENV=production` o npm remove
+`devDependencies` e o dev server sobe sem React Refresh.
+
+## Histórico da análise que originou o lote
+
+`npm audit --omit=dev` reporta 2 vulnerabilidades altas em `react-router`/`react-router-dom`.
+
+Análise concluída em 2026-08-04. Relatório completo: `docs/reports/2026-08-04_react-router-advisory-analysis.md`.
+
+Resumo objetivo:
+
+- Advisory: GHSA-qwww-vcr4-c8h2, High, CVSS 7.1, CWE-352, sem CVE atribuído.
+- Faixa afetada: `>= 7.12.0`, `< 8.3.0`. Instalado: `7.18.0`.
+- Única versão corrigida: `react-router@8.3.0`. Não existe patch na linha 7, e `react-router-dom` não tem linha 8; latest é `7.18.2`.
+- O advisory só afeta aplicações que usam as APIs RSC instáveis. O projeto não usa: nenhuma ocorrência de `unstable_`, RSC, SSR, `entry.server`, `createStaticHandler`, `ServerRouter`, `useFetcher` ou route `loader`/`action`.
+- APIs realmente usadas nos 48 arquivos: `createBrowserRouter`, `RouterProvider`, `Link`, `Navigate`, `Outlet`, `useLocation`, `useNavigate`, `useParams`, `useSearchParams`, `useOutletContext`, `useRouteError`.
+- Corrigir exige migração major: trocar `react-router-dom` por `react-router`, mover `RouterProvider` para `react-router/dom` e subir React de `19.2.5` para `>= 19.2.7`.
+
+Decisão: risco aceito de forma explícita neste lote, com plano de migração registrado no relatório. Nenhum gate de CI ou script local executa `npm audit`, portanto a pendência não produz falso verde nem bloqueia build.
+
+`npm audit fix --force` permanece proibido: instala `react-router-dom@7.11.0`, que é downgrade de 7 versões menores e continua sem corrigir o advisory.
+
+## Dívida conhecida do lint
+
+Os 256 avisos são anteriores à configuração do ESLint e estão concentrados em:
+
+- imports, variáveis e handlers não utilizados;
+- imports duplicados;
+- dependências de hooks incompletas;
+- uso legado de `useEffectEvent` fora de Effects/Effect Events;
+- avisos de Fast Refresh;
+- alguns `autoFocus`.
+
+Eles estão visíveis, mas não bloqueiam o comando geral neste momento. A limpeza deve ser feita por módulo, com testes e revisão de comportamento; não executar `npm run lint:fix` em todo o monorepo sem revisar o diff.
+
+## Estado Git e continuidade
+
+- Branch atual: `main`.
+- Antes deste handoff, o repositório estava 178 commits à frente de `origin/main`.
+- Não houve push.
+- Não houve reset, clean, rebase, merge, cherry-pick ou reset de banco neste ciclo.
+- Não alterar branches antigas nem apagar worktrees sem inventário e autorização.
+
+## Próxima ação segura
+
+A migração para `react-router@8` está concluída e validada na branch dedicada. A higiene da raiz está limpa e o primeiro lote da dívida de lint foi entregue: 256 avisos passaram para 240, com `no-duplicate-imports` zerado. Relatório: `docs/reports/2026-08-04_lint-debt-lote-1-e-higiene-raiz.md`.
+
+O lote 2 da dívida de lint também está entregue: 24 specifiers de import mortos removidos, com lint em 216 avisos e 0 erros. A triagem completa dos 122 itens de código declarado e nunca usado está em `docs/reports/2026-08-04_lint-debt-lote-2-imports-mortos-e-triagem.md`, com arquivo, linha, símbolo e natureza.
+
+Também estão entregues: QA autenticado local destravado com o harness oficial (5 papéis por API e 10 cenários visuais aprovados, runbook em `docs/LOCAL_QA_AUTH.md`), auditoria de dependência de produção no quality gate via `npm run security:audit:prod`, e remoção de 21 helpers de apresentação órfãos, deixando o lint em 196 avisos. Relatório: `docs/reports/2026-08-04_qa-autenticado-audit-no-gate-e-lint-lote-3.md`.
+
+O harness de smoke já foi estendido para `/admin/knowledge` e `/admin/access`, a Central Pública ficou sem `rules-of-hooks` e sem `react-refresh`, e o lint está em 187 avisos. Relatório: `docs/reports/2026-08-04_smoke-estendido-hooks-publicos-e-fast-refresh.md`.
+
+Em 2026-08-05 o harness passou a inventariar as superfícies internas e revelou que a fixture local alcança apenas `/admin/analytics`, `/admin/knowledge`, `/admin/access` e `/admin/settings`; as outras sete respondem `/access-denied` por falta de screen key. `AccessPage.tsx` ficou sem `rules-of-hooks` e o lint está em 184 avisos. O padrão canônico de carregadores está em `docs/FRONTEND_DATA_LOADING_PATTERNS.md`, com a decisão de congelar os 38 avisos restantes de hooks, 35 deles em telas sem QA local possível. Relatório: `docs/reports/2026-08-05_mapa-de-superficies-hooks-access-e-padrao-de-carregamento.md`.
+
+Correção importante da orientação anterior: o bloqueio de QA nas telas internas não é falta de grant na fixture. É `release_enabled = false` em `public.internal_screen_catalog`, e `rpc_internal_actor_workspace_context` só devolve tela publicada. Hoje só `analytics`, `knowledge`, `access` e `settings` estão com `release_enabled = true`. Destravar QA das outras é decisão de produto sobre o escopo do release.
+
+Também entregues em 2026-08-05: cenário profundo no smoke que abre o editor de artigo real, e token de recarga no bootstrap de `KnowledgePage.tsx`, com o lint em 183 avisos. Relatório: `docs/reports/2026-08-05_release-manifest-cenario-do-editor-e-token-de-recarga.md`.
+
+Decisão registrada sobre o release: as telas com `release_enabled = false` não serão publicadas para viabilizar QA. Em vez disso existe `npm run supabase:qa:local-release-preview`, que liga o flag somente no banco local, com backup e restauração, exigindo lista explícita de telas. Descoberta associada: autorização de tela interna tem três camadas em série, `release_enabled`, grant de tela e capability; o `platform_admin` da fixture já tem grant de tela, faltam release e capability. O script não concede capability por decisão explícita. Relatório: `docs/reports/2026-08-05_preview-de-release-local-e-tres-camadas-de-autorizacao.md`.
+
+O cenário de escrita em Conhecimento já está no smoke: grava marcador sanitizado no título pelo editor, confirma persistência após reload e restaura o valor original. Também foram corrigidos dois `exhaustive-deps` em telas publicadas com referência estável, deixando o lint em 181 avisos. Relatório: `docs/reports/2026-08-05_qa-de-escrita-em-conhecimento-e-deps-estaveis.md`.
+
+Também em 2026-08-05, a regra de superfície do tema entrou em vigor: escuro só em ambiente autenticado, Central Pública sempre clara, com regressão no smoke. Relatório: `docs/reports/2026-08-05_regra-de-superficie-do-tema.md`.
+
+Em seguida, a seção Configurações → Integrações recebeu a composição nova (cabeçalho de página, resumo, cards por provedor, rail de governança e faixa inferior), reutilizando a sidebar e a navegação local existentes e sem tocar em migration, RPC ou view. Duas limitações reais ficaram declaradas na própria tela em vez de simuladas: não existe verificação de conexão sob demanda no backend, e não existe tela de políticas de segurança — o rail só afirma o que a migration `20260718034735_managed_integrations_v1.sql` comprova. O smoke ganhou o cenário `settings-integrations` em 1920×1080, que exige campos de credencial vazios. Relatório: `docs/reports/2026-08-05_configuracoes-integracoes-nova-composicao.md`.
+
+As próximas ações seguras são: aplicar a mesma composição ao restante do domínio de Configurações (Marcas, Central de ajuda, Fontes do Dashboard e Histórico) e revisar a Central Pública; decidir o merge em `main`; replicar o padrão de `period` memoizado em `AnalyticsCeoPage`, `AnalyticsCommercialPage` e `AnalyticsFinancePage`; tratar `load`, `grantedKeys` e `sourceStatus` com leitura de fluxo; e estender o cenário de escrita para categoria e revisão editorial, que é o que destrava os dois avisos de hooks de `KnowledgePage.tsx`.
+
+Em qualquer caso, manter as instâncias locais acessíveis nas portas 4173 e 4174 e preservar o banco local existente.

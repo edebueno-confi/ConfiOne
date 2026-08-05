@@ -1,0 +1,5 @@
+{
+  "title": "Produtos em Exceção",
+  "summary": "Nessa funcionalidade, você pode configurar produtos ou categorias específicas que não terão permissão para criar reversas.",
+  "body_md": "Nessa funcionalidade, você pode configurar produtos ou categorias específicas que não terão permissão para criar reversas.\n\n- Acesse a área administrativa da plataforma.\n- No menu, clique em Configurações > Parametrização Geral.\n- Localize a funcionalidade Produtos em Exceção.\n\n![Imagem do artigo Produtos em Exceção](knowledge-asset-source:octa-static-tenants/o205658-f7a/knowledgebase/2025-02-24/n9g9zcl0dqbxh9u4x_cl7.com)\n\n::related como-configurar-o-blocklist\nComo configurar o BlockList?\nAcesse a área administrativa da plataforma.\n::"
+}

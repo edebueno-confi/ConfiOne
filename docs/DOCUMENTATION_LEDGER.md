@@ -1,3 +1,121 @@
+# Estado corrente — Interface High-Density V1 — 2026-08-03
+
+## Registro corrente — Dashboard por domínios — 2026-08-03
+
+- **Especificação:** `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md` recebeu as
+  regras do adendo de navegação, filtros, Produto/Desenvolvimento e estados do
+  Gênio.
+- **Design system:** `docs/design/GENIUS_SUPPORT_OS_DESIGN_SYSTEM.md` registra
+  as sete áreas, a ausência do container global de fontes e a regra de não usar
+  voo/magia como estado operacional.
+- **Código:** shell, páginas analíticas, estados de espera e componentes de KPI
+  foram alinhados sem tocar em contratos de dados ou execução de sincronização.
+- **Evidência prevista:** relatório corrente em
+  `docs/reports/2026-08-03_dashboard-visual-density-v1-1.md`, complementado
+  pelos comandos e manifestos executados no fechamento deste lote.
+
+## Registro corrente — fechamento High-Density — 2026-08-03
+
+- Branch: `codex/high-density-ui-rebuild-20260803`; HEAD deve ser confirmado
+  com `git rev-parse --short HEAD`.
+- Especificação: `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md`.
+- Relatório: `docs/reports/2026-08-03_high-density-ui-rebuild.md`.
+- Escopo: shell, Dashboard Gerencial, domínios analíticos, Configurações e
+  estados visuais; sem alteração de backend, contratos, banco ou credenciais.
+- Evidência automatizada: build, typechecks, secret scan, quality gates e
+  `git diff --check` aprovados. A reexecução focal de contratos terminou em
+  111/114, com três falhas estruturais conhecidas registradas no relatório.
+- QA real executado: matriz final com 80 capturas nas oito superfícies, cinco
+  viewports e dois temas; reteste direcionado do Financeiro com 10 capturas;
+  reteste de Configurações com 24 verificações e manifesto UI-05 com cinco
+  estados do Gênio, sem falhas de rede, HTTP inesperado ou overflow. Quatro
+  falhas ampliadas preexistentes
+  permanecem registradas no relatório.
+- A Visão Geral agora expõe `Sincronizar bases` para administrador de plataforma,
+  com bloqueio de ciclo concorrente e reuso do orquestrador sequencial. O fluxo
+  foi exercitado em QA interceptado em
+  `output/high-density-overview-sync-action-20260803/manifest.json`; nenhuma
+  sincronização real foi executada.
+- O Comercial diferencia quatro KPIs primários de Conversão/Ticket médio como
+  indicadores secundários, sem alterar cálculos ou contratos.
+- A seção 25 da especificação canônica registra o adendo de densidade cognitiva,
+  seus dez eixos e quinze perguntas de revisão visual.
+- Correção registrada: leituras de Configurações passaram a ser sob demanda;
+  o 403 repetido de `ticket_categories` fora da seção Categorias desapareceu.
+- Referências visuais vigentes: `docs/design/blueprint/Dashboard PO/` e
+  `docs/design/blueprint/Suporte e conversas/`; a consolidação e as exclusões
+  intencionais foram commitadas em `619dfa8` e documentadas em `bb77c67`, sem
+  reescrita do histórico.
+
+## Precedência
+
+## Registro corrente
+
+- Branch: `codex/dashboard-visual-density-v1-1-20260803`.
+- Base: `c75ec57b22985589a9f705c6bf2bbce908af1b92`.
+- Escopo documental: densidade/tipografia/shell/QA visual; sem mudança de
+  backend, contratos, métricas, fontes, sincronizações ou credenciais.
+- Relatório canônico: `docs/reports/2026-08-03_dashboard-visual-density-v1-1.md`.
+- Evidência externa: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803`.
+- Estado QA: 80/80 capturas no `final-head-bcebf1c`, HEAD `bcebf1c`, sem falha de rota, HTTP ≥400,
+  console errors, request failures ou overflow horizontal.
+- Regressão focada: 26/26. Suíte ampliada Analytics + Settings: 103/105;
+  duas falhas fora do escopo visual permanecem registradas como limitação,
+  ambas em contratos de Edge Functions/diagnóstico.
+
+## Precedência histórica
+
+O registro abaixo preserva o estado anterior documentado.
+
+# Estado corrente — 2026-08-01, reconciliado pelo Codex
+
+## Carregamento do Dashboard e fila visual — 2026-08-02
+
+- Implementado o aguardo do estado publicado após iniciar sincronização, com
+  Gênio animado durante o processamento e timeout honesto.
+- Validações: 32 testes focados, typecheck web/contratos, build, secret scan,
+  quality gate e QA empacotado com 20 capturas aprovados.
+- Evidência: `docs/reports/2026-08-02_dashboard-sync-loading-stabilization.md`.
+- Fila registrada: `DASHBOARD-05` (visão gerencial HD da aba CEO) e `DASHBOARD-06`
+  (fonte financeira alinhada ao cabeçalho OMIE). Nenhum dos dois itens foi
+  implementado neste ciclo.
+
+## Atualização corrente do Dashboard Gerencial API-only — 2026-08-02
+
+- A verdade corrente está em `C:\Projetos\GSO-old`, branch
+  `codex/dashboard-management-rebuild-20260802`, HEAD `b47d603`, sem upstream,
+  `origin/main...HEAD = 0 58`.
+- O ponto de entrada `b121b446` foi preservado em
+  `refs/archive/dashboard-rebuild-start-20260802`; o stash existente também
+  permanece intacto.
+- O Dashboard publicado possui cinco áreas: Resumo Gerencial, Comercial,
+  Customer Success, Suporte & Chat e Financeiro. Produto e Desenvolvimento
+  permanecem fora da navegação ativa.
+- HubSpot e OMIE são as únicas integrações publicadas. Planilhas e conectores
+  antigos permanecem somente como histórico, migração, auditoria ou QA; não
+  devem ser reativados como fonte, fallback ou contingência.
+- Migrations locais forward-only foram aplicadas sem reset. Validações objetivas
+  e limitações estão registradas em
+  `docs/reports/2026-08-02_dashboard-delta-final.md` e na matriz visual.
+
+## Atualização do lote Dashboard Gerencial API-only — 2026-08-02
+
+- Estado: implementado localmente e validado parcialmente; sem push, deploy, sync externo ou reset.
+- Escopo: cinco áreas publicadas, integrações HubSpot/OMIE, histórico separado, scheduler legado desativado localmente e preservação dos artefatos históricos de planilha.
+- Evidências: `docs/reports/2026-08-02_dashboard-reconstruction-audit.md`, `docs/reports/visual-audit/screenshots/` e `supabase/tests/089_dashboard_api_only_reconstruction.sql`.
+- Validação: build/typecheck/quality aprovados; pgTAP focado 37/37; suite completa parcial por colisão de fixtures no banco persistente sem reset.
+- Próximo gate: revisar a matriz visual completa e autorizar credenciais externas antes de qualquer sincronização real.
+
+- checkout canônico: `C:\Projetos\GSO-old`;
+- branch `main`, HEAD do commit que contém este bloco, upstream `origin/main`;
+- divergência: `origin/main` é ancestral do checkout; confirme a contagem corrente com `git rev-list --left-right --count origin/main...HEAD`;
+- um único worktree ativo, stash preservado e 24 refs de arquivo de reconciliação preservadas;
+- nenhuma branch remota foi apagada; branches sem upstream e commits locais não publicados permanecem preservados;
+- superfície publicada nesta fase: Dashboard, Configurações aprovadas, Central de Ajuda e Knowledge/editor;
+- validações do HEAD atual: contracts/web typecheck, build web, 266 testes Node, validadores de governança/qualidade, documentação interna e `git diff --check` passaram;
+- fonte de reconciliação: `docs/reports/2026-08-01_git-state-reconciliation-addendum.md`;
+- pendências atuais: QA autenticado com capturas, editor legado, grants/DML de integrações, colisão hydrate/pgTAP, Auth local e sync real dependente de credencial autorizada.
+
 # Encerramento formal da RELEASE-01 — 2026-07-24
 
 - desenvolvimento concluído: Central Pública de Ajuda, Dashboard Gerencial do piloto, migração Octadesk, Hub de Integrações e API, taxonomia, assets, normalização editorial, busca, navegação, responsividade, acessibilidade e CTA `/portal`;
@@ -160,6 +278,30 @@
 - relatorio: `docs/reports/SUPPORT_QUEUE_TIMEOUT_ROOT_CAUSE_2026-07-23.md`;
 - limite: validacao local apenas; ainda nao houve reset controlado completo,
   migration remota, deploy ou push.
+
+# Discovery HubSpot somente leitura — 2026-08-02
+
+- Discovery autorizado executado sem escrita externa, sincronização ampla ou
+  persistência de token, payload, registro individual ou PII.
+- Preflight GSO real: `ready`, endpoint alcançável, credencial server-side
+  configurada, 35 pipelines não arquivados e `writesExternalData=false`.
+- Relatórios persistidos: matriz de capacidades, discovery operacional de CS,
+  catálogo de métricas, inventário de pipelines e evidência JSON sanitizada em
+  `docs/reports/2026-08-02_hubspot-*.md` e
+  `docs/reports/2026-08-02_hubspot-discovery-evidence.json`.
+- Resultado parcialmente validado: denominador CS, fonte autoritativa de
+  Conversas/Feedback e Chrome autenticado aguardam validação/decisão.
+
+# Revisão do próximo macro-lote visual — decisão do Product Owner — 2026-08-02
+
+- Delta persistido: `docs/reports/2026-08-02_ui-05-specification-delta.md`.
+- Especificação única: `docs/specs/UI_05_GENIO_EM_ACAO_V1.md`.
+- `UI-05` foi aprovado conceitualmente como micro-lote isolado, sem
+  implementação neste ciclo. A copy anterior foi substituída pela copy aprovada.
+- `DASHBOARD-05` depende do discovery HubSpot, denominador de CS e catálogo de
+  métricas; `DASHBOARD-06` foi separado para backlog técnico de runtime/dados.
+- Ordem registrada: discovery, denominadores, catálogo, UI-05, aprovação visual,
+  DASHBOARD-05 e depois DASHBOARD-06 em lote próprio.
 
 # DOCUMENTATION_LEDGER.md
 
@@ -6770,3 +6912,279 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 
 - Relatório: `docs/reports/ACCESS_01_2_INVITES_SAGA_NAVIGATION_2026-07-27.md`.
 - Entrega: Edge Function oficial, aceite idempotente, compensação condicionada, rate limit, guarda do último administrador e URLs canônicas do Dashboard.
+## DASHBOARD-API-ONLY - Reconstrucao do Dashboard Gerencial - 2026-08-02
+
+- Relatorio: `docs/reports/2026-08-02_dashboard-api-only-audit.md`.
+- Entrega: cinco areas ativas, planilhas fora da superficie operacional, Chat explicitamente indisponivel sem contrato confirmado e orquestracao sequencial HubSpot -> OMIE.
+- Commits: `9eb9ef2`, `2578366`, `4d96bbb`, `4c6e314`, `22b3346`, `b89fefb`.
+- Validacao: build web, typecheck web/contratos, testes focados, quality gate e validador documental; QA autenticado e sync real ainda dependem de ambiente.
+- Limite: nenhuma migration foi aplicada e nenhum banco foi resetado.
+
+## DASHBOARD-03 - Visao Geral e Integracoes - 2026-08-02
+
+- Relatorio: `docs/reports/2026-08-02_dashboard-api-only-audit.md`.
+- Evidencia visual: `docs/reports/visual-audit/design-qa.md` e capturas autenticadas em `docs/reports/visual-audit/screenshots/`.
+- Entrega: pulso HubSpot/OMIE, densidade visual padronizada, configuracao segura de integracoes, cadencia unica do ciclo completo e acoes manuais por fonte.
+- Limite: migrations forward-only, sincronizacao real e QA responsivo/dark ainda nao executados.
+
+## SETTINGS-SOURCES-V2 - Configuracoes, Fontes e Historico - 2026-08-02
+
+- Relatorios: `docs/reports/2026-08-02_settings-sources-delta.md`,
+  `docs/reports/2026-08-02_settings-ux-friction-audit.md` e
+  `docs/reports/2026-08-02_settings-design-report.md`.
+- Entrega: shell unico, rotas canonicas, Integracoes somente HubSpot/OMIE,
+  APP_KEY/APP_SECRET OMIE, catalogo vivo de pipelines, classificacao por area,
+  historico separado e remocao do diagnostico legado.
+- Evidencia: typechecks, build, testes Node 21/21, pgTAP focado 15/15, lint SQL,
+  secret scan e QA empacotado 18 capturas + 6 checks sem falhas.
+- Limites: nenhum sync real, push, deploy, reset, fixture pgTAP ou alteracao nas
+  paginas analiticas; denominador de Customer Success permanece pendente.
+
+## DASHBOARD-VISUAL-SYSTEM-V1 - Shell, superfícies e Gênio em ação - 2026-08-03
+
+- Auditoria inicial: `docs/reports/2026-08-03_dashboard-visual-system-v1-audit.md`.
+- Branch dedicada: `codex/dashboard-visual-system-v1-20260803`.
+- Escopo: reconstrução visual frontend, estados honestos, acessibilidade,
+  responsividade, performance localizada, testes focados e QA empacotado.
+- Limites: nenhum backend, banco, RPC, view, contrato, métrica, denominador,
+  integração, credencial, sincronização real ou dado persistido.
+- Precedência: esta entrada e a especificação atualizada de UI-05 corrigem a
+  dependência histórica de discovery HubSpot/denominador/catalogo para o lote
+  visual; os relatórios históricos permanecem preservados.
+
+## DASHBOARD-VISUAL-DENSITY-V1.1 - Densidade, tipografia e QA empacotado - 2026-08-03
+
+- Evidência adicional: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\ui05-final` registra 32 estados estáticos, 32 frames de movimento e 2 reduced-motion do componente real; o harness foi removido antes do build final.
+
+- Relatório: `docs/reports/2026-08-03_dashboard-visual-density-v1-1.md`.
+- Branch: `codex/dashboard-visual-density-v1-1-20260803`; base preservada em
+  `refs/archive/dashboard-visual-density-v1-1-start-20260803`.
+- Entrega: tipografia limitada, overview sem status duplicado, filtros contíguos,
+  Financeiro agrupado semanticamente, histórico compacto, formulários de
+  integrações sem warning de password fora de form e UI-05 com copy/motion
+  preservados.
+- Evidência: preview empacotado 80/80, zoom 125/200 em oito superfícies, motion
+  real do loading e reduced motion sem animações.
+- Limites: sincronização real HubSpot/OMIE não executada; overlay de ciclo real,
+  validação de denominador CS e três falhas amplas de Analytics permanecem fora
+  deste lote.
+## Registro corrente — High-Density Interface V1 — 2026-08-03
+
+- Branch: `codex/high-density-ui-rebuild-20260803`, sem upstream.
+- Base preservada: `refs/archive/high-density-ui-rebuild-start-20260803`.
+- Bundle externo: `C:\Projetos\GSO-artifacts\high-density-ui-rebuild-20260803`.
+- Especificação: `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md`.
+- Referências vigentes: `docs/design/blueprint/Dashboard PO/` e
+  `docs/design/blueprint/Suporte e conversas/`.
+- Decisão: Blueprint V2 superado para implementação; nenhuma alteração de
+  backend, contrato, dado, integração, credencial, permissão ou sincronismo.
+- Estado: documentação concluída; implementação e validação ainda pendentes.
+
+## SECURITY-DEP-01 — Advisory react-router — 2026-08-04
+
+- Relatório: `docs/reports/2026-08-04_react-router-advisory-analysis.md`.
+- Branch: `main`. Nenhuma dependência, lockfile, código de aplicação, contrato,
+  view, RPC, banco, permissão ou integração foi alterado.
+- Escopo: investigação do advisory GHSA-qwww-vcr4-c8h2 em
+  `react-router`/`react-router-dom`, faixa afetada `>= 7.12.0 < 8.3.0`,
+  instalado `7.18.0`.
+- Decisão: não aplicar correção neste lote. A única versão corrigida é
+  `react-router@8.3.0` e `react-router-dom` não tem linha 8, o que torna a
+  correção uma migração major em 48 arquivos com bump de React.
+- Evidência de não exploração: o advisory depende das APIs RSC instáveis;
+  o projeto usa apenas o data router client-side, sem `unstable_`, RSC, SSR,
+  route `loader`/`action` ou `useFetcher`.
+- Riscos restantes: `npm audit --omit=dev` continua reportando 2 altas até a
+  migração para a linha 8; nenhum gate de CI executa `npm audit`.
+- Impacto futuro na FAQ: nenhum. Não há mudança de comportamento de produto.
+
+## SECURITY-DEP-02 — Migração react-router 8 — 2026-08-04
+
+- Relatório: `docs/reports/2026-08-04_react-router-v8-migration.md`.
+- Branch: `codex/react-router-v8-migration-20260804`. Base preservada em
+  `refs/archive/react-router-v8-migration-start-20260804`.
+- Entrega: `react-router@8.3.0` no lugar de `react-router-dom@7.18.0`,
+  `RouterProvider` importado de `react-router/dom`, React e ReactDOM em
+  `19.2.8`, 48 arquivos de `apps/web/src` com import migrado.
+- Efeito de segurança: advisory GHSA-qwww-vcr4-c8h2 fechado;
+  `npm audit --omit=dev` saiu de 2 altas para 0.
+- Evidência: lint 0 erros, web/contracts typecheck, build, secret scan,
+  quality gate sem blockers e QA real no navegador em 4173/4174 cobrindo
+  redirect de raiz, rota pública, navegação por `Link`, `useParams`, gate de
+  rota protegida, catch-all e `useSearchParams`.
+- Limites: nenhum backend, banco, contrato, view, RPC, permissão, integração ou
+  dado alterado; QA autenticado não executado por ausência de credencial
+  autorizada; sem push e sem merge.
+- Riscos restantes: `eslint.config.js` fora da allowlist da raiz e 256 avisos
+  legados de lint.
+- Impacto futuro na FAQ: nenhum. Não houve mudança de comportamento de produto.
+
+## QUALITY-LINT-01 — Higiene da raiz e primeiro lote de dívida de lint — 2026-08-04
+
+- Relatório: `docs/reports/2026-08-04_lint-debt-lote-1-e-higiene-raiz.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Entrega: `eslint.config.js` classificado na allowlist de higiene da raiz;
+  `no-duplicate-imports` zerado em 10 arquivos; 3 imports mortos removidos.
+- Efeito medido: `repository:check-root` de 1 violação para OK; lint de 256 para
+  240 avisos, mantendo 0 erros.
+- Evidência: check-root, teste de higiene 3/3, lint, web/contracts typecheck,
+  build, secret scan, quality gate sem findings e QA no navegador em
+  `4173/login` e `4174/help/genius`.
+- Decisão registrada: código morto maior, como `LegacyRichTextArticleEditor` e
+  handlers de anexo desconectados, não foi apagado. A triagem exige decisão
+  humana e está tabelada no relatório.
+- Limites: nenhuma regra de ESLint afrouxada, nenhum `eslint-disable`, nenhum
+  backend, banco, contrato, permissão ou dado alterado; superfícies autenticadas
+  não verificadas no navegador.
+- Riscos restantes: 240 avisos, sendo 73 de hooks que exigem QA autenticado.
+- Impacto futuro na FAQ: nenhum.
+
+## QUALITY-LINT-02 — Imports mortos e triagem do código morto — 2026-08-04
+
+- Relatório: `docs/reports/2026-08-04_lint-debt-lote-2-imports-mortos-e-triagem.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Entrega: classificação dos 146 avisos de variável não usada em specifier de
+  import morto (24), declaração local morta (118) e prop/parâmetro (4); remoção
+  apenas dos 24 specifiers, com verificação prévia de que nenhuma declaração
+  `import` ficaria vazia.
+- Efeito medido: lint de 240 para 216 avisos, mantendo 0 erros.
+- Evidência: lint, web typecheck, build, secret scan, quality gate sem findings,
+  check-root OK e QA no navegador em `4173/login` e
+  `4174/help/genius/articles?page=3`.
+- Decisão registrada: os 122 itens restantes não foram apagados. A triagem por
+  arquivo, linha, símbolo e natureza está no relatório e exige decisão de
+  produto, principalmente nos filtros meio ligados de Conhecimento e na
+  superfície legada do editor.
+- Limites: nenhuma regra afrouxada, nenhum `eslint-disable`, nenhum aviso de
+  hooks tocado, nenhum backend, banco, contrato, permissão ou dado alterado.
+- Impacto futuro na FAQ: nenhum.
+
+## QUALITY-QA-01 — QA autenticado, auditoria no gate e lint lote 3 — 2026-08-04
+
+- Relatório: `docs/reports/2026-08-04_qa-autenticado-audit-no-gate-e-lint-lote-3.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Entrega 1: QA autenticado local destravado com o harness oficial. 5 papéis
+  autenticados por API e 10 cenários visuais aprovados em desktop e mobile, com
+  capturas em `output/local-qa/`. Runbook validado adicionado a
+  `docs/LOCAL_QA_AUTH.md`, incluindo os requisitos de porta 4173 livre e
+  `NODE_ENV=development`.
+- Entrega 2: auditoria de dependência de produção no quality gate. Novo
+  `scripts/ci/check-dependency-advisories.mjs` e script
+  `npm run security:audit:prod`, executado nos modos `fast`, `staged` e `full`,
+  com 3 testes em `tests/scripts/dependency-advisories.test.mjs`. Indisponibilidade
+  é reportada como `INDISPONÍVEL`, nunca como aprovação.
+- Entrega 3: remoção de 21 helpers de apresentação órfãos em Conhecimento, editor,
+  Portal Admin, Access e navegação. Lint de 216 para 196 avisos.
+- Evidência: smoke auth, smoke visual, security audit, testes 3/3, lint,
+  typecheck, build, secret scan e quality gate sem findings.
+- Limites: Conhecimento, Access e Portal Admin ainda não têm cenário próprio no
+  smoke; `local:qa:writes` não foi executado; nenhum backend, banco, contrato,
+  permissão ou dado alterado.
+- Impacto futuro na FAQ: nenhum.
+
+## QUALITY-QA-02 — Smoke estendido, hooks públicos e Fast Refresh — 2026-08-04
+
+- Relatório: `docs/reports/2026-08-04_smoke-estendido-hooks-publicos-e-fast-refresh.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Entrega 1: `scripts/local-qa/browser-smoke.mjs` com `extraRoutes` por persona,
+  cobrindo `/admin/knowledge` e `/admin/access` para `platform_admin`, com
+  captura e bloco `internalRoutes` na saída.
+- Entrega 2: Central Pública sem `rules-of-hooks`. `loadSpaces`, `loadSpace`,
+  `loadArticle` e `loadSearch` migraram de `useEffectEvent` para `useCallback`,
+  com dependências explícitas e comportamento preservado.
+- Entrega 3: novo `apps/web/src/features/help-center/public-presentation.ts` com
+  os quatro helpers puros que ficavam em `public-ui.tsx`, zerando
+  `react-refresh/only-export-components` na área pública.
+- Efeito medido: lint de 196 para 187 avisos, sempre com 0 erros.
+- Evidência: smoke com 10 cenários e 2 rotas internas, QA manual da Central
+  Pública em busca, artigo e diretório, lint, typecheck, build, secret scan e
+  quality gate sem findings.
+- Achado registrado: `/admin/customer-portal` depende da screen key
+  `customer_portal_admin`, ausente na fixture local; superfície fora do QA local.
+- Limites: 41 avisos de hooks seguem em superfícies internas; nenhum backend,
+  banco, contrato, permissão ou dado alterado.
+- Impacto futuro na FAQ: nenhum.
+
+## QUALITY-QA-03 — Mapa de superfícies, hooks do Access e padrão de carregamento — 2026-08-05
+
+- Relatório: `docs/reports/2026-08-05_mapa-de-superficies-hooks-access-e-padrao-de-carregamento.md`.
+- Documento novo: `docs/FRONTEND_DATA_LOADING_PATTERNS.md`, indexado no
+  `docs/README.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Entrega 1: `probeRoutes` no harness de smoke, com o mapa de 11 superfícies
+  internas da fixture local, e promoção de `/admin/settings` para cobertura com
+  asserção. A sondagem roda após o veredito do persona porque rota sem screen key
+  produz 401 esperado em `vw_admin_auth_context`.
+- Entrega 2: `features/access/AccessPage.tsx` sem `rules-of-hooks`. `loadSurface`
+  virou `useCallback` com dependência estável, verificado pelo smoke na rota
+  `/admin/access`.
+- Entrega 3: padrão canônico de carregamento documentado em três casos, com a
+  decisão explícita de congelar 38 avisos de hooks, 35 deles em telas sem QA
+  local possível.
+- Efeito medido: lint de 187 para 184 avisos, sempre com 0 erros.
+- Evidência: lint, typecheck, build, secret scan, quality gate e smoke com 10
+  personas, 3 rotas internas asseguradas e 7 sondadas.
+- Limites: nenhum backend, banco, contrato, permissão ou dado alterado; sondagem
+  cobre apenas a persona `platform_admin`.
+- Impacto futuro na FAQ: nenhum.
+
+## QUALITY-QA-04 — Manifesto de release, cenário do editor e token de recarga — 2026-08-05
+
+- Relatório: `docs/reports/2026-08-05_release-manifest-cenario-do-editor-e-token-de-recarga.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Entrega 1: causa do bloqueio de QA interno confirmada por consulta somente
+  leitura ao `internal_screen_catalog`. É `release_enabled = false`, não falta de
+  grant. Correção propagada para handoff, `FRONTEND_DATA_LOADING_PATTERNS` e
+  comentários do harness.
+- Entrega 2: cenário profundo `knowledgeEditorScenario` no smoke, cobrindo a
+  montagem do editor de artigo real com dado do banco local.
+- Entrega 3: token de recarga no bootstrap de `KnowledgePage.tsx`, primeiro uso do
+  Caso 3 do padrão canônico, com o botão de nova tentativa apenas sinalizando.
+- Efeito medido: lint de 184 para 183 avisos, sempre com 0 erros.
+- Evidência: lint, typecheck, build, secret scan, quality gate e smoke com 10
+  personas, 3 rotas internas, 1 cenário profundo e 7 rotas sondadas.
+- Limites: cobertura de escrita em Conhecimento continua inexistente; 37 avisos de
+  hooks seguem congelados, 35 deles por decisão de release.
+- Impacto futuro na FAQ: nenhum.
+
+## QUALITY-QA-05 — Preview de release local e três camadas de autorização — 2026-08-05
+
+- Relatório: `docs/reports/2026-08-05_preview-de-release-local-e-tres-camadas-de-autorizacao.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Decisão: não publicar telas para viabilizar QA. Em vez disso, pré-visualização
+  restrita ao banco local, reversível, fora de `supabase/migrations/`.
+- Entrega: `supabase/qa/local-release-preview.mjs` mais scripts `status`,
+  `--screens=<lista>` e `disable`, com backup do estado original, asserção de
+  ambiente local e bloqueio contra ligar o catálogo inteiro.
+- Achado: autorização de tela interna tem três camadas em série, `release_enabled`,
+  grant de tela e capability. `platform_admin` já tem grant de tela para todas as
+  internas; faltam release e capability. Documentado em
+  `FRONTEND_DATA_LOADING_PATTERNS`.
+- Limite deliberado: o script não concede capability, por ser o controle mais
+  sensível do control plane.
+- Evidência: ciclo status/enable/smoke/disable/status com estado final idêntico ao
+  inicial; lint, typecheck e secret scan aprovados.
+- Limites: telas fora do release seguem sem QA local; cenário de escrita em
+  Conhecimento continua pendente; nenhuma migration, contrato, view ou RPC
+  alterado.
+- Impacto futuro na FAQ: nenhum.
+
+## QUALITY-QA-06 — QA de escrita em Conhecimento e dependências estáveis — 2026-08-05
+
+- Relatório: `docs/reports/2026-08-05_qa-de-escrita-em-conhecimento-e-deps-estaveis.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Entrega 1: cenário `knowledge-write` no smoke, autorizado pelo usuário. Escreve
+  marcador sanitizado no título pelo editor, valida persistência após reload e
+  restaura o valor original, com erros dedicados para falha de persistência e de
+  restauração.
+- Entrega 2: dependências estáveis em duas telas publicadas.
+  `AnalyticsCsPage.tsx` memoiza `period`; `SettingsPage.tsx` memoiza
+  `settingsPermissions` e remove a assinatura duplicada de screen keys. Nenhum
+  `eslint-disable` usado.
+- Efeito medido: lint de 183 para 181 avisos, sempre com 0 erros.
+- Evidência: smoke com 10 personas, 3 rotas internas, 2 cenários profundos e 7
+  sondadas; lint, typecheck, build e secret scan aprovados.
+- Limites: escrita coberta apenas no editor de artigo; 7 avisos de
+  `exhaustive-deps` seguem abertos em telas publicadas, listados no relatório;
+  nenhum backend, contrato, RPC, view ou permissão alterado.
+- Impacto futuro na FAQ: nenhum.

@@ -389,7 +389,8 @@ export interface ManagedIntegration {
   id: string;
   integrationKey: string;
   label: string;
-  provider: 'hubspot' | 'omie' | 'google_sheets' | 'spreadsheet_upload' | 'github';
+  /** Providers publicados na superfície ativa de Integrações. */
+  provider: 'hubspot' | 'omie';
   mode: 'api' | 'manual' | 'hybrid';
   isEnabled: boolean;
   config: Record<string, unknown>;
@@ -419,6 +420,10 @@ function mapManagedIntegration(row: Record<string, unknown>): ManagedIntegration
   };
 }
 
+function isPublishedIntegrationProvider(value: unknown): value is ManagedIntegration['provider'] {
+  return value === 'hubspot' || value === 'omie';
+}
+
 export async function listManagedIntegrations(): Promise<ManagedIntegration[]> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client
@@ -426,7 +431,9 @@ export async function listManagedIntegrations(): Promise<ManagedIntegration[]> {
     .select('*')
     .order('label', { ascending: true });
   if (error) throw new Error(error.message);
-  return (data ?? []).map((row) => mapManagedIntegration(row as Record<string, unknown>));
+  return (data ?? [])
+    .filter((row) => isPublishedIntegrationProvider((row as Record<string, unknown>).provider))
+    .map((row) => mapManagedIntegration(row as Record<string, unknown>));
 }
 
 export async function saveManagedIntegration(input: {

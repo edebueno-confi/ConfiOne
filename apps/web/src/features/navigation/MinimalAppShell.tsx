@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { cx } from '../../components/ui';
-import { GeniusMascot } from '../../components/GeniusMascot';
+import { GeniusLamp } from '../../components/GeniusLamp';
 import { Avatar } from '../../components/Avatar';
 import { ThemeToggle } from '../../components/ThemeToggle';
 import { useAuthContext } from '../auth/auth-context';
+import { SettingsNavIcon } from '../settings/settings-nav-icons';
+import { GeniusGlobalSearch } from './GeniusGlobalSearch';
+// A sidebar veste o mesmo sistema visual das telas de Configuracoes: a classe
+// raiz `gso-ui` publica os tokens e o CSS abaixo aplica a linguagem nova.
+import '../settings/settings-ui.css';
 import {
   buildMinimalNavigation,
   resolveMinimalRouteLabel,
@@ -91,27 +96,55 @@ function ShellNavigation({
           {(collapsed || !collapsedSections[section.id] || section.items.some((item) => item.matches(pathname))) ? <div className="space-y-0.5">
             {section.items.filter((item) => collapsed || !collapsedSections[section.id] || item.matches(pathname)).map((item) => {
               const active = item.matches(pathname);
+              const linkClassName = cx(
+                'gso-nav-link flex min-h-11 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors duration-150',
+                collapsed && 'justify-center px-0',
+                // Subitens de Configuracoes ficam recuados sob o rotulo do grupo.
+                !collapsed && item.settingsSection && 'gso-nav-link--nested',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]',
+                active
+                  ? 'gso-nav-link--active bg-[color:var(--minimal-selection)] font-medium text-[color:var(--minimal-selection-text)]'
+                  : 'text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)]',
+              );
+              const linkContent = (
+                <>
+                  <span className="inline-flex h-5 w-5 items-center justify-center">
+                    {/* Subitens de Configurações reaproveitam os ícones lineares
+                        já desenhados para as seções da tela. */}
+                    {item.settingsSection ? <SettingsNavIcon section={item.settingsSection} /> : <NavigationGlyph icon={item.icon} />}
+                  </span>
+                  {!collapsed ? <span className="truncate">{item.label}</span> : null}
+                </>
+              );
+
+              // External entries leave the authenticated shell (public Help
+              // Center), so they open in a new tab instead of routing.
+              if (item.external) {
+                return (
+                  <a
+                    className={linkClassName}
+                    href={item.to}
+                    key={item.id}
+                    onClick={onNavigate}
+                    rel="noreferrer"
+                    target="_blank"
+                    title={collapsed ? item.label : undefined}
+                  >
+                    {linkContent}
+                  </a>
+                );
+              }
 
               return (
                 <Link
                   aria-current={active ? 'page' : undefined}
-                  className={cx(
-                    'gso-nav-link flex min-h-11 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors duration-150',
-                    collapsed && 'justify-center px-0',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]',
-                    active
-                      ? 'gso-nav-link--active bg-[color:var(--minimal-selection)] font-medium text-[color:var(--minimal-selection-text)]'
-                      : 'text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)]',
-                  )}
+                  className={linkClassName}
                   key={item.id}
                   onClick={onNavigate}
                   to={item.to}
                   title={collapsed ? item.label : undefined}
                 >
-                  <span className="inline-flex h-5 w-5 items-center justify-center">
-                    <NavigationGlyph icon={item.icon} />
-                  </span>
-                  {!collapsed ? <span className="truncate">{item.label}</span> : null}
+                  {linkContent}
                 </Link>
               );
             })}
@@ -119,6 +152,133 @@ function ShellNavigation({
         </section>
       ))}
     </nav>
+  );
+}
+
+function SidebarIconButton({
+  label,
+  children,
+  onClick,
+}: {
+  label: string;
+  children: ReactNode;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      aria-label={label}
+      className="gso-sidebar-icon-button"
+      onClick={onClick}
+      title={label}
+      type="button"
+    >
+      {children}
+    </button>
+  );
+}
+
+function GeniusSidebar({
+  collapsed,
+  onCollapse,
+  onNavigate,
+  pathname,
+  permissions,
+  email,
+  fullName,
+  userTitle,
+  userSubtitle,
+  signOut,
+}: {
+  collapsed: boolean;
+  onCollapse: () => void;
+  onNavigate?: () => void;
+  pathname: string;
+  permissions: MinimalNavigationPermissions;
+  email: string | null;
+  fullName: string | null;
+  userTitle: string;
+  userSubtitle: string;
+  signOut: () => Promise<void>;
+}) {
+  const navigate = useNavigate();
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!accountMenuOpen) return undefined;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Node && accountMenuRef.current?.contains(target)) return;
+      setAccountMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAccountMenuOpen(false);
+    };
+
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePointer);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [accountMenuOpen]);
+
+  return (
+    <aside
+      aria-label="Navegação principal"
+      className={cx('gso-ui gso-sidebar hidden shrink-0 lg:grid', collapsed ? 'gso-sidebar--collapsed' : 'gso-sidebar--open')}
+      data-collapsed={collapsed}
+    >
+      <div className="gso-sidebar-header">
+        <Link aria-label="GeniusOS" className="gso-brand-lockup" to="/">
+          {!collapsed ? <span>Genius<span className="text-[color:var(--genius-site-pink)]">OS</span></span> : null}
+        </Link>
+        <SidebarIconButton label={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'} onClick={onCollapse}>
+          <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24"><path d={collapsed ? 'm9 6 6 6-6 6' : 'm15 6-6 6 6 6'} /></svg>
+        </SidebarIconButton>
+      </div>
+
+      <div className="gso-sidebar-search">
+        <GeniusGlobalSearch
+          compact={collapsed}
+          permissions={{
+            isPlatformAdmin: permissions.isPlatformAdmin || (permissions.roles ?? []).includes('platform_admin'),
+            screenKeys: permissions.screenKeys ?? [],
+          }}
+        />
+      </div>
+
+      <div className="gso-sidebar-nav">
+        <ShellNavigation collapsed={collapsed} onNavigate={onNavigate} pathname={pathname} permissions={permissions} />
+      </div>
+
+      <div ref={accountMenuRef} className="gso-sidebar-account" data-collapsed={collapsed} data-menu-open={accountMenuOpen}>
+        <div className="gso-sidebar-account-card">
+          <button
+            aria-expanded={accountMenuOpen}
+            aria-haspopup="menu"
+            className="gso-sidebar-account-trigger"
+            onClick={() => setAccountMenuOpen((current) => !current)}
+            title={collapsed ? `Abrir menu de ${userTitle}` : undefined}
+            type="button"
+          >
+            <Avatar email={email} name={fullName} size="md" label={`Perfil de ${userTitle}`} />
+            {!collapsed ? <span className="gso-sidebar-account-identity"><strong>{userTitle}</strong><small>{userSubtitle}</small></span> : null}
+            {!collapsed ? <svg aria-hidden="true" className={cx('gso-sidebar-chevron', accountMenuOpen && 'rotate-180')} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" /></svg> : null}
+          </button>
+        </div>
+        {accountMenuOpen ? <div className="gso-sidebar-account-menu" role="menu">
+          <div className="gso-sidebar-menu-heading">
+            <p className="gso-sidebar-menu-caption">Aparência e conta</p>
+            <button aria-label="Fechar menu da conta" className="gso-sidebar-menu-close" onClick={() => setAccountMenuOpen(false)} type="button">×</button>
+          </div>
+          <ThemeToggle className="w-full justify-center" />
+          <button className="gso-sidebar-menu-action" onClick={() => navigate('/admin/settings')} role="menuitem" type="button">Preferências</button>
+          <button className="gso-sidebar-menu-action gso-sidebar-menu-action--danger" onClick={() => void signOut()} role="menuitem" type="button">Encerrar sessão</button>
+        </div> : null}
+      </div>
+    </aside>
   );
 }
 
@@ -134,13 +294,14 @@ export function MinimalAppShell({
   const location = useLocation();
   const { signOut, user } = useAuthContext();
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
       const stored = window.localStorage.getItem('gso-shell-sidebar-collapsed');
       if (stored !== null) return stored === 'true';
-      return window.location.pathname.startsWith('/admin/analytics') && window.innerWidth >= 1440;
+      return false;
     } catch {
-      return window.location.pathname.startsWith('/admin/analytics') && window.innerWidth >= 1440;
+      return false;
     }
   });
   const mobileCloseButtonRef = useRef<HTMLButtonElement>(null);
@@ -152,6 +313,7 @@ export function MinimalAppShell({
 
   useEffect(() => {
     setMobileNavigationOpen(false);
+    setAccountMenuOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -201,31 +363,85 @@ export function MinimalAppShell({
       >
         Pular para o conteúdo
       </a>
-      <div className="flex h-full min-h-0">
+      <div className="flex h-full min-h-0 gap-2 lg:p-2">
+        <GeniusSidebar
+          collapsed={sidebarCollapsed}
+          email={email}
+          fullName={fullName}
+          onCollapse={() => setSidebarCollapsed((current) => !current)}
+          pathname={location.pathname}
+          permissions={permissions}
+          signOut={signOut}
+          userSubtitle={userSubtitle}
+          userTitle={userTitle}
+        />
         <aside className={cx(
-          'gso-sidebar hidden h-full shrink-0 border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] transition-[width] duration-200 lg:flex lg:flex-col',
-          sidebarCollapsed ? 'w-16' : 'w-[248px]',
+          'gso-legacy-sidebar hidden h-full shrink-0',
+          sidebarCollapsed ? 'w-[var(--shell-sidebar-collapsed)]' : 'w-[var(--shell-sidebar-width)]',
         )}>
           <div className={cx(
-            'flex h-14 shrink-0 items-center border-b border-[color:var(--minimal-border)] px-4',
-            sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+            'gso-sidebar-header flex h-[var(--shell-topbar-height)] shrink-0 items-center gap-1.5 px-2',
+            sidebarCollapsed ? 'justify-center' : 'justify-between px-3',
           )}>
-            <Link aria-label="GeniusOS" className="gso-brand-lockup flex items-center gap-2 rounded-md text-sm font-semibold tracking-[-0.015em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]" to="/">
-              <GeniusMascot size="sm" />
+            <Link aria-label="GeniusOS" className={cx('gso-brand-lockup flex min-w-0 items-center gap-2 rounded-md text-sm font-semibold tracking-[-0.015em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]', sidebarCollapsed ? 'shrink-0' : 'flex-1')} to="/">
+              <GeniusLamp size="sm" />
               {!sidebarCollapsed ? <span>
                 Genius<span className="text-[color:var(--genius-site-pink)]">OS</span>
               </span> : null}
             </Link>
+            <div className={cx('gso-sidebar-search shrink-0', sidebarCollapsed ? 'w-8' : 'w-[142px]')}>
+              <GeniusGlobalSearch
+                compact={sidebarCollapsed}
+                permissions={{
+                  isPlatformAdmin: permissions.isPlatformAdmin || (permissions.roles ?? []).includes('platform_admin'),
+                  screenKeys: permissions.screenKeys ?? [],
+                }}
+              />
+            </div>
           </div>
 
           <div className={cx('min-h-0 flex-1 overflow-y-auto overscroll-contain py-4', sidebarCollapsed ? 'px-1.5' : 'px-2')}>
             <ShellNavigation collapsed={sidebarCollapsed} pathname={location.pathname} permissions={permissions} />
           </div>
 
+          <div className={cx(
+            'gso-sidebar-account shrink-0 border-t border-[color:var(--minimal-border)] p-3',
+            sidebarCollapsed ? 'flex flex-col items-center gap-2 px-2' : 'space-y-2',
+          )} data-collapsed={sidebarCollapsed}>
+            <div className={cx('flex items-center gap-2.5', sidebarCollapsed ? 'justify-center' : 'min-w-0')}>
+              <Avatar email={email} name={fullName} size={sidebarCollapsed ? 'sm' : 'md'} label={`Perfil de ${userTitle}`} />
+              {!sidebarCollapsed ? <div className="min-w-0 flex-1 leading-tight">
+                <p className="truncate text-xs font-semibold text-[color:var(--minimal-text)]">{userTitle}</p>
+                <p className="truncate text-[10px] text-[color:var(--minimal-text-tertiary)]">{userSubtitle}</p>
+              </div> : null}
+            </div>
+            <button
+              aria-label={sidebarCollapsed ? 'Abrir menu da conta' : 'Abrir opções da conta'}
+              aria-expanded={accountMenuOpen}
+              aria-haspopup="menu"
+              className={cx(
+                'gso-sidebar-account-trigger inline-flex min-h-8 items-center justify-center rounded-md text-[color:var(--minimal-text-tertiary)] hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]',
+                'h-8 w-8 px-0',
+              )}
+              onClick={() => setAccountMenuOpen((current) => !current)}
+              type="button"
+            >
+              <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.2h-2.6v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1A1.7 1.7 0 0 0 8 15a1.7 1.7 0 0 0-1.5-1H6.3v-2.6h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5v-.2H15v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.2V14h-.2a1.7 1.7 0 0 0-1.5 1Z" /></svg>
+              {!sidebarCollapsed ? <span className="sr-only">Opções da conta</span> : null}
+            </button>
+            {accountMenuOpen ? <div className="gso-sidebar-account-menu rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-2 shadow-lg" role="menu">
+              <ThemeToggle className="w-full justify-center" />
+              <button aria-label="Encerrar sessão" className="gso-sidebar-signout mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-md px-2.5 text-xs font-medium text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]" onClick={() => void signOut()} role="menuitem" type="button">
+                <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14.5 7.5 19 12l-4.5 4.5M19 12H9M11 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H11" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" /></svg>
+                <span>Encerrar sessão</span>
+              </button>
+            </div> : null}
+          </div>
+
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <header className="gso-topbar flex h-14 shrink-0 items-center gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-3 sm:px-4">
+          <header className="gso-topbar relative flex h-[var(--shell-topbar-height)] shrink-0 items-center gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-3 sm:px-4">
             <button
               ref={mobileMenuButtonRef}
               aria-expanded={mobileNavigationOpen}
@@ -250,12 +466,22 @@ export function MinimalAppShell({
                 <path d={sidebarCollapsed ? 'm10 6 6 6-6 6' : 'm14 6-6 6 6 6'} />
               </svg>
             </button>
-            <p className="truncate text-sm text-[color:var(--minimal-text-secondary)]">
-              <span className="hidden text-[color:var(--minimal-text-tertiary)] sm:inline">
-                GeniusOS&nbsp;&nbsp;/&nbsp;&nbsp;
-              </span>
+            <p className="hidden max-w-[220px] truncate text-sm text-[color:var(--minimal-text-secondary)] lg:block">
               <span className="font-medium text-[color:var(--minimal-text)]">{routeLabel}</span>
             </p>
+            {/* Busca global do Genio: centralizada no header, em todas as telas.
+                Absoluta para ficar no centro otico independente da largura dos
+                clusters da esquerda e da direita. */}
+            <div className="pointer-events-none absolute left-1/2 top-1/2 hidden w-full max-w-xl -translate-x-1/2 -translate-y-1/2 justify-center px-4 md:flex">
+              <div className="pointer-events-auto w-full">
+                <GeniusGlobalSearch
+                  permissions={{
+                    isPlatformAdmin: permissions.isPlatformAdmin || (permissions.roles ?? []).includes('platform_admin'),
+                    screenKeys: permissions.screenKeys ?? [],
+                  }}
+                />
+              </div>
+            </div>
             <div className="ml-auto flex items-center gap-2">
               <ThemeToggle />
               <div className="hidden items-center gap-2 border-l border-[color:var(--minimal-border)] pl-3 sm:flex">
@@ -275,9 +501,9 @@ export function MinimalAppShell({
           {mobileNavigationOpen ? (
             <div className="fixed inset-0 z-40 lg:hidden" id="gso-mobile-navigation">
               <button aria-label="Fechar navegação" className="absolute inset-0 bg-[color:var(--minimal-overlay)]" onClick={() => setMobileNavigationOpen(false)} type="button" />
-              <aside aria-label="Menu principal mobile" aria-modal="true" className="relative flex h-full w-[min(19rem,86vw)] flex-col border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] shadow-[var(--minimal-drawer-shadow)]" role="dialog">
+              <aside aria-label="Menu principal mobile" aria-modal="true" className="gso-ui gso-sidebar-drawer relative flex h-full w-[min(19rem,86vw)] flex-col border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] shadow-[var(--minimal-drawer-shadow)]" role="dialog">
                 <div className="flex h-14 items-center justify-between border-b border-[color:var(--minimal-border)] px-4">
-                  <p className="flex items-center gap-2 text-sm font-semibold"><GeniusMascot size="sm" />Genius<span className="text-[color:var(--genius-site-pink)]">OS</span></p>
+                  <p className="flex items-center gap-2 text-sm font-semibold"><GeniusLamp size="sm" />Genius<span className="text-[color:var(--genius-site-pink)]">OS</span></p>
                   <button ref={mobileCloseButtonRef} aria-label="Fechar navegação" className="inline-flex h-11 w-11 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]" onClick={() => { setMobileNavigationOpen(false); mobileMenuButtonRef.current?.focus(); }} type="button">
                     <span aria-hidden="true">×</span>
                   </button>

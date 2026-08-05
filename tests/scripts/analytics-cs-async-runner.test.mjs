@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const migration = await readFile(new URL('../../supabase/migrations/20260726215117_analytics_hubspot_common_orchestrator_v1.sql', import.meta.url), 'utf8');
+const sharedWorkSplitMigration = await readFile(new URL('../../supabase/migrations/20260803200000_dashboard_hubspot_shared_work_split_v1.sql', import.meta.url), 'utf8');
 const startFixMigration = await readFile(new URL('../../supabase/migrations/20260726230100_analytics_hubspot_common_start_state_fix_v1.sql', import.meta.url), 'utf8');
 const serviceIdentityMigration = await readFile(new URL('../../supabase/migrations/20260726234000_analytics_hubspot_service_identity_v1.sql', import.meta.url), 'utf8');
 const stagingAclMigration = await readFile(new URL('../../supabase/migrations/20260726241000_analytics_hubspot_staging_service_acl_v1.sql', import.meta.url), 'utf8');
@@ -60,10 +61,15 @@ test('tickets acima do teto de busca sao particionados antes da persistencia', (
   assert.match(partitionMigration, /status = 'succeeded'/);
 });
 
-test('shared sync usa lotes menores e lease ampliado para a carga de empresas', () => {
+test('shared sync usa paginas retomaveis e unidades curtas para reduzir carga do runtime', () => {
   assert.match(worker, /p_lease_seconds: 300/);
   assert.match(worker, /offset \+= 500/);
   assert.match(worker, /rows\.slice\(offset, offset \+ 500\)/);
+  assert.match(worker, /fetchCompaniesPage/);
+  assert.match(worker, /fetchOwnersPage/);
+  assert.match(sharedWorkSplitMigration, /shared_companies/);
+  assert.match(sharedWorkSplitMigration, /shared_owners/);
+  assert.match(sharedWorkSplitMigration, /shared_catalog/);
 });
 
 test('run enfileirado nao grava source evidence invalida', () => {
@@ -85,8 +91,9 @@ test('worker possui adaptadores para deals, tickets e entidades compartilhadas',
   assert.match(worker, /fetchTicketsPageByPipeline/);
   assert.match(worker, /analytics_hubspot_deal_staging/);
   assert.match(worker, /analytics_cs_ticket_staging/);
-  assert.match(worker, /fetchCompanies/);
-  assert.match(worker, /fetchOwners/);
+  assert.match(worker, /fetchCompaniesPage/);
+  assert.match(worker, /fetchOwnersPage/);
+  assert.match(worker, /item\.object_type === 'shared_catalog'/);
 });
 
 test('promoção é posterior à cobertura completa e usa chaves HubSpot estáveis', () => {
@@ -99,15 +106,22 @@ test('promoção é posterior à cobertura completa e usa chaves HubSpot estáve
 });
 
 test('schedule e compatibilidade usam somente o motor comum', () => {
-  assert.match(schedule, /hubspot-orchestrator-dispatcher/);
+  assert.match(schedule, /analytics-sequential-sync/);
   assert.doesNotMatch(schedule, /hubspot-cs-dispatcher/);
   assert.doesNotMatch(schedule, /analytics-integration-run/);
-  assert.match(schedule, /hubspot_enabled/);
-  assert.match(schedule, /hubspot_frequency/);
+  assert.match(schedule, /select\('enabled,frequency,last_run_at'\)/);
+  assert.match(schedule, /invokeFullCycle/);
   assert.doesNotMatch(compatibility, /fetchDealsByPipeline|fetchTicketsByPipeline|updateCompaniesBatch/);
   assert.match(compatibility, /rpc_analytics_hubspot_start_run/);
   assert.match(dispatcher, /hubspot-orchestrator-worker/);
   assert.match(api, /hubspot-orchestrator-start/);
+});
+
+test('cadência legada não cria um segundo ciclo HubSpot', async () => {
+  const fullCycleMigration = await readFile(new URL('../../supabase/migrations/20260802040000_analytics_full_cycle_scheduler_v1.sql', import.meta.url), 'utf8');
+  assert.match(fullCycleMigration, /hubspot_enabled = false/);
+  assert.match(fullCycleMigration, /hubspot_frequency = 'off'/);
+  assert.match(fullCycleMigration, /único ciclo automático/);
 });
 
 test('cron do HubSpot e idempotente, diario e separado do OMIE', () => {

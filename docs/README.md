@@ -23,6 +23,12 @@ Fonte oficial da documentação do Genius Support OS.
 ## Visão e estado
 
 - [PROJECT_STATE.md](./PROJECT_STATE.md)
+- [reports/2026-08-01_repository-and-release-surface-audit.md](./reports/2026-08-01_repository-and-release-surface-audit.md)
+- [reports/2026-08-01_git-state-reconciliation-addendum.md](./reports/2026-08-01_git-state-reconciliation-addendum.md)
+- [reports/2026-08-01_analytics-contracts-and-local-auth-delta.md](./reports/2026-08-01_analytics-contracts-and-local-auth-delta.md)
+- [reports/DESIGN_QA_ANALYTICS_COCKPIT_2026-08-01.md](./reports/DESIGN_QA_ANALYTICS_COCKPIT_2026-08-01.md)
+- [reports/2026-08-01_dashboard-metrics-and-integrations-discovery.md](./reports/2026-08-01_dashboard-metrics-and-integrations-discovery.md)
+- [reports/2026-08-01_ambiente_local_pgtap_e_sync_hubspot.md](./reports/2026-08-01_ambiente_local_pgtap_e_sync_hubspot.md)
 - [reports/HUBSPOT_OMIE_SYNC_HARDENING_2026-07-21.md](./reports/HUBSPOT_OMIE_SYNC_HARDENING_2026-07-21.md)
 - [reports/CODEX_CONTINUATION_HANDOFF_2026-07-17.md](./reports/CODEX_CONTINUATION_HANDOFF_2026-07-17.md)
 - [ANALYTICS_METRIC_CATALOG_V1.md](./ANALYTICS_METRIC_CATALOG_V1.md)
@@ -52,6 +58,7 @@ Fonte oficial da documentação do Genius Support OS.
 ## Arquitetura e backend
 
 - [ARCHITECTURE_RULES.md](./ARCHITECTURE_RULES.md)
+- [FRONTEND_DATA_LOADING_PATTERNS.md](./FRONTEND_DATA_LOADING_PATTERNS.md)
 - [REPOSITORY_STRUCTURE.md](./REPOSITORY_STRUCTURE.md)
 - [DATA_MODEL_STRATEGY.md](./DATA_MODEL_STRATEGY.md)
 - [PHASE_4_1_MULTI_BRAND_ARCHITECTURE_REVIEW.md](./PHASE_4_1_MULTI_BRAND_ARCHITECTURE_REVIEW.md)
@@ -180,3 +187,4 @@ Skill local versionada para tarefas de UI/UX do Genius Support OS baseadas em bl
 - [reports/REPOSITORY_SANITIZATION_REPORT.md](./reports/REPOSITORY_SANITIZATION_REPORT.md)
 - [reports/PROJECT_FORENSIC_RECOVERY_AUDIT_2026-05-29.md](./reports/PROJECT_FORENSIC_RECOVERY_AUDIT_2026-05-29.md)
 - [reports/WORKTREE_VISUAL_BLUEPRINT_RECOVERY_CLOSURE_2026-05-29.md](./reports/WORKTREE_VISUAL_BLUEPRINT_RECOVERY_CLOSURE_2026-05-29.md)
+- [specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md](./specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md)

@@ -1,0 +1,164 @@
+# Auditoria do Dashboard Gerencial - API-only
+
+**Data:** 2026-08-02
+**Checkout:** `C:\Projetos\GSO-old`
+**Branch:** `codex/dashboard-management-rebuild-20260802`
+**HEAD de inicio preservado em:** `refs/archive/dashboard-rebuild-start-20260802`
+
+## Objetivo
+
+Registrar o estado factual antes da reconstrucao do Dashboard Gerencial. O
+Dashboard publicado deve operar com contratos backend reais, sem planilha como
+fonte, fallback ou contingencia, e sem apagar migrations, dados historicos ou
+artefatos de QA que ainda sejam necessarios para auditoria.
+
+## Estado Git de entrada
+
+- Worktree limpo antes da auditoria.
+- Branch de trabalho criada a partir de `b121b446d743a0d84928456b0d4ef66c10007f55`.
+- `origin/main...HEAD`: `0 44`; a branch local contem 44 commits alem do
+  `origin/main` observado no inicio deste lote.
+- Nenhuma operacao destrutiva, integracao de branch, push ou alteracao remota
+  foi executada neste lote.
+
+## Superficies ativas e fonte contratual
+
+| Superficie | Entrada atual | Fonte aprovada para o lote | Situacao observada | Acao do lote |
+|---|---|---|---|---|
+| Resumo Gerencial | `rpc_analytics_ceo_snapshot` e historico | HubSpot + OMIE API por read models/RPCs | Publicado; ainda carrega blocos Produto/Desenvolvimento no modelo | Manter cinco areas ativas e retirar Produto/Desenvolvimento da navegacao e do resumo publicado |
+| Comercial | `rpc_analytics_commercial_snapshot` | HubSpot Deals, pipelines, stages e owners | Publicado e server-side | Preservar contrato, revisar estados de vazio/frescor e visual |
+| Customer Success | `AnalyticsCustomerSuccessPage` | HubSpot Companies/Deals somente quando houver contrato confirmado | A pagina publicada esta indisponivel; o resumo CEO possui campos de CS, mas isso nao constitui uma pagina CS completa | Nao inventar carteira/health; publicar apenas dados confirmados ou indisponibilidade factual |
+| Suporte & Chat | `rpc_analytics_cs_snapshot` | HubSpot Tickets; Conversations/Inbox/Chat somente com contrato real | Tickets existem; rotulos de origem nao provam integracao de chat | Renomear a area e separar ticket confirmado de Chat indisponivel |
+| Financeiro | `rpc_analytics_finance_snapshot` | OMIE API, `source_key = omie_receivables_api` | Migration `20260802004655_analytics_finance_omie_only_contract_v1.sql` ja impede fallback de planilha no snapshot | Manter API-only; remover referencia de planilha da superficie ativa e preservar historico |
+| Configuracoes/Integracoes | `AnalyticsConfigPage` em Settings | RPCs administrativos e status sanitizado | Ainda contem upload, listagem e dry-run/aplicacao de CS Ops | Remover acoes de planilha da UI; preservar backend historico de migracao |
+| Historico | `AnalyticsLogsPage` | Logs de sincronizacao HubSpot | Nao e fonte de metrica | Manter como observabilidade de sincronizacao, sem promover planilha a fonte |
+
+## Consumidores de planilha classificados
+
+### Consumidores ativos que precisam sair da superficie publicada
+
+- `apps/web/src/features/analytics/AnalyticsConfigPage.tsx` importa e chama
+  `triggerCsOpsSpreadsheetImport`, `listCsOpsImportRuns` e
+  `runCsOpsMigration`; tambem oferece upload, dry-run e aplicacao.
+- `apps/web/src/features/analytics/analytics-model.ts` expoe o objeto
+  `FinanceSourceStatus.spreadsheet`, embora o snapshot financeiro publicado ja
+  seja somente OMIE.
+- `apps/web/src/features/analytics/analytics-api.ts` mantem exports de upload
+  e leitura de lotes. Eles devem deixar de ser chamados pela UI do Dashboard;
+  a remocao fisica sera decidida apos a checagem de consumidores e testes.
+
+### Codigo historico que deve ser preservado neste lote
+
+- `supabase/functions/analytics-spreadsheet-import` e
+  `supabase/functions/hubspot-cs-migration`: fluxo de staging e migracao
+  auditavel, sem promocao para fonte operacional do Dashboard.
+- Tabelas, views, migrations e testes `analytics_spreadsheet_*` que registram
+  proveniencia, hash, rejeicoes e dry-run.
+- Fixtures, parsers e relatorios historicos de CS Ops/financeiro/comercial.
+- Documentos historicos que descrevem ciclos anteriores; eles nao devem ser
+  reescritos como se a decisao API-only tivesse existido no passado.
+
+## Gaps e riscos de contrato
+
+1. A migration OMIE-only ainda publica metadados historicos de planilha no RPC
+   `rpc_analytics_finance_source_status`. Isso nao alimenta o snapshot, mas
+   permite que a UI continue exibindo a planilha. A superficie ativa deve
+   consumir apenas configuracao, execucao, frescor e estado OMIE.
+2. O modelo CEO ainda contem `product` e `development`. O codigo pode ser
+   preservado, mas esses blocos nao devem aparecer como areas ativas no Dashboard
+   deste lote.
+3. O suporte atual observa labels de origem de tickets. Isso nao e evidencia de
+   HubSpot Conversations/Inbox/Chat; Chat deve ser marcado como indisponivel ate
+   existir read model ou RPC confirmado.
+4. `toNumber` e agregacoes SQL usam zero em alguns caminhos. Zero so e valido
+   quando o contrato backend confirma uma contagem/valor igual a zero; ausencia
+   de fonte, campo ou snapshot deve manter estado de indisponibilidade.
+5. A execucao manual combinada existente (`runIntegrationNow`) e compatibilidade
+   e nao substitui os executores independentes HubSpot e OMIE nem o orquestrador
+   sequencial HubSpot -> OMIE requerido para este lote.
+
+## Decisoes de implementacao
+
+- As cinco areas ativas serao `ceo`, `commercial`, `customer_success`,
+  `support` e `finance`; Produto e Desenvolvimento permanecem no repositorio,
+  mas fora da navegacao e dos cards ativos.
+- O frontend continuara consumindo somente views/read models/RPCs e estados de
+  qualidade/frescor fornecidos pelo backend.
+- A planilha nao sera consultada para preencher vazio, indisponibilidade ou
+  fallback. O historico sera preservado e ficara fora do caminho operacional.
+- A fonte OMIE API pode aparecer como `Indisponivel`, `Nao configurada`,
+  `Sincronizando`, `Desatualizada` ou `Erro`, conforme o contrato real; nenhum
+  zero sera fabricado para mascarar ausencia.
+- Nenhuma migration sera aplicada ao banco local neste ciclo sem uma etapa
+  explicita de validacao/autorizacao; nao sera executado `db reset`.
+
+## Proxima etapa autorizada
+
+Auditar o catalogo de metricas e os contratos RPC/migrations exatos, depois
+implementar em commits pequenos: contrato/modelo, primitivas visuais, resumo,
+Comercial, CS, Suporte & Chat, Financeiro, remocao da UI de planilha,
+executores/orquestracao, testes e evidencias.
+
+## DASHBOARD-03 — padronização visual e integrações — 2026-08-02
+
+### Implementado
+
+- Visão Geral: pulso com somente HubSpot e OMIE; canvas executivo com padding e
+  densidade alinhados às abas Comercial e Suporte; preservada a hierarquia de
+  decisão executiva sem apresentar Customer Success como terceira fonte.
+- Integrações: campos administrativos seguros para modo, ativação, recurso ou
+  escopo e substituição de credencial no Vault. O segredo existente nunca é
+  retornado ou mostrado.
+- Sincronização: removida da superfície a ação de sincronizar somente CS / Suporte;
+  HubSpot passa a ser descrito como fonte de empresas, Comercial e CS / Suporte;
+  OMIE permanece exclusivo de Financeiro. A configuração apresenta uma única
+  cadência automática do ciclo completo e botões manuais por fonte.
+- Customer Success: publicado modelo TypeScript, mapeador, RPC dedicado e tela
+  baseada exclusivamente no cache de empresas HubSpot. Regras não confirmadas
+  de cliente ativo, health, risco e valor MRR continuam indisponíveis.
+- Orquestração: o scheduler passou a chamar o ciclo sequencial; falha terminal
+  do HubSpot não bloqueia OMIE, mas o resultado passa a ser parcial. Execução
+  ainda em processamento continua bloqueando OMIE.
+
+### Evidências
+
+- `docs/reports/visual-audit/design-qa.md` — comparação e limitações de QA.
+- `docs/reports/visual-audit/screenshots/dashboard-overview-2026-08-02.png` —
+  captura autenticada da Visão Geral, 1920x975, tema claro.
+- `docs/reports/visual-audit/screenshots/integrations-2026-08-02.png` — captura
+  autenticada de Integrações, 1920x975, tema claro.
+- Logs do navegador na janela observada: zero erros e zero avisos.
+
+### Limitações e próximo lote
+
+- A migration `20260802030000_dashboard_api_only_read_models_v2.sql` e a
+  migration de scheduler `20260802040000_analytics_full_cycle_scheduler_v1.sql`
+  foram apenas persistidas no checkout; não foram aplicadas ao banco.
+- A captura autenticada da aba Customer Success retornou o estado de erro
+  esperado enquanto o RPC ainda não existe no banco observado.
+- Não foram executados salvar configuração, sincronização real ou cron. O QA
+  visual em tema escuro e viewports responsivos segue pendente.
+## Implementacao registrada neste ciclo
+
+- `9eb9ef2`: contrato e catalogo API-only do Dashboard.
+- `2578366`: cinco areas ativas no Dashboard; Produto e Desenvolvimento ficaram preservados no codigo, mas fora da navegacao publicada.
+- `4d96bbb`: planilhas retiradas da superficie operacional e status financeiro ativo limitado a OMIE API por migration forward-only nao aplicada neste ciclo.
+- `4c6e314`: novo executor sequencial HubSpot -> OMIE; OMIE nao inicia quando o ciclo HubSpot nao termina com sucesso.
+- `22b3346`: Chat marcado como indisponivel ate existir contrato Conversations, Inbox ou Chat confirmado.
+- `b89fefb`: rolagem confinada ao conteudo do Dashboard para preservar shell e sidebar fixos.
+
+## Validacao e limites
+
+- `npm run web:build`: aprovado.
+- `npm run quality:changed`: aprovado com observacoes, 0 blockers; o relatorio gerou candidatos de auditoria existentes e lint nao esta configurado.
+- `npm run documentation:validate:internal-docs`: aprovado sem bloqueios; avisos existentes foram mantidos e nao contem secrets expostos.
+- Typecheck web/contratos e testes focados de contratos/orquestracao: aprovados.
+- QA visual autenticado nao foi concluido: o ambiente local abriu a tela de login e nao havia sessao autorizada. Nao foram inferidos resultados de dados.
+- pgTAP/migrations e sincronizacao real HubSpot/OMIE nao foram executados; dependem de banco/credenciais autorizados. Nenhum reset de banco foi feito.
+
+## Backlog imediato
+
+1. Obter sessao QA autorizada e capturar as cinco superficies em light/dark e viewports definidos.
+2. Executar contratos pgTAP e migration forward-only contra banco local persistente, sem reset, quando houver autorizacao operacional.
+3. Auditar zeros versus indisponibilidade no catalogo/read models e revisar a integracao do scheduler com o orquestrador sequencial.
+4. Validar sincronizacao real HubSpot -> OMIE com credenciais externas sem expor valores no repositorio ou nos relatorios.

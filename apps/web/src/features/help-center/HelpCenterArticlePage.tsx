@@ -1,5 +1,5 @@
-import { useEffect, useEffectEvent, useMemo, useState } from 'react';
-import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useOutletContext, useParams } from 'react-router';
 import {
   ContractUnavailableState,
   EmptyState,
@@ -23,11 +23,14 @@ import {
   HelpIcon,
   PublicBreadcrumb,
   PublicSearchStateCard,
+} from './public-ui';
+import {
   formatRelativePublicDate,
   getPublicCategoryLabel,
-} from './public-ui';
+} from './public-presentation';
 
 type DetailPhase = 'loading' | 'ready' | 'empty' | 'contract-unavailable' | 'error';
+type ArticleAssetPhase = 'not-required' | 'ready' | 'unavailable';
 
 interface ArticleSectionItem {
   id: string;
@@ -58,7 +61,7 @@ function estimateReadingTime(source: string) {
 }
 
 function hasKnowledgeAssetReferences(source: string) {
-  return /!\[[^\]]*]\(knowledge-asset:[^)]+\)/i.test(source);
+  return /(?:^|\n)\s*(?:#{1,6}\s+)?!\[[^\]]*]\(knowledge-asset:[^)]+\)/i.test(source);
 }
 
 function normalizeEditorialText(value: string) {
@@ -218,8 +221,12 @@ export function HelpCenterArticlePage() {
   const [message, setMessage] = useState<string | null>(null);
   const [article, setArticle] = useState<PublicKnowledgeArticleDetailRow | null>(null);
   const [articleAssets, setArticleAssets] = useState<PublicKnowledgeArticleAssetRow[]>([]);
+  const [articleAssetPhase, setArticleAssetPhase] = useState<ArticleAssetPhase>('not-required');
 
-  const loadArticle = useEffectEvent(
+  // Carregador usado tanto pelo Effect de rota quanto pelo botão de nova
+  // tentativa. Não captura valor reativo: só parâmetros, setters e funções de
+  // módulo. Por isso a lista de dependências é vazia e a referência é estável.
+  const loadArticle = useCallback(
     async (targetSpaceSlug: string, targetArticleSlug: string) => {
       try {
         const data = await getPublicKnowledgeArticle(
@@ -230,6 +237,7 @@ export function HelpCenterArticlePage() {
         if (!data) {
           setArticle(null);
           setArticleAssets([]);
+          setArticleAssetPhase('not-required');
           setMessage(null);
           setPhase('empty');
           return;
@@ -237,13 +245,17 @@ export function HelpCenterArticlePage() {
 
         let assets: PublicKnowledgeArticleAssetRow[] = [];
         if (hasKnowledgeAssetReferences(data.body_md ?? '')) {
+          setArticleAssetPhase('ready');
           try {
             assets = await listPublicKnowledgeArticleAssets(data.id);
           } catch {
-            // Safe degradation: without the public assets read model, the article can
-            // still render and governed image placeholders remain non-public.
+            // The article remains readable, but the UI must make the incomplete
+            // visual experience explicit instead of silently claiming success.
             assets = [];
+            setArticleAssetPhase('unavailable');
           }
+        } else {
+          setArticleAssetPhase('not-required');
         }
 
         setArticle(data);
@@ -257,6 +269,7 @@ export function HelpCenterArticlePage() {
         );
         setArticle(null);
         setArticleAssets([]);
+        setArticleAssetPhase('not-required');
         setMessage(classified.message);
         setPhase(
           classified.kind === 'contract-unavailable'
@@ -265,6 +278,7 @@ export function HelpCenterArticlePage() {
         );
       }
     },
+    [],
   );
 
   useEffect(() => {
@@ -274,7 +288,7 @@ export function HelpCenterArticlePage() {
 
     setPhase('loading');
     void loadArticle(spaceSlug, articleSlug);
-  }, [articleSlug, spaceSlug]);
+  }, [articleSlug, loadArticle, spaceSlug]);
 
   const articleMetaTitle = article
     ? `${article.title} | ${context.primaryRoute.brand_name}`
@@ -447,6 +461,16 @@ export function HelpCenterArticlePage() {
               {articleSummary ??
                 'Aprenda como executar esta configuração pública com mais clareza e segurança.'}
             </p> : null}
+
+            {articleAssetPhase === 'unavailable' ? (
+              <div
+                className="flex items-start gap-2 rounded-[12px] bg-[var(--help-content-note)] px-3 py-2 text-sm leading-6 text-[var(--help-muted)]"
+                role="status"
+              >
+                <HelpIcon className="mt-1 shrink-0 text-[var(--help-link)]" kind="alert" />
+                <span>Algumas imagens estão indisponíveis no momento. O conteúdo deste artigo continua disponível em texto.</span>
+              </div>
+            ) : null}
           </div>
 
           {articleSections.length >= 3 ? <details className="rounded-[18px] border border-[var(--help-border)] bg-[var(--help-surface)] px-4 py-3 lg:hidden">

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { MinimalState } from '../../components/minimal-states';
 import { cx } from '../../components/ui';
 import { GeniusMascot } from '../../components/GeniusMascot';

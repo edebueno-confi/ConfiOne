@@ -21,14 +21,19 @@ export type ExecutiveException = {
 
 const STATUS_SEVERITY: Record<AnalyticsBlockState['status'], 1 | 2 | 3> = {
   error: 3,
+  failed: 3,
   unavailable: 3,
   not_configured: 3,
+  never_synced: 3,
   partial: 2,
   stale: 2,
   syncing: 2,
   empty: 1,
   zero: 1,
   fresh: 1,
+  unavailable_source: 3,
+  unavailable_contract: 3,
+  unavailable_period: 3,
 };
 
 export function rankExecutivePipelines(rows: CsPipelinePoint[], limit = 5): ExecutivePipeline[] {

@@ -1,5 +1,11 @@
 # SPEC — Upgrade visual do Dashboard Gerencial (V1)
 
+> **Documento histórico/superseded para o contrato de áreas.** A especificação
+> visual abaixo foi preservada como referência; a superfície vigente em
+> 2026-08-02 tem cinco áreas (Resumo, Comercial, Customer Success, Suporte &
+> Chat e Financeiro), com Configurações fora das abas do Dashboard. A fonte
+> vigente é API-only HubSpot/OMIE; planilhas não são fallback.
+
 Data: 2026-07-20
 Autor: Claude / Anthropic
 Rota: `/admin/analytics` (shell `AnalyticsShell`)

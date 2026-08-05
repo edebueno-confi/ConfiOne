@@ -1,12 +1,12 @@
 import {
   type FormEvent,
+  useCallback,
   useDeferredValue,
   useEffect,
-  useEffectEvent,
   useRef,
   useState,
 } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate } from 'react-router';
 import { formatDateTime } from '../../app/format';
 import { sanitizeOperationalVisibleText } from '../../lib/operational-copy';
 import {
@@ -156,30 +156,6 @@ function membershipSituation(membership: AdminTenantMembershipRow): UserSituatio
   }
 
   return 'active';
-}
-
-function situationLabel(situation: UserSituation) {
-  if (situation === 'active') {
-    return 'Ativo';
-  }
-
-  if (situation === 'inactive') {
-    return 'Inativo';
-  }
-
-  return 'Bloqueado';
-}
-
-function toneForSituation(situation: UserSituation) {
-  if (situation === 'active') {
-    return 'positive' as const;
-  }
-
-  if (situation === 'inactive') {
-    return 'warning' as const;
-  }
-
-  return 'critical' as const;
 }
 
 function membershipStateLabel(membership: AdminTenantMembershipRow) {
@@ -344,7 +320,10 @@ export function AccessPage() {
   const [lookupMessage, setLookupMessage] = useState<string | null>(null);
   const deferredQuery = useDeferredValue(query);
 
-  const loadSurface = useEffectEvent(async () => {
+  // Carregador usado pelo bootstrap, pelos handlers de escrita e pelo botão de
+  // nova tentativa. `markSessionExpired` é estável no provider de auth, então a
+  // referência não muda entre renders.
+  const loadSurface = useCallback(async () => {
     try {
       const [tenantRows, membershipRows, userRows] = await Promise.all([
         listAdminTenants(),
@@ -387,7 +366,7 @@ export function AccessPage() {
         classified.kind === 'contract-unavailable' ? 'contract-unavailable' : 'error',
       );
     }
-  });
+  }, [markSessionExpired]);
 
   const dashboardUsers = accessUsers.filter((user) => {
     if (!deferredQuery.trim()) return true;
@@ -426,7 +405,7 @@ export function AccessPage() {
 
     didBootstrapRef.current = true;
     void loadSurface();
-  }, []);
+  }, [loadSurface]);
 
   const filteredMemberships = memberships.filter((membership) => {
     const situation = membershipSituation(membership);

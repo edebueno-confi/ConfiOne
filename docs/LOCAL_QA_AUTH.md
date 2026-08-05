@@ -108,3 +108,63 @@ devem ser registradas em documentação, scripts rastreados ou relatórios.
 - Depois de reidratar, abra `/support/queue` ou `/support/tickets` e use um ticket atual da fila para validar o workspace autenticado.
 - `Invalid login credentials` indica drift de fixture/credencial/Auth.
 - `Failed to fetch` ou `502` no Kong/Auth local indica instabilidade do runtime local e deve ser tratado separadamente de credencial inválida.
+
+## Runbook validado de QA autenticado — 2026-08-04
+
+Sequência confirmada em execução real, sem digitar senha e sem expor credencial.
+
+1. Confirme o Supabase local respondendo em `http://127.0.0.1:54321`.
+2. Confirme `NODE_ENV=development` no shell. Com `NODE_ENV=production` o Vite sobe
+   sem o preâmbulo do React Refresh, a tela fica branca com
+   `$RefreshSig$ is not defined` e o login do harness falha sem relação com
+   credencial.
+3. Autenticação por API:
+
+```bash
+npm run local:qa:smoke:auth
+```
+
+Esperado: `admin`, `dashboard_viewer`, `support_manager`, `support_agent` e
+`customer_user` com `authenticated: true`.
+
+4. Smoke visual autenticado:
+
+```bash
+npm run local:qa:smoke
+```
+
+O script sobe o próprio Vite, portanto a porta 4173 precisa estar livre. Derrube
+a instância 4173, rode o smoke e suba a instância de novo. A 4174 pode continuar
+de pé. Falha com `LOCAL_QA_WEB_PORT_OCCUPIED` quando a porta está ocupada.
+
+Saída esperada: 10 cenários, 5 papéis em desktop e mobile, com `consoleErrors`,
+`pageErrors`, `requestFailures` e `unexpectedResponses` em zero. Capturas em
+`output/local-qa/`.
+
+5. Para escrita real na UI de Suporte e Portal, com checagem de isolamento
+   cross-tenant, use `npm run local:qa:writes`. Ele grava mensagens de QA no banco
+   local e depende dos IDs atuais da fixture.
+
+Cobertura atual do smoke: Dashboard Gerencial autenticado, escopo de
+`dashboard_viewer`, bloqueio de rota administrativa para suporte e cliente,
+bloqueio de rota interna para `customer_user` e, desde 2026-08-04, as superfícies
+internas `/admin/knowledge` e `/admin/access` para `platform_admin` em desktop,
+declaradas em `extraRoutes` dentro de `scripts/local-qa/browser-smoke.mjs`.
+
+As telas internas fora do primeiro release não entram no smoke porque dependem de
+três camadas em série: `release_enabled` no `internal_screen_catalog`, grant de
+tela e capability. O `platform_admin` da fixture já tem grant de tela para todas
+elas; faltam release e capability.
+
+Para a camada de release existe ferramenta local:
+
+```bash
+npm run supabase:qa:local-release-preview:status
+npm run supabase:qa:local-release-preview -- --screens=tenants
+npm run supabase:qa:local-release-preview:disable
+```
+
+Ela altera somente o banco local, guarda o estado original em
+`output/local-qa/release-preview-backup.json` e exige lista explícita de telas.
+Ligar o catálogo inteiro faz o smoke falhar com 401 em `vw_admin_auth_context`.
+A camada de capability não é aberta por script de QA por decisão explícita.

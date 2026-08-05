@@ -22,6 +22,28 @@ function sanitizeAdminMessage(message: string, fallbackMessage: string) {
     return 'Já existe um registro com os mesmos dados principais. Revise os campos e tente novamente.';
   }
 
+  // Mensagens do gate de publicacao publica: traduzir para acao concreta em vez
+  // de vazar o texto cru do backend em ingles.
+  if (lowered.includes('must be public before preparing public evidence')) {
+    return 'Defina a visibilidade como Público e salve o artigo antes de preparar a evidência de publicação.';
+  }
+
+  if (lowered.includes('must be in review before publish')) {
+    return 'Envie o artigo para revisão antes de publicar.';
+  }
+
+  if (lowered.includes('requires reviewed human evidence')) {
+    return 'A publicação pública exige revisão editorial registrada. Conclua a confirmação editorial antes de publicar.';
+  }
+
+  if (lowered.includes('requires complete human confirmations')) {
+    return 'Marque todos os itens da confirmação editorial antes de publicar.';
+  }
+
+  if (lowered.includes('requires public advisory classification')) {
+    return 'A evidência editorial ainda não está classificada como pública. Refaça a confirmação com a visibilidade Público.';
+  }
+
   if (
     lowered.includes('violates check constraint') ||
     lowered.includes('status transition') ||
@@ -41,6 +63,16 @@ function sanitizeAdminMessage(message: string, fallbackMessage: string) {
     lowered.includes('row-level security')
   ) {
     return 'Sua sessão não tem permissão para concluir esta ação agora.';
+  }
+
+  if (
+    lowered.includes('edge function') ||
+    lowered.includes('non-2xx') ||
+    lowered.includes('status code') ||
+    lowered.includes('http 4') ||
+    lowered.includes('http 5')
+  ) {
+    return fallbackMessage;
   }
 
   if (
@@ -79,7 +111,7 @@ export function classifyAdminError(
     if (error.code === 'permission-denied') {
       return {
         kind: 'permission-denied',
-        message: error.message,
+        message: 'Sua conta não tem permissão para concluir esta ação agora.',
       };
     }
 

@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router';
 import { useAuthContext } from '../auth/auth-context';
 import { MinimalAppShell } from '../navigation/MinimalAppShell';
 

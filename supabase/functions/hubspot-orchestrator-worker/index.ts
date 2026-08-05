@@ -1,13 +1,18 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createServiceClient, jsonResponse, optionsResponse } from '../_shared/ticket-evidence.ts';
-import { fetchDealsPageByPipeline, fetchTicketsPageByPipeline, fetchOwners, fetchPipelineDefinitions, fetchPipelineStages } from '../_shared/hubspot.ts';
-import { authorizeCsRunner, HUBSPOT_DEAL_PROPERTIES, CS_TICKET_PROPERTIES, resolveHubSpotToken, runnerError, runnerMessage, toDealStagingRow, toTicketStagingRow } from '../_shared/hubspot-cs-runner.ts';
+import { fetchCompaniesPage, fetchDealsPageByPipeline, fetchTicketsPageByPipeline, fetchOwnersPage, fetchPipelineDefinitions } from '../_shared/hubspot.ts';
+import { authorizeCsRunner, classifyHubSpotError, HUBSPOT_DEAL_PROPERTIES, CS_TICKET_PROPERTIES, resolveHubSpotToken, runnerError, runnerMessage, toDealStagingRow, toTicketStagingRow } from '../_shared/hubspot-cs-runner.ts';
+import { createSyncRequestTelemetryBuffer } from '../_shared/sync-request-telemetry.ts';
 
 function failure(error: unknown, attempts: number) {
+  const classified = classifyHubSpotError(error);
+  // Retryable classification is preserved while the public message remains sanitized.
+  const match = classified.retryable ? ['', 'TRANSIENT'] : null;
   const message = runnerMessage(error);
-  const match = message.match(/\((429|5\d\d)\)/);
   const retryable = Boolean(match) || /timeout|tempo limite|network|fetch failed|conex[aã]o/i.test(message);
-  return retryable && attempts < 5 ? { code: `RETRY_${match?.[1] ?? 'TRANSIENT'}`, message } : { code: match?.[1] === '403' ? 'FORBIDDEN' : 'PERMANENT_FAILURE', message };
+  return retryable && attempts < 5
+    ? { ...classified, code: `RETRY_${classified.code.toUpperCase()}` }
+    : classified;
 }
 
 Deno.serve(async (req) => {
@@ -21,39 +26,104 @@ Deno.serve(async (req) => {
     if (claimError) return runnerError(claimError, 409);
     const item = Array.isArray(claimed) ? claimed[0] : null;
     if (!item) return jsonResponse({ status: 'idle', workerId });
+    const { data: runContext, error: runContextError } = await client
+      .from('hubspot_sync_runs')
+      .select('cycle_id')
+      .eq('id', item.run_id)
+      .maybeSingle();
+    if (runContextError) return runnerError(runContextError, 500);
+    const telemetry = createSyncRequestTelemetryBuffer({ provider: 'hubspot', hubspotRunId: item.run_id, cycleId: runContext?.cycle_id ?? null, workItemId: item.work_item_id, correlationId: item.correlation_id, pageNumber: Math.max(1, Number(item.page_number) || 1) });
+    const flushTelemetry = async () => {
+      const result = await telemetry.flush(client);
+      if (result.error) console.warn(`Falha ao persistir telemetria HubSpot: ${result.error}`);
+    };
     try {
       const token = await resolveHubSpotToken(client);
       let records = [] as Array<{ id: string; properties: Record<string, string | null> }>;
       let nextCursor: string | null = null;
+      let receivedCount = 0;
       if (item.object_type === 'ticket') {
-        const page = await fetchTicketsPageByPipeline(item.pipeline_id, CS_TICKET_PROPERTIES, token, { cursor: item.cursor, rangeStartMs: Number(item.range_start_ms), rangeEndMs: Number(item.range_end_ms), updatedAfterMs: item.source_updated_after_ms ? Number(item.source_updated_after_ms) : undefined });
+        const page = await fetchTicketsPageByPipeline(item.pipeline_id, CS_TICKET_PROPERTIES, token, { cursor: item.cursor, rangeStartMs: Number(item.range_start_ms), rangeEndMs: Number(item.range_end_ms), updatedAfterMs: item.source_updated_after_ms ? Number(item.source_updated_after_ms) : undefined, telemetry: telemetry.observer });
         if (!item.cursor && page.total !== null && page.total > 10_000) {
           const midpoint = Number(item.range_start_ms) + Math.floor((Number(item.range_end_ms) - Number(item.range_start_ms)) / 2);
           if (midpoint <= Number(item.range_start_ms) || midpoint >= Number(item.range_end_ms)) throw new Error('Intervalo de busca de tickets sem ponto de particionamento.');
           const { data: splitResult, error: splitError } = await client.rpc('rpc_analytics_hubspot_split_work_item', { p_work_item_id: item.work_item_id, p_worker_id: workerId, p_midpoint_ms: midpoint });
           if (splitError) throw splitError;
+          await flushTelemetry();
           return jsonResponse({ status: 'split', runId: item.run_id, workItemId: item.work_item_id, total: page.total, split: splitResult });
         }
-        records = page.records; nextCursor = page.nextCursor;
+        records = page.records; nextCursor = page.nextCursor; receivedCount = records.length;
         const rows = records.map((r) => toTicketStagingRow(r, item.pipeline_id, item.run_id, Number(item.page_number)));
         if (rows.length) { const { error } = await client.from('analytics_cs_ticket_staging').upsert(rows, { onConflict: 'parent_run_id,ticket_id' }); if (error) throw error; }
       } else if (item.object_type === 'deal') {
-        const page = await fetchDealsPageByPipeline(item.pipeline_id, HUBSPOT_DEAL_PROPERTIES, token, { cursor: item.cursor, updatedAfterMs: item.source_updated_after_ms ? Number(item.source_updated_after_ms) : undefined });
-        records = page.records; nextCursor = page.nextCursor;
+        const page = await fetchDealsPageByPipeline(item.pipeline_id, HUBSPOT_DEAL_PROPERTIES, token, { cursor: item.cursor, updatedAfterMs: item.source_updated_after_ms ? Number(item.source_updated_after_ms) : undefined, telemetry: telemetry.observer });
+        records = page.records; nextCursor = page.nextCursor; receivedCount = records.length;
         const rows = records.map((r) => toDealStagingRow(r, item.pipeline_id, item.run_id, Number(item.page_number)));
         if (rows.length) { const { error } = await client.from('analytics_hubspot_deal_staging').upsert(rows, { onConflict: 'parent_run_id,deal_id' }); if (error) throw error; }
-      } else if (item.object_type === 'shared') {
-        const companies = await (await import('../_shared/hubspot.ts')).fetchCompanies(['name','domain','cnpj','aftersale___mrr','status_do_cliente___aftersale','status_do_contrato','cs_owner___aftersale'], token);
-        if (companies.length) { const rows = companies.map((r) => ({ company_id:r.id,name:r.properties.name??null,domain:r.properties.domain??null,tax_id:(r.properties.cnpj??'').replace(/\D/g,'')||null,mrr:Number(r.properties.aftersale___mrr??0)||0,client_status:r.properties.status_do_cliente___aftersale??null,contract_status:r.properties.status_do_contrato??null,cs_owner_id:r.properties.cs_owner___aftersale??null,raw:r.properties,synced_at:new Date().toISOString() })); for (let offset = 0; offset < rows.length; offset += 500) { const { error } = await client.from('hubspot_companies').upsert(rows.slice(offset, offset + 500),{onConflict:'company_id'}); if(error) throw error; } }
-        const owners = await fetchOwners(token); if (owners.length) { const rows=owners.map((o)=>({owner_id:o.ownerId,email:o.email,first_name:o.firstName,last_name:o.lastName,full_name:o.fullName,archived:o.archived,raw:o.raw,synced_at:new Date().toISOString()})); const {error}=await client.from('hubspot_owners').upsert(rows,{onConflict:'owner_id'}); if(error) throw error; }
-        for (const objectType of ['deals','tickets'] as const) { const definitions=await fetchPipelineDefinitions(objectType,token); for(const p of definitions.filter((x)=>!x.archived)){ const domain=objectType==='deals'?'commercial':'cs'; await client.from('analytics_source_config').upsert({domain_key:domain,object_type:objectType==='deals'?'deal':'ticket',hubspot_pipeline_id:p.pipelineId,hubspot_pipeline_label:p.label,is_active:false},{onConflict:'domain_key,object_type,hubspot_pipeline_id',ignoreDuplicates:true}); for(const s of p.stages){ await client.from('hubspot_pipeline_stages').upsert({object_type:objectType==='deals'?'deal':'ticket',pipeline_id:p.pipelineId,stage_id:s.stageId,label:s.label,display_order:s.displayOrder,is_closed:s.isClosed,is_won:s.isWon,metadata:s.metadata,synced_at:new Date().toISOString()},{onConflict:'object_type,pipeline_id,stage_id'}); } } }
+      } else if (item.object_type === 'shared_companies') {
+        const page = await fetchCompaniesPage(
+          ['name','domain','cnpj','aftersale___mrr','status_do_cliente___aftersale','status_do_contrato','cs_owner___aftersale'],
+          token,
+          { cursor: item.cursor, updatedAfterMs: item.source_updated_after_ms ? Number(item.source_updated_after_ms) : undefined, observer: telemetry.observer },
+        );
+        const companies = page.records;
+        nextCursor = page.nextCursor;
+        receivedCount = companies.length;
+        if (companies.length) { const rows = companies.map((r) => ({ parent_run_id:item.run_id, company_id:r.id,name:r.properties.name??null,domain:r.properties.domain??null,tax_id:(r.properties.cnpj??'').replace(/\D/g,'')||null,mrr:Number(r.properties.aftersale___mrr??0)||0,client_status:r.properties.status_do_cliente___aftersale??null,contract_status:r.properties.status_do_contrato??null,cs_owner_id:r.properties.cs_owner___aftersale??null,raw:r.properties,synced_at:new Date().toISOString() })); for (let offset = 0; offset < rows.length; offset += 500) { const { error } = await client.from('analytics_hubspot_company_staging').upsert(rows.slice(offset, offset + 500),{onConflict:'parent_run_id,company_id'}); if(error) throw error; } }
+      } else if (item.object_type === 'shared_owners') {
+        const page = await fetchOwnersPage(token, { cursor: item.cursor, observer: telemetry.observer });
+        nextCursor = page.nextCursor;
+        receivedCount = page.records.length;
+        const rows = page.records.map((o) => ({ parent_run_id:item.run_id,owner_id:o.ownerId,email:o.email,first_name:o.firstName,last_name:o.lastName,full_name:o.fullName,archived:o.archived,raw:o.raw,synced_at:new Date().toISOString() }));
+        if (rows.length) { const { error } = await client.from('analytics_hubspot_owner_staging').upsert(rows,{onConflict:'parent_run_id,owner_id'}); if(error) throw error; }
+      } else if (item.object_type === 'shared_catalog') {
+        let definitionsCount = 0;
+        for (const objectType of ['deals', 'tickets'] as const) {
+          const definitions = await fetchPipelineDefinitions(objectType, token, telemetry.observer);
+          definitionsCount += definitions.length;
+          const catalogObjectType = objectType === 'deals' ? 'deal' : 'ticket';
+          const pipelineRows = definitions.map((pipeline) => ({ parent_run_id:item.run_id,object_type:catalogObjectType,pipeline_id:pipeline.pipelineId,label:pipeline.label,archived:pipeline.archived }));
+          if (pipelineRows.length) { const { error } = await client.from('analytics_hubspot_pipeline_staging').upsert(pipelineRows,{onConflict:'parent_run_id,object_type,pipeline_id'}); if(error) throw error; }
+          for (const pipeline of definitions.filter((candidate) => !candidate.archived)) {
+            for (const stage of pipeline.stages) {
+              const { error } = await client.from('analytics_hubspot_stage_staging').upsert({
+                parent_run_id:item.run_id,
+                object_type: catalogObjectType,
+                pipeline_id: pipeline.pipelineId,
+                stage_id: stage.stageId,
+                label: stage.label,
+                display_order: stage.displayOrder,
+                is_closed: stage.isClosed,
+                is_won: stage.isWon,
+                metadata: stage.metadata,
+                synced_at: new Date().toISOString(),
+              }, { onConflict: 'parent_run_id,object_type,pipeline_id,stage_id' });
+              if (error) throw error;
+            }
+          }
+        }
+        receivedCount = definitionsCount;
       }
-      const { error: checkpointError } = await client.rpc('rpc_analytics_hubspot_checkpoint_work_item', { p_work_item_id:item.work_item_id,p_worker_id:workerId,p_next_cursor:nextCursor,p_page_number:Number(item.page_number)+1,p_received:records.length,p_accepted:records.length,p_rejected:0,p_completed:!nextCursor,p_error_code:null,p_error_message:null });
+      await flushTelemetry();
+      const { error: checkpointError } = await client.rpc('rpc_analytics_hubspot_checkpoint_work_item', { p_work_item_id:item.work_item_id,p_worker_id:workerId,p_next_cursor:nextCursor,p_page_number:Number(item.page_number)+1,p_received:receivedCount,p_accepted:receivedCount,p_rejected:0,p_completed:!nextCursor,p_error_code:null,p_error_message:null });
       if (checkpointError) throw checkpointError;
       const { data: finalized, error: finalizeError } = await client.rpc('rpc_analytics_hubspot_finalize_run',{p_run_id:item.run_id}); if(finalizeError) throw finalizeError;
-      return jsonResponse({status:nextCursor?'checkpointed':'completed',runId:item.run_id,workItemId:item.work_item_id,received:records.length,nextCursor,finalized});
+      return jsonResponse({status:nextCursor?'checkpointed':'completed',runId:item.run_id,workItemId:item.work_item_id,received:receivedCount,nextCursor,finalized});
     } catch (error) {
-      const f=failure(error,Number(item.attempts)); await client.rpc('rpc_analytics_hubspot_checkpoint_work_item',{p_work_item_id:item.work_item_id,p_worker_id:workerId,p_next_cursor:item.cursor,p_page_number:Number(item.page_number),p_received:0,p_accepted:0,p_rejected:0,p_completed:false,p_error_code:f.code,p_error_message:f.message}); await client.rpc('rpc_analytics_hubspot_finalize_run',{p_run_id:item.run_id}); return runnerError({message:f.message},f.code.startsWith('RETRY_')?503:422);
+      await flushTelemetry();
+      const f=failure(error,Number(item.attempts));
+      await client.rpc('rpc_analytics_hubspot_checkpoint_work_item',{p_work_item_id:item.work_item_id,p_worker_id:workerId,p_next_cursor:item.cursor,p_page_number:Number(item.page_number),p_received:0,p_accepted:0,p_rejected:0,p_completed:false,p_error_code:f.code,p_error_message:f.sanitizedMessage});
+      await client.rpc('rpc_analytics_hubspot_finalize_run',{p_run_id:item.run_id});
+      await client.from('hubspot_sync_runs').update({
+        error_code: f.code,
+        error_message: f.sanitizedMessage,
+        internal_error_code: f.code,
+        provider_code: f.providerCode,
+        internal_message: f.internalMessage,
+        sanitized_error: f.sanitizedMessage,
+        error_occurred_at: new Date().toISOString(),
+      }).eq('id', item.run_id);
+      return runnerError({message:f.internalMessage},f.code.startsWith('RETRY_')?503:422);
     }
   } catch (error) { return runnerError(error,500); }
 });

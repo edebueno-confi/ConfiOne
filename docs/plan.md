@@ -1,3 +1,331 @@
+# Plano corrente — Interface High-Density V1 — 2026-08-03
+
+## Fila consolidada para o MVP de deploy — Product Owner — 2026-08-03
+
+Esta é a fila única de execução para encerrar o MVP local sem perder conteúdo
+ou transformar estados indefinidos em sucesso. Itens só podem ser marcados como
+concluídos com evidência objetiva e permanecem dependentes dos contratos reais
+de views, read models, RPCs, RLS, permissões e auditoria.
+
+### Lote 0 — preservação e diagnóstico obrigatório
+
+- Confirmar `C:\Projetos\GSO-old` como checkout canônico, branch/HEAD/upstream,
+  worktrees, stash e divergência de `origin/main`.
+- Inventariar todas as branches e commits exclusivos; comparar conteúdo real,
+  preservar referências/bundles e consolidar somente trabalho comprovadamente
+  aplicável. Nenhuma branch ou commit será apagado por contagem ou aparência.
+- Registrar o estado atual do banco local persistente, sem reset, sem limpeza
+  destrutiva e sem expor secrets.
+
+### Lote 1 — Central de Ajuda e artigos OctaDesk
+
+- Localizar o diretório canônico dos artigos OctaDesk já editados e confirmar,
+  por hash/metadado, que cada corpo e asset é a versão editorial tratada; não
+  publicar exportação bruta, rascunho sem revisão ou artigo sem origem.
+- Ler o corpus, corrigir/confirmar títulos e recategorizar os artigos nas
+  categorias operacionais da Central de Ajuda; criar categorias ausentes e
+  permitir editar as existentes pela tela de organização.
+- Vincular cada artigo à categoria correta e publicar somente os itens com
+  evidência editorial, asset renderizável quando aplicável e visibilidade
+  permitida pelo contrato. Duplicatas, temas sensíveis e itens sem decisão
+  permanecem indisponíveis, nunca são publicados por inferência.
+- Refatorar o cockpit de Conhecimento para que categorias não sobreponham a
+  tabela nem cubram o botão Editar; `Ver todas` e `Gerenciar categorias` devem
+  abrir superfícies reais; corrigir paginação, filtros, estados vazios e dark
+  mode. `Novo artigo` sempre inicia editor limpo.
+- Manter o editor rico e os artigos editados com imagens/estrutura; validar
+  exportação profissional em PNG/PDF apenas quando houver dados publicáveis.
+
+**Evidência executada em 2026-08-03:** o corpus editorial tem 54 artigos com
+`editorial.json` e `content.editorial.md` válidos; 42 foram publicados por RPC
+editorial e 12 ficaram bloqueados por revisão crítica. Os 42 públicos estão
+categorizados, com 97 assets aprovados no bucket público, 97 objetos físicos
+existentes, zero referências quebradas e zero assets sem texto alternativo.
+A Central Pública foi exercitada em `http://127.0.0.1:4173/help/genius`, em
+lista, filtro de categoria e artigo com nove imagens carregadas progressivamente.
+O refactor visual/funcional do cockpit administrativo e a gestão de categorias
+continuam pendentes de QA autenticado dedicado.
+
+### Lote 2 — acesso, usuários e perfis
+
+- Expor gestão de usuários apenas para super administrador ou capability
+  autorizada, usando os read models/RPCs de acesso existentes.
+- Permitir cadastro/convite por link ou e-mail sem devolver token bruto,
+  action link, senha ou payload de Auth ao browser; convites devem ser
+  revogáveis, expirados, auditáveis e idempotentes.
+- Associar cada usuário a grupos/perfis/capabilities e áreas; aplicar os
+  limites de ação no backend com tenant scope, RLS, permissões e auditoria.
+- Permitir ativar/inativar e atualizar atribuições pelos contratos existentes,
+  preservando a regra de último administrador e impedindo escalada de privilégio.
+
+### Lote 3 — sincronização e verdade operacional
+
+- Validar o fluxo completo HubSpot → OMIE em ambiente local autenticado, sem
+  executar deploy remoto ou escrever em provedor externo sem autorização.
+- Garantir consulta incremental com watermark/cursor e paginação; nunca reler
+  a base inteira em cada atualização. Medir chamadas, retries, duração,
+  rate-limit, erro sanitizado, itens processados e promoção atômica.
+- Manter lock de execução: uma segunda sincronização deve ser bloqueada enquanto
+  houver ciclo ativo. O motion do Gênio abre ao solicitar atualização, permanece
+  até o estado terminal publicado e, após 60 segundos, oferece continuar em
+  segundo plano com aviso explícito de que não se deve iniciar outro ciclo.
+- HubSpot deve alimentar as áreas contratadas; OMIE deve alimentar Financeiro.
+  Produto/Desenvolvimento aguarda contrato GitHub e Customer Success aguarda
+  denominador/read model próprio; ambos devem aparecer como indisponíveis.
+- Corrigir a semântica de status/frescor: não combinar “dados atualizados” com
+  sincronização não registrada, fonte sem resposta ou execução inexistente.
+
+### Lote 4 — Dashboard Gerencial essencial
+
+- Manter Visão Geral, Comercial, Financeiro e Suporte & Chat funcionais com
+  dados reais; Visão Geral é o compilado das áreas publicadas e não possui
+  filtro de domínio.
+- Remover o container global de fontes operacionais e o filtro de domínio de
+  todas as telas; exibir pipelines somente onde houver contrato e seleção real.
+- Igualar o header da Visão Geral à altura/densidade das demais abas: estado das
+  fontes à esquerda, log HubSpot no contexto operacional correspondente e log
+  OMIE alinhado ao Financeiro, sem duplicidade.
+- Padronizar cards, filtros, KPIs, tipografia, margens e espaçamentos; títulos
+  compactos, leitura HD/densa, bordas leves, sem maximalismo, sem efeitos de
+  foco duplicados e sem rolagem desnecessária. Comercial deve seguir a gramática
+  de Suporte & Chat; Financeiro deve usar o mesmo sistema de cards.
+- Corrigir dark mode em todo o app, incluindo editor, selects nativos, overlays,
+  estados de erro/loading/vazio e componentes de configuração.
+- Reduzir Configurações a um cockpit operacional escalável, sem bordas pesadas
+  e sem empilhar seções desnecessariamente; manter Integrações API-only,
+  HubSpot completo e OMIE financeiro, com `APP_KEY`/`APP_SECRET` e botão de
+  teste read-only quando o contrato permitir.
+- Atualizar o avatar original em todos os estados/telas a partir de
+  `C:\Projetos\GSO-old\avatar\Genius Mascote.dc.html`, preservando a versão
+  SVG correta, braços e transparência; remover fundo/borda do container e usar
+  motion do Gênio com copy humana, sem vazar detalhes técnicos.
+- Revisar todo o copy da interface: falar com o usuário, explicar estado e
+  próxima ação, sem mencionar implementação, mocks, tokens, RPCs ou detalhes
+  internos.
+
+### Lote 5 — validação e fechamento para deploy
+
+- Executar typecheck, build, testes focados, pgTAP focado sem reset, lint SQL,
+  secret scan, quality gate e QA visual/funcional autenticado em claro/escuro,
+  com evidência real das superfícies alteradas.
+- Confirmar que artigos publicados aparecem na Central, que categorias e
+  vínculos persistem, que convites/perfis respeitam autorização e que o sync
+  termina sem ciclo órfão ou execução concorrente.
+- Atualizar `PROJECT_STATE.md`, ledger e relatório final com arquivos,
+  comandos, testes, evidências, limitações e critérios ainda dependentes de
+  credencial externa.
+- Deixar o worktree limpo e a branch principal coerente com `origin/main`,
+  preservando refs de arquivo para qualquer commit não consolidado. Push,
+  deploy, migração remota e exclusão permanente ficam fora deste lote até
+  autorização explícita.
+
+### Critério de entrega do MVP
+
+Entrega local somente quando os Lotes 0–5 tiverem evidência. Produto e
+Desenvolvimento e Customer Success podem permanecer em espera honesta, mas
+Visão Geral, Comercial, Financeiro, Suporte & Chat, Central de Ajuda, acesso de
+usuários e sincronização HubSpot/OMIE precisam estar funcionais e auditáveis.
+
+## Adendo corrente — reestruturação por domínio — 2026-08-03
+
+- Direção: usar `docs/design/blueprint/Dashboard PO` como referência visual,
+  mantendo títulos compactos, filtros em linha, KPIs legíveis e zonas analíticas
+  densas.
+- Implementação autorizada: retirar o container global de fontes e filtros de
+  domínio; preservar pipelines apenas nos domínios com contrato real; consolidar
+  a Visão Geral; publicar Produto e Desenvolvimento como espera por integração.
+- Limite: nenhum sync, API externa, mudança de métrica, backend, banco, RPC,
+  view, contrato, RLS ou credencial neste lote.
+- Próxima validação: typecheck, build, testes focados, qualidade, secret scan e
+  matriz visual dos sete domínios em cinco viewports e dois temas. O fechamento
+  deve registrar limitações sem promover dados indisponíveis a atualizados.
+
+### Ajuste de cabeçalho adicionado à fila
+
+- Igualar a altura e a densidade do header da Visão Geral às demais áreas.
+- Mover o estado das fontes para a coluna esquerda do contexto executivo.
+- Contextualizar o log de execução do HubSpot junto da operação correspondente
+  e posicionar o log do OMIE com o Financeiro, alinhado ao estado das fontes.
+- Não duplicar status nem alterar o contrato dos read models; a mudança é de
+  composição visual e localização contextual do estado publicado.
+
+## Fechamento do lote atual
+
+- Branch: `codex/high-density-ui-rebuild-20260803`; HEAD deve ser confirmado
+  com `git rev-parse --short HEAD`.
+- A especificação documental foi criada antes da implementação e o Blueprint
+  V2 foi marcado como superado para implementação.
+- A camada visual High-Density foi aplicada ao shell, Dashboard e Configurações
+  sem tocar em métricas, fontes, contratos ou banco; a Visão Geral também recebeu
+  a ação autorizada de sincronização que reutiliza o ciclo sequencial existente.
+- Typechecks, build, secret scan, quality gates e `git diff --check` passaram.
+  A reexecução focal de contratos terminou em 111/114, com três falhas
+  estruturais conhecidas documentadas; a matriz visual continua sem falhas.
+- QA visual real foi executado: matriz final com 80 capturas nas oito
+  superfícies, cinco viewports e dois temas; reteste do Financeiro com 10
+  capturas; reteste de Configurações com 24 verificações; e manifesto UI-05
+  com cinco estados do Gênio. Nenhum reset ou hidratação foi executado.
+- A origem financeira foi movida para o mesmo nível do cabeçalho `OMIE · Contas
+  a Receber`, preservando timestamp, estado e ação `Gerenciar OMIE`.
+- No Comercial, quatro KPIs são primários e Conversão/Ticket médio são
+  visualmente secundários, preservando o estudo de métricas e temporalidade.
+- O adendo de densidade cognitiva foi incorporado à especificação canônica na
+  seção 25, com dez eixos e quinze perguntas de revisão.
+- Relatório: `docs/reports/2026-08-03_high-density-ui-rebuild.md`.
+- QA da ação da Visão Geral: `output/high-density-overview-sync-action-20260803/manifest.json`.
+- Referências visuais consolidadas em `docs/design/blueprint/Dashboard PO/` e
+  `docs/design/blueprint/Suporte e conversas/`, com exclusões intencionais
+  registradas nos commits `619dfa8` e `bb77c67`.
+
+## Próximo lote recomendado
+
+1. executar sincronização real read-only HubSpot → OMIE somente com autorização
+   e credenciais provisionadas, conferindo o Histórico;
+2. reconciliar os quatro contratos preexistentes da suíte ampliada;
+3. aguardar aprovação visual antes de novos ajustes por domínio;
+4. executar sincronização externa somente com autorização e credenciais próprias.
+
+## Precedência
+
+## Execução corrente do macro-lote visual
+
+- Branch de trabalho: `codex/dashboard-visual-density-v1-1-20260803`.
+- Base preservada: `c75ec57b22985589a9f705c6bf2bbce908af1b92`.
+- Escopo: refinamento visual V1.1, com foco em densidade, tipografia, shell,
+  visão geral, domínios analíticos, configurações, histórico e UI-05.
+- A Visão Geral agora limita o título a 32px no desktop, remove o eyebrow
+  duplicado e usa KPIs compactos sem card azul dominante.
+- Nenhuma regra de negócio, métrica, denominador, origem, contrato, RPC,
+  integração, sincronização ou credencial foi alterada.
+- Evidência visual persistida fora do Git em
+  `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803`.
+- Relatório: `docs/reports/2026-08-03_dashboard-visual-density-v1-1.md`.
+- QA final no preview empacotado no HEAD `bcebf1c`: 80/80 capturas em cinco viewports e dois temas,
+  0 falhas de rota, 0 HTTP >=400, 0 overflow horizontal/vertical, 0 console
+  errors e 0 request failures; Visão Geral em 32px, domínios até 28px e mobile
+  em 24px. Evidência: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\final-head-bcebf1c`.
+  Zoom adicional: 16 capturas em 125% e 200%, sem overflow horizontal.
+
+## Estado de validação
+
+- UI-05 foi validado localmente com estados ativos, falha, timeout, abandono e reduced-motion; o harness de captura foi removido antes do build final.
+
+- Typechecks, build, secret scan e quality changed/module passaram. A regressão
+  focada passou em 26/26 após alinhar o badge ao normalizador canônico.
+- A suíte ampliada Analytics + Settings passou em 103/105; duas falhas
+  preexistentes permanecem fora do escopo visual no runner e diagnóstico de
+  Edge Functions.
+- Nenhuma sincronização externa foi acionada para produzir evidência.
+
+## Próximo lote recomendado
+
+1. aprovação visual do V1.1 e, depois, discovery e decisão do denominador de Customer Success;
+2. catálogo executivo de métricas, antes de qualquer novo redesenho;
+3. lote técnico separado para status/frescor OMIE e observabilidade do fluxo;
+4. micro-lote isolado para testes de integração somente quando houver contrato
+   e autorização para chamada externa read-only.
+
+Após este fechamento, parar e aguardar revisão visual do Product Owner.
+
+# Plano histórico — superfície operacional do primeiro release — 2026-08-01
+
+## Objetivo
+
+Publicar e evoluir no checkout único `C:\Projetos\GSO-old` somente o Dashboard Gerencial, Configurações aprovadas, Central de Ajuda e Knowledge/editor, sem remover módulos ainda não publicados e sem inventar dados no frontend.
+
+## Estado Git reconciliado
+
+- `main` usa `origin/main` como upstream e mantém esse histórico como ancestral; o HEAD exato deve ser obtido com `git rev-parse HEAD`.
+- A divergência corrente deve ser obtida com `git rev-list --left-right --count origin/main...HEAD`; os commits da origem estão contidos no histórico local.
+- Há um único worktree ativo, stash preservado e refs de arquivo para a reconciliação anterior.
+- O drift anterior de `PROJECT_STATE.md` e `DOCUMENTATION_LEDGER.md` foi corrigido neste lote.
+- Nenhuma operação destrutiva, push, deploy, migration remota ou alteração de secret foi executada.
+
+Evidência: `docs/reports/2026-08-01_git-state-reconciliation-addendum.md`.
+
+## Sequência de execução
+
+1. Fechar o inventário Git e manter a proveniência em refs de arquivo.
+2. Validar contratos, typechecks, build, suíte Node, higiene e secrets.
+3. Fazer QA browser autenticado real das quatro superfícies aprovadas.
+4. Remover o editor legado não referenciado em lote isolado.
+5. Endurecer a superfície de integrações no backend com grants/RLS/pgTAP.
+6. Resolver a colisão entre hydrate e pgTAP e revalidar Auth local.
+7. Preparar commits separados e só publicar após autorização explícita.
+
+## Critérios de aceite
+
+- uma única origem operacional: `C:\Projetos\GSO-old`;
+- `origin/main` preservado e contido no histórico local;
+- dashboard viewer limitado ao dashboard executivo;
+- dados ausentes exibidos como `Indisponível`;
+- editor sem `window.prompt/alert` no caminho ativo;
+- nenhuma credencial, segredo ou service role versionado;
+- captura real das superfícies alteradas e evidência persistida.
+
+Relatório do diagnóstico: `docs/reports/2026-08-01_repository-and-release-surface-audit.md`.
+
+## Delta executado neste ciclo
+
+- Customer Success agora declara indisponibilidade honesta até existir read
+  model próprio; não reutiliza snapshot executivo nem tickets.
+- Financeiro publica somente OMIE API, com estado de configuração, execução,
+  frescor e vazio; planilha histórica não é fallback.
+- Ações de sincronização permanecem em Configurações e o loop de render da
+  página foi corrigido.
+- RPC de contexto de workspace foi aplicado localmente após evidência HTTP 404;
+  não houve reset ou exclusão.
+- Especificações e backlog: `docs/specs/` e
+  `docs/plans/analytics-macro-lote-0.4-backlog-v1.md`.
+
+## Fila adicionada após a estabilização visual — 2026-08-02
+
+- `DASHBOARD-05`: reconstrução visual HD da aba CEO (`/admin/analytics?tab=ceo`),
+  com cards padronizados, hierarquia executiva, melhor uso da largura e QA
+  responsivo claro/escuro. A execução fica separada da correção de sincronismo
+  em andamento e aguarda aprovação visual antes de ser propagada às demais abas.
+- `DASHBOARD-06`: alinhar o container de fonte financeira da aba Financeiro ao
+  cabeçalho `OMIE · Contas a Receber`, mantendo origem, frescor e gerenciamento
+  no mesmo nível visual dos demais elementos da área.
+- `UI-04`: hardening do dark mode/editor, reset limpo de `Novo artigo`,
+  histórico recolhível, padronização dos cards financeiros e avaliação de
+  teste read-only das integrações.
+- `KNOWLEDGE-03`: reconstrução completa do cockpit de Artigos, corrigindo
+  ações sem efeito e sobreposição da coluna de categorias.
+- `DASHBOARD-03`: exportação profissional de imagem e PDF a partir de fonte
+  estática, com proveniência, texto selecionável e verificação do artefato.
+- `KNOWLEDGE-04`: auditoria e cobertura dos contratos de categorias, filtros,
+  paginação e retorno contextual.
+
+Detalhamento e critérios: `docs/UI_REFACTOR_BACKLOG.md`. Nenhum item acima é
+declarado implementado por este registro documental.
+
+# Discovery HubSpot concluído como investigação — 2026-08-02
+
+- O discovery somente leitura foi registrado nos cinco relatórios
+  `docs/reports/2026-08-02_hubspot-*.md` e no JSON sanitizado correspondente.
+- Nenhuma métrica foi implementada e nenhum denominador CS foi selecionado.
+  A próxima especificação deve transformar o universo escolhido pelo Product
+  Owner em configuração auditável por área, sem descartar pipelines legados.
+- Conversas/Feedback e navegação autenticada no Chrome seguem pendentes; não
+  usar `source_type=CHAT` ou propriedade CSAT/NPS/CES isoladamente como prova de
+  fonte autoritativa.
+
+# Revisão do próximo macro-lote — decisão do Product Owner — 2026-08-02
+
+- Delta e especificação: `docs/reports/2026-08-02_ui-05-specification-delta.md`
+  e `docs/specs/UI_05_GENIO_EM_ACAO_V1.md`.
+- `UI-05` é um micro-lote isolado de design system, motion, loading e feedback
+  de sincronização. Está aprovado conceitualmente, mas não autorizado para
+  implementação neste ciclo.
+- `DASHBOARD-05` fica bloqueado até a conclusão do discovery HubSpot, decisão do
+  denominador de Customer Success e aprovação do catálogo de métricas.
+- `DASHBOARD-06` sai do lote visual e permanece no backlog técnico de runtime e
+  dados, por depender da consistência entre OMIE, status, snapshot e read model.
+- Ordem obrigatória: discovery HubSpot, denominador CS, catálogo de métricas,
+  micro-lote UI-05, aprovação visual, especificação/implementação DASHBOARD-05
+  e, separadamente, DASHBOARD-06.
+
 # Genius Support OS - Plano operacional vivo
 
 ## Smoke autenticado de release - 2026-07-23
@@ -1784,3 +2112,85 @@ O relatório completo, incluindo evidências locais, contratos existentes, lacun
 - Avaliação do Context Pack pelo chat oficial de direção.
 - Autorização explícita do próximo macro-lote.
 - Upload no chat oficial, caso a navegação/autenticação permita.
+## Atualizacao do macro-lote Dashboard API-only - 2026-08-02
+
+- Branch de trabalho: `codex/dashboard-management-rebuild-20260802`.
+- Escopo concluido: cinco areas ativas (`ceo`, `commercial`, `customer_success`, `support`, `finance`), sem Produto/Desenvolvimento na navegacao ativa e sem planilhas no caminho operacional.
+- Implementado: contrato/catalogo, surface de configuracao, Chat indisponivel sem contrato confirmado, executor sequencial HubSpot -> OMIE e shell com rolagem confinada.
+- Validacao: build web, typecheck web/contratos, testes focados, quality gate e validador documental aprovados; QA autenticado e sync real permanecem dependentes de sessao/credencial externa.
+- Evidencia detalhada: `docs/reports/2026-08-02_dashboard-api-only-audit.md`.
+- Proximo gate: capturas autenticadas, pgTAP/migration sem reset, auditoria de zeros/indisponibilidade e decisao sobre scheduler.
+
+## Macro-lote Configuracoes e Fontes do Dashboard - 2026-08-02
+
+### Decidido
+
+- Não alterar as páginas analíticas do Dashboard nem executar sincronização real.
+- Consolidar Configurações em rotas próprias, com um único shell e sem a barra
+  interna “Dashboard e Analytics”.
+- Manter HubSpot e OMIE como únicas integrações publicadas; OMIE recebe
+  `APP_KEY` e `APP_SECRET` separados na UI e mantém o segredo somente no
+  secret store.
+- Descobrir pipelines via API, ativar novos não arquivados por padrão e
+  separar Comercial, Customer Success, Suporte, Chat e A classificar.
+
+### Em execução
+
+- Refatorar Integrações, Fontes do Dashboard e Histórico.
+- Auditar/remover diagnóstico somente após substituir seus testes por contratos
+  de ausência e confirmar todos os consumidores.
+- Registrar origem, cobertura e critério de classificação no read model e na UI.
+
+### Critério de parada
+
+- Typecheck, build, testes focados, quality gates e QA empacotado nas três rotas
+  de Configurações, em claro/escuro e nos quatro viewports definidos.
+- Worktree limpo, commits locais separados e relatório Delta persistido.
+- Aguardar aprovação visual do Product Owner; sem push, deploy, sync real ou
+  correção de fixtures pgTAP.
+## Plano corrente — High-Density Interface V1 — 2026-08-03
+
+- Branch: `codex/high-density-ui-rebuild-20260803`, sem upstream.
+- Escopo: reconstrução visual direta baseada nas referências oficiais atuais,
+  cobrindo shell, Dashboard Gerencial, Configurações, Fontes, Histórico e Gênio.
+- Regra: somente frontend, documentação e validação; contratos, dados e backend
+  permanecem congelados.
+- Fase atual: documentação canônica concluída; implementação pendente.
+- Preservação: ref `refs/archive/high-density-ui-rebuild-start-20260803` e
+  bundle externo em `C:\Projetos\GSO-artifacts\high-density-ui-rebuild-20260803`.
+- Critério: validar visual real em cinco viewports, dois temas, teclado, foco,
+  reduced motion, requests, console e overflow antes de encerrar.
+
+### Sequência
+
+1. tokens/primitivos e shell compartilhado;
+### Fila COPY-01 e cockpit operacional
+
+- Revisar e padronizar o copy de todas as telas e dominios, incluindo titulos,
+  descricoes, labels, acoes, tooltips e estados de carregamento, vazio, erro,
+  parcial e indisponivel.
+- A interface deve conversar com o usuario final e nao expor RPCs, APIs, read
+  models, tokens, nomes de implementacao, detalhes de desenvolvimento ou
+  mensagens de infraestrutura.
+- Refatorar Conhecimento e Configuracoes como superficies operacionais densas,
+  acionaveis e sem bordas pesadas; preservar contratos e dados reais.
+- Corrigir o motion de sincronizacao: bloquear durante o ciclo, oferecer
+  segundo plano apos 60 segundos e impedir nova solicitacao enquanto houver
+  execucao ativa.
+- Registrar inventario de strings, vocabulario aprovado, matriz de estados,
+  implementacao e QA real das superficies alteradas. A origem e o frescor
+  continuam definidos pelo backend/read model e sao traduzidos para linguagem
+  de produto.
+
+2. Visão Geral, Comercial, Customer Success, Suporte e Financeiro;
+3. Integrações, Fontes, Histórico e estados do Gênio;
+4. responsividade, temas e acessibilidade;
+5. testes, QA visual real, correções e documentação final.
+## Verificação do apontamento de header — 03/08/2026
+
+- Confirmado: a pendência visual registrada anteriormente ainda não estava implementada.
+- Corrigido: o estado das fontes agora fica na coluna esquerda do contexto da Visão Geral.
+- Corrigido: o cabeçalho Comercial consulta e mostra a última execução do HubSpot.
+- Corrigido: o cabeçalho Financeiro consulta e mostra a última execução do OMIE junto da origem financeira.
+- Não alterado: contratos de dados, RPCs, regras de frescor, RLS ou credenciais.
+- Pendências técnicas: telemetria por request, atomicidade do bloco compartilhado HubSpot, tombstones/arquivamentos e smoke visual autenticado em todos os viewports.

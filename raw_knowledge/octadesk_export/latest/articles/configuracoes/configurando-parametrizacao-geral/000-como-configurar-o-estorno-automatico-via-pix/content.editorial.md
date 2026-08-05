@@ -1,0 +1,23 @@
+### Configurando as Formas de Estorno Automático via PIX
+
+### Passo a passo para habilitar o estorno automático via Pix
+
+- Acesse o painel Admin da plataforma.
+- No menu à esquerda, clique em CONFIGURAÇÕES.
+- Selecione a opção AMBIENTE e, em seguida, clique em ESTORNO/VALE-COMPRA.
+- Localize a funcionalidade "Habilitar estorno automático via Pix".
+
+Nesta seção, você pode habilitar o estorno automático via Pix, facilitando o processo de reembolso para seus clientes. Ao ativar essa funcionalidade, os estornos serão feitos diretamente para a conta do cliente via Pix, proporcionando agilidade e comodidade no processo de devolução.
+
+Se preferir, também é possível informar o gateway de pagamento para realizar os estornos via Pix.
+
+![Imagem do artigo Como configurar o estorno automatico via pix](knowledge-asset-source:octa-static-tenants/o205658-f7a/knowledgebase/2025-03-07/aocdsauhh_raw8bqbzokb.com)
+
+:::callout info
+Dica: Certifique-se de que o método de pagamento utilizado pelo cliente seja compatível com a opção de estorno via Pix para evitar problemas durante o reembolso.
+:::
+
+::related como-automatizar-o-pagamento-de-estorno-e-vale-compra
+Como automatizar o pagamento de Estorno e Vale-Compra
+Automatização de Estorno e Vale-Compra
+::

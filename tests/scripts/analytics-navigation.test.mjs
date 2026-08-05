@@ -9,7 +9,12 @@ test('analytics navigation preserves the canonical allowlist', () => {
 });
 
 test('analytics navigation supports the executive dashboard domains', () => {
-  for (const tab of ['ceo', 'commercial', 'customer-success', 'support', 'finance', 'product', 'development']) assert.match(source, new RegExp(`['"]${tab}['"]`));
+  for (const tab of ['ceo', 'commercial', 'customer-success', 'support', 'finance', 'product-development', 'product', 'development']) assert.match(source, new RegExp(`['"]${tab}['"]`));
+});
+
+test('analytics navigation normalizes aliases legados para Produto e Desenvolvimento', () => {
+  assert.match(source, /value === 'product' \|\| value === 'development' \? 'product-development'/);
+  assert.match(source, /tab === 'product' \|\| tab === 'development'\) return 'product-development'/);
 });
 
 test('analytics navigation validates identifiers and dates', () => {

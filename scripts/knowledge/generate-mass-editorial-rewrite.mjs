@@ -324,8 +324,58 @@ function deriveSummary(title, summary, body) {
 }
 
 function fetchRows() {
-  const query = `select coalesce(json_agg(row_to_json(rows)), '[]'::json) from (select id::text, title, summary, body_md from public.knowledge_articles where status='published' and visibility='public' order by title) rows;`;
+  const query = `select coalesce(json_agg(row_to_json(rows)), '[]'::json) from (select ka.id::text, ka.title, ka.summary, ka.body_md, ka.source_path, coalesce((select json_agg(json_build_object('id', kaa.id::text, 'source_path', kaa.source_path)) from public.knowledge_article_assets kaa where kaa.article_id = ka.id), '[]'::json) as assets, case when related.slug is null then null else json_build_object('slug', related.slug, 'title', related.title, 'summary', related.summary) end as related from public.knowledge_articles ka left join lateral (select candidate.slug, candidate.title, candidate.summary from public.knowledge_articles candidate where candidate.knowledge_space_id = ka.knowledge_space_id and candidate.category_id = ka.category_id and candidate.id <> ka.id and candidate.status = 'published' and candidate.visibility = 'public' order by candidate.title limit 1) related on true where ka.knowledge_space_id = (select id from public.knowledge_spaces where slug='genius') and ka.source_path like 'raw_knowledge/octadesk_export/latest/articles/%' order by ka.title) rows;`;
   return JSON.parse(runPsql(query).trim() || '[]');
+}
+
+function editorialAssetSource(sourcePath) {
+  const normalized = String(sourcePath ?? '').replaceAll('\\', '/');
+  const marker = normalized.split('/assets/')[1];
+  return marker ? `knowledge-asset-source:${marker}` : null;
+}
+
+function materializeAssetReferences(body, assets) {
+  const assetSources = new Map(
+    (assets ?? [])
+      .map((asset) => [String(asset.id), editorialAssetSource(asset.source_path)])
+      .filter(([, marker]) => marker),
+  );
+
+  return String(body ?? '').replace(
+    /knowledge-asset:([0-9a-f-]{36})/gi,
+    (full, assetId) => assetSources.get(assetId) ?? full,
+  );
+}
+
+function materializeEditorialSources(rewritten) {
+  for (const row of rewritten) {
+    if (!row.source_path) continue;
+    const articleDir = join(process.cwd(), row.source_path);
+    mkdirSync(articleDir, { recursive: true });
+    writeFileSync(join(articleDir, 'content.editorial.md'), `${row.body_md.trim()}\n`, 'utf8');
+    writeFileSync(
+      join(articleDir, 'editorial.json'),
+      `${JSON.stringify({ title: row.title, summary: row.summary, body_md: row.body_md }, null, 2)}\n`,
+      'utf8',
+    );
+  }
+}
+
+function appendRelatedCard(body, related) {
+  if (!related?.slug) return body;
+  const withoutExistingCard = String(body)
+    .replace(/\n\n::related\s+[^\n]+\n[\s\S]*?\n::\s*$/i, '')
+    .trim();
+  const summary = String(related.summary ?? '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#') && !/^[-*\d.]+\s/.test(line))
+    .slice(0, 1)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .slice(0, 240)
+    .trim() || 'Continue a consulta em um artigo relacionado.';
+  return `${withoutExistingCard}\n\n::related ${related.slug}\n${String(related.title ?? '').trim()}\n${summary}\n::`;
 }
 
 function buildMigration(rows) {
@@ -339,7 +389,8 @@ function buildMigration(rows) {
     const title = normalizeTitle(row.title);
     const body = normalizeBody(title, row.body_md);
     const summary = deriveSummary(title, row.summary, body);
-    chunks.push(`update public.knowledge_articles set title=${sqlLiteral(title)}, summary=${sqlLiteral(summary)}, body_md=${sqlLiteral(body)}, updated_at=timezone('utc', now()) where id=${sqlLiteral(row.id)}::uuid;`);
+    const materializedBody = appendRelatedCard(materializeAssetReferences(body, row.assets), row.related);
+    chunks.push(`update public.knowledge_articles set title=${sqlLiteral(title)}, summary=${sqlLiteral(summary)}, body_md=${sqlLiteral(materializedBody)}, updated_at=timezone('utc', now()) where id=${sqlLiteral(row.id)}::uuid;`);
   }
 
   chunks.push('commit;', '');
@@ -351,11 +402,12 @@ const rewritten = rows.map((row) => ({
   ...row,
   title: normalizeTitle(row.title),
   summary: deriveSummary(row.title, row.summary, normalizeBody(row.title, row.body_md)),
-  body_md: normalizeBody(row.title, row.body_md),
+  body_md: appendRelatedCard(materializeAssetReferences(normalizeBody(row.title, row.body_md), row.assets), row.related),
 }));
 
 mkdirSync(join(process.cwd(), 'supabase', 'migrations'), { recursive: true });
 writeFileSync(MIGRATION_PATH, buildMigration(rows), 'utf8');
+materializeEditorialSources(rewritten);
 
 const changed = rewritten.filter((row, index) => {
   const original = rows[index];

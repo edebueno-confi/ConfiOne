@@ -10,8 +10,10 @@ import {
   mapCsKpis,
   mapCsMonthly,
   mapSyncRun,
+  mapOmieSyncRun,
   mapCommercialSnapshot,
   mapCsSnapshot,
+  mapCustomerSuccessSnapshot,
   type CommercialByOwner,
   type CommercialFunnelStage,
   type CommercialKpis,
@@ -20,9 +22,11 @@ import {
   type CsKpis,
   type CsMonthlyPoint,
   type SyncRun,
+  type OmieSyncRun,
   type AnalyticsFilters,
   type CommercialSnapshot,
   type CsSnapshot,
+  type CustomerSuccessSnapshot,
   mapFinanceSnapshot,
   type FinanceSnapshot,
   mapFinanceSourceStatus,
@@ -37,50 +41,15 @@ import {
   mapAnalyticsSourceConfig,
   type ReconciliationQualityResult,
   type AnalyticsSourceConfig,
+  mapAnalyticsSyncHistory,
+  type AnalyticsSyncHistoryRow,
+  mapAnalyticsSourceStatus,
 } from './analytics-model';
-
-export interface HubspotCsDiagnosticPipeline {
-  label: string;
-  activeRecords: number;
-  archivedRecords: number | null;
-  configuredForSync: boolean;
-  stages: Array<{ label: string; closed: boolean }>;
-}
-
-export interface HubspotCsDiagnostic {
-  object: 'tickets';
-  endpoint: string;
-  filters: string[];
-  pages: number;
-  paginationComplete: boolean;
-  total: number;
-  sourceState: 'available' | 'empty_authoritative' | 'empty_unverified' | 'forbidden' | 'misconfigured' | 'partial' | 'failed';
-  scopesPresent: string[];
-  scopesAbsent: string[];
-  pipelines: HubspotCsDiagnosticPipeline[];
-}
-
-export async function runHubspotCsDiagnostic(): Promise<HubspotCsDiagnostic> {
-  const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.functions.invoke('hubspot-cs-diagnostic', { body: {} });
-  if (error) throw new Error(error.message || 'Falha ao executar o diagnóstico de CS / Suporte.');
-  const payload = (data ?? {}) as Partial<HubspotCsDiagnostic>;
-  return {
-    object: 'tickets',
-    endpoint: payload.endpoint ?? 'HubSpot',
-    filters: Array.isArray(payload.filters) ? payload.filters : [],
-    pages: Number(payload.pages ?? 0),
-    paginationComplete: Boolean(payload.paginationComplete),
-    total: Number(payload.total ?? 0),
-    sourceState: payload.sourceState ?? 'failed',
-    scopesPresent: Array.isArray(payload.scopesPresent) ? payload.scopesPresent : [],
-    scopesAbsent: Array.isArray(payload.scopesAbsent) ? payload.scopesAbsent : [],
-    pipelines: Array.isArray(payload.pipelines) ? payload.pipelines : [],
-  };
-}
+import type { AnalyticsSourceStatusPayload } from '@genius-support-os/contracts';
 import { aggregateLatestHubspotSyncRuns } from './analytics-sync-runs.mjs';
-import { formatAnalyticsSyncError } from './analytics-sync-errors.mjs';
+import { analyticsSyncError } from './analytics-sync-errors.mjs';
 import { sanitizeCsSyncResult } from './analytics-cs-control.mjs';
+import { areAnalyticsSourcesActive } from './analytics-sync-progress.mjs';
 
 type Row = Record<string, unknown>;
 
@@ -186,6 +155,28 @@ export async function getLatestSyncRun(): Promise<SyncRun | null> {
   return latest;
 }
 
+export async function getAnalyticsSourceStatus(): Promise<AnalyticsSourceStatusPayload> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_analytics_source_status');
+  if (error) throw toAppError(error, 'Falha ao carregar o estado das fontes do dashboard.');
+  return mapAnalyticsSourceStatus(data);
+}
+
+export async function waitForAnalyticsSyncCompletion(
+  kind: 'full' | 'hubspot' | 'omie',
+  options: { pollMs?: number; timeoutMs?: number } = {},
+): Promise<{ status: AnalyticsSourceStatusPayload; timedOut: boolean }> {
+  const pollMs = Math.max(options.pollMs ?? 1500, 250);
+  const timeoutMs = Math.max(options.timeoutMs ?? 5 * 60 * 1000, pollMs);
+  const startedAt = Date.now();
+  let status = await getAnalyticsSourceStatus();
+  while (areAnalyticsSourcesActive(status, kind) && Date.now() - startedAt < timeoutMs) {
+    await new Promise((resolve) => setTimeout(resolve, pollMs));
+    status = await getAnalyticsSourceStatus();
+  }
+  return { status, timedOut: areAnalyticsSourcesActive(status, kind) };
+}
+
 export async function listHubspotSyncRuns(): Promise<SyncRun[]> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client
@@ -195,6 +186,17 @@ export async function listHubspotSyncRuns(): Promise<SyncRun[]> {
     .limit(30);
   if (error) throw toAppError(error, 'Falha ao carregar os logs de sincronização HubSpot.');
   return (data ?? []).map((row) => mapSyncRun(row as Row)).filter((row): row is SyncRun => Boolean(row));
+}
+
+export async function listOmieSyncRuns(): Promise<OmieSyncRun[]> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client
+    .from('vw_analytics_finance_sync_runs_read')
+    .select('id,source_key,status,total_rows,accepted_rows,rejected_rows,started_at,finished_at,error_message,correlation_id,request_count,request_retry_count,rate_limit_count,provider_error_count,failed_request_count,request_duration_ms,request_average_duration_ms,request_success_rate_percent,last_request_at,enrichment_cache_source,enrichment_cache_age_seconds,enrichment_cache_rows')
+    .order('started_at', { ascending: false })
+    .limit(30);
+  if (error) throw toAppError(error, 'Falha ao carregar os logs de sincronização OMIE.');
+  return (data ?? []).map((row) => mapOmieSyncRun(row as Row));
 }
 
 export async function getLatestCsSyncRun(): Promise<SyncRun | null> {
@@ -240,6 +242,13 @@ export async function getCsSnapshot(filters: AnalyticsFilters, excludedPipelineI
   return mapCsSnapshot(data);
 }
 
+export async function getCustomerSuccessSnapshot(): Promise<CustomerSuccessSnapshot> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_analytics_customer_success_snapshot');
+  if (error) throw toAppError(error, 'Falha ao carregar a carteira de Customer Success.');
+  return mapCustomerSuccessSnapshot(data);
+}
+
 export async function getFinanceSnapshot(filters: AnalyticsFilters, clientQuery = ''): Promise<FinanceSnapshot> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client.rpc('rpc_analytics_finance_snapshot', {
@@ -271,13 +280,13 @@ export async function getFinanceSourceStatus(): Promise<FinanceSourceStatus> {
 
 export async function triggerOmieSync(): Promise<{ totalRows: number; acceptedRows: number }> {
   const config = readRuntimeConfig();
-  if (!config.ok) throw new Error('As funcoes seguras do Supabase nao estao disponiveis neste ambiente.');
+  if (!config.ok) throw new Error('A atualização não está disponível neste ambiente. O painel mantém o último estado publicado.');
   const client = requireSupabaseBrowserClient();
   const { data: { session }, error: sessionError } = await client.auth.getSession();
   if (sessionError || !session?.access_token) throw new Error('Sessao ativa indisponivel para sincronizar o Omie.');
   const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/omie-sync`, { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}`, apikey: config.config.supabaseAnonKey } });
   const payload = await response.json().catch(() => null) as { error?: string; code?: string; message?: string; totalRows?: number; acceptedRows?: number } | null;
-  if (!response.ok) throw new Error(formatAnalyticsSyncError({ operation: 'OMIE', status: response.status, payload }));
+  if (!response.ok) throw analyticsSyncError({ operation: 'OMIE', status: response.status, payload });
   return { totalRows: Number(payload?.totalRows ?? 0), acceptedRows: Number(payload?.acceptedRows ?? 0) };
 }
 
@@ -335,14 +344,37 @@ export async function setIntegrationSchedule(
 
 export async function runIntegrationNow(): Promise<{ status: 'success' | 'partial'; updated: number; companies: number; omieTitles: number; message?: string }> {
   const config = readRuntimeConfig();
-  if (!config.ok) throw new Error('As funções seguras do Supabase não estão disponíveis neste ambiente.');
+  if (!config.ok) throw new Error('A atualização não está disponível neste ambiente. O painel mantém o último estado publicado.');
   const client = requireSupabaseBrowserClient();
   const { data: { session }, error: sessionError } = await client.auth.getSession();
   if (sessionError || !session?.access_token) throw new Error('Sessão ativa indisponível para sincronizar.');
   const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/analytics-integration-run`, { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}`, apikey: config.config.supabaseAnonKey } });
   const payload = await response.json().catch(() => null) as { error?: string; code?: string; status?: 'success' | 'partial'; updated?: number; companies?: number; omieTitles?: number; message?: string } | null;
-  if (!response.ok) throw new Error(formatAnalyticsSyncError({ operation: 'OMIE ↔ HubSpot', status: response.status, payload }));
+  if (!response.ok) throw analyticsSyncError({ operation: 'OMIE ↔ HubSpot', status: response.status, payload });
   return { status: payload?.status === 'partial' ? 'partial' : 'success', updated: Number(payload?.updated ?? 0), companies: Number(payload?.companies ?? 0), omieTitles: Number(payload?.omieTitles ?? 0), message: payload?.message };
+}
+
+export async function triggerSequentialAnalyticsSync(): Promise<{ status: 'success' | 'partial'; updated: number; companies: number; omieTitles: number; message?: string }> {
+  const config = readRuntimeConfig();
+  if (!config.ok) throw new Error('A atualização não está disponível neste ambiente. O painel mantém o último estado publicado.');
+  const client = requireSupabaseBrowserClient();
+  const { data: { session }, error: sessionError } = await client.auth.getSession();
+  if (sessionError || !session?.access_token) throw new Error('Sessao ativa indisponivel para sincronizar.');
+  const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/analytics-sequential-sync`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${session.access_token}`, apikey: config.config.supabaseAnonKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  const payload = await response.json().catch(() => null) as { error?: string; status?: 'success' | 'partial' | 'blocked'; hubspot?: { runId?: string; recordsPromoted?: number }; omie?: { totalRows?: number; acceptedRows?: number }; message?: string } | null;
+  if (!response.ok && response.status !== 202) throw analyticsSyncError({ operation: 'HubSpot e OMIE', status: response.status, payload });
+  const blocked = payload?.status === 'blocked';
+  return {
+    status: blocked || payload?.status === 'partial' ? 'partial' : 'success',
+    updated: Number(payload?.hubspot?.recordsPromoted ?? 0),
+    companies: 0,
+    omieTitles: blocked ? 0 : Number(payload?.omie?.totalRows ?? 0),
+    message: blocked ? `HubSpot ainda em processamento; OMIE nao iniciado. Execucao: ${payload?.hubspot?.runId ?? 'indisponivel'}.` : payload?.message,
+  };
 }
 
 export async function getCeoSnapshot(filters: AnalyticsFilters): Promise<CeoSnapshot> {
@@ -383,9 +415,32 @@ export async function getReconciliationQuality(input: { from?: string; to?: stri
 
 export async function listAnalyticsSourceConfig(): Promise<AnalyticsSourceConfig[]> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.from('vw_analytics_dashboard_pipeline_catalog').select('*').order('domain_key').order('label');
+  const { data, error } = await client.from('vw_admin_analytics_pipeline_catalog_v2').select('*').order('object_type').order('label');
   if (error) throw toAppError(error, 'Falha ao carregar as fontes configuradas do Dashboard.');
   return (data ?? []).map((row) => mapAnalyticsSourceConfig(row as Row));
+}
+
+export async function updateAnalyticsPipelineConfig(input: { id: string; areaKey: AnalyticsSourceConfig['areaKey']; alias: string; isActive: boolean }): Promise<AnalyticsSourceConfig> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_admin_update_analytics_pipeline_config', {
+    p_id: input.id,
+    p_area_key: input.areaKey,
+    p_alias: input.alias.trim() || null,
+    p_is_active: input.isActive,
+  });
+  if (error) throw toAppError(error, 'Falha ao salvar a configuração do pipeline.');
+  return mapAnalyticsSourceConfig((data as Row) ?? {});
+}
+
+export async function listAnalyticsSyncHistory(): Promise<AnalyticsSyncHistoryRow[]> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client
+    .from('vw_admin_analytics_sync_history_v2')
+    .select('*')
+    .order('started_at', { ascending: false })
+    .limit(100);
+  if (error) throw toAppError(error, 'Falha ao carregar o histórico de sincronizações.');
+  return (data ?? []).map((row) => mapAnalyticsSyncHistory(row as Row));
 }
 
 export async function upsertAnalyticsSourceConfig(input: { id?: string; domainKey: 'commercial' | 'cs'; objectType: 'deal' | 'ticket'; pipelineId: string; label: string; isActive: boolean }): Promise<AnalyticsSourceConfig> {
@@ -404,7 +459,7 @@ export async function upsertAnalyticsSourceConfig(input: { id?: string; domainKe
 
 export async function mergeHubSpotCompanies(input: { primaryCompanyId: string; objectIdToMerge: string; confirmation: string; reason?: string }): Promise<{ auditId: string; mergedCompanyId: string | null; syncRecommended: boolean; message: string }> {
   const config = readRuntimeConfig();
-  if (!config.ok) throw new Error('As funções seguras do Supabase não estão disponíveis neste ambiente.');
+  if (!config.ok) throw new Error('A atualização não está disponível neste ambiente. O painel mantém o último estado publicado.');
   const client = requireSupabaseBrowserClient();
   const { data: sessionData, error: sessionError } = await client.auth.getSession();
   if (sessionError || !sessionData.session?.access_token) throw new Error('Sessão ativa indisponível para unificar empresas.');
@@ -417,138 +472,6 @@ export async function mergeHubSpotCompanies(input: { primaryCompanyId: string; o
   const payload = await response.json().catch(() => null) as { error?: string; auditId?: string; mergedCompanyId?: string | null; syncRecommended?: boolean; message?: string } | null;
   if (!response.ok) throw new Error(payload?.error ?? `Unificação recusada pelo servidor (HTTP ${response.status}).`);
   return { auditId: payload?.auditId ?? '', mergedCompanyId: payload?.mergedCompanyId ?? null, syncRecommended: Boolean(payload?.syncRecommended), message: payload?.message ?? 'Unificação concluída.' };
-}
-
-export interface FinanceImportRun {
-  id: string;
-  status: string;
-  originalFilename: string;
-  totalRows: number;
-  acceptedRows: number;
-  rejectedRows: number;
-  createdAt: string;
-  finishedAt: string | null;
-}
-
-export async function listFinanceImportRuns(): Promise<FinanceImportRun[]> {
-  const client = requireSupabaseBrowserClient();
-  const { data, error } = await client
-    .from('vw_analytics_spreadsheet_import_runs_read')
-    .select('id,status,original_filename,total_rows,accepted_rows,rejected_rows,created_at,finished_at')
-    .order('created_at', { ascending: false })
-    .limit(8);
-  if (error) throw toAppError(error, 'Falha ao carregar o historico de importacoes.');
-  return (data ?? []).map((row) => ({
-    id: String(row.id),
-    status: String(row.status),
-    originalFilename: String(row.original_filename),
-    totalRows: Number(row.total_rows ?? 0),
-    acceptedRows: Number(row.accepted_rows ?? 0),
-    rejectedRows: Number(row.rejected_rows ?? 0),
-    createdAt: String(row.created_at),
-    finishedAt: (row.finished_at as string | null) ?? null,
-  }));
-}
-
-export async function triggerFinanceSpreadsheetImport(file: File): Promise<void> {
-  const config = readRuntimeConfig();
-  if (!config.ok) throw new Error('As funcoes seguras do Supabase nao estao disponiveis neste ambiente.');
-  const client = requireSupabaseBrowserClient();
-  const { data: { session }, error: sessionError } = await client.auth.getSession();
-  if (sessionError || !session?.access_token) throw new Error('Sessao ativa indisponivel para importar a planilha.');
-  const form = new FormData();
-  form.set('source_key', 'omie_receivables_xlsx_20260622');
-  form.set('file', file);
-  const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/analytics-spreadsheet-import`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${session.access_token}`, apikey: config.config.supabaseAnonKey },
-    body: form,
-  });
-  const payload = await response.json().catch(() => null) as { error?: string } | null;
-  if (!response.ok) throw new Error(payload?.error ?? `Importacao recusada pelo servidor (HTTP ${response.status}).`);
-}
-
-export async function triggerCsOpsSpreadsheetImport(file: File): Promise<void> {
-  const config = readRuntimeConfig();
-  if (!config.ok) throw new Error('As funcoes seguras do Supabase nao estao disponiveis neste ambiente.');
-  const client = requireSupabaseBrowserClient();
-  const { data: { session }, error: sessionError } = await client.auth.getSession();
-  if (sessionError || !session?.access_token) throw new Error('Sessao ativa indisponivel para importar a planilha CS Ops.');
-  const form = new FormData();
-  form.set('source_key', 'cs_ops_consolidated');
-  form.set('file', file);
-  const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/analytics-spreadsheet-import`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${session.access_token}`, apikey: config.config.supabaseAnonKey },
-    body: form,
-  });
-  const payload = await response.json().catch(() => null) as { error?: string } | null;
-  if (!response.ok) throw new Error(payload?.error ?? `Importacao CS Ops recusada pelo servidor (HTTP ${response.status}).`);
-}
-
-export interface CsOpsImportRun {
-  id: string;
-  status: string;
-  originalFilename: string;
-  totalRows: number;
-  acceptedRows: number;
-  rejectedRows: number;
-  createdAt: string;
-}
-
-export async function listCsOpsImportRuns(): Promise<CsOpsImportRun[]> {
-  const client = requireSupabaseBrowserClient();
-  const { data: sources, error: sourceError } = await client
-    .from('analytics_spreadsheet_sources')
-    .select('id')
-    .eq('source_key', 'cs_ops_consolidated');
-  if (sourceError) throw toAppError(sourceError, 'Falha ao carregar a fonte CS Ops.');
-  const sourceIds = (sources ?? []).map((row) => String(row.id));
-  if (!sourceIds.length) return [];
-  const { data, error } = await client
-    .from('vw_analytics_spreadsheet_import_runs_read')
-    .select('id,status,original_filename,total_rows,accepted_rows,rejected_rows,created_at')
-    .in('source_id', sourceIds)
-    .order('created_at', { ascending: false })
-    .limit(8);
-  if (error) throw toAppError(error, 'Falha ao carregar os lotes CS Ops.');
-  return (data ?? []).map((row) => ({
-    id: String(row.id),
-    status: String(row.status),
-    originalFilename: String(row.original_filename),
-    totalRows: Number(row.total_rows ?? 0),
-    acceptedRows: Number(row.accepted_rows ?? 0),
-    rejectedRows: Number(row.rejected_rows ?? 0),
-    createdAt: String(row.created_at),
-  }));
-}
-
-export interface CsOpsMigrationPreflight {
-  mode: 'dry_run' | 'apply';
-  sourceRows: number;
-  validSourceRows: number;
-  hubspotCompaniesLoaded: number;
-  hubspotOwnersLoaded: number;
-  companyCatalog: 'local_cache' | 'hubspot_live';
-  requiresRehydrate: boolean;
-  canApply: boolean;
-}
-
-export async function runCsOpsMigration(sourceImportRunId: string, mode: 'dry_run' | 'apply' = 'dry_run', maxRows = 1000): Promise<{ migrationRunId: string; sourceImportRunId: string; status: string; counts: Record<string, number>; preflight?: CsOpsMigrationPreflight; message: string }> {
-  const config = readRuntimeConfig();
-  if (!config.ok) throw new Error('As funcoes seguras do Supabase nao estao disponiveis neste ambiente.');
-  const client = requireSupabaseBrowserClient();
-  const { data: { session }, error: sessionError } = await client.auth.getSession();
-  if (sessionError || !session?.access_token) throw new Error('Sessao ativa indisponivel para simular a migracao CS Ops.');
-  const baseUrl = config.config.supabaseUrl.replace(/\/$/, '');
-  const response = await fetch(`${baseUrl}/functions/v1/hubspot-cs-migration`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${session.access_token}`, apikey: config.config.supabaseAnonKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sourceImportRunId, mode, maxRows, ...(mode === 'apply' ? { confirmation: 'MIGRAR_CS_OPS' } : {}) }),
-  });
-  const payload = await response.json().catch(() => null) as { error?: string; migrationRunId?: string; sourceImportRunId?: string; status?: string; counts?: Record<string, number>; preflight?: CsOpsMigrationPreflight; message?: string } | null;
-  if (!response.ok) throw new Error(payload?.error ?? `Migracao CS Ops recusada pelo servidor (HTTP ${response.status}).`);
-  return { migrationRunId: String(payload?.migrationRunId ?? ''), sourceImportRunId: String(payload?.sourceImportRunId ?? sourceImportRunId), status: String(payload?.status ?? 'unknown'), counts: payload?.counts ?? {}, preflight: payload?.preflight, message: String(payload?.message ?? 'Simulacao concluida.') };
 }
 
 // Dispara a Edge Function hubspot-sync com o JWT da sessao ativa (platform_admin).
@@ -569,7 +492,7 @@ export async function triggerHubspotSync(
 ): Promise<HubspotSyncResult> {
   const config = readRuntimeConfig();
   if (!config.ok) {
-    throw new Error('As funcoes seguras do Supabase nao estao disponiveis neste ambiente.');
+    throw new Error('A atualização não está disponível neste ambiente. O painel mantém o último estado publicado.');
   }
 
   const client = requireSupabaseBrowserClient();
@@ -597,7 +520,7 @@ export async function triggerHubspotSync(
 
     const payload = (await response.json().catch(() => null)) as ({ error?: string; code?: string; message?: string } & Partial<HubspotSyncResult>) | null;
     if (!response.ok) {
-      throw new Error(formatAnalyticsSyncError({ operation: 'HubSpot', status: response.status, payload }));
+      throw analyticsSyncError({ operation: 'HubSpot', status: response.status, payload });
     }
   const rawRunId = payload as (Partial<HubspotSyncResult> & { run_id?: string }) | null;
   return { mode: rawRunId?.mode === 'full' ? 'full' : 'incremental', deals: 0, tickets: 0, owners: 0, stages: 0, companies: 0, status: 'queued', runId: rawRunId?.runId ?? rawRunId?.run_id };
@@ -653,7 +576,7 @@ export async function getCsSyncProgress(runId: string): Promise<CsSyncProgress |
 
 export async function triggerCsSupportSync(latestRun: SyncRun | null): Promise<CsSupportSyncResult> {
   const config = readRuntimeConfig();
-  if (!config.ok) throw new Error('As funções seguras do Supabase não estão disponíveis neste ambiente.');
+  if (!config.ok) throw new Error('A atualização não está disponível neste ambiente. O painel mantém o último estado publicado.');
   const client = requireSupabaseBrowserClient();
   const { data: { session }, error: sessionError } = await client.auth.getSession();
   if (sessionError || !session?.access_token) throw new Error('Sessão ativa indisponível para sincronizar CS / Suporte.');
@@ -669,6 +592,6 @@ export async function triggerCsSupportSync(latestRun: SyncRun | null): Promise<C
     body: JSON.stringify({ domain: 'cs_support', correlationId }),
   });
   const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
-  if (!response.ok) throw new Error(formatAnalyticsSyncError({ operation: 'HubSpot CS / Suporte', status: response.status, payload }));
+  if (!response.ok) throw analyticsSyncError({ operation: 'HubSpot CS / Suporte', status: response.status, payload });
   return { ...sanitizeCsSyncResult(payload), status: 'queued', mode: 'full' };
 }

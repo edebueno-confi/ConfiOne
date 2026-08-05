@@ -1,4 +1,4 @@
-import type { AnalyticsBlockState, AnalyticsDataStatus } from '@genius-support-os/contracts';
+import type { AnalyticsBlockState, AnalyticsDataStatus, AnalyticsExecutionStatus, AnalyticsSourceStatus, AnalyticsSourceState, AnalyticsSourceStatusPayload } from '@genius-support-os/contracts';
 import { createAnalyticsBlockState, parseAnalyticsNumber } from './analytics-state';
 
 // Tipos e mapeadores do modulo Analytics/Dashboard Gerencial.
@@ -132,6 +132,15 @@ export interface SyncRun {
   pipelinesTotal: number;
   pipelinesCompleted: number;
   errorCode: string | null;
+  requestCount: number | null;
+  requestRetryCount: number | null;
+  rateLimitCount: number | null;
+  providerErrorCount: number | null;
+  failedRequestCount: number | null;
+  requestDurationMs: number | null;
+  requestAverageDurationMs: number | null;
+  requestSuccessRatePercent: number | null;
+  lastRequestAt: string | null;
 }
 
 export interface AnalyticsFilters {
@@ -159,6 +168,46 @@ export interface CsSnapshot {
   byPipeline: CsPipelinePoint[];
   byOwner: CsOwnerPoint[];
   latestTicketCreatedAt: string | null;
+  state?: AnalyticsBlockState;
+}
+
+export interface CustomerSuccessKpis {
+  companiesTotal: number;
+  clientStatusFilled: number;
+  contractStatusFilled: number;
+  withoutOwner: number;
+  mrrFilled: number;
+}
+
+export interface CustomerSuccessBreakdown {
+  key: string;
+  companyCount: number;
+}
+
+export interface CustomerSuccessOwner {
+  ownerId: string | null;
+  ownerName: string;
+  companyCount: number;
+}
+
+export interface CustomerSuccessCompany {
+  companyId: string;
+  companyName: string;
+  clientStatus: string | null;
+  contractStatus: string | null;
+  csOwnerId: string | null;
+  csOwnerName: string;
+  syncedAt: string | null;
+}
+
+export interface CustomerSuccessSnapshot {
+  kpis: CustomerSuccessKpis;
+  byOwner: CustomerSuccessOwner[];
+  byClientStatus: CustomerSuccessBreakdown[];
+  byContractStatus: CustomerSuccessBreakdown[];
+  companies: CustomerSuccessCompany[];
+  source: string;
+  limitations: string[];
   state?: AnalyticsBlockState;
 }
 
@@ -206,7 +255,8 @@ export interface FinanceCsBucket {
 }
 
 export interface FinanceSnapshot {
-  source: 'api' | 'spreadsheet' | 'none';
+  /** Somente OMIE API pode ser publicado no snapshot do Dashboard. */
+  source: 'api' | 'none';
   kpis: FinanceKpis;
   byStatus: FinanceBreakdown[];
   byAging: FinanceBreakdown[];
@@ -220,8 +270,98 @@ export interface FinanceSnapshot {
 }
 
 export interface FinanceSourceStatus {
-  api: { provider: string; resource: string; configured: boolean; lastSyncAt: string | null; lastStatus: string | null; metrics: string[]; fallback: string };
-  spreadsheet: { provider: string; available: boolean; lastImportAt: string | null };
+  api: { provider: string; resource: string; configured: boolean; lastSyncAt: string | null; lastStatus: string | null; metrics: string[] };
+}
+
+export type DashboardSourceStatus = AnalyticsSourceState;
+
+export function mapAnalyticsSourceStatus(value: unknown): AnalyticsSourceStatusPayload {
+  const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  const valid: AnalyticsSourceStatus[] = ['never_synced', 'syncing', 'fresh', 'stale', 'partial', 'failed', 'unavailable'];
+  const executions: AnalyticsExecutionStatus[] = ['queued', 'running', 'succeeded', 'failed', 'partial', 'cancelled', 'timed_out', 'abandoned'];
+  const map = (key: string, label: string): DashboardSourceStatus => {
+    const row = (data[key] && typeof data[key] === 'object' ? data[key] : {}) as Record<string, unknown>;
+    const status = toText(row.status);
+    return {
+      key,
+      label,
+      status: (valid.includes(status as AnalyticsSourceStatus) ? status : 'unavailable') as AnalyticsSourceStatus,
+      lastAttemptAt: row.lastAttemptAt ? toText(row.lastAttemptAt) : null,
+      lastSuccessAt: row.lastSuccessAt ? toText(row.lastSuccessAt) : null,
+      durationMs: row.durationMs == null ? null : toNumber(row.durationMs),
+      processedCount: row.processedCount == null ? null : toNumber(row.processedCount),
+      error: row.error ? toText(row.error) : null,
+      freshnessMinutes: row.freshnessMinutes == null ? null : toNumber(row.freshnessMinutes),
+      runId: row.runId ? toText(row.runId) : null,
+      origin: toText(row.origin) || key,
+      currentRunId: row.currentRunId ? toText(row.currentRunId) : row.runId ? toText(row.runId) : null,
+      currentRunStatus: executions.includes(toText(row.currentRunStatus) as AnalyticsExecutionStatus) ? toText(row.currentRunStatus) as AnalyticsExecutionStatus : null,
+      publishedSourceStatus: (valid.includes(toText(row.publishedSourceStatus) as AnalyticsSourceStatus) ? toText(row.publishedSourceStatus) : (valid.includes(status as AnalyticsSourceStatus) ? status : 'unavailable')) as AnalyticsSourceStatus,
+      lastFailureAt: row.lastFailureAt ? toText(row.lastFailureAt) : null,
+      rejectedCount: row.rejectedCount == null ? null : toNumber(row.rejectedCount),
+      sanitizedError: row.sanitizedError ? toText(row.sanitizedError) : row.error ? toText(row.error) : null,
+      hasValidSnapshot: row.hasValidSnapshot === true,
+    };
+  };
+  const globalStatus = toText(data.globalStatus);
+  return {
+    hubspot: map('hubspot', 'HubSpot'),
+    omie: map('omie', 'OMIE'),
+    globalStatus: (valid.includes(globalStatus as AnalyticsSourceStatus) ? globalStatus : 'unavailable') as AnalyticsSourceStatus,
+  };
+}
+
+export function analyticsSourceToBlockState(source: AnalyticsSourceState): AnalyticsBlockState {
+  return {
+    status: source.status,
+    source: source.label,
+    asOf: source.lastSuccessAt,
+    lastSuccessfulSyncAt: source.lastSuccessAt,
+    syncRunId: source.runId,
+    coverage: { expected: null, received: source.processedCount },
+    reason: source.error,
+  };
+}
+
+export function analyticsGlobalToBlockState(payload: AnalyticsSourceStatusPayload): AnalyticsBlockState {
+  const lastSuccessAt = [payload.hubspot.lastSuccessAt, payload.omie.lastSuccessAt].filter(Boolean).sort().at(-1) ?? null;
+  const reason = payload.globalStatus === 'failed'
+    ? [payload.hubspot.error, payload.omie.error].filter(Boolean).join(' ')
+    : null;
+  return {
+    status: payload.globalStatus,
+    source: 'HubSpot + OMIE',
+    asOf: lastSuccessAt,
+    lastSuccessfulSyncAt: lastSuccessAt,
+    syncRunId: null,
+    coverage: { expected: null, received: null },
+    reason: reason || null,
+  };
+}
+
+export interface OmieSyncRun {
+  id: string;
+  sourceKey: string;
+  status: 'processing' | 'completed' | 'partial' | 'failed' | 'empty' | 'abandoned';
+  totalRows: number;
+  acceptedRows: number;
+  rejectedRows: number;
+  startedAt: string;
+  finishedAt: string | null;
+  errorMessage: string | null;
+  correlationId: string | null;
+  requestCount: number | null;
+  requestRetryCount: number | null;
+  rateLimitCount: number | null;
+  providerErrorCount: number | null;
+  failedRequestCount: number | null;
+  requestDurationMs: number | null;
+  requestAverageDurationMs: number | null;
+  requestSuccessRatePercent: number | null;
+  lastRequestAt: string | null;
+  enrichmentCacheSource: 'cache' | 'api' | 'stale_cache' | 'api_partial' | 'unavailable' | null;
+  enrichmentCacheAgeSeconds: number | null;
+  enrichmentCacheRows: number | null;
 }
 
 export interface CeoSnapshot {
@@ -346,13 +486,35 @@ export interface ReconciliationQualityResult {
 
 export interface AnalyticsSourceConfig {
   id: string;
-  domainKey: 'commercial' | 'cs';
+  domainKey: 'commercial' | 'cs' | 'unclassified';
   objectType: 'deal' | 'ticket';
   pipelineId: string;
   hubspotLabel: string | null;
   alias: string | null;
   label: string;
   isActive: boolean;
+  areaKey: 'commercial' | 'customer_success' | 'support' | 'chat' | 'a_classificar';
+  classificationSource: 'legacy' | 'admin' | 'pending';
+  isArchived: boolean;
+  discoveryStatus: 'pending' | 'active' | 'archived';
+  lastDiscoveredAt: string | null;
+}
+
+export interface AnalyticsSyncHistoryRow {
+  runId: string | null;
+  cycleId: string;
+  rowKind: 'cycle' | 'step';
+  sourceKey: 'hubspot' | 'omie' | null;
+  sourceLabel: string;
+  status: string;
+  startedAt: string;
+  finishedAt: string | null;
+  durationMs: number;
+  processedCount: number;
+  errorMessage: string | null;
+  correlationId: string | null;
+  triggerKind: 'manual' | 'automatic' | 'diagnostic';
+  currentStep: string | null;
 }
 
 export interface AnalyticsSharedPeriod {
@@ -365,6 +527,10 @@ export interface AnalyticsPageProps {
   onSharedPeriodChange?: (period: AnalyticsSharedPeriod) => void;
   onRetry?: () => void;
   isDashboardViewer?: boolean;
+  sourceStatus?: AnalyticsSourceStatusPayload;
+  canSyncSources?: boolean;
+  syncSources?: () => void;
+  syncBusy?: boolean;
 }
 
 export const EMPTY_COMMERCIAL_KPIS: CommercialKpis = {
@@ -423,15 +589,41 @@ export function mapCsSnapshot(value: unknown): CsSnapshot {
   };
 }
 
+export function mapCustomerSuccessSnapshot(value: unknown): CustomerSuccessSnapshot {
+  const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  const rows = (key: string) => (Array.isArray(data[key]) ? data[key] : []) as Record<string, unknown>[];
+  const rawKpis = (data.kpis && typeof data.kpis === 'object' ? data.kpis : {}) as Record<string, unknown>;
+  const companies = rows('companies').map((row) => ({
+    companyId: toText(row.company_id),
+    companyName: toText(row.company_name) || 'Empresa sem nome',
+    clientStatus: row.client_status ? toText(row.client_status) : null,
+    contractStatus: row.contract_status ? toText(row.contract_status) : null,
+    csOwnerId: row.cs_owner_id ? toText(row.cs_owner_id) : null,
+    csOwnerName: toText(row.cs_owner_name) || 'Sem responsável',
+    syncedAt: row.synced_at ? toText(row.synced_at) : null,
+  }));
+  const breakdown = (key: string) => rows(key).map((row) => ({ key: toText(row.key) || 'Indisponível', companyCount: toNumber(row.company_count) }));
+  return {
+    kpis: { companiesTotal: toNumber(rawKpis.companies_total), clientStatusFilled: toNumber(rawKpis.client_status_filled), contractStatusFilled: toNumber(rawKpis.contract_status_filled), withoutOwner: toNumber(rawKpis.without_owner), mrrFilled: toNumber(rawKpis.mrr_filled) },
+    byOwner: rows('by_owner').map((row) => ({ ownerId: row.owner_id ? toText(row.owner_id) : null, ownerName: toText(row.owner_name) || 'Sem responsável', companyCount: toNumber(row.company_count) })),
+    byClientStatus: breakdown('by_client_status'),
+    byContractStatus: breakdown('by_contract_status'),
+    companies,
+    source: toText(data.source) || 'HubSpot',
+    limitations: Array.isArray(data.limitations) ? data.limitations.map(toText).filter(Boolean) : [],
+    state: createSnapshotState(data, toText(data.source) || 'HubSpot', toNumber(rawKpis.companies_total), true),
+  };
+}
+
 export function mapFinanceSnapshot(value: unknown): FinanceSnapshot {
   const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
   const rows = (key: string) => (Array.isArray(data[key]) ? data[key] : []) as Record<string, unknown>[];
   const recon = (data.cs_reconciliation && typeof data.cs_reconciliation === 'object' ? data.cs_reconciliation : {}) as Record<string, unknown>;
   const reconRows = (Array.isArray(recon.by_client_status) ? recon.by_client_status : []) as Record<string, unknown>[];
-  const sourceValue = data.source === 'api' || data.source === 'spreadsheet' ? data.source : 'none';
+  const sourceValue: FinanceSnapshot['source'] = data.source === 'api' ? 'api' : 'none';
   const rawKpis = (data.kpis && typeof data.kpis === 'object' ? data.kpis : {}) as Record<string, unknown>;
   return {
-    source: sourceValue as FinanceSnapshot['source'],
+    source: sourceValue,
     kpis: mapFinanceKpis(rawKpis),
     byStatus: rows('by_status').map((row) => mapFinanceBreakdown(row, 'status')),
     byAging: rows('by_aging').map((row) => mapFinanceBreakdown(row, 'bucket')),
@@ -445,17 +637,42 @@ export function mapFinanceSnapshot(value: unknown): FinanceSnapshot {
       unmatchedBalance: toNumber(recon.unmatched_balance),
       byClientStatus: reconRows.map((row) => ({ key: toText(row.key) || 'Indisponível', titles: toNumber(row.titles), balance: toNumber(row.balance), overdueBalance: toNumber(row.overdue_balance) })),
     },
-    state: createSnapshotState(data, sourceValue === 'none' ? 'OMIE / planilha' : sourceValue === 'api' ? 'OMIE API' : 'Planilha OMIE', toNumber(rawKpis.total_titles), sourceValue !== 'none'),
+    state: createSnapshotState(data, sourceValue === 'none' ? 'OMIE indisponível' : 'OMIE API', toNumber(rawKpis.total_titles), sourceValue !== 'none'),
   };
 }
 
 export function mapFinanceSourceStatus(value: unknown): FinanceSourceStatus {
   const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
   const api = (data.api && typeof data.api === 'object' ? data.api : {}) as Record<string, unknown>;
-  const spreadsheet = (data.spreadsheet && typeof data.spreadsheet === 'object' ? data.spreadsheet : {}) as Record<string, unknown>;
   return {
-    api: { provider: toText(api.provider) || 'Omie', resource: toText(api.resource) || 'Contas a Receber', configured: Boolean(api.configured), lastSyncAt: api.last_sync_at ? toText(api.last_sync_at) : null, lastStatus: api.last_status ? toText(api.last_status) : null, metrics: Array.isArray(api.metrics) ? api.metrics.map(toText).filter(Boolean) : [], fallback: toText(api.fallback) },
-    spreadsheet: { provider: toText(spreadsheet.provider) || 'Planilha exportada do Omie', available: Boolean(spreadsheet.available), lastImportAt: spreadsheet.last_import_at ? toText(spreadsheet.last_import_at) : null },
+    api: { provider: toText(api.provider) || 'Omie', resource: toText(api.resource) || 'Contas a Receber', configured: Boolean(api.configured), lastSyncAt: api.last_sync_at ? toText(api.last_sync_at) : null, lastStatus: api.last_status ? toText(api.last_status) : null, metrics: Array.isArray(api.metrics) ? api.metrics.map(toText).filter(Boolean) : [] },
+  };
+}
+
+export function mapOmieSyncRun(row: Record<string, unknown>): OmieSyncRun {
+  return {
+    id: toText(row.id),
+    sourceKey: toText(row.source_key) || 'omie_receivables_api',
+    status: (toText(row.status) || 'failed') as OmieSyncRun['status'],
+    totalRows: toNumber(row.total_rows),
+    acceptedRows: toNumber(row.accepted_rows),
+    rejectedRows: toNumber(row.rejected_rows),
+    startedAt: toText(row.started_at),
+    finishedAt: row.finished_at ? toText(row.finished_at) : null,
+    errorMessage: row.error_message ? toText(row.error_message) : null,
+    correlationId: row.correlation_id ? toText(row.correlation_id) : null,
+    requestCount: row.request_count == null ? null : toNumber(row.request_count),
+    requestRetryCount: row.request_retry_count == null ? null : toNumber(row.request_retry_count),
+    rateLimitCount: row.rate_limit_count == null ? null : toNumber(row.rate_limit_count),
+    providerErrorCount: row.provider_error_count == null ? null : toNumber(row.provider_error_count),
+    failedRequestCount: row.failed_request_count == null ? null : toNumber(row.failed_request_count),
+    requestDurationMs: row.request_duration_ms == null ? null : toNumber(row.request_duration_ms),
+    requestAverageDurationMs: row.request_average_duration_ms == null ? null : toNumber(row.request_average_duration_ms),
+    requestSuccessRatePercent: row.request_success_rate_percent == null ? null : toNumber(row.request_success_rate_percent),
+    lastRequestAt: row.last_request_at ? toText(row.last_request_at) : null,
+    enrichmentCacheSource: row.enrichment_cache_source ? toText(row.enrichment_cache_source) as OmieSyncRun['enrichmentCacheSource'] : null,
+    enrichmentCacheAgeSeconds: row.enrichment_cache_age_seconds == null ? null : toNumber(row.enrichment_cache_age_seconds),
+    enrichmentCacheRows: row.enrichment_cache_rows == null ? null : toNumber(row.enrichment_cache_rows),
   };
 }
 
@@ -490,7 +707,7 @@ export function mapCeoSnapshot(value: unknown): CeoSnapshot {
 
 function createSnapshotState(data: Record<string, unknown>, source: string, received: number, sourceConfigured = true): AnalyticsBlockState {
   const status = data.status;
-  const validStatus = typeof status === 'string' && ['fresh', 'stale', 'partial', 'empty', 'zero', 'not_configured', 'syncing', 'unavailable', 'error'].includes(status);
+  const validStatus = typeof status === 'string' && ['fresh', 'stale', 'partial', 'never_synced', 'empty', 'zero', 'not_configured', 'syncing', 'unavailable', 'failed', 'error'].includes(status);
   const lastSuccessfulSyncAt = typeof data.last_successful_sync_at === 'string'
     ? data.last_successful_sync_at
     : typeof data.synced_at === 'string' ? data.synced_at : null;
@@ -550,8 +767,46 @@ export function mapReconciliationQuality(value: unknown): ReconciliationQualityR
 export function mapAnalyticsSourceConfig(row: Record<string, unknown>): AnalyticsSourceConfig {
   const pipelineId = toText(row.hubspot_pipeline_id);
   const hubspotLabel = row.hubspot_pipeline_label ? toText(row.hubspot_pipeline_label) : null;
-  const alias = row.label ? toText(row.label) : null;
-  return { id: toText(row.id), domainKey: toText(row.domain_key) as AnalyticsSourceConfig['domainKey'], objectType: toText(row.object_type) as AnalyticsSourceConfig['objectType'], pipelineId, hubspotLabel, alias, label: alias || hubspotLabel || pipelineId, isActive: Boolean(row.is_active) };
+  const label = row.label ? toText(row.label) : null;
+  const alias = row.has_alias === true
+    ? (row.alias ? toText(row.alias) : label)
+    : (label && hubspotLabel && label !== hubspotLabel ? label : null);
+  const areaKey = toText(row.area_key) as AnalyticsSourceConfig['areaKey'];
+  const discoveryStatus = toText(row.discovery_status) as AnalyticsSourceConfig['discoveryStatus'];
+  return {
+    id: toText(row.id),
+    domainKey: toText(row.domain_key) as AnalyticsSourceConfig['domainKey'],
+    objectType: toText(row.object_type) as AnalyticsSourceConfig['objectType'],
+    pipelineId,
+    hubspotLabel,
+    alias,
+    label: label || hubspotLabel || pipelineId,
+    isActive: Boolean(row.is_active),
+    areaKey: ['commercial', 'customer_success', 'support', 'chat', 'a_classificar'].includes(areaKey) ? areaKey : 'a_classificar',
+    classificationSource: (['legacy', 'admin', 'pending'].includes(toText(row.classification_source)) ? toText(row.classification_source) : 'pending') as AnalyticsSourceConfig['classificationSource'],
+    isArchived: Boolean(row.is_archived),
+    discoveryStatus: ['pending', 'active', 'archived'].includes(discoveryStatus) ? discoveryStatus : 'pending',
+    lastDiscoveredAt: row.last_discovered_at ? toText(row.last_discovered_at) : null,
+  };
+}
+
+export function mapAnalyticsSyncHistory(row: Record<string, unknown>): AnalyticsSyncHistoryRow {
+  return {
+    runId: row.run_id ? toText(row.run_id) : null,
+    cycleId: toText(row.cycle_id) || toText(row.correlation_id),
+    rowKind: toText(row.row_kind) === 'step' ? 'step' : 'cycle',
+    sourceKey: ['hubspot', 'omie'].includes(toText(row.source_key)) ? toText(row.source_key) as 'hubspot' | 'omie' : null,
+    sourceLabel: toText(row.source_label) || 'Ciclo de atualização',
+    status: toText(row.status) || 'unknown',
+    startedAt: toText(row.started_at),
+    finishedAt: row.finished_at ? toText(row.finished_at) : null,
+    durationMs: toNumber(row.duration_ms),
+    processedCount: toNumber(row.processed_count),
+    errorMessage: row.error_message ? toText(row.error_message) : null,
+    correlationId: row.correlation_id ? toText(row.correlation_id) : null,
+    triggerKind: (['manual', 'automatic', 'diagnostic'].includes(toText(row.trigger_kind)) ? toText(row.trigger_kind) : 'automatic') as AnalyticsSyncHistoryRow['triggerKind'],
+    currentStep: row.current_step ? toText(row.current_step) : null,
+  };
 }
 
 export function mapAmbiguousOverdueTitles(value: unknown): AmbiguousOverdueTitle[] {
@@ -718,6 +973,15 @@ export function mapSyncRun(row: Record<string, unknown> | null): SyncRun | null 
     pipelinesTotal: toNumber(row.pipelines_total),
     pipelinesCompleted: toNumber(row.pipelines_completed),
     errorCode: row.error_code ? toText(row.error_code) : null,
+    requestCount: row.request_count == null ? null : toNumber(row.request_count),
+    requestRetryCount: row.request_retry_count == null ? null : toNumber(row.request_retry_count),
+    rateLimitCount: row.rate_limit_count == null ? null : toNumber(row.rate_limit_count),
+    providerErrorCount: row.provider_error_count == null ? null : toNumber(row.provider_error_count),
+    failedRequestCount: row.failed_request_count == null ? null : toNumber(row.failed_request_count),
+    requestDurationMs: row.request_duration_ms == null ? null : toNumber(row.request_duration_ms),
+    requestAverageDurationMs: row.request_average_duration_ms == null ? null : toNumber(row.request_average_duration_ms),
+    requestSuccessRatePercent: row.request_success_rate_percent == null ? null : toNumber(row.request_success_rate_percent),
+    lastRequestAt: row.last_request_at ? toText(row.last_request_at) : null,
   };
 }
 

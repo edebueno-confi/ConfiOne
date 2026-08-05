@@ -7,6 +7,9 @@ export type GeniusAvatarVariant = 'default' | 'attention' | 'success';
 export type GeniusMascotPose = GeniusPose;
 export type GeniusMascotSurface = 'default' | 'loading' | 'empty' | 'success' | 'avatar';
 
+// A geometria das poses segue o SVG atualizado de avatar/GeniusGenie.dc.html.
+// O SVG permanece inline para preservar os estados dinâmicos de pose e expressão.
+
 type GeniusMascotProps = {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   alt?: string;
@@ -90,7 +93,7 @@ export function GeniusMascot({
   const posePresent = resolvedPose === 'present';
   const poseThink = resolvedPose === 'think';
   const showBaseArm = !['celebrate', 'shrug'].includes(resolvedPose);
-  const showMagicEffect = resolvedPose === 'magic' || isLoading;
+  const showMagicEffect = resolvedPose === 'magic';
   const renderedPupilOffset = isLoading ? { x: 0, y: 5.5 } : pupilOffset;
 
   return (
@@ -128,7 +131,7 @@ export function GeniusMascot({
           <path d="M156 416c2-11 38-11 40 0Z" fill="#c00087" />
           <ellipse cx="163" cy="428" rx="14" ry="4" fill="#ff5cc4" opacity="0.5" />
         </g>
-        {isLoading ? (
+        {isLoading && resolvedPose === 'magic' ? (
           <g aria-hidden="true" className="genius-mascot__magic" fill="none">
             <path d="M137 362c18-12 40-12 58 0" stroke="#ff69cf" strokeWidth="3" strokeLinecap="round" />
             <path d="M146 379c13-8 29-8 42 0" stroke="#bff0f7" strokeWidth="2.5" strokeLinecap="round" />
@@ -154,9 +157,9 @@ export function GeniusMascot({
           {resolvedPose === 'magic' ? (
             <g className="genius-mascot__pose-arm genius-mascot__pose-arm--magic">
               <path d="M224 214c28-12 48-38 40-66-4-16-8-26-10-36h-18c2 12 6 22 8 38 4 22-12 44-32 54Z" fill="#307fe2" />
-              <path d="M234 112h22V98h-22Z" fill="#e10098" />
-              <path d="M234 98c-2-8 2-14 9-16V70c0-4 6-4 6 0v10h3V62c0-4 6-4 6 0v18h3V68c0-4 6-4 6 0v19c4 1 6 5 5 9l-3 8Z" fill="#307fe2" />
-              <path d="M248 60v26" stroke="#1f5fc0" strokeWidth="2" opacity="0.6" />
+              <path d="M234 112 256 112 256 98 234 98Z" fill="#e10098" />
+              <path d="M236 98C232 90 234 80 244 80L248 80V56C248 49 259 49 259 56V82C264 84 266 90 264 98Z" fill="#307fe2" />
+              <path d="M248 60 248 86" stroke="#1f5fc0" strokeWidth="2" opacity="0.6" />
               <path className="genius-mascot__pose-spark" d="M254 32c1.6 8 4 10.4 12 12-8 1.6-10.4 4-12 12-1.6-8-4-10.4-12-12 8-1.6 10.4-4 12-12Z" fill="#e10098" />
             </g>
           ) : null}

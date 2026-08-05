@@ -1,0 +1,636 @@
+{
+  "generatedAt": "2026-08-02T05:37:19.135Z",
+  "baseUrl": "http://127.0.0.1:4180",
+  "total": 48,
+  "screenshots": [
+    {
+      "surface": "overview",
+      "theme": "light",
+      "viewport": "1440x900",
+      "filename": "dashboard-overview-light-1440x900-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "commercial",
+      "theme": "light",
+      "viewport": "1440x900",
+      "filename": "dashboard-commercial-light-1440x900-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "customer-success",
+      "theme": "light",
+      "viewport": "1440x900",
+      "filename": "dashboard-customer-success-light-1440x900-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "support",
+      "theme": "light",
+      "viewport": "1440x900",
+      "filename": "dashboard-support-light-1440x900-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "finance",
+      "theme": "light",
+      "viewport": "1440x900",
+      "filename": "dashboard-finance-light-1440x900-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "integrations",
+      "theme": "light",
+      "viewport": "1440x900",
+      "filename": "dashboard-integrations-light-1440x900-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "overview",
+      "theme": "light",
+      "viewport": "1024x768",
+      "filename": "dashboard-overview-light-1024x768-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "commercial",
+      "theme": "light",
+      "viewport": "1024x768",
+      "filename": "dashboard-commercial-light-1024x768-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "customer-success",
+      "theme": "light",
+      "viewport": "1024x768",
+      "filename": "dashboard-customer-success-light-1024x768-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "support",
+      "theme": "light",
+      "viewport": "1024x768",
+      "filename": "dashboard-support-light-1024x768-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "finance",
+      "theme": "light",
+      "viewport": "1024x768",
+      "filename": "dashboard-finance-light-1024x768-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "integrations",
+      "theme": "light",
+      "viewport": "1024x768",
+      "filename": "dashboard-integrations-light-1024x768-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "overview",
+      "theme": "light",
+      "viewport": "768x1024",
+      "filename": "dashboard-overview-light-768x1024-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "commercial",
+      "theme": "light",
+      "viewport": "768x1024",
+      "filename": "dashboard-commercial-light-768x1024-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "customer-success",
+      "theme": "light",
+      "viewport": "768x1024",
+      "filename": "dashboard-customer-success-light-768x1024-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "support",
+      "theme": "light",
+      "viewport": "768x1024",
+      "filename": "dashboard-support-light-768x1024-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "finance",
+      "theme": "light",
+      "viewport": "768x1024",
+      "filename": "dashboard-finance-light-768x1024-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "integrations",
+      "theme": "light",
+      "viewport": "768x1024",
+      "filename": "dashboard-integrations-light-768x1024-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "overview",
+      "theme": "light",
+      "viewport": "390x844",
+      "filename": "dashboard-overview-light-390x844-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "commercial",
+      "theme": "light",
+      "viewport": "390x844",
+      "filename": "dashboard-commercial-light-390x844-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "customer-success",
+      "theme": "light",
+      "viewport": "390x844",
+      "filename": "dashboard-customer-success-light-390x844-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "support",
+      "theme": "light",
+      "viewport": "390x844",
+      "filename": "dashboard-support-light-390x844-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "finance",
+      "theme": "light",
+      "viewport": "390x844",
+      "filename": "dashboard-finance-light-390x844-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "integrations",
+      "theme": "light",
+      "viewport": "390x844",
+      "filename": "dashboard-integrations-light-390x844-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": []
+    },
+    {
+      "surface": "overview",
+      "theme": "dark",
+      "viewport": "1440x900",
+      "filename": "dashboard-overview-dark-1440x900-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "commercial",
+      "theme": "dark",
+      "viewport": "1440x900",
+      "filename": "dashboard-commercial-dark-1440x900-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "customer-success",
+      "theme": "dark",
+      "viewport": "1440x900",
+      "filename": "dashboard-customer-success-dark-1440x900-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "support",
+      "theme": "dark",
+      "viewport": "1440x900",
+      "filename": "dashboard-support-dark-1440x900-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "finance",
+      "theme": "dark",
+      "viewport": "1440x900",
+      "filename": "dashboard-finance-dark-1440x900-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "integrations",
+      "theme": "dark",
+      "viewport": "1440x900",
+      "filename": "dashboard-integrations-dark-1440x900-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "overview",
+      "theme": "dark",
+      "viewport": "1024x768",
+      "filename": "dashboard-overview-dark-1024x768-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "commercial",
+      "theme": "dark",
+      "viewport": "1024x768",
+      "filename": "dashboard-commercial-dark-1024x768-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "customer-success",
+      "theme": "dark",
+      "viewport": "1024x768",
+      "filename": "dashboard-customer-success-dark-1024x768-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "support",
+      "theme": "dark",
+      "viewport": "1024x768",
+      "filename": "dashboard-support-dark-1024x768-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "finance",
+      "theme": "dark",
+      "viewport": "1024x768",
+      "filename": "dashboard-finance-dark-1024x768-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "integrations",
+      "theme": "dark",
+      "viewport": "1024x768",
+      "filename": "dashboard-integrations-dark-1024x768-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "overview",
+      "theme": "dark",
+      "viewport": "768x1024",
+      "filename": "dashboard-overview-dark-768x1024-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "commercial",
+      "theme": "dark",
+      "viewport": "768x1024",
+      "filename": "dashboard-commercial-dark-768x1024-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "customer-success",
+      "theme": "dark",
+      "viewport": "768x1024",
+      "filename": "dashboard-customer-success-dark-768x1024-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "support",
+      "theme": "dark",
+      "viewport": "768x1024",
+      "filename": "dashboard-support-dark-768x1024-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "finance",
+      "theme": "dark",
+      "viewport": "768x1024",
+      "filename": "dashboard-finance-dark-768x1024-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "integrations",
+      "theme": "dark",
+      "viewport": "768x1024",
+      "filename": "dashboard-integrations-dark-768x1024-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "overview",
+      "theme": "dark",
+      "viewport": "390x844",
+      "filename": "dashboard-overview-dark-390x844-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "commercial",
+      "theme": "dark",
+      "viewport": "390x844",
+      "filename": "dashboard-commercial-dark-390x844-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "customer-success",
+      "theme": "dark",
+      "viewport": "390x844",
+      "filename": "dashboard-customer-success-dark-390x844-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "support",
+      "theme": "dark",
+      "viewport": "390x844",
+      "filename": "dashboard-support-dark-390x844-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "finance",
+      "theme": "dark",
+      "viewport": "390x844",
+      "filename": "dashboard-finance-dark-390x844-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    },
+    {
+      "surface": "integrations",
+      "theme": "dark",
+      "viewport": "390x844",
+      "filename": "dashboard-integrations-dark-390x844-2026-08-02.png",
+      "visibleDialog": false,
+      "themeMatched": true,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "requestFailures": [
+        "http://127.0.0.1:4180/src/features/admin-shell/AdminConsoleShell.tsx"
+      ]
+    }
+  ],
+  "cleanCaptureCount": 48,
+  "themeMatchedCount": 48,
+  "noHorizontalOverflowCount": 48,
+  "noConsoleOrPageErrorsCount": 48,
+  "requestFailureCount": 24
+}

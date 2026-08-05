@@ -1,0 +1,4 @@
+interface:
+  display_name: "GSO Documentation Governance"
+  short_description: "Audit and reconcile GSO docs"
+  default_prompt: "Use $genius-documentation-governance to audit repository documentation and report current, historical, superseded, and conflicting sources."

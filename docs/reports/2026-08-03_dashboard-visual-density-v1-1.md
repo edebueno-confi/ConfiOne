@@ -1,0 +1,292 @@
+# Relatório Delta — Dashboard Visual Density V1.1
+
+## Adendo — reestruturação das páginas por domínio — 2026-08-03
+
+### Objetivo
+
+Alinhar o Dashboard aos blueprints de `docs/design/blueprint/Dashboard PO` e à
+direção High-Density V1.1: leitura gerencial compacta, filtros sem redundância,
+zonas analíticas isoladas e estados factuais. O lote não executa sincronização,
+não chama APIs externas e não altera backend, banco, views, RPCs, contratos,
+RLS, permissões, auditoria, fontes ou métricas.
+
+### Decisões de produto aplicadas
+
+- remover o container global de fontes operacionais das páginas;
+- remover filtros de domínio; a Visão Geral consolida as áreas publicadas;
+- manter seleção de pipelines somente em Comercial, Suporte e Customer Success
+  quando a fonte contratual disponibilizar opções reais;
+- manter Financeiro sem pipeline e Produto/Desenvolvimento sem pipeline, em modo
+  de espera por integração, sem simular dados ou afirmar conexão com GitHub;
+- reduzir repetição de estados nos KPIs, preservar indisponibilidade factual e
+  deixar a movimentação do Gênio operacional e discreta.
+
+### Referências observadas
+
+Foram observados os sete blueprints de `Dashboard PO`, a especificação
+`docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md`, o design system e os contratos
+de views/RPCs. As imagens de Produto e Desenvolvimento foram tratadas como
+referência de composição; seus números demonstrativos não foram incorporados.
+
+### Estado da validação
+
+Esta seção será fechada com os comandos, resultados, manifestos e limitações
+reais após a execução da validação do lote. Nenhuma evidência futura deve ser
+interpretada como validação concluída antes desse registro.
+
+## 1. Resumo executivo
+
+Macro-lote visual executado na branch `codex/dashboard-visual-density-v1-1-20260803`. O foco foi reduzir a escala tipográfica e a densidade excessiva do Dashboard sem alterar backend, banco, contratos, métricas, fontes ou sincronizações.
+
+## 2. Git inicial
+
+- Checkout canônico: `C:\Projetos\GSO-old`.
+- Base preservada: `c75ec57b22985589a9f705c6bf2bbce908af1b92` (`feat(ui): aplicar sistema visual do dashboard`).
+- Relação com `origin/main`: `0 120`.
+- Sem upstream configurado para a branch; stash existente preservado.
+- Worktree inicial limpo.
+
+## 3. Preservação
+
+Foi criado o bundle externo `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\GSO-old-dashboard-visual-density-v1-1.bundle`, verificado como histórico completo, com SHA-256 `0135A0E6AC56F138BE98691599E692A14119941626CE8D226F803CBB84565620`. Também foi criada a ref `refs/archive/dashboard-visual-density-v1-1-start-20260803` apontando para o HEAD inicial.
+
+## 4. Auditoria do V1
+
+O V1 tinha regras concorrentes para overview, pilot e domínio. O título podia alcançar 43px, KPIs alcançavam 50px, o primeiro KPI usava preenchimento azul dominante, havia gaps de até 48px e o histórico usava uma linha do tempo decorativa. O baseline real foi capturado antes da correção.
+
+## 5. Skills aplicadas
+
+Foram aplicadas as orientações de `gso-operational-design`, `frontend-design`, `ui-ux-specialist`, `ux-friction-analyzer`, `design-kpis`, `tailwind-patterns`, `web-design-guidelines`, `genius-code-quality`, `genius-documentation-governance`, `playwright`, `screenshot` e `verification-before-completion`. A revisão atualizada das Web Interface Guidelines reforça foco visível, reduced motion, tipografia compacta e ausência de `transition: all`. [Web Interface Guidelines](https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md)
+
+Registro obrigatório de uso:
+
+| Skill e path | Orientação relevante | Ação tomada | Orientação rejeitada e justificativa |
+|---|---|---|---|
+| `artifact-template-cockpit-operacional-genius-os` — `C:\Users\edebu\.codex\skills\artifact-template-cockpit-operacional-genius-os\SKILL.md` | Preservar linguagem editorial-operacional e não inventar fatos. | Usada como referência de composição do cockpit e hierarquia de sinais. | Não copiar literalmente o template, pois o lote refinou uma implementação existente. |
+| `gso-operational-design` — `C:\Users\edebu\.codex\skills\gso-operational-design\SKILL.md` | Priorizar ação segura, densidade, tokens e estados factuais. | Aplicados agrupamento semântico, filtros compactos, status e indisponibilidade honesta. | Não usar mascote como decoração dominante. |
+| `product-design:index` — `C:\Users\edebu\.codex\plugins\cache\openai-curated-remote\product-design\0.1.52\skills\index\SKILL.md` | Roteiar auditoria e crítica de produto antes da implementação. | Usada para estruturar a auditoria visual V1 e a revisão crítica. | Não criar protótipo paralelo, pois o escopo exigia corrigir a base atual. |
+| `data-analytics:design-kpis` — `C:\Users\edebu\.codex\plugins\cache\openai-curated-remote\data-analytics\0.2.8-13ceeea1f599\skills\design-kpis\SKILL.md` | Tratar fonte, definição e denominador como autoridade do dado. | Aplicada somente à hierarquia visual e agrupamento de KPIs. | Não redefinir métricas, fontes ou denominadores por escopo congelado. |
+| `tailwind-patterns` — `C:\Projetos\GSO-old\.agents\skills\tailwind-patterns\SKILL.md` | Preferir tokens e padrões consistentes, evitando medidas arbitrárias. | Revisadas regras CSS e tokens existentes, sem criar configuração Tailwind paralela. | Não migrar CSS global para Tailwind, pois seria mudança metodológica desnecessária. |
+| `genius-code-quality` — `C:\Projetos\GSO-old\.agents\skills\genius-code-quality\SKILL.md` | Auditar diff, contratos, segurança, testes e manutenção sem autoalteração silenciosa. | Executados `changed`, `module` e `staged`, todos sem findings confirmados. | Não aplicar correções automáticas fora do escopo visual. |
+| `genius-documentation-governance` — `C:\Projetos\GSO-old\.agents\skills\genius-documentation-governance\SKILL.md` | Dar precedência ao código e documentos canônicos e preservar histórico. | Executado `changed`; relatório, plano e ledger canônicos foram atualizados. | Não reescrever documentos históricos conflitantes nem reproduzir o achado sensível. |
+| `frontend-design` — `C:\Users\edebu\.codex\skills\frontend-design\SKILL.md` | Definir direção editorial explícita e evitar estética genérica de IA. | Mantida direção operacional editorial, compacta e não maximalista. | Rejeitada direção promocional/landing page por incompatibilidade com o produto interno. |
+| `ui-ux-specialist` — `C:\Users\edebu\.codex\skills\ui-ux-specialist\SKILL.md` | Semântica, teclado, foco, contraste, labels e estados de erro. | Preservados landmarks, `aria-live`, `aria-busy`, foco e reduced motion. | Não criar elementos decorativos que competissem com conteúdo operacional. |
+| `ux-friction-analyzer` — `C:\Users\edebu\.codex\skills\ux-friction-analyzer\SKILL.md` | Progressive disclosure e redução de carga cognitiva. | Aplicados filtros compactos, histórico recolhível e redução de repetição. | Não esconder dados essenciais atrás de múltiplos níveis de navegação. |
+| `web-design-guidelines` — `C:\Projetos\GSO-old\.agents\skills\web-design-guidelines\SKILL.md` | Foco visível, reduced motion, sem `transition: all`, sem overflow e semântica. | Guidelines atualizadas foram consultadas e os probes foram executados no preview. | Não usar animação baseada em layout ou cores como único canal de status. |
+| `playwright` — `C:\Users\edebu\.codex\skills\playwright\SKILL.md` | Automatizar navegador real para navegação, screenshots e extração. | Usado no preview 4183 com sessão QA local e cinco viewports. | Não usar sincronização real nem escrever dados externos. |
+| `screenshot` — `C:\Users\edebu\.codex\skills\screenshot\SKILL.md` | Preferir captura específica da ferramenta e salvar evidência rastreável. | Capturas Playwright e inspeção `view_image` foram persistidas no pacote externo. | Não substituir captura real por typecheck ou mock visual. |
+| `verification-before-completion` — `C:\Users\edebu\.codex\skills\verification-before-completion\SKILL.md` | Exigir evidência fresca antes de declarar conclusão. | Matriz final, builds, gates, manifestos e Git foram reexecutados. | Não declarar aprovação total enquanto o auditor documental permanece inconsistente. |
+
+## 6. Tipografia
+
+- Título de página: máximo observado 32px desktop; 28px intermediário; 24px mobile.
+- Título de domínio: limite aproximado de 28px.
+- KPI executivo: máximo observado 36px.
+- Removido o eyebrow duplicado de `Visão Geral`.
+- O título mantém hierarquia editorial, sem escala maximalista.
+
+## 7. Espaçamento
+
+Gaps principais foram reduzidos para a escala operacional de 4/8/12/16/20/24px. O cabeçalho da overview usa padding vertical compacto; filtros, KPIs, domínios e histórico não criam áreas vazias desnecessárias.
+
+## 8. Shell
+
+O shell preserva contexto global, abas analíticas e fonte agregada. O padding horizontal foi reduzido para `clamp(1rem, 2.5vw, 2.5rem)`, sem alterar navegação ou estado de URL.
+
+## 9. Visão Geral
+
+O título foi reduzido para 32px no desktop, o filtro foi compactado e a primeira métrica deixou de ser um card azul dominante. Os KPIs e a posição atual agora usam regras superiores e contraste por hierarquia, não caixas excessivas.
+
+## 10. Comercial
+
+A superfície continua usando o mesmo frame de domínio e KPI compartilhado. O refinamento global reduz o título do domínio, a altura mínima de KPI e a distância entre filtros, indicadores e gráficos.
+
+## 11. Customer Success
+
+A superfície permanece somente leitura e mantém indisponibilidade honesta quando não há read model próprio. Nenhum denominador, carteira ou métrica foi alterado neste lote.
+
+## 12. Suporte
+
+O frame compartilhado mantém filtros, KPIs e gráficos. A mudança global evita que Suporte e Comercial usem escalas distintas de título e indicador.
+
+## 13. Financeiro
+
+Delta final: os oito KPIs foram agrupados em Posicao e risco e Movimentacao e previsao, sem alterar valores, formulas ou contrato.
+
+O bloco de fonte financeira foi transformado visualmente em metadata compacta, alinhada ao cabeçalho `OMIE · Contas a Receber`, preservando fonte, frescor, link de gerenciamento e estado real.
+
+## 14. Integrações
+
+As duas integrações publicadas continuam sendo HubSpot e OMIE. Apenas densidade visual e tipografia compartilhada foram tocadas; campos, credenciais e handlers não foram alterados.
+
+## 15. Fontes
+
+A superfície de fontes continua responsável por ações operacionais existentes. Nenhum botão de sincronização foi acionado durante o QA deste lote.
+
+## 16. Histórico
+
+O histórico deixou de apresentar a linha do tempo decorativa. O cabeçalho foi reduzido a uma faixa operacional curta, sem o hero “Rastreabilidade”; os grupos continuam recolhíveis e agora exibem registro operacional, trigger, data e status em linhas mais compactas. A repetição de “Ciclo de atualização” foi removida.
+
+## 17. UI-05
+
+O componente também representa falha, timeout e abandono sem animar o mascote e sem substituir o último snapshot publicado. O QA local renderizou o componente real por query temporária, sem iniciar sincronização nem escrever no banco.
+
+Delta final: o titulo do overlay/loading foi limitado a 24-30px no desktop e 21px no mobile.
+
+O copy do Gênio foi refinado para mensagens operacionais mais humanas: consulta do HubSpot, organização dos dados financeiros e preparação da visão publicada. A semântica de overlay bloqueante/banner não bloqueante foi preservada.
+
+O avatar foi alinhado à origem atualizada em `avatar/GeniusGenie.dc.html`: a pose `magic` é contextual ao carregamento, com braço direito elevado e sem moldura de card. O runtime continua inline para preservar poses e expressões dinâmicas.
+
+## 18. Alta resolução
+
+A captura de 1920x1080 não aumenta mais o título proporcionalmente; a escala fica limitada pelos tokens definidos. A leitura usa a largura disponível sem transformar o dashboard em uma página maximalista.
+
+## 19. Responsividade
+
+Delta final: as 80 capturas foram refeitas no preview empacotado estabilizado, sem overflow horizontal ou vertical.
+
+Foram capturados 80 estados: 8 superfícies × 5 viewports × 2 temas. Viewports: 1920x1080, 1440x900, 1024x768, 768x1024 e 390x844. Não foi observado overflow horizontal.
+
+## 20. Temas
+
+Light e dark foram capturados em todas as superfícies. A troca de tema preserva contraste, status e densidade sem reintroduzir bordas ou fundos dominantes.
+
+## 21. Acessibilidade
+
+Delta final: os campos de integracao passaram a estar em formularios e o probe browser encontrou foco visivel nos controles navegaveis.
+
+Typecheck e contratos passaram. Os controles e semântica existentes foram preservados; o histórico permanece com `<details>/<summary>`, fonte financeira recebeu `aria-label` e o overlay mantém `role=status`, `aria-live` e `aria-busy`.
+
+## 22. Performance
+
+Não houve alteração de chamadas, polling, sincronização, cache, read model ou lifecycle. O build Vite passou com 831 módulos transformados.
+
+## 23. Código/CSS
+
+Delta final: o escopo inclui agrupamento financeiro, formulários de integrações e escala do loading do Gênio.
+
+As correções foram concentradas em `index.css`, no frame executivo, no metadata financeiro, no histórico e no copy do overlay. Os limites foram expressos em regras CSS com tokens existentes, sem regra de negócio no frontend.
+
+## 24. Qualidade
+
+`quality:changed`, `quality:module` para Analytics e Components passaram com zero findings confirmados. Settings passou com seis candidatos arquiteturais preexistentes de acesso direto a tabelas, sem blocker confirmado. O lint de banco passou com warnings preexistentes de variáveis/parâmetro não lidos.
+
+## 25. Governança documental
+
+Este relatório é a evidência delta do macro-lote. O plano corrente, `PROJECT_STATE.md` e `DOCUMENTATION_LEDGER.md` foram atualizados sem substituir o histórico anterior. A auditoria `run-documentation-audit.mjs changed` foi executada durante a revisão documental e identificou candidatos históricos globais; o inventário final, com worktree limpo, retornou `consistent`, sem documentos pendentes para análise. Nenhum valor sensível foi aberto ou reproduzido neste lote.
+
+## 26. Testes
+
+- Regressão focada: 26/26 passou após alinhar o badge visual ao normalizador canônico de status; a ausência de `lastSuccessfulSyncAt` permanece tratada como `never_synced` na camada de estado.
+
+- `npm run contracts:typecheck`: passou.
+- `npm run web:typecheck`: passou.
+- `npm run web:build`: passou.
+- `npm run local:qa:secret-scan`: passou, 0 matches.
+- Suíte focada UI: 31/31 passou.
+- Suíte ampliada Analytics + Settings: 103/105 passou. As duas falhas reproduzidas isoladamente são `analytics-cs-async-runner.test.mjs` (expectativa de `runnerMessage(error)` em Edge Function) e `analytics-diagnostic-runtime.test.mjs` (expectativa de `runnerMessage(error)` no diagnóstico); ambas estão fora do escopo visual e não foram alteradas para preservar o congelamento de backend.
+- `npm run supabase:lint:db`: passou com warnings não bloqueantes preexistentes.
+
+## 27. Matriz inicial
+
+| Superfície | Problema V1 | Severidade | Correção V1.1 |
+|---|---|---:|---|
+| Visão Geral | título/KPI grandes e primeiro card dominante | P1 | escala limitada, contexto compacto, fundo neutro |
+| Comercial | frame mais pesado que Suporte | P2 | frame/KPI compartilhados |
+| Customer Success | risco de leitura de catálogo | P0 fora do escopo | mantida indisponibilidade, sem métrica nova |
+| Suporte | densidade dependente de regras globais | P2 | tokens compartilhados |
+| Financeiro | fonte em bloco redundante | P1 | metadata compacta no cabeçalho operacional |
+| Integrações | cards altos | P2 | regras compactas globais |
+| Fontes | ações preservadas | P2 | sem alteração de contrato |
+| Histórico | timeline e repetição de ciclo | P1 | grupos compactos, sem linha decorativa |
+| UI-05 bloqueante | overlay sem ciclo real no QA | P1 | motion auditado no loading real; sync não acionado |
+| UI-05 não bloqueante | dependente de snapshot válido | P2 | contrato preservado |
+| UI-05 erro | sem nova chamada autorizada | P2 | não executado externamente |
+| UI-05 reduced motion | precisa desligar animação | P1 | captura e computed style sem animação |
+
+## 28. Findings
+
+O finding visual principal foi confirmado no baseline: escala excessiva e composição espaçada em desktop. Findings de dados, denominadores e sincronismo foram deliberadamente excluídos deste lote.
+
+## 29. Correções
+
+Delta final: seis áreas de código foram cobertas: CSS visual, overview, Financeiro, histórico, formulários de integração e UI-05.
+
+Implementadas 4 áreas de código: CSS visual, overview, finance metadata e UI-05 copy/history. Não houve alteração em migrations, RPCs, views, read models, secrets, handlers de sincronização ou permissões.
+
+## 30. QA final
+
+Delta final: preview empacotado 80/80, 0 falhas de rota, 0 HTTP >=400, 0 overflow, 0 login detectado, 0 console errors e 0 request failures na coleta final.
+
+Matriz final atual: 80/80 capturas no HEAD `bcebf1c`, em 1920x1080, 1440x900, 1024x768, 768x1024 e 390x844, nos temas claro e escuro; 0 falhas de carregamento; 0 HTTP ≥400; 0 overflow horizontal/vertical; 0 console errors; 0 request failures. Os títulos observados foram 32px, 28px e 24px conforme viewport, e os KPIs ficaram dentro do limite de 40px.
+
+## 31. Evidência de motion
+
+Em `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\ui05-final` foram capturados 32 estados estáticos (8 estados x 2 temas x 2 viewports), 32 frames de movimento nos estados ativos e 2 capturas reduced-motion. O manifesto registra `aria-busy=true` durante estados ativos, `aria-busy=false` em falha/timeout/abandono, overflow zero e `animationName: none` com reduced motion. O harness temporário foi removido antes do build final.
+
+Em `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\motion` foram capturados frames reais do loading do Dashboard em 0/250/500/750ms. O computed style registrou `genius-mascot-float`, `genius-mascot-magic`, `genius-mascot-arm-magic` e sparkles. Em reduced motion, nenhuma animação permaneceu. O overlay de ciclo ativo não foi acionado porque isso iniciaria sincronização externa.
+
+## 32. Screenshots
+
+- Baseline: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\baseline-v1` — 80 PNGs e manifesto.
+- Final: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\final-v1-1` — 80 PNGs e manifesto.
+- Preview final: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\preview-final-2` — 80 PNGs e manifesto.
+- Preview final atual: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\preview-final-3` — 80 PNGs e manifesto, HEAD `f055723`.
+- Matriz final no HEAD atual: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\final-head-bcebf1c` — 80 PNGs e manifesto válido, 0 falhas após rechecagem isolada de Histórico 1920x1080 claro.
+- Zoom: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\zoom` — 16 PNGs, oito superfícies em 125% e 200%, sem overflow horizontal.
+- Motion: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\motion`.
+- UI-05: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\ui05-final` — manifesto, 32 estados estáticos, 32 frames de movimento e 2 reduced-motion.
+- Pacote atualizado para revisão: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05.zip`, 31.931.121 bytes, SHA-256 `46BFE028E99C297D75907B0CFA1311771814BACFABA7EC853EFFDDF9FE9F05BF`.
+- Pacote final atualizado: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v2.zip`, 40.895.876 bytes, SHA-256 `054641874E4E0878A1F56A4574B1202157434F73207450DC8BA6B18512CDAABC`.
+- Pacote final desta revisão: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v3.zip`, 40.897.450 bytes, SHA-256 `68B48373D3AA4A785CA40FD38742B03DF628B5150BE02062DFE85A2D965DE78B`.
+- Pacote final após a correção do status: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v4.zip`, 40.897.554 bytes, SHA-256 `979B514BF2901473A447242A32A8FBB9BCA4EEC623B913445D6D8A47EE044986`.
+- Pacote final com a matriz ampliada: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v5.zip`, 40.897.769 bytes, SHA-256 `AC19DEC944B2C51F5673BB33FF4AD0C20B6E555258B4132D562ED11EC3BFA373`.
+- Pacote final com o handoff documental alinhado: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v6.zip`, 40.897.866 bytes, SHA-256 `4D95B60E89BBF222F6CF07DF2CE75899869E9EE167AE5C8BF9E5931E5E7309B3`.
+- Pacote final da matriz no HEAD `bcebf1c`: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence-ui05-v7.zip`, 52.368.340 bytes, SHA-256 `DAA02849C9C0AEAD7E6A5FC4A2F24CEEA9E157FC6091C43432D4A15B444A0BD4`, 532 arquivos.
+- Pacote para revisão: `C:\Projetos\GSO-artifacts\dashboard-visual-density-v1-1-20260803\dashboard-visual-density-v1-1-evidence.zip`, 16.266.594 bytes, SHA-256 `2B037C236CADBCB8FB9F86E5B282612EEE567F37C951AE8E8ECA0DC147E6935B`.
+
+## 33. Arquivos
+
+Alterados no código: `apps/web/src/index.css`, `apps/web/src/features/analytics/AnalyticsCeoPage.tsx`, `apps/web/src/features/analytics/AnalyticsFinancePage.tsx`, `apps/web/src/features/analytics/analytics-ui.tsx`, `apps/web/src/features/settings/SyncHistorySettingsPage.tsx`, `apps/web/src/features/settings/SettingsIntegrationsPanel.tsx`, `apps/web/src/components/GeniusSyncOverlay.tsx`. Documentação: este relatório, `docs/plan.md`, `docs/PROJECT_STATE.md` e `docs/DOCUMENTATION_LEDGER.md`.
+
+## 34. Código removido
+
+Removidos: status duplicado no título da Visão Geral, eyebrow duplicado, preenchimento azul dominante do primeiro KPI, linha decorativa da timeline e texto repetitivo “Ciclo de atualização”. Nenhum código de integração ou fonte de dados foi removido.
+
+## 35. Commits
+
+- `e8f5380 refactor(ui): reduzir densidade visual do dashboard` — código e CSS.
+- `6527c75 docs(ui): registrar densidade e QA do dashboard` — relatório e registros canônicos.
+- `0ed6f61 docs(ui): fechar relatório do lote visual` — HEAD/commits finais.
+- `5f2186d docs(ui): atualizar contagem final de testes` — validação ampla corrigida.
+- `fff25ff refactor(ui): compactar hierarquia e estados visuais` — ajustes finais de overview, Financeiro, histórico, integrações e loading.
+- `dd26d09 docs(ui): fechar evidências do lote de densidade` — documentação, matriz final e limites.
+- `8dfed64 docs(ui): registrar commits e divergência finais` — fechamento do inventário Git.
+- `c0d1672 refactor(ui): fechar estados visuais do gênio` — estados permanentes de falha, timeout e abandono do UI-05.
+- `6446dfc docs(ui): registrar QA final do UI-05` — manifesto, reduced-motion e pacote atualizado.
+- `ee71719 docs(ui): fixar estado final do lote` — alinhamento do relatório ao fechamento documental.
+- `ff107bc fix(ui): alinhar badge ao status canônico` — consumo direto do status normalizado.
+- `867de49 docs(ui): atualizar pacote final de evidências` — pacote pós-correção.
+- `220399f docs(ui): registrar matriz ampliada de testes` — resultados Analytics + Settings.
+- `bcebf1c docs(ui): alinhar handoff de validação` — plano, ledger e limitações atuais.
+
+## 36. Git final
+
+Branch: `codex/dashboard-visual-density-v1-1-20260803`. O handoff final deve confirmar `git rev-parse --short HEAD` e `git rev-list --left-right --count origin/main...HEAD`; worktree limpo após o fechamento documental.
+
+## 37. Limitações
+
+Não foi executada sincronização HubSpot/OMIE, não foram usadas credenciais externas, não foi feito deploy/push e não foi validado o overlay com um ciclo externo real. A suíte ampliada tem duas falhas fora do delta, em contratos de Edge Functions/diagnóstico.
+
+## 38. Backlog residual
+
+1. Autorizar e executar uma sincronização real read-only controlada para validar o fluxo completo e o overlay UI-05.
+2. Resolver as três falhas de contratos amplos em lote técnico separado.
+3. Validar denominador de Customer Success e documentação de origem dos dados.
+4. Aprovar visualmente V1.1 antes de propagar ajustes adicionais a outras superfícies.
+
+## 39. Decisões pendentes
+
+- Aprovação visual do Product Owner para o novo limite tipográfico e composição compacta.
+- Autorização explícita para sincronização externa read-only, se o QA de UI-05 precisar do ciclo real.
+- Decisão de produto sobre o denominador de Customer Success permanece fora deste lote.

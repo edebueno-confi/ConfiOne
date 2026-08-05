@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { MinimalState } from '../../components/minimal-states';
-import { getFinanceSnapshot, getFinanceSourceStatus, getFinanceUnmatchedClients, type FinanceUnmatchedClient } from './analytics-api';
-import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, KpiCard, MetricInfo } from './analytics-ui';
-import { formatCurrencyBRL, formatMonthLabel, formatPercent, type AnalyticsFilters, DEFAULT_ANALYTICS_FILTERS, type FinanceBreakdown, type FinanceSnapshot, type FinanceSourceStatus } from './analytics-model';
+import { getFinanceSnapshot, getFinanceSourceStatus, getFinanceUnmatchedClients, listOmieSyncRuns, type FinanceUnmatchedClient } from './analytics-api';
+import { AnalyticsLoadingState, ChartCard, KpiCard, MetricInfo } from './analytics-ui';
+import { analyticsSourceToBlockState, formatCurrencyBRL, formatMonthLabel, formatPercent, type AnalyticsFilters, DEFAULT_ANALYTICS_FILTERS, type AnalyticsPageProps, type FinanceBreakdown, type FinanceSnapshot, type FinanceSourceStatus } from './analytics-model';
 import { ANALYTICS_PERIOD_OPTIONS, resolveAnalyticsPeriod, type AnalyticsPeriodPreset } from './analytics-periods';
-import type { AnalyticsPageProps } from './analytics-model';
-import { AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
+import { AnalyticsExecutionMeta, AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
 
 type FinanceFilters = AnalyticsFilters & { clientQuery: string };
 
@@ -39,6 +38,14 @@ function agingTone(bucket: string): 'positive' | 'warning' | 'critical' | 'neutr
   return 'neutral';
 }
 
+function HistoryLink() {
+  return <Link to="/admin/settings?section=analytics&panel=history" className="rounded-lg border border-[color:var(--minimal-border-strong)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-text)]">Ver histórico</Link>;
+}
+
+function FinanceSourceLinks() {
+  return <div className="flex flex-wrap items-center gap-2"><Link to="/admin/settings?section=analytics&panel=omie" className="rounded-lg border border-[color:var(--minimal-border-strong)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-text)]">Gerenciar OMIE</Link><HistoryLink /></div>;
+}
+
 function BreakdownTable({ rows, valueHeader, labelHeader, humanize, toneFor }: { rows: FinanceBreakdown[]; valueHeader: string; labelHeader: string; humanize?: boolean; toneFor?: (key: string) => 'positive' | 'warning' | 'critical' | 'neutral' }) {
   const total = rows.reduce((sum, row) => sum + row.balance, 0);
   if (rows.length === 0) return <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Sem dados neste recorte.</p>;
@@ -57,12 +64,13 @@ function BreakdownTable({ rows, valueHeader, labelHeader, humanize, toneFor }: {
   </div>;
 }
 
-export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRetry }: AnalyticsPageProps) {
+export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourceStatus: unifiedSourceStatus }: AnalyticsPageProps) {
   const period = sharedPeriod ?? resolveAnalyticsPeriod('month');
   const [filters, setFilters] = useState<FinanceFilters>({ ...DEFAULT_ANALYTICS_FILTERS, ...period, clientQuery: '' });
   const [draft, setDraft] = useState(filters);
   const [state, setState] = useState<{ phase: 'loading' } | { phase: 'ready'; snapshot: FinanceSnapshot } | { phase: 'error'; message: string }>({ phase: 'loading' });
-  const [sourceStatus, setSourceStatus] = useState<FinanceSourceStatus | null>(null);
+  const [financeSourceStatus, setFinanceSourceStatus] = useState<FinanceSourceStatus | null>(null);
+  const [latestOmieRun, setLatestOmieRun] = useState<import('./analytics-model').OmieSyncRun | null>(null);
   const [preset, setPreset] = useState<AnalyticsPeriodPreset | ''>('month');
   const [unmatched, setUnmatched] = useState<FinanceUnmatchedClient[] | null>(null);
   const [loadingUnmatched, setLoadingUnmatched] = useState(false);
@@ -89,7 +97,8 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
     return () => { cancelled = true; };
   }, [filters]);
 
-  useEffect(() => { getFinanceSourceStatus().then(setSourceStatus).catch(() => setSourceStatus(null)); }, []);
+  useEffect(() => { getFinanceSourceStatus().then(setFinanceSourceStatus).catch(() => setFinanceSourceStatus(null)); }, []);
+  useEffect(() => { listOmieSyncRuns().then((runs) => setLatestOmieRun(runs[0] ?? null)).catch(() => setLatestOmieRun(null)); }, []);
 
   const applyPreset = (nextPreset: AnalyticsPeriodPreset) => {
     setPreset(nextPreset);
@@ -100,59 +109,63 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, onRet
   const apply = () => { if (draft.from && draft.to && draft.from > draft.to) return; setFilters(draft); onSharedPeriodChange?.({ from: draft.from, to: draft.to }); };
 
   if (state.phase === 'loading') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber"><AnalyticsLoadingState title="Carregando financeiro" description="O Gênio está consultando as Contas a Receber do OMIE." /></AnalyticsHdDomainFrame>;
-  if (state.phase === 'error') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber"><MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores financeiros estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} /></AnalyticsHdDomainFrame>;
+  if (state.phase === 'error') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber"><MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores financeiros estão indisponíveis no momento. Consulte o Histórico para ver o motivo." actions={<HistoryLink />} /></AnalyticsHdDomainFrame>;
   const { snapshot } = state;
   const { kpis } = snapshot;
-  const dataState = snapshot.state;
-  if (dataState?.status === 'error' || dataState?.status === 'unavailable') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState tone="critical" title="Dados financeiros indisponíveis" description="A fonte financeira não respondeu. Tente novamente mais tarde." actions={<AnalyticsRetryAction onRetry={onRetry} />} /></AnalyticsHdDomainFrame>;
-  if (dataState?.status === 'not_configured') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState title="Fonte financeira não configurada" description="Configure a fonte OMIE ou o fallback aprovado para consultar estes indicadores." actions={<AnalyticsRetryAction onRetry={onRetry} />} /></AnalyticsHdDomainFrame>;
+  const dataState = unifiedSourceStatus ? analyticsSourceToBlockState(unifiedSourceStatus.omie) : snapshot.state;
   const sourceIsApi = snapshot.source === 'api';
+  const lastSuccessAt = unifiedSourceStatus?.omie.lastSuccessAt ?? snapshot.state?.lastSuccessfulSyncAt ?? null;
+  const sourceLabel = dataState?.status === 'failed' || dataState?.status === 'error'
+    ? lastSuccessAt ? `Últimos dados válidos em ${new Date(lastSuccessAt).toLocaleString('pt-BR')}` : 'Atualização não registrada'
+    : lastSuccessAt ? `Dados atualizados em ${new Date(lastSuccessAt).toLocaleString('pt-BR')}` : 'Atualização não registrada';
+  const financeSourceMeta = <div className="gso-finance-source-meta" aria-label={sourceLabel}>
+    <div className="flex flex-wrap items-center justify-start gap-x-2 gap-y-1">
+      <Link to="/admin/settings?section=analytics&panel=omie">Gerenciar OMIE</Link>
+    </div>
+    <AnalyticsExecutionMeta provider="OMIE" run={latestOmieRun} />
+    {!financeSourceStatus?.api.configured ? <p>Configure a credencial OMIE em Configurações → Integrações. O histórico fica em Configurações → Histórico.</p> : null}
+  </div>;
+  if ((dataState?.status === 'error' || dataState?.status === 'failed' || dataState?.status === 'unavailable' || dataState?.status === 'unavailable_source') && !dataState.lastSuccessfulSyncAt) return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState tone="critical" title="Dados financeiros ainda não disponíveis" description="A última atualização do OMIE não foi concluída. Consulte o Histórico para ver o motivo." actions={<HistoryLink />} /></AnalyticsHdDomainFrame>;
+  if (dataState?.status === 'not_configured') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState title="Fonte financeira não configurada" description="Configure a integração OMIE para consultar estes indicadores. Planilhas não são consideradas fonte financeira." actions={<FinanceSourceLinks />} /></AnalyticsHdDomainFrame>;
+  if (snapshot.source !== 'api') return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}><MinimalState tone="critical" title="Dados OMIE indisponíveis" description="O Financeiro publica somente dados de uma sincronização OMIE válida. A fonte disponível não é uma leitura OMIE confirmada; configure o OMIE e consulte o Histórico para acompanhar a execução." actions={<FinanceSourceLinks />} /></AnalyticsHdDomainFrame>;
   const controlClass = 'mt-1 block w-full rounded-lg border border-[color:var(--minimal-border-strong)] bg-transparent px-2 py-1.5 text-sm text-[color:var(--minimal-text)]';
 
-  return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState}>
-    <div className="gso-hd-domain-surface space-y-5">
-    {/* Toolbar de fonte e sincronização */}
-    <section className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-sm font-semibold text-[color:var(--minimal-text)]">Fonte financeira</h2>
-          {sourceIsApi
-            ? <Tag label="Fonte: API OMIE (ao vivo)" tone="positive" />
-            : snapshot.source === 'spreadsheet' ? <Tag label="Fonte: planilha (fallback)" tone="warning" /> : <Tag label="Sem fonte financeira" tone="critical" />}
-          {sourceStatus?.api.lastSyncAt ? <span className="text-xs text-[color:var(--minimal-text-tertiary)]">Atualizada em {new Date(sourceStatus.api.lastSyncAt).toLocaleString('pt-BR')}</span> : null}
-          <Link to="/admin/settings?section=analytics&panel=omie" className="text-xs font-medium text-[color:var(--minimal-action)] hover:underline">Gerenciar OMIE</Link>
-        </div>
-      </div>
-      {!sourceStatus?.api.configured ? <p className="mt-2 text-xs text-[color:var(--minimal-warning-text)]">Configure a credencial OMIE em Configurações → Integrações para ativar a fonte ao vivo. O histórico de importações fica na aba Logs.</p> : null}
-      {!sourceIsApi && snapshot.source === 'spreadsheet' ? <p className="mt-2 text-xs text-[color:var(--minimal-text-tertiary)]">Exibindo a planilha como fallback. Previsibilidade, aging por dias e cruzamento com CS ficam completos apenas com a API OMIE.</p> : null}
-    </section>
-
+  return <AnalyticsHdDomainFrame title="Financeiro" description="Recebíveis, aging e posição financeira atual." source="OMIE · Contas a Receber" state={dataState} headerAside={financeSourceMeta}>
+    <div className="gso-hd-domain-surface gso-pilot-finance space-y-5">
     {/* Filtros */}
     <section className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4">
-      <div className="grid gap-3 md:grid-cols-6">
+      <div className="grid gap-3 md:grid-cols-8">
         <label className="text-xs text-[color:var(--minimal-text-secondary)]">Período<select value={preset} onChange={(e) => applyPreset(e.target.value as AnalyticsPeriodPreset)} className={controlClass}><option value="">Personalizado</option>{ANALYTICS_PERIOD_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
         <label className="text-xs text-[color:var(--minimal-text-secondary)]">De<input type="date" value={draft.from} onChange={(e) => setDraft({ ...draft, from: e.target.value })} className={controlClass} /></label>
         <label className="text-xs text-[color:var(--minimal-text-secondary)]">Até<input type="date" value={draft.to} onChange={(e) => setDraft({ ...draft, to: e.target.value })} className={controlClass} /></label>
         <label className="text-xs text-[color:var(--minimal-text-secondary)]">Situação<select value={draft.stageId} onChange={(e) => setDraft({ ...draft, stageId: e.target.value })} className={controlClass}><option value="">Todas</option>{STATUS_OPTIONS.map((value) => <option key={value} value={value}>{titleCase(value)}</option>)}</select></label>
         <label className="text-xs text-[color:var(--minimal-text-secondary)]">Aging<select value={draft.priority} onChange={(e) => setDraft({ ...draft, priority: e.target.value })} className={controlClass}><option value="">Todos</option>{AGING_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
         <label className="text-xs text-[color:var(--minimal-text-secondary)]">Cliente<input value={draft.clientQuery} onChange={(e) => setDraft({ ...draft, clientQuery: e.target.value })} placeholder="Nome ou CNPJ" className={controlClass} /></label>
+        <div className="flex items-end gap-2 md:col-span-2"><button type="button" onClick={apply} className="h-9 rounded-lg bg-[color:var(--minimal-text)] px-3 text-sm font-medium text-[color:var(--minimal-surface)]">Aplicar</button><button type="button" onClick={() => { const next = { ...DEFAULT_ANALYTICS_FILTERS, ...resolveAnalyticsPeriod('month'), clientQuery: '' }; setPreset('month'); setDraft(next); setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} className="h-9 rounded-lg border border-[color:var(--minimal-border-strong)] px-3 text-sm text-[color:var(--minimal-text)]">Limpar</button></div>
       </div>
-      <div className="mt-3 flex gap-2"><button type="button" onClick={apply} className="rounded-lg bg-[color:var(--minimal-text)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-surface)]">Aplicar</button><button type="button" onClick={() => { const next = { ...DEFAULT_ANALYTICS_FILTERS, ...resolveAnalyticsPeriod('month'), clientQuery: '' }; setPreset('month'); setDraft(next); setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} className="rounded-lg border border-[color:var(--minimal-border-strong)] px-3 py-1.5 text-sm text-[color:var(--minimal-text)]">Limpar</button></div>
     </section>
 
     {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado financeiro" description="A fonte respondeu, mas não encontrou registros para este recorte." /> : <>
-      {/* KPIs coloridos: conduzem o olho ao que importa */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {/* KPIs agrupados por leitura operacional */}
+      <div className="gso-finance-kpi-groups">
+      <section className="gso-finance-kpi-group" aria-labelledby="finance-position-heading">
+      <h3 id="finance-position-heading">Posição e risco</h3>
+      <div className="gso-pilot-kpi-grid grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard label="Saldo em aberto" value={formatCurrencyBRL(kpis.openBalance)} hint={`${kpis.openTitles.toLocaleString('pt-BR')} títulos a receber`} />
         <KpiCard label="Vencido" value={formatCurrencyBRL(kpis.overdueBalance)} hint={`${formatPercent(kpis.overdueRate)} da carteira · ${kpis.overdueTitles.toLocaleString('pt-BR')} títulos`} tone="critical" />
         <KpiCard label="A vencer em 30 dias" value={formatCurrencyBRL(kpis.due30)} hint="Previsão de entrada no mês" tone="warning" />
         <KpiCard label="Atraso médio" value={`${kpis.avgDaysOverdue.toLocaleString('pt-BR')} dias`} hint="Média ponderada dos vencidos" tone={kpis.avgDaysOverdue > 60 ? 'critical' : 'warning'} />
       </div>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      </section>
+      <section className="gso-finance-kpi-group" aria-labelledby="finance-period-heading">
+      <h3 id="finance-period-heading">Movimentação e previsão</h3>
+      <div className="gso-pilot-kpi-grid grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard label="Recebido no período" value={formatCurrencyBRL(kpis.receivedAmount)} hint={`${formatPercent(kpis.receivedRate)} do valor faturado`} />
         <KpiCard label="A vencer em 60 dias" value={formatCurrencyBRL(kpis.due60)} hint="Acumulado até 60 dias" />
         <KpiCard label="A vencer em 90 dias" value={formatCurrencyBRL(kpis.due90)} hint="Acumulado até 90 dias" />
         <KpiCard label="Faturado (período)" value={formatCurrencyBRL(kpis.netAmount)} hint={`${kpis.totalTitles.toLocaleString('pt-BR')} títulos no recorte`} />
+      </div>
+      </section>
       </div>
 
       {/* Previsibilidade + Aging por faixa */}

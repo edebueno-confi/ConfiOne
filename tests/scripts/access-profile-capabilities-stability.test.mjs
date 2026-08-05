@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
 import { test } from 'node:test';
 import { loadQaEnv, readLocalSupabaseStatus } from '../../scripts/local-qa/assert-local-supabase.mjs';
 import { readQaPassword } from '../../scripts/local-qa/credentials.mjs';
@@ -32,7 +31,6 @@ async function login() {
 
 test('read models de Access permanecem estaveis em consultas repetidas', async () => {
   assert.ok(anonKey, 'VITE_SUPABASE_ANON_KEY ausente para o teste local');
-  execFileSync('npx.cmd', ['supabase@latest', 'db', 'query', '--local', '--file', '.tmp/access-repeat.sql'], { stdio: 'pipe', encoding: 'utf8', shell: true });
 
   const accessToken = await login();
   for (let index = 0; index < 100; index += 1) {

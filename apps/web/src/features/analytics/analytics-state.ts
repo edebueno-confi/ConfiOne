@@ -24,9 +24,9 @@ export type AnalyticsStateInput = {
 
 export function classifyAnalyticsState(input: AnalyticsStateInput): AnalyticsDataStatus {
   if (input.syncing) return 'syncing';
-  if (input.error) return 'error';
+  if (input.error) return 'failed';
   if (input.unavailable) return 'unavailable';
-  if (input.sourceConfigured === false) return 'not_configured';
+  if (input.sourceConfigured === false) return 'unavailable';
   if (input.partial) return 'partial';
   if (input.zeroReal) return 'zero';
   if (input.lastSuccessfulSyncAt && input.staleAfterMinutes != null) {
@@ -34,6 +34,7 @@ export function classifyAnalyticsState(input: AnalyticsStateInput): AnalyticsDat
     const last = Date.parse(input.lastSuccessfulSyncAt);
     if (Number.isFinite(now) && Number.isFinite(last) && now - last > input.staleAfterMinutes * 60_000) return 'stale';
   }
+  if (!input.lastSuccessfulSyncAt) return 'never_synced';
   if (input.queried && input.received === 0) return 'empty';
   return 'fresh';
 }

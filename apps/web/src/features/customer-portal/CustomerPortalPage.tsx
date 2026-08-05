@@ -16,7 +16,7 @@ import {
   useNavigate,
   useParams,
   useSearchParams,
-} from 'react-router-dom';
+} from 'react-router';
 import {
   ContractUnavailableState,
   ErrorState,
@@ -129,16 +129,16 @@ function buildPortalKnowledgePath(slug: string) {
 }
 
 function sanitizeCustomerFacingText(value: string | null | undefined) {
-  return (value ?? 'IndisponÃ­vel')
+  return (value ?? 'Indisponível')
     .replace(/\bfixture local sanitizada\b/gi, 'Registro operacional')
     .replace(/\bfixture\b/gi, 'registro operacional')
     .replace(/\btenant\b/gi, 'cliente')
-    .replace(/\bbackend\b/gi, 'operaÃ§Ã£o')
-    .replace(/\bprovider\b/gi, 'serviÃ§o externo')
+    .replace(/\bbackend\b/gi, 'operação')
+    .replace(/\bprovider\b/gi, 'serviço externo')
     .replace(/\bcontratos?\b/gi, 'acordos operacionais')
     .replace(/\bRPCs?\b/g, 'rotina operacional')
     .replace(/\bRLS\b/g, 'regra de acesso')
-    .replace(/\bpayload\b/gi, 'conteÃºdo tÃ©cnico');
+    .replace(/\bpayload\b/gi, 'conteúdo técnico');
 }
 
 function buildPortalHelpSearchPath(params: {
@@ -568,7 +568,6 @@ export function CustomerPortalGate({ children }: { children: ReactNode }) {
         <StateFrame
           title="Sessão expirada"
           description="Entre novamente para continuar no portal cliente."
-          eyebrow="portal"
           tone="critical"
           actions={
             <>
@@ -662,7 +661,6 @@ export function CustomerPortalLayout() {
               : staleMessage ??
                 'O contexto do portal mudou e a conta anterior não está mais disponível para esta sessão.'
           }
-          eyebrow="portal"
           tone="default"
           actions={
             <AppButton disabled={isRefreshing} onClick={() => void refresh()}>
@@ -702,7 +700,6 @@ export function CustomerPortalLayout() {
             phaseMessage ??
             'Seu acesso ao portal foi revogado ou deixou de atender os requisitos desta conta.'
           }
-          eyebrow="portal"
           tone="critical"
         />
       </div>
@@ -718,7 +715,6 @@ export function CustomerPortalLayout() {
             phaseMessage ??
             'Nenhuma conta habilitada no portal está disponível para esta sessão agora.'
           }
-          eyebrow="portal"
           tone="default"
           actions={
             <AppButton disabled={isRefreshing} onClick={() => void refresh()}>

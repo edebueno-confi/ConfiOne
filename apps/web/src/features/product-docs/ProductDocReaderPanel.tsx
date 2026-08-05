@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { EmptyState } from '../../components/states';
 import { InlineNotice, StatusPill, cx } from '../../components/ui';
 import { formatDateTime } from '../../app/format';

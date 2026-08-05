@@ -13,9 +13,10 @@ interface Props {
   pipelines: AnalyticsPipelineOption[];
   excludedPipelineIds: string[];
   onChange: (next: string[]) => void;
+  inline?: boolean;
 }
 
-export function AnalyticsPipelineCombobox({ storageKey, pipelines, excludedPipelineIds, onChange }: Props) {
+export function AnalyticsPipelineCombobox({ storageKey, pipelines, excludedPipelineIds, onChange, inline = false }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const rootRef = useRef<HTMLDivElement>(null);
@@ -42,9 +43,9 @@ export function AnalyticsPipelineCombobox({ storageKey, pipelines, excludedPipel
   const toggle = (id: string) => onChange(excludedPipelineIds.includes(id) ? excludedPipelineIds.filter((value) => value !== id) : [...excludedPipelineIds, id]);
   const label = allIncluded ? 'Todos os pipelines' : selected.length === 1 ? selected[0].label : `${selected.length} pipelines selecionados`;
 
-  return <div ref={rootRef} className="relative min-w-0" data-testid="analytics-pipeline-combobox">
-    <label className="mb-1 block text-xs font-medium text-[color:var(--minimal-text-secondary)]" htmlFor={`${storageKey}-trigger`}>Pipelines</label>
-    <button id={`${storageKey}-trigger`} type="button" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((value) => !value)} className="flex min-h-10 w-full items-center justify-between gap-3 rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-3 py-2 text-left text-sm text-[color:var(--minimal-text)] hover:border-[color:var(--minimal-border-hover)] focus:outline-none focus:ring-2 focus:ring-[color:var(--minimal-action)]">
+  return <div ref={rootRef} className={inline ? 'relative min-w-[13rem] flex-1 basis-48' : 'relative min-w-0'} data-testid="analytics-pipeline-combobox">
+    <label className={`${inline ? 'mb-1.5' : 'mb-1'} block text-xs font-medium text-[color:var(--minimal-text-secondary)]`} htmlFor={`${storageKey}-trigger`}>Pipelines</label>
+    <button id={`${storageKey}-trigger`} type="button" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((value) => !value)} className={`flex ${inline ? 'h-9' : 'min-h-10'} w-full items-center justify-between gap-3 rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-3 py-2 text-left text-sm text-[color:var(--minimal-text)] hover:border-[color:var(--minimal-border-hover)] focus:outline-none focus:ring-2 focus:ring-[color:var(--minimal-action)]`}>
       <span className="min-w-0 truncate">{label}</span><span aria-hidden="true" className="text-[color:var(--minimal-text-tertiary)]">⌄</span>
     </button>
     {open ? <div role="listbox" aria-label="Pipelines do Dashboard" className="absolute z-30 mt-2 max-h-80 w-full min-w-[16rem] overflow-auto rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] p-2 shadow-lg">

@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams } from 'react-router';
 import {
   formatDateTime,
   humanizeToken,
@@ -22,18 +22,13 @@ import { Avatar } from '../../components/Avatar';
 import { FilterTabs } from '../../components/FilterTabs';
 import {
   AppButton,
-  ContextSubsidebar,
-  ContextSubsidebarSection,
   GhostButton,
   InlineNotice,
-  PageHeader,
   Panel,
   SelectInput,
   StatusPill,
-  SummaryStrip,
   TextInput,
   TextareaInput,
-  WorkspaceSplit,
   cx,
 } from '../../components/ui';
 import { useAuthContext } from '../auth/auth-context';
@@ -85,13 +80,10 @@ import {
   updateTicketStatus,
 } from './support-api';
 import {
-  ENGINEERING_WORK_ITEM_TYPES,
-  INTERNAL_ACTION_SUPPORT_TYPES,
   TICKET_PRIORITIES,
   TICKET_SEVERITIES,
   TICKET_SOURCES,
   TICKET_STATUSES,
-  type InternalActionStatus,
   type InternalActionSupportType,
   type SupportInternalActionTargetArea,
   type SupportInternalActionDetail,
@@ -101,8 +93,6 @@ import {
   type SupportCustomerAccountAlert,
   type SupportCustomerAccountContext,
   type SupportCustomerAccountCustomization,
-  type SupportCustomerAccountFeature,
-  type SupportCustomerAccountIntegration,
   type SupportCustomerProductContext,
   type SupportCustomer360,
   type SupportCustomer360Contact,
@@ -131,8 +121,6 @@ import {
   type Uuid,
 } from '../../contracts/support-contracts';
 import {
-  QueueTicketItem,
-  EvidenceFileChip,
   OperationalField,
   OperationalFooterActions,
   OperationalFormGrid,
@@ -140,17 +128,13 @@ import {
   SupportConversationMessage,
   SupportIconActionButton,
   SupportInternalNote,
-  SupportPrimaryActionButton,
   SupportSearchInput,
-  SupportSecondaryActionButton,
   SupportSystemEvent,
   SupportWorkspaceGrid,
 } from './components/SupportWorkspacePrimitives';
 import { SupportTicketComposerSection } from './components/SupportTicketComposerSection';
 import {
   SupportClassificationDrawerPanel,
-  SupportDrawerField,
-  SupportDrawerPill,
   SupportEvidenceDrawerPanel,
   SupportKnowledgeDrawerPanel,
   SupportRelatedDrawerPanel,
@@ -166,15 +150,11 @@ import { SupportTicketQueue } from './components/SupportTicketQueue';
 import { SupportTicketRightRail } from './components/SupportTicketRightRail';
 import { SupportTicketWorkspaceHeader } from './components/SupportTicketWorkspaceHeader';
 import {
-  SupportHelpCenterPanel,
-  OperationalQueueBadge,
-  queueMetricIcon,
   SupportSummaryStrip,
 } from './components/SupportWorkspaceAuxiliaryPanels';
 import { SupportQueueLoadingScaffold, SupportTicketLoadingScaffold } from './components/SupportWorkspaceStates';
 import { CompactSupportPill, SupportSurfaceIcon } from './components/SupportWorkspaceVisuals';
 import {
-  formatSlaDueLabel,
   formatSupportShortTime,
   humanizeKnowledgeLinkType,
   humanizeKnowledgeStatus,
@@ -186,7 +166,6 @@ import {
   readCustomerDocumentLabel,
   supportTicketCode,
   ticketTenantLabel,
-  toneForKnowledgeLinkType,
   toneForTicketStatus,
   compactTicketStatusLabel,
 } from './lib/SupportWorkspacePresentation';
@@ -432,11 +411,11 @@ function attachmentKind(attachment: SupportTicketAttachment) {
 function sanitizeSupportVisibleText(value: string | null | undefined) {
   const sanitized = (value ?? 'Indisponível')
     .replace(/\bpayload\b/gi, 'conteúdo técnico')
-    .replace(/\bbackend\b/gi, 'operaÃ§Ã£o')
-    .replace(/\bprovider\b/gi, 'serviÃ§o externo')
+    .replace(/\bbackend\b/gi, 'operação')
+    .replace(/\bprovider\b/gi, 'serviço externo')
     .replace(/\bcontratos?\b/gi, 'acordos operacionais')
     .replace(/\btenant\b/gi, 'cliente')
-    .replace(/\bfixture\b/gi, 'registro de validaÃ§Ã£o')
+    .replace(/\bfixture\b/gi, 'registro de validação')
     .replace(/\bRPCs?\b/g, 'processo operacional')
     .replace(/\bRLS\b/g, 'regra de acesso')
     .replace(/\bSupabase\b/g, 'plataforma')

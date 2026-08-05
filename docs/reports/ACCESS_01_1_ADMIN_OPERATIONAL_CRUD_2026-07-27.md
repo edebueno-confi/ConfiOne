@@ -8,7 +8,9 @@ Decisão: a fundação existente foi preservada e `/admin/access` passou a usar 
 
 ## Preservação
 
-Diretório: `C:\Projetos\GSO-integrations-04`
+Diretório no registro histórico: `C:\Projetos\GSO-integrations-04`.
+Essa cópia foi enviada à Lixeira em 2026-08-01 durante a volta do trabalho para
+`C:\Projetos\GSO-old`; o conteúdo Git preservável foi mantido em refs de arquivo.
 
 Branch: `codex/access-01-internal-control-plane`
 

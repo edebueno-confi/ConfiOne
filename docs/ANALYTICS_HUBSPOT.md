@@ -1,5 +1,10 @@
 # Analytics / Dashboard Gerencial (integração HubSpot)
 
+> **Estado documental:** este arquivo preserva decisões e evidências históricas.
+> Para o contrato vigente de 2026-08-02, HubSpot e OMIE são as únicas fontes
+> publicadas; planilha não é fallback, contingência ou fonte ativa. Consulte
+> `docs/PROJECT_STATE.md` e `docs/reports/2026-08-02_dashboard-delta-final.md`.
+
 Módulo de dashboards gerenciais multi-fonte. **Comercial (Aftersale)** usa Deals,
 **CS/Suporte** usa Tickets e **Financeiro** usa o read model do OMIE com fallback
 de planilha. A arquitetura é por adapter de domínio: adicionar uma nova área

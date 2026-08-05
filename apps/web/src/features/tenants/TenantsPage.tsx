@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router';
 import { formatDateTime } from '../../app/format';
 import { sanitizeOperationalVisibleText } from '../../lib/operational-copy';
 import {
@@ -29,36 +29,6 @@ import {
   TextareaInput,
   cx,
 } from '../../components/ui';
-import type {
-  AdminAuditFeedRow,
-  AdminCustomerAccountAlert,
-  AdminCustomerAccountCustomization,
-  AdminCustomerAccountFeature,
-  AdminCustomerAccountIntegration,
-  AdminCustomerAccountProfileDetail,
-  AdminCommercialProduct,
-  AdminCommercialProductDetail,
-  AdminCustomerProductSubscription,
-  AdminCustomerProductSubscriptionDetail,
-  AdminTenantContactRecordRow,
-  AdminTenantContactViewRow,
-  AdminTenantDetailRow,
-  AdminTenantMembershipRow,
-  AdminTenantsListItemRow,
-  CustomerAlertSeverity,
-  CustomerCustomizationRiskLevel,
-  CustomerIntegrationEnvironment,
-  CustomerIntegrationStatus,
-  CustomerIntegrationType,
-  CustomerOperationalStatus,
-  CustomerProductFeatureEntitlementSource,
-  CustomerProductFeatureEntitlementStatus,
-  CustomerProductInternalOwnerRole,
-  CustomerProductInternalOwnerStatus,
-  CustomerProductLine,
-  CustomerProductSubscriptionStatus,
-  TenantStatus,
-} from '../../contracts/admin-contracts';
 import {
   CUSTOMER_ALERT_SEVERITIES,
   CUSTOMER_CUSTOMIZATION_RISK_LEVELS,
@@ -68,6 +38,34 @@ import {
   CUSTOMER_OPERATIONAL_STATUSES,
   CUSTOMER_PRODUCT_LINES,
   TENANT_STATUSES,
+  type AdminAuditFeedRow,
+  type AdminCustomerAccountAlert,
+  type AdminCustomerAccountCustomization,
+  type AdminCustomerAccountFeature,
+  type AdminCustomerAccountIntegration,
+  type AdminCustomerAccountProfileDetail,
+  type AdminCommercialProduct,
+  type AdminCommercialProductDetail,
+  type AdminCustomerProductSubscription,
+  type AdminCustomerProductSubscriptionDetail,
+  type AdminTenantContactRecordRow,
+  type AdminTenantContactViewRow,
+  type AdminTenantDetailRow,
+  type AdminTenantMembershipRow,
+  type AdminTenantsListItemRow,
+  type CustomerAlertSeverity,
+  type CustomerCustomizationRiskLevel,
+  type CustomerIntegrationEnvironment,
+  type CustomerIntegrationStatus,
+  type CustomerIntegrationType,
+  type CustomerOperationalStatus,
+  type CustomerProductFeatureEntitlementSource,
+  type CustomerProductFeatureEntitlementStatus,
+  type CustomerProductInternalOwnerRole,
+  type CustomerProductInternalOwnerStatus,
+  type CustomerProductLine,
+  type CustomerProductSubscriptionStatus,
+  type TenantStatus,
 } from '../../contracts/admin-contracts';
 import { useAuthContext } from '../auth/auth-context';
 import {

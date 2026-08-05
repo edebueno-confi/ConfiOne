@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Genius Support OS — Dashboard Gerencial (mockup)</title>
+<style>
+:root{
+  --brand-500:#4f6ef7; --brand-600:#3b5bdb; --brand-weak:#eef2ff; --accent:#e63aa8; --accent-weak:#fdeaf5;
+  --surface:#ffffff; --surface-2:#f6f8fb; --surface-3:#eef1f6; --border:#e5e9f0; --border-strong:#d3d9e3;
+  --text:#0f172a; --text-2:#475569; --text-3:#94a3b8;
+  --success:#16a34a; --success-weak:#dcfce7; --warning:#b45309; --warning-weak:#fef3c7; --danger:#dc2626; --danger-weak:#fee2e2;
+  --shadow-sm:0 1px 2px rgba(15,23,42,.06); --shadow-md:0 10px 26px -10px rgba(15,23,42,.16);
+  --radius:12px; --radius-lg:16px;
+}
+[data-theme="dark"]{
+  --brand-500:#5b7bff; --brand-600:#6f8cff; --brand-weak:#16264a; --accent:#f062bd; --accent-weak:#351028;
+  --surface:#0b1120; --surface-2:#111a2e; --surface-3:#182338; --border:#1f2b45; --border-strong:#2c3a5a;
+  --text:#e7ecf5; --text-2:#9fb0c9; --text-3:#64748b;
+  --success:#22c55e; --success-weak:#0f2a1c; --warning:#f59e0b; --warning-weak:#2a1f08; --danger:#f87171; --danger-weak:#2a1416;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.5); --shadow-md:0 12px 30px -10px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--surface-2);color:var(--text);font-size:14px;line-height:1.5}
+.tnum{font-variant-numeric:tabular-nums}
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+.side{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:14px 12px;gap:6px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;padding:6px 8px 12px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.brand b{font-weight:800;letter-spacing:-.02em}
+.brand small{color:var(--text-3);font-size:11px;display:block;font-weight:500}
+.navgroup{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin:12px 8px 4px;font-weight:600}
+.navitem{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;color:var(--text-2);text-decoration:none;font-weight:500;position:relative}
+.navitem:hover{background:var(--surface-2);color:var(--text)}
+.navitem.active{background:var(--brand-weak);color:var(--brand-600)}
+.navitem.active::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--brand-500)}
+.dot{width:18px;height:18px;border-radius:5px;background:var(--surface-3);display:inline-block;flex:0 0 auto}
+.side-footer{margin-top:auto;border-top:1px solid var(--border);padding-top:10px;display:flex;align-items:center;gap:10px}
+.avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--brand-500),var(--accent));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex:0 0 auto}
+.main{padding:22px 26px 44px;max-width:1320px}
+.topbar{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:14px}
+.h1{font-size:22px;font-weight:700;letter-spacing:-.02em;margin:0}
+.sub{color:var(--text-2);font-size:13px;margin:3px 0 0}
+.cta{display:flex;gap:8px}
+.btn{height:38px;padding:0 14px;border-radius:var(--radius);font-weight:600;font-size:13px;border:1px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--brand-600);color:#fff}
+.btn-secondary{background:transparent;border-color:var(--border-strong);color:var(--text)}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0 6px}
+.seg{display:inline-flex;background:var(--surface-3);border-radius:10px;padding:3px}
+.seg button{border:0;background:transparent;color:var(--text-2);font-weight:600;font-size:12px;padding:7px 12px;border-radius:8px;cursor:pointer}
+.seg button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
+.tabs{display:inline-flex;gap:4px;background:var(--surface-3);border-radius:12px;padding:4px;margin:16px 0 4px}
+.tabs button{border:0;background:transparent;color:var(--text-2);font-weight:700;font-size:13px;padding:9px 16px;border-radius:9px;cursor:pointer;display:flex;align-items:center;gap:8px}
+.tabs button.on{background:var(--surface);color:var(--brand-600);box-shadow:var(--shadow-sm)}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px;border:1px solid var(--border-strong);color:var(--text-2)}
+.badge .live{width:7px;height:7px;border-radius:50%;background:var(--success)}
+.tag{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid}
+.tag.ok{color:var(--success);background:var(--success-weak);border-color:transparent}
+.tag.warn{color:var(--warning);background:var(--warning-weak);border-color:transparent}
+.tag.bad{color:var(--danger);background:var(--danger-weak);border-color:transparent}
+.tag.info{color:var(--brand-600);background:var(--brand-weak);border-color:transparent}
+.grid-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:12px}
+.grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm)}
+.kpi .val{font-size:28px;font-weight:700;letter-spacing:-.02em;line-height:1.05}
+.kpi .lab{display:flex;align-items:center;gap:6px;margin-top:8px;font-weight:600;color:var(--text-2)}
+.kpi .hint{margin-top:3px;font-size:12px;color:var(--text-3)}
+.kpi.bad{border-color:color-mix(in srgb,var(--danger) 40%,var(--border))}
+.kpi.bad .val{color:var(--danger)} .kpi.warn .val{color:var(--warning)} .kpi.ok .val{color:var(--success)}
+.delta{font-size:12px;font-weight:700;padding:1px 6px;border-radius:6px}
+.delta.up{color:var(--success);background:var(--success-weak)} .delta.down{color:var(--danger);background:var(--danger-weak)}
+.info{width:16px;height:16px;border-radius:50%;border:1px solid var(--border-strong);color:var(--text-3);font-size:10px;display:inline-flex;align-items:center;justify-content:center;cursor:help}
+h3.block{font-size:15px;font-weight:700;margin:0}
+p.blocksub{margin:3px 0 12px;color:var(--text-2);font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);font-weight:600;padding:8px 6px;border-bottom:1px solid var(--border)}
+td{padding:9px 6px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:0}
+.right{text-align:right}
+.bars{display:flex;align-items:flex-end;gap:12px;height:120px;padding-top:6px}
+.bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--text-3);font-size:11px}
+.bar .b{width:100%;border-radius:8px 8px 0 0;background:linear-gradient(180deg,var(--brand-500),var(--brand-600))}
+.ai{margin-top:14px;border-color:color-mix(in srgb,var(--accent) 45%,var(--border));background:linear-gradient(90deg,var(--accent-weak),transparent)}
+.ai .r{display:flex;align-items:center;gap:12px}
+.ai .t{font-weight:700;display:flex;align-items:center;gap:8px}
+.aitag{color:var(--accent);background:var(--accent-weak);border-color:transparent}
+.sectitle{margin-top:18px;display:flex;align-items:center;gap:8px}
+.themebtn{position:fixed;right:16px;bottom:16px;z-index:9;height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font-weight:600;cursor:pointer;box-shadow:var(--shadow-md)}
+.note{font-size:11px;color:var(--text-3);margin-top:14px}
+.pane{display:none} .pane.on{display:block}
+@media(max-width:1100px){.grid-kpi{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-2{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:860px){.app{grid-template-columns:1fr}.side{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f6ef7"/><stop offset="1" stop-color="#e63aa8"/></linearGradient></defs><circle cx="20" cy="16" r="11" fill="url(#g)"/><path d="M14 26 q6 8 12 0 l-2 8 h-8 z" fill="url(#g)"/><circle cx="16" cy="15" r="1.7" fill="#fff"/><circle cx="24" cy="15" r="1.7" fill="#fff"/></svg>
+      <div><b>Genius OS</b><small>Aftersale · Confi</small></div>
+    </div>
+    <div class="navgroup">Operação</div>
+    <a class="navitem"><span class="dot"></span>Atendimento</a>
+    <a class="navitem"><span class="dot"></span>Fila</a>
+    <a class="navitem"><span class="dot"></span>Clientes</a>
+    <div class="navgroup">Inteligência</div>
+    <a class="navitem active"><span class="dot"></span>Dashboard Gerencial</a>
+    <div class="navgroup">Administração</div>
+    <a class="navitem"><span class="dot"></span>Contas B2B</a>
+    <a class="navitem"><span class="dot"></span>Integrações</a>
+    <div class="side-footer"><span class="avatar">EO</span><div><div style="font-weight:600;font-size:13px">Eduardo</div><small style="color:var(--text-3)">Administrador</small></div></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div><h1 class="h1">Dashboard Gerencial</h1><p class="sub">Financeiro, comercial e suporte em uma sala de comando.</p></div>
+      <div class="cta"><button class="btn btn-secondary">Exportar</button><button class="btn btn-primary">Sincronizar</button></div>
+    </div>
+
+    <div class="controls">
+      <div class="seg"><button>Semana</button><button class="on">Mês</button><button>Trimestre</button><button>Ano</button></div>
+    </div>
+
+    <div class="tabs">
+      <button class="on" data-tab="fin">Financeiro · OMIE</button>
+      <button data-tab="com">Comercial · HubSpot</button>
+      <button data-tab="sup">Suporte & Chat</button>
+    </div>
+
+    <!-- ================= FINANCEIRO ================= -->
+    <section class="pane on" id="fin">
+      <div class="controls"><span class="badge"><span class="live"></span> Fonte: API OMIE ao vivo · há 6 min</span><span class="tag info">Reconciliação: 196/247 empresas por CNPJ</span></div>
+      <div class="grid-kpi">
+        <div class="card kpi"><div class="val tnum">R$ 750.554</div><div class="lab">Saldo em aberto <span class="info">i</span></div><div class="hint">943 títulos a receber</div></div>
+        <div class="card kpi bad"><div class="val tnum">R$ 368.300</div><div class="lab">Vencido <span class="delta down">▲ 4,2%</span></div><div class="hint">49,1% da carteira · 597 títulos</div></div>
+        <div class="card kpi warn"><div class="val tnum">R$ 312.268</div><div class="lab">A vencer em 30 dias</div><div class="hint">Entrada prevista no mês</div></div>
+        <div class="card kpi"><div class="val tnum">221 d</div><div class="lab">Atraso médio <span class="delta up">▼ 3 d</span></div><div class="hint">Média ponderada dos vencidos</div></div>
+      </div>
+      <div class="sectitle"><h3 class="block">Novos KPIs de gestão</h3><span class="tag info">além do básico</span></div>
+      <div class="grid-kpi">
+        <div class="card kpi warn"><div class="val tnum">58%</div><div class="lab">Concentração de risco</div><div class="hint">Top 5 clientes no saldo vencido</div></div>
+        <div class="card kpi ok"><div class="val tnum">84,8%</div><div class="lab">Cobertura CS <span class="delta up">▲ 6 p.p.</span></div><div class="hint">Saldo reconciliado com HubSpot</div></div>
+        <div class="card kpi bad"><div class="val tnum">R$ 111.635</div><div class="lab">Vencido em risco</div><div class="hint">Clientes em churn ou sem CSM</div></div>
+        <div class="card kpi"><div class="val tnum">127</div><div class="lab">Clientes inadimplentes</div><div class="hint">Com ≥1 título vencido</div></div>
+      </div>
+      <div class="card ai"><div class="r"><svg width="34" height="34" viewBox="0 0 40 40"><circle cx="20" cy="16" r="11" fill="url(#g)"/><path d="M14 26 q6 8 12 0 l-2 8 h-8 z" fill="url(#g)"/><circle cx="16" cy="15" r="1.7" fill="#fff"/><circle cx="24" cy="15" r="1.7" fill="#fff"/></svg><div><div class="t">Insight do Gênio <span class="tag aitag">IA</span></div><div style="color:var(--text-2);margin-top:2px">3 clientes concentram <b>41%</b> do vencido e estão <b>sem CSM</b> — priorize a cobrança dessas contas.</div></div></div></div>
+      <div class="grid-2">
+        <div class="card"><h3 class="block">Previsibilidade de recebíveis</h3><p class="blocksub">Entrada prevista por mês (títulos em aberto).</p>
+          <div class="bars"><div class="bar"><div class="b" style="height:92%"></div>jul<br><b class="tnum" style="color:var(--text)">188k</b></div><div class="bar"><div class="b" style="height:67%"></div>ago<br><b class="tnum" style="color:var(--text)">137k</b></div><div class="bar"><div class="b" style="height:20%"></div>set<br><b class="tnum" style="color:var(--text)">31k</b></div><div class="bar"><div class="b" style="height:16%"></div>out<br><b class="tnum" style="color:var(--text)">26k</b></div></div></div>
+        <div class="card"><h3 class="block">Inadimplência por faixa</h3><p class="blocksub">Saldo vencido por dias em atraso.</p>
+          <table><thead><tr><th>Faixa</th><th class="right">Títulos</th><th class="right">Saldo</th></tr></thead><tbody>
+          <tr><td><span class="tag warn">1-30 d</span></td><td class="right tnum">43</td><td class="right tnum">R$ 41.790</td></tr>
+          <tr><td><span class="tag warn">31-60 d</span></td><td class="right tnum">24</td><td class="right tnum">R$ 15.633</td></tr>
+          <tr><td><span class="tag warn">61-90 d</span></td><td class="right tnum">41</td><td class="right tnum">R$ 20.618</td></tr>
+          <tr><td><span class="tag bad">90+ d</span></td><td class="right tnum">489</td><td class="right tnum" style="font-weight:700">R$ 290.259</td></tr></tbody></table></div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><h3 class="block">Maiores devedores</h3><p class="blocksub">Maior saldo em aberto (OMIE).</p>
+          <table><thead><tr><th>Cliente</th><th>CNPJ</th><th class="right">Saldo</th></tr></thead><tbody>
+          <tr><td>Social S.A.</td><td class="tnum" style="color:var(--text-3)">28.511.223/0001-32</td><td class="right tnum">R$ 105.600</td></tr>
+          <tr><td>Infracommerce</td><td class="tnum" style="color:var(--text-3)">15.427.207/0001-14</td><td class="right tnum">R$ 76.500</td></tr>
+          <tr><td>Zinzane</td><td class="tnum" style="color:var(--text-3)">—</td><td class="right tnum">R$ 41.597</td></tr>
+          <tr><td>Chilli Beans</td><td class="tnum" style="color:var(--text-3)">—</td><td class="right tnum">R$ 20.072</td></tr></tbody></table></div>
+        <div class="card"><h3 class="block">Financeiro × CS (HubSpot)</h3><p class="blocksub">Carteira cruzada com o CRM por CNPJ.</p>
+          <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap"><span class="tag ok">Reconciliado: R$ 636.616</span><span class="tag warn">Sem cadastro: R$ 113.938</span></div>
+          <table><thead><tr><th>Status CS</th><th class="right">Saldo</th><th class="right">Vencido</th></tr></thead><tbody>
+          <tr><td>Cliente ativo</td><td class="right tnum">R$ 421.062</td><td class="right tnum" style="color:var(--danger)">R$ 196.960</td></tr>
+          <tr><td>Sem status CS</td><td class="right tnum">R$ 138.606</td><td class="right tnum" style="color:var(--danger)">R$ 111.188</td></tr>
+          <tr><td>Grupo econômico</td><td class="right tnum">R$ 76.500</td><td class="right tnum">R$ 0</td></tr>
+          <tr><td>Churn</td><td class="right tnum">R$ 447</td><td class="right tnum" style="color:var(--danger)">R$ 447</td></tr></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- ================= COMERCIAL ================= -->
+    <section class="pane" id="com">
+      <div class="controls"><span class="badge"><span class="live"></span> Fonte: HubSpot (deals) · há 12 min</span><span class="tag info">Pipeline: Vendas B2B</span></div>
+      <div class="grid-kpi">
+        <div class="card kpi ok"><div class="val tnum">R$ 214.900</div><div class="lab">Receita nova ganha <span class="delta up">▲ 18%</span></div><div class="hint">Deals fechados no mês (won)</div></div>
+        <div class="card kpi"><div class="val tnum">R$ 892.400</div><div class="lab">Pipeline aberto</div><div class="hint">63 deals em negociação</div></div>
+        <div class="card kpi warn"><div class="val tnum">27,5%</div><div class="lab">Taxa de conversão <span class="delta down">▼ 2 p.p.</span></div><div class="hint">Ganhos ÷ fechados no período</div></div>
+        <div class="card kpi"><div class="val tnum">38 d</div><div class="lab">Ciclo médio de vendas</div><div class="hint">Criação → fechamento</div></div>
+      </div>
+      <div class="sectitle"><h3 class="block">Novos KPIs de gestão</h3><span class="tag info">além do básico</span></div>
+      <div class="grid-kpi">
+        <div class="card kpi ok"><div class="val tnum">11</div><div class="lab">Deals ganhos</div><div class="hint">No período</div></div>
+        <div class="card kpi"><div class="val tnum">R$ 19.536</div><div class="lab">Ticket médio</div><div class="hint">Valor médio do deal ganho</div></div>
+        <div class="card kpi warn"><div class="val tnum">R$ 128.000</div><div class="lab">Em risco de perda</div><div class="hint">Deals parados > 30 d</div></div>
+        <div class="card kpi"><div class="val tnum">R$ 296.700</div><div class="lab">Previsão de fechamento</div><div class="hint">Ponderada pela etapa</div></div>
+      </div>
+      <div class="card ai"><div class="r"><svg width="34" height="34" viewBox="0 0 40 40"><circle cx="20" cy="16" r="11" fill="url(#g)"/><path d="M14 26 q6 8 12 0 l-2 8 h-8 z" fill="url(#g)"/><circle cx="16" cy="15" r="1.7" fill="#fff"/><circle cx="24" cy="15" r="1.7" fill="#fff"/></svg><div><div class="t">Insight do Gênio <span class="tag aitag">IA</span></div><div style="color:var(--text-2);margin-top:2px">5 deals somam <b>R$ 128 mil</b> parados há mais de 30 dias na etapa "Proposta" — risco de escorregar do mês.</div></div></div></div>
+      <div class="grid-2">
+        <div class="card"><h3 class="block">Funil por etapa</h3><p class="blocksub">Deals abertos e valor por estágio.</p>
+          <table><thead><tr><th>Etapa</th><th class="right">Deals</th><th class="right">Valor</th></tr></thead><tbody>
+          <tr><td>Qualificação</td><td class="right tnum">28</td><td class="right tnum">R$ 312.000</td></tr>
+          <tr><td>Descoberta</td><td class="right tnum">17</td><td class="right tnum">R$ 268.400</td></tr>
+          <tr><td>Proposta</td><td class="right tnum">12</td><td class="right tnum">R$ 214.000</td></tr>
+          <tr><td>Negociação</td><td class="right tnum">6</td><td class="right tnum">R$ 98.000</td></tr></tbody></table></div>
+        <div class="card"><h3 class="block">Pipeline por responsável</h3><p class="blocksub">Valor aberto por owner (HubSpot).</p>
+          <table><thead><tr><th>Owner</th><th class="right">Deals</th><th class="right">Aberto</th></tr></thead><tbody>
+          <tr><td>Marina L.</td><td class="right tnum">22</td><td class="right tnum">R$ 341.200</td></tr>
+          <tr><td>Rafael S.</td><td class="right tnum">18</td><td class="right tnum">R$ 288.900</td></tr>
+          <tr><td>Bianca M.</td><td class="right tnum">14</td><td class="right tnum">R$ 176.300</td></tr>
+          <tr><td>Não atribuído</td><td class="right tnum">9</td><td class="right tnum" style="color:var(--warning)">R$ 86.000</td></tr></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- ================= SUPORTE & CHAT ================= -->
+    <section class="pane" id="sup">
+      <div class="controls"><span class="badge"><span class="live"></span> Fonte: HubSpot Service + Chat · há 3 min</span><span class="tag info">SLA padrão: 4h resposta</span></div>
+      <div class="grid-kpi">
+        <div class="card kpi"><div class="val tnum">148</div><div class="lab">Tickets abertos</div><div class="hint">Fila total ativa</div></div>
+        <div class="card kpi warn"><div class="val tnum">2h 42m</div><div class="lab">1ª resposta (TMR) <span class="delta down">▲ 18m</span></div><div class="hint">Tempo médio de 1ª resposta</div></div>
+        <div class="card kpi"><div class="val tnum">14h 06m</div><div class="lab">Resolução (TMA)</div><div class="hint">Tempo médio até resolver</div></div>
+        <div class="card kpi ok"><div class="val tnum">92,3%</div><div class="lab">CSAT <span class="delta up">▲ 1,4 p.p.</span></div><div class="hint">Satisfação no período</div></div>
+      </div>
+      <div class="sectitle"><h3 class="block">Novos KPIs de gestão</h3><span class="tag info">além do básico</span></div>
+      <div class="grid-kpi">
+        <div class="card kpi bad"><div class="val tnum">23</div><div class="lab">Backlog fora do SLA</div><div class="hint">Tickets estourados</div></div>
+        <div class="card kpi ok"><div class="val tnum">61%</div><div class="lab">Resolução no 1º contato</div><div class="hint">FCR do período</div></div>
+        <div class="card kpi"><div class="val tnum">207</div><div class="lab">Resolvidos no mês</div><div class="hint">Vazão da operação</div></div>
+        <div class="card kpi"><div class="val tnum">34</div><div class="lab">Conversas de chat ativas</div><div class="hint">Ao vivo agora</div></div>
+      </div>
+      <div class="card ai"><div class="r"><svg width="34" height="34" viewBox="0 0 40 40"><circle cx="20" cy="16" r="11" fill="url(#g)"/><path d="M14 26 q6 8 12 0 l-2 8 h-8 z" fill="url(#g)"/><circle cx="16" cy="15" r="1.7" fill="#fff"/><circle cx="24" cy="15" r="1.7" fill="#fff"/></svg><div><div class="t">Insight do Gênio <span class="tag aitag">IA</span></div><div style="color:var(--text-2);margin-top:2px">O tempo de 1ª resposta subiu <b>18 min</b> e há <b>23 tickets fora do SLA</b> concentrados no turno da tarde — reforce a escala.</div></div></div></div>
+      <div class="grid-2">
+        <div class="card"><h3 class="block">Fila por prioridade</h3><p class="blocksub">Tickets abertos e mais antigo em espera.</p>
+          <table><thead><tr><th>Prioridade</th><th class="right">Abertos</th><th class="right">Mais antigo</th></tr></thead><tbody>
+          <tr><td><span class="tag bad">Crítica</span></td><td class="right tnum">9</td><td class="right tnum">6h 20m</td></tr>
+          <tr><td><span class="tag warn">Alta</span></td><td class="right tnum">37</td><td class="right tnum">1d 4h</td></tr>
+          <tr><td><span class="tag info">Média</span></td><td class="right tnum">64</td><td class="right tnum">2d 9h</td></tr>
+          <tr><td>Baixa</td><td class="right tnum">38</td><td class="right tnum">4d 1h</td></tr></tbody></table></div>
+        <div class="card"><h3 class="block">Volume por canal</h3><p class="blocksub">Atendimentos recebidos no período.</p>
+          <div class="bars"><div class="bar"><div class="b" style="height:95%"></div>Chat<br><b class="tnum" style="color:var(--text)">412</b></div><div class="bar"><div class="b" style="height:64%"></div>E-mail<br><b class="tnum" style="color:var(--text)">278</b></div><div class="bar"><div class="b" style="height:33%"></div>WhatsApp<br><b class="tnum" style="color:var(--text)">143</b></div><div class="bar"><div class="b" style="height:15%"></div>Telefone<br><b class="tnum" style="color:var(--text)">64</b></div></div></div>
+      </div>
+    </section>
+
+    <p class="note">Mockup de referência (valores ilustrativos; financeiro baseado no ambiente real medido). Métricas sem fonte no HubSpot/OMIE devem aparecer como "indisponível", nunca simuladas. Tokens, grade, KPIs, abas e paridade light/dark seguem docs/design/DESIGN_PLAN.md.</p>
+  </main>
+</div>
+<button class="themebtn" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">Alternar tema</button>
+<svg width="0" height="0" style="position:absolute"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f6ef7"/><stop offset="1" stop-color="#e63aa8"/></linearGradient></defs></svg>
+<script>
+document.querySelectorAll('.tabs button').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.tabs button').forEach(function(x){x.classList.remove('on')});
+    document.querySelectorAll('.pane').forEach(function(p){p.classList.remove('on')});
+    b.classList.add('on');
+    document.getElementById(b.dataset.tab).classList.add('on');
+  });
+});
+</script>
+</body>
+</html>

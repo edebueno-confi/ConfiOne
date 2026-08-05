@@ -1,5 +1,9 @@
 # Operação de CS no HubSpot
 
+> **Estado histórico de migração:** este guia preserva o plano de corte e a
+> proveniência da planilha. No contrato corrente, HubSpot é a fonte operacional
+> de CS; a planilha não é fallback nem sistema paralelo.
+
 ## Objetivo desta mudança
 
 O HubSpot passará a ser a fonte única de verdade operacional do Customer

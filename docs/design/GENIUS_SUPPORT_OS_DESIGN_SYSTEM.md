@@ -1033,3 +1033,82 @@ Uma tela só é aprovada se:
 Não basta estar “melhor”.
 
 Precisa estar correta para a operação.
+
+---
+
+## 26. Dashboard Visual System V1 — cockpit editorial de decisão
+
+Para o macro-lote visual de 2026-08-03, as superfícies do Dashboard Gerencial e
+suas configurações adotam uma única gramática de cockpit:
+
+- o shell administrativo é único; analytics não repete uma segunda navegação em
+  Configurações;
+- a ordem das áreas é Visão Geral, Comercial, Customer Success, Suporte & Chat,
+  Financeiro, Produto e Desenvolvimento;
+- não existe container global de fontes nem filtro de domínio dentro das páginas;
+  estado da fonte e frescor aparecem localmente, sem mensagens contraditórias;
+- filtros, KPIs e evidência pertencem à mesma composição, com a ação principal
+  subordinada à leitura;
+- superfícies abertas e separadores discretos substituem caixas aninhadas;
+- `Indisponível` permanece indisponível e nenhum layout pode preencher lacunas
+  com zero, texto genérico ou dado inventado;
+- a Visão Geral é o cockpit executivo, não um mosaico de cards administrativos;
+- o Gênio em ação é um avatar sólido do sistema: consulta, organiza, processa e
+  publica dados com movimento operacional discreto; a pose `magic` é contextual
+  ao carregamento e não deve virar decoração dominante, voo contínuo ou halo teatral;
+- snapshot válido mantém o Dashboard navegável durante atualização; sem snapshot
+  válido, a UI pode bloquear somente durante ciclo real ou aguardando publicação;
+- toda nova composição deve ser validada em light/dark, 1440, 1024, 768 e 390px,
+  com teclado, foco, contraste, reduced motion e ausência de overflow.
+
+O contrato visual não autoriza mudança de métrica, fonte, denominador, RPC,
+view, tabela, integração, credencial ou estado persistido. A implementação
+deve consumir os read models e handlers já existentes.
+## High-Density Interface V1
+
+Para o Dashboard Gerencial e suas superfícies administrativas, a referência de
+implementação passa a ser `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md`.
+High-Density combina alta densidade funcional com baixa densidade perceptual:
+header baixo, filtros em linha, 4–6 KPIs compactos no desktop amplo, análises
+lado a lado, tabelas visíveis e tipografia proporcional. Não usar zoom CSS,
+números gigantes, cards decorativos, grandes áreas vazias ou sequência de
+seções como landing page.
+
+Tokens de implementação:
+
+- título de página: 22–30px, máximo 32px;
+- título de domínio: 20–26px;
+- KPI: 24–34px;
+- padding da página: 20–28px;
+- padding de superfície: 12–16px;
+- gap: 12–18px;
+- header: 52–60px;
+- sidebar: 224–248px;
+- números com tabular nums;
+- foco visível, reduced motion e `color-scheme` coerente com o tema.
+
+Adendo canônico — densidade cognitiva e semântica: High-Density é alta
+densidade funcional com baixa densidade perceptiva. O espaço negativo que
+separa grupos permanece intencional; não se preenche a tela apenas para
+aumentar a contagem de elementos. A leitura segue orientação, resultado,
+explicação e ação/detalhe, com apenas um ponto dominante e poucos elementos
+secundários.
+
+KPIs primários respondem à pergunta central. Secundários, contexto, diagnóstico
+e qualidade de dados ficam subordinados e próximos do indicador relacionado.
+Azul informa/orienta, verde indica positivo/válido, vermelho indica falha/perda,
+âmbar indica atenção e magenta é assinatura da marca. A cor precisa explicar
+por que o elemento merece atenção; não substitui texto, rótulo ou ícone.
+
+Ganhos, perdas e variações são coloridos pelo significado do KPI, não pelo
+sinal matemático. Alertas devem informar ocorrência, gravidade, contexto e
+ação. Gráficos preservam as regras de temporalidade e granularidade vigentes,
+usando paleta limitada; tabelas reservam cor para status, prioridade, risco,
+resultado ou ação pendente. Na revisão visual, verificar início do olhar,
+estado geral, hierarquia, competição, respiro, semântica de cor, ação
+contextual, primeira dobra, escaneabilidade e percepção humana. P0/P1/P2 são
+corrigidos antes do aceite; P3 entra no backlog.
+
+O Blueprint V2 anterior fica superado para implementação quando conflitar com
+as referências atuais de `Dashboard PO` e `Suporte e conversas`. Métricas,
+contratos, read models, permissões e estados de dados permanecem imutáveis.

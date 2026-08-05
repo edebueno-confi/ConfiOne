@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { formatDateTime, humanizeToken } from '../../../app/format';
 import { EmptyState, LoadingState } from '../../../components/states';
 import { sanitizeOperationalVisibleText } from '../../../lib/operational-copy';

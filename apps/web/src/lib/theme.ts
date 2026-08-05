@@ -84,3 +84,23 @@ export function applyResolvedTheme(theme: ResolvedTheme): void {
   root.setAttribute('data-theme', theme);
   root.style.colorScheme = theme;
 }
+
+/**
+ * Superfícies públicas: Central de Ajuda, entrada e telas anônimas.
+ *
+ * Regra de produto: a Central Pública é sempre clara. O tema escuro existe
+ * apenas em ambiente autenticado, onde o usuário escolhe a preferência. Esta
+ * função é a fonte única dessa decisão e é usada tanto pelo React quanto pelo
+ * script anti-flash de `index.html`, que replica a mesma lista de prefixos.
+ */
+export const PUBLIC_SURFACE_PREFIXES: readonly string[] = ['/help', '/login', '/access-denied'];
+
+export function isPublicSurfacePath(pathname: string): boolean {
+  if (pathname === '/') {
+    return true;
+  }
+
+  return PUBLIC_SURFACE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}

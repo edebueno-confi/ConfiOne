@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, type ReactNode } from 'react';
+import { Link } from 'react-router';
 import { GeniusMascot } from '../../components/GeniusMascot';
 import { AppButton, GhostButton, cx } from '../../components/ui';
 import type { PublicHelpSupportContacts } from '../../contracts/public-contracts';
@@ -231,79 +231,6 @@ export function PublicIconBadge({
   );
 }
 
-export function getCategoryVisuals(name: string | null | undefined) {
-  const normalized = (name ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-
-  if (normalized.includes('integr')) {
-    return { icon: 'puzzle' as const, tone: 'blue' as const };
-  }
-
-  if (normalized.includes('config') || normalized.includes('primeiro')) {
-    return { icon: 'gear' as const, tone: 'pink' as const };
-  }
-
-  if (normalized.includes('oper') || normalized.includes('reversa') || normalized.includes('troca')) {
-    return { icon: 'truck' as const, tone: 'blue' as const };
-  }
-
-  if (normalized.includes('relat') || normalized.includes('solu') || normalized.includes('problem')) {
-    return { icon: 'chart' as const, tone: 'pink' as const };
-  }
-
-  if (normalized.includes('boa') || normalized.includes('seller') || normalized.includes('loja')) {
-    return { icon: 'cap' as const, tone: 'blue' as const };
-  }
-
-  if (normalized.includes('suporte')) {
-    return { icon: 'support' as const, tone: 'blue' as const };
-  }
-
-  return { icon: 'doc' as const, tone: 'neutral' as const };
-}
-
-export function formatRelativePublicDate(value: string | null | undefined) {
-  if (!value) {
-    return 'Atualizado recentemente';
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return 'Atualizado recentemente';
-  }
-
-  const now = Date.now();
-  const diffMs = date.getTime() - now;
-  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-  const absDays = Math.abs(diffDays);
-  const formatter = new Intl.RelativeTimeFormat('pt-BR', { numeric: 'auto' });
-
-  if (absDays < 7) {
-    return `Atualizado ${formatter.format(diffDays, 'day')}`;
-  }
-
-  if (absDays < 30) {
-    return `Atualizado ${formatter.format(Math.round(diffDays / 7), 'week')}`;
-  }
-
-  if (absDays < 365) {
-    return `Atualizado ${formatter.format(Math.round(diffDays / 30), 'month')}`;
-  }
-
-  return `Atualizado ${formatter.format(Math.round(diffDays / 365), 'year')}`;
-}
-
-export function getPublicCategoryLabel(value: string | null | undefined) {
-  if (value === 'Operação de trocas e devoluções') return 'Trocas e devoluções';
-  return value ?? 'Categoria pública';
-}
-
-export function isPublicNavigationCategory(value: string | null | undefined) {
-  return value !== 'Primeiros passos';
-}
-
 export function PublicSearchStateCard({
   tone,
   title,
@@ -384,6 +311,7 @@ export function PublicHelpHeader({
   tertiaryHref?: string | null;
   portalHref?: string | null;
 }) {
+  const [portalNoticeOpen, setPortalNoticeOpen] = useState(false);
   const navLink = (label: string, to: string, isActive: boolean) => (
     <Link
       className={cx(
@@ -456,11 +384,7 @@ export function PublicHelpHeader({
             </span>
           )}
           </nav>
-          {portalHref ? (
-            <Link to={portalHref}>
-              <AppButton className="min-h-11 rounded-[14px] px-5">Entrar no portal</AppButton>
-            </Link>
-          ) : null}
+          {portalHref ? <AppButton className="min-h-11 rounded-[14px] px-5" onClick={() => setPortalNoticeOpen(true)}>Entrar no portal</AppButton> : null}
         </div>
 
         <details className="relative md:hidden">
@@ -514,18 +438,26 @@ export function PublicHelpHeader({
                 {tertiaryLabel}
               </span>
             )}
-            {portalHref ? (
-              <Link
-                className="rounded-[12px] bg-[var(--help-link)] px-3 py-2 text-sm font-semibold text-white no-underline"
-                to={portalHref}
-              >
-                Entrar no portal
-              </Link>
-            ) : null}
+            {portalHref ? <button className="rounded-[12px] bg-[var(--help-link)] px-3 py-2 text-left text-sm font-semibold text-white" onClick={() => setPortalNoticeOpen(true)} type="button">Entrar no portal</button> : null}
           </div>
         </details>
       </div>
-    </header>
+      {portalNoticeOpen ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-5" role="presentation" onClick={() => setPortalNoticeOpen(false)}>
+          <section aria-labelledby="portal-notice-title" aria-modal="true" className="w-full max-w-md rounded-[24px] bg-[var(--help-surface-strong)] p-6 shadow-[var(--help-shadow)]" onClick={(event) => event.stopPropagation()} role="dialog">
+            <div className="flex items-start gap-4">
+              <GeniusMascot alt="Gênio avisando sobre o portal" expression="happy" pose="magic" size="md" surface="empty" />
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--help-link)]">Um pouquinho mais</p>
+                <h2 className="mt-1 text-xl font-semibold text-[var(--help-ink-strong)]" id="portal-notice-title">O portal está quase pronto</h2>
+                <p className="mt-2 text-sm leading-6 text-[var(--help-muted)]">O Gênio está preparando esse espaço para você acompanhar tudo com tranquilidade. Em breve, ele estará pronto para receber você.</p>
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end"><GhostButton onClick={() => setPortalNoticeOpen(false)}>Entendi</GhostButton></div>
+          </section>
+        </div>
+      ) : null}
+      </header>
   );
 }
 

@@ -5,7 +5,7 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router';
 import { formatDateTime } from '../../app/format';
 import { EmptyState, ErrorState, LoadingState } from '../../components/states';
 import {

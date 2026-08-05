@@ -6,6 +6,7 @@ import {
   getDefaultInternalLandingRoute,
   type InternalRouteContext,
 } from './internal-route-access';
+import { resolveReleaseRedirect } from '../../app/release-surface.mjs';
 
 export type PostLoginDenialReason =
   | 'missing-profile'
@@ -32,6 +33,25 @@ function normalizeRedirectTo(rawValue: string | null) {
   }
 
   return rawValue;
+}
+
+/**
+ * Applies the release manifest's technical redirects before permission checks.
+ *
+ * `/inicio` is retained as a compatibility entry point, but the reduced
+ * release publishes `/admin/analytics`. Checking the compatibility pathname
+ * directly would incorrectly deny a valid platform administrator session.
+ */
+export function normalizePostLoginRedirectTarget(rawValue: string | null) {
+  const normalized = normalizeRedirectTo(rawValue);
+  if (!normalized) return null;
+
+  const match = normalized.match(/^([^?#]*)([?#].*)?$/);
+  const pathname = match?.[1] ?? normalized;
+  const technicalTarget = resolveReleaseRedirect(pathname);
+  if (!technicalTarget) return normalized;
+
+  return `${technicalTarget}${match?.[2] ?? ''}`;
 }
 
 async function hasCustomerPortalAccess() {
@@ -146,7 +166,7 @@ export async function resolvePostLoginRedirect(
     hasInternalActionAreaAccess: internalActionAreaAccess,
     hasCsPortfolioAccess: csPortfolioAccess,
   };
-  const redirectTo = normalizeRedirectTo(rawRedirectTo);
+  const redirectTo = normalizePostLoginRedirectTarget(rawRedirectTo);
   const requestedRouteAllowed = redirectTo ? canOpenInternalRoute(redirectTo, context) : null;
   const destination = redirectTo
     ? requestedRouteAllowed

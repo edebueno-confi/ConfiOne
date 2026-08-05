@@ -234,3 +234,14 @@ A política estará operando corretamente quando:
 - evidências duráveis forem curadas para `docs/reports/` ou `docs/design/`;
 - quarentena for usada para ambiguidade real, com triagem curta;
 - novos lotes deixarem menos artefatos soltos do que deixam hoje.
+
+## Classificação de `eslint.config.js` — 2026-08-04
+
+- `eslint.config.js`, criado no lote de configuração do ESLint, era a única
+  entrada da raiz fora da allowlist;
+- por ser entrada canônica de tooling do repositório, e não artefato
+  transitório, foi classificado em `DEFAULT_ALLOWED_ROOT_FILES` em vez de
+  movido para `.tmp/`;
+- `npm run repository:check-root` volta a sair limpo e
+  `tests/scripts/root-artifacts-hygiene.test.mjs` segue com 3/3 aprovados;
+- evidência: `docs/reports/2026-08-04_lint-debt-lote-1-e-higiene-raiz.md`.

@@ -11,13 +11,14 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type {
-  CommercialFunnelStage,
-  CommercialMonthlyPoint,
-  CsByStatus,
-  CsMonthlyPoint,
+import {
+  formatCurrencyBRL,
+  formatMonthLabel,
+  type CommercialFunnelStage,
+  type CommercialMonthlyPoint,
+  type CsByStatus,
+  type CsMonthlyPoint,
 } from '../analytics-model';
-import { formatCurrencyBRL, formatMonthLabel } from '../analytics-model';
 
 const PALETTE = {
   primary: 'var(--color-brand-blue)',
@@ -50,6 +51,28 @@ function ChartFrame({ children, height = 260 }: { children: React.ReactElement; 
   );
 }
 
+function CompactSummary({ title, rows, unit }: { title: string; rows: Array<{ label: string; value: number }>; unit: string }) {
+  const total = rows.reduce((sum, row) => sum + row.value, 0);
+  return <div className="gso-compact-chart-summary" aria-label={title}>
+    {rows.map((row) => <div className="gso-compact-chart-row" key={row.label}>
+      <span className="gso-compact-chart-label">{row.label}</span>
+      <span className="gso-compact-chart-value">{row.value.toLocaleString('pt-BR')} {unit}</span>
+      <span className="gso-compact-chart-share">{total ? `${Math.round((row.value / total) * 100)}%` : '0%'}</span>
+    </div>)}
+  </div>;
+}
+
+function CompactTemporalSummary({ rows, unit, message }: { rows: Array<{ label: string; first: number; second: number }>; unit: string; message: string }) {
+  return <div className="gso-compact-chart-summary" aria-label="Resumo temporal">
+    <p className="gso-compact-chart-note">{message}</p>
+    <div className="gso-compact-chart-temporal-grid">
+      {rows.map((row) => <div className="gso-compact-chart-temporal-row" key={row.label}>
+        <strong>{row.label}</strong><span>{row.first.toLocaleString('pt-BR')} {unit}</span><span>{row.second.toLocaleString('pt-BR')} {unit}</span>
+      </div>)}
+    </div>
+  </div>;
+}
+
 export function CommercialFunnelChart({ data }: { data: CommercialFunnelStage[] }) {
   const rows = data.map((stage) => ({
     name: stage.label,
@@ -57,6 +80,10 @@ export function CommercialFunnelChart({ data }: { data: CommercialFunnelStage[] 
     isWon: stage.isWon,
     isClosed: stage.isClosed,
   }));
+
+  if (rows.length <= 2) {
+    return <CompactSummary title="Resumo do funil comercial" rows={rows.map((row) => ({ label: row.name, value: row.deals }))} unit="negócios" />;
+  }
 
   return (
     <ChartFrame height={Math.max(220, rows.length * 42)}>
@@ -88,6 +115,10 @@ export function CommercialMonthlyChart({ data }: { data: CommercialMonthlyPoint[
     Ganhos: point.wonCount,
   }));
 
+  if (rows.length < 3) {
+    return <CompactTemporalSummary rows={rows.map((row) => ({ label: row.name, first: row.Criados, second: row.Ganhos }))} unit="negócios" message="A série tem poucos pontos para uma leitura de tendência; o resumo preserva o recorte recebido." />;
+  }
+
   return (
     <ChartFrame>
       <LineChart data={rows} margin={{ left: 4, right: 16, top: 8, bottom: 8 }}>
@@ -110,6 +141,10 @@ export function TicketStatusChart({ data }: { data: CsByStatus[] }) {
     isClosed: status.isClosed,
     pipelineBreakdown: status.pipelineBreakdown ?? [],
   }));
+
+  if (rows.length <= 2) {
+    return <CompactSummary title="Resumo dos tickets por status" rows={rows.map((row) => ({ label: row.name, value: row.tickets }))} unit="tickets" />;
+  }
 
   return (
     <ChartFrame height={Math.max(220, rows.length * 42)}>
@@ -142,6 +177,10 @@ export function TicketMonthlyChart({ data }: { data: CsMonthlyPoint[] }) {
     Criados: point.createdCount,
     Encerrados: point.closedCount,
   }));
+
+  if (rows.length < 3) {
+    return <CompactTemporalSummary rows={rows.map((row) => ({ label: row.name, first: row.Criados, second: row.Encerrados }))} unit="tickets" message="A série tem poucos pontos para uma leitura de tendência; o resumo preserva o recorte recebido." />;
+  }
 
   return (
     <ChartFrame>

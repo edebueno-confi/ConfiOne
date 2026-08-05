@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getCeoSnapshot, getCommercialSnapshot, getCsSnapshot, getFinanceSnapshot } from './analytics-api';
 import { formatCurrencyBRL, type AnalyticsFilters } from './analytics-model';
-import { downloadAnalyticsPng, printAnalyticsReport, type AnalyticsReportData, type AnalyticsReportSection } from './analytics-export';
+import { downloadAnalyticsPng, hasExportableAnalyticsData, printAnalyticsReport, type AnalyticsReportData, type AnalyticsReportSection } from './analytics-export';
 
 type ReportPayload = Pick<AnalyticsReportData, 'ceo' | 'commercial' | 'cs' | 'finance'>;
 type Props = { open: boolean; period: { from: string; to: string }; onClose: () => void };
@@ -32,9 +32,10 @@ export function AnalyticsReportExport({ open, period, onClose }: Props) {
 
   if (!open) return null;
   const data: AnalyticsReportData = { ...payload, from: period.from, to: period.to, selected };
+  const hasExportableData = state === 'ready' && hasExportableAnalyticsData(data);
   const toggle = (key: AnalyticsReportSection) => setSelected((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
-  const handlePrint = () => { if (!selected.length) return; if (!printAnalyticsReport(data)) setError('O navegador bloqueou a janela do relatório. Permita pop-ups para gerar o PDF.'); };
-  const handlePng = async () => { if (!selected.length) return; try { await downloadAnalyticsPng(data); } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível gerar o PNG.'); } };
+  const handlePrint = () => { if (!selected.length || !hasExportableData) return; if (!printAnalyticsReport(data)) setError('O navegador bloqueou a janela do relatório. Permita pop-ups para gerar o PDF.'); };
+  const handlePng = async () => { if (!selected.length || !hasExportableData) return; try { await downloadAnalyticsPng(data); } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível gerar o PNG.'); } };
   const ceo = payload.ceo;
   const commercial = payload.commercial;
   const cs = payload.cs;
@@ -46,8 +47,9 @@ export function AnalyticsReportExport({ open, period, onClose }: Props) {
       <div className="mt-4 rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] p-3"><div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]">Prévia · {period.from || 'início'} a {period.to || 'fim'}</div><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4"><Preview label="Receita ganha" value={ceo ? formatCurrencyBRL(ceo.commercial.wonRevenue) : commercial ? formatCurrencyBRL(commercial.kpis.wonRevenue) : '—'} /><Preview label="Conversão" value={commercial ? `${(commercial.kpis.conversionRate * 100).toFixed(1)}%` : '—'} /><Preview label="Tickets abertos" value={cs ? cs.kpis.openTickets.toLocaleString('pt-BR') : '—'} /><Preview label="Saldo vencido" value={finance ? formatCurrencyBRL(finance.kpis.overdueBalance) : ceo ? formatCurrencyBRL(ceo.finance.overdueBalance) : '—'} /></div></div>
       {state === 'loading' ? <p className="mt-4 text-sm text-[color:var(--minimal-text-secondary)]">Preparando dados das abas...</p> : null}
       {state === 'error' ? <p role="alert" className="mt-4 text-sm text-[color:var(--minimal-danger-text)]">{error}</p> : null}
+      {state === 'ready' && selected.length > 0 && !hasExportableData ? <p role="status" className="mt-4 text-sm text-[color:var(--minimal-text-secondary)]">Não há dados exportáveis nas abas selecionadas.</p> : null}
       {error && state !== 'error' ? <p role="alert" className="mt-4 text-sm text-[color:var(--minimal-danger-text)]">{error}</p> : null}
-      <div className="mt-5 flex flex-wrap justify-end gap-2"><button type="button" onClick={handlePng} disabled={state !== 'ready' || !selected.length} className="rounded-md border border-[color:var(--minimal-border-strong)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-text)] disabled:cursor-not-allowed disabled:opacity-50">Baixar PNG</button><button type="button" onClick={handlePrint} disabled={state !== 'ready' || !selected.length} className="rounded-md bg-[color:var(--minimal-text)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-surface)] disabled:cursor-not-allowed disabled:opacity-50">Gerar PDF</button></div>
+      <div className="mt-5 flex flex-wrap justify-end gap-2"><button type="button" onClick={handlePng} disabled={!hasExportableData || !selected.length} title={!hasExportableData ? 'Não há dados exportáveis nas abas selecionadas.' : undefined} className="rounded-md border border-[color:var(--minimal-border-strong)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-text)] disabled:cursor-not-allowed disabled:opacity-50">Baixar PNG</button><button type="button" onClick={handlePrint} disabled={!hasExportableData || !selected.length} title={!hasExportableData ? 'Não há dados exportáveis nas abas selecionadas.' : undefined} className="rounded-md bg-[color:var(--minimal-text)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-surface)] disabled:cursor-not-allowed disabled:opacity-50">Gerar PDF</button></div>
     </section>
   </div>;
 }

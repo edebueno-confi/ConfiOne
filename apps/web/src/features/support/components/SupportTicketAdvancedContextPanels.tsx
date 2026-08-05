@@ -1,11 +1,10 @@
 import {
   type ComponentProps,
   type FormEvent,
-  type ReactNode,
   useMemo,
   useState,
 } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { formatDateTime, humanizeToken } from '../../../app/format';
 import { LoadingState } from '../../../components/states';
 import {
@@ -36,7 +35,6 @@ import {
   type SupportTicketDetail,
   type SupportTicketEngineeringLink,
   type SupportTicketInternalAction,
-  type SupportTicketQueueItem,
   type SupportTicketTimelineRecentWindow,
   type TicketPriority,
   type TicketSeverity,
@@ -44,7 +42,6 @@ import {
   type TicketStatusUpdateTarget,
   type Uuid,
 } from '../../../contracts/support-contracts';
-import { EvidenceFileChip } from './SupportWorkspacePrimitives';
 import { CompactSupportPill, SupportSurfaceIcon } from './SupportWorkspaceVisuals';
 import { SupportDrawerField, SupportDrawerPill } from './SupportTicketContextPanels';
 

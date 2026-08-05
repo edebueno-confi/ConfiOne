@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 const files = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' })
   .split('\0')
@@ -9,6 +9,7 @@ const suspicious = /(Admin123!|Local-QA-[A-Za-z0-9-]+!|eyJ[A-Za-z0-9_-]{20,}\.[A
 const matches = [];
 for (const file of files) {
   if (/^(\.env|output\/|node_modules\/)/i.test(file)) continue;
+  if (!existsSync(file)) continue;
   const contents = readFileSync(file, 'utf8');
   if (suspicious.test(contents)) matches.push(file);
 }

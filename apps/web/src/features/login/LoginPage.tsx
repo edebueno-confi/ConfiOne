@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react';
-import { Navigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router';
 import {
   MinimalButton,
   MinimalField,
@@ -9,7 +9,6 @@ import {
   MinimalTextInput,
 } from '../../components/minimal-ui';
 import { MinimalState } from '../../components/minimal-states';
-import { ThemeToggle } from '../../components/ThemeToggle';
 import { GeniusMascot } from '../../components/GeniusMascot';
 import { signInWithPassword } from '../auth/auth-api';
 import { acceptAdminInternalInvitation } from '../admin/admin-api';
@@ -178,31 +177,52 @@ export function LoginPage() {
   }
 
   return (
-    <MinimalPage>
-      <div className="w-full max-w-[26rem]">
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
+    <MinimalPage className="gso-login-page">
+      <div className="gso-login-shell">
+        <section className="gso-login-brand-panel" aria-labelledby="login-brand-title">
+          <div className="gso-login-brand-lockup">
             <GeniusMascot size="lg" alt="Gênio, mascote do GeniusOS" />
             <div>
-              <p className="text-base font-semibold text-[color:var(--minimal-text)]">
-                Genius<span className="text-[color:var(--genius-site-pink)]">OS</span>
+              <p className="gso-login-brand-name">
+                Genius<span>OS</span>
               </p>
-              <p className="text-xs text-[color:var(--minimal-text-tertiary)]">
-                Atendimento Genius e After Sale
-              </p>
+              <p className="gso-login-brand-caption">Suporte, conhecimento e operação</p>
             </div>
           </div>
-          <ThemeToggle />
-        </div>
 
-        <MinimalSurface>
+          <div className="gso-login-brand-copy">
+            <p className="gso-login-eyebrow">PLATAFORMA GENIUS</p>
+            <h1 id="login-brand-title">Tudo o que sua operação precisa, em um só lugar</h1>
+            <p>
+              Acompanhe atendimentos, consulte o conhecimento e acesse os recursos
+              disponíveis para sua equipe.
+            </p>
+          </div>
+
+          <div className="gso-login-feature-grid">
+            {[
+              ['Atendimento', 'Acompanhe e organize as demandas da sua operação.', '◇'],
+              ['Conhecimento', 'Encontre orientações confiáveis para agir com clareza.', '▤'],
+              ['Acompanhamento', 'Tenha visibilidade do que precisa de atenção.', '✓'],
+            ].map(([title, description, icon]) => (
+              <article className="gso-login-feature" key={title}>
+                <span aria-hidden="true" className="gso-login-feature-icon">{icon}</span>
+                <h2>{title}</h2>
+                <p>{description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="gso-login-form-panel" aria-labelledby="login-title">
+          <MinimalSurface className="gso-login-form-surface">
           <form className="space-y-5" onSubmit={handleSubmit}>
             <div>
-              <h1 className="text-xl font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
-                Entrar
-              </h1>
+              <h2 id="login-title" className="text-xl font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
+                Entrar na GeniusOS
+              </h2>
               <p className="mt-1 text-sm text-[color:var(--minimal-text-secondary)]">
-                Use sua conta autorizada para acessar a operação.
+                Use sua conta para continuar. Os recursos disponíveis seguem o seu perfil de acesso.
               </p>
             </div>
 
@@ -240,14 +260,15 @@ export function LoginPage() {
 
             <div className="grid gap-4">
               <MinimalButton className="w-full" loading={submitting} type="submit">
-                {submitting ? 'Validando acesso...' : 'Entrar'}
+                {submitting ? 'Validando acesso...' : 'Entrar na plataforma'}
               </MinimalButton>
               <p className="text-center text-xs leading-5 text-[color:var(--minimal-text-tertiary)]">
-                Acesso restrito a contas autorizadas.
+                Ambiente protegido para clientes e colaboradores autorizados.
               </p>
             </div>
           </form>
-        </MinimalSurface>
+          </MinimalSurface>
+        </section>
       </div>
     </MinimalPage>
   );

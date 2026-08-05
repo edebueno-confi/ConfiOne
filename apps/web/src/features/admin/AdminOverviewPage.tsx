@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { MinimalState } from '../../components/minimal-states';
 import { listCustomers, type CustomerAccount } from '../customers/customers-api';
 import { listInboxItems, type InboxItem } from '../inbox/inbox-api';

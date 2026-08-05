@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createClient } from '@supabase/supabase-js';
@@ -20,6 +21,7 @@ function parseArgs(argv) {
     title: null,
     allowlist: null,
     all: false,
+    editorialOnly: false,
     email: process.env.KNOWLEDGE_ADMIN_EMAIL,
     password: process.env.KNOWLEDGE_ADMIN_PASSWORD,
   };
@@ -33,6 +35,7 @@ function parseArgs(argv) {
     else if (arg === '--title') args.title = argv[++index];
     else if (arg === '--allowlist') args.allowlist = argv[++index];
     else if (arg === '--all') args.all = true;
+    else if (arg === '--editorial-only') args.editorialOnly = true;
     else if (arg === '--email') args.email = argv[++index];
     else if (arg === '--password') args.password = argv[++index];
     else throw new Error(`Unknown argument: ${arg}`);
@@ -44,11 +47,11 @@ function parseArgs(argv) {
   if (!args.spaceSlug) {
     throw new Error('--space-slug is required.');
   }
-  if (!args.title && !args.allowlist && !args.all) {
-    throw new Error('Use --title, --allowlist or --all to select articles explicitly.');
+  if (!args.title && !args.allowlist && !args.all && !args.editorialOnly) {
+    throw new Error('Use --title, --allowlist, --editorial-only or --all to select articles explicitly.');
   }
-  if (Number(Boolean(args.title)) + Number(Boolean(args.allowlist)) + Number(args.all) > 1) {
-    throw new Error('Use only one article selector: --title, --allowlist or --all.');
+  if (Number(Boolean(args.title)) + Number(Boolean(args.allowlist)) + Number(args.all) + Number(args.editorialOnly) > 1) {
+    throw new Error('Use only one article selector: --title, --allowlist, --editorial-only or --all.');
   }
 
   return args;
@@ -235,6 +238,28 @@ function buildMarkdownFromHtml(html, assetBySrc, articleTitle) {
   return markdown.startsWith('# ') ? markdown : `# ${normalizedTitle}\n\n${markdown}`;
 }
 
+function resolveEditorialAssetReferences(markdown, assetBySrc) {
+  const sourceResolved = String(markdown ?? '').replace(
+    /knowledge-asset-source:([^\s)]+)/g,
+    (full, sourcePath) => {
+      const asset = assetBySrc.get(String(sourcePath).replace(/^assets\//, ''));
+      return asset ? `knowledge-asset:${asset.id}` : full;
+    },
+  );
+
+  const legacyMarkers = [...sourceResolved.matchAll(/knowledge-asset:([0-9a-f-]{36})/gi)];
+  const articleAssetIds = [...assetBySrc.values()].map((asset) => asset.id).filter(Boolean);
+  if (legacyMarkers.length === 0) return sourceResolved;
+  if (legacyMarkers.length !== articleAssetIds.length) return sourceResolved;
+
+  let index = 0;
+  return sourceResolved.replace(/knowledge-asset:([0-9a-f-]{36})/gi, () => {
+    const assetId = articleAssetIds[index];
+    index += 1;
+    return assetId ? `knowledge-asset:${assetId}` : 'knowledge-asset:unresolved';
+  });
+}
+
 async function readAllowlist(filePath) {
   const raw = JSON.parse(await fs.readFile(filePath, 'utf8'));
   const items = Array.isArray(raw) ? raw : raw.articles ?? raw.items ?? [];
@@ -253,7 +278,9 @@ async function main() {
   const allowedTitles = args.allowlist ? await readAllowlist(args.allowlist) : null;
   const selected = index.filter((article) => {
     const title = normalizeText(article.title);
-    return args.all || (args.title ? title === normalizeText(args.title) : allowedTitles.has(title));
+    const articlePath = path.join(root, article.articleDirRelative);
+    if (args.editorialOnly && !existsSync(path.join(articlePath, 'editorial.json'))) return false;
+    return args.editorialOnly || args.all || (args.title ? title === normalizeText(args.title) : allowedTitles.has(title));
   });
 
   if (selected.length === 0) {
@@ -290,6 +317,12 @@ async function main() {
     const article = JSON.parse(await fs.readFile(path.join(articlePath, 'article.json'), 'utf8'));
     const localHtml = await fs.readFile(path.join(articlePath, 'content.local.html'), 'utf8');
     const localText = await fs.readFile(path.join(articlePath, 'content.txt'), 'utf8');
+    let editorial = null;
+    try {
+      editorial = JSON.parse(await fs.readFile(path.join(articlePath, 'editorial.json'), 'utf8'));
+    } catch {
+      // O legado continua válido enquanto a curadoria editorial não existir.
+    }
     const sourcePath = `${args.root.replace(/\\/g, '/')}/${articleIndex.articleDirRelative}`;
     const sourceHash = sha256(Buffer.from(localText.trim(), 'utf8'));
 
@@ -336,8 +369,8 @@ async function main() {
     const assetReviewStatus = isPublished && isPublic ? 'approved' : 'pending';
     const assetVisibility = isPublished ? runtimeArticle.visibility : 'internal';
     const storageBucket = isPublished && isPublic ? 'knowledge-public-assets' : 'knowledge-assets';
-    const articleTitle = repairMojibake(runtimeArticle.title);
-    const articleSummary = repairMojibake(runtimeArticle.summary ?? '');
+    const articleTitle = repairMojibake(editorial?.title ?? runtimeArticle.title);
+    const articleSummary = repairMojibake(editorial?.summary ?? runtimeArticle.summary ?? '');
 
     for (const asset of article.assets ?? []) {
       const relativeAssetPath = String(asset.localPath ?? '').replace(/\\/g, '/');
@@ -425,7 +458,11 @@ async function main() {
       }
     }
 
-    const markdown = buildMarkdownFromHtml(localHtml, assetBySrc, articleTitle);
+    const markdown = editorial?.body_md
+      ? resolveEditorialAssetReferences(editorial.body_md, assetBySrc)
+      : buildMarkdownFromHtml(localHtml, assetBySrc, articleTitle);
+    const unresolvedAssetMarkers = (markdown.match(/knowledge-asset:(?:unresolved|[0-9a-f-]{36})/gi) ?? [])
+      .filter((marker) => marker.toLowerCase() === 'knowledge-asset:unresolved').length;
 
     if (args.apply) {
       if (isPublished) {
@@ -489,6 +526,7 @@ async function main() {
       visibility: runtimeArticle.visibility,
       assets: article.assets?.length ?? 0,
       markdownBytes: Buffer.byteLength(markdown, 'utf8'),
+      unresolvedAssetMarkers,
       applied: args.apply,
       upsertedAssets: upsertedAssets.length,
       articleUpdate: args.apply ? (isPublished ? 'editorial_revision_published' : 'draft_updated') : 'dry_run',

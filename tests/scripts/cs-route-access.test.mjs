@@ -5,6 +5,12 @@ import {
   canOpenInternalRoute,
   getDefaultInternalLandingRoute,
 } from '../../apps/web/src/features/auth/internal-route-access.ts';
+import { setReleaseSurfaceModeForTests } from '../../apps/web/src/app/release-surface.mjs';
+
+// This suite describes the authorization rules of the complete system, which is
+// preserved in the repository. The reduced release surface is covered on its own
+// by tests/scripts/release-surface.test.mjs.
+setReleaseSurfaceModeForTests('full');
 
 const csContext = {
   roles: [],

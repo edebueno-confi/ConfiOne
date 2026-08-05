@@ -1,10 +1,11 @@
 import { lazy, type ComponentType, type ReactNode, Suspense } from 'react';
-import { createBrowserRouter, Navigate, useRouteError } from 'react-router-dom';
-import { ErrorState, LoadingState } from '../components/states';
+import { createBrowserRouter, Navigate, useRouteError, useSearchParams } from 'react-router';
+import { ErrorState } from '../components/states';
 import { GeniusMascot } from '../components/GeniusMascot';
 import { AppButton, GhostButton } from '../components/ui';
 import { AuthBootstrap } from '../features/auth/AuthBootstrap';
 import { AdminGate } from '../features/auth/AdminGate';
+import { ReleaseSurfaceGate } from '../features/auth/ReleaseSurfaceGate';
 
 const CHUNK_RECOVERY_KEY = 'genius.lazy-reload-once';
 
@@ -199,6 +200,20 @@ const SettingsPage = lazyRouteModule(
   'SettingsPage',
 );
 
+function SettingsLegacyRedirect() {
+  const [searchParams] = useSearchParams();
+  const legacy = searchParams.get('section');
+  const target = ({
+    marcas: '/admin/settings/brands',
+    'central-ajuda': '/admin/settings/help-center',
+    analytics: '/admin/settings/integrations',
+    integracoes: '/admin/settings/integrations',
+    'dashboard-fontes': '/admin/settings/dashboard-sources',
+    'dashboard-historico': '/admin/settings/sync-history',
+  } as Record<string, string>)[legacy ?? ''] ?? '/admin/settings/integrations';
+  return <Navigate replace to={target} />;
+}
+
 const SupportWorkspaceShell = lazyRouteModule(
   () => import('../features/support/SupportWorkspaceShell'),
   'SupportWorkspaceShell',
@@ -299,7 +314,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: '/',
-        element: <Navigate replace to="/admin" />,
+        element: <Navigate replace to="/login" />,
       },
       {
         path: '/login',
@@ -338,9 +353,11 @@ export const router = createBrowserRouter([
       {
         path: '/portal',
         element: withSuspense(
-          <CustomerPortalGate>
-            <CustomerPortalLayout />
-          </CustomerPortalGate>,
+          <ReleaseSurfaceGate>
+            <CustomerPortalGate>
+              <CustomerPortalLayout />
+            </CustomerPortalGate>
+          </ReleaseSurfaceGate>,
         ),
         children: [
           {
@@ -368,7 +385,9 @@ export const router = createBrowserRouter([
       {
         path: '/admin',
         element: (
-          <AdminGate>{withSuspense(<AdminConsoleShell />)}</AdminGate>
+          <ReleaseSurfaceGate>
+            <AdminGate>{withSuspense(<AdminConsoleShell />)}</AdminGate>
+          </ReleaseSurfaceGate>
         ),
         children: [
           {
@@ -425,6 +444,26 @@ export const router = createBrowserRouter([
           },
           {
             path: 'settings',
+            element: <SettingsLegacyRedirect />,
+          },
+          {
+            path: 'settings/brands',
+            element: withSuspense(<SettingsPage />),
+          },
+          {
+            path: 'settings/help-center',
+            element: withSuspense(<SettingsPage />),
+          },
+          {
+            path: 'settings/integrations',
+            element: withSuspense(<SettingsPage />),
+          },
+          {
+            path: 'settings/dashboard-sources',
+            element: withSuspense(<SettingsPage />),
+          },
+          {
+            path: 'settings/sync-history',
             element: withSuspense(<SettingsPage />),
           },
         ],
@@ -432,9 +471,11 @@ export const router = createBrowserRouter([
       {
         path: '/cs',
         element: withSuspense(
-          <CsGate>
-            <CsWorkspaceShell />
-          </CsGate>,
+          <ReleaseSurfaceGate>
+            <CsGate>
+              <CsWorkspaceShell />
+            </CsGate>
+          </ReleaseSurfaceGate>,
         ),
         children: [
           {
@@ -450,9 +491,11 @@ export const router = createBrowserRouter([
       {
         path: '/support',
         element: withSuspense(
-          <SupportGate>
-            <SupportWorkspaceShell />
-          </SupportGate>,
+          <ReleaseSurfaceGate>
+            <SupportGate>
+              <SupportWorkspaceShell />
+            </SupportGate>
+          </ReleaseSurfaceGate>,
         ),
         children: [
           {
@@ -492,9 +535,11 @@ export const router = createBrowserRouter([
       {
         path: '/inicio',
         element: withSuspense(
-          <SupportGate>
-            <SupportWorkspaceShell />
-          </SupportGate>,
+          <ReleaseSurfaceGate>
+            <SupportGate>
+              <SupportWorkspaceShell />
+            </SupportGate>
+          </ReleaseSurfaceGate>,
         ),
         children: [
           {
@@ -506,9 +551,11 @@ export const router = createBrowserRouter([
       {
         path: '/engineering',
         element: withSuspense(
-          <SupportGate>
-            <SupportWorkspaceShell />
-          </SupportGate>,
+          <ReleaseSurfaceGate>
+            <SupportGate>
+              <SupportWorkspaceShell />
+            </SupportGate>
+          </ReleaseSurfaceGate>,
         ),
         children: [
           {
@@ -524,9 +571,11 @@ export const router = createBrowserRouter([
       {
         path: '/internal-actions',
         element: withSuspense(
-          <SupportGate>
-            <SupportWorkspaceShell />
-          </SupportGate>,
+          <ReleaseSurfaceGate>
+            <SupportGate>
+              <SupportWorkspaceShell />
+            </SupportGate>
+          </ReleaseSurfaceGate>,
         ),
         children: [
           {

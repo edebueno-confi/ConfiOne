@@ -1,5 +1,5 @@
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
-import { Link, Navigate, Outlet, useLocation, useParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, Navigate, Outlet, useLocation, useParams } from 'react-router';
 import {
   ContractUnavailableState,
   EmptyState,
@@ -26,8 +26,8 @@ import {
   PublicBreadcrumb,
   PublicHelpFooter,
   PublicHelpHeader,
-  isPublicNavigationCategory,
 } from './public-ui';
+import { isPublicNavigationCategory } from './public-presentation';
 
 type LoadPhase = 'loading' | 'ready' | 'empty' | 'contract-unavailable' | 'error';
 
@@ -38,13 +38,11 @@ interface HelpCenterSpaceSummary {
   brandName: string;
   defaultLocale: string;
   organizationDisplayName: string;
-  canonicalPath: string;
-  canonicalHost: string | null;
 }
 
 function PublicHelpLoadingSurface() {
   return (
-    <div data-public-theme="light" className="min-h-screen bg-[var(--help-surface)]">
+    <div className="min-h-screen bg-[var(--help-surface)]">
       <PublicHelpHeader active="articles" brandName="Genius Returns" showOtherCenters={false} spaceSlug="genius" tertiaryLabel="Categorias" />
       <main className="mx-auto max-w-[1520px] px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
         <section aria-busy="true" className="flex min-h-[160px] flex-col items-center justify-center rounded-[28px] border border-[var(--help-border)] bg-[var(--help-surface-strong)] px-5 py-6 text-center shadow-[var(--help-shadow)] sm:min-h-[250px] sm:px-8">
@@ -69,11 +67,6 @@ function buildSpaceSummary(
     rows.find((row) => row.is_canonical) ??
     rows[0];
 
-  const domainRoute =
-    rows.find((row) => row.route_kind === 'domain' && row.is_canonical) ??
-    rows.find((row) => row.route_kind === 'domain') ??
-    null;
-
   return {
     knowledgeSpaceId: primaryRoute.knowledge_space_id,
     knowledgeSpaceSlug: primaryRoute.knowledge_space_slug,
@@ -81,11 +74,6 @@ function buildSpaceSummary(
     brandName: primaryRoute.brand_name,
     defaultLocale: primaryRoute.default_locale,
     organizationDisplayName: primaryRoute.organization_display_name,
-    canonicalPath:
-      primaryRoute.route_kind === 'space_slug'
-        ? primaryRoute.route_path_prefix
-        : `/help/${primaryRoute.knowledge_space_slug}`,
-    canonicalHost: domainRoute?.route_host ?? null,
   };
 }
 
@@ -115,7 +103,9 @@ export function HelpCenterPage() {
       'Documentação oficial para clientes B2B, com centrais públicas de configuração, operação e resolução de dúvidas.',
   });
 
-  const loadSpaces = useEffectEvent(async () => {
+  // Carregador do diretório público, usado pelo Effect inicial e pelos botões de
+  // nova tentativa. Não captura valor reativo, então a referência é estável.
+  const loadSpaces = useCallback(async () => {
     try {
       const rows = await listPublicKnowledgeSpaces();
       const nextSpaces = groupSpaceSummaries(rows);
@@ -134,7 +124,7 @@ export function HelpCenterPage() {
           : 'error',
       );
     }
-  });
+  }, []);
 
   useEffect(() => {
     if (didLoadRef.current) {
@@ -143,7 +133,7 @@ export function HelpCenterPage() {
 
     didLoadRef.current = true;
     void loadSpaces();
-  }, []);
+  }, [loadSpaces]);
 
   if (phase === 'loading') {
     return <PublicHelpLoadingSurface />;
@@ -151,7 +141,7 @@ export function HelpCenterPage() {
 
   if (phase === 'contract-unavailable') {
     return (
-      <div data-public-theme="light" className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-6 py-12">
+      <div className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-6 py-12">
         <ContractUnavailableState contractName="central pública de ajuda" />
       </div>
     );
@@ -159,7 +149,7 @@ export function HelpCenterPage() {
 
   if (phase === 'error') {
     return (
-      <div data-public-theme="light" className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-6 py-12">
+      <div className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-6 py-12">
         <ErrorState
           title="Falha ao carregar a Central de Ajuda"
           description={
@@ -174,7 +164,7 @@ export function HelpCenterPage() {
 
   if (phase === 'empty') {
     return (
-      <div data-public-theme="light" className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-6 py-12">
+      <div className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-6 py-12">
         <EmptyState
           title="Nenhuma central disponível"
           description="Ainda não existe uma central publicada para leitura neste ambiente."
@@ -234,8 +224,7 @@ export function HelpCenterPage() {
                   </div>
                   <div className="text-xs leading-5 text-[var(--color-muted)]">
                     <p>{space.organizationDisplayName}</p>
-                    <p>{space.canonicalPath}</p>
-                    {space.canonicalHost ? <p>{space.canonicalHost}</p> : null}
+                    <p>Conteúdo oficial para consulta e orientação.</p>
                   </div>
                 </div>
                 <div className="mt-5 flex flex-wrap gap-3">
@@ -263,7 +252,9 @@ export function HelpCenterSpaceLayout() {
   const [context, setContext] = useState<HelpCenterSpaceContext | null>(null);
   const [availableSpaces, setAvailableSpaces] = useState<HelpCenterSpaceSummary[]>([]);
 
-  const loadSpace = useEffectEvent(async (targetSpaceSlug: string) => {
+  // Carregador da central selecionada, usado pelo Effect de rota e pelo botão de
+  // nova tentativa. Não captura valor reativo: só o parâmetro e setters.
+  const loadSpace = useCallback(async (targetSpaceSlug: string) => {
     try {
       const [routes, navigation, articles, directory] = await Promise.all([
         getPublicKnowledgeSpace(targetSpaceSlug),
@@ -318,7 +309,7 @@ export function HelpCenterSpaceLayout() {
           : 'error',
       );
     }
-  });
+  }, []);
 
   useEffect(() => {
     if (!spaceSlug) {
@@ -327,7 +318,7 @@ export function HelpCenterSpaceLayout() {
 
     setPhase('loading');
     void loadSpace(spaceSlug);
-  }, [spaceSlug]);
+  }, [loadSpace, spaceSlug]);
 
   const space = context?.primaryRoute ?? null;
   const seoDefaults = useMemo(
@@ -404,7 +395,7 @@ export function HelpCenterSpaceLayout() {
         : 'directory';
 
   return (
-    <div data-public-theme="light" className="min-h-screen bg-[var(--help-surface)]">
+    <div className="min-h-screen bg-[var(--help-surface)]">
       <PublicHelpHeader
         active={active}
         brandName={space.brand_name}

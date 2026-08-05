@@ -4,6 +4,10 @@ import { assertLocalSupabaseEnvironment, loadQaEnv, runLocalCommand } from './as
 const qa = loadQaEnv();
 assertLocalSupabaseEnvironment({ ...process.env, ...qa });
 
+if (process.env.ALLOW_LOCAL_DB_RESET !== 'true') {
+  throw new Error('LOCAL_DB_RESET_BLOCKED: este comando destrói o banco local. Use ALLOW_LOCAL_DB_RESET=true somente em uma operação deliberada.');
+}
+
 try {
   runLocalCommand(['start'], { timeout: 180000, stdio: ['ignore', 'pipe', 'pipe'] });
   const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';

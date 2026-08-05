@@ -1,5 +1,4 @@
-import { useRef } from 'react';
-import type { FormEventHandler, ReactNode } from 'react';
+import { useRef, type FormEventHandler, type ReactNode } from 'react';
 import { cx } from '../../../components/ui';
 
 export function SupportTicketComposerSection({

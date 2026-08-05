@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
-import { RouterProvider } from 'react-router-dom';
+import { RouterProvider } from 'react-router/dom';
 import { router } from './app/router';
-import { ThemeProvider } from './app/theme-context';
 import './index.css';
 
 function ViewportHeightSync() {
@@ -31,8 +30,6 @@ function ViewportHeightSync() {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ThemeProvider>
-      <ViewportHeightSync />
-    </ThemeProvider>
+    <ViewportHeightSync />
   </React.StrictMode>,
 );

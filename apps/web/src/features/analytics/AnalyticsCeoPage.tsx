@@ -1,22 +1,25 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import type {
   AnalyticsDataStatus,
   AnalyticsBlockState,
+  AnalyticsSourceStatusPayload,
 } from "@genius-support-os/contracts";
-import { GeniusMascot } from "../../components/GeniusMascot";
-import { getCeoHistory, getCeoSnapshot } from "./analytics-api";
-import type {
-  AnalyticsFilters,
-  AnalyticsPageProps,
-  CeoHistory,
-  CeoSnapshot,
+import { getAnalyticsSourceStatus, getCeoHistory, getCeoSnapshot } from "./analytics-api";
+import {
+  analyticsGlobalToBlockState,
+  analyticsSourceToBlockState,
+  DEFAULT_ANALYTICS_FILTERS,
+  type AnalyticsFilters,
+  type AnalyticsPageProps,
+  type CeoHistory,
+  type CeoSnapshot,
 } from "./analytics-model";
-import { DEFAULT_ANALYTICS_FILTERS } from "./analytics-model";
 import { AnalyticsFilters as Filters } from "./AnalyticsFilters";
 import {
   AnalyticsLoadingState,
   AnalyticsRetryAction,
+  AnalyticsStateBadge,
   formatCountLabel,
 } from "./analytics-ui";
 import { resolveAnalyticsPeriod } from "./analytics-periods";
@@ -30,32 +33,32 @@ const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
   fresh: "Dados atualizados",
   stale: "Dados podem estar atrasados",
   partial: "Cobertura parcial",
+  never_synced: "Sincronização ainda não realizada",
   empty: "Sem registros no recorte",
   zero: "Zero real no recorte",
   not_configured: "Fonte não configurada",
   syncing: "Sincronização em andamento",
   unavailable: "Fonte indisponível",
-  error: "Falha na fonte",
+  failed: "Falha na sincronização",
+  error: "Falha na sincronização",
+  unavailable_source: "Fonte indisponível",
+  unavailable_contract: "Contrato indisponível",
+  unavailable_period: "Período indisponível",
 };
 
 type MetricDelta = {
   label: string;
   tone: "positive" | "negative" | "neutral";
 } | null;
-type DomainScope =
-  | "all"
-  | "commercial"
-  | "customer_success"
-  | "support"
-  | "finance"
-  | "product"
-  | "development";
-
 export function AnalyticsCeoPage({
   sharedPeriod,
   onSharedPeriodChange,
   onRetry,
   isDashboardViewer = false,
+  sourceStatus,
+  canSyncSources = false,
+  syncSources,
+  syncBusy = false,
 }: AnalyticsPageProps) {
   const period = sharedPeriod ?? resolveAnalyticsPeriod("month");
   const [filters, setFilters] = useState<AnalyticsFilters>({
@@ -66,10 +69,10 @@ export function AnalyticsCeoPage({
     loading: boolean;
     data?: CeoSnapshot;
     history?: CeoHistory;
+    sourceStatus?: AnalyticsSourceStatusPayload;
     error?: boolean;
   }>({ loading: true });
   const [refreshing, setRefreshing] = useState(false);
-  const [domainScope, setDomainScope] = useState<DomainScope>("all");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   useEffect(
@@ -84,10 +87,10 @@ export function AnalyticsCeoPage({
         ? { ...current, loading: false, error: undefined }
         : { loading: true },
     );
-    Promise.all([getCeoSnapshot(filters), getCeoHistory(filters)])
-      .then(([data, history]) => {
+    Promise.all([getCeoSnapshot(filters), getCeoHistory(filters), sourceStatus ? Promise.resolve(sourceStatus) : getAnalyticsSourceStatusSafe()])
+      .then(([data, history, liveSourceStatus]) => {
         if (!cancelled) {
-          setResult({ loading: false, data, history });
+          setResult({ loading: false, data, history, sourceStatus: liveSourceStatus ?? sourceStatus });
           setRefreshing(false);
         }
       })
@@ -105,8 +108,8 @@ export function AnalyticsCeoPage({
   if (result.loading && !result.data)
     return (
       <AnalyticsLoadingState
-        title="Conjurando seus dados"
-        description="Estamos preparando sua visão executiva."
+        title="O Gênio está alinhando os sinais das fontes"
+        description="Ele está cruzando as leituras publicadas; o cockpit volta assim que houver um estado confiável."
       />
     );
   if (result.error || !result.data)
@@ -119,18 +122,24 @@ export function AnalyticsCeoPage({
     );
 
   const data = result.data;
-  const state = data.state;
+  const currentSourceStatus = result.sourceStatus ?? sourceStatus;
+  const state = currentSourceStatus ? analyticsGlobalToBlockState(currentSourceStatus) : data.state;
   const exceptions = buildExecutiveExceptions(data);
   const pipelines = rankExecutivePipelines(data.support.byPipeline);
-  const unavailable = [
+  const snapshotUnavailable = [
     "empty",
+    "never_synced",
+    "syncing",
     "unavailable",
+    "failed",
     "error",
     "not_configured",
   ].includes(state?.status ?? "unavailable");
+  const hubspotUnavailable = currentSourceStatus ? !hasUsableSnapshot(currentSourceStatus.hubspot.status, currentSourceStatus.hubspot.lastSuccessAt, currentSourceStatus.hubspot.hasValidSnapshot) : snapshotUnavailable;
+  const omieUnavailable = currentSourceStatus ? !hasUsableSnapshot(currentSourceStatus.omie.status, currentSourceStatus.omie.lastSuccessAt, currentSourceStatus.omie.hasValidSnapshot) : snapshotUnavailable;
   const history = result.history;
   const comparison =
-    history && !unavailable
+    history && !hubspotUnavailable
       ? {
           revenue: buildDelta(
             data.commercial.wonRevenue,
@@ -161,7 +170,12 @@ export function AnalyticsCeoPage({
     onSharedPeriodChange?.({ from: next.from, to: next.to });
     setMobileFiltersOpen(false);
   };
-  const domainCards = buildDomainCards(data, unavailable);
+  const domainCards = buildDomainCards(
+    data,
+    hubspotUnavailable,
+    omieUnavailable,
+    currentSourceStatus,
+  );
 
   return (
     <ExecutiveHdCanvas
@@ -172,14 +186,16 @@ export function AnalyticsCeoPage({
       exceptions={exceptions}
       pipelines={pipelines}
       comparison={comparison}
-      unavailable={unavailable}
+      unavailable={hubspotUnavailable}
+      financeUnavailable={omieUnavailable}
       refreshing={refreshing}
-      domainScope={domainScope}
-      setDomainScope={setDomainScope}
       mobileFiltersOpen={mobileFiltersOpen}
       setMobileFiltersOpen={setMobileFiltersOpen}
       applyFilters={applyFilters}
       isDashboardViewer={isDashboardViewer}
+      canSyncSources={canSyncSources}
+      syncSources={syncSources}
+      syncBusy={syncBusy}
     />
   );
 }
@@ -197,89 +213,75 @@ type DomainCard = {
 
 function buildDomainCards(
   data: CeoSnapshot,
-  unavailable: boolean,
+  hubspotUnavailable: boolean,
+  omieUnavailable: boolean,
+  sourceStatus?: AnalyticsSourceStatusPayload,
 ): DomainCard[] {
+  const hubspotState = sourceStatus
+    ? analyticsSourceToBlockState(sourceStatus.hubspot)
+    : data.state;
+  const omieState = sourceStatus
+    ? analyticsSourceToBlockState(sourceStatus.omie)
+    : data.state;
+
   return [
     {
       key: "commercial",
       title: "Comercial",
       description: "Pipeline e conversão",
-      value: unavailable
+      value: hubspotUnavailable
         ? "Indisponível"
         : formatCurrency(data.commercial.openPipelineValue),
-      details: `${formatCountLabel(data.commercial.openDeals, "negócio aberto", "negócios abertos")} · ${data.commercial.avgSalesCycleDays > 0 ? `${Math.round(data.commercial.avgSalesCycleDays).toLocaleString("pt-BR")} dias de ciclo` : "ciclo indisponível"}`,
+      details: hubspotUnavailable
+        ? "Dados comerciais indisponíveis"
+        : `${formatCountLabel(data.commercial.openDeals, "negócio aberto", "negócios abertos")} · ${data.commercial.avgSalesCycleDays > 0 ? `${Math.round(data.commercial.avgSalesCycleDays).toLocaleString("pt-BR")} dias de ciclo` : "ciclo indisponível"}`,
       href: analyticsHref("commercial"),
-      state: data.state,
+      state: hubspotState,
       tone: "blue",
     },
     {
       key: "customer_success",
       title: "Customer Success",
       description: "Carteira e cobertura",
-      value:
-        data.customerSuccess.state.status === "empty"
-          ? "Indisponível"
-          : formatCountLabel(
-              data.customerSuccess.activeCustomers,
-              "cliente ativo",
-              "clientes ativos",
-            ),
-      details: `${formatCountLabel(data.customerSuccess.customersWithoutOwner, "sem responsável", "sem responsáveis")} · ${formatCountLabel(data.customerSuccess.healthAvailable, "sinal disponível", "sinais disponíveis")}`,
+      value: "Indisponível",
+      details: "Dados de carteira ainda não consolidados",
       href: analyticsHref("customer-success"),
-      state: data.customerSuccess.state,
+      state: { ...data.customerSuccess.state, status: "unavailable", reason: "O denominador de cliente ativo ainda não foi confirmado." },
       tone: "pink",
     },
     {
       key: "support",
       title: "Suporte",
       description: "Volume e risco da fila",
-      value: unavailable
+      value: hubspotUnavailable
         ? "Indisponível"
         : formatCountLabel(
             data.support.highPriorityOpen,
             "alta prioridade",
             "altas prioridades",
           ),
-      details: `${formatPercent(data.support.closedRate)} encerrados · ${formatCountLabel(data.support.closeSlaTracked, "SLA acompanhado", "SLAs acompanhados")}`,
+      details: hubspotUnavailable
+        ? "Dados de suporte indisponíveis"
+        : `${formatPercent(data.support.closedRate)} encerrados · ${formatCountLabel(data.support.closeSlaTracked, "SLA acompanhado", "SLAs acompanhados")}`,
       href: analyticsHref("support"),
-      state: data.state,
+      state: hubspotState,
       tone: "cyan",
     },
     {
       key: "finance",
       title: "Financeiro",
       description: "Fluxo e reconciliação",
-      value: unavailable
+      value: omieUnavailable
         ? "Indisponível"
         : formatCountLabel(
             data.finance.unmatchedTitles,
             "título sem correspondência",
             "títulos sem correspondência",
           ),
-      details: `${formatCurrency(data.finance.balance)} em posição atual`,
+      details: omieUnavailable ? "Dados financeiros indisponíveis" : `${formatCurrency(data.finance.balance)} em posição atual`,
       href: analyticsHref("finance"),
-      state: data.state,
+      state: omieState,
       tone: "green",
-    },
-    {
-      key: "product",
-      title: "Produto",
-      description: "Fonte operacional",
-      value: "Fonte ainda não conectada",
-      details: data.product.reason,
-      href: analyticsHref("product"),
-      state: undefined,
-      tone: "muted",
-    },
-    {
-      key: "development",
-      title: "Desenvolvimento",
-      description: "Fonte operacional",
-      value: "Fonte ainda não conectada",
-      details: data.development.reason,
-      href: analyticsHref("development"),
-      state: undefined,
-      tone: "muted",
     },
   ];
 }
@@ -293,13 +295,15 @@ function ExecutiveHdCanvas({
   pipelines,
   comparison,
   unavailable,
+  financeUnavailable,
   refreshing,
-  domainScope,
-  setDomainScope,
   mobileFiltersOpen,
   setMobileFiltersOpen,
   applyFilters,
   isDashboardViewer,
+  canSyncSources,
+  syncSources,
+  syncBusy,
 }: {
   data: CeoSnapshot;
   state?: AnalyticsBlockState;
@@ -314,29 +318,17 @@ function ExecutiveHdCanvas({
     tickets: MetricDelta;
   };
   unavailable: boolean;
+  financeUnavailable: boolean;
   refreshing: boolean;
-  domainScope: DomainScope;
-  setDomainScope: (value: DomainScope) => void;
   mobileFiltersOpen: boolean;
   setMobileFiltersOpen: (value: boolean) => void;
   applyFilters: (next: AnalyticsFilters) => void;
   isDashboardViewer: boolean;
+  canSyncSources: boolean;
+  syncSources?: () => void;
+  syncBusy: boolean;
 }) {
   const periodLabel = formatPeriod(filters);
-  const sourceStates = [
-    { label: "HubSpot", state: data.commercial ? state : undefined },
-    { label: "OMIE", state: data.finance ? state : undefined },
-    { label: "CS", state: data.customerSuccess.state },
-    { label: "Produto", state: undefined, note: "não conectado" },
-    { label: "Desenvolvimento", state: undefined, note: "não conectado" },
-  ];
-  const availableSources = sourceStates.filter((item) => item.state && ['fresh', 'stale', 'partial', 'syncing', 'zero'].includes(item.state.status)).length;
-  const sourceCoverage = (sourceState?: AnalyticsBlockState) => {
-    const expected = sourceState?.coverage.expected;
-    const received = sourceState?.coverage.received;
-    if (expected === null || expected === undefined || received === null || received === undefined) return null;
-    return `${received.toLocaleString("pt-BR")}/${expected.toLocaleString("pt-BR")}`;
-  };
   const qualityExpected = state?.coverage.expected;
   const qualityReceived = state?.coverage.received;
   const qualityLabel =
@@ -348,70 +340,40 @@ function ExecutiveHdCanvas({
       : "Cobertura não informada";
 
   return (
-    <div className="gso-hd-canvas gso-executive-canvas" data-testid="executive-dashboard">
-      <section className="gso-hd-pulse gso-executive-source-pulse" aria-label="Pulso das fontes">
-        <div className="gso-hd-pulse-label">
-          <span className="gso-hd-signal-dot" aria-hidden="true" />
-          Pulso das fontes
+    <div className="gso-hd-canvas gso-pilot-summary gso-executive-canvas gso-visual-v1-overview" data-testid="executive-dashboard">
+      <section className="gso-hd-context gso-overview-context" aria-labelledby="executive-heading">
+        <div className="gso-overview-context__source">
+          <strong>Estado das fontes</strong>
+          {state ? <AnalyticsStateBadge state={state} /> : null}
+          <span>HubSpot para operação; OMIE para Financeiro.</span>
         </div>
-        <div className="gso-hd-source-list">
-          {sourceStates.map((item) => (
-            <div key={item.label} className="gso-hd-source">
-              <span
-                className={`gso-hd-source-line ${item.state ? statusTone(item.state.status) : "muted"}`}
-                aria-hidden="true"
-              />
-              <span>{item.label}</span>
-              <small>{item.note ?? [shortStatus(item.state?.status), sourceCoverage(item.state)].filter(Boolean).join(" · ")}</small>
-            </div>
-          ))}
-        </div>
-        <span className="gso-hd-source-summary">{availableSources} de {sourceStates.length} fontes disponíveis</span>
-        <span className="gso-hd-pulse-meta">
-          {state?.lastSuccessfulSyncAt
-            ? `Última atualização ${formatRelativeSync(state.lastSuccessfulSyncAt)}`
-            : "Atualização não registrada"}
-        </span>
-      </section>
-
-      <section className="gso-hd-context" aria-labelledby="executive-heading">
-        <div>
-          <p className="gso-hd-eyebrow">Visão Geral</p>
+        <div className="gso-overview-context__heading">
           <div className="gso-hd-title-row">
             <h2 id="executive-heading">Visão Geral</h2>
-            {state ? <HdStatus state={state} /> : null}
           </div>
           <p>
             Desempenho no período, posição atual e sinais que merecem contexto.
           </p>
         </div>
-        <div className="gso-hd-context-side">
-          <GeniusMascot
-            size="sm"
-            pose={state?.status === "syncing" ? "magic" : "think"}
-            expression="happy"
-            alt="Gênio organizando a leitura das fontes"
-          />
-          <div>
-            <strong>
-              {state ? shortStatus(state.status) : "Fonte sem atualização"}
-            </strong>
-            <span>
-              {state?.reason ?? "Leitura factual das fontes conectadas."}
-            </span>
-          </div>
+        <div className="gso-overview-context__action">
+          {canSyncSources && syncSources ? (
+            <button
+              type="button"
+              className="gso-hd-sync-action"
+              disabled={syncBusy}
+              onClick={syncSources}
+              data-testid="overview-sync-sources"
+            >
+              {syncBusy ? "Atualizando…" : "Sincronizar bases"}
+            </button>
+          ) : null}
         </div>
       </section>
 
-      <div className="gso-hd-filter-bar" aria-label="Filtros da análise">
+          <div className="gso-hd-filter-bar gso-hd-pulse" aria-label="Filtros da análise">
         <div className="gso-hd-filter-context">
           <span>Recorte</span>
           <strong>{periodLabel}</strong>
-          <em>
-            {domainScope === "all"
-              ? "Todos os domínios"
-              : domainCards.find((card) => card.key === domainScope)?.title}
-          </em>
         </div>
         <button
           type="button"
@@ -422,23 +384,6 @@ function ExecutiveHdCanvas({
           Filtros <span>{mobileFiltersOpen ? "−" : "+"}</span>
         </button>
         <div className={`gso-hd-filters ${mobileFiltersOpen ? "is-open" : ""}`}>
-          <label>
-            Domínio em foco
-            <select
-              value={domainScope}
-              onChange={(event) =>
-                setDomainScope(event.target.value as typeof domainScope)
-              }
-            >
-              <option value="all">Todos</option>
-              <option value="commercial">Comercial</option>
-              <option value="customer_success">Customer Success</option>
-              <option value="support">Suporte</option>
-              <option value="finance">Financeiro</option>
-              <option value="product">Produto</option>
-              <option value="development">Desenvolvimento</option>
-            </select>
-          </label>
           <Filters value={filters} onApply={applyFilters} stageOptions={[]} />
         </div>
       </div>
@@ -468,11 +413,11 @@ function ExecutiveHdCanvas({
                 ? "Indisponível"
                 : formatCurrency(data.commercial.wonRevenue)
             }
-            detail={formatCountLabel(
-              data.commercial.wonDeals,
-              "negócio ganho",
-              "negócios ganhos",
-            )}
+            detail={unavailable
+              ? data.commercial.wonDeals > 0
+                ? `${formatCountLabel(data.commercial.wonDeals, "negócio ganho", "negócios ganhos")}; valor não disponível`
+                : "Valor da receita indisponível"
+              : formatCountLabel(data.commercial.wonDeals, "negócio ganho", "negócios ganhos")}
             comparison={comparison.revenue?.label}
           />
           <HdMetric
@@ -482,11 +427,9 @@ function ExecutiveHdCanvas({
                 ? "Indisponível"
                 : data.commercial.wonDeals.toLocaleString("pt-BR")
             }
-            detail={formatCountLabel(
-              data.commercial.lostDeals,
-              "negócio perdido",
-              "negócios perdidos",
-            )}
+            detail={unavailable
+              ? "Dados comerciais indisponíveis"
+              : formatCountLabel(data.commercial.lostDeals, "negócio perdido", "negócios perdidos")}
             comparison={comparison.deals?.label}
           />
           <HdMetric
@@ -497,7 +440,7 @@ function ExecutiveHdCanvas({
                 ? "Indisponível"
                 : formatPercent(data.commercial.conversionRate)
             }
-            detail="Ganhos sobre ganhos e perdas"
+            detail={unavailable ? "Dados comerciais indisponíveis" : "Ganhos sobre ganhos e perdas"}
             comparison={comparison.conversion?.label}
           />
           <HdMetric
@@ -507,11 +450,9 @@ function ExecutiveHdCanvas({
                 ? "Indisponível"
                 : data.support.createdTickets.toLocaleString("pt-BR")
             }
-            detail={formatCountLabel(
-              data.support.closedTickets,
-              "ticket encerrado",
-              "tickets encerrados",
-            )}
+            detail={unavailable
+              ? "Contagem de tickets indisponível"
+              : formatCountLabel(data.support.closedTickets, "ticket encerrado", "tickets encerrados")}
             comparison={comparison.tickets?.label}
           />
         </div>
@@ -530,24 +471,22 @@ function ExecutiveHdCanvas({
           <HdMetric
             label="Saldo vencido"
             value={
-              unavailable
+              financeUnavailable
                 ? "Indisponível"
                 : formatCurrency(data.finance.overdueBalance)
             }
-            detail={formatCountLabel(
-              data.finance.overdueTitles,
-              "título vencido",
-              "títulos vencidos",
-            )}
+            detail={financeUnavailable
+              ? "Dados financeiros indisponíveis"
+              : formatCountLabel(data.finance.overdueTitles, "título vencido", "títulos vencidos")}
           />
           <HdMetric
             label="Clientes com alerta"
             value={
-              unavailable
+              financeUnavailable || unavailable
                 ? "Indisponível"
                 : data.financialAlerts.length.toLocaleString("pt-BR")
             }
-            detail="Inadimplência reconciliada"
+            detail={financeUnavailable || unavailable ? "Reconciliação financeira indisponível" : "Inadimplência reconciliada"}
           />
           <HdMetric
             label="Tickets em aberto"
@@ -556,11 +495,9 @@ function ExecutiveHdCanvas({
                 ? "Indisponível"
                 : data.support.openTickets.toLocaleString("pt-BR")
             }
-            detail={formatCountLabel(
-              data.support.highPriorityOpen,
-              "alta prioridade aberta",
-              "altas prioridades abertas",
-            )}
+            detail={unavailable
+              ? "Contagem de tickets indisponível"
+              : formatCountLabel(data.support.highPriorityOpen, "alta prioridade aberta", "altas prioridades abertas")}
           />
         </div>
       </section>
@@ -572,17 +509,12 @@ function ExecutiveHdCanvas({
         <HdSectionHeading
           id="domains-heading"
           title="Mapa das áreas"
-          description="As áreas ativas ganham peso; Produto e Desenvolvimento permanecem conectados ao mapa sem inventar métricas."
+          description="Cada indicador mostra sua fonte e o estado da última atualização válida."
         />
         <div className="gso-hd-domain-grid">
-          {domainCards
-            .filter((card) => domainScope === "all" || card.key === domainScope)
-            .map((card) => (
-              <HdDomain
-                key={card.key}
-                card={card}
-              />
-            ))}
+          {domainCards.map((card) => (
+            <HdDomain key={card.key} card={card} />
+          ))}
         </div>
       </section>
 
@@ -695,10 +627,13 @@ function ExecutiveHdCanvas({
 }
 
 function HdStatus({ state }: { state: AnalyticsBlockState }) {
+  const lastValidLabel = (state.status === "failed" || state.status === "error") && state.lastSuccessfulSyncAt
+    ? ` · dados válidos de ${new Date(state.lastSuccessfulSyncAt).toLocaleString("pt-BR")}`
+    : "";
   return (
     <span className={`gso-hd-status ${statusTone(state.status)}`}>
       <i aria-hidden="true" />
-      {shortStatus(state.status)}
+      {shortStatus(state.status)}{lastValidLabel}
     </span>
   );
 }
@@ -803,8 +738,20 @@ function statusTone(status?: AnalyticsDataStatus) {
   if (status === "fresh" || status === "zero") return "fresh";
   if (status === "stale" || status === "partial" || status === "syncing")
     return "warning";
-  if (status === "error" || status === "unavailable") return "critical";
+  if (status === "error" || status === "failed" || status === "unavailable" || status === "never_synced") return "critical";
   return "muted";
+}
+
+function hasUsableSnapshot(status: AnalyticsSourceStatusPayload['globalStatus'], lastSuccessAt: string | null, hasValidSnapshot = false) {
+  return Boolean(lastSuccessAt || hasValidSnapshot) && ['fresh', 'stale', 'partial', 'syncing', 'failed'].includes(status);
+}
+
+async function getAnalyticsSourceStatusSafe(): Promise<AnalyticsSourceStatusPayload | null> {
+  try {
+    return await getAnalyticsSourceStatus();
+  } catch {
+    return null;
+  }
 }
 function shortStatus(status?: AnalyticsDataStatus) {
   return status ? STATUS_LABELS[status] : "Não conectado";
@@ -826,12 +773,6 @@ function formatPeriod(filters: AnalyticsFilters) {
 }
 function formatDate(value: string) {
   return new Date(`${value}T12:00:00`).toLocaleDateString("pt-BR");
-}
-function formatRelativeSync(value: string) {
-  return new Date(value).toLocaleString("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  });
 }
 function buildDelta(
   current: number,

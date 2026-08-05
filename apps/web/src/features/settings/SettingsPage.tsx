@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router';
 import { cx } from '../../components/ui';
 import {
   archiveConversationType,
@@ -31,7 +31,6 @@ import {
   saveHelpCenterSupportContacts,
   saveManagedIntegration,
 } from './settings-api';
-import { AnalyticsConfigPage } from '../analytics/AnalyticsConfigPage';
 import { useAuthContext } from '../auth/auth-context';
 
 type GroupStatus = 'ativo' | 'existe_hoje' | 'em_breve';
@@ -48,6 +47,30 @@ interface SettingsGroup {
 
 type LoadState<T> = { phase: 'idle' | 'loading' } | { phase: 'ready'; items: T[] } | { phase: 'error' };
 
+import { canOpenSettingsSection } from '../../app/release-surface.mjs';
+import { BrandsSettingsPage } from './BrandsSettingsPage';
+import { DashboardSourcesSettingsPage } from './DashboardSourcesSettingsPage';
+import { HelpCenterSettingsPage } from './HelpCenterSettingsPage';
+import { SettingsIntegrationsPanel } from './SettingsIntegrationsPanel';
+import '../analytics/high-density.css';
+import './settings-ui.css';
+import { SyncHistorySettingsPage } from './SyncHistorySettingsPage';
+
+const DASHBOARD_SECTION_IDS = ['dashboard-fontes', 'dashboard-historico'];
+
+const SETTINGS_ROUTES: Record<string, string> = {
+  marcas: '/admin/settings/brands',
+  'central-ajuda': '/admin/settings/help-center',
+  integracoes: '/admin/settings/integrations',
+  'dashboard-fontes': '/admin/settings/dashboard-sources',
+  'dashboard-historico': '/admin/settings/sync-history',
+};
+
+function sectionFromPathname(pathname: string) {
+  const route = Object.entries(SETTINGS_ROUTES).find(([, path]) => pathname === path)?.[0];
+  return route ?? null;
+}
+
 const GROUPS: SettingsGroup[] = [
   { id: 'marcas', label: 'Marcas', description: 'As marcas atendidas na plataforma e sua identidade.', controls: ['Nome da marca', 'Central de ajuda (slug)', 'Ordem'], usadoEm: 'Central de ajuda, portal do cliente e atendimento', status: 'ativo', nota: 'Genius e After Sale na mesma plataforma; gerenciável aqui.' },
   { id: 'central-ajuda', label: 'Central de ajuda', description: 'Contatos exibidos no rodapé público, fora do conteúdo dos artigos.', controls: ['E-mail de suporte', 'WhatsApp de suporte', 'Site e links auxiliares', 'Por central de ajuda'], usadoEm: 'Rodapé da Central de Ajuda pública', status: 'ativo', nota: 'Os artigos não armazenam mais contatos operacionais; esta configuração é a fonte única para o público.' },
@@ -62,18 +85,10 @@ const GROUPS: SettingsGroup[] = [
   { id: 'automacoes', label: 'Automações', description: 'Regras simples de roteamento (se isto, então aquilo).', controls: ['Condição (se)', 'Ação (então)'], usadoEm: 'Roteamento de demandas entre áreas', status: 'em_breve', nota: 'Exemplo: se o tipo for “bug”, então a área é “Produto”.' },
   { id: 'segmentos', label: 'Segmentos e clusters', description: 'Como os clientes são agrupados na carteira de CS.', controls: ['Nome do segmento', 'Cor', 'Ordem'], usadoEm: 'Carteira de CS (clusterização)', status: 'ativo', nota: 'Parâmetro gerenciável pela tela; base para a clusterização de CS.' },
   { id: 'canais', label: 'Canais', description: 'Por onde as mensagens entram e saem.', controls: ['Canal', 'Situação', 'Marca'], usadoEm: 'Entrada e saída de mensagens', status: 'existe_hoje', nota: 'Portal do cliente ativo; e-mail e WhatsApp são evolução futura.' },
-  { id: 'integracoes', label: 'Integrações', description: 'Fontes externas, credenciais e atualizações do dashboard gerencial.', controls: ['HubSpot', 'Planilhas CS e Comercial', 'Omie Financeiro', 'GitHub Produto'], usadoEm: 'Dashboard gerencial e ingestões operacionais', status: 'ativo', nota: 'Segredos ficam no Vault; o painel mostra apenas o estado configurado.' },
+  { id: 'integracoes', label: 'Integrações', description: 'Fontes externas e credenciais do Dashboard Gerencial.', controls: ['HubSpot', 'OMIE Financeiro', 'Estado da credencial'], usadoEm: 'Dashboard Gerencial e atualizações operacionais', status: 'ativo', nota: 'A tela mostra somente o estado da conexão. O valor da credencial nunca retorna para a interface.' },
+  { id: 'dashboard-fontes', label: 'Fontes do Dashboard', description: 'Pipelines e fontes que alimentam o Dashboard Gerencial.', controls: ['Pipelines HubSpot', 'Fonte OMIE API'], usadoEm: 'Dashboard Gerencial', status: 'ativo', nota: 'Pipelines e escopos operacionais permanecem separados da credencial da integração.' },
+  { id: 'dashboard-historico', label: 'Histórico de sincronizações', description: 'Execuções, resultados e erros das integrações gerenciais.', controls: ['Execuções', 'Status', 'Erros'], usadoEm: 'Dashboard Gerencial', status: 'ativo', nota: 'O histórico fica separado das configurações e das ações de atualização.' },
 ];
-
-function StatusPill({ status }: { status: GroupStatus }) {
-  if (status === 'ativo') {
-    return <span className="inline-flex items-center rounded-full border border-[color:var(--color-success-border)] bg-[color:var(--color-success-surface)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--color-success-text)]">Ativo</span>;
-  }
-  if (status === 'existe_hoje') {
-    return <span className="inline-flex items-center rounded-full border border-[color:var(--color-info-border)] bg-[color:var(--color-info-surface)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--color-info-text)]">Existe hoje</span>;
-  }
-  return <span className="inline-flex items-center rounded-full border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--minimal-text-tertiary)]">Em breve</span>;
-}
 
 function ColorPill({ token, label }: { token: string | null; label: string }) {
   const map: Record<string, string> = {
@@ -461,181 +476,6 @@ function CustomerSegmentsPanel({
   );
 }
 
-function BrandsPanel({
-  state,
-  onCreate,
-  onArchive,
-  mutating,
-  mutationError,
-}: {
-  state: LoadState<Brand>;
-  onCreate: (input: { label: string; helpCenterSlug: string; sortOrder: number }) => Promise<boolean>;
-  onArchive: (id: string) => Promise<void>;
-  mutating: boolean;
-  mutationError: string | null;
-}) {
-  const [showForm, setShowForm] = useState(false);
-  const [label, setLabel] = useState('');
-  const [slug, setSlug] = useState('');
-  const items = state.phase === 'ready' ? state.items.filter((item: Brand) => item.isActive) : [];
-
-  async function handleSave() {
-    if (!label.trim()) return;
-    const ok = await onCreate({ label, helpCenterSlug: slug, sortOrder: (items.length + 1) * 10 });
-    if (ok) {
-      setLabel('');
-      setSlug('');
-      setShowForm(false);
-    }
-  }
-
-  return (
-    <div>
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">Marcas cadastradas</h3>
-        {!showForm ? (
-          <button className="inline-flex items-center rounded-lg border border-[color:var(--minimal-border)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-text)] hover:bg-[color:var(--minimal-surface-muted)]" onClick={() => setShowForm(true)} type="button">
-            Adicionar marca
-          </button>
-        ) : null}
-      </div>
-      {showForm ? (
-        <div className="mb-4 rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] p-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="text-xs font-medium text-[color:var(--minimal-text-secondary)]">
-              Nome da marca
-              <input className={cx(inputClass, 'mt-1')} onChange={(event) => setLabel(event.target.value)} placeholder="Ex.: After Sale" value={label} />
-            </label>
-            <label className="text-xs font-medium text-[color:var(--minimal-text-secondary)]">
-              Central de ajuda (slug)
-              <input className={cx(inputClass, 'mt-1')} onChange={(event) => setSlug(event.target.value)} placeholder="ex.: after-sale" value={slug} />
-            </label>
-          </div>
-          {mutationError ? <p className="mt-2 text-xs text-[color:var(--color-danger-text)]">{mutationError}</p> : null}
-          <div className="mt-3 flex items-center gap-2">
-            <button className="inline-flex items-center rounded-lg border border-transparent bg-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action-ink)] disabled:opacity-60" disabled={mutating || !label.trim()} onClick={() => void handleSave()} type="button">
-              {mutating ? 'Salvando…' : 'Salvar'}
-            </button>
-            <button className="inline-flex items-center rounded-lg border border-[color:var(--minimal-border)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-text-secondary)]" onClick={() => { setShowForm(false); setLabel(''); setSlug(''); }} type="button">
-              Cancelar
-            </button>
-          </div>
-        </div>
-      ) : null}
-      {state.phase === 'loading' || state.phase === 'idle' ? (
-        <p className="text-sm text-[color:var(--minimal-text-secondary)]">Carregando marcas…</p>
-      ) : state.phase === 'error' ? (
-        <div className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] px-4 py-3 text-sm text-[color:var(--color-danger-text)]">Não foi possível carregar agora. Atualize a página e tente novamente.</div>
-      ) : items.length === 0 ? (
-        <p className="text-sm text-[color:var(--minimal-text-secondary)]">Nenhuma marca cadastrada.</p>
-      ) : (
-        <div className="overflow-hidden rounded-lg border border-[color:var(--minimal-border)]">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] text-xs text-[color:var(--minimal-text-tertiary)]">
-              <tr><th className="px-3 py-2 font-medium">Marca</th><th className="px-3 py-2 font-medium">Central de ajuda</th><th className="px-3 py-2 text-right font-medium">Ação</th></tr>
-            </thead>
-            <tbody>
-              {items.map((item: Brand) => (
-                <tr className="border-b border-[color:var(--minimal-border)] last:border-b-0" key={item.id}>
-                  <td className="px-3 py-2.5 font-medium text-[color:var(--minimal-text)]">{item.label}</td>
-                  <td className="px-3 py-2.5 text-[color:var(--minimal-text-secondary)]">{item.helpCenterSlug ?? '—'}</td>
-                  <td className="px-3 py-2.5 text-right">
-                    <button className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--minimal-text-tertiary)] hover:text-[color:var(--color-danger-text)] disabled:opacity-60" disabled={mutating} onClick={() => void onArchive(item.id)} type="button">Arquivar</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function HelpCenterSupportContactsPanel({
-  state,
-  onSave,
-  mutating,
-  mutationError,
-}: {
-  state: LoadState<HelpCenterSupportContacts>;
-  onSave: (input: HelpCenterSupportContacts) => Promise<void>;
-  mutating: boolean;
-  mutationError: string | null;
-}) {
-  if (state.phase === 'loading' || state.phase === 'idle') {
-    return <p className="text-sm text-[color:var(--minimal-text-secondary)]">Carregando configurações da Central de Ajuda…</p>;
-  }
-  if (state.phase === 'error') {
-    return <div className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] px-4 py-3 text-sm text-[color:var(--color-danger-text)]">Não foi possível carregar os contatos da Central agora.</div>;
-  }
-  const items = state.phase === 'ready' ? state.items : [];
-  if (items.length === 0) {
-    return <p className="text-sm text-[color:var(--minimal-text-secondary)]">Nenhuma Central de Ajuda ativa foi encontrada.</p>;
-  }
-
-  return (
-    <div className="grid gap-4">
-      <div className="rounded-lg border border-[color:var(--color-info-border)] bg-[color:var(--color-info-surface)] px-4 py-3 text-sm leading-6 text-[color:var(--color-info-text)]">
-        Estes dados aparecem no rodapé público da Central. Alterações aqui não exigem editar artigo por artigo.
-      </div>
-      {items.map((item: HelpCenterSupportContacts) => (
-        <HelpCenterSupportContactForm item={item} key={item.knowledgeSpaceId} mutating={mutating} mutationError={mutationError} onSave={onSave} />
-      ))}
-    </div>
-  );
-}
-
-function HelpCenterSupportContactForm({
-  item,
-  onSave,
-  mutating,
-  mutationError,
-}: {
-  item: HelpCenterSupportContacts;
-  onSave: (input: HelpCenterSupportContacts) => Promise<void>;
-  mutating: boolean;
-  mutationError: string | null;
-}) {
-  const [form, setForm] = useState(item);
-  const update = (key: keyof HelpCenterSupportContacts, value: string) => {
-    setForm((current) => ({ ...current, [key]: value }));
-  };
-
-  return (
-    <div className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-4">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">{item.brandName}</h3>
-          <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">/{item.knowledgeSpaceSlug} · {item.knowledgeSpaceDisplayName}</p>
-        </div>
-        <span className="rounded-full border border-[color:var(--minimal-border)] px-2 py-1 text-[11px] text-[color:var(--minimal-text-tertiary)]">Fonte única pública</span>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {([
-          ['email', 'E-mail de suporte', 'ede.oliveira@confi.com.vc', 'email'],
-          ['whatsapp', 'WhatsApp de suporte', '(41) 98765-2115', 'text'],
-          ['websiteUrl', 'Site/portal', 'https://www.geniusreturns.com.br/', 'url'],
-          ['statusPageUrl', 'Página de status', 'https://status.exemplo.com', 'url'],
-          ['docsUrl', 'Link alternativo da Central', 'https://...', 'url'],
-        ] as const).map(([key, label, placeholder, type]) => (
-          <label className="text-xs font-medium text-[color:var(--minimal-text-secondary)]" key={key}>
-            {label}
-            <input className={cx(inputClass, 'mt-1')} onChange={(event) => update(key, event.target.value)} placeholder={placeholder} type={type} value={form[key] ?? ''} />
-          </label>
-        ))}
-      </div>
-      {mutationError ? <p className="mt-3 text-xs text-[color:var(--color-danger-text)]">{mutationError}</p> : null}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Salvo por RPC auditada; o conteúdo original dos artigos permanece como proveniência.</p>
-        <button className="inline-flex items-center rounded-lg border border-transparent bg-[color:var(--minimal-action)] px-3 py-1.5 text-sm font-medium text-[color:var(--minimal-action-ink)] disabled:opacity-60" disabled={mutating} onClick={() => void onSave(form)} type="button">
-          {mutating ? 'Salvando…' : 'Salvar contatos'}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function TicketCategoriesPanel({ state }: { state: LoadState<TicketCategory> }) {
   const items = state.phase === 'ready' ? state.items : [];
   if (state.phase === 'loading' || state.phase === 'idle') {
@@ -670,7 +510,7 @@ function TicketCategoriesPanel({ state }: { state: LoadState<TicketCategory> }) 
           </tbody>
         </table>
       </div>
-      <p className="mt-3 text-xs leading-5 text-[color:var(--minimal-text-tertiary)]">Edição de categorias entra num próximo ciclo; hoje a consulta é centralizada aqui.</p>
+      <p className="mt-3 text-xs leading-5 text-[color:var(--minimal-text-tertiary)]">As categorias exibidas aqui orientam a classificação do atendimento e podem ser arquivadas quando deixarem de ser usadas.</p>
     </div>
   );
 }
@@ -698,7 +538,8 @@ function GroupDetail({
   mutating,
   mutationError,
   integrations,
-  onSaveIntegration: _onSaveIntegration,
+  onReloadIntegrations,
+  onSaveIntegration,
 }: {
   group: SettingsGroup;
   conversationTypes: LoadState<ConversationType>;
@@ -722,6 +563,7 @@ function GroupDetail({
   mutating: boolean;
   mutationError: string | null;
   integrations: LoadState<ManagedIntegration>;
+  onReloadIntegrations: () => Promise<void>;
   onSaveIntegration: (input: Parameters<typeof saveManagedIntegration>[0]) => Promise<void>;
 }) {
   const isConversationTypes = group.id === 'tipos-conversa';
@@ -734,31 +576,57 @@ function GroupDetail({
   const isIntegrations = group.id === 'integracoes';
 
   return (
-    <article className="min-h-0 overflow-y-auto bg-[color:var(--minimal-surface)]">
+    <article className="min-h-0 bg-[color:var(--minimal-surface)]">
+      {DASHBOARD_SECTION_IDS.includes(group.id) ? (
+        // As duas telas do eixo de dados trazem o próprio cabeçalho de página,
+        // com breadcrumb, metadado de leitura e ações da seção.
+        <div className="px-5 py-5 sm:px-6">
+          {group.id === 'dashboard-fontes' ? <DashboardSourcesSettingsPage /> : <SyncHistorySettingsPage />}
+        </div>
+      ) : isIntegrations ? (
+        // Integrações traz o próprio cabeçalho de página: título, contexto de
+        // leitura e a ação de reler o estado ficam na composição da tela.
+        <div className="px-5 py-5 sm:px-6">
+          {integrations.phase === 'ready' ? (
+            <SettingsIntegrationsPanel busy={mutating} error={mutationError} integrations={integrations.items} onReload={onReloadIntegrations} onSave={onSaveIntegration} />
+          ) : integrations.phase === 'error' ? (
+            <div className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] px-4 py-3 text-sm text-[color:var(--color-danger-text)]">Não foi possível carregar as integrações agora.</div>
+          ) : (
+            <p className="text-sm text-[color:var(--minimal-text-secondary)]">Carregando integrações…</p>
+          )}
+        </div>
+      ) : isBrands ? (
+        // Marcas traz o próprio cabeçalho de página: título, contagem de marcas
+        // ativas e a ação de cadastro ficam na composição da tela.
+        <div className="px-5 py-5 sm:px-6">
+          <BrandsSettingsPage mutating={mutating} mutationError={mutationError} onArchive={onArchiveBrand} onCreate={onCreateBrand} state={brands} />
+        </div>
+      ) : isHelpCenter ? (
+        // Central de ajuda também responde pelo próprio cabeçalho, com a ação de
+        // abrir a central pública.
+        <div className="px-5 py-5 sm:px-6">
+          <HelpCenterSettingsPage mutating={mutating} mutationError={mutationError} onSave={onSaveHelpCenterSupportContacts} state={helpCenterSupportContacts} />
+        </div>
+      ) : (
+      <>
       <header className="border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-xl font-semibold tracking-[-0.025em] text-[color:var(--minimal-text)]">{group.label}</h2>
             <p className="mt-1 text-sm text-[color:var(--minimal-text-secondary)]">{group.description}</p>
           </div>
-          <StatusPill status={group.status} />
+
         </div>
       </header>
 
       <div className="divide-y divide-[color:var(--minimal-border)]">
-        <section className="px-5 py-5 sm:px-6">
-          <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">O que este parâmetro define</h3>
-          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-            {group.controls.map((control: string) => (
-              <li className="rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface-muted)] px-3 py-2 text-sm text-[color:var(--minimal-text)]" key={control}>{control}</li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="px-5 py-5 sm:px-6">
-          <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">Usado em</h3>
-          <p className="mt-2 text-sm text-[color:var(--minimal-text-secondary)]">{group.usadoEm}</p>
-          {group.nota ? <p className="mt-3 text-xs leading-5 text-[color:var(--minimal-text-tertiary)]">{group.nota}</p> : null}
+        <section className="gso-settings-context-strip px-5 py-3 sm:px-6" aria-label="Resumo da configuração">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span className="text-xs font-semibold text-[color:var(--minimal-text)]">Nesta área</span>
+            <div className="flex flex-wrap gap-1.5">{group.controls.map((control: string) => <span className="gso-settings-context-chip" key={control}>{control}</span>)}</div>
+            <span className="text-xs text-[color:var(--minimal-text-secondary)]">Usado em: {group.usadoEm}</span>
+          </div>
+          {group.nota ? <p className="mt-1 text-[11px] leading-4 text-[color:var(--minimal-text-tertiary)]">{group.nota}</p> : null}
         </section>
 
         <section className="px-5 py-5 sm:px-6">
@@ -770,31 +638,8 @@ function GroupDetail({
             <QuickRepliesPanel mutating={mutating} mutationError={mutationError} onArchive={onArchiveQuickReply} onCreate={onCreateQuickReply} state={quickReplies} />
           ) : isSegments ? (
             <CustomerSegmentsPanel mutating={mutating} mutationError={mutationError} onArchive={onArchiveSegment} onCreate={onCreateSegment} state={customerSegments} />
-          ) : isBrands ? (
-            <BrandsPanel mutating={mutating} mutationError={mutationError} onArchive={onArchiveBrand} onCreate={onCreateBrand} state={brands} />
-          ) : isHelpCenter ? (
-            <HelpCenterSupportContactsPanel mutating={mutating} mutationError={mutationError} onSave={onSaveHelpCenterSupportContacts} state={helpCenterSupportContacts} />
           ) : isCategorias ? (
             <TicketCategoriesPanel state={ticketCategories} />
-          ) : isIntegrations ? (
-            integrations.phase === 'ready' ? (
-              <>
-                <div className="gso-settings-integration-panorama" aria-label="Panorama das integrações">
-                  {integrations.items.filter((item) => ['hubspot', 'omie', 'github'].includes(item.provider)).map((item) => (
-                    <div className="gso-settings-integration-signal" key={item.id}>
-                      <span>{item.provider === 'hubspot' ? 'HubSpot' : item.provider === 'omie' ? 'OMIE' : 'Produto'}</span>
-                      <strong>{item.hasCredentials ? 'Configurado' : 'Aguardando configuração'}</strong>
-                      <small>{item.lastRunAt ? `Última execução: ${new Date(item.lastRunAt).toLocaleString('pt-BR')}` : 'Nenhuma execução registrada'}</small>
-                    </div>
-                  ))}
-                </div>
-                <AnalyticsConfigPage />
-              </>
-            ) : integrations.phase === 'error' ? (
-              <div className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] px-4 py-3 text-sm text-[color:var(--color-danger-text)]">Não foi possível carregar as integrações agora.</div>
-            ) : (
-              <p className="text-sm text-[color:var(--minimal-text-secondary)]">Carregando integrações…</p>
-            )
           ) : group.status === 'existe_hoje' ? (
             <div className="rounded-lg border border-[color:var(--color-info-border)] bg-[color:var(--color-info-surface)] px-4 py-3 text-sm text-[color:var(--color-info-text)]">Já existe no sistema. Será centralizado aqui para edição em um único lugar.</div>
           ) : (
@@ -802,17 +647,46 @@ function GroupDetail({
           )}
         </section>
       </div>
+      </>
+      )}
     </article>
   );
 }
 
 export function SettingsPage() {
   const { gate } = useAuthContext();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const isDashboardViewer = gate.actor?.roles.includes('dashboard_viewer') === true && gate.actor?.is_platform_admin !== true;
-  const visibleGroups = isDashboardViewer ? GROUPS.filter((group) => group.id === 'integracoes') : GROUPS.filter((group) => ['integracoes', 'central-ajuda', 'marcas'].includes(group.id));
-  const requestedSection = searchParams.get('section') === 'analytics' ? 'integracoes' : searchParams.get('section');
-  const [selectedId, setSelectedId] = useState<string>(isDashboardViewer ? 'integracoes' : requestedSection ?? 'integracoes');
+  // Ordem de validacao: superficie do release primeiro, permissao do perfil
+  // depois. Configuracoes passa a exibir apenas o que o usuario pode operar.
+  // Referência estável a partir do contexto de auth: evita recalcular os memos
+  // que dependem de permissão a cada render e deixa a dependência explícita.
+  const settingsPermissions = useMemo(
+    () => ({
+      isPlatformAdmin: gate.actor?.is_platform_admin === true,
+      screenKeys: gate.actor?.screen_keys ?? [],
+    }),
+    [gate.actor?.is_platform_admin, gate.actor?.screen_keys],
+  );
+  const visibleGroups = useMemo(
+    () => GROUPS.filter((group) => canOpenSettingsSection(group.id, settingsPermissions)),
+    [settingsPermissions],
+  );
+  const requestedSection = sectionFromPathname(location.pathname) ?? 'integracoes';
+  const [selectedId, setSelectedId] = useState<string>(() => {
+    // A busca global do Genio deixa aqui a secao pedida.
+    try {
+      const requested = window.sessionStorage.getItem('genius.settings-section');
+      if (requested) {
+        window.sessionStorage.removeItem('genius.settings-section');
+        if (visibleGroups.some((group) => group.id === requested)) return requested;
+      }
+    } catch {
+      // sessionStorage indisponivel: segue com a primeira secao visivel.
+    }
+    if (requestedSection && visibleGroups.some((group) => group.id === requestedSection)) return requestedSection;
+    return visibleGroups[0]?.id ?? GROUPS[0].id;
+  });
   const [conversationTypes, setConversationTypes] = useState<LoadState<ConversationType>>({ phase: 'idle' });
   const [priorityLevels, setPriorityLevels] = useState<LoadState<PriorityLevel>>({ phase: 'idle' });
   const [quickReplies, setQuickReplies] = useState<LoadState<QuickReply>>({ phase: 'idle' });
@@ -826,16 +700,9 @@ export function SettingsPage() {
   const selected = visibleGroups.find((group: SettingsGroup) => group.id === selectedId) ?? visibleGroups[0];
 
   useEffect(() => {
-    const next = isDashboardViewer ? 'integracoes' : (searchParams.get('section') === 'analytics' ? 'integracoes' : searchParams.get('section'));
-    if (next && visibleGroups.some((group) => group.id === next)) setSelectedId(next);
-  }, [isDashboardViewer, searchParams, visibleGroups]);
-
-  const selectGroup = (groupId: string) => {
-    setSelectedId(groupId);
-    const params = new URLSearchParams(searchParams);
-    params.set('section', groupId === 'integracoes' ? 'analytics' : groupId);
-    setSearchParams(params, { replace: true });
-  };
+    const next = isDashboardViewer ? 'integracoes' : sectionFromPathname(location.pathname);
+    if (next && visibleGroups.some((group) => group.id === next) && selectedId !== next) setSelectedId(next);
+  }, [isDashboardViewer, location.pathname, selectedId, visibleGroups]);
 
   const loadTypes = useCallback(async () => {
     setConversationTypes({ phase: 'loading' });
@@ -918,20 +785,20 @@ export function SettingsPage() {
   }, []);
 
   useEffect(() => {
-    if (isDashboardViewer) {
-      void loadIntegrations();
-      return;
-    }
-
-    void loadTypes();
-    void loadPriorities();
-    void loadQuickReplies();
-    void loadSegments();
-    void loadBrands();
-    void loadHelpCenterSupportContacts();
-    void loadCategories();
-    void loadIntegrations();
-  }, [isDashboardViewer, loadTypes, loadPriorities, loadQuickReplies, loadSegments, loadBrands, loadHelpCenterSupportContacts, loadCategories, loadIntegrations]);
+    // Cada read model só é consultado quando a seção correspondente está
+    // realmente aberta e autorizada. Carregar todas as configurações no mount
+    // disparava leituras de módulos que o operador não está usando e gerava
+    // 403 de RLS (por exemplo, categorias ao abrir Integrações).
+    if (!selected) return;
+    if (selected.id === 'tipos-conversa') void loadTypes();
+    if (selected.id === 'prioridades') void loadPriorities();
+    if (selected.id === 'respostas-rapidas') void loadQuickReplies();
+    if (selected.id === 'segmentos') void loadSegments();
+    if (selected.id === 'marcas') void loadBrands();
+    if (selected.id === 'central-ajuda') void loadHelpCenterSupportContacts();
+    if (selected.id === 'categorias') void loadCategories();
+    if (selected.id === 'integracoes') void loadIntegrations();
+  }, [selected, loadTypes, loadPriorities, loadQuickReplies, loadSegments, loadBrands, loadHelpCenterSupportContacts, loadCategories, loadIntegrations]);
 
   const handleSaveIntegration = useCallback(
     async (input: Parameters<typeof saveManagedIntegration>[0]) => {
@@ -1136,40 +1003,13 @@ export function SettingsPage() {
   );
 
   return (
-    <div className="gso-settings-shell flex h-full min-h-0 flex-col bg-[color:var(--minimal-surface)]">
-      <header className="gso-workspace-header shrink-0 border-b border-[color:var(--minimal-border)] px-5 py-4 sm:px-6">
-        <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">Configurações</h1>
-        <p className="mt-1 text-xs text-[color:var(--minimal-text-secondary)]">
-          {isDashboardViewer
-            ? 'Credenciais e fontes usadas pelo Dashboard Gerencial.'
-            : 'O centro de parâmetros do sistema — tudo que aparece nas outras telas nasce aqui.'}
-        </p>
-      </header>
-
-      <div className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="gso-settings-nav min-h-0 overflow-y-auto border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)]">
-          {visibleGroups.map((group: SettingsGroup) => {
-            const active = group.id === selectedId;
-            return (
-              <button
-                aria-pressed={active}
-                className={cx(
-                  'gso-nav-link flex w-full items-center justify-between gap-2 border-b border-[color:var(--minimal-border)] px-4 py-3 text-left transition-colors duration-150',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--minimal-focus)]',
-                  active ? 'gso-nav-link--active bg-[color:var(--minimal-selection)]' : 'bg-transparent hover:bg-[color:var(--minimal-surface-muted)]',
-                )}
-                key={group.id}
-                onClick={() => selectGroup(group.id)}
-                type="button"
-              >
-                <span className={cx('truncate text-sm font-medium', active ? 'text-[color:var(--minimal-selection-text)]' : 'text-[color:var(--minimal-text)]')}>{group.label}</span>
-                <StatusPill status={group.status} />
-              </button>
-            );
-          })}
-        </aside>
-
-        <GroupDetail
+    <div className="gso-settings-shell gso-visual-v1-settings-shell gso-high-density-ui flex h-full min-h-0 flex-col bg-[color:var(--minimal-surface)]">
+      {/* A navegação das seções de Configurações vive na sidebar global. Aqui
+          resta apenas o conteúdo da seção pedida pela rota, em uma coluna
+          única, e cada seção responde pelo próprio cabeçalho. */}
+      <div className="gso-settings-cockpit-layout flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <main className="gso-settings-cockpit-main min-w-0 flex-1">
+          <GroupDetail
           conversationTypes={conversationTypes}
           group={selected}
           mutating={mutating}
@@ -1192,8 +1032,10 @@ export function SettingsPage() {
           priorityLevels={priorityLevels}
           quickReplies={quickReplies}
           integrations={integrations}
+          onReloadIntegrations={loadIntegrations}
           onSaveIntegration={handleSaveIntegration}
-        />
+          />
+        </main>
       </div>
     </div>
   );
