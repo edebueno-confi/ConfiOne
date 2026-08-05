@@ -25,6 +25,38 @@ test('integrações não misturam fontes, histórico ou modo técnico', () => {
   assert.doesNotMatch(integrations, /Modo|Dashboard e Analytics|Diagnóstico|Histórico|contas_a_receber|Vault/);
 });
 
+test('a composição de Integrações não puxa dados de outras telas', async () => {
+  const rail = await readFile(new URL('../../apps/web/src/features/settings/integrations/IntegrationHealthRail.tsx', import.meta.url), 'utf8');
+  const syncStatus = await readFile(new URL('../../apps/web/src/features/settings/integrations/IntegrationSyncStatus.tsx', import.meta.url), 'utf8');
+  const security = await readFile(new URL('../../apps/web/src/features/settings/integrations/IntegrationSecuritySummary.tsx', import.meta.url), 'utf8');
+
+  // O rail é governança, não um segundo histórico: ele lê o mesmo read model
+  // dos cards e apenas aponta para a tela dedicada de execuções.
+  for (const source of [rail, syncStatus, security]) {
+    assert.doesNotMatch(source, /analytics-api|listAnalyticsSyncHistory|triggerHubspotSync|triggerOmieSync/);
+  }
+  assert.match(syncStatus, /\/admin\/settings\/sync-history/);
+  // Verificação de conexão sob demanda não existe no backend: a tela declara a
+  // limitação em vez de simular um teste.
+  assert.match(syncStatus, /Não existe verificação de conexão sob demanda/);
+  assert.doesNotMatch(syncStatus, /Testar conex/);
+  // Nenhuma promessa de segurança sem contrapartida no código.
+  assert.doesNotMatch(security, /AES-256|rotação automática de|monitoramento ativo/);
+});
+
+test('a tela de Integrações não carrega nem ecoa o valor da credencial', async () => {
+  const panel = await readFile(new URL('../../apps/web/src/features/settings/SettingsIntegrationsPanel.tsx', import.meta.url), 'utf8');
+  const card = await readFile(new URL('../../apps/web/src/features/settings/integrations/IntegrationProviderCard.tsx', import.meta.url), 'utf8');
+
+  // Campos de credencial nascem vazios e só viajam quando o operador digita.
+  assert.match(panel, /useState\(''\)/);
+  assert.match(panel, /secret: nextSecret \? nextSecret : undefined/);
+  assert.match(panel, /secret: key \? JSON\.stringify\(\{ app_key: key, app_secret: secret \}\) : undefined/);
+  assert.match(panel, /type="password"/);
+  assert.doesNotMatch(panel, /console\.|localStorage|sessionStorage/);
+  assert.doesNotMatch(card, /secret|token/i);
+});
+
 test('Fontes do Dashboard concentra agenda, ações reais e catálogo', () => {
   assert.match(sources, /Atualização automática do Dashboard/);
   assert.match(sources, /Atualizar painel completo/);

@@ -93,6 +93,7 @@ const accounts = [
     extraRoutes: ['/admin/knowledge', '/admin/access', '/admin/settings'],
     knowledgeEditorScenario: true,
     themeSurfaceScenario: true,
+    settingsIntegrationsScenario: true,
     // Sondagem sem asserção: inventário vivo das telas com
     // `release_enabled = false`. Elas respondem `/access-denied` por decisão de
     // release. Quando uma for publicada, promova para `extraRoutes`.
@@ -314,6 +315,52 @@ try {
           internalTheme,
           publicTheme,
         });
+      }
+      // Configurações → Integrações: auditoria visual em 1920x1080 e verificação
+      // de que a tela nunca chega com credencial preenchida. Os campos de
+      // segredo precisam nascer vazios, porque campo vazio significa "manter a
+      // credencial atual" no contrato de gravação.
+      if (viewport.name === 'desktop' && account.settingsIntegrationsScenario) {
+        await page.setViewportSize({ width: 1920, height: 1080 });
+        await page.goto(`${baseUrl}/admin/settings/integrations`, { waitUntil: 'domcontentloaded' });
+        await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+        await page.waitForTimeout(700);
+        for (const [name, level] of [
+          ['Integrações', 2],
+          ['HubSpot', 3],
+          ['OMIE', 3],
+          ['Conexões e execuções', 3],
+          ['Proteção das credenciais', 3],
+        ]) {
+          const heading = page.getByRole('heading', { name, level, exact: true });
+          if (!(await heading.count())) {
+            throw new Error(`LOCAL_QA_SETTINGS_INTEGRATIONS_MISSING_BLOCK: ${name}`);
+          }
+        }
+        const credentialFields = page.locator('.gso-int-card input[type="password"]');
+        const credentialCount = await credentialFields.count();
+        if (credentialCount < 3) {
+          throw new Error(`LOCAL_QA_SETTINGS_INTEGRATIONS_CREDENTIAL_FIELDS: ${credentialCount}`);
+        }
+        for (let index = 0; index < credentialCount; index += 1) {
+          if ((await credentialFields.nth(index).inputValue()) !== '') {
+            throw new Error('LOCAL_QA_SETTINGS_INTEGRATIONS_CREDENTIAL_PREFILLED');
+          }
+        }
+        const integrationsOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+        if (integrationsOverflow) {
+          throw new Error('LOCAL_QA_HORIZONTAL_OVERFLOW: platform_admin settings-integrations 1920');
+        }
+        await page.screenshot({ path: join(logDir, 'browser-platform_admin-settings-integrations-1920.png'), fullPage: true });
+        screenshots.push('browser-platform_admin-settings-integrations-1920.png');
+        deepScenarios.push({
+          role: account.role,
+          scenario: 'settings-integrations',
+          viewport: '1920x1080',
+          credentialFields: credentialCount,
+          credentialsPrefilled: false,
+        });
+        await page.setViewportSize({ width: viewport.width, height: viewport.height });
       }
       // A sondagem roda por último, depois do veredito do persona, porque visita
       // rotas sem screen key de propósito. Nesse caminho o app tenta ler o read

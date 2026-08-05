@@ -1,0 +1,93 @@
+/* Configurações → Integrações.
+   Composição da referência: cabeçalho, resumo, cards de provedor, rail de
+   governança e faixa inferior. Usa apenas os tokens já publicados em
+   index.css; nenhuma cor literal é introduzida aqui. */
+
+.gso-int-surface { display: grid; gap: 0.95rem; min-width: 0; color: var(--minimal-text); }
+/* A variante visual de Configurações abre o espaçamento das telas antigas; a
+   composição desta tela mantém o próprio ritmo vertical. */
+.gso-int-surface.gso-visual-v1-settings { gap: 0.95rem; }
+
+.gso-int-tone-success { color: var(--color-success-text); }
+.gso-int-tone-warning { color: var(--color-warning-text); }
+.gso-int-tone-danger { color: var(--color-danger-text); }
+.gso-int-tone-muted { color: var(--minimal-text-tertiary); }
+
+/* Resumo das integrações */
+.gso-int-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid color-mix(in srgb, var(--minimal-border) 76%, transparent); background: var(--minimal-surface); }
+.gso-int-summary-item { min-width: 0; padding: 0.68rem 0.85rem; border-right: 1px solid color-mix(in srgb, var(--minimal-border) 55%, transparent); }
+.gso-int-summary-item:last-child { border-right: 0; }
+.gso-int-summary-item > span { display: block; color: var(--minimal-text-tertiary); font-size: 0.63rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.gso-int-summary-item > strong { display: block; margin-top: 0.26rem; font-family: 'Space Grotesk', 'Instrument Sans', sans-serif; font-size: 1.15rem; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.gso-int-summary-item > small { display: block; margin-top: 0.16rem; color: var(--minimal-text-secondary); font-size: 0.68rem; line-height: 1.4; }
+.gso-int-summary-item--health { border-left: 2px solid var(--minimal-action); }
+.gso-int-summary-item--health > strong { font-size: 0.95rem; letter-spacing: -0.015em; }
+.gso-int-summary-item--text > strong { font-size: 0.95rem; letter-spacing: -0.015em; }
+
+/* Corpo: coluna de cards + rail de governança */
+.gso-int-body { display: grid; grid-template-columns: minmax(0, 1fr) 19.5rem; align-items: start; gap: 0.95rem; }
+.gso-int-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; }
+
+/* Card do provedor */
+.gso-int-card { display: grid; align-content: start; gap: 0.7rem; min-width: 0; border: 1px solid color-mix(in srgb, var(--minimal-border) 76%, transparent); border-top: 2px solid var(--minimal-action); background: var(--minimal-surface); padding: 0.9rem; }
+.gso-int-card--finance { border-top-color: var(--accent-500); }
+.gso-int-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.85rem; }
+.gso-int-card-title { min-width: 0; }
+.gso-int-card-title h3 { margin: 0.14rem 0 0.26rem; font-size: 1rem; letter-spacing: -0.02em; }
+.gso-int-card-title p { margin: 0; color: var(--minimal-text-secondary); font-size: 0.78rem; line-height: 1.5; }
+.gso-int-card-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem 0.75rem; margin: 0; border-top: 1px solid color-mix(in srgb, var(--minimal-border) 55%, transparent); padding-top: 0.6rem; }
+.gso-int-card-meta div { min-width: 0; }
+.gso-int-card-meta dt { color: var(--minimal-text-tertiary); font-size: 0.63rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; }
+.gso-int-card-meta dd { margin: 0.14rem 0 0; color: var(--minimal-text-secondary); font-size: 0.73rem; line-height: 1.4; font-variant-numeric: tabular-nums; }
+.gso-int-card-error { margin: 0; border-left: 2px solid var(--color-danger-border); padding-left: 0.55rem; color: var(--color-danger-text); font-size: 0.72rem; line-height: 1.45; overflow-wrap: anywhere; }
+.gso-int-card-footnote { margin: 0; color: var(--minimal-text-tertiary); font-size: 0.7rem; line-height: 1.45; }
+
+/* Rail de governança */
+.gso-int-rail { display: grid; align-content: start; gap: 0.7rem; min-width: 0; }
+.gso-int-rail-block { border: 1px solid color-mix(in srgb, var(--minimal-border) 76%, transparent); border-left: 2px solid var(--minimal-action); background: var(--minimal-surface-muted); padding: 0.75rem 0.8rem; }
+.gso-int-rail-block h3 { margin: 0.14rem 0 0; font-size: 0.85rem; letter-spacing: -0.015em; }
+.gso-int-rail-block > p { margin: 0.28rem 0 0; color: var(--minimal-text-secondary); font-size: 0.72rem; line-height: 1.5; }
+.gso-int-rail-list { display: grid; gap: 0.55rem; margin: 0.65rem 0 0; padding: 0; list-style: none; }
+.gso-int-rail-item { display: grid; gap: 0.1rem; min-width: 0; border-left: 2px solid color-mix(in srgb, var(--minimal-action) 45%, transparent); padding-left: 0.55rem; }
+.gso-int-rail-item > strong { font-size: 0.75rem; }
+.gso-int-rail-item > span { color: var(--minimal-text-secondary); font-size: 0.7rem; font-variant-numeric: tabular-nums; }
+.gso-int-rail-item > small { color: var(--minimal-text-tertiary); font-size: 0.68rem; line-height: 1.4; overflow-wrap: anywhere; }
+.gso-int-rail-facts { display: grid; gap: 0.42rem; margin: 0.6rem 0 0; padding: 0; list-style: none; }
+.gso-int-rail-facts li { position: relative; padding-left: 0.8rem; color: var(--minimal-text-secondary); font-size: 0.71rem; line-height: 1.45; }
+.gso-int-rail-facts li::before { content: ''; position: absolute; top: 0.42rem; left: 0; width: 0.32rem; height: 0.32rem; background: var(--minimal-action); }
+.gso-int-rail-link { display: inline-flex; align-items: center; gap: 0.3rem; margin-top: 0.65rem; color: var(--minimal-action); font-size: 0.72rem; font-weight: 700; }
+.gso-int-rail-link:hover { text-decoration: underline; }
+.gso-int-rail-note { margin: 0.6rem 0 0; border-top: 1px dashed color-mix(in srgb, var(--minimal-border) 70%, transparent); padding-top: 0.5rem; color: var(--minimal-text-tertiary); font-size: 0.68rem; line-height: 1.45; }
+
+/* Faixa inferior */
+.gso-int-footer { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid color-mix(in srgb, var(--minimal-border) 76%, transparent); border-left: 2px solid var(--minimal-action); background: color-mix(in srgb, var(--minimal-action) 5%, var(--minimal-surface)); }
+.gso-int-footer-item { min-width: 0; padding: 0.68rem 0.85rem; border-right: 1px solid color-mix(in srgb, var(--minimal-border) 45%, transparent); }
+.gso-int-footer-item:last-child { border-right: 0; }
+.gso-int-footer-item > strong { display: block; font-size: 0.77rem; letter-spacing: -0.01em; }
+.gso-int-footer-item > span { display: block; margin-top: 0.18rem; color: var(--minimal-text-secondary); font-size: 0.7rem; line-height: 1.45; }
+
+@media (max-width: 1440px) {
+  .gso-int-cards { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 1180px) {
+  .gso-int-body { grid-template-columns: 1fr; }
+  .gso-int-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 1024px) {
+  .gso-int-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gso-int-summary-item:nth-child(2n) { border-right: 0; }
+  .gso-int-summary-item:nth-child(-n + 2) { border-bottom: 1px solid color-mix(in srgb, var(--minimal-border) 55%, transparent); }
+  .gso-int-cards { grid-template-columns: 1fr; }
+  .gso-int-footer { grid-template-columns: 1fr; }
+  .gso-int-footer-item { border-right: 0; border-bottom: 1px solid color-mix(in srgb, var(--minimal-border) 45%, transparent); }
+  .gso-int-footer-item:last-child { border-bottom: 0; }
+}
+
+@media (max-width: 760px) {
+  .gso-int-summary { grid-template-columns: 1fr; }
+  .gso-int-summary-item { border-right: 0; border-bottom: 1px solid color-mix(in srgb, var(--minimal-border) 55%, transparent); }
+  .gso-int-summary-item:last-child { border-bottom: 0; }
+  .gso-int-card-meta { grid-template-columns: 1fr; }
+}

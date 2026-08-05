@@ -730,6 +730,7 @@ function GroupDetail({
   mutating,
   mutationError,
   integrations,
+  onReloadIntegrations,
   onSaveIntegration,
 }: {
   group: SettingsGroup;
@@ -754,6 +755,7 @@ function GroupDetail({
   mutating: boolean;
   mutationError: string | null;
   integrations: LoadState<ManagedIntegration>;
+  onReloadIntegrations: () => Promise<void>;
   onSaveIntegration: (input: Parameters<typeof saveManagedIntegration>[0]) => Promise<void>;
 }) {
   const isConversationTypes = group.id === 'tipos-conversa';
@@ -777,6 +779,18 @@ function GroupDetail({
             {group.id === 'dashboard-fontes' ? <DashboardSourcesSettingsPage /> : <SyncHistorySettingsPage />}
           </div>
         </>
+      ) : isIntegrations ? (
+        // Integrações traz o próprio cabeçalho de página: título, contexto de
+        // leitura e a ação de reler o estado ficam na composição da tela.
+        <div className="px-5 py-5 sm:px-6">
+          {integrations.phase === 'ready' ? (
+            <SettingsIntegrationsPanel busy={mutating} error={mutationError} integrations={integrations.items} onReload={onReloadIntegrations} onSave={onSaveIntegration} />
+          ) : integrations.phase === 'error' ? (
+            <div className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] px-4 py-3 text-sm text-[color:var(--color-danger-text)]">Não foi possível carregar as integrações agora.</div>
+          ) : (
+            <p className="text-sm text-[color:var(--minimal-text-secondary)]">Carregando integrações…</p>
+          )}
+        </div>
       ) : (
       <>
       <header className="border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6">
@@ -790,18 +804,14 @@ function GroupDetail({
       </header>
 
       <div className="divide-y divide-[color:var(--minimal-border)]">
-        {!isIntegrations ? (
-          <>
-            <section className="gso-settings-context-strip px-5 py-3 sm:px-6" aria-label="Resumo da configuração">
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <span className="text-xs font-semibold text-[color:var(--minimal-text)]">Nesta área</span>
-                <div className="flex flex-wrap gap-1.5">{group.controls.map((control: string) => <span className="gso-settings-context-chip" key={control}>{control}</span>)}</div>
-                <span className="text-xs text-[color:var(--minimal-text-secondary)]">Usado em: {group.usadoEm}</span>
-              </div>
-              {group.nota ? <p className="mt-1 text-[11px] leading-4 text-[color:var(--minimal-text-tertiary)]">{group.nota}</p> : null}
-            </section>
-          </>
-        ) : null}
+        <section className="gso-settings-context-strip px-5 py-3 sm:px-6" aria-label="Resumo da configuração">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span className="text-xs font-semibold text-[color:var(--minimal-text)]">Nesta área</span>
+            <div className="flex flex-wrap gap-1.5">{group.controls.map((control: string) => <span className="gso-settings-context-chip" key={control}>{control}</span>)}</div>
+            <span className="text-xs text-[color:var(--minimal-text-secondary)]">Usado em: {group.usadoEm}</span>
+          </div>
+          {group.nota ? <p className="mt-1 text-[11px] leading-4 text-[color:var(--minimal-text-tertiary)]">{group.nota}</p> : null}
+        </section>
 
         <section className="px-5 py-5 sm:px-6">
           {isConversationTypes ? (
@@ -818,14 +828,6 @@ function GroupDetail({
             <HelpCenterSupportContactsPanel mutating={mutating} mutationError={mutationError} onSave={onSaveHelpCenterSupportContacts} state={helpCenterSupportContacts} />
           ) : isCategorias ? (
             <TicketCategoriesPanel state={ticketCategories} />
-          ) : isIntegrations ? (
-            integrations.phase === 'ready' ? (
-              <SettingsIntegrationsPanel busy={mutating} error={mutationError} integrations={integrations.items} onSave={onSaveIntegration} />
-            ) : integrations.phase === 'error' ? (
-              <div className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] px-4 py-3 text-sm text-[color:var(--color-danger-text)]">Não foi possível carregar as integrações agora.</div>
-            ) : (
-              <p className="text-sm text-[color:var(--minimal-text-secondary)]">Carregando integrações…</p>
-            )
           ) : group.status === 'existe_hoje' ? (
             <div className="rounded-lg border border-[color:var(--color-info-border)] bg-[color:var(--color-info-surface)] px-4 py-3 text-sm text-[color:var(--color-info-text)]">Já existe no sistema. Será centralizado aqui para edição em um único lugar.</div>
           ) : (
@@ -1263,6 +1265,7 @@ export function SettingsPage() {
           priorityLevels={priorityLevels}
           quickReplies={quickReplies}
           integrations={integrations}
+          onReloadIntegrations={loadIntegrations}
           onSaveIntegration={handleSaveIntegration}
           />
         </main>
