@@ -47,7 +47,7 @@ import {
 } from './analytics-model';
 import type { AnalyticsSourceStatusPayload } from '@genius-support-os/contracts';
 import { aggregateLatestHubspotSyncRuns } from './analytics-sync-runs.mjs';
-import { formatAnalyticsSyncError } from './analytics-sync-errors.mjs';
+import { analyticsSyncError } from './analytics-sync-errors.mjs';
 import { sanitizeCsSyncResult } from './analytics-cs-control.mjs';
 import { areAnalyticsSourcesActive } from './analytics-sync-progress.mjs';
 
@@ -280,13 +280,13 @@ export async function getFinanceSourceStatus(): Promise<FinanceSourceStatus> {
 
 export async function triggerOmieSync(): Promise<{ totalRows: number; acceptedRows: number }> {
   const config = readRuntimeConfig();
-  if (!config.ok) throw new Error('As funcoes seguras do Supabase nao estao disponiveis neste ambiente.');
+  if (!config.ok) throw new Error('A atualização não está disponível neste ambiente. O painel mantém o último estado publicado.');
   const client = requireSupabaseBrowserClient();
   const { data: { session }, error: sessionError } = await client.auth.getSession();
   if (sessionError || !session?.access_token) throw new Error('Sessao ativa indisponivel para sincronizar o Omie.');
   const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/omie-sync`, { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}`, apikey: config.config.supabaseAnonKey } });
   const payload = await response.json().catch(() => null) as { error?: string; code?: string; message?: string; totalRows?: number; acceptedRows?: number } | null;
-  if (!response.ok) throw new Error(formatAnalyticsSyncError({ operation: 'OMIE', status: response.status, payload }));
+  if (!response.ok) throw analyticsSyncError({ operation: 'OMIE', status: response.status, payload });
   return { totalRows: Number(payload?.totalRows ?? 0), acceptedRows: Number(payload?.acceptedRows ?? 0) };
 }
 
@@ -344,19 +344,19 @@ export async function setIntegrationSchedule(
 
 export async function runIntegrationNow(): Promise<{ status: 'success' | 'partial'; updated: number; companies: number; omieTitles: number; message?: string }> {
   const config = readRuntimeConfig();
-  if (!config.ok) throw new Error('As funções seguras do Supabase não estão disponíveis neste ambiente.');
+  if (!config.ok) throw new Error('A atualização não está disponível neste ambiente. O painel mantém o último estado publicado.');
   const client = requireSupabaseBrowserClient();
   const { data: { session }, error: sessionError } = await client.auth.getSession();
   if (sessionError || !session?.access_token) throw new Error('Sessão ativa indisponível para sincronizar.');
   const response = await fetch(`${config.config.supabaseUrl.replace(/\/$/, '')}/functions/v1/analytics-integration-run`, { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}`, apikey: config.config.supabaseAnonKey } });
   const payload = await response.json().catch(() => null) as { error?: string; code?: string; status?: 'success' | 'partial'; updated?: number; companies?: number; omieTitles?: number; message?: string } | null;
-  if (!response.ok) throw new Error(formatAnalyticsSyncError({ operation: 'OMIE ↔ HubSpot', status: response.status, payload }));
+  if (!response.ok) throw analyticsSyncError({ operation: 'OMIE ↔ HubSpot', status: response.status, payload });
   return { status: payload?.status === 'partial' ? 'partial' : 'success', updated: Number(payload?.updated ?? 0), companies: Number(payload?.companies ?? 0), omieTitles: Number(payload?.omieTitles ?? 0), message: payload?.message };
 }
 
 export async function triggerSequentialAnalyticsSync(): Promise<{ status: 'success' | 'partial'; updated: number; companies: number; omieTitles: number; message?: string }> {
   const config = readRuntimeConfig();
-  if (!config.ok) throw new Error('As funcoes seguras do Supabase nao estao disponiveis neste ambiente.');
+  if (!config.ok) throw new Error('A atualização não está disponível neste ambiente. O painel mantém o último estado publicado.');
   const client = requireSupabaseBrowserClient();
   const { data: { session }, error: sessionError } = await client.auth.getSession();
   if (sessionError || !session?.access_token) throw new Error('Sessao ativa indisponivel para sincronizar.');
@@ -366,7 +366,7 @@ export async function triggerSequentialAnalyticsSync(): Promise<{ status: 'succe
     body: JSON.stringify({}),
   });
   const payload = await response.json().catch(() => null) as { error?: string; status?: 'success' | 'partial' | 'blocked'; hubspot?: { runId?: string; recordsPromoted?: number }; omie?: { totalRows?: number; acceptedRows?: number }; message?: string } | null;
-  if (!response.ok && response.status !== 202) throw new Error(formatAnalyticsSyncError({ operation: 'HubSpot -> OMIE', status: response.status, payload }));
+  if (!response.ok && response.status !== 202) throw analyticsSyncError({ operation: 'HubSpot e OMIE', status: response.status, payload });
   const blocked = payload?.status === 'blocked';
   return {
     status: blocked || payload?.status === 'partial' ? 'partial' : 'success',
@@ -459,7 +459,7 @@ export async function upsertAnalyticsSourceConfig(input: { id?: string; domainKe
 
 export async function mergeHubSpotCompanies(input: { primaryCompanyId: string; objectIdToMerge: string; confirmation: string; reason?: string }): Promise<{ auditId: string; mergedCompanyId: string | null; syncRecommended: boolean; message: string }> {
   const config = readRuntimeConfig();
-  if (!config.ok) throw new Error('As funções seguras do Supabase não estão disponíveis neste ambiente.');
+  if (!config.ok) throw new Error('A atualização não está disponível neste ambiente. O painel mantém o último estado publicado.');
   const client = requireSupabaseBrowserClient();
   const { data: sessionData, error: sessionError } = await client.auth.getSession();
   if (sessionError || !sessionData.session?.access_token) throw new Error('Sessão ativa indisponível para unificar empresas.');
@@ -492,7 +492,7 @@ export async function triggerHubspotSync(
 ): Promise<HubspotSyncResult> {
   const config = readRuntimeConfig();
   if (!config.ok) {
-    throw new Error('As funcoes seguras do Supabase nao estao disponiveis neste ambiente.');
+    throw new Error('A atualização não está disponível neste ambiente. O painel mantém o último estado publicado.');
   }
 
   const client = requireSupabaseBrowserClient();
@@ -520,7 +520,7 @@ export async function triggerHubspotSync(
 
     const payload = (await response.json().catch(() => null)) as ({ error?: string; code?: string; message?: string } & Partial<HubspotSyncResult>) | null;
     if (!response.ok) {
-      throw new Error(formatAnalyticsSyncError({ operation: 'HubSpot', status: response.status, payload }));
+      throw analyticsSyncError({ operation: 'HubSpot', status: response.status, payload });
     }
   const rawRunId = payload as (Partial<HubspotSyncResult> & { run_id?: string }) | null;
   return { mode: rawRunId?.mode === 'full' ? 'full' : 'incremental', deals: 0, tickets: 0, owners: 0, stages: 0, companies: 0, status: 'queued', runId: rawRunId?.runId ?? rawRunId?.run_id };
@@ -576,7 +576,7 @@ export async function getCsSyncProgress(runId: string): Promise<CsSyncProgress |
 
 export async function triggerCsSupportSync(latestRun: SyncRun | null): Promise<CsSupportSyncResult> {
   const config = readRuntimeConfig();
-  if (!config.ok) throw new Error('As funções seguras do Supabase não estão disponíveis neste ambiente.');
+  if (!config.ok) throw new Error('A atualização não está disponível neste ambiente. O painel mantém o último estado publicado.');
   const client = requireSupabaseBrowserClient();
   const { data: { session }, error: sessionError } = await client.auth.getSession();
   if (sessionError || !session?.access_token) throw new Error('Sessão ativa indisponível para sincronizar CS / Suporte.');
@@ -592,6 +592,6 @@ export async function triggerCsSupportSync(latestRun: SyncRun | null): Promise<C
     body: JSON.stringify({ domain: 'cs_support', correlationId }),
   });
   const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
-  if (!response.ok) throw new Error(formatAnalyticsSyncError({ operation: 'HubSpot CS / Suporte', status: response.status, payload }));
+  if (!response.ok) throw analyticsSyncError({ operation: 'HubSpot CS / Suporte', status: response.status, payload });
   return { ...sanitizeCsSyncResult(payload), status: 'queued', mode: 'full' };
 }
