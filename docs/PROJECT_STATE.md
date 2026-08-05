@@ -3560,3 +3560,24 @@ Relatório corrente: `docs/reports/2026-08-04_mvp-closure-status.md`.
 - Lint manteve 0 erros e 181 avisos; build, typechecks, secret scan e
   `quality:changed` aprovados.
 - Relatório: `docs/reports/2026-08-05_configuracoes-integracoes-nova-composicao.md`.
+
+## Atualização corrente — Configurações: arquitetura compartilhada e Histórico — 2026-08-05
+
+- `settings-shell.css` passa a ser a peça comum das telas de Configurações:
+  breadcrumb, navegação local com ícone, faixa de indicadores, barra de filtros,
+  paginação e tons de estado. `SettingsPageHeader` ganhou breadcrumb.
+- Ícones da navegação local são SVG inline, no padrão da sidebar. Nenhuma
+  dependência nova foi adicionada.
+- Histórico de sincronizações recomposto: quatro filtros com efeito comprovado
+  (29 execuções no recorte, 9 com o filtro de falha), faixa de cinco indicadores
+  sempre coerente com a lista, paginação cliente e estados vazios distintos.
+- Regra pura extraída para `features/settings/history/sync-history-view.mjs`, com
+  10 casos de teste. Ciclo com etapa falhada nunca é exibido como concluído.
+- Limitações declaradas na tela: leitura limitada a 100 execuções; não existe
+  exportação; o read model não publica registros criados/atualizados.
+- Relatório: `docs/reports/2026-08-05_configuracoes-arquitetura-e-historico.md`.
+- Próximas telas: Fontes do Dashboard, Marcas, Central de ajuda, Geral e
+  Usuários e acesso. As limitações de backend de cada uma estão levantadas e
+  registradas no relatório, incluindo a ausência de RPC de convite, reenvio,
+  remoção de usuário e auditoria por usuário no eixo de tenant, e o fato de o
+  control plane interno completo estar com `release_enabled = false`.
