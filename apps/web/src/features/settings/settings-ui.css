@@ -668,6 +668,51 @@
 .gso-ui-page-button:not(:disabled):hover { background: var(--ui-surface-muted); }
 .gso-ui-page-button:disabled { color: var(--ui-text-tertiary); cursor: not-allowed; opacity: 0.6; }
 
+/* Casco de tela administrativa com navegação permanente.
+
+   Regra estrutural: o container que ROLA nunca pode ser o mesmo que carrega o
+   cabeçalho, os indicadores e as abas. Quando isso acontece, cada filho vira um
+   item flexível encolhível; qualquer filho que seja container de rolagem (basta
+   `overflow-x: auto`, porque o eixo oposto deixa de ser `visible`) passa a ter
+   `min-height: auto` resolvido para 0 e o navegador o esmaga até sumir em vez de
+   gerar rolagem. Aqui o casco não rola, o cromo é `flex: 0 0 auto` e só o corpo
+   da aba rola. */
+.gso-ui-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  min-width: 0;
+  background: var(--ui-canvas);
+}
+.gso-ui-shell-chrome {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 0.8rem;
+  min-width: 0;
+  padding: 1.15rem 1.5rem 0;
+  background: var(--ui-canvas);
+}
+.gso-ui-shell-chrome > * { min-width: 0; }
+.gso-ui-shell-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.gso-ui-shell-body > .gso-ui-page { padding-top: 1rem; }
+
+/* Abas da tela: rolagem horizontal só quando não couberem, e altura mínima
+   preservada para que a faixa nunca colapse. */
+.gso-ui-tabs { flex: 0 0 auto; min-height: 2.5rem; }
+.gso-ui-tab { flex: 0 0 auto; }
+
+@media (max-width: 760px) {
+  .gso-ui-shell-chrome { padding: 1rem 1rem 0; }
+  .gso-ui-shell-body > .gso-ui-page { padding-top: 0.9rem; }
+}
+
 /* Lista + detalhe (Marcas). */
 .gso-ui-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 21rem); align-items: start; gap: 1.25rem; min-width: 0; }
 .gso-ui-split > * { min-width: 0; }

@@ -447,6 +447,67 @@ try {
           cards: helpCenterCards,
           contactFields: helpCenterFields,
         });
+        // Usuários e acesso: a navegação da tela precisa continuar visível e
+        // utilizável em TODAS as abas. O defeito corrigido em 2026-08-06 era
+        // estrutural: com o cabeçalho, os indicadores e as abas dentro do mesmo
+        // container que rola, a faixa de abas era esmagada até a altura de um
+        // fio. A asserção compara altura visível com altura de conteúdo, em
+        // 1920x1080 e em viewport móvel, e exige rótulo clicável em cada aba.
+        for (const accessViewport of [
+          { name: '1920x1080', width: 1920, height: 1080 },
+          { name: 'mobile-390x844', width: 390, height: 844 },
+        ]) {
+          await page.setViewportSize({ width: accessViewport.width, height: accessViewport.height });
+          await page.goto(`${baseUrl}/admin/access`, { waitUntil: 'domcontentloaded' });
+          await page.waitForLoadState('networkidle', { timeout: 12_000 }).catch(() => {});
+          await page.waitForTimeout(800);
+          const accessTabs = page.locator('nav[aria-label="Seções de acessos"] button');
+          const accessTabCount = await accessTabs.count();
+          if (accessTabCount < 4) throw new Error(`LOCAL_QA_ACCESS_TABS_MISSING: ${accessTabCount}`);
+          const visitedTabs = [];
+          for (let index = 0; index < accessTabCount; index += 1) {
+            const tabLabel = (await accessTabs.nth(index).innerText()).trim();
+            await accessTabs.nth(index).click();
+            await page.waitForTimeout(500);
+            const navigation = await page.evaluate(() => {
+              const nav = document.querySelector('nav[aria-label="Seções de acessos"]');
+              if (!nav) return null;
+              const rect = nav.getBoundingClientRect();
+              return {
+                clientHeight: nav.clientHeight,
+                scrollHeight: nav.scrollHeight,
+                height: Number(rect.height.toFixed(2)),
+                top: Number(rect.top.toFixed(2)),
+                buttons: nav.querySelectorAll('button').length,
+                horizontalOverflow: document.documentElement.scrollWidth - window.innerWidth,
+              };
+            });
+            if (!navigation) throw new Error(`LOCAL_QA_ACCESS_NAV_MISSING: ${tabLabel} ${accessViewport.name}`);
+            if (navigation.clientHeight < navigation.scrollHeight) {
+              throw new Error(
+                `LOCAL_QA_ACCESS_NAV_CLIPPED: ${tabLabel} ${accessViewport.name} visível=${navigation.clientHeight} conteúdo=${navigation.scrollHeight}`,
+              );
+            }
+            if (navigation.top < 0 || navigation.top + navigation.height > accessViewport.height) {
+              throw new Error(`LOCAL_QA_ACCESS_NAV_OFFSCREEN: ${tabLabel} ${accessViewport.name} top=${navigation.top}`);
+            }
+            if (navigation.horizontalOverflow > 1) {
+              throw new Error(`LOCAL_QA_HORIZONTAL_OVERFLOW: platform_admin access ${tabLabel} ${accessViewport.name}`);
+            }
+            visitedTabs.push({ tab: tabLabel, navHeight: navigation.clientHeight });
+          }
+          const primaryAction = await page.getByRole('button', { name: 'Criar usuário', exact: true }).count();
+          if (primaryAction < 1) throw new Error(`LOCAL_QA_ACCESS_PRIMARY_ACTION_MISSING: ${accessViewport.name}`);
+          await page.screenshot({ path: join(logDir, `browser-platform_admin-access-${accessViewport.name}.png`), fullPage: true });
+          screenshots.push(`browser-platform_admin-access-${accessViewport.name}.png`);
+          deepScenarios.push({
+            role: account.role,
+            scenario: 'access-tabs-navigation',
+            viewport: accessViewport.name,
+            tabs: visitedTabs,
+            primaryAction: 'Criar usuário',
+          });
+        }
         await page.setViewportSize({ width: viewport.width, height: viewport.height });
       }
       // A sondagem roda por último, depois do veredito do persona, porque visita
