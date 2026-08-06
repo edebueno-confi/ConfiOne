@@ -289,6 +289,21 @@ const CsPortfolioPage = lazyRouteModule(
   'CsPortfolioPage',
 );
 
+const MyProfilePage = lazyRouteModule(
+  () => import('../features/account/MyProfilePage'),
+  'MyProfilePage',
+);
+
+const AccountSelfShell = lazyRouteModule(
+  () => import('../features/account/AccountSelfShell'),
+  'AccountSelfShell',
+);
+
+const AccountSelfGate = lazyRouteModule(
+  () => import('../features/account/AccountSelfShell'),
+  'AccountSelfGate',
+) as ReturnType<typeof lazy<ComponentType<{ children?: ReactNode }>>>;
+
 function RouteLoading() {
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-[color:var(--color-background)] px-4 py-8" role="status" aria-busy="true" aria-label="Consultando a superfície solicitada">
@@ -565,6 +580,24 @@ export const router = createBrowserRouter([
           {
             path: 'work-items/:workItemId',
             element: withSuspense(<EngineeringWorkspacePage />),
+          },
+        ],
+      },
+      {
+        // Auto-servico: fora das areas operacionais de proposito. Qualquer
+        // identidade interna autenticada precisa alcancar o proprio perfil.
+        path: '/meu-perfil',
+        element: withSuspense(
+          <ReleaseSurfaceGate>
+            <AccountSelfGate>
+              <AccountSelfShell />
+            </AccountSelfGate>
+          </ReleaseSurfaceGate>,
+        ),
+        children: [
+          {
+            index: true,
+            element: withSuspense(<MyProfilePage />),
           },
         ],
       },

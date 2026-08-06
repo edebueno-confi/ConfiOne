@@ -1,5 +1,18 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+## Adendo corrente — convites internos e SMTP — 2026-08-06
+
+- O fluxo remoto de convite interno possui a correção de claim do `service_role`
+  aplicada pela migration `20260806005940_access_01_3_invitation_delivery_claim_hardening.sql`.
+- A Edge Function `internal-access-invite` foi redeployada e está ativa.
+- O SMTP customizado remoto aparece habilitado com `smtp.gmail.com:587`, mas a
+  senha não é auditável após o salvamento. A confirmação de produção depende de
+  App Password do Google, novo convite e leitura dos logs/caixa do destinatário.
+- O teste local foi validado com Mailpit: HTTP 200, convite `sent` e mensagem
+  capturada. O último teste remoto anterior ao deploy final terminou em HTTP 500
+  e deixou convites `pending`; evidência detalhada em
+  `docs/reports/2026-08-06_invite-smtp-delivery-diagnosis.md`.
+
 ## Adendo corrente — sincronização, qualidade e superfícies — 2026-08-04
 
 - O checkout canônico continua sendo `C:\Projetos\GSO-old`, na branch `main`,

@@ -1791,20 +1791,36 @@ export async function createAdminInternalUser(input: {
     body: { action: 'create', ...input },
   });
   if (error) throw toAppError(error, 'Falha ao criar o usuário interno.');
-  return data as { userId: string; created: boolean; alreadyExisted: boolean; credentialStatus: string };
+  return data as AdminInternalUserCredentialResult & {
+    created: boolean;
+    alreadyExisted: boolean;
+  };
 }
 
 /**
- * Inicialização de credencial pelo fluxo oficial de definição de senha. Nenhum
- * segredo trafega para o navegador: o servidor apenas dispara o fluxo do Auth.
+ * Resultado de uma operação que emite credencial. `temporaryPassword` só existe
+ * nesta resposta: o servidor não persiste, não registra em log e não devolve o
+ * valor em nenhuma consulta posterior.
  */
-export async function sendAdminInternalUserPasswordSetup(userId: string) {
+export interface AdminInternalUserCredentialResult {
+  userId: string;
+  credentialStatus: string;
+  temporaryPassword: string | null;
+  temporaryPasswordDisplayOnce: boolean;
+}
+
+/**
+ * Redefinição administrativa de senha. Substituiu o disparo de e-mail depois da
+ * decisão de produto de 2026-08-06: a senha é gerada no servidor, exibida uma
+ * única vez ao administrador e marcada para troca obrigatória no próximo acesso.
+ */
+export async function resetAdminInternalUserPassword(userId: string) {
   const client = requireClient();
   const { data, error } = await client.functions.invoke('internal-access-user-create', {
-    body: { action: 'password-setup', userId },
+    body: { action: 'password-reset', userId },
   });
-  if (error) throw toAppError(error, 'Falha ao iniciar a definição de senha.');
-  return data as { userId: string; credentialStatus: string };
+  if (error) throw toAppError(error, 'Falha ao redefinir a senha do usuário.');
+  return data as AdminInternalUserCredentialResult;
 }
 
 export async function listAdminInternalAccessAreas() {

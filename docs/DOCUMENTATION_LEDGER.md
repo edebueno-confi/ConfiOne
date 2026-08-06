@@ -1,5 +1,17 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## Registro corrente — diagnóstico de entrega de convites — 2026-08-06
+
+- **Relatório:** `reports/2026-08-06_invite-smtp-delivery-diagnosis.md`.
+- **Escopo:** convite interno, Auth SMTP remoto e Edge Function
+  `internal-access-invite`.
+- **Estado real:** migration e função corrigida estão publicadas; SMTP customizado
+  está habilitado, mas a validade da senha/App Password ainda exige teste real.
+- **Validação:** teste local com Mailpit, preflight CORS remoto, migration remota,
+  grant do RPC e logs do Supabase revisados.
+- **Risco restante:** entrega externa ainda depende de credencial SMTP válida e
+  filtros/reputação do provedor; nenhum e-mail real foi disparado neste fechamento.
+
 ## Registro corrente — Dashboard por domínios — 2026-08-03
 
 - **Especificação:** `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md` recebeu as

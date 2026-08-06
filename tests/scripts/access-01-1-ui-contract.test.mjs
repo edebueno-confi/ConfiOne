@@ -37,9 +37,34 @@ test('a navegação da tela fica fora do container de rolagem', () => {
   assert.doesNotMatch(page, /gso-access-hd/);
 });
 
-test('nenhuma senha ou segredo é tratado no cliente', () => {
-  // A credencial nasce e é inicializada somente no servidor: a tela não coleta,
-  // não exibe e não guarda senha, token ou service role.
+test('nenhum segredo de plataforma é tratado no cliente', () => {
+  // Decisão de produto de 2026-08-06: não há envio de e-mail, então o servidor
+  // gera a senha e a devolve UMA vez para o administrador repassar. O que
+  // continua proibido é o cliente coletar senha, montar credencial ou tocar em
+  // chave de serviço.
   assert.doesNotMatch(page, /type="password"/);
-  assert.doesNotMatch(page, /temporaryPassword|senhaTemporaria|service_role|serviceRole/);
+  assert.doesNotMatch(page, /service_role|serviceRole|SERVICE_ROLE/);
+  // A senha só pode chegar como leitura do resultado da operação: a tela não
+  // pode gerar valor de credencial por conta própria.
+  assert.doesNotMatch(page, /Math\.random|crypto\.getRandomValues/);
+});
+
+test('a senha temporária é de exibição única e não é persistida', () => {
+  assert.match(page, /Senha temporária — exibição única/);
+  assert.match(page, /Copiar senha/);
+  // Nada de localStorage, sessionStorage, URL ou log com o valor.
+  assert.doesNotMatch(page, /localStorage[\s\S]{0,80}[Pp]assword/);
+  assert.doesNotMatch(page, /sessionStorage/);
+  assert.doesNotMatch(page, /console\.(log|info|warn|error)[\s\S]{0,80}[Pp]assword/);
+});
+
+test('o caminho ativo não usa mais e-mail para definir senha', () => {
+  // Sem servidor de e-mail: `resetPasswordForEmail` e a ação `password-setup`
+  // saíram do fluxo oferecido pela interface.
+  assert.doesNotMatch(page, /resetPasswordForEmail/);
+  assert.doesNotMatch(page, /password-setup/);
+  assert.doesNotMatch(page, /sendAdminInternalUserPasswordSetup/);
+  assert.doesNotMatch(page, /Enviar definição de senha/);
+  assert.match(page, /Redefinir senha/);
+  assert.match(page, /resetAdminInternalUserPassword/);
 });

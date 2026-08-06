@@ -37,7 +37,7 @@ import {
   listAdminInternalOverrides,
   removeAdminInternalOverride,
   revokeAdminInternalInvitation,
-  sendAdminInternalUserPasswordSetup,
+  resetAdminInternalUserPassword,
   setAdminInternalUserStatus,
   updateAdminInternalAccessArea,
   updateAdminInternalAccessAssignment,
@@ -161,6 +161,9 @@ export function InternalControlPlanePage() {
   const [assignment, setAssignment] = useState({ areaKey: '', functionId: '', profileId: '' });
   const [overrideForm, setOverrideForm] = useState({ capabilityKey: '', effect: 'allow' as 'allow' | 'deny', justification: '' });
   const [profileForm, setProfileForm] = useState({ name: '', description: '' });
+  // Credencial de exibição única. Vive só na memória desta tela, sai da memória
+  // quando o administrador fecha o aviso e nunca é gravada em lugar nenhum.
+  const [issuedCredential, setIssuedCredential] = useState<{ label: string; password: string } | null>(null);
 
   async function load() {
     setPhase('loading');
@@ -206,6 +209,27 @@ export function InternalControlPlanePage() {
     finally { setBusy(false); }
   }
 
+  /**
+   * Redefinição administrativa: a senha é gerada no servidor e volta uma única
+   * vez. A tela apenas mostra o valor recebido — não gera, não guarda e não
+   * repete a consulta.
+   */
+  async function resetPassword(user: AdminInternalAccessUserRow) {
+    setBusy(true); setMessage(null); setIssuedCredential(null);
+    try {
+      const result = await resetAdminInternalUserPassword(user.user_id);
+      if (result?.temporaryPassword) {
+        setIssuedCredential({ label: user.email || user.full_name || user.user_id, password: result.temporaryPassword });
+      }
+      setMessage({ text: 'Senha redefinida. O valor aparece uma única vez abaixo e a troca será exigida no próximo acesso.', tone: 'positive' });
+    } catch (error) {
+      const classified = classifyAdminError(error, 'Não foi possível redefinir a senha.');
+      setMessage({ text: classified.message, tone: 'critical' });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function openUser(user: AdminInternalAccessUserRow) {
     setSelectedUser(user); setAssignment({ areaKey: String((user.areas[0]?.area_key as string | undefined) ?? ''), functionId: String((user.areas[0]?.function_id as string | undefined) ?? ''), profileId: String((user.areas[0]?.access_profile_id as string | undefined) ?? '') });
     try { setDetail(await getAdminInternalAccessUser(user.user_id)); } catch { setDetail(null); }
@@ -239,10 +263,16 @@ export function InternalControlPlanePage() {
         functionId: createForm.functionId || null,
         accessProfileId: createForm.profileId || null,
       });
+      if (result?.temporaryPassword) {
+        setIssuedCredential({
+          label: createForm.email.trim().toLowerCase(),
+          password: result.temporaryPassword,
+        });
+      }
       setMessage({
         text: result?.alreadyExisted
-          ? 'Este e-mail já tinha conta na plataforma. O acesso interno foi atualizado com a área, a função e o perfil informados.'
-          : 'Usuário criado. A conta ainda não tem senha: use "Enviar definição de senha" para liberar o primeiro acesso.',
+          ? 'Este e-mail já tinha conta na plataforma. O acesso interno foi atualizado com a área, a função e o perfil informados. A senha atual não foi alterada.'
+          : 'Usuário criado. A senha temporária aparece uma única vez abaixo: copie e repasse pelo seu canal.',
         tone: result?.alreadyExisted ? 'warning' : 'positive',
       });
       setCreating(false);
@@ -323,6 +353,12 @@ export function InternalControlPlanePage() {
 
           {tab === 'users' ? (
             <>
+              {issuedCredential ? (
+                <OneTimeCredentialCard
+                  credential={issuedCredential}
+                  onDismiss={() => setIssuedCredential(null)}
+                />
+              ) : null}
               {creating ? (
                 <CreateUserCard
                   areas={areas}
@@ -346,6 +382,7 @@ export function InternalControlPlanePage() {
                 functions={functions}
                 onAction={runAction}
                 onCreate={startCreate}
+                onResetPassword={resetPassword}
                 onSelect={openUser}
                 overrideForm={overrideForm}
                 overrides={overrides.filter((item) => item.user_id === selectedUser?.user_id)}
@@ -423,8 +460,56 @@ export function InternalControlPlanePage() {
 }
 
 /**
- * Formulário de criação direta. A credencial nunca é definida aqui: a conta
- * nasce sem senha e o primeiro acesso usa o fluxo oficial disparado no servidor.
+ * Exibição única da senha temporária emitida pelo servidor.
+ *
+ * A senha chega pela resposta da operação e vive apenas no estado desta tela.
+ * Não é gravada em `localStorage`, não vai para a URL, não é reconsultável e
+ * some da memória quando o administrador fecha o aviso. Se ele perder o valor,
+ * o caminho é redefinir de novo — não existe recuperação.
+ */
+function OneTimeCredentialCard({
+  credential,
+  onDismiss,
+}: {
+  credential: { label: string; password: string };
+  onDismiss: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  return (
+    <UiCard labelledBy="one-time-credential-title">
+      <UiCardHeader
+        actions={<UiButton compact icon="x" onClick={onDismiss} variant="ghost">Fechar</UiButton>}
+        description={`Credencial de ${credential.label}. Este valor aparece uma única vez e não pode ser consultado depois. Copie e repasse pelo seu canal.`}
+        icon="key"
+        title="Senha temporária — exibição única"
+        titleId="one-time-credential-title"
+        tone="warning"
+      />
+      <div className="gso-ui-card-body">
+        <p className="gso-ui-code" data-testid="one-time-credential-value">{credential.password}</p>
+        <div className="gso-ui-actions">
+          <UiButton
+            icon="check"
+            onClick={() => {
+              void navigator.clipboard?.writeText(credential.password).then(() => setCopied(true)).catch(() => setCopied(false));
+            }}
+            variant="primary"
+          >
+            {copied ? 'Copiado' : 'Copiar senha'}
+          </UiButton>
+        </div>
+        <p className="gso-ui-note">
+          A pessoa é obrigada a trocar esta senha no primeiro acesso, antes de usar qualquer tela.
+        </p>
+      </div>
+    </UiCard>
+  );
+}
+
+/**
+ * Formulário de criação direta. O administrador não digita senha: quem gera é o
+ * servidor, e o valor volta uma única vez na resposta da criação.
  */
 function CreateUserCard(props: {
   areas: AdminInternalAccessAreaRow[];
@@ -443,7 +528,7 @@ function CreateUserCard(props: {
   return (
     <UiCard labelledBy="create-user-title">
       <UiCardHeader
-        description="A conta de autenticação e o vínculo interno são provisionados no servidor. Nenhuma senha é gerada ou exibida aqui."
+        description="A conta, a senha inicial e o vínculo interno são provisionados no servidor. A senha aparece uma única vez depois de criar."
         icon="plus"
         title="Criar usuário"
         titleId="create-user-title"
@@ -517,8 +602,8 @@ function CreateUserCard(props: {
           </UiField>
         </div>
         <p className="gso-ui-note">
-          A conta é criada sem senha. Depois de criada, use “Enviar definição de senha” na lista para que a pessoa defina a
-          própria credencial pelo fluxo oficial de autenticação.
+          O servidor gera uma senha temporária forte e a exibe uma única vez após a criação. Repasse pelo seu canal: a pessoa
+          será obrigada a trocá-la no primeiro acesso.
         </p>
         <div className="gso-ui-actions">
           <UiButton disabled={busy} icon="check" type="submit" variant="primary">
@@ -541,6 +626,7 @@ function UsersPanel(props: {
   functions: AdminInternalFunctionRow[];
   onAction: (action: () => Promise<unknown>, success: string) => Promise<void>;
   onCreate: () => void;
+  onResetPassword: (user: AdminInternalAccessUserRow) => Promise<void>;
   onSelect: (user: AdminInternalAccessUserRow) => void;
   overrideForm: { capabilityKey: string; effect: 'allow' | 'deny'; justification: string };
   overrides: AdminInternalOverrideRow[];
@@ -553,7 +639,7 @@ function UsersPanel(props: {
   setQuery: (value: string) => void;
   users: AdminInternalAccessUserRow[];
 }) {
-  const { areas, assignment, busy, capabilities, detail, filters, functions, onAction, onCreate, onSelect, overrideForm, overrides, profiles, query, selectedUser, setAssignment, setFilters, setOverrideForm, setQuery, users } = props;
+  const { areas, assignment, busy, capabilities, detail, filters, functions, onAction, onCreate, onResetPassword, onSelect, overrideForm, overrides, profiles, query, selectedUser, setAssignment, setFilters, setOverrideForm, setQuery, users } = props;
   const visibleFunctions = functions.filter((item) => !assignment.areaKey || item.area_key === assignment.areaKey);
   const effectiveCapabilities = Array.isArray(detail?.capabilities) ? (detail?.capabilities as unknown[]).length : null;
 
@@ -628,11 +714,11 @@ function UsersPanel(props: {
                       <div className="gso-ui-table-actions">
                         <UiButton
                           compact
-                          disabled={busy || !user.email}
+                          disabled={busy}
                           icon="key"
-                          onClick={() => void onAction(() => sendAdminInternalUserPasswordSetup(user.user_id), 'Definição de senha enviada pelo fluxo oficial de autenticação.')}
+                          onClick={() => void onResetPassword(user)}
                         >
-                          Enviar definição de senha
+                          Redefinir senha
                         </UiButton>
                         <UiButton
                           compact

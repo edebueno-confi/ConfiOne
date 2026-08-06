@@ -7,9 +7,14 @@
 // administrador, para que capacidade, tenant, RLS e auditoria de linha
 // continuem valendo exatamente como nas demais operacoes do control plane.
 //
-// Seguranca: nenhuma senha e gerada, transportada, persistida ou registrada em
-// log. A conta nasce sem credencial e a definicao de senha usa o fluxo oficial
-// de recuperacao do Auth, disparado somente pelo servidor.
+// Credencial (decisao de produto de 2026-08-06): nao existe envio de e-mail. A
+// senha inicial e gerada AQUI, no servidor, com aleatoriedade criptografica, e
+// devolvida UMA UNICA VEZ na resposta da operacao que a gerou, para o
+// administrador repassar pelo canal dele. Ela nunca e persistida em texto
+// claro, nunca entra em log, telemetria ou mensagem de erro, e nunca volta em
+// consulta posterior. A conta nasce com `app_metadata.must_change_password`,
+// marcador que so o service_role escreve, e a aplicacao exige a troca antes de
+// liberar qualquer uso.
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import {
   createServiceClient,
@@ -21,7 +26,7 @@ import {
 } from '../_shared/ticket-evidence.ts';
 
 type RequestBody = {
-  action?: 'create' | 'password-setup';
+  action?: 'create' | 'password-reset';
   email?: string;
   fullName?: string;
   areaKey?: string;
@@ -30,8 +35,30 @@ type RequestBody = {
   userId?: string;
 };
 
-function appUrl(req: Request) {
-  return Deno.env.get('PUBLIC_APP_URL') ?? new URL(req.url).origin;
+// Alfabeto sem caracteres ambiguos (0/O, 1/l/I): a senha e lida em voz alta ou
+// copiada uma unica vez, e ambiguidade vira chamado de suporte.
+const PASSWORD_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%*-_';
+const PASSWORD_LENGTH = 20;
+
+/**
+ * Senha temporaria com aleatoriedade criptografica do runtime (`crypto.getRandomValues`).
+ * A rejeicao por modulo e eliminada descartando os bytes que cairiam na cauda
+ * incompleta do alfabeto, entao a distribuicao e uniforme.
+ */
+function generateTemporaryPassword() {
+  const size = PASSWORD_ALPHABET.length;
+  const limit = 256 - (256 % size);
+  const characters: string[] = [];
+  while (characters.length < PASSWORD_LENGTH) {
+    const bytes = new Uint8Array(PASSWORD_LENGTH);
+    crypto.getRandomValues(bytes);
+    for (const byte of bytes) {
+      if (byte >= limit) continue;
+      characters.push(PASSWORD_ALPHABET[byte % size]);
+      if (characters.length === PASSWORD_LENGTH) break;
+    }
+  }
+  return characters.join('');
 }
 
 function normalizedEmail(value: string | undefined) {
@@ -83,7 +110,10 @@ Deno.serve(async (req) => {
     const userClient = createUserClient(authHeader);
     const serviceClient = createServiceClient();
 
-    if (action === 'password-setup') {
+    // Redefinicao administrativa de senha. Substitui o antigo disparo de e-mail:
+    // a nova senha e gerada no servidor e devolvida uma unica vez ao
+    // administrador, junto com a reativacao do marcador de troca obrigatoria.
+    if (action === 'password-reset') {
       if (!body.userId) return jsonResponse({ error: 'userId is required' }, { status: 400 });
       // A leitura passa pelo JWT do administrador: quem nao tem `access.view`
       // recebe erro aqui e nunca dispara o fluxo de credencial.
@@ -91,13 +121,22 @@ Deno.serve(async (req) => {
         p_user_id: body.userId,
       });
       if (readError || !target) return jsonResponse({ error: 'Usuário interno não encontrado ou fora do seu escopo.' }, { status: 403 });
-      const targetEmail = normalizedEmail(String((target as { email?: unknown }).email ?? ''));
-      if (!targetEmail) return jsonResponse({ error: 'Usuário sem e-mail cadastrado.' }, { status: 409 });
-      const { error: recoveryError } = await serviceClient.auth.resetPasswordForEmail(targetEmail, {
-        redirectTo: `${appUrl(req)}/login`,
+
+      const temporaryPassword = generateTemporaryPassword();
+      const { error: updateError } = await serviceClient.auth.admin.updateUserById(body.userId, {
+        password: temporaryPassword,
+        app_metadata: { must_change_password: true },
       });
-      if (recoveryError) return jsonResponse({ error: 'Não foi possível iniciar a definição de senha.' }, { status: 502 });
-      return jsonResponse({ userId: body.userId, credentialStatus: 'password_setup_sent' });
+      // A mensagem de erro do provedor nao e propagada: ela pode carregar o
+      // corpo da requisicao, e o corpo carrega a senha.
+      if (updateError) return jsonResponse({ error: 'Não foi possível redefinir a senha deste usuário.' }, { status: 502 });
+
+      return jsonResponse({
+        userId: body.userId,
+        credentialStatus: 'temporary_password_issued',
+        temporaryPassword,
+        temporaryPasswordDisplayOnce: true,
+      });
     }
 
     const email = normalizedEmail(body.email);
@@ -122,16 +161,22 @@ Deno.serve(async (req) => {
 
     let userId = existingProfile?.id ? String(existingProfile.id) : '';
     let createdNow = false;
+    let temporaryPassword: string | null = null;
 
     if (!userId) {
-      // Conta criada SEM senha: a credencial nasce inexistente e so pode ser
-      // definida pelo fluxo oficial de recuperacao, no proprio servidor.
+      // A senha nasce aqui, no servidor, e sai apenas nesta resposta.
+      temporaryPassword = generateTemporaryPassword();
       const { data: created, error: createError } = await serviceClient.auth.admin.createUser({
         email,
+        password: temporaryPassword,
         email_confirm: true,
         user_metadata: { full_name: fullName },
+        // `app_metadata` nao e gravavel pelo proprio usuario: so o service_role
+        // escreve. E o marcador durável da troca obrigatoria.
+        app_metadata: { must_change_password: true },
       });
       if (createError || !created?.user?.id) {
+        temporaryPassword = null;
         return jsonResponse({ error: 'Não foi possível criar a conta de autenticação para este e-mail.' }, { status: 409 });
       }
       userId = String(created.user.id);
@@ -160,13 +205,20 @@ Deno.serve(async (req) => {
       userId,
       created: createdNow,
       alreadyExisted: !createdNow,
-      credentialStatus: 'pending_password_setup',
+      // Conta pre-existente nao tem senha rotacionada nesta operacao: quem
+      // precisa de credencial nova usa a acao explicita de redefinicao.
+      credentialStatus: createdNow ? 'temporary_password_issued' : 'unchanged',
+      temporaryPassword,
+      temporaryPasswordDisplayOnce: temporaryPassword !== null,
       actorId: actor.userId,
       user: provisioned,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error ?? 'User provisioning failed.');
-    console.error('internal-access-user-create failed', message);
-    return jsonResponse({ error: message }, { status: 500 });
+    // A excecao nao e propagada literalmente: erros de transporte podem carregar
+    // o corpo da requisicao, e o corpo pode carregar a senha temporaria. Nem o
+    // log nem a resposta recebem o texto original.
+    const kind = error instanceof Error ? error.name : 'UnknownError';
+    console.error('internal-access-user-create failed', kind);
+    return jsonResponse({ error: 'Não foi possível concluir o provisionamento do usuário interno.' }, { status: 500 });
   }
 });

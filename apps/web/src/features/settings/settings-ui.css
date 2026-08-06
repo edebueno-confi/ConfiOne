@@ -425,6 +425,22 @@
 .gso-ui-alert { margin: 0.85rem 0 0; font-size: 0.8rem; font-weight: 600; line-height: 1.5; }
 .gso-ui-alert--error { color: var(--ui-danger-ink); }
 .gso-ui-alert--success { color: var(--ui-success-ink); }
+/* Valor literal que precisa ser lido caractere a caractere (senha temporária de
+   exibição única). Fonte monoespaçada e quebra explícita para não esconder
+   nenhum símbolo. */
+.gso-ui-code {
+  margin: 0.5rem 0 0;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.6rem;
+  background: var(--ui-surface-muted);
+  color: var(--ui-text);
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
 
 @media (max-width: 760px) {
   .gso-ui-grid { grid-template-columns: 1fr; }
