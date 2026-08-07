@@ -23,24 +23,39 @@ import { resolveAnalyticsPeriod } from './analytics-periods';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
 import { CommercialFunnelChart, CommercialMonthlyChart } from './charts/AnalyticsCharts';
 import { AnalyticsExecutionMeta, AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
-import { AnalyticsKpiGrid, AnalyticsKpiLimitations, type KpiDescriptor } from './AnalyticsKpiGrid';
+import { AnalyticsBoardLimitations, AnalyticsKpiBoard, type BoardBand } from './AnalyticsKpiBoard';
 
 // Indicadores com coorte declarada, publicados pelo read model de KPI.
 // Pipeline e posicao na data de corte; criados usam data de criacao; ganhos,
 // win rate, ticket e ciclo usam data de fechamento. Misturar as tres coortes
 // sob o mesmo filtro foi o erro que a versao anterior cometia em silencio.
-const COMMERCIAL_PRIMARY: KpiDescriptor[] = [
-  { key: 'open_pipeline_amount', kind: 'currency', hint: 'Soma dos negócios ainda em aberto, na data de hoje' },
-  { key: 'won_amount', kind: 'currency', hint: 'Negócios ganhos dentro do período selecionado' },
-  { key: 'win_rate', kind: 'percent', hint: 'Ganhos sobre tudo que foi encerrado no período' },
-  { key: 'created_deals', kind: 'count', hint: 'Novos negócios iniciados no período' },
-];
-
-const COMMERCIAL_SECONDARY: KpiDescriptor[] = [
-  { key: 'weighted_pipeline_amount', kind: 'currency', hint: 'Valor ajustado pela chance de fechar de cada etapa' },
-  { key: 'median_deal_amount', kind: 'currency', hint: 'Valor típico; não se desloca por um negócio atípico' },
-  { key: 'avg_deal_amount', kind: 'currency', hint: 'Complemento do valor típico' },
-  { key: 'median_sales_cycle_days', kind: 'days', hint: 'Da abertura até o ganho' },
+const COMMERCIAL_BANDS: BoardBand[] = [
+  {
+    title: 'Agora',
+    note: 'Posição na data de hoje; não muda com o período selecionado.',
+    items: [
+      { key: 'open_pipeline_amount', kind: 'currency', note: 'Soma dos negócios ainda em aberto' },
+      { key: 'weighted_pipeline_amount', kind: 'currency', note: 'Ajustado pela chance de fechar de cada etapa' },
+    ],
+  },
+  {
+    title: 'No período',
+    note: 'Movimento dentro do recorte selecionado acima.',
+    items: [
+      { key: 'won_amount', kind: 'currency', note: 'Negócios ganhos' },
+      { key: 'win_rate', kind: 'percent', note: 'Ganhos sobre tudo que foi encerrado' },
+      { key: 'created_deals', kind: 'count', note: 'Novos negócios iniciados' },
+      { key: 'median_sales_cycle_days', kind: 'days', note: 'Da abertura até o ganho' },
+    ],
+  },
+  {
+    title: 'Apoio',
+    dense: true,
+    items: [
+      { key: 'median_deal_amount', kind: 'currency', note: 'Valor típico; resiste a negócio atípico' },
+      { key: 'avg_deal_amount', kind: 'currency', note: 'Complemento do valor típico' },
+    ],
+  },
 ];
 
 type State =
@@ -127,15 +142,8 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
       ) : null}
       {kpiPayload ? (
         <>
-          <AnalyticsKpiGrid
-            payload={kpiPayload}
-            primary={COMMERCIAL_PRIMARY}
-            secondary={COMMERCIAL_SECONDARY}
-            state={displayState}
-            title="Indicadores comerciais"
-            description="Cada indicador informa a data que define seu recorte, para que posição de hoje e resultado do período não sejam confundidos."
-          />
-          <AnalyticsKpiLimitations payload={kpiPayload} />
+          <AnalyticsKpiBoard payload={kpiPayload} bands={COMMERCIAL_BANDS} />
+          <AnalyticsBoardLimitations payload={kpiPayload} />
         </>
       ) : null}
 

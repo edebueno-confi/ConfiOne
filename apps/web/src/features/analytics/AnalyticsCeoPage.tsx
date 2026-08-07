@@ -28,7 +28,7 @@ import {
   rankExecutivePipelines,
 } from "./analytics-executive";
 import { analyticsHref } from "./analytics-navigation";
-import { AnalyticsKpiGrid, AnalyticsKpiLimitations, type KpiDescriptor } from "./AnalyticsKpiGrid";
+import { AnalyticsBoardLimitations, AnalyticsKpiBoard, type BoardBand } from "./AnalyticsKpiBoard";
 
 const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
   fresh: "Dados atualizados",
@@ -54,21 +54,37 @@ type MetricDelta = {
 // O Resumo reusa os read models de cada area em vez de recalcular. Isso impede
 // que a mesma metrica apareca com valores diferentes entre a visao geral e a
 // tela da area, que e a falha classica de dashboards executivos.
-const EXECUTIVE_PRIMARY: KpiDescriptor[] = [
-  { key: 'mrr_total', kind: 'currency', hint: 'Receita recorrente da base ativa' },
-  { key: 'won_amount', kind: 'currency', hint: 'Negócios ganhos no período' },
-  { key: 'open_backlog', kind: 'count', hint: 'Atendimentos aguardando agora' },
-  { key: 'overdue_receivables', kind: 'currency', hint: 'Valores vencidos e não recebidos', warnWhenPositive: true },
-];
-
-const EXECUTIVE_SECONDARY: KpiDescriptor[] = [
-  { key: 'active_customers', kind: 'count', hint: 'Base ativa hoje' },
-  { key: 'open_pipeline_amount', kind: 'currency', hint: 'Em negociação hoje' },
-  { key: 'win_rate', kind: 'percent', hint: 'Sobre o que foi encerrado no período' },
-  { key: 'created_tickets', kind: 'count', hint: 'Atendimentos abertos no período' },
-  { key: 'received_amount', kind: 'currency', hint: 'Entradas efetivas no período' },
-  { key: 'mrr_overdue', kind: 'currency', hint: 'Recorrência de clientes em atraso', warnWhenPositive: true },
-  { key: 'nrr', kind: 'percent' },
+const EXECUTIVE_BANDS: BoardBand[] = [
+  {
+    title: 'Agora',
+    note: 'Posição na data de hoje, em todas as áreas.',
+    items: [
+      { key: 'mrr_total', kind: 'currency', note: 'Recorrência da base ativa' },
+      { key: 'active_customers', kind: 'count', note: 'Clientes na carteira' },
+      { key: 'open_pipeline_amount', kind: 'currency', note: 'Em negociação' },
+      { key: 'open_backlog', kind: 'count', note: 'Atendimentos aguardando' },
+    ],
+  },
+  {
+    title: 'No período',
+    note: 'Movimento dentro do recorte selecionado acima.',
+    items: [
+      { key: 'won_amount', kind: 'currency', note: 'Negócios ganhos' },
+      { key: 'win_rate', kind: 'percent', note: 'Sobre o que foi encerrado' },
+      { key: 'created_tickets', kind: 'count', note: 'Atendimentos abertos' },
+      { key: 'received_amount', kind: 'currency', note: 'Entradas efetivas' },
+    ],
+  },
+  {
+    title: 'Atenção',
+    note: 'Sinais que costumam exigir ação antes do próximo ciclo.',
+    dense: true,
+    items: [
+      { key: 'overdue_receivables', kind: 'currency', note: 'Vencido e não recebido', alertWhenPositive: true },
+      { key: 'mrr_overdue', kind: 'currency', note: 'Recorrência de clientes em atraso', alertWhenPositive: true },
+      { key: 'nrr', kind: 'percent' },
+    ],
+  },
 ];
 
 export function AnalyticsCeoPage({
@@ -399,20 +415,6 @@ function ExecutiveHdCanvas({
         </div>
       </section>
 
-      {executiveKpis ? (
-        <>
-          <AnalyticsKpiGrid
-            payload={executiveKpis}
-            primary={EXECUTIVE_PRIMARY}
-            secondary={EXECUTIVE_SECONDARY}
-            state={state}
-            title="Visão consolidada"
-            description="Reúne Comercial, Atendimento, Carteira e Financeiro a partir da fonte de cada área, para que nenhum número divirja entre esta visão e a tela de origem."
-          />
-          <AnalyticsKpiLimitations payload={executiveKpis} />
-        </>
-      ) : null}
-
           <div className="gso-hd-filter-bar gso-hd-pulse" aria-label="Filtros da análise">
         <div className="gso-hd-filter-context">
           <span>Recorte</span>
@@ -430,6 +432,14 @@ function ExecutiveHdCanvas({
           <Filters value={filters} onApply={applyFilters} stageOptions={[]} />
         </div>
       </div>
+
+      {executiveKpis ? (
+        <>
+          <AnalyticsKpiBoard payload={executiveKpis} bands={EXECUTIVE_BANDS} />
+          <AnalyticsBoardLimitations payload={executiveKpis} />
+        </>
+      ) : null}
+
       {refreshing ? (
         <p className="gso-hd-inline-status" role="status">
           Atualizando o período selecionado…

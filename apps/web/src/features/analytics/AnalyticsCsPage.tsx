@@ -23,7 +23,7 @@ import { resolveAnalyticsPeriod } from './analytics-periods';
 import { TicketMonthlyChart, TicketStatusChart } from './charts/AnalyticsCharts';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
 import { AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
-import { AnalyticsKpiGrid, AnalyticsKpiLimitations, type KpiDescriptor } from './AnalyticsKpiGrid';
+import { AnalyticsBoardLimitations, AnalyticsKpiBoard, type BoardBand } from './AnalyticsKpiBoard';
 
 // Resolucao, tempo de resolucao e primeira resposta passaram a existir depois
 // que a ingestao foi corrigida para pedir os campos que a conta realmente
@@ -31,18 +31,33 @@ import { AnalyticsKpiGrid, AnalyticsKpiLimitations, type KpiDescriptor } from '.
 // ingerido, e por isso aparece como aguardando historico.
 // O detalhe tecnico da correcao esta no relatorio do ciclo, nao aqui: nomes de
 // propriedade nao pertencem a camada de apresentacao.
-const SUPPORT_PRIMARY: KpiDescriptor[] = [
-  { key: 'open_backlog', kind: 'count', hint: 'Aguardando atendimento agora' },
-  { key: 'created_tickets', kind: 'count', hint: 'Entraram no período selecionado' },
-  { key: 'resolved_tickets', kind: 'count', hint: 'Encerrados dentro do período' },
-  { key: 'median_time_to_resolution_days', kind: 'days', hint: 'Da abertura até o encerramento' },
-];
-
-const SUPPORT_SECONDARY: KpiDescriptor[] = [
-  { key: 'median_first_response_hours', kind: 'days', hint: 'Até o cliente receber o primeiro retorno' },
-  { key: 'median_backlog_age_days', kind: 'days', hint: 'Há quanto tempo espera quem está na fila' },
-  { key: 'p90_time_to_resolution_days', kind: 'days', hint: 'Nove em cada dez resolvidos abaixo deste tempo' },
-  { key: 'reopen_rate', kind: 'percent', hint: 'Resolvidos que precisaram voltar' },
+const SUPPORT_BANDS: BoardBand[] = [
+  {
+    title: 'Agora',
+    note: 'Quem está esperando neste momento.',
+    items: [
+      { key: 'open_backlog', kind: 'count', note: 'Aguardando atendimento' },
+      { key: 'median_backlog_age_days', kind: 'days', note: 'Há quanto tempo espera quem está na fila' },
+    ],
+  },
+  {
+    title: 'No período',
+    note: 'Movimento dentro do recorte selecionado acima.',
+    items: [
+      { key: 'created_tickets', kind: 'count', note: 'Entraram' },
+      { key: 'resolved_tickets', kind: 'count', note: 'Encerrados' },
+      { key: 'median_time_to_resolution_days', kind: 'days', note: 'Da abertura ao encerramento' },
+      { key: 'median_first_response_hours', kind: 'days', note: 'Até o cliente receber o primeiro retorno' },
+    ],
+  },
+  {
+    title: 'Apoio',
+    dense: true,
+    items: [
+      { key: 'p90_time_to_resolution_days', kind: 'days', note: 'Nove em cada dez resolvidos abaixo deste tempo' },
+      { key: 'reopen_rate', kind: 'percent', note: 'Resolvidos que precisaram voltar' },
+    ],
+  },
 ];
 
 type State =
@@ -125,15 +140,8 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
       {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." /> : null}
       {kpiPayload ? (
         <>
-          <AnalyticsKpiGrid
-            payload={kpiPayload}
-            primary={SUPPORT_PRIMARY}
-            secondary={SUPPORT_SECONDARY}
-            state={dataState}
-            title="Indicadores de atendimento"
-            description="A fila é a posição de agora. Abertos e resolvidos são o movimento do período selecionado."
-          />
-          <AnalyticsKpiLimitations payload={kpiPayload} />
+          <AnalyticsKpiBoard payload={kpiPayload} bands={SUPPORT_BANDS} />
+          <AnalyticsBoardLimitations payload={kpiPayload} />
         </>
       ) : null}
 

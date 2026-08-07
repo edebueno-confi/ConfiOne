@@ -10,7 +10,7 @@ const [commercial, support, executive, customerSuccess, grid, contract] = await 
   read('AnalyticsCsPage.tsx'),
   read('AnalyticsCeoPage.tsx'),
   read('AnalyticsCustomerSuccessPage.tsx'),
-  read('AnalyticsKpiGrid.tsx'),
+  read('AnalyticsKpiBoard.tsx'),
   read('analytics-kpi-contract.mjs'),
 ]);
 
@@ -73,7 +73,7 @@ test('nenhuma tela define rótulo próprio: o nome vem do glossário', () => {
   assert.match(grid, /kpiLabel\(item\.key\)/);
 });
 
-test('a grade distingue parcial de indisponível no tom do cartão', () => {
-  assert.match(grid, /entry\.state === 'partial' \? 'warning'/);
-  assert.match(grid, /AnalyticsKpiLimitations/);
+test('o painel codifica o estado no próprio indicador', () => {
+  assert.match(grid, /data-state=\{entry\.state\}/);
+  assert.match(grid, /AnalyticsBoardLimitations/);
 });

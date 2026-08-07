@@ -1039,3 +1039,127 @@ As mudanças de layout foram validadas por build e teste de contrato, **não por
 inspeção visual em navegador**. Falta abrir as cinco abas em 1920×1080, 1366×768
 e 390×844, nos dois temas, e registrar evidência por rota. É o próximo passo
 natural e exige a instância local em pé.
+
+---
+
+## 18. Painel de leitura: o visual deixa de ser grade de cartões
+
+### 18.1 O design system já proibia o que eu tinha feito
+
+`docs/design/GENIUS_SUPPORT_OS_DESIGN_SYSTEM.md`, seção 2, lista o que o produto
+**não é**, e "coleção de cards administrativos" está na lista. A mesma seção
+manda cada tela comunicar a tarefa pelo layout, não por texto explicativo.
+
+A grade de caixas com borda falhava nos dois pontos: tratava um número de decisão
+e um de apoio como iguais, e não dizia nada sobre o recorte de cada um.
+
+### 18.2 Duas ideias, ambas vindas de defeitos reais
+
+**A coorte organiza o espaço.** As faixas passam a se chamar "Agora", "No
+período" e "Atenção" — não "Comercial" ou "Suporte". Misturar posição de hoje com
+movimento do período foi exatamente o que produziu dois valores para "Receita
+ganha". Agora ler o número errado exige atravessar uma divisória com título.
+
+**A confiabilidade vive dentro do número.** Não é selo colado ao lado:
+
+| Estado | Tratamento |
+| --- | --- |
+| Disponível | algarismo em peso pleno, sem cromo |
+| Parcial | sublinhado pontilhado sob o próprio número, mais o medidor de cobertura na faixa |
+| Indisponível | o lugar do valor recebe a frase do estado, jamais um zero |
+| Alerta | régua vermelha à esquerda e valor em tom de perigo |
+
+O medidor de cobertura **some quando a cobertura é total** — informação que não
+muda decisão não merece pixel.
+
+### 18.3 Escolhas de composição
+
+- Sem borda em volta de cada indicador. Separação por espaço e régua fina, o que
+  deixa o número respirar em Full HD, a viewport canônica do projeto.
+- Tipografia como hierarquia: 1,9rem no número, 2,15rem acima de 1600px,
+  1,6rem no celular. O rótulo vem **abaixo** do valor, invertendo o padrão de
+  cartão — quem varre a tela lê primeiro a grandeza, depois o nome.
+- Régua de 2px à esquerda como único cromo, e ela só aparece quando há algo a
+  dizer.
+- No celular cada indicador vira linha com divisória, não cartão empilhado.
+
+### 18.4 Ordem dos blocos padronizada
+
+A auditoria encontrou quatro divergências entre as abas. A pior: na Visão Geral
+**o filtro de recorte aparecia depois dos indicadores** — apontada pela operação
+e introduzida por mim na seção 15. Ler um número antes de saber qual recorte ele
+cobre é o caminho mais curto para uma decisão errada.
+
+Ordem agora idêntica em todas: cabeçalho → filtro → estado vazio → painel →
+limitações → gráficos e tabelas.
+
+Carteira permanece sem filtro de período **de propósito**: todos os seus
+indicadores são posição atual, e um seletor de datas ali sugeriria um recorte que
+não existe. A justificativa está escrita na própria tela, não só no código.
+
+### 18.5 Financeiro
+
+Passou pelo glossário: "status OMIE", "código de categoria do OMIE",
+"CNPJ (somente dígitos)" e "A fonte respondeu" saíram. O nome do sistema de
+origem permanece, porque responde de onde vem o número — que é justamente o que
+a operação pediu para manter.
+
+A grade também deixou de ser duas colunas no celular.
+
+### 18.6 Testes que protegem o layout
+
+`analytics-layout-structure.test.mjs` falha se:
+
+- o filtro aparecer depois dos indicadores em qualquer aba;
+- a faixa de limitações vier antes do que ela explica;
+- alguma aba deixar de usar o invólucro padrão de área;
+- Carteira ganhar filtro sem justificativa escrita na tela.
+
+### 18.7 Validação
+
+| Verificação | Resultado |
+| --- | --- |
+| `node --test`, seis arquivos | **53 de 53** |
+| `npm run web:build` | **aprovado** |
+| `npm run lint` | **0 erros** |
+| `npm run local:qa:secret-scan` | **aprovado**, 2.086 arquivos |
+
+Continua pendente a inspeção visual em navegador, agora com mais motivo: a
+mudança de composição é grande e nenhum teste substitui olhar.
+
+---
+
+## 19. Por que o ambiente local mostra tudo indisponível
+
+Levantado pela operação. **Não é defeito do código.**
+
+| Medida | Banco local | Banco remoto |
+| --- | --- | --- |
+| Tickets com data de encerramento | **0** de 38.260 | 31.532 |
+| Tickets com tempo de primeira resposta | 0 | 1.076 |
+| Empresas com última interação | 0 | 5.525 |
+| Vínculos ingeridos | 0 | 12.906 |
+| Snapshots capturados | 0 | 8 métricas |
+| Última sincronização | **2026-08-04** | 2026-08-07 |
+
+O banco local tem dados de **três dias antes da correção**. O schema está
+atualizado, porque as migrations foram aplicadas nos dois ambientes, mas as
+colunas novas nunca foram preenchidas ali. O aplicativo local aponta para
+`http://127.0.0.1:54321`, então é esse banco que ele lê.
+
+A tentativa de sincronizar localmente não funcionou porque a credencial do
+HubSpot foi removida de `apps/web/.env.local` ao fim da sondagem — corretamente,
+por higiene. Sem ela, a função local não tem como consultar a origem.
+
+**O painel está se comportando exatamente como projetado:** diante de campo
+vazio, ele declara "Indisponível" em vez de mostrar zero. O incômodo é a prova
+de que a regra funciona.
+
+Caminhos, em ordem de custo:
+
+1. **Apontar o aplicativo local para o banco remoto**, trocando `VITE_SUPABASE_URL`
+   e a chave pública. Vê os números reais na hora, sem sincronizar nada. Risco a
+   observar: os botões de sincronização passam a agir sobre produção.
+2. **Sincronizar o ambiente local**, devolvendo a credencial ao arquivo de
+   ambiente e repetindo a carga completa. Fiel, porém é a carga de 470 páginas.
+3. **Fazer o QA visual contra o ambiente publicado**, que já tem tudo correto.

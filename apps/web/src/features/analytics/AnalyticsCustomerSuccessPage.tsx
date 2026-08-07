@@ -4,25 +4,40 @@ import { getCustomerSuccessKpisV2 } from './analytics-api';
 import { AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
 import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard } from './analytics-ui';
 import { MinimalState } from '../../components/minimal-states';
-import { AnalyticsKpiGrid, AnalyticsKpiLimitations, type KpiDescriptor } from './AnalyticsKpiGrid';
+import { AnalyticsBoardLimitations, AnalyticsKpiBoard, type BoardBand } from './AnalyticsKpiBoard';
 import { toAnalyticsBlockState } from './analytics-kpi-contract.mjs';
 
-const CS_PRIMARY: KpiDescriptor[] = [
-  { key: 'active_customers', kind: 'count', hint: 'Base ativa na data de hoje' },
-  { key: 'mrr_total', kind: 'currency', hint: 'Soma da recorrência dos clientes ativos' },
-  { key: 'overdue_customers', kind: 'count', hint: 'Com pelo menos um título vencido', warnWhenPositive: true },
-  { key: 'customers_without_recent_activity', kind: 'count', hint: 'Sem contato registrado no prazo definido', warnWhenPositive: true },
-];
-
-const CS_SECONDARY: KpiDescriptor[] = [
-  { key: 'arpa', kind: 'currency', hint: 'Recorrência dividida pelos clientes que a possuem' },
-  { key: 'mrr_overdue', kind: 'currency', hint: 'Recorrência exposta a inadimplência', warnWhenPositive: true },
-  { key: 'mrr_without_recent_activity', kind: 'currency', hint: 'Recorrência sem contato recente', warnWhenPositive: true },
-  { key: 'customers_with_open_tickets', kind: 'count', hint: 'Com atendimento em aberto' },
-  { key: 'mrr_with_critical_ticket', kind: 'currency', hint: 'Recorrência com atendimento de prioridade alta', warnWhenPositive: true },
-  { key: 'mapping_coverage_percent', kind: 'percent', hint: 'Parte da carteira que cruza com o financeiro' },
-  { key: 'logo_churn_rate', kind: 'percent' },
-  { key: 'nrr', kind: 'percent' },
+const CS_BANDS: BoardBand[] = [
+  {
+    title: 'Carteira hoje',
+    note: 'Todos os indicadores desta aba são posição atual, por isso não há filtro de período.',
+    items: [
+      { key: 'active_customers', kind: 'count', note: 'Base ativa' },
+      { key: 'mrr_total', kind: 'currency', note: 'Recorrência somada' },
+      { key: 'arpa', kind: 'currency', note: 'Recorrência por cliente que a possui' },
+      { key: 'mapping_coverage_percent', kind: 'percent', note: 'Parte da carteira que cruza com o financeiro' },
+    ],
+  },
+  {
+    title: 'Risco',
+    note: 'Sinais exibidos separadamente; nenhum score composto é calculado.',
+    items: [
+      { key: 'overdue_customers', kind: 'count', note: 'Com título vencido', alertWhenPositive: true },
+      { key: 'mrr_overdue', kind: 'currency', note: 'Recorrência exposta a inadimplência', alertWhenPositive: true },
+      { key: 'customers_without_recent_activity', kind: 'count', note: 'Sem contato no prazo definido', alertWhenPositive: true },
+      { key: 'mrr_without_recent_activity', kind: 'currency', note: 'Recorrência sem contato recente', alertWhenPositive: true },
+    ],
+  },
+  {
+    title: 'Relacionamento e retenção',
+    dense: true,
+    items: [
+      { key: 'customers_with_open_tickets', kind: 'count', note: 'Com atendimento em aberto' },
+      { key: 'mrr_with_critical_ticket', kind: 'currency', note: 'Recorrência com atendimento crítico', alertWhenPositive: true },
+      { key: 'logo_churn_rate', kind: 'percent' },
+      { key: 'nrr', kind: 'percent' },
+    ],
+  },
 ];
 
 const TITLE = 'Customer Success';
@@ -110,14 +125,7 @@ export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
 
   return (
     <AnalyticsHdDomainFrame title={TITLE} description={DESCRIPTION} source={SOURCE} state={state}>
-      <AnalyticsKpiGrid
-        payload={payload}
-        primary={CS_PRIMARY}
-        secondary={CS_SECONDARY}
-        state={state}
-        title="Saúde da carteira"
-        description="Posição de hoje. Receita recorrente e atraso vêm de fontes diferentes e são cruzados apenas por cadastro fiscal conferido."
-      />
+      <AnalyticsKpiBoard payload={payload} bands={CS_BANDS} />
 
       <div className="grid gap-4 xl:grid-cols-2">
         <ChartCard
@@ -210,7 +218,7 @@ export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
         )}
       </ChartCard>
 
-      <AnalyticsKpiLimitations payload={payload} />
+      <AnalyticsBoardLimitations payload={payload} />
     </AnalyticsHdDomainFrame>
   );
 }

@@ -1,0 +1,220 @@
+/* ---------------------------------------------------------------------------
+   Painel de leitura
+   ---------------------------------------------------------------------------
+   O design system proíbe "coleção de cards administrativos" e manda a tela
+   comunicar a tarefa pelo layout. Uma grade de caixas com borda falha nos dois:
+   trata um número de decisão e um número de apoio como iguais, e não diz nada
+   sobre o recorte de cada um.
+
+   Duas ideias organizam este componente, e as duas vêm do que este produto tem
+   de particular:
+
+   1. **A coorte é espacial, não textual.** Misturar posição de hoje com fluxo do
+      período foi o defeito que produziu dois valores para "Receita ganha". Aqui
+      são faixas distintas, com título próprio. Ler o número errado exige
+      atravessar uma divisória.
+
+   2. **A confiabilidade vive dentro do número.** Não é selo colado ao lado: o
+      próprio algarismo muda de tratamento. Cobertura parcial ganha sublinhado
+      pontilhado e a porcentagem embutida; ausência de fonte ocupa o lugar do
+      número com a frase do estado, nunca com zero.
+
+   Sem borda em volta de cada indicador. A separação é feita por espaço e por
+   uma régua fina — o que deixa o número respirar em Full HD, que é a viewport
+   canônica do projeto.
+   -------------------------------------------------------------------------- */
+
+.gso-board {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+}
+
+/* --- Faixa de coorte ------------------------------------------------------ */
+
+.gso-board-band__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--minimal-border);
+}
+
+.gso-board-band__title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--minimal-text);
+  white-space: nowrap;
+}
+
+.gso-board-band__note {
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--minimal-text-tertiary);
+}
+
+/* Medidor de confiança da faixa: comprimento proporcional à cobertura real.
+   Fica à direita, discreto, e some quando a cobertura é total — informação que
+   não muda nada não merece pixel. */
+.gso-board-band__trust {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.68rem;
+  color: var(--minimal-warning-text);
+  white-space: nowrap;
+}
+
+.gso-board-band__trust-rail {
+  width: 3.5rem;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--minimal-border);
+  overflow: hidden;
+}
+
+.gso-board-band__trust-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--minimal-warning-text);
+}
+
+/* --- Grade dos indicadores ------------------------------------------------ */
+
+.gso-board-band__items {
+  display: grid;
+  gap: 0.35rem 2rem;
+  grid-template-columns: 1fr;
+  padding-top: 1rem;
+}
+
+@media (min-width: 640px) {
+  .gso-board-band__items { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem 2rem; }
+}
+
+@media (min-width: 1101px) {
+  .gso-board-band__items { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .gso-board-band__items[data-density='support'] { grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
+}
+
+/* --- Indicador ------------------------------------------------------------ */
+
+.gso-board-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.15rem 0 0.15rem 0.85rem;
+  border-left: 2px solid transparent;
+  transition: border-color 120ms ease;
+}
+
+/* A régua à esquerda é o único cromo: aparece só quando há algo a dizer. */
+.gso-board-item[data-state='partial'] { border-left-color: var(--minimal-warning-border); }
+.gso-board-item[data-state='unavailable'],
+.gso-board-item[data-state='awaiting_history'] { border-left-color: var(--minimal-border); }
+.gso-board-item[data-alert='true'] { border-left-color: var(--minimal-danger-border); }
+
+.gso-board-item__value {
+  font-size: 1.9rem;
+  font-weight: 650;
+  line-height: 1.05;
+  letter-spacing: -0.022em;
+  font-variant-numeric: tabular-nums;
+  color: var(--minimal-text);
+}
+
+.gso-board-item[data-alert='true'] .gso-board-item__value { color: var(--minimal-danger-text); }
+
+/* Cobertura parcial marcada no próprio número: o valor continua legível e com
+   peso pleno, mas o pontilhado avisa que ele cobre parte da base. */
+.gso-board-item[data-state='partial'] .gso-board-item__value {
+  text-decoration: underline dotted var(--minimal-warning-border);
+  text-underline-offset: 0.28em;
+  text-decoration-thickness: 2px;
+}
+
+/* Sem fonte, o lugar do número recebe a frase do estado — nunca um zero. */
+.gso-board-item__value--absent {
+  font-size: 0.95rem;
+  font-weight: 550;
+  letter-spacing: 0;
+  line-height: 1.3;
+  color: var(--minimal-text-tertiary);
+  padding: 0.32rem 0;
+}
+
+.gso-board-item__label {
+  font-size: 0.78rem;
+  font-weight: 550;
+  line-height: 1.3;
+  color: var(--minimal-text-secondary);
+}
+
+.gso-board-item__meta {
+  font-size: 0.7rem;
+  line-height: 1.45;
+  color: var(--minimal-text-tertiary);
+}
+
+.gso-board-item__coverage {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--minimal-warning-text);
+}
+
+@media (min-width: 1600px) {
+  .gso-board-item__value { font-size: 2.15rem; }
+}
+
+@media (max-width: 639px) {
+  .gso-board-item {
+    padding: 0.55rem 0 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--minimal-border);
+  }
+  .gso-board-item:last-child { border-bottom: 0; }
+  .gso-board-item__value { font-size: 1.6rem; }
+}
+
+/* --- Limitações ----------------------------------------------------------- */
+
+.gso-board-limits {
+  border-top: 1px solid var(--minimal-border);
+  padding-top: 0.65rem;
+}
+
+.gso-board-limits__summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--minimal-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.gso-board-limits__summary::-webkit-details-marker { display: none; }
+
+.gso-board-limits__summary::before {
+  content: '';
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--minimal-warning-text);
+  flex: 0 0 auto;
+}
+
+.gso-board-limits__list {
+  margin: 0.55rem 0 0;
+  padding-left: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--minimal-text-tertiary);
+}

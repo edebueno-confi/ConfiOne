@@ -445,3 +445,25 @@ Fechado:
 Próximo lote recomendado:
 - hardening visual das superfícies internas não nomeadas neste lote, preservando o mesmo sistema canônico;
 - redução do bundle do editor de Knowledge sem trocar contratos ou comportamento.
+
+## Documentação do Dashboard Gerencial — planejado em 2026-08-07
+
+Plano completo em `docs/DASHBOARD_DOCUMENTATION_PLAN.md`.
+
+O painel será compartilhado com pessoas que não participaram da sua construção.
+Elas farão três perguntas: como uso, de onde vem o número, e como ele é
+calculado. Hoje essas respostas só existem em relatórios de ciclo, que são
+registro de execução e não material de consulta.
+
+O risco de não documentar não é dúvida, é **decisão errada com confiança**:
+alguém lê a taxa de ganho, supõe o denominador errado e conclui algo falso.
+
+Entregáveis previstos: guia de uso, glossário de negócio, ficha técnica por
+indicador com fórmula e origem, mapa das fontes e perguntas frequentes.
+
+Pré-requisitos: abas estabilizadas visualmente, série histórica com alguns dias e
+decisão de onde a documentação vive.
+
+Regra de manutenção: a ficha técnica deve derivar do código, nunca ser escrita em
+paralelo. Documentação que diverge do comportamento real é pior que documentação
+ausente, porque tem aparência de autoridade.
