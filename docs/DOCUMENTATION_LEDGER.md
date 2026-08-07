@@ -7246,3 +7246,25 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
   47,7 s com statement timeout.
 - Nenhum dado apagado; 3.768 titulos OMIE ativos publicados.
 - Impacto futuro na FAQ: nenhum.
+
+## SETTINGS-V4-01 — primitivas do blueprint — 2026-08-07
+
+- Especificacao: `docs/design/SETTINGS_BLUEPRINT_V4_REFACTOR_SPEC.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Entrega: cinco primitivas novas em `features/settings/ui` — `UiToggleField`,
+  `UiAvatar`, `UiPagination`, `UiSortHeader` e `UiRowActions` — mais a regra pura
+  `pagination-range.mjs` com tipagem em `.d.mts` e o helper `ui-sort.ts`.
+- Icones novos no conjunto inline: `chevron-down`, `more`, `sort`, `sort-asc` e
+  `sort-desc`. Nenhuma biblioteca de icone adicionada.
+- Escala tipografica ajustada ao blueprint: titulo da pagina em 2,5 rem peso 700,
+  valor de indicador em 1,9 rem peso 700, ladrilho de icone em 44 px.
+- Paleta inalterada: `--ui-primary` e `--ui-accent` ja eram os valores do
+  blueprint. Unico literal de cor novo e o branco do botao do interruptor,
+  coberto por teste.
+- Evidencia: `settings-ui-primitives-contract` 11/11, web typecheck 0 erros,
+  contracts typecheck aprovado, lint 0 erros e 179 avisos (baseline mantido),
+  secret scan 2043 arquivos e 0 matches.
+- Limites: `web:build` nao executado nesta sessao; o sandbox Linux nao resolve os
+  symlinks de workspace do `node_modules` e o operador esta com ambiente ativo.
+  QA visual ainda nao feito — as primitivas ainda nao foram montadas em tela.
+- Impacto futuro na FAQ: nenhum.
