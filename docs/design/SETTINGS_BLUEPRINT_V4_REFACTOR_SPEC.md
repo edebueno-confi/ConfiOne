@@ -220,3 +220,15 @@ coluna "estado" diz o que já foi corrigido nesta entrega e o que ficou mapeado.
   domínio em cartões; declarar 17 ativos de 35 no catálogo.
 - **Histórico:** mover filtros para dentro do cartão e aplicar `UiPagination`.
 - **Integrações:** recomposição completa; hoje só recebeu a camada de densidade.
+
+## 10. Duas regras de layout que passam a valer sempre
+
+Definidas pelo operador em 2026-08-07, com prioridade sobre preferência estética.
+
+1. **Não rolar quando há espaço para realocar.** Antes de aceitar rolagem, reduzir
+   respiro dos cards, dividir a altura entre as colunas e dar rolagem interna só à
+   região que realmente não couber. Rolagem da página inteira é último recurso.
+2. **Texto não vaza nem quebra em excesso.** Descrição sem largura em `ch` que
+   force quebra curta, `text-wrap: pretty` em textos de apoio, `overflow-wrap`
+   em títulos e identificadores, e reticência em selo. Nenhum texto pode
+   ultrapassar o próprio componente.

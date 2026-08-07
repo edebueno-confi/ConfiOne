@@ -7321,3 +7321,23 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
   arquivos e 0 matches, suites 11/11, 3/3, 5/5, 7/7 e 8/8.
 - Limites: `web:build` e QA visual medido nao executados nesta sessao.
 - Impacto futuro na FAQ: nenhum.
+
+## SETTINGS-V4-05 — fundo unico e fim da rolagem desnecessaria — 2026-08-07
+
+- Fundo: o invólucro `<article>` de cada secao de Configuracoes pintava
+  `--minimal-surface` sobre o canvas, criando o painel claro que aparecia em
+  Integracoes, Historico, Fontes e Marcas e nao aparecia em Usuarios e acesso.
+  Passou a usar `--minimal-canvas` e a ocupar a altura toda.
+- Rolagem: o container da pagina rolava inteiro porque a coluna da direita
+  crescia com o texto. A rolagem saiu do container; `gso-ui-cards` e
+  `gso-ui-rail` passam a dividir a altura e a rolar por dentro, so quando o
+  conteudo realmente nao couber.
+- Cards de integracao mais baixos: padding de 1,1/1,25 rem para 0,95/1,1 rem e
+  respiro interno de 0,9 rem para 0,7 rem.
+- Texto: descricao de card sem `max-width` em ch, `text-wrap: pretty` em
+  descricoes e rotulos de indicador, `overflow-wrap: anywhere` em titulo, e selo
+  com reticencia em vez de vazar.
+- Evidencia: typecheck 0 erros, lint 0 erros e 179 avisos, secret scan 2055
+  arquivos e 0 matches, suites 11/11, 3/3, 5/5, 7/7 e 8/8.
+- Limites: `web:build` e QA visual medido nao executados nesta sessao.
+- Impacto futuro na FAQ: nenhum.

@@ -576,7 +576,7 @@ function GroupDetail({
   const isIntegrations = group.id === 'integracoes';
 
   return (
-    <article className="min-h-0 bg-[color:var(--minimal-surface)]">
+    <article className="flex min-h-0 flex-1 flex-col bg-[color:var(--minimal-canvas)]">
       {DASHBOARD_SECTION_IDS.includes(group.id) ? (
         // As duas telas do eixo de dados trazem o próprio cabeçalho de página,
         // com breadcrumb, metadado de leitura e ações da seção.
@@ -1007,7 +1007,7 @@ export function SettingsPage() {
       {/* A navegação das seções de Configurações vive na sidebar global. Aqui
           resta apenas o conteúdo da seção pedida pela rota, em uma coluna
           única, e cada seção responde pelo próprio cabeçalho. */}
-      <div className="gso-settings-cockpit-layout flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <div className="gso-settings-cockpit-layout flex min-h-0 flex-1 flex-col overflow-hidden">
         <main className="gso-settings-cockpit-main min-w-0 flex-1">
           <GroupDetail
           conversationTypes={conversationTypes}

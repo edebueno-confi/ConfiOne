@@ -1215,3 +1215,37 @@
 /* Altura de linha do blueprint: 56 px, com nome e e-mail empilhados dentro. */
 .gso-ui-table tbody td { padding-block: 0.6rem; }
 .gso-ui-table tbody tr { height: 3.5rem; }
+
+/* ==========================================================================
+   Blueprint V4 — regra 1: não rolar quando há espaço para realocar.
+
+   Em Integrações a página rolava porque a coluna da direita crescia com o
+   texto e empurrava o resto. Agora o corpo divide a altura disponível e cada
+   coluna rola por dentro, só quando o conteúdo realmente não couber.
+   ========================================================================== */
+.gso-ui-body { align-items: stretch; min-height: 0; }
+.gso-ui-body > * { min-height: 0; }
+.gso-ui-cards,
+.gso-ui-rail {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding-right: 0.15rem;
+}
+
+/* Regra 2: texto não vaza e não quebra em excesso.
+   A descrição do card de integração ficava espremida ao lado do ladrilho e
+   quebrava em duas linhas curtas; agora ocupa a largura do bloco de texto. */
+.gso-ui-card-header-text p { max-width: none; text-wrap: pretty; }
+.gso-ui-card-header-text h3 { overflow-wrap: anywhere; }
+.gso-ui-metric-label,
+.gso-ui-metric-sub { overflow-wrap: anywhere; text-wrap: pretty; }
+.gso-ui-badge { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Cards de integração mais baixos: o respiro interno vinha do padding do card
+   somado ao respiro de cada campo. */
+.gso-ui-cards > .gso-ui-card { padding: 0.95rem 1.1rem; }
+.gso-ui-cards .gso-ui-card-body { margin-top: 0.7rem; }
+.gso-ui-rail > .gso-ui-card { padding: 0.95rem 1.1rem; }
+.gso-ui-rail .gso-ui-card-body { margin-top: 0.7rem; }
