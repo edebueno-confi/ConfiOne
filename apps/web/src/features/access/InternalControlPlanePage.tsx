@@ -319,6 +319,11 @@ export function InternalControlPlanePage() {
           title="Usuários e acesso"
           titleId="access-title"
         />
+        <UiMetricRow label="Resumo de acessos internos">
+          <UiMetric icon="users" label="Usuários ativos" sub="acesso liberado" tone="success" value={activeUsers} valueTone="success" />
+          <UiMetric icon="layers" label="Sem área atribuída" sub="ainda sem vínculo organizacional" tone="warning" value={withoutArea} valueTone={withoutArea ? 'warning' : undefined} />
+          <UiMetric icon="shield" label="Usuários suspensos" sub="acesso pausado" tone="danger" value={suspendedUsers} valueTone={suspendedUsers ? 'danger' : undefined} />
+        </UiMetricRow>
         <nav aria-label="Seções de acessos" className="gso-ui-tabs">
           {tabs.map((item) => (
             <button
@@ -335,13 +340,7 @@ export function InternalControlPlanePage() {
       </div>
 
       <div className="gso-ui-shell-body">
-        <UiPage>
-          <UiMetricRow label="Resumo de acessos internos">
-            <UiMetric icon="users" label="Usuários ativos" sub="acesso liberado" tone="success" value={activeUsers} valueTone="success" />
-            <UiMetric icon="layers" label="Sem área atribuída" sub="ainda sem vínculo organizacional" tone="warning" value={withoutArea} valueTone={withoutArea ? 'warning' : undefined} />
-            <UiMetric icon="shield" label="Usuários suspensos" sub="acesso pausado" tone="danger" value={suspendedUsers} valueTone={suspendedUsers ? 'danger' : undefined} />
-          </UiMetricRow>
-
+        <UiPage className="gso-ui-page--fill">
           {message ? (
             <p
               className={message.tone === 'critical' ? 'gso-ui-alert gso-ui-alert--error' : 'gso-ui-alert gso-ui-alert--success'}
@@ -645,40 +644,39 @@ function UsersPanel(props: {
 
   return (
     <>
-      <UiToolbar label="Filtros da lista de usuários">
-        <div className="gso-ui-toolbar-field gso-ui-toolbar-field--wide">
-          <UiSearchField aria-label="Buscar usuário" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nome, e-mail ou papel" value={query} />
-        </div>
-        <div className="gso-ui-toolbar-field">
-          <select aria-label="Filtrar por área" className="gso-ui-control gso-ui-select" onChange={(event) => setFilters.setArea(event.target.value)} value={filters.area}>
-            <option value="">Todas as áreas</option>
-            {areas.map((area) => <option key={area.area_key} value={area.area_key}>{area.display_name}</option>)}
-          </select>
-        </div>
-        <div className="gso-ui-toolbar-field">
-          <select aria-label="Filtrar por função" className="gso-ui-control gso-ui-select" onChange={(event) => setFilters.setFunctionId(event.target.value)} value={filters.functionId}>
-            <option value="">Todas as funções</option>
-            {functions.map((item) => <option key={item.function_id} value={item.function_id}>{item.name}</option>)}
-          </select>
-        </div>
-        <div className="gso-ui-toolbar-field">
-          <select aria-label="Filtrar por perfil" className="gso-ui-control gso-ui-select" onChange={(event) => setFilters.setProfile(event.target.value)} value={filters.profile}>
-            <option value="">Todos os perfis</option>
-            {profiles.map((profile) => <option key={profile.access_profile_id} value={profile.access_profile_id}>{profile.name}</option>)}
-          </select>
-        </div>
-        <div className="gso-ui-toolbar-field">
-          <select aria-label="Filtrar por status" className="gso-ui-control gso-ui-select" onChange={(event) => setFilters.setStatus(event.target.value)} value={filters.status}>
-            <option value="">Todos os status</option>
-            <option value="active">Ativo</option>
-            <option value="suspended">Suspenso</option>
-            <option value="inactive">Inativo</option>
-          </select>
-        </div>
-      </UiToolbar>
-
-      <div className="gso-ui-split">
-        <UiCard flush label="Usuários internos">
+      <div className="gso-ui-split gso-ui-grow">
+        <UiCard fill flush label="Usuários internos">
+        <UiToolbar inline label="Filtros da lista de usuários">
+          <div className="gso-ui-toolbar-field gso-ui-toolbar-field--wide">
+            <UiSearchField aria-label="Buscar usuário" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nome, e-mail ou papel" value={query} />
+          </div>
+          <div className="gso-ui-toolbar-field">
+            <select aria-label="Filtrar por área" className="gso-ui-control gso-ui-select" onChange={(event) => setFilters.setArea(event.target.value)} value={filters.area}>
+              <option value="">Todas as áreas</option>
+              {areas.map((area) => <option key={area.area_key} value={area.area_key}>{area.display_name}</option>)}
+            </select>
+          </div>
+          <div className="gso-ui-toolbar-field">
+            <select aria-label="Filtrar por função" className="gso-ui-control gso-ui-select" onChange={(event) => setFilters.setFunctionId(event.target.value)} value={filters.functionId}>
+              <option value="">Todas as funções</option>
+              {functions.map((item) => <option key={item.function_id} value={item.function_id}>{item.name}</option>)}
+            </select>
+          </div>
+          <div className="gso-ui-toolbar-field">
+            <select aria-label="Filtrar por perfil" className="gso-ui-control gso-ui-select" onChange={(event) => setFilters.setProfile(event.target.value)} value={filters.profile}>
+              <option value="">Todos os perfis</option>
+              {profiles.map((profile) => <option key={profile.access_profile_id} value={profile.access_profile_id}>{profile.name}</option>)}
+            </select>
+          </div>
+          <div className="gso-ui-toolbar-field">
+            <select aria-label="Filtrar por status" className="gso-ui-control gso-ui-select" onChange={(event) => setFilters.setStatus(event.target.value)} value={filters.status}>
+              <option value="">Todos os status</option>
+              <option value="active">Ativo</option>
+              <option value="suspended">Suspenso</option>
+              <option value="inactive">Inativo</option>
+            </select>
+          </div>
+        </UiToolbar>
           <UiTable label="Usuários internos">
             <thead>
               <tr>
@@ -745,9 +743,9 @@ function UsersPanel(props: {
           ) : null}
         </UiCard>
 
-        <aside>
+        <aside className="gso-ui-aside">
           {selectedUser ? (
-            <UiCard labelledBy="access-detail-title">
+            <UiCard fill labelledBy="access-detail-title">
               <UiCardHeader
                 actions={<UiBadge dot tone={statusTone(selectedUser.access_status)}>{statusLabel(selectedUser.access_status)}</UiBadge>}
                 description={selectedUser.email || 'E-mail indisponível'}
@@ -755,88 +753,90 @@ function UsersPanel(props: {
                 title={selectedUser.full_name || 'Usuário interno'}
                 titleId="access-detail-title"
               />
-              <div className="gso-ui-card-body">
-                <UiDetailList
-                  items={[
-                    { icon: 'shield', label: 'Capacidades efetivas', value: effectiveCapabilities === null ? 'Indisponível' : `${effectiveCapabilities} liberadas pelo backend` },
-                    { icon: 'key', label: 'Overrides auditáveis', value: `${selectedUser.override_count}` },
-                    { icon: 'clock', label: 'Contexto atualizado', value: selectedUser.last_access_at ? formatDateTime(selectedUser.last_access_at) : 'Indisponível' },
-                  ]}
-                />
-              </div>
-              <div className="gso-ui-card-body">
-                <UiField label="Área">
-                  <select className="gso-ui-control gso-ui-select" onChange={(event) => setAssignment((current) => ({ ...current, areaKey: event.target.value, functionId: '' }))} value={assignment.areaKey}>
-                    {areas.filter((area) => area.is_active).map((area) => <option key={area.area_key} value={area.area_key}>{area.display_name}</option>)}
-                  </select>
-                </UiField>
-                <UiField label="Função">
-                  <select className="gso-ui-control gso-ui-select" onChange={(event) => setAssignment((current) => ({ ...current, functionId: event.target.value }))} value={assignment.functionId}>
-                    <option value="">Sem função</option>
-                    {visibleFunctions.map((item) => <option key={item.function_id} value={item.function_id}>{item.name}</option>)}
-                  </select>
-                </UiField>
-                <UiField label="Perfil">
-                  <select className="gso-ui-control gso-ui-select" onChange={(event) => setAssignment((current) => ({ ...current, profileId: event.target.value }))} value={assignment.profileId}>
-                    <option value="">Personalizado</option>
-                    {profiles.filter((profile) => profile.is_active).map((profile) => <option key={profile.access_profile_id} value={profile.access_profile_id}>{profile.name}</option>)}
-                  </select>
-                </UiField>
-                <div className="gso-ui-actions">
-                  <UiButton
-                    disabled={busy || !assignment.areaKey}
-                    icon="check"
-                    onClick={() => void onAction(() => updateAdminInternalAccessAssignment({ userId: selectedUser.user_id, areaKey: assignment.areaKey, functionId: assignment.functionId || null, accessProfileId: assignment.profileId || null }), 'Atribuição atualizada.')}
-                    variant="primary"
-                  >
-                    Salvar atribuição
-                  </UiButton>
+              <div className="gso-ui-aside-body">
+                <div className="gso-ui-card-body">
+                  <UiDetailList
+                    items={[
+                      { icon: 'shield', label: 'Capacidades efetivas', value: effectiveCapabilities === null ? 'Indisponível' : `${effectiveCapabilities} liberadas pelo backend` },
+                      { icon: 'key', label: 'Overrides auditáveis', value: `${selectedUser.override_count}` },
+                      { icon: 'clock', label: 'Contexto atualizado', value: selectedUser.last_access_at ? formatDateTime(selectedUser.last_access_at) : 'Indisponível' },
+                    ]}
+                  />
                 </div>
-              </div>
-              <div className="gso-ui-card-body">
-                <UiCardHeader
-                  description="Exceções individuais exigem justificativa e ficam auditadas."
-                  icon="key"
-                  title="Overrides"
-                  tone="warning"
-                />
-                {overrides.length === 0 ? (
-                  <p className="gso-ui-note">Nenhum override individual.</p>
-                ) : (
-                  <ul className="gso-ui-facts">
-                    {overrides.map((item) => (
-                      <li key={item.override_id}>
-                        {item.capability_name} · {item.effect === 'allow' ? 'conceder' : 'bloquear'}
-                        {' '}
-                        <UiButton compact onClick={() => void onAction(() => removeAdminInternalOverride(item.override_id), 'Override removido.')} variant="ghost">
-                          Remover
-                        </UiButton>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <UiField label="Capacidade">
-                  <select className="gso-ui-control gso-ui-select" onChange={(event) => setOverrideForm((current) => ({ ...current, capabilityKey: event.target.value }))} value={overrideForm.capabilityKey}>
-                    <option value="">Selecione uma capacidade</option>
-                    {capabilities.map((capability) => <option key={capability.capability_key} value={capability.capability_key}>{capability.display_name} · {capability.domain}</option>)}
-                  </select>
-                </UiField>
-                <UiField label="Efeito">
-                  <select className="gso-ui-control gso-ui-select" onChange={(event) => setOverrideForm((current) => ({ ...current, effect: event.target.value as 'allow' | 'deny' }))} value={overrideForm.effect}>
-                    <option value="allow">Conceder</option>
-                    <option value="deny">Bloquear</option>
-                  </select>
-                </UiField>
-                <UiField label="Justificativa">
-                  <textarea className="gso-ui-control" onChange={(event) => setOverrideForm((current) => ({ ...current, justification: event.target.value }))} rows={3} value={overrideForm.justification} />
-                </UiField>
-                <div className="gso-ui-actions">
-                  <UiButton
-                    disabled={busy || !overrideForm.capabilityKey || !overrideForm.justification}
-                    onClick={() => void onAction(() => upsertAdminInternalOverride({ userId: selectedUser.user_id, capabilityKey: overrideForm.capabilityKey, effect: overrideForm.effect, justification: overrideForm.justification }), 'Override salvo.')}
-                  >
-                    Salvar override
-                  </UiButton>
+                <div className="gso-ui-card-body">
+                  <UiField label="Área">
+                    <select className="gso-ui-control gso-ui-select" onChange={(event) => setAssignment((current) => ({ ...current, areaKey: event.target.value, functionId: '' }))} value={assignment.areaKey}>
+                      {areas.filter((area) => area.is_active).map((area) => <option key={area.area_key} value={area.area_key}>{area.display_name}</option>)}
+                    </select>
+                  </UiField>
+                  <UiField label="Função">
+                    <select className="gso-ui-control gso-ui-select" onChange={(event) => setAssignment((current) => ({ ...current, functionId: event.target.value }))} value={assignment.functionId}>
+                      <option value="">Sem função</option>
+                      {visibleFunctions.map((item) => <option key={item.function_id} value={item.function_id}>{item.name}</option>)}
+                    </select>
+                  </UiField>
+                  <UiField label="Perfil">
+                    <select className="gso-ui-control gso-ui-select" onChange={(event) => setAssignment((current) => ({ ...current, profileId: event.target.value }))} value={assignment.profileId}>
+                      <option value="">Personalizado</option>
+                      {profiles.filter((profile) => profile.is_active).map((profile) => <option key={profile.access_profile_id} value={profile.access_profile_id}>{profile.name}</option>)}
+                    </select>
+                  </UiField>
+                  <div className="gso-ui-actions">
+                    <UiButton
+                      disabled={busy || !assignment.areaKey}
+                      icon="check"
+                      onClick={() => void onAction(() => updateAdminInternalAccessAssignment({ userId: selectedUser.user_id, areaKey: assignment.areaKey, functionId: assignment.functionId || null, accessProfileId: assignment.profileId || null }), 'Atribuição atualizada.')}
+                      variant="primary"
+                    >
+                      Salvar atribuição
+                    </UiButton>
+                  </div>
+                </div>
+                <div className="gso-ui-card-body">
+                  <UiCardHeader
+                    description="Exceções individuais exigem justificativa e ficam auditadas."
+                    icon="key"
+                    title="Overrides"
+                    tone="warning"
+                  />
+                  {overrides.length === 0 ? (
+                    <p className="gso-ui-note">Nenhum override individual.</p>
+                  ) : (
+                    <ul className="gso-ui-facts">
+                      {overrides.map((item) => (
+                        <li key={item.override_id}>
+                          {item.capability_name} · {item.effect === 'allow' ? 'conceder' : 'bloquear'}
+                          {' '}
+                          <UiButton compact onClick={() => void onAction(() => removeAdminInternalOverride(item.override_id), 'Override removido.')} variant="ghost">
+                            Remover
+                          </UiButton>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <UiField label="Capacidade">
+                    <select className="gso-ui-control gso-ui-select" onChange={(event) => setOverrideForm((current) => ({ ...current, capabilityKey: event.target.value }))} value={overrideForm.capabilityKey}>
+                      <option value="">Selecione uma capacidade</option>
+                      {capabilities.map((capability) => <option key={capability.capability_key} value={capability.capability_key}>{capability.display_name} · {capability.domain}</option>)}
+                    </select>
+                  </UiField>
+                  <UiField label="Efeito">
+                    <select className="gso-ui-control gso-ui-select" onChange={(event) => setOverrideForm((current) => ({ ...current, effect: event.target.value as 'allow' | 'deny' }))} value={overrideForm.effect}>
+                      <option value="allow">Conceder</option>
+                      <option value="deny">Bloquear</option>
+                    </select>
+                  </UiField>
+                  <UiField label="Justificativa">
+                    <textarea className="gso-ui-control" onChange={(event) => setOverrideForm((current) => ({ ...current, justification: event.target.value }))} rows={3} value={overrideForm.justification} />
+                  </UiField>
+                  <div className="gso-ui-actions">
+                    <UiButton
+                      disabled={busy || !overrideForm.capabilityKey || !overrideForm.justification}
+                      onClick={() => void onAction(() => upsertAdminInternalOverride({ userId: selectedUser.user_id, capabilityKey: overrideForm.capabilityKey, effect: overrideForm.effect, justification: overrideForm.justification }), 'Override salvo.')}
+                    >
+                      Salvar override
+                    </UiButton>
+                  </div>
                 </div>
               </div>
             </UiCard>

@@ -162,7 +162,7 @@ export function BrandsSettingsPage({
   };
 
   return (
-    <UiPage>
+    <UiPage className="gso-ui-page--fill">
       <UiPageHeader
         actions={
           <UiButton disabled={mutating || creating} icon="plus" onClick={startCreate} variant="primary">
@@ -201,7 +201,7 @@ export function BrandsSettingsPage({
           Não foi possível carregar as marcas agora. Atualize a página e tente novamente.
         </p>
       ) : (
-        <div className="gso-ui-split">
+        <div className="gso-ui-split gso-ui-grow">
           <div className="gso-ui-stack">
             <UiToolbar
               actions={
@@ -244,7 +244,7 @@ export function BrandsSettingsPage({
                 />
               </UiCard>
             ) : (
-              <UiCard flush label="Marcas cadastradas">
+              <UiCard fill flush label="Marcas cadastradas">
                 <UiTable label="Marcas cadastradas">
                   <thead>
                     <tr>

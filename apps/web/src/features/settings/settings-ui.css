@@ -461,8 +461,8 @@
   background: var(--ui-surface);
   box-shadow: var(--ui-shadow);
 }
-.gso-ui-toolbar-field { flex: 1 1 10rem; min-width: 9rem; }
-.gso-ui-toolbar-field--wide { flex: 2 1 18rem; }
+.gso-ui-toolbar-field { flex: 0 0 auto; width: 10.5rem; min-width: 0; }
+.gso-ui-toolbar-field--wide { flex: 0 1 19rem; width: auto; min-width: 12rem; }
 .gso-ui-toolbar-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-left: auto; }
 .gso-ui-search { position: relative; display: block; }
 .gso-ui-search > svg {
@@ -546,7 +546,7 @@
 /* O indicador de posição é o magenta da marca, o mesmo das abas do Dashboard.
    Azul continua sendo cor de ação; magenta diz onde você está. */
 .gso-ui-tab[aria-current='page'],
-.gso-ui-tab[aria-selected='true'] { border-bottom-color: var(--selection-accent); color: var(--selection-accent); font-weight: 600; }
+.gso-ui-tab[aria-selected='true'] { border-bottom-color: var(--selection-accent); color: var(--ui-text); font-weight: 600; }
 
 /* -------------------------------------------------------------------------
    13. UiEmptyState
@@ -732,8 +732,8 @@
 }
 
 /* Lista + detalhe (Marcas). */
-.gso-ui-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 21rem); align-items: start; gap: 1.25rem; min-width: 0; }
-.gso-ui-split > * { min-width: 0; }
+.gso-ui-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 23.5rem); align-items: stretch; gap: 1.25rem; min-width: 0; min-height: 0; }
+.gso-ui-split > * { min-width: 0; min-height: 0; }
 .gso-ui-stack { display: grid; gap: 1.25rem; min-width: 0; align-content: start; }
 
 /* Corpo da tela de Integrações: cards + coluna de governança. */
@@ -1138,3 +1138,80 @@
   .gso-ui-pagination-pages { margin: 0; order: 3; width: 100%; justify-content: center; }
   .gso-ui-pagination-size { margin-left: 0; }
 }
+
+/* ==========================================================================
+   Blueprint V4 — densidade: a página ocupa a viewport.
+
+   Medição de 2026-08-07: a tela terminava a 62% da altura e deixava 37% de
+   vazio abaixo. É essa sobra que dá a sensação de "1366 em Full HD", não o
+   tamanho da fonte. As regras abaixo fazem o bloco principal esticar até a base
+   e ancoram rodapé e ações, para que nada precise de rolagem para ser acionado.
+   ========================================================================== */
+
+/* Canvas que preenche a altura: os blocos de cromo ficam no tamanho natural e
+   o bloco marcado com `gso-ui-grow` toma o espaço restante. */
+.gso-ui-page--fill {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  gap: 1rem;
+}
+.gso-ui-page--fill > * { flex: 0 0 auto; }
+.gso-ui-page--fill > .gso-ui-grow { flex: 1 1 auto; min-height: 0; }
+
+/* Cartão que estica: cabeçalho e rodapé fixos, corpo rolando por dentro. */
+.gso-ui-card--fill { display: flex; min-height: 0; flex-direction: column; }
+.gso-ui-card--fill > .gso-ui-table-frame { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.gso-ui-card--fill > .gso-ui-pagination { flex: 0 0 auto; }
+
+/* Barra de filtros embutida no cartão que ela filtra: sem borda própria, sem
+   sombra e sem raio, apenas o filete que a separa da tabela. */
+.gso-ui-toolbar--inline {
+  border: 0;
+  border-bottom: 1px solid var(--ui-border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0.75rem 1.1rem;
+  align-items: center;
+}
+
+/* Painel de detalhe: coluna de altura cheia, com a leitura rolando por dentro e
+   as ações sempre visíveis no rodapé. Antes o painel crescia com o conteúdo e
+   obrigava a rolar a página inteira para alcançar o botão. */
+.gso-ui-aside { display: flex; min-height: 0; flex-direction: column; }
+.gso-ui-aside-head { flex: 0 0 auto; }
+.gso-ui-aside-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.gso-ui-aside-foot {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--ui-border);
+}
+
+/* Linha de atributo do painel: rótulo com ícone à esquerda, valor à direita, sem
+   caixa de campo. Campo com borda só onde existe edição de verdade. */
+.gso-ui-attr {
+  display: grid;
+  grid-template-columns: 1.1rem minmax(0, 8rem) minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.55rem;
+  padding: 0.45rem 0;
+  font-size: 0.8rem;
+}
+.gso-ui-attr + .gso-ui-attr { border-top: 1px solid color-mix(in srgb, var(--ui-border) 60%, transparent); }
+.gso-ui-attr > svg { align-self: center; color: var(--ui-text-tertiary); }
+.gso-ui-attr dt { color: var(--ui-text-secondary); }
+.gso-ui-attr dd { margin: 0; color: var(--ui-text); font-weight: 550; overflow-wrap: anywhere; }
+
+/* Altura de linha do blueprint: 56 px, com nome e e-mail empilhados dentro. */
+.gso-ui-table tbody td { padding-block: 0.6rem; }
+.gso-ui-table tbody tr { height: 3.5rem; }

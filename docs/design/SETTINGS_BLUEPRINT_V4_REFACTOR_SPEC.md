@@ -189,3 +189,34 @@ QA visual em 1920×1080 mede, por rota:
 - `scrollWidth - innerWidth === 0`.
 
 Sem esses quatro números, a tela não é dada por entregue.
+
+## 9. Diff por tela contra o blueprint — 2026-08-07
+
+Mapeamento completo das divergências, feito depois da revisão do operador. A
+coluna "estado" diz o que já foi corrigido nesta entrega e o que ficou mapeado.
+
+### 9.1 Divergências estruturais comuns
+
+| Divergência | Onde | Estado |
+| --- | --- | --- |
+| Abas antes dos indicadores | Usuários e acesso | corrigido |
+| Página termina no meio da viewport | todas | corrigido pela camada `gso-ui-page--fill` |
+| Filtro esticado por toda a largura | todas | corrigido: campo com largura própria |
+| Filtro fora do cartão que ele filtra | Usuários, Marcas, Histórico | corrigido em Usuários; Marcas e Histórico exigem mover o bloco |
+| Painel de detalhe estreito e com rolagem para agir | Usuários, Marcas | corrigido: coluna de altura cheia, leitura rolando por dentro, largura de 21 rem para 23,5 rem |
+| Campo com borda onde o blueprint mostra leitura | Usuários, Marcas | primitivo `.gso-ui-attr` criado; aplicação por tela pendente |
+| Altura de linha 67 px | tabelas | corrigido para 56 px |
+| Magenta com peso excessivo na aba | todas | corrigido: magenta só no traço, rótulo em tinta forte |
+
+### 9.2 Pendente por tela
+
+- **Geral:** tela ainda não existe no padrão do blueprint; exige auditoria dos
+  campos antes de desenhar.
+- **Marcas:** mover a barra de filtros para dentro do cartão e trocar os campos
+  do painel por `.gso-ui-attr`.
+- **Central de ajuda:** auditar persistência de cada interruptor antes de montar
+  a coluna de comportamento.
+- **Fontes do Dashboard:** bloco explicativo com indicadores e catálogo por
+  domínio em cartões; declarar 17 ativos de 35 no catálogo.
+- **Histórico:** mover filtros para dentro do cartão e aplicar `UiPagination`.
+- **Integrações:** recomposição completa; hoje só recebeu a camada de densidade.

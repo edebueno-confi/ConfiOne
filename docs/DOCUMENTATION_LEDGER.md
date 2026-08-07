@@ -7285,3 +7285,22 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
   2052 arquivos e 0 matches; suites afetadas 11/11, 7/7 e 8/8.
 - Limites: `web:build` e QA visual nao executados nesta sessao.
 - Impacto futuro na FAQ: nenhum.
+
+## SETTINGS-V4-03 — densidade, filtro e painel de detalhe — 2026-08-07
+
+- Especificacao e diff por tela: `docs/design/SETTINGS_BLUEPRINT_V4_REFACTOR_SPEC.md` secoes 8 e 9.
+- Camada compartilhada: `gso-ui-page--fill` faz a pagina ocupar a viewport;
+  `gso-ui-card--fill` estica o cartao com rodape ancorado; `gso-ui-aside` da
+  altura cheia ao painel de detalhe; `gso-ui-toolbar--inline` embute o filtro no
+  cartao; `.gso-ui-attr` cria a linha de leitura sem caixa de campo.
+- Usuarios e acesso: indicadores subiram para antes das abas, filtro entrou no
+  cartao da tabela, painel de detalhe passou de 21 rem para 23,5 rem com leitura
+  rolando por dentro em vez de empurrar a pagina.
+- Aba: o magenta ficou so no traco de 2 px; o rotulo voltou para tinta forte.
+  O peso excessivo apontado pelo operador vinha do rotulo colorido.
+- Marcas e Integracoes receberam a camada de densidade; a recomposicao completa
+  segue mapeada.
+- Evidencia: typecheck 0 erros, contracts aprovado, lint 0 erros e 179 avisos,
+  secret scan 2055 arquivos e 0 matches, suites 11/11, 3/3, 5/5, 7/7, 8/8 e 7/7.
+- Limites: `web:build` e QA visual medido nao executados nesta sessao.
+- Impacto futuro na FAQ: nenhum.
