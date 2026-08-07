@@ -1,5 +1,27 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+## Adendo corrente — interfaces ligadas e remotos investigados — 2026-08-07
+
+Relatório: seções 15 e 16 de `docs/reports/2026-08-07_kpi-discovery-e-lote-p0.md`.
+
+**As quatro áreas do Dashboard passam a exibir os indicadores.** Comercial,
+Suporte e Resumo estavam nas RPCs anteriores; agora consomem os read models de
+KPI através de `AnalyticsKpiGrid`, com tradução centralizada no contrato de
+apresentação. Suporte ganhou cinco indicadores que não existiam. O Resumo reusa
+os read models de cada área em vez de recalcular, o que impede a mesma métrica
+divergir entre a visão geral e a tela de origem.
+
+**Os dois repositórios remotos são espelhos byte a byte.** Mesma `main`
+(`2873bc5`), mesmas 31 branches, zero divergência. Não há "qual é o certo": há
+duplicidade acidental. Nenhuma configuração do projeto fixa o nome do
+repositório, e a conexão do Vercel é externa ao código.
+
+**Resolução proposta e ainda não aplicada:** um único remoto com duas URLs de
+push, publicando nos dois simultaneamente. Elimina a decisão em vez de tomá-la, e
+impede divergência futura. A reconfiguração foi bloqueada pela política de
+permissões do ambiente e é o único item que exige execução manual. Comandos
+exatos na seção 16.3 do relatório.
+
 ## Adendo corrente — KPIs publicados em produção — 2026-08-07
 
 Relatório: seção 14 de `docs/reports/2026-08-07_kpi-discovery-e-lote-p0.md`.

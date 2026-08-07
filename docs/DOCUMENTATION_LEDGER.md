@@ -1,5 +1,18 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## Registro corrente — interfaces e remotos — 2026-08-07
+
+- **Relatório:** `reports/2026-08-07_kpi-discovery-e-lote-p0.md`, seções 15 e 16.
+- **Interfaces:** as quatro áreas do Dashboard passam a exibir os indicadores,
+  via componente compartilhado com tradução única no contrato de apresentação.
+  Teste novo falha se alguma tela navegar o payload cru ou vazar nome de
+  propriedade, endpoint ou termo de infraestrutura.
+- **Remotos:** investigados e comprovados espelhos byte a byte, mesma `main` e
+  mesmas 31 branches. Resolução proposta é um remoto com duas URLs de push, que
+  elimina a decisão em vez de tomá-la. Bloqueada por permissão do ambiente;
+  único item pendente de execução manual.
+- **Validação:** 43 asserções de contrato, build, lint e secret scan aprovados.
+
 ## Registro corrente — KPIs em produção e quatro defeitos corrigidos — 2026-08-07
 
 - **Relatório:** `reports/2026-08-07_kpi-discovery-e-lote-p0.md`, seção 14.

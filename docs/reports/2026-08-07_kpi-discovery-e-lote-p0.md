@@ -880,3 +880,61 @@ código citava o nome da propriedade corrigida. Reescrito.
 | `npm run web:build` | **aprovado** |
 | `npm run lint` | **0 erros** |
 | `npm run local:qa:secret-scan` | **aprovado**, 2.081 arquivos |
+
+---
+
+## 16. Os dois repositórios remotos: investigação e resolução proposta
+
+### 16.1 O que são
+
+Investigado por comparação direta após `git fetch --all`:
+
+| Medida | `origin` (Central-Confi) | `genius-os` (Genius-OS) |
+| --- | --- | --- |
+| Branches | 31 | 31 |
+| `main` | `2873bc5`, 599 commits | `2873bc5`, 599 commits |
+| Divergência entre as duas `main` | — | **0 à frente, 0 atrás** |
+| Branches `codex/*` divergentes | — | **0** |
+
+**São espelhos byte a byte.** Não existe "qual é o certo": existe duplicidade
+acidental. Alguém criou um repositório com o nome novo do produto e espelhou o
+conteúdo inteiro, mantendo o antigo como `origin`.
+
+O risco real nunca foi perder trabalho — era publicar em um e esquecer o outro,
+criando divergência com o tempo. Foi o que quase aconteceu: a branch de trabalho
+estava com 820 commits no espelho e 837 no local.
+
+### 16.2 Nenhuma configuração depende do nome
+
+Verificado: `vercel.json` não referencia repositório, o workflow do GitHub roda
+em qualquer um, e nenhum documento fixa a origem. A conexão do Vercel é externa
+ao código.
+
+### 16.3 Resolução proposta: eliminar a escolha
+
+Em vez de eleger um canônico e arriscar quebrar a conexão de deploy que ninguém
+sabe onde está apontada, a solução é **um único remoto que publica nos dois**.
+O Git suporta múltiplas URLs de push por remoto:
+
+```
+git remote set-url origin https://github.com/edebueno-confi/Genius-OS.git
+git remote set-url --add --push origin https://github.com/edebueno-confi/Genius-OS.git
+git remote set-url --add --push origin https://github.com/edebueno-confi/Central-Confi.git
+git remote remove genius-os
+```
+
+Depois disso, `git push` sozinho publica nos dois, sempre. A ambiguidade deixa de
+existir porque não há mais nada a decidir, e os espelhos não podem divergir.
+
+O nome de leitura passa a ser o do produto; o legado continua recebendo tudo,
+sem perda de histórico e sem quebrar integração externa.
+
+**Não executado neste ciclo:** a reconfiguração de remoto foi bloqueada pela
+política de permissões do ambiente. É o único item que exige execução manual.
+
+### 16.4 Recomendação complementar
+
+Depois que o espelhamento estiver ativo e comprovado por alguns ciclos, arquivar
+`Central-Confi` no GitHub. Arquivo, não exclusão: o histórico permanece legível e
+o repositório para de aceitar escrita, o que remove a duplicidade de vez sem
+perder nada.
