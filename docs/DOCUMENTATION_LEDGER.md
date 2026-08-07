@@ -7268,3 +7268,20 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
   symlinks de workspace do `node_modules` e o operador esta com ambiente ativo.
   QA visual ainda nao feito — as primitivas ainda nao foram montadas em tela.
 - Impacto futuro na FAQ: nenhum.
+
+## SETTINGS-V4-02 — barra lateral com tema real — 2026-08-07
+
+- Especificacao: `docs/design/SETTINGS_BLUEPRINT_V4_REFACTOR_SPEC.md`.
+- Defeito encontrado: a barra lateral era pintada com literais escuros aplicados
+  nos dois temas (`rgba(15,31,68,...)`, `rgba(226,232,240,...)`, `#0c1a3a`,
+  `#f472b6`, `#fff`). No tema claro ela ficava incoerente com o resto da tela.
+- Entrega: 20 tokens de barra lateral declarados no claro e no escuro, e 24
+  regras convertidas para esses tokens. O escuro recebeu literalmente os valores
+  que ja vigoravam; nada mudou no tema em uso.
+- Tema claro segue o blueprint: item ativo em `#EEF2FF` com tinta `#2563EB`, sem
+  gradiente e sem trilho rosa, cartao e busca sobre superficie clara.
+- Evidencia: `sidebar-theme-tokens-contract` 3/3, que barra a reintroducao de cor
+  literal em regra compartilhada; typecheck 0 erros; lint 0 erros; secret scan
+  2052 arquivos e 0 matches; suites afetadas 11/11, 7/7 e 8/8.
+- Limites: `web:build` e QA visual nao executados nesta sessao.
+- Impacto futuro na FAQ: nenhum.
