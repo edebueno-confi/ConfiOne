@@ -7352,3 +7352,17 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
   arquivos e 0 matches, suites 11/11, 3/3, 5/5, 7/7 e 8/8.
 - Limites: `web:build` e QA visual medido nao executados nesta sessao.
 - Impacto futuro na FAQ: nenhum.
+
+## SETTINGS-V4-07 — margem lateral na regua do Dashboard — 2026-08-07
+
+- Regua adotada: `clamp(1rem, 2.5vw, 2.5rem)`, copiada de
+  `.gso-visual-v1-shell .gso-analytics-content`, que e a margem do Dashboard
+  Gerencial. Em Full HD da 40 px e acompanha a largura da janela abaixo disso.
+- Aplicada em `.gso-ui-page` e `.gso-ui-shell-chrome`, entao Configuracoes,
+  Conhecimento e Dashboard passam a encostar na barra lateral a mesma distancia.
+- Substitui a medida anterior de 1,25 rem, que era fixa e vinha de Artigos.
+- Evidencia: typecheck 0 erros, lint 0 erros e 179 avisos, secret scan 2055
+  arquivos e 0 matches, suites 11/11, 3/3, 5/5, 7/7 e 8/8.
+- Limites: QA visual medido segue pendente; a extensao do navegador nao esta
+  conectada nesta sessao.
+- Impacto futuro na FAQ: nenhum.

@@ -91,7 +91,7 @@
   gap: 1rem;
   align-content: start;
   min-width: 0;
-  padding: 1.15rem 1.25rem 1.25rem;
+  padding: 1.15rem clamp(1rem, 2.5vw, 2.5rem) 1.25rem;
   background: var(--ui-canvas);
 }
 
@@ -708,7 +708,7 @@
   flex: 0 0 auto;
   gap: 0.8rem;
   min-width: 0;
-  padding: 1.15rem 1.25rem 0;
+  padding: 1.15rem clamp(1rem, 2.5vw, 2.5rem) 0;
   background: var(--ui-canvas);
 }
 .gso-ui-shell-chrome > * { min-width: 0; }
@@ -1250,13 +1250,9 @@
 .gso-ui-rail > .gso-ui-card { padding: 0.95rem 1.1rem; }
 .gso-ui-rail .gso-ui-card-body { margin-top: 0.7rem; }
 
-/* Margem lateral padrão do produto: 1,25 rem, o mesmo `px-5` do cockpit de
-   Conhecimento. Antes as telas de Configurações usavam 1,5 rem e ficavam mais
-   afastadas da barra lateral que Artigos. */
-.gso-ui-page { padding-inline: 1.25rem; }
-.gso-ui-shell-chrome { padding-inline: 1.25rem; }
-
-@media (max-width: 760px) {
-  .gso-ui-page,
-  .gso-ui-shell-chrome { padding-inline: 1rem; }
-}
+/* Margem lateral padrão do produto: a mesma do Dashboard Gerencial.
+   `clamp(1rem, 2.5vw, 2.5rem)` — 16 px no mínimo, 40 px em Full HD, acompanhando
+   a largura da janela. Copiada de `.gso-visual-v1-shell .gso-analytics-content`,
+   que é a régua adotada pelo operador em 2026-08-07. */
+.gso-ui-page { padding-inline: clamp(1rem, 2.5vw, 2.5rem); }
+.gso-ui-shell-chrome { padding-inline: clamp(1rem, 2.5vw, 2.5rem); }

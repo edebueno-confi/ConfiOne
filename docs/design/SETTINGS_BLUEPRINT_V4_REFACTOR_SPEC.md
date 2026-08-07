@@ -235,10 +235,15 @@ Definidas pelo operador em 2026-08-07, com prioridade sobre preferência estéti
 
 ## 11. Margem lateral padrão do produto
 
-Definida pelo operador em 2026-08-07 a partir da tela de Artigos: **1,25 rem**
-(o `px-5` do cockpit de Conhecimento), reduzida para 1 rem abaixo de 760 px.
+Régua definida pelo operador em 2026-08-07: **a margem do Dashboard Gerencial**.
 
-As telas de Configurações usavam 1,5 rem e ficavam visivelmente mais afastadas da
-barra lateral que Artigos. `.gso-ui-page` e `.gso-ui-shell-chrome` passam a usar
-a mesma margem, então toda superfície do produto encosta na barra lateral à mesma
-distância.
+O valor é `clamp(1rem, 2.5vw, 2.5rem)`, copiado de
+`.gso-visual-v1-shell .gso-analytics-content`. Em Full HD dá 40 px; abaixo de
+1600 px acompanha a largura da janela; nunca desce de 16 px.
+
+`.gso-ui-page` e `.gso-ui-shell-chrome` passam a usar exatamente essa expressão,
+então Configurações, Conhecimento e Dashboard encostam na barra lateral à mesma
+distância, em qualquer largura.
+
+Histórico da decisão: a primeira tentativa usou 1,25 rem, a medida de Artigos.
+Foi substituída pela régua do Dashboard, que é responsiva.
