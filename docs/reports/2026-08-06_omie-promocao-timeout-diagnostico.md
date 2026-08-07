@@ -84,3 +84,17 @@ falhando na promoção.
 Critério de sucesso após a aplicação: `omie-sync` em HTTP 200, execução com
 `status = 'completed'`, `promotion_result` preenchido e ausência de
 `statement timeout` no erro.
+
+## 7. Aplicação no remoto — 2026-08-07
+
+A migration foi aplicada. `pg_proc` confirma que a versao em producao de
+`rpc_service_promote_omie_snapshot` contem `statement_timeout` e
+`pg_advisory_xact_lock`. O registro em `schema_migrations` foi reconciliado para
+`20260806150000`, a mesma versao do arquivo no repositorio, para que
+`supabase db push` nao tente reaplicar.
+
+Estado no momento da aplicacao: staging vazio, 3.761 titulos OMIE ativos
+preservados da ultima execucao completa. Nenhum dado foi apagado.
+
+Falta a prova de ponta a ponta: uma execucao real do OMIE terminando em
+`completed`, com `promotion_result` preenchido e sem `statement timeout`.

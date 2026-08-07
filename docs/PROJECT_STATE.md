@@ -11,9 +11,16 @@
   (3.761 a 3.768 linhas no staging); o que falha é a promoção do snapshot, com
   `canceling statement due to statement timeout` gravado em
   `analytics_finance_sync_runs`. Última execução completa: 2026-08-06 00:35 UTC.
-- Correção existente e **não aplicada** no remoto:
-  `20260806150000_omie_promotion_timeout_hardening.sql`, agora versionada no Git.
-  A última migration aplicada é `20260806120000_profile_avatars_self_service_v1`.
+- Correção **aplicada no remoto** em 2026-08-07:
+  `20260806150000_omie_promotion_timeout_hardening.sql`. A RPC
+  `rpc_service_promote_omie_snapshot` em produção passou a conter
+  `statement_timeout` e `pg_advisory_xact_lock`, confirmado por `pg_proc`.
+  O registro em `schema_migrations` foi reconciliado para a versão do repositório,
+  evitando reaplicação em `supabase db push`.
+- Estado do read model no momento da aplicação: staging vazio e 3.761 títulos
+  OMIE ativos, preservados da última execução completa.
+- Falta a prova de ponta a ponta: uma execução real do OMIE terminando em
+  `completed` com `promotion_result` preenchido.
 - Vazamento técnico já resolvido: o commit `18237ac` traduziu 502, 503 e
   `BOOT_ERROR` para linguagem de produto, sem status HTTP nem nome de função.
   Coberto por `analytics-sync-error.test.mjs`, 7/7.
