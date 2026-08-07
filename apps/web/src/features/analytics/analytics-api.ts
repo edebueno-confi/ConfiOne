@@ -249,6 +249,46 @@ export async function getCustomerSuccessSnapshot(): Promise<CustomerSuccessSnaps
   return mapCustomerSuccessSnapshot(data);
 }
 
+// Read models de KPI com estado explícito por indicador. O payload é devolvido
+// cru para o contrato de apresentação, que é quem traduz códigos técnicos em
+// linguagem gerencial. Nenhuma tela lê os campos internos diretamente.
+
+export async function getCommercialKpisV2(filters: AnalyticsFilters): Promise<unknown> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_analytics_commercial_kpis_v2', {
+    ...rpcFilters(filters),
+    p_owner_id: filters.ownerId || null,
+    p_pipeline_id: null,
+  });
+  if (error) throw toAppError(error, 'Falha ao carregar os indicadores comerciais.');
+  return data;
+}
+
+export async function getSupportKpisV2(filters: AnalyticsFilters): Promise<unknown> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_analytics_support_kpis_v2', {
+    ...rpcFilters(filters),
+    p_pipeline_id: null,
+    p_priority: filters.priority || null,
+  });
+  if (error) throw toAppError(error, 'Falha ao carregar os indicadores de atendimento.');
+  return data;
+}
+
+export async function getCustomerSuccessKpisV2(): Promise<unknown> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_analytics_customer_success_kpis_v2');
+  if (error) throw toAppError(error, 'Falha ao carregar os indicadores da carteira.');
+  return data;
+}
+
+export async function getExecutiveKpisV2(filters: AnalyticsFilters): Promise<unknown> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_analytics_executive_kpis_v2', rpcFilters(filters));
+  if (error) throw toAppError(error, 'Falha ao carregar o resumo executivo.');
+  return data;
+}
+
 export async function getFinanceSnapshot(filters: AnalyticsFilters, clientQuery = ''): Promise<FinanceSnapshot> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client.rpc('rpc_analytics_finance_snapshot', {

@@ -6770,3 +6770,7 @@ table {
 .gso-knowledge-manager-content { padding-inline: var(--app-gutter); }
 
 .gso-analytics-shell > .gso-workspace-header { padding-inline: var(--app-gutter); }
+
+/* Blocos de Configurações que não hospedam página do sistema visual e por isso
+   precisam declarar a margem: consomem o mesmo token, nunca um `px-*` fixo. */
+.gso-settings-gutter { padding-inline: var(--app-gutter); }

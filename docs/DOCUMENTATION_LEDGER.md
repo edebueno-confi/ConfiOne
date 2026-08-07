@@ -7387,3 +7387,18 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - Limites: QA visual medido segue pendente; a extensao do navegador nao esta
   conectada nesta sessao.
 - Impacto futuro na FAQ: nenhum.
+
+## SETTINGS-V4-09 — invólucros de página somavam margem — 2026-08-07
+
+- Causa real da divergencia que persistia: dentro de `GroupDetail`, quatro
+  invólucros `<div className="px-5 py-5 sm:px-6">` envolviam as paginas do
+  sistema visual e somavam 20 a 24 px ao `--app-gutter` que a propria pagina ja
+  traz. Era o "algo a mais" que o operador percebia.
+- Entrega: os quatro invólucros ficam so com respiro vertical. Os tres blocos que
+  realmente precisam declarar margem (cabecalho da secao, faixa de contexto e
+  secao generica) passam a usar `.gso-settings-gutter`, que consome o token.
+- Nenhum `px-*` fixo sobrou em `SettingsPage.tsx`.
+- Evidencia: typecheck 0 erros, lint 0 erros e 179 avisos, secret scan 2056
+  arquivos e 0 matches, suites de contrato aprovadas.
+- Limites: QA visual medido segue pendente.
+- Impacto futuro na FAQ: nenhum.

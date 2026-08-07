@@ -580,13 +580,13 @@ function GroupDetail({
       {DASHBOARD_SECTION_IDS.includes(group.id) ? (
         // As duas telas do eixo de dados trazem o próprio cabeçalho de página,
         // com breadcrumb, metadado de leitura e ações da seção.
-        <div className="px-5 py-5 sm:px-6">
+        <div className="py-5">
           {group.id === 'dashboard-fontes' ? <DashboardSourcesSettingsPage /> : <SyncHistorySettingsPage />}
         </div>
       ) : isIntegrations ? (
         // Integrações traz o próprio cabeçalho de página: título, contexto de
         // leitura e a ação de reler o estado ficam na composição da tela.
-        <div className="px-5 py-5 sm:px-6">
+        <div className="py-5">
           {integrations.phase === 'ready' ? (
             <SettingsIntegrationsPanel busy={mutating} error={mutationError} integrations={integrations.items} onReload={onReloadIntegrations} onSave={onSaveIntegration} />
           ) : integrations.phase === 'error' ? (
@@ -598,18 +598,18 @@ function GroupDetail({
       ) : isBrands ? (
         // Marcas traz o próprio cabeçalho de página: título, contagem de marcas
         // ativas e a ação de cadastro ficam na composição da tela.
-        <div className="px-5 py-5 sm:px-6">
+        <div className="py-5">
           <BrandsSettingsPage mutating={mutating} mutationError={mutationError} onArchive={onArchiveBrand} onCreate={onCreateBrand} state={brands} />
         </div>
       ) : isHelpCenter ? (
         // Central de ajuda também responde pelo próprio cabeçalho, com a ação de
         // abrir a central pública.
-        <div className="px-5 py-5 sm:px-6">
+        <div className="py-5">
           <HelpCenterSettingsPage mutating={mutating} mutationError={mutationError} onSave={onSaveHelpCenterSupportContacts} state={helpCenterSupportContacts} />
         </div>
       ) : (
       <>
-      <header className="border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6">
+      <header className="gso-settings-gutter border-b border-[color:var(--minimal-border)] py-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-xl font-semibold tracking-[-0.025em] text-[color:var(--minimal-text)]">{group.label}</h2>
@@ -620,7 +620,7 @@ function GroupDetail({
       </header>
 
       <div className="divide-y divide-[color:var(--minimal-border)]">
-        <section className="gso-settings-context-strip px-5 py-3 sm:px-6" aria-label="Resumo da configuração">
+        <section className="gso-settings-context-strip gso-settings-gutter py-3" aria-label="Resumo da configuração">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <span className="text-xs font-semibold text-[color:var(--minimal-text)]">Nesta área</span>
             <div className="flex flex-wrap gap-1.5">{group.controls.map((control: string) => <span className="gso-settings-context-chip" key={control}>{control}</span>)}</div>
@@ -629,7 +629,7 @@ function GroupDetail({
           {group.nota ? <p className="mt-1 text-[11px] leading-4 text-[color:var(--minimal-text-tertiary)]">{group.nota}</p> : null}
         </section>
 
-        <section className="px-5 py-5 sm:px-6">
+        <section className="gso-settings-gutter py-5">
           {isConversationTypes ? (
             <ConversationTypesPanel mutating={mutating} mutationError={mutationError} onArchive={onArchive} onCreate={onCreate} state={conversationTypes} />
           ) : isPriorities ? (

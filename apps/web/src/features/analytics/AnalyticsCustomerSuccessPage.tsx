@@ -1,16 +1,65 @@
 import { useEffect, useState } from 'react';
-import type { AnalyticsPageProps, CustomerSuccessSnapshot } from './analytics-model';
-import { getCustomerSuccessSnapshot } from './analytics-api';
+import type { AnalyticsPageProps } from './analytics-model';
+import { getCustomerSuccessKpisV2 } from './analytics-api';
 import { AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
 import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, KpiCard } from './analytics-ui';
 import { MinimalState } from '../../components/minimal-states';
+import {
+  describeKpiBasis,
+  describeKpiLimitation,
+  formatKpiValue,
+  readKpi,
+  readKpiMeta,
+  toAnalyticsBlockState,
+} from './analytics-kpi-contract.mjs';
+
+const TITLE = 'Customer Success';
+const DESCRIPTION = 'Carteira ativa, receita recorrente e risco financeiro dos clientes.';
+const SOURCE = 'HubSpot · OMIE';
+
+interface OwnerRow {
+  owner_id: string;
+  owner_name: string;
+  customers: number;
+  mrr: number | null;
+  overdue_customers: number;
+  overdue_amount: number;
+}
+
+interface RiskRow {
+  signal: string;
+  signal_label: string;
+  customers: number;
+  mrr_at_risk: number | null;
+}
+
+interface OverdueRow {
+  company_id: string;
+  company_name: string;
+  cs_owner_name: string | null;
+  mrr: number | null;
+  overdue_balance: number;
+  overdue_titles: number;
+  max_overdue_days: number | null;
+}
+
+function rows<T>(payload: unknown, key: string): T[] {
+  const data = payload as Record<string, unknown> | null;
+  const value = data && typeof data === 'object' ? data[key] : null;
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function currency(value: number | null | undefined): string {
+  if (value === null || value === undefined) return 'Indisponível';
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+}
 
 export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
-  const [result, setResult] = useState<{ loading: boolean; data?: CustomerSuccessSnapshot; error?: boolean }>({ loading: true });
+  const [result, setResult] = useState<{ loading: boolean; data?: unknown; error?: boolean }>({ loading: true });
 
   const load = () => {
-    setResult((current) => current.data ? { ...current, loading: true, error: undefined } : { loading: true });
-    void getCustomerSuccessSnapshot()
+    setResult((current) => (current.data ? { ...current, loading: true, error: undefined } : { loading: true }));
+    void getCustomerSuccessKpisV2()
       .then((data) => setResult({ loading: false, data }))
       .catch(() => setResult((current) => ({ ...current, loading: false, error: true })));
   };
@@ -18,47 +67,230 @@ export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
   useEffect(() => { load(); }, []);
 
   if (result.loading && !result.data) {
-    return <AnalyticsHdDomainFrame title="Customer Success" description="Carteira HubSpot, cobertura de responsáveis e preenchimento dos campos operacionais." source="HubSpot · Empresas"><AnalyticsLoadingState title="Carregando Customer Success" description="Estamos preparando a leitura desta área." /></AnalyticsHdDomainFrame>;
-  }
-  if (result.error || !result.data) {
-    return <AnalyticsHdDomainFrame title="Customer Success" description="Carteira HubSpot, cobertura de responsáveis e preenchimento dos campos operacionais." source="HubSpot · Empresas"><MinimalState tone="critical" title="Não foi possível carregar Customer Success" description="A leitura desta área está indisponível agora." actions={<AnalyticsRetryAction onRetry={onRetry ?? load} />} /></AnalyticsHdDomainFrame>;
+    return (
+      <AnalyticsHdDomainFrame title={TITLE} description={DESCRIPTION} source={SOURCE}>
+        <AnalyticsLoadingState title="Carregando Customer Success" description="Estamos preparando a leitura desta área." />
+      </AnalyticsHdDomainFrame>
+    );
   }
 
-  const data = result.data;
-  const state = data.state;
-  const unavailable = ['unavailable', 'error', 'not_configured'].includes(state?.status ?? 'unavailable');
-  const value = (amount: number, suffix = '') => unavailable ? 'Indisponível' : `${amount.toLocaleString('pt-BR')}${suffix}`;
+  if (result.error || !result.data) {
+    return (
+      <AnalyticsHdDomainFrame title={TITLE} description={DESCRIPTION} source={SOURCE}>
+        <MinimalState
+          tone="critical"
+          title="Não foi possível carregar Customer Success"
+          description="A leitura desta área está indisponível agora."
+          actions={<AnalyticsRetryAction onRetry={onRetry ?? load} />}
+        />
+      </AnalyticsHdDomainFrame>
+    );
+  }
+
+  const payload = result.data;
+  const meta = readKpiMeta(payload);
+  const state = toAnalyticsBlockState(payload, SOURCE);
+
+  const activeCustomers = readKpi(payload, 'active_customers');
+  const mrrTotal = readKpi(payload, 'mrr_total');
+  const arpa = readKpi(payload, 'arpa');
+  const overdueCustomers = readKpi(payload, 'overdue_customers');
+  const mrrOverdue = readKpi(payload, 'mrr_overdue');
+  const mappingCoverage = readKpi(payload, 'mapping_coverage_percent');
+  const withOpenTickets = readKpi(payload, 'customers_with_open_tickets');
+  const withoutActivity = readKpi(payload, 'customers_without_recent_activity');
+  const logoChurn = readKpi(payload, 'logo_churn_rate');
+  const nrr = readKpi(payload, 'nrr');
+
+  const owners = rows<OwnerRow>(payload, 'by_owner');
+  const risks = rows<RiskRow>(payload, 'risk_signals');
+  const overdue = rows<OverdueRow>(payload, 'top_overdue_customers');
 
   return (
-    <AnalyticsHdDomainFrame title="Customer Success" description="Carteira HubSpot, cobertura de responsáveis e preenchimento dos campos operacionais." source={data.source} state={state}>
-      {state?.status === 'empty' ? <MinimalState title="Nenhuma empresa disponível no recorte" description="O HubSpot não retornou empresas para esta leitura. Nenhum indicador foi inventado." /> : null}
-      <div className="gso-pilot-kpi-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <KpiCard label="Empresas no HubSpot" value={value(data.kpis.companiesTotal)} hint="Registros disponíveis para a análise" source="Contagem de empresas fornecida pelo HubSpot." state={state} />
-        <KpiCard label="Status de cliente preenchido" value={value(data.kpis.clientStatusFilled)} hint="Empresas com o campo informado" source="Presença do campo; não interpreta a regra de cliente ativo." state={state} />
-        <KpiCard label="Status contratual preenchido" value={value(data.kpis.contractStatusFilled)} hint="Empresas com o campo informado" source="Presença do campo no HubSpot." state={state} />
-        <KpiCard label="Sem responsável" value={value(data.kpis.withoutOwner)} hint="Empresas sem responsável associado" source="Responsável ausente no cadastro do HubSpot." state={state} tone={data.kpis.withoutOwner > 0 ? 'warning' : 'neutral'} />
-        <KpiCard label="MRR observado" value={data.kpis.mrrFilled > 0 ? value(data.kpis.mrrFilled) : 'Indisponível'} hint={data.kpis.mrrFilled > 0 ? 'Empresas com campo preenchido' : 'O valor de MRR não é publicado neste contrato'} source="O read model informa presença do campo, não um valor financeiro utilizável." state={state} />
+    <AnalyticsHdDomainFrame title={TITLE} description={DESCRIPTION} source={SOURCE} state={state}>
+      <div className="gso-pilot-kpi-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard
+          label="Clientes ativos"
+          value={formatKpiValue(activeCustomers, 'count')}
+          hint={describeKpiLimitation(activeCustomers) || 'Carteira ativa segundo a regra definida pela operação'}
+          source={describeKpiBasis(activeCustomers)}
+          state={state}
+        />
+        <KpiCard
+          label="Receita recorrente"
+          value={formatKpiValue(mrrTotal, 'currency')}
+          hint={describeKpiLimitation(mrrTotal) || 'Soma da recorrência dos clientes ativos'}
+          source={describeKpiBasis(mrrTotal)}
+          state={state}
+          tone={mrrTotal.state === 'partial' ? 'warning' : 'neutral'}
+        />
+        <KpiCard
+          label="Receita média por cliente"
+          value={formatKpiValue(arpa, 'currency')}
+          hint={describeKpiLimitation(arpa) || 'Recorrência dividida pelos clientes com valor registrado'}
+          source={describeKpiBasis(arpa)}
+          state={state}
+        />
+        <KpiCard
+          label="Recorrência com atraso"
+          value={formatKpiValue(mrrOverdue, 'currency')}
+          hint={describeKpiLimitation(mrrOverdue) || 'Recorrência de clientes com títulos vencidos'}
+          source={describeKpiBasis(mrrOverdue)}
+          state={state}
+          tone={(mrrOverdue.value ?? 0) > 0 ? 'warning' : 'neutral'}
+        />
       </div>
+
+      <div className="gso-pilot-kpi-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard
+          label="Clientes inadimplentes"
+          value={formatKpiValue(overdueCustomers, 'count')}
+          hint={describeKpiLimitation(overdueCustomers) || 'Clientes ativos com pelo menos um título vencido'}
+          source={describeKpiBasis(overdueCustomers)}
+          state={state}
+          tone={(overdueCustomers.value ?? 0) > 0 ? 'warning' : 'neutral'}
+          className="gso-kpi-secondary"
+        />
+        <KpiCard
+          label="Clientes com cadastro financeiro"
+          value={formatKpiValue(mappingCoverage, 'percent')}
+          hint="Parte da carteira que pode ser cruzada com o financeiro"
+          source={describeKpiBasis(mappingCoverage)}
+          state={state}
+          className="gso-kpi-secondary"
+        />
+        <KpiCard
+          label="Clientes com atendimento aberto"
+          value={formatKpiValue(withOpenTickets, 'count')}
+          hint={describeKpiLimitation(withOpenTickets)}
+          state={state}
+          className="gso-kpi-secondary"
+        />
+        <KpiCard
+          label="Clientes sem interação recente"
+          value={formatKpiValue(withoutActivity, 'count')}
+          hint={describeKpiLimitation(withoutActivity)}
+          state={state}
+          className="gso-kpi-secondary"
+        />
+      </div>
+
       <div className="grid gap-4 xl:grid-cols-2">
-        <ChartCard title="Carteira por responsável" description="Distribuição factual das empresas que possuem owner no HubSpot.">
-          <SimpleRows rows={data.byOwner.map((row) => ({ label: row.ownerName, value: row.companyCount }))} empty="Nenhum responsável informado." />
+        <ChartCard
+          title="Carteira por responsável"
+          description="Clientes ativos, recorrência e exposição a atraso de cada responsável."
+        >
+          {owners.length === 0 ? (
+            <p className="text-sm text-[color:var(--minimal-text-secondary)]">Nenhum cliente ativo na carteira.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[520px] text-left text-xs">
+                <thead className="border-b border-[color:var(--minimal-border)] text-[color:var(--minimal-text-tertiary)]">
+                  <tr>
+                    <th className="px-2 py-2 font-medium">Responsável</th>
+                    <th className="px-2 py-2 text-right font-medium">Clientes</th>
+                    <th className="px-2 py-2 text-right font-medium">Recorrência</th>
+                    <th className="px-2 py-2 text-right font-medium">Em atraso</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {owners.map((row) => (
+                    <tr className="border-b border-[color:var(--minimal-border)] last:border-0" key={row.owner_id}>
+                      <td className="px-2 py-2 font-medium text-[color:var(--minimal-text)]">{row.owner_name}</td>
+                      <td className="px-2 py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.customers.toLocaleString('pt-BR')}</td>
+                      <td className="px-2 py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{currency(row.mrr)}</td>
+                      <td className="px-2 py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.overdue_customers.toLocaleString('pt-BR')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </ChartCard>
-        <ChartCard title="Status operacional" description="Campos exibidos como foram recebidos; ausência permanece indisponível.">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <SimpleRows rows={data.byClientStatus.map((row) => ({ label: row.key, value: row.companyCount }))} empty="Status de cliente indisponível." />
-            <SimpleRows rows={data.byContractStatus.map((row) => ({ label: row.key, value: row.companyCount }))} empty="Status contratual indisponível." />
-          </div>
+
+        <ChartCard
+          title="Receita em risco"
+          description="Sinais explícitos, exibidos separadamente. Nenhum score composto é calculado."
+        >
+          {risks.length === 0 ? (
+            <p className="text-sm text-[color:var(--minimal-text-secondary)]">Nenhum sinal de risco identificado na carteira ativa.</p>
+          ) : (
+            <div className="divide-y divide-[color:var(--minimal-border)]">
+              {risks.map((row) => (
+                <div className="flex items-center justify-between gap-3 py-2 text-sm" key={row.signal}>
+                  <span className="min-w-0">
+                    <span className="block truncate text-[color:var(--minimal-text)]">{row.signal_label}</span>
+                    <span className="block text-xs text-[color:var(--minimal-text-tertiary)]">{row.customers.toLocaleString('pt-BR')} cliente(s)</span>
+                  </span>
+                  <strong className="tabular-nums text-[color:var(--minimal-text)]">{currency(row.mrr_at_risk)}</strong>
+                </div>
+              ))}
+            </div>
+          )}
         </ChartCard>
       </div>
-      <ChartCard title="Empresas consultadas" description="Amostra limitada pelo contrato; health score, regra de cliente ativo e risco não são inferidos.">
-        {data.companies.length === 0 ? <p className="text-sm text-[color:var(--minimal-text-secondary)]">Nenhuma empresa disponível.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-xs"><thead className="border-b border-[color:var(--minimal-border)] text-[color:var(--minimal-text-tertiary)]"><tr><th className="px-2 py-2 font-medium">Empresa</th><th className="px-2 py-2 font-medium">Status cliente</th><th className="px-2 py-2 font-medium">Status contratual</th><th className="px-2 py-2 font-medium">Responsável</th><th className="px-2 py-2 font-medium">Atualização</th></tr></thead><tbody>{data.companies.map((row) => <tr className="border-b border-[color:var(--minimal-border)] last:border-0" key={row.companyId}><td className="px-2 py-2 font-medium text-[color:var(--minimal-text)]">{row.companyName}</td><td className="px-2 py-2 text-[color:var(--minimal-text-secondary)]">{row.clientStatus ?? 'Indisponível'}</td><td className="px-2 py-2 text-[color:var(--minimal-text-secondary)]">{row.contractStatus ?? 'Indisponível'}</td><td className="px-2 py-2 text-[color:var(--minimal-text-secondary)]">{row.csOwnerName}</td><td className="px-2 py-2 text-[color:var(--minimal-text-tertiary)]">{row.syncedAt ? new Date(row.syncedAt).toLocaleString('pt-BR') : 'Indisponível'}</td></tr>)}</tbody></table></div>}
+
+      <ChartCard
+        title="Clientes com maior valor vencido"
+        description="Cruzamento entre a carteira e os títulos vencidos, feito apenas por cadastro fiscal conferido."
+      >
+        {overdue.length === 0 ? (
+          <p className="text-sm text-[color:var(--minimal-text-secondary)]">Nenhum cliente ativo com título vencido.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-xs">
+              <thead className="border-b border-[color:var(--minimal-border)] text-[color:var(--minimal-text-tertiary)]">
+                <tr>
+                  <th className="px-2 py-2 font-medium">Cliente</th>
+                  <th className="px-2 py-2 font-medium">Responsável</th>
+                  <th className="px-2 py-2 text-right font-medium">Recorrência</th>
+                  <th className="px-2 py-2 text-right font-medium">Valor vencido</th>
+                  <th className="px-2 py-2 text-right font-medium">Títulos</th>
+                  <th className="px-2 py-2 text-right font-medium">Maior atraso</th>
+                </tr>
+              </thead>
+              <tbody>
+                {overdue.map((row) => (
+                  <tr className="border-b border-[color:var(--minimal-border)] last:border-0" key={row.company_id}>
+                    <td className="px-2 py-2 font-medium text-[color:var(--minimal-text)]">{row.company_name}</td>
+                    <td className="px-2 py-2 text-[color:var(--minimal-text-secondary)]">{row.cs_owner_name ?? 'Sem responsável'}</td>
+                    <td className="px-2 py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{currency(row.mrr)}</td>
+                    <td className="px-2 py-2 text-right tabular-nums text-[color:var(--minimal-text)]">{currency(row.overdue_balance)}</td>
+                    <td className="px-2 py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.overdue_titles.toLocaleString('pt-BR')}</td>
+                    <td className="px-2 py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.max_overdue_days === null ? 'Indisponível' : `${row.max_overdue_days} dias`}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </ChartCard>
-      {data.limitations.length > 0 ? <p className="text-xs leading-5 text-[color:var(--minimal-text-tertiary)]">Limitações do contrato: {data.limitations.join(' ')}</p> : null}
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <KpiCard
+          label="Churn de clientes"
+          value={formatKpiValue(logoChurn, 'percent')}
+          hint={describeKpiLimitation(logoChurn)}
+          state={state}
+          className="gso-kpi-secondary"
+        />
+        <KpiCard
+          label="Retenção líquida de receita"
+          value={formatKpiValue(nrr, 'percent')}
+          hint={describeKpiLimitation(nrr)}
+          state={state}
+          className="gso-kpi-secondary"
+        />
+      </div>
+
+      {meta.warnings.length > 0 ? (
+        <div className="rounded-xl border border-[color:var(--minimal-border)] px-4 py-3">
+          <p className="text-xs font-semibold text-[color:var(--minimal-text-secondary)]">O que limita esta leitura</p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs leading-5 text-[color:var(--minimal-text-tertiary)]">
+            {meta.warnings.map((warning) => <li key={warning}>{warning}</li>)}
+          </ul>
+        </div>
+      ) : null}
     </AnalyticsHdDomainFrame>
   );
-}
-
-function SimpleRows({ rows, empty }: { rows: Array<{ label: string; value: number }>; empty: string }) {
-  if (rows.length === 0) return <p className="text-sm text-[color:var(--minimal-text-secondary)]">{empty}</p>;
-  return <div className="divide-y divide-[color:var(--minimal-border)]">{rows.map((row) => <div className="flex items-center justify-between gap-3 py-2 text-sm" key={row.label}><span className="min-w-0 truncate text-[color:var(--minimal-text-secondary)]">{row.label}</span><strong className="tabular-nums text-[color:var(--minimal-text)]">{row.value.toLocaleString('pt-BR')}</strong></div>)}</div>;
 }
