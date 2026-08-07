@@ -220,7 +220,7 @@ export function HelpCenterSettingsPage({
   const items = state.phase === 'ready' ? state.items : [];
 
   return (
-    <UiPage>
+    <UiPage className="gso-ui-page--fill">
       <UiPageHeader
         actions={
           <Link

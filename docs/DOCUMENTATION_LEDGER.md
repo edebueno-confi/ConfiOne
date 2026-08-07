@@ -7304,3 +7304,20 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
   secret scan 2055 arquivos e 0 matches, suites 11/11, 3/3, 5/5, 7/7, 8/8 e 7/7.
 - Limites: `web:build` e QA visual medido nao executados nesta sessao.
 - Impacto futuro na FAQ: nenhum.
+
+## SETTINGS-V4-04 — fundo unico nas telas de Configuracoes — 2026-08-07
+
+- Defeito apontado pelo operador: ao trocar de aba, Usuarios e acesso tinha um
+  fundo e Integracoes, Historico e Fontes tinham outro.
+- Causa: Usuarios e acesso monta o proprio casco sobre `--ui-canvas`, enquanto as
+  demais eram renderizadas dentro de `SettingsPage`, cujo casco e cujo main
+  pintavam `--minimal-surface`. Alem disso o main somava um segundo padding ao
+  padding que a propria pagina ja traz.
+- Entrega: `gso-settings-shell`, `gso-settings-cockpit-layout` e
+  `gso-settings-cockpit-main` passam a usar `--minimal-canvas`; o padding do main
+  e zerado quando ele hospeda uma pagina do sistema visual. Historico, Fontes e
+  Central de ajuda passaram a preencher a altura, como Usuarios e acesso.
+- Evidencia: typecheck 0 erros, lint 0 erros e 179 avisos, secret scan 2055
+  arquivos e 0 matches, suites 11/11, 3/3, 5/5, 7/7 e 8/8.
+- Limites: `web:build` e QA visual medido nao executados nesta sessao.
+- Impacto futuro na FAQ: nenhum.

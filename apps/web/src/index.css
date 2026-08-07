@@ -1209,13 +1209,19 @@
    -------------------------------------------------------------------------- */
 .gso-settings-cockpit-layout {
   min-width: 0;
-  background: var(--minimal-surface);
+  /* Mesmo fundo de Usuários e acesso: as telas de Configurações ficavam sobre
+     `surface` enquanto aquela ficava sobre `canvas`, e a diferença aparecia ao
+     trocar de aba. O padrão passa a ser o canvas. */
+  background: var(--minimal-canvas);
 }
 .gso-settings-cockpit-main {
   min-width: 0;
   padding: 1.25rem clamp(1rem, 2vw, 2rem) 2.5rem;
-  background: var(--minimal-surface);
+  background: var(--minimal-canvas);
 }
+/* Quando a tela já é uma página do sistema visual, ela traz o próprio padding e
+   o próprio canvas: o casco não pode somar um segundo respiro. */
+.gso-settings-cockpit-main:has(> .gso-ui-page) { padding: 0; }
 .gso-settings-cockpit-main > article > header {
   margin: 0 0 1.1rem;
   border-bottom: 1px solid var(--minimal-border);

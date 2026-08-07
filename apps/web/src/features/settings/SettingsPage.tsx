@@ -1003,7 +1003,7 @@ export function SettingsPage() {
   );
 
   return (
-    <div className="gso-settings-shell gso-visual-v1-settings-shell gso-high-density-ui flex h-full min-h-0 flex-col bg-[color:var(--minimal-surface)]">
+    <div className="gso-settings-shell gso-visual-v1-settings-shell gso-high-density-ui flex h-full min-h-0 flex-col bg-[color:var(--minimal-canvas)]">
       {/* A navegação das seções de Configurações vive na sidebar global. Aqui
           resta apenas o conteúdo da seção pedida pela rota, em uma coluna
           única, e cada seção responde pelo próprio cabeçalho. */}
