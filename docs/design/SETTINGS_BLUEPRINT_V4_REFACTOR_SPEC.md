@@ -232,3 +232,13 @@ Definidas pelo operador em 2026-08-07, com prioridade sobre preferência estéti
    force quebra curta, `text-wrap: pretty` em textos de apoio, `overflow-wrap`
    em títulos e identificadores, e reticência em selo. Nenhum texto pode
    ultrapassar o próprio componente.
+
+## 11. Margem lateral padrão do produto
+
+Definida pelo operador em 2026-08-07 a partir da tela de Artigos: **1,25 rem**
+(o `px-5` do cockpit de Conhecimento), reduzida para 1 rem abaixo de 760 px.
+
+As telas de Configurações usavam 1,5 rem e ficavam visivelmente mais afastadas da
+barra lateral que Artigos. `.gso-ui-page` e `.gso-ui-shell-chrome` passam a usar
+a mesma margem, então toda superfície do produto encosta na barra lateral à mesma
+distância.

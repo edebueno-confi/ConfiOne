@@ -7341,3 +7341,14 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
   arquivos e 0 matches, suites 11/11, 3/3, 5/5, 7/7 e 8/8.
 - Limites: `web:build` e QA visual medido nao executados nesta sessao.
 - Impacto futuro na FAQ: nenhum.
+
+## SETTINGS-V4-06 — margem lateral padrao — 2026-08-07
+
+- Margem lateral das telas de Configuracoes alinhada a de Artigos: 1,5 rem para
+  1,25 rem em `.gso-ui-page` e `.gso-ui-shell-chrome`, e 1 rem abaixo de 760 px.
+- Efeito: todas as superficies passam a encostar na barra lateral a mesma
+  distancia. Antes Configuracoes ficava mais afastada que Conhecimento.
+- Evidencia: typecheck 0 erros, lint 0 erros e 179 avisos, secret scan 2055
+  arquivos e 0 matches, suites 11/11, 3/3, 5/5, 7/7 e 8/8.
+- Limites: `web:build` e QA visual medido nao executados nesta sessao.
+- Impacto futuro na FAQ: nenhum.
