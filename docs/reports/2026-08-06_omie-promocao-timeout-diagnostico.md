@@ -98,3 +98,18 @@ preservados da ultima execucao completa. Nenhum dado foi apagado.
 
 Falta a prova de ponta a ponta: uma execucao real do OMIE terminando em
 `completed`, com `promotion_result` preenchido e sem `statement timeout`.
+
+## 8. Prova de ponta a ponta — 2026-08-07
+
+Execucao real disparada pelo operador em producao, depois da migration:
+
+| Inicio (UTC) | Situacao | Duracao | Aceitas | Promovidas | promotion_result | Erro |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-07 02:02:42 | **completed** | 39,4 s | 3.768 | 3.768 | `{"staged":3768,"promoted":3768}` | nenhum |
+| 2026-08-06 23:54:04 | failed | 47,7 s | 3.768 | 0 | nulo | statement timeout |
+
+A promocao passou a concluir dentro do tempo e o snapshot de 3.768 titulos foi
+publicado. A duracao caiu de 47,7 s com falha para 39,4 s com sucesso. A
+interface passou a exibir a fonte OMIE como Atualizada, com volume 3.768.
+
+Defeito encerrado.

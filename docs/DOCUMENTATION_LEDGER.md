@@ -7234,3 +7234,15 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - Confirmado resolvido: vazamento de "Edge Function" e "HTTP 503" na interface,
   corrigido em `18237ac` e coberto por teste 7/7.
 - Impacto futuro na FAQ: nenhum.
+
+## SYNC-OMIE-02 — hardening aplicado e defeito encerrado — 2026-08-07
+
+- Relatorio: `docs/reports/2026-08-06_omie-promocao-timeout-diagnostico.md`.
+- Migration `20260806150000` aplicada no remoto; `pg_proc` confirma
+  `statement_timeout` e `pg_advisory_xact_lock` na RPC em producao.
+- Registro em `schema_migrations` reconciliado para a versao do repositorio.
+- Prova real em producao: execucao `completed` em 39,4 s, 3.768 aceitas e 3.768
+  promovidas, `promotion_result` preenchido, sem erro. A anterior falhava em
+  47,7 s com statement timeout.
+- Nenhum dado apagado; 3.768 titulos OMIE ativos publicados.
+- Impacto futuro na FAQ: nenhum.

@@ -19,8 +19,11 @@
   evitando reaplicação em `supabase db push`.
 - Estado do read model no momento da aplicação: staging vazio e 3.761 títulos
   OMIE ativos, preservados da última execução completa.
-- Falta a prova de ponta a ponta: uma execução real do OMIE terminando em
-  `completed` com `promotion_result` preenchido.
+- **Defeito encerrado com prova de ponta a ponta.** Execução real em produção em
+  2026-08-07 02:02:42 UTC: `completed` em 39,4 s, 3.768 linhas aceitas e 3.768
+  promovidas, `promotion_result` = `{"staged":3768,"promoted":3768}`, sem erro.
+  A execução anterior falhava em 47,7 s com `statement timeout`. A interface passou
+  a exibir a fonte OMIE como Atualizada, com volume 3.768.
 - Vazamento técnico já resolvido: o commit `18237ac` traduziu 502, 503 e
   `BOOT_ERROR` para linguagem de produto, sem status HTTP nem nome de função.
   Coberto por `analytics-sync-error.test.mjs`, 7/7.
