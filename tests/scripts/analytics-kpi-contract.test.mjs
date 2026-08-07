@@ -65,7 +65,9 @@ test('valor sem número não pode ser publicado como disponível', () => {
 
 test('formatação usa a unidade correta de cada indicador', () => {
   const entry = (value) => ({ state: 'available', value, basis: null, reason: null });
-  assert.equal(formatKpiValue(entry(335849.1), 'currency').replace(/ /g, ' '), 'R$ 335.849');
+  // O separador entre simbolo e valor em pt-BR e espaco nao separavel (U+00A0).
+  const nbsp = String.fromCharCode(0x00a0);
+  assert.equal(formatKpiValue(entry(335849.1), 'currency').split(nbsp).join(' '), 'R$ 335.849');
   assert.equal(formatKpiValue(entry(12.12), 'percent'), '12,1%');
   assert.equal(formatKpiValue(entry(8.5), 'days'), '8,5 dias');
   assert.equal(formatKpiValue(entry(1), 'days'), '1 dia');

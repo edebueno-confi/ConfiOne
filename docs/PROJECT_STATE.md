@@ -1,5 +1,198 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+## Adendo corrente — KPIs publicados em produção — 2026-08-07
+
+Relatório: seção 14 de `docs/reports/2026-08-07_kpi-discovery-e-lote-p0.md`.
+
+**Publicado no remoto `jzmmvfcmruasqmrdmbup`, com autorização da operação:**
+12 migrations e 5 Edge Functions.
+
+**A carga completa expôs quatro defeitos latentes** que nenhuma execução
+incremental revelaria:
+
+1. **Orçamento de retentativa media progresso, não falha.** `attempts` incrementa
+   por página processada, e a condição era `attempts < 5`. A partir da sexta
+   página, nenhum erro transitório podia ser repetido — um tempo limite de 20s
+   descartava 46 mil registros. Corrigido para medir falhas.
+2. **Falha ao promover desfazia a paginação concluída**, criando laço infinito:
+   chegava a 34/34, a promoção estourava, um item voltava para a fila.
+3. **Promoção do HubSpot sem endurecimento de tempo**, ao contrário da do OMIE.
+4. **Ingestão de vínculos não persistia a marca d'água** e recomeçava do zero.
+
+**Medição que corrigiu o diagnóstico:** executada pelo banco, a promoção de
+47.159 registros levou **19,7 segundos**. A promoção nunca foi lenta; o que a
+matava era o teto de tempo da Edge Function somado ao defeito 1.
+
+**Resultado em produção:** 31.532 tickets passaram a ter data de encerramento,
+28.838 têm última atividade, 5.525 empresas têm última interação e há 8.240
+vínculos de atendimento e 893 de negócio, ainda convergindo.
+
+**KPIs de suporte que saíram de indisponível:** 2.392 atendimentos resolvidos no
+ano, tempo de resolução mediano de 0,1 dia, médio de 4,3 dias e P90 de 8,9 dias.
+Customer Success ganhou 273 clientes sem interação recente, com R$ 149.388,11 de
+recorrência exposta.
+
+**Fundação histórica ativada.** Três agendas em `pg_cron`; a série de MRR começa
+em 2026-08-07 e grava recorrência **por cliente**, o grão que permite reconstruir
+novo MRR, expansão, contração e churn.
+
+**Pendências:** cobertura de vínculos ainda parcial e convergindo pelas agendas;
+histórico de estágio não ingerido, então reabertura e tempo por etapa seguem
+aguardando; Comercial, Suporte e Resumo ainda usam as RPCs anteriores no
+frontend; divergência de MRR contra a planilha de CS não reconciliada.
+
+**Nenhum push realizado.** O remoto canônico segue sem definição.
+
+## Adendo corrente — lote de KPIs validado em banco local — 2026-08-07
+
+Relatório: seção 13 de `docs/reports/2026-08-07_kpi-discovery-e-lote-p0.md`.
+
+**Sete migrations aplicadas no Supabase local**, com `supabase migration up`, sem
+reset e sem perda de dado. Validadas por 99 asserções pgTAP nos arquivos `102` a
+`105`, todas aprovadas, mais 38 asserções de contrato em Node.
+
+**Correção de privilégio.** O teste `102` reprovou e revelou que o Supabase
+concede privilégios padrão a `authenticated` em toda tabela nova do schema
+`public`. As migrations do lote revogavam apenas de `public` e `anon`, deixando
+DELETE, INSERT, UPDATE e TRUNCATE liberados nas cinco tabelas novas. A RLS já
+barrava a escrita, mas o privilégio latente foi removido em
+`20260807180000_analytics_kpi_least_privilege_v1.sql`, alinhando à convenção
+verificada em `hubspot_tickets` e `analytics_finance_receivables`.
+
+**Atenção para quem for rodar a suíte:** ela fecha com `FAIL` por quatro testes
+pré-existentes. O `052_analytics_hubspot_pipe_alignment` é drift do banco local —
+exige 6 pipelines de CS ativos, o local tem 25 e o remoto tem 6. Nenhuma
+migration deste lote escreve em `analytics_source_config`.
+
+**Estado de entrega inalterado quanto ao remoto:** nada aplicado em produção,
+nenhuma Edge Function publicada, nenhum commit realizado. A correção do ingester
+só produz efeito após publicar `hubspot-orchestrator-worker` e ressincronizar.
+
+## Adendo corrente — datas nativas do HubSpot — 2026-08-07
+
+Relatório: seção 12 de `docs/reports/2026-08-07_kpi-discovery-e-lote-p0.md`.
+
+**Retifica os dois adendos anteriores deste dia.** A afirmação de que a conta não
+preenche a data de encerramento do ticket estava errada na atribuição de causa.
+A conta preenche. O ingester é que pedia `closedate`, propriedade **inexistente**
+entre as 1.147 propriedades de ticket do portal. O HubSpot ignora propriedade
+inexistente sem erro, e por isso o defeito atravessou todas as sincronizações.
+
+**Propriedades reais, medidas em 100 tickets encerrados dos pipelines
+publicados:** `closed_date` 100%, `hs_last_closed_date` 100%, `time_to_close`
+100%, `hs_lastactivitydate` 100%, `hs_time_to_first_response_in_operating_hours`
+77%. Em empresas com status de cliente: `notes_last_contacted` 100%.
+
+**Unidades:** `time_to_close` e `hs_time_to_first_response_in_operating_hours`
+vêm em milissegundos, apesar do nome da segunda sugerir horas. A conversão para
+horas acontece no read model, nunca na tela.
+
+**Associations:** Deal→Company 99%. Ticket→Company 58% nos tickets recentes e 6%
+na base completa — o vínculo é prática recente da operação.
+
+**Deixam de ser bloqueados** após ressincronização: tickets resolvidos, tempo de
+resolução (mediana, média e P90), tempo de primeira resposta a 77% e clientes sem
+interação recente a 100%.
+
+**Continua bloqueado:** reabertura e tempo por etapa, que só o histórico de
+estágio resolve.
+
+**Precedência de fonte:** a propriedade nativa vence; o histórico de estágio
+entra apenas quando ela falta. `resolution_source` registra qual foi usada.
+
+**Estado de entrega:** seis migrations criadas e **não aplicadas**. pgTAP `102` a
+`105` escritos e não executados. Nenhuma Edge Function publicada. A correção do
+ingester só produz efeito após publicar `hubspot-orchestrator-worker` e
+ressincronizar.
+
+**Higiene pendente:** a credencial usada na sondagem está em
+`apps/web/.env.local`, que é ignorado pelo Git, e deve ser removida.
+
+## Adendo corrente — associations e histórico de estágio — 2026-08-07
+
+Complementa o adendo de KPIs do mesmo dia. Relatório: seção 11 de
+`docs/reports/2026-08-07_kpi-discovery-e-lote-p0.md`.
+
+**Correção de premissa.** A data de encerramento do ticket não está perdida — ela
+é recuperável. `hs_lastmodifieddate` foi descartado como substituto por evidência:
+19.888 dos 31.530 tickets encerrados compartilham três datas de julho de 2026,
+com mediana de 912,7 dias desde a criação. A fonte fiel é o histórico da
+propriedade de estágio do HubSpot, que permite reconstruir **retroativamente** a
+resolução, o tempo de resolução, o tempo em etapa e a reabertura.
+
+**Associations não eram limitação da conta.** Nunca houve ingestão. O adapter de
+leitura em lote foi implementado para Ticket→Company e Deal→Company.
+
+**Novos objetos de banco:** `analytics_hubspot_associations`,
+`analytics_hubspot_stage_events`, `analytics_hubspot_history_sync_state`,
+`vw_analytics_ticket_resolution`, `vw_analytics_ticket_company`,
+`rpc_analytics_relations_coverage` e duas RPCs de gravação restritas a
+`service_role`.
+
+**Novas Edge Functions:** `hubspot-associations-sync` e
+`hubspot-stage-history-sync`. Ambas somente leitura no HubSpot, idempotentes,
+retomáveis por marca d'água e com orçamento de tempo por execução.
+
+**Regra nova de produto:** o estado de cada KPI é função da cobertura real da
+ingestão, medida em tempo de consulta. Enquanto nada foi ingerido, o indicador
+segue indisponível; conforme a carga avança, vira parcial e depois disponível,
+sem edição de código.
+
+**Continuam bloqueados por ausência de fonte:** tempo de primeira resposta,
+clientes sem interação recente e SLA de primeira resposta (4,1% de cobertura).
+
+**Estado de entrega:** quatro migrations criadas e **não aplicadas**. pgTAP
+escrito e não executado. Sondagem da API real pendente de credencial
+disponibilizada localmente.
+
+## Adendo corrente — KPIs do Dashboard, fundação e lote P0 — 2026-08-07
+
+Relatório completo: `docs/reports/2026-08-07_kpi-discovery-e-lote-p0.md`.
+
+**Decisões de negócio, agora persistidas em `public.analytics_kpi_settings`:**
+
+- Fonte oficial de MRR: `HUBSPOT_RECURRING_REVENUE`, pela propriedade de Company
+  `aftersale___mrr`. `OMIE_CONTRACTS` não é opção hoje porque não existe ingestão
+  de Contratos de Serviço do OMIE.
+- Cliente ativo: `HUBSPOT_CLIENT_STATUS`, isto é `status_do_cliente___aftersale`
+  igual a `Cliente`. Resulta em 320 clientes ativos.
+- A abstração aceita `UNRESOLVED` e, nesse estado, mantém os KPIs dependentes
+  indisponíveis em vez de estimar valor.
+
+**Números reais medidos em 2026-08-07:**
+
+- Carteira ativa: 320 clientes, 205 com recorrência, MRR de R$ 335.849,10,
+  ARPA de R$ 1.638,29.
+- Ligação HubSpot ↔ OMIE por CNPJ normalizado: 180 de 320 clientes ativos,
+  56,25% de cobertura; 87,2% do saldo aberto conciliado.
+- Inadimplência na carteira ativa: 81 clientes, R$ 219.669,74 vencidos,
+  R$ 48.658,46 de recorrência exposta.
+- Comercial: pipeline aberto R$ 3.217.559,00, ponderado R$ 579.127,05,
+  win rate 12,12%, ciclo mediano 8,5 dias.
+- Suporte: backlog de 2.841 atendimentos, idade mediana de 346 dias.
+
+**Bloqueios confirmados contra a conta real, não presumidos:**
+
+- A conta **não preenche `closedate` em tickets**: 31.530 estão em estágios
+  fechados e nenhum tem data. Tickets resolvidos por período, tempo de resolução
+  e backlog histórico ficam indisponíveis. O ingester já solicita a propriedade;
+  o dado não existe na origem.
+- **Nenhuma association do HubSpot é ingerida.** Ticket ↔ Company e
+  Deal ↔ Company não existem, o que bloqueia tickets por cliente, MRR com ticket
+  crítico e MRR com SLA violado.
+- Tempo de primeira resposta não é ingerido; só o status de SLA, com 4,1% de
+  cobertura.
+- Conversations/Chat não tem integração; a aba permanece sem contrato.
+
+**Fundação de histórico iniciada.** `analytics_kpi_daily_snapshot` e
+`rpc_service_capture_analytics_kpi_snapshot` foram criados. Churn, novo MRR,
+NRR e GRR permanecem aguardando série. Cada dia sem captura agendada é histórico
+que não se recupera.
+
+**Estado de entrega:** migrations criadas e **não aplicadas** em nenhum ambiente.
+pgTAP escrito e não executado. Customer Success foi a única tela recomposta;
+Comercial, Suporte e Resumo continuam nas RPCs anteriores e seguem funcionando.
+
 ## Adendo corrente — sincronismo OMIE e HubSpot — 2026-08-06
 
 - Premissa anterior corrigida: as funções de sincronização **estão** publicadas e

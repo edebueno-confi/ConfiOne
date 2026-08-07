@@ -395,6 +395,15 @@ verify_jwt = false
 [functions.hubspot-orchestrator-dispatcher]
 verify_jwt = false
 
+# Ingestao de vinculos e de historico de estagio. Mesma politica das demais:
+# a autorizacao acontece dentro da funcao, por JWT de platform_admin ou pelo
+# segredo do scheduler, nunca pelo gateway.
+[functions.hubspot-associations-sync]
+verify_jwt = false
+
+[functions.hubspot-stage-history-sync]
+verify_jwt = false
+
 # Essas funcoes possuem autorizacao interna por JWT de platform_admin ou pelo
 # segredo dedicado do scheduler. O gateway nao deve bloquear o segundo fluxo.
 [functions.omie-sync]
@@ -406,6 +415,15 @@ verify_jwt = false
 # Heartbeat unico do scheduler: dispara os dois fluxos configuraveis em ordem,
 # cada funcao decide internamente se sua cadencia esta vencida.
 [functions.analytics-scheduled-run]
+verify_jwt = false
+
+# Alinhamento de 2026-08-07. Esta funcao era a unica da cadeia de orquestracao
+# sem declaracao, e por isso herdava a verificacao de JWT do gateway. Isso a
+# tornava inalcancavel por um disparo server-side via pg_net, que nao carrega
+# JWT de usuario. A protecao real e a mesma das demais e continua intacta:
+# `authorizeCsRunner` exige o segredo do scheduler ou um JWT de platform_admin,
+# e a funcao so orquestra outras que ja aplicam o mesmo gate.
+[functions.analytics-sequential-sync]
 verify_jwt = false
 
 [analytics]

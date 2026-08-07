@@ -91,12 +91,16 @@ async function runHubspotToCompletion(
   config: ReturnType<typeof runtimeConfig>,
   correlationId: string,
   cycleId: string,
+  // Carga completa e necessaria sempre que o mapeamento de propriedades muda:
+  // a janela incremental so traz registros modificados desde a marca d'agua, e
+  // um campo recem-adicionado nao altera a data de modificacao no HubSpot.
+  full = false,
 ) {
   let run = await activeHubspotRun(client, correlationId);
   if (!run) {
     let started: FunctionResult;
     try {
-      started = await callFunction(config.baseUrl, config.anonKey, config.secret, 'hubspot-orchestrator-start', correlationId, { correlationId });
+      started = await callFunction(config.baseUrl, config.anonKey, config.secret, 'hubspot-orchestrator-start', correlationId, full ? { correlationId, full: true } : { correlationId });
     } catch (error) {
       const classified = classifyHubSpotError(error);
       await updateStep(client, cycleId, 'hubspot', { status: 'failed', finished_at: new Date().toISOString(), sanitized_error: classified.sanitizedMessage });
@@ -158,6 +162,10 @@ Deno.serve(async (req) => {
 
   try {
     const config = runtimeConfig();
+    const requestBody = await req.json().catch(() => ({})) as { full?: boolean };
+    const full = requestBody.full === true;
+    // `trigger_kind` tem dominio fechado por constraint: manual, automatic e
+    // diagnostic. A intencao de carga completa viaja no corpo, nao no tipo.
     const startedCycle = await client.rpc('rpc_service_start_analytics_sync_cycle', { p_trigger_kind: 'manual', p_requested_by: null });
     if (startedCycle.error) throw startedCycle.error;
     const cycle = startedCycle.data as { accepted?: boolean; cycle_id?: string; correlation_id?: string; status?: string; reason?: string } | null;
@@ -166,7 +174,7 @@ Deno.serve(async (req) => {
     }
     const cycleId = String(cycle.cycle_id);
     const correlationId = String(cycle.correlation_id);
-    const hubspot = await runHubspotToCompletion(client, config, correlationId, cycleId);
+    const hubspot = await runHubspotToCompletion(client, config, correlationId, cycleId, full);
 
     if (hubspot.status === 'running') {
       await updateCycle(client, cycleId, { status: 'running', current_step: 'hubspot' });

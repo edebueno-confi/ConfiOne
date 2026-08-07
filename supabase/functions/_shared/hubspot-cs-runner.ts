@@ -1,9 +1,22 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { getAuthorizationHeader, jsonResponse } from './ticket-evidence.ts';
 
+// Propriedades reais de ticket desta conta, confirmadas contra a API em
+// 2026-08-07 por `scripts/analytics/hubspot-coverage-discovery.mjs`.
+//
+// Correcao de causa raiz: a lista anterior pedia `closedate`, que **nao existe**
+// entre as 1.147 propriedades de ticket do portal. O HubSpot ignora propriedade
+// inexistente em silencio, entao a data de encerramento ficava nula em 100% dos
+// tickets encerrados sem nenhum erro visivel.
+//
+// Cobertura medida em 100 tickets encerrados dos pipelines publicados:
+//   closed_date                                   100%
+//   hs_lastactivitydate                           100%
+//   hs_time_to_first_response_in_operating_hours   77%  (valor em milissegundos)
 export const CS_TICKET_PROPERTIES = [
   'hs_pipeline', 'hs_pipeline_stage', 'hubspot_owner_id', 'source_type',
-  'hs_ticket_priority', 'createdate', 'closedate',
+  'hs_ticket_priority', 'createdate', 'closed_date',
+  'hs_lastactivitydate', 'hs_time_to_first_response_in_operating_hours',
   'hs_time_to_first_response_sla_status', 'hs_time_to_close_sla_status', 'subject',
 ];
 export const HUBSPOT_DEAL_PROPERTIES = ['pipeline','dealstage','hubspot_owner_id','amount_in_home_currency','dealtype','dealname','createdate','closedate','hs_lastmodifieddate'];
@@ -104,7 +117,7 @@ export function runnerError(error: unknown, status = 502) {
   return jsonResponse({ error: classified.sanitizedMessage, code: classified.code }, { status });
 }
 
-function toIsoTimestamp(value: string | null | undefined): string | null {
+export function toIsoTimestamp(value: string | null | undefined): string | null {
   if (!value) return null;
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
@@ -120,13 +133,26 @@ export function toTicketStagingRow(record: { id: string; properties: Record<stri
     source_type: record.properties.source_type ?? null,
     priority: record.properties.hs_ticket_priority ?? null,
     hs_created_at: toIsoTimestamp(record.properties.createdate),
-    hs_closed_at: toIsoTimestamp(record.properties.closedate),
+    hs_closed_at: toIsoTimestamp(record.properties.closed_date),
+    last_activity_at: toIsoTimestamp(record.properties.hs_lastactivitydate),
+    first_response_ms: toMilliseconds(record.properties.hs_time_to_first_response_in_operating_hours),
     time_to_first_response_sla_status: record.properties.hs_time_to_first_response_sla_status ?? null,
     time_to_close_sla_status: record.properties.hs_time_to_close_sla_status ?? null,
     raw: record.properties,
     source_page: pageNumber,
     updated_at: new Date().toISOString(),
   };
+}
+
+/**
+ * Duracoes do HubSpot chegam como string de milissegundos. O nome
+ * `hs_time_to_first_response_in_operating_hours` sugere horas, mas o valor
+ * medido na conta e em milissegundos; a conversao acontece no read model.
+ */
+export function toMilliseconds(value: string | null | undefined): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.round(parsed) : null;
 }
 
 export function toDealStagingRow(record: { id: string; properties: Record<string, string | null> }, pipelineId: string, parentRunId: string, pageNumber: number) {

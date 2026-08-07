@@ -4,7 +4,7 @@
 
 begin;
 
-select plan(24);
+select plan(25);
 
 -- ---------------------------------------------------------------------------
 -- Estrutura
@@ -115,16 +115,21 @@ values
   ('kpi-fixture-4', 'Prospect Sem Status', '12.121.212/0001-12', 0, null, null, timezone('utc', now()))
 on conflict (company_id) do nothing;
 
+-- `status_original` e `aging_bucket` são obrigatórios no contrato da tabela;
+-- o bucket é validado por check, então a fixture usa valores reais do domínio.
 insert into public.analytics_finance_receivables (
-  id, source_key, source_record_id, client_name, client_tax_id,
+  id, source_key, source_record_id, status_original, aging_bucket, client_name, client_tax_id,
   net_amount, received_amount, balance, due_date, is_current, is_cancelled, created_at, updated_at
 )
 values
-  (gen_random_uuid(), 'kpi_fixture', 'kpi-title-1', 'Cliente Ativo Com MRR', '11222333000144',
+  (gen_random_uuid(), 'kpi_fixture', 'kpi-title-1', 'ATRASADO', 'atrasado',
+   'Cliente Ativo Com MRR', '11222333000144',
    700, 0, 700, current_date - 45, true, false, timezone('utc', now()), timezone('utc', now())),
-  (gen_random_uuid(), 'kpi_fixture', 'kpi-title-2', 'Cliente Ativo Com MRR', '11222333000144',
+  (gen_random_uuid(), 'kpi_fixture', 'kpi-title-2', 'A VENCER', 'a_vencer',
+   'Cliente Ativo Com MRR', '11222333000144',
    300, 0, 300, current_date + 10, true, false, timezone('utc', now()), timezone('utc', now())),
-  (gen_random_uuid(), 'kpi_fixture', 'kpi-title-3', 'Empresa Em Churn', '99888777000166',
+  (gen_random_uuid(), 'kpi_fixture', 'kpi-title-3', 'CANCELADO', 'cancelado',
+   'Empresa Em Churn', '99888777000166',
    900, 0, 900, current_date - 5, true, true, timezone('utc', now()), timezone('utc', now()));
 
 select is(

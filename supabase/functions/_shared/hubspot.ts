@@ -107,6 +107,9 @@ function hubSpotEndpointKey(path: string) {
   if (pathname.includes('/owners')) return 'crm.owners';
   if (pathname.includes('/properties/companies/groups')) return 'crm.properties.companies.groups';
   if (pathname.includes('/properties/companies')) return 'crm.properties.companies';
+  if (pathname.includes('/associations/') && pathname.includes('/batch/read')) return 'crm.associations.batch_read';
+  if (pathname.includes('/objects/tickets/batch/read')) return 'crm.objects.tickets.batch_read';
+  if (pathname.includes('/objects/deals/batch/read')) return 'crm.objects.deals.batch_read';
   return 'hubspot.unknown';
 }
 
@@ -814,6 +817,134 @@ export async function createCompanyPropertyGroup(name: string, label: string, to
 export async function createCompanyProperty(def: Record<string, unknown>, tokenOverride?: string): Promise<unknown> {
   const response = await hubspotFetch('/crm/v3/properties/companies', { method: 'POST', body: JSON.stringify(def) }, 0, tokenOverride);
   return await response.json();
+}
+
+// ---------------------------------------------------------------------------
+// Associations e historico de estagio
+// ---------------------------------------------------------------------------
+//
+// Ambos existem para desbloquear achados do discovery de 2026-08-07: a conta nao
+// tinha nenhuma association ingerida, e nao preenche `closedate` em tickets. A
+// data real de encerramento so pode ser reconstruida pelo historico da
+// propriedade de estagio, que o HubSpot mantem e devolve por lote.
+
+/** Limite oficial do batch read de associations na v4. */
+export const HUBSPOT_ASSOCIATION_BATCH_LIMIT = 100;
+
+/** Batch read com historico de propriedade aceita menos itens por chamada. */
+export const HUBSPOT_HISTORY_BATCH_LIMIT = 50;
+
+export interface HubSpotAssociationRow {
+  from_id: string;
+  to_id: string;
+  label: string | null;
+}
+
+export interface HubSpotStageEventRow {
+  object_id: string;
+  changed_at: string;
+  stage_id: string;
+  pipeline_id: string | null;
+}
+
+export function chunkIds(ids: string[], size: number): string[][] {
+  const chunks: string[][] = [];
+  for (let index = 0; index < ids.length; index += size) {
+    chunks.push(ids.slice(index, index + size));
+  }
+  return chunks;
+}
+
+// POST /crm/v4/associations/{fromType}/{toType}/batch/read
+// Leitura pura: nenhum vinculo e criado, alterado ou removido no HubSpot.
+export async function fetchAssociationsBatch(
+  fromObjectType: 'tickets' | 'deals',
+  toObjectType: 'companies' | 'contacts',
+  ids: string[],
+  tokenOverride?: string,
+  observer?: HubSpotRequestObserver,
+): Promise<HubSpotAssociationRow[]> {
+  if (ids.length === 0) return [];
+  if (ids.length > HUBSPOT_ASSOCIATION_BATCH_LIMIT) {
+    throw new Error(`Lote de associations acima do limite de ${HUBSPOT_ASSOCIATION_BATCH_LIMIT}.`);
+  }
+  const response = await hubspotFetch(
+    `/crm/v4/associations/${fromObjectType}/${toObjectType}/batch/read`,
+    { method: 'POST', body: JSON.stringify({ inputs: ids.map((id) => ({ id })) }) },
+    0,
+    tokenOverride,
+    observer,
+  );
+  const payload = await response.json() as {
+    results?: Array<{ from?: { id?: string }; to?: Array<{ toObjectId?: string | number; associationTypes?: Array<{ label?: string | null }> }> }>;
+  };
+  const rows: HubSpotAssociationRow[] = [];
+  for (const result of payload.results ?? []) {
+    const fromId = result.from?.id;
+    if (!fromId) continue;
+    for (const target of result.to ?? []) {
+      const toId = target.toObjectId;
+      if (toId === undefined || toId === null || toId === '') continue;
+      const label = target.associationTypes?.find((type) => type.label)?.label ?? null;
+      rows.push({ from_id: String(fromId), to_id: String(toId), label: label ? String(label) : null });
+    }
+  }
+  return rows;
+}
+
+// POST /crm/v3/objects/{objectType}/batch/read com propertiesWithHistory.
+// Devolve cada versao da propriedade de estagio, com o instante real da mudanca.
+export async function fetchStageHistoryBatch(
+  objectType: 'tickets' | 'deals',
+  ids: string[],
+  tokenOverride?: string,
+  observer?: HubSpotRequestObserver,
+): Promise<HubSpotStageEventRow[]> {
+  if (ids.length === 0) return [];
+  if (ids.length > HUBSPOT_HISTORY_BATCH_LIMIT) {
+    throw new Error(`Lote de historico acima do limite de ${HUBSPOT_HISTORY_BATCH_LIMIT}.`);
+  }
+  const stageProperty = objectType === 'tickets' ? 'hs_pipeline_stage' : 'dealstage';
+  const pipelineProperty = objectType === 'tickets' ? 'hs_pipeline' : 'pipeline';
+  const response = await hubspotFetch(
+    `/crm/v3/objects/${objectType}/batch/read`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        propertiesWithHistory: [stageProperty],
+        properties: [pipelineProperty],
+        inputs: ids.map((id) => ({ id })),
+      }),
+    },
+    0,
+    tokenOverride,
+    observer,
+  );
+  const payload = await response.json() as {
+    results?: Array<{
+      id?: string;
+      properties?: Record<string, string | null>;
+      propertiesWithHistory?: Record<string, Array<{ value?: string | null; timestamp?: string | null }>>;
+    }>;
+  };
+  const rows: HubSpotStageEventRow[] = [];
+  for (const result of payload.results ?? []) {
+    const objectId = result.id;
+    if (!objectId) continue;
+    const pipelineId = result.properties?.[pipelineProperty] ?? null;
+    for (const version of result.propertiesWithHistory?.[stageProperty] ?? []) {
+      const stageId = version.value;
+      const changedAt = toTimestamp(version.timestamp);
+      if (!stageId || !changedAt) continue;
+      rows.push({
+        object_id: String(objectId),
+        changed_at: changedAt,
+        stage_id: String(stageId),
+        pipeline_id: pipelineId ? String(pipelineId) : null,
+      });
+    }
+  }
+  return rows;
 }
 
 export function toTimestamp(value: string | null | undefined): string | null {

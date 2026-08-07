@@ -1,5 +1,114 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## Registro corrente — KPIs em produção e quatro defeitos corrigidos — 2026-08-07
+
+- **Relatório:** `reports/2026-08-07_kpi-discovery-e-lote-p0.md`, seção 14.
+- **Escopo:** 12 migrations e 5 Edge Functions publicadas no remoto, com
+  autorização explícita da operação.
+- **Defeitos latentes encontrados pela carga completa:** orçamento de retentativa
+  medindo progresso em vez de falha; promoção que invalidava paginação concluída;
+  promoção do HubSpot sem proteção de tempo; ingestão de vínculos sem marca
+  d'água persistida. Todos corrigidos e versionados.
+- **Evidência que corrigiu o diagnóstico:** promoção de 47.159 registros em 19,7s
+  quando executada pelo banco. O gargalo era o teto da Edge Function, não o SQL.
+- **Resultado:** 31.532 tickets com data de encerramento onde havia zero; quatro
+  KPIs de suporte com número real; dois KPIs novos de CS.
+- **Fundação histórica ativa:** três agendas em `pg_cron`, série iniciada em
+  2026-08-07, com recorrência gravada por cliente.
+- **Validação:** 100 asserções pgTAP, 38 de contrato, build, lint e secret scan
+  aprovados.
+- **Sem push.** Remoto canônico ainda indefinido.
+
+## Registro corrente — validação em banco e privilégio corrigido — 2026-08-07
+
+- **Relatório:** `reports/2026-08-07_kpi-discovery-e-lote-p0.md`, seção 13.
+- **Sete migrations aplicadas em ambiente local**, sem reset e sem perda de dado.
+- **Falha de segurança encontrada pelo próprio teste:** o Supabase concede
+  privilégios padrão a `authenticated` em toda tabela nova do schema `public`, e
+  as migrations do lote revogavam apenas de `public` e `anon`. As cinco tabelas
+  novas ficaram com escrita liberada. A RLS já barrava, mas privilégio concedido
+  e não usado é risco latente. Corrigido em
+  `20260807180000_analytics_kpi_least_privilege_v1.sql`, alinhando à convenção do
+  projeto de não conceder nada direto a `authenticated`.
+- **Outras duas correções:** `create or replace view` não aceita reordenar
+  coluna, resolvido derrubando as views na ordem inversa da dependência; e a
+  fixture do teste `102` omitia colunas obrigatórias.
+- **Validação:** 99 asserções pgTAP e 38 de contrato, todas aprovadas. Build,
+  lint, typecheck, secret scan e `git diff --check` aprovados.
+- **Falhas remanescentes na suíte são pré-existentes.** O caso `052` é drift do
+  banco local: exige 6 pipelines de CS ativos, o local tem 25 e o remoto tem 6.
+  Nenhuma migration do lote escreve nessa tabela.
+- **Nada aplicado no remoto. Nenhuma função publicada. Nenhum commit.**
+
+## Registro corrente — correção de causa raiz das datas de ticket — 2026-08-07
+
+- **Relatório:** `reports/2026-08-07_kpi-discovery-e-lote-p0.md`, seção 12.
+- **Correção de diagnóstico:** a conta preenche sim a data de encerramento do
+  ticket. O defeito era nosso: o ingester pedia `closedate`, propriedade que
+  **não existe** entre as 1.147 propriedades de ticket do portal. O HubSpot
+  ignora propriedade inexistente em silêncio, então a coluna ficava nula em 100%
+  dos casos sem nenhum erro visível.
+- **Fontes reais confirmadas:** `closed_date` 100%, `hs_lastactivitydate` 100%,
+  `hs_time_to_first_response_in_operating_hours` 77% e, em empresas,
+  `notes_last_contacted` 100%. Unidades de duração são milissegundos.
+- **Efeito:** tickets resolvidos, tempo de resolução, tempo de primeira resposta
+  e clientes sem interação recente deixam de ser bloqueados e passam a depender
+  apenas de uma ressincronização.
+- **Associations medidas:** Deal→Company 99%, Ticket→Company 58% nos recentes e
+  6% na base completa.
+- **Precedência implementada:** a propriedade nativa vence o histórico de
+  estágio, que vira reforço e fonte única de reabertura; `resolution_source`
+  registra qual foi usada.
+- **Validação:** 38 testes de contrato aprovados, build e lint sem erro, secret
+  scan aprovado. pgTAP `102` a `105` escritos e não executados; nenhuma migration
+  aplicada; nenhuma função publicada.
+
+## Registro corrente — associations e histórico de estágio — 2026-08-07
+
+- **Relatório:** `reports/2026-08-07_kpi-discovery-e-lote-p0.md`, seção 11.
+- **Pergunta respondida com evidência:** não existe campo alternativo com a data
+  de encerramento do ticket. `hs_lastmodifieddate` está 100% preenchido, mas
+  19.888 dos 31.530 encerrados se concentram em três dias de julho de 2026, com
+  mediana de 912,7 dias desde a criação. É rastro de operação em massa e
+  produziria números falsos.
+- **Solução adotada:** reconstruir a data real pelo histórico da propriedade de
+  estágio, que recupera o passado inteiro, não só daqui para frente.
+- **Associations:** não eram limitação da conta, e sim ausência de ingestão.
+  Adapter, destino canônico e gravação idempotente implementados.
+- **Decisão de arquitetura:** o estado de cada KPI passou a ser função da
+  cobertura da ingestão medida em tempo de consulta. Indisponível vira parcial e
+  depois disponível sem edição de código, e nunca apresenta número incompleto
+  como definitivo.
+- **Segurança:** ingestão somente leitura no HubSpot, com teste que falha se
+  aparecer endpoint de escrita; idempotência por chave composta; retomada por
+  marca d'água; gravações restritas a `service_role`.
+- **Validação:** 26 testes de contrato aprovados, build e lint sem erro, secret
+  scan aprovado. pgTAP `102`, `103` e `104` escritos e não executados; migrations
+  não aplicadas; sondagem da API pendente de credencial local.
+
+## Registro corrente — discovery de KPIs e lote P0 — 2026-08-07
+
+- **Relatório:** `reports/2026-08-07_kpi-discovery-e-lote-p0.md`.
+- **Escopo:** discovery real de KPIs HubSpot + OMIE e implementação da fundação
+  e dos indicadores P0 de Resumo, Comercial, Customer Success, Suporte e
+  Financeiro.
+- **Decisões registradas em banco:** fonte oficial de MRR é
+  `HUBSPOT_RECURRING_REVENUE`; cliente ativo é `HUBSPOT_CLIENT_STATUS`. Ambas
+  vivem em `public.analytics_kpi_settings`, com constraint, e não em constante
+  de frontend.
+- **Bloqueios com evidência:** a conta não preenche data de fechamento em
+  tickets (31.530 encerrados, zero com data), não ingere associations e não
+  possui Contratos de Serviço do OMIE. Os KPIs dependentes retornam estado
+  explícito, nunca zero.
+- **Fundação de histórico:** `analytics_kpi_daily_snapshot` e a captura diária
+  idempotente foram criadas; churn, NRR e GRR permanecem aguardando série.
+- **Validação:** 15 testes de contrato aprovados, lint limpo nos arquivos do
+  lote, secret scan aprovado, typecheck sem erro. pgTAP escrito e ainda não
+  executado; migrations não aplicadas em nenhum ambiente.
+- **Atenção:** os arquivos deste lote foram absorvidos por commits do Codex
+  (`10b253b` e `b23a4e2`) durante execução concorrente no mesmo checkout.
+  Nada foi perdido; a rastreabilidade do histórico ficou comprometida.
+
 ## Registro corrente — diagnóstico de entrega de convites — 2026-08-06
 
 - **Relatório:** `reports/2026-08-06_invite-smtp-delivery-diagnosis.md`.

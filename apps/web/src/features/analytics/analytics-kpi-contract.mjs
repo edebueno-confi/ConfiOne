@@ -32,10 +32,20 @@ const REASON_MESSAGES = {
     'Nem todos os clientes têm cadastro financeiro correspondente, então o valor cobre apenas parte da carteira.',
   ticket_close_date_missing:
     'Os atendimentos encerrados não registram a data de encerramento na origem, então não é possível medir o que foi resolvido no período.',
+  ticket_history_partial:
+    'O histórico dos atendimentos ainda está sendo reconstruído, então este número cobre parte do período.',
+  ticket_close_date_partial:
+    'Parte dos atendimentos encerrados ainda não tem data de encerramento carregada, então este número cobre parte do período.',
   ticket_first_response_missing:
     'O tempo de primeira resposta não é registrado na origem dos atendimentos.',
+  first_response_partial:
+    'Nem todos os atendimentos registram o tempo de primeira resposta, então este número cobre parte da base.',
+  activity_partial:
+    'Parte dos clientes ainda não tem a última interação registrada, então este número cobre parte da carteira.',
   associations_missing:
     'Os atendimentos ainda não estão vinculados às empresas, então não é possível cruzar suporte com carteira.',
+  associations_partial:
+    'O vínculo entre atendimentos e empresas ainda está sendo carregado, então este número cobre parte da base.',
   activity_dates_missing:
     'A data da última interação com o cliente não é registrada na origem.',
   history_insufficient:
@@ -156,6 +166,7 @@ const BASIS_MESSAGES = {
   deal_stage_transition: 'Considera a mudança de etapa.',
   ticket_created_at: 'Considera a data de abertura do atendimento.',
   ticket_closed_at: 'Considera a data de encerramento do atendimento.',
+  ticket_resolved_at: 'Considera a data em que o atendimento foi resolvido.',
   ticket_state_open_now: 'Atendimentos em aberto na data de hoje.',
   ticket_state_open_at_date: 'Atendimentos em aberto em cada data medida.',
   ticket_first_response_at: 'Considera a primeira resposta ao cliente.',

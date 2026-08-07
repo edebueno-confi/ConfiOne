@@ -3,7 +3,7 @@
 
 begin;
 
-select plan(26);
+select plan(28);
 
 -- ---------------------------------------------------------------------------
 -- Contrato de acesso
@@ -217,7 +217,7 @@ select ok(
 );
 
 select is(
-  ((select payload from kpi_support) -> 'close_date_coverage' ->> 'closed_with_date')::integer,
+  ((select payload from kpi_support) -> 'source_coverage' ->> 'closed_with_date')::integer,
   0,
   'a cobertura real de data de fechamento é publicada para auditoria'
 );

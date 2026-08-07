@@ -41,6 +41,7 @@ interface OverdueRow {
   overdue_balance: number;
   overdue_titles: number;
   max_overdue_days: number | null;
+  open_tickets?: number;
 }
 
 function rows<T>(payload: unknown, key: string): T[] {
@@ -98,6 +99,7 @@ export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
   const mrrOverdue = readKpi(payload, 'mrr_overdue');
   const mappingCoverage = readKpi(payload, 'mapping_coverage_percent');
   const withOpenTickets = readKpi(payload, 'customers_with_open_tickets');
+  const mrrCriticalTicket = readKpi(payload, 'mrr_with_critical_ticket');
   const withoutActivity = readKpi(payload, 'customers_without_recent_activity');
   const logoChurn = readKpi(payload, 'logo_churn_rate');
   const nrr = readKpi(payload, 'nrr');
@@ -141,7 +143,7 @@ export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
         />
       </div>
 
-      <div className="gso-pilot-kpi-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="gso-pilot-kpi-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <KpiCard
           label="Clientes inadimplentes"
           value={formatKpiValue(overdueCustomers, 'count')}
@@ -162,15 +164,27 @@ export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
         <KpiCard
           label="Clientes com atendimento aberto"
           value={formatKpiValue(withOpenTickets, 'count')}
-          hint={describeKpiLimitation(withOpenTickets)}
+          hint={describeKpiLimitation(withOpenTickets) || 'Clientes ativos com pelo menos um atendimento em aberto'}
+          source={describeKpiBasis(withOpenTickets)}
           state={state}
+          className="gso-kpi-secondary"
+        />
+        <KpiCard
+          label="Recorrência com atendimento crítico"
+          value={formatKpiValue(mrrCriticalTicket, 'currency')}
+          hint={describeKpiLimitation(mrrCriticalTicket) || 'Recorrência de clientes com atendimento de prioridade alta em aberto'}
+          source={describeKpiBasis(mrrCriticalTicket)}
+          state={state}
+          tone={(mrrCriticalTicket.value ?? 0) > 0 ? 'warning' : 'neutral'}
           className="gso-kpi-secondary"
         />
         <KpiCard
           label="Clientes sem interação recente"
           value={formatKpiValue(withoutActivity, 'count')}
-          hint={describeKpiLimitation(withoutActivity)}
+          hint={describeKpiLimitation(withoutActivity) || 'Clientes ativos sem contato registrado no período definido'}
+          source={describeKpiBasis(withoutActivity)}
           state={state}
+          tone={(withoutActivity.value ?? 0) > 0 ? 'warning' : 'neutral'}
           className="gso-kpi-secondary"
         />
       </div>
