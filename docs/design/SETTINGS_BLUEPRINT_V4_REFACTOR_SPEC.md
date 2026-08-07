@@ -134,3 +134,11 @@ escrever a interface.
 `npm run lint`, `web:typecheck`, `contracts:typecheck`, `web:build`,
 `local:qa:secret-scan`, `quality:changed`, testes de contrato afetados e captura
 real no navegador nos dois temas.
+
+## 7. Campos ausentes
+
+O mapeamento completo do que o blueprint pede e nao existe, com veredito de
+implementar ou descartar, esta em
+`docs/design/SETTINGS_BLUEPRINT_V4_FIELD_GAP_BACKLOG.md`. Quatro campos entram
+nesta refatoracao porque o dado ja existe no banco: ultimo acesso real,
+membro desde, foto do usuario e cobertura de areas.
