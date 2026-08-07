@@ -62,17 +62,15 @@ test('as superfícies não expõem nome de propriedade, endpoint ou termo de inf
   }
 });
 
-test('cada indicador declarado tem rótulo em linguagem de negócio', () => {
-  // Um descritor sem rótulo legível deixaria a chave técnica vazar para a tela.
-  const descritores = [...commercial, ...support, ...executive]
-    .join('')
-    .match(/\{ key: '[a-z_0-9]+', label: '[^']+'/g) ?? [];
-  assert.ok(descritores.length >= 20, 'as três telas devem declarar seus indicadores');
-  for (const item of descritores) {
-    const rotulo = item.match(/label: '([^']+)'/)[1];
-    assert.equal(/_/.test(rotulo), false, `rótulo com aparência técnica: ${rotulo}`);
-    assert.ok(rotulo.length > 3, `rótulo curto demais: ${rotulo}`);
+test('nenhuma tela define rótulo próprio: o nome vem do glossário', () => {
+  // Rótulo declarado na tela foi exatamente o que permitiu "Conversão" e
+  // "Taxa de ganho" conviverem para a mesma métrica. O nome agora é único e
+  // central; a tela escolhe quais indicadores mostrar, nunca como chamá-los.
+  for (const [nome, source] of surfaces) {
+    const comRotulo = source.match(/\{ key: '[a-z_0-9]+', label:/g) ?? [];
+    assert.deepEqual(comRotulo, [], `${nome} não pode declarar rótulo próprio`);
   }
+  assert.match(grid, /kpiLabel\(item\.key\)/);
 });
 
 test('a grade distingue parcial de indisponível no tom do cartão', () => {

@@ -31,15 +31,18 @@ import { AnalyticsKpiGrid, AnalyticsKpiLimitations, type KpiDescriptor } from '.
 // ingerido, e por isso aparece como aguardando historico.
 // O detalhe tecnico da correcao esta no relatorio do ciclo, nao aqui: nomes de
 // propriedade nao pertencem a camada de apresentacao.
-const SUPPORT_KPIS: KpiDescriptor[] = [
-  { key: 'created_tickets', label: 'Atendimentos recebidos', kind: 'count', hint: 'Abertos dentro do período' },
-  { key: 'resolved_tickets', label: 'Atendimentos resolvidos', kind: 'count', hint: 'Encerrados dentro do período' },
-  { key: 'open_backlog', label: 'Fila em aberto', kind: 'count', hint: 'Posição na data de hoje', warnWhenPositive: false },
-  { key: 'median_backlog_age_days', label: 'Idade mediana da fila', kind: 'days', hint: 'Tempo desde a abertura dos que seguem em aberto' },
-  { key: 'median_time_to_resolution_days', label: 'Tempo de resolução', kind: 'days', hint: 'Mediana entre abertura e encerramento' },
-  { key: 'p90_time_to_resolution_days', label: 'Resolução no pior caso', kind: 'days', hint: 'Nove em cada dez resolvidos abaixo deste tempo', secondary: true },
-  { key: 'median_first_response_hours', label: 'Primeira resposta', kind: 'days', hint: 'Mediana até o primeiro retorno ao cliente', secondary: true },
-  { key: 'reopen_rate', label: 'Taxa de reabertura', kind: 'percent', hint: 'Resolvidos que voltaram a ser abertos', secondary: true },
+const SUPPORT_PRIMARY: KpiDescriptor[] = [
+  { key: 'open_backlog', kind: 'count', hint: 'Aguardando atendimento agora' },
+  { key: 'created_tickets', kind: 'count', hint: 'Entraram no período selecionado' },
+  { key: 'resolved_tickets', kind: 'count', hint: 'Encerrados dentro do período' },
+  { key: 'median_time_to_resolution_days', kind: 'days', hint: 'Da abertura até o encerramento' },
+];
+
+const SUPPORT_SECONDARY: KpiDescriptor[] = [
+  { key: 'median_first_response_hours', kind: 'days', hint: 'Até o cliente receber o primeiro retorno' },
+  { key: 'median_backlog_age_days', kind: 'days', hint: 'Há quanto tempo espera quem está na fila' },
+  { key: 'p90_time_to_resolution_days', kind: 'days', hint: 'Nove em cada dez resolvidos abaixo deste tempo' },
+  { key: 'reopen_rate', kind: 'percent', hint: 'Resolvidos que precisaram voltar' },
 ];
 
 type State =
@@ -100,11 +103,11 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
   }, [filters, excludedPipelineIds]);
 
   if (state.phase === 'loading') {
-    return <AnalyticsHdDomainFrame title="Suporte & Chat" description="Tickets, backlog, prioridades e responsáveis; Chat somente quando confirmado." source="HubSpot · Tickets"><AnalyticsLoadingState title="Carregando suporte" description="O Gênio está consultando os tickets sincronizados do HubSpot." /></AnalyticsHdDomainFrame>;
+    return <AnalyticsHdDomainFrame title="Suporte" description="Fila, tempo de resposta e distribuição dos atendimentos." source="HubSpot"><AnalyticsLoadingState title="Carregando suporte" description="O Gênio está reunindo os atendimentos do período." /></AnalyticsHdDomainFrame>;
   }
 
   if (state.phase === 'error') {
-    return <AnalyticsHdDomainFrame title="Suporte & Chat" description="Tickets, backlog, prioridades e responsáveis; Chat somente quando confirmado." source="HubSpot · Tickets"><MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores de suporte estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} /></AnalyticsHdDomainFrame>;
+    return <AnalyticsHdDomainFrame title="Suporte" description="Fila, tempo de resposta e distribuição dos atendimentos." source="HubSpot"><MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores de suporte estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} /></AnalyticsHdDomainFrame>;
   }
 
   const { kpis, byStatus, monthly, bySource, byPipeline, byOwner, latestTicketCreatedAt, state: dataState } = state;
@@ -116,31 +119,27 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
   });
 
   return (
-    <AnalyticsHdDomainFrame title="Suporte & Chat" description="Tickets, backlog, prioridades e responsáveis; Chat somente quando confirmado." source="HubSpot · Tickets" state={dataState}>
+    <AnalyticsHdDomainFrame title="Suporte" description="Fila, tempo de resposta e distribuição dos atendimentos." source="HubSpot" state={dataState}>
     <div className="gso-hd-domain-surface space-y-5">
       <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} priorityOptions={priorityOptions} stageLabel="Status" extraFields={pipelineOptions.length > 0 ? <AnalyticsPipelineCombobox inline storageKey="analytics-cs-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.ticketCount }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null} />
       {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." /> : null}
       {kpiPayload ? (
-        <section className="space-y-3">
-          <header>
-            <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">Indicadores de atendimento</h3>
-            <p className="mt-0.5 text-xs text-[color:var(--minimal-text-secondary)]">
-              Cada indicador declara a data que define seu recorte. Fila em aberto é posição de hoje; recebidos e resolvidos são fluxo do período.
-            </p>
-          </header>
-          <AnalyticsKpiGrid payload={kpiPayload} items={SUPPORT_KPIS} state={dataState} />
+        <>
+          <AnalyticsKpiGrid
+            payload={kpiPayload}
+            primary={SUPPORT_PRIMARY}
+            secondary={SUPPORT_SECONDARY}
+            state={dataState}
+            title="Indicadores de atendimento"
+            description="A fila é a posição de agora. Abertos e resolvidos são o movimento do período selecionado."
+          />
           <AnalyticsKpiLimitations payload={kpiPayload} />
-        </section>
+        </>
       ) : null}
-      {dataState?.status !== 'empty' ? <div className="gso-pilot-kpi-grid grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard state={dataState} temporalType="Fluxo no período" label="Tickets totais" value={kpis.totalTickets.toLocaleString('pt-BR')} hint="Nos pipelines de suporte" source="Total de tickets nos pipelines de suporte ativos, considerando o período e os filtros selecionados." />
-        <KpiCard state={dataState} temporalType="Posição dos registros" label="Abertos" value={kpis.openTickets.toLocaleString('pt-BR')} hint="Ainda não encerrados" source="Tickets que ainda não estão em um estágio de encerrado." />
-        <KpiCard state={dataState} temporalType="Fluxo no período" label="Encerrados" value={kpis.closedTickets.toLocaleString('pt-BR')} hint="Em estágio de encerrado" source="Tickets que já estão em um estágio de encerrado." />
-        <KpiCard state={dataState} temporalType="Fluxo no período" label="% Encerrados" value={formatPercent(kpis.closedRate)} hint="Encerrados sobre o total" source="Tickets encerrados divididos pelo total de tickets do período." />
-      </div> : null}
+
 
       {dataState?.status !== 'empty' ? <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <ChartCard title="Tickets por status" description="Status com o mesmo nome são consolidados; o tooltip mostra a distribuição por pipeline.">
+        <ChartCard title="Atendimentos por etapa" description="Status com o mesmo nome são consolidados; o tooltip mostra a distribuição por pipeline.">
           {byStatus.length > 0 ? (
             <TicketStatusChart data={byStatus} />
           ) : (
@@ -148,11 +147,11 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
           )}
         </ChartCard>
 
-        <ChartCard title="Tendência mensal" description="Tickets criados e encerrados por mês.">
+        <ChartCard title="Tendência mensal" description="Atendimentos abertos e encerrados por mês.">
           {monthly.length > 0 ? (
             <TicketMonthlyChart data={monthly} />
           ) : (
-            <MinimalState title="Sem histórico" description="Ainda não há tickets sincronizados no período." />
+            <MinimalState title="Sem histórico" description="Ainda não há atendimentos no período." />
           )}
         </ChartCard>
       </div> : null}
@@ -160,8 +159,8 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
         <div className="grid gap-4 lg:grid-cols-3"><Breakdown title="Por origem" rows={bySource.map((row) => ({ label: row.label, value: row.ticketCount }))} /><Breakdown title="Por pipeline" rows={byPipeline.map((row) => ({ label: row.label, value: row.ticketCount }))} /><Breakdown title="Por responsável" rows={byOwner.slice(0, 8).map((row) => ({ label: row.ownerName, value: row.ticketCount }))} /></div>
         <OwnerPipelineNote owners={byOwner.slice(0, 8)} />
       </ChartCard> : null}
-      <ChartCard title="Chat" description="O contrato atual confirma tickets do HubSpot, mas não confirma a origem em Conversations/Inbox/Chat.">
-        <MinimalState title="Chat indisponível" description="Nenhum read model de Conversations, Inbox ou Chat foi confirmado para este ambiente. Os rótulos de origem dos tickets permanecem apenas como evidência observada." />
+      <ChartCard title="Chat" description="A origem por chat ainda não foi confirmada para este ambiente; os números cobrem apenas os atendimentos registrados.">
+        <MinimalState title="Chat indisponível" description="O atendimento por chat ainda não está integrado. Os números desta tela cobrem apenas os atendimentos registrados, e nada é estimado para o que falta." />
       </ChartCard>
     </div>
     </AnalyticsHdDomainFrame>

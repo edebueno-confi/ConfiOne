@@ -54,17 +54,21 @@ type MetricDelta = {
 // O Resumo reusa os read models de cada area em vez de recalcular. Isso impede
 // que a mesma metrica apareca com valores diferentes entre a visao geral e a
 // tela da area, que e a falha classica de dashboards executivos.
-const EXECUTIVE_KPIS: KpiDescriptor[] = [
-  { key: 'active_customers', label: 'Clientes ativos', kind: 'count', hint: 'Carteira ativa na data de hoje' },
-  { key: 'mrr_total', label: 'Receita recorrente', kind: 'currency', hint: 'Soma da recorrência dos clientes ativos' },
-  { key: 'open_pipeline_amount', label: 'Pipeline aberto', kind: 'currency', hint: 'Valor em negociação hoje' },
-  { key: 'win_rate', label: 'Taxa de ganho', kind: 'percent', hint: 'Sobre negócios encerrados no período' },
-  { key: 'open_backlog', label: 'Fila de atendimento', kind: 'count', hint: 'Em aberto na data de hoje' },
-  { key: 'created_tickets', label: 'Atendimentos recebidos', kind: 'count', hint: 'Abertos no período', secondary: true },
-  { key: 'received_amount', label: 'Recebimentos', kind: 'currency', hint: 'Baixas efetivas no período', secondary: true },
-  { key: 'overdue_receivables', label: 'Recebíveis vencidos', kind: 'currency', hint: 'Em atraso na data de hoje', warnWhenPositive: true, secondary: true },
-  { key: 'mrr_overdue', label: 'Recorrência com atraso', kind: 'currency', hint: 'De clientes com título vencido', warnWhenPositive: true, secondary: true },
-  { key: 'nrr', label: 'Retenção líquida', kind: 'percent', secondary: true },
+const EXECUTIVE_PRIMARY: KpiDescriptor[] = [
+  { key: 'mrr_total', kind: 'currency', hint: 'Receita recorrente da base ativa' },
+  { key: 'won_amount', kind: 'currency', hint: 'Negócios ganhos no período' },
+  { key: 'open_backlog', kind: 'count', hint: 'Atendimentos aguardando agora' },
+  { key: 'overdue_receivables', kind: 'currency', hint: 'Valores vencidos e não recebidos', warnWhenPositive: true },
+];
+
+const EXECUTIVE_SECONDARY: KpiDescriptor[] = [
+  { key: 'active_customers', kind: 'count', hint: 'Base ativa hoje' },
+  { key: 'open_pipeline_amount', kind: 'currency', hint: 'Em negociação hoje' },
+  { key: 'win_rate', kind: 'percent', hint: 'Sobre o que foi encerrado no período' },
+  { key: 'created_tickets', kind: 'count', hint: 'Atendimentos abertos no período' },
+  { key: 'received_amount', kind: 'currency', hint: 'Entradas efetivas no período' },
+  { key: 'mrr_overdue', kind: 'currency', hint: 'Recorrência de clientes em atraso', warnWhenPositive: true },
+  { key: 'nrr', kind: 'percent' },
 ];
 
 export function AnalyticsCeoPage({
@@ -396,16 +400,17 @@ function ExecutiveHdCanvas({
       </section>
 
       {executiveKpis ? (
-        <section className="space-y-3" aria-label="Indicadores consolidados">
-          <header>
-            <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">Indicadores consolidados</h3>
-            <p className="mt-0.5 text-xs text-[color:var(--minimal-text-secondary)]">
-              Reúne Comercial, Atendimento, Carteira e Financeiro a partir da mesma fonte de cada área, para que nenhum número divirja entre esta visão e a tela de origem.
-            </p>
-          </header>
-          <AnalyticsKpiGrid payload={executiveKpis} items={EXECUTIVE_KPIS} state={state} columns={5} />
+        <>
+          <AnalyticsKpiGrid
+            payload={executiveKpis}
+            primary={EXECUTIVE_PRIMARY}
+            secondary={EXECUTIVE_SECONDARY}
+            state={state}
+            title="Visão consolidada"
+            description="Reúne Comercial, Atendimento, Carteira e Financeiro a partir da fonte de cada área, para que nenhum número divirja entre esta visão e a tela de origem."
+          />
           <AnalyticsKpiLimitations payload={executiveKpis} />
-        </section>
+        </>
       ) : null}
 
           <div className="gso-hd-filter-bar gso-hd-pulse" aria-label="Filtros da análise">
@@ -482,7 +487,7 @@ function ExecutiveHdCanvas({
             comparison={comparison.conversion?.label}
           />
           <HdMetric
-            label="Tickets criados"
+            label="Atendimentos abertos"
             value={
               unavailable
                 ? "Indisponível"
@@ -527,7 +532,7 @@ function ExecutiveHdCanvas({
             detail={financeUnavailable || unavailable ? "Reconciliação financeira indisponível" : "Inadimplência reconciliada"}
           />
           <HdMetric
-            label="Tickets em aberto"
+            label="Fila atual"
             value={
               unavailable
                 ? "Indisponível"

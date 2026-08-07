@@ -29,15 +29,18 @@ import { AnalyticsKpiGrid, AnalyticsKpiLimitations, type KpiDescriptor } from '.
 // Pipeline e posicao na data de corte; criados usam data de criacao; ganhos,
 // win rate, ticket e ciclo usam data de fechamento. Misturar as tres coortes
 // sob o mesmo filtro foi o erro que a versao anterior cometia em silencio.
-const COMMERCIAL_KPIS: KpiDescriptor[] = [
-  { key: 'open_pipeline_amount', label: 'Pipeline aberto', kind: 'currency', hint: 'Valor em negociação na data de hoje' },
-  { key: 'weighted_pipeline_amount', label: 'Pipeline ponderado', kind: 'currency', hint: 'Valor ajustado pela probabilidade de cada etapa' },
-  { key: 'created_deals', label: 'Negócios criados', kind: 'count', hint: 'Abertos dentro do período' },
-  { key: 'won_amount', label: 'Receita ganha', kind: 'currency', hint: 'Encerrados como ganhos no período' },
-  { key: 'win_rate', label: 'Taxa de ganho', kind: 'percent', hint: 'Ganhos sobre o total de encerrados no período' },
-  { key: 'median_deal_amount', label: 'Ticket mediano', kind: 'currency', hint: 'Resiste a negócios atípicos, ao contrário da média', secondary: true },
-  { key: 'avg_deal_amount', label: 'Ticket médio', kind: 'currency', hint: 'Complemento da mediana', secondary: true },
-  { key: 'median_sales_cycle_days', label: 'Ciclo de vendas', kind: 'days', hint: 'Mediana entre criação e ganho', secondary: true },
+const COMMERCIAL_PRIMARY: KpiDescriptor[] = [
+  { key: 'open_pipeline_amount', kind: 'currency', hint: 'Soma dos negócios ainda em aberto, na data de hoje' },
+  { key: 'won_amount', kind: 'currency', hint: 'Negócios ganhos dentro do período selecionado' },
+  { key: 'win_rate', kind: 'percent', hint: 'Ganhos sobre tudo que foi encerrado no período' },
+  { key: 'created_deals', kind: 'count', hint: 'Novos negócios iniciados no período' },
+];
+
+const COMMERCIAL_SECONDARY: KpiDescriptor[] = [
+  { key: 'weighted_pipeline_amount', kind: 'currency', hint: 'Valor ajustado pela chance de fechar de cada etapa' },
+  { key: 'median_deal_amount', kind: 'currency', hint: 'Valor típico; não se desloca por um negócio atípico' },
+  { key: 'avg_deal_amount', kind: 'currency', hint: 'Complemento do valor típico' },
+  { key: 'median_sales_cycle_days', kind: 'days', hint: 'Da abertura até o ganho' },
 ];
 
 type State =
@@ -123,25 +126,19 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
         <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." />
       ) : null}
       {kpiPayload ? (
-        <section className="space-y-3">
-          <header>
-            <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">Indicadores comerciais</h3>
-            <p className="mt-0.5 text-xs text-[color:var(--minimal-text-secondary)]">
-              Cada indicador declara a data que define seu recorte, para que posição atual e fluxo do período não sejam lidos como a mesma coisa.
-            </p>
-          </header>
-          <AnalyticsKpiGrid payload={kpiPayload} items={COMMERCIAL_KPIS} state={displayState} />
+        <>
+          <AnalyticsKpiGrid
+            payload={kpiPayload}
+            primary={COMMERCIAL_PRIMARY}
+            secondary={COMMERCIAL_SECONDARY}
+            state={displayState}
+            title="Indicadores comerciais"
+            description="Cada indicador informa a data que define seu recorte, para que posição de hoje e resultado do período não sejam confundidos."
+          />
           <AnalyticsKpiLimitations payload={kpiPayload} />
-        </section>
+        </>
       ) : null}
-      {dataState?.status !== 'empty' ? <div className="gso-pilot-kpi-grid grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard state={displayState} temporalType="Fluxo no período" label="Negócios totais" value={kpis.totalDeals.toLocaleString('pt-BR')} hint="No funil comercial" source="Total de negócios no funil comercial, considerando o período e os filtros selecionados." />
-        <KpiCard state={displayState} temporalType="Posição dos registros" label="Em aberto" value={kpis.openDeals.toLocaleString('pt-BR')} hint="Ainda não fechados" source="Negócios que ainda não chegaram a um estágio de fechado (nem ganho, nem perdido)." />
-        <KpiCard state={displayState} temporalType="Fluxo no período" label="Ganhos" value={kpis.wonDeals.toLocaleString('pt-BR')} hint={formatCountLabel(kpis.lostDeals, 'perdido', 'perdidos')} source="Negócios fechados como ganhos no período." />
-        <KpiCard state={displayState} temporalType="Fluxo no período" label="Receita ganha" value={formatCurrencyBRL(kpis.wonRevenue)} hint="Negócios ganhos" source="Soma do valor dos negócios ganhos no período." />
-        <KpiCard className="gso-kpi-secondary" state={displayState} temporalType="Fluxo no período" label="Conversão" value={formatPercent(kpis.conversionRate)} hint="Ganhos sobre fechados" source="Negócios ganhos divididos pelo total de negócios fechados (ganhos mais perdidos). Os em aberto não entram na conta." tone={kpis.conversionRate >= 0.3 ? 'neutral' : 'warning'} />
-        <KpiCard className="gso-kpi-secondary" state={displayState} temporalType="Fluxo no período" label="Ticket médio" value={formatCurrencyBRL(kpis.avgTicket)} hint="Por negócio ganho" source="Receita ganha dividida pela quantidade de negócios ganhos no período." />
-      </div> : null}
+
 
       {dataState?.status !== 'empty' ? <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <ChartCard title="Funil por estágio" description="Quantidade de negócios em cada estágio do funil comercial.">
@@ -164,7 +161,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
       {dataState?.status !== 'empty' ? <ChartCard title="Negócios por responsável" description="Responsável pelo negócio no HubSpot.">
         {byOwner.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[520px] text-sm">
+            <table className="gso-analytics-responsive-table w-full min-w-[520px] text-sm">
               <thead>
                 <tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]">
                   <th className="py-2 pr-4">Responsável</th>
@@ -179,14 +176,14 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
                     key={owner.ownerId ?? owner.ownerName}
                     className="border-b border-[color:var(--minimal-border)] last:border-0"
                   >
-                    <td className="py-2 pr-4 text-[color:var(--minimal-text)]">{owner.ownerName}</td>
-                    <td className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text)]">
+                    <td data-label="Responsável" className="py-2 pr-4 text-[color:var(--minimal-text)]">{owner.ownerName}</td>
+                    <td data-label="Negócios" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text)]">
                       {owner.dealCount.toLocaleString('pt-BR')}
                     </td>
-                    <td className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text)]">
+                    <td data-label="Ganhos" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text)]">
                       {owner.wonCount.toLocaleString('pt-BR')}
                     </td>
-                    <td className="py-2 text-right tabular-nums text-[color:var(--minimal-text)]">
+                    <td data-label="Receita ganha" className="py-2 text-right tabular-nums text-[color:var(--minimal-text)]">
                       {formatCurrencyBRL(owner.wonRevenue)}
                     </td>
                   </tr>

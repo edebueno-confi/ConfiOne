@@ -321,3 +321,60 @@
   .gso-high-density-ui .gso-visual-v1-domain-frame .gso-hd-domain-frame-header { min-height: 0; }
   .gso-high-density-ui .gso-visual-v1-domain-frame .gso-hd-domain-frame-aside { max-width: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   Leitura no celular
+   ---------------------------------------------------------------------------
+   Auditoria de 2026-08-07: as tabelas de detalhamento usavam largura mínima
+   entre 420px e 720px, o que forçava rolagem horizontal em qualquer aparelho.
+   Rolar na horizontal para ler uma linha é o pior padrão possível num painel:
+   o rótulo sai da tela junto com o valor.
+
+   Abaixo de 640px cada linha vira um cartão empilhado. O cabeçalho de coluna
+   passa a ser prefixo da célula, via `data-label`, então nenhum valor aparece
+   sem o nome do que representa.
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .gso-analytics-responsive-table { min-width: 0 !important; }
+  .gso-analytics-responsive-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .gso-analytics-responsive-table,
+  .gso-analytics-responsive-table tbody,
+  .gso-analytics-responsive-table tr,
+  .gso-analytics-responsive-table td { display: block; width: 100%; }
+  .gso-analytics-responsive-table tr {
+    border: 1px solid var(--minimal-border);
+    border-radius: 0.65rem;
+    padding: 0.5rem 0.65rem;
+    margin-bottom: 0.5rem;
+  }
+  .gso-analytics-responsive-table td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.2rem 0;
+    text-align: right;
+  }
+  .gso-analytics-responsive-table td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    text-align: left;
+    font-weight: 500;
+    color: var(--minimal-text-tertiary);
+  }
+  /* A primeira célula é o identificador da linha e ganha destaque de título. */
+  .gso-analytics-responsive-table td:first-child {
+    justify-content: flex-start;
+    text-align: left;
+    font-weight: 600;
+    padding-bottom: 0.35rem;
+    margin-bottom: 0.35rem;
+    border-bottom: 1px solid var(--minimal-border);
+  }
+  .gso-analytics-responsive-table td:first-child::before { content: none; }
+
+  /* O cartão de indicador ocupa a largura inteira: valor monetário partido em
+     duas colunas de 390px perde a legibilidade que justifica o cartão. */
+  .gso-high-density-ui .gso-visual-v1-kpi { padding-left: 0.85rem; padding-right: 0.85rem; }
+  .gso-high-density-ui .gso-visual-v1-kpi p:first-child { font-size: 1.35rem; }
+}

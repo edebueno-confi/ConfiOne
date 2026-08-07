@@ -938,3 +938,94 @@ Depois que o espelhamento estiver ativo e comprovado por alguns ciclos, arquivar
 `Central-Confi` no GitHub. Arquivo, não exclusão: o histórico permanece legível e
 o repositório para de aceitar escrita, o que remove a duplicidade de vez sem
 perder nada.
+
+---
+
+## 17. Auditoria de duplicidade, vocabulário e responsividade
+
+Levantada pela operação depois da seção 15. O defeito é meu: acrescentei os
+indicadores novos **ao lado** dos antigos em vez de substituí-los.
+
+### 17.1 O que a auditoria encontrou
+
+**Comercial — 14 cartões, com duas colisões críticas:**
+
+| Duplicidade | Por que é grave |
+| --- | --- |
+| "Receita ganha" aparecia **duas vezes com números diferentes** | Coortes de data distintas sob o mesmo nome. Num painel de decisão isso é pior que um número ausente: destrói a confiança em todos os outros. |
+| "Ticket médio" aparecia duas vezes | Idem |
+| "Conversão" ≡ "Taxa de ganho" | Mesma métrica, dois nomes |
+| "Em aberto" (contagem) vs "Pipeline aberto" (valor) | Nomes sugerem o mesmo conceito |
+| "Negócios totais" vs "Negócios criados" | Ambíguo: totais de quê, em que recorte |
+
+**Suporte:** vocabulário misturado na mesma tela — "Tickets totais" e
+"Atendimentos recebidos", "Abertos" e "Fila em aberto", "Encerrados" e
+"Atendimentos resolvidos", estes dois últimos com coortes diferentes.
+
+**Customer Success:** 11 cartões numa lista plana, sem hierarquia.
+
+**Responsividade:** grade em duas colunas já no celular, com valores monetários
+truncados em 390px; e **nove tabelas com largura mínima de 420 a 720px**,
+forçando rolagem horizontal. Rolar na horizontal é o pior padrão possível num
+painel, porque o rótulo sai da tela junto com o valor.
+
+### 17.2 Decisões de vocabulário registradas
+
+Tomadas pela operação: a unidade comercial é **negócio**; a unidade de suporte é
+**atendimento**. Sinônimos ficam proibidos na interface. Os indicadores antigos
+foram **substituídos**, não mantidos em paralelo.
+
+### 17.3 Glossário canônico
+
+`analytics-vocabulary.mjs` passa a ser a única fonte de nome de indicador. A
+regra é **um conceito, um nome, uma definição, um lugar**. A tela escolhe *quais*
+indicadores mostrar; nunca *como chamá-los*.
+
+Uma chave sem rótulo canônico não cai na chave interna: devolve
+"Indicador sem nome definido", porque expor nome interno ao usuário é pior que
+admitir uma lacuna de contrato.
+
+### 17.4 Hierarquia
+
+`AnalyticsKpiGrid` passou a separar **indicadores de decisão** — no máximo
+quatro, maiores e primeiro — de **indicadores de apoio**, menores e depois. Uma
+grade plana de doze cartões não é um painel, é uma lista. O limite de quatro é
+verificado por teste.
+
+### 17.5 Responsividade
+
+- Uma coluna abaixo de 640px na grade de indicadores.
+- As nove tabelas ganharam `gso-analytics-responsive-table`: abaixo de 640px
+  cada linha vira um cartão empilhado e **o cabeçalho de coluna passa a prefixar
+  a célula** via `data-label`, então nenhum valor aparece sem o nome do que
+  representa. 38 células rotuladas.
+- A primeira célula vira título do cartão, separando identificação de medida.
+
+### 17.6 Testes que impedem a reincidência
+
+`analytics-vocabulary.test.mjs` falha se:
+
+- dois indicadores compartilharem o mesmo rótulo;
+- alguma tela usar termo fora do glossário — pegou **sete resíduos**, incluindo
+  dois cartões no Resumo e uma frase que expunha vocabulário interno ao usuário;
+- alguma tela declarar o mesmo indicador duas vezes;
+- algum bloco primário passar de quatro indicadores.
+
+`analytics-kpi-surfaces.test.mjs` passou a exigir que **nenhuma tela declare
+rótulo próprio** — foi exatamente isso que permitiu a duplicidade original.
+
+### 17.7 Validação
+
+| Verificação | Resultado |
+| --- | --- |
+| `node --test`, cinco arquivos | **48 de 48** |
+| `npm run web:build` | **aprovado** |
+| `npm run lint` | **0 erros** |
+| `npm run local:qa:secret-scan` | **aprovado**, 2.083 arquivos |
+
+### 17.8 O que fica pendente de QA visual
+
+As mudanças de layout foram validadas por build e teste de contrato, **não por
+inspeção visual em navegador**. Falta abrir as cinco abas em 1920×1080, 1366×768
+e 390×844, nos dois temas, e registrar evidência por rota. É o próximo passo
+natural e exige a instância local em pé.
