@@ -467,3 +467,27 @@ decisão de onde a documentação vive.
 Regra de manutenção: a ficha técnica deve derivar do código, nunca ser escrita em
 paralelo. Documentação que diverge do comportamento real é pior que documentação
 ausente, porque tem aparência de autoridade.
+
+## Pipelines, etapas e gráficos do Dashboard — mapeado em 2026-08-07
+
+Mapa completo em `docs/DASHBOARD_PIPELINES_E_GRAFICOS_ROADMAP.md`. Nada
+implementado; levantamento com medição contra dados reais.
+
+**Defeito confirmado:** a consolidação de etapas compara texto cru, então
+`Em Tratativa` e `Em tratativa ` viram duas linhas. Correção pendente, a entrar
+junto com o mapeamento de etapas canônicas — sozinha resolveria 2 de 6 conceitos
+duplicados e daria falsa impressão de conclusão.
+
+**Achado grave:** pipelines de frentes diferentes somados na mesma aba. O
+"Criadouro de Tíquetes" concentra 81% dos tickets com 0,6% em aberto — é
+repositório, não fila. "Fale conosco" e "Whatsapp" guardam 84% da fila com idade
+mediana de 316 e 428 dias. A espera mediana de 346 dias publicada hoje está
+correta e **narrativamente enganosa**. Exige decisão de produto sobre quais
+pipelines pertencem a cada aba.
+
+**Seletor de pipelines** precisa de marcar e desmarcar todos.
+
+**Sub-abas temporais por domínio:** viáveis hoje em Suporte, Comercial e
+Financeiro, que têm data real de abertura e fechamento. Não viáveis em Carteira e
+Retenção, cuja série de snapshot começou em 2026-08-07 e tem um único ponto —
+abrir sub-aba vazia contradiz a regra de nunca sugerir tendência sem base.
