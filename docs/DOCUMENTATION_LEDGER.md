@@ -7217,3 +7217,20 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - Também registrado: diagnóstico de SMTP de 2026-08-06 e relatório de estado e
   plano de continuidade.
 - Impacto futuro na FAQ: nenhum.
+
+## SYNC-OMIE-01 — diagnóstico do 502 na promoção do snapshot — 2026-08-06
+
+- Relatório: `docs/reports/2026-08-06_omie-promocao-timeout-diagnostico.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Achado: as funções de sincronização estão publicadas e ativas no remoto. O
+  defeito do OMIE é 502 após ~48 s, causado por `statement timeout` na promoção
+  do snapshot, não por ausência de publicação nem por credencial.
+- Entrega: migration `20260806150000_omie_promotion_timeout_hardening.sql`
+  versionada no Git. **Não aplicada no remoto** — depende de autorização.
+- Evidência: `analytics_finance_sync_runs` com três execuções `failed` e a
+  mensagem `canceling statement due to statement timeout`; logs de Edge Function
+  com 502 em 48.663 ms, 47.131 ms e 48.798 ms; `schema_migrations` com
+  `20260806120000` como última aplicada.
+- Confirmado resolvido: vazamento de "Edge Function" e "HTTP 503" na interface,
+  corrigido em `18237ac` e coberto por teste 7/7.
+- Impacto futuro na FAQ: nenhum.

@@ -1,5 +1,26 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+## Adendo corrente — sincronismo OMIE e HubSpot — 2026-08-06
+
+- Premissa anterior corrigida: as funções de sincronização **estão** publicadas e
+  ativas no remoto `jzmmvfcmruasqmrdmbup`. `hubspot-sync` v37, `omie-sync` v31 e
+  `analytics-sequential-sync` v2, todas `ACTIVE`.
+- HubSpot funciona: `hubspot-orchestrator-start` responde 202 e worker/dispatcher
+  respondem 200. `analytics-sequential-sync` conclui em 200, com 79 s a 118 s.
+- `omie-sync` devolve **502 após ~48 s**, de forma reprodutível. A coleta funciona
+  (3.761 a 3.768 linhas no staging); o que falha é a promoção do snapshot, com
+  `canceling statement due to statement timeout` gravado em
+  `analytics_finance_sync_runs`. Última execução completa: 2026-08-06 00:35 UTC.
+- Correção existente e **não aplicada** no remoto:
+  `20260806150000_omie_promotion_timeout_hardening.sql`, agora versionada no Git.
+  A última migration aplicada é `20260806120000_profile_avatars_self_service_v1`.
+- Vazamento técnico já resolvido: o commit `18237ac` traduziu 502, 503 e
+  `BOOT_ERROR` para linguagem de produto, sem status HTTP nem nome de função.
+  Coberto por `analytics-sync-error.test.mjs`, 7/7.
+- Achado secundário: `analytics-scheduled-run` v34 está publicada a partir de
+  `/Projetos/GSO-integrations-04/`, checkout diferente do canônico.
+- Relatório: `docs/reports/2026-08-06_omie-promocao-timeout-diagnostico.md`.
+
 ## Adendo corrente — sessão de troca de senha — 2026-08-06
 
 - Defeito corrigido: trocar a senha pela Admin API invalida o refresh token
