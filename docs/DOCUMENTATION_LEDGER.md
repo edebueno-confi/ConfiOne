@@ -7200,3 +7200,20 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
   `exhaustive-deps` seguem abertos em telas publicadas, listados no relatório;
   nenhum backend, contrato, RPC, view ou permissão alterado.
 - Impacto futuro na FAQ: nenhum.
+
+## ACCESS-01-4 — sessão válida após troca de senha — 2026-08-06
+
+- Relatório: `docs/reports/2026-08-06_estado-atual-e-plano-de-continuidade.md`.
+- Branch: `codex/react-router-v8-migration-20260804`.
+- Entrega: `refreshAuthClaims(newPassword?)` reautentica quando a renovação de
+  sessão falha depois da troca de senha, e `PasswordChangeGate` exige a senha
+  atual antes de enviar.
+- Causa raiz: a troca pela Admin API invalida o refresh token corrente; a
+  renovação voltava HTTP 400 e prendia o usuário no gate.
+- Evidência: typecheck 0 erros, contracts typecheck aprovado, eslint sem erro nos
+  arquivos alterados, `account-self-service-contract` 8/8, secret scan 2037/0.
+- Limites: `web:build` e QA visual não executados nesta sessão; ambiente local em
+  uso pelo operador.
+- Também registrado: diagnóstico de SMTP de 2026-08-06 e relatório de estado e
+  plano de continuidade.
+- Impacto futuro na FAQ: nenhum.

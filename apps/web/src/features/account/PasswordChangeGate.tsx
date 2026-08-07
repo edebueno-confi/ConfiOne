@@ -45,6 +45,10 @@ export function PasswordChangeGate({ children }: { children: ReactNode }) {
       setError('A confirmação não confere com a nova senha.');
       return;
     }
+    if (!currentPassword) {
+      setError('Informe sua senha atual.');
+      return;
+    }
     const violation = selfPasswordPolicyViolation(newPassword);
     if (violation) {
       setError(violation);
@@ -59,7 +63,10 @@ export function PasswordChangeGate({ children }: { children: ReactNode }) {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmation('');
-      await refreshAuthClaims();
+      // Alterar a senha pelo Admin API pode invalidar o refresh token atual.
+      // Nesse caso, a renovacao retorna 400; a funcao abaixo reautentica com a
+      // nova senha e deixa o Auth emitir uma sessao valida com os claims novos.
+      await refreshAuthClaims(newPassword);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Não foi possível trocar a senha agora.');
     } finally {

@@ -1,5 +1,21 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+## Adendo corrente — sessão de troca de senha — 2026-08-06
+
+- Defeito corrigido: trocar a senha pela Admin API invalida o refresh token
+  corrente. `refreshSession` voltava HTTP 400 e o usuário ficava preso no gate de
+  troca obrigatória mesmo com a senha já alterada.
+- `refreshAuthClaims(newPassword?)` passou a reautenticar com a senha recém-definida
+  quando a renovação falha, deixando o Auth emitir sessão válida com os claims novos.
+- `PasswordChangeGate` passou a exigir a senha atual antes de enviar a troca.
+- Validação: typecheck do web com 0 erros, `contracts:typecheck` aprovado,
+  eslint sem erro nos dois arquivos, `account-self-service-contract` 8/8 e secret
+  scan com 2037 arquivos e 0 matches.
+- Não validado nesta sessão: `web:build` e QA visual no navegador. O ambiente
+  local estava em uso pelo operador na porta 4173 e o sandbox Linux não resolve os
+  symlinks de workspace do `node_modules`; o typecheck foi executado com mapeamento
+  explícito de `@genius-support-os/contracts`.
+
 ## Adendo corrente — convites internos e SMTP — 2026-08-06
 
 - O fluxo remoto de convite interno possui a correção de claim do `service_role`

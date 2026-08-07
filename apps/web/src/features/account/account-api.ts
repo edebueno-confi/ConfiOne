@@ -191,8 +191,16 @@ export function requiresPasswordChange(appMetadata: Record<string, unknown> | un
  * O JWT em memoria ainda carrega o `app_metadata` anterior depois da troca de
  * senha. Renovar a sessao e o que faz a aplicacao enxergar o marcador limpo.
  */
-export async function refreshAuthClaims() {
+export async function refreshAuthClaims(newPassword?: string) {
   const client = requireSupabaseBrowserClient();
   const { error } = await client.auth.refreshSession();
-  if (error) throw toAppError(error, 'Falha ao renovar a sessão após a troca de senha.');
+  if (!error) return;
+
+  if (!newPassword) throw toAppError(error, 'Falha ao renovar a sessão após a troca de senha.');
+  const { data: userData, error: userError } = await client.auth.getUser();
+  const email = userData.user?.email?.trim();
+  if (userError || !email) throw toAppError(error, 'Falha ao renovar a sessão após a troca de senha.');
+
+  const { error: reauthError } = await client.auth.signInWithPassword({ email, password: newPassword });
+  if (reauthError) throw toAppError(reauthError, 'Falha ao renovar a sessão após a troca de senha.');
 }
