@@ -929,8 +929,18 @@ existir porque não há mais nada a decidir, e os espelhos não podem divergir.
 O nome de leitura passa a ser o do produto; o legado continua recebendo tudo,
 sem perda de histórico e sem quebrar integração externa.
 
-**Não executado neste ciclo:** a reconfiguração de remoto foi bloqueada pela
-política de permissões do ambiente. É o único item que exige execução manual.
+**Executado em 2026-08-07.** A reconfiguração foi bloqueada pela política de
+permissões do ambiente e rodada manualmente pela operação. Resultado verificado:
+
+```
+origin  https://github.com/edebueno-confi/Genius-OS.git (fetch)
+origin  https://github.com/edebueno-confi/Genius-OS.git (push)
+origin  https://github.com/edebueno-confi/Central-Confi.git (push)
+```
+
+O push seguinte publicou 20 commits **nos dois repositórios em um único comando**.
+Verificação por `git ls-remote`: local, Genius-OS e Central-Confi apontam para o
+mesmo commit `6914a7f`. A ambiguidade deixou de existir.
 
 ### 16.4 Recomendação complementar
 

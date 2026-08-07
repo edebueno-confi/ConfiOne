@@ -1,5 +1,27 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+## Adendo corrente — remotos consolidados e trabalho publicado — 2026-08-07
+
+Relatório: seção 16 de `docs/reports/2026-08-07_kpi-discovery-e-lote-p0.md`.
+
+**A duplicidade de repositório está resolvida.** `origin` passou a ter uma URL de
+leitura, no repositório com o nome do produto, e **duas URLs de push**. Um
+`git push` publica nos dois espelhos ao mesmo tempo, então não há mais o que
+decidir nem como divergir.
+
+```
+origin  https://github.com/edebueno-confi/Genius-OS.git (fetch)
+origin  https://github.com/edebueno-confi/Genius-OS.git (push)
+origin  https://github.com/edebueno-confi/Central-Confi.git (push)
+```
+
+**20 commits publicados**, incluindo todo o lote de KPIs. Verificado por
+`git ls-remote`: local, Genius-OS e Central-Confi no mesmo commit `6914a7f`.
+
+Recomendação que segue aberta: depois de alguns ciclos com o espelhamento
+comprovado, arquivar `Central-Confi` no GitHub. Arquivar, não excluir — o
+histórico continua legível e o repositório para de aceitar escrita.
+
 ## Adendo corrente — interfaces ligadas e remotos investigados — 2026-08-07
 
 Relatório: seções 15 e 16 de `docs/reports/2026-08-07_kpi-discovery-e-lote-p0.md`.
