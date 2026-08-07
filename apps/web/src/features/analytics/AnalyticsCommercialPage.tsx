@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MinimalState } from '../../components/minimal-states';
-import { getCommercialSnapshot, listAnalyticsSourceConfig, listHubspotSyncRuns } from './analytics-api';
+import { getCommercialKpisV2, getCommercialSnapshot, listAnalyticsSourceConfig, listHubspotSyncRuns } from './analytics-api';
 import {
   formatCurrencyBRL,
   formatPercent,
@@ -23,6 +23,22 @@ import { resolveAnalyticsPeriod } from './analytics-periods';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
 import { CommercialFunnelChart, CommercialMonthlyChart } from './charts/AnalyticsCharts';
 import { AnalyticsExecutionMeta, AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
+import { AnalyticsKpiGrid, AnalyticsKpiLimitations, type KpiDescriptor } from './AnalyticsKpiGrid';
+
+// Indicadores com coorte declarada, publicados pelo read model de KPI.
+// Pipeline e posicao na data de corte; criados usam data de criacao; ganhos,
+// win rate, ticket e ciclo usam data de fechamento. Misturar as tres coortes
+// sob o mesmo filtro foi o erro que a versao anterior cometia em silencio.
+const COMMERCIAL_KPIS: KpiDescriptor[] = [
+  { key: 'open_pipeline_amount', label: 'Pipeline aberto', kind: 'currency', hint: 'Valor em negociação na data de hoje' },
+  { key: 'weighted_pipeline_amount', label: 'Pipeline ponderado', kind: 'currency', hint: 'Valor ajustado pela probabilidade de cada etapa' },
+  { key: 'created_deals', label: 'Negócios criados', kind: 'count', hint: 'Abertos dentro do período' },
+  { key: 'won_amount', label: 'Receita ganha', kind: 'currency', hint: 'Encerrados como ganhos no período' },
+  { key: 'win_rate', label: 'Taxa de ganho', kind: 'percent', hint: 'Ganhos sobre o total de encerrados no período' },
+  { key: 'median_deal_amount', label: 'Ticket mediano', kind: 'currency', hint: 'Resiste a negócios atípicos, ao contrário da média', secondary: true },
+  { key: 'avg_deal_amount', label: 'Ticket médio', kind: 'currency', hint: 'Complemento da mediana', secondary: true },
+  { key: 'median_sales_cycle_days', label: 'Ciclo de vendas', kind: 'days', hint: 'Mediana entre criação e ganho', secondary: true },
+];
 
 type State =
   | { phase: 'loading' }
@@ -44,6 +60,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
   const [configuredPipelines, setConfiguredPipelines] = useState<AnalyticsSourceConfig[]>([]);
   const [excludedPipelineIds, setExcludedPipelineIds] = useState<string[]>([]);
   const [latestHubspotRun, setLatestHubspotRun] = useState<import('./analytics-model').SyncRun | null>(null);
+  const [kpiPayload, setKpiPayload] = useState<unknown>(null);
 
   useEffect(() => {
     setFilters((current) => current.from === period.from && current.to === period.to ? current : { ...current, ...period });
@@ -52,6 +69,10 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
   useEffect(() => {
     let cancelled = false;
     setState((current) => current.phase === 'ready' ? current : { phase: 'loading' });
+
+    void getCommercialKpisV2(filters)
+      .then((payload) => { if (!cancelled) setKpiPayload(payload); })
+      .catch(() => { if (!cancelled) setKpiPayload(null); });
 
     Promise.all([getCommercialSnapshot(filters, excludedPipelineIds), listAnalyticsSourceConfig(), listHubspotSyncRuns()])
       .then(([snapshot, configs, runs]) => {
@@ -100,6 +121,18 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
       <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} ownerOptions={ownerOptions} extraFields={pipelineOptions.length > 0 ? <AnalyticsPipelineCombobox inline storageKey="analytics-commercial-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.dealCount }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null} />
       {dataState?.status === 'empty' ? (
         <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." />
+      ) : null}
+      {kpiPayload ? (
+        <section className="space-y-3">
+          <header>
+            <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">Indicadores comerciais</h3>
+            <p className="mt-0.5 text-xs text-[color:var(--minimal-text-secondary)]">
+              Cada indicador declara a data que define seu recorte, para que posição atual e fluxo do período não sejam lidos como a mesma coisa.
+            </p>
+          </header>
+          <AnalyticsKpiGrid payload={kpiPayload} items={COMMERCIAL_KPIS} state={displayState} />
+          <AnalyticsKpiLimitations payload={kpiPayload} />
+        </section>
       ) : null}
       {dataState?.status !== 'empty' ? <div className="gso-pilot-kpi-grid grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard state={displayState} temporalType="Fluxo no período" label="Negócios totais" value={kpis.totalDeals.toLocaleString('pt-BR')} hint="No funil comercial" source="Total de negócios no funil comercial, considerando o período e os filtros selecionados." />

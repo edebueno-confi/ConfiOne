@@ -5,7 +5,7 @@ import type {
   AnalyticsBlockState,
   AnalyticsSourceStatusPayload,
 } from "@genius-support-os/contracts";
-import { getAnalyticsSourceStatus, getCeoHistory, getCeoSnapshot } from "./analytics-api";
+import { getAnalyticsSourceStatus, getCeoHistory, getCeoSnapshot, getExecutiveKpisV2 } from "./analytics-api";
 import {
   analyticsGlobalToBlockState,
   analyticsSourceToBlockState,
@@ -28,6 +28,7 @@ import {
   rankExecutivePipelines,
 } from "./analytics-executive";
 import { analyticsHref } from "./analytics-navigation";
+import { AnalyticsKpiGrid, AnalyticsKpiLimitations, type KpiDescriptor } from "./AnalyticsKpiGrid";
 
 const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
   fresh: "Dados atualizados",
@@ -50,6 +51,22 @@ type MetricDelta = {
   label: string;
   tone: "positive" | "negative" | "neutral";
 } | null;
+// O Resumo reusa os read models de cada area em vez de recalcular. Isso impede
+// que a mesma metrica apareca com valores diferentes entre a visao geral e a
+// tela da area, que e a falha classica de dashboards executivos.
+const EXECUTIVE_KPIS: KpiDescriptor[] = [
+  { key: 'active_customers', label: 'Clientes ativos', kind: 'count', hint: 'Carteira ativa na data de hoje' },
+  { key: 'mrr_total', label: 'Receita recorrente', kind: 'currency', hint: 'Soma da recorrência dos clientes ativos' },
+  { key: 'open_pipeline_amount', label: 'Pipeline aberto', kind: 'currency', hint: 'Valor em negociação hoje' },
+  { key: 'win_rate', label: 'Taxa de ganho', kind: 'percent', hint: 'Sobre negócios encerrados no período' },
+  { key: 'open_backlog', label: 'Fila de atendimento', kind: 'count', hint: 'Em aberto na data de hoje' },
+  { key: 'created_tickets', label: 'Atendimentos recebidos', kind: 'count', hint: 'Abertos no período', secondary: true },
+  { key: 'received_amount', label: 'Recebimentos', kind: 'currency', hint: 'Baixas efetivas no período', secondary: true },
+  { key: 'overdue_receivables', label: 'Recebíveis vencidos', kind: 'currency', hint: 'Em atraso na data de hoje', warnWhenPositive: true, secondary: true },
+  { key: 'mrr_overdue', label: 'Recorrência com atraso', kind: 'currency', hint: 'De clientes com título vencido', warnWhenPositive: true, secondary: true },
+  { key: 'nrr', label: 'Retenção líquida', kind: 'percent', secondary: true },
+];
+
 export function AnalyticsCeoPage({
   sharedPeriod,
   onSharedPeriodChange,
@@ -73,6 +90,7 @@ export function AnalyticsCeoPage({
     error?: boolean;
   }>({ loading: true });
   const [refreshing, setRefreshing] = useState(false);
+  const [executiveKpis, setExecutiveKpis] = useState<unknown>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   useEffect(
@@ -87,6 +105,10 @@ export function AnalyticsCeoPage({
         ? { ...current, loading: false, error: undefined }
         : { loading: true },
     );
+    void getExecutiveKpisV2(filters)
+      .then((payload) => setExecutiveKpis(payload))
+      .catch(() => setExecutiveKpis(null));
+
     Promise.all([getCeoSnapshot(filters), getCeoHistory(filters), sourceStatus ? Promise.resolve(sourceStatus) : getAnalyticsSourceStatusSafe()])
       .then(([data, history, liveSourceStatus]) => {
         if (!cancelled) {
@@ -180,6 +202,7 @@ export function AnalyticsCeoPage({
   return (
     <ExecutiveHdCanvas
       data={data}
+      executiveKpis={executiveKpis}
       state={state}
       filters={filters}
       domainCards={domainCards}
@@ -288,6 +311,7 @@ function buildDomainCards(
 
 function ExecutiveHdCanvas({
   data,
+  executiveKpis,
   state,
   filters,
   domainCards,
@@ -306,6 +330,7 @@ function ExecutiveHdCanvas({
   syncBusy,
 }: {
   data: CeoSnapshot;
+  executiveKpis: unknown;
   state?: AnalyticsBlockState;
   filters: AnalyticsFilters;
   domainCards: DomainCard[];
@@ -369,6 +394,19 @@ function ExecutiveHdCanvas({
           ) : null}
         </div>
       </section>
+
+      {executiveKpis ? (
+        <section className="space-y-3" aria-label="Indicadores consolidados">
+          <header>
+            <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">Indicadores consolidados</h3>
+            <p className="mt-0.5 text-xs text-[color:var(--minimal-text-secondary)]">
+              Reúne Comercial, Atendimento, Carteira e Financeiro a partir da mesma fonte de cada área, para que nenhum número divirja entre esta visão e a tela de origem.
+            </p>
+          </header>
+          <AnalyticsKpiGrid payload={executiveKpis} items={EXECUTIVE_KPIS} state={state} columns={5} />
+          <AnalyticsKpiLimitations payload={executiveKpis} />
+        </section>
+      ) : null}
 
           <div className="gso-hd-filter-bar gso-hd-pulse" aria-label="Filtros da análise">
         <div className="gso-hd-filter-context">

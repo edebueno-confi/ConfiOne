@@ -825,3 +825,58 @@ de aging e R$ 3.096.643,00 de pipeline comercial aberto.
    R$ 461.032,48 na planilha histórica de CS.
 5. **Nenhum push realizado.** O remoto canônico entre `origin` e `genius-os`
    continua sem definição da operação.
+
+---
+
+## 15. Interfaces: as quatro áreas passam a mostrar os indicadores
+
+Até aqui os read models estavam publicados e testados, mas só Customer Success
+os exibia. Comercial, Suporte e Resumo continuavam nas RPCs anteriores, e por
+isso o que foi construído não aparecia para quem usa o produto.
+
+### 15.1 Componente compartilhado, tradução única
+
+`AnalyticsKpiGrid.tsx` renderiza qualquer payload de KPI a partir de uma lista de
+descritores. A tradução de código técnico para linguagem gerencial continua
+acontecendo **uma única vez**, no contrato de apresentação, e as quatro áreas
+herdam o mesmo comportamento: ausência de fonte nunca vira zero, cobertura
+parcial é sinalizada no tom do cartão, e a coorte de data de cada indicador é
+sempre declarada.
+
+`AnalyticsKpiLimitations` exibe, em linguagem de negócio, o que limita a leitura
+corrente — e some quando não há limitação, para não virar ruído.
+
+### 15.2 O que cada tela ganhou
+
+**Comercial:** pipeline aberto e ponderado, negócios criados, receita ganha,
+taxa de ganho por coorte de fechamento, ticket mediano e médio, ciclo de vendas.
+A versão anterior misturava três coortes sob o mesmo filtro sem avisar.
+
+**Suporte:** atendimentos recebidos e resolvidos, fila em aberto, idade mediana
+da fila, tempo de resolução mediano e no pior caso, primeira resposta e taxa de
+reabertura. Cinco desses não existiam antes desta correção.
+
+**Resumo:** dez indicadores consolidando as quatro áreas. **Reusa os read models
+de cada área em vez de recalcular** — é o que impede a falha clássica de uma
+métrica aparecer com valores diferentes entre a visão geral e a tela de origem.
+
+### 15.3 Teste que protege a fronteira
+
+`tests/scripts/analytics-kpi-surfaces.test.mjs` falha se qualquer tela:
+
+- deixar de consumir o read model da sua área;
+- navegar o payload cru ou comparar código de estado diretamente;
+- conter nome de propriedade, endpoint ou termo de infraestrutura;
+- declarar um indicador com rótulo de aparência técnica.
+
+O teste encontrou uma violação minha na primeira execução: um comentário no
+código citava o nome da propriedade corrigida. Reescrito.
+
+### 15.4 Validação
+
+| Verificação | Resultado |
+| --- | --- |
+| `node --test` nos quatro arquivos | **43 de 43** |
+| `npm run web:build` | **aprovado** |
+| `npm run lint` | **0 erros** |
+| `npm run local:qa:secret-scan` | **aprovado**, 2.081 arquivos |

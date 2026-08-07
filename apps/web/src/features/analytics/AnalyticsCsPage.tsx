@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { MinimalState } from '../../components/minimal-states';
-import { getCsSnapshot, listAnalyticsSourceConfig } from './analytics-api';
+import { getCsSnapshot, getSupportKpisV2, listAnalyticsSourceConfig } from './analytics-api';
 import {
   formatPercent,
   type AnalyticsPageProps,
@@ -23,6 +23,24 @@ import { resolveAnalyticsPeriod } from './analytics-periods';
 import { TicketMonthlyChart, TicketStatusChart } from './charts/AnalyticsCharts';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
 import { AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
+import { AnalyticsKpiGrid, AnalyticsKpiLimitations, type KpiDescriptor } from './AnalyticsKpiGrid';
+
+// Resolucao, tempo de resolucao e primeira resposta passaram a existir depois
+// que a ingestao foi corrigida para pedir os campos que a conta realmente
+// preenche. Reabertura continua dependendo do historico de etapa, ainda nao
+// ingerido, e por isso aparece como aguardando historico.
+// O detalhe tecnico da correcao esta no relatorio do ciclo, nao aqui: nomes de
+// propriedade nao pertencem a camada de apresentacao.
+const SUPPORT_KPIS: KpiDescriptor[] = [
+  { key: 'created_tickets', label: 'Atendimentos recebidos', kind: 'count', hint: 'Abertos dentro do período' },
+  { key: 'resolved_tickets', label: 'Atendimentos resolvidos', kind: 'count', hint: 'Encerrados dentro do período' },
+  { key: 'open_backlog', label: 'Fila em aberto', kind: 'count', hint: 'Posição na data de hoje', warnWhenPositive: false },
+  { key: 'median_backlog_age_days', label: 'Idade mediana da fila', kind: 'days', hint: 'Tempo desde a abertura dos que seguem em aberto' },
+  { key: 'median_time_to_resolution_days', label: 'Tempo de resolução', kind: 'days', hint: 'Mediana entre abertura e encerramento' },
+  { key: 'p90_time_to_resolution_days', label: 'Resolução no pior caso', kind: 'days', hint: 'Nove em cada dez resolvidos abaixo deste tempo', secondary: true },
+  { key: 'median_first_response_hours', label: 'Primeira resposta', kind: 'days', hint: 'Mediana até o primeiro retorno ao cliente', secondary: true },
+  { key: 'reopen_rate', label: 'Taxa de reabertura', kind: 'percent', hint: 'Resolvidos que voltaram a ser abertos', secondary: true },
+];
 
 type State =
   | { phase: 'loading' }
@@ -43,6 +61,7 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
   const [filters, setFilters] = useState<AnalyticsFilters>({ ...DEFAULT_ANALYTICS_FILTERS, ...period });
   const [configuredPipelines, setConfiguredPipelines] = useState<AnalyticsSourceConfig[]>([]);
   const [excludedPipelineIds, setExcludedPipelineIds] = useState<string[]>([]);
+  const [kpiPayload, setKpiPayload] = useState<unknown>(null);
 
   useEffect(() => {
     setFilters((current) => current.from === period.from && current.to === period.to ? current : { ...current, ...period });
@@ -51,6 +70,10 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
   useEffect(() => {
     let cancelled = false;
     setState((current) => current.phase === 'ready' ? current : { phase: 'loading' });
+
+    void getSupportKpisV2(filters)
+      .then((payload) => { if (!cancelled) setKpiPayload(payload); })
+      .catch(() => { if (!cancelled) setKpiPayload(null); });
 
     Promise.all([getCsSnapshot(filters, excludedPipelineIds), listAnalyticsSourceConfig()])
       .then(([snapshot, configs]) => {
@@ -97,6 +120,18 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
     <div className="gso-hd-domain-surface space-y-5">
       <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} priorityOptions={priorityOptions} stageLabel="Status" extraFields={pipelineOptions.length > 0 ? <AnalyticsPipelineCombobox inline storageKey="analytics-cs-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.ticketCount }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null} />
       {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." /> : null}
+      {kpiPayload ? (
+        <section className="space-y-3">
+          <header>
+            <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">Indicadores de atendimento</h3>
+            <p className="mt-0.5 text-xs text-[color:var(--minimal-text-secondary)]">
+              Cada indicador declara a data que define seu recorte. Fila em aberto é posição de hoje; recebidos e resolvidos são fluxo do período.
+            </p>
+          </header>
+          <AnalyticsKpiGrid payload={kpiPayload} items={SUPPORT_KPIS} state={dataState} />
+          <AnalyticsKpiLimitations payload={kpiPayload} />
+        </section>
+      ) : null}
       {dataState?.status !== 'empty' ? <div className="gso-pilot-kpi-grid grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard state={dataState} temporalType="Fluxo no período" label="Tickets totais" value={kpis.totalTickets.toLocaleString('pt-BR')} hint="Nos pipelines de suporte" source="Total de tickets nos pipelines de suporte ativos, considerando o período e os filtros selecionados." />
         <KpiCard state={dataState} temporalType="Posição dos registros" label="Abertos" value={kpis.openTickets.toLocaleString('pt-BR')} hint="Ainda não encerrados" source="Tickets que ainda não estão em um estágio de encerrado." />
