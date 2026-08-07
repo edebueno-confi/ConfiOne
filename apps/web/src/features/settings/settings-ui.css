@@ -543,8 +543,10 @@
   font-weight: 550;
 }
 .gso-ui-tab:hover { color: var(--ui-text); }
+/* O indicador de posição é o magenta da marca, o mesmo das abas do Dashboard.
+   Azul continua sendo cor de ação; magenta diz onde você está. */
 .gso-ui-tab[aria-current='page'],
-.gso-ui-tab[aria-selected='true'] { border-bottom-color: var(--ui-primary); color: var(--ui-primary-ink); font-weight: 600; }
+.gso-ui-tab[aria-selected='true'] { border-bottom-color: var(--selection-accent); color: var(--selection-accent); font-weight: 600; }
 
 /* -------------------------------------------------------------------------
    13. UiEmptyState

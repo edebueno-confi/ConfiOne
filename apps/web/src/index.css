@@ -39,6 +39,13 @@
   --genius-site-cyan: #6ad1e7;
   --genius-site-soft: #ebeffb;
   --genius-site-peach: #ffbc7d;
+
+  /* Indicador de posicao ("voce esta aqui"). Magenta da marca, separado do azul
+     de acao: azul age, magenta localiza. Vale para aba, trilho da barra lateral
+     e marcador de linha selecionada. */
+  --selection-accent: var(--color-brand-magenta);
+  --selection-accent-soft: color-mix(in srgb, var(--color-brand-magenta) 12%, transparent);
+
   --color-surface: #f4f7fc;
   --color-surface-strong: #ffffff;
   --color-border: #dce4f2;
@@ -182,7 +189,7 @@
   --sidebar-item-active-bg: #EEF2FF;
   --sidebar-item-active-text: #2563EB;
   --sidebar-item-active-border: transparent;
-  --sidebar-item-active-rail: transparent;
+  --sidebar-item-active-rail: var(--selection-accent);
   --sidebar-card-bg: var(--minimal-surface);
   --sidebar-card-border: var(--minimal-border);
   --sidebar-search-bg: var(--minimal-surface);
@@ -284,6 +291,10 @@
   --genius-site-cyan: #6ad1e7;
   --genius-site-soft: #172445;
   --genius-site-peach: #ffbc7d;
+
+  /* Mesmo papel no escuro; o magenta clareado ja vem de --color-brand-magenta. */
+  --selection-accent: var(--color-brand-magenta);
+  --selection-accent-soft: color-mix(in srgb, var(--color-brand-magenta) 20%, transparent);
   --color-surface: #071126;
   --color-surface-strong: #0f1d3a;
   --color-border: #263a63;
@@ -363,7 +374,7 @@
   --sidebar-item-active-bg: linear-gradient(90deg, rgba(59,130,246,0.28), rgba(99,102,241,0.16));
   --sidebar-item-active-text: #FFFFFF;
   --sidebar-item-active-border: rgba(129,140,248,0.2);
-  --sidebar-item-active-rail: #f472b6;
+  --sidebar-item-active-rail: var(--selection-accent);
   --sidebar-card-bg: rgba(15,31,68,0.78);
   --sidebar-card-border: rgba(148,163,184,0.16);
   --sidebar-search-bg: rgba(15,31,68,0.72);
@@ -1672,7 +1683,7 @@
   left: 0.85rem;
   height: 3px;
   border-radius: 0;
-  background: var(--hd-pink, var(--accent-500));
+  background: var(--selection-accent);
 }
 .gso-visual-v1-shell .gso-analytics-content {
   background: var(--visual-canvas);
@@ -5611,7 +5622,7 @@ table {
   left: 0.65rem;
   height: 2px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--genius-site-cyan), var(--genius-site-pink));
+  background: var(--selection-accent);
   content: '';
 }
 
@@ -6139,7 +6150,7 @@ table {
 .gso-visual-v1-shell.gso-pilot-shell .gso-workspace-tabs { border-top: 0; border-bottom: 1px solid var(--visual-border, var(--minimal-border)); padding-top: 0; }
 .gso-visual-v1-shell.gso-pilot-shell .gso-workspace-tab { border-radius: 0; padding-inline: 0.85rem; }
 .gso-visual-v1-shell.gso-pilot-shell .gso-workspace-tab[aria-current='page']::after {
-  background: var(--hd-pink, var(--accent-500));
+  background: var(--selection-accent);
 }
 .gso-visual-v1-overview.gso-executive-canvas { gap: 1.5rem; padding: 0.25rem 0 2.25rem; background: var(--visual-canvas, var(--minimal-canvas)); }
 .gso-visual-v1-overview.gso-executive-canvas .gso-hd-context { border-bottom: 1px solid var(--overview-rule, var(--minimal-border)); padding: 1.25rem 0 0.9rem; }

@@ -142,3 +142,50 @@ implementar ou descartar, esta em
 `docs/design/SETTINGS_BLUEPRINT_V4_FIELD_GAP_BACKLOG.md`. Quatro campos entram
 nesta refatoracao porque o dado ja existe no banco: ultimo acesso real,
 membro desde, foto do usuario e cobertura de areas.
+
+## 8. Densidade — critério medido, não impressão
+
+O operador apontou em 2026-08-07 que a tela entregue "parece 1366 mesmo em Full
+HD" e pediu o efeito de afastamento do blueprint. A comparação foi feita medindo
+o blueprint de Usuários e acesso contra a captura real da tela em produção.
+
+### 8.1 O que a medição mostrou
+
+| Aspecto | Blueprint | Tela atual | Efeito |
+| --- | --- | --- | --- |
+| Espaço vertical usado | 100% da altura, sem sobra | conteúdo termina a ~62%, com 37% de vazio abaixo | é a maior causa da sensação de zoom |
+| Ordem dos blocos | cabeçalho → indicadores → abas → tabela | cabeçalho → **abas** → indicadores → tabela | posição divergente do blueprint |
+| Faixa de indicadores | **um** cartão com 4 colunas separadas por filete de 1 px | **três** cartões soltos, com borda e vão entre eles | contorno onde não devia haver |
+| Barra de filtros | compacta, alinhada à esquerda, **dentro** do cartão da tabela | esticada por toda a largura, fora do cartão | rouba altura e dispersa o olho |
+| Tabela | dentro de um cartão, com rodapé de paginação fixo na base | sem cartão, sem rodapé, para onde os dados acabam | não preenche a viewport |
+| Altura de linha | ~58 px | ~67 px | 15% a mais por linha |
+| Painel de detalhe | linhas de rótulo e valor, sem caixa | campos de formulário com borda visível | contorno onde não devia haver |
+| Linhas visíveis | 6 + paginação | 3 e vazio | menos informação na mesma tela |
+
+### 8.2 Regras que passam a valer
+
+1. **A página ocupa a altura da viewport.** O cartão da tabela estica até a base
+   e a paginação fica ancorada no rodapé dele. Nunca terminar o conteúdo no meio
+   da tela e deixar vazio embaixo.
+2. **A ordem do blueprint é obrigatória**: trilha, título, subtítulo, ação
+   primária, faixa de indicadores, abas, conteúdo. Abas vêm **depois** dos
+   indicadores.
+3. **Um indicador não é um cartão.** A faixa é uma superfície única dividida por
+   filete; sem borda por indicador e sem vão entre eles.
+4. **Filtro é compacto.** Largura pelo conteúdo, alinhado à esquerda, dentro do
+   cartão que ele filtra. Nada de `flex: 1` esticando seletor.
+5. **Painel de detalhe é leitura.** Rótulo e valor em linha, sem caixa de campo.
+   Campo com borda só quando existe edição naquele ponto.
+6. **Altura de linha de tabela: 56 px**, com o par nome/e-mail em duas linhas
+   dentro dessa altura.
+
+### 8.3 Como isso é verificado
+
+QA visual em 1920×1080 mede, por rota:
+
+- `document.scrollingElement.scrollHeight === clientHeight` (sem rolagem global);
+- altura do vazio abaixo do último bloco menor que 5% da viewport;
+- ordem dos blocos conferida por seletor;
+- `scrollWidth - innerWidth === 0`.
+
+Sem esses quatro números, a tela não é dada por entregue.
