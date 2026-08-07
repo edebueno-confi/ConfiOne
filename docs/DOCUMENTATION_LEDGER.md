@@ -7366,3 +7366,24 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - Limites: QA visual medido segue pendente; a extensao do navegador nao esta
   conectada nesta sessao.
 - Impacto futuro na FAQ: nenhum.
+
+## SETTINGS-V4-08 — margem lateral unica em todo o produto — 2026-08-07
+
+- Defeito: mesmo depois do lote anterior, as quatro telas comparadas pelo
+  operador ainda divergiam. Integracoes era a pior, porque
+  `.gso-settings-cockpit-main` continuava somando padding proprio — o seletor
+  `:has(> .gso-ui-page)` nao pegava, ja que a pagina nao e filha direta.
+- Entrega: token `--app-gutter: clamp(1rem, 2.5vw, 2.5rem)` declarado em `:root`
+  e consumido por `.gso-ui-page`, `.gso-ui-shell-chrome`,
+  `.gso-analytics-content`, o cabecalho do Dashboard e os quatro containers de
+  Conhecimento, que usavam `px-5` fixo.
+- `.gso-settings-cockpit-main` passou a `padding: 0`: quem traz a margem e a
+  pagina, sempre.
+- Efeito: Dashboard, Conhecimento, Configuracoes e Usuarios e acesso passam a
+  encostar na barra lateral a mesma distancia, por construcao e nao por medida
+  repetida em cada arquivo.
+- Evidencia: typecheck 0 erros, lint 0 erros e 179 avisos, secret scan 2055
+  arquivos e 0 matches, suites 11/11, 3/3 e 5/5.
+- Limites: QA visual medido segue pendente; a extensao do navegador nao esta
+  conectada nesta sessao.
+- Impacto futuro na FAQ: nenhum.

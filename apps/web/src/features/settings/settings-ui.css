@@ -91,7 +91,7 @@
   gap: 1rem;
   align-content: start;
   min-width: 0;
-  padding: 1.15rem clamp(1rem, 2.5vw, 2.5rem) 1.25rem;
+  padding: 1.15rem var(--app-gutter) 1.25rem;
   background: var(--ui-canvas);
 }
 
@@ -708,7 +708,7 @@
   flex: 0 0 auto;
   gap: 0.8rem;
   min-width: 0;
-  padding: 1.15rem clamp(1rem, 2.5vw, 2.5rem) 0;
+  padding: 1.15rem var(--app-gutter) 0;
   background: var(--ui-canvas);
 }
 .gso-ui-shell-chrome > * { min-width: 0; }
@@ -1251,8 +1251,8 @@
 .gso-ui-rail .gso-ui-card-body { margin-top: 0.7rem; }
 
 /* Margem lateral padrão do produto: a mesma do Dashboard Gerencial.
-   `clamp(1rem, 2.5vw, 2.5rem)` — 16 px no mínimo, 40 px em Full HD, acompanhando
+   `var(--app-gutter)` — 16 px no mínimo, 40 px em Full HD, acompanhando
    a largura da janela. Copiada de `.gso-visual-v1-shell .gso-analytics-content`,
    que é a régua adotada pelo operador em 2026-08-07. */
-.gso-ui-page { padding-inline: clamp(1rem, 2.5vw, 2.5rem); }
-.gso-ui-shell-chrome { padding-inline: clamp(1rem, 2.5vw, 2.5rem); }
+.gso-ui-page { padding-inline: var(--app-gutter); }
+.gso-ui-shell-chrome { padding-inline: var(--app-gutter); }

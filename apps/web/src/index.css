@@ -46,6 +46,11 @@
   --selection-accent: var(--color-brand-magenta);
   --selection-accent-soft: color-mix(in srgb, var(--color-brand-magenta) 12%, transparent);
 
+  /* Margem lateral unica do produto. Regua definida pelo Dashboard Gerencial em
+     2026-08-07: toda superficie autenticada encosta na barra lateral a esta
+     distancia, em qualquer largura. Nao declarar padding lateral proprio. */
+  --app-gutter: clamp(1rem, 2.5vw, 2.5rem);
+
   --color-surface: #f4f7fc;
   --color-surface-strong: #ffffff;
   --color-border: #dce4f2;
@@ -1216,12 +1221,11 @@
 }
 .gso-settings-cockpit-main {
   min-width: 0;
-  padding: 1.25rem clamp(1rem, 2vw, 2rem) 2.5rem;
+  /* Sem respiro proprio: a pagina do sistema visual traz o `--app-gutter`. O
+     seletor `:has` anterior nao pegava porque a pagina nao e filha direta. */
+  padding: 0;
   background: var(--minimal-canvas);
 }
-/* Quando a tela já é uma página do sistema visual, ela traz o próprio padding e
-   o próprio canvas: o casco não pode somar um segundo respiro. */
-.gso-settings-cockpit-main:has(> .gso-ui-page) { padding: 0; }
 .gso-settings-cockpit-main > article > header {
   margin: 0 0 1.1rem;
   border-bottom: 1px solid var(--minimal-border);
@@ -1693,7 +1697,7 @@
 }
 .gso-visual-v1-shell .gso-analytics-content {
   background: var(--visual-canvas);
-  padding: 0 clamp(1rem, 3vw, 3.25rem) 3rem;
+  padding: 0 var(--app-gutter) 3rem;
 }
 .gso-visual-v1-shell .gso-source-rail {
   border-left-color: var(--visual-border);
@@ -6189,7 +6193,7 @@ table {
 .gso-visual-v1-domain-frame.gso-hd-domain-frame .gso-hd-domain-frame-header { border-bottom: 1px solid var(--visual-border, var(--minimal-border)); padding-bottom: 0.8rem; }
 .gso-visual-v1-domain-frame.gso-hd-domain-frame .gso-hd-domain-frame-heading h2 { font-size: clamp(1.5rem, 1.9vw, 1.75rem); letter-spacing: -0.045em; }
 .gso-visual-v1-domain-frame.gso-hd-domain-frame .gso-visual-v1-kpi > p:first-child { font-size: clamp(1.75rem, 2.3vw, 2rem); letter-spacing: -0.045em; }
-.gso-visual-v1-shell .gso-analytics-content { padding-inline: clamp(1rem, 2.5vw, 2.5rem); }
+.gso-visual-v1-shell .gso-analytics-content { padding-inline: var(--app-gutter); }
 .gso-finance-source-meta { margin-bottom: -0.35rem; border: 0 !important; border-left: 2px solid var(--hd-accent, var(--minimal-action)) !important; border-radius: 0 !important; background: transparent !important; padding: 0.25rem 0 0.25rem 0.75rem !important; }
 .gso-finance-source-meta h2 { font-size: 0.78rem; }
 .gso-finance-source-meta p { margin-top: 0.35rem !important; }
@@ -6751,3 +6755,18 @@ table {
   letter-spacing: normal;
   text-transform: none;
 }
+
+/* ==========================================================================
+   Margem lateral única — 2026-08-07.
+
+   Toda superfície autenticada consome `--app-gutter`. As telas que ainda
+   declaravam padding próprio em utilitário (Conhecimento com `px-5`) passam a
+   consumir o token, para que Dashboard, Conhecimento, Configurações e Usuários
+   e acesso encostem na barra lateral exatamente à mesma distância.
+   ========================================================================== */
+.gso-knowledge-cockpit-header,
+.gso-knowledge-cockpit-grid,
+.gso-knowledge-manager-header,
+.gso-knowledge-manager-content { padding-inline: var(--app-gutter); }
+
+.gso-analytics-shell > .gso-workspace-header { padding-inline: var(--app-gutter); }
