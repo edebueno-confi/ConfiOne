@@ -635,3 +635,72 @@ export async function triggerCsSupportSync(latestRun: SyncRun | null): Promise<C
   if (!response.ok) throw analyticsSyncError({ operation: 'HubSpot CS / Suporte', status: response.status, payload });
   return { ...sanitizeCsSyncResult(payload), status: 'queued', mode: 'full' };
 }
+
+/** Uma linha do cruzamento de etapas, já em linguagem de tela. */
+export interface StageMappingRow {
+  pipelineId: string;
+  pipelineLabel: string;
+  pipelineActive: boolean;
+  stageId: string;
+  sourceLabel: string | null;
+  canonicalKey: string;
+  canonicalLabel: string;
+  canonicalOrder: number;
+  isReviewed: boolean;
+  ticketCount: number;
+}
+
+export async function listAnalyticsStageMapping(objectType = 'ticket'): Promise<StageMappingRow[]> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_analytics_stage_mapping_list', { p_object_type: objectType });
+  if (error) throw toAppError(error, 'Falha ao carregar o cruzamento de etapas.');
+  const rows = Array.isArray(data) ? data : [];
+  return rows.map((row: Record<string, unknown>) => ({
+    pipelineId: String(row.pipeline_id ?? ''),
+    pipelineLabel: String(row.pipeline_label ?? ''),
+    pipelineActive: row.pipeline_active === true,
+    stageId: String(row.stage_id ?? ''),
+    sourceLabel: row.source_label ? String(row.source_label) : null,
+    canonicalKey: String(row.canonical_key ?? ''),
+    canonicalLabel: String(row.canonical_label ?? ''),
+    canonicalOrder: Number(row.canonical_order ?? 100),
+    isReviewed: row.is_reviewed === true,
+    ticketCount: Number(row.ticket_count ?? 0),
+  }));
+}
+
+export async function updateAnalyticsStageMapping(input: {
+  objectType: string;
+  pipelineId: string;
+  stageId: string;
+  canonicalLabel: string;
+}): Promise<void> {
+  const client = requireSupabaseBrowserClient();
+  const { error } = await client.rpc('rpc_admin_update_analytics_stage_mapping', {
+    p_object_type: input.objectType,
+    p_pipeline_id: input.pipelineId,
+    p_stage_id: input.stageId,
+    p_canonical_label: input.canonicalLabel,
+    p_canonical_order: null,
+  });
+  if (error) throw toAppError(error, 'Falha ao salvar o cruzamento de etapas.');
+}
+
+export async function seedAnalyticsStageMapping(): Promise<{ processed: number; pendingReview: number }> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_admin_seed_analytics_stage_mapping');
+  if (error) throw toAppError(error, 'Falha ao buscar etapas novas.');
+  const payload = (data ?? {}) as Record<string, unknown>;
+  return {
+    processed: Number(payload.processed ?? 0),
+    pendingReview: Number(payload.pending_review ?? 0),
+  };
+}
+
+/** Distribuição da fila por etapa canônica, já cruzada entre pipelines. */
+export async function getSupportStageBreakdown(pipelineId: string | null = null): Promise<unknown> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_analytics_support_stage_breakdown', { p_pipeline_id: pipelineId });
+  if (error) throw toAppError(error, 'Falha ao carregar a distribuição por etapa.');
+  return data;
+}

@@ -50,6 +50,7 @@ type LoadState<T> = { phase: 'idle' | 'loading' } | { phase: 'ready'; items: T[]
 import { canOpenSettingsSection } from '../../app/release-surface.mjs';
 import { BrandsSettingsPage } from './BrandsSettingsPage';
 import { DashboardSourcesSettingsPage } from './DashboardSourcesSettingsPage';
+import { StageMappingSettings } from './StageMappingSettings';
 import { HelpCenterSettingsPage } from './HelpCenterSettingsPage';
 import { SettingsIntegrationsPanel } from './SettingsIntegrationsPanel';
 import '../analytics/high-density.css';
@@ -581,7 +582,12 @@ function GroupDetail({
         // As duas telas do eixo de dados trazem o próprio cabeçalho de página,
         // com breadcrumb, metadado de leitura e ações da seção.
         <div className="py-5">
-          {group.id === 'dashboard-fontes' ? <DashboardSourcesSettingsPage /> : <SyncHistorySettingsPage />}
+          {group.id === 'dashboard-fontes' ? (
+            <div className="space-y-6">
+              <DashboardSourcesSettingsPage />
+              <StageMappingSettings />
+            </div>
+          ) : <SyncHistorySettingsPage />}
         </div>
       ) : isIntegrations ? (
         // Integrações traz o próprio cabeçalho de página: título, contexto de
