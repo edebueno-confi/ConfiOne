@@ -31,7 +31,9 @@ export function readQueueHealth(payload) {
   if (!payload || typeof payload !== 'object') {
     return {
       available: false, threshold: null, inQueue: 0, stagnant: 0, stagnantRate: null,
-      pipelines: [], classified: 0, total: 0, notice: null,
+      pipelines: [], classified: 0, total: 0, notice: null, ageBuckets: [],
+      unknown: 0, measured: 0, moving: 0, partial: false, coverageWarning: null,
+      byGroupCompany: [], waitingThirdParty: 0, unowned: 0, waitingUndecided: 0,
     };
   }
 
@@ -46,7 +48,15 @@ export function readQueueHealth(payload) {
   const pipelines = (Array.isArray(payload.pipelines) ? payload.pipelines : [])
     .map((row) => ({
       pipelineId: String(row?.pipeline_id ?? ''),
-      label: String(row?.pipeline_label ?? ''),
+      // O nome oficial é o rótulo. O apelido vem ao lado, nunca no lugar: foi o
+      // apelido sozinho que fez "CS | Neotrust" ser aprovado como "Suporte".
+      label: String(row?.pipeline_name ?? row?.pipeline_label ?? ''),
+      alias: row?.pipeline_alias ? String(row.pipeline_alias) : null,
+      groupCompany: String(row?.group_company ?? 'a_definir'),
+      groupCompanyConfirmed: row?.group_company_source === 'confirmed',
+      waitingThirdParty: Number(row?.waiting_third_party ?? 0),
+      unowned: Number(row?.unowned ?? 0),
+      waitingUndecided: Number(row?.waiting_undecided ?? 0),
       role: typeof row?.queue_role === 'string' ? row.queue_role : 'a_classificar',
       inQueue: Number(row?.in_queue ?? 0),
       stagnant: Number(row?.stagnant ?? 0),
@@ -60,7 +70,41 @@ export function readQueueHealth(payload) {
         : Number(row.median_age_days),
     }));
 
+  // As faixas existem para que o limiar de estagnação possa ser conferido por
+  // quem lê, em vez de aceito como dado. Sem elas, "parado há mais de 180 dias"
+  // é uma afirmação que ninguém tem como pesar.
+  const ageBuckets = (Array.isArray(payload.age_buckets) ? payload.age_buckets : [])
+    .map((row) => ({
+      bucket: String(row?.bucket ?? ''),
+      tickets: Number(row?.tickets ?? 0),
+      order: Number(row?.sort_order ?? 99),
+    }))
+    .filter((row) => row.bucket !== '' && row.tickets > 0)
+    .sort((a, b) => a.order - b.order);
+
+  // A operação do grupo é a dimensão que faltava. O portal do HubSpot é
+  // compartilhado, e somar Confi, Neotrust e Aftersale num indicador único
+  // produz um número que não serve para nenhuma das três.
+  const byGroupCompany = (Array.isArray(payload.by_group_company) ? payload.by_group_company : [])
+    .map((row) => ({
+      company: String(row?.group_company ?? 'a_definir'),
+      pipelines: Number(row?.pipelines ?? 0),
+      inQueue: Number(row?.in_queue ?? 0),
+      unowned: Number(row?.unowned ?? 0),
+      waitingThirdParty: Number(row?.waiting_third_party ?? 0),
+      confirmedPipelines: Number(row?.confirmed_pipelines ?? 0),
+    }))
+    .sort((a, b) => b.inQueue - a.inQueue);
+
   return {
+    ageBuckets,
+    byGroupCompany,
+    // "Sem dono" é o problema de atendimento. "Esperando terceiro" é fila
+    // legítima que ninguém encerrou. Tratar os dois como a mesma coisa inflou o
+    // problema em quase o triplo na leitura anterior.
+    waitingThirdParty: Number(payload.total_waiting_third_party ?? 0),
+    unowned: Number(payload.total_unowned ?? 0),
+    waitingUndecided: Number(payload.total_waiting_undecided ?? 0),
     // A medição só existe se houver fila E se ao menos parte dela tiver data de
     // atividade. Sem data nenhuma, dizer "0 em movimento" seria publicar
     // ausência de dado com a confiança de um zero medido.

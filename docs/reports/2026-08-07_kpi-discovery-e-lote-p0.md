@@ -1482,3 +1482,166 @@ atendimento, mede idade de coisa esquecida.
 Consultar o banco não é o mesmo que consultar a fonte certa. Da próxima vez que
 um número surpreender, a primeira pergunta não é "o que isso significa" e sim
 "de qual ambiente veio este dado, e ele está atualizado".
+
+---
+
+## 23. As três fases entregues, e o que os números viraram
+
+### 23.1 O efeito medido em produção
+
+| Indicador | Antes | Depois |
+| --- | ---: | ---: |
+| Fila atual | 2.851 | **459** |
+| Espera mediana na fila | 383 dias | **128,8 dias** |
+| Passivo fora da fila | não existia | **2.392** |
+| Parados dentro da fila | não existia | 175 |
+
+Classificação decidida pela operação: **fila de trabalho** para Criadouro de
+Tíquetes | Aftersale, Suporte e Suporte B2B | Confi; **caixa de entrada** para
+Fale conosco | Confi, Confi | Whatsapp e Atendimento | Confi Analytics.
+
+### 23.2 O fallback, que é o que torna a Fase 3 segura
+
+Enquanto nenhum pipeline estiver classificado, os indicadores devolvem
+exatamente o que devolviam antes, com estado parcial e motivo declarado. Sem
+isso, aplicar a migration publicaria "0 aguardando atendimento" — número falso,
+com a mesma cara de número medido.
+
+Foi construído para o caso em que a migration entra num ambiente onde ninguém
+decidiu nada, que é o estado normal de qualquer ambiente novo.
+
+### 23.3 A dívida com clientes, e por que ela é a única parte que devolve algo
+
+Dos atendimentos parados, **2.056 não têm empresa no cadastro**: mensagens de
+formulário e WhatsApp que nunca viraram relação. Não há o que tratar um a um.
+
+Os **146 restantes, de 63 empresas**, são clientes que pediram alguma coisa e
+nunca tiveram resposta.
+
+| Empresa | Atendimentos | Espera mais longa | Em fila de trabalho |
+| --- | ---: | ---: | ---: |
+| L'ORÉAL BRASIL | 25 | 715 dias | 25 |
+| Neotrust | 23 | 912 dias | 23 |
+| Samsung | 14 | 532 dias | 14 |
+| RD Saúde | 5 | 1.346 dias | 5 |
+| Magazine Luiza | 5 | 1.263 dias | 5 |
+
+**Quase todos estão dentro de filas que o time considera de trabalho.** Não é
+ruído de caixa de entrada sem dono; é dívida acumulada onde havia processo.
+
+A prioridade da lista considera tempo de espera e quantidade de pedidos parados,
+**nunca porte ou receita da empresa**. Decidir atender primeiro quem paga mais é
+escolha da operação, e o painel não deve tomá-la por ninguém.
+
+### 23.4 Dois defeitos corrigidos dentro do próprio lote
+
+**O assunto do atendimento não existe no read model.** A função da dívida
+selecionava `t.subject`, que não é coluna de `hubspot_tickets` — a ingestão nunca
+pediu essa propriedade. A correção foi remover o campo, não preenchê-lo com
+"Sem assunto" para todos, o que daria impressão de contexto onde não há. Fica
+registrado: ingerir o assunto tornaria a lista utilizável sem sair do painel.
+
+**"Parados dentro da fila" publicava zero.** O QA visual pegou, contra base sem
+`last_activity_at`, um zero com a tipografia de valor medido. Zero ali afirma
+"nenhum atendimento parado" quando a verdade é "não temos como saber".
+
+Este segundo merece registro pelo que revela: **eu havia corrigido exatamente
+esse defeito na saúde da fila poucas horas antes, e não apliquei a mesma regra
+ao indicador novo.** A conclusão prática é que a checagem de cobertura precisa
+acompanhar a medida, e não a função — todo indicador que depende de campo
+opcional carrega o mesmo risco, e corrigir num lugar não protege o próximo.
+
+### 23.5 Validação
+
+| Verificação | Resultado |
+| --- | --- |
+| Contratos novos | 23 asserções aprovadas |
+| Suíte completa | 478 de 498, mesmos 19 da linha de base |
+| `web:typecheck`, `lint`, `web:build` | limpos |
+| Secret scan | 0 ocorrências |
+| QA visual | 18 combinações, 0 achados |
+| Migrations | local e remoto, histórico do CLI realinhado |
+
+**Pendências registradas:** ingerir o assunto do atendimento; alerta quando um
+pipeline de trabalho passar de 30% estagnado; decisão da operação sobre o que
+fazer com os 2.056 sem empresa — tornar visível não resolve, alguém precisa
+decidir se trata, encerra ou desliga o canal.
+
+---
+
+## 24. A classificação foi revertida: o painel somava três empresas
+
+### 24.1 O apelido escondia de quem era o pipeline
+
+Uma verificação na tela do HubSpot derrubou a decisão do lote anterior.
+
+| ID | Nome oficial no HubSpot | Apelido que o painel exibia |
+| --- | --- | --- |
+| 1429283 | **📊 CS \| Neotrust** | **"Suporte"** |
+
+Quando propus "Suporte: 210 na fila, classificar como fila de trabalho" e a
+operação aprovou, **as duas partes falavam de coisas diferentes**: a aprovação
+pensava no suporte da Confi, o dado era o CS da Neotrust.
+
+O alias interno é permitido pelas regras do projeto — o que faltava era o nome
+oficial continuar visível ao lado dele. Sem isso, o apelido não abrevia: substitui.
+
+### 24.2 O portal é compartilhado por três operações
+
+| Operação | Na fila | Sem dono | Esperando terceiro |
+| --- | ---: | ---: | ---: |
+| **Confi** | 2.469 | **2.053** | 27 |
+| Neotrust | 210 | **11** | 103 |
+| Aftersale | 170 | **4** | 0 |
+| Confi Analytics | 2 | 2 | 0 |
+
+O indicador "Fila atual" somava as três. **Separadas, a conclusão inverte:**
+Neotrust e Aftersale estão saudáveis — 11 e 4 atendimentos sem dono — e o
+problema inteiro é da Confi, concentrado nas caixas de entrada.
+
+A convenção de emoji no nome do pipeline já codificava a operação (💜 Aftersale,
+🔎 Confi, 📊 Neotrust, 👁 Confi Analytics) e eu a ignorei por dois lotes.
+
+### 24.3 "Parado" não é "abandonado"
+
+| Natureza | Casos |
+| --- | ---: |
+| Esperando terceiro | 130 |
+| **Sem dono** | **2.070** |
+| Etapa sem decisão de espera | 2 |
+
+Nas filas de trabalho, 117 dos 177 parados estavam em "Aguardando CS",
+"Aguardando Cliente" ou "Pendente N2" — a bola não estava com o atendimento. Eu
+chamei de dívida o que era espera legítima que ninguém encerrou.
+
+### 24.4 O que foi revertido e o que entrou
+
+**Revertido:** a classificação dos seis pipelines voltou a `a_classificar`, e o
+fallback devolveu a fila a 2.851 com estado parcial declarado. A Fase 3 continua
+implementada, mas inerte até uma nova decisão — agora informada.
+
+**Removido da tela:** a lista de "clientes sem resposta". Dois terços dos casos
+estavam em espera legítima e metade das empresas já havia voltado a abrir
+chamado. Publicar aquilo cobraria o time por uma dívida que não existe no tamanho
+anunciado. O read model fica no banco.
+
+**Entrou:** a operação do grupo como dimensão, semeada pela convenção de emoji e
+marcada como *sugerida* até alguém confirmar; o nome oficial do pipeline como
+rótulo, com o apelido abaixo; e a separação entre parado sem dono e parado
+esperando terceiro, decidida por etapa canônica e revisável.
+
+### 24.5 O padrão que se repete, e o que ele custou
+
+Três lotes seguidos com o mesmo erro de fundo: **eu tratei uma leitura do banco
+como se fosse conhecimento do negócio.**
+
+No primeiro, li o banco local defasado e anunciei um defeito que não existia em
+produção. No segundo, li o apelido e classifiquei o pipeline de outra empresa. No
+terceiro, li "aberto há muito tempo" e chamei de dívida o que era espera.
+
+Nos três casos o SQL estava correto. O que faltou foi conferir contra a origem
+antes de propor decisão — e nos três a correção veio de alguém abrir a tela do
+HubSpot, não de mais consulta.
+
+**A regra que fica:** número que vai mudar decisão da operação precisa ser
+conferido na origem antes de virar proposta, não depois.

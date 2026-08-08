@@ -51,6 +51,7 @@ import { canOpenSettingsSection } from '../../app/release-surface.mjs';
 import { BrandsSettingsPage } from './BrandsSettingsPage';
 import { DashboardSourcesSettingsPage } from './DashboardSourcesSettingsPage';
 import { StageMappingSettings } from './StageMappingSettings';
+import { PipelineRoleSettings } from './PipelineRoleSettings';
 import { HelpCenterSettingsPage } from './HelpCenterSettingsPage';
 import { SettingsIntegrationsPanel } from './SettingsIntegrationsPanel';
 import '../analytics/high-density.css';
@@ -585,6 +586,11 @@ function GroupDetail({
           {group.id === 'dashboard-fontes' ? (
             <div className="space-y-6">
               <DashboardSourcesSettingsPage />
+              {/* O papel do pipeline vem antes do cruzamento de etapas: decidir
+                  quais pipelines contam é a decisão mais ampla, e cruzar etapas
+                  de um pipeline que não deveria estar na fila é trabalho jogado
+                  fora. */}
+              <PipelineRoleSettings />
               <StageMappingSettings />
             </div>
           ) : <SyncHistorySettingsPage />}

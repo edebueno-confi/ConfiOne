@@ -53,6 +53,10 @@ export const KPI_LABELS = {
   resolved_tickets: 'Atendimentos resolvidos',
   open_backlog: 'Fila atual',
   median_backlog_age_days: 'Espera mediana na fila',
+  // "Passivo" e não "fila antiga": o que está fora das filas de trabalho não é
+  // uma fila mais velha, é um acúmulo que ninguém assumiu.
+  dormant_backlog: 'Passivo fora da fila',
+  stagnant_in_queue: 'Parados dentro da fila',
   median_time_to_resolution_days: 'Tempo até resolver',
   avg_time_to_resolution_days: 'Tempo médio até resolver',
   p90_time_to_resolution_days: 'Tempo até resolver, pior caso',

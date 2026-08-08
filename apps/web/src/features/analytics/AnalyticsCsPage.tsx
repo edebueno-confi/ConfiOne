@@ -39,8 +39,19 @@ const SUPPORT_BANDS: BoardBand[] = [
     title: 'Agora',
     note: 'Quem está esperando neste momento.',
     items: [
-      { key: 'open_backlog', kind: 'count', note: 'Aguardando atendimento' },
+      { key: 'open_backlog', kind: 'count', note: 'Aguardando atendimento nas filas de trabalho' },
       { key: 'median_backlog_age_days', kind: 'days', note: 'Há quanto tempo espera quem está na fila' },
+      { key: 'stagnant_in_queue', kind: 'count', note: 'Dentro da fila, mas sem movimento há meses' },
+    ],
+  },
+  {
+    // O passivo tem faixa própria, e não um cartão ao lado da fila. Lado a lado,
+    // o leitor soma mentalmente os dois e volta ao número que confundia.
+    title: 'Fora da fila',
+    note: 'Caixas de entrada que ninguém trabalha. Continuam contadas, separadas do que está em atendimento.',
+    dense: true,
+    items: [
+      { key: 'dormant_backlog', kind: 'count', note: 'Registros parados fora das filas de trabalho' },
     ],
   },
   {
@@ -170,6 +181,13 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
           {dataState?.status !== 'empty' && queuePayload ? (
             <AnalyticsQueueHealth payload={queuePayload} />
           ) : null}
+          {/* A lista de "clientes sem resposta" saiu da tela.
+              Ela tratava como dívida um conjunto em que dois terços estavam em
+              etapas de espera legítima — "Aguardando Cliente", "Pendente N2" —
+              e metade das empresas já tinha voltado a abrir chamado depois.
+              Publicar aquilo levaria a cobrar o time por uma dívida que não
+              existe no tamanho anunciado. O read model continua no banco; volta
+              quando distinguir espera de abandono. */}
           {dataState?.status !== 'empty' ? (
             <ChartCard
               title="Fila por etapa"

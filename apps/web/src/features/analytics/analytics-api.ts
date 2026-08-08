@@ -718,6 +718,31 @@ export async function getSupportQueueHealth(): Promise<unknown> {
   return data;
 }
 
+export type QueueRole = 'trabalhada' | 'caixa_de_entrada' | 'a_classificar';
+
+/** Registra o papel de um pipeline. A autoria é gravada pelo servidor. */
+export async function updatePipelineQueueRole(pipelineId: string, role: QueueRole): Promise<void> {
+  const client = requireSupabaseBrowserClient();
+  const { error } = await client.rpc('rpc_admin_update_pipeline_queue_role', {
+    p_pipeline_id: pipelineId,
+    p_queue_role: role,
+  });
+  if (error) throw toAppError(error, 'Falha ao registrar o papel do pipeline.');
+}
+
+/**
+ * Atendimentos sem resposta que pertencem a uma empresa do cadastro.
+ *
+ * É o recorte do passivo que representa dívida com cliente: o restante são
+ * mensagens avulsas que nunca viraram relação.
+ */
+export async function getSupportCustomerDebt(): Promise<unknown> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_analytics_support_customer_debt');
+  if (error) throw toAppError(error, 'Falha ao carregar os atendimentos sem resposta.');
+  return data;
+}
+
 export type TimeseriesDomain = 'support' | 'commercial' | 'finance';
 export type TimeseriesGrain = 'day' | 'week' | 'month';
 
