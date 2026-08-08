@@ -497,7 +497,7 @@ function ExecutiveHdCanvas({
             comparison={comparison.conversion?.label}
           />
           <HdMetric
-            label="Atendimentos abertos"
+            label="Atendimentos recebidos"
             value={
               unavailable
                 ? "Indisponível"

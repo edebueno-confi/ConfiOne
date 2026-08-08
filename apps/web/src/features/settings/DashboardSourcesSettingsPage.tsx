@@ -14,6 +14,7 @@ import {
   triggerSequentialAnalyticsSync,
   waitForAnalyticsSyncCompletion,
   updateAnalyticsPipelineConfig,
+  updateAnalyticsPipelineOperation,
   type IntegrationSchedule,
 } from '../analytics/analytics-api';
 import type { AnalyticsSourceConfig } from '../analytics/analytics-model';
@@ -41,6 +42,8 @@ const AREA_LABELS: Record<AnalyticsSourceConfig['areaKey'], string> = {
   chat: 'Chat',
   a_classificar: 'A classificar',
 };
+
+const GROUP_COMPANY_OPTIONS = ['a_definir', 'Confi', 'Neotrust', 'Aftersale', 'SocialSoul/Lomadee', 'Confi Analytics'];
 
 function statusLabel(status: string) {
   return ({ fresh: 'Atualizada', syncing: 'Atualizando', failed: 'Falhou', partial: 'Parcial', stale: 'Desatualizada', never_synced: 'Ainda não atualizada', unavailable: 'Indisponível' } as Record<string, string>)[status] ?? 'Indisponível';
@@ -88,10 +91,12 @@ function terminalSyncState(status: AnalyticsSourceStatusPayload, kind: 'full' | 
   return 'publishing';
 }
 
-function PipelineRow({ row, canEdit, busy, onSave }: { row: AnalyticsSourceConfig; canEdit: boolean; busy: boolean; onSave: (row: AnalyticsSourceConfig, areaKey: AnalyticsSourceConfig['areaKey'], alias: string, isActive: boolean) => Promise<void> }) {
+function PipelineRow({ row, canEdit, busy, onSave, onSaveOperation }: { row: AnalyticsSourceConfig; canEdit: boolean; busy: boolean; onSave: (row: AnalyticsSourceConfig, areaKey: AnalyticsSourceConfig['areaKey'], alias: string, isActive: boolean) => Promise<void>; onSaveOperation: (row: AnalyticsSourceConfig, groupCompany: string) => Promise<void> }) {
   const [areaKey, setAreaKey] = useState(row.areaKey);
   const [alias, setAlias] = useState(row.alias ?? '');
+  const [groupCompany, setGroupCompany] = useState(row.groupCompany);
   const changed = areaKey !== row.areaKey || alias !== (row.alias ?? '');
+  const operationChanged = groupCompany !== row.groupCompany || row.groupCompanySource !== 'confirmed';
   return (
     <li className={row.isArchived ? 'gso-ui-rowcard gso-ui-rowcard--archived' : 'gso-ui-rowcard'}>
       <div className="gso-ui-rowcard-main">
@@ -109,6 +114,12 @@ function PipelineRow({ row, canEdit, busy, onSave }: { row: AnalyticsSourceConfi
             {Object.entries(AREA_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
           </select>
         </UiField>
+        <UiField label="Operação do grupo">
+          <select className="gso-ui-control gso-ui-select" disabled={!canEdit || row.isArchived || busy} value={groupCompany} onChange={(event) => setGroupCompany(event.target.value)}>
+            {GROUP_COMPANY_OPTIONS.map((option) => <option key={option} value={option}>{option === 'a_definir' ? 'A decidir' : option}</option>)}
+          </select>
+          <small>{row.groupCompanySource === 'confirmed' ? 'Confirmada por pessoa autorizada.' : 'Sugestão: confirme antes de publicar o recorte.'}</small>
+        </UiField>
         <UiField label={<>Alias interno <small>(opcional)</small></>}>
           <input className="gso-ui-control" disabled={!canEdit || row.isArchived || busy} value={alias} onChange={(event) => setAlias(event.target.value)} placeholder={row.hubspotLabel ?? 'Nome oficial'} />
         </UiField>
@@ -119,6 +130,11 @@ function PipelineRow({ row, canEdit, busy, onSave }: { row: AnalyticsSourceConfi
         {canEdit && !row.isArchived ? (
           <UiButton className="gso-ui-rowcard-save" disabled={busy || !changed} icon="check" onClick={() => void onSave(row, areaKey, alias, row.isActive)}>
             Salvar linha
+          </UiButton>
+        ) : null}
+        {canEdit && !row.isArchived ? (
+          <UiButton className="gso-ui-rowcard-save" disabled={busy || !operationChanged} icon="check" onClick={() => void onSaveOperation(row, groupCompany)}>
+            Confirmar operação
           </UiButton>
         ) : null}
       </div>
@@ -177,6 +193,17 @@ export function DashboardSourcesSettingsPage() {
       setMessage(`Configuração de “${saved.label}” salva.`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Não foi possível salvar o pipeline.');
+    } finally { setBusy(false); }
+  };
+
+  const savePipelineOperation = async (row: AnalyticsSourceConfig, groupCompany: string) => {
+    setBusy(true); setError(null); setMessage(null);
+    try {
+      const saved = await updateAnalyticsPipelineOperation(row.id, groupCompany);
+      setRows((current) => current.map((item) => item.id === saved.id ? saved : item));
+      setMessage(`Operação de “${saved.label}” confirmada como ${saved.groupCompany}.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Não foi possível salvar a operação do pipeline.');
     } finally { setBusy(false); }
   };
 
@@ -442,7 +469,7 @@ export function DashboardSourcesSettingsPage() {
                   <small>{areaRows.length} fontes</small>
                 </summary>
                 <ul className="gso-ui-rowlist">
-                  {areaRows.map((row) => <PipelineRow busy={busy} canEdit={canEdit} key={row.id} onSave={savePipeline} row={row} />)}
+                  {areaRows.map((row) => <PipelineRow busy={busy} canEdit={canEdit} key={row.id} onSave={savePipeline} onSaveOperation={savePipelineOperation} row={row} />)}
                 </ul>
               </details>
             ))}

@@ -3,7 +3,7 @@
 
 begin;
 
-select plan(28);
+select plan(32);
 
 -- ---------------------------------------------------------------------------
 -- Contrato de acesso
@@ -115,6 +115,30 @@ select is(
   ((select payload from kpi_commercial) -> 'kpis' -> 'win_rate' ->> 'basis'),
   'deal_closed_at',
   'win rate declara a coorte de fechamento'
+);
+
+select is(
+  jsonb_array_length((select payload from kpi_commercial) -> 'closed_wins'),
+  3,
+  'detalhe dos ganhos inclui negócios criados antes e fechados no período'
+);
+
+select is(
+  (select payload from kpi_commercial) -> 'closed_wins' -> 0 ->> 'deal_id',
+  'kd-won-3',
+  'detalhe dos ganhos preserva a identidade do negócio fechado'
+);
+
+select is(
+  (select payload from kpi_commercial) -> 'closed_wins' -> 0 ->> 'closed_on',
+  '2026-03-31',
+  'detalhe dos ganhos publica a data de fechamento'
+);
+
+select is(
+  ((select payload from kpi_commercial) -> 'closed_wins' -> 0 ->> 'amount_home')::numeric,
+  9000::numeric,
+  'detalhe dos ganhos conserva a receita da mesma coorte do KPI'
 );
 
 select is(

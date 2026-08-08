@@ -14,10 +14,12 @@ import {
   type AnalyticsSourceConfig,
   DEFAULT_ANALYTICS_FILTERS,
   analyticsSourceToBlockState,
+  mapCommercialKpiDetails,
 } from './analytics-model';
 import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, MetricInfo } from './analytics-ui';
 import { AnalyticsFilters as AnalyticsFiltersBar } from './AnalyticsFilters';
 import { AnalyticsPipelineCombobox } from './AnalyticsPipelineCombobox';
+import { AnalyticsOperationScope } from './AnalyticsOperationScope';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
 import { CommercialFunnelChart } from './charts/AnalyticsCharts';
@@ -78,6 +80,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
   const [filters, setFilters] = useState<AnalyticsFilters>({ ...DEFAULT_ANALYTICS_FILTERS, ...period });
   const [configuredPipelines, setConfiguredPipelines] = useState<AnalyticsSourceConfig[]>([]);
   const [excludedPipelineIds, setExcludedPipelineIds] = useState<string[]>([]);
+  const [groupCompany, setGroupCompany] = useState('');
   const [latestHubspotRun, setLatestHubspotRun] = useState<import('./analytics-model').SyncRun | null>(null);
   const [kpiPayload, setKpiPayload] = useState<unknown>(null);
   const [subTab, setSubTab] = useState('posicao');
@@ -90,11 +93,11 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
     let cancelled = false;
     setState((current) => current.phase === 'ready' ? current : { phase: 'loading' });
 
-    void getCommercialKpisV2(filters)
+    void getCommercialKpisV2(filters, groupCompany || null)
       .then((payload) => { if (!cancelled) setKpiPayload(payload); })
       .catch(() => { if (!cancelled) setKpiPayload(null); });
 
-    Promise.all([getCommercialSnapshot(filters, excludedPipelineIds), listAnalyticsSourceConfig(), listHubspotSyncRuns()])
+    Promise.all([getCommercialSnapshot(filters, excludedPipelineIds, groupCompany || null), listAnalyticsSourceConfig(), listHubspotSyncRuns()])
       .then(([snapshot, configs, runs]) => {
         if (!cancelled) {
           const activeConfigs = configs.filter((config) => config.domainKey === 'commercial' && config.objectType === 'deal' && config.isActive);
@@ -116,7 +119,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
     return () => {
       cancelled = true;
     };
-  }, [filters, excludedPipelineIds]);
+  }, [filters, excludedPipelineIds, groupCompany]);
 
   if (state.phase === 'loading') {
     return <AnalyticsHdDomainFrame title="Comercial" description="Receita, pipeline e conversão para decisão comercial." source="HubSpot · Deals"><AnalyticsLoadingState title="Carregando comercial" description="O Gênio está consultando os negócios sincronizados do HubSpot." /></AnalyticsHdDomainFrame>;
@@ -128,6 +131,8 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
 
   const { funnel, byPipeline, byOwner, state: dataState } = state;
   const displayState = sourceStatus ? analyticsSourceToBlockState(sourceStatus.hubspot) : dataState;
+  const commercialKpiDetails = mapCommercialKpiDetails(kpiPayload);
+  const ownersWithPeriodActivity = commercialKpiDetails.byOwner.filter((owner) => owner.openDeals > 0 || owner.wonDeals > 0);
   const stageOptions = funnel.map((stage) => ({ value: stage.stageId, label: stage.label }));
   const ownerOptions = byOwner.filter((owner) => owner.ownerId).map((owner) => ({ value: owner.ownerId as string, label: owner.ownerName }));
   const pipelineOptions = configuredPipelines.map((pipeline) => {
@@ -157,33 +162,33 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
               )}
             </ChartCard>
           ) : null}
-          {dataState?.status !== 'empty' ? <ChartCard title="Negócios por responsável" description="Responsável pelo negócio no HubSpot.">
-            {byOwner.length > 0 ? (
+          {dataState?.status !== 'empty' ? <ChartCard title="Negócios por responsável" description="Abertos agora e ganhos fechados dentro do recorte selecionado.">
+            {ownersWithPeriodActivity.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="gso-analytics-responsive-table w-full min-w-[520px] text-sm">
                   <thead>
                     <tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]">
                       <th className="py-2 pr-4">Responsável</th>
-                      <th className="py-2 pr-4 text-right">Negócios</th>
-                      <th className="py-2 pr-4 text-right">Ganhos</th>
+                      <th className="py-2 pr-4 text-right">Abertos agora</th>
+                      <th className="py-2 pr-4 text-right">Ganhos no período</th>
                       <th className="py-2 text-right">Receita ganha</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {byOwner.map((owner) => (
+                    {ownersWithPeriodActivity.map((owner) => (
                       <tr
                         key={owner.ownerId ?? owner.ownerName}
                         className="border-b border-[color:var(--minimal-border)] last:border-0"
                       >
                         <td data-label="Responsável" className="py-2 pr-4 text-[color:var(--minimal-text)]">{owner.ownerName}</td>
-                        <td data-label="Negócios" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text)]">
-                          {owner.dealCount.toLocaleString('pt-BR')}
+                        <td data-label="Abertos agora" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text)]">
+                          {owner.openDeals.toLocaleString('pt-BR')}
                         </td>
-                        <td data-label="Ganhos" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text)]">
-                          {owner.wonCount.toLocaleString('pt-BR')}
+                        <td data-label="Ganhos no período" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text)]">
+                          {owner.wonDeals.toLocaleString('pt-BR')}
                         </td>
                         <td data-label="Receita ganha" className="py-2 text-right tabular-nums text-[color:var(--minimal-text)]">
-                          {formatCurrencyBRL(owner.wonRevenue)}
+                          {formatCurrencyBRL(owner.wonAmount)}
                         </td>
                       </tr>
                     ))}
@@ -191,7 +196,35 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
                 </table>
               </div>
             ) : (
-              <MinimalState title="Sem responsáveis" description="Nenhum negócio atribuído no período." />
+              <MinimalState title="Sem responsáveis" description="Nenhum negócio aberto ou ganho foi atribuído no recorte." />
+            )}
+          </ChartCard> : null}
+          {kpiPayload ? <ChartCard title="Ganhos no período" description="Negócios efetivamente fechados como ganho no intervalo selecionado.">
+            {commercialKpiDetails.closedWins.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="gso-analytics-responsive-table w-full min-w-[640px] text-sm">
+                  <thead>
+                    <tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]">
+                      <th className="py-2 pr-4">Negócio</th>
+                      <th className="py-2 pr-4">Responsável</th>
+                      <th className="py-2 pr-4">Data de ganho</th>
+                      <th className="py-2 text-right">Receita ganha</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {commercialKpiDetails.closedWins.map((deal) => (
+                      <tr key={deal.dealId} className="border-b border-[color:var(--minimal-border)] last:border-0">
+                        <td data-label="Negócio" className="py-2 pr-4 text-[color:var(--minimal-text)]">{deal.dealName}</td>
+                        <td data-label="Responsável" className="py-2 pr-4 text-[color:var(--minimal-text)]">{deal.ownerName}</td>
+                        <td data-label="Data de ganho" className="py-2 pr-4 tabular-nums text-[color:var(--minimal-text)]">{formatCommercialCloseDate(deal.closedOn)}</td>
+                        <td data-label="Receita ganha" className="py-2 text-right tabular-nums text-[color:var(--minimal-text)]">{formatCurrencyBRL(deal.amountHome)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <MinimalState title="Nenhum ganho no período" description="Não houve negócio fechado como ganho no intervalo selecionado." />
             )}
           </ChartCard> : null}
         </div>
@@ -208,7 +241,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
   return (
     <AnalyticsHdDomainFrame title="Comercial" description="Receita, pipeline e conversão para decisão comercial." source="HubSpot · Deals" state={displayState} headerAside={<AnalyticsExecutionMeta provider="HubSpot" run={latestHubspotRun} />}>
     <div className="gso-hd-domain-surface gso-pilot-commercial space-y-5">
-      <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} ownerOptions={ownerOptions} extraFields={pipelineOptions.length > 0 ? <AnalyticsPipelineCombobox inline storageKey="analytics-commercial-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.dealCount }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /> : null} />
+      <AnalyticsFiltersBar value={filters} onApply={(next) => { setFilters(next); onSharedPeriodChange?.({ from: next.from, to: next.to }); }} stageOptions={stageOptions} ownerOptions={ownerOptions} extraFields={pipelineOptions.length > 0 ? <><AnalyticsOperationScope storageKey="analytics-commercial-operation" value={groupCompany} onChange={setGroupCompany} options={configuredPipelines.map((pipeline) => ({ value: pipeline.groupCompany, source: pipeline.groupCompanySource }))} /><AnalyticsPipelineCombobox inline storageKey="analytics-commercial-pipelines" pipelines={pipelineOptions.map((pipeline) => ({ ...pipeline, count: pipeline.dealCount }))} excludedPipelineIds={excludedPipelineIds} onChange={setExcludedPipelineIds} /></> : null} />
       {dataState?.status === 'empty' ? (
         <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." />
       ) : null}
@@ -216,6 +249,11 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
     </div>
     </AnalyticsHdDomainFrame>
   );
+}
+
+function formatCommercialCloseDate(value: string): string {
+  const [year, month, day] = value.split('-');
+  return year && month && day ? `${day}/${month}/${year}` : 'Data não informada';
 }
 
 function applyConfiguredPipelineLabels(snapshot: CommercialSnapshot, configs: AnalyticsSourceConfig[]): CommercialSnapshot {

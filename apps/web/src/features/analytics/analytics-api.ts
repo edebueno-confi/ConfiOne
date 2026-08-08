@@ -218,25 +218,27 @@ function rpcFilters(filters: AnalyticsFilters) {
   };
 }
 
-export async function getCommercialSnapshot(filters: AnalyticsFilters, excludedPipelineIds: string[] = []): Promise<CommercialSnapshot> {
+export async function getCommercialSnapshot(filters: AnalyticsFilters, excludedPipelineIds: string[] = [], groupCompany: string | null = null): Promise<CommercialSnapshot> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_commercial_snapshot', {
+  const { data, error } = await client.rpc('rpc_analytics_commercial_snapshot_by_operation', {
     ...rpcFilters(filters),
     p_owner_id: filters.ownerId || null,
     p_stage_id: filters.stageId || null,
     p_excluded_pipeline_ids: excludedPipelineIds,
+    p_group_company: groupCompany,
   });
   if (error) throw toAppError(error, 'Falha ao carregar a analise comercial filtrada.');
   return mapCommercialSnapshot(data);
 }
 
-export async function getCsSnapshot(filters: AnalyticsFilters, excludedPipelineIds: string[] = []): Promise<CsSnapshot> {
+export async function getCsSnapshot(filters: AnalyticsFilters, excludedPipelineIds: string[] = [], groupCompany: string | null = null): Promise<CsSnapshot> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_cs_snapshot', {
+  const { data, error } = await client.rpc('rpc_analytics_cs_snapshot_by_operation', {
     ...rpcFilters(filters),
     p_stage_id: filters.stageId || null,
     p_priority: filters.priority || null,
     p_excluded_pipeline_ids: excludedPipelineIds,
+    p_group_company: groupCompany,
   });
   if (error) throw toAppError(error, 'Falha ao carregar a analise de suporte filtrada.');
   return mapCsSnapshot(data);
@@ -253,23 +255,23 @@ export async function getCustomerSuccessSnapshot(): Promise<CustomerSuccessSnaps
 // cru para o contrato de apresentação, que é quem traduz códigos técnicos em
 // linguagem gerencial. Nenhuma tela lê os campos internos diretamente.
 
-export async function getCommercialKpisV2(filters: AnalyticsFilters): Promise<unknown> {
+export async function getCommercialKpisV2(filters: AnalyticsFilters, groupCompany: string | null = null): Promise<unknown> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_commercial_kpis_v2', {
+  const { data, error } = await client.rpc('rpc_analytics_commercial_kpis_by_operation', {
     ...rpcFilters(filters),
     p_owner_id: filters.ownerId || null,
-    p_pipeline_id: null,
+    p_group_company: groupCompany,
   });
   if (error) throw toAppError(error, 'Falha ao carregar os indicadores comerciais.');
   return data;
 }
 
-export async function getSupportKpisV2(filters: AnalyticsFilters): Promise<unknown> {
+export async function getSupportKpisV2(filters: AnalyticsFilters, groupCompany: string | null = null): Promise<unknown> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_support_kpis_v2', {
+  const { data, error } = await client.rpc('rpc_analytics_support_kpis_by_operation', {
     ...rpcFilters(filters),
-    p_pipeline_id: null,
     p_priority: filters.priority || null,
+    p_group_company: groupCompany,
   });
   if (error) throw toAppError(error, 'Falha ao carregar os indicadores de atendimento.');
   return data;
@@ -469,6 +471,17 @@ export async function updateAnalyticsPipelineConfig(input: { id: string; areaKey
     p_is_active: input.isActive,
   });
   if (error) throw toAppError(error, 'Falha ao salvar a configuração do pipeline.');
+  return mapAnalyticsSourceConfig((data as Row) ?? {});
+}
+
+/** Confirma a operação dona do pipeline; sugestão de nome nunca é aplicada sozinha. */
+export async function updateAnalyticsPipelineOperation(id: string, groupCompany: string): Promise<AnalyticsSourceConfig> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_admin_set_analytics_pipeline_operation', {
+    p_id: id,
+    p_group_company: groupCompany,
+  });
+  if (error) throw toAppError(error, 'Falha ao salvar a operação do pipeline.');
   return mapAnalyticsSourceConfig((data as Row) ?? {});
 }
 
@@ -698,9 +711,9 @@ export async function seedAnalyticsStageMapping(): Promise<{ processed: number; 
 }
 
 /** Distribuição da fila por etapa canônica, já cruzada entre pipelines. */
-export async function getSupportStageBreakdown(pipelineId: string | null = null): Promise<unknown> {
+export async function getSupportStageBreakdown(pipelineId: string | null = null, groupCompany: string | null = null): Promise<unknown> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_support_stage_breakdown', { p_pipeline_id: pipelineId });
+  const { data, error } = await client.rpc('rpc_analytics_support_stage_breakdown_by_operation', { p_pipeline_id: pipelineId, p_group_company: groupCompany });
   if (error) throw toAppError(error, 'Falha ao carregar a distribuição por etapa.');
   return data;
 }
@@ -711,9 +724,9 @@ export async function getSupportStageBreakdown(pipelineId: string | null = null)
  * Sem recorte de data: responde "quem está parado agora", e filtrar por período
  * contaria só parte de quem espera.
  */
-export async function getSupportQueueHealth(): Promise<unknown> {
+export async function getSupportQueueHealth(groupCompany: string | null = null): Promise<unknown> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_support_queue_health');
+  const { data, error } = await client.rpc('rpc_analytics_support_queue_health_by_operation', { p_group_company: groupCompany });
   if (error) throw toAppError(error, 'Falha ao carregar a saúde da fila.');
   return data;
 }

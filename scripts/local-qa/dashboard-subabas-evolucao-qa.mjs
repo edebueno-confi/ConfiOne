@@ -132,9 +132,14 @@ async function inspecionar(browser, dominio, tema, viewport, storageState) {
     // --- Sub-aba de posição -------------------------------------------------
     const abaPosicao = page.getByRole('button', { name: 'Posição', exact: true });
     const temSubAbas = await abaPosicao.count() > 0;
-    if (!temSubAbas) achados.push('SEM_SUBABAS: a aba não expõe Posição/Evolução');
 
     const textoPosicao = await page.locator('body').innerText();
+    // Financeiro não monta as sub-abas quando a própria fonte declara que não
+    // há dados. Nesse caso, o estado vazio é a interface correta: não existe
+    // conteúdo de posição ou evolução para alternar. Sem essa exceção, o QA
+    // acusa uma regressão estrutural que não existe no produto.
+    const estadoFinanceiroDeclarado = /Nenhum dado financeiro|Dados financeiros ainda não disponíveis|Fonte financeira não configurada|Dados OMIE indisponíveis|Não foi possível carregar/i.test(textoPosicao);
+    if (!temSubAbas && !estadoFinanceiroDeclarado) achados.push('SEM_SUBABAS: a aba não expõe Posição/Evolução');
     await page.screenshot({ path: join(outputDir, `${dominio.key}-posicao-${tema}-${viewport.name}.png`), fullPage: true });
 
     const overflowPosicao = await page.evaluate(() => ({

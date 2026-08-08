@@ -151,7 +151,7 @@
   --support-cockpit-gap: var(--workspace-panel-gap);
   --support-cockpit-padding: var(--workspace-shell-pad);
   --support-composer-min-height: 9.5rem;
-  --support-card-radius: 0.75rem;
+  --support-card-radius: 0px;
   /* Shell V3: geometria compartilhada com o blueprint administrativo. */
   --shell-sidebar-width: 304px;
   --shell-sidebar-collapsed: 88px;
@@ -167,10 +167,10 @@
   --shell-content-gutter: 24px;
   --shell-section-gap: 16px;
   --shell-control-height: 36px;
-  --support-panel-radius: 1rem;
-  --support-button-radius: 0.75rem;
+  --support-panel-radius: 0px;
+  --support-button-radius: 0px;
   --support-badge-radius: 999px;
-  --support-input-radius: 0.75rem;
+  --support-input-radius: 0px;
   --support-page-padding: var(--workspace-shell-pad);
   --support-panel-padding: 1rem;
   --support-card-padding: 0.875rem;
@@ -255,9 +255,9 @@
   --focus: color-mix(in srgb, var(--brand-500) 40%, transparent);
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
   --shadow-md: 0 8px 24px -8px rgba(15, 23, 42, 0.14);
-  --radius-sm: 8px;
-  --radius: 12px;
-  --radius-lg: 16px;
+  --radius-sm: 0px;
+  --radius: 0px;
+  --radius-lg: 0px;
   background-color: var(--color-app-bg);
 }
 
@@ -439,9 +439,9 @@
   --focus: color-mix(in srgb, var(--brand-500) 40%, transparent);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
   --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.55);
-  --radius-sm: 8px;
-  --radius: 12px;
-  --radius-lg: 16px;
+  --radius-sm: 0px;
+  --radius: 0px;
+  --radius-lg: 0px;
 }
 
 /* Controles nativos tambem precisam seguir o tema; sem isso o menu de
@@ -6774,3 +6774,17 @@ table {
 /* Blocos de Configurações que não hospedam página do sistema visual e por isso
    precisam declarar a margem: consomem o mesmo token, nunca um `px-*` fixo. */
 .gso-settings-gutter { padding-inline: var(--app-gutter); }
+
+/* Direção visual 2026-08-08: geometria reta é a regra do produto. Os únicos
+   elementos circulares são identidade e sinais compactos de estado; por isso
+   `rounded-full` fica fora deste escopo. */
+:root {
+  --ui-radius-sm: 0px;
+  --ui-radius: 0px;
+  --ui-radius-lg: 0px;
+}
+
+:where(.gso-ui, .gso-analytics-shell, .support-operational-shell, .gso-settings-shell, .gso-knowledge-cockpit)
+  :is(button, input:not([type='checkbox']):not([type='radio']), select, textarea, [class*='rounded-']):not([class*='rounded-full']) {
+  border-radius: 0 !important;
+}
