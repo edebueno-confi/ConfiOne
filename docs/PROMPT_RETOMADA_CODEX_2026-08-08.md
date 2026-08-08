@@ -44,7 +44,12 @@ coisa.**
    especificação em vigor, com objetivos, não-objetivos e faseamento.
 4. **`docs/DASHBOARD_PIPELINES_E_GRAFICOS_ROADMAP.md`**, seções 5.1 e 6 —
    Now/Next/Later atualizado, com o que saiu do roadmap e por quê.
-5. Os de sempre: `AGENTS.md`, `docs/PROJECT_STATE.md`,
+5. **`docs/specs/2026-08-08_cockpit-gerencial-e-conciliacao.md`** — três pedidos
+   diretos da operação, registrados e não implementados: conciliação de empresas
+   entre HubSpot e OMIE por similaridade de nome com vínculo manual, o cockpit
+   gerencial que tira a administração de dentro do painel, e a direção visual de
+   geometria reta.
+6. Os de sempre: `AGENTS.md`, `docs/PROJECT_STATE.md`,
    `docs/ARCHITECTURE_RULES.md`, `docs/VIEW_RPC_CONTRACTS.md`,
    `docs/AUTH_CONTEXT_STRATEGY.md`, `docs/DOCUMENTATION_LEDGER.md`.
 
@@ -126,7 +131,13 @@ que não se comparam. `rpc_analytics_pipeline_inventory('deal')` apoia a decisã
 **5. Confirmar SocialSoul / Lomadee** como quarta operação e revisar se os
 pipelines dela deveriam estar ativos no recorte de Suporte.
 
-**6. Terminar a ingestão de vínculos.** `completed_at` ainda nulo em
+**6. Os três pedidos da operação** em
+`docs/specs/2026-08-08_cockpit-gerencial-e-conciliacao.md`, na ordem sugerida
+lá: direção visual de cantos retos primeiro, porque é de menor risco e evita
+retrabalho; depois o cockpit; por último a conciliação de empresas, que é a de
+maior valor e maior cuidado porque muda o cruzamento financeiro.
+
+**7. Terminar a ingestão de vínculos.** `completed_at` ainda nulo em
 `analytics_hubspot_associations_sync_state`. A cobertura de 2026 subiu de 0% para
 60,2% após a retomada; a varredura segue em curso.
 
