@@ -4,7 +4,7 @@
 
 begin;
 
-select plan(4);
+select plan(7);
 
 select has_function(
   'public',
@@ -46,6 +46,42 @@ select is(
   ),
   'work_mem=64MB',
   'Snapshot executivo evita spill temporário durante sua execução'
+);
+
+select is(
+  (
+    select setting
+    from pg_proc p
+    cross join lateral unnest(coalesce(p.proconfig, array[]::text[])) as cfg(setting)
+    where p.oid = 'public.rpc_analytics_ceo_snapshot(date,date)'::regprocedure
+      and setting like 'statement_timeout=%'
+  ),
+  'statement_timeout=30s',
+  'Snapshot executivo tem orcamento de execucao proprio'
+);
+
+select is(
+  (
+    select setting
+    from pg_proc p
+    cross join lateral unnest(coalesce(p.proconfig, array[]::text[])) as cfg(setting)
+    where p.oid = 'public.rpc_analytics_ceo_history(date,date)'::regprocedure
+      and setting like 'statement_timeout=%'
+  ),
+  'statement_timeout=30s',
+  'Historico executivo nao herda o timeout curto da sessao autenticada'
+);
+
+select is(
+  (
+    select setting
+    from pg_proc p
+    cross join lateral unnest(coalesce(p.proconfig, array[]::text[])) as cfg(setting)
+    where p.oid = 'public.rpc_analytics_executive_kpis_v2(date,date)'::regprocedure
+      and setting like 'statement_timeout=%'
+  ),
+  'statement_timeout=30s',
+  'Resumo executivo nao herda o timeout curto da sessao autenticada'
 );
 
 select * from finish();
