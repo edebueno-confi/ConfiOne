@@ -1,13 +1,64 @@
 # Handoff — 2026-08-08
 
+> ## ⛔ INCIDENTE ABERTO — LEIA PRIMEIRO
+>
+> **O Dashboard está quebrado em produção.** Reportado pela operação logo após o
+> commit `b064b43`.
+>
+> ```
+> rpc_analytics_ceo_snapshot        500
+> rpc_analytics_ceo_history         500
+> rpc_analytics_executive_kpis_v2   500
+> functions/v1/omie-sync            502
+> ```
+>
+> **Diagnóstico confirmado:** o log do Postgres acusa
+> `canceling statement due to statement timeout`. **Não é permissão nem coluna
+> ausente** — as funções executam com sucesso quando chamadas direto no banco,
+> inclusive com `set role authenticated`. Estouram o `statement_timeout` do
+> PostgREST quando vêm pelo REST.
+>
+> **Suspeito principal: `vw_analytics_ticket_resolution`**, reescrita por mim em
+> `20260808210000` e novamente em `20260808230000`. Um `count(*)` sobre ela custa
+> **563 ms** com Seq Scan em 34.392 linhas, e as RPCs executivas fazem LEFT JOIN
+> dela dentro de cadeias de 15 CTEs.
+>
+> Descartados na investigação: carga concorrente (banco ocioso, nenhuma consulta
+> longa), `analytics_hubspot_stage_events` (zero linhas, o CTE de janela é
+> barato), privilégios (`authenticated` tem EXECUTE em todas as RPCs).
+>
+> ### Caminhos, do mais seguro ao mais custoso
+>
+> 1. **Reverter a view para a definição de `20260807160000`**, que rodava em
+>    produção sem timeout. Perde as propriedades nativas, que só terão valor
+>    depois da próxima sincronização de qualquer forma. É a reversão mais barata
+>    e devolve o painel hoje.
+> 2. **Medir a RPC, não a view.** `explain (analyze)` em
+>    `rpc_analytics_executive_kpis_v2` e `rpc_analytics_ceo_snapshot` para achar o
+>    nó caro. Pode não ser a view: as duas cruzam OMIE, HubSpot e snapshots.
+> 3. **Materializar.** Se a view for mesmo o gargalo, uma matview com refresh no
+>    ciclo de sincronização resolve sem perder as colunas novas.
+>
+> O `omie-sync` com 502 pode ser sintoma do mesmo esgotamento ou problema
+> independente — **verifique separadamente antes de assumir causa comum**.
+>
+> **Não tive contexto para concluir a correção.** O diagnóstico acima é o que
+> ficou verificado; a hipótese da view é forte mas **não foi provada** medindo a
+> RPC completa. Comece por aí.
+
+
 Estado do trabalho no Dashboard para quem continuar, com ou sem histórico da
 conversa. Escrito para o Codex assumir do zero.
 
 ---
 
-## 1. O bloqueio ativo: CI vermelho há cinco commits
+## 1. CI: estava vermelho por cinco commits, foi corrigido
 
-**Os workflows "Supabase DB" falham desde `6914a7f` (2026-08-07 17:09).** Cinco
+> **Resolvido em `b064b43`.** `db reset` do zero mais 1.690 testes pgTAP em PASS.
+> O diagnóstico dos quatro defeitos está na seção 9. As linhas abaixo descrevem o
+> estado em que o problema foi encontrado, e ficam como registro.
+
+**Os workflows "Supabase DB" falhavam desde `6914a7f` (2026-08-07 17:09).** Cinco
 execuções seguidas em vermelho, e eu publiquei todas sem conferir.
 
 O workflow (`.github/workflows/supabase-db.yml`) roda, nesta ordem:
@@ -58,13 +109,11 @@ qualquer ambiente que não seja o local.
 | Item | Estado |
 | --- | --- |
 | Branch | `codex/react-router-v8-migration-20260804` |
-| Último commit local | `707f6a8` — não publicado |
-| Último commit publicado | `7f3b273` |
+| Último commit | `b064b43` — **publicado nos dois espelhos** |
 | Árvore de trabalho | limpa |
 | Remoto | `origin` com duas URLs de push (Genius-OS e Central-Confi) |
 
-**`707f6a8` não foi publicado de propósito:** não faz sentido empurrar mais um
-commit para um CI já vermelho antes de entender a causa.
+Verificado por `git ls-remote`: local, Genius-OS e Central-Confi no mesmo commit.
 
 ---
 
@@ -159,15 +208,28 @@ devolve o comportamento anterior com estado parcial declarado.
 
 ## 6. Pendências, em ordem
 
-1. **Corrigir o CI** — hipótese na seção 1. Bloqueia tudo.
-2. **Publicar `707f6a8`** depois do CI verde.
-3. **Sincronização completa de atendimentos**, para os campos novos chegarem.
-4. **Reclassificar os pipelines** em Configurações, Fontes do Dashboard.
-5. **Filtro por operação no painel** — pedido da operação: o CS da Neotrust abre
-   e vê Neotrust. `group_company` já existe e é agrupável; falta o seletor e a
-   propagação aos read models.
-6. **Confirmar SocialSoul / Lomadee** como quarta operação.
-7. Ingestão de vínculos: `completed_at` ainda nulo, varredura em curso.
+~~1. Corrigir o CI~~ — **feito** em `b064b43`, seção 9.
+~~2. Publicar~~ — **feito**, os dois espelhos em `b064b43`.
+
+3. **Sincronização completa de atendimentos.** Sem ela os campos novos —
+   `subject`, `first_agent_reply_at`, `reopened_at`, `closure_type` — continuam
+   nulos, e os indicadores que dependem deles seguem em "Indisponível". É o
+   passo de maior efeito por menor esforço.
+4. **Reclassificar os pipelines** em Configurações, Fontes do Dashboard, agora
+   com o nome oficial e a operação à vista. Muda "Fila atual" de 2.851 para a
+   ordem de 650 — avisar a operação antes.
+5. **Filtro por operação no painel** — pedido explícito: o CS da Neotrust abre e
+   vê Neotrust, o da Aftersale vê Aftersale. `group_company` já existe em
+   `analytics_source_config` e a saúde da fila já agrupa por ela; falta o seletor
+   e a propagação aos read models de cada aba.
+6. **Confirmar SocialSoul / Lomadee** como quarta operação, e revisar se os
+   pipelines dela deveriam estar ativos no recorte de Suporte.
+7. **Ingestão de vínculos:** `completed_at` ainda nulo, varredura em curso.
+   Cobertura de 2026 subiu de 0% para 60,2% após a retomada.
+8. **Comercial tem a mesma mistura do Suporte** e ninguém decidiu nada ainda:
+   "Piloto Aftersale" 1.171 negócios, "Pipe de Vendas" 908 sem operação
+   definida, "Gestão CS" 25 que não é comercial. Nenhum indicador comercial foi
+   alterado de propósito.
 
 ---
 
