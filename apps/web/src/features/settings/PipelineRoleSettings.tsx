@@ -1,34 +1,57 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MinimalState } from '../../components/minimal-states';
 import { getSupportQueueHealth, updatePipelineQueueRole, type QueueRole } from '../analytics/analytics-api';
-import { queueRoleLabel, readQueueHealth } from '../analytics/analytics-queue-health.mjs';
+import { readQueueHealth } from '../analytics/analytics-queue-health.mjs';
 
 /**
- * Editor do papel de cada pipeline.
+ * Fontes do Dashboard: quais pipelines contam, e como.
  *
- * A decisão que esta tela registra muda o indicador mais visível do painel, e
- * por isso ela é tomada com a evidência à vista: quanto tem na fila, quanto está
- * parado, quanto entrou no último mês. Um seletor sem esses números levaria a
- * decidir pelo nome do pipeline, que é o que produziu a leitura errada de antes.
+ * A versão anterior era uma tabela única com todos os pipelines em sequência.
+ * Duas coisas quebravam nela. Rolar uma lista longa faz esquecer o que já foi
+ * marcado, e sem agrupamento não havia como saber que "CS | Neotrust" e
+ * "Suporte B2B | Confi" pertencem a operações diferentes — que foi exatamente o
+ * erro que essa tela deveria ter impedido.
  *
- * A tela diz o efeito antes de ele acontecer. Ninguém deve descobrir que a fila
- * caiu pela metade abrindo o Dashboard no dia seguinte.
+ * A reorganização segue a estrutura real do problema, não a do banco:
+ *
+ * **Uma seção por operação do grupo.** É a divisão que existe na empresa. Cada
+ * seção mostra o próprio progresso, então dá para fechar uma operação e passar
+ * para a seguinte sem perder o fio.
+ *
+ * **O que falta decidir vem primeiro.** Pipeline sem papel definido é o trabalho
+ * pendente; o resto é consulta. Uma seção fechada não some, mas também não
+ * ocupa espaço.
+ *
+ * **Três botões em vez de um menu.** A escolha é entre três opções conhecidas.
+ * Um seletor esconde as alternativas atrás de um clique e não deixa comparar.
  */
 
-const OPCOES: Array<{ value: QueueRole; label: string; hint: string }> = [
-  { value: 'trabalhada', label: 'Fila de trabalho', hint: 'Conta em "Fila atual"' },
-  { value: 'caixa_de_entrada', label: 'Caixa de entrada', hint: 'Sai da fila e conta no passivo' },
-  { value: 'a_classificar', label: 'A classificar', hint: 'Fica de fora até alguém decidir' },
+const PAPEIS: Array<{ value: QueueRole; label: string; efeito: string }> = [
+  { value: 'trabalhada', label: 'Fila de trabalho', efeito: 'Conta em "Fila atual"' },
+  { value: 'caixa_de_entrada', label: 'Caixa de entrada', efeito: 'Sai da fila, vai para o passivo' },
+  { value: 'a_classificar', label: 'Não decidir agora', efeito: 'Fica de fora até alguém decidir' },
 ];
+
+interface Pipeline {
+  pipelineId: string;
+  label: string;
+  alias: string | null;
+  groupCompany: string;
+  role: QueueRole;
+  inQueue: number;
+  unowned: number;
+  waitingThirdParty: number;
+  arrived30d: number;
+}
 
 export function PipelineRoleSettings() {
   const [payload, setPayload] = useState<unknown>(null);
   const [phase, setPhase] = useState<'loading' | 'ready' | 'error'>('loading');
   const [salvando, setSalvando] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [recolhidas, setRecolhidas] = useState<Set<string>>(new Set());
 
   const carregar = useCallback(() => {
-    setPhase('loading');
     void getSupportQueueHealth()
       .then((data) => {
         setPayload(data);
@@ -38,6 +61,36 @@ export function PipelineRoleSettings() {
   }, []);
 
   useEffect(carregar, [carregar]);
+
+  const saude = readQueueHealth(payload);
+
+  /** Agrupado por operação, com o que falta decidir no topo de cada uma. */
+  const secoes = useMemo(() => {
+    const mapa = new Map<string, Pipeline[]>();
+    for (const pipeline of saude.pipelines as Pipeline[]) {
+      const chave = pipeline.groupCompany === 'a_definir' ? 'Operação a definir' : pipeline.groupCompany;
+      const lista = mapa.get(chave) ?? [];
+      lista.push(pipeline);
+      mapa.set(chave, lista);
+    }
+    return [...mapa.entries()]
+      .map(([operacao, pipelines]) => {
+        const pendentes = pipelines.filter((p) => p.role === 'a_classificar').length;
+        return {
+          operacao,
+          pipelines: [...pipelines].sort((a, b) => {
+            // Pendente primeiro; entre pendentes, o de maior volume, que é o que
+            // mais muda o indicador.
+            const aPend = a.role === 'a_classificar' ? 0 : 1;
+            const bPend = b.role === 'a_classificar' ? 0 : 1;
+            return aPend - bPend || b.inQueue - a.inQueue;
+          }),
+          pendentes,
+          naFila: pipelines.reduce((soma, p) => soma + p.inQueue, 0),
+        };
+      })
+      .sort((a, b) => b.pendentes - a.pendentes || b.naFila - a.naFila);
+  }, [saude.pipelines]);
 
   async function decidir(pipelineId: string, role: QueueRole) {
     setSalvando(pipelineId);
@@ -50,6 +103,15 @@ export function PipelineRoleSettings() {
     } finally {
       setSalvando(null);
     }
+  }
+
+  function alternar(operacao: string) {
+    setRecolhidas((atual) => {
+      const proximo = new Set(atual);
+      if (proximo.has(operacao)) proximo.delete(operacao);
+      else proximo.add(operacao);
+      return proximo;
+    });
   }
 
   if (phase === 'loading') {
@@ -66,96 +128,132 @@ export function PipelineRoleSettings() {
     );
   }
 
-  const saude = readQueueHealth(payload);
+  const faltam = saude.total - saude.classified;
 
   return (
     <section className="space-y-4">
-      <header className="space-y-1">
-        <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">Papel de cada pipeline</h3>
+      <header className="space-y-2">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <h3 className="text-sm font-semibold text-[color:var(--minimal-text)]">Quais pipelines contam na fila</h3>
+          <p className="text-xs tabular-nums text-[color:var(--minimal-text-secondary)]">
+            {faltam === 0
+              ? 'Todos decididos'
+              : `${faltam} de ${saude.total} ainda sem decisão`}
+          </p>
+        </div>
         <p className="text-xs leading-5 text-[color:var(--minimal-text-secondary)]">
-          O portal do HubSpot é compartilhado por mais de uma operação do grupo, e o nome abaixo de cada pipeline diz a qual pertence. Pipelines marcados como fila de trabalho são os únicos contados em "Fila atual" no Dashboard. Os demais
-          continuam visíveis, no passivo. Um pipeline novo entra como "a classificar" e fica fora da fila até alguém
-          decidir — o padrão é não entrar sem ninguém saber.
+          O HubSpot é compartilhado por mais de uma operação do grupo, e cada seção abaixo é uma delas. Só os pipelines
+          marcados como fila de trabalho entram em "Fila atual" no Dashboard; os demais continuam contados, no passivo.
         </p>
       </header>
 
       {erro ? <p className="text-xs text-[color:var(--minimal-danger-text)]">{erro}</p> : null}
 
-      <div className="overflow-x-auto">
-        <table className="gso-analytics-responsive-table w-full min-w-[620px] text-sm">
-          <thead>
-            <tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]">
-              <th className="py-2 pr-4">Pipeline</th>
-              <th className="py-2 pr-4 text-right">Na fila</th>
-              <th className="py-2 pr-4 text-right">Sem dono</th>
-              <th className="py-2 pr-4 text-right">Entraram em 30 dias</th>
-              <th className="py-2">Papel</th>
-            </tr>
-          </thead>
-          <tbody>
-            {saude.pipelines.map((pipeline) => {
-              const naoDecidido = pipeline.role === 'a_classificar';
-              return (
-                <tr
-                  key={pipeline.pipelineId}
-                  className={`border-b border-[color:var(--minimal-border)] last:border-0 ${naoDecidido ? 'bg-[color:var(--minimal-surface-muted)]' : ''}`}
-                >
-                  <td data-label="Pipeline" className="py-2 pr-4 text-[color:var(--minimal-text)]">
-                    {/* Nome oficial do HubSpot como rótulo, apelido abaixo. O
-                        apelido sozinho já fez "CS | Neotrust" ser classificado
-                        como se fosse o suporte da Confi. */}
-                    {pipeline.label}
-                    <span className="block text-[10px] text-[color:var(--minimal-text-tertiary)]">
-                      {pipeline.groupCompany === 'a_definir' ? 'operação a definir' : pipeline.groupCompany}
-                      {pipeline.groupCompanyConfirmed ? '' : ' (sugerida)'}
-                      {pipeline.alias && pipeline.alias !== pipeline.label ? ` · apelido: ${pipeline.alias}` : ''}
+      <div className="space-y-3">
+        {secoes.map((secao) => {
+          const fechada = recolhidas.has(secao.operacao);
+          return (
+            <section
+              key={secao.operacao}
+              className="rounded-xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)]"
+            >
+              <button
+                type="button"
+                onClick={() => alternar(secao.operacao)}
+                aria-expanded={!fechada}
+                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+              >
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-[color:var(--minimal-text)]">{secao.operacao}</span>
+                  <span className="block text-[11px] text-[color:var(--minimal-text-tertiary)]">
+                    {secao.pipelines.length} {secao.pipelines.length === 1 ? 'pipeline' : 'pipelines'} ·{' '}
+                    {secao.naFila.toLocaleString('pt-BR')} na fila
+                  </span>
+                </span>
+                <span className="flex shrink-0 items-center gap-3">
+                  {secao.pendentes > 0 ? (
+                    <span className="rounded-full bg-[color:var(--minimal-surface-muted)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--minimal-text)]">
+                      {secao.pendentes} a decidir
                     </span>
-                  </td>
-                  <td data-label="Na fila" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text)]">
-                    {pipeline.inQueue.toLocaleString('pt-BR')}
-                  </td>
-                  <td data-label="Sem dono" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text)]">
-                    {pipeline.unowned.toLocaleString('pt-BR')}
-                    {pipeline.waitingThirdParty > 0 ? (
-                      <span className="block text-[10px] font-normal text-[color:var(--minimal-text-tertiary)]">
-                        +{pipeline.waitingThirdParty.toLocaleString('pt-BR')} esperando terceiro
-                      </span>
-                    ) : null}
-                  </td>
-                  <td data-label="Entraram em 30 dias" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">
-                    {pipeline.arrived30d.toLocaleString('pt-BR')}
-                  </td>
-                  <td data-label="Papel" className="py-2">
-                    <select
-                      value={pipeline.role}
-                      disabled={salvando === pipeline.pipelineId}
-                      onChange={(event) => void decidir(pipeline.pipelineId, event.target.value as QueueRole)}
-                      aria-label={`Papel do pipeline ${pipeline.label}`}
-                      className="h-9 w-full min-w-[180px] rounded-lg border border-[color:var(--minimal-border-strong)] bg-[color:var(--minimal-surface)] px-2 text-xs text-[color:var(--minimal-text)] disabled:opacity-60"
-                    >
-                      {OPCOES.map((opcao) => (
-                        <option key={opcao.value} value={opcao.value}>
-                          {opcao.label} — {opcao.hint}
-                        </option>
-                      ))}
-                    </select>
-                    {!naoDecidido ? (
-                      <span className="mt-1 block text-[10px] text-[color:var(--minimal-text-tertiary)]">
-                        {queueRoleLabel(pipeline.role)} · decisão registrada
-                      </span>
-                    ) : null}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  ) : (
+                    <span className="text-[11px] text-[color:var(--minimal-text-tertiary)]">tudo decidido</span>
+                  )}
+                  <span aria-hidden className="text-[color:var(--minimal-text-tertiary)]">{fechada ? '+' : '−'}</span>
+                </span>
+              </button>
+
+              {!fechada ? (
+                <ul className="border-t border-[color:var(--minimal-border)]">
+                  {secao.pipelines.map((pipeline) => {
+                    const pendente = pipeline.role === 'a_classificar';
+                    return (
+                      <li
+                        key={pipeline.pipelineId}
+                        className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3 border-b border-[color:var(--minimal-border)] px-4 py-3 last:border-0"
+                      >
+                        <div className="min-w-[13rem] flex-1">
+                          <p className="text-sm text-[color:var(--minimal-text)]">
+                            {pipeline.label}
+                            {pendente ? (
+                              <span className="ml-2 align-middle text-[10px] font-medium uppercase tracking-wide text-[color:var(--minimal-warning-text)]">
+                                a decidir
+                              </span>
+                            ) : null}
+                          </p>
+                          <p className="mt-0.5 text-[11px] tabular-nums text-[color:var(--minimal-text-tertiary)]">
+                            {pipeline.inQueue.toLocaleString('pt-BR')} na fila ·{' '}
+                            {pipeline.unowned.toLocaleString('pt-BR')} sem dono ·{' '}
+                            {pipeline.arrived30d.toLocaleString('pt-BR')} entraram no mês
+                            {pipeline.alias && pipeline.alias !== pipeline.label
+                              ? ` · apelido: ${pipeline.alias}`
+                              : ''}
+                          </p>
+                        </div>
+
+                        {/* Três botões, e não um menu: a escolha é entre opções
+                            conhecidas, e comparar exige vê-las juntas. */}
+                        <div
+                          role="group"
+                          aria-label={`Papel de ${pipeline.label}`}
+                          className="flex flex-wrap gap-1"
+                        >
+                          {PAPEIS.map((papel) => {
+                            const ativo = pipeline.role === papel.value;
+                            return (
+                              <button
+                                key={papel.value}
+                                type="button"
+                                onClick={() => void decidir(pipeline.pipelineId, papel.value)}
+                                disabled={salvando === pipeline.pipelineId}
+                                aria-pressed={ativo}
+                                title={papel.efeito}
+                                className={`min-h-8 rounded-lg border px-2.5 py-1 text-[11px] font-medium transition disabled:opacity-50 ${
+                                  ativo
+                                    ? 'border-[color:var(--minimal-text)] bg-[color:var(--minimal-text)] text-[color:var(--minimal-surface)]'
+                                    : 'border-[color:var(--minimal-border-strong)] text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)]'
+                                }`}
+                              >
+                                {papel.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : null}
+            </section>
+          );
+        })}
       </div>
 
       <p className="text-[11px] leading-4 text-[color:var(--minimal-text-tertiary)]">
-        {saude.classified === saude.total
-          ? 'Todos os pipelines têm papel definido. "Fila atual" já reflete apenas as filas de trabalho.'
-          : `${saude.total - saude.classified} de ${saude.total} pipelines ainda sem papel definido. Enquanto houver algum, "Fila atual" conta todos e o Dashboard declara a leitura como parcial.`}
+        {faltam === 0
+          ? 'Todos os pipelines têm papel definido. "Fila atual" reflete apenas as filas de trabalho.'
+          : 'Enquanto houver pipeline sem decisão, "Fila atual" conta todos eles e o Dashboard declara a leitura como parcial.'}{' '}
+        A operação de cada pipeline é sugerida pelo nome usado no HubSpot; confirmar cabe a quem conhece a estrutura do
+        grupo.
       </p>
     </section>
   );

@@ -18,6 +18,30 @@ export const CS_TICKET_PROPERTIES = [
   'hs_ticket_priority', 'createdate', 'closed_date',
   'hs_lastactivitydate', 'hs_time_to_first_response_in_operating_hours',
   'hs_time_to_first_response_sla_status', 'hs_time_to_close_sla_status', 'subject',
+  // Propriedades que a conta preenche e que a ingestao nao pedia. A auditoria
+  // contra a API mostrou a diferenca entre o que existe e o que chegava aqui:
+  //
+  //   first_agent_reply_date        13.679 na origem, 1.077 do campo em uso
+  //   hs_ticket_reopened_at            68 na origem, nenhum ingerido
+  //   time_to_close                  medido pelo HubSpot, calculavamos a mao
+  //   hs_is_one_touch_ticket         explica os encerramentos instantaneos
+  //
+  // `subject` ja era pedido e descartado na gravacao, por falta de coluna.
+  'first_agent_reply_date', 'hs_ticket_reopened_at', 'time_to_close',
+  'hs_is_one_touch_ticket',
+  // Campos customizados de conclusao. A hipotese da operacao se confirmou: a
+  // equipe registra o desfecho aqui e nem sempre move a etapa, e por isso o
+  // painel via como aberto o que ja tinha sido concluido.
+  //
+  //   tipo_de_fechamento___fale_conosco___confi   1.247 preenchidos, no mesmo
+  //     pipeline que tem 1.117 parados
+  //   data_de_passgem___concluido                    51 preenchidos
+  //
+  // Nenhuma regra e aplicada na ingestao: os valores sao gravados como vieram, e
+  // a decisao de como interpreta-los fica registrada depois, com pessoa.
+  'tipo_de_fechamento___fale_conosco___confi', 'tipo_de_fechamento___b2b___confi',
+  'tipo_de_fechamento___confi', 'data_de_passgem___concluido',
+  'hs_resolution',
 ];
 export const HUBSPOT_DEAL_PROPERTIES = ['pipeline','dealstage','hubspot_owner_id','amount_in_home_currency','dealtype','dealname','createdate','closedate','hs_lastmodifieddate'];
 
@@ -138,6 +162,25 @@ export function toTicketStagingRow(record: { id: string; properties: Record<stri
     first_response_ms: toMilliseconds(record.properties.hs_time_to_first_response_in_operating_hours),
     time_to_first_response_sla_status: record.properties.hs_time_to_first_response_sla_status ?? null,
     time_to_close_sla_status: record.properties.hs_time_to_close_sla_status ?? null,
+    subject: record.properties.subject ?? null,
+    // A data da primeira resposta do agente tem cobertura mais de dez vezes
+    // maior que o tempo em horas de SLA que usavamos.
+    first_agent_reply_at: toIsoTimestamp(record.properties.first_agent_reply_date),
+    // Reabertura nativa: dispensa o historico de etapas, que nunca foi ingerido.
+    reopened_at: toIsoTimestamp(record.properties.hs_ticket_reopened_at),
+    time_to_close_ms: toMilliseconds(record.properties.time_to_close),
+    // Guardados sem interpretacao. O painel nao pode tratar "Solicitacao
+    // concluida" como encerramento por conta propria: isso seria inventar regra
+    // de negocio a partir de um texto livre.
+    closure_type: record.properties.tipo_de_fechamento___fale_conosco___confi
+      ?? record.properties.tipo_de_fechamento___b2b___confi
+      ?? record.properties.tipo_de_fechamento___confi
+      ?? null,
+    closure_marked_at: toIsoTimestamp(record.properties.data_de_passgem___concluido),
+    resolution_note: record.properties.hs_resolution ?? null,
+    is_one_touch: record.properties.hs_is_one_touch_ticket === 'true'
+      ? true
+      : record.properties.hs_is_one_touch_ticket === 'false' ? false : null,
     raw: record.properties,
     source_page: pageNumber,
     updated_at: new Date().toISOString(),

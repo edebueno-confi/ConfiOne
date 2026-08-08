@@ -1731,3 +1731,85 @@ exige tradução para cada motivo emitido. O defeito não volta em silêncio.
 0% de cobertura e a frase que diz onde decidir. Passivo e parados como
 "Indisponível", com o mesmo motivo. É o estado correto para um painel cuja
 classificação ainda não foi feita — e agora ele diz isso em vez de fingir.
+
+---
+
+## 26. Os "Indisponível" eram falta de contrato nosso
+
+### 26.1 A pergunta e a resposta, medidas contra a API
+
+A operação perguntou se os indisponíveis do painel eram ausência de dado no
+HubSpot ou falta de mapeamento nosso. Medido:
+
+| Propriedade | Existe na origem | Tínhamos |
+| --- | ---: | ---: |
+| `subject` | **53.070** | **0** |
+| `first_agent_reply_date` | **13.679** | 1.077 |
+| `hs_ticket_reopened_at` | 68 | 0 |
+
+**É falta de contrato nosso em todos os casos.** `subject` era até pedido ao
+HubSpot e descartado na gravação, por não existir coluna para recebê-lo — eu
+havia afirmado que a propriedade não existia, com base em ler o schema do nosso
+banco em vez da origem.
+
+`first_agent_reply_date` tem cobertura **doze vezes maior** que o campo de SLA em
+horas que vínhamos usando.
+
+`hs_ticket_reopened_at` **resolve a taxa de reabertura sem o histórico de
+etapas**, que eu vinha apontando como bloqueio há vários ciclos.
+
+### 26.2 A hipótese da operação sobre campo customizado estava certa
+
+A operação levantou: *"é quase impossível estar em débito tantos dias, a equipe
+não deixaria tanto atendimento aberto assim; deve haver campo customizado"*.
+
+| Campo customizado | Preenchidos |
+| --- | ---: |
+| `tipo_de_fechamento` \| Fale conosco \| Confi | **1.247** |
+| `data_de_passgem` para Concluído \| B2B | 51 |
+
+"Fale conosco | Confi" é o pipeline com 1.443 na fila e **1.117 parados**. Os
+números são da mesma ordem de grandeza.
+
+**A equipe registra o desfecho no campo customizado e nem sempre move a etapa.**
+O painel, lendo apenas a etapa, publicava como aberto o que já havia sido
+concluído. Boa parte do "passivo" que eu vinha apurando é isto.
+
+Os valores passam a ser guardados **sem interpretação**. Tratar "Solicitação
+concluída" como encerramento seria inventar regra de negócio a partir de texto
+livre — o mesmo erro que já custou três lotes. Fica como evidência para uma
+decisão registrada, ao lado do papel do pipeline e do cruzamento de etapas.
+
+### 26.3 Uma quarta operação apareceu
+
+A busca por propriedades revelou **SocialSoul / Lomadee** — campos como
+"Categorias | Atendimento | SocialSoul" e "Data de passagem para Concluído |
+Integração | SocialSoul". O grupo não tem três operações no portal, tem pelo
+menos quatro. A dimensão de operação já suporta isso; falta confirmar.
+
+### 26.4 Fontes do Dashboard, refeita
+
+A tela era uma tabela única com todos os pipelines em sequência. Rolar uma lista
+longa faz esquecer o que já foi marcado, e sem agrupamento não havia como
+perceber que "CS | Neotrust" e "Suporte B2B | Confi" são operações diferentes —
+exatamente o erro que essa tela deveria ter impedido.
+
+A reorganização segue a estrutura do problema:
+
+- **Uma seção recolhível por operação**, cada uma com o próprio progresso, para
+  fechar uma e passar à seguinte sem perder o fio.
+- **O que falta decidir vem primeiro**, dentro de cada seção e entre elas.
+- **Três botões em vez de um menu.** A escolha é entre opções conhecidas, e
+  comparar exige vê-las juntas.
+- **Contador no topo:** quantos de quantos ainda sem decisão.
+
+### 26.5 Pendente
+
+Os valores novos só chegam na próxima sincronização completa de atendimentos.
+Até lá os indicadores seguem declarando o que falta — que é o comportamento
+correto, e agora com frase acionável.
+
+Falta também o **filtro por operação no painel**, levantado pela operação: o CS
+da Neotrust abre e vê Neotrust, o da Aftersale vê Aftersale. A base está pronta,
+`group_company` já existe e é agrupável; falta o seletor e a propagação aos read
+models.
