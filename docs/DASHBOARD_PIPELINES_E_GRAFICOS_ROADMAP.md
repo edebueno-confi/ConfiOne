@@ -217,54 +217,98 @@ Crítica registrada ao que estava publicado, e o que foi feito com cada ponto:
 
 ---
 
-## 5.1 Etapas de conclusão contadas como fila — achado de QA, 2026-08-07
+## 5.1 A fila publicada não mede fila — medido em produção, 2026-08-08
 
-O QA visual expôs um defeito que nenhuma verificação estática pegaria: o gráfico
-de fila mostra **"Concluída" como a maior barra**, com 2.587 atendimentos.
+> **Esta seção substitui uma versão anterior que estava errada.** Ela afirmava
+> que etapas de conclusão eram contadas como fila e que 48% do número era falso.
+> A leitura veio do banco local, defasado em três dias. Em produção as etapas de
+> conclusão estão corretas. A retificação completa está na seção 22 de
+> `reports/2026-08-07_kpi-discovery-e-lote-p0.md`.
 
-A causa está na origem. Essas etapas estão configuradas no HubSpot com
-`ticketState = OPEN`. O painel lê a configuração da origem e conclui, sem errar
-na leitura, que atendimentos concluídos continuam esperando.
+O problema real é de **escopo de pipeline**, não de etapa. A fila de produção é
+de 2.851 atendimentos, e **2.199 deles — 77% — não têm atividade há mais de seis
+meses**.
 
-**"Fila atual" publica 5.448, e 2.602 desses — 48% — estão em etapas cujo nome
-afirma conclusão.** A "Espera mediana na fila" de 604,5 dias vem dos mesmos
-registros. É o mesmo tipo de número que a seção 2.2 já registrava: tecnicamente
-correto e narrativamente enganoso.
+| Pipeline | Na fila | Sem atividade +180d | % parado | Entradas em 30d |
+| --- | ---: | ---: | ---: | ---: |
+| Fale conosco \| Confi | 1.443 | 1.117 | 77% | 66 |
+| Confi \| Whatsapp | 947 | 905 | **96%** | **2** |
+| Suporte | 210 | 113 | 54% | 16 |
+| Criadouro de Tíquetes \| Aftersale | 170 | 6 | **4%** | 39 |
+| Suporte B2B \| Confi | 79 | 56 | 71% | 1 |
+| Atendimento \| Confi Analytics | 2 | 2 | 100% | 0 |
 
-O painel não foi ensinado a adivinhar pelo nome. Tratar "Concluída" como
-encerrada porque o texto sugere isso inventaria regra de negócio na tela e
-quebraria no dia em que existisse uma etapa "Aguardando conclusão".
+Dois pipelines concentram 84% da fila e quase tudo em "Novo", nunca triado.
+"Confi | Whatsapp" recebeu **dois** atendimentos em trinta dias e carrega 947
+parados: é um depósito, não uma fila.
 
-Dois caminhos, não excludentes:
+**A seção 2 deste roadmap estava invertida.** Ela tratava "Criadouro de Tíquetes |
+Aftersale" como repositório; ele é o único pipeline saudável do conjunto — 4% de
+estagnação e 39 entradas no mês.
 
-1. **Corrigir na origem.** Marcar essas etapas como fechadas no HubSpot. Resolve
-   para todos os consumidores, não só para o painel. Depende de acesso e de
-   decisão de quem administra os pipelines.
-2. **Decisão de encerramento no cruzamento.** A tabela de cruzamento já é o lugar
-   da decisão humana sobre etapas; falta a ela declarar que uma etapa canônica
-   encerra o atendimento. Permite à operação resolver sem depender do HubSpot, com
-   a decisão registrada e auditável no backend.
+Quem lê "Fila atual: 2.851" entende *2.851 pessoas esperando*. A leitura correta
+é *652 aguardando e 2.199 abandonados em caixas de entrada que ninguém trabalha*.
+São conclusões operacionais opostas a partir do mesmo número.
 
-O caminho 2 é o recomendado como próximo lote, porque não depende de terceiros e
-porque a decisão fica versionada. Muda números publicados, então pede aviso à
-operação antes de entrar.
+Especificação completa em
+`specs/2026-08-08_saude-da-fila-e-papel-do-pipeline.md`.
 
 ---
 
-## 6. Ordem sugerida
+## 6. Roadmap — Now / Next / Later
 
-1. ~~Mapeamento de etapas canônicas e normalização~~ — **entregue**, com editor
-   em Configurações, Fontes do Dashboard.
-2. **Decisão de encerramento no cruzamento de etapas** — ver 5.1. Corrige 48% da
-   fila publicada. **Passou a ser o item mais urgente**, à frente da definição de
-   pipelines, porque distorce o indicador mais visível do painel.
-3. Definição de quais pipelines pertencem a cada aba — muda números publicados.
-4. Seletor com marcar e desmarcar todos — barato e melhora o uso diário.
-5. ~~Sub-abas temporais de Suporte, Comercial e Financeiro~~ — **entregue**, com
-   legenda, eixo separado por ordem de grandeza e linha sem interpolação.
-6. Revisão dos gráficos de posição com coorte e cobertura declaradas.
-7. Sub-abas temporais de Carteira e Retenção, quando a série sustentar.
+Atualizado em 2026-08-08, depois da medição em produção da seção 5.1.
 
-Os itens 2 e 3 alteram números que já estão publicados, então pedem comunicação
-à operação antes de entrar. O item 1 já entrou e mudou a leitura do gráfico de
-etapas.
+### Agora
+
+| Item | Estado | Muda número publicado? | Depende de |
+| --- | --- | --- | --- |
+| **Fase 1 — estagnação visível** | Pronto para entrar | Não | Nada |
+| **Fase 2 — papel do pipeline e editor** | Especificado | Não | Nada |
+| **Fase 3 — aplicar o recorte à fila** | Especificado | **Sim** | Decisão da operação sobre quais pipelines são trabalhados |
+
+O faseamento existe para isolar o risco: as duas primeiras fases não mexem em
+nenhum número, e a terceira só chega depois de a operação ter visto os valores
+novos ao lado dos antigos.
+
+### Em seguida
+
+| Item | Por quê | Muda número? |
+| --- | --- | --- |
+| Passivo por faixa de idade | 180 dias e 900 dias pedem decisões diferentes | Não |
+| Evolução do Suporte separando as duas séries | A série atual soma fila e passivo | Não |
+| Marcar e desmarcar todos no seletor | Dívida antiga, barato, uso diário | Não |
+| Cobertura declarada nos gráficos de posição | Os de evolução já declaram; os de posição não | Não |
+
+### Depois
+
+| Item | Condição para começar |
+| --- | --- |
+| Alerta de pipeline trabalhado passando de 30% estagnado | Fase 3 entregue e classificação estável |
+| Sub-abas de evolução em Carteira e Retenção | Série de snapshot com 90 dias — a partir de 2026-11-05 |
+| Encerramento em massa do passivo no HubSpot | Autorização explícita, dry-run e ledger. Escrita externa |
+| SLA por pipeline | Existir fonte de SLA. Hoje não existe |
+
+### O que saiu
+
+**Decisão de encerramento no cruzamento de etapas — removida.** Resolvia um
+defeito que só existe no banco local defasado. Ver 5.1.
+
+**Definição de quais pipelines pertencem a cada aba — absorvida** pela Fase 2,
+que é a mesma decisão com desenho melhor: papel declarado por pessoa, com
+autoria, em vez de lista fixa no código.
+
+### Riscos
+
+**A Fase 3 muda o indicador mais visível do painel**, de 2.851 para cerca de 652.
+Sem aviso prévio, quem abrir a tela vai achar que o sistema quebrou. Mitigação: a
+Fase 1 mostra os dois números lado a lado antes.
+
+**A classificação depende de uma decisão que não é minha.** Se ninguém decidir, o
+painel fica com todo mundo em "a classificar" e nada muda — que é o
+comportamento seguro, mas o problema segue de pé. É o único bloqueio real do
+roadmap.
+
+**O passivo de 2.199 é uma decisão operacional adiada, não um problema de
+software.** Tornar visível não resolve; alguém precisa decidir se trata, encerra
+ou desliga o canal.

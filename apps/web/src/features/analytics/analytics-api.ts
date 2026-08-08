@@ -705,6 +705,19 @@ export async function getSupportStageBreakdown(pipelineId: string | null = null)
   return data;
 }
 
+/**
+ * Saúde da fila por pipeline.
+ *
+ * Sem recorte de data: responde "quem está parado agora", e filtrar por período
+ * contaria só parte de quem espera.
+ */
+export async function getSupportQueueHealth(): Promise<unknown> {
+  const client = requireSupabaseBrowserClient();
+  const { data, error } = await client.rpc('rpc_analytics_support_queue_health');
+  if (error) throw toAppError(error, 'Falha ao carregar a saúde da fila.');
+  return data;
+}
+
 export type TimeseriesDomain = 'support' | 'commercial' | 'finance';
 export type TimeseriesGrain = 'day' | 'week' | 'month';
 

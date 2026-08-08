@@ -1344,6 +1344,11 @@ estava errada no Comercial, onde a maior é "Perdidos".
 
 ### 21.2 Um defeito que não é meu, e é o mais grave
 
+> **Retificado na seção 22.** A conclusão abaixo foi tirada do **banco local**,
+> que tem dados de 2026-08-04, anteriores à correção da ingestão. Em produção as
+> etapas de conclusão estão corretamente marcadas como fechadas, e nada dos 48%
+> se sustenta. O problema real de produção é outro, e está na seção 22.
+
 O gráfico de fila por etapa mostra **"Concluída" como a maior barra de uma
 fila**, com 2.587 atendimentos.
 
@@ -1405,3 +1410,75 @@ nenhum arquivo de configuração de build foi tocado aqui.
 envolve o campo sem `htmlFor` e sem `id`, e um leitor de tela não anuncia o campo
 corretamente. Descoberto porque o seletor por rótulo falhou no roteiro de QA.
 Fica registrado como defeito de acessibilidade fora do escopo deste lote.
+
+---
+
+## 22. Retificação: o defeito da seção 21.2 não existe em produção
+
+### 22.1 O que eu afirmei errado
+
+Afirmei que 2.587 atendimentos em etapa "Concluída" estavam marcados como abertos
+e que **48% da fila publicada era falsa**. Consultei o banco antes de afirmar, o
+que dava à conclusão uma aparência de evidência — mas consultei o **banco local**,
+que tem dados de 2026-08-04, anteriores à correção da ingestão daquele ciclo. A
+seção 19 deste mesmo relatório já registrava que o local está defasado. Eu não
+apliquei ao meu próprio achado o cuidado que documentei três seções antes.
+
+Conferido em produção:
+
+| Rótulo canônico | Estado na origem | Atendimentos |
+| --- | --- | --- |
+| Encerrado | CLOSED | 27.610 |
+| Fechado | CLOSED | 3.392 |
+
+**Nenhuma etapa de conclusão está contada como fila em produção.** Das 163 etapas
+de atendimento, 33 estão marcadas como fechadas e 16 delas têm nome de conclusão;
+as três etapas abertas com nome que sugere fim não têm volume relevante.
+
+O aviso que acrescentei à tela — "um atendimento conta como fila enquanto a etapa
+estiver marcada como aberta na origem" — continua correto e útil como declaração
+de proveniência. Não é remendo de um defeito inexistente; é a mesma disciplina de
+declarar de onde vem cada número. Fica.
+
+### 22.2 O problema real de produção, medido
+
+A fila de produção é de **2.851 atendimentos**. A distribuição desmonta a leitura
+que o painel publica hoje:
+
+| Pipeline | Na fila | Em "Novo" | Sem atividade há +180d | % parado | Novos em 30d |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Fale conosco \| Confi | 1.443 | 1.356 | 1.117 | 77% | 66 |
+| Confi \| Whatsapp | 947 | 947 | 905 | **96%** | **2** |
+| Suporte | 210 | 28 | 113 | 54% | 16 |
+| Criadouro de Tíquetes \| Aftersale | 170 | 0 | 6 | **4%** | 39 |
+| Suporte B2B \| Confi | 79 | 55 | 56 | 71% | 1 |
+| Atendimento \| Confi Analytics | 2 | 2 | 2 | 100% | 0 |
+
+**2.199 dos 2.851 — 77% da fila — não têm nenhuma atividade há mais de seis
+meses.**
+
+Dois pipelines concentram 2.390 atendimentos, 84% do total, e quase tudo em
+"Novo": nunca foram triados. "Confi | Whatsapp" recebeu **dois** atendimentos nos
+últimos trinta dias e carrega 947 parados — não é uma fila de trabalho, é um
+depósito.
+
+E o inverso também aparece: **"Criadouro de Tíquetes | Aftersale" é o único
+pipeline saudável** do conjunto. 4% de estagnação, 39 entradas no mês, mediana de
+79 dias. Ironicamente é o pipeline que a seção 2 deste relatório tratava como
+"repositório" — a classificação anterior estava invertida.
+
+### 22.3 Por que isso importa mais do que o defeito que eu inventei
+
+O indicador "Fila atual" publica 2.851 e o leitor entende "2.851 pessoas
+esperando atendimento". A leitura correta é "652 aguardando atendimento e 2.199
+abandonados em caixas de entrada que ninguém trabalha". São conclusões
+operacionais opostas a partir do mesmo número.
+
+A "Espera mediana na fila" sofre o mesmo: 383 dias em "Novo" não mede demora de
+atendimento, mede idade de coisa esquecida.
+
+### 22.4 A lição, que vale mais que o achado
+
+Consultar o banco não é o mesmo que consultar a fonte certa. Da próxima vez que
+um número surpreender, a primeira pergunta não é "o que isso significa" e sim
+"de qual ambiente veio este dado, e ele está atualizado".

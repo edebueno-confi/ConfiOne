@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { MinimalState } from '../../components/minimal-states';
-import { getCsSnapshot, getSupportKpisV2, getSupportStageBreakdown, listAnalyticsSourceConfig } from './analytics-api';
+import { getCsSnapshot, getSupportKpisV2, getSupportQueueHealth, getSupportStageBreakdown, listAnalyticsSourceConfig } from './analytics-api';
 import {
   type AnalyticsPageProps,
   type CsByStatus,
@@ -26,6 +26,7 @@ import { AnalyticsBoardLimitations, AnalyticsKpiBoard, type BoardBand } from './
 import { AnalyticsDomainTabs, type DomainTab } from './AnalyticsDomainTabs';
 import { AnalyticsTrendPanel } from './AnalyticsTrendPanel';
 import { readStageBreakdown } from './analytics-stage-breakdown.mjs';
+import { AnalyticsQueueHealth } from './AnalyticsQueueHealth';
 
 // Resolucao, tempo de resolucao e primeira resposta passaram a existir depois
 // que a ingestao foi corrigida para pedir os campos que a conta realmente
@@ -83,6 +84,7 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
   const [excludedPipelineIds, setExcludedPipelineIds] = useState<string[]>([]);
   const [kpiPayload, setKpiPayload] = useState<unknown>(null);
   const [stagePayload, setStagePayload] = useState<unknown>(null);
+  const [queuePayload, setQueuePayload] = useState<unknown>(null);
   const [subTab, setSubTab] = useState('posicao');
 
   useEffect(() => {
@@ -103,6 +105,10 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
     void getSupportStageBreakdown(null)
       .then((payload) => { if (!cancelled) setStagePayload(payload); })
       .catch(() => { if (!cancelled) setStagePayload(null); });
+
+    void getSupportQueueHealth()
+      .then((payload) => { if (!cancelled) setQueuePayload(payload); })
+      .catch(() => { if (!cancelled) setQueuePayload(null); });
 
     Promise.all([getCsSnapshot(filters, excludedPipelineIds), listAnalyticsSourceConfig()])
       .then(([snapshot, configs]) => {
@@ -157,6 +163,12 @@ export function AnalyticsCsPage({ sharedPeriod, onSharedPeriodChange, onRetry }:
               <AnalyticsKpiBoard payload={kpiPayload} bands={SUPPORT_BANDS} />
               <AnalyticsBoardLimitations payload={kpiPayload} />
             </>
+          ) : null}
+          {/* A saúde da fila vem logo depois dos indicadores e antes da
+              distribuição por etapa: ela qualifica o número que acabou de ser
+              lido, e qualificação atrasada não conserta leitura já feita. */}
+          {dataState?.status !== 'empty' && queuePayload ? (
+            <AnalyticsQueueHealth payload={queuePayload} />
           ) : null}
           {dataState?.status !== 'empty' ? (
             <ChartCard
