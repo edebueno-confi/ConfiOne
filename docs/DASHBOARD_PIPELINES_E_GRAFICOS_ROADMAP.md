@@ -112,6 +112,10 @@ persistida — o seletor é recorte de leitura, não configuração.
 
 ## 4. Sub-abas temporais por domínio
 
+> **Status: entregue para Suporte, Comercial e Financeiro em 2026-08-07.**
+> Carteira e Retenção seguem aguardando série, conforme decidido na seção 4.2.
+> A avaliação abaixo permanece registrada como a base da decisão.
+
 Ideia levantada pela operação: dentro de cada domínio, uma sub-aba dedicada a
 evolução no tempo — crescimento, queda, ganhos e perdas.
 
@@ -167,30 +171,100 @@ e bruta — todos dependentes da série de snapshot.
 
 ---
 
+### 4.5 O que foi entregue
+
+Cada domínio tem duas sub-abas, **Posição** e **Evolução**, com uma frase no topo
+declarando que pergunta cada uma responde.
+
+A regra de não duplicar foi aplicada de forma destrutiva, não aditiva: as antigas
+tabelas e linhas de "Tendência mensal" foram **removidas** das abas de posição, e
+não deixadas ao lado da nova. Foram três remoções — `TicketMonthlyChart`,
+`CommercialMonthlyChart` e a tabela de saldo mensal do Financeiro. Manter as duas
+versões teria reproduzido exatamente o defeito que gerou "Receita ganha" duas
+vezes com valores diferentes.
+
+A janela da evolução é **independente do filtro de recorte** da aba de posição:
+doze meses no grão mensal, vinte e seis semanas no semanal, sessenta dias no
+diário. O motivo é que o recorte de posição costuma ser curto, e uma série de
+trinta dias em grão mensal desenha um ou dois pontos. A tela diz isso ao usuário,
+para que ninguém compare o total do gráfico com o indicador acima e conclua que
+um dos dois está errado.
+
+---
+
 ## 5. Qualidade dos gráficos existentes
 
-Crítica honesta ao que está publicado:
+Crítica registrada ao que estava publicado, e o que foi feito com cada ponto:
 
 - **Barras horizontais com vinte categorias** e cauda longa de valores 1, 1, 3, 9
-  não comunicam. Melhor exibir as principais e agrupar o restante, ou separar
-  primeiro por situação e só depois por etapa.
+  não comunicam. *Parcialmente resolvido:* o cruzamento de etapas reduziu as
+  categorias ao consolidar nomes equivalentes, e a ordenação passou a seguir o
+  fluxo do atendimento em vez do volume — o que antes produzia um ranking e agora
+  mostra onde a fila se acumula dentro do processo. **Continua pendente** o
+  agrupamento das categorias residuais em "outras".
 - **Tendência mensal** mistura aberturas e encerramentos numa mesma escala sem
-  mostrar o saldo, que é a informação que interessa.
-- **Nenhum gráfico declara a coorte de data**, ao contrário dos indicadores. A
-  mesma disciplina precisa valer para eles.
-- **Nenhum gráfico mostra estado de cobertura.** Uma série construída sobre dado
-  parcial parece tão sólida quanto uma completa.
+  mostrar o saldo. *Resolvido:* o saldo acumulado virou a linha de destaque, com
+  linha de referência no zero, e a taxa de conversão do Comercial ganhou eixo
+  próprio para não ser achatada pela contagem.
+- **Nenhum gráfico declara a coorte de data.** *Resolvido nos gráficos de
+  evolução:* a legenda vem do próprio read model, para que a frase não possa
+  divergir da fórmula, e é impressa no rodapé do gráfico. Os gráficos de posição
+  ainda não declaram.
+- **Nenhum gráfico mostra estado de cobertura.** **Continua pendente.** Há um
+  meio-passo: série ausente, vazia ou inteiramente em zero devolve estado
+  explícito em vez de desenhar uma linha plana — mas cobertura parcial ainda não
+  é sinalizada dentro do gráfico como já é nos indicadores.
+
+---
+
+## 5.1 Etapas de conclusão contadas como fila — achado de QA, 2026-08-07
+
+O QA visual expôs um defeito que nenhuma verificação estática pegaria: o gráfico
+de fila mostra **"Concluída" como a maior barra**, com 2.587 atendimentos.
+
+A causa está na origem. Essas etapas estão configuradas no HubSpot com
+`ticketState = OPEN`. O painel lê a configuração da origem e conclui, sem errar
+na leitura, que atendimentos concluídos continuam esperando.
+
+**"Fila atual" publica 5.448, e 2.602 desses — 48% — estão em etapas cujo nome
+afirma conclusão.** A "Espera mediana na fila" de 604,5 dias vem dos mesmos
+registros. É o mesmo tipo de número que a seção 2.2 já registrava: tecnicamente
+correto e narrativamente enganoso.
+
+O painel não foi ensinado a adivinhar pelo nome. Tratar "Concluída" como
+encerrada porque o texto sugere isso inventaria regra de negócio na tela e
+quebraria no dia em que existisse uma etapa "Aguardando conclusão".
+
+Dois caminhos, não excludentes:
+
+1. **Corrigir na origem.** Marcar essas etapas como fechadas no HubSpot. Resolve
+   para todos os consumidores, não só para o painel. Depende de acesso e de
+   decisão de quem administra os pipelines.
+2. **Decisão de encerramento no cruzamento.** A tabela de cruzamento já é o lugar
+   da decisão humana sobre etapas; falta a ela declarar que uma etapa canônica
+   encerra o atendimento. Permite à operação resolver sem depender do HubSpot, com
+   a decisão registrada e auditável no backend.
+
+O caminho 2 é o recomendado como próximo lote, porque não depende de terceiros e
+porque a decisão fica versionada. Muda números publicados, então pede aviso à
+operação antes de entrar.
 
 ---
 
 ## 6. Ordem sugerida
 
-1. Mapeamento de etapas canônicas e normalização — destrava a leitura correta.
-2. Definição de quais pipelines pertencem a cada aba — muda números publicados.
-3. Seletor com marcar e desmarcar todos — barato e melhora o uso diário.
-4. Sub-abas temporais de Suporte, Comercial e Financeiro.
-5. Revisão dos gráficos com coorte e cobertura declaradas.
-6. Sub-abas temporais de Carteira e Retenção, quando a série sustentar.
+1. ~~Mapeamento de etapas canônicas e normalização~~ — **entregue**, com editor
+   em Configurações, Fontes do Dashboard.
+2. **Decisão de encerramento no cruzamento de etapas** — ver 5.1. Corrige 48% da
+   fila publicada. **Passou a ser o item mais urgente**, à frente da definição de
+   pipelines, porque distorce o indicador mais visível do painel.
+3. Definição de quais pipelines pertencem a cada aba — muda números publicados.
+4. Seletor com marcar e desmarcar todos — barato e melhora o uso diário.
+5. ~~Sub-abas temporais de Suporte, Comercial e Financeiro~~ — **entregue**, com
+   legenda, eixo separado por ordem de grandeza e linha sem interpolação.
+6. Revisão dos gráficos de posição com coorte e cobertura declaradas.
+7. Sub-abas temporais de Carteira e Retenção, quando a série sustentar.
 
-Os itens 1 e 2 alteram números que já estão publicados, então pedem comunicação
-à operação antes de entrar.
+Os itens 2 e 3 alteram números que já estão publicados, então pedem comunicação
+à operação antes de entrar. O item 1 já entrou e mudou a leitura do gráfico de
+etapas.

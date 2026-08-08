@@ -3,7 +3,6 @@ import { MinimalState } from '../../components/minimal-states';
 import { getCommercialKpisV2, getCommercialSnapshot, listAnalyticsSourceConfig, listHubspotSyncRuns } from './analytics-api';
 import {
   formatCurrencyBRL,
-  formatPercent,
   type CommercialByOwner,
   type CommercialFunnelStage,
   type CommercialKpis,
@@ -16,14 +15,16 @@ import {
   DEFAULT_ANALYTICS_FILTERS,
   analyticsSourceToBlockState,
 } from './analytics-model';
-import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, KpiCard, MetricInfo, formatCountLabel } from './analytics-ui';
+import { AnalyticsLoadingState, AnalyticsRetryAction, ChartCard, MetricInfo } from './analytics-ui';
 import { AnalyticsFilters as AnalyticsFiltersBar } from './AnalyticsFilters';
 import { AnalyticsPipelineCombobox } from './AnalyticsPipelineCombobox';
 import { resolveAnalyticsPeriod } from './analytics-periods';
 import type { AnalyticsBlockState } from '@genius-support-os/contracts';
-import { CommercialFunnelChart, CommercialMonthlyChart } from './charts/AnalyticsCharts';
+import { CommercialFunnelChart } from './charts/AnalyticsCharts';
 import { AnalyticsExecutionMeta, AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
 import { AnalyticsBoardLimitations, AnalyticsKpiBoard, type BoardBand } from './AnalyticsKpiBoard';
+import { AnalyticsDomainTabs, type DomainTab } from './AnalyticsDomainTabs';
+import { AnalyticsTrendPanel } from './AnalyticsTrendPanel';
 
 // Indicadores com coorte declarada, publicados pelo read model de KPI.
 // Pipeline e posicao na data de corte; criados usam data de criacao; ganhos,
@@ -79,6 +80,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
   const [excludedPipelineIds, setExcludedPipelineIds] = useState<string[]>([]);
   const [latestHubspotRun, setLatestHubspotRun] = useState<import('./analytics-model').SyncRun | null>(null);
   const [kpiPayload, setKpiPayload] = useState<unknown>(null);
+  const [subTab, setSubTab] = useState('posicao');
 
   useEffect(() => {
     setFilters((current) => current.from === period.from && current.to === period.to ? current : { ...current, ...period });
@@ -124,7 +126,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
     return <AnalyticsHdDomainFrame title="Comercial" description="Receita, pipeline e conversão para decisão comercial." source="HubSpot · Deals"><MinimalState tone="critical" title="Não foi possível carregar" description="Os indicadores comerciais estão indisponíveis no momento." actions={<AnalyticsRetryAction onRetry={onRetry} />} /></AnalyticsHdDomainFrame>;
   }
 
-  const { kpis, funnel, byPipeline, byOwner, monthly, state: dataState } = state;
+  const { funnel, byPipeline, byOwner, state: dataState } = state;
   const displayState = sourceStatus ? analyticsSourceToBlockState(sourceStatus.hubspot) : dataState;
   const stageOptions = funnel.map((stage) => ({ value: stage.stageId, label: stage.label }));
   const ownerOptions = byOwner.filter((owner) => owner.ownerId).map((owner) => ({ value: owner.ownerId as string, label: owner.ownerName }));
@@ -133,6 +135,76 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
     return { ...pipeline, dealCount: observed?.dealCount ?? 0 };
   });
 
+  const subTabs: DomainTab[] = [
+    {
+      id: 'posicao',
+      label: 'Posição',
+      question: 'Onde estão os negócios agora e o que foi encerrado no recorte selecionado.',
+      content: (
+        <div className="space-y-4">
+          {kpiPayload ? (
+            <>
+              <AnalyticsKpiBoard payload={kpiPayload} bands={COMMERCIAL_BANDS} />
+              <AnalyticsBoardLimitations payload={kpiPayload} />
+            </>
+          ) : null}
+          {dataState?.status !== 'empty' ? (
+            <ChartCard title="Funil por estágio" description="Quantidade de negócios em cada estágio do funil comercial.">
+              {funnel.length > 0 ? (
+                <CommercialFunnelChart data={funnel} />
+              ) : (
+                <MinimalState title="Sem estágios" description="Execute uma sincronização para carregar os estágios do funil." />
+              )}
+            </ChartCard>
+          ) : null}
+          {dataState?.status !== 'empty' ? <ChartCard title="Negócios por responsável" description="Responsável pelo negócio no HubSpot.">
+            {byOwner.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="gso-analytics-responsive-table w-full min-w-[520px] text-sm">
+                  <thead>
+                    <tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]">
+                      <th className="py-2 pr-4">Responsável</th>
+                      <th className="py-2 pr-4 text-right">Negócios</th>
+                      <th className="py-2 pr-4 text-right">Ganhos</th>
+                      <th className="py-2 text-right">Receita ganha</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {byOwner.map((owner) => (
+                      <tr
+                        key={owner.ownerId ?? owner.ownerName}
+                        className="border-b border-[color:var(--minimal-border)] last:border-0"
+                      >
+                        <td data-label="Responsável" className="py-2 pr-4 text-[color:var(--minimal-text)]">{owner.ownerName}</td>
+                        <td data-label="Negócios" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text)]">
+                          {owner.dealCount.toLocaleString('pt-BR')}
+                        </td>
+                        <td data-label="Ganhos" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text)]">
+                          {owner.wonCount.toLocaleString('pt-BR')}
+                        </td>
+                        <td data-label="Receita ganha" className="py-2 text-right tabular-nums text-[color:var(--minimal-text)]">
+                          {formatCurrencyBRL(owner.wonRevenue)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <MinimalState title="Sem responsáveis" description="Nenhum negócio atribuído no período." />
+            )}
+          </ChartCard> : null}
+        </div>
+      ),
+    },
+    {
+      id: 'evolucao',
+      label: 'Evolução',
+      question: 'Como ganhos, perdas e taxa de conversão se comportaram ao longo do tempo.',
+      content: <AnalyticsTrendPanel domain="commercial" />,
+    },
+  ];
+
   return (
     <AnalyticsHdDomainFrame title="Comercial" description="Receita, pipeline e conversão para decisão comercial." source="HubSpot · Deals" state={displayState} headerAside={<AnalyticsExecutionMeta provider="HubSpot" run={latestHubspotRun} />}>
     <div className="gso-hd-domain-surface gso-pilot-commercial space-y-5">
@@ -140,69 +212,7 @@ export function AnalyticsCommercialPage({ sharedPeriod, onSharedPeriodChange, on
       {dataState?.status === 'empty' ? (
         <MinimalState title="Nenhum dado neste recorte" description="Ajuste os filtros ou execute uma sincronização concluída para consultar o histórico." />
       ) : null}
-      {kpiPayload ? (
-        <>
-          <AnalyticsKpiBoard payload={kpiPayload} bands={COMMERCIAL_BANDS} />
-          <AnalyticsBoardLimitations payload={kpiPayload} />
-        </>
-      ) : null}
-
-
-      {dataState?.status !== 'empty' ? <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <ChartCard title="Funil por estágio" description="Quantidade de negócios em cada estágio do funil comercial.">
-          {funnel.length > 0 ? (
-            <CommercialFunnelChart data={funnel} />
-          ) : (
-            <MinimalState title="Sem estágios" description="Execute uma sincronização para carregar os estágios do funil." />
-          )}
-        </ChartCard>
-
-        <ChartCard title="Tendência mensal" description="Negócios criados e ganhos por mês.">
-          {monthly.length > 0 ? (
-            <CommercialMonthlyChart data={monthly} />
-          ) : (
-            <MinimalState title="Sem histórico" description="Ainda não há negócios sincronizados no período." />
-          )}
-        </ChartCard>
-      </div> : null}
-
-      {dataState?.status !== 'empty' ? <ChartCard title="Negócios por responsável" description="Responsável pelo negócio no HubSpot.">
-        {byOwner.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="gso-analytics-responsive-table w-full min-w-[520px] text-sm">
-              <thead>
-                <tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]">
-                  <th className="py-2 pr-4">Responsável</th>
-                  <th className="py-2 pr-4 text-right">Negócios</th>
-                  <th className="py-2 pr-4 text-right">Ganhos</th>
-                  <th className="py-2 text-right">Receita ganha</th>
-                </tr>
-              </thead>
-              <tbody>
-                {byOwner.map((owner) => (
-                  <tr
-                    key={owner.ownerId ?? owner.ownerName}
-                    className="border-b border-[color:var(--minimal-border)] last:border-0"
-                  >
-                    <td data-label="Responsável" className="py-2 pr-4 text-[color:var(--minimal-text)]">{owner.ownerName}</td>
-                    <td data-label="Negócios" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text)]">
-                      {owner.dealCount.toLocaleString('pt-BR')}
-                    </td>
-                    <td data-label="Ganhos" className="py-2 pr-4 text-right tabular-nums text-[color:var(--minimal-text)]">
-                      {owner.wonCount.toLocaleString('pt-BR')}
-                    </td>
-                    <td data-label="Receita ganha" className="py-2 text-right tabular-nums text-[color:var(--minimal-text)]">
-                      {formatCurrencyBRL(owner.wonRevenue)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <MinimalState title="Sem responsáveis" description="Nenhum negócio atribuído no período." />
-        )}
-      </ChartCard> : null}
+      <AnalyticsDomainTabs tabs={subTabs} activeId={subTab} onChange={setSubTab} />
     </div>
     </AnalyticsHdDomainFrame>
   );

@@ -6,6 +6,8 @@ import { AnalyticsLoadingState, ChartCard, KpiCard, MetricInfo } from './analyti
 import { analyticsSourceToBlockState, formatCurrencyBRL, formatMonthLabel, formatPercent, type AnalyticsFilters, DEFAULT_ANALYTICS_FILTERS, type AnalyticsPageProps, type FinanceBreakdown, type FinanceSnapshot, type FinanceSourceStatus } from './analytics-model';
 import { ANALYTICS_PERIOD_OPTIONS, resolveAnalyticsPeriod, type AnalyticsPeriodPreset } from './analytics-periods';
 import { AnalyticsExecutionMeta, AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
+import { AnalyticsDomainTabs } from './AnalyticsDomainTabs';
+import { AnalyticsTrendPanel } from './AnalyticsTrendPanel';
 
 type FinanceFilters = AnalyticsFilters & { clientQuery: string };
 
@@ -74,6 +76,7 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
   const [preset, setPreset] = useState<AnalyticsPeriodPreset | ''>('month');
   const [unmatched, setUnmatched] = useState<FinanceUnmatchedClient[] | null>(null);
   const [loadingUnmatched, setLoadingUnmatched] = useState(false);
+  const [subTab, setSubTab] = useState('posicao');
 
   const toggleUnmatched = async () => {
     if (unmatched) { setUnmatched(null); return; }
@@ -145,7 +148,12 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
       </div>
     </section>
 
-    {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado financeiro" description="A consulta funcionou, mas não há registros neste recorte. Experimente ampliar o período." /> : <>
+    {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado financeiro" description="A consulta funcionou, mas não há registros neste recorte. Experimente ampliar o período." /> : <AnalyticsDomainTabs activeId={subTab} onChange={setSubTab} tabs={[
+      {
+        id: 'posicao',
+        label: 'Posição',
+        question: 'Quanto há a receber hoje, quanto está vencido e como a carteira se distribui.',
+        content: <div className="space-y-5">
       {/* KPIs agrupados por leitura operacional */}
       <div className="gso-finance-kpi-groups">
       <section className="gso-finance-kpi-group" aria-labelledby="finance-position-heading">
@@ -212,11 +220,18 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
         </ChartCard>
       </div>
 
-      {/* Tendência mensal */}
-      <ChartCard title="Tendência mensal" description="Saldo por mês de vencimento ou emissão no recorte selecionado.">
-        {snapshot.monthly.length === 0 ? <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Sem histórico no recorte.</p> : <div className="overflow-x-auto"><table className="gso-analytics-responsive-table w-full min-w-[420px] text-sm"><thead><tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]"><th className="py-2">Mês</th><th className="py-2 text-right">Títulos</th><th className="py-2 text-right">Saldo</th></tr></thead><tbody>{snapshot.monthly.map((row) => <tr key={row.month} className="border-b border-[color:var(--minimal-border)] last:border-0"><td data-label="Mês" className="py-2 text-[color:var(--minimal-text)]">{formatMonthLabel(row.month)}</td><td data-label="Títulos" className="py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.titles.toLocaleString('pt-BR')}</td><td data-label="Saldo" className="py-2 text-right tabular-nums font-medium text-[color:var(--minimal-text)]">{formatCurrencyBRL(row.balance)}</td></tr>)}</tbody></table></div>}
-      </ChartCard>
-    </>}
+        </div>,
+      },
+      {
+        id: 'evolucao',
+        label: 'Evolução',
+        // A tabela de saldo por mês que vivia aqui saiu: ela misturava emissão e
+        // vencimento na mesma coluna e não dizia qual das duas posicionava a
+        // linha. A série declara a coorte de cada medida.
+        question: 'Como o recebimento se comportou ao longo do tempo, contra o que estava previsto.',
+        content: <AnalyticsTrendPanel domain="finance" />,
+      },
+    ]} />}
     </div>
   </AnalyticsHdDomainFrame>;
 }

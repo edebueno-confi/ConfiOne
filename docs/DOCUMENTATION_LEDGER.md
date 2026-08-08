@@ -1,5 +1,39 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## Registro corrente — sub-abas de evolução e fila por etapa cruzada — 2026-08-07
+
+- **Roadmap:** `DASHBOARD_PIPELINES_E_GRAFICOS_ROADMAP.md`, seções 4.5, 5 e 6.
+- **Sub-abas:** Suporte, Comercial e Financeiro passam a ter **Posição** e
+  **Evolução**, cada uma declarando no topo que pergunta responde. Carteira e
+  Retenção seguem sem sub-aba, porque a série de snapshot tem um único ponto.
+- **Remoção deliberada:** as três "Tendência mensal" antigas foram apagadas das
+  abas de posição, não mantidas ao lado das novas. Duplicar mediria a mesma coisa
+  por dois caminhos, que é a origem do defeito de "Receita ganha" duplicada.
+- **Janela própria:** a evolução usa doze meses, vinte e seis semanas ou sessenta
+  dias conforme o grão, independente do filtro de recorte. O motivo é dito na
+  tela, para que o total do gráfico não seja confundido com o indicador acima.
+- **Fila por etapa:** o gráfico de Suporte passa a ler o cruzamento canônico. A
+  ordem segue o fluxo do atendimento, não o volume; o tooltip abre a composição
+  por pipeline; etapa sem decisão fica em tom neutro e gera aviso em linguagem de
+  operação. O modelo antigo permanece como reserva se o cruzamento não devolver
+  linha.
+- **Estado explícito:** série ausente, vazia ou inteiramente em zero devolve
+  motivo em texto, nunca uma linha plana. As três situações têm teste próprio.
+- **Validação:** 30 asserções de contrato novas, typecheck, build, lint, gate de
+  qualidade e secret scan, todos no ambiente Windows.
+- **QA visual executado:** 18 combinações — três domínios, dois temas, três
+  resoluções — contra o build de produção servido em preview. Roteiros gravados
+  em `scripts/local-qa/dashboard-subabas-evolucao-qa.mjs` e
+  `dashboard-fila-por-etapa-qa.mjs`.
+- **Três defeitos de leitura corrigidos, todos invisíveis à verificação
+  estática:** linha suave inventando trajetória entre meses não medidos; fila
+  acumulada esmagando as barras por dividir eixo com medida de outra ordem de
+  grandeza; ausência de legenda em todos os gráficos.
+- **Achado que muda número publicado:** 2.587 atendimentos em etapa "Concluída"
+  estão marcados como abertos na origem, e 48% da fila publicada vem daí. O
+  painel passou a declarar de onde vem a classificação em vez de adivinhar pelo
+  nome. Correção estrutural proposta no roadmap, seção 5.1.
+
 ## Registro corrente — interfaces e remotos — 2026-08-07
 
 - **Relatório:** `reports/2026-08-07_kpi-discovery-e-lote-p0.md`, seções 15 e 16.

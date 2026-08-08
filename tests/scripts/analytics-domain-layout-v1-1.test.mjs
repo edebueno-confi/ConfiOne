@@ -13,6 +13,7 @@ const commercial = await readFile(new URL('../../apps/web/src/features/analytics
 const finance = await readFile(new URL('../../apps/web/src/features/analytics/AnalyticsFinancePage.tsx', import.meta.url), 'utf8');
 const ui = await readFile(new URL('../../apps/web/src/features/analytics/analytics-ui.tsx', import.meta.url), 'utf8');
 const charts = await readFile(new URL('../../apps/web/src/features/analytics/charts/AnalyticsCharts.tsx', import.meta.url), 'utf8');
+const trendContract = await readFile(new URL('../../apps/web/src/features/analytics/analytics-timeseries-contract.mjs', import.meta.url), 'utf8');
 
 test('dashboard por domínio não renderiza container global nem filtro de domínio', () => {
   assert.doesNotMatch(shell, /gso-source-rail/);
@@ -31,7 +32,13 @@ test('KPIs e gráficos compactos possuem semântica de leitura', () => {
   assert.match(ui, /data-kpi-role=\{resolvedSemantic\}/);
   assert.match(ui, /gso-kpi-snapshot-marker/);
   assert.match(charts, /CompactSummary/);
-  assert.match(charts, /CompactTemporalSummary/);
+  // `CompactTemporalSummary` existia para degradar uma série curta a resumo em
+  // vez de desenhar uma linha de dois pontos. As séries mensais que o usavam
+  // saíram das abas de posição e viraram a sub-aba de evolução, onde a mesma
+  // proteção é feita pelo contrato: série sem sinal devolve motivo em texto e
+  // nenhum gráfico é desenhado. A garantia mudou de lugar, não desapareceu.
+  assert.match(trendContract, /unavailable_reason|history_insufficient/);
+  assert.match(trendContract, /available: false/);
 });
 
 test('contexto executivo e logs de integraÃ§Ã£o permanecem localizados por Ã¡rea', () => {

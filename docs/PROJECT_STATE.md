@@ -1,5 +1,40 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+## Adendo corrente — evolução temporal e fila cruzada por etapa — 2026-08-07
+
+Roadmap: seções 4.5, 5 e 6 de `docs/DASHBOARD_PIPELINES_E_GRAFICOS_ROADMAP.md`.
+
+**Suporte, Comercial e Financeiro ganharam sub-abas de Posição e Evolução.**
+A série vem de `rpc_analytics_timeseries`, que declara a coorte de cada medida no
+próprio payload — a frase que o usuário lê é escrita ao lado da fórmula, para que
+não possam divergir.
+
+As três "Tendência mensal" antigas foram **removidas**, não mantidas ao lado das
+novas. A decisão é a mesma que corrigiu a duplicidade de indicadores: quando duas
+telas medem a mesma coisa por caminhos diferentes, uma delas está errada e não se
+sabe qual.
+
+**O gráfico de fila de Suporte passou a ler o cruzamento canônico de etapas.**
+Ordena pelo fluxo do atendimento em vez do volume, abre a composição por pipeline
+no tooltip e mantém etapa sem decisão visível como pendência, em tom neutro.
+
+**O QA visual foi executado**, em 18 combinações de domínio, tema e resolução,
+contra o build de produção servido em preview. Ele encontrou três defeitos de
+leitura que tipo, lint, build e contrato haviam aprovado sem apontar nada — linha
+suave inventando trajetória, eixo compartilhado entre medidas de ordem de
+grandeza diferente e ausência de legenda. Os três foram corrigidos e têm teste.
+
+E encontrou um quarto, mais grave e que não é do código: **2.587 atendimentos em
+etapa chamada "Concluída" estão marcados como abertos no HubSpot, e 48% da fila
+publicada vem daí.** O painel passou a dizer de onde vem a classificação em vez
+de adivinhar pelo nome, que inventaria regra de negócio na tela. A correção
+estrutural está proposta no roadmap, seção 5.1, e é o próximo lote recomendado.
+
+Dois achados laterais ficam registrados sem correção: `npm run web:dev` não monta
+o aplicativo (`$RefreshSig$ is not defined`, preâmbulo de Fast Refresh ausente;
+o build e o preview funcionam), e os campos de login não têm rótulo associado
+programaticamente, o que é defeito de acessibilidade.
+
 ## Adendo corrente — remotos consolidados e trabalho publicado — 2026-08-07
 
 Relatório: seção 16 de `docs/reports/2026-08-07_kpi-discovery-e-lote-p0.md`.

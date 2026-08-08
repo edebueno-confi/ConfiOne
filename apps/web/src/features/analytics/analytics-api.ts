@@ -704,3 +704,42 @@ export async function getSupportStageBreakdown(pipelineId: string | null = null)
   if (error) throw toAppError(error, 'Falha ao carregar a distribuição por etapa.');
   return data;
 }
+
+export type TimeseriesDomain = 'support' | 'commercial' | 'finance';
+export type TimeseriesGrain = 'day' | 'week' | 'month';
+
+/**
+ * Janela padrão da evolução: doze meses cheios até o mês corrente.
+ *
+ * O recorte de data das abas de posição não serve aqui. Ele costuma ser curto,
+ * porque responde "como estamos agora", e uma série de trinta dias em grão
+ * mensal produz um ou dois pontos — o suficiente para desenhar uma linha e
+ * sugerir tendência que o dado não sustenta.
+ */
+function defaultTimeseriesWindow(grain: TimeseriesGrain): { from: string; to: string } {
+  const to = new Date();
+  const from = new Date(to);
+  if (grain === 'day') from.setDate(from.getDate() - 60);
+  else if (grain === 'week') from.setDate(from.getDate() - 26 * 7);
+  else from.setMonth(from.getMonth() - 11);
+  from.setDate(1);
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  return { from: iso(from), to: iso(to) };
+}
+
+export async function getAnalyticsTimeseries(
+  domain: TimeseriesDomain,
+  grain: TimeseriesGrain = 'month',
+  window?: { from?: string | null; to?: string | null },
+): Promise<unknown> {
+  const client = requireSupabaseBrowserClient();
+  const fallback = defaultTimeseriesWindow(grain);
+  const { data, error } = await client.rpc('rpc_analytics_timeseries', {
+    p_domain: domain,
+    p_from: window?.from || fallback.from,
+    p_to: window?.to || fallback.to,
+    p_grain: grain,
+  });
+  if (error) throw toAppError(error, 'Falha ao carregar a evolução do período.');
+  return data;
+}

@@ -26,15 +26,32 @@ const comFiltro = [
 test('o filtro sempre precede os indicadores que ele governa', () => {
   // Ler um número antes de saber qual recorte ele cobre é o caminho mais curto
   // para uma decisão errada. Em toda aba com filtro, o recorte vem primeiro.
+  //
+  // A verificação mudou quando os domínios ganharam sub-abas. Antes, comparar a
+  // posição no arquivo bastava, porque a ordem do texto era a ordem da tela. Com
+  // as sub-abas, o conteúdo é declarado numa constante acima do `return`, e a
+  // posição no arquivo deixou de significar posição na tela.
+  //
+  // O que continua sendo verdade, e é o que se afere agora: dentro do JSX
+  // devolvido, o filtro vem antes de tudo que ele governa — seja o painel de
+  // indicadores diretamente, seja o conjunto de sub-abas que o contém.
   for (const [nome, source, filtro] of comFiltro) {
-    const posFiltro = at(source, filtro);
-    const posKpis = at(source, /<AnalyticsKpiBoard/);
-    assert.ok(posFiltro > -1, `${nome} precisa ter barra de filtros`);
-    assert.ok(posKpis > -1, `${nome} precisa exibir indicadores`);
-    assert.ok(
-      posFiltro < posKpis,
-      `${nome}: o filtro aparece depois dos indicadores; inverta a ordem`,
+    const jsx = source.slice(source.search(/\n {2}return \(|\n {2}return </));
+    const posFiltro = at(jsx, filtro);
+    const posGovernado = Math.min(
+      ...[/<AnalyticsKpiBoard/, /<AnalyticsDomainTabs/]
+        .map((padrao) => at(jsx, padrao))
+        .filter((pos) => pos > -1),
     );
+    assert.ok(posFiltro > -1, `${nome} precisa ter barra de filtros`);
+    assert.ok(Number.isFinite(posGovernado), `${nome} precisa exibir indicadores`);
+    assert.ok(
+      posFiltro < posGovernado,
+      `${nome}: o filtro aparece depois do que governa; inverta a ordem`,
+    );
+    // O painel de indicadores precisa continuar existindo em algum lugar da
+    // aba, mesmo que agora dentro de uma sub-aba.
+    assert.ok(at(source, /<AnalyticsKpiBoard/) > -1, `${nome} precisa exibir indicadores`);
   }
 });
 

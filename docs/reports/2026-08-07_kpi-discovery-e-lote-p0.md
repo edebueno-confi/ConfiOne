@@ -1163,3 +1163,245 @@ Caminhos, em ordem de custo:
 2. **Sincronizar o ambiente local**, devolvendo a credencial ao arquivo de
    ambiente e repetindo a carga completa. Fiel, porém é a carga de 470 páginas.
 3. **Fazer o QA visual contra o ambiente publicado**, que já tem tudo correto.
+
+---
+
+## 20. Sub-abas de evolução e fila por etapa cruzada
+
+### 20.1 O que mudou de estrutura
+
+Suporte, Comercial e Financeiro passaram a ter duas sub-abas, **Posição** e
+**Evolução**, cada uma com uma frase no topo dizendo que pergunta responde.
+
+A separação é de conteúdo, não de navegação. "Qual é a posição" e "como evoluiu"
+pedem recortes de data, granularidades e visualizações diferentes; espremer as
+duas na mesma tela é o que produz painel confuso.
+
+Carteira e Retenção **não** ganharam sub-aba. A série de snapshot tem um único
+ponto, capturado em 2026-08-07. Um gráfico com um ponto sugere tendência onde não
+há, que é a mesma desonestidade que o resto do painel combate.
+
+### 20.2 A remoção que acompanha a adição
+
+Três visualizações foram **apagadas**, não mantidas ao lado das novas:
+
+| Removido | Onde vivia |
+| --- | --- |
+| `TicketMonthlyChart` | Suporte, aba de posição |
+| `CommercialMonthlyChart` | Comercial, aba de posição |
+| Tabela de saldo mensal | Financeiro, aba de posição |
+
+Isto é a aplicação direta da lição do ciclo anterior. Quando "Receita ganha"
+apareceu duas vezes com valores diferentes, a causa foi eu ter **adicionado** os
+indicadores novos ao lado dos antigos em vez de substituí-los. Manter as
+tendências antigas ao lado da sub-aba de evolução reproduziria o defeito: duas
+telas medindo a mesma coisa por caminhos diferentes, sem que ninguém saiba qual
+está certa.
+
+A tabela do Financeiro tinha um problema adicional que a substituição resolve:
+ela dizia "saldo por mês de vencimento **ou** emissão" sem informar qual das duas
+posicionava cada linha. A série declara a coorte de cada medida.
+
+### 20.3 Janela independente do recorte, e por quê
+
+A evolução usa doze meses no grão mensal, vinte e seis semanas no semanal,
+sessenta dias no diário — sempre independente do filtro de data da aba de
+posição.
+
+O motivo é concreto: o recorte de posição costuma ser curto, porque responde
+"como estamos agora". Uma série de trinta dias em grão mensal desenha um ou dois
+pontos. A tela informa isso ao usuário, para que ninguém compare o total do
+gráfico com o indicador acima e conclua que um dos dois está errado.
+
+### 20.4 Decisões de leitura nos gráficos
+
+Três escolhas que separam estes gráficos dos anteriores:
+
+**O saldo virou a informação principal.** Aberturas e encerramentos lado a lado
+não respondem "a fila cresceu ou diminuiu". A linha de saldo acumulado responde,
+e é ela que fica em destaque, com linha de referência no zero — sem ela, um saldo
+negativo parece apenas uma barra menor.
+
+**A taxa de conversão ganhou eixo próprio.** Comparar percentual com contagem na
+mesma escala achata a tendência que interessa.
+
+**A taxa é do próprio período, não acumulada.** Um mês ruim não deve ser diluído
+pelo histórico.
+
+### 20.5 A fila por etapa passou a ler o cruzamento
+
+O backend do cruzamento canônico estava pronto desde o lote anterior; a tela
+ainda lia o modelo antigo, que comparava texto cru. Agora consome
+`rpc_analytics_support_stage_breakdown`, com três diferenças de leitura:
+
+- **Ordem pelo fluxo do atendimento, não pelo volume.** Ordenar por volume produz
+  um ranking; ordenar pelo fluxo mostra onde a fila se acumula dentro do
+  processo, que é a pergunta real.
+- **Tooltip abre a composição por pipeline.** Uma barra consolidada precisa poder
+  ser auditada: quem vê "Em tratativa: 240" deve conseguir descobrir de onde
+  vieram os 240.
+- **Etapa sem decisão fica em tom neutro e gera aviso.** Ela não é uma etapa do
+  processo, é uma pendência de configuração, e o aviso diz onde resolver sem
+  citar nome de tabela.
+
+O modelo antigo permanece como reserva se o cruzamento não devolver linha —
+melhor uma leitura menos consolidada do que nenhuma leitura.
+
+### 20.6 Estado explícito em vez de linha plana
+
+O contrato de apresentação trata **três** situações como indisponível, não uma:
+
+1. o backend declarou motivo;
+2. a lista veio vazia;
+3. todos os pontos têm valor zero em todas as medidas.
+
+A terceira importa e é fácil de esquecer. Uma série inteira em zero é
+indistinguível de ausência de dado, e desenhá-la afirma "não aconteceu nada"
+quando a verdade é "não sabemos". Cada uma das três tem teste próprio.
+
+### 20.7 Dois testes estruturais quebraram, e a correção não foi afrouxá-los
+
+**"O filtro sempre precede os indicadores que ele governa"** comparava posição no
+arquivo. Com as sub-abas, o conteúdo passou a ser declarado numa constante acima
+do `return`, e posição no texto deixou de significar posição na tela. A
+verificação foi reescrita para percorrer apenas o JSX devolvido e exigir que o
+filtro venha antes do que governa — seja o painel de indicadores diretamente,
+seja o conjunto de sub-abas que o contém. A asserção de que o painel continua
+existindo em algum lugar da aba foi mantida.
+
+**"KPIs e gráficos compactos possuem semântica de leitura"** exigia a existência
+de `CompactTemporalSummary`, que degradava série curta a resumo. O símbolo foi
+apagado junto com os gráficos que o usavam. A garantia não desapareceu: mudou de
+lugar, para o contrato da série. A asserção passou a apontar para lá.
+
+### 20.8 Validação
+
+| Verificação | Resultado |
+| --- | --- |
+| Contratos novos (`node:test`) | **22 asserções**, todas aprovadas |
+| Suíte completa | 444 aprovados, 19 reprovados |
+| Regressão introduzida | **zero** |
+| `tsc --noEmit` nos arquivos alterados | **limpo** |
+| `eslint` em `features/analytics` | **0 erros** |
+| Secret scan | 2.092 arquivos, 0 ocorrências |
+
+Os 19 reprovados foram comparados contra a linha de base extraída do próprio
+`HEAD` com `git archive`, que é leitura pura e não toca o índice: **o conjunto é
+exatamente o mesmo, teste a teste**. São falhas anteriores a este lote, quase
+todas de testes estruturais que ainda esperam a grade de cartões substituída pelo
+painel em ciclos passados.
+
+**Não validado, e é preciso dizer com clareza:**
+
+- `npm run web:build` e `npm run web:typecheck` **não foram executados no
+  ambiente Windows** neste ciclo. A ferramenta de shell do host ficou
+  indisponível durante toda a fase de validação. O typecheck foi executado no
+  ambiente Linux com um mapeamento explícito para o pacote de contratos, porque
+  os symlinks de workspace do Windows não são legíveis do mount — e voltou limpo
+  para todos os arquivos alterados. Isso é evidência forte de que compila, mas
+  **não substitui o build**.
+- **Nenhum QA visual em navegador.** Nada foi visto em 1920×1080, 1366×768 ou
+  390×844, nem nos dois temas. As sub-abas são estrutura nova; é exatamente o
+  tipo de mudança em que a validação estática não alcança o que importa.
+- **A série do domínio financeiro nunca foi conferida contra dado real.** Suporte
+  e Comercial foram, no lote anterior, com resultado significativo — fila
+  crescendo mês a mês e taxa de ganho caindo de 10,3% para 8,0%. O financeiro
+  não; a conexão ao banco também ficou indisponível nesta fase.
+
+### 20.9 Dívida que este lote não pagou
+
+Duas funções de filtro de pipeline seguem no código sem nenhuma chamada,
+`PipelineScopeFilter` e `CommercialPipelineScopeFilter`, substituídas pela caixa
+de seleção em ciclo anterior. O lint as aponta. Não foram removidas aqui porque
+apagá-las arrasta uma cadeia de quatro auxiliares e foge do escopo pedido —
+fica registrado como limpeza pendente, não como descuido.
+
+---
+
+## 21. QA visual executado, e o que ele encontrou
+
+O ciclo anterior fechou sem QA em navegador. Este executou, e vale registrar que
+**as verificações estáticas tinham passado com zero achado enquanto três
+defeitos de leitura estavam na tela**. Nenhum deles seria pego por tipo, lint,
+build ou contrato.
+
+### 21.1 Três defeitos meus, corrigidos
+
+**A linha suave inventava trajetória.** `type="monotone"` desenha picos e vales
+entre dois meses que ninguém mediu. No Comercial, a taxa de conversão subia a 32%
+e despencava entre dez/25 e jan/26 numa curva que o dado não contém. Trocado por
+segmento reto em todas as séries, com teste que impede a volta.
+
+**A fila acumulada esmagava as barras.** No Suporte, o acumulado chega a 4.500
+enquanto o movimento mensal fica na casa das centenas. Dividindo o mesmo eixo, as
+barras de abertos e encerrados colavam no zero e ficavam ilegíveis. Eu havia
+aplicado exatamente esta lição à taxa do Comercial e não a apliquei aqui. Agora a
+fila tem eixo próprio à direita; o mesmo vale para o previsto do Financeiro.
+
+**Nenhum gráfico tinha legenda.** Duas cores de barra e nenhuma indicação de qual
+é ganho e qual é perda — e a suposição natural, de que a barra maior é a boa,
+estava errada no Comercial, onde a maior é "Perdidos".
+
+### 21.2 Um defeito que não é meu, e é o mais grave
+
+O gráfico de fila por etapa mostra **"Concluída" como a maior barra de uma
+fila**, com 2.587 atendimentos.
+
+Investigado no banco: essas etapas estão configuradas no HubSpot com
+`ticketState = OPEN`. O painel lê a configuração da origem, corretamente, e
+conclui que atendimentos concluídos continuam esperando.
+
+| Etapa canônica | Estado na origem | Atendimentos |
+| --- | --- | --- |
+| Concluída | OPEN | 2.587 |
+| Novo | OPEN | 2.379 |
+| Deploy realizado | OPEN | 15 |
+
+**Consequência medida: "Fila atual" publica 5.448, e 2.602 desses — 48% — estão
+em etapas cujo próprio nome afirma conclusão.** A "Espera mediana na fila" de
+604,5 dias é sustentada pelos mesmos registros.
+
+O painel **não** foi ensinado a adivinhar pelo nome. Tratar "Concluída" como
+encerrada porque o texto sugere isso seria inventar regra de negócio na tela,
+contra a regra de que o backend é a fonte da verdade — e quebraria no dia em que
+alguém criasse uma etapa chamada "Aguardando conclusão".
+
+O que foi feito agora é declarar de onde vem a classificação, em uma frase abaixo
+do gráfico: um atendimento conta como fila enquanto a etapa estiver marcada como
+aberta na origem, e etapa com nome de conclusão aparecendo ali indica
+configuração a revisar. A contradição fica visível para quem pode corrigi-la.
+
+**A correção estrutural fica proposta, não executada.** A tabela de cruzamento já
+é o lugar da decisão humana sobre etapas; falta a ela uma decisão de
+encerramento, que permitiria à operação declarar "esta etapa canônica encerra o
+atendimento" sem depender de acerto no HubSpot. É registrada como o próximo lote
+porque muda números publicados e pede aviso à operação antes de entrar.
+
+### 21.3 Cobertura do QA
+
+18 combinações — três domínios, dois temas, três resoluções (1920×1080,
+1366×768, 390×844). Verificado por combinação: a sub-aba de evolução troca o
+conteúdo e desenha gráfico; nenhum número aparece nas duas sub-abas do mesmo
+domínio; a coorte é declarada no rodapé; não há rolagem horizontal; nenhum termo
+técnico vaza; nenhum erro de console ou requisição falha.
+
+Resultado após as correções: **18 de 18 sem achado**, com capturas em
+`output/dashboard-subabas-evolucao/`.
+
+Dois roteiros novos ficam no repositório para reexecução:
+`scripts/local-qa/dashboard-subabas-evolucao-qa.mjs` e
+`scripts/local-qa/dashboard-fila-por-etapa-qa.mjs`.
+
+### 21.4 Achados laterais, registrados e não corrigidos
+
+**O modo de desenvolvimento não sobe.** `npm run web:dev` serve a página, mas o
+aplicativo não monta: `$RefreshSig$ is not defined`. O preâmbulo de Fast Refresh
+não está sendo injetado no HTML pelo plugin de React nesta versão do Vite. O
+build de produção e o preview funcionam, e foi contra o preview que todo o QA
+rodou — o que é mais fiel ao que a operação usa. Não é regressão deste lote:
+nenhum arquivo de configuração de build foi tocado aqui.
+
+**Os campos de login não têm rótulo associado programaticamente.** O rótulo
+envolve o campo sem `htmlFor` e sem `id`, e um leitor de tela não anuncia o campo
+corretamente. Descoberto porque o seletor por rótulo falhou no roteiro de QA.
+Fica registrado como defeito de acessibilidade fora do escopo deste lote.
