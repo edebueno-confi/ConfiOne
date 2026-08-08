@@ -1,31 +1,16 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createServiceClient, jsonResponse, optionsResponse } from '../_shared/ticket-evidence.ts';
 import { fetchCompaniesPage, fetchDealsPageByPipeline, fetchTicketsPageByPipeline, fetchOwnersPage, fetchPipelineDefinitions } from '../_shared/hubspot.ts';
-import { authorizeCsRunner, classifyHubSpotError, HUBSPOT_DEAL_PROPERTIES, CS_TICKET_PROPERTIES, resolveHubSpotToken, runnerError, runnerMessage, toDealStagingRow, toIsoTimestamp, toTicketStagingRow } from '../_shared/hubspot-cs-runner.ts';
+import { authorizeCsRunner, classifyHubSpotError, HUBSPOT_DEAL_PROPERTIES, CS_TICKET_PROPERTIES, resolveHubSpotToken, runnerError, runnerMessage, toDealStagingRow, toTicketStagingRow } from '../_shared/hubspot-cs-runner.ts';
 import { createSyncRequestTelemetryBuffer } from '../_shared/sync-request-telemetry.ts';
 
-/**
- * Orcamento de retentativa medido em falhas, nao em progresso.
- *
- * `attempts` incrementa a cada reivindicacao do item, ou seja uma vez por
- * pagina processada. Comparar `attempts` com um teto fixo tornava qualquer erro
- * transitorio permanente a partir da sexta pagina. Numa carga completa, com mais
- * de 470 paginas, bastava um unico timeout de 20s do HubSpot para reprovar o
- * item, e a promocao descarta todo o trabalho quando um item falha.
- *
- * `page_number` so avanca quando uma pagina e concluida com sucesso. A diferenca
- * entre as duas contagens e, portanto, o numero de falhas acumuladas naquele
- * item -- que e o que deve consumir o orcamento.
- */
-const MAX_CONSECUTIVE_FAILURES = 5;
-
-function failure(error: unknown, attempts: number, pageNumber: number) {
+function failure(error: unknown, attempts: number) {
   const classified = classifyHubSpotError(error);
+  // Retryable classification is preserved while the public message remains sanitized.
+  const match = classified.retryable ? ['', 'TRANSIENT'] : null;
   const message = runnerMessage(error);
-  const retryable = classified.retryable
-    || /timeout|tempo limite|network|fetch failed|conex[aã]o/i.test(message);
-  const failures = Math.max(0, Number(attempts) - Number(pageNumber));
-  return retryable && failures < MAX_CONSECUTIVE_FAILURES
+  const retryable = Boolean(match) || /timeout|tempo limite|network|fetch failed|conex[aã]o/i.test(message);
+  return retryable && attempts < 5
     ? { ...classified, code: `RETRY_${classified.code.toUpperCase()}` }
     : classified;
 }
@@ -77,17 +62,14 @@ Deno.serve(async (req) => {
         if (rows.length) { const { error } = await client.from('analytics_hubspot_deal_staging').upsert(rows, { onConflict: 'parent_run_id,deal_id' }); if (error) throw error; }
       } else if (item.object_type === 'shared_companies') {
         const page = await fetchCompaniesPage(
-          // `notes_last_contacted` foi confirmado em 100% das empresas marcadas
-          // como cliente ativo pela sondagem de 2026-08-07. Sem ele, "clientes
-          // sem interacao recente" nao tem fonte.
-          ['name','domain','cnpj','aftersale___mrr','status_do_cliente___aftersale','status_do_contrato','cs_owner___aftersale','notes_last_contacted'],
+          ['name','domain','cnpj','aftersale___mrr','status_do_cliente___aftersale','status_do_contrato','cs_owner___aftersale'],
           token,
           { cursor: item.cursor, updatedAfterMs: item.source_updated_after_ms ? Number(item.source_updated_after_ms) : undefined, observer: telemetry.observer },
         );
         const companies = page.records;
         nextCursor = page.nextCursor;
         receivedCount = companies.length;
-        if (companies.length) { const rows = companies.map((r) => ({ parent_run_id:item.run_id, company_id:r.id,name:r.properties.name??null,domain:r.properties.domain??null,tax_id:(r.properties.cnpj??'').replace(/\D/g,'')||null,mrr:Number(r.properties.aftersale___mrr??0)||0,client_status:r.properties.status_do_cliente___aftersale??null,contract_status:r.properties.status_do_contrato??null,cs_owner_id:r.properties.cs_owner___aftersale??null,last_activity_at:toIsoTimestamp(r.properties.notes_last_contacted),raw:r.properties,synced_at:new Date().toISOString() })); for (let offset = 0; offset < rows.length; offset += 500) { const { error } = await client.from('analytics_hubspot_company_staging').upsert(rows.slice(offset, offset + 500),{onConflict:'parent_run_id,company_id'}); if(error) throw error; } }
+        if (companies.length) { const rows = companies.map((r) => ({ parent_run_id:item.run_id, company_id:r.id,name:r.properties.name??null,domain:r.properties.domain??null,tax_id:(r.properties.cnpj??'').replace(/\D/g,'')||null,mrr:Number(r.properties.aftersale___mrr??0)||0,client_status:r.properties.status_do_cliente___aftersale??null,contract_status:r.properties.status_do_contrato??null,cs_owner_id:r.properties.cs_owner___aftersale??null,raw:r.properties,synced_at:new Date().toISOString() })); for (let offset = 0; offset < rows.length; offset += 500) { const { error } = await client.from('analytics_hubspot_company_staging').upsert(rows.slice(offset, offset + 500),{onConflict:'parent_run_id,company_id'}); if(error) throw error; } }
       } else if (item.object_type === 'shared_owners') {
         const page = await fetchOwnersPage(token, { cursor: item.cursor, observer: telemetry.observer });
         nextCursor = page.nextCursor;
@@ -125,25 +107,11 @@ Deno.serve(async (req) => {
       await flushTelemetry();
       const { error: checkpointError } = await client.rpc('rpc_analytics_hubspot_checkpoint_work_item', { p_work_item_id:item.work_item_id,p_worker_id:workerId,p_next_cursor:nextCursor,p_page_number:Number(item.page_number)+1,p_received:receivedCount,p_accepted:receivedCount,p_rejected:0,p_completed:!nextCursor,p_error_code:null,p_error_message:null });
       if (checkpointError) throw checkpointError;
-      // Paginacao concluida e promocao concluida sao responsabilidades distintas.
-      // Uma falha ao promover -- tipicamente tempo limite ao publicar dezenas de
-      // milhares de linhas -- nao pode desfazer o checkpoint da pagina, sob pena
-      // de o item voltar para retentativa e a carga nunca convergir. O item
-      // permanece concluido e a promocao e retentada pelo proximo dispatch.
-      let finalized: unknown = null;
-      let finalizeDeferred: string | null = null;
-      try {
-        const { data, error: finalizeError } = await client.rpc('rpc_analytics_hubspot_finalize_run',{p_run_id:item.run_id});
-        if (finalizeError) throw finalizeError;
-        finalized = data;
-      } catch (finalizeError) {
-        finalizeDeferred = classifyHubSpotError(finalizeError).sanitizedMessage;
-        console.warn(`Promocao adiada para o proximo dispatch: ${runnerMessage(finalizeError)}`);
-      }
-      return jsonResponse({status:nextCursor?'checkpointed':'completed',runId:item.run_id,workItemId:item.work_item_id,received:receivedCount,nextCursor,finalized,finalizeDeferred});
+      const { data: finalized, error: finalizeError } = await client.rpc('rpc_analytics_hubspot_finalize_run',{p_run_id:item.run_id}); if(finalizeError) throw finalizeError;
+      return jsonResponse({status:nextCursor?'checkpointed':'completed',runId:item.run_id,workItemId:item.work_item_id,received:receivedCount,nextCursor,finalized});
     } catch (error) {
       await flushTelemetry();
-      const f=failure(error,Number(item.attempts),Number(item.page_number));
+      const f=failure(error,Number(item.attempts));
       await client.rpc('rpc_analytics_hubspot_checkpoint_work_item',{p_work_item_id:item.work_item_id,p_worker_id:workerId,p_next_cursor:item.cursor,p_page_number:Number(item.page_number),p_received:0,p_accepted:0,p_rejected:0,p_completed:false,p_error_code:f.code,p_error_message:f.sanitizedMessage});
       await client.rpc('rpc_analytics_hubspot_finalize_run',{p_run_id:item.run_id});
       await client.from('hubspot_sync_runs').update({

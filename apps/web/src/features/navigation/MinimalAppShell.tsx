@@ -178,7 +178,6 @@ function SidebarIconButton({
 }
 
 function GeniusSidebar({
-  avatarUrl,
   collapsed,
   onCollapse,
   onNavigate,
@@ -190,7 +189,6 @@ function GeniusSidebar({
   userSubtitle,
   signOut,
 }: {
-  avatarUrl: string | null;
   collapsed: boolean;
   onCollapse: () => void;
   onNavigate?: () => void;
@@ -265,7 +263,7 @@ function GeniusSidebar({
             title={collapsed ? `Abrir menu de ${userTitle}` : undefined}
             type="button"
           >
-            <Avatar email={email} name={fullName} size="md" src={avatarUrl} label={`Perfil de ${userTitle}`} />
+            <Avatar email={email} name={fullName} size="md" label={`Perfil de ${userTitle}`} />
             {!collapsed ? <span className="gso-sidebar-account-identity"><strong>{userTitle}</strong><small>{userSubtitle}</small></span> : null}
             {!collapsed ? <svg aria-hidden="true" className={cx('gso-sidebar-chevron', accountMenuOpen && 'rotate-180')} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" /></svg> : null}
           </button>
@@ -276,9 +274,6 @@ function GeniusSidebar({
             <button aria-label="Fechar menu da conta" className="gso-sidebar-menu-close" onClick={() => setAccountMenuOpen(false)} type="button">×</button>
           </div>
           <ThemeToggle className="w-full justify-center" />
-          {/* O chevron do rodape agora abre a conta de verdade: o proprio
-              perfil, as preferencias e a saida da sessao. */}
-          <button className="gso-sidebar-menu-action" onClick={() => { setAccountMenuOpen(false); navigate('/meu-perfil'); }} role="menuitem" type="button">Meu perfil</button>
           <button className="gso-sidebar-menu-action" onClick={() => navigate('/admin/settings')} role="menuitem" type="button">Preferências</button>
           <button className="gso-sidebar-menu-action gso-sidebar-menu-action--danger" onClick={() => void signOut()} role="menuitem" type="button">Encerrar sessão</button>
         </div> : null}
@@ -297,7 +292,7 @@ export function MinimalAppShell({
   userSubtitle: string;
 }) {
   const location = useLocation();
-  const { gate, signOut, user } = useAuthContext();
+  const { signOut, user } = useAuthContext();
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -311,12 +306,7 @@ export function MinimalAppShell({
   });
   const mobileCloseButtonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
-  // `profiles` e a fonte da verdade do nome e da foto: e o que a pessoa edita em
-  // "Meu perfil". O metadado do Auth fica apenas como retaguarda para o
-  // intervalo entre o login e a resolução do contexto.
-  const fullName =
-    String(gate.actor?.profile.full_name ?? user?.user_metadata?.full_name ?? '').trim() || null;
-  const avatarUrl = gate.actor?.profile.avatar_url ?? null;
+  const fullName = String(user?.user_metadata?.full_name ?? '').trim() || null;
   const email = user?.email ?? null;
   const userTitle = fullName ?? email ?? 'Operador interno';
   const routeLabel = resolveMinimalRouteLabel(location.pathname);
@@ -375,7 +365,6 @@ export function MinimalAppShell({
       </a>
       <div className="flex h-full min-h-0 gap-2 lg:p-2">
         <GeniusSidebar
-          avatarUrl={avatarUrl}
           collapsed={sidebarCollapsed}
           email={email}
           fullName={fullName}
@@ -420,7 +409,7 @@ export function MinimalAppShell({
             sidebarCollapsed ? 'flex flex-col items-center gap-2 px-2' : 'space-y-2',
           )} data-collapsed={sidebarCollapsed}>
             <div className={cx('flex items-center gap-2.5', sidebarCollapsed ? 'justify-center' : 'min-w-0')}>
-              <Avatar email={email} name={fullName} size={sidebarCollapsed ? 'sm' : 'md'} src={avatarUrl} label={`Perfil de ${userTitle}`} />
+              <Avatar email={email} name={fullName} size={sidebarCollapsed ? 'sm' : 'md'} label={`Perfil de ${userTitle}`} />
               {!sidebarCollapsed ? <div className="min-w-0 flex-1 leading-tight">
                 <p className="truncate text-xs font-semibold text-[color:var(--minimal-text)]">{userTitle}</p>
                 <p className="truncate text-[10px] text-[color:var(--minimal-text-tertiary)]">{userSubtitle}</p>
@@ -442,7 +431,6 @@ export function MinimalAppShell({
             </button>
             {accountMenuOpen ? <div className="gso-sidebar-account-menu rounded-lg border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] p-2 shadow-lg" role="menu">
               <ThemeToggle className="w-full justify-center" />
-              <Link className="gso-sidebar-menu-action mt-2 inline-flex min-h-9 w-full items-center justify-center rounded-md px-2.5 text-xs font-medium text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]" onClick={() => setAccountMenuOpen(false)} role="menuitem" to="/meu-perfil">Meu perfil</Link>
               <button aria-label="Encerrar sessão" className="gso-sidebar-signout mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-md px-2.5 text-xs font-medium text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]" onClick={() => void signOut()} role="menuitem" type="button">
                 <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14.5 7.5 19 12l-4.5 4.5M19 12H9M11 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H11" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" /></svg>
                 <span>Encerrar sessão</span>
@@ -497,7 +485,7 @@ export function MinimalAppShell({
             <div className="ml-auto flex items-center gap-2">
               <ThemeToggle />
               <div className="hidden items-center gap-2 border-l border-[color:var(--minimal-border)] pl-3 sm:flex">
-                <Avatar email={email} name={fullName} size="sm" src={avatarUrl} label={`Perfil de ${userTitle}`} />
+                <Avatar email={email} name={fullName} size="sm" label={`Perfil de ${userTitle}`} />
                 <div className="max-w-[180px] leading-tight">
                   <p className="truncate text-xs font-medium text-[color:var(--minimal-text)]">{userTitle}</p>
                   <p className="truncate text-[10px] text-[color:var(--minimal-text-tertiary)]">{userSubtitle}</p>
@@ -506,7 +494,7 @@ export function MinimalAppShell({
                   <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M14.5 7.5 19 12l-4.5 4.5M19 12H9M11 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H11" /></svg>
                 </button>
               </div>
-              <Avatar email={email} name={fullName} onClick={() => void signOut()} size="md" src={avatarUrl} label={`Encerrar sessão de ${userTitle}`} className="sm:hidden" />
+              <Avatar email={email} name={fullName} onClick={() => void signOut()} size="md" label={`Encerrar sessão de ${userTitle}`} className="sm:hidden" />
             </div>
           </header>
 
@@ -525,7 +513,7 @@ export function MinimalAppShell({
                 </div>
                 <div className="border-t border-[color:var(--minimal-border)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                   <div className="flex items-center gap-3">
-                    <Avatar email={email} name={fullName} size="md" src={avatarUrl} />
+                    <Avatar email={email} name={fullName} size="md" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-[color:var(--minimal-text)]">{userTitle}</p>
                       <p className="truncate text-xs text-[color:var(--minimal-text-tertiary)]">{userSubtitle}</p>

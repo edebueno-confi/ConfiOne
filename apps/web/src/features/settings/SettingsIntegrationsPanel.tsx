@@ -202,14 +202,14 @@ export function SettingsIntegrationsPanel({
 
   if (!published.length) {
     return (
-      <UiPage className="gso-ui-page--fill">
+      <UiPage>
         <UiEmptyState icon="plug" title="Nenhuma integração disponível neste ambiente." />
       </UiPage>
     );
   }
 
   return (
-    <UiPage className="gso-ui-page--fill">
+    <UiPage>
       <UiPageHeader
         actions={
           <UiButton disabled={busy || reloading} icon="refresh" onClick={() => void reload()}>
@@ -224,7 +224,7 @@ export function SettingsIntegrationsPanel({
 
       <IntegrationsSummary summary={summary} />
 
-      <div className="gso-ui-body gso-ui-grow">
+      <div className="gso-ui-body">
         <div className="gso-ui-cards">
           {published.map((item) =>
             item.provider === 'omie' ? (

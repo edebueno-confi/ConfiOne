@@ -91,7 +91,7 @@
   gap: 1rem;
   align-content: start;
   min-width: 0;
-  padding: 1.15rem var(--app-gutter) 1.25rem;
+  padding: 1.15rem 1.5rem 1.5rem;
   background: var(--ui-canvas);
 }
 
@@ -425,22 +425,6 @@
 .gso-ui-alert { margin: 0.85rem 0 0; font-size: 0.8rem; font-weight: 600; line-height: 1.5; }
 .gso-ui-alert--error { color: var(--ui-danger-ink); }
 .gso-ui-alert--success { color: var(--ui-success-ink); }
-/* Valor literal que precisa ser lido caractere a caractere (senha temporária de
-   exibição única). Fonte monoespaçada e quebra explícita para não esconder
-   nenhum símbolo. */
-.gso-ui-code {
-  margin: 0.5rem 0 0;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid var(--ui-border);
-  border-radius: 0.6rem;
-  background: var(--ui-surface-muted);
-  color: var(--ui-text);
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.95rem;
-  letter-spacing: 0.04em;
-  overflow-wrap: anywhere;
-  user-select: all;
-}
 
 @media (max-width: 760px) {
   .gso-ui-grid { grid-template-columns: 1fr; }
@@ -461,8 +445,8 @@
   background: var(--ui-surface);
   box-shadow: var(--ui-shadow);
 }
-.gso-ui-toolbar-field { flex: 0 0 auto; width: 10.5rem; min-width: 0; }
-.gso-ui-toolbar-field--wide { flex: 0 1 19rem; width: auto; min-width: 12rem; }
+.gso-ui-toolbar-field { flex: 1 1 10rem; min-width: 9rem; }
+.gso-ui-toolbar-field--wide { flex: 2 1 18rem; }
 .gso-ui-toolbar-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-left: auto; }
 .gso-ui-search { position: relative; display: block; }
 .gso-ui-search > svg {
@@ -543,10 +527,8 @@
   font-weight: 550;
 }
 .gso-ui-tab:hover { color: var(--ui-text); }
-/* O indicador de posição é o magenta da marca, o mesmo das abas do Dashboard.
-   Azul continua sendo cor de ação; magenta diz onde você está. */
 .gso-ui-tab[aria-current='page'],
-.gso-ui-tab[aria-selected='true'] { border-bottom-color: var(--selection-accent); color: var(--ui-text); font-weight: 600; }
+.gso-ui-tab[aria-selected='true'] { border-bottom-color: var(--ui-primary); color: var(--ui-primary-ink); font-weight: 600; }
 
 /* -------------------------------------------------------------------------
    13. UiEmptyState
@@ -686,54 +668,9 @@
 .gso-ui-page-button:not(:disabled):hover { background: var(--ui-surface-muted); }
 .gso-ui-page-button:disabled { color: var(--ui-text-tertiary); cursor: not-allowed; opacity: 0.6; }
 
-/* Casco de tela administrativa com navegação permanente.
-
-   Regra estrutural: o container que ROLA nunca pode ser o mesmo que carrega o
-   cabeçalho, os indicadores e as abas. Quando isso acontece, cada filho vira um
-   item flexível encolhível; qualquer filho que seja container de rolagem (basta
-   `overflow-x: auto`, porque o eixo oposto deixa de ser `visible`) passa a ter
-   `min-height: auto` resolvido para 0 e o navegador o esmaga até sumir em vez de
-   gerar rolagem. Aqui o casco não rola, o cromo é `flex: 0 0 auto` e só o corpo
-   da aba rola. */
-.gso-ui-shell {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  height: 100%;
-  min-width: 0;
-  background: var(--ui-canvas);
-}
-.gso-ui-shell-chrome {
-  display: grid;
-  flex: 0 0 auto;
-  gap: 0.8rem;
-  min-width: 0;
-  padding: 1.15rem var(--app-gutter) 0;
-  background: var(--ui-canvas);
-}
-.gso-ui-shell-chrome > * { min-width: 0; }
-.gso-ui-shell-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  min-width: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-.gso-ui-shell-body > .gso-ui-page { padding-top: 1rem; }
-
-/* Abas da tela: rolagem horizontal só quando não couberem, e altura mínima
-   preservada para que a faixa nunca colapse. */
-.gso-ui-tabs { flex: 0 0 auto; min-height: 2.5rem; }
-.gso-ui-tab { flex: 0 0 auto; }
-
-@media (max-width: 760px) {
-  .gso-ui-shell-chrome { padding: 1rem 1rem 0; }
-  .gso-ui-shell-body > .gso-ui-page { padding-top: 0.9rem; }
-}
-
 /* Lista + detalhe (Marcas). */
-.gso-ui-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 23.5rem); align-items: stretch; gap: 1.25rem; min-width: 0; min-height: 0; }
-.gso-ui-split > * { min-width: 0; min-height: 0; }
+.gso-ui-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 21rem); align-items: start; gap: 1.25rem; min-width: 0; }
+.gso-ui-split > * { min-width: 0; }
 .gso-ui-stack { display: grid; gap: 1.25rem; min-width: 0; align-content: start; }
 
 /* Corpo da tela de Integrações: cards + coluna de governança. */
@@ -913,346 +850,3 @@
   .gso-ui-historysummary { grid-template-columns: auto minmax(0, 1fr); }
   .gso-ui-historysummary > .gso-ui-badge { grid-column: 2; justify-self: start; }
 }
-
-/* ==========================================================================
-   Blueprint V4 — primitivas novas e ajuste de escala tipográfica.
-
-   As cores não mudam: `--ui-primary` e `--ui-accent` já são exatamente os
-   valores declarados no blueprint. O que muda aqui é peso, escala e o
-   tratamento dos blocos de ícone.
-   ========================================================================== */
-
-/* Escala do blueprint: título maior e mais pesado, indicador em 700. */
-.gso-ui-header-heading h2 {
-  font-size: clamp(1.75rem, 2.6vw, 2.5rem);
-  font-weight: 700;
-  letter-spacing: -0.03em;
-}
-.gso-ui-metric-value { font-size: 1.9rem; font-weight: 700; }
-.gso-ui-tile { width: 2.75rem; height: 2.75rem; border-radius: var(--ui-radius); }
-.gso-ui-tile--sm { width: 2rem; height: 2rem; border-radius: var(--ui-radius-sm); }
-
-/* Utilitário de leitor de tela. */
-.gso-ui-sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  border: 0;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-/* ---- Interruptor rotulado ---- */
-.gso-ui-toggle-field {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.85rem;
-  padding: 0.85rem 0;
-}
-.gso-ui-toggle-field + .gso-ui-toggle-field { border-top: 1px solid var(--ui-border); }
-.gso-ui-toggle-field-text { min-width: 0; }
-.gso-ui-toggle-field-label {
-  display: block;
-  color: var(--ui-text);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-.gso-ui-toggle-field-hint {
-  margin: 0.2rem 0 0;
-  color: var(--ui-text-secondary);
-  font-size: 0.78rem;
-  line-height: 1.45;
-}
-.gso-ui-toggle-field--readonly .gso-ui-toggle-field-label { cursor: default; }
-
-.gso-ui-switch {
-  position: relative;
-  flex: 0 0 auto;
-  width: 2.6rem;
-  height: 1.45rem;
-  margin: 0;
-  border: 0;
-  border-radius: 999px;
-  background: var(--ui-border-strong);
-  appearance: none;
-  cursor: pointer;
-  transition: background 140ms ease;
-}
-.gso-ui-switch::after {
-  content: '';
-  position: absolute;
-  top: 0.17rem;
-  left: 0.17rem;
-  width: 1.11rem;
-  height: 1.11rem;
-  border-radius: 50%;
-  background: #FFFFFF;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, .25);
-  transition: transform 140ms ease;
-}
-.gso-ui-switch:checked { background: var(--ui-primary); }
-.gso-ui-switch:checked::after { transform: translateX(1.15rem); }
-.gso-ui-switch:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
-.gso-ui-switch:disabled { opacity: .55; cursor: not-allowed; }
-
-/* ---- Avatar ---- */
-.gso-ui-avatar {
-  position: relative;
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  overflow: visible;
-  border-radius: 50%;
-  background: var(--ui-primary-soft);
-  color: var(--ui-primary-ink);
-  font-weight: 600;
-  line-height: 1;
-}
-.gso-ui-avatar--sm { width: 1.75rem; height: 1.75rem; font-size: 0.65rem; }
-.gso-ui-avatar--md { width: 2.25rem; height: 2.25rem; font-size: 0.75rem; }
-.gso-ui-avatar--lg { width: 3.25rem; height: 3.25rem; font-size: 1rem; }
-.gso-ui-avatar-image { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-.gso-ui-avatar-status {
-  position: absolute;
-  right: -1px;
-  bottom: -1px;
-  width: 0.6rem;
-  height: 0.6rem;
-  border: 2px solid var(--ui-surface);
-  border-radius: 50%;
-}
-.gso-ui-avatar-status--active { background: var(--ui-success); }
-.gso-ui-avatar-status--suspended { background: var(--ui-warning); }
-.gso-ui-avatar-status--inactive { background: var(--ui-text-tertiary); }
-
-/* ---- Cabeçalho ordenável ---- */
-.gso-ui-sort-header {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-.gso-ui-sort-header > svg { color: var(--ui-text-tertiary); }
-.gso-ui-sort-header.is-sorted { color: var(--ui-text); }
-.gso-ui-sort-header.is-sorted > svg { color: var(--ui-primary-ink); }
-.gso-ui-sort-header:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 3px; border-radius: var(--ui-radius-sm); }
-
-/* ---- Menu de ações da linha ---- */
-.gso-ui-row-actions { position: relative; display: inline-flex; }
-.gso-ui-row-actions-trigger {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border: 0;
-  border-radius: var(--ui-radius-sm);
-  background: none;
-  color: var(--ui-text-tertiary);
-  cursor: pointer;
-}
-.gso-ui-row-actions-trigger:hover { background: var(--ui-surface-muted); color: var(--ui-text); }
-.gso-ui-row-actions-trigger:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 1px; }
-.gso-ui-row-actions-menu {
-  position: absolute;
-  top: calc(100% + 0.25rem);
-  right: 0;
-  z-index: 20;
-  display: flex;
-  min-width: 11rem;
-  flex-direction: column;
-  padding: 0.3rem;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
-  background: var(--ui-surface);
-  box-shadow: var(--ui-shadow-lifted);
-}
-.gso-ui-row-actions-item {
-  padding: 0.5rem 0.6rem;
-  border: 0;
-  border-radius: var(--ui-radius-sm);
-  background: none;
-  color: var(--ui-text);
-  font: inherit;
-  font-size: 0.8rem;
-  text-align: left;
-  cursor: pointer;
-}
-.gso-ui-row-actions-item:hover:not(:disabled) { background: var(--ui-surface-muted); }
-.gso-ui-row-actions-item.is-danger { color: var(--ui-danger-ink); }
-.gso-ui-row-actions-item:disabled { color: var(--ui-text-tertiary); cursor: not-allowed; }
-
-/* ---- Paginação ---- */
-.gso-ui-pagination {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1.15rem;
-  border-top: 1px solid var(--ui-border);
-}
-.gso-ui-pagination-summary { margin: 0; color: var(--ui-text-secondary); font-size: 0.78rem; }
-.gso-ui-pagination-pages { display: flex; align-items: center; gap: 0.2rem; margin: 0 auto; }
-.gso-ui-pagination-page,
-.gso-ui-pagination-step {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2rem;
-  height: 2rem;
-  padding: 0 0.4rem;
-  border: 1px solid transparent;
-  border-radius: var(--ui-radius-sm);
-  background: none;
-  color: var(--ui-text-secondary);
-  font: inherit;
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
-  cursor: pointer;
-}
-.gso-ui-pagination-page:hover:not(.is-current),
-.gso-ui-pagination-step:hover:not(:disabled) { background: var(--ui-surface-muted); color: var(--ui-text); }
-.gso-ui-pagination-page.is-current {
-  border-color: var(--ui-primary);
-  background: var(--ui-primary-soft);
-  color: var(--ui-primary-ink);
-  font-weight: 600;
-}
-.gso-ui-pagination-step:disabled { opacity: .4; cursor: not-allowed; }
-.gso-ui-pagination-gap { padding: 0 0.15rem; color: var(--ui-text-tertiary); }
-.gso-ui-pagination-size { margin-left: auto; }
-.gso-ui-pagination-size .gso-ui-control { min-height: 2rem; padding-top: 0; padding-bottom: 0; font-size: 0.78rem; }
-
-@media (max-width: 760px) {
-  .gso-ui-pagination-pages { margin: 0; order: 3; width: 100%; justify-content: center; }
-  .gso-ui-pagination-size { margin-left: 0; }
-}
-
-/* ==========================================================================
-   Blueprint V4 — densidade: a página ocupa a viewport.
-
-   Medição de 2026-08-07: a tela terminava a 62% da altura e deixava 37% de
-   vazio abaixo. É essa sobra que dá a sensação de "1366 em Full HD", não o
-   tamanho da fonte. As regras abaixo fazem o bloco principal esticar até a base
-   e ancoram rodapé e ações, para que nada precise de rolagem para ser acionado.
-   ========================================================================== */
-
-/* Canvas que preenche a altura: os blocos de cromo ficam no tamanho natural e
-   o bloco marcado com `gso-ui-grow` toma o espaço restante. */
-.gso-ui-page--fill {
-  display: flex;
-  min-height: 100%;
-  flex-direction: column;
-  gap: 1rem;
-}
-.gso-ui-page--fill > * { flex: 0 0 auto; }
-.gso-ui-page--fill > .gso-ui-grow { flex: 1 1 auto; min-height: 0; }
-
-/* Cartão que estica: cabeçalho e rodapé fixos, corpo rolando por dentro. */
-.gso-ui-card--fill { display: flex; min-height: 0; flex-direction: column; }
-.gso-ui-card--fill > .gso-ui-table-frame { flex: 1 1 auto; min-height: 0; overflow: auto; }
-.gso-ui-card--fill > .gso-ui-pagination { flex: 0 0 auto; }
-
-/* Barra de filtros embutida no cartão que ela filtra: sem borda própria, sem
-   sombra e sem raio, apenas o filete que a separa da tabela. */
-.gso-ui-toolbar--inline {
-  border: 0;
-  border-bottom: 1px solid var(--ui-border);
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  padding: 0.75rem 1.1rem;
-  align-items: center;
-}
-
-/* Painel de detalhe: coluna de altura cheia, com a leitura rolando por dentro e
-   as ações sempre visíveis no rodapé. Antes o painel crescia com o conteúdo e
-   obrigava a rolar a página inteira para alcançar o botão. */
-.gso-ui-aside { display: flex; min-height: 0; flex-direction: column; }
-.gso-ui-aside-head { flex: 0 0 auto; }
-.gso-ui-aside-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-}
-.gso-ui-aside-foot {
-  display: grid;
-  flex: 0 0 auto;
-  gap: 0.5rem;
-  margin-top: 0.9rem;
-  padding-top: 0.9rem;
-  border-top: 1px solid var(--ui-border);
-}
-
-/* Linha de atributo do painel: rótulo com ícone à esquerda, valor à direita, sem
-   caixa de campo. Campo com borda só onde existe edição de verdade. */
-.gso-ui-attr {
-  display: grid;
-  grid-template-columns: 1.1rem minmax(0, 8rem) minmax(0, 1fr);
-  align-items: baseline;
-  gap: 0.55rem;
-  padding: 0.45rem 0;
-  font-size: 0.8rem;
-}
-.gso-ui-attr + .gso-ui-attr { border-top: 1px solid color-mix(in srgb, var(--ui-border) 60%, transparent); }
-.gso-ui-attr > svg { align-self: center; color: var(--ui-text-tertiary); }
-.gso-ui-attr dt { color: var(--ui-text-secondary); }
-.gso-ui-attr dd { margin: 0; color: var(--ui-text); font-weight: 550; overflow-wrap: anywhere; }
-
-/* Altura de linha do blueprint: 56 px, com nome e e-mail empilhados dentro. */
-.gso-ui-table tbody td { padding-block: 0.6rem; }
-.gso-ui-table tbody tr { height: 3.5rem; }
-
-/* ==========================================================================
-   Blueprint V4 — regra 1: não rolar quando há espaço para realocar.
-
-   Em Integrações a página rolava porque a coluna da direita crescia com o
-   texto e empurrava o resto. Agora o corpo divide a altura disponível e cada
-   coluna rola por dentro, só quando o conteúdo realmente não couber.
-   ========================================================================== */
-.gso-ui-body { align-items: stretch; min-height: 0; }
-.gso-ui-body > * { min-height: 0; }
-.gso-ui-cards,
-.gso-ui-rail {
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  padding-right: 0.15rem;
-}
-
-/* Regra 2: texto não vaza e não quebra em excesso.
-   A descrição do card de integração ficava espremida ao lado do ladrilho e
-   quebrava em duas linhas curtas; agora ocupa a largura do bloco de texto. */
-.gso-ui-card-header-text p { max-width: none; text-wrap: pretty; }
-.gso-ui-card-header-text h3 { overflow-wrap: anywhere; }
-.gso-ui-metric-label,
-.gso-ui-metric-sub { overflow-wrap: anywhere; text-wrap: pretty; }
-.gso-ui-badge { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-/* Cards de integração mais baixos: o respiro interno vinha do padding do card
-   somado ao respiro de cada campo. */
-.gso-ui-cards > .gso-ui-card { padding: 0.95rem 1.1rem; }
-.gso-ui-cards .gso-ui-card-body { margin-top: 0.7rem; }
-.gso-ui-rail > .gso-ui-card { padding: 0.95rem 1.1rem; }
-.gso-ui-rail .gso-ui-card-body { margin-top: 0.7rem; }
-
-/* Margem lateral padrão do produto: a mesma do Dashboard Gerencial.
-   `var(--app-gutter)` — 16 px no mínimo, 40 px em Full HD, acompanhando
-   a largura da janela. Copiada de `.gso-visual-v1-shell .gso-analytics-content`,
-   que é a régua adotada pelo operador em 2026-08-07. */
-.gso-ui-page { padding-inline: var(--app-gutter); }
-.gso-ui-shell-chrome { padding-inline: var(--app-gutter); }

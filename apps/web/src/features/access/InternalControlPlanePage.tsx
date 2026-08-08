@@ -645,8 +645,8 @@ function UsersPanel(props: {
   return (
     <>
       <div className="gso-ui-split gso-ui-grow">
-        <UiCard fill flush label="Usuários internos">
-        <UiToolbar inline label="Filtros da lista de usuários">
+        <UiCard flush label="Usuários internos">
+        <UiToolbar label="Filtros da lista de usuários">
           <div className="gso-ui-toolbar-field gso-ui-toolbar-field--wide">
             <UiSearchField aria-label="Buscar usuário" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nome, e-mail ou papel" value={query} />
           </div>
@@ -745,7 +745,7 @@ function UsersPanel(props: {
 
         <aside className="gso-ui-aside">
           {selectedUser ? (
-            <UiCard fill labelledBy="access-detail-title">
+            <UiCard labelledBy="access-detail-title">
               <UiCardHeader
                 actions={<UiBadge dot tone={statusTone(selectedUser.access_status)}>{statusLabel(selectedUser.access_status)}</UiBadge>}
                 description={selectedUser.email || 'E-mail indisponível'}

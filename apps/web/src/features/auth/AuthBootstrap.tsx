@@ -2,7 +2,6 @@ import { Outlet, useLocation } from 'react-router';
 import type { ReactNode } from 'react';
 import { ThemeProvider } from '../../app/theme-context';
 import { isPublicSurfacePath } from '../../lib/theme';
-import { PasswordChangeGate } from '../account/PasswordChangeGate';
 import { AuthProvider, useAuthContext } from './auth-context';
 
 /**
@@ -26,12 +25,7 @@ export function AuthBootstrap() {
   return (
     <AuthProvider>
       <AuthenticatedTheme>
-        {/* A troca obrigatoria de senha e avaliada acima de qualquer rota: uma
-            credencial emitida por administrador nao libera nenhuma area antes
-            de a pessoa definir a propria senha. */}
-        <PasswordChangeGate>
-          <Outlet />
-        </PasswordChangeGate>
+        <Outlet />
       </AuthenticatedTheme>
     </AuthProvider>
   );

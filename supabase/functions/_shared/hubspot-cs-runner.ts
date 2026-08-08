@@ -1,47 +1,10 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { getAuthorizationHeader, jsonResponse } from './ticket-evidence.ts';
 
-// Propriedades reais de ticket desta conta, confirmadas contra a API em
-// 2026-08-07 por `scripts/analytics/hubspot-coverage-discovery.mjs`.
-//
-// Correcao de causa raiz: a lista anterior pedia `closedate`, que **nao existe**
-// entre as 1.147 propriedades de ticket do portal. O HubSpot ignora propriedade
-// inexistente em silencio, entao a data de encerramento ficava nula em 100% dos
-// tickets encerrados sem nenhum erro visivel.
-//
-// Cobertura medida em 100 tickets encerrados dos pipelines publicados:
-//   closed_date                                   100%
-//   hs_lastactivitydate                           100%
-//   hs_time_to_first_response_in_operating_hours   77%  (valor em milissegundos)
 export const CS_TICKET_PROPERTIES = [
   'hs_pipeline', 'hs_pipeline_stage', 'hubspot_owner_id', 'source_type',
-  'hs_ticket_priority', 'createdate', 'closed_date',
-  'hs_lastactivitydate', 'hs_time_to_first_response_in_operating_hours',
+  'hs_ticket_priority', 'createdate', 'closedate',
   'hs_time_to_first_response_sla_status', 'hs_time_to_close_sla_status', 'subject',
-  // Propriedades que a conta preenche e que a ingestao nao pedia. A auditoria
-  // contra a API mostrou a diferenca entre o que existe e o que chegava aqui:
-  //
-  //   first_agent_reply_date        13.679 na origem, 1.077 do campo em uso
-  //   hs_ticket_reopened_at            68 na origem, nenhum ingerido
-  //   time_to_close                  medido pelo HubSpot, calculavamos a mao
-  //   hs_is_one_touch_ticket         explica os encerramentos instantaneos
-  //
-  // `subject` ja era pedido e descartado na gravacao, por falta de coluna.
-  'first_agent_reply_date', 'hs_ticket_reopened_at', 'time_to_close',
-  'hs_is_one_touch_ticket',
-  // Campos customizados de conclusao. A hipotese da operacao se confirmou: a
-  // equipe registra o desfecho aqui e nem sempre move a etapa, e por isso o
-  // painel via como aberto o que ja tinha sido concluido.
-  //
-  //   tipo_de_fechamento___fale_conosco___confi   1.247 preenchidos, no mesmo
-  //     pipeline que tem 1.117 parados
-  //   data_de_passgem___concluido                    51 preenchidos
-  //
-  // Nenhuma regra e aplicada na ingestao: os valores sao gravados como vieram, e
-  // a decisao de como interpreta-los fica registrada depois, com pessoa.
-  'tipo_de_fechamento___fale_conosco___confi', 'tipo_de_fechamento___b2b___confi',
-  'tipo_de_fechamento___confi', 'data_de_passgem___concluido',
-  'hs_resolution',
 ];
 export const HUBSPOT_DEAL_PROPERTIES = ['pipeline','dealstage','hubspot_owner_id','amount_in_home_currency','dealtype','dealname','createdate','closedate','hs_lastmodifieddate'];
 
@@ -141,7 +104,7 @@ export function runnerError(error: unknown, status = 502) {
   return jsonResponse({ error: classified.sanitizedMessage, code: classified.code }, { status });
 }
 
-export function toIsoTimestamp(value: string | null | undefined): string | null {
+function toIsoTimestamp(value: string | null | undefined): string | null {
   if (!value) return null;
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
@@ -157,45 +120,13 @@ export function toTicketStagingRow(record: { id: string; properties: Record<stri
     source_type: record.properties.source_type ?? null,
     priority: record.properties.hs_ticket_priority ?? null,
     hs_created_at: toIsoTimestamp(record.properties.createdate),
-    hs_closed_at: toIsoTimestamp(record.properties.closed_date),
-    last_activity_at: toIsoTimestamp(record.properties.hs_lastactivitydate),
-    first_response_ms: toMilliseconds(record.properties.hs_time_to_first_response_in_operating_hours),
+    hs_closed_at: toIsoTimestamp(record.properties.closedate),
     time_to_first_response_sla_status: record.properties.hs_time_to_first_response_sla_status ?? null,
     time_to_close_sla_status: record.properties.hs_time_to_close_sla_status ?? null,
-    subject: record.properties.subject ?? null,
-    // A data da primeira resposta do agente tem cobertura mais de dez vezes
-    // maior que o tempo em horas de SLA que usavamos.
-    first_agent_reply_at: toIsoTimestamp(record.properties.first_agent_reply_date),
-    // Reabertura nativa: dispensa o historico de etapas, que nunca foi ingerido.
-    reopened_at: toIsoTimestamp(record.properties.hs_ticket_reopened_at),
-    time_to_close_ms: toMilliseconds(record.properties.time_to_close),
-    // Guardados sem interpretacao. O painel nao pode tratar "Solicitacao
-    // concluida" como encerramento por conta propria: isso seria inventar regra
-    // de negocio a partir de um texto livre.
-    closure_type: record.properties.tipo_de_fechamento___fale_conosco___confi
-      ?? record.properties.tipo_de_fechamento___b2b___confi
-      ?? record.properties.tipo_de_fechamento___confi
-      ?? null,
-    closure_marked_at: toIsoTimestamp(record.properties.data_de_passgem___concluido),
-    resolution_note: record.properties.hs_resolution ?? null,
-    is_one_touch: record.properties.hs_is_one_touch_ticket === 'true'
-      ? true
-      : record.properties.hs_is_one_touch_ticket === 'false' ? false : null,
     raw: record.properties,
     source_page: pageNumber,
     updated_at: new Date().toISOString(),
   };
-}
-
-/**
- * Duracoes do HubSpot chegam como string de milissegundos. O nome
- * `hs_time_to_first_response_in_operating_hours` sugere horas, mas o valor
- * medido na conta e em milissegundos; a conversao acontece no read model.
- */
-export function toMilliseconds(value: string | null | undefined): number | null {
-  if (value === null || value === undefined || value === '') return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed >= 0 ? Math.round(parsed) : null;
 }
 
 export function toDealStagingRow(record: { id: string; properties: Record<string, string | null> }, pipelineId: string, parentRunId: string, pageNumber: number) {
