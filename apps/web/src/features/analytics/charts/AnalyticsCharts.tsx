@@ -3,9 +3,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -13,12 +10,10 @@ import {
 } from 'recharts';
 import {
   formatCurrencyBRL,
-  formatMonthLabel,
   type CommercialFunnelStage,
-  type CommercialMonthlyPoint,
   type CsByStatus,
-  type CsMonthlyPoint,
 } from '../analytics-model';
+import { UNCLASSIFIED_LABEL, type StageBreakdownRow } from '../analytics-stage-breakdown.mjs';
 
 const PALETTE = {
   primary: 'var(--color-brand-blue)',
@@ -62,17 +57,6 @@ function CompactSummary({ title, rows, unit }: { title: string; rows: Array<{ la
   </div>;
 }
 
-function CompactTemporalSummary({ rows, unit, message }: { rows: Array<{ label: string; first: number; second: number }>; unit: string; message: string }) {
-  return <div className="gso-compact-chart-summary" aria-label="Resumo temporal">
-    <p className="gso-compact-chart-note">{message}</p>
-    <div className="gso-compact-chart-temporal-grid">
-      {rows.map((row) => <div className="gso-compact-chart-temporal-row" key={row.label}>
-        <strong>{row.label}</strong><span>{row.first.toLocaleString('pt-BR')} {unit}</span><span>{row.second.toLocaleString('pt-BR')} {unit}</span>
-      </div>)}
-    </div>
-  </div>;
-}
-
 export function CommercialFunnelChart({ data }: { data: CommercialFunnelStage[] }) {
   const rows = data.map((stage) => ({
     name: stage.label,
@@ -104,32 +88,6 @@ export function CommercialFunnelChart({ data }: { data: CommercialFunnelStage[] 
           ))}
         </Bar>
       </BarChart>
-    </ChartFrame>
-  );
-}
-
-export function CommercialMonthlyChart({ data }: { data: CommercialMonthlyPoint[] }) {
-  const rows = data.map((point) => ({
-    name: formatMonthLabel(point.monthStart),
-    Criados: point.createdCount,
-    Ganhos: point.wonCount,
-  }));
-
-  if (rows.length < 3) {
-    return <CompactTemporalSummary rows={rows.map((row) => ({ label: row.name, first: row.Criados, second: row.Ganhos }))} unit="negócios" message="A série tem poucos pontos para uma leitura de tendência; o resumo preserva o recorte recebido." />;
-  }
-
-  return (
-    <ChartFrame>
-      <LineChart data={rows} margin={{ left: 4, right: 16, top: 8, bottom: 8 }}>
-        <CartesianGrid stroke={PALETTE.grid} />
-        <XAxis dataKey="name" tick={AXIS_STYLE} />
-        <YAxis allowDecimals={false} tick={AXIS_STYLE} />
-        <Tooltip cursor={{ stroke: PALETTE.grid }} />
-        <Legend wrapperStyle={{ fontSize: 12 }} />
-        <Line type="monotone" dataKey="Criados" stroke={PALETTE.primary} strokeWidth={2} dot={false} />
-        <Line type="monotone" dataKey="Ganhos" stroke={PALETTE.won} strokeWidth={2} dot={false} />
-      </LineChart>
     </ChartFrame>
   );
 }
@@ -171,30 +129,65 @@ export function TicketStatusChart({ data }: { data: CsByStatus[] }) {
   );
 }
 
-export function TicketMonthlyChart({ data }: { data: CsMonthlyPoint[] }) {
-  const rows = data.map((point) => ({
-    name: formatMonthLabel(point.monthStart),
-    Criados: point.createdCount,
-    Encerrados: point.closedCount,
+/**
+ * Fila por etapa canônica.
+ *
+ * Difere do gráfico anterior em uma coisa que muda a leitura: as barras seguem a
+ * ordem do fluxo de atendimento, não o volume. Ordenar por volume produz um
+ * ranking; ordenar pelo fluxo mostra onde a fila se acumula dentro do processo,
+ * que é a pergunta real.
+ *
+ * O tooltip abre a composição por pipeline porque uma barra consolidada precisa
+ * poder ser auditada — quem vê "Em tratativa: 240" deve conseguir descobrir de
+ * onde vieram os 240.
+ */
+export function SupportStageChart({ rows }: { rows: StageBreakdownRow[] }) {
+  const points = rows.map((row) => ({
+    name: row.stage,
+    tickets: row.openTickets,
+    byPipeline: row.byPipeline,
+    isUnclassified: row.stage === UNCLASSIFIED_LABEL,
   }));
 
-  if (rows.length < 3) {
-    return <CompactTemporalSummary rows={rows.map((row) => ({ label: row.name, first: row.Criados, second: row.Encerrados }))} unit="tickets" message="A série tem poucos pontos para uma leitura de tendência; o resumo preserva o recorte recebido." />;
+  if (points.length <= 2) {
+    return <CompactSummary title="Resumo da fila por etapa" rows={points.map((row) => ({ label: row.name, value: row.tickets }))} unit="atendimentos" />;
   }
 
   return (
-    <ChartFrame>
-      <LineChart data={rows} margin={{ left: 4, right: 16, top: 8, bottom: 8 }}>
-        <CartesianGrid stroke={PALETTE.grid} />
-        <XAxis dataKey="name" tick={AXIS_STYLE} />
-        <YAxis allowDecimals={false} tick={AXIS_STYLE} />
-        <Tooltip cursor={{ stroke: PALETTE.grid }} />
-        <Legend wrapperStyle={{ fontSize: 12 }} />
-        <Line type="monotone" dataKey="Criados" stroke={PALETTE.primary} strokeWidth={2} dot={false} />
-        <Line type="monotone" dataKey="Encerrados" stroke={PALETTE.neutral} strokeWidth={2} dot={false} />
-      </LineChart>
+    <ChartFrame height={Math.max(220, points.length * 42)}>
+      <BarChart data={points} layout="vertical" margin={{ left: 8, right: 24, top: 8, bottom: 8 }}>
+        <CartesianGrid horizontal={false} stroke={PALETTE.grid} />
+        <XAxis type="number" allowDecimals={false} tick={AXIS_STYLE} />
+        <YAxis type="category" dataKey="name" width={150} tick={AXIS_STYLE} />
+        <Tooltip
+          cursor={{ fill: PALETTE.cursor }}
+          content={({ active, payload }) => {
+            const row = payload?.[0]?.payload as (typeof points)[number] | undefined;
+            if (!active || !row) return null;
+            return <div style={{ border: `1px solid ${PALETTE.grid}`, borderRadius: 8, background: 'var(--minimal-surface)', padding: '8px 10px', color: 'var(--minimal-text)', fontSize: 12 }}>
+              <strong>{row.name}</strong>
+              <div style={{ marginTop: 4 }}>{row.tickets.toLocaleString('pt-BR')} aguardando atendimento</div>
+              {row.byPipeline.length > 1 ? <div style={{ marginTop: 6, color: 'var(--minimal-text-secondary)' }}>{row.byPipeline.map((item) => <div key={item.pipelineLabel}>{item.pipelineLabel}: {item.openTickets.toLocaleString('pt-BR')}</div>)}</div> : null}
+            </div>;
+          }}
+        />
+        <Bar dataKey="tickets" radius={[0, 4, 4, 0]}>
+          {points.map((row, index) => (
+            // Etapa sem decisão de cruzamento fica em tom neutro: ela não é uma
+            // etapa do processo, é uma pendência de configuração.
+            <Cell key={index} fill={row.isUnclassified ? PALETTE.neutral : ticketStatusColor(row.name, false)} />
+          ))}
+        </Bar>
+      </BarChart>
     </ChartFrame>
   );
 }
+
+// As séries mensais de suporte e comercial saíram daqui.
+//
+// Elas viviam na aba de posição, ao lado dos indicadores do recorte, e mediam a
+// mesma coisa por outro caminho — a mesma duplicidade que produziu "Receita
+// ganha" duas vezes com valores diferentes. A evolução agora tem sub-aba
+// própria, janela própria e coorte declarada, em `AnalyticsTrendPanel`.
 
 export { formatCurrencyBRL };

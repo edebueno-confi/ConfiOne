@@ -5,7 +5,7 @@ import type {
   AnalyticsBlockState,
   AnalyticsSourceStatusPayload,
 } from "@genius-support-os/contracts";
-import { getAnalyticsSourceStatus, getCeoHistory, getCeoSnapshot } from "./analytics-api";
+import { getAnalyticsSourceStatus, getCeoHistory, getCeoSnapshot, getExecutiveKpisV2 } from "./analytics-api";
 import {
   analyticsGlobalToBlockState,
   analyticsSourceToBlockState,
@@ -28,6 +28,7 @@ import {
   rankExecutivePipelines,
 } from "./analytics-executive";
 import { analyticsHref } from "./analytics-navigation";
+import { AnalyticsBoardLimitations, AnalyticsKpiBoard, type BoardBand } from "./AnalyticsKpiBoard";
 
 const STATUS_LABELS: Record<AnalyticsDataStatus, string> = {
   fresh: "Dados atualizados",
@@ -50,6 +51,42 @@ type MetricDelta = {
   label: string;
   tone: "positive" | "negative" | "neutral";
 } | null;
+// O Resumo reusa os read models de cada area em vez de recalcular. Isso impede
+// que a mesma metrica apareca com valores diferentes entre a visao geral e a
+// tela da area, que e a falha classica de dashboards executivos.
+const EXECUTIVE_BANDS: BoardBand[] = [
+  {
+    title: 'Agora',
+    note: 'Posição na data de hoje, em todas as áreas.',
+    items: [
+      { key: 'mrr_total', kind: 'currency', note: 'Recorrência da base ativa' },
+      { key: 'active_customers', kind: 'count', note: 'Clientes na carteira' },
+      { key: 'open_pipeline_amount', kind: 'currency', note: 'Em negociação' },
+      { key: 'open_backlog', kind: 'count', note: 'Atendimentos aguardando' },
+    ],
+  },
+  {
+    title: 'No período',
+    note: 'Movimento dentro do recorte selecionado acima.',
+    items: [
+      { key: 'won_amount', kind: 'currency', note: 'Negócios ganhos' },
+      { key: 'win_rate', kind: 'percent', note: 'Sobre o que foi encerrado' },
+      { key: 'created_tickets', kind: 'count', note: 'Atendimentos abertos' },
+      { key: 'received_amount', kind: 'currency', note: 'Entradas efetivas' },
+    ],
+  },
+  {
+    title: 'Atenção',
+    note: 'Sinais que costumam exigir ação antes do próximo ciclo.',
+    dense: true,
+    items: [
+      { key: 'overdue_receivables', kind: 'currency', note: 'Vencido e não recebido', alertWhenPositive: true },
+      { key: 'mrr_overdue', kind: 'currency', note: 'Recorrência de clientes em atraso', alertWhenPositive: true },
+      { key: 'nrr', kind: 'percent' },
+    ],
+  },
+];
+
 export function AnalyticsCeoPage({
   sharedPeriod,
   onSharedPeriodChange,
@@ -73,6 +110,7 @@ export function AnalyticsCeoPage({
     error?: boolean;
   }>({ loading: true });
   const [refreshing, setRefreshing] = useState(false);
+  const [executiveKpis, setExecutiveKpis] = useState<unknown>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   useEffect(
@@ -87,6 +125,10 @@ export function AnalyticsCeoPage({
         ? { ...current, loading: false, error: undefined }
         : { loading: true },
     );
+    void getExecutiveKpisV2(filters)
+      .then((payload) => setExecutiveKpis(payload))
+      .catch(() => setExecutiveKpis(null));
+
     Promise.all([getCeoSnapshot(filters), getCeoHistory(filters), sourceStatus ? Promise.resolve(sourceStatus) : getAnalyticsSourceStatusSafe()])
       .then(([data, history, liveSourceStatus]) => {
         if (!cancelled) {
@@ -180,6 +222,7 @@ export function AnalyticsCeoPage({
   return (
     <ExecutiveHdCanvas
       data={data}
+      executiveKpis={executiveKpis}
       state={state}
       filters={filters}
       domainCards={domainCards}
@@ -288,6 +331,7 @@ function buildDomainCards(
 
 function ExecutiveHdCanvas({
   data,
+  executiveKpis,
   state,
   filters,
   domainCards,
@@ -306,6 +350,7 @@ function ExecutiveHdCanvas({
   syncBusy,
 }: {
   data: CeoSnapshot;
+  executiveKpis: unknown;
   state?: AnalyticsBlockState;
   filters: AnalyticsFilters;
   domainCards: DomainCard[];
@@ -387,6 +432,14 @@ function ExecutiveHdCanvas({
           <Filters value={filters} onApply={applyFilters} stageOptions={[]} />
         </div>
       </div>
+
+      {executiveKpis ? (
+        <>
+          <AnalyticsKpiBoard payload={executiveKpis} bands={EXECUTIVE_BANDS} />
+          <AnalyticsBoardLimitations payload={executiveKpis} />
+        </>
+      ) : null}
+
       {refreshing ? (
         <p className="gso-hd-inline-status" role="status">
           Atualizando o período selecionado…
@@ -444,7 +497,7 @@ function ExecutiveHdCanvas({
             comparison={comparison.conversion?.label}
           />
           <HdMetric
-            label="Tickets criados"
+            label="Atendimentos recebidos"
             value={
               unavailable
                 ? "Indisponível"
@@ -489,7 +542,7 @@ function ExecutiveHdCanvas({
             detail={financeUnavailable || unavailable ? "Reconciliação financeira indisponível" : "Inadimplência reconciliada"}
           />
           <HdMetric
-            label="Tickets em aberto"
+            label="Fila atual"
             value={
               unavailable
                 ? "Indisponível"

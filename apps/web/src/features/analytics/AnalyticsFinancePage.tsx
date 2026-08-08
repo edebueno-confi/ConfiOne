@@ -6,6 +6,8 @@ import { AnalyticsLoadingState, ChartCard, KpiCard, MetricInfo } from './analyti
 import { analyticsSourceToBlockState, formatCurrencyBRL, formatMonthLabel, formatPercent, type AnalyticsFilters, DEFAULT_ANALYTICS_FILTERS, type AnalyticsPageProps, type FinanceBreakdown, type FinanceSnapshot, type FinanceSourceStatus } from './analytics-model';
 import { ANALYTICS_PERIOD_OPTIONS, resolveAnalyticsPeriod, type AnalyticsPeriodPreset } from './analytics-periods';
 import { AnalyticsExecutionMeta, AnalyticsHdDomainFrame } from './AnalyticsHdDomainFrame';
+import { AnalyticsDomainTabs } from './AnalyticsDomainTabs';
+import { AnalyticsTrendPanel } from './AnalyticsTrendPanel';
 
 type FinanceFilters = AnalyticsFilters & { clientQuery: string };
 
@@ -50,15 +52,15 @@ function BreakdownTable({ rows, valueHeader, labelHeader, humanize, toneFor }: {
   const total = rows.reduce((sum, row) => sum + row.balance, 0);
   if (rows.length === 0) return <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Sem dados neste recorte.</p>;
   return <div className="overflow-x-auto">
-    <table className="w-full min-w-[420px] text-sm">
+    <table className="gso-analytics-responsive-table w-full min-w-[420px] text-sm">
       <thead><tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]">
         <th className="py-2">{labelHeader}</th><th className="py-2 text-right">Títulos</th><th className="py-2 text-right">{valueHeader}</th><th className="py-2 text-right">% da carteira</th>
       </tr></thead>
       <tbody>{rows.map((row) => <tr key={row.key} className="border-b border-[color:var(--minimal-border)] last:border-0">
-        <td className="py-2">{toneFor ? <Tag label={humanize ? titleCase(row.key) : row.key} tone={toneFor(row.key)} /> : <span className="text-[color:var(--minimal-text)]">{humanize ? titleCase(row.key) : row.key}</span>}</td>
-        <td className="py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.titles.toLocaleString('pt-BR')}</td>
-        <td className="py-2 text-right tabular-nums font-medium text-[color:var(--minimal-text)]">{formatCurrencyBRL(row.balance)}</td>
-        <td className="py-2 text-right tabular-nums text-[color:var(--minimal-text-tertiary)]">{total > 0 ? formatPercent(row.balance / total) : '—'}</td>
+        <td data-label="Títulos" className="py-2">{toneFor ? <Tag label={humanize ? titleCase(row.key) : row.key} tone={toneFor(row.key)} /> : <span className="text-[color:var(--minimal-text)]">{humanize ? titleCase(row.key) : row.key}</span>}</td>
+        <td data-label="% da carteira" className="py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.titles.toLocaleString('pt-BR')}</td>
+        <td data-label="Títulos" className="py-2 text-right tabular-nums font-medium text-[color:var(--minimal-text)]">{formatCurrencyBRL(row.balance)}</td>
+        <td data-label="% da carteira" className="py-2 text-right tabular-nums text-[color:var(--minimal-text-tertiary)]">{total > 0 ? formatPercent(row.balance / total) : '—'}</td>
       </tr>)}</tbody>
     </table>
   </div>;
@@ -74,6 +76,7 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
   const [preset, setPreset] = useState<AnalyticsPeriodPreset | ''>('month');
   const [unmatched, setUnmatched] = useState<FinanceUnmatchedClient[] | null>(null);
   const [loadingUnmatched, setLoadingUnmatched] = useState(false);
+  const [subTab, setSubTab] = useState('posicao');
 
   const toggleUnmatched = async () => {
     if (unmatched) { setUnmatched(null); return; }
@@ -145,12 +148,17 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
       </div>
     </section>
 
-    {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado financeiro" description="A fonte respondeu, mas não encontrou registros para este recorte." /> : <>
+    {dataState?.status === 'empty' ? <MinimalState title="Nenhum dado financeiro" description="A consulta funcionou, mas não há registros neste recorte. Experimente ampliar o período." /> : <AnalyticsDomainTabs activeId={subTab} onChange={setSubTab} tabs={[
+      {
+        id: 'posicao',
+        label: 'Posição',
+        question: 'Quanto há a receber hoje, quanto está vencido e como a carteira se distribui.',
+        content: <div className="space-y-5">
       {/* KPIs agrupados por leitura operacional */}
       <div className="gso-finance-kpi-groups">
       <section className="gso-finance-kpi-group" aria-labelledby="finance-position-heading">
       <h3 id="finance-position-heading">Posição e risco</h3>
-      <div className="gso-pilot-kpi-grid grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="gso-pilot-kpi-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard label="Saldo em aberto" value={formatCurrencyBRL(kpis.openBalance)} hint={`${kpis.openTitles.toLocaleString('pt-BR')} títulos a receber`} />
         <KpiCard label="Vencido" value={formatCurrencyBRL(kpis.overdueBalance)} hint={`${formatPercent(kpis.overdueRate)} da carteira · ${kpis.overdueTitles.toLocaleString('pt-BR')} títulos`} tone="critical" />
         <KpiCard label="A vencer em 30 dias" value={formatCurrencyBRL(kpis.due30)} hint="Previsão de entrada no mês" tone="warning" />
@@ -159,7 +167,7 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
       </section>
       <section className="gso-finance-kpi-group" aria-labelledby="finance-period-heading">
       <h3 id="finance-period-heading">Movimentação e previsão</h3>
-      <div className="gso-pilot-kpi-grid grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="gso-pilot-kpi-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard label="Recebido no período" value={formatCurrencyBRL(kpis.receivedAmount)} hint={`${formatPercent(kpis.receivedRate)} do valor faturado`} />
         <KpiCard label="A vencer em 60 dias" value={formatCurrencyBRL(kpis.due60)} hint="Acumulado até 60 dias" />
         <KpiCard label="A vencer em 90 dias" value={formatCurrencyBRL(kpis.due90)} hint="Acumulado até 90 dias" />
@@ -170,53 +178,60 @@ export function AnalyticsFinancePage({ sharedPeriod, onSharedPeriodChange, sourc
 
       {/* Previsibilidade + Aging por faixa */}
       <div className="grid gap-4 xl:grid-cols-2">
-        <ChartCard title="Previsibilidade de recebíveis" description="Quanto está previsto entrar por mês, pelos títulos em aberto (data de vencimento).">
-          {snapshot.projection.length === 0 ? <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Sem recebíveis futuros no horizonte.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[420px] text-sm"><thead><tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]"><th className="py-2">Mês previsto</th><th className="py-2 text-right">Títulos</th><th className="py-2 text-right">Valor a receber</th></tr></thead><tbody>{snapshot.projection.map((row) => <tr key={row.month} className="border-b border-[color:var(--minimal-border)] last:border-0"><td className="py-2 text-[color:var(--minimal-text)]">{formatMonthLabel(row.month)}</td><td className="py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.titles.toLocaleString('pt-BR')}</td><td className="py-2 text-right tabular-nums font-medium text-[color:var(--minimal-action)]">{formatCurrencyBRL(row.balance)}</td></tr>)}</tbody></table></div>}
+        <ChartCard title="Previsibilidade de recebíveis" description="Quanto deve entrar em cada mês, considerando o vencimento dos títulos ainda em aberto.">
+          {snapshot.projection.length === 0 ? <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Sem recebíveis futuros no horizonte.</p> : <div className="overflow-x-auto"><table className="gso-analytics-responsive-table w-full min-w-[420px] text-sm"><thead><tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]"><th className="py-2">Mês previsto</th><th className="py-2 text-right">Títulos</th><th className="py-2 text-right">Valor a receber</th></tr></thead><tbody>{snapshot.projection.map((row) => <tr key={row.month} className="border-b border-[color:var(--minimal-border)] last:border-0"><td data-label="Mês previsto" className="py-2 text-[color:var(--minimal-text)]">{formatMonthLabel(row.month)}</td><td data-label="Títulos" className="py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.titles.toLocaleString('pt-BR')}</td><td data-label="Valor a receber" className="py-2 text-right tabular-nums font-medium text-[color:var(--minimal-action)]">{formatCurrencyBRL(row.balance)}</td></tr>)}</tbody></table></div>}
         </ChartCard>
-        <ChartCard title="Inadimplência por faixa de atraso" description="Saldo vencido agrupado por dias em atraso. Faixas mais longas exigem ação imediata.">
+        <ChartCard title="Inadimplência por faixa de atraso" description="Quanto está vencido, agrupado por tempo de atraso. Quanto mais longa a faixa, menor a chance de recuperar.">
           <BreakdownTable rows={snapshot.agingDays} labelHeader="Faixa" valueHeader="Saldo" humanize={false} toneFor={agingTone} />
         </ChartCard>
       </div>
 
       {/* Maiores devedores + cruzamento CS */}
       <div className="grid gap-4 xl:grid-cols-2">
-        <ChartCard title="Maiores devedores" description="Clientes com maior saldo em aberto (nome e CNPJ da base OMIE).">
-          {snapshot.topDebtors.length === 0 ? <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Sem devedores em aberto.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[480px] text-sm"><thead><tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]"><th className="py-2">Cliente</th><th className="py-2">CNPJ/CPF</th><th className="py-2 text-right">Títulos</th><th className="py-2 text-right">Saldo em aberto</th></tr></thead><tbody>{snapshot.topDebtors.map((row, index) => <tr key={`${row.client}-${index}`} className="border-b border-[color:var(--minimal-border)] last:border-0"><td className="py-2 text-[color:var(--minimal-text)]">{row.client}</td><td className="py-2 tabular-nums text-[color:var(--minimal-text-tertiary)]">{row.taxId ?? '—'}</td><td className="py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.titles.toLocaleString('pt-BR')}</td><td className="py-2 text-right tabular-nums font-medium text-[color:var(--minimal-text)]">{formatCurrencyBRL(row.balance)}</td></tr>)}</tbody></table></div>}
+        <ChartCard title="Maiores devedores" description="Clientes com maior valor a receber, identificados pelo cadastro fiscal.">
+          {snapshot.topDebtors.length === 0 ? <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Sem devedores em aberto.</p> : <div className="overflow-x-auto"><table className="gso-analytics-responsive-table w-full min-w-[480px] text-sm"><thead><tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]"><th className="py-2">Cliente</th><th className="py-2">CNPJ/CPF</th><th className="py-2 text-right">Títulos</th><th className="py-2 text-right">Saldo em aberto</th></tr></thead><tbody>{snapshot.topDebtors.map((row, index) => <tr key={`${row.client}-${index}`} className="border-b border-[color:var(--minimal-border)] last:border-0"><td data-label="Cliente" className="py-2 text-[color:var(--minimal-text)]">{row.client}</td><td data-label="CNPJ/CPF" className="py-2 tabular-nums text-[color:var(--minimal-text-tertiary)]">{row.taxId ?? '—'}</td><td data-label="Títulos" className="py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.titles.toLocaleString('pt-BR')}</td><td data-label="Saldo em aberto" className="py-2 text-right tabular-nums font-medium text-[color:var(--minimal-text)]">{formatCurrencyBRL(row.balance)}</td></tr>)}</tbody></table></div>}
         </ChartCard>
-        <ChartCard title="Financeiro × CS (HubSpot)" description="Carteira em aberto cruzada com o cadastro de clientes do HubSpot. Critério: CNPJ (somente dígitos). O nome não reconcilia, só serve de pista.">
+        <ChartCard title="Carteira cruzada com o financeiro" description="Valores em aberto ligados aos clientes. O cruzamento usa apenas o cadastro fiscal conferido; semelhança de nome serve de pista, nunca de confirmação.">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <Tag label={`Reconciliado: ${formatCurrencyBRL(snapshot.csReconciliation.matchedBalance)}`} tone="positive" />
             <MetricInfo text="Saldo em aberto de títulos cujo CNPJ foi encontrado no cadastro de empresas do HubSpot." />
             <Tag label={`Sem empresa no HubSpot: ${formatCurrencyBRL(snapshot.csReconciliation.unmatchedBalance)}`} tone={snapshot.csReconciliation.unmatchedBalance > 0 ? 'warning' : 'neutral'} />
             <MetricInfo text="Saldo de títulos cujo CNPJ não existe em nenhuma empresa do HubSpot. São clientes candidatos a cadastro." />
           </div>
-          {snapshot.csReconciliation.byClientStatus.length === 0 ? <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Sem cruzamento disponível{sourceIsApi ? '' : ' (disponível via API OMIE)'}.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[440px] text-sm"><thead><tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]"><th className="py-2">Status do cliente (CS)</th><th className="py-2 text-right">Títulos</th><th className="py-2 text-right">Saldo</th><th className="py-2 text-right">Vencido</th></tr></thead><tbody>{snapshot.csReconciliation.byClientStatus.map((row) => <tr key={row.key} className="border-b border-[color:var(--minimal-border)] last:border-0"><td className="py-2 text-[color:var(--minimal-text)]">{row.key}</td><td className="py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.titles.toLocaleString('pt-BR')}</td><td className="py-2 text-right tabular-nums text-[color:var(--minimal-text)]">{formatCurrencyBRL(row.balance)}</td><td className="py-2 text-right tabular-nums font-medium text-[color:var(--minimal-danger-text)]">{formatCurrencyBRL(row.overdueBalance)}</td></tr>)}</tbody></table></div>}
+          {snapshot.csReconciliation.byClientStatus.length === 0 ? <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Sem cruzamento disponível{sourceIsApi ? '' : ' (disponível via API OMIE)'}.</p> : <div className="overflow-x-auto"><table className="gso-analytics-responsive-table w-full min-w-[440px] text-sm"><thead><tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]"><th className="py-2">Status do cliente (CS)</th><th className="py-2 text-right">Títulos</th><th className="py-2 text-right">Saldo</th><th className="py-2 text-right">Vencido</th></tr></thead><tbody>{snapshot.csReconciliation.byClientStatus.map((row) => <tr key={row.key} className="border-b border-[color:var(--minimal-border)] last:border-0"><td data-label="Situação do cliente" className="py-2 text-[color:var(--minimal-text)]">{row.key}</td><td data-label="Títulos" className="py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.titles.toLocaleString('pt-BR')}</td><td data-label="Saldo" className="py-2 text-right tabular-nums text-[color:var(--minimal-text)]">{formatCurrencyBRL(row.balance)}</td><td data-label="Vencido" className="py-2 text-right tabular-nums font-medium text-[color:var(--minimal-danger-text)]">{formatCurrencyBRL(row.overdueBalance)}</td></tr>)}</tbody></table></div>}
           <p className="mt-3 text-[11px] leading-4 text-[color:var(--minimal-text-tertiary)]"><strong>Sem status CS</strong>: empresa existe no HubSpot (CNPJ bateu), mas sem o campo de status de cliente preenchido. <strong>Sem empresa no HubSpot</strong>: CNPJ não encontrado em nenhuma empresa do CRM. <strong>Grupo de Empresas</strong> e demais: status vindo do HubSpot.</p>
           <div className="mt-3">
             <button type="button" onClick={() => void toggleUnmatched()} disabled={loadingUnmatched} className="rounded-lg border border-[color:var(--minimal-border-strong)] px-3 py-1.5 text-xs font-medium text-[color:var(--minimal-text)] hover:bg-[color:var(--minimal-surface-muted)] disabled:opacity-60">{loadingUnmatched ? 'Carregando...' : unmatched ? 'Ocultar empresas sem cadastro' : 'Ver empresas do OMIE sem cadastro no HubSpot'}</button>
           </div>
           {unmatched ? (unmatched.length === 0 ? <p className="mt-3 text-xs text-[color:var(--minimal-text-tertiary)]">Nenhuma empresa sem cadastro neste recorte.</p> : <>
             <p className="mt-3 mb-2 text-[11px] leading-4 text-[color:var(--minimal-text-tertiary)]">Busca feita por CNPJ normalizado (somente dígitos) contra <code>hubspot_companies</code>. A coluna Motivo indica quando há uma empresa de nome parecido no HubSpot (provável CNPJ divergente ou ausente).</p>
-            <div className="overflow-x-auto"><table className="w-full min-w-[560px] text-sm"><thead><tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]"><th className="py-2">Empresa (OMIE)</th><th className="py-2">CNPJ</th><th className="py-2 text-right">Títulos</th><th className="py-2 text-right">Saldo</th><th className="py-2 text-right">Vencido</th><th className="py-2">Motivo</th></tr></thead><tbody>{unmatched.map((row, index) => <tr key={`${row.taxId ?? row.client}-${index}`} className="border-b border-[color:var(--minimal-border)] last:border-0"><td className="py-2 text-[color:var(--minimal-text)]">{row.client}</td><td className="py-2 tabular-nums text-[color:var(--minimal-text-tertiary)]">{row.taxId ?? '—'}</td><td className="py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.titles.toLocaleString('pt-BR')}</td><td className="py-2 text-right tabular-nums font-medium text-[color:var(--minimal-text)]">{formatCurrencyBRL(row.balance)}</td><td className="py-2 text-right tabular-nums text-[color:var(--minimal-danger-text)]">{formatCurrencyBRL(row.overdueBalance)}</td><td className="py-2">{row.nameMatches > 0 ? <Tag label="Nome parecido no HubSpot" tone="warning" /> : <Tag label="Não encontrada" tone="neutral" />}</td></tr>)}</tbody></table></div>
+            <div className="overflow-x-auto"><table className="gso-analytics-responsive-table w-full min-w-[560px] text-sm"><thead><tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]"><th className="py-2">Empresa (OMIE)</th><th className="py-2">CNPJ</th><th className="py-2 text-right">Títulos</th><th className="py-2 text-right">Saldo</th><th className="py-2 text-right">Vencido</th><th className="py-2">Motivo</th></tr></thead><tbody>{unmatched.map((row, index) => <tr key={`${row.taxId ?? row.client}-${index}`} className="border-b border-[color:var(--minimal-border)] last:border-0"><td data-label="Empresa" className="py-2 text-[color:var(--minimal-text)]">{row.client}</td><td data-label="CNPJ" className="py-2 tabular-nums text-[color:var(--minimal-text-tertiary)]">{row.taxId ?? '—'}</td><td data-label="Títulos" className="py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.titles.toLocaleString('pt-BR')}</td><td data-label="Saldo" className="py-2 text-right tabular-nums font-medium text-[color:var(--minimal-text)]">{formatCurrencyBRL(row.balance)}</td><td data-label="Vencido" className="py-2 text-right tabular-nums text-[color:var(--minimal-danger-text)]">{formatCurrencyBRL(row.overdueBalance)}</td><td data-label="Motivo" className="py-2">{row.nameMatches > 0 ? <Tag label="Nome parecido no HubSpot" tone="warning" /> : <Tag label="Não encontrada" tone="neutral" />}</td></tr>)}</tbody></table></div>
           </> ) : null}
         </ChartCard>
       </div>
 
       {/* Situação + Categoria */}
       <div className="grid gap-4 xl:grid-cols-2">
-        <ChartCard title="Por situação (status OMIE)" description="Como cada situação do título compõe a carteira no recorte.">
+        <ChartCard title="Por situação do título" description="Como cada situação compõe o total a receber no recorte.">
           <BreakdownTable rows={snapshot.byStatus} labelHeader="Situação" valueHeader="Saldo" humanize toneFor={(key) => /atras|vencid/i.test(key) ? 'critical' : /receb/i.test(key) ? 'positive' : /vence/i.test(key) ? 'warning' : 'neutral'} />
         </ChartCard>
-        <ChartCard title="Por categoria financeira" description="Saldo em aberto por categoria (código de categoria do OMIE).">
+        <ChartCard title="Por categoria financeira" description="Valor a receber distribuído entre as categorias do plano financeiro.">
           <BreakdownTable rows={snapshot.byCategory} labelHeader="Categoria" valueHeader="Saldo em aberto" />
         </ChartCard>
       </div>
 
-      {/* Tendência mensal */}
-      <ChartCard title="Tendência mensal" description="Saldo por mês de vencimento ou emissão no recorte selecionado.">
-        {snapshot.monthly.length === 0 ? <p className="text-xs text-[color:var(--minimal-text-tertiary)]">Sem histórico no recorte.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[420px] text-sm"><thead><tr className="border-b border-[color:var(--minimal-border)] text-left text-[11px] font-semibold uppercase tracking-wide text-[color:var(--minimal-text-tertiary)]"><th className="py-2">Mês</th><th className="py-2 text-right">Títulos</th><th className="py-2 text-right">Saldo</th></tr></thead><tbody>{snapshot.monthly.map((row) => <tr key={row.month} className="border-b border-[color:var(--minimal-border)] last:border-0"><td className="py-2 text-[color:var(--minimal-text)]">{formatMonthLabel(row.month)}</td><td className="py-2 text-right tabular-nums text-[color:var(--minimal-text-secondary)]">{row.titles.toLocaleString('pt-BR')}</td><td className="py-2 text-right tabular-nums font-medium text-[color:var(--minimal-text)]">{formatCurrencyBRL(row.balance)}</td></tr>)}</tbody></table></div>}
-      </ChartCard>
-    </>}
+        </div>,
+      },
+      {
+        id: 'evolucao',
+        label: 'Evolução',
+        // A tabela de saldo por mês que vivia aqui saiu: ela misturava emissão e
+        // vencimento na mesma coluna e não dizia qual das duas posicionava a
+        // linha. A série declara a coorte de cada medida.
+        question: 'Como o recebimento se comportou ao longo do tempo, contra o que estava previsto.',
+        content: <AnalyticsTrendPanel domain="finance" />,
+      },
+    ]} />}
     </div>
   </AnalyticsHdDomainFrame>;
 }

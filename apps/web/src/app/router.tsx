@@ -199,6 +199,10 @@ const SettingsPage = lazyRouteModule(
   () => import('../features/settings/SettingsPage'),
   'SettingsPage',
 );
+const ManagementCockpitPage = lazyRouteModule(
+  () => import('../features/settings/ManagementCockpitPage'),
+  'ManagementCockpitPage',
+);
 
 function SettingsLegacyRedirect() {
   const [searchParams] = useSearchParams();
@@ -288,6 +292,21 @@ const CsPortfolioPage = lazyRouteModule(
   () => import('../features/cs/CsPortfolioPage'),
   'CsPortfolioPage',
 );
+
+const MyProfilePage = lazyRouteModule(
+  () => import('../features/account/MyProfilePage'),
+  'MyProfilePage',
+);
+
+const AccountSelfShell = lazyRouteModule(
+  () => import('../features/account/AccountSelfShell'),
+  'AccountSelfShell',
+);
+
+const AccountSelfGate = lazyRouteModule(
+  () => import('../features/account/AccountSelfShell'),
+  'AccountSelfGate',
+) as ReturnType<typeof lazy<ComponentType<{ children?: ReactNode }>>>;
 
 function RouteLoading() {
   return (
@@ -447,6 +466,10 @@ export const router = createBrowserRouter([
             element: <SettingsLegacyRedirect />,
           },
           {
+            path: 'cockpit',
+            element: withSuspense(<ManagementCockpitPage />),
+          },
+          {
             path: 'settings/brands',
             element: withSuspense(<SettingsPage />),
           },
@@ -565,6 +588,24 @@ export const router = createBrowserRouter([
           {
             path: 'work-items/:workItemId',
             element: withSuspense(<EngineeringWorkspacePage />),
+          },
+        ],
+      },
+      {
+        // Auto-servico: fora das areas operacionais de proposito. Qualquer
+        // identidade interna autenticada precisa alcancar o proprio perfil.
+        path: '/meu-perfil',
+        element: withSuspense(
+          <ReleaseSurfaceGate>
+            <AccountSelfGate>
+              <AccountSelfShell />
+            </AccountSelfGate>
+          </ReleaseSurfaceGate>,
+        ),
+        children: [
+          {
+            index: true,
+            element: withSuspense(<MyProfilePage />),
           },
         ],
       },

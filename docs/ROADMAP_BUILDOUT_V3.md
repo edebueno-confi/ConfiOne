@@ -445,3 +445,49 @@ Fechado:
 Próximo lote recomendado:
 - hardening visual das superfícies internas não nomeadas neste lote, preservando o mesmo sistema canônico;
 - redução do bundle do editor de Knowledge sem trocar contratos ou comportamento.
+
+## Documentação do Dashboard Gerencial — planejado em 2026-08-07
+
+Plano completo em `docs/DASHBOARD_DOCUMENTATION_PLAN.md`.
+
+O painel será compartilhado com pessoas que não participaram da sua construção.
+Elas farão três perguntas: como uso, de onde vem o número, e como ele é
+calculado. Hoje essas respostas só existem em relatórios de ciclo, que são
+registro de execução e não material de consulta.
+
+O risco de não documentar não é dúvida, é **decisão errada com confiança**:
+alguém lê a taxa de ganho, supõe o denominador errado e conclui algo falso.
+
+Entregáveis previstos: guia de uso, glossário de negócio, ficha técnica por
+indicador com fórmula e origem, mapa das fontes e perguntas frequentes.
+
+Pré-requisitos: abas estabilizadas visualmente, série histórica com alguns dias e
+decisão de onde a documentação vive.
+
+Regra de manutenção: a ficha técnica deve derivar do código, nunca ser escrita em
+paralelo. Documentação que diverge do comportamento real é pior que documentação
+ausente, porque tem aparência de autoridade.
+
+## Pipelines, etapas e gráficos do Dashboard — mapeado em 2026-08-07
+
+Mapa completo em `docs/DASHBOARD_PIPELINES_E_GRAFICOS_ROADMAP.md`. Nada
+implementado; levantamento com medição contra dados reais.
+
+**Defeito confirmado:** a consolidação de etapas compara texto cru, então
+`Em Tratativa` e `Em tratativa ` viram duas linhas. Correção pendente, a entrar
+junto com o mapeamento de etapas canônicas — sozinha resolveria 2 de 6 conceitos
+duplicados e daria falsa impressão de conclusão.
+
+**Achado grave:** pipelines de frentes diferentes somados na mesma aba. O
+"Criadouro de Tíquetes" concentra 81% dos tickets com 0,6% em aberto — é
+repositório, não fila. "Fale conosco" e "Whatsapp" guardam 84% da fila com idade
+mediana de 316 e 428 dias. A espera mediana de 346 dias publicada hoje está
+correta e **narrativamente enganosa**. Exige decisão de produto sobre quais
+pipelines pertencem a cada aba.
+
+**Seletor de pipelines** precisa de marcar e desmarcar todos.
+
+**Sub-abas temporais por domínio:** viáveis hoje em Suporte, Comercial e
+Financeiro, que têm data real de abertura e fechamento. Não viáveis em Carteira e
+Retenção, cuja série de snapshot começou em 2026-08-07 e tem um único ponto —
+abrir sub-aba vazia contradiz a regra de nunca sugerir tendência sem base.

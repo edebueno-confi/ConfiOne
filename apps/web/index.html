@@ -5,12 +5,32 @@
       // @vitejs/plugin-react@6 com Vite 8 pode transformar componentes com
       // Fast Refresh sem inserir o preambulo no HTML durante o dev server.
       // Instale o runtime antes dos modulos React transformados.
-      if (import.meta.env.DEV) {
-        const RefreshRuntime = await import('/@react-refresh');
-        RefreshRuntime.default.injectIntoGlobalHook(window);
+      //
+      // A guarda e `import.meta.hot`, e NAO `import.meta.env.DEV`.
+      // Dentro de script inline no HTML, o Vite 8 substitui `import.meta.env`
+      // por um objeto literal com DEV:false e PROD:true mesmo servindo em
+      // desenvolvimento. Com a guarda anterior o bloco inteiro nunca executava,
+      // e o dev server entregava tela em branco com "$RefreshSig$ is not
+      // defined". `import.meta.hot` so existe no dev server e e removido do
+      // build, entao expressa a condicao real sem depender daquela
+      // substituicao.
+      //
+      // Os globais sao definidos ANTES do import do runtime. O import e
+      // assincrono; definindo primeiro, o pior caso passa a ser perder o
+      // recarregamento a quente, e nao perder a aplicacao.
+      if (import.meta.hot) {
         window.$RefreshReg$ = () => {};
         window.$RefreshSig$ = () => (type) => type;
         window.__vite_plugin_react_preamble_installed__ = true;
+        try {
+          const RefreshRuntime = await import('/@react-refresh');
+          const injetar =
+            RefreshRuntime.injectIntoGlobalHook ??
+            RefreshRuntime.default?.injectIntoGlobalHook;
+          injetar?.(window);
+        } catch (error) {
+          console.warn('[dev] recarregamento a quente indisponivel:', error);
+        }
       }
     </script>
     <meta charset="UTF-8" />

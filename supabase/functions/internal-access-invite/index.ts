@@ -50,7 +50,7 @@ async function deliverInvite(serviceClient: ReturnType<typeof createServiceClien
     redirectTo,
     data: { internal_invite_id: invite.id },
   });
-  if (!error && authData.user?.id) {
+  if (!error && authData?.user?.id) {
     await serviceClient.from('internal_invites').update({ auth_user_id: authData.user.id }).eq('id', invite.id);
   }
   const { error: deliveryError } = await serviceClient.rpc('rpc_internal_invitation_delivery_update', {
@@ -131,6 +131,12 @@ Deno.serve(async (req) => {
     await deliverInvite(serviceClient, invite, req);
     return jsonResponse({ inviteId: invite.id, status: 'sent', actorId: actor.userId });
   } catch (error) {
-    return jsonResponse({ error: error instanceof Error ? error.message : 'Invite operation failed.' }, { status: 500 });
+    const message = error instanceof Error
+      ? error.message
+      : typeof error === 'object' && error !== null
+        ? String((error as { message?: unknown }).message ?? JSON.stringify(error))
+        : String(error ?? 'Invite operation failed.');
+    console.error('internal-access-invite failed', message);
+    return jsonResponse({ error: message }, { status: 500 });
   }
 });

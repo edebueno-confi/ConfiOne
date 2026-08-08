@@ -150,6 +150,13 @@ function buildReleaseNavigation({
   }
 
   if (allows('settings')) {
+    administration.push({
+      id: 'admin-cockpit',
+      label: 'Cockpit gerencial',
+      to: '/admin/cockpit',
+      icon: 'workflow',
+      matches: (path) => matchesBase(path, '/admin/cockpit'),
+    });
     for (const entry of RELEASE_SETTINGS_SUBMENU) {
       if (!canOpenSettingsSection(entry.sectionId, { isPlatformAdmin, screenKeys })) continue;
       administration.push({
@@ -222,6 +229,7 @@ export function buildMinimalNavigation({
 
   const administration: MinimalNavigationItem[] = [];
   if (isPlatformAdmin || hasScreen('settings')) {
+    administration.push({ id: 'admin-cockpit', label: 'Cockpit gerencial', to: '/admin/cockpit', icon: 'workflow', matches: (path) => matchesBase(path, '/admin/cockpit') });
     administration.push({ id: 'admin-settings', label: 'Configurações', to: '/admin/settings', icon: 'settings', matches: (path) => matchesBase(path, '/admin/settings') });
   }
   if ((isPlatformAdmin || hasScreen('access')) && !(isPlatformAdmin || hasScreen('settings'))) {
@@ -234,6 +242,7 @@ export function buildMinimalNavigation({
 export function resolveMinimalRouteLabel(pathname: string) {
   if (/^\/support\/tickets\/[^/]+/.test(pathname)) return 'Ticket';
   const routes: Array<[string, string]> = [
+    ['/admin/cockpit', 'Cockpit gerencial'],
     ['/admin/analytics', 'Dashboard gerencial'],
     ['/admin/knowledge', 'Conhecimento'],
     ['/admin/settings', 'Configurações'],

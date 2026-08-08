@@ -30,6 +30,7 @@ export type UiIconName =
   | 'link'
   | 'list'
   | 'mail'
+  | 'more'
   | 'phone'
   | 'plug'
   | 'plus'
@@ -37,6 +38,9 @@ export type UiIconName =
   | 'search'
   | 'shield'
   | 'sparkles'
+  | 'sort'
+  | 'sort-asc'
+  | 'sort-desc'
   | 'tag'
   | 'users'
   | 'x';

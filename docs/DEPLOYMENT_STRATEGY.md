@@ -58,16 +58,24 @@ Regras:
 
 ### App web
 
-Fluxo esperado quando a fase de frontend for liberada:
+Fluxo automático do app web:
 1. Branch abre Preview no Vercel.
 2. PR recebe validação de CI e revisão.
-3. Merge aprovado em `main` dispara Production.
+3. Depois do merge em `main` com os checks obrigatórios verdes, a integração GitHub/Vercel dispara Production automaticamente.
 4. Smoke test pós-deploy valida rotas, auth e consumo de contratos.
 
 Regras:
 - Preview por branch/PR.
-- Production somente via merge aprovado.
+- Production somente via merge na `main` com checks obrigatórios verdes.
 - Nenhum deploy direto de branch local para Production.
+- Não promover manualmente um Preview de branch para Production; o deploy de produção deve sempre nascer da `main`.
+
+### Automação e proteção da `main`
+
+- O projeto Vercel `genius-support-os` está vinculado ao GitHub com `main` como `productionBranch`.
+- A `main` exige pull request e o check obrigatório e atualizado `verify-database` antes do merge, inclusive para administradores.
+- O check executa typecheck de contratos e frontend, build web, reset/testes pgTAP e lint do schema local.
+- Branches `codex/*` e demais branches continuam em Preview; elas não entram no fluxo de produção até serem integradas à `main`.
 
 ### Documentação
 
@@ -114,10 +122,10 @@ Regras:
 
 ## Gates obrigatórios de produção
 
-- aprovação explícita do usuário
+- mudança integrada por pull request no fluxo autorizado
 - working tree limpa
 - branch remota atualizada
-- CI verde no commit que será usado
+- check `verify-database` verde e atualizado no commit que será usado
 - documentação operacional sincronizada
 - nenhum segredo novo commitado
 
@@ -134,5 +142,5 @@ Regras:
 
 - Deploy remoto do Supabase: concluído
 - Bootstrap do primeiro `platform_admin`: concluído
-- Preview Vercel: ainda não ativo porque o frontend continua bloqueado
-- Production Vercel: ainda não aplicável nesta fase
+- Preview Vercel: ativo por branch/PR
+- Production Vercel: ativo e automatizado pela `main`, após o check obrigatório do GitHub

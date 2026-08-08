@@ -46,6 +46,27 @@ export interface CommercialByOwner {
   wonRevenue: number;
 }
 
+export interface CommercialKpiOwner {
+  ownerId: string | null;
+  ownerName: string;
+  openDeals: number;
+  wonDeals: number;
+  wonAmount: number;
+}
+
+export interface CommercialClosedWin {
+  dealId: string;
+  dealName: string;
+  ownerName: string;
+  closedOn: string;
+  amountHome: number;
+}
+
+export interface CommercialKpiDetails {
+  byOwner: CommercialKpiOwner[];
+  closedWins: CommercialClosedWin[];
+}
+
 export interface CommercialByPipeline {
   pipelineId: string;
   label: string;
@@ -495,6 +516,8 @@ export interface AnalyticsSourceConfig {
   isActive: boolean;
   areaKey: 'commercial' | 'customer_success' | 'support' | 'chat' | 'a_classificar';
   classificationSource: 'legacy' | 'admin' | 'pending';
+  groupCompany: string;
+  groupCompanySource: 'pending' | 'suggested' | 'confirmed';
   isArchived: boolean;
   discoveryStatus: 'pending' | 'active' | 'archived';
   lastDiscoveredAt: string | null;
@@ -784,6 +807,8 @@ export function mapAnalyticsSourceConfig(row: Record<string, unknown>): Analytic
     isActive: Boolean(row.is_active),
     areaKey: ['commercial', 'customer_success', 'support', 'chat', 'a_classificar'].includes(areaKey) ? areaKey : 'a_classificar',
     classificationSource: (['legacy', 'admin', 'pending'].includes(toText(row.classification_source)) ? toText(row.classification_source) : 'pending') as AnalyticsSourceConfig['classificationSource'],
+    groupCompany: toText(row.group_company) || 'a_definir',
+    groupCompanySource: (['pending', 'suggested', 'confirmed'].includes(toText(row.group_company_source)) ? toText(row.group_company_source) : 'pending') as AnalyticsSourceConfig['groupCompanySource'],
     isArchived: Boolean(row.is_archived),
     discoveryStatus: ['pending', 'active', 'archived'].includes(discoveryStatus) ? discoveryStatus : 'pending',
     lastDiscoveredAt: row.last_discovered_at ? toText(row.last_discovered_at) : null,
@@ -866,6 +891,27 @@ export function mapCommercialKpis(row: Record<string, unknown> | null): Commerci
     wonRevenue: toNumber(row.won_revenue),
     conversionRate: toNumber(row.conversion_rate),
     avgTicket: toNumber(row.avg_ticket),
+  };
+}
+
+export function mapCommercialKpiDetails(value: unknown): CommercialKpiDetails {
+  const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  const rows = (key: string) => (Array.isArray(data[key]) ? data[key] : []) as Record<string, unknown>[];
+  return {
+    byOwner: rows('by_owner').map((row) => ({
+      ownerId: row.owner_id ? toText(row.owner_id) : null,
+      ownerName: toText(row.owner_name) || 'Sem responsável',
+      openDeals: toNumber(row.open_deals),
+      wonDeals: toNumber(row.won_deals),
+      wonAmount: toNumber(row.won_amount),
+    })),
+    closedWins: rows('closed_wins').map((row) => ({
+      dealId: toText(row.deal_id),
+      dealName: toText(row.deal_name) || 'Negócio sem nome',
+      ownerName: toText(row.owner_name) || 'Sem responsável',
+      closedOn: toText(row.closed_on),
+      amountHome: toNumber(row.amount_home),
+    })),
   };
 }
 

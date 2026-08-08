@@ -1,0 +1,561 @@
+{
+  "generated_at": "2026-08-07T14:25:29.131Z",
+  "sample_size": 100,
+  "ticket_properties": {
+    "totalProperties": 1147,
+    "candidates": [
+      {
+        "name": "closed_date",
+        "label": "Close date",
+        "type": "datetime",
+        "fieldType": "date",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "closer_owner___lomadee",
+        "label": "Closer Owner | SocialSoul",
+        "type": "enumeration",
+        "fieldType": "select",
+        "calculated": false,
+        "hubspotDefined": false
+      },
+      {
+        "name": "hs_is_closed",
+        "label": "Closed",
+        "type": "bool",
+        "fieldType": "calculation_equation",
+        "calculated": true,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_is_closed_in_time_to_close_sla_count",
+        "label": "Is Closed in Time to Close Sla Count",
+        "type": "number",
+        "fieldType": "calculation_equation",
+        "calculated": true,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_is_closed_in_time_to_first_response_sla_count",
+        "label": "Is Closed in Time to First Response Sla Count",
+        "type": "number",
+        "fieldType": "calculation_equation",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_last_closed_date",
+        "label": "Last Closed Date",
+        "type": "datetime",
+        "fieldType": "date",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_lastactivitydate",
+        "label": "Last activity date",
+        "type": "datetime",
+        "fieldType": "date",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_lastmodifieddate",
+        "label": "Last modified date",
+        "type": "datetime",
+        "fieldType": "date",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_mentions_resolved_user_ids",
+        "label": "hs_mentions_resolved_user_ids",
+        "type": "enumeration",
+        "fieldType": "checkbox",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_notes_last_activity",
+        "label": "Last Activity",
+        "type": "object_coordinates",
+        "fieldType": "text",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_time_to_close_in_operating_hours",
+        "label": "Time to close in SLA hours",
+        "type": "number",
+        "fieldType": "number",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_time_to_close_sla_at",
+        "label": "Time to Close SLA Due Date",
+        "type": "datetime",
+        "fieldType": "date",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_time_to_close_sla_status",
+        "label": "Time to Close SLA Ticket Status",
+        "type": "enumeration",
+        "fieldType": "select",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_time_to_first_assign",
+        "label": "Time to first assign",
+        "type": "number",
+        "fieldType": "number",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_time_to_first_rep_assignment",
+        "label": "Time to first rep assignment",
+        "type": "number",
+        "fieldType": "number",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_time_to_first_response_in_operating_hours",
+        "label": "Time to first response in SLA hours",
+        "type": "number",
+        "fieldType": "number",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_time_to_first_response_sla_at",
+        "label": "Time to First Response SLA Due Date",
+        "type": "datetime",
+        "fieldType": "date",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_time_to_first_response_sla_status",
+        "label": "Time to First Response SLA Status",
+        "type": "enumeration",
+        "fieldType": "select",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_time_to_next_response_sla_at",
+        "label": "Time to Next Response SLA Due Date",
+        "type": "datetime",
+        "fieldType": "date",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_time_to_next_response_sla_status",
+        "label": "Time to Next Response SLA Status",
+        "type": "enumeration",
+        "fieldType": "select",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_v2_cumulative_time_in_16245768",
+        "label": "Cumulative time in \"Encerrado (💜 Criadouro de Tíquetes | Aftersale)\"",
+        "type": "number",
+        "fieldType": "number",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_v2_cumulative_time_in_17099310",
+        "label": "Cumulative time in \"Finalizado (💜 Bug | Aftersale)\"",
+        "type": "number",
+        "fieldType": "number",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_v2_cumulative_time_in_17117704",
+        "label": "Cumulative time in \"POC Encerrado (💜 POC | Aftersale)\"",
+        "type": "number",
+        "fieldType": "number",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_v2_cumulative_time_in_5000512",
+        "label": "Cumulative time in \"Finalizado (📊 CS | Neotrust)\"",
+        "type": "number",
+        "fieldType": "number",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_v2_date_entered_16245768",
+        "label": "Date entered \"Encerrado (💜 Criadouro de Tíquetes | Aftersale)\"",
+        "type": "datetime",
+        "fieldType": "date",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_v2_date_entered_17099310",
+        "label": "Date entered \"Finalizado (💜 Bug | Aftersale)\"",
+        "type": "datetime",
+        "fieldType": "date",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_v2_date_entered_17117704",
+        "label": "Date entered \"POC Encerrado (💜 POC | Aftersale)\"",
+        "type": "datetime",
+        "fieldType": "date",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_v2_date_entered_5000512",
+        "label": "Date entered \"Finalizado (📊 CS | Neotrust)\"",
+        "type": "datetime",
+        "fieldType": "date",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_v2_date_exited_16245768",
+        "label": "Date exited \"Encerrado (💜 Criadouro de Tíquetes | Aftersale)\"",
+        "type": "datetime",
+        "fieldType": "date",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_v2_date_exited_17099310",
+        "label": "Date exited \"Finalizado (💜 Bug | Aftersale)\"",
+        "type": "datetime",
+        "fieldType": "date",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_v2_date_exited_17117704",
+        "label": "Date exited \"POC Encerrado (💜 POC | Aftersale)\"",
+        "type": "datetime",
+        "fieldType": "date",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_v2_date_exited_5000512",
+        "label": "Date exited \"Finalizado (📊 CS | Neotrust)\"",
+        "type": "datetime",
+        "fieldType": "date",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_v2_latest_time_in_16245768",
+        "label": "Latest time in \"Encerrado (💜 Criadouro de Tíquetes | Aftersale)\"",
+        "type": "number",
+        "fieldType": "number",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_v2_latest_time_in_17099310",
+        "label": "Latest time in \"Finalizado (💜 Bug | Aftersale)\"",
+        "type": "number",
+        "fieldType": "number",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_v2_latest_time_in_17117704",
+        "label": "Latest time in \"POC Encerrado (💜 POC | Aftersale)\"",
+        "type": "number",
+        "fieldType": "number",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "hs_v2_latest_time_in_5000512",
+        "label": "Latest time in \"Finalizado (📊 CS | Neotrust)\"",
+        "type": "number",
+        "fieldType": "number",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "incidente_resolvido___atividade_do_tiquete___aftersale",
+        "label": "Incidente resolvido | Atividade do Tíquete | Aftersale",
+        "type": "string",
+        "fieldType": "text",
+        "calculated": false,
+        "hubspotDefined": false
+      },
+      {
+        "name": "o_que_foi_feito_para_resolver_o_chamado____bug___aftersale",
+        "label": "O que foi feito para resolver o chamado? | Aftersale",
+        "type": "string",
+        "fieldType": "textarea",
+        "calculated": false,
+        "hubspotDefined": false
+      },
+      {
+        "name": "para_resolver_o_problema___us___aftersale",
+        "label": "Resultado Esperado | US | Aftersale",
+        "type": "string",
+        "fieldType": "textarea",
+        "calculated": false,
+        "hubspotDefined": false
+      },
+      {
+        "name": "time_to_close",
+        "label": "Time to close",
+        "type": "number",
+        "fieldType": "calculation_equation",
+        "calculated": false,
+        "hubspotDefined": true
+      },
+      {
+        "name": "time_to_first_agent_reply",
+        "label": "Time to first agent email reply",
+        "type": "number",
+        "fieldType": "number",
+        "calculated": false,
+        "hubspotDefined": true
+      }
+    ]
+  },
+  "close_date_coverage": {
+    "sampled": 100,
+    "filled": [
+      {
+        "name": "hs_is_closed",
+        "count": 100,
+        "percent": 100
+      },
+      {
+        "name": "hs_lastactivitydate",
+        "count": 100,
+        "percent": 100
+      },
+      {
+        "name": "hs_lastmodifieddate",
+        "count": 100,
+        "percent": 100
+      },
+      {
+        "name": "hs_notes_last_activity",
+        "count": 100,
+        "percent": 100
+      },
+      {
+        "name": "closed_date",
+        "count": 92,
+        "percent": 92
+      },
+      {
+        "name": "hs_last_closed_date",
+        "count": 92,
+        "percent": 92
+      },
+      {
+        "name": "hs_v2_date_entered_16245768",
+        "count": 92,
+        "percent": 92
+      },
+      {
+        "name": "hs_time_to_first_rep_assignment",
+        "count": 41,
+        "percent": 41
+      },
+      {
+        "name": "hs_v2_cumulative_time_in_16245768",
+        "count": 4,
+        "percent": 4
+      },
+      {
+        "name": "hs_is_closed_in_time_to_first_response_sla_count",
+        "count": 3,
+        "percent": 3
+      },
+      {
+        "name": "hs_time_to_close_sla_at",
+        "count": 3,
+        "percent": 3
+      },
+      {
+        "name": "hs_time_to_close_sla_status",
+        "count": 3,
+        "percent": 3
+      },
+      {
+        "name": "hs_time_to_first_response_in_operating_hours",
+        "count": 3,
+        "percent": 3
+      },
+      {
+        "name": "hs_time_to_first_response_sla_at",
+        "count": 3,
+        "percent": 3
+      },
+      {
+        "name": "hs_time_to_first_response_sla_status",
+        "count": 3,
+        "percent": 3
+      },
+      {
+        "name": "hs_time_to_next_response_sla_at",
+        "count": 3,
+        "percent": 3
+      },
+      {
+        "name": "hs_time_to_next_response_sla_status",
+        "count": 3,
+        "percent": 3
+      },
+      {
+        "name": "hs_is_closed_in_time_to_close_sla_count",
+        "count": 2,
+        "percent": 2
+      },
+      {
+        "name": "hs_time_to_close_in_operating_hours",
+        "count": 2,
+        "percent": 2
+      },
+      {
+        "name": "closer_owner___lomadee",
+        "count": 0,
+        "percent": 0
+      },
+      {
+        "name": "hs_mentions_resolved_user_ids",
+        "count": 0,
+        "percent": 0
+      },
+      {
+        "name": "hs_time_to_first_assign",
+        "count": 0,
+        "percent": 0
+      },
+      {
+        "name": "hs_v2_cumulative_time_in_17099310",
+        "count": 0,
+        "percent": 0
+      },
+      {
+        "name": "hs_v2_cumulative_time_in_17117704",
+        "count": 0,
+        "percent": 0
+      },
+      {
+        "name": "hs_v2_cumulative_time_in_5000512",
+        "count": 0,
+        "percent": 0
+      }
+    ],
+    "sampleTicketIds": [
+      "24520988161",
+      "26651437925",
+      "29100642988"
+    ]
+  },
+  "closed_tickets_in_published_pipelines": {
+    "sampled": 100,
+    "total": 31531,
+    "filled": [
+      {
+        "name": "closed_date",
+        "count": 100,
+        "percent": 100
+      },
+      {
+        "name": "hs_last_closed_date",
+        "count": 100,
+        "percent": 100
+      },
+      {
+        "name": "time_to_close",
+        "count": 100,
+        "percent": 100
+      },
+      {
+        "name": "hs_lastactivitydate",
+        "count": 100,
+        "percent": 100
+      },
+      {
+        "name": "hs_time_to_first_response_in_operating_hours",
+        "count": 77,
+        "percent": 77
+      },
+      {
+        "name": "time_to_first_agent_reply",
+        "count": 8,
+        "percent": 8
+      }
+    ]
+  },
+  "stage_history": {
+    "available": true,
+    "versionsOnSampledTicket": 4,
+    "oldestChangeAt": "2025-05-26T18:02:45Z",
+    "newestChangeAt": "2025-05-26T20:31:45.296Z",
+    "note": "O histórico de estágio está acessível e permite derivar a data de encerramento real."
+  },
+  "associations": {
+    "ticket_to_company": {
+      "available": true,
+      "probed": 100,
+      "withAssociation": 6,
+      "percent": 6
+    },
+    "ticket_to_company_recent": {
+      "available": true,
+      "probed": 100,
+      "withAssociation": 58,
+      "percent": 58
+    },
+    "deal_to_company": {
+      "available": true,
+      "probed": 100,
+      "withAssociation": 99,
+      "percent": 99
+    }
+  },
+  "company_activity": {
+    "totalProperties": 587,
+    "candidates": [
+      "hs_notes_last_activity",
+      "notes_last_contacted",
+      "notes_last_updated"
+    ],
+    "sampled": 100,
+    "filled": [
+      {
+        "name": "hs_notes_last_activity",
+        "count": 100,
+        "percent": 100
+      },
+      {
+        "name": "notes_last_contacted",
+        "count": 100,
+        "percent": 100
+      },
+      {
+        "name": "notes_last_updated",
+        "count": 100,
+        "percent": 100
+      }
+    ]
+  }
+}

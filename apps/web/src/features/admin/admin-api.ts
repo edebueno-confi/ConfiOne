@@ -1755,13 +1755,11 @@ export async function listAdminInternalInvites() {
   return (data ?? []) as AdminInternalInviteRow[];
 }
 
-export async function createAdminInternalInvitation(input: { email: string; fullName: string; areaKey: string; functionId?: string | null; accessProfileId?: string | null; expiresAt: string }) {
-  const client = requireClient();
-  const { data, error } = await client.functions.invoke('internal-access-invite', { body: { action: 'create', ...input } });
-  if (error) throw toAppError(error, 'Falha ao preparar o convite interno.');
-  return data as Record<string, unknown>;
-}
-
+/**
+ * Aposentado como caminho de liberação de acesso: a criação de convite saiu do
+ * painel. O aceite continua exportado porque convites históricos ainda podem
+ * chegar por link, e a revogação continua disponível para encerrá-los.
+ */
 export async function acceptAdminInternalInvitation(inviteId: string) {
   const client = requireClient();
   const { data, error } = await client.functions.invoke('internal-access-invite', { body: { action: 'accept', inviteId } });
@@ -1774,6 +1772,55 @@ export async function revokeAdminInternalInvitation(inviteId: string) {
   const { data, error } = await client.rpc('rpc_admin_revoke_internal_invitation', { p_invite_id: inviteId });
   if (error) throw toAppError(error, 'Falha ao revogar o convite interno.');
   return data;
+}
+
+/**
+ * Criação direta de usuário interno. Caminho oficial de liberação de acesso:
+ * a conta de autenticação e o vínculo interno são provisionados no servidor,
+ * sem passar por `internal_invites` nem por `internal-access-invite`.
+ */
+export async function createAdminInternalUser(input: {
+  email: string;
+  fullName: string;
+  areaKey: string;
+  functionId?: string | null;
+  accessProfileId?: string | null;
+}) {
+  const client = requireClient();
+  const { data, error } = await client.functions.invoke('internal-access-user-create', {
+    body: { action: 'create', ...input },
+  });
+  if (error) throw toAppError(error, 'Falha ao criar o usuário interno.');
+  return data as AdminInternalUserCredentialResult & {
+    created: boolean;
+    alreadyExisted: boolean;
+  };
+}
+
+/**
+ * Resultado de uma operação que emite credencial. `temporaryPassword` só existe
+ * nesta resposta: o servidor não persiste, não registra em log e não devolve o
+ * valor em nenhuma consulta posterior.
+ */
+export interface AdminInternalUserCredentialResult {
+  userId: string;
+  credentialStatus: string;
+  temporaryPassword: string | null;
+  temporaryPasswordDisplayOnce: boolean;
+}
+
+/**
+ * Redefinição administrativa de senha. Substituiu o disparo de e-mail depois da
+ * decisão de produto de 2026-08-06: a senha é gerada no servidor, exibida uma
+ * única vez ao administrador e marcada para troca obrigatória no próximo acesso.
+ */
+export async function resetAdminInternalUserPassword(userId: string) {
+  const client = requireClient();
+  const { data, error } = await client.functions.invoke('internal-access-user-create', {
+    body: { action: 'password-reset', userId },
+  });
+  if (error) throw toAppError(error, 'Falha ao redefinir a senha do usuário.');
+  return data as AdminInternalUserCredentialResult;
 }
 
 export async function listAdminInternalAccessAreas() {
