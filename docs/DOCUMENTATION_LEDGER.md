@@ -1,5 +1,41 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## HUBSPOT-TICKET-NATIVE-FIELDS-AND-AUTODISPATCH-01 — aplicado — 2026-08-08
+
+- Migrações remotas: `20260808260000_hubspot_ticket_native_fields_promotion.sql`,
+  `20260808270000_analytics_native_reopen_rate.sql` e
+  `20260808280000_hubspot_dispatch_autostart_and_continuation.sql`.
+- Publicações: `hubspot-orchestrator-worker` v39 e
+  `hubspot-orchestrator-dispatcher` v32.
+- Resultado: carga completa promoveu 45.065 registros e campos nativos de
+  tickets; o dispatcher parte automaticamente de uma run criada e continua até
+  a fila ficar ociosa. Run incremental remoto de prova concluiu em `success`
+  sem dispatch manual.
+- Contratos: `107_hubspot_ticket_native_fields_promotion.sql`,
+  `108_analytics_native_reopen_rate.sql` e
+  `109_hubspot_dispatch_autostart_and_continuation.sql`.
+- Relatório: `reports/2026-08-08_hubspot-ticket-native-fields-and-autodispatch.md`.
+
+## DASHBOARD-TIMEOUT-01 — causa medida e hardening aplicado — 2026-08-08
+
+- Incidente: `rpc_analytics_ceo_snapshot`, `rpc_analytics_ceo_history` e
+  `rpc_analytics_executive_kpis_v2` excediam o orçamento de 8 s do PostgREST em
+  picos de I/O temporário.
+- Causa confirmada: spills de CTE em `work_mem=2184kB`; a view de resolução não
+  foi a causa. Migration local `20260808250000_analytics_dashboard_timeout_hardening.sql`
+  define 16 MB para Suporte e 64 MB para o Snapshot executivo, restaurados ao
+  final de cada função.
+- Teste: `106_analytics_dashboard_timeout_hardening.sql`; primeiro vermelho e
+  depois verde. Reset integral e 1.694 pgTAP aprovados, além de lint de banco,
+  quality gate, typechecks, build e secret scan.
+- Aplicação: migration publicada no Supabase remoto. O catálogo confirma os
+  dois `work_mem` por função e as quatro RPCs críticas mediram de 299 ms a
+  4,37 s, abaixo do timeout autenticado de 8 s. Não houve deploy, push ou
+  alteração de secret; a rota autenticada segue sob observação operacional.
+- OMIE: 502 atual vem de erro 500 do provedor; os antigos timeouts de promoção
+  são anteriores ao hardening de 120 s e não são o mesmo incidente.
+- Relatório: `docs/reports/2026-08-08_dashboard-timeout-root-cause-and-hardening.md`.
+
 ## Registro corrente — sub-abas de evolução e fila por etapa cruzada — 2026-08-07
 
 - **Roadmap:** `DASHBOARD_PIPELINES_E_GRAFICOS_ROADMAP.md`, seções 4.5, 5 e 6.

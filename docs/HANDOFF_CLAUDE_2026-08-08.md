@@ -1,5 +1,22 @@
 # Handoff — 2026-08-08
 
+> ## Atualização Codex — tickets HubSpot completos e dispatcher autônomo
+>
+> As migrations `20260808260000`, `20260808270000` e `20260808280000` estão
+> aplicadas no remoto. A carga completa de tickets terminou em `success` com
+> 45.065 registros promovidos e passou a materializar assunto, primeira resposta
+> do agente, reabertura, duração, one-touch e fechamento quando presentes na
+> origem. O KPI de reabertura passou a usar a evidência nativa e não inventa
+> valor quando ela está ausente.
+>
+> O defeito de operação também foi resolvido: criar uma run agora aciona o
+> dispatcher por trigger privado, e o dispatcher continua lotes de 12 itens e
+> tenta a promoção final ao encontrar a fila vazia. Um run incremental iniciado
+> diretamente pelo RPC concluiu com nove páginas e `success`, sem intervenção
+> manual. Foram publicadas `hubspot-orchestrator-worker` v39 e
+> `hubspot-orchestrator-dispatcher` v32. Relatório:
+> `docs/reports/2026-08-08_hubspot-ticket-native-fields-and-autodispatch.md`.
+
 > ## ⛔ INCIDENTE ABERTO — LEIA PRIMEIRO
 >
 > **O Dashboard está quebrado em produção.** Reportado pela operação logo após o
@@ -45,6 +62,25 @@
 > **Não tive contexto para concluir a correção.** O diagnóstico acima é o que
 > ficou verificado; a hipótese da view é forte mas **não foi provada** medindo a
 > RPC completa. Comece por aí.
+
+> ## Atualização Codex — hardening aplicado no Supabase, 2026-08-08
+>
+> A medição remota da cadeia completa refutou a hipótese da view: ela conta
+> 34.392 tickets em 42 ms. O gargalo é o spill de CTEs sob `work_mem=2184kB`, com
+> `authenticated` limitado a 8 s. Os máximos históricos via PostgREST foram
+> 7,68 s no Histórico, 6,79 s no Snapshot e 6,71 s no Resumo Executivo.
+>
+> A migration local `20260808250000_analytics_dashboard_timeout_hardening.sql`
+> configura `work_mem=16MB` no read model de Suporte e `64MB` no Snapshot
+> executivo. Ela tem pgTAP dedicado, reset integral e 1.694 testes aprovados.
+> A migration foi aplicada no Supabase remoto: o catálogo confirma os valores
+> por função e as quatro RPCs críticas mediram entre 299 ms e 4,37 s, abaixo dos
+> 8 s autenticados. Não houve deploy, push ou alteração de secret; falta apenas
+> acompanhar a rota HTTP autenticada sob tráfego real.
+>
+> O 502 atual do OMIE é separado: os dois últimos runs falharam por 500 do
+> provedor; a promoção de 3.768 títulos concluiu em 42,2 s após o hardening de
+> 120 s. Relatório: `docs/reports/2026-08-08_dashboard-timeout-root-cause-and-hardening.md`.
 
 
 Estado do trabalho no Dashboard para quem continuar, com ou sem histórico da

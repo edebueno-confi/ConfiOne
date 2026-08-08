@@ -397,7 +397,7 @@ Não substituir por roxo/lilás.
 | Gap compacto | 12–16px |
 | Padding de card | 16px |
 | Padding denso | 12–14px |
-| Radius de card | 18–24px |
+| Radius de card | 0px |
 | Altura de linha de tabela | 56–72px |
 | Altura de KPI compacto | 86–96px |
 | Sidebar | 240–260px |
@@ -499,12 +499,24 @@ A fase atual é de correção do Design System, viewport real e fidelidade visua
 
 ## 12. Componentes
 
+### 12.0 Geometria reta
+
+O raio padrão do produto é `0`. Cartões, tabelas, campos, botões, seções,
+menus e a barra lateral usam cantos retos; a separação deve vir de espaço,
+alinhamento e réguas finas, não de caixas arredondadas em sequência.
+
+Exceções permitidas são apenas formas que comunicam estado ou identidade:
+avatar, ponto de status, medidor/progresso e marcador estritamente circular.
+Toda exceção deve usar o token de forma circular, nunca um valor avulso.
+
+Não criar novos `rounded-*` sem uma dessas justificativas.
+
 ### 12.1 Cards
 
 Devem ter:
 - fundo branco/light ou card dark;
 - borda sutil;
-- radius 18–24px;
+- radius 0px;
 - sombra leve;
 - padding 12–16px;
 - título claro;

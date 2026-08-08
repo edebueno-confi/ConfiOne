@@ -1,5 +1,47 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+## HubSpot — campos nativos e fila autônoma aplicados — 2026-08-08
+
+- A carga completa de tickets foi concluída no remoto: 45.065 registros
+  promovidos, 44.850 recebidos, 457 páginas e marca d'água avançada. O snapshot
+  passou a persistir `subject`, primeira resposta, reabertura, tempo de
+  encerramento, one-touch e tipo de fechamento quando fornecidos pelo HubSpot.
+- `rpc_analytics_support_kpis_v2` agora usa `reopened_at` como evidência nativa.
+  O KPI de reabertura está `available`; no recorte de 01–08/08 o valor é 0,
+  resultado da origem, não ausência de cobertura.
+- O início de uma execução HubSpot agora dispara o dispatcher por trigger
+  privado; o dispatcher encadeia lotes de até 12 itens e finaliza ao esvaziar a
+  fila. Validação remota direta: run incremental com nove itens terminou em
+  `success`, sem chamada manual ao dispatcher.
+- Publicado no Supabase remoto: migrations `20260808260000`, `20260808270000`
+  e `20260808280000`; Edge Functions `hubspot-orchestrator-worker` v39 e
+  `hubspot-orchestrator-dispatcher` v32. Sem commit ou push Git.
+- Relatório: `docs/reports/2026-08-08_hubspot-ticket-native-fields-and-autodispatch.md`.
+
+## Incidente do Dashboard — hardening aplicado no Supabase — 2026-08-08
+
+- A hipótese de que `vw_analytics_ticket_resolution` causava os HTTP 500 foi
+  refutada por `EXPLAIN (ANALYZE, BUFFERS)` remoto: a view conta 34.392 tickets
+  em 42 ms e não é o nó que consome o orçamento do PostgREST.
+- Causa medida: `work_mem=2184kB` derrama CTEs de `rpc_analytics_support_kpis_v2`
+  e da reconciliação de `rpc_analytics_ceo_snapshot`, enquanto o papel
+  `authenticated` tem `statement_timeout=8s`. Os máximos históricos da rota
+  chegaram a 7,68 s.
+- A migration local
+  `20260808250000_analytics_dashboard_timeout_hardening.sql` limita a memória
+  por função: 16 MB em Suporte e 64 MB no Snapshot executivo. Sem alterar dados,
+  contratos, RLS ou grants, os spills foram removidos nas medições remotas de
+  sessão.
+- A migration foi aplicada no Supabase remoto e o catálogo confirma
+  `work_mem=16MB` em Suporte e `64MB` no Snapshot. As quatro RPCs críticas
+  concluíram entre 299 ms e 4,37 s em `EXPLAIN (ANALYZE, BUFFERS)`, abaixo dos
+  8 s do papel autenticado. Não houve deploy, push ou alteração de secret.
+- Evidência local: reset integral, 1.694 testes pgTAP, lint de banco, quality
+  gate, typechecks, build e secret scan aprovados.
+- O `omie-sync` 502 atual é falha 500 do provedor; não compartilha esta causa.
+  O relatório completo é
+  `docs/reports/2026-08-08_dashboard-timeout-root-cause-and-hardening.md`.
+
 ## Adendo corrente — evolução temporal e fila cruzada por etapa — 2026-08-07
 
 Roadmap: seções 4.5, 5 e 6 de `docs/DASHBOARD_PIPELINES_E_GRAFICOS_ROADMAP.md`.
