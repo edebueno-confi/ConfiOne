@@ -50,6 +50,14 @@ const REASON_MESSAGES = {
     'A data da última interação com o cliente não é registrada na origem.',
   history_insufficient:
     'Ainda não há histórico suficiente. O acompanhamento começa a partir das medições diárias já iniciadas.',
+  // Motivos que dependem de decisão humana, e não de dado que falta. A frase
+  // precisa dizer o que fazer, porque aqui existe alguém que pode resolver.
+  queue_role_unclassified:
+    'Nenhum pipeline teve o papel definido ainda. Enquanto isso, a fila conta todos eles. Defina em Configurações, Fontes do Dashboard.',
+  ticket_last_activity_missing:
+    'Os atendimentos não registram a data da última movimentação, então não é possível separar o que está andando do que está parado.',
+  ticket_last_activity_partial:
+    'Parte dos atendimentos ainda não tem a data da última movimentação carregada, então este número cobre parte da fila.',
   sla_unavailable: 'Nenhum atendimento do recorte tem prazo acordado registrado.',
   sla_partial_coverage:
     'Apenas parte dos atendimentos tem prazo acordado registrado.',

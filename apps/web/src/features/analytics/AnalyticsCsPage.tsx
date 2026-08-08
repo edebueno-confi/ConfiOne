@@ -69,6 +69,9 @@ const SUPPORT_BANDS: BoardBand[] = [
     dense: true,
     items: [
       { key: 'p90_time_to_resolution_days', kind: 'days', note: 'Nove em cada dez resolvidos abaixo deste tempo' },
+      // Sem este número, a mediana de resolução parece excelente sem que se
+      // saiba quanto dela vem de fechamento automático na entrada.
+      { key: 'instant_resolutions', kind: 'count', note: 'Entram no cálculo do tempo de resolução' },
       { key: 'reopen_rate', kind: 'percent', note: 'Resolvidos que precisaram voltar' },
     ],
   },

@@ -1645,3 +1645,89 @@ HubSpot, não de mais consulta.
 
 **A regra que fica:** número que vai mudar decisão da operação precisa ser
 conferido na origem antes de virar proposta, não depois.
+
+---
+
+## 25. Auditoria completa dos indicadores e publicação
+
+### 25.1 A sincronização de vínculos foi retomada e funcionou
+
+A varredura estava parada no ticket `37173199993`, sem `completed_at`, e a
+distribuição por ano mostrava **0% de vínculo em 2026** — a faixa nunca varrida.
+
+Após a retomada:
+
+| Ano | Cobertura antes | Cobertura depois |
+| --- | ---: | ---: |
+| 2026 | **0%** | **60,2%** |
+| 2025 | 66,7% | 68,8% |
+| 2024 | 65,5% | 69,3% |
+
+Confirma a hipótese: os 270 casos que eu classificara como "sem empresa" eram
+lacuna de ingestão, não realidade. A varredura segue em curso.
+
+### 25.2 Dois indicadores publicavam número enganoso
+
+**`dormant_backlog` devolvia 0** quando nenhum pipeline estava classificado.
+"Passivo fora da fila: 0" afirma que nada está fora; a verdade é que ainda não se
+sabe separar. **`stagnant_in_queue`** publicava o total de parados da base sob o
+rótulo "dentro da fila".
+
+Os dois passaram a `unavailable` enquanto não houver classificação. Indicador que
+só existe depois de uma decisão não deve publicar número antes dela.
+
+### 25.3 A mediana de resolução escondia fechamento automático
+
+**81 dos 351 encerramentos do último mês — 23% — têm data de encerramento igual à
+de abertura.** Todos no mesmo pipeline. Isso puxa a mediana para 0,1 dia.
+
+Excluir seria inventar regra: pode haver atendimento legitimamente resolvido no
+ato. A função passou a **publicar a contagem**, e a tela mostra "Encerrados no
+mesmo instante em que abriram" ao lado do tempo de resolução. Quem lê decide o
+peso.
+
+Vale registrar o outro lado do mesmo número: **337 dos 351 resolvidos vêm de um
+único pipeline**. A "mediana de resolução do Suporte" é, na prática, a mediana
+daquele pipeline.
+
+### 25.4 O Comercial tem o mesmo problema de mistura
+
+| Pipeline | Negócios | Observação |
+| --- | ---: | --- |
+| Piloto Aftersale *(apelido "Comercial Aftersale")* | 1.171 | Aftersale |
+| Pipe de Vendas | 908 | operação indefinida |
+| **Gestão CS** | 25 | **não é comercial** |
+
+"Taxa de ganho: 8%" é a média de coisas que não se comparam. A operação do grupo
+foi semeada também para negócios, e um inventário de pipelines foi publicado para
+apoiar a decisão. **Nenhum indicador comercial foi alterado** — fazer isso sem
+decisão humana repetiria o erro do lote anterior.
+
+### 25.5 Um motivo sem tradução vazou para a tela
+
+O QA visual pegou **"Este indicador tem uma limitação de origem registrada pela
+equipe responsável"** — texto genérico que não diz nada a quem lê nem a quem
+poderia resolver. Causa: o read model passou a emitir `queue_role_unclassified` e
+o contrato não tinha frase para ele.
+
+A frase agora é acionável: *"Nenhum pipeline teve o papel definido ainda.
+Enquanto isso, a fila conta todos eles. Defina em Configurações, Fontes do
+Dashboard."*
+
+E ficou um teste que varre os blocos `case ... end as reason` das migrations e
+exige tradução para cada motivo emitido. O defeito não volta em silêncio.
+
+### 25.6 Validação
+
+| Verificação | Resultado |
+| --- | --- |
+| Suíte completa | 483 de 503, mesmos 19 da linha de base |
+| `web:typecheck`, `lint`, `web:build` | limpos |
+| QA visual | 18 combinações, 0 achados |
+| Migrations | local e remoto alinhados |
+| `git diff --check` | limpo |
+
+**Estado publicado do Suporte:** "Fila atual: 5.448" com estado parcial, marca de
+0% de cobertura e a frase que diz onde decidir. Passivo e parados como
+"Indisponível", com o mesmo motivo. É o estado correto para um painel cuja
+classificação ainda não foi feita — e agora ele diz isso em vez de fingir.

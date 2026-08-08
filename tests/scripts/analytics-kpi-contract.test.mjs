@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import { readdirSync, readFileSync } from 'node:fs';
 
 import {
   describeKpiBasis,
@@ -185,4 +186,47 @@ test('nenhum read model é exposto a usuário anônimo', () => {
   for (const grant of grants) {
     assert.equal(/\banon\b/.test(grant), false, `grant não pode incluir anon: ${grant}`);
   }
+});
+
+test('todo motivo publicado pelo backend tem tradução própria', () => {
+  // O QA visual pegou "Este indicador tem uma limitação de origem registrada
+  // pela equipe responsável" na tela: um motivo novo tinha sido publicado pelo
+  // read model sem entrada no contrato, e caiu no texto genérico. A frase não
+  // dizia nada a quem lia nem a quem poderia resolver.
+  //
+  // A varredura olha apenas blocos `case ... end as reason`, que é onde os read
+  // models de KPI decidem o motivo. Uma regex mais larga pegaria qualquer
+  // literal do arquivo e o teste viraria ruído.
+  const motivos = new Set();
+  const dir = new URL('../../supabase/migrations/', import.meta.url);
+  for (const arquivo of readdirSync(dir)) {
+    if (!arquivo.endsWith('.sql')) continue;
+    const sql = readFileSync(new URL(arquivo, dir), 'utf8');
+    for (const bloco of sql.matchAll(/case\s+when[\s\S]{0,900}?end as reason/g)) {
+      for (const literal of bloco[0].matchAll(/then\s+'([a-z][a-z0-9_]{6,})'/g)) {
+        motivos.add(literal[1]);
+      }
+    }
+  }
+
+  // `unavailable`, `partial` e `awaiting_history` são estados, não motivos: eles
+  // aparecem no mesmo `case` e precisam sair. Os de autorização pertencem ao
+  // contexto de acesso, que tem o próprio vocabulário.
+  const ESTADOS = new Set(['unavailable', 'partial', 'available', 'awaiting_history']);
+  const ACESSO = new Set([
+    'profile_missing', 'profile_inactive', 'membership_revoked',
+    'returns_portal_disabled', 'no_active_tenant',
+  ]);
+  for (const nome of [...motivos]) {
+    if (ESTADOS.has(nome) || ACESSO.has(nome)) motivos.delete(nome);
+  }
+
+  assert.ok(motivos.size >= 5, 'a varredura precisa encontrar motivos reais');
+
+  const generico = describeKpiLimitation({ state: 'partial', reason: '__inexistente__' });
+  const semTraducao = [...motivos].filter(
+    (motivo) => describeKpiLimitation({ state: 'partial', reason: motivo }) === generico,
+  );
+
+  assert.deepEqual(semTraducao, [], `motivos sem frase própria: ${semTraducao.join(', ')}`);
 });

@@ -57,6 +57,10 @@ export const KPI_LABELS = {
   // uma fila mais velha, é um acúmulo que ninguém assumiu.
   dormant_backlog: 'Passivo fora da fila',
   stagnant_in_queue: 'Parados dentro da fila',
+  // Nome deliberadamente descritivo e não avaliativo: encerrar no ato pode ser
+  // automação inútil ou atendimento genuinamente rápido, e o painel não sabe
+  // qual dos dois.
+  instant_resolutions: 'Encerrados no mesmo instante em que abriram',
   median_time_to_resolution_days: 'Tempo até resolver',
   avg_time_to_resolution_days: 'Tempo médio até resolver',
   p90_time_to_resolution_days: 'Tempo até resolver, pior caso',
