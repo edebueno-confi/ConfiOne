@@ -293,24 +293,37 @@ export async function getExecutiveKpisV2(filters: AnalyticsFilters): Promise<unk
 
 export async function getFinanceSnapshot(filters: AnalyticsFilters, clientQuery = ''): Promise<FinanceSnapshot> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_finance_snapshot', {
-    ...rpcFilters(filters),
-    p_status: filters.stageId || null,
-    p_aging_bucket: filters.priority || null,
-    p_client_query: clientQuery.trim() || null,
+  const [snapshot, reconciliation] = await Promise.all([
+    client.rpc('rpc_analytics_finance_snapshot', {
+      ...rpcFilters(filters),
+      p_status: filters.stageId || null,
+      p_aging_bucket: filters.priority || null,
+      p_client_query: clientQuery.trim() || null,
+    }),
+    client.rpc('rpc_analytics_finance_reconciliation_v1', {
+      p_client_query: clientQuery.trim() || null,
+      p_limit: 200,
+    }),
+  ]);
+  if (snapshot.error) throw toAppError(snapshot.error, 'Falha ao carregar a analise financeira filtrada.');
+  if (reconciliation.error) throw toAppError(reconciliation.error, 'Falha ao carregar a conciliação financeira.');
+  const summary = reconciliation.data && typeof reconciliation.data === 'object'
+    ? reconciliation.data as Record<string, unknown>
+    : {};
+  const rawSnapshot = snapshot.data && typeof snapshot.data === 'object'
+    ? snapshot.data as Record<string, unknown>
+    : {};
+  return mapFinanceSnapshot({
+    ...rawSnapshot,
+    cs_reconciliation: {
+      ...(summary.summary && typeof summary.summary === 'object' ? summary.summary : {}),
+      by_client_status: Array.isArray(summary.by_client_status) ? summary.by_client_status : [],
+    },
+    reconciliation_exceptions: {
+      unmatched_companies: Array.isArray(summary.unmatched_companies) ? summary.unmatched_companies : [],
+      identity_issues: Array.isArray(summary.identity_issues) ? summary.identity_issues : [],
+    },
   });
-  if (error) throw toAppError(error, 'Falha ao carregar a analise financeira filtrada.');
-  return mapFinanceSnapshot(data);
-}
-
-export interface FinanceUnmatchedClient { client: string; taxId: string | null; titles: number; balance: number; overdueBalance: number; nameMatches: number }
-
-export async function getFinanceUnmatchedClients(clientQuery?: string, limit = 100): Promise<FinanceUnmatchedClient[]> {
-  const client = requireSupabaseBrowserClient();
-  const { data, error } = await client.rpc('rpc_analytics_finance_unmatched_clients', { p_client_query: clientQuery?.trim() || null, p_limit: limit });
-  if (error) throw toAppError(error, 'Falha ao listar empresas sem correspondência no HubSpot.');
-  const rows = Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
-  return rows.map((row) => ({ client: String(row.client ?? 'Indisponível'), taxId: row.tax_id ? String(row.tax_id) : null, titles: Number(row.titles ?? 0), balance: Number(row.balance ?? 0), overdueBalance: Number(row.overdue_balance ?? 0), nameMatches: Number(row.name_matches ?? 0) }));
 }
 
 export async function getFinanceSourceStatus(): Promise<FinanceSourceStatus> {

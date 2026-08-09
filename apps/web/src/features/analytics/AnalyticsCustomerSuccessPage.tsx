@@ -71,6 +71,11 @@ interface OverdueRow {
   open_tickets?: number;
 }
 
+interface FinancialIdentity {
+  identity_missing_overdue_titles?: number;
+  identity_missing_overdue_balance?: number;
+}
+
 function rows<T>(payload: unknown, key: string): T[] {
   const data = payload as Record<string, unknown> | null;
   const value = data && typeof data === 'object' ? data[key] : null;
@@ -122,6 +127,9 @@ export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
   const owners = rows<OwnerRow>(payload, 'by_owner');
   const risks = rows<RiskRow>(payload, 'risk_signals');
   const overdue = rows<OverdueRow>(payload, 'top_overdue_customers');
+  const financialIdentity = ((payload as Record<string, unknown>).financial_identity ?? {}) as FinancialIdentity;
+  const missingIdentityOverdueTitles = Number(financialIdentity.identity_missing_overdue_titles ?? 0);
+  const missingIdentityOverdueBalance = Number(financialIdentity.identity_missing_overdue_balance ?? 0);
 
   return (
     <AnalyticsHdDomainFrame title={TITLE} description={DESCRIPTION} source={SOURCE} state={state}>
@@ -186,7 +194,9 @@ export function AnalyticsCustomerSuccessPage({ onRetry }: AnalyticsPageProps) {
         title="Clientes com maior valor vencido"
         description="Cruzamento entre a carteira e os títulos vencidos, feito apenas por cadastro fiscal conferido."
       >
-        {overdue.length === 0 ? (
+        {overdue.length === 0 && missingIdentityOverdueTitles > 0 ? (
+          <p className="text-sm text-[color:var(--minimal-text-secondary)]">Não foi possível identificar os clientes com títulos vencidos: {missingIdentityOverdueTitles.toLocaleString('pt-BR')} títulos ({currency(missingIdentityOverdueBalance)}) chegaram do OMIE sem nome e CNPJ. A lista será preenchida quando a identidade financeira estiver disponível.</p>
+        ) : overdue.length === 0 ? (
           <p className="text-sm text-[color:var(--minimal-text-secondary)]">Nenhum cliente ativo com título vencido.</p>
         ) : (
           <div className="overflow-x-auto">
