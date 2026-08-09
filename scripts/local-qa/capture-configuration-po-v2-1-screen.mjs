@@ -27,6 +27,16 @@ const SCREENS = {
       ['events', '.gso-po-table'],
     ],
   },
+  '04-help-center-settings': {
+    route: '/admin/settings/help-center',
+    reference: '04-help-center-settings-approved.png',
+    regions: [
+      ['header', '.gso-ui-header'],
+      ['metrics', '.gso-ui-metric-row'],
+      ['mainRow', '.grid-cols-1.lg\\:grid-cols-2'],
+      ['lowerRow', '.grid-cols-1.lg\\:grid-cols-3'],
+    ],
+  },
 };
 
 const id = process.argv[2] ?? '01-integrations';
