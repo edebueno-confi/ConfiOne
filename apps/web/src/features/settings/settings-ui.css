@@ -100,18 +100,18 @@
    Isso remove o fundo concorrente que fazia cada tela de Configuracoes parecer
    pertencer a um produto diferente. */
 .gso-ui-page > .gso-ui-header {
-  margin: -1.15rem -1.5rem 0;
-  padding: 0.9rem 1.5rem;
-  border-bottom: 1px solid var(--ui-border);
-  background: var(--ui-surface);
+  margin: 0 0 1rem 0;
+  padding: 0;
+  border-bottom: none !important;
+  background: transparent !important;
 }
 .gso-ui-shell,
-.gso-ui-shell-body { background: var(--ui-canvas); }
+.gso-ui-shell-body { background: var(--gso-canvas-bg, #081220) !important; }
 .gso-ui-shell-chrome {
-  border-bottom: 1px solid var(--ui-border);
-  background: var(--ui-surface);
+  border-bottom: none !important;
+  background: transparent !important;
 }
-.gso-ui-shell-chrome .gso-ui-header { padding: 0.9rem 1.5rem; }
+.gso-ui-shell-chrome .gso-ui-header { padding: 0 0 1rem 0; }
 @media (max-width: 760px) {
   .gso-ui-page > .gso-ui-header { margin: -1rem -1rem 0; padding: 0.8rem 1rem; }
   .gso-ui-shell-chrome .gso-ui-header { padding-inline: 1rem; }

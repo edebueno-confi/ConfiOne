@@ -150,7 +150,7 @@ function ShellNavigation({
     const triggerBounds = target.getBoundingClientRect();
     setFlyoutAnchor({
       top: Math.max(8, Math.min(triggerBounds.top, window.innerHeight - 280)),
-      left: triggerBounds.right + 4,
+      left: triggerBounds.right,
     });
     setOpenFlyoutSectionId(section.id);
   }, [cancelFlyoutClose]);
@@ -161,10 +161,9 @@ function ShellNavigation({
     if (!openFlyoutSectionId) return undefined;
 
     const focusableSelector = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
-    const focusInitialItem = () => flyoutRef.current?.querySelector<HTMLElement>(focusableSelector)?.focus();
     const handlePointerDown = (event: PointerEvent) => {
       const target = event.target;
-      if (target instanceof Node && flyoutRef.current?.contains(target)) return;
+      if (target instanceof Node && (flyoutRef.current?.contains(target) || flyoutTriggerRef.current?.contains(target))) return;
       closeFlyout();
     };
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -173,21 +172,8 @@ function ShellNavigation({
         closeFlyout();
         return;
       }
-      if (event.key !== 'Tab') return;
-      const focusable = [...(flyoutRef.current?.querySelectorAll<HTMLElement>(focusableSelector) ?? [])];
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
     };
 
-    window.requestAnimationFrame(focusInitialItem);
     document.addEventListener('pointerdown', handlePointerDown);
     document.addEventListener('keydown', handleKeyDown);
     return () => {
@@ -214,10 +200,6 @@ function ShellNavigation({
                 sectionActive && 'gso-nav-group-rail-button--active',
               )}
               onClick={(event) => {
-                if (openFlyoutSectionId === section.id) {
-                  closeFlyout();
-                  return;
-                }
                 openFlyoutForSection(section, event.currentTarget);
               }}
               onMouseEnter={(event) => openFlyoutForSection(section, event.currentTarget)}
@@ -253,30 +235,27 @@ function ShellNavigation({
         );
       })}
       {collapsed && openFlyoutSection ? (
-        <>
-          <button aria-label="Fechar submenu" className="gso-nav-flyout-scrim" onClick={() => closeFlyout()} type="button" />
-          <aside
-            aria-label={`Submenu ${openFlyoutSection.label}`}
-            aria-modal="true"
-            className="gso-nav-flyout"
-            id={`gso-nav-flyout-${openFlyoutSection.id}`}
-            ref={flyoutRef}
-            role="dialog"
-            style={{ top: flyoutAnchor.top, left: flyoutAnchor.left }}
-            onMouseEnter={cancelFlyoutClose}
-            onMouseLeave={scheduleFlyoutClose}
-          >
-            <div className="gso-nav-flyout-heading">
-              <p>{openFlyoutSection.label}</p>
-              <button aria-label={`Fechar submenu ${openFlyoutSection.label}`} onClick={() => closeFlyout()} type="button">×</button>
-            </div>
-            <div className="gso-nav-flyout-items">
-              {openFlyoutSection.items.map((item) => (
-                <SidebarNavigationLink item={item} key={item.id} onNavigate={closeFlyout} />
-              ))}
-            </div>
-          </aside>
-        </>
+        <aside
+          aria-label={`Submenu ${openFlyoutSection.label}`}
+          aria-modal="false"
+          className="gso-nav-flyout z-[80]"
+          id={`gso-nav-flyout-${openFlyoutSection.id}`}
+          ref={flyoutRef}
+          role="region"
+          style={{ top: flyoutAnchor.top, left: flyoutAnchor.left }}
+          onMouseEnter={cancelFlyoutClose}
+          onMouseLeave={scheduleFlyoutClose}
+        >
+          <div className="gso-nav-flyout-heading flex items-center justify-between px-3 py-2 border-b border-[color:var(--minimal-border,#22324D)] bg-[color:var(--minimal-surface-muted,#18263F)]">
+            <p className="text-xs font-bold uppercase tracking-wider text-[color:var(--gso-brand-pink,#FF4FA3)]">{openFlyoutSection.label}</p>
+            <button aria-label={`Fechar submenu ${openFlyoutSection.label}`} className="text-xs text-[color:var(--minimal-text-tertiary)] hover:text-[color:var(--minimal-text)]" onClick={() => closeFlyout()} type="button">✕</button>
+          </div>
+          <div className="gso-nav-flyout-items p-1.5 grid gap-1">
+            {openFlyoutSection.items.map((item) => (
+              <SidebarNavigationLink item={item} key={item.id} onNavigate={closeFlyout} />
+            ))}
+          </div>
+        </aside>
       ) : null}
     </nav>
   );
@@ -340,18 +319,10 @@ function GeniusSidebar({
         <ShellNavigation collapsed={collapsed} onNavigate={onNavigate} pathname={pathname} permissions={permissions} />
       </div>
 
-      <div className="gso-sidebar-footer flex flex-col gap-2 p-2 border-t border-[color:var(--gso-border,#22324D)]">
-        {!collapsed ? (
-          <div className="px-2 py-1 text-[11px] text-[color:var(--minimal-text-tertiary)]">
-            <span className="block font-semibold text-[color:var(--minimal-text-secondary)] uppercase tracking-wider text-[10px]">
-              Workspace Atual
-            </span>
-            <span className="block text-[color:var(--minimal-text)]">GeniusOS Produção</span>
-          </div>
-        ) : null}
+      <div className="gso-sidebar-footer flex items-center justify-start p-2 border-t border-[color:var(--gso-border,#22324D)]">
         <button
           aria-label={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
-          className="gso-sidebar-collapse-action flex items-center gap-2 rounded-md p-2 text-xs text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)] transition-colors"
+          className="gso-sidebar-collapse-action flex items-center gap-2 rounded-md p-2 text-xs text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)] transition-colors w-full"
           onClick={onCollapse}
           title="Atalho: Ctrl/Cmd+B"
           type="button"

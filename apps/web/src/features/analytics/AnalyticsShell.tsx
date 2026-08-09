@@ -96,9 +96,9 @@ export function AnalyticsShell() {
   const ActiveComponent = activeDomain?.Component;
 
   return (
-    <div className="gso-screen-frame gso-analytics-shell gso-pilot-shell gso-visual-v1-shell gso-high-density-ui flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
+    <div className="gso-screen-frame gso-analytics-shell gso-pilot-shell gso-visual-v1-shell gso-high-density-ui flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--gso-canvas-bg,#081220)]">
       {syncFeedback ? <GeniusSyncOverlay source={syncFeedback.source} state={syncFeedback.state} hasValidSnapshot={Boolean(sourceStatus?.hubspot.hasValidSnapshot && sourceStatus?.omie.hasValidSnapshot)} detail={syncFeedback.detail} historyHref="/admin/settings/sync-history" /> : null}
-      <header className="gso-screen-header gso-workspace-header shrink-0 border-b border-[color:var(--minimal-border)] px-5 py-3 sm:px-6">
+      <header className="gso-screen-header gso-workspace-header shrink-0 px-5 py-3 sm:px-6 bg-transparent">
         <div className="flex min-h-12 flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <div className="min-w-0">
             <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">Dashboard Gerencial</h1>

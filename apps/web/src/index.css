@@ -1088,12 +1088,13 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  height: var(--shell-topbar-height);
-  min-height: var(--shell-topbar-height);
+  height: 52px !important;
+  min-height: 52px !important;
+  max-height: 52px !important;
   flex-shrink: 0;
   padding: 0 16px;
-  border-bottom: 1px solid var(--minimal-border);
-  background: var(--minimal-surface);
+  border-bottom: 1px solid var(--gso-border, #22324D) !important;
+  background: var(--gso-topbar-bg, #0E1627) !important;
   position: relative;
   z-index: 40;
 }
@@ -6490,7 +6491,7 @@ table {
 .gso-sidebar .gso-sidebar-account-card { background: var(--minimal-surface-muted) !important; }
 .gso-sidebar .gso-sidebar-account-menu { z-index: 100; background: var(--minimal-surface) !important; color: var(--minimal-text); box-shadow: var(--minimal-shadow); }
 .gso-sidebar .gso-sidebar-menu-action--danger:hover { background: var(--minimal-danger-surface); color: var(--color-danger-text); }
-:root[data-theme='dark'] .gso-sidebar { background: linear-gradient(180deg, #08142e 0%, #061128 100%) !important; border-color: rgba(148, 163, 184, 0.14) !important; }
+:root[data-theme='dark'] .gso-sidebar { background: var(--gso-sidebar-bg, #0F1A2E) !important; border-color: rgba(148, 163, 184, 0.14) !important; }
 :root:not([data-theme='dark']) .gso-sidebar {
   --minimal-text: oklch(0.27 0.035 255);
   --minimal-text-secondary: oklch(0.39 0.025 255);
@@ -6842,13 +6843,13 @@ table {
 .gso-ui.gso-sidebar {
   border: 1px solid var(--ui-border) !important;
   border-radius: var(--ui-radius-lg);
-  background: var(--ui-surface) !important;
+  background: var(--gso-sidebar-bg, #0F1A2E) !important;
   box-shadow: var(--ui-shadow) !important;
   color: var(--ui-text);
 }
 :root[data-theme='dark'] .gso-ui.gso-sidebar {
   border-color: var(--ui-border) !important;
-  background: var(--ui-surface) !important;
+  background: var(--gso-sidebar-bg, #0F1A2E) !important;
 }
 
 /* Cabeçalho: marca e o botão de recolher. */
@@ -7265,7 +7266,7 @@ table {
 .gso-nav-flyout {
   top: 80px;
   bottom: auto;
-  left: calc(var(--shell-sidebar-collapsed) + 8px);
+  left: var(--shell-sidebar-collapsed);
   width: min(280px, calc(100vw - var(--shell-sidebar-collapsed)));
   max-height: min(420px, calc(100dvh - 16px));
   overflow-y: auto;
