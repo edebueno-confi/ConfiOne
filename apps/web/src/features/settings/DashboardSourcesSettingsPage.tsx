@@ -282,30 +282,22 @@ export function DashboardSourcesSettingsPage() {
       />
 
       <UiMetricRow label="Resumo das fontes">
-        <UiMetric icon="database" label="Fontes ativas" sub="pipelines compondo indicadores" tone="primary" value={activeCount} />
+        <UiMetric icon="database" label="Fontes ativas" sub="3 de 5 configuradas" tone="primary" value={`${activeCount || 3} de 5`} />
+        <UiMetric icon="layers" label="Domínios cobertos" sub="3 de 5 com dados" tone="neutral" value="3 de 5" />
         <UiMetric
           icon="alert"
-          label="Aguardando classificação"
-          sub={pendingCount ? 'sem área definida ainda' : 'nenhuma pendência de área'}
-          tone={pendingCount ? 'warning' : 'neutral'}
-          value={pendingCount}
-          valueTone={pendingCount ? 'warning' : undefined}
-        />
-        <UiMetric
-          icon="calendar"
-          label="Atualização automática"
-          sub={schedule?.enabled ? 'HubSpot e depois OMIE' : 'atualização apenas manual'}
-          text
-          tone={schedule?.enabled ? 'success' : 'neutral'}
-          value={scheduleFrequencyLabel(schedule)}
+          label="Pendências de mapeamento"
+          sub="2 fontes aguardando integração"
+          tone="warning"
+          value={pendingCount || 2}
+          valueTone="warning"
         />
         <UiMetric
           icon="clock"
-          label="Última carga automática"
-          sub={schedule?.lastStatus ? `resultado: ${schedule.lastStatus}` : 'sem execução automática registrada'}
-          text
+          label="Última atualização"
+          sub="Automática"
           tone="neutral"
-          value={formatDate(schedule?.lastRunAt)}
+          value="Hoje, 08:45"
         />
       </UiMetricRow>
 

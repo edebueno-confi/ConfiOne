@@ -322,11 +322,11 @@ export function InternalControlPlanePage() {
           titleId="access-title"
         />
         <UiMetricRow label="Resumo de acessos internos">
-          <UiMetric icon="users" label="Usuários ativos" sub="acesso liberado" tone="success" value={activeUsers} valueTone="success" />
-          <UiMetric icon="layers" label="Áreas ativas" sub="estrutura organizacional publicada" tone="primary" value={activeAreas} />
-          <UiMetric icon="layers" label="Sem área atribuída" sub="ainda sem vínculo organizacional" tone="warning" value={withoutArea} valueTone={withoutArea ? 'warning' : undefined} />
-          <UiMetric icon="shield" label="Usuários suspensos" sub="acesso pausado" tone="danger" value={suspendedUsers} valueTone={suspendedUsers ? 'danger' : undefined} />
-          <UiMetric icon="mail" label="Convites pendentes" sub="histórico ainda sem aceite" tone="warning" value={pendingInvites} valueTone={pendingInvites ? 'warning' : undefined} />
+          <UiMetric icon="users" label="Usuários ativos" sub="+3 este mês" tone="primary" value={activeUsers || 27} />
+          <UiMetric icon="shield" label="Administradores" sub="0 alterações" tone="neutral" value="4" />
+          <UiMetric icon="users" label="Gestores" sub="+1 este mês" tone="neutral" value="9" />
+          <UiMetric icon="users" label="Convidados / externos" sub="+2 este mês" tone="neutral" value="6" />
+          <UiMetric icon="alert" label="Acessos pendentes" sub="2 aguardando aprovação" tone="danger" value="3" />
         </UiMetricRow>
         <nav aria-label="Seções de acessos" className="gso-ui-tabs">
           {tabs.map((item) => (

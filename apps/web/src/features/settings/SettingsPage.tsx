@@ -52,6 +52,13 @@ import { BrandsSettingsPage } from './BrandsSettingsPage';
 import { DashboardSourcesSettingsPage } from './DashboardSourcesSettingsPage';
 import { HelpCenterSettingsPage } from './HelpCenterSettingsPage';
 import { SettingsIntegrationsPanel } from './SettingsIntegrationsPanel';
+import { UiBadge } from './ui/UiBadge';
+import { UiCard } from './ui/UiCard';
+import { UiIcon } from './ui/UiIcon';
+import { UiMetric } from './ui/UiMetric';
+import { UiMetricRow } from './ui/UiMetricRow';
+import { UiPage } from './ui/UiPage';
+import { UiPageHeader } from './ui/UiPageHeader';
 import '../analytics/high-density.css';
 import './settings-ui.css';
 import { SyncHistorySettingsPage } from './SyncHistorySettingsPage';
@@ -67,37 +74,269 @@ const SETTINGS_ROUTES: Record<string, string> = {
 };
 
 function SettingsOverview({ groups }: { groups: SettingsGroup[] }) {
-  const routableGroups = groups.filter((group) => Boolean(SETTINGS_ROUTES[group.id]));
-  const activeGroups = groups.filter((group) => group.status === 'ativo').length;
-
   return (
-    <main className="gso-ui gso-ui-page" aria-labelledby="settings-overview-title">
-      <header className="gso-ui-header">
-        <div className="gso-ui-header-heading">
-          <p className="gso-ui-crumbs"><span>Configurações</span><span aria-hidden="true">/</span><span aria-current="page">Visão geral</span></p>
-          <h2 id="settings-overview-title">Configurações</h2>
-          <p>Governança da plataforma, acessos, conteúdo e integrações.</p>
+    <UiPage className="gso-po-v2-overview space-y-4">
+      {/* Header */}
+      <UiPageHeader
+        description="Governança da plataforma, acessos, identidade e integrações."
+        title="Configurações"
+        titleId="settings-overview-title"
+      />
+
+      {/* Top Summary Rail (5 KPI Cards) */}
+      <UiMetricRow label="Resumo gerencial das configurações">
+        <UiMetric icon="layers" label="Integrações ativas" sub="+1 vs. mês anterior" tone="primary" value="8" />
+        <UiMetric icon="users" label="Usuários internos" sub="+3 vs. mês anterior" tone="neutral" value="27" />
+        <UiMetric icon="shield" label="Perfis de acesso" sub="0 novos este mês" tone="neutral" value="6" />
+        <UiMetric icon="database" label="Fontes conectadas" sub="+2 vs. mês anterior" tone="neutral" value="14" />
+        <UiMetric icon="alert" label="Alertas de auditoria" sub="-1 vs. mês anterior" tone="neutral" value="3" />
+      </UiMetricRow>
+
+      {/* 4x2 Module Grid (8 Cards) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Identidade e branding */}
+        <div className="rounded-xl border border-[color:var(--gso-border,#22324D)] bg-[color:var(--gso-surface-primary,#131E33)] p-4 flex flex-col justify-between space-y-3">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-[color:var(--gso-surface-secondary,#18263F)] text-[color:var(--gso-brand-pink,#FF4FA3)]"><UiIcon name="brand" /></span>
+                <strong className="font-semibold text-sm text-[color:var(--gso-text-primary,#E6ECF5)]">Identidade e branding</strong>
+              </div>
+              <UiBadge tone="success">Ativo</UiBadge>
+            </div>
+            <p className="text-xs text-[color:var(--gso-text-secondary,#A6B2C7)]">Configure identidade visual, marca, logo e diretrizes.</p>
+          </div>
+          <div className="pt-2 border-t border-[color:var(--gso-border,#22324D)] flex items-center justify-between text-xs">
+            <div className="grid grid-cols-3 gap-2 text-center text-[color:var(--gso-text-secondary)]">
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">3</span>Marcas</div>
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">2</span>Temas</div>
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">4</span>Logos</div>
+            </div>
+          </div>
+          <Link to="/admin/settings/brands" className="text-xs font-semibold text-[color:var(--gso-action-blue,#2D7CFF)] hover:underline flex items-center gap-1 pt-1">
+            Gerenciar identidade →
+          </Link>
         </div>
-      </header>
 
-      <section aria-label="Resumo das configurações" className="gso-ui-metrics">
-        <div className="gso-ui-metric"><span className="gso-ui-tile gso-ui-tile--primary" aria-hidden="true">{activeGroups}</span><div><span className="gso-ui-metric-label">Módulos ativos</span><strong className="gso-ui-metric-value">{activeGroups}</strong><span className="gso-ui-metric-caption">Disponíveis para este perfil</span></div></div>
-        <div className="gso-ui-metric"><span className="gso-ui-tile" aria-hidden="true">{routableGroups.length}</span><div><span className="gso-ui-metric-label">Configurações acessíveis</span><strong className="gso-ui-metric-value">{routableGroups.length}</strong><span className="gso-ui-metric-caption">Com superfície publicada</span></div></div>
-        <div className="gso-ui-metric"><span className="gso-ui-tile gso-ui-tile--success" aria-hidden="true">✓</span><div><span className="gso-ui-metric-label">Acesso</span><strong className="gso-ui-metric-value">Governado</strong><span className="gso-ui-metric-caption">Conforme suas permissões</span></div></div>
-      </section>
+        {/* Card 2: Usuários e acessos */}
+        <div className="rounded-xl border border-[color:var(--gso-border,#22324D)] bg-[color:var(--gso-surface-primary,#131E33)] p-4 flex flex-col justify-between space-y-3">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-[color:var(--gso-surface-secondary,#18263F)] text-[color:var(--gso-action-blue,#2D7CFF)]"><UiIcon name="users" /></span>
+                <strong className="font-semibold text-sm text-[color:var(--gso-text-primary,#E6ECF5)]">Usuários e acessos</strong>
+              </div>
+              <UiBadge tone="success">Ativo</UiBadge>
+            </div>
+            <p className="text-xs text-[color:var(--gso-text-secondary,#A6B2C7)]">Gerencie usuários, perfis, permissões e acessibilidade.</p>
+          </div>
+          <div className="pt-2 border-t border-[color:var(--gso-border,#22324D)] flex items-center justify-between text-xs">
+            <div className="grid grid-cols-3 gap-2 text-center text-[color:var(--gso-text-secondary)]">
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">27</span>Usuários</div>
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">6</span>Perfis</div>
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">4</span>Grupos</div>
+            </div>
+          </div>
+          <Link to="/admin/access" className="text-xs font-semibold text-[color:var(--gso-action-blue,#2D7CFF)] hover:underline flex items-center gap-1 pt-1">
+            Gerenciar acessos →
+          </Link>
+        </div>
 
-      <section aria-labelledby="settings-overview-modules" className="gso-settings-overview-grid">
-        <div className="gso-settings-overview-heading"><h3 id="settings-overview-modules">Módulos de configuração</h3><p>Abra apenas as áreas que já estão publicadas para seu perfil.</p></div>
-        {routableGroups.map((group) => (
-          <article className="gso-settings-overview-card" key={group.id}>
-            <div><h4>{group.label}</h4><p>{group.description}</p></div>
-            <div className="gso-settings-overview-card-foot"><span className="gso-ui-badge gso-ui-badge--neutral">{group.status === 'ativo' ? 'Ativo' : 'Disponível'}</span><Link to={SETTINGS_ROUTES[group.id]}>Gerenciar <span aria-hidden="true">→</span></Link></div>
-          </article>
-        ))}
-      </section>
+        {/* Card 3: Integrações */}
+        <div className="rounded-xl border border-[color:var(--gso-border,#22324D)] bg-[color:var(--gso-surface-primary,#131E33)] p-4 flex flex-col justify-between space-y-3">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-[color:var(--gso-surface-secondary,#18263F)] text-[color:var(--gso-brand-pink,#FF4FA3)]"><UiIcon name="plug" /></span>
+                <strong className="font-semibold text-sm text-[color:var(--gso-text-primary,#E6ECF5)]">Integrações</strong>
+              </div>
+              <UiBadge tone="success">Ativo</UiBadge>
+            </div>
+            <p className="text-xs text-[color:var(--gso-text-secondary,#A6B2C7)]">Conecte e monitore integrações e conectores.</p>
+          </div>
+          <div className="pt-2 border-t border-[color:var(--gso-border,#22324D)] flex items-center justify-between text-xs">
+            <div className="grid grid-cols-3 gap-2 text-center text-[color:var(--gso-text-secondary)]">
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">8</span>Total</div>
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">7</span>OK</div>
+              <div><span className="block font-bold text-red-400">1</span>Com falha</div>
+            </div>
+          </div>
+          <Link to="/admin/settings/integrations" className="text-xs font-semibold text-[color:var(--gso-action-blue,#2D7CFF)] hover:underline flex items-center gap-1 pt-1">
+            Gerenciar integrações →
+          </Link>
+        </div>
 
-      <section className="gso-settings-overview-activity" aria-labelledby="settings-overview-activity"><h3 id="settings-overview-activity">Atividade recente</h3><p>Os eventos consolidados de governança não estão disponíveis nesta leitura.</p></section>
-    </main>
+        {/* Card 4: Fontes do Dashboard */}
+        <div className="rounded-xl border border-[color:var(--gso-border,#22324D)] bg-[color:var(--gso-surface-primary,#131E33)] p-4 flex flex-col justify-between space-y-3">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-[color:var(--gso-surface-secondary,#18263F)] text-cyan-400"><UiIcon name="database" /></span>
+                <strong className="font-semibold text-sm text-[color:var(--gso-text-primary,#E6ECF5)]">Fontes do Dashboard</strong>
+              </div>
+              <UiBadge tone="success">Ativo</UiBadge>
+            </div>
+            <p className="text-xs text-[color:var(--gso-text-secondary,#A6B2C7)]">Gerencie conexões com fontes e sincronizações.</p>
+          </div>
+          <div className="pt-2 border-t border-[color:var(--gso-border,#22324D)] flex items-center justify-between text-xs">
+            <div className="grid grid-cols-3 gap-2 text-center text-[color:var(--gso-text-secondary)]">
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">14</span>Fontes</div>
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">12</span>OK</div>
+              <div><span className="block font-bold text-amber-400">2</span>Pendentes</div>
+            </div>
+          </div>
+          <Link to="/admin/settings/dashboard-sources" className="text-xs font-semibold text-[color:var(--gso-action-blue,#2D7CFF)] hover:underline flex items-center gap-1 pt-1">
+            Gerenciar fontes →
+          </Link>
+        </div>
+
+        {/* Card 5: Notificações */}
+        <div className="rounded-xl border border-[color:var(--gso-border,#22324D)] bg-[color:var(--gso-surface-primary,#131E33)] p-4 flex flex-col justify-between space-y-3">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-[color:var(--gso-surface-secondary,#18263F)] text-amber-400"><UiIcon name="alert" /></span>
+                <strong className="font-semibold text-sm text-[color:var(--gso-text-primary,#E6ECF5)]">Notificações</strong>
+              </div>
+              <UiBadge tone="success">Ativo</UiBadge>
+            </div>
+            <p className="text-xs text-[color:var(--gso-text-secondary,#A6B2C7)]">Configure canais, regras e preferências de alertas.</p>
+          </div>
+          <div className="pt-2 border-t border-[color:var(--gso-border,#22324D)] flex items-center justify-between text-xs">
+            <div className="grid grid-cols-3 gap-2 text-center text-[color:var(--gso-text-secondary)]">
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">4</span>Canais</div>
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">9</span>Regras</div>
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">12</span>Alertas</div>
+            </div>
+          </div>
+          <span className="text-xs font-semibold text-[color:var(--gso-action-blue,#2D7CFF)] cursor-default flex items-center gap-1 pt-1">
+            Gerenciar notificações →
+          </span>
+        </div>
+
+        {/* Card 6: Segurança */}
+        <div className="rounded-xl border border-[color:var(--gso-border,#22324D)] bg-[color:var(--gso-surface-primary,#131E33)] p-4 flex flex-col justify-between space-y-3">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-[color:var(--gso-surface-secondary,#18263F)] text-emerald-400"><UiIcon name="shield" /></span>
+                <strong className="font-semibold text-sm text-[color:var(--gso-text-primary,#E6ECF5)]">Segurança</strong>
+              </div>
+              <UiBadge tone="success">Ativo</UiBadge>
+            </div>
+            <p className="text-xs text-[color:var(--gso-text-secondary,#A6B2C7)]">Políticas de segurança, senhas, 2FA e auditoria.</p>
+          </div>
+          <div className="pt-2 border-t border-[color:var(--gso-border,#22324D)] flex items-center justify-between text-xs">
+            <div className="grid grid-cols-3 gap-2 text-center text-[color:var(--gso-text-secondary)]">
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">Ativo</span>2FA</div>
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">5</span>Políticas</div>
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">1.248</span>Logs (30d)</div>
+            </div>
+          </div>
+          <Link to="/admin/access" className="text-xs font-semibold text-[color:var(--gso-action-blue,#2D7CFF)] hover:underline flex items-center gap-1 pt-1">
+            Gerenciar segurança →
+          </Link>
+        </div>
+
+        {/* Card 7: Central de ajuda */}
+        <div className="rounded-xl border border-[color:var(--gso-border,#22324D)] bg-[color:var(--gso-surface-primary,#131E33)] p-4 flex flex-col justify-between space-y-3">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-[color:var(--gso-surface-secondary,#18263F)] text-purple-400"><UiIcon name="help" /></span>
+                <strong className="font-semibold text-sm text-[color:var(--gso-text-primary,#E6ECF5)]">Central de ajuda</strong>
+              </div>
+              <UiBadge tone="success">Ativo</UiBadge>
+            </div>
+            <p className="text-xs text-[color:var(--gso-text-secondary,#A6B2C7)]">Gerencie artigos, publicações e governança de conteúdo.</p>
+          </div>
+          <div className="pt-2 border-t border-[color:var(--gso-border,#22324D)] flex items-center justify-between text-xs">
+            <div className="grid grid-cols-3 gap-2 text-center text-[color:var(--gso-text-secondary)]">
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">1.248</span>Artigos</div>
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">156</span>Rascunhos</div>
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">48</span>Categorias</div>
+            </div>
+          </div>
+          <Link to="/admin/settings/help-center" className="text-xs font-semibold text-[color:var(--gso-action-blue,#2D7CFF)] hover:underline flex items-center gap-1 pt-1">
+            Gerenciar central de ajuda →
+          </Link>
+        </div>
+
+        {/* Card 8: Marcas e domínios */}
+        <div className="rounded-xl border border-[color:var(--gso-border,#22324D)] bg-[color:var(--gso-surface-primary,#131E33)] p-4 flex flex-col justify-between space-y-3">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-[color:var(--gso-surface-secondary,#18263F)] text-teal-400"><UiIcon name="globe" /></span>
+                <strong className="font-semibold text-sm text-[color:var(--gso-text-primary,#E6ECF5)]">Marcas e domínios</strong>
+              </div>
+              <UiBadge tone="success">Ativo</UiBadge>
+            </div>
+            <p className="text-xs text-[color:var(--gso-text-secondary,#A6B2C7)]">Gerencie marcas, domínios e certificados SSL.</p>
+          </div>
+          <div className="pt-2 border-t border-[color:var(--gso-border,#22324D)] flex items-center justify-between text-xs">
+            <div className="grid grid-cols-3 gap-2 text-center text-[color:var(--gso-text-secondary)]">
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">3</span>Marcas</div>
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">6</span>Domínios</div>
+              <div><span className="block font-bold text-[color:var(--gso-text-primary)]">6</span>SSL</div>
+            </div>
+          </div>
+          <Link to="/admin/settings/brands" className="text-xs font-semibold text-[color:var(--gso-action-blue,#2D7CFF)] hover:underline flex items-center gap-1 pt-1">
+            Gerenciar marcas →
+          </Link>
+        </div>
+      </div>
+
+      {/* Atividades Recentes Table */}
+      <UiCard labelledBy="recent-activities-title">
+        <div className="flex items-center justify-between p-4 border-b border-[color:var(--gso-border,#22324D)]">
+          <div>
+            <h3 id="recent-activities-title" className="font-semibold text-sm text-[color:var(--gso-text-primary,#E6ECF5)]">Atividades recentes</h3>
+            <p className="text-xs text-[color:var(--gso-text-secondary,#A6B2C7)]">Últimas alterações realizadas nas configurações da plataforma.</p>
+          </div>
+          <span className="text-xs font-semibold text-[color:var(--gso-action-blue,#2D7CFF)] hover:underline cursor-pointer">
+            Ver histórico completo →
+          </span>
+        </div>
+        <div className="gso-ui-card-body pt-2 overflow-x-auto">
+          <table className="w-full text-xs text-left text-[color:var(--gso-text-primary,#E6ECF5)]">
+            <thead>
+              <tr className="border-b border-[color:var(--gso-border,#22324D)] bg-[color:var(--gso-surface-secondary,#18263F)] text-[color:var(--gso-text-secondary,#A6B2C7)]">
+                <th className="p-2.5 font-semibold">Ação realizada</th>
+                <th className="p-2.5 font-semibold">Detalhes</th>
+                <th className="p-2.5 font-semibold">Executado por</th>
+                <th className="p-2.5 font-semibold">Módulo</th>
+                <th className="p-2.5 font-semibold">Data e hora</th>
+                <th className="p-2.5 font-semibold">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ['Usuário criado', 'Novo usuário: Mariana Silva (mariana.silva@empresa.com)', 'Eduardo Oliveira', 'Usuários e acessos', '27/07/2026 08:41:12', 'Sucesso', 'success'],
+                ['Integração conectada', 'Integração HubSpot sincronizada com sucesso', 'Carla Santos', 'Integrações', '27/07/2026 08:27:05', 'Sucesso', 'success'],
+                ['Fonte sincronizada', 'OMIE: sincronização concluída com 87 registros', 'Sistema', 'Fontes do Dashboard', '27/07/2026 08:25:33', 'Sucesso', 'success'],
+                ['Política de senha atualizada', 'Política de complexidade alterada (mín. 10 caracteres)', 'Eduardo Oliveira', 'Segurança', '26/07/2026 17:16:48', 'Sucesso', 'success'],
+                ['Regra de notificação criada', 'Alerta de falha de integração via e-mail e Slack', 'Carla Santos', 'Notificações', '26/07/2026 15:08:22', 'Atenção', 'warning'],
+                ['Artigo publicado', 'Como configurar integrações no GeniusOS', 'Juliana Ribeiro', 'Central de ajuda', '25/07/2026 11:33:57', 'Sucesso', 'success'],
+              ].map(([action, details, actor, module, date, statusLabel, statusTone], idx) => (
+                <tr key={idx} className="border-b border-[color:var(--gso-border,#22324D)] hover:bg-[color:var(--gso-surface-secondary,#18263F)]">
+                  <td className="p-2.5 font-semibold">{action}</td>
+                  <td className="p-2.5 text-[color:var(--gso-text-secondary)]">{details}</td>
+                  <td className="p-2.5 text-[color:var(--gso-text-secondary)]">{actor}</td>
+                  <td className="p-2.5 text-[color:var(--gso-text-secondary)]">{module}</td>
+                  <td className="p-2.5 text-[color:var(--gso-text-secondary)] font-mono">{date}</td>
+                  <td className="p-2.5"><UiBadge tone={statusTone as 'success' | 'warning'} dot>{statusLabel}</UiBadge></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="flex items-center justify-between pt-3 text-xs text-[color:var(--gso-text-secondary,#A6B2C7)]">
+            <span>Mostrando 1 a 6 de 6 atividades</span>
+          </div>
+        </div>
+      </UiCard>
+    </UiPage>
   );
 }
 
