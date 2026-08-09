@@ -177,10 +177,16 @@ function agingBucket(status: string, dueDate: string | null) {
 }
 
 export type RejectedReceivable = { reasonCode: string; message: string; index: number; fields: string[] };
-export type NormalizedReceivablesResult = { accepted: Array<Record<string, unknown>>; rejected: RejectedReceivable[]; summary: { received: number; accepted: number; rejected: number } };
+export type NormalizedReceivable = Record<string, unknown> & {
+  client_name: string | null;
+  client_tax_id: string | null;
+  client_trade_name: string | null;
+  raw_payload: unknown;
+};
+export type NormalizedReceivablesResult = { accepted: NormalizedReceivable[]; rejected: RejectedReceivable[]; summary: { received: number; accepted: number; rejected: number } };
 
 export function normalizeOmieApiReceivables(rows: unknown[], syncRunId: string): NormalizedReceivablesResult {
-  const accepted: Array<Record<string, unknown>> = [];
+  const accepted: NormalizedReceivable[] = [];
   const rejected: RejectedReceivable[] = [];
   rows.forEach((entry, index) => {
     if (!entry || typeof entry !== 'object') {
@@ -483,7 +489,11 @@ export async function fetchOmieClientsIndexWithMetadata(
       await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
     }
     if (!response || !response.ok) return null;
-    return extractOmieClientsPage(await response.json());
+    try {
+      return extractOmieClientsPage(await response.json());
+    } catch {
+      return null;
+    }
   }
 
   function addPageRows(rows: unknown[]) {
@@ -500,23 +510,30 @@ export async function fetchOmieClientsIndexWithMetadata(
 
   const firstPage = await fetchPage(1);
   if (!firstPage) return { index, complete: false, pages, records };
+  if (!Number.isInteger(firstPage.page) || firstPage.page !== 1 || !Number.isInteger(firstPage.totalPages) || firstPage.totalPages < firstPage.page) {
+    return { index, complete: false, pages, records };
+  }
   pages += 1;
   records += firstPage.rows.length;
   addPageRows(firstPage.rows);
   if (firstPage.page >= firstPage.totalPages) return { index, complete: true, pages, records };
   if (firstPage.rows.length === 0) return { index, complete: false, pages, records };
 
-  const totalPages = Math.min(Math.max(firstPage.totalPages, firstPage.page), maxPages);
+  const totalPages = Math.max(firstPage.totalPages, firstPage.page);
+  if (totalPages > maxPages) return { index, complete: false, pages, records };
   for (let page = 2; page <= totalPages; page += 1) {
     const result = await fetchPage(page);
     if (!result) return { index, complete: false, pages, records };
+    if (!Number.isInteger(result.page) || result.page !== page || !Number.isInteger(result.totalPages) || result.totalPages < page) {
+      return { index, complete: false, pages, records };
+    }
     pages += 1;
     records += result.rows.length;
     addPageRows(result.rows);
     if (result.rows.length === 0) return { index, complete: false, pages, records };
   }
 
-  return { index, complete: pages >= totalPages, pages, records };
+  return { index, complete: pages === totalPages, pages, records };
 }
 
 export async function fetchOmieClientsIndex(

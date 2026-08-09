@@ -78,6 +78,7 @@ export function canOpenInternalRoute(
       ['/admin/customer-portal', 'customer_portal_admin'],
       ['/admin/knowledge', 'knowledge'],
       ['/admin/settings', 'settings'],
+      ['/admin/cockpit', 'settings'],
       ['/admin/visao-geral', 'admin_overview'],
       ['/admin/tenants', 'tenants'],
       ['/admin/internal-areas', 'internal_areas'],

@@ -66,6 +66,12 @@ const FIRST_RELEASE_ROUTES = [
       'Configuracoes necessarias ao Dashboard, a Central de Ajuda e as integracoes autorizadas.',
   },
   {
+    path: '/admin/cockpit',
+    screenKey: 'settings',
+    rationale:
+      'Cockpit administrativo das fontes, etapas e execucoes do Dashboard, operado pela mesma permissao de Configuracoes.',
+  },
+  {
     path: '/admin/access',
     screenKey: 'access',
     rationale:

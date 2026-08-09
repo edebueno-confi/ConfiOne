@@ -212,6 +212,21 @@ test('indice OMIE parcial nunca e classificado como snapshot completo', async ()
   assert.deepEqual([...result.index.keys()], ['1']);
 });
 
+test('limite de paginas nunca transforma indice truncado em snapshot completo', async () => {
+  const result = await fetchOmieClientsIndexWithMetadata({ appKey: 'a', appSecret: 'b' }, async (_url, init) => {
+    const page = JSON.parse(String(init?.body ?? '{}')).param[0].pagina;
+    return new Response(JSON.stringify({
+      pagina: page,
+      total_de_paginas: 3,
+      clientes_cadastro_resumido: [{ codigo_cliente: page, razao_social: `Cliente ${page}` }],
+    }), { status: 200 });
+  }, { timeoutMs: 1000, maxRetries: 0, maxPages: 2 });
+
+  assert.equal(result.complete, false);
+  assert.equal(result.pages, 1);
+  assert.deepEqual([...result.index.keys()], ['1']);
+});
+
 test('pagina OMIE vazia antes do fim invalida o snapshot do indice', async () => {
   const result = await fetchOmieClientsIndexWithMetadata({ appKey: 'a', appSecret: 'b' }, async (_url, init) => {
     const page = JSON.parse(String(init?.body ?? '{}')).param[0].pagina;
