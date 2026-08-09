@@ -14,6 +14,7 @@ import {
   buildMinimalNavigation,
   resolveMinimalRouteLabel,
   type MinimalNavigationIcon,
+  type MinimalNavigationItem,
   type MinimalNavigationPermissions,
 } from './minimal-navigation';
 
@@ -35,6 +36,42 @@ function NavigationGlyph({ icon }: { icon: MinimalNavigationIcon }) {
       {paths[icon]}
     </svg>
   );
+}
+
+function SidebarNavigationLink({
+  collapsed = false,
+  item,
+  onNavigate,
+}: {
+  collapsed?: boolean;
+  item: MinimalNavigationItem;
+  onNavigate?: () => void;
+}) {
+  const location = useLocation();
+  const active = item.matches(location.pathname);
+  const linkClassName = cx(
+    'gso-nav-link flex min-h-11 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors duration-150',
+    collapsed && 'justify-center px-0',
+    !collapsed && item.settingsSection && 'gso-nav-link--nested',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]',
+    active
+      ? 'gso-nav-link--active bg-[color:var(--minimal-selection)] font-medium text-[color:var(--minimal-selection-text)]'
+      : 'text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)]',
+  );
+  const linkContent = (
+    <>
+      <span className="inline-flex h-5 w-5 items-center justify-center">
+        {item.settingsSection ? <SettingsNavIcon section={item.settingsSection} /> : <NavigationGlyph icon={item.icon} />}
+      </span>
+      {!collapsed ? <span className="truncate">{item.label}</span> : null}
+    </>
+  );
+
+  if (item.external) {
+    return <a className={linkClassName} href={item.to} onClick={onNavigate} rel="noreferrer" target="_blank" title={collapsed ? item.label : undefined}>{linkContent}</a>;
+  }
+
+  return <Link aria-current={active ? 'page' : undefined} className={linkClassName} onClick={onNavigate} to={item.to} title={collapsed ? item.label : undefined}>{linkContent}</Link>;
 }
 
 function ShellNavigation({
@@ -60,6 +97,9 @@ function ShellNavigation({
       return {};
     }
   });
+  const [openFlyoutSectionId, setOpenFlyoutSectionId] = useState<string | null>(null);
+  const flyoutRef = useRef<HTMLElement>(null);
+  const flyoutTriggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const activeSection = sections.find((section) => section.items.some((item) => item.matches(pathname)));
@@ -75,11 +115,78 @@ function ShellNavigation({
     }
   }, [collapsedSections]);
 
+  const closeFlyout = () => {
+    setOpenFlyoutSectionId(null);
+    window.requestAnimationFrame(() => flyoutTriggerRef.current?.focus());
+  };
+
+  useEffect(() => {
+    if (!openFlyoutSectionId) return undefined;
+
+    const focusableSelector = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const focusInitialItem = () => flyoutRef.current?.querySelector<HTMLElement>(focusableSelector)?.focus();
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Node && flyoutRef.current?.contains(target)) return;
+      closeFlyout();
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeFlyout();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = [...(flyoutRef.current?.querySelectorAll<HTMLElement>(focusableSelector) ?? [])];
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    window.requestAnimationFrame(focusInitialItem);
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [openFlyoutSectionId]);
+
+  const openFlyoutSection = sections.find((section) => section.id === openFlyoutSectionId) ?? null;
+
   return (
     <nav aria-label="Navegação principal" className="space-y-5">
       {sections.map((section) => (
         <section key={section.id}>
-          {!collapsed ? (
+          {collapsed ? (
+            <button
+              aria-controls={`gso-nav-flyout-${section.id}`}
+              aria-expanded={openFlyoutSectionId === section.id}
+              aria-haspopup="dialog"
+              className={cx(
+                'gso-nav-group-rail-button',
+                section.items.some((item) => item.matches(pathname)) && 'gso-nav-group-rail-button--active',
+              )}
+              onClick={(event) => {
+                flyoutTriggerRef.current = event.currentTarget;
+                setOpenFlyoutSectionId((current) => current === section.id ? null : section.id);
+              }}
+              title={section.label}
+              type="button"
+            >
+              <span aria-hidden="true">
+                <NavigationGlyph icon={(section.items.find((item) => item.matches(pathname)) ?? section.items[0]).icon} />
+              </span>
+              <span className="sr-only">Abrir {section.label}</span>
+            </button>
+          ) : (
             <button
               aria-expanded={!collapsedSections[section.id]}
               className="gso-nav-group-toggle mb-1.5 flex min-h-8 w-full items-center justify-between gap-2 rounded-md px-2 text-left text-xs font-medium text-[color:var(--minimal-text-tertiary)] hover:bg-[color:var(--minimal-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]"
@@ -92,65 +199,37 @@ function ShellNavigation({
               <span>{section.label}</span>
               <svg aria-hidden="true" className={cx('h-3.5 w-3.5 transition-transform', !collapsedSections[section.id] && 'rotate-180')} fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>
             </button>
-          ) : null}
-          {(collapsed || !collapsedSections[section.id] || section.items.some((item) => item.matches(pathname))) ? <div className="space-y-0.5">
-            {section.items.filter((item) => collapsed || !collapsedSections[section.id] || item.matches(pathname)).map((item) => {
-              const active = item.matches(pathname);
-              const linkClassName = cx(
-                'gso-nav-link flex min-h-11 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors duration-150',
-                collapsed && 'justify-center px-0',
-                // Subitens de Configuracoes ficam recuados sob o rotulo do grupo.
-                !collapsed && item.settingsSection && 'gso-nav-link--nested',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]',
-                active
-                  ? 'gso-nav-link--active bg-[color:var(--minimal-selection)] font-medium text-[color:var(--minimal-selection-text)]'
-                  : 'text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)]',
-              );
-              const linkContent = (
-                <>
-                  <span className="inline-flex h-5 w-5 items-center justify-center">
-                    {/* Subitens de Configurações reaproveitam os ícones lineares
-                        já desenhados para as seções da tela. */}
-                    {item.settingsSection ? <SettingsNavIcon section={item.settingsSection} /> : <NavigationGlyph icon={item.icon} />}
-                  </span>
-                  {!collapsed ? <span className="truncate">{item.label}</span> : null}
-                </>
-              );
-
-              // External entries leave the authenticated shell (public Help
-              // Center), so they open in a new tab instead of routing.
-              if (item.external) {
-                return (
-                  <a
-                    className={linkClassName}
-                    href={item.to}
-                    key={item.id}
-                    onClick={onNavigate}
-                    rel="noreferrer"
-                    target="_blank"
-                    title={collapsed ? item.label : undefined}
-                  >
-                    {linkContent}
-                  </a>
-                );
-              }
-
-              return (
-                <Link
-                  aria-current={active ? 'page' : undefined}
-                  className={linkClassName}
-                  key={item.id}
-                  onClick={onNavigate}
-                  to={item.to}
-                  title={collapsed ? item.label : undefined}
-                >
-                  {linkContent}
-                </Link>
-              );
-            })}
+          )}
+          {!collapsed && (!collapsedSections[section.id] || section.items.some((item) => item.matches(pathname))) ? <div className="space-y-0.5">
+            {section.items.filter((item) => !collapsedSections[section.id] || item.matches(pathname)).map((item) => (
+              <SidebarNavigationLink item={item} key={item.id} onNavigate={onNavigate} />
+            ))}
           </div> : null}
         </section>
       ))}
+      {collapsed && openFlyoutSection ? (
+        <>
+          <button aria-label="Fechar submenu" className="gso-nav-flyout-scrim" onClick={closeFlyout} type="button" />
+          <aside
+            aria-label={`Submenu ${openFlyoutSection.label}`}
+            aria-modal="true"
+            className="gso-nav-flyout"
+            id={`gso-nav-flyout-${openFlyoutSection.id}`}
+            ref={flyoutRef}
+            role="dialog"
+          >
+            <div className="gso-nav-flyout-heading">
+              <p>{openFlyoutSection.label}</p>
+              <button aria-label={`Fechar submenu ${openFlyoutSection.label}`} onClick={closeFlyout} type="button">×</button>
+            </div>
+            <div className="gso-nav-flyout-items">
+              {openFlyoutSection.items.map((item) => (
+                <SidebarNavigationLink item={item} key={item.id} onNavigate={closeFlyout} />
+              ))}
+            </div>
+          </aside>
+        </>
+      ) : null}
     </nav>
   );
 }

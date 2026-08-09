@@ -55,7 +55,7 @@ test('shows only the MVP surfaces to platform admins', () => {
 
   const ids = itemIds(navigation);
 
-  assert.deepEqual(ids, ['admin-analytics', 'admin-knowledge', 'admin-settings', 'admin-access']);
+  assert.deepEqual(ids, ['admin-analytics', 'admin-knowledge', 'admin-cockpit', 'admin-settings', 'admin-access']);
   assert.equal(ids.includes('admin-access'), true);
   assert.equal(ids.includes('admin-tenants'), false);
   assert.equal(ids.includes('support-queue'), false);
@@ -92,4 +92,17 @@ test('support home nao oferece atalho para configuracoes administrativas', () =>
     /to=["']\/admin\/settings["']/,
     'o suporte nao deve apontar para uma configuracao protegida pelo Admin Console',
   );
+});
+
+test('sidebar colapsada usa flyout sobreposto acessivel para os grupos autorizados', () => {
+  const source = fs.readFileSync(
+    path.resolve('apps/web/src/features/navigation/MinimalAppShell.tsx'),
+    'utf8',
+  );
+
+  assert.match(source, /gso-nav-flyout/, 'o rail colapsado precisa abrir um flyout proprio');
+  assert.match(source, /aria-modal="true"/, 'o flyout precisa anunciar o contexto modal');
+  assert.match(source, /event\.key === 'Escape'/, 'o flyout precisa fechar no Escape');
+  assert.match(source, /pointerdown/, 'o flyout precisa fechar no clique fora');
+  assert.match(source, /onNavigate=\{closeFlyout\}/, 'a selecao de uma rota precisa fechar o flyout');
 });

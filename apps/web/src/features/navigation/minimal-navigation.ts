@@ -232,7 +232,10 @@ export function buildMinimalNavigation({
     administration.push({ id: 'admin-cockpit', label: 'Cockpit gerencial', to: '/admin/cockpit', icon: 'workflow', matches: (path) => matchesBase(path, '/admin/cockpit') });
     administration.push({ id: 'admin-settings', label: 'Configurações', to: '/admin/settings', icon: 'settings', matches: (path) => matchesBase(path, '/admin/settings') });
   }
-  if ((isPlatformAdmin || hasScreen('access')) && !(isPlatformAdmin || hasScreen('settings'))) {
+  // A permissão de acesso é independente das configurações. Escondê-la para
+  // quem também pode abrir Configurações criava um beco sem saída na sidebar:
+  // a rota continuava protegida e disponível, mas não era alcançável pelo menu.
+  if (isPlatformAdmin || hasScreen('access')) {
     administration.push({ id: 'admin-access', label: 'Acessos e áreas', to: '/admin/access', icon: 'shield', matches: (path) => matchesBase(path, '/admin/access') || matchesBase(path, '/admin/internal-areas') });
   }
   if (administration.length) sections.push({ id: 'administration', label: 'Administração', items: administration });
