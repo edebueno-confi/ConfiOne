@@ -37,7 +37,7 @@ export function IntegrationProviderCard({
       <UiCardHeader
         actions={
           <>
-            <UiBadge tone={variant === 'finance' ? 'accent' : 'primary'}>{eyebrow}</UiBadge>
+            <UiBadge tone="neutral">{eyebrow}</UiBadge>
             <UiBadge dot tone={uiToneOf(credential.tone)}>{credential.label}</UiBadge>
           </>
         }
@@ -45,7 +45,7 @@ export function IntegrationProviderCard({
         icon={variant === 'finance' ? 'database' : 'plug'}
         title={title}
         titleId={headingId}
-        tone={variant === 'finance' ? 'accent' : 'primary'}
+        tone="neutral"
       />
 
       <div className="gso-ui-card-body">{children}</div>

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const settings = fs.readFileSync(path.join(repoRoot, 'apps/web/src/features/settings/SettingsPage.tsx'), 'utf8');
+const providerCard = fs.readFileSync(path.join(repoRoot, 'apps/web/src/features/settings/integrations/IntegrationProviderCard.tsx'), 'utf8');
 
 test('Configurações estabiliza grupos visíveis e não cria loop de recarga', () => {
   assert.match(settings, /useMemo/);
@@ -15,4 +16,10 @@ test('Configurações estabiliza grupos visíveis e não cria loop de recarga', 
   assert.match(settings, /if \(selected\.id === 'integracoes'\) void loadIntegrations\(\);/);
   assert.match(settings, /if \(selected\.id === 'categorias'\) void loadCategories\(\);/);
   assert.doesNotMatch(settings, /const hasGroup = \(id: string\) => visibleGroups\.some/);
+});
+
+test('provedores não usam cor de domínio para comunicar operação ou financeiro', () => {
+  assert.match(providerCard, /<UiBadge tone="neutral">\{eyebrow\}<\/UiBadge>/);
+  assert.match(providerCard, /tone="neutral"/);
+  assert.doesNotMatch(providerCard, /variant === 'finance' \? 'accent' : 'primary'/);
 });
