@@ -1,5 +1,12 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+## Atualização corrente — Admin Configuration Visual Rebuild V1 — 2026-08-09
+
+- Direção visual canônica criada em `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md`, com cinco referências aprovadas versionadas em `docs/design/blueprint/Configuration PO/`.
+- Escopo fechado: shell/sidebar, Usuários e acessos, Histórico, Fontes do Dashboard e Integrações. Dashboard Gerencial, backend, dados, métricas, contratos, RLS, sincronizações e credenciais permanecem fora.
+- Estado de implementação: documentação e matriz REUSE/ADAPT/NEW/OMIT concluídas antes do runtime; a branch local de trabalho é `codex/admin-configuration-visual-v1`, preservada por `refs/archive/admin-configuration-visual-v1-start-20260809`.
+- Critério de encerramento: QA real dark nos viewports 1366×768, 1440×900, 1024×768 e 390×844, correção de P0/P1/P2, gates de qualidade e commits exclusivamente locais; sem push, deploy, sync externo ou alteração remota.
+
 ## Adendo corrente — sincronização, qualidade e superfícies — 2026-08-04
 
 - O checkout canônico continua sendo `C:\Projetos\GSO-old`, na branch `main`,

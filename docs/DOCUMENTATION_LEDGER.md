@@ -1,5 +1,13 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## ADMIN-CONFIG-VISUAL-01 — Contrato, referências e matriz — 2026-08-09
+
+- **Escopo:** shell/sidebar, Usuários e acessos, Histórico de sincronizações, Fontes do Dashboard e Integrações; nenhuma página analítica, contrato, backend, banco, credencial ou sincronização foi alterada nesta etapa documental.
+- **Decisão:** `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md` passa a ser a precedência visual localizada. Ele substitui apenas direções conflitantes de 1920×1080 único, submenu que desloca conteúdo, Gênio sobrenatural, cor por domínio, iconografia decorativa e Configurações tratadas como analytics.
+- **Referências:** cinco PNGs aprovados, todos 1672×941, foram identificados e versionados em `docs/design/blueprint/Configuration PO/`.
+- **Mapa:** `docs/reports/2026-08-09_admin-configuration-blueprint-component-map.md` registra REUSE/ADAPT/NEW/OMIT antes de runtime. A fonte de permissão confirmada é a navegação derivada do catálogo/guard real; nenhum papel ou ação foi inventado.
+- **Risco restante:** implementação e QA real ainda pendentes; não há autorização deste lote para push, deploy, sync externo, migration remota, reset ou secret.
+
 ## Registro corrente — Dashboard por domínios — 2026-08-03
 
 - **Especificação:** `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md` recebeu as

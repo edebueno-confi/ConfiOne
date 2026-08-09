@@ -1,5 +1,7 @@
 # Genius Support OS — Design System V3
 
+> **Precedência localizada — 2026-08-09.** O contrato `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md` substitui direções conflitantes para o shell e as superfícies administrativas de Usuários, Histórico, Fontes e Integrações. Em especial, 1920×1080 não é a única composição, rail colapsado não empurra conteúdo, o Gênio não usa linguagem sobrenatural e cores não codificam domínio. Este documento preserva o contexto anterior para as demais superfícies.
+
 ## 1. Finalidade
 
 Este documento é o contrato visual canônico do **Genius Support OS** para implementação no projeto via Codex.
