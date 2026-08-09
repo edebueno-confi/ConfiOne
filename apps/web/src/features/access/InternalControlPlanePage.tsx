@@ -306,23 +306,27 @@ export function InternalControlPlanePage() {
   // O indicador abaixo usa um dado que o backend realmente entrega: quantas
   // identidades internas ainda estão sem vínculo de área.
   const withoutArea = users.filter((user) => user.areas.length === 0).length;
+  const activeAreas = areas.filter((area) => area.is_active).length;
+  const pendingInvites = invites.filter((invite) => invite.status === 'pending' || invite.status === 'sent').length;
 
   return (
-    <div className="gso-ui gso-ui-shell">
+    <div className="gso-ui gso-ui-shell gso-po-v2-access">
       {/* Cromo fixo: identidade da tela, indicadores e navegação nunca entram no
           container de rolagem, então nenhuma aba consegue escondê-los. */}
       <div className="gso-ui-shell-chrome">
         <UiPageHeader
           actions={<UiButton icon="plus" onClick={startCreate} variant="primary">Criar usuário</UiButton>}
           description="Crie contas internas, defina área, função e perfil, e acompanhe as permissões efetivas calculadas pelo backend."
-          parentHref="/admin/settings/integrations"
-          title="Usuários e acesso"
+          parentHref="/admin/settings"
+          title="Usuários e acessos"
           titleId="access-title"
         />
         <UiMetricRow label="Resumo de acessos internos">
           <UiMetric icon="users" label="Usuários ativos" sub="acesso liberado" tone="success" value={activeUsers} valueTone="success" />
+          <UiMetric icon="layers" label="Áreas ativas" sub="estrutura organizacional publicada" tone="primary" value={activeAreas} />
           <UiMetric icon="layers" label="Sem área atribuída" sub="ainda sem vínculo organizacional" tone="warning" value={withoutArea} valueTone={withoutArea ? 'warning' : undefined} />
           <UiMetric icon="shield" label="Usuários suspensos" sub="acesso pausado" tone="danger" value={suspendedUsers} valueTone={suspendedUsers ? 'danger' : undefined} />
+          <UiMetric icon="mail" label="Convites pendentes" sub="histórico ainda sem aceite" tone="warning" value={pendingInvites} valueTone={pendingInvites ? 'warning' : undefined} />
         </UiMetricRow>
         <nav aria-label="Seções de acessos" className="gso-ui-tabs">
           {tabs.map((item) => (

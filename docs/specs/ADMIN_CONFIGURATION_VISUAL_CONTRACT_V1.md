@@ -1,5 +1,40 @@
 # Genius Support OS — Admin & Configuration Visual Contract V1
 
+## Configuration PO — Visual Lock V2
+
+Status: aprovado pelo Product Owner em 2026-08-09 para reprodução em runtime.
+
+Este lock substitui, quando houver conflito visual, as referências V1 e qualquer
+direção histórica para as seis superfícies abaixo. Segurança, autorização,
+contratos reais, capacidades existentes e proteção de dados continuam acima da
+referência visual. O frontend adapta somente conteúdo, estados e handlers reais;
+não cria backend, provider, dado, ação ou permissão fictícios.
+
+| Ordem | Referência V2 | Superfície | Rota real |
+| --- | --- | --- | --- |
+| 01 | `docs/design/blueprint/Configuration PO/v2/01-integrations-approved.png` | Integrações | `/admin/settings/integrations` |
+| 02 | `docs/design/blueprint/Configuration PO/v2/02-settings-overview-approved.png` | Configurações gerais | rota administrativa de configurações, sem Dashboard Analytics |
+| 03 | `docs/design/blueprint/Configuration PO/v2/03-users-access-approved.png` | Usuários e acessos | `/admin/access` |
+| 04 | `docs/design/blueprint/Configuration PO/v2/04-help-center-settings-approved.png` | Central de Ajuda — configuração | `/admin/settings/help-center` |
+| 05 | `docs/design/blueprint/Configuration PO/v2/05-sync-history-approved.png` | Histórico de sincronizações | `/admin/settings/sync-history` |
+| 06 | `docs/design/blueprint/Configuration PO/v2/06-dashboard-sources-approved.png` | Fontes do Dashboard | `/admin/settings/dashboard-sources` |
+
+Regras de fidelidade:
+
+- reproduzir composição, grid, densidade, hierarquia, primeira dobra, tabela e
+  detalhe contextual das referências; não redesenhar, reinterpretar ou trocar
+  blocos por preferência de implementação;
+- manter o shell único: sidebar expandida de aproximadamente 240px, rail
+  colapsado de aproximadamente 56px e submenu em overlay já existente;
+- preservar navy, superfícies discretas, azul funcional, rosa apenas como
+  microacento e iconografia linear de 16–18px;
+- não alterar Dashboard Analytics, modelos de dados, integrações, secrets,
+  permissões ou sincronizações para acomodar layout;
+- validar dark em 1366×768 como baseline, além de 1440×900, 1024×768 e
+  390×844; corrigir qualquer divergência P0, P1 ou P2 antes do aceite;
+- registrar divergências factuais no relatório visual. Estado vazio, erro ou
+  indisponível ocupa a região prevista pelo blueprint sem inventar conteúdo.
+
 Status: direção visual aprovada pelo Product Owner para implementação local.
 Data: 2026-08-09.
 Precedência: este contrato prevalece, para as cinco superfícies abaixo, sobre orientações visuais anteriores que conflitem com ele. Código, rotas, guards, read models e handlers existentes continuam a ser a verdade para dados, ações e permissões.

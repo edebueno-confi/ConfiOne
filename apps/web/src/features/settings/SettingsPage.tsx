@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { cx } from '../../components/ui';
 import {
   archiveConversationType,
@@ -65,6 +65,41 @@ const SETTINGS_ROUTES: Record<string, string> = {
   'dashboard-fontes': '/admin/settings/dashboard-sources',
   'dashboard-historico': '/admin/settings/sync-history',
 };
+
+function SettingsOverview({ groups }: { groups: SettingsGroup[] }) {
+  const routableGroups = groups.filter((group) => Boolean(SETTINGS_ROUTES[group.id]));
+  const activeGroups = groups.filter((group) => group.status === 'ativo').length;
+
+  return (
+    <main className="gso-ui gso-ui-page" aria-labelledby="settings-overview-title">
+      <header className="gso-ui-header">
+        <div className="gso-ui-header-heading">
+          <p className="gso-ui-crumbs"><span>Configurações</span><span aria-hidden="true">/</span><span aria-current="page">Visão geral</span></p>
+          <h2 id="settings-overview-title">Configurações</h2>
+          <p>Governança da plataforma, acessos, conteúdo e integrações.</p>
+        </div>
+      </header>
+
+      <section aria-label="Resumo das configurações" className="gso-ui-metrics">
+        <div className="gso-ui-metric"><span className="gso-ui-tile gso-ui-tile--primary" aria-hidden="true">{activeGroups}</span><div><span className="gso-ui-metric-label">Módulos ativos</span><strong className="gso-ui-metric-value">{activeGroups}</strong><span className="gso-ui-metric-caption">Disponíveis para este perfil</span></div></div>
+        <div className="gso-ui-metric"><span className="gso-ui-tile" aria-hidden="true">{routableGroups.length}</span><div><span className="gso-ui-metric-label">Configurações acessíveis</span><strong className="gso-ui-metric-value">{routableGroups.length}</strong><span className="gso-ui-metric-caption">Com superfície publicada</span></div></div>
+        <div className="gso-ui-metric"><span className="gso-ui-tile gso-ui-tile--success" aria-hidden="true">✓</span><div><span className="gso-ui-metric-label">Acesso</span><strong className="gso-ui-metric-value">Governado</strong><span className="gso-ui-metric-caption">Conforme suas permissões</span></div></div>
+      </section>
+
+      <section aria-labelledby="settings-overview-modules" className="gso-settings-overview-grid">
+        <div className="gso-settings-overview-heading"><h3 id="settings-overview-modules">Módulos de configuração</h3><p>Abra apenas as áreas que já estão publicadas para seu perfil.</p></div>
+        {routableGroups.map((group) => (
+          <article className="gso-settings-overview-card" key={group.id}>
+            <div><h4>{group.label}</h4><p>{group.description}</p></div>
+            <div className="gso-settings-overview-card-foot"><span className="gso-ui-badge gso-ui-badge--neutral">{group.status === 'ativo' ? 'Ativo' : 'Disponível'}</span><Link to={SETTINGS_ROUTES[group.id]}>Gerenciar <span aria-hidden="true">→</span></Link></div>
+          </article>
+        ))}
+      </section>
+
+      <section className="gso-settings-overview-activity" aria-labelledby="settings-overview-activity"><h3 id="settings-overview-activity">Atividade recente</h3><p>Os eventos consolidados de governança não estão disponíveis nesta leitura.</p></section>
+    </main>
+  );
+}
 
 function sectionFromPathname(pathname: string) {
   const route = Object.entries(SETTINGS_ROUTES).find(([, path]) => pathname === path)?.[0];
@@ -672,7 +707,8 @@ export function SettingsPage() {
     () => GROUPS.filter((group) => canOpenSettingsSection(group.id, settingsPermissions)),
     [settingsPermissions],
   );
-  const requestedSection = sectionFromPathname(location.pathname) ?? 'integracoes';
+  const isOverview = location.pathname === '/admin/settings' && !isDashboardViewer;
+  const requestedSection = sectionFromPathname(location.pathname) ?? (isOverview ? null : 'integracoes');
   const [selectedId, setSelectedId] = useState<string>(() => {
     // A busca global do Genio deixa aqui a secao pedida.
     try {
@@ -697,7 +733,7 @@ export function SettingsPage() {
   const [integrations, setIntegrations] = useState<LoadState<ManagedIntegration>>({ phase: 'idle' });
   const [mutating, setMutating] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
-  const selected = visibleGroups.find((group: SettingsGroup) => group.id === selectedId) ?? visibleGroups[0];
+  const selected = isOverview ? null : visibleGroups.find((group: SettingsGroup) => group.id === selectedId) ?? visibleGroups[0];
 
   useEffect(() => {
     const next = isDashboardViewer ? 'integracoes' : sectionFromPathname(location.pathname);
@@ -1009,7 +1045,7 @@ export function SettingsPage() {
           única, e cada seção responde pelo próprio cabeçalho. */}
       <div className="gso-settings-cockpit-layout flex min-h-0 flex-1 flex-col overflow-y-auto">
         <main className="gso-settings-cockpit-main min-w-0 flex-1">
-          <GroupDetail
+          {isOverview ? <SettingsOverview groups={visibleGroups} /> : selected ? <GroupDetail
           conversationTypes={conversationTypes}
           group={selected}
           mutating={mutating}
@@ -1034,7 +1070,7 @@ export function SettingsPage() {
           integrations={integrations}
           onReloadIntegrations={loadIntegrations}
           onSaveIntegration={handleSaveIntegration}
-          />
+          /> : null}
         </main>
       </div>
     </div>

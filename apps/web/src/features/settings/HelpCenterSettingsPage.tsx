@@ -16,6 +16,8 @@ import { UiEmptyState } from './ui/UiEmptyState';
 import { UiField } from './ui/UiField';
 import { UiHintBand } from './ui/UiHintBand';
 import { UiIcon } from './ui/UiIcon';
+import { UiMetric } from './ui/UiMetric';
+import { UiMetricRow } from './ui/UiMetricRow';
 import { UiPage } from './ui/UiPage';
 import { UiPageHeader } from './ui/UiPageHeader';
 import './settings-ui.css';
@@ -218,9 +220,22 @@ export function HelpCenterSettingsPage({
 }) {
   const profiles = useKnowledgeSpaceProfiles();
   const items = state.phase === 'ready' ? state.items : [];
+  const summary = items.reduce((current, item) => {
+    const profile = profileForSlug(profiles, item.knowledgeSpaceSlug);
+    const articleCount = profile?.articleCount;
+    const publishedArticleCount = profile?.publishedArticleCount;
+    const categoryCount = profile?.categoryCount;
+    return {
+      configuredContacts: current.configuredContacts + (hasPublicContact(item) ? 1 : 0),
+      profiles: current.profiles + (profile ? 1 : 0),
+      articles: current.articles === null || articleCount === null || articleCount === undefined ? null : current.articles + articleCount,
+      publishedArticles: current.publishedArticles === null || publishedArticleCount === null || publishedArticleCount === undefined ? null : current.publishedArticles + publishedArticleCount,
+      categories: current.categories === null || categoryCount === null || categoryCount === undefined ? null : current.categories + categoryCount,
+    };
+  }, { configuredContacts: 0, profiles: 0, articles: 0 as number | null, publishedArticles: 0 as number | null, categories: 0 as number | null });
 
   return (
-    <UiPage>
+    <UiPage className="gso-po-v2-help-center">
       <UiPageHeader
         actions={
           <Link
@@ -238,6 +253,14 @@ export function HelpCenterSettingsPage({
         title="Central de ajuda"
         titleId="settings-help-center-title"
       />
+
+      <UiMetricRow label="Resumo da central de ajuda">
+        <UiMetric icon="help" label="Centrais vinculadas" sub="marcas com configuração disponível" tone="primary" value={items.length} />
+        <UiMetric icon="check" label="Contatos publicados" sub="centrais com ao menos um canal" tone="success" value={summary.configuredContacts} valueTone={summary.configuredContacts ? 'success' : undefined} />
+        <UiMetric icon="brand" label="Perfis consultados" sub={profiles.status === 'loading' ? 'carregando identidade' : profiles.status === 'unavailable' ? 'leitura indisponível' : 'identidade resolvida'} tone="primary" value={`${summary.profiles} de ${items.length}`} />
+        <UiMetric icon="list" label="Artigos publicados" sub="catálogo do espaço de conhecimento" tone="neutral" value={summary.publishedArticles ?? UNAVAILABLE} />
+        <UiMetric icon="layers" label="Categorias" sub={summary.articles === null ? 'catálogo indisponível' : `${summary.articles} artigos no catálogo`} tone="neutral" value={summary.categories ?? UNAVAILABLE} />
+      </UiMetricRow>
 
       {state.phase === 'idle' || state.phase === 'loading' ? (
         <UiCard>

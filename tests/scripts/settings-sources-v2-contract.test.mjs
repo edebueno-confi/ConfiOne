@@ -12,7 +12,7 @@ const worker = await readFile(new URL('../../supabase/functions/hubspot-orchestr
 
 test('rotas canônicas e redirects legados existem', () => {
   for (const path of ['settings/integrations', 'settings/dashboard-sources', 'settings/sync-history']) assert.match(router, new RegExp(`path: '${path}'`));
-  assert.match(router, /SettingsLegacyRedirect/);
+  assert.match(router, /path: 'settings',[\s\S]*?element: withSuspense\(<SettingsPage \/>\)/);
   assert.match(settings, /SETTINGS_ROUTES/);
 });
 

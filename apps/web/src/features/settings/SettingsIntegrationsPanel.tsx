@@ -209,7 +209,7 @@ export function SettingsIntegrationsPanel({
   }
 
   return (
-    <UiPage>
+    <UiPage className="gso-po-v2-integrations">
       <UiPageHeader
         actions={
           <UiButton disabled={busy || reloading} icon="refresh" onClick={() => void reload()}>

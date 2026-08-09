@@ -214,7 +214,7 @@ function SettingsLegacyRedirect() {
     integracoes: '/admin/settings/integrations',
     'dashboard-fontes': '/admin/settings/dashboard-sources',
     'dashboard-historico': '/admin/settings/sync-history',
-  } as Record<string, string>)[legacy ?? ''] ?? '/admin/settings/integrations';
+  } as Record<string, string>)[legacy ?? ''] ?? '/admin/settings';
   return <Navigate replace to={target} />;
 }
 
@@ -463,7 +463,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'settings',
-            element: <SettingsLegacyRedirect />,
+            element: withSuspense(<SettingsPage />),
           },
           {
             path: 'cockpit',

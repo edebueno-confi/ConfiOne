@@ -95,6 +95,26 @@
   background: var(--ui-canvas);
 }
 
+.gso-settings-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+.gso-settings-overview-heading { grid-column: 1 / -1; }
+.gso-settings-overview-heading h3,
+.gso-settings-overview-activity h3 { margin: 0; color: var(--ui-text); font-size: 1rem; font-weight: 600; }
+.gso-settings-overview-heading p,
+.gso-settings-overview-activity p { margin: 0.25rem 0 0; color: var(--ui-text-secondary); font-size: 0.8rem; }
+.gso-settings-overview-card,
+.gso-settings-overview-activity { display: grid; gap: 1rem; min-width: 0; padding: 1rem; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-surface); box-shadow: var(--ui-shadow); }
+.gso-settings-overview-card h4 { margin: 0; color: var(--ui-text); font-size: 0.95rem; font-weight: 600; }
+.gso-settings-overview-card p { margin: 0.35rem 0 0; color: var(--ui-text-secondary); font-size: 0.78rem; line-height: 1.45; }
+.gso-settings-overview-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.gso-settings-overview-card-foot a { color: var(--ui-primary-ink); font-size: 0.8rem; font-weight: 600; }
+.gso-settings-overview-activity { min-height: 86px; }
+@media (max-width: 1120px) { .gso-settings-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .gso-settings-overview-grid { grid-template-columns: minmax(0, 1fr); } }
+
 @media (max-width: 760px) {
   .gso-ui-page { gap: 1rem; padding: 1rem; }
 }
@@ -677,6 +697,22 @@
 .gso-ui-body { display: grid; grid-template-columns: minmax(0, 1fr) 21rem; align-items: start; gap: 1.25rem; min-width: 0; }
 .gso-ui-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; min-width: 0; }
 .gso-ui-rail { display: grid; align-content: start; gap: 1.25rem; min-width: 0; }
+
+/* Lock V2: Integrações tem dois provedores equivalentes na primeira dobra.
+   A edição de segredo fica recolhida porque é um comando, não o assunto
+   dominante da página. */
+.gso-po-v2-integrations .gso-ui-body { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+.gso-po-v2-integrations .gso-ui-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.gso-po-v2-integrations .gso-ui-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.gso-po-v2-provider-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid var(--ui-border); }
+.gso-po-v2-provider-actions details { min-width: 0; }
+.gso-po-v2-provider-actions summary { cursor: pointer; color: var(--ui-text); font-size: 0.8rem; font-weight: 600; }
+.gso-po-v2-provider-actions > a { color: var(--ui-primary-ink); font-size: 0.8rem; font-weight: 600; }
+.gso-po-v2-provider-actions details[open] { width: 100%; }
+@media (max-width: 760px) {
+  .gso-po-v2-integrations .gso-ui-cards,
+  .gso-po-v2-integrations .gso-ui-rail { grid-template-columns: 1fr; }
+}
 .gso-ui-facts { display: grid; gap: 0.5rem; margin: 1rem 0 0; padding: 0; list-style: none; }
 .gso-ui-facts li {
   position: relative;

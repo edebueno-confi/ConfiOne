@@ -182,7 +182,7 @@ export function SyncHistorySettingsPage() {
   if (error && !rows.length) return <MinimalState tone="critical" title="Não foi possível carregar o histórico" description={error} />;
 
   return (
-    <UiPage>
+    <UiPage className="gso-po-v2-history">
       <UiPageHeader
         actions={
           <UiButton disabled={loading} icon="refresh" onClick={() => void load()}>
