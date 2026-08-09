@@ -30,6 +30,8 @@ const REASON_MESSAGES = {
     'Parte dos clientes ativos ainda não tem receita recorrente registrada.',
   missing_hubspot_omie_mapping:
     'Nem todos os clientes têm cadastro financeiro correspondente, então o valor cobre apenas parte da carteira.',
+  omie_customer_identity_missing:
+    'Há títulos financeiros sem identificação de cliente suficiente para vinculá-los com segurança à carteira.',
   ticket_close_date_missing:
     'Os atendimentos encerrados não registram a data de encerramento na origem, então não é possível medir o que foi resolvido no período.',
   ticket_history_partial:

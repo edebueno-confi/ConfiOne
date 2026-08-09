@@ -275,6 +275,22 @@ export interface FinanceCsBucket {
   overdueBalance: number;
 }
 
+export interface FinanceUnmatchedCompany {
+  client: string;
+  taxId: string | null;
+  titles: number;
+  balance: number;
+  overdueBalance: number;
+  nameMatches: number;
+}
+
+export interface FinanceIdentityIssue {
+  omieClientCode: string;
+  titles: number;
+  balance: number;
+  overdueBalance: number;
+}
+
 export interface FinanceSnapshot {
   /** Somente OMIE API pode ser publicado no snapshot do Dashboard. */
   source: 'api' | 'none';
@@ -286,7 +302,16 @@ export interface FinanceSnapshot {
   projection: FinanceMonthlyPoint[];
   byCategory: FinanceBreakdown[];
   topDebtors: FinanceDebtor[];
-  csReconciliation: { matchedBalance: number; unmatchedBalance: number; byClientStatus: FinanceCsBucket[] };
+  csReconciliation: {
+    matchedBalance: number;
+    unmatchedBalance: number;
+    identityMissingBalance: number;
+    identityIncompleteBalance: number;
+    noHubspotCompanyBalance: number;
+    byClientStatus: FinanceCsBucket[];
+    unmatchedCompanies: FinanceUnmatchedCompany[];
+    identityIssues: FinanceIdentityIssue[];
+  };
   state?: AnalyticsBlockState;
 }
 
@@ -643,6 +668,9 @@ export function mapFinanceSnapshot(value: unknown): FinanceSnapshot {
   const rows = (key: string) => (Array.isArray(data[key]) ? data[key] : []) as Record<string, unknown>[];
   const recon = (data.cs_reconciliation && typeof data.cs_reconciliation === 'object' ? data.cs_reconciliation : {}) as Record<string, unknown>;
   const reconRows = (Array.isArray(recon.by_client_status) ? recon.by_client_status : []) as Record<string, unknown>[];
+  const reconExceptions = (data.reconciliation_exceptions && typeof data.reconciliation_exceptions === 'object' ? data.reconciliation_exceptions : {}) as Record<string, unknown>;
+  const unmatchedCompanies = (Array.isArray(reconExceptions.unmatched_companies) ? reconExceptions.unmatched_companies : []) as Record<string, unknown>[];
+  const identityIssues = (Array.isArray(reconExceptions.identity_issues) ? reconExceptions.identity_issues : []) as Record<string, unknown>[];
   const sourceValue: FinanceSnapshot['source'] = data.source === 'api' ? 'api' : 'none';
   const rawKpis = (data.kpis && typeof data.kpis === 'object' ? data.kpis : {}) as Record<string, unknown>;
   return {
@@ -658,7 +686,12 @@ export function mapFinanceSnapshot(value: unknown): FinanceSnapshot {
     csReconciliation: {
       matchedBalance: toNumber(recon.matched_balance),
       unmatchedBalance: toNumber(recon.unmatched_balance),
+      identityMissingBalance: toNumber(recon.identity_missing_balance),
+      identityIncompleteBalance: toNumber(recon.identity_incomplete_balance),
+      noHubspotCompanyBalance: toNumber(recon.no_hubspot_company_balance),
       byClientStatus: reconRows.map((row) => ({ key: toText(row.key) || 'Indisponível', titles: toNumber(row.titles), balance: toNumber(row.balance), overdueBalance: toNumber(row.overdue_balance) })),
+      unmatchedCompanies: unmatchedCompanies.map((row) => ({ client: toText(row.client) || 'Empresa sem nome', taxId: row.tax_id ? toText(row.tax_id) : null, titles: toNumber(row.titles), balance: toNumber(row.balance), overdueBalance: toNumber(row.overdue_balance), nameMatches: toNumber(row.name_matches) })),
+      identityIssues: identityIssues.map((row) => ({ omieClientCode: toText(row.omie_client_code) || 'Sem código OMIE', titles: toNumber(row.titles), balance: toNumber(row.balance), overdueBalance: toNumber(row.overdue_balance) })),
     },
     state: createSnapshotState(data, sourceValue === 'none' ? 'OMIE indisponível' : 'OMIE API', toNumber(rawKpis.total_titles), sourceValue !== 'none'),
   };
