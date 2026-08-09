@@ -1,8 +1,9 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createServiceClient, jsonResponse, optionsResponse } from '../_shared/ticket-evidence.ts';
-import { authorizeCsRunner, classifyHubSpotError, runnerError } from '../_shared/hubspot-cs-runner.ts';
+import { authorizeCsRunner, classifyHubSpotError, runnerError, runnerMessage } from '../_shared/hubspot-cs-runner.ts';
 
 type FunctionResult = { status: number; payload: Record<string, unknown> | null };
+type InternalInvocationAuth = { authorization: string | null; secret: string | null };
 
 const TERMINAL_HUBSPOT_STATUSES = new Set(['success', 'succeeded', 'failed', 'error', 'abandoned', 'timed_out', 'cancelled']);
 
@@ -10,14 +11,14 @@ function runtimeConfig() {
   const secret = Deno.env.get('ANALYTICS_SYNC_SECRET')?.trim();
   const baseUrl = Deno.env.get('SUPABASE_URL')?.replace(/\/$/, '');
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')?.trim();
-  if (!secret || !baseUrl || !anonKey) throw new Error('Runtime sem configuracao segura para orquestrar as fontes.');
+  if (!baseUrl || !anonKey) throw new Error('Runtime sem configuracao segura para orquestrar as fontes.');
   return { secret, baseUrl, anonKey };
 }
 
 async function callFunction(
   baseUrl: string,
   anonKey: string,
-  secret: string,
+  auth: InternalInvocationAuth,
   functionName: string,
   correlationId: string,
   body: Record<string, unknown>,
@@ -28,7 +29,8 @@ async function callFunction(
     headers: {
       apikey: anonKey,
       'Content-Type': 'application/json',
-      'x-analytics-sync-secret': secret,
+      ...(auth.authorization ? { Authorization: auth.authorization } : {}),
+      ...(auth.secret ? { 'x-analytics-sync-secret': auth.secret } : {}),
       'x-analytics-correlation-id': correlationId,
       ...(cycleId ? { 'x-analytics-cycle-id': cycleId } : {}),
     },
@@ -89,6 +91,7 @@ async function hubspotProgress(client: ReturnType<typeof createServiceClient>, r
 async function runHubspotToCompletion(
   client: ReturnType<typeof createServiceClient>,
   config: ReturnType<typeof runtimeConfig>,
+  auth: InternalInvocationAuth,
   correlationId: string,
   cycleId: string,
 ) {
@@ -96,7 +99,7 @@ async function runHubspotToCompletion(
   if (!run) {
     let started: FunctionResult;
     try {
-      started = await callFunction(config.baseUrl, config.anonKey, config.secret, 'hubspot-orchestrator-start', correlationId, { correlationId });
+      started = await callFunction(config.baseUrl, config.anonKey, auth, 'hubspot-orchestrator-start', correlationId, { correlationId });
     } catch (error) {
       const classified = classifyHubSpotError(error);
       await updateStep(client, cycleId, 'hubspot', { status: 'failed', finished_at: new Date().toISOString(), sanitized_error: classified.sanitizedMessage });
@@ -132,7 +135,7 @@ async function runHubspotToCompletion(
 
     let dispatched: FunctionResult;
     try {
-      dispatched = await callFunction(config.baseUrl, config.anonKey, config.secret, 'hubspot-orchestrator-dispatcher', correlationId, {});
+      dispatched = await callFunction(config.baseUrl, config.anonKey, auth, 'hubspot-orchestrator-dispatcher', correlationId, {});
     } catch (error) {
       const classified = classifyHubSpotError(error);
       await updateStep(client, cycleId, 'hubspot', { status: 'failed', finished_at: new Date().toISOString(), sanitized_error: classified.sanitizedMessage });
@@ -154,10 +157,16 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed.' }, { status: 405 });
 
   const client = createServiceClient();
-  if (!(await authorizeCsRunner(req, client))) return jsonResponse({ error: 'Acesso negado. Requer platform_admin.' }, { status: 403 });
+  const requester = await authorizeCsRunner(req, client);
+  if (!requester) return jsonResponse({ error: 'Acesso negado. Requer platform_admin.' }, { status: 403 });
 
   try {
     const config = runtimeConfig();
+    const auth: InternalInvocationAuth = {
+      authorization: requester === 'scheduler' ? null : req.headers.get('authorization'),
+      secret: requester === 'scheduler' ? config.secret : null,
+    };
+    if (!auth.authorization && !auth.secret) throw new Error('Identidade autenticada indisponivel para orquestrar as fontes.');
     const startedCycle = await client.rpc('rpc_service_start_analytics_sync_cycle', { p_trigger_kind: 'manual', p_requested_by: null });
     if (startedCycle.error) throw startedCycle.error;
     const cycle = startedCycle.data as { accepted?: boolean; cycle_id?: string; correlation_id?: string; status?: string; reason?: string } | null;
@@ -166,7 +175,7 @@ Deno.serve(async (req) => {
     }
     const cycleId = String(cycle.cycle_id);
     const correlationId = String(cycle.correlation_id);
-    const hubspot = await runHubspotToCompletion(client, config, correlationId, cycleId);
+    const hubspot = await runHubspotToCompletion(client, config, auth, correlationId, cycleId);
 
     if (hubspot.status === 'running') {
       await updateCycle(client, cycleId, { status: 'running', current_step: 'hubspot' });
@@ -185,7 +194,7 @@ Deno.serve(async (req) => {
     // parcial para que a UI e o agendamento não confundam isso com sucesso.
     await updateCycle(client, cycleId, { status: 'running', current_step: 'omie' });
     await updateStep(client, cycleId, 'omie', { status: 'running', started_at: new Date().toISOString() });
-    const omie = await callFunction(config.baseUrl, config.anonKey, config.secret, 'omie-sync', correlationId, {}, cycleId).catch((error) => ({
+    const omie = await callFunction(config.baseUrl, config.anonKey, auth, 'omie-sync', correlationId, {}, cycleId).catch((error) => ({
       status: 503,
       payload: { error: runnerMessage(error) },
     }));

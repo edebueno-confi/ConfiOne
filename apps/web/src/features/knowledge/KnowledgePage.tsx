@@ -1856,7 +1856,7 @@ export function KnowledgePage() {
           : 'Criar artigo';
 
     return (
-      <div className="space-y-3 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
+      <div className="gso-knowledge-inline-editor space-y-3 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
         <section className="rounded-[24px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-6 py-4 shadow-[var(--shadow-panel)]">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-1.5">

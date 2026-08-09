@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { cx } from '../../components/ui';
 import { GeniusLamp } from '../../components/GeniusLamp';
@@ -18,6 +18,8 @@ import {
   type MinimalNavigationPermissions,
 } from './minimal-navigation';
 
+type NavigationSection = ReturnType<typeof buildMinimalNavigation>[number];
+
 function NavigationGlyph({ icon }: { icon: MinimalNavigationIcon }) {
   const paths: Record<MinimalNavigationIcon, ReactNode> = {
     inbox: <path d="M4.5 6.5h15v11h-15zM4.5 13h4l1.5 2h4l1.5-2h4" />,
@@ -32,7 +34,7 @@ function NavigationGlyph({ icon }: { icon: MinimalNavigationIcon }) {
   };
 
   return (
-    <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" viewBox="0 0 24 24">
+    <svg aria-hidden="true" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" viewBox="0 0 24 24">
       {paths[icon]}
     </svg>
   );
@@ -60,7 +62,7 @@ function SidebarNavigationLink({
   );
   const linkContent = (
     <>
-      <span className="inline-flex h-5 w-5 items-center justify-center">
+      <span className="inline-flex h-[18px] w-[18px] items-center justify-center">
         {item.settingsSection ? <SettingsNavIcon section={item.settingsSection} /> : <NavigationGlyph icon={item.icon} />}
       </span>
       {!collapsed ? <span className="truncate">{item.label}</span> : null}
@@ -98,8 +100,10 @@ function ShellNavigation({
     }
   });
   const [openFlyoutSectionId, setOpenFlyoutSectionId] = useState<string | null>(null);
+  const [flyoutAnchor, setFlyoutAnchor] = useState({ top: 80, left: 64 });
   const flyoutRef = useRef<HTMLElement>(null);
   const flyoutTriggerRef = useRef<HTMLButtonElement>(null);
+  const flyoutCloseTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const activeSection = sections.find((section) => section.items.some((item) => item.matches(pathname)));
@@ -115,10 +119,42 @@ function ShellNavigation({
     }
   }, [collapsedSections]);
 
-  const closeFlyout = () => {
+  useEffect(() => {
+    if (!collapsed) setOpenFlyoutSectionId(null);
+  }, [collapsed]);
+
+  const cancelFlyoutClose = useCallback(() => {
+    if (flyoutCloseTimerRef.current !== null) {
+      window.clearTimeout(flyoutCloseTimerRef.current);
+      flyoutCloseTimerRef.current = null;
+    }
+  }, []);
+
+  const closeFlyout = useCallback((restoreFocus = true) => {
+    cancelFlyoutClose();
     setOpenFlyoutSectionId(null);
-    window.requestAnimationFrame(() => flyoutTriggerRef.current?.focus());
-  };
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => flyoutTriggerRef.current?.focus());
+    }
+  }, [cancelFlyoutClose]);
+
+  const scheduleFlyoutClose = useCallback(() => {
+    cancelFlyoutClose();
+    flyoutCloseTimerRef.current = window.setTimeout(() => closeFlyout(false), 140);
+  }, [cancelFlyoutClose, closeFlyout]);
+
+  const openFlyoutForSection = useCallback((section: NavigationSection, target: HTMLButtonElement) => {
+    cancelFlyoutClose();
+    flyoutTriggerRef.current = target;
+    const triggerBounds = target.getBoundingClientRect();
+    setFlyoutAnchor({
+      top: Math.max(8, Math.min(triggerBounds.top, window.innerHeight - 280)),
+      left: triggerBounds.right + 8,
+    });
+    setOpenFlyoutSectionId(section.id);
+  }, [cancelFlyoutClose]);
+
+  useEffect(() => () => cancelFlyoutClose(), [cancelFlyoutClose]);
 
   useEffect(() => {
     if (!openFlyoutSectionId) return undefined;
@@ -157,14 +193,16 @@ function ShellNavigation({
       document.removeEventListener('pointerdown', handlePointerDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [openFlyoutSectionId]);
+  }, [closeFlyout, openFlyoutSectionId]);
 
   const openFlyoutSection = sections.find((section) => section.id === openFlyoutSectionId) ?? null;
 
   return (
-    <nav aria-label="Navegação principal" className="space-y-5">
-      {sections.map((section) => (
-        <section key={section.id}>
+    <nav aria-label="Navegação principal" className="gso-sidebar-navigation">
+      {sections.map((section) => {
+        const sectionActive = section.items.some((item) => item.matches(pathname));
+        return (
+        <section className={cx('gso-nav-section', collapsed && 'gso-nav-section--collapsed', sectionActive && 'gso-nav-section--active')} key={section.id}>
           {collapsed ? (
             <button
               aria-controls={`gso-nav-flyout-${section.id}`}
@@ -172,12 +210,17 @@ function ShellNavigation({
               aria-haspopup="dialog"
               className={cx(
                 'gso-nav-group-rail-button',
-                section.items.some((item) => item.matches(pathname)) && 'gso-nav-group-rail-button--active',
+                sectionActive && 'gso-nav-group-rail-button--active',
               )}
               onClick={(event) => {
-                flyoutTriggerRef.current = event.currentTarget;
-                setOpenFlyoutSectionId((current) => current === section.id ? null : section.id);
+                if (openFlyoutSectionId === section.id) {
+                  closeFlyout();
+                  return;
+                }
+                openFlyoutForSection(section, event.currentTarget);
               }}
+              onMouseEnter={(event) => openFlyoutForSection(section, event.currentTarget)}
+              onMouseLeave={scheduleFlyoutClose}
               title={section.label}
               type="button"
             >
@@ -189,7 +232,7 @@ function ShellNavigation({
           ) : (
             <button
               aria-expanded={!collapsedSections[section.id]}
-              className="gso-nav-group-toggle mb-1.5 flex min-h-8 w-full items-center justify-between gap-2 rounded-md px-2 text-left text-xs font-medium text-[color:var(--minimal-text-tertiary)] hover:bg-[color:var(--minimal-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]"
+              className="gso-nav-group-toggle flex min-h-8 w-full items-center justify-between gap-2 rounded-md px-2 text-left text-xs font-medium text-[color:var(--minimal-text-tertiary)] hover:bg-[color:var(--minimal-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]"
               onClick={() => setCollapsedSections((current) => {
                 const willOpen = current[section.id] !== false;
                 return { ...current, [section.id]: !willOpen };
@@ -200,16 +243,17 @@ function ShellNavigation({
               <svg aria-hidden="true" className={cx('h-3.5 w-3.5 transition-transform', !collapsedSections[section.id] && 'rotate-180')} fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>
             </button>
           )}
-          {!collapsed && (!collapsedSections[section.id] || section.items.some((item) => item.matches(pathname))) ? <div className="space-y-0.5">
+          {!collapsed && (!collapsedSections[section.id] || sectionActive) ? <div className="gso-nav-section-items">
             {section.items.filter((item) => !collapsedSections[section.id] || item.matches(pathname)).map((item) => (
               <SidebarNavigationLink item={item} key={item.id} onNavigate={onNavigate} />
             ))}
           </div> : null}
         </section>
-      ))}
+        );
+      })}
       {collapsed && openFlyoutSection ? (
         <>
-          <button aria-label="Fechar submenu" className="gso-nav-flyout-scrim" onClick={closeFlyout} type="button" />
+          <button aria-label="Fechar submenu" className="gso-nav-flyout-scrim" onClick={() => closeFlyout()} type="button" />
           <aside
             aria-label={`Submenu ${openFlyoutSection.label}`}
             aria-modal="true"
@@ -217,10 +261,13 @@ function ShellNavigation({
             id={`gso-nav-flyout-${openFlyoutSection.id}`}
             ref={flyoutRef}
             role="dialog"
+            style={{ top: flyoutAnchor.top, left: flyoutAnchor.left }}
+            onMouseEnter={cancelFlyoutClose}
+            onMouseLeave={scheduleFlyoutClose}
           >
             <div className="gso-nav-flyout-heading">
               <p>{openFlyoutSection.label}</p>
-              <button aria-label={`Fechar submenu ${openFlyoutSection.label}`} onClick={closeFlyout} type="button">×</button>
+              <button aria-label={`Fechar submenu ${openFlyoutSection.label}`} onClick={() => closeFlyout()} type="button">×</button>
             </div>
             <div className="gso-nav-flyout-items">
               {openFlyoutSection.items.map((item) => (
@@ -310,12 +357,21 @@ function GeniusSidebar({
       data-collapsed={collapsed}
     >
       <div className="gso-sidebar-header">
-        <Link aria-label="GeniusOS" className="gso-brand-lockup" to="/">
-          {!collapsed ? <span>Genius<span className="text-[color:var(--genius-site-pink)]">OS</span></span> : null}
-        </Link>
-        <SidebarIconButton label={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'} onClick={onCollapse}>
-          <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24"><path d={collapsed ? 'm9 6 6 6-6 6' : 'm15 6-6 6 6 6'} /></svg>
-        </SidebarIconButton>
+        {collapsed ? (
+          <SidebarIconButton label="Expandir menu lateral" onClick={onCollapse}>
+            <GeniusLamp animated={false} size="sm" />
+          </SidebarIconButton>
+        ) : (
+          <>
+            <Link aria-label="GeniusOS" className="gso-brand-lockup" to="/">
+              <GeniusLamp animated={false} size="sm" />
+              <span>Genius<span className="text-[color:var(--genius-site-pink)]">OS</span></span>
+            </Link>
+            <SidebarIconButton label="Recolher menu lateral" onClick={onCollapse}>
+              <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6" /></svg>
+            </SidebarIconButton>
+          </>
+        )}
       </div>
 
       <div className="gso-sidebar-search">
@@ -442,7 +498,7 @@ export function MinimalAppShell({
       >
         Pular para o conteúdo
       </a>
-      <div className="flex h-full min-h-0 gap-2 lg:p-2">
+      <div className="flex h-full min-h-0 gap-0 lg:p-0">
         <GeniusSidebar
           collapsed={sidebarCollapsed}
           email={email}

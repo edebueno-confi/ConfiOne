@@ -95,6 +95,28 @@
   background: var(--ui-canvas);
 }
 
+/* Shell administrativo compartilhado: mesma hierarquia do Dashboard.
+   Header e sidebar usam a surface; o canvas de trabalho fica um degrau abaixo.
+   Isso remove o fundo concorrente que fazia cada tela de Configuracoes parecer
+   pertencer a um produto diferente. */
+.gso-ui-page > .gso-ui-header {
+  margin: -1.15rem -1.5rem 0;
+  padding: 0.9rem 1.5rem;
+  border-bottom: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+}
+.gso-ui-shell,
+.gso-ui-shell-body { background: var(--ui-canvas); }
+.gso-ui-shell-chrome {
+  border-bottom: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+}
+.gso-ui-shell-chrome .gso-ui-header { padding: 0.9rem 1.5rem; }
+@media (max-width: 760px) {
+  .gso-ui-page > .gso-ui-header { margin: -1rem -1rem 0; padding: 0.8rem 1rem; }
+  .gso-ui-shell-chrome .gso-ui-header { padding-inline: 1rem; }
+}
+
 .gso-settings-overview-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

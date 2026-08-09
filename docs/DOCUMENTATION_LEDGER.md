@@ -1,5 +1,11 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## CONFIGURATION-PO-V2 — Lock visual, mapas e evidência — 2026-08-09
+
+- **Precedência:** `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md` recebeu o lock V2 antes da alteração de runtime. Ele cobre Configurações, Usuários e acessos, Central de ajuda, Histórico, Fontes e Integrações; Dashboard Analytics permanece explicitamente fora.
+- **Referências e mapas:** seis PNGs aprovados foram versionados em `docs/design/blueprint/Configuration PO/v2/`. As medidas e o uso de componentes reais estão registrados em `docs/reports/2026-08-09_configuration-po-v2-measurement-map.md` e `docs/reports/2026-08-09_configuration-po-v2-component-map.md`.
+- **Estado:** execução apenas local, com fixture identificada como QA local. O pacote final, manifestos, hashes e comparações somente serão registrados após o QA V2; não houve push, deploy, sync externo, modificação de secret ou operação remota.
+
 ## ADMIN-CONFIG-VISUAL-01 — Contrato, referências e matriz — 2026-08-09
 
 - **Escopo:** shell/sidebar, Usuários e acessos, Histórico de sincronizações, Fontes do Dashboard e Integrações; nenhuma página analítica, contrato, backend, banco, credencial ou sincronização foi alterada nesta etapa documental.

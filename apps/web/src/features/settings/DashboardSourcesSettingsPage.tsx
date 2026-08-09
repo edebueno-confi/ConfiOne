@@ -91,6 +91,12 @@ function terminalSyncState(status: AnalyticsSourceStatusPayload, kind: 'full' | 
   return 'publishing';
 }
 
+function isSyncAlreadyRunning(cause: unknown) {
+  return cause instanceof Error
+    && cause.name === 'AnalyticsSyncError'
+    && String(cause.cause ?? '').includes('status=409');
+}
+
 function PipelineRow({ row, canEdit, busy, onSave, onSaveOperation }: { row: AnalyticsSourceConfig; canEdit: boolean; busy: boolean; onSave: (row: AnalyticsSourceConfig, areaKey: AnalyticsSourceConfig['areaKey'], alias: string, isActive: boolean) => Promise<void>; onSaveOperation: (row: AnalyticsSourceConfig, groupCompany: string) => Promise<void> }) {
   const [areaKey, setAreaKey] = useState(row.areaKey);
   const [alias, setAlias] = useState(row.alias ?? '');
@@ -238,6 +244,13 @@ export function DashboardSourcesSettingsPage() {
        if (finalState === 'publishing') setSyncFeedback(null);
        setMessage(completion.timedOut ? syncProgressLabel(kind, true) : `Atualização ${kind === 'full' ? 'do painel' : kind === 'hubspot' ? 'do HubSpot' : 'do OMIE'} concluída; o estado publicado foi confirmado.`);
     } catch (cause) {
+      if (isSyncAlreadyRunning(cause)) {
+        const current = await getAnalyticsSourceStatus().catch(() => null);
+        if (current) setSourceStatus(current);
+        setSyncFeedback(null);
+        setMessage(`A atualização ${kind === 'hubspot' ? 'do HubSpot' : kind === 'omie' ? 'do OMIE' : 'do painel'} já estava em andamento; o estado publicado continua sendo acompanhado.`);
+        return;
+      }
       const message = cause instanceof Error ? cause.message : 'Não foi possível iniciar a atualização.';
       setSyncFeedback({ source, state: 'failed', detail: message });
       setError(message);

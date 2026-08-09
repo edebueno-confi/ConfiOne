@@ -155,13 +155,13 @@
   /* Shell V3: geometria compartilhada com o blueprint administrativo. */
   --shell-sidebar-width: 240px;
   --shell-sidebar-collapsed: 56px;
-  --shell-sidebar-outer-gap: 8px;
+  --shell-sidebar-outer-gap: 0px;
   --shell-sidebar-radius: 0px;
-  --shell-sidebar-padding: 8px;
-  --shell-sidebar-collapsed-padding: 6px;
-  --shell-sidebar-header-height: 56px;
-  --shell-sidebar-search-height: 44px;
-  --shell-sidebar-nav-item-height: 40px;
+  --shell-sidebar-padding: 12px;
+  --shell-sidebar-collapsed-padding: 8px;
+  --shell-sidebar-header-height: 48px;
+  --shell-sidebar-search-height: 36px;
+  --shell-sidebar-nav-item-height: 36px;
   --shell-sidebar-user-height: 112px;
   --shell-topbar-height: 64px;
   --shell-content-gutter: 24px;
@@ -1307,10 +1307,19 @@
 .gso-settings-cockpit-main .gso-settings-source-note { font-size: 0.68rem; line-height: 1.45; }
 
 .gso-knowledge-cockpit { --knowledge-rail-width: 290px; }
+.gso-knowledge-cockpit,
+.gso-knowledge-manager-page,
+.knowledge-editor-page {
+  background: var(--minimal-canvas) !important;
+}
 .gso-knowledge-cockpit-header { padding: 0.85rem 1.25rem !important; }
 .gso-knowledge-cockpit-header h1 { font-size: 1rem; }
 .gso-knowledge-cockpit-header p { font-size: 0.72rem; }
-.gso-knowledge-cockpit-grid { background: var(--minimal-surface); }
+.gso-knowledge-cockpit-grid,
+.gso-knowledge-manager-content,
+.knowledge-editor-page .gso-knowledge-editor-shell { background: var(--minimal-canvas) !important; }
+.gso-knowledge-manager-header,
+.knowledge-editor-page .knowledge-editor-header { background: var(--minimal-surface) !important; }
 .gso-knowledge-filter-deck { background: var(--minimal-surface-muted) !important; padding: 0.75rem 1rem !important; }
 .gso-knowledge-filter-deck label { font-size: 0.68rem; }
 .gso-knowledge-filter-deck input,
@@ -1324,7 +1333,7 @@
 .gso-knowledge-article-table tbody tr:hover { background: var(--minimal-surface-muted) !important; }
 .gso-knowledge-article-table th:last-child,
 .gso-knowledge-article-table td:last-child { width: 5.8rem; min-width: 5.8rem; }
-.gso-knowledge-category-rail { position: relative; min-height: 0; background: var(--minimal-sidebar) !important; }
+.gso-knowledge-category-rail { position: relative; min-height: 0; background: var(--minimal-surface) !important; }
 .gso-knowledge-category-rail > section { padding: 0.85rem 0.9rem !important; }
 .gso-knowledge-category-rail h2 { font-size: 0.78rem; }
 .gso-knowledge-category-rail button { max-width: 100%; }
@@ -1333,6 +1342,20 @@
 .gso-knowledge-category-rail .truncate { min-width: 0; }
 .gso-knowledge-category-rail .gso-category-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gso-knowledge-category-rail .gso-knowledge-alert { border-radius: 0.55rem; background: var(--minimal-surface-muted); }
+
+/* O fluxo interno de criar/editar artigo ainda usa componentes editoriais
+   legados. Ele recebe o mesmo canvas do Dashboard: header e paineis usam
+   surface; a area entre eles nunca reaproveita a cor da sidebar. */
+.gso-knowledge-inline-editor {
+  background: var(--minimal-canvas);
+  padding: var(--shell-section-gap) var(--app-gutter);
+}
+.gso-knowledge-inline-editor > section:first-child,
+.gso-knowledge-inline-editor > form > section {
+  border-color: var(--minimal-border) !important;
+  background: var(--minimal-surface) !important;
+  box-shadow: none !important;
+}
 
 /* The editor has historical inline light-mode rules. These selectors keep the
    entire properties rail readable when the product theme is dark. */
@@ -5523,9 +5546,7 @@ table {
 .gso-app-shell {
   position: relative;
   isolation: isolate;
-  background-image:
-    radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--genius-site-cyan) 9%, transparent), transparent 24rem),
-    linear-gradient(135deg, color-mix(in srgb, var(--genius-site-blue) 2%, transparent), transparent 36%);
+  background: var(--minimal-canvas);
 }
 
 /* A sidebar segue o sistema visual claro: superfície plana e traço único.
@@ -5534,18 +5555,11 @@ table {
 .gso-topbar {
   position: relative;
   isolation: isolate;
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--genius-site-cyan) 11%, transparent);
+  box-shadow: none;
 }
 
 .gso-topbar::before {
-  position: absolute;
-  top: 0;
-  right: 1rem;
-  left: 1rem;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--genius-site-cyan) 56%, transparent), color-mix(in srgb, var(--genius-site-pink) 42%, transparent), transparent);
-  content: '';
-  pointer-events: none;
+  display: none;
 }
 
 .gso-brand-lockup .genius-mascot {
@@ -5561,7 +5575,7 @@ table {
 
 .gso-main-canvas {
   position: relative;
-  background-image: radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--genius-site-cyan) 5%, transparent), transparent 22rem);
+  background: var(--minimal-canvas);
 }
 
 .gso-panel,
@@ -6897,3 +6911,151 @@ table {
 .gso-nav-flyout-items .gso-nav-link { min-height: 38px; height: 38px; padding-inline: 10px; font-size: 12px; }
 @keyframes gso-nav-flyout-enter { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
 @media (prefers-reduced-motion: reduce) { .gso-nav-flyout { animation: none; } }
+
+/* Sidebar blueprint V1: a navegação é uma coluna integrada ao shell, não um
+   card solto. Este bloco final também neutraliza regras históricas que ainda
+   aumentavam os ícones e a densidade em algumas telas administrativas. */
+.gso-ui.gso-sidebar {
+  width: var(--shell-sidebar-width) !important;
+  height: 100dvh !important;
+  padding: var(--shell-sidebar-padding) !important;
+  grid-template-rows: var(--shell-sidebar-header-height) var(--shell-sidebar-search-height) minmax(0, 1fr) auto;
+  gap: 10px;
+  border: 0 !important;
+  border-right: 1px solid var(--ui-border) !important;
+  border-radius: 0 !important;
+  background: var(--minimal-sidebar) !important;
+  box-shadow: none !important;
+}
+.gso-ui.gso-sidebar--collapsed {
+  width: var(--shell-sidebar-collapsed) !important;
+  padding: var(--shell-sidebar-collapsed-padding) !important;
+}
+.gso-ui.gso-sidebar .gso-sidebar-header {
+  height: var(--shell-sidebar-header-height);
+  min-height: var(--shell-sidebar-header-height);
+  padding: 0 2px;
+}
+.gso-ui.gso-sidebar .gso-brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--ui-text);
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1;
+}
+.gso-ui.gso-sidebar .gso-sidebar-icon-button {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ui-text-secondary);
+}
+.gso-ui.gso-sidebar .gso-sidebar-icon-button:hover { background: var(--ui-surface-muted); color: var(--ui-text); }
+.gso-ui.gso-sidebar .gso-sidebar-icon-button > svg { width: 16px; height: 16px; }
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-header { justify-content: center; }
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-icon-button { width: 36px; height: 36px; }
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-icon-button .genius-lamp { width: 24px; height: 24px; }
+
+.gso-ui.gso-sidebar .gso-sidebar-search,
+.gso-ui.gso-sidebar .gso-sidebar-search .gso-genius-trigger {
+  height: var(--shell-sidebar-search-height);
+  min-height: var(--shell-sidebar-search-height);
+}
+.gso-ui.gso-sidebar .gso-sidebar-search .gso-genius-trigger {
+  padding-inline: 10px;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 6px !important;
+  background: var(--ui-surface-muted) !important;
+  box-shadow: none;
+}
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-search .gso-genius-trigger { width: 36px; height: 36px; min-height: 36px; border-radius: 6px !important; }
+
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-sidebar-navigation { display: grid; gap: 0; padding: 0; }
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-section {
+  padding: 10px 0;
+  border-top: 1px solid var(--ui-border);
+}
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-section:first-child { padding-top: 0; border-top: 0; }
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-section-items { display: grid; gap: 2px; }
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-group-toggle {
+  min-height: 26px;
+  margin-bottom: 4px;
+  padding-inline: 6px;
+  color: var(--ui-text-tertiary) !important;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-link,
+.gso-nav-flyout-items .gso-nav-link {
+  min-height: var(--shell-sidebar-nav-item-height);
+  height: var(--shell-sidebar-nav-item-height);
+  gap: 8px;
+  padding-inline: 8px;
+  border: 0;
+  border-radius: 6px !important;
+  font-size: 12px;
+  font-weight: 500;
+}
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-link > span:first-child,
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-link > span:first-child svg,
+.gso-nav-group-rail-button > span:first-child svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-link--active {
+  border: 0 !important;
+  background: var(--ui-primary-soft) !important;
+  box-shadow: inset 2px 0 0 var(--genius-site-pink) !important;
+  color: var(--ui-primary-ink) !important;
+}
+.gso-ui.gso-sidebar .gso-sidebar-nav .gso-nav-link--nested { padding-left: 8px !important; }
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-nav .gso-sidebar-navigation { gap: 6px; }
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-nav .gso-nav-section {
+  display: grid;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+}
+.gso-nav-group-rail-button {
+  width: 40px;
+  height: var(--shell-sidebar-nav-item-height);
+  border-radius: 6px !important;
+}
+
+.gso-ui.gso-sidebar .gso-sidebar-account-card {
+  min-height: 0 !important;
+  padding: 6px !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 6px !important;
+  background: var(--ui-surface-muted) !important;
+}
+.gso-ui.gso-sidebar .gso-sidebar-account-trigger {
+  height: 38px !important;
+  padding-inline: 4px;
+  border-radius: 4px;
+}
+.gso-ui.gso-sidebar .gso-sidebar-account-identity strong { font-size: 12px; }
+.gso-ui.gso-sidebar .gso-sidebar-account-identity small { font-size: 10px; }
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-account-card { padding: 4px !important; }
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-account-trigger,
+.gso-ui.gso-sidebar--collapsed .gso-sidebar-account-trigger .genius-avatar { width: 36px; height: 36px; }
+
+.gso-nav-flyout {
+  top: 80px;
+  bottom: auto;
+  left: calc(var(--shell-sidebar-collapsed) + 8px);
+  width: min(280px, calc(100vw - var(--shell-sidebar-collapsed)));
+  max-height: min(420px, calc(100dvh - 16px));
+  overflow-y: auto;
+  border-radius: 0 8px 8px 0 !important;
+}

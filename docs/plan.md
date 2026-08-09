@@ -1,5 +1,7 @@
 # Plano corrente — Interface High-Density V1 — 2026-08-03
 
+> **Configuration PO Visual Lock V2 (em execução local, 2026-08-09):** substituir a direção V1 nas seis superfícies administrativas por reprodução fiel das referências versionadas em `docs/design/blueprint/Configuration PO/v2/`. Evidências de dark e light, nos quatro viewports definidos, serão fechadas somente após typecheck, build e QA autenticado local. Não há autorização de deploy, push, migração remota ou sync externo.
+
 ## Lote atual — Admin Configuration Visual Rebuild V1 — 2026-08-09
 
 - Concluído localmente: shell/sidebar e as superfícies administrativas de Usuários, Histórico, Fontes e Integrações alinhados a `ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md`.

@@ -1,5 +1,7 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+> **Configuration PO Visual Lock V2 (em execução local, 2026-08-09).** As seis referências aprovadas estão versionadas em `docs/design/blueprint/Configuration PO/v2/`; a precedência operacional e visual desta rodada é `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md`, atualizado com o lock V2. O escopo inclui Central de ajuda e a visão geral de Configurações, sem alterar Dashboard Analytics, contratos, banco, RLS, sincronização ou credenciais.
+
 ## Atualização corrente — Admin Configuration Visual Rebuild V1 — 2026-08-09
 
 - Direção visual canônica criada em `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md`, com cinco referências aprovadas versionadas em `docs/design/blueprint/Configuration PO/`.
@@ -7,6 +9,22 @@
 - Estado de implementação: shell, flyout, drawer responsivo e neutralidade visual de provider implementados e validados localmente. A branch é `codex/admin-configuration-visual-v1`, preservada por `refs/archive/admin-configuration-visual-v1-start-20260809`.
 - Evidência: `docs/reports/2026-08-09_admin-configuration-visual-rebuild-v1.md` registra QA dark real nos quatro viewports, sem overflow global; o dataset local continua com apenas a persona administrativa e sem histórico de execuções, limitação registrada sem hidratação/reset.
 - Limites confirmados: nenhum push, deploy, sync externo, alteração remota, alteração de secret, banco, RLS, RPC ou migration neste lote.
+
+## Adendo corrente — reconciliação OMIE ↔ HubSpot — 2026-08-09
+
+- Correção local pronta para o enriquecimento de títulos OMIE cujo código de
+  cliente vem dentro de `detalhes`; antes, esses títulos perdiam nome, CNPJ e
+  nome fantasia ao cruzar com o índice de clientes.
+- A sincronização de Companies do HubSpot passa a reter razão social, nome
+  fantasia e a chave CNPJ alternativa no cache de analytics. A fila e a lista
+  financeira usam esses aliases apenas para sugerir candidatas; CNPJ único ou
+  decisão auditada continuam sendo os únicos vínculos confirmados.
+- Validação local: teste de regressão OMIE, pgTAP de conciliação, typecheck web
+  e lint do banco aprovados. A migration canônica `20260809060338` foi
+  restaurada a partir do commit que a versionou; o histórico agora está alinhado
+  com o remoto. O dry-run remoto prevê somente as migrations locais novas
+  `20260809070000` e `20260809093201`; nenhum push, deploy, sync externo ou
+  migration remota foi executado neste lote.
 
 ## Adendo corrente — sincronização, qualidade e superfícies — 2026-08-04
 

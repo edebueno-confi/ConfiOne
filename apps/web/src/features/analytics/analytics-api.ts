@@ -303,14 +303,14 @@ export async function getFinanceSnapshot(filters: AnalyticsFilters, clientQuery 
   return mapFinanceSnapshot(data);
 }
 
-export interface FinanceUnmatchedClient { client: string; taxId: string | null; titles: number; balance: number; overdueBalance: number; nameMatches: number }
+export interface FinanceUnmatchedClient { client: string; taxId: string | null; tradeName: string | null; titles: number; balance: number; overdueBalance: number; nameMatches: number }
 
 export async function getFinanceUnmatchedClients(clientQuery?: string, limit = 100): Promise<FinanceUnmatchedClient[]> {
   const client = requireSupabaseBrowserClient();
   const { data, error } = await client.rpc('rpc_analytics_finance_unmatched_clients', { p_client_query: clientQuery?.trim() || null, p_limit: limit });
   if (error) throw toAppError(error, 'Falha ao listar empresas sem correspondência no HubSpot.');
   const rows = Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
-  return rows.map((row) => ({ client: String(row.client ?? 'Indisponível'), taxId: row.tax_id ? String(row.tax_id) : null, titles: Number(row.titles ?? 0), balance: Number(row.balance ?? 0), overdueBalance: Number(row.overdue_balance ?? 0), nameMatches: Number(row.name_matches ?? 0) }));
+  return rows.map((row) => ({ client: String(row.client ?? 'Indisponível'), taxId: row.tax_id ? String(row.tax_id) : null, tradeName: row.trade_name ? String(row.trade_name) : null, titles: Number(row.titles ?? 0), balance: Number(row.balance ?? 0), overdueBalance: Number(row.overdue_balance ?? 0), nameMatches: Number(row.name_matches ?? 0) }));
 }
 
 export async function getFinanceSourceStatus(): Promise<FinanceSourceStatus> {

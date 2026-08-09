@@ -3,7 +3,7 @@ import { requireSupabaseBrowserClient } from '../../app/supabase-browser';
 
 type Row = Record<string, unknown>;
 export type ReconciliationCandidate = { companyId: string; companyName: string; taxId: string | null; score: number | null; reason: string; decision: 'suggested' | 'confirmed' | 'discarded' };
-export type ReconciliationItem = { sourceKey: string; sourceName: string; sourceTaxId: string | null; titleCount: number; totalBalance: number; status: 'pending' | 'confirmed'; candidates: ReconciliationCandidate[] };
+export type ReconciliationItem = { sourceKey: string; sourceName: string; sourceTradeName: string | null; sourceTaxId: string | null; titleCount: number; totalBalance: number; status: 'pending' | 'confirmed'; candidates: ReconciliationCandidate[] };
 export type ReconciliationQueue = { summary: { total: number; confirmed: number; pending: number }; items: ReconciliationItem[] };
 
 const asText = (value: unknown) => typeof value === 'string' ? value.trim() : '';
@@ -28,7 +28,7 @@ function mapQueue(value: unknown): ReconciliationQueue {
     const sourceKey = asText(row.source_key);
     const sourceName = asText(row.source_name);
     if (!sourceKey || !sourceName) return [];
-    return [{ sourceKey, sourceName, sourceTaxId: asText(row.source_tax_id) || null, titleCount: asNumber(row.title_count), totalBalance: asNumber(row.total_balance), status: row.status === 'confirmed' ? 'confirmed' : 'pending', candidates: (Array.isArray(row.candidates) ? row.candidates : []).flatMap((candidate) => { const mapped = mapCandidate(candidate); return mapped ? [mapped] : []; }) }];
+    return [{ sourceKey, sourceName, sourceTradeName: asText(row.source_trade_name) || null, sourceTaxId: asText(row.source_tax_id) || null, titleCount: asNumber(row.title_count), totalBalance: asNumber(row.total_balance), status: row.status === 'confirmed' ? 'confirmed' : 'pending', candidates: (Array.isArray(row.candidates) ? row.candidates : []).flatMap((candidate) => { const mapped = mapCandidate(candidate); return mapped ? [mapped] : []; }) }];
   }) : [];
   return { summary: { total: asNumber(summary.total), confirmed: asNumber(summary.confirmed), pending: asNumber(summary.pending) }, items };
 }

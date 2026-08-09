@@ -1,5 +1,7 @@
 # Genius Support OS — Design System V3
 
+> **Lock Configuration PO V2 — 2026-08-09.** Para as seis telas administrativas do contrato, o modo escuro é a referência primária e o modo claro só é aceito como variação do tema interno. Superfícies são compactas, sem gradientes, excesso de sombra, cor por domínio ou valores simulados. A fonte, permissões, estados e ações continuam derivadas dos contratos reais.
+
 > **Precedência localizada — 2026-08-09.** O contrato `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md` substitui direções conflitantes para o shell e as superfícies administrativas de Usuários, Histórico, Fontes e Integrações. Em especial, 1920×1080 não é a única composição, rail colapsado não empurra conteúdo, o Gênio não usa linguagem sobrenatural e cores não codificam domínio. Este documento preserva o contexto anterior para as demais superfícies.
 
 ## 1. Finalidade
