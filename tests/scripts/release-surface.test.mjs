@@ -33,6 +33,7 @@ const PUBLISHED_ROUTES = [
   '/admin/knowledge/new',
   '/admin/knowledge/1f0d9b6e-0000-4000-8000-000000000000/edit',
   '/admin/settings',
+  '/admin/cockpit',
   // `/admin/access` passou a ser publicada no manifesto (tela `access`).
   '/admin/access',
 ];
@@ -132,7 +133,7 @@ test('publishes exactly the approved internal routes', () => {
   assert.deepEqual(
     listReleaseRoutes().map((route) => route.path),
     // `/admin/access` acompanha a publicacao da tela `access`.
-    ['/admin/analytics', '/admin/knowledge', '/admin/settings', '/admin/access'],
+    ['/admin/analytics', '/admin/knowledge', '/admin/settings', '/admin/cockpit', '/admin/access'],
   );
 });
 
@@ -141,6 +142,7 @@ test('every published route resolves to its screen key', () => {
   assert.equal(resolveReleaseRouteScreenKey('/admin/knowledge/new'), 'knowledge');
   assert.equal(resolveReleaseRouteScreenKey('/admin/knowledge/abc/edit'), 'knowledge');
   assert.equal(resolveReleaseRouteScreenKey('/admin/settings'), 'settings');
+  assert.equal(resolveReleaseRouteScreenKey('/admin/cockpit'), 'settings');
   // Rota publicada nova: precisa resolver para a propria tela `access`.
   assert.equal(resolveReleaseRouteScreenKey('/admin/access'), 'access');
   assert.equal(resolveReleaseRouteScreenKey('/admin/tenants'), null);
@@ -184,6 +186,16 @@ test('the full mode restores the complete system', () => {
   }
   assert.equal(resolveReleaseRedirect('/inicio'), null);
   assert.equal(getReleaseLandingRoute(), null);
+});
+
+test('cockpit administrativo usa a permissao de Configurações', () => {
+  const context = platformAdminContext();
+  assert.equal(canOpenInternalRoute('/admin/cockpit', context), true);
+  assert.equal(canOpenInternalRoute('/admin/cockpit', {
+    ...context,
+    roles: [],
+    screenKeys: ['analytics'],
+  }), false);
 });
 
 // ------------------------------------------------------------- redirects
@@ -290,6 +302,7 @@ test('platform_admin sidebar shows only the released surfaces', () => {
     'admin-knowledge-new',
     'public-help-center',
     'admin-access',
+    'admin-cockpit',
     'admin-settings-integrations',
     'admin-settings-dashboard-sources',
     'admin-settings-sync-history',

@@ -5,9 +5,40 @@ export interface AnalyticsOperationOption {
   source: 'pending' | 'suggested' | 'confirmed';
 }
 
+const sourcePriority: Record<AnalyticsOperationOption['source'], number> = {
+  confirmed: 0,
+  suggested: 1,
+  pending: 2,
+};
+
+/**
+ * Um mesmo agrupamento pode ser dono de diversos pipelines. O seletor mostra
+ * a operacao, nao o pipeline: por isso cada valor aparece uma unica vez.
+ * Quando coexistem sugestao e confirmacao para o mesmo nome, a confirmacao
+ * prevalece sem alterar o valor que segue para as RPCs de Analytics.
+ */
+export function dedupeAnalyticsOperationOptions(options: AnalyticsOperationOption[]) {
+  const unique = new Map<string, AnalyticsOperationOption>();
+
+  for (const option of options) {
+    const value = option.value.trim().replace(/\s+/g, ' ');
+    if (!value || value === 'a_definir') continue;
+
+    const key = value.toLocaleLowerCase('pt-BR');
+    const current = unique.get(key);
+    if (!current || sourcePriority[option.source] < sourcePriority[current.source]) {
+      unique.set(key, { ...option, value });
+    }
+  }
+
+  return [...unique.values()].sort((left, right) =>
+    left.value.localeCompare(right.value, 'pt-BR', { sensitivity: 'base' }),
+  );
+}
+
 export function AnalyticsOperationScope({ storageKey, options, value, onChange }: { storageKey: string; options: AnalyticsOperationOption[]; value: string; onChange: (value: string) => void }) {
   const [restored, setRestored] = useState(false);
-  const visible = useMemo(() => options.filter((option) => option.value && option.value !== 'a_definir'), [options]);
+  const visible = useMemo(() => dedupeAnalyticsOperationOptions(options), [options]);
 
   useEffect(() => {
     if (restored || visible.length === 0) return;

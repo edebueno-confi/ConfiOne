@@ -424,16 +424,61 @@ function isPublishedIntegrationProvider(value: unknown): value is ManagedIntegra
   return value === 'hubspot' || value === 'omie';
 }
 
+function sourceRunState(value: unknown): Pick<ManagedIntegration, 'lastRunAt' | 'lastRunStatus' | 'lastErrorMessage'> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const source = value as Record<string, unknown>;
+  const lastRunAt = typeof source.lastAttemptAt === 'string' && source.lastAttemptAt.trim()
+    ? source.lastAttemptAt
+    : null;
+  if (!lastRunAt) return null;
+
+  const execution = String(source.executionStatus ?? source.currentRunStatus ?? source.status ?? '').toLowerCase();
+  const lastRunStatus: ManagedIntegration['lastRunStatus'] =
+    execution === 'success' || execution === 'succeeded' || execution === 'fresh' || execution === 'stale'
+      ? 'success'
+      : execution === 'partial' || execution === 'empty'
+        ? 'partial'
+        : execution === 'error' || execution === 'failed' || execution === 'abandoned'
+          ? 'error'
+          : 'never';
+
+  return {
+    lastRunAt,
+    lastRunStatus,
+    lastErrorMessage:
+      typeof source.sanitizedError === 'string'
+        ? source.sanitizedError
+        : typeof source.error === 'string'
+          ? source.error
+          : null,
+  };
+}
+
 export async function listManagedIntegrations(): Promise<ManagedIntegration[]> {
   const client = requireSupabaseBrowserClient();
-  const { data, error } = await client
-    .from('vw_admin_managed_integrations')
-    .select('*')
-    .order('label', { ascending: true });
+  const [{ data, error }, { data: sourceStatus, error: sourceStatusError }] = await Promise.all([
+    client
+      .from('vw_admin_managed_integrations')
+      .select('*')
+      .order('label', { ascending: true }),
+    client.rpc('rpc_analytics_source_status'),
+  ]);
   if (error) throw new Error(error.message);
+
+  const sourceRuns = !sourceStatusError && sourceStatus && typeof sourceStatus === 'object' && !Array.isArray(sourceStatus)
+    ? new Map(
+      (['hubspot', 'omie'] as const)
+        .map((provider) => [provider, sourceRunState((sourceStatus as Record<string, unknown>)[provider])] as const)
+        .filter((entry): entry is readonly [ManagedIntegration['provider'], NonNullable<ReturnType<typeof sourceRunState>>] => entry[1] !== null),
+    )
+    : new Map<ManagedIntegration['provider'], NonNullable<ReturnType<typeof sourceRunState>>>();
+
   return (data ?? [])
     .filter((row) => isPublishedIntegrationProvider((row as Record<string, unknown>).provider))
-    .map((row) => mapManagedIntegration(row as Record<string, unknown>));
+    .map((row) => {
+      const integration = mapManagedIntegration(row as Record<string, unknown>);
+      return { ...integration, ...(sourceRuns.get(integration.provider) ?? {}) };
+    });
 }
 
 export async function saveManagedIntegration(input: {
