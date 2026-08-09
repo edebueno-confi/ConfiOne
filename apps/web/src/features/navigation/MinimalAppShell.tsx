@@ -141,7 +141,7 @@ function ShellNavigation({
 
   const scheduleFlyoutClose = useCallback(() => {
     cancelFlyoutClose();
-    flyoutCloseTimerRef.current = window.setTimeout(() => closeFlyout(false), 140);
+    flyoutCloseTimerRef.current = window.setTimeout(() => closeFlyout(false), 350);
   }, [cancelFlyoutClose, closeFlyout]);
 
   const openFlyoutForSection = useCallback((section: NavigationSection, target: HTMLButtonElement) => {
@@ -150,7 +150,7 @@ function ShellNavigation({
     const triggerBounds = target.getBoundingClientRect();
     setFlyoutAnchor({
       top: Math.max(8, Math.min(triggerBounds.top, window.innerHeight - 280)),
-      left: triggerBounds.right + 8,
+      left: triggerBounds.right + 4,
     });
     setOpenFlyoutSectionId(section.id);
   }, [cancelFlyoutClose]);
@@ -509,7 +509,7 @@ function ShellTopbar({
   }, [userMenuOpen]);
 
   return (
-    <header className="gso-topbar bg-[color:var(--gso-topbar-bg,#0E1627)] border-b border-[color:var(--gso-border,#22324D)]">
+    <header className="gso-topbar relative z-40 bg-[color:var(--gso-topbar-bg,#0E1627)] border-b border-[color:var(--gso-border,#22324D)]">
       <button
         ref={mobileMenuButtonRef}
         aria-expanded={mobileNavigationOpen}
@@ -560,7 +560,7 @@ function ShellTopbar({
       </div>
 
       {/* Extremo direito: MENU DO USUÁRIO ÚNICO */}
-      <div className="gso-topbar-actions relative" ref={userMenuRef}>
+      <div className="gso-topbar-actions relative z-50" ref={userMenuRef}>
         <button
           aria-expanded={userMenuOpen}
           aria-haspopup="menu"

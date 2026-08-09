@@ -1094,6 +1094,8 @@
   padding: 0 16px;
   border-bottom: 1px solid var(--minimal-border);
   background: var(--minimal-surface);
+  position: relative;
+  z-index: 40;
 }
 .gso-topbar-icon-button {
   display: inline-flex;
@@ -7282,6 +7284,15 @@ table {
   box-shadow: 0 20px 48px rgba(2, 8, 24, 0.55) !important;
   opacity: 1 !important;
   backdrop-filter: none !important;
+}
+.gso-nav-flyout::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  bottom: -12px;
+  left: -16px;
+  width: 16px;
+  background: transparent;
 }
 .gso-nav-flyout-scrim {
   z-index: 79 !important;
