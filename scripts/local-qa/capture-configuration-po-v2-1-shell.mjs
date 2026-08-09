@@ -127,12 +127,22 @@ try {
   }
 
   measurements.expanded = await measure(page);
-  await shot(page, 'shell-admin-expanded-1366-dark', 'sidebar expandida');
+  await shot(page, 'shell-v3-expanded-1366-dark', 'sidebar expandida');
+
+  // Captura do menu de usuario aberto
+  const userMenuTrigger = page.locator('.gso-topbar-actions button').first();
+  if (await userMenuTrigger.count()) {
+    await userMenuTrigger.click();
+    await page.waitForTimeout(400);
+    await shot(page, 'shell-v3-user-menu-open-1366-dark', 'menu do usuario aberto');
+    await userMenuTrigger.click();
+    await page.waitForTimeout(300);
+  }
 
   await page.getByRole('button', { name: /recolher menu lateral/i }).click();
   await page.waitForTimeout(400);
   measurements.collapsed = await measure(page);
-  await shot(page, 'shell-admin-collapsed-1366-dark', 'sidebar recolhida');
+  await shot(page, 'shell-v3-collapsed-1366-dark', 'sidebar recolhida');
 
   // O flyout so existe no estado recolhido. Mede-se o conteudo antes e depois
   // para provar que o overlay nao empurra o layout.
@@ -154,7 +164,7 @@ try {
       mainBeforeFlyout.width !== measurements.flyout.main.width,
     flyoutRendered: measurements.flyout.flyout !== null,
   };
-  await shot(page, 'shell-admin-flyout-1366-dark', 'submenu flutuante sobre a sidebar recolhida');
+  await shot(page, 'shell-v3-flyout-1366-dark', 'submenu flutuante sobre a sidebar recolhida');
 
   await context.close();
 } finally {
