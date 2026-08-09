@@ -2,10 +2,10 @@
 
 ## Lote atual — Admin Configuration Visual Rebuild V1 — 2026-08-09
 
-- Implementar somente shell/sidebar e as superfícies administrativas de Usuários, Histórico, Fontes e Integrações segundo `ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md`.
-- O menu deve reutilizar catálogo de telas e guards existentes; rail colapsado abre flyout overlay, sem deslocar o conteúdo.
-- Reutilizar primitivas de Settings e Access. Ações, dados e providers sem capability real permanecem omitidos; HubSpot e OMIE seguem como integrações publicadas.
-- Encerrar com QA dark em 1366×768, 1440×900, 1024×768 e 390×844, testes focados, typecheck/build, secret scan e quality gates. O lote não autoriza push, deploy, sync, migração, reset ou mudança de segredo.
+- Concluído localmente: shell/sidebar e as superfícies administrativas de Usuários, Histórico, Fontes e Integrações alinhados a `ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md`.
+- Menu continua derivado do catálogo de telas e guards existentes; o rail colapsado usa flyout overlay sem deslocar conteúdo, com fechamento por seleção, clique externo e `Esc`.
+- Primitivas de Settings e Access, ações e fontes reais foram preservadas. HubSpot e OMIE seguem como integrações publicadas, sem revelar credenciais.
+- Fechado com QA dark em 1366×768, 1440×900, 1024×768 e 390×844, testes focados, typecheck, build, secret scan e quality gates. Não houve push, deploy, sync, migração, reset ou mudança de segredo.
 
 ## Fila consolidada para o MVP de deploy — Product Owner — 2026-08-03
 

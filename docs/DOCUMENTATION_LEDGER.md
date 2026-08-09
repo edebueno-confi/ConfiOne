@@ -6,7 +6,7 @@
 - **Decisão:** `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md` passa a ser a precedência visual localizada. Ele substitui apenas direções conflitantes de 1920×1080 único, submenu que desloca conteúdo, Gênio sobrenatural, cor por domínio, iconografia decorativa e Configurações tratadas como analytics.
 - **Referências:** cinco PNGs aprovados, todos 1672×941, foram identificados e versionados em `docs/design/blueprint/Configuration PO/`.
 - **Mapa:** `docs/reports/2026-08-09_admin-configuration-blueprint-component-map.md` registra REUSE/ADAPT/NEW/OMIT antes de runtime. A fonte de permissão confirmada é a navegação derivada do catálogo/guard real; nenhum papel ou ação foi inventado.
-- **Risco restante:** implementação e QA real ainda pendentes; não há autorização deste lote para push, deploy, sync externo, migration remota, reset ou secret.
+- **Fechamento local:** implementação e QA real registrados em `docs/reports/2026-08-09_admin-configuration-visual-rebuild-v1.md`. Não houve push, deploy, sync externo, migration remota, reset ou alteração de secret.
 
 ## Registro corrente — Dashboard por domínios — 2026-08-03
 
