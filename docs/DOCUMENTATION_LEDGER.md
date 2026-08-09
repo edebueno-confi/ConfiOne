@@ -7202,3 +7202,25 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
   `exhaustive-deps` seguem abertos em telas publicadas, listados no relatório;
   nenhum backend, contrato, RPC, view ou permissão alterado.
 - Impacto futuro na FAQ: nenhum.
+
+## CONFIG-PO-V2.1-01 — Fidelity delta de Configuration PO — 2026-08-09
+
+- Relatório: `docs/reports/2026-08-09_configuration-po-v2-1-fidelity-delta.md`.
+- Branch: `codex/admin-configuration-visual-v1` (em `718b988`).
+- Cumpre o bloqueio obrigatório da seção 2 do handoff
+  `docs/reports/2026-08-09_handoff-claude-configuration-po-v2-1.md`: delta região a
+  região entre o blueprint aprovado `docs/design/blueprint/Configuration PO/v2/` e o
+  runtime V2 rejeitado, em 1366×768 tema escuro.
+- Baseline reutilizado, sem novas capturas:
+  `output/playwright/2026-08-09-configuration-po-v2-final/screenshots/1366x768/`.
+- Resultado: 6 de 6 telas reprovadas no gate factual, além do shell. Regiões ausentes
+  (9), substituídas (7) e inventadas (2) estão listadas por tela, com o ponto de
+  correção no código.
+- Decisão registrada: vazio de dados vira estado vazio dentro da região aprovada;
+  nunca justifica remover a região. Taxonomia da sidebar classificada como *a
+  verificar* porque `features/navigation/minimal-navigation.ts` admite duas variantes
+  conforme permissão efetiva.
+- Limites: nenhum código, banco, migration, secret, deploy ou push tocado; nenhuma
+  suíte executada; CI da PR #34 não consultado; viewports 1440/1024/390 e tema claro
+  fora de escopo até o gate de 1366 passar.
+- Impacto futuro na FAQ: nenhum.

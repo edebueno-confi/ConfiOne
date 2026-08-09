@@ -12,7 +12,8 @@ import { GeniusGlobalSearch } from './GeniusGlobalSearch';
 import '../settings/settings-ui.css';
 import {
   buildMinimalNavigation,
-  resolveMinimalRouteLabel,
+  resolveMinimalBreadcrumb,
+  type MinimalBreadcrumbSegment,
   type MinimalNavigationIcon,
   type MinimalNavigationItem,
   type MinimalNavigationPermissions,
@@ -362,26 +363,11 @@ function GeniusSidebar({
             <GeniusLamp animated={false} size="sm" />
           </SidebarIconButton>
         ) : (
-          <>
-            <Link aria-label="GeniusOS" className="gso-brand-lockup" to="/">
-              <GeniusLamp animated={false} size="sm" />
-              <span>Genius<span className="text-[color:var(--genius-site-pink)]">OS</span></span>
-            </Link>
-            <SidebarIconButton label="Recolher menu lateral" onClick={onCollapse}>
-              <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6" /></svg>
-            </SidebarIconButton>
-          </>
+          <Link aria-label="GeniusOS" className="gso-brand-lockup" to="/">
+            <GeniusLamp animated={false} size="sm" />
+            <span>Genius<span className="text-[color:var(--genius-site-pink)]">OS</span></span>
+          </Link>
         )}
-      </div>
-
-      <div className="gso-sidebar-search">
-        <GeniusGlobalSearch
-          compact={collapsed}
-          permissions={{
-            isPlatformAdmin: permissions.isPlatformAdmin || (permissions.roles ?? []).includes('platform_admin'),
-            screenKeys: permissions.screenKeys ?? [],
-          }}
-        />
       </div>
 
       <div className="gso-sidebar-nav">
@@ -412,8 +398,143 @@ function GeniusSidebar({
           <button className="gso-sidebar-menu-action" onClick={() => navigate('/admin/settings')} role="menuitem" type="button">Preferências</button>
           <button className="gso-sidebar-menu-action gso-sidebar-menu-action--danger" onClick={() => void signOut()} role="menuitem" type="button">Encerrar sessão</button>
         </div> : null}
+        {/* O blueprint ancora o controle de recolher no rodape da sidebar. O
+            atalho Ctrl/Cmd+B e a persistencia continuam no shell. */}
+        <button
+          aria-label={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
+          className="gso-sidebar-collapse-action"
+          onClick={onCollapse}
+          title="Atalho: Ctrl/Cmd+B"
+          type="button"
+        >
+          <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24">
+            <path d={collapsed ? 'm9 6 6 6-6 6' : 'm15 6-6 6 6 6'} />
+          </svg>
+          {!collapsed ? <span>Recolher menu</span> : null}
+        </button>
       </div>
     </aside>
+  );
+}
+
+/**
+ * Shared topbar primitive for the administrative shell.
+ *
+ * The Configuration PO blueprint puts a single horizontal band above the canvas
+ * carrying the back affordance, the breadcrumb trail, the global search, the
+ * theme control and the signed-in identity. It is declared once here so no page
+ * reimplements its own header band.
+ */
+function ShellTopbar({
+  breadcrumb,
+  canGoBack,
+  email,
+  fullName,
+  mobileMenuButtonRef,
+  mobileNavigationOpen,
+  onToggleMobileNavigation,
+  permissions,
+  signOut,
+  userSubtitle,
+  userTitle,
+}: {
+  breadcrumb: MinimalBreadcrumbSegment[];
+  canGoBack: boolean;
+  email: string | null;
+  fullName: string | null;
+  mobileMenuButtonRef: React.RefObject<HTMLButtonElement | null>;
+  mobileNavigationOpen: boolean;
+  onToggleMobileNavigation: () => void;
+  permissions: MinimalNavigationPermissions;
+  signOut: () => Promise<void>;
+  userSubtitle: string;
+  userTitle: string;
+}) {
+  const navigate = useNavigate();
+  const searchPermissions = useMemo(
+    () => ({
+      isPlatformAdmin: permissions.isPlatformAdmin || (permissions.roles ?? []).includes('platform_admin'),
+      screenKeys: permissions.screenKeys ?? [],
+    }),
+    [permissions],
+  );
+
+  return (
+    <header className="gso-topbar">
+      <button
+        ref={mobileMenuButtonRef}
+        aria-expanded={mobileNavigationOpen}
+        aria-controls="gso-mobile-navigation"
+        aria-label="Abrir navegação"
+        className="gso-topbar-icon-button gso-topbar-menu-button"
+        onClick={onToggleMobileNavigation}
+        type="button"
+      >
+        <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" viewBox="0 0 24 24">
+          <path d="M5 7h14M5 12h14M5 17h14" />
+        </svg>
+      </button>
+      {canGoBack ? (
+        <button
+          aria-label="Voltar para a superfície anterior"
+          className="gso-topbar-icon-button gso-topbar-back-button"
+          onClick={() => navigate(-1)}
+          type="button"
+        >
+          <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24">
+            <path d="m15 6-6 6 6 6" />
+          </svg>
+        </button>
+      ) : null}
+      <nav aria-label="Trilha de navegação" className="gso-topbar-breadcrumb">
+        <ol>
+          {breadcrumb.map((segment, index) => {
+            const isLast = index === breadcrumb.length - 1;
+            return (
+              <li key={`${segment.label}-${index}`}>
+                {segment.to && !isLast ? (
+                  <Link to={segment.to}>{segment.label}</Link>
+                ) : (
+                  <span aria-current={isLast ? 'page' : undefined} data-current={isLast ? 'true' : undefined}>
+                    {segment.label}
+                  </span>
+                )}
+                {!isLast ? <span aria-hidden="true" className="gso-topbar-breadcrumb-separator">/</span> : null}
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+      {/* Busca global do Gênio: capability real do produto, preservada em
+          posição discreta dentro da topbar para não disputar a composição
+          principal das telas. */}
+      <div className="gso-topbar-search">
+        <GeniusGlobalSearch permissions={searchPermissions} />
+      </div>
+      <div className="gso-topbar-actions">
+        <ThemeToggle />
+        <div className="gso-topbar-identity">
+          <Avatar email={email} name={fullName} size="sm" label={`Perfil de ${userTitle}`} />
+          <div className="gso-topbar-identity-text">
+            <p>{userTitle}</p>
+            <p>{userSubtitle}</p>
+          </div>
+          <button aria-label="Encerrar sessão" className="gso-topbar-icon-button" onClick={() => void signOut()} type="button">
+            <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24">
+              <path d="M14.5 7.5 19 12l-4.5 4.5M19 12H9M11 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H11" />
+            </svg>
+          </button>
+        </div>
+        <Avatar
+          className="sm:hidden"
+          email={email}
+          label={`Encerrar sessão de ${userTitle}`}
+          name={fullName}
+          onClick={() => void signOut()}
+          size="md"
+        />
+      </div>
+    </header>
   );
 }
 
@@ -444,7 +565,7 @@ export function MinimalAppShell({
   const fullName = String(user?.user_metadata?.full_name ?? '').trim() || null;
   const email = user?.email ?? null;
   const userTitle = fullName ?? email ?? 'Operador interno';
-  const routeLabel = resolveMinimalRouteLabel(location.pathname);
+  const breadcrumb = useMemo(() => resolveMinimalBreadcrumb(location.pathname), [location.pathname]);
 
   useEffect(() => {
     setMobileNavigationOpen(false);
@@ -576,62 +697,19 @@ export function MinimalAppShell({
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <header className="gso-topbar relative flex h-[var(--shell-topbar-height)] shrink-0 items-center gap-3 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-3 sm:px-4">
-            <button
-              ref={mobileMenuButtonRef}
-              aria-expanded={mobileNavigationOpen}
-              aria-controls="gso-mobile-navigation"
-              aria-label="Abrir navegação"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-md text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] lg:hidden"
-              onClick={() => setMobileNavigationOpen((current) => !current)}
-              type="button"
-            >
-              <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" viewBox="0 0 24 24">
-                <path d="M5 7h14M5 12h14M5 17h14" />
-              </svg>
-            </button>
-            <button
-              aria-label={sidebarCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
-              className="hidden h-11 w-11 items-center justify-center rounded-md text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)] lg:inline-flex"
-              onClick={() => setSidebarCollapsed((current) => !current)}
-              title="Atalho: Ctrl/Cmd+B"
-              type="button"
-            >
-              <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24">
-                <path d={sidebarCollapsed ? 'm10 6 6 6-6 6' : 'm14 6-6 6 6 6'} />
-              </svg>
-            </button>
-            <p className="hidden max-w-[220px] truncate text-sm text-[color:var(--minimal-text-secondary)] lg:block">
-              <span className="font-medium text-[color:var(--minimal-text)]">{routeLabel}</span>
-            </p>
-            {/* Busca global do Genio: centralizada no header, em todas as telas.
-                Absoluta para ficar no centro otico independente da largura dos
-                clusters da esquerda e da direita. */}
-            <div className="pointer-events-none absolute left-1/2 top-1/2 hidden w-full max-w-xl -translate-x-1/2 -translate-y-1/2 justify-center px-4 md:flex">
-              <div className="pointer-events-auto w-full">
-                <GeniusGlobalSearch
-                  permissions={{
-                    isPlatformAdmin: permissions.isPlatformAdmin || (permissions.roles ?? []).includes('platform_admin'),
-                    screenKeys: permissions.screenKeys ?? [],
-                  }}
-                />
-              </div>
-            </div>
-            <div className="ml-auto flex items-center gap-2">
-              <ThemeToggle />
-              <div className="hidden items-center gap-2 border-l border-[color:var(--minimal-border)] pl-3 sm:flex">
-                <Avatar email={email} name={fullName} size="sm" label={`Perfil de ${userTitle}`} />
-                <div className="max-w-[180px] leading-tight">
-                  <p className="truncate text-xs font-medium text-[color:var(--minimal-text)]">{userTitle}</p>
-                  <p className="truncate text-[10px] text-[color:var(--minimal-text-tertiary)]">{userSubtitle}</p>
-                </div>
-                <button aria-label="Encerrar sessão" className="inline-flex h-11 w-11 items-center justify-center rounded-md text-[color:var(--minimal-text-tertiary)] hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]" onClick={() => void signOut()} type="button">
-                  <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M14.5 7.5 19 12l-4.5 4.5M19 12H9M11 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H11" /></svg>
-                </button>
-              </div>
-              <Avatar email={email} name={fullName} onClick={() => void signOut()} size="md" label={`Encerrar sessão de ${userTitle}`} className="sm:hidden" />
-            </div>
-          </header>
+          <ShellTopbar
+            breadcrumb={breadcrumb}
+            canGoBack={breadcrumb.length > 1}
+            email={email}
+            fullName={fullName}
+            mobileMenuButtonRef={mobileMenuButtonRef}
+            mobileNavigationOpen={mobileNavigationOpen}
+            onToggleMobileNavigation={() => setMobileNavigationOpen((current) => !current)}
+            permissions={permissions}
+            signOut={signOut}
+            userSubtitle={userSubtitle}
+            userTitle={userTitle}
+          />
 
           {mobileNavigationOpen ? (
             <div className="fixed inset-0 z-40 lg:hidden" id="gso-mobile-navigation">

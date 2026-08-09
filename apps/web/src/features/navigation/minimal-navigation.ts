@@ -269,3 +269,36 @@ export function resolveMinimalRouteLabel(pathname: string) {
   ];
   return routes.find(([basePath]) => matchesBase(pathname, basePath))?.[1] ?? 'GeniusOS';
 }
+
+export type MinimalBreadcrumbSegment = {
+  label: string;
+  to?: string;
+};
+
+/**
+ * Breadcrumb trail for the shared topbar.
+ *
+ * The trail is derived from the same route table and the same settings submenu
+ * that build the sidebar, so it never announces a surface that the navigation
+ * model does not know about. The root segment is always the product; the last
+ * segment is always the current surface and carries no link.
+ */
+export function resolveMinimalBreadcrumb(pathname: string): MinimalBreadcrumbSegment[] {
+  const root: MinimalBreadcrumbSegment = { label: 'GeniusOS', to: '/' };
+  const routeLabel = resolveMinimalRouteLabel(pathname);
+
+  if (matchesBase(pathname, '/admin/settings')) {
+    const leaf = RELEASE_SETTINGS_SUBMENU.find((entry) => matchesBase(pathname, entry.to));
+    if (leaf) {
+      return [root, { label: 'Configurações', to: '/admin/settings' }, { label: leaf.label }];
+    }
+    return [root, { label: 'Configurações', to: '/admin/settings' }, { label: 'Configurações gerais' }];
+  }
+
+  if (matchesBase(pathname, '/admin/access') || matchesBase(pathname, '/admin/internal-areas')) {
+    return [root, { label: 'Configurações', to: '/admin/settings' }, { label: 'Usuários e acessos' }];
+  }
+
+  if (routeLabel === 'GeniusOS') return [root];
+  return [root, { label: routeLabel }];
+}

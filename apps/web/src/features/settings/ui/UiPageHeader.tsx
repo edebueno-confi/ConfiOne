@@ -1,16 +1,18 @@
 import type { ReactNode } from 'react';
-import { Link } from 'react-router';
 
 /**
- * Cabecalho de uma tela de Configuracoes: trilha curta, titulo grande na fonte
- * de corpo, descricao e as acoes da propria tela. Sem rotulo em caixa alta.
+ * Cabecalho de uma tela de Configuracoes: titulo, descricao e as acoes da
+ * propria tela. Sem rotulo em caixa alta.
+ *
+ * Configuration PO V2.1: a trilha de navegacao pertence a topbar compartilhada
+ * do shell. Mante-la aqui produzia dois breadcrumbs empilhados, o que o
+ * blueprint aprovado nao tem. Os parametros de trilha continuam aceitos para
+ * nao quebrar as chamadas existentes, mas nao renderizam nada.
  */
 export function UiPageHeader({
   actions,
   description,
   meta,
-  parentHref = '/admin/settings/integrations',
-  parentLabel = 'Configurações',
   title,
   titleId,
 }: {
@@ -25,11 +27,6 @@ export function UiPageHeader({
   return (
     <header className="gso-ui-header">
       <div className="gso-ui-header-heading">
-        <nav aria-label="Trilha de navegação" className="gso-ui-crumbs">
-          <Link to={parentHref}>{parentLabel}</Link>
-          <span aria-hidden="true">/</span>
-          <span aria-current="page">{title}</span>
-        </nav>
         <h2 id={titleId}>{title}</h2>
         {description ? <p>{description}</p> : null}
       </div>
