@@ -720,20 +720,124 @@
 .gso-ui-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; min-width: 0; }
 .gso-ui-rail { display: grid; align-content: start; gap: 1.25rem; min-width: 0; }
 
-/* Lock V2: Integrações tem dois provedores equivalentes na primeira dobra.
-   A edição de segredo fica recolhida porque é um comando, não o assunto
-   dominante da página. */
-.gso-po-v2-integrations .gso-ui-body { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
-.gso-po-v2-integrations .gso-ui-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
-.gso-po-v2-integrations .gso-ui-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
-.gso-po-v2-provider-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid var(--ui-border); }
-.gso-po-v2-provider-actions details { min-width: 0; }
-.gso-po-v2-provider-actions summary { cursor: pointer; color: var(--ui-text); font-size: 0.8rem; font-weight: 600; }
-.gso-po-v2-provider-actions > a { color: var(--ui-primary-ink); font-size: 0.8rem; font-weight: 600; }
-.gso-po-v2-provider-actions details[open] { width: 100%; }
-@media (max-width: 760px) {
-  .gso-po-v2-integrations .gso-ui-cards,
-  .gso-po-v2-integrations .gso-ui-rail { grid-template-columns: 1fr; }
+/* Configuration PO V2.1 — Integrações.
+   Quatro regiões: cabeçalho, dois painéis equivalentes, governança em duas
+   colunas e eventos recentes em largura plena. As medidas seguem a faixa de
+   densidade aprovada: corpo 12–13px, metadados 11–12px, títulos de seção
+   14–17px, padding interno 14–16px. */
+.gso-po-v2-integrations { display: grid; align-content: start; gap: 12px; }
+/* O título da tela usa a faixa aprovada de 22–26px; o padrão de 30px do
+   cabeçalho compartilhado empurrava as quatro regiões para fora da dobra. */
+.gso-po-v2-integrations > .gso-ui-header { padding-block: 0.55rem; }
+.gso-po-v2-integrations > .gso-ui-header h2 { margin-top: 0; font-size: 24px; line-height: 1.2; }
+.gso-po-v2-integrations > .gso-ui-header .gso-ui-header-heading > p { margin-top: 0.2rem; font-size: 13px; line-height: 1.4; }
+.gso-po-v2-integrations .gso-po-policy-list { gap: 6px; }
+.gso-po-v2-integrations .gso-po-region-head p { margin-top: 1px; }
+.gso-po-providers,
+.gso-po-governance { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; min-width: 0; align-items: stretch; }
+
+.gso-po-panel,
+.gso-po-region {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+}
+/* A barra de ações ancora no rodapé para que os dois painéis alinhem, mesmo
+   quando um deles publica um alerta real de falha e o outro não. */
+.gso-po-panel-actions { margin-top: auto; }
+
+.gso-po-panel-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 12px; }
+.gso-po-panel-title { min-width: 0; }
+.gso-po-panel-title h3 { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.25; color: var(--ui-text); }
+.gso-po-panel-title p { margin: 2px 0 0; font-size: 12px; line-height: 1.35; color: var(--ui-text-muted); }
+.gso-po-panel-badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+
+.gso-po-panel-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--ui-border);
+}
+.gso-po-metric { min-width: 0; }
+.gso-po-metric dt { font-size: 11px; line-height: 1.3; color: var(--ui-text-muted); }
+.gso-po-metric-value { margin: 4px 0 0; font-size: 13px; font-weight: 600; line-height: 1.3; color: var(--ui-text); }
+.gso-po-metric-detail { margin: 2px 0 0; font-size: 11px; line-height: 1.35; color: var(--ui-text-muted); }
+.gso-po-tone-success { color: var(--ui-success-ink, var(--ui-text)); }
+.gso-po-tone-warning { color: var(--ui-warning-ink, var(--ui-text)); }
+.gso-po-tone-danger { color: var(--ui-danger-ink, var(--ui-text)); }
+.gso-po-tone-muted { color: var(--ui-text); }
+
+.gso-po-panel-scope { padding-top: 10px; border-top: 1px solid var(--ui-border); }
+.gso-po-panel-scope-label { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--ui-text); }
+.gso-po-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.gso-po-chip {
+  padding: 3px 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--ui-text);
+  background: var(--ui-surface-muted, transparent);
+}
+
+.gso-po-panel-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 10px; border-top: 1px solid var(--ui-border); }
+.gso-po-action {
+  display: inline-flex;
+  height: 32px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ui-text);
+  background: transparent;
+  cursor: pointer;
+}
+.gso-po-action:hover { border-color: var(--ui-border-strong, var(--ui-border)); background: var(--ui-surface-muted, transparent); }
+.gso-po-action:focus-visible { outline: 2px solid var(--ui-focus, var(--minimal-focus)); outline-offset: 2px; }
+.gso-po-panel-form { padding-top: 10px; border-top: 1px solid var(--ui-border); }
+
+.gso-po-region-head h3 { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.25; color: var(--ui-text); }
+.gso-po-region-head p { margin: 2px 0 0; font-size: 12px; line-height: 1.35; color: var(--ui-text-muted); }
+
+.gso-po-scope-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.gso-po-scope-row { display: grid; grid-template-columns: minmax(0, 160px) minmax(0, 1fr); align-items: center; gap: 12px; padding-top: 10px; border-top: 1px solid var(--ui-border); }
+.gso-po-scope-list > .gso-po-scope-row:first-child { padding-top: 0; border-top: 0; }
+.gso-po-scope-provider { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; color: var(--ui-text); }
+
+.gso-po-policy-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.gso-po-policy-list li { display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: start; gap: 8px; font-size: 12px; line-height: 1.4; color: var(--ui-text); }
+.gso-po-policy-list svg { width: 14px; height: 14px; margin-top: 2px; }
+
+.gso-po-table-wrap { overflow-x: auto; }
+.gso-po-table { width: 100%; border-collapse: collapse; }
+.gso-po-table th {
+  height: 30px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--ui-border);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  color: var(--ui-text-muted);
+}
+.gso-po-table td { height: 34px; padding: 0 10px; border-bottom: 1px solid var(--ui-border); font-size: 12px; color: var(--ui-text); }
+.gso-po-table-empty td { height: 48px; text-align: center; color: var(--ui-text-muted); }
+.gso-po-region-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+
+@media (max-width: 900px) {
+  .gso-po-providers,
+  .gso-po-governance { grid-template-columns: minmax(0, 1fr); }
+  .gso-po-panel-metrics { grid-template-columns: minmax(0, 1fr); }
+  .gso-po-scope-row { grid-template-columns: minmax(0, 1fr); }
 }
 .gso-ui-facts { display: grid; gap: 0.5rem; margin: 1rem 0 0; padding: 0; list-style: none; }
 .gso-ui-facts li {

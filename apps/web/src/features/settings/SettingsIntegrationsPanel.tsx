@@ -1,10 +1,8 @@
 import { useMemo, useState } from 'react';
-import { formatDateTime } from '../../app/format';
-import { IntegrationHealthRail } from './integrations/IntegrationHealthRail';
-import { IntegrationProviderCard } from './integrations/IntegrationProviderCard';
-import { IntegrationsSummary } from './integrations/IntegrationsSummary';
-import { SettingsBenefitsFooter } from './integrations/SettingsBenefitsFooter';
-import { summarizeIntegrations } from './integrations/integration-health.mjs';
+import { IntegrationEventsTable } from './integrations/IntegrationEventsTable';
+import { IntegrationProviderPanel } from './integrations/IntegrationProviderPanel';
+import { IntegrationScopesPanel } from './integrations/IntegrationScopesPanel';
+import { IntegrationSecurityPolicy } from './integrations/IntegrationSecurityPolicy';
 import { saveManagedIntegration, type ManagedIntegration } from './settings-api';
 import { UiButton } from './ui/UiButton';
 import { UiEmptyState } from './ui/UiEmptyState';
@@ -164,9 +162,16 @@ function OmieIntegrationForm({ busy, item, onSave }: ProviderFormProps) {
 }
 
 /**
- * Tela de Integracoes: cabecalho, resumo, cards por provedor, rail de
- * governanca e faixa inferior. A tela nao inventa acao nem estado: tudo que
- * aparece vem do read model das integracoes gerenciais.
+ * Tela de Integracoes — composicao aprovada do Configuration PO.
+ *
+ * Quatro regioes, nesta ordem: cabecalho; dois paineis equivalentes de
+ * provedor; permissoes e escopos ao lado da politica de seguranca; eventos
+ * recentes. O trilho de KPIs que a V2 havia introduzido nao existe no blueprint
+ * e foi removido — o estado de cada fonte pertence ao painel da fonte.
+ *
+ * A tela nao inventa acao nem estado: tudo que aparece vem do read model das
+ * integracoes gerenciais, e a ausencia de dado aparece como indisponivel dentro
+ * da regiao, nunca como remocao da regiao.
  */
 export function SettingsIntegrationsPanel({
   busy,
@@ -189,7 +194,6 @@ export function SettingsIntegrationsPanel({
         .sort((left, right) => (left.provider === right.provider ? 0 : left.provider === 'hubspot' ? -1 : 1)),
     [integrations],
   );
-  const summary = useMemo(() => summarizeIntegrations(published), [published]);
 
   const reload = async () => {
     setReloading(true);
@@ -216,45 +220,10 @@ export function SettingsIntegrationsPanel({
             {reloading ? 'Atualizando…' : 'Atualizar estado'}
           </UiButton>
         }
-        description="Credenciais e estado das fontes externas que abastecem o Dashboard Gerencial."
-        meta={summary.updatedAt ? `Última alteração registrada em ${formatDateTime(summary.updatedAt)}` : 'Nenhuma alteração registrada'}
+        description="Conexões, credenciais e status das fontes operacionais."
         title="Integrações"
         titleId="settings-integrations-title"
       />
-
-      <IntegrationsSummary summary={summary} />
-
-      <div className="gso-ui-body">
-        <div className="gso-ui-cards">
-          {published.map((item) =>
-            item.provider === 'omie' ? (
-              <IntegrationProviderCard
-                description="Fonte dos dados financeiros e contas a receber."
-                eyebrow="Financeiro"
-                item={item}
-                key={item.integrationKey}
-                title="OMIE"
-                variant="finance"
-              >
-                <OmieIntegrationForm busy={busy} item={item} onSave={onSave} />
-              </IntegrationProviderCard>
-            ) : (
-              <IntegrationProviderCard
-                description="Fonte de dados comerciais, clientes e atendimentos."
-                eyebrow="Operação"
-                item={item}
-                key={item.integrationKey}
-                title="HubSpot"
-                variant="operation"
-              >
-                <HubSpotIntegrationForm busy={busy} item={item} onSave={onSave} />
-              </IntegrationProviderCard>
-            ),
-          )}
-        </div>
-
-        <IntegrationHealthRail integrations={published} />
-      </div>
 
       {error ? (
         <p className="gso-ui-alert gso-ui-alert--error" role="alert">
@@ -262,7 +231,41 @@ export function SettingsIntegrationsPanel({
         </p>
       ) : null}
 
-      <SettingsBenefitsFooter />
+      {/* B — dois paineis equivalentes, mesma primitive. */}
+      <div className="gso-po-providers">
+        {published.map((item) =>
+          item.provider === 'omie' ? (
+            <IntegrationProviderPanel
+              credentialForm={<OmieIntegrationForm busy={busy} item={item} onSave={onSave} />}
+              description="Fonte dos dados financeiros e contas a receber."
+              eyebrow="Financeiro"
+              item={item}
+              key={item.integrationKey}
+              title="OMIE"
+              variant="finance"
+            />
+          ) : (
+            <IntegrationProviderPanel
+              credentialForm={<HubSpotIntegrationForm busy={busy} item={item} onSave={onSave} />}
+              description="Fonte de dados comerciais, clientes e atendimentos."
+              eyebrow="Operação"
+              item={item}
+              key={item.integrationKey}
+              title="HubSpot"
+              variant="operation"
+            />
+          ),
+        )}
+      </div>
+
+      {/* C — governanca: escopos a esquerda, politica a direita. */}
+      <div className="gso-po-governance">
+        <IntegrationScopesPanel integrations={published} />
+        <IntegrationSecurityPolicy />
+      </div>
+
+      {/* D — eventos recentes, estrutural inclusive quando vazia. */}
+      <IntegrationEventsTable />
     </UiPage>
   );
 }
