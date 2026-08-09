@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { formatDateTime } from '../../app/format';
 import { ErrorState, LoadingState } from '../../components/states';
@@ -641,6 +641,50 @@ function UsersPanel(props: {
   const { areas, assignment, busy, capabilities, detail, filters, functions, onAction, onCreate, onResetPassword, onSelect, overrideForm, overrides, profiles, query, selectedUser, setAssignment, setFilters, setOverrideForm, setQuery, users } = props;
   const visibleFunctions = functions.filter((item) => !assignment.areaKey || item.area_key === assignment.areaKey);
   const effectiveCapabilities = Array.isArray(detail?.capabilities) ? (detail?.capabilities as unknown[]).length : null;
+  const [detailOpen, setDetailOpen] = useState(false);
+  const drawerRef = useRef<HTMLElement | null>(null);
+  const drawerTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  function closeDetail() {
+    setDetailOpen(false);
+    window.requestAnimationFrame(() => drawerTriggerRef.current?.focus());
+  }
+
+  useEffect(() => {
+    if (!detailOpen) return;
+
+    const focusable = () => Array.from(
+      drawerRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ) ?? [],
+    );
+    const focusFirst = () => focusable()[0]?.focus();
+    const frame = window.requestAnimationFrame(focusFirst);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeDetail();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const nodes = focusable();
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [detailOpen]);
 
   return (
     <>
@@ -698,7 +742,7 @@ function UsersPanel(props: {
                 return (
                   <tr className={selected ? 'is-selected' : undefined} key={user.user_id}>
                     <td>
-                      <button className="gso-ui-rowselect" onClick={() => onSelect(user)} type="button">
+                      <button className="gso-ui-rowselect" onClick={(event) => { drawerTriggerRef.current = event.currentTarget; onSelect(user); setDetailOpen(true); }} type="button">
                         {user.full_name || 'Sem nome'}
                       </button>
                       <small>{user.email || 'Indisponível'}</small>
@@ -743,11 +787,17 @@ function UsersPanel(props: {
           ) : null}
         </UiCard>
 
-        <aside className="gso-ui-aside">
+        {detailOpen ? <button aria-label="Fechar detalhe do usuário" className="gso-ui-access-drawer-scrim" onClick={closeDetail} type="button" /> : null}
+        <aside aria-label="Detalhe do usuário" aria-modal={detailOpen} className="gso-ui-aside gso-ui-access-drawer" data-open={detailOpen} ref={drawerRef} role={detailOpen ? 'dialog' : undefined}>
           {selectedUser ? (
             <UiCard labelledBy="access-detail-title">
               <UiCardHeader
-                actions={<UiBadge dot tone={statusTone(selectedUser.access_status)}>{statusLabel(selectedUser.access_status)}</UiBadge>}
+                actions={
+                  <>
+                    <UiBadge dot tone={statusTone(selectedUser.access_status)}>{statusLabel(selectedUser.access_status)}</UiBadge>
+                    <UiButton aria-label="Fechar detalhe" compact onClick={closeDetail} variant="ghost">Fechar</UiButton>
+                  </>
+                }
                 description={selectedUser.email || 'E-mail indisponível'}
                 icon="users"
                 title={selectedUser.full_name || 'Usuário interno'}
