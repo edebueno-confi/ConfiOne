@@ -113,7 +113,10 @@
   border-bottom: none !important;
   background: transparent !important;
 }
-.gso-ui-shell-chrome .gso-ui-header { padding: 0 0 1rem 0; }
+/* O chrome do shell nao tinha regua horizontal: o titulo de /admin/access
+   comecava em x=240 (colado na sidebar) enquanto Configuracoes e Dashboard
+   comecavam em x=266. Medido no QA de 2026-08-10. */
+.gso-ui-shell-chrome .gso-ui-header { padding: 0 var(--one-space-page-x) 1rem; }
 @media (max-width: 760px) {
   .gso-ui-page > .gso-ui-header { margin: -1rem -1rem 0; padding: 0.8rem 1rem; }
   .gso-ui-shell-chrome .gso-ui-header { padding-inline: 1rem; }
