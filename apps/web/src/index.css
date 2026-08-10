@@ -5,14 +5,49 @@
   color-scheme: light;
   font-family: 'Instrument Sans', 'Segoe UI', sans-serif;
   --app-viewport-height: 100dvh;
-  --color-app-bg: #f4f7fc;
-  --color-surface-elevated: #ffffff;
-  --color-divider: #e8eef7;
-  --color-text-primary: #162443;
-  --color-text-secondary: #6b7892;
-  --color-text-muted: #98a3b8;
-  --color-text-label: #6b7892;
-  --color-text-caption: #98a3b8;
+
+  /*
+   * CONFI ONE BRAND SYSTEM V1 — Canonical Tokens (Light Baseline)
+   * Shell (Sidebar + Topbar continuous L-shell): #EEF3FA / #F7FAFD
+   * Canvas (Workspace background): #F4F7FB
+   * Surface 1 (Cards, tables, filters, panels): #FFFFFF
+   * Surface 2 (Detail rails, inner areas, contextual selection): #F5F8FC
+   * Surface Interactive (Hover / Focus): #EBF1F9
+   * Borders: Subtle #E2E9F3 | Default #D7E1EE | Strong #BDCBE0
+   * Text: Primary #13233A | Secondary #5E728C | Muted #8295AD | Disabled #A3B3C7
+   * Action Primary: #2D7CFF (Hover #1A6AF0)
+   * Genius Pink (Microaccent signature): #FF4FA3
+   * States: Success #16A34A | Warning #D97706 | Danger #DC2626 | Info #2D7CFF
+   */
+  --one-shell-bg: #EEF3FA;
+  --one-shell-border: #D7E1EE;
+  --one-canvas-bg: #F4F7FB;
+  --one-surface-1: #FFFFFF;
+  --one-surface-2: #F5F8FC;
+  --one-surface-interactive: #EBF1F9;
+  --one-border-subtle: #E2E9F3;
+  --one-border-default: #D7E1EE;
+  --one-border-strong: #BDCBE0;
+  --one-text-primary: #13233A;
+  --one-text-secondary: #5E728C;
+  --one-text-muted: #8295AD;
+  --one-text-disabled: #A3B3C7;
+  --one-action-primary: #2D7CFF;
+  --one-action-primary-hover: #1A6AF0;
+  --one-genius-pink: #FF4FA3;
+  --one-success: #16A34A;
+  --one-warning: #D97706;
+  --one-danger: #DC2626;
+  --one-info: #2D7CFF;
+
+  --color-app-bg: var(--one-canvas-bg);
+  --color-surface-elevated: var(--one-surface-1);
+  --color-divider: var(--one-border-default);
+  --color-text-primary: var(--one-text-primary);
+  --color-text-secondary: var(--one-text-secondary);
+  --color-text-muted: var(--one-text-muted);
+  --color-text-label: var(--one-text-secondary);
+  --color-text-caption: var(--one-text-muted);
   --color-info-surface: #eaf2ff;
   --color-info-border: #d9e9ff;
   --color-info-text: #2f6bff;

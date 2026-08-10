@@ -112,13 +112,13 @@ function fallbackTheme(space: {
   const secondaryHue = (hue + 42) % 360;
 
   return {
-    '--help-surface': 'var(--gso-canvas-bg, #081220)',
-    '--help-surface-strong': 'var(--gso-surface-1, #131E33)',
-    '--help-panel': 'var(--gso-surface-2, #18263F)',
-    '--help-ink': 'var(--one-text-primary, #E6ECF5)',
-    '--help-ink-strong': '#ffffff',
-    '--help-muted': 'var(--one-text-secondary, #A6B2C7)',
-    '--help-border': 'var(--one-border-default, #22324D)',
+    '--help-surface': 'var(--gso-canvas-bg, #F4F7FB)',
+    '--help-surface-strong': 'var(--gso-surface-1, #FFFFFF)',
+    '--help-panel': 'var(--gso-surface-2, #F5F8FC)',
+    '--help-ink': 'var(--one-text-primary, #13233A)',
+    '--help-ink-strong': '#13233A',
+    '--help-muted': 'var(--one-text-secondary, #5E728C)',
+    '--help-border': 'var(--one-border-default, #D7E1EE)',
     '--help-accent': `hsl(${secondaryHue} 70% 48%)`,
     '--help-accent-strong': `hsl(${hue} 60% 22%)`,
     '--help-accent-soft': `hsl(${secondaryHue} 78% 48% / 0.14)`,
