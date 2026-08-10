@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { cx } from '../../components/ui';
 import { GeniusLamp } from '../../components/GeniusLamp';
@@ -264,39 +265,233 @@ function ShellNavigation({
   );
 }
 
-function SidebarIconButton({
-  label,
-  children,
-  onClick,
+/**
+ * Identidade do usuario no rodape da barra lateral.
+ *
+ * Decisao de produto 2026-08-10: o menu do usuario saiu do Global Header e
+ * passou a ser o rodape da sidebar. O header concentra contexto (trilha) e
+ * busca; a sidebar concentra marca, navegacao e identidade. Nao existem os
+ * dois — a identidade tem um unico lugar.
+ *
+ * O popover e renderizado em portal porque `.gso-sidebar` declara
+ * `isolation: isolate`: um filho posicionado nao consegue subir acima do
+ * conteudo apenas por z-index.
+ */
+function SidebarAccount({
+  collapsed,
+  email,
+  fullName,
+  onOpenPreferences,
+  signOut,
+  userSubtitle,
+  userTitle,
 }: {
-  label: string;
-  children: ReactNode;
-  onClick?: () => void;
+  collapsed: boolean;
+  email: string | null;
+  fullName: string | null;
+  onOpenPreferences: () => void;
+  signOut: () => Promise<void>;
+  userSubtitle: string;
+  userTitle: string;
 }) {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [anchor, setAnchor] = useState<{ left: number; bottom: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const closeMenu = useCallback(() => {
+    setOpen(false);
+    triggerRef.current?.focus();
+  }, []);
+
+  const toggleMenu = useCallback(() => {
+    setOpen((current) => {
+      if (current) {
+        return false;
+      }
+
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (rect) {
+        setAnchor({ left: rect.left, bottom: window.innerHeight - rect.top + 8 });
+      }
+
+      return true;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!(event.target instanceof Node)) {
+        return;
+      }
+      if (menuRef.current?.contains(event.target) || triggerRef.current?.contains(event.target)) {
+        return;
+      }
+      setOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closeMenu();
+      }
+    };
+
+    // O popover e ancorado por coordenada calculada no clique; se a janela
+    // mudar de tamanho ou rolar, a ancora deixa de valer.
+    const closeOnViewportChange = () => setOpen(false);
+
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    document.addEventListener('keydown', closeOnEscape);
+    window.addEventListener('resize', closeOnViewportChange);
+
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePointer);
+      document.removeEventListener('keydown', closeOnEscape);
+      window.removeEventListener('resize', closeOnViewportChange);
+    };
+  }, [closeMenu, open]);
+
+  const menuItemClass =
+    'flex h-[36px] w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-xs text-[color:var(--one-text-primary)] hover:bg-[color:var(--one-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--one-border-focus)] transition-colors';
+
   return (
-    <button
-      aria-label={label}
-      className="gso-sidebar-icon-button"
-      onClick={onClick}
-      title={label}
-      type="button"
-    >
-    </button>
+    <>
+      <button
+        ref={triggerRef}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label={`Menu de ${userTitle}`}
+        className={cx(
+          'gso-sidebar-account-trigger flex w-full items-center rounded-[7px] text-left transition-colors',
+          'hover:bg-[color:var(--one-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--one-border-focus)]',
+          collapsed ? 'justify-center px-0 py-1.5' : 'gap-2.5 px-2 py-1.5',
+        )}
+        onClick={toggleMenu}
+        title={collapsed ? `${userTitle} — ${userSubtitle}` : undefined}
+        type="button"
+      >
+        <Avatar email={email} name={fullName} size="sm" label={`Perfil de ${userTitle}`} />
+        {collapsed ? null : (
+          <>
+            <span className="grid min-w-0 flex-1 leading-tight">
+              <span className="truncate text-xs font-semibold text-[color:var(--one-text-primary)]">{userTitle}</span>
+              <span className="truncate text-[10px] text-[color:var(--one-text-secondary)]">{userSubtitle}</span>
+            </span>
+            <svg
+              aria-hidden="true"
+              className={cx(
+                'h-3.5 w-3.5 shrink-0 text-[color:var(--one-text-secondary)] transition-transform',
+                open && 'rotate-180',
+              )}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="m7 10 5 5 5-5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+            </svg>
+          </>
+        )}
+      </button>
+
+      {open && anchor
+        ? createPortal(
+            <div
+              ref={menuRef}
+              className="gso-sidebar-account-portal fixed w-[280px] border border-[color:var(--one-border-strong)] bg-[color:var(--one-panel-bg)] p-2 text-xs text-[color:var(--one-text-primary)]"
+              role="menu"
+              style={{ left: anchor.left, bottom: anchor.bottom }}
+            >
+              <div className="flex items-center gap-2.5 border-b border-[color:var(--one-border-default)] p-2.5 pb-3">
+                <Avatar email={email} name={fullName} size="md" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-semibold text-[color:var(--one-text-primary)]">{userTitle}</p>
+                  {email ? (
+                    <p className="truncate text-[11px] text-[color:var(--one-text-secondary)]">{email}</p>
+                  ) : null}
+                  <span className="mt-1 inline-block rounded border border-[color:var(--one-border-default)] bg-[color:var(--one-panel-elevated-bg)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--one-text-secondary)]">
+                    {userSubtitle}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-0.5 py-1.5">
+                <button
+                  className={menuItemClass}
+                  onClick={() => {
+                    setOpen(false);
+                    navigate('/meu-perfil');
+                  }}
+                  role="menuitem"
+                  type="button"
+                >
+                  <svg className="h-4 w-4 text-[color:var(--one-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" /></svg>
+                  <span>Meu perfil</span>
+                </button>
+
+                <button
+                  className={menuItemClass}
+                  onClick={() => {
+                    setOpen(false);
+                    onOpenPreferences();
+                  }}
+                  role="menuitem"
+                  type="button"
+                >
+                  <svg className="h-4 w-4 text-[color:var(--one-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" /><circle cx="12" cy="12" r="3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" /></svg>
+                  <span>Preferências</span>
+                </button>
+              </div>
+
+              <div className="my-1 border-t border-[color:var(--one-border-default)]" />
+
+              <button
+                className={cx(menuItemClass, 'text-[color:var(--one-danger)]')}
+                onClick={() => {
+                  setOpen(false);
+                  void signOut();
+                }}
+                role="menuitem"
+                type="button"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" /></svg>
+                <span>Sair da plataforma</span>
+              </button>
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
   );
 }
 
 function GeniusSidebar({
   collapsed,
+  email,
+  fullName,
   onCollapse,
   onNavigate,
+  onOpenPreferences,
   pathname,
   permissions,
+  signOut,
+  userSubtitle,
+  userTitle,
 }: {
   collapsed: boolean;
+  email: string | null;
+  fullName: string | null;
   onCollapse: () => void;
   onNavigate?: () => void;
+  onOpenPreferences: () => void;
   pathname: string;
   permissions: MinimalNavigationPermissions;
+  signOut: () => Promise<void>;
+  userSubtitle: string;
+  userTitle: string;
 }) {
   return (
     <aside
@@ -342,7 +537,19 @@ function GeniusSidebar({
         <ShellNavigation collapsed={collapsed} onNavigate={onNavigate} pathname={pathname} permissions={permissions} />
       </div>
 
-      <div className="gso-sidebar-footer border-t border-[color:var(--one-border-default,#22324D)] p-2 min-h-[16px]" />
+      {/* Rodape semantico: identidade do usuario. O divisor decorativo que
+          existia aqui separava nada — o rodape estava vazio. */}
+      <div className={cx('gso-sidebar-footer', collapsed ? 'px-1 pb-2 pt-1' : 'px-2 pb-2 pt-1')}>
+        <SidebarAccount
+          collapsed={collapsed}
+          email={email}
+          fullName={fullName}
+          onOpenPreferences={onOpenPreferences}
+          signOut={signOut}
+          userSubtitle={userSubtitle}
+          userTitle={userTitle}
+        />
+      </div>
     </aside>
   );
 }
@@ -438,33 +645,19 @@ function PreferencesModal({
 function ShellTopbar({
   breadcrumb,
   canGoBack,
-  email,
-  fullName,
   mobileMenuButtonRef,
   mobileNavigationOpen,
   onToggleMobileNavigation,
-  onOpenPreferences,
   permissions,
-  signOut,
-  userSubtitle,
-  userTitle,
 }: {
   breadcrumb: MinimalBreadcrumbSegment[];
   canGoBack: boolean;
-  email: string | null;
-  fullName: string | null;
   mobileMenuButtonRef: React.RefObject<HTMLButtonElement | null>;
   mobileNavigationOpen: boolean;
   onToggleMobileNavigation: () => void;
-  onOpenPreferences: () => void;
   permissions: MinimalNavigationPermissions;
-  signOut: () => Promise<void>;
-  userSubtitle: string;
-  userTitle: string;
 }) {
   const navigate = useNavigate();
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const searchPermissions = useMemo(
     () => ({
@@ -473,23 +666,6 @@ function ShellTopbar({
     }),
     [permissions],
   );
-
-  useEffect(() => {
-    if (!userMenuOpen) return undefined;
-    const closeOnOutsidePointer = (event: PointerEvent) => {
-      if (event.target instanceof Node && userMenuRef.current?.contains(event.target)) return;
-      setUserMenuOpen(false);
-    };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setUserMenuOpen(false);
-    };
-    document.addEventListener('pointerdown', closeOnOutsidePointer);
-    document.addEventListener('keydown', closeOnEscape);
-    return () => {
-      document.removeEventListener('pointerdown', closeOnOutsidePointer);
-      document.removeEventListener('keydown', closeOnEscape);
-    };
-  }, [userMenuOpen]);
 
   return (
     <header className="gso-topbar relative z-40 flex h-[52px] items-center justify-between px-4 bg-[color:var(--gso-topbar-bg)] border-b border-[color:var(--gso-border)]">
@@ -545,95 +721,11 @@ function ShellTopbar({
         <GeniusGlobalSearch permissions={searchPermissions} />
       </div>
 
-      {/* Extremo direito: ÚNICO USER MENU TRIGGER GLOBAL */}
-      <div className="gso-topbar-actions relative z-50 flex items-center gap-2" ref={userMenuRef}>
-        <button
-          aria-expanded={userMenuOpen}
-          aria-haspopup="menu"
-          aria-label={`Menu de ${userTitle}`}
-          className="flex h-[36px] items-center gap-2 rounded-[7px] px-2 py-1 bg-transparent hover:bg-[color:var(--one-surface-2)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--one-action-primary)]"
-          onClick={() => setUserMenuOpen((curr) => !curr)}
-          type="button"
-        >
-          <Avatar email={email} name={fullName} size="sm" label={`Perfil de ${userTitle}`} />
-          <div className="hidden sm:grid min-w-0 text-left leading-tight">
-            <span className="truncate text-xs font-semibold text-[color:var(--one-text-primary)]">
-              {userTitle}
-            </span>
-            <span className="truncate text-[10px] text-[color:var(--one-text-secondary)]">
-              {userSubtitle}
-            </span>
-          </div>
-          <svg aria-hidden="true" className={cx('h-3.5 w-3.5 text-[color:var(--one-text-secondary)] transition-transform', userMenuOpen && 'rotate-180')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path d="m7 10 5 5 5-5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
-          </svg>
-        </button>
+      {/* A identidade do usuario vive no rodape da barra lateral
+          (<SidebarAccount>). O Global Header concentra apenas contexto, busca e
+          acoes realmente globais. Decisao de produto de 2026-08-10: a
+          identidade tem UM unico lugar; nao existem os dois. */}
 
-        {userMenuOpen ? (
-          <div
-            className="absolute right-0 top-full mt-2 w-[300px] rounded-[10px] border border-[color:var(--one-border-strong)] bg-[color:var(--one-surface-1)] p-2 shadow-lg z-50 text-xs text-[color:var(--one-text-primary)]"
-            role="menu"
-          >
-            {/* Header do Menu */}
-            <div className="flex items-center gap-2.5 p-2.5 pb-3 border-b border-[color:var(--one-border-default)]">
-              <Avatar email={email} name={fullName} size="md" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-xs text-[color:var(--one-text-primary)]">{userTitle}</p>
-                <p className="truncate text-[11px] text-[color:var(--one-text-secondary)]">{email ?? 'operador@confione.local'}</p>
-                <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[color:var(--one-surface-2)] text-[color:var(--one-text-secondary)] border border-[color:var(--one-border-default)]">
-                  {userSubtitle}
-                </span>
-              </div>
-            </div>
-
-            {/* Opções de Menu */}
-            <div className="py-1.5 space-y-0.5">
-              <button
-                className="flex h-[36px] w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-xs text-[color:var(--one-text-primary,#E6ECF5)] hover:bg-[color:var(--one-surface-interactive,#1C2D49)] transition-colors"
-                onClick={() => {
-                  setUserMenuOpen(false);
-                  navigate('/meu-perfil');
-                }}
-                role="menuitem"
-                type="button"
-              >
-                <svg className="h-4 w-4 text-[color:var(--one-text-secondary,#A6B2C7)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" /></svg>
-                <span>Meu perfil</span>
-              </button>
-
-              <button
-                className="flex h-[36px] w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-xs text-[color:var(--one-text-primary,#E6ECF5)] hover:bg-[color:var(--one-surface-interactive,#1C2D49)] transition-colors"
-                onClick={() => {
-                  setUserMenuOpen(false);
-                  onOpenPreferences();
-                }}
-                role="menuitem"
-                type="button"
-              >
-                <svg className="h-4 w-4 text-[color:var(--one-text-secondary,#A6B2C7)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" /><circle cx="12" cy="12" r="3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" /></svg>
-                <span>Preferências</span>
-              </button>
-            </div>
-
-            {/* Separador */}
-            <div className="my-1 border-t border-[color:var(--one-border-default,#22324D)]" />
-
-            {/* Encerramento de Sessão */}
-            <button
-              className="flex h-[36px] w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-xs text-[color:var(--one-danger,#EF4444)] hover:bg-[color:var(--one-surface-interactive,#1C2D49)] transition-colors"
-              onClick={() => {
-                setUserMenuOpen(false);
-                void signOut();
-              }}
-              role="menuitem"
-              type="button"
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" /></svg>
-              <span>Sair da plataforma</span>
-            </button>
-          </div>
-        ) : null}
-      </div>
     </header>
   );
 }
@@ -648,6 +740,7 @@ export function MinimalAppShell({
   userSubtitle: string;
 }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { signOut, user } = useAuthContext();
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
@@ -721,25 +814,25 @@ export function MinimalAppShell({
       <div className="flex h-full min-h-0 gap-0 lg:p-0">
         <GeniusSidebar
           collapsed={sidebarCollapsed}
+          email={email}
+          fullName={fullName}
           onCollapse={() => setSidebarCollapsed((current) => !current)}
+          onOpenPreferences={() => setPreferencesOpen(true)}
           pathname={location.pathname}
           permissions={permissions}
+          signOut={signOut}
+          userSubtitle={userSubtitle}
+          userTitle={userTitle}
         />
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <ShellTopbar
             breadcrumb={breadcrumb}
             canGoBack={breadcrumb.length > 1}
-            email={email}
-            fullName={fullName}
             mobileMenuButtonRef={mobileMenuButtonRef}
             mobileNavigationOpen={mobileNavigationOpen}
             onToggleMobileNavigation={() => setMobileNavigationOpen((current) => !current)}
-            onOpenPreferences={() => setPreferencesOpen(true)}
             permissions={permissions}
-            signOut={signOut}
-            userSubtitle={userSubtitle}
-            userTitle={userTitle}
           />
 
           {mobileNavigationOpen ? (
@@ -747,7 +840,7 @@ export function MinimalAppShell({
               <button aria-label="Fechar navegação" className="absolute inset-0 bg-[color:var(--minimal-overlay)]" onClick={() => setMobileNavigationOpen(false)} type="button" />
               <aside aria-label="Menu principal mobile" aria-modal="true" className="gso-ui gso-sidebar-drawer relative flex h-full w-[min(19rem,86vw)] flex-col border-r border-[color:var(--minimal-border)] bg-[color:var(--minimal-sidebar)] shadow-[var(--minimal-drawer-shadow)]" role="dialog">
                 <div className="flex h-14 items-center justify-between border-b border-[color:var(--minimal-border)] px-4">
-                  <p className="flex items-center gap-2 text-sm font-semibold"><GeniusLamp size="sm" />Genius<span className="text-[color:var(--gso-brand-pink,#FF4FA3)]">OS</span></p>
+                  <p className="flex items-center gap-2 text-sm font-semibold"><GeniusLamp size="sm" />Confi <span className="text-[color:var(--one-genius-pink)]">One</span></p>
                   <button ref={mobileCloseButtonRef} aria-label="Fechar navegação" className="inline-flex h-11 w-11 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]" onClick={() => { setMobileNavigationOpen(false); mobileMenuButtonRef.current?.focus(); }} type="button">
                     <span aria-hidden="true">×</span>
                   </button>
@@ -755,15 +848,45 @@ export function MinimalAppShell({
                 <div className="min-h-0 flex-1 overflow-y-auto px-2 py-4">
                   <ShellNavigation onNavigate={() => setMobileNavigationOpen(false)} pathname={location.pathname} permissions={permissions} />
                 </div>
-                <div className="border-t border-[color:var(--minimal-border)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                {/* Abaixo de 1024px a barra lateral nao existe, entao o rodape
+                    do drawer precisa oferecer os MESMOS itens do menu de
+                    identidade; caso contrario /meu-perfil e as Preferencias
+                    ficariam inalcancaveis em tablet e celular. */}
+                <div className="border-t border-[color:var(--one-border-default)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                   <div className="flex items-center gap-3">
                     <Avatar email={email} name={fullName} size="md" />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-[color:var(--minimal-text)]">{userTitle}</p>
-                      <p className="truncate text-xs text-[color:var(--minimal-text-tertiary)]">{userSubtitle}</p>
+                      <p className="truncate text-sm font-medium text-[color:var(--one-text-primary)]">{userTitle}</p>
+                      <p className="truncate text-xs text-[color:var(--one-text-secondary)]">{userSubtitle}</p>
                     </div>
-                    <button aria-label="Encerrar sessão" className="inline-flex h-11 w-11 items-center justify-center rounded-md text-[color:var(--minimal-text-tertiary)] hover:bg-[color:var(--minimal-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]" onClick={() => void signOut()} type="button">
-                      <span aria-hidden="true">↪</span>
+                  </div>
+                  <div className="mt-2 space-y-0.5">
+                    <button
+                      className="flex h-11 w-full items-center rounded-[6px] px-2.5 text-left text-sm text-[color:var(--one-text-primary)] hover:bg-[color:var(--one-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--one-border-focus)]"
+                      onClick={() => {
+                        setMobileNavigationOpen(false);
+                        navigate('/meu-perfil');
+                      }}
+                      type="button"
+                    >
+                      Meu perfil
+                    </button>
+                    <button
+                      className="flex h-11 w-full items-center rounded-[6px] px-2.5 text-left text-sm text-[color:var(--one-text-primary)] hover:bg-[color:var(--one-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--one-border-focus)]"
+                      onClick={() => {
+                        setMobileNavigationOpen(false);
+                        setPreferencesOpen(true);
+                      }}
+                      type="button"
+                    >
+                      Preferências
+                    </button>
+                    <button
+                      className="flex h-11 w-full items-center rounded-[6px] px-2.5 text-left text-sm text-[color:var(--one-danger)] hover:bg-[color:var(--one-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--one-border-focus)]"
+                      onClick={() => void signOut()}
+                      type="button"
+                    >
+                      Sair da plataforma
                     </button>
                   </div>
                 </div>

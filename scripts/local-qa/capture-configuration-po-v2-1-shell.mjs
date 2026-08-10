@@ -129,15 +129,19 @@ try {
   measurements.expanded = await measure(page);
   await shot(page, 'shell-v3-expanded-1366-dark', 'sidebar expandida');
 
-  // Captura do menu de usuario aberto
-  const userMenuTrigger = page.locator('.gso-topbar-actions button').first();
-  if (await userMenuTrigger.count()) {
-    await userMenuTrigger.click();
-    await page.waitForTimeout(400);
-    await shot(page, 'shell-v3-user-menu-open-1366-dark', 'menu do usuario aberto');
-    await userMenuTrigger.click();
-    await page.waitForTimeout(300);
+  // Captura do menu de usuario aberto.
+  // Macro-lote 01: a identidade migrou da topbar para o rodape da sidebar.
+  // O `if (await count())` mascarava a ausencia do gatilho e gerava evidencia
+  // sem o menu. Agora falha explicitamente.
+  const userMenuTrigger = page.locator('.gso-sidebar-account-trigger').first();
+  if (!(await userMenuTrigger.count())) {
+    throw new Error('SHELL_CONTRACT_VIOLATION: gatilho de identidade ausente no rodape da barra lateral.');
   }
+  await userMenuTrigger.click();
+  await page.waitForTimeout(400);
+  await shot(page, 'shell-v3-user-menu-open-1366-dark', 'menu do usuario aberto');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
 
   await page.getByRole('button', { name: /recolher menu lateral/i }).click();
   await page.waitForTimeout(400);

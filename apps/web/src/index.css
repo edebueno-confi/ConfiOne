@@ -1351,6 +1351,18 @@
 .gso-sidebar-account[data-collapsed='true'] [role='radiogroup'] {
   flex-direction: column;
 }
+/* Rodape de identidade da barra lateral (Macro-lote 01).
+   A sidebar declara `isolation: isolate`, entao o popover de conta e
+   renderizado em portal no body. Estilo estrutural fica aqui, tokenizado. */
+.gso-sidebar-footer {
+  min-width: 0;
+}
+.gso-sidebar-account-portal {
+  z-index: var(--one-z-overlay);
+  border-radius: var(--one-radius-panel);
+  box-shadow: var(--one-shadow-modal);
+}
+
 /* ===========================================================================
    PAGE TABS — DEFINICAO UNICA (Macro-lote 01)
    Ate 2026-08-10 estas mesmas classes eram declaradas duas vezes: aqui e em

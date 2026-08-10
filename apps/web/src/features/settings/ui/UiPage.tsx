@@ -1,10 +1,14 @@
 import type { ReactNode } from 'react';
-import '../settings-ui.css';
+import { PageCanvas } from '../../../components/page/page-primitives';
 
 /**
- * Canvas de uma tela de Configuracoes. A classe raiz `gso-ui` publica os tokens
- * do sistema visual para tudo que estiver dentro dela.
+ * Canvas de uma tela de Configuracoes.
+ *
+ * Macro-lote 01: passou a ser um alias fino de <PageCanvas>, o primitive
+ * compartilhado. Configuracoes deixou de ter um contrato de canvas proprio —
+ * a mesma superficie serve Conhecimento, Acessos e demais dominios internos.
+ * Mantido para nao reescrever as sete chamadas existentes de uma vez.
  */
 export function UiPage({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={className ? `gso-ui gso-ui-page ${className}` : 'gso-ui gso-ui-page'}>{children}</div>;
+  return <PageCanvas className={className}>{children}</PageCanvas>;
 }

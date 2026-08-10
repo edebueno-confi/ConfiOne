@@ -1,13 +1,17 @@
 import type { ReactNode } from 'react';
+import { PageHeader } from '../../../components/page/page-primitives';
 
 /**
- * Cabecalho de uma tela de Configuracoes: titulo, descricao e as acoes da
- * propria tela. Sem rotulo em caixa alta.
+ * Cabecalho de uma tela de Configuracoes.
  *
- * Configuration PO V2.1: a trilha de navegacao pertence a topbar compartilhada
- * do shell. Mante-la aqui produzia dois breadcrumbs empilhados, o que o
- * blueprint aprovado nao tem. Os parametros de trilha continuam aceitos para
- * nao quebrar as chamadas existentes, mas nao renderizam nada.
+ * Macro-lote 01: passou a ser um alias fino de <PageHeader>, o primitive
+ * compartilhado. O titulo agora e <h1> — antes era <h2>, e as telas de
+ * Configuracoes ficavam sem nenhum <h1>. A escala visual nao mudou: o CSS ja
+ * estilizava h1 e h2 identicamente.
+ *
+ * A trilha de navegacao pertence a topbar compartilhada do shell. Os
+ * parametros de trilha continuam aceitos para nao quebrar chamadas existentes,
+ * mas nao renderizam nada.
  */
 export function UiPageHeader({
   actions,
@@ -27,22 +31,13 @@ export function UiPageHeader({
   titleId: string;
 }) {
   return (
-    <header className="gso-ui-header">
-      <div className="gso-ui-header-heading">
-        {eyebrow ? (
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[color:var(--one-info,#4DA3FF)]">
-            {eyebrow}
-          </p>
-        ) : null}
-        <h2 id={titleId}>{title}</h2>
-        {description ? <p>{description}</p> : null}
-      </div>
-      {meta || actions ? (
-        <div className="gso-ui-header-side">
-          {meta ? <p className="gso-ui-header-meta">{meta}</p> : null}
-          {actions ? <div className="gso-ui-header-actions">{actions}</div> : null}
-        </div>
-      ) : null}
-    </header>
+    <PageHeader
+      actions={actions}
+      description={description}
+      eyebrow={eyebrow}
+      meta={meta}
+      title={title}
+      titleId={titleId}
+    />
   );
 }

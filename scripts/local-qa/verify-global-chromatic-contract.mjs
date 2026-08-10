@@ -99,14 +99,19 @@ async function run() {
   }
 
   // 03-shell-user-menu-open.png
-  const userMenuBtn = await page.$('.gso-topbar-actions button');
-  if (userMenuBtn) {
-    await userMenuBtn.click();
-    await page.waitForTimeout(300);
-    await page.screenshot({ path: path.join(OUTPUT_DIR, '03-shell-user-menu-open.png') });
-    await userMenuBtn.click();
-    await page.waitForTimeout(300);
+  // Macro-lote 01: a identidade migrou da topbar para o rodape da sidebar.
+  // O seletor antigo ('.gso-topbar-actions button') passou a nao casar nunca e
+  // a evidencia era gerada em silencio, sem o menu. Agora a ausencia do gatilho
+  // e um erro explicito.
+  const userMenuBtn = await page.$('.gso-sidebar-account-trigger');
+  if (!userMenuBtn) {
+    throw new Error('SHELL_CONTRACT_VIOLATION: gatilho de identidade ausente no rodape da barra lateral.');
   }
+  await userMenuBtn.click();
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: path.join(OUTPUT_DIR, '03-shell-user-menu-open.png') });
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
 
   // 04-dashboard-shell-color-check.png
   await page.goto(`${BASE_URL}/admin/analytics`, { waitUntil: 'networkidle' });

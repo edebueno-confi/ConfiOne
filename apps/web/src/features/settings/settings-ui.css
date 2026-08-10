@@ -194,7 +194,32 @@
   line-height: 1.4;
   text-align: right;
 }
-.gso-ui-header-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.gso-ui-header-actions { display: flex; flex-wrap: wrap; gap: var(--one-space-control-gap); }
+/* Eyebrow do page header: rotulo curto acima do titulo. Antes era escrito em
+   Tailwind dentro do primitive, com fallback hex proprio. */
+.gso-ui-eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--one-info);
+  font-size: var(--one-font-eyebrow);
+  font-weight: var(--one-weight-eyebrow);
+  line-height: var(--one-line-eyebrow);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+/* Contador opcional dentro de uma aba. */
+.gso-ui-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.35rem;
+  justify-content: center;
+  border-radius: var(--one-radius-pill);
+  background: var(--one-panel-elevated-bg);
+  color: var(--one-text-secondary);
+  font-size: var(--one-font-meta);
+  font-weight: 600;
+}
 
 @media (max-width: 900px) {
   .gso-ui-header { display: grid; grid-template-columns: 1fr; align-items: start; gap: 0.9rem; }
