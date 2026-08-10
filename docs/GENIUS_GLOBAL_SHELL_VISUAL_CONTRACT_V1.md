@@ -1,5 +1,7 @@
 # GENIUSOS GLOBAL SHELL VISUAL CONTRACT V1
 
+> **SUPERSEDED NOTE (2026-08-09):** Esta especificação foi SUPERSEDIDA pelo [CONFI_ONE_BRAND_SYSTEM_V1.md](file:///C:/Projetos/GSO-old/docs/specs/CONFI_ONE_BRAND_SYSTEM_V1.md), que define o Brand System canônico do Confi One.
+
 **Approved Specification — 2026-08-09**
 
 ## 1. Executive Summary & Core Hierarchy

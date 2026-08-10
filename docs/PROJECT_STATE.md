@@ -2,6 +2,14 @@
 
 > **Configuration PO Visual Lock V2 (em execução local, 2026-08-09).** As seis referências aprovadas estão versionadas em `docs/design/blueprint/Configuration PO/v2/`; a precedência operacional e visual desta rodada é `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md`, atualizado com o lock V2. O escopo inclui Central de ajuda e a visão geral de Configurações, sem alterar Dashboard Analytics, contratos, banco, RLS, sincronização ou credenciais.
 
+## Atualização corrente — Confi One V1 Global Surface Sweep & Remoção do Cockpit — 2026-08-09
+
+- **Brand System Canônico**: `docs/specs/CONFI_ONE_BRAND_SYSTEM_V1.md` (58 seções) é a única fonte canônica de Brand System. O contrato `docs/GENIUS_GLOBAL_SHELL_VISUAL_CONTRACT_V1.md` permanece classificado como SUPERSEDED para histórico.
+- **Cockpit Gerencial Removido**: A superfície independente `Cockpit gerencial` (`/admin/cockpit`) foi removida da navegação e o componente frontend órfão `ManagementCockpitPage.tsx` excluído. A rota antiga redireciona diretamente para `/admin/settings/dashboard-sources`.
+- **Fontes do Dashboard Canônica**: `Fontes do Dashboard` (`/admin/settings/dashboard-sources`) é a superfície administrativa canônica para fontes, cobertura, classificação, atualização e agendamento, incorporando `PipelineRoleSettings`, `StageMappingSettings` e `CompanyReconciliationPanel`.
+- **Backend Preservado**: 100% preservado (tabelas, RPCs, views, RLS, functions, Edge Functions, scheduler).
+- **QA & Testes**: Executada verificação de typecheck, build, lint (0 erros), secret-scan e runner Playwright para 22 rotas internas.
+
 ## Atualização corrente — Admin Configuration Visual Rebuild V1 — 2026-08-09
 
 - Direção visual canônica criada em `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md`, com cinco referências aprovadas versionadas em `docs/design/blueprint/Configuration PO/`.

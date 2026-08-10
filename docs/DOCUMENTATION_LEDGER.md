@@ -1,5 +1,12 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## CONFI-ONE-V1 — Surface Sweep, Cockpit Removal & Brand Canonization — 2026-08-09
+
+- **Brand System Canônico:** `docs/specs/CONFI_ONE_BRAND_SYSTEM_V1.md` (58 seções). O documento legados `docs/GENIUS_GLOBAL_SHELL_VISUAL_CONTRACT_V1.md` é mantido como historicamente SUPERSEDED. A cópia duplicada `docs/CONFI_ONE_BRAND_SYSTEM_V1.md` foi removida.
+- **Cockpit Gerencial Removido:** `ManagementCockpitPage.tsx` foi removido como código órfão. A navegação deixou de expor a opção e a rota `/admin/cockpit` redireciona via client-side `<Navigate to="/admin/settings/dashboard-sources" replace />`.
+- **Fontes do Dashboard Canônica:** O painel `Fontes do Dashboard` (`/admin/settings/dashboard-sources`) é o container administrativo único, incorporando as seções `PipelineRoleSettings`, `StageMappingSettings` e `CompanyReconciliationPanel`.
+- **Relatório de Auditoria:** `docs/duplicate-surface-audit.md` e `docs/route-audit.md` registram 22 rotas autenticadas internas com 0 falhas bloqueantes de DOM/tipografia.
+
 ## CONFIGURATION-PO-V2 — Lock visual, mapas e evidência — 2026-08-09
 
 - **Precedência:** `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md` recebeu o lock V2 antes da alteração de runtime. Ele cobre Configurações, Usuários e acessos, Central de ajuda, Histórico, Fontes e Integrações; Dashboard Analytics permanece explicitamente fora.
