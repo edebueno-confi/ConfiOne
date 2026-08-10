@@ -96,8 +96,6 @@
     "local:qa:admin-configuration-visual-v1-preview": "node scripts/local-qa/admin-configuration-visual-v1-preview.mjs",
     "local:qa:confi-one-global-audit": "node scripts/local-qa/verify-confi-one-v1-global-audit-qa.mjs",
     "local:qa:secret-scan": "node scripts/local-qa/secret-scan.mjs",
-    "security:audit:prod": "node scripts/local-qa/security-audit-prod.mjs",
-    "repository:check-root": "node scripts/local-qa/check-root-hygiene.mjs",
     "lint": "npm run lint --workspaces --if-present",
     "web:typecheck": "npm run typecheck --workspace @genius-support-os/web",
     "web:build": "npm run build --workspace @genius-support-os/web"
