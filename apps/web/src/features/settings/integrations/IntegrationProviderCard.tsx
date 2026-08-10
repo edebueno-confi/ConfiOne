@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Link } from 'react-router';
 import { formatDateTime, truncateText } from '../../../app/format';
 import type { ManagedIntegration } from '../settings-api';
 import { UiBadge } from '../ui/UiBadge';
@@ -37,7 +38,7 @@ export function IntegrationProviderCard({
       <UiCardHeader
         actions={
           <>
-            <UiBadge tone={variant === 'finance' ? 'accent' : 'primary'}>{eyebrow}</UiBadge>
+            <UiBadge tone="neutral">{eyebrow}</UiBadge>
             <UiBadge dot tone={uiToneOf(credential.tone)}>{credential.label}</UiBadge>
           </>
         }
@@ -45,10 +46,8 @@ export function IntegrationProviderCard({
         icon={variant === 'finance' ? 'database' : 'plug'}
         title={title}
         titleId={headingId}
-        tone={variant === 'finance' ? 'accent' : 'primary'}
+        tone="neutral"
       />
-
-      <div className="gso-ui-card-body">{children}</div>
 
       <div className="gso-ui-card-body">
         <UiDetailList
@@ -76,6 +75,14 @@ export function IntegrationProviderCard({
       {item.lastErrorMessage ? (
         <p className="gso-ui-alert gso-ui-alert--error">Última falha registrada: {truncateText(item.lastErrorMessage, 240)}</p>
       ) : null}
+
+      <footer className="gso-po-v2-provider-actions">
+        <details>
+          <summary>Gerenciar credenciais</summary>
+          <div className="gso-ui-card-body">{children}</div>
+        </details>
+        <Link to="/admin/settings/sync-history">Ver histórico</Link>
+      </footer>
     </UiCard>
   );
 }

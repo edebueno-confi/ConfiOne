@@ -1,5 +1,35 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## CONFI-ONE-V1 — Blueprint Alignment & Claude Handoff — 2026-08-10
+
+- **Handoff Claude:** Relatório completo gerado em `docs/reports/2026-08-10_handoff-claude-confi-one-v1.md`.
+- **Fidelidade Visual:** Ordem estrita de blocos mantida (Header → Summary Rail → Abas → Filtros → Tabela + Paginação).
+- **Abas e Seleção:** Linha ativa de 2-3px em Genius Pink (`#FF4FA3`) adicionada globalmente em `.gso-ui-tabs`.
+- **Canvas de Conhecimento:** Fundo de `/admin/knowledge` e `/admin/knowledge/new` alinhado ao Canvas Azul Escuro (`#081220`).
+- **Limpeza de Artefatos:** Removidas imagens obsoletas e aba legada `Convites / Histórico`.
+- **Qualidade:** Typecheck (0 erros), Build Vite (0 erros), 22 rotas validadas em QA Playwright.
+
+## CONFI-ONE-V1 — Surface Sweep, Cockpit Removal & Brand Canonization — 2026-08-09
+
+- **Brand System Canônico:** `docs/specs/CONFI_ONE_BRAND_SYSTEM_V1.md` (58 seções). O documento legados `docs/GENIUS_GLOBAL_SHELL_VISUAL_CONTRACT_V1.md` é mantido como historicamente SUPERSEDED. A cópia duplicada `docs/CONFI_ONE_BRAND_SYSTEM_V1.md` foi removida.
+- **Cockpit Gerencial Removido:** `ManagementCockpitPage.tsx` foi removido como código órfão. A navegação deixou de expor a opção e a rota `/admin/cockpit` redireciona via client-side `<Navigate to="/admin/settings/dashboard-sources" replace />`.
+- **Fontes do Dashboard Canônica:** O painel `Fontes do Dashboard` (`/admin/settings/dashboard-sources`) é o container administrativo único, incorporando as seções `PipelineRoleSettings`, `StageMappingSettings` e `CompanyReconciliationPanel`.
+- **Relatório de Auditoria:** `docs/duplicate-surface-audit.md` e `docs/route-audit.md` registram 22 rotas autenticadas internas com 0 falhas bloqueantes de DOM/tipografia.
+
+## CONFIGURATION-PO-V2 — Lock visual, mapas e evidência — 2026-08-09
+
+- **Precedência:** `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md` recebeu o lock V2 antes da alteração de runtime. Ele cobre Configurações, Usuários e acessos, Central de ajuda, Histórico, Fontes e Integrações; Dashboard Analytics permanece explicitamente fora.
+- **Referências e mapas:** seis PNGs aprovados foram versionados em `docs/design/blueprint/Configuration PO/v2/`. As medidas e o uso de componentes reais estão registrados em `docs/reports/2026-08-09_configuration-po-v2-measurement-map.md` e `docs/reports/2026-08-09_configuration-po-v2-component-map.md`.
+- **Estado:** execução apenas local, com fixture identificada como QA local. O pacote final, manifestos, hashes e comparações somente serão registrados após o QA V2; não houve push, deploy, sync externo, modificação de secret ou operação remota.
+
+## ADMIN-CONFIG-VISUAL-01 — Contrato, referências e matriz — 2026-08-09
+
+- **Escopo:** shell/sidebar, Usuários e acessos, Histórico de sincronizações, Fontes do Dashboard e Integrações; nenhuma página analítica, contrato, backend, banco, credencial ou sincronização foi alterada nesta etapa documental.
+- **Decisão:** `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md` passa a ser a precedência visual localizada. Ele substitui apenas direções conflitantes de 1920×1080 único, submenu que desloca conteúdo, Gênio sobrenatural, cor por domínio, iconografia decorativa e Configurações tratadas como analytics.
+- **Referências:** cinco PNGs aprovados, todos 1672×941, foram identificados e versionados em `docs/design/blueprint/Configuration PO/`.
+- **Mapa:** `docs/reports/2026-08-09_admin-configuration-blueprint-component-map.md` registra REUSE/ADAPT/NEW/OMIT antes de runtime. A fonte de permissão confirmada é a navegação derivada do catálogo/guard real; nenhum papel ou ação foi inventado.
+- **Fechamento local:** implementação e QA real registrados em `docs/reports/2026-08-09_admin-configuration-visual-rebuild-v1.md`. Não houve push, deploy, sync externo, migration remota, reset ou alteração de secret.
+
 ## Registro corrente — Dashboard por domínios — 2026-08-03
 
 - **Especificação:** `docs/specs/GENIUS_HIGH_DENSITY_INTERFACE_V1.md` recebeu as
@@ -7187,4 +7217,26 @@ de cliente antes do gate remoto. Evidência: `docs/reports/ACCESS_01_INTERNAL_CO
 - Limites: escrita coberta apenas no editor de artigo; 7 avisos de
   `exhaustive-deps` seguem abertos em telas publicadas, listados no relatório;
   nenhum backend, contrato, RPC, view ou permissão alterado.
+- Impacto futuro na FAQ: nenhum.
+
+## CONFIG-PO-V2.1-01 — Fidelity delta de Configuration PO — 2026-08-09
+
+- Relatório: `docs/reports/2026-08-09_configuration-po-v2-1-fidelity-delta.md`.
+- Branch: `codex/admin-configuration-visual-v1` (em `718b988`).
+- Cumpre o bloqueio obrigatório da seção 2 do handoff
+  `docs/reports/2026-08-09_handoff-claude-configuration-po-v2-1.md`: delta região a
+  região entre o blueprint aprovado `docs/design/blueprint/Configuration PO/v2/` e o
+  runtime V2 rejeitado, em 1366×768 tema escuro.
+- Baseline reutilizado, sem novas capturas:
+  `output/playwright/2026-08-09-configuration-po-v2-final/screenshots/1366x768/`.
+- Resultado: 6 de 6 telas reprovadas no gate factual, além do shell. Regiões ausentes
+  (9), substituídas (7) e inventadas (2) estão listadas por tela, com o ponto de
+  correção no código.
+- Decisão registrada: vazio de dados vira estado vazio dentro da região aprovada;
+  nunca justifica remover a região. Taxonomia da sidebar classificada como *a
+  verificar* porque `features/navigation/minimal-navigation.ts` admite duas variantes
+  conforme permissão efetiva.
+- Limites: nenhum código, banco, migration, secret, deploy ou push tocado; nenhuma
+  suíte executada; CI da PR #34 não consultado; viewports 1440/1024/390 e tema claro
+  fora de escopo até o gate de 1366 passar.
 - Impacto futuro na FAQ: nenhum.

@@ -1,5 +1,7 @@
 # UX Navigation Design Contract V1
 
+> **Adendo de precedência — 2026-08-09.** Para o shell autenticado, `ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md` determina sidebar de 240px expandida, rail de 56px colapsado e submenu em overlay. A visibilidade continua derivada do catálogo/guard real; o flyout não introduz uma segunda matriz de permissões nem altera a validação de deep links.
+
 ## Objetivo
 
 Garantir que o Genius Support OS tenha navegação, hierarquia visual e experiência operacional coerentes, sem telas fragmentadas, redundantes ou visualmente incompatíveis.

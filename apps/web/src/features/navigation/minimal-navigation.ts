@@ -141,7 +141,7 @@ function buildReleaseNavigation({
   if (allows('access')) {
     administration.push({
       id: 'admin-access',
-      label: 'Usuários e acesso',
+      label: 'Usuários e acessos',
       to: '/admin/access',
       icon: 'shield',
       settingsSection: 'access',
@@ -150,13 +150,6 @@ function buildReleaseNavigation({
   }
 
   if (allows('settings')) {
-    administration.push({
-      id: 'admin-cockpit',
-      label: 'Cockpit gerencial',
-      to: '/admin/cockpit',
-      icon: 'workflow',
-      matches: (path) => matchesBase(path, '/admin/cockpit'),
-    });
     for (const entry of RELEASE_SETTINGS_SUBMENU) {
       if (!canOpenSettingsSection(entry.sectionId, { isPlatformAdmin, screenKeys })) continue;
       administration.push({
@@ -232,8 +225,11 @@ export function buildMinimalNavigation({
     administration.push({ id: 'admin-cockpit', label: 'Cockpit gerencial', to: '/admin/cockpit', icon: 'workflow', matches: (path) => matchesBase(path, '/admin/cockpit') });
     administration.push({ id: 'admin-settings', label: 'Configurações', to: '/admin/settings', icon: 'settings', matches: (path) => matchesBase(path, '/admin/settings') });
   }
-  if ((isPlatformAdmin || hasScreen('access')) && !(isPlatformAdmin || hasScreen('settings'))) {
-    administration.push({ id: 'admin-access', label: 'Acessos e áreas', to: '/admin/access', icon: 'shield', matches: (path) => matchesBase(path, '/admin/access') || matchesBase(path, '/admin/internal-areas') });
+  // A permissão de acesso é independente das configurações. Escondê-la para
+  // quem também pode abrir Configurações criava um beco sem saída na sidebar:
+  // a rota continuava protegida e disponível, mas não era alcançável pelo menu.
+  if (isPlatformAdmin || hasScreen('access')) {
+    administration.push({ id: 'admin-access', label: 'Usuários e acessos', to: '/admin/access', icon: 'shield', matches: (path) => matchesBase(path, '/admin/access') || matchesBase(path, '/admin/internal-areas') });
   }
   if (administration.length) sections.push({ id: 'administration', label: 'Administração', items: administration });
   return sections;
@@ -246,8 +242,8 @@ export function resolveMinimalRouteLabel(pathname: string) {
     ['/admin/analytics', 'Dashboard gerencial'],
     ['/admin/knowledge', 'Conhecimento'],
     ['/admin/settings', 'Configurações'],
-    ['/admin/internal-areas', 'Acessos e áreas'],
-    ['/admin/access', 'Acessos e áreas'],
+    ['/admin/internal-areas', 'Usuários e acessos'],
+    ['/admin/access', 'Usuários e acessos'],
     ['/inicio', 'Início'],
     ['/support/inbox', 'Atendimento'],
     ['/support/queue', 'Fila operacional'],
@@ -264,5 +260,38 @@ export function resolveMinimalRouteLabel(pathname: string) {
     ['/admin/build-journal', 'Diário de construção'],
     ['/admin/product-docs', 'Documentos'],
   ];
-  return routes.find(([basePath]) => matchesBase(pathname, basePath))?.[1] ?? 'GeniusOS';
+  return routes.find(([basePath]) => matchesBase(pathname, basePath))?.[1] ?? 'Confi One';
+}
+
+export type MinimalBreadcrumbSegment = {
+  label: string;
+  to?: string;
+};
+
+/**
+ * Breadcrumb trail for the shared topbar.
+ *
+ * The trail is derived from the same route table and the same settings submenu
+ * that build the sidebar, so it never announces a surface that the navigation
+ * model does not know about. The root segment is always the product; the last
+ * segment is always the current surface and carries no link.
+ */
+export function resolveMinimalBreadcrumb(pathname: string): MinimalBreadcrumbSegment[] {
+  const root: MinimalBreadcrumbSegment = { label: 'Confi One', to: '/' };
+  const routeLabel = resolveMinimalRouteLabel(pathname);
+
+  if (matchesBase(pathname, '/admin/settings')) {
+    const leaf = RELEASE_SETTINGS_SUBMENU.find((entry) => matchesBase(pathname, entry.to));
+    if (leaf) {
+      return [root, { label: 'Configurações', to: '/admin/settings' }, { label: leaf.label }];
+    }
+    return [root, { label: 'Configurações', to: '/admin/settings' }, { label: 'Configurações gerais' }];
+  }
+
+  if (matchesBase(pathname, '/admin/access') || matchesBase(pathname, '/admin/internal-areas')) {
+    return [root, { label: 'Configurações', to: '/admin/settings' }, { label: 'Usuários e acessos' }];
+  }
+
+  if (routeLabel === 'Confi One') return [root];
+  return [root, { label: routeLabel }];
 }

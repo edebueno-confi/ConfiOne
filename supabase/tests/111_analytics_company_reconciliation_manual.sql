@@ -1,6 +1,6 @@
 begin;
 
-select plan(15);
+select plan(19);
 
 select has_table(
   'public',
@@ -86,7 +86,12 @@ select ok(
 insert into public.hubspot_companies (company_id, name, tax_id, synced_at)
 values
   ('reconciliation-fixture-company', 'Empresa de Conciliacao Ltda', '12.345.678/0001-90', timezone('utc', now())),
-  ('reconciliation-manual-company', 'Financeira Manual Destino Ltda', '98.765.432/0001-10', timezone('utc', now()));
+  ('reconciliation-manual-company', 'Financeira Manual Destino Ltda', '98.765.432/0001-10', timezone('utc', now())),
+  ('reconciliation-alias-company', 'Malwee Comercial', null, timezone('utc', now()));
+
+update public.hubspot_companies
+set raw = '{"razao_social":"MALWEE MALHAS LTDA","nome_fantasia___aftersale":"Malwee"}'::jsonb
+where company_id = 'reconciliation-alias-company';
 
 insert into public.analytics_finance_receivables (
   id, source_key, source_record_id, status_original, aging_bucket, client_name, client_tax_id,
@@ -102,6 +107,11 @@ values
     gen_random_uuid(), 'omie_receivables_api', 'reconciliation-title-manual', 'ATRASADO', 'atrasado',
     'Identidade Financeira Manual', null,
     654, 0, 654, current_date - 7, true, false, timezone('utc', now()), timezone('utc', now())
+  ),
+  (
+    gen_random_uuid(), 'omie_receivables_api', 'reconciliation-title-alias', 'A VENCER', 'a_vencer',
+    'MALWEE MALHAS LTDA', null,
+    987, 0, 987, current_date + 3, true, false, timezone('utc', now()), timezone('utc', now())
   );
 
 select is(
@@ -117,6 +127,16 @@ set local request.jwt.claim.sub = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 select ok(
   public.rpc_analytics_company_reconciliation_queue(100, 0) @? '$.items[*] ? (@.source_key == "tax:12345678000190" && @.candidates[*].company_id == "reconciliation-fixture-company")',
   'fila devolve a candidata real, sem criar vinculo automaticamente'
+);
+
+select ok(
+  public.rpc_analytics_company_reconciliation_queue(100, 0) @? '$.items[*] ? (@.source_key == "name:MALWEE MALHAS" && @.candidates[*].company_id == "reconciliation-alias-company")',
+  'fila encontra razao social e nome fantasia armazenados no cache do HubSpot como candidatos para revisao'
+);
+
+select ok(
+  public.rpc_analytics_finance_unmatched_clients(null, 100) @? '$[*] ? (@.client == "MALWEE MALHAS LTDA" && @.name_matches > 0)',
+  'lista financeira sinaliza candidata por identidade alternativa sem marcar conciliacao automatica'
 );
 
 select is(
@@ -156,6 +176,16 @@ select is(
 select ok(
   public.rpc_analytics_ceo_snapshot(null, current_date) @? '$.financial_alerts[*] ? (@.company_id == "reconciliation-manual-company" && @.match_method == "manual")',
   'vinculo manual confirmado passa a compor o cruzamento executivo'
+);
+
+select ok(
+  (public.rpc_analytics_finance_snapshot(null, null, null, null, null) #>> '{cs_reconciliation,matched_balance}')::numeric >= 975,
+  'vinculo manual confirmado tambem entra no saldo conciliado da carteira financeira'
+);
+
+select ok(
+  not public.rpc_analytics_finance_unmatched_clients(null, 100) @? '$[*] ? (@.client == "Identidade Financeira Manual")',
+  'vinculo manual confirmado deixa de ser listado como pendencia financeira'
 );
 
 set local request.jwt.claim.sub = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';

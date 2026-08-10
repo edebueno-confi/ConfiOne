@@ -1,5 +1,7 @@
 # Admin Access Blueprint Spec
 
+> **Superado no escopo visual — 2026-08-09.** A composição de acesso vigente é `ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md` + `02-users-access-approved.png`. Esta especificação continua útil como histórico de capacidades reais, mas não autoriza convite/importação, papel fictício, MFA, tenant ou último acesso que o read model não entregue.
+
 ## Rota
 
 `/admin/access`

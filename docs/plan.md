@@ -1,5 +1,22 @@
 # Plano corrente — Interface High-Density V1 — 2026-08-03
 
+> **Configuration PO Visual Lock V2 (em execução local, 2026-08-09):** substituir a direção V1 nas seis superfícies administrativas por reprodução fiel das referências versionadas em `docs/design/blueprint/Configuration PO/v2/`. Evidências de dark e light, nos quatro viewports definidos, serão fechadas somente após typecheck, build e QA autenticado local. Não há autorização de deploy, push, migração remota ou sync externo.
+
+## Lote atual — Confi One V1 Global Surface Sweep & Cockpit Removal — 2026-08-09
+
+- **Brand System Canônico:** `docs/specs/CONFI_ONE_BRAND_SYSTEM_V1.md` (58 seções) é a fonte única. `docs/GENIUS_GLOBAL_SHELL_VISUAL_CONTRACT_V1.md` marcado como SUPERSEDED. Cópia resumida `docs/CONFI_ONE_BRAND_SYSTEM_V1.md` excluída.
+- **Remoção do Cockpit Gerencial:** `/admin/cockpit` redirecionado para `/admin/settings/dashboard-sources`. `ManagementCockpitPage.tsx` excluído por ser órfão. Opção removida da barra lateral.
+- **Fontes do Dashboard Canônica:** Consolidação das capabilities `PipelineRoleSettings`, `StageMappingSettings` e `CompanyReconciliationPanel` em `/admin/settings/dashboard-sources`.
+- **QA & Testes Executados:** `npm run web:typecheck`, `npm run contracts:typecheck`, `npm run web:build`, `npm run lint` (0 erros), `npm run local:qa:secret-scan` (0 segredos), `git diff --check`, `npm run local:qa:confi-one-global-audit` (22 rotas auditadas com 0 erros de DOM).
+- **Commits Locais:** 5 commits organizados no git local da branch `codex/admin-configuration-visual-v1`. Zero push/remote actions.
+
+## Lote atual — Admin Configuration Visual Rebuild V1 — 2026-08-09
+
+- Concluído localmente: shell/sidebar e as superfícies administrativas de Usuários, Histórico, Fontes e Integrações alinhados a `ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md`.
+- Menu continua derivado do catálogo de telas e guards existentes; o rail colapsado usa flyout overlay sem deslocar conteúdo, com fechamento por seleção, clique externo e `Esc`.
+- Primitivas de Settings e Access, ações e fontes reais foram preservadas. HubSpot e OMIE seguem como integrações publicadas, sem revelar credenciais.
+- Fechado com QA dark em 1366×768, 1440×900, 1024×768 e 390×844, testes focados, typecheck, build, secret scan e quality gates. Não houve push, deploy, sync, migração, reset ou mudança de segredo.
+
 ## Fila consolidada para o MVP de deploy — Product Owner — 2026-08-03
 
 Esta é a fila única de execução para encerrar o MVP local sem perder conteúdo

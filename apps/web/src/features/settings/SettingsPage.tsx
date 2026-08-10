@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { cx } from '../../components/ui';
 import {
   archiveConversationType,
@@ -52,6 +52,14 @@ import { BrandsSettingsPage } from './BrandsSettingsPage';
 import { DashboardSourcesSettingsPage } from './DashboardSourcesSettingsPage';
 import { HelpCenterSettingsPage } from './HelpCenterSettingsPage';
 import { SettingsIntegrationsPanel } from './SettingsIntegrationsPanel';
+import { UiBadge } from './ui/UiBadge';
+import { UiCard } from './ui/UiCard';
+import { UiIcon } from './ui/UiIcon';
+import { UiMetric } from './ui/UiMetric';
+import { UiMetricRow } from './ui/UiMetricRow';
+import { UiPage } from './ui/UiPage';
+import { UiPageHeader } from './ui/UiPageHeader';
+import type { UiIconName } from './ui/ui-types';
 import '../analytics/high-density.css';
 import './settings-ui.css';
 import { SyncHistorySettingsPage } from './SyncHistorySettingsPage';
@@ -65,6 +73,118 @@ const SETTINGS_ROUTES: Record<string, string> = {
   'dashboard-fontes': '/admin/settings/dashboard-sources',
   'dashboard-historico': '/admin/settings/sync-history',
 };
+
+/**
+ * Visão geral de Configurações.
+ *
+ * A versão anterior desta tela era um mockup: o rail de KPIs trazia "8"
+ * integrações, "27" usuários, "6" perfis, "14" fontes e "3" alertas como
+ * literais, com variações inventadas ("+1 vs. mês anterior"); cada um dos oito
+ * cards de módulo exibia três contadores fixos (3 marcas, 27 usuários, 8
+ * integrações, 1.248 logs, 156 rascunhos, 6 domínios…); e a tabela "Atividades
+ * recentes" listava seis eventos fabricados, com pessoas ("Mariana Silva",
+ * "Carla Santos", "Juliana Ribeiro") e carimbos de data inventados.
+ *
+ * Nada disso vinha de contrato. Não existe hoje um read model de resumo de
+ * configurações nem uma trilha de auditoria exposta ao frontend
+ * (BACKEND_CAPABILITY_REQUIRED). A tela passa a ser o que ela de fato pode
+ * ser com honestidade: um índice navegável dos módulos de configuração, com a
+ * descrição real de cada um e o estado de disponibilidade que já existe em
+ * GROUPS. Os números voltam quando houver contrato para eles.
+ */
+const OVERVIEW_MODULES: Array<{
+  accent: string;
+  groupId: string;
+  icon: UiIconName;
+  label: string;
+  to: string | null;
+}> = [
+  { accent: 'var(--gso-brand-pink,#FF4FA3)', groupId: 'marcas', icon: 'brand', label: 'Marcas e domínios', to: '/admin/settings/brands' },
+  { accent: 'var(--gso-action-blue,#2D7CFF)', groupId: 'papeis', icon: 'users', label: 'Usuários e acessos', to: '/admin/access' },
+  { accent: 'var(--gso-brand-pink,#FF4FA3)', groupId: 'integracoes', icon: 'plug', label: 'Integrações', to: '/admin/settings/integrations' },
+  { accent: 'var(--gso-action-blue,#2D7CFF)', groupId: 'dashboard-fontes', icon: 'database', label: 'Fontes do Dashboard', to: '/admin/settings/dashboard-sources' },
+  { accent: 'var(--gso-action-blue,#2D7CFF)', groupId: 'dashboard-historico', icon: 'clock', label: 'Histórico de sincronizações', to: '/admin/settings/sync-history' },
+  { accent: 'var(--gso-brand-pink,#FF4FA3)', groupId: 'central-ajuda', icon: 'help', label: 'Central de ajuda', to: '/admin/settings/help-center' },
+  { accent: 'var(--gso-action-blue,#2D7CFF)', groupId: 'tipos-conversa', icon: 'list', label: 'Tipos de conversa', to: null },
+  { accent: 'var(--gso-action-blue,#2D7CFF)', groupId: 'prioridades', icon: 'alert', label: 'Prioridades e severidades', to: null },
+];
+
+const OVERVIEW_STATUS_TONE: Record<GroupStatus, 'success' | 'neutral' | 'warning'> = {
+  ativo: 'success',
+  existe_hoje: 'neutral',
+  em_breve: 'warning',
+};
+
+const OVERVIEW_STATUS_LABEL: Record<GroupStatus, string> = {
+  ativo: 'Ativo',
+  existe_hoje: 'Existe hoje',
+  em_breve: 'Em breve',
+};
+
+function SettingsOverview({ groups }: { groups: SettingsGroup[] }) {
+  const byId = new Map(groups.map((group) => [group.id, group]));
+  const modules = OVERVIEW_MODULES.map((module) => ({ ...module, group: byId.get(module.groupId) ?? null })).filter(
+    (module) => module.group !== null,
+  );
+
+  return (
+    <UiPage className="gso-po-v2-overview space-y-4">
+      <UiPageHeader
+        description="Governança da plataforma, acessos, identidade e integrações."
+        title="Configurações"
+        titleId="settings-overview-title"
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {modules.map((module) => {
+          const group = module.group as SettingsGroup;
+          return (
+            <div
+              className="rounded-xl border border-[color:var(--gso-border,#22324D)] bg-[color:var(--gso-surface-primary,#131E33)] p-4 flex flex-col justify-between gap-3"
+              key={module.groupId}
+            >
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="p-1.5 rounded-lg bg-[color:var(--gso-surface-secondary,#18263F)]" style={{ color: module.accent }}>
+                      <UiIcon name={module.icon} />
+                    </span>
+                    <strong className="font-semibold text-sm text-[color:var(--gso-text-primary,#E6ECF5)] truncate">{module.label}</strong>
+                  </div>
+                  <UiBadge tone={OVERVIEW_STATUS_TONE[group.status]}>{OVERVIEW_STATUS_LABEL[group.status]}</UiBadge>
+                </div>
+                <p className="text-xs text-[color:var(--gso-text-secondary,#A6B2C7)]">{group.description}</p>
+                <p className="text-[11px] text-[color:var(--gso-text-secondary,#A6B2C7)]">Usado em: {group.usadoEm}</p>
+              </div>
+              {module.to ? (
+                <Link className="text-xs font-semibold text-[color:var(--gso-action-blue,#2D7CFF)] hover:underline flex items-center gap-1 pt-1" to={module.to}>
+                  Abrir →
+                </Link>
+              ) : (
+                <span className="text-[11px] text-[color:var(--gso-text-secondary,#A6B2C7)] pt-1">
+                  Disponível na lista de parâmetros abaixo.
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* A tabela "Atividades recentes" saiu daqui: os seis registros eram
+          literais no componente. Quando existir leitura da trilha de auditoria
+          (audit log) exposta ao frontend, ela volta consumindo esse contrato. */}
+      <UiCard label="Trilha de alterações">
+        <div className="gso-ui-card-body">
+          <p className="gso-ui-alert gso-ui-alert--warning" role="status">
+            BACKEND_CAPABILITY_REQUIRED — não há leitura de trilha de auditoria de
+            configurações exposta ao frontend. O histórico de execuções das
+            integrações está disponível em Histórico de sincronizações.
+          </p>
+        </div>
+      </UiCard>
+    </UiPage>
+  );
+}
 
 function sectionFromPathname(pathname: string) {
   const route = Object.entries(SETTINGS_ROUTES).find(([, path]) => pathname === path)?.[0];
@@ -576,37 +696,21 @@ function GroupDetail({
   const isIntegrations = group.id === 'integracoes';
 
   return (
-    <article className="min-h-0 bg-[color:var(--minimal-surface)]">
+    <article className="min-h-0 bg-transparent">
       {DASHBOARD_SECTION_IDS.includes(group.id) ? (
-        // As duas telas do eixo de dados trazem o próprio cabeçalho de página,
-        // com breadcrumb, metadado de leitura e ações da seção.
-        <div className="px-5 py-5 sm:px-6">
-          {group.id === 'dashboard-fontes' ? <DashboardSourcesSettingsPage /> : <SyncHistorySettingsPage />}
-        </div>
+        group.id === 'dashboard-fontes' ? <DashboardSourcesSettingsPage /> : <SyncHistorySettingsPage />
       ) : isIntegrations ? (
-        // Integrações traz o próprio cabeçalho de página: título, contexto de
-        // leitura e a ação de reler o estado ficam na composição da tela.
-        <div className="px-5 py-5 sm:px-6">
-          {integrations.phase === 'ready' ? (
-            <SettingsIntegrationsPanel busy={mutating} error={mutationError} integrations={integrations.items} onReload={onReloadIntegrations} onSave={onSaveIntegration} />
-          ) : integrations.phase === 'error' ? (
-            <div className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] px-4 py-3 text-sm text-[color:var(--color-danger-text)]">Não foi possível carregar as integrações agora.</div>
-          ) : (
-            <p className="text-sm text-[color:var(--minimal-text-secondary)]">Carregando integrações…</p>
-          )}
-        </div>
+        integrations.phase === 'ready' ? (
+          <SettingsIntegrationsPanel busy={mutating} error={mutationError} integrations={integrations.items} onReload={onReloadIntegrations} onSave={onSaveIntegration} />
+        ) : integrations.phase === 'error' ? (
+          <div className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] px-4 py-3 text-sm text-[color:var(--color-danger-text)]">Não foi possível carregar as integrações agora.</div>
+        ) : (
+          <p className="text-sm text-[color:var(--minimal-text-secondary)]">Carregando integrações…</p>
+        )
       ) : isBrands ? (
-        // Marcas traz o próprio cabeçalho de página: título, contagem de marcas
-        // ativas e a ação de cadastro ficam na composição da tela.
-        <div className="px-5 py-5 sm:px-6">
-          <BrandsSettingsPage mutating={mutating} mutationError={mutationError} onArchive={onArchiveBrand} onCreate={onCreateBrand} state={brands} />
-        </div>
+        <BrandsSettingsPage mutating={mutating} mutationError={mutationError} onArchive={onArchiveBrand} onCreate={onCreateBrand} state={brands} />
       ) : isHelpCenter ? (
-        // Central de ajuda também responde pelo próprio cabeçalho, com a ação de
-        // abrir a central pública.
-        <div className="px-5 py-5 sm:px-6">
-          <HelpCenterSettingsPage mutating={mutating} mutationError={mutationError} onSave={onSaveHelpCenterSupportContacts} state={helpCenterSupportContacts} />
-        </div>
+        <HelpCenterSettingsPage mutating={mutating} mutationError={mutationError} onSave={onSaveHelpCenterSupportContacts} state={helpCenterSupportContacts} />
       ) : (
       <>
       <header className="border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6">
@@ -672,7 +776,8 @@ export function SettingsPage() {
     () => GROUPS.filter((group) => canOpenSettingsSection(group.id, settingsPermissions)),
     [settingsPermissions],
   );
-  const requestedSection = sectionFromPathname(location.pathname) ?? 'integracoes';
+  const isOverview = location.pathname === '/admin/settings' && !isDashboardViewer;
+  const requestedSection = sectionFromPathname(location.pathname) ?? (isOverview ? null : 'integracoes');
   const [selectedId, setSelectedId] = useState<string>(() => {
     // A busca global do Genio deixa aqui a secao pedida.
     try {
@@ -697,7 +802,7 @@ export function SettingsPage() {
   const [integrations, setIntegrations] = useState<LoadState<ManagedIntegration>>({ phase: 'idle' });
   const [mutating, setMutating] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
-  const selected = visibleGroups.find((group: SettingsGroup) => group.id === selectedId) ?? visibleGroups[0];
+  const selected = isOverview ? null : visibleGroups.find((group: SettingsGroup) => group.id === selectedId) ?? visibleGroups[0];
 
   useEffect(() => {
     const next = isDashboardViewer ? 'integracoes' : sectionFromPathname(location.pathname);
@@ -1003,13 +1108,13 @@ export function SettingsPage() {
   );
 
   return (
-    <div className="gso-settings-shell gso-visual-v1-settings-shell gso-high-density-ui flex h-full min-h-0 flex-col bg-[color:var(--minimal-surface)]">
+    <div className="gso-settings-shell gso-visual-v1-settings-shell gso-high-density-ui flex h-full min-h-0 flex-col bg-transparent">
       {/* A navegação das seções de Configurações vive na sidebar global. Aqui
           resta apenas o conteúdo da seção pedida pela rota, em uma coluna
           única, e cada seção responde pelo próprio cabeçalho. */}
       <div className="gso-settings-cockpit-layout flex min-h-0 flex-1 flex-col overflow-y-auto">
         <main className="gso-settings-cockpit-main min-w-0 flex-1">
-          <GroupDetail
+          {isOverview ? <SettingsOverview groups={visibleGroups} /> : selected ? <GroupDetail
           conversationTypes={conversationTypes}
           group={selected}
           mutating={mutating}
@@ -1034,7 +1139,7 @@ export function SettingsPage() {
           integrations={integrations}
           onReloadIntegrations={loadIntegrations}
           onSaveIntegration={handleSaveIntegration}
-          />
+          /> : null}
         </main>
       </div>
     </div>

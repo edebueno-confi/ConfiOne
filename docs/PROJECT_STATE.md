@@ -1,5 +1,48 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
+> **Configuration PO Visual Lock V2 & Handoff Claude (2026-08-10).** As referências aprovadas estão versionadas em `docs/design/blueprint/Configuration PO/v2/`; a precedência operacional e visual é `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md` e `docs/specs/CONFI_ONE_BRAND_SYSTEM_V1.md`. Relatório de Handoff para Claude disponível em `docs/reports/2026-08-10_handoff-claude-confi-one-v1.md`.
+
+## Atualização corrente — Confi One V1 Blueprint Alignment & Handoff Claude — 2026-08-10
+
+- **Brand Migration ConfiOne**: Nome público do sistema alterado de GeniusOS para ConfiOne em todas as telas visíveis do frontend.
+- **Fidelidade Visual aos Blueprints**: Ordem dos blocos padronizada (Header → Summary Rail → Abas → Filtros compactos → Tabela dominante + Paginação).
+- **Indicador de Aba Ativa**: Traço inferior de 2-3px em rosa Genius Pink (`#FF4FA3`) configurado em `.gso-ui-tabs` e `.gso-ui-tab[aria-current='page']::after`.
+- **Hierarquia de Fundo Shell vs Canvas**: Fundo da página de Conhecimento (`/admin/knowledge`) e Novo Artigo (`/admin/knowledge/new`) ajustado para Dark Blue Canvas (`#081220`), garantindo contraste com o Shell (`#0F1A2E`) e Cartões (`#131E33`).
+- **Remoção de Elementos Obsoletos**: Aba `Convites / Histórico` removida do painel de Acessos; imagens legadas de blueprint excluídas.
+- **Governança & QA**: Typecheck (0 erros), Vite Build (0 erros), Playwright QA de 22 rotas executado. Handoff documentado em `docs/reports/2026-08-10_handoff-claude-confi-one-v1.md`.
+
+## Atualização corrente — Confi One V1 Global Surface Sweep & Remoção do Cockpit — 2026-08-09
+
+- **Brand System Canônico**: `docs/specs/CONFI_ONE_BRAND_SYSTEM_V1.md` (58 seções) é a única fonte canônica de Brand System. O contrato `docs/GENIUS_GLOBAL_SHELL_VISUAL_CONTRACT_V1.md` permanece classificado como SUPERSEDED para histórico.
+- **Cockpit Gerencial Removido**: A superfície independente `Cockpit gerencial` (`/admin/cockpit`) foi removida da navegação e o componente frontend órfão `ManagementCockpitPage.tsx` excluído. A rota antiga redireciona diretamente para `/admin/settings/dashboard-sources`.
+- **Fontes do Dashboard Canônica**: `Fontes do Dashboard` (`/admin/settings/dashboard-sources`) é a superfície administrativa canônica para fontes, cobertura, classificação, atualização e agendamento, incorporando `PipelineRoleSettings`, `StageMappingSettings` e `CompanyReconciliationPanel`.
+- **Backend Preservado**: 100% preservado (tabelas, RPCs, views, RLS, functions, Edge Functions, scheduler).
+- **QA & Testes**: Executada verificação de typecheck, build, lint (0 erros), secret-scan e runner Playwright para 22 rotas internas.
+
+## Atualização corrente — Admin Configuration Visual Rebuild V1 — 2026-08-09
+
+- Direção visual canônica criada em `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md`, com cinco referências aprovadas versionadas em `docs/design/blueprint/Configuration PO/`.
+- Escopo fechado: shell/sidebar, Usuários e acessos, Histórico, Fontes do Dashboard e Integrações. Dashboard Gerencial, backend, dados, métricas, contratos, RLS, sincronizações e credenciais permanecem fora.
+- Estado de implementação: shell, flyout, drawer responsivo e neutralidade visual de provider implementados e validados localmente. A branch é `codex/admin-configuration-visual-v1`, preservada por `refs/archive/admin-configuration-visual-v1-start-20260809`.
+- Evidência: `docs/reports/2026-08-09_admin-configuration-visual-rebuild-v1.md` registra QA dark real nos quatro viewports, sem overflow global; o dataset local continua com apenas a persona administrativa e sem histórico de execuções, limitação registrada sem hidratação/reset.
+- Limites confirmados: nenhum push, deploy, sync externo, alteração remota, alteração de secret, banco, RLS, RPC ou migration neste lote.
+
+## Adendo corrente — reconciliação OMIE ↔ HubSpot — 2026-08-09
+
+- Correção local pronta para o enriquecimento de títulos OMIE cujo código de
+  cliente vem dentro de `detalhes`; antes, esses títulos perdiam nome, CNPJ e
+  nome fantasia ao cruzar com o índice de clientes.
+- A sincronização de Companies do HubSpot passa a reter razão social, nome
+  fantasia e a chave CNPJ alternativa no cache de analytics. A fila e a lista
+  financeira usam esses aliases apenas para sugerir candidatas; CNPJ único ou
+  decisão auditada continuam sendo os únicos vínculos confirmados.
+- Validação local: teste de regressão OMIE, pgTAP de conciliação, typecheck web
+  e lint do banco aprovados. A migration canônica `20260809060338` foi
+  restaurada a partir do commit que a versionou; o histórico agora está alinhado
+  com o remoto. O dry-run remoto prevê somente as migrations locais novas
+  `20260809070000` e `20260809093201`; nenhum push, deploy, sync externo ou
+  migration remota foi executado neste lote.
+
 ## Adendo corrente — sincronização, qualidade e superfícies — 2026-08-04
 
 - O checkout canônico continua sendo `C:\Projetos\GSO-old`, na branch `main`,

@@ -7,6 +7,7 @@ import { UiCardHeader } from '../settings/ui/UiCardHeader';
 import { UiDetailList } from '../settings/ui/UiDetailList';
 import { UiField } from '../settings/ui/UiField';
 import { UiHintBand } from '../settings/ui/UiHintBand';
+import { UiPage } from '../settings/ui/UiPage';
 import { UiPageHeader } from '../settings/ui/UiPageHeader';
 import '../settings/settings-ui.css';
 import {
@@ -105,26 +106,21 @@ export function MyProfilePage() {
   const screenKeys = gate.actor?.screen_keys ?? [];
 
   return (
-    <div className="gso-ui gso-ui-shell">
-      <div className="gso-ui-shell-chrome">
-        <UiPageHeader
-          description="Atualize os seus dados pessoais e a sua senha. Papel, área e permissões continuam sob a administração de acessos."
-          parentHref="/inicio"
-          parentLabel="Início"
-          title="Meu perfil"
-          titleId="my-profile-title"
-        />
-      </div>
+    <UiPage className="max-w-[1200px]">
+      <UiPageHeader
+        description="Atualize os seus dados pessoais e a sua senha. Papel, área e permissões continuam sob a administração de acessos."
+        title="Meu perfil"
+        titleId="my-profile-title"
+      />
 
-      <div className="gso-ui-shell-body">
-        {feedback ? (
-          <p
-            className={feedback.tone === 'critical' ? 'gso-ui-field-error' : 'gso-ui-note'}
-            role="status"
-          >
-            {feedback.text}
-          </p>
-        ) : null}
+      {feedback ? (
+        <p
+          className={feedback.tone === 'critical' ? 'gso-ui-field-error' : 'gso-ui-note'}
+          role="status"
+        >
+          {feedback.text}
+        </p>
+      ) : null}
 
         <UiCard labelledBy="my-profile-identity-title">
           <UiCardHeader
@@ -174,7 +170,7 @@ export function MyProfilePage() {
             </p>
 
             <form
-              className="gso-ui-grid"
+              className="gso-ui-grid max-w-[640px]"
               onSubmit={(event) => {
                 event.preventDefault();
                 void run(() => updateSelfProfile(userId, { fullName }), 'Perfil atualizado.');
@@ -241,8 +237,7 @@ export function MyProfilePage() {
           description="Nome e foto valem para todo o sistema: a sidebar, o menu do usuário e as listas administrativas passam a mostrar o que você salvar aqui."
           title="Onde estes dados aparecem"
         />
-      </div>
-    </div>
+    </UiPage>
   );
 }
 
@@ -297,7 +292,7 @@ function SelfPasswordCard() {
         titleId="my-profile-password-title"
         tone="warning"
       />
-      <form className="gso-ui-card-body" onSubmit={(event) => void submit(event)}>
+      <form className="gso-ui-card-body max-w-[640px]" onSubmit={(event) => void submit(event)}>
         <div className="gso-ui-grid">
           <UiField label="Senha atual">
             <input

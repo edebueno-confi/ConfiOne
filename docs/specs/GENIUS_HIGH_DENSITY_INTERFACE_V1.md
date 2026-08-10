@@ -2,6 +2,8 @@
 
 Status: direção autorizada e implementação pendente de aprovação visual final.
 
+> **Nota de precedência — 2026-08-09.** Para shell, Usuários e acessos, Histórico de sincronizações, Fontes do Dashboard e Integrações, `ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md` prevalece. A composição mínima de QA destas superfícies é 1366×768 (com 1440×900, 1024×768 e 390×844), a sidebar colapsada usa flyout sobreposto e Configurações não são analytics decorativo. As regras abaixo permanecem históricas ou complementares quando não conflitantes.
+
 Esta especificação substitui a direção de implementação do `Dashboard Blueprint
 System V2`. O Blueprint V2 permanece apenas como histórico quando ainda existir
 no histórico Git; não é referência para novas composições. As referências visuais

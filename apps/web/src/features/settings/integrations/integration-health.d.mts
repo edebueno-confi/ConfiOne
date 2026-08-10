@@ -38,3 +38,22 @@ export function toneTextClassName(tone: IntegrationTone): string;
 export function credentialState(item: Pick<IntegrationHealthInput, 'isEnabled' | 'hasCredentials'>): IntegrationStateBadge;
 export function lastRunState(item: Pick<IntegrationHealthInput, 'lastRunStatus'>): IntegrationStateBadge;
 export function summarizeIntegrations(items: readonly IntegrationHealthInput[]): IntegrationsHealthSummary;
+
+export interface IntegrationProviderMetric {
+  readonly key: string;
+  readonly label: string;
+  readonly at: string | null;
+  readonly value: string | null;
+  readonly detail: string;
+  readonly detailAt?: string | null;
+  readonly tone: IntegrationTone;
+}
+
+export function integrationScopes(item: { readonly config?: Record<string, unknown> }): string[];
+export function providerMetrics(
+  item: IntegrationHealthInput & {
+    readonly credentialUpdatedAt: string | null;
+    readonly lastErrorMessage: string | null;
+    readonly config?: Record<string, unknown>;
+  },
+): IntegrationProviderMetric[];

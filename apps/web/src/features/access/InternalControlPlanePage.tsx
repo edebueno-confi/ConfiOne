@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { formatDateTime } from '../../app/format';
 import { ErrorState, LoadingState } from '../../components/states';
@@ -61,20 +61,14 @@ import type {
 import { classifyAdminError } from '../admin/admin-errors';
 import { useAuthContext } from '../auth/auth-context';
 
-type Tab = 'users' | 'invites' | 'structure' | 'permissions';
+type Tab = 'users' | 'structure' | 'permissions';
 type LoadPhase = 'loading' | 'ready' | 'error' | 'denied';
 type Tone = 'positive' | 'warning' | 'critical';
 
-/**
- * A aba de convites permanece apenas como histórico auditável. A liberação de
- * acesso interno passou a ser feita por "Criar usuário", que provisiona a conta
- * e o vínculo no servidor sem usar `internal_invites`.
- */
 const tabs: Array<{ key: Tab; label: string }> = [
   { key: 'users', label: 'Usuários' },
   { key: 'structure', label: 'Estrutura' },
   { key: 'permissions', label: 'Perfis' },
-  { key: 'invites', label: 'Convites (histórico)' },
 ];
 
 const STATUS_LABELS: Record<string, string> = {
@@ -89,6 +83,16 @@ const STATUS_LABELS: Record<string, string> = {
   failed: 'Falhou',
 };
 
+// Rotulos dos dominios de capability (public.internal_capabilities.domain).
+const DOMAIN_LABELS: Record<string, string> = {
+  access: 'Usuários e acessos',
+  administration: 'Administração do sistema',
+  analytics: 'Dashboard gerencial',
+  knowledge: 'Central de conhecimento',
+  settings: 'Configurações',
+  workspace: 'Espaço de trabalho',
+};
+
 function statusLabel(status: string) {
   return STATUS_LABELS[status] ?? status;
 }
@@ -101,7 +105,7 @@ function statusTone(status: string) {
 }
 
 function isTab(value: string | null): value is Tab {
-  return value === 'users' || value === 'invites' || value === 'structure' || value === 'permissions';
+  return value === 'users' || value === 'structure' || value === 'permissions';
 }
 
 function firstOrMatchingArea(user: AdminInternalAccessUserRow, areaKey?: string) {
@@ -306,24 +310,43 @@ export function InternalControlPlanePage() {
   // O indicador abaixo usa um dado que o backend realmente entrega: quantas
   // identidades internas ainda estão sem vínculo de área.
   const withoutArea = users.filter((user) => user.areas.length === 0).length;
+  const activeAreas = areas.filter((area) => area.is_active).length;
+  const pendingInvites = invites.filter((invite) => invite.status === 'pending' || invite.status === 'sent').length;
+
+  const ctaLabel =
+    tab === 'structure'
+      ? 'Criar área'
+      : tab === 'permissions'
+        ? 'Criar perfil'
+        : 'Criar usuário';
 
   return (
-    <div className="gso-ui gso-ui-shell">
-      {/* Cromo fixo: identidade da tela, indicadores e navegação nunca entram no
-          container de rolagem, então nenhuma aba consegue escondê-los. */}
+    <div className="gso-ui gso-ui-shell gso-po-v2-access">
       <div className="gso-ui-shell-chrome">
         <UiPageHeader
-          actions={<UiButton icon="plus" onClick={startCreate} variant="primary">Criar usuário</UiButton>}
-          description="Crie contas internas, defina área, função e perfil, e acompanhe as permissões efetivas calculadas pelo backend."
-          parentHref="/admin/settings/integrations"
-          title="Usuários e acesso"
+          actions={
+            <UiButton
+              icon="plus"
+              onClick={() => {
+                if (tab === 'structure') {
+                  const areaKeyInput = document.querySelector<HTMLInputElement>('#new-area-key');
+                  areaKeyInput?.focus();
+                } else if (tab === 'permissions') {
+                  const profileNameInput = document.querySelector<HTMLInputElement>('#new-profile-name');
+                  profileNameInput?.focus();
+                } else {
+                  startCreate();
+                }
+              }}
+              variant="primary"
+            >
+              {ctaLabel}
+            </UiButton>
+          }
+          description="Gerencie usuários, estrutura organizacional, perfis e permissões da plataforma."
+          title="Usuários e acessos"
           titleId="access-title"
         />
-        <UiMetricRow label="Resumo de acessos internos">
-          <UiMetric icon="users" label="Usuários ativos" sub="acesso liberado" tone="success" value={activeUsers} valueTone="success" />
-          <UiMetric icon="layers" label="Sem área atribuída" sub="ainda sem vínculo organizacional" tone="warning" value={withoutArea} valueTone={withoutArea ? 'warning' : undefined} />
-          <UiMetric icon="shield" label="Usuários suspensos" sub="acesso pausado" tone="danger" value={suspendedUsers} valueTone={suspendedUsers ? 'danger' : undefined} />
-        </UiMetricRow>
         <nav aria-label="Seções de acessos" className="gso-ui-tabs">
           {tabs.map((item) => (
             <button
@@ -397,15 +420,6 @@ export function InternalControlPlanePage() {
             </>
           ) : null}
 
-          {tab === 'invites' ? (
-            <InviteHistoryPanel
-              busy={busy}
-              invites={invites}
-              onCreateUser={startCreate}
-              onRevoke={(id) => void runAction(() => revokeAdminInternalInvitation(id), 'Convite revogado.')}
-            />
-          ) : null}
-
           {tab === 'structure' ? (
             <StructurePanel
               areaForm={areaForm}
@@ -420,6 +434,7 @@ export function InternalControlPlanePage() {
               profiles={profiles}
               setAreaForm={setAreaForm}
               setFunctionForm={setFunctionForm}
+              users={users}
             />
           ) : null}
 
@@ -435,6 +450,7 @@ export function InternalControlPlanePage() {
                 profileForm={profileForm}
                 profiles={profiles}
                 setProfileForm={setProfileForm}
+                users={users}
               />
               <ProfileScreenAccessPanel
                 busy={busy}
@@ -641,10 +657,66 @@ function UsersPanel(props: {
   const { areas, assignment, busy, capabilities, detail, filters, functions, onAction, onCreate, onResetPassword, onSelect, overrideForm, overrides, profiles, query, selectedUser, setAssignment, setFilters, setOverrideForm, setQuery, users } = props;
   const visibleFunctions = functions.filter((item) => !assignment.areaKey || item.area_key === assignment.areaKey);
   const effectiveCapabilities = Array.isArray(detail?.capabilities) ? (detail?.capabilities as unknown[]).length : null;
+  const [detailOpen, setDetailOpen] = useState(false);
+  const drawerRef = useRef<HTMLElement | null>(null);
+  const drawerTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  function closeDetail() {
+    setDetailOpen(false);
+    window.requestAnimationFrame(() => drawerTriggerRef.current?.focus());
+  }
+
+  useEffect(() => {
+    if (!detailOpen) return;
+
+    const focusable = () => Array.from(
+      drawerRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ) ?? [],
+    );
+    const focusFirst = () => focusable()[0]?.focus();
+    const frame = window.requestAnimationFrame(focusFirst);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeDetail();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const nodes = focusable();
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [detailOpen]);
 
   return (
     <>
-      <div className="gso-ui-split gso-ui-grow">
+      {/* Esta faixa exibia numeros inventados: "9" gestores, "6" convidados e "3"
+          acessos pendentes eram literais, e os dois primeiros caiam em `|| 27` e
+          `|| 4` quando a lista vinha vazia. As variacoes ("+3 este mes",
+          "2 aguardando aprovacao") tambem eram fixas — nao existe serie historica
+          por tras delas. Ficam apenas os valores derivaveis da lista real. */}
+      <UiMetricRow label="Resumo de usuários internos">
+        <UiMetric icon="users" label="Usuários ativos" tone="primary" value={users.filter((u) => u.access_status === 'active').length} />
+        <UiMetric icon="shield" label="Administradores" tone="neutral" value={users.filter((u) => u.platform_roles.includes('platform_admin')).length} />
+        {/* O contrato so expoe active | suspended | inactive: nao existe estado
+            "pendente" para acesso interno. */}
+        <UiMetric icon="alert" label="Acessos suspensos ou inativos" tone="danger" value={users.filter((u) => u.access_status !== 'active').length} />
+      </UiMetricRow>
+      <div className="gso-ui-split gso-ui-split--wide-detail gso-ui-grow mt-4">
         <UiCard flush label="Usuários internos">
         <UiToolbar label="Filtros da lista de usuários">
           <div className="gso-ui-toolbar-field gso-ui-toolbar-field--wide">
@@ -698,7 +770,7 @@ function UsersPanel(props: {
                 return (
                   <tr className={selected ? 'is-selected' : undefined} key={user.user_id}>
                     <td>
-                      <button className="gso-ui-rowselect" onClick={() => onSelect(user)} type="button">
+                      <button className="gso-ui-rowselect" onClick={(event) => { drawerTriggerRef.current = event.currentTarget; onSelect(user); setDetailOpen(true); }} type="button">
                         {user.full_name || 'Sem nome'}
                       </button>
                       <small>{user.email || 'Indisponível'}</small>
@@ -715,6 +787,7 @@ function UsersPanel(props: {
                           disabled={busy}
                           icon="key"
                           onClick={() => void onResetPassword(user)}
+                          variant="secondary"
                         >
                           Redefinir senha
                         </UiButton>
@@ -722,7 +795,7 @@ function UsersPanel(props: {
                           compact
                           disabled={busy}
                           onClick={() => void onAction(() => setAdminInternalUserStatus(user.user_id, user.access_status !== 'active'), user.access_status === 'active' ? 'Usuário suspenso.' : 'Usuário reativado.')}
-                          variant={user.access_status === 'active' ? 'danger' : 'secondary'}
+                          variant="ghost"
                         >
                           {user.access_status === 'active' ? 'Suspender' : 'Reativar'}
                         </UiButton>
@@ -743,11 +816,17 @@ function UsersPanel(props: {
           ) : null}
         </UiCard>
 
-        <aside className="gso-ui-aside">
+        {detailOpen ? <button aria-label="Fechar detalhe do usuário" className="gso-ui-access-drawer-scrim" onClick={closeDetail} type="button" /> : null}
+        <aside aria-label="Detalhe do usuário" aria-modal={detailOpen} className="gso-ui-aside gso-ui-access-drawer" data-open={detailOpen} ref={drawerRef} role={detailOpen ? 'dialog' : undefined}>
           {selectedUser ? (
             <UiCard labelledBy="access-detail-title">
               <UiCardHeader
-                actions={<UiBadge dot tone={statusTone(selectedUser.access_status)}>{statusLabel(selectedUser.access_status)}</UiBadge>}
+                actions={
+                  <>
+                    <UiBadge dot tone={statusTone(selectedUser.access_status)}>{statusLabel(selectedUser.access_status)}</UiBadge>
+                    <UiButton aria-label="Fechar detalhe" compact onClick={closeDetail} variant="ghost">Fechar</UiButton>
+                  </>
+                }
                 description={selectedUser.email || 'E-mail indisponível'}
                 icon="users"
                 title={selectedUser.full_name || 'Usuário interno'}
@@ -860,74 +939,7 @@ function UsersPanel(props: {
  * liberação de acesso; os registros permanecem para auditoria e a única ação
  * disponível é revogar um convite que ainda esteja aberto.
  */
-function InviteHistoryPanel(props: {
-  busy: boolean;
-  invites: AdminInternalInviteRow[];
-  onCreateUser: () => void;
-  onRevoke: (id: string) => void;
-}) {
-  const { busy, invites, onCreateUser, onRevoke } = props;
-  const open = invites.filter((invite) => invite.status === 'pending' || invite.status === 'sent');
 
-  return (
-    <>
-      <UiHintBand
-        description="O convite deixou de ser o caminho de liberação de acesso interno. Novos acessos são criados diretamente em “Criar usuário”, com a conta provisionada no servidor. Este histórico continua aqui apenas para auditoria e para encerrar convites que ficaram abertos."
-        title="Convites: histórico auditável"
-      />
-      <UiCard flush labelledBy="invite-history-title">
-        <div className="gso-ui-card-body">
-          <UiCardHeader
-            actions={<UiButton icon="plus" onClick={onCreateUser} variant="primary">Criar usuário</UiButton>}
-            description={`${invites.length} registro(s) preservado(s) · ${open.length} ainda em aberto. Tokens nunca são retornados nas listagens.`}
-            icon="archive"
-            title="Convites (histórico)"
-            titleId="invite-history-title"
-            tone="neutral"
-          />
-        </div>
-        <UiTable labelledBy="invite-history-title">
-          <thead>
-            <tr>
-              <th scope="col">Pessoa</th>
-              <th scope="col">Área</th>
-              <th scope="col">Perfil</th>
-              <th scope="col">Status</th>
-              <th className="gso-ui-table-actions--head" scope="col">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {invites.map((invite) => (
-              <tr key={invite.invite_id}>
-                <td>
-                  <strong>{invite.full_name}</strong>
-                  <small>{invite.email}</small>
-                </td>
-                <td>{invite.area_label}</td>
-                <td>{invite.access_profile_name || 'Personalizado'}</td>
-                <td><UiBadge dot tone={statusTone(invite.status)}>{statusLabel(invite.status)}</UiBadge></td>
-                <td>
-                  <div className="gso-ui-table-actions">
-                    {invite.status === 'pending' || invite.status === 'sent' ? (
-                      <UiButton compact disabled={busy} onClick={() => onRevoke(invite.invite_id)} variant="danger">Revogar</UiButton>
-                    ) : null}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </UiTable>
-        {invites.length === 0 ? (
-          <UiEmptyState
-            description="Nenhum convite foi preparado neste ambiente. O caminho oficial de liberação é a criação direta de usuário."
-            icon="archive"
-            title="Sem histórico de convites"
-          />
-        ) : null}
-      </UiCard>
-    </>
-  );
-}
 
 function StructurePanel(props: {
   areaForm: { areaKey: string; displayName: string; description: string };
@@ -942,108 +954,278 @@ function StructurePanel(props: {
   profiles: AdminInternalProfileRow[];
   setAreaForm: React.Dispatch<React.SetStateAction<{ areaKey: string; displayName: string; description: string }>>;
   setFunctionForm: React.Dispatch<React.SetStateAction<{ areaKey: string; name: string; description: string; profileId: string }>>;
+  users: AdminInternalAccessUserRow[];
 }) {
-  const { areaForm, areas, busy, functionForm, functions, onCreateArea, onCreateFunction, onToggleArea, onToggleFunction, profiles, setAreaForm, setFunctionForm } = props;
+  const { areaForm, areas, busy, functionForm, functions, onCreateArea, onCreateFunction, onToggleArea, onToggleFunction, profiles, setAreaForm, setFunctionForm, users } = props;
+  const [selectedAreaKey, setSelectedAreaKey] = useState<string>(areas[0]?.area_key ?? '');
+  const [areaSearch, setAreaSearch] = useState('');
+  const [structureTab, setStructureTab] = useState<'overview' | 'functions' | 'users'>('overview');
+
+  // Nao existe area "Customer Success" fabricada como fallback: sem areas no
+  // contrato, o painel de detalhe entra em estado vazio explicito.
+  const selectedArea = areas.find((a) => a.area_key === selectedAreaKey) ?? areas[0] ?? null;
+
+  const areaFunctions = functions.filter((f) => f.area_key === (selectedArea?.area_key ?? selectedAreaKey));
+
+  // Colaboradores realmente vinculados a area selecionada.
+  const areaUsers = !selectedArea
+    ? []
+    : users.filter((user) => user.areas.some((area) => String(area.area_key ?? '') === selectedArea.area_key));
+
+  const filteredAreas = areas.filter((a) =>
+    !areaSearch.trim() || a.display_name.toLowerCase().includes(areaSearch.trim().toLowerCase()),
+  );
 
   return (
-    <div className="gso-ui-cards">
-      <UiCard labelledBy="structure-areas-title">
-        <UiCardHeader
-          description="Catálogo organizacional, separado do catálogo legado de áreas-alvo dos acionamentos."
-          icon="layers"
-          title="Áreas"
-          titleId="structure-areas-title"
-        />
-        <div className="gso-ui-card-body">
-          <ul className="gso-ui-rowlist">
-            {areas.map((area) => (
-              <li className="gso-ui-rowcard" key={area.area_key}>
-                <div className="gso-ui-rowcard-main">
-                  <div>
-                    <strong>{area.display_name}</strong>
-                    <p>{area.active_user_count} usuários · {area.active_function_count} funções</p>
-                  </div>
-                  <div className="gso-ui-table-actions">
-                    <UiBadge dot tone={area.is_active ? 'success' : 'neutral'}>{area.is_active ? 'Ativa' : 'Inativa'}</UiBadge>
-                    <UiButton compact disabled={busy || area.active_user_count > 0} onClick={() => onToggleArea(area)}>
-                      {area.is_active ? 'Desativar' : 'Ativar'}
-                    </UiButton>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <form className="gso-ui-card-body" onSubmit={(event) => { event.preventDefault(); onCreateArea(); }}>
-          <div className="gso-ui-grid">
-            <UiField hint="Somente letras minúsculas, números e underline." label="Chave">
-              <input className="gso-ui-control" onChange={(event) => setAreaForm((current) => ({ ...current, areaKey: event.target.value }))} pattern="[a-z0-9_]+" required value={areaForm.areaKey} />
-            </UiField>
-            <UiField label="Nome">
-              <input className="gso-ui-control" onChange={(event) => setAreaForm((current) => ({ ...current, displayName: event.target.value }))} required value={areaForm.displayName} />
-            </UiField>
-            <UiField label="Descrição" wide>
-              <textarea className="gso-ui-control" onChange={(event) => setAreaForm((current) => ({ ...current, description: event.target.value }))} rows={2} value={areaForm.description} />
-            </UiField>
-          </div>
-          <div className="gso-ui-actions">
-            <UiButton disabled={busy} icon="plus" type="submit" variant="primary">Criar área</UiButton>
-          </div>
-        </form>
-      </UiCard>
+    <div className="space-y-4">
+      {/* "87" vinculados, "2" sem estrutura e "5" pendencias eram literais, e os
+          dois primeiros indicadores caiam em `|| 8` e `|| 24`. Ficam apenas os
+          valores contados das listas reais. */}
+      <UiMetricRow label="Resumo da estrutura organizacional">
+        <UiMetric icon="layers" label="Áreas ativas" tone="primary" value={areas.filter((a) => a.is_active).length} />
+        <UiMetric icon="list" label="Funções cadastradas" tone="neutral" value={functions.length} />
+        <UiMetric icon="users" label="Usuários vinculados" tone="neutral" value={users.filter((u) => u.areas.length > 0).length} />
+        <UiMetric icon="users" label="Usuários sem estrutura" tone="neutral" value={users.filter((u) => u.areas.length === 0).length} />
+      </UiMetricRow>
 
-      <UiCard labelledBy="structure-functions-title">
-        <UiCardHeader
-          description="Funções organizam o trabalho e podem apontar para um perfil padrão."
-          icon="list"
-          title="Funções"
-          titleId="structure-functions-title"
-        />
-        <div className="gso-ui-card-body">
-          <ul className="gso-ui-rowlist">
-            {functions.map((item) => (
-              <li className="gso-ui-rowcard" key={item.function_id}>
-                <div className="gso-ui-rowcard-main">
-                  <div>
-                    <strong>{item.name}</strong>
-                    <p>{item.area_label} · {item.default_access_profile_name || 'sem perfil padrão'}</p>
-                  </div>
-                  <div className="gso-ui-table-actions">
-                    <UiBadge dot tone={item.is_active ? 'success' : 'neutral'}>{item.is_active ? 'Ativa' : 'Inativa'}</UiBadge>
-                    <UiButton compact disabled={busy} onClick={() => onToggleFunction(item)}>
-                      {item.is_active ? 'Desativar' : 'Ativar'}
-                    </UiButton>
-                  </div>
+      <div className="gso-ui-split gso-ui-split--wide-detail gso-ui-grow">
+        <UiCard flush label="Áreas da organização">
+          <UiToolbar label="Filtros de áreas">
+            <div className="gso-ui-toolbar-field gso-ui-toolbar-field--wide">
+              <UiSearchField aria-label="Buscar área" onChange={(event) => setAreaSearch(event.target.value)} placeholder="Buscar área" value={areaSearch} />
+            </div>
+            <div className="gso-ui-toolbar-field">
+              <select aria-label="Status da área" className="gso-ui-control gso-ui-select" defaultValue="">
+                <option value="">Todos os status</option>
+                <option value="active">Ativa</option>
+                <option value="inactive">Inativa</option>
+              </select>
+            </div>
+          </UiToolbar>
+
+          <UiTable label="Tabela de áreas">
+            <thead>
+              <tr>
+                {/* A coluna "Atualizado em" foi removida: vw_admin_access_areas nao
+                    expoe data de atualizacao, e a tela exibia a literal 22/07/2026
+                    em todas as linhas. Coluna sem fonte nao vira coluna vazia — sai. */}
+                <th scope="col">Área</th>
+                <th scope="col">Responsável</th>
+                <th scope="col" className="text-center">Funções</th>
+                <th scope="col" className="text-center">Usuários</th>
+                <th scope="col">Status</th>
+                <th className="gso-ui-table-actions--head" scope="col">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredAreas.map((area) => {
+                const isSelected = area.area_key === selectedAreaKey;
+                return (
+                  <tr className={isSelected ? 'is-selected' : undefined} key={area.area_key}>
+                    <td>
+                      <button
+                        className="gso-ui-rowselect flex items-center gap-2 text-left font-semibold text-[color:var(--gso-text-primary)]"
+                        onClick={() => setSelectedAreaKey(area.area_key)}
+                        type="button"
+                      >
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[color:var(--gso-action-blue)] text-[10px] text-white">
+                          ◆
+                        </span>
+                        {area.display_name}
+                      </button>
+                    </td>
+                    {/* manager_name vem de vw_admin_access_areas. A tela exibia a
+                        literal "Marina Souza" em todas as linhas, ignorando o campo
+                        real. E os contadores usavam `|| 4` e `|| 18`: quando o
+                        backend devolvia 0 ou null, o fallback inventava um numero
+                        plausivel no lugar do dado. Zero e um valor legitimo. */}
+                    <td className="text-xs text-[color:var(--gso-text-secondary)]">{area.manager_name || 'Indisponível'}</td>
+                    <td className="text-center font-mono text-xs">{typeof area.active_function_count === 'number' ? area.active_function_count : 'Indisponível'}</td>
+                    <td className="text-center font-mono text-xs">{typeof area.active_user_count === 'number' ? area.active_user_count : 'Indisponível'}</td>
+                    <td><UiBadge dot tone={area.is_active ? 'success' : 'neutral'}>{area.is_active ? 'Ativa' : 'Inativa'}</UiBadge></td>
+                    <td>
+                      <UiButton compact disabled={busy} onClick={() => onToggleArea(area)} variant="ghost">
+                        {area.is_active ? 'Desativar' : 'Ativar'}
+                      </UiButton>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </UiTable>
+
+          {/* Form para criar nova área */}
+          <form className="gso-ui-card-body border-t border-[color:var(--gso-border)]" onSubmit={(event) => { event.preventDefault(); onCreateArea(); }}>
+            <h4 className="text-xs font-semibold text-[color:var(--gso-text-primary)] mb-2">+ Criar nova área</h4>
+            <div className="gso-ui-grid">
+              <UiField hint="Chave única em letras minúsculas." label="Chave">
+                <input id="new-area-key" className="gso-ui-control" onChange={(event) => setAreaForm((current) => ({ ...current, areaKey: event.target.value }))} pattern="[a-z0-9_]+" placeholder="ex: customer_success" required value={areaForm.areaKey} />
+              </UiField>
+              <UiField label="Nome de exibição">
+                <input className="gso-ui-control" onChange={(event) => setAreaForm((current) => ({ ...current, displayName: event.target.value }))} placeholder="ex: Customer Success" required value={areaForm.displayName} />
+              </UiField>
+              <UiField label="Descrição" wide>
+                <textarea className="gso-ui-control" onChange={(event) => setAreaForm((current) => ({ ...current, description: event.target.value }))} placeholder="Descrição dos objetivos da área" rows={2} value={areaForm.description} />
+              </UiField>
+            </div>
+            <div className="gso-ui-actions mt-3">
+              <UiButton disabled={busy} icon="plus" type="submit" variant="primary">Criar área</UiButton>
+            </div>
+          </form>
+        </UiCard>
+
+        {/* Master-Detail Side Panel para Área Selecionada */}
+        <aside className="gso-ui-aside">
+          {!selectedArea ? (
+            <UiCard label="Detalhe da área">
+              <div className="gso-ui-card-body">
+                <p className="gso-ui-note">Nenhuma área organizacional disponível para exibir.</p>
+              </div>
+            </UiCard>
+          ) : (
+          <UiCard labelledBy="area-detail-title">
+            <div className="p-4 border-b border-[color:var(--gso-border)] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--gso-action-blue)] text-white text-base">
+                  ◆
+                </span>
+                <div>
+                  <h3 id="area-detail-title" className="text-base font-semibold text-[color:var(--gso-text-primary)] leading-tight">
+                    {selectedArea.display_name}
+                  </h3>
+                  <p className="text-xs text-[color:var(--gso-text-secondary)]">Responsável pela área: {selectedArea.manager_name || 'Indisponível'}</p>
                 </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <form className="gso-ui-card-body" onSubmit={(event) => { event.preventDefault(); onCreateFunction(); }}>
-          <div className="gso-ui-grid">
-            <UiField label="Área">
-              <select className="gso-ui-control gso-ui-select" onChange={(event) => setFunctionForm((current) => ({ ...current, areaKey: event.target.value }))} required value={functionForm.areaKey}>
-                {areas.filter((area) => area.is_active).map((area) => <option key={area.area_key} value={area.area_key}>{area.display_name}</option>)}
-              </select>
-            </UiField>
-            <UiField label="Nome">
-              <input className="gso-ui-control" onChange={(event) => setFunctionForm((current) => ({ ...current, name: event.target.value }))} required value={functionForm.name} />
-            </UiField>
-            <UiField label="Perfil padrão" wide>
-              <select className="gso-ui-control gso-ui-select" onChange={(event) => setFunctionForm((current) => ({ ...current, profileId: event.target.value }))} value={functionForm.profileId}>
-                <option value="">Sem perfil padrão</option>
-                {profiles.filter((profile) => profile.is_active).map((profile) => <option key={profile.access_profile_id} value={profile.access_profile_id}>{profile.name}</option>)}
-              </select>
-            </UiField>
-            <UiField label="Descrição" wide>
-              <textarea className="gso-ui-control" onChange={(event) => setFunctionForm((current) => ({ ...current, description: event.target.value }))} rows={2} value={functionForm.description} />
-            </UiField>
-          </div>
-          <div className="gso-ui-actions">
-            <UiButton disabled={busy} icon="plus" type="submit" variant="primary">Criar função</UiButton>
-          </div>
-        </form>
-      </UiCard>
+              </div>
+              <UiBadge dot tone={selectedArea.is_active ? 'success' : 'neutral'}>{selectedArea.is_active ? 'Ativa' : 'Inativa'}</UiBadge>
+            </div>
+
+            <div className="flex items-center gap-6 px-4 py-3 border-b border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] text-xs">
+              <div>
+                <strong className="block text-sm font-semibold text-[color:var(--gso-text-primary)]">{typeof selectedArea.active_function_count === 'number' ? selectedArea.active_function_count : 'Indisponível'}</strong>
+                <span className="text-[11px] text-[color:var(--gso-text-secondary)]">Funções</span>
+              </div>
+              <div>
+                <strong className="block text-sm font-semibold text-[color:var(--gso-text-primary)]">{typeof selectedArea.active_user_count === 'number' ? selectedArea.active_user_count : 'Indisponível'}</strong>
+                <span className="text-[11px] text-[color:var(--gso-text-secondary)]">Usuários vinculados</span>
+              </div>
+            </div>
+
+            <div className="flex border-b border-[color:var(--gso-border)] px-4">
+              {[
+                ['overview', 'Visão geral'],
+                ['functions', 'Funções'],
+                ['users', 'Usuários'],
+              ].map(([key, label]) => (
+                <button
+                  className={`py-2.5 px-3 text-xs font-semibold border-b-2 transition-colors ${structureTab === key ? 'border-[color:var(--gso-action-blue)] text-[color:var(--gso-action-blue)]' : 'border-transparent text-[color:var(--gso-text-secondary)] hover:text-[color:var(--gso-text-primary)]'}`}
+                  key={key}
+                  onClick={() => setStructureTab(key as typeof structureTab)}
+                  type="button"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="p-4 space-y-4 text-xs">
+              {structureTab === 'overview' ? (
+                <>
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Informações da área</h4>
+                    {/* A descricao caia num texto generico sobre carteira de clientes
+                        quando a area nao tinha descricao — o que fazia toda area sem
+                        descricao parecer ser de Customer Success. E as datas eram
+                        literais: a view nao expoe criacao nem atualizacao. */}
+                    <p className="text-[color:var(--gso-text-secondary)] leading-relaxed">
+                      {selectedArea.description || 'Sem descrição cadastrada.'}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t border-[color:var(--gso-border)]">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Funções da área ({areaFunctions.length})</h4>
+                      <button className="text-[11px] font-semibold text-[color:var(--gso-action-blue)] hover:underline" onClick={() => setStructureTab('functions')} type="button">+ Criar função</button>
+                    </div>
+                    {/* Havia aqui um array de fallback com funcoes de Customer Success
+                        (Gestor de CS, Analista de CS, CSM, Assistente de CS). Qualquer
+                        area sem funcoes cadastradas — inclusive Comercial, Financeiro e
+                        Engenharia — exibia essa lista como se fosse sua. Estado vazio
+                        honesto no lugar. */}
+                    <div className="space-y-1.5">
+                      {areaFunctions.length === 0 ? (
+                        <p className="text-[11px] text-[color:var(--gso-text-secondary)]">Nenhuma função cadastrada nesta área.</p>
+                      ) : areaFunctions.map((fn, idx) => (
+                        <div className="p-2 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] flex items-center justify-between" key={fn.function_id || idx}>
+                          <div>
+                            <strong className="font-semibold text-[color:var(--gso-text-primary)]">{fn.name}</strong>
+                            <p className="text-[11px] text-[color:var(--gso-text-secondary)]">{fn.default_access_profile_name ?? 'Sem perfil padrão'}</p>
+                          </div>
+                          <span className="font-mono text-[11px] text-[color:var(--gso-text-secondary)]">{(() => { const count = (fn as unknown as Record<string, unknown>).user_count; return typeof count === 'number' ? `${count} usuários` : 'Indisponível'; })()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-[color:var(--gso-border)] space-y-2">
+                    <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Ações rápidas</h4>
+                    <div className="grid gap-2">
+                      <button className="p-2 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] text-left hover:bg-[color:var(--gso-surface-1)] transition-colors font-medium text-[color:var(--gso-text-primary)]" type="button">✎ Editar área</button>
+                      <button className="p-2 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] text-left hover:bg-[color:var(--gso-surface-1)] transition-colors font-medium text-[color:var(--gso-text-primary)]" onClick={() => setStructureTab('functions')} type="button">＋ Adicionar função</button>
+                      <button className="p-2 rounded-lg border border-[color:var(--gso-danger)]/30 bg-[color:var(--gso-danger)]/10 text-left text-[color:var(--gso-danger)] hover:bg-[color:var(--gso-danger)]/20 transition-colors font-medium" type="button">🗑 Inativar área</button>
+                    </div>
+                  </div>
+                </>
+              ) : structureTab === 'functions' ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Gestão de Funções</h4>
+                  </div>
+                  <form className="space-y-3 p-3 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)]" onSubmit={(event) => { event.preventDefault(); onCreateFunction(); }}>
+                    <UiField label="Nome da função">
+                      <input className="gso-ui-control" onChange={(event) => setFunctionForm((current) => ({ ...current, areaKey: selectedArea.area_key, name: event.target.value }))} required value={functionForm.name} />
+                    </UiField>
+                    <UiField label="Perfil padrão">
+                      <select className="gso-ui-control gso-ui-select" onChange={(event) => setFunctionForm((current) => ({ ...current, profileId: event.target.value }))} value={functionForm.profileId}>
+                        <option value="">Sem perfil padrão</option>
+                        {profiles.map((p) => <option key={p.access_profile_id} value={p.access_profile_id}>{p.name}</option>)}
+                      </select>
+                    </UiField>
+                    <UiButton compact disabled={busy} icon="plus" type="submit" variant="primary">Criar função nesta área</UiButton>
+                  </form>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Usuários vinculados à área</h4>
+                  <p className="text-[11px] text-[color:var(--gso-text-secondary)]">Colaboradores associados a {selectedArea.display_name}.</p>
+                  {/* Lista real vinda de vw_admin_internal_access_users. A versao
+                      anterior repetia tres pessoas fixas de CS em qualquer area. */}
+                  {areaUsers.length === 0 ? (
+                    <p className="gso-ui-note">Nenhum colaborador vinculado a esta área.</p>
+                  ) : (
+                    <div className="divide-y divide-[color:var(--gso-border)]">
+                      {areaUsers.map((user) => {
+                        const membership = user.areas.find((area) => String(area.area_key ?? '') === selectedArea.area_key) ?? {};
+                        const functionName = String(membership.function_name ?? '') || 'Sem função';
+                        const profileName = String(membership.access_profile_name ?? '') || 'Sem perfil';
+                        return (
+                          <div className="py-2 flex items-center justify-between" key={user.user_id}>
+                            <div>
+                              <strong className="block font-medium text-[color:var(--gso-text-primary)]">{user.full_name || user.email || 'Colaborador'}</strong>
+                              <span className="text-[11px] text-[color:var(--gso-text-secondary)]">{functionName} · {profileName}</span>
+                            </div>
+                            <UiBadge dot tone={statusTone(user.access_status)}>{statusLabel(user.access_status)}</UiBadge>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </UiCard>
+          )}
+        </aside>
+      </div>
     </div>
   );
 }
@@ -1058,10 +1240,14 @@ function PermissionsCapabilityPanel(props: {
   profileForm: { name: string; description: string };
   profiles: AdminInternalProfileRow[];
   setProfileForm: React.Dispatch<React.SetStateAction<{ name: string; description: string }>>;
+  users: AdminInternalAccessUserRow[];
 }) {
-  const { busy, capabilities, onCreate, onSaveCapabilities, onToggle, profileCapabilities, profileForm, profiles, setProfileForm } = props;
+  const { busy, capabilities, onCreate, onSaveCapabilities, onToggle, profileCapabilities, profileForm, profiles, setProfileForm, users } = props;
   const [selectedProfileId, setSelectedProfileId] = useState(profiles[0]?.access_profile_id ?? '');
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [profileSearch, setProfileSearch] = useState('');
+  const [profileTypeFilter, setProfileTypeFilter] = useState('');
+  const [profileDetailTab, setProfileDetailTab] = useState<'overview' | 'permissions' | 'users'>('overview');
 
   useEffect(() => {
     if (!profiles.some((profile) => profile.access_profile_id === selectedProfileId)) setSelectedProfileId(profiles[0]?.access_profile_id ?? '');
@@ -1070,94 +1256,291 @@ function PermissionsCapabilityPanel(props: {
     setSelectedKeys(profileCapabilities.filter((item) => item.access_profile_id === selectedProfileId).map((item) => item.capability_key));
   }, [profileCapabilities, selectedProfileId]);
 
+  // Nao existe perfil "Gestor de CS" fabricado como fallback: quando o contrato
+  // nao retorna perfis, o painel de detalhe entra em estado vazio explicito.
+  const selectedProfile = profiles.find((p) => p.access_profile_id === selectedProfileId) ?? profiles[0] ?? null;
+
   const toggleCapability = (key: string) => setSelectedKeys((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
   const viewCapabilities = capabilities.filter((capability) => capability.capability_key.endsWith('.view'));
   const actionCapabilities = capabilities.filter((capability) => !capability.capability_key.endsWith('.view'));
+
+  // Nivel de acesso por dominio, derivado do catalogo de capabilities e das
+  // capabilities efetivamente atribuidas ao perfil selecionado.
+  const profileModuleAccess = Array.from(
+    capabilities.reduce<Map<string, { granted: number; grantedAction: number }>>((acc, capability) => {
+      const entry = acc.get(capability.domain) ?? { granted: 0, grantedAction: 0 };
+      if (selectedKeys.includes(capability.capability_key)) {
+        entry.granted += 1;
+        if (!capability.capability_key.endsWith('.view')) entry.grantedAction += 1;
+      }
+      acc.set(capability.domain, entry);
+      return acc;
+    }, new Map()),
+  )
+    .map(([domain, entry]) => ({
+      domain,
+      label: DOMAIN_LABELS[domain] ?? domain,
+      status: entry.grantedAction > 0 ? 'Permitido' : entry.granted > 0 ? 'Somente leitura' : 'Bloqueado',
+      tone: (entry.grantedAction > 0 ? 'success' : entry.granted > 0 ? 'neutral' : 'danger') as 'success' | 'neutral' | 'danger',
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+
+  // Colaboradores realmente vinculados ao perfil selecionado, via areas.
+  const profileUsers = users
+    .filter((user) => user.areas.some((area) => String(area.access_profile_id ?? '') === selectedProfileId))
+    .map((user) => ({
+      user_id: user.user_id,
+      full_name: user.full_name,
+      email: user.email,
+      status: user.access_status as string,
+    }));
+
   const capabilityOption = (capability: (typeof capabilities)[number]) => (
-    <label className="gso-ui-toggle" key={capability.capability_key}>
-      <span>
+    <label className="gso-ui-toggle flex items-center justify-between py-1.5 px-2 rounded hover:bg-[color:var(--gso-surface-2)]" key={capability.capability_key}>
+      <span className="text-xs text-[color:var(--gso-text-primary)]">
         {capability.display_name}
-        {capability.description ? <small className="gso-ui-metric-sub">{capability.description}</small> : null}
+        {capability.description ? <small className="block text-[11px] text-[color:var(--gso-text-secondary)]">{capability.description}</small> : null}
       </span>
       <input checked={selectedKeys.includes(capability.capability_key)} onChange={() => toggleCapability(capability.capability_key)} type="checkbox" />
     </label>
   );
 
+  const filteredProfiles = profiles.filter((p) => {
+    const textMatch = !profileSearch.trim() || p.name.toLowerCase().includes(profileSearch.trim().toLowerCase());
+    const typeMatch = !profileTypeFilter || (profileTypeFilter === 'system' ? p.is_system : !p.is_system);
+    return textMatch && typeMatch;
+  });
+
   return (
-    <div className="gso-ui-split">
-      <UiCard labelledBy="profiles-title">
-        <UiCardHeader
-          description="Monte perfis combinando telas de consulta e ações permitidas. As decisões efetivas continuam protegidas pela área e pelo perfil atribuído."
-          icon="shield"
-          title="Perfis e permissões"
-          titleId="profiles-title"
-        />
-        <div className="gso-ui-card-body">
-          <ul className="gso-ui-rowlist">
-            {profiles.map((profile) => (
-              <li className="gso-ui-rowcard" key={profile.access_profile_id}>
-                <div className="gso-ui-rowcard-main">
-                  <div>
-                    <button className="gso-ui-rowselect" onClick={() => setSelectedProfileId(profile.access_profile_id)} type="button">{profile.name}</button>
-                    <p>{profile.user_count} usuários · {profile.capability_count} permissões · {profile.screen_count} telas</p>
+    <div className="space-y-4">
+      {/* "2" em revisao e "87" vinculados eram literais; os tres primeiros caiam
+          em `|| 12`, `|| 4` e `|| 8`. Nao existe estado "em revisao" no contrato
+          de perfis, entao o indicador sai em vez de exibir um numero inventado. */}
+      <UiMetricRow label="Resumo de perfis de acesso">
+        <UiMetric icon="shield" label="Perfis ativos" tone="primary" value={profiles.filter((p) => p.is_active).length} />
+        <UiMetric icon="check" label="Padrão" tone="neutral" value={profiles.filter((p) => p.is_system).length} />
+        <UiMetric icon="users" label="Customizados" tone="neutral" value={profiles.filter((p) => !p.is_system).length} />
+      </UiMetricRow>
+
+      <div className="gso-ui-split gso-ui-split--wide-detail gso-ui-grow">
+        <UiCard flush label="Perfis e permissões">
+          <UiToolbar label="Filtros de perfis">
+            <div className="gso-ui-toolbar-field gso-ui-toolbar-field--wide">
+              <UiSearchField aria-label="Buscar perfil" onChange={(event) => setProfileSearch(event.target.value)} placeholder="Buscar perfil" value={profileSearch} />
+            </div>
+            <div className="gso-ui-toolbar-field">
+              <select aria-label="Tipo de perfil" className="gso-ui-control gso-ui-select" onChange={(event) => setProfileTypeFilter(event.target.value)} value={profileTypeFilter}>
+                <option value="">Todos os tipos</option>
+                <option value="system">Padrão</option>
+                <option value="custom">Customizado</option>
+              </select>
+            </div>
+          </UiToolbar>
+
+          <UiTable label="Tabela de perfis">
+            <thead>
+              <tr>
+                {/* "Atualizado em" removida: o contrato de perfis nao expoe data
+                    de atualizacao e a coluna exibia 22/07/2026 em todas as linhas. */}
+                <th scope="col">Perfil</th>
+                <th scope="col">Tipo</th>
+                <th scope="col" className="text-center">Usuários</th>
+                <th scope="col" className="text-center">Permissões</th>
+                <th scope="col">Status</th>
+                <th className="gso-ui-table-actions--head" scope="col">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredProfiles.map((profile) => {
+                const isSelected = profile.access_profile_id === selectedProfileId;
+                return (
+                  <tr className={isSelected ? 'is-selected' : undefined} key={profile.access_profile_id}>
+                    <td>
+                      <button
+                        className="gso-ui-rowselect flex items-center gap-2 text-left font-semibold text-[color:var(--gso-text-primary)]"
+                        onClick={() => setSelectedProfileId(profile.access_profile_id)}
+                        type="button"
+                      >
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[color:var(--gso-action-blue)] text-[10px] text-white">
+                          🛡
+                        </span>
+                        {profile.name}
+                      </button>
+                    </td>
+                    <td>
+                      <UiBadge tone={profile.is_system ? 'neutral' : 'accent'}>
+                        {profile.is_system ? 'Padrão' : 'Customizado'}
+                      </UiBadge>
+                    </td>
+                    <td className="text-center font-mono text-xs">{typeof profile.user_count === 'number' ? profile.user_count : 'Indisponível'}</td>
+                    <td className="text-center font-mono text-xs">{typeof profile.capability_count === 'number' ? profile.capability_count : 'Indisponível'}</td>
+                    <td><UiBadge dot tone={profile.is_active ? 'success' : 'neutral'}>{profile.is_active ? 'Ativo' : 'Inativo'}</UiBadge></td>
+                    <td>
+                      {!profile.is_system ? (
+                        <UiButton compact disabled={busy} onClick={() => onToggle(profile)} variant="ghost">
+                          {profile.is_active ? 'Desativar' : 'Ativar'}
+                        </UiButton>
+                      ) : (
+                        <span className="text-[11px] text-[color:var(--gso-text-secondary)] italic">Sistema</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </UiTable>
+
+          {/* Form para criar perfil personalizado */}
+          <form className="gso-ui-card-body border-t border-[color:var(--gso-border)]" onSubmit={(event) => { event.preventDefault(); onCreate(); }}>
+            <h4 className="text-xs font-semibold text-[color:var(--gso-text-primary)] mb-2">+ Criar perfil personalizado</h4>
+            <div className="gso-ui-grid">
+              <UiField label="Nome do perfil">
+                <input id="new-profile-name" className="gso-ui-control" onChange={(event) => setProfileForm((current) => ({ ...current, name: event.target.value }))} placeholder="ex: Financeiro Restrito" required value={profileForm.name} />
+              </UiField>
+              <UiField label="Descrição" wide>
+                <textarea className="gso-ui-control" onChange={(event) => setProfileForm((current) => ({ ...current, description: event.target.value }))} placeholder="Descrição das responsabilidades do perfil" rows={2} value={profileForm.description} />
+              </UiField>
+            </div>
+            <div className="gso-ui-actions mt-3">
+              <UiButton disabled={busy} icon="plus" type="submit" variant="primary">Criar perfil personalizado</UiButton>
+            </div>
+          </form>
+        </UiCard>
+
+        {/* Master-Detail Side Panel para Perfil Selecionado */}
+        <aside className="gso-ui-aside">
+          {!selectedProfile ? (
+            <UiCard label="Detalhe do perfil">
+              <div className="gso-ui-card-body">
+                <p className="gso-ui-note">Nenhum perfil de acesso disponível para exibir.</p>
+              </div>
+            </UiCard>
+          ) : (
+          <UiCard labelledBy="profile-detail-title">
+            <div className="p-4 border-b border-[color:var(--gso-border)] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--gso-action-blue)] text-white text-base">
+                  🛡
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 id="profile-detail-title" className="text-base font-semibold text-[color:var(--gso-text-primary)] leading-tight">
+                      {selectedProfile.name}
+                    </h3>
+                    <UiBadge tone={selectedProfile.is_system ? 'neutral' : 'accent'}>{selectedProfile.is_system ? 'Padrão' : 'Customizado'}</UiBadge>
                   </div>
-                  <div className="gso-ui-table-actions">
-                    <UiBadge dot tone={profile.is_active ? 'success' : 'danger'}>{profile.is_active ? 'Ativo' : 'Inativo'}</UiBadge>
-                    {!profile.is_system ? <UiButton compact disabled={busy} onClick={() => onToggle(profile)}>{profile.is_active ? 'Desativar' : 'Ativar'}</UiButton> : null}
+                  <p className="text-xs text-[color:var(--gso-text-secondary)] mt-0.5">{selectedProfile.description || 'Perfil para atribuição de acessos.'}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-6 px-4 py-3 border-b border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] text-xs">
+              <div>
+                <strong className="block text-sm font-semibold text-[color:var(--gso-text-primary)]">{typeof selectedProfile.user_count === 'number' ? selectedProfile.user_count : 'Indisponível'}</strong>
+                <span className="text-[11px] text-[color:var(--gso-text-secondary)]">Usuários</span>
+              </div>
+              <div>
+                <strong className="block text-sm font-semibold text-[color:var(--gso-text-primary)]">{typeof selectedProfile.capability_count === 'number' ? selectedProfile.capability_count : 'Indisponível'}</strong>
+                <span className="text-[11px] text-[color:var(--gso-text-secondary)]">Regras de acesso</span>
+              </div>
+            </div>
+
+            <div className="flex border-b border-[color:var(--gso-border)] px-4">
+              {[
+                ['overview', 'Visão geral'],
+                ['permissions', 'Permissões'],
+                ['users', 'Usuários vinculados'],
+              ].map(([key, label]) => (
+                <button
+                  className={`py-2.5 px-3 text-xs font-semibold border-b-2 transition-colors ${profileDetailTab === key ? 'border-[color:var(--gso-action-blue)] text-[color:var(--gso-action-blue)]' : 'border-transparent text-[color:var(--gso-text-secondary)] hover:text-[color:var(--gso-text-primary)]'}`}
+                  key={key}
+                  onClick={() => setProfileDetailTab(key as typeof profileDetailTab)}
+                  type="button"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="p-4 space-y-4 text-xs">
+              {profileDetailTab === 'overview' ? (
+                <>
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Módulos e níveis de acesso</h4>
+                    {/* Derivado das capabilities reais do perfil. A lista fixa
+                        anterior mostrava os mesmos 7 modulos com o mesmo status
+                        para qualquer perfil selecionado. */}
+                    {profileModuleAccess.length === 0 ? (
+                      <p className="gso-ui-note">Nenhuma permissão atribuída a este perfil.</p>
+                    ) : (
+                      <div className="divide-y divide-[color:var(--gso-border)] text-xs">
+                        {profileModuleAccess.map((module) => (
+                          <div className="py-2 flex items-center justify-between" key={module.domain}>
+                            <span className="font-medium text-[color:var(--gso-text-primary)]">{module.label}</span>
+                            <UiBadge tone={module.tone}>{module.status}</UiBadge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-3 border-t border-[color:var(--gso-border)] space-y-2">
+                    <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Ações rápidas</h4>
+                    <div className="grid gap-2">
+                      <button className="p-2 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] text-left hover:bg-[color:var(--gso-surface-1)] transition-colors font-medium text-[color:var(--gso-text-primary)]" onClick={() => setProfileDetailTab('permissions')} type="button">⚡ Ajustar permissões</button>
+                      <button className="p-2 rounded-lg border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-2)] text-left hover:bg-[color:var(--gso-surface-1)] transition-colors font-medium text-[color:var(--gso-text-primary)]" type="button">⎘ Duplicar perfil</button>
+                      {!selectedProfile.is_system ? (
+                        <button className="p-2 rounded-lg border border-[color:var(--gso-danger)]/30 bg-[color:var(--gso-danger)]/10 text-left text-[color:var(--gso-danger)] hover:bg-[color:var(--gso-danger)]/20 transition-colors font-medium" onClick={() => onToggle(selectedProfile)} type="button">🗑 Desativar perfil</button>
+                      ) : null}
+                    </div>
+                  </div>
+                </>
+              ) : profileDetailTab === 'permissions' ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Matriz de Permissões ({selectedKeys.length})</h4>
+                    <UiButton compact disabled={busy} icon="check" onClick={() => onSaveCapabilities(selectedProfileId, selectedKeys)} variant="primary">
+                      Salvar
+                    </UiButton>
+                  </div>
+                  <div className="max-h-[360px] overflow-y-auto space-y-3 pr-1">
+                    <div className="space-y-1">
+                      <h5 className="font-semibold text-[11px] text-[color:var(--gso-text-secondary)] uppercase tracking-wider">Visualização / Telas</h5>
+                      {viewCapabilities.map(capabilityOption)}
+                    </div>
+                    <div className="space-y-1 pt-2 border-t border-[color:var(--gso-border)]">
+                      <h5 className="font-semibold text-[11px] text-[color:var(--gso-text-secondary)] uppercase tracking-wider">Ações & Operações</h5>
+                      {actionCapabilities.map(capabilityOption)}
+                    </div>
                   </div>
                 </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <form className="gso-ui-card-body" onSubmit={(event) => { event.preventDefault(); onCreate(); }}>
-          <div className="gso-ui-grid">
-            <UiField label="Nome do perfil">
-              <input className="gso-ui-control" onChange={(event) => setProfileForm((current) => ({ ...current, name: event.target.value }))} required value={profileForm.name} />
-            </UiField>
-            <UiField label="Descrição" wide>
-              <textarea className="gso-ui-control" onChange={(event) => setProfileForm((current) => ({ ...current, description: event.target.value }))} rows={2} value={profileForm.description} />
-            </UiField>
-          </div>
-          <div className="gso-ui-actions">
-            <UiButton disabled={busy} icon="plus" type="submit" variant="primary">Criar perfil personalizado</UiButton>
-          </div>
-        </form>
-      </UiCard>
-
-      <aside>
-        <UiCard labelledBy="profile-capabilities-title">
-          <UiCardHeader
-            description="Escolha primeiro as telas que a pessoa poderá consultar. Em seguida, libere somente as ações necessárias."
-            icon="key"
-            title="Permissões do perfil"
-            titleId="profile-capabilities-title"
-            tone="accent"
-          />
-          <div className="gso-ui-card-body">
-            <UiField label="Perfil selecionado">
-              <select className="gso-ui-control gso-ui-select" onChange={(event) => setSelectedProfileId(event.target.value)} value={selectedProfileId}>
-                {profiles.map((profile) => <option key={profile.access_profile_id} value={profile.access_profile_id}>{profile.name}</option>)}
-              </select>
-            </UiField>
-          </div>
-          <fieldset className="gso-ui-card-body">
-            <legend className="gso-ui-field-label">Telas para consultar</legend>
-            <div className="gso-ui-groups">{viewCapabilities.map(capabilityOption)}</div>
-          </fieldset>
-          <fieldset className="gso-ui-card-body">
-            <legend className="gso-ui-field-label">Ações permitidas</legend>
-            <div className="gso-ui-groups">{actionCapabilities.map(capabilityOption)}</div>
-          </fieldset>
-          <div className="gso-ui-card-body">
-            <div className="gso-ui-actions">
-              <UiButton disabled={busy || !selectedProfileId} icon="check" onClick={() => onSaveCapabilities(selectedProfileId, selectedKeys)} variant="primary">
-                Salvar permissões
-              </UiButton>
+              ) : (
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-[color:var(--gso-text-primary)]">Usuários com o perfil {selectedProfile.name}</h4>
+                  {/* Lista real derivada dos vinculos de area. A versao anterior
+                      exibia tres pessoas fixas para qualquer perfil. */}
+                  {profileUsers.length === 0 ? (
+                    <p className="gso-ui-note">Nenhum colaborador vinculado a este perfil.</p>
+                  ) : (
+                    <div className="divide-y divide-[color:var(--gso-border)]">
+                      {profileUsers.map((user) => (
+                        <div className="py-2 flex items-center justify-between" key={user.user_id}>
+                          <div>
+                            <strong className="block font-medium text-[color:var(--gso-text-primary)]">{user.full_name || 'Colaborador'}</strong>
+                            <span className="text-[11px] text-[color:var(--gso-text-secondary)]">{user.email || 'Indisponível'}</span>
+                          </div>
+                          <UiBadge dot tone={statusTone(user.status)}>{statusLabel(user.status)}</UiBadge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
-        </UiCard>
-      </aside>
+          </UiCard>
+          )}
+        </aside>
+      </div>
     </div>
   );
 }

@@ -1856,7 +1856,7 @@ export function KnowledgePage() {
           : 'Criar artigo';
 
     return (
-      <div className="space-y-3 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
+      <div className="gso-knowledge-inline-editor space-y-3 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
         <section className="rounded-[24px] border border-[color:var(--color-border)] bg-[color:var(--color-surface-strong)]/95 px-6 py-4 shadow-[var(--shadow-panel)]">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-1.5">
@@ -2210,16 +2210,14 @@ export function KnowledgePage() {
   }
 
   return (
-    <div className="gso-knowledge-cockpit flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--minimal-surface)]">
-      <section className="gso-knowledge-cockpit-header shrink-0 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-4">
+    <div className="gso-knowledge-cockpit flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--one-canvas-bg)]">
+      {/* Regua horizontal e tipografia vindas do contrato global; a tela nao
+          declara mais padding lateral nem escala de titulo proprios. */}
+      <section className="gso-knowledge-cockpit-header shrink-0 border-b border-[color:var(--one-border-default)] bg-[color:var(--one-canvas-bg)] px-[var(--one-space-page-x)] py-[var(--one-space-page-y)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--minimal-text)]">
-              Conhecimento
-            </h1>
-            <p className="text-sm text-[color:var(--minimal-text-secondary)]">
-              Artigos, revisão e publicação.
-            </p>
+          <div className="gso-ui-header-heading space-y-1">
+            <h1>Conhecimento</h1>
+            <p>Artigos, revisão e publicação.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <AppButton

@@ -173,6 +173,18 @@ test('enriquece títulos com nome/CNPJ do cliente por codigo_cliente_fornecedor'
   assert.equal(rows[0].client_tax_id, '12345678000199');
 });
 
+test('enriches a title when OMIE nests the customer code in details', () => {
+  const rows = [{ client_name: null, client_tax_id: null, raw_payload: { detalhes: { codigo_cliente_fornecedor: 99 } } }];
+  const clients = new Map([['99', { name: 'ACME LTDA', taxId: '12345678000199', tradeName: 'ACME' }]]);
+
+  const result = enrichReceivablesWithClients(rows, clients);
+
+  assert.deepEqual(result.stats, { matched: 1, unmatched: 0, fieldsUpdated: 3 });
+  assert.equal(rows[0].client_name, 'ACME LTDA');
+  assert.equal(rows[0].client_tax_id, '12345678000199');
+  assert.equal(rows[0].client_trade_name, 'ACME');
+});
+
 test('persiste staging em lotes governados e retorna contagens', async () => {
   const batches = [];
   const client = { from: () => ({ insert: async (rows) => { batches.push(rows); return { error: null }; } }) };
