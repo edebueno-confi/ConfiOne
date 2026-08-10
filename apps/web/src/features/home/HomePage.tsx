@@ -130,7 +130,7 @@ export function HomePage() {
               {greeting()}{firstName(fullName, user?.email ?? null) ? `, ${firstName(fullName, user?.email ?? null)}` : ''}!
             </h1>
             <p className="mt-0.5 text-xs text-[color:var(--minimal-text-secondary)]">
-              Este é o seu dia no GeniusOS. Comece pelo que espera por você.
+              Este é o seu dia no ConfiOne. Comece pelo que espera por você.
             </p>
           </div>
         </div>

@@ -274,7 +274,7 @@ export function GeniusGlobalSearch({
           <div className="gso-genius-panel relative w-full max-w-2xl overflow-hidden rounded-2xl border border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] shadow-2xl">
             <div className="gso-genius-panel-glow" aria-hidden="true" />
             <div className="relative flex items-center gap-3 border-b border-[color:var(--minimal-border)] px-4 py-3">
-              <GeniusLamp alt="Lâmpada do GeniusOS" size="md" />
+              <GeniusLamp alt="Lâmpada do ConfiOne" size="md" />
               <input
                 ref={inputRef}
                 aria-label="Pergunte ao Gênio"

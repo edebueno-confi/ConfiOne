@@ -129,7 +129,7 @@ function HelpCenterContactsSubpanel({
           { icon: 'brand', label: 'Nome de exibição', value: item.knowledgeSpaceDisplayName },
           { icon: 'help', label: 'Endereço da central', value: `/${item.knowledgeSpaceSlug}` },
           { icon: 'globe', label: 'Idioma padrão', value: profile?.defaultLocale ?? 'pt-BR' },
-          { icon: 'link', label: 'Domínio principal', value: profile?.primaryDomain ?? 'ajuda.geniusos.com' },
+          { icon: 'link', label: 'Domínio principal', value: profile?.primaryDomain ?? 'ajuda.confione.com' },
         ]}
       />
 

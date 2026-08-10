@@ -317,7 +317,7 @@ function SettingsOverview({ groups }: { groups: SettingsGroup[] }) {
                 ['Fonte sincronizada', 'OMIE: sincronização concluída com 87 registros', 'Sistema', 'Fontes do Dashboard', '27/07/2026 08:25:33', 'Sucesso', 'success'],
                 ['Política de senha atualizada', 'Política de complexidade alterada (mín. 10 caracteres)', 'Eduardo Oliveira', 'Segurança', '26/07/2026 17:16:48', 'Sucesso', 'success'],
                 ['Regra de notificação criada', 'Alerta de falha de integração via e-mail e Slack', 'Carla Santos', 'Notificações', '26/07/2026 15:08:22', 'Atenção', 'warning'],
-                ['Artigo publicado', 'Como configurar integrações no GeniusOS', 'Juliana Ribeiro', 'Central de ajuda', '25/07/2026 11:33:57', 'Sucesso', 'success'],
+                ['Artigo publicado', 'Como configurar integrações no ConfiOne', 'Juliana Ribeiro', 'Central de ajuda', '25/07/2026 11:33:57', 'Sucesso', 'success'],
               ].map(([action, details, actor, module, date, statusLabel, statusTone], idx) => (
                 <tr key={idx} className="border-b border-[color:var(--gso-border,#22324D)] hover:bg-[color:var(--gso-surface-secondary,#18263F)]">
                   <td className="p-2.5 font-semibold">{action}</td>

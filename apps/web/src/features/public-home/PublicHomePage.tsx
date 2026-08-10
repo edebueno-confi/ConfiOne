@@ -27,12 +27,12 @@ function ProductPreview() {
   return (
     <div className="public-home__preview" aria-label="Prévia do ambiente operacional">
       <div className="public-home__preview-topbar">
-        <span className="public-home__preview-brand"><span className="public-home__preview-dot" /> GeniusOS</span>
+        <span className="public-home__preview-brand"><span className="public-home__preview-dot" /> ConfiOne</span>
         <span className="public-home__preview-status"><i /> Ambiente conectado</span>
       </div>
       <div className="public-home__preview-body">
         <aside className="public-home__preview-sidebar">
-          <span className="public-home__preview-avatar">G</span>
+          <span className="public-home__preview-avatar">C</span>
           <span className="public-home__preview-nav active" />
           <span className="public-home__preview-nav" />
           <span className="public-home__preview-nav" />
@@ -63,15 +63,15 @@ function ProductPreview() {
 
 export function PublicHomePage() {
   useEffect(() => {
-    document.title = 'GeniusOS | Operação de suporte B2B';
+    document.title = 'ConfiOne | Operação de suporte B2B';
   }, []);
 
   return (
     <div className="public-home">
       <header className="public-home__header">
-        <Link className="public-home__wordmark" to="/" aria-label="GeniusOS início">
+        <Link className="public-home__wordmark" to="/" aria-label="ConfiOne início">
           <span className="public-home__mark">✦</span>
-          <span>Genius<span>OS</span></span>
+          <span>Confi<span>One</span></span>
         </Link>
         <nav className="public-home__nav" aria-label="Navegação pública">
           <a href="#como-funciona">Como funciona</a>
@@ -85,7 +85,7 @@ export function PublicHomePage() {
           <div className="public-home__hero-copy">
             <div className="public-home__kicker"><span /> SISTEMA OPERACIONAL DE SUPORTE B2B</div>
             <h1>Menos ruído.<br /><em>Mais operação.</em></h1>
-            <p className="public-home__hero-lede">O GeniusOS conecta atendimento, clientes e conhecimento em uma única estação de trabalho — para seu time saber o que fazer agora.</p>
+            <p className="public-home__hero-lede">O ConfiOne conecta atendimento, clientes e conhecimento em uma única estação de trabalho — para seu time saber o que fazer agora.</p>
             <div className="public-home__hero-actions">
               <Link className="public-home__primary" to="/login">Entrar no ambiente <span>→</span></Link>
               <Link className="public-home__secondary" to="/help/genius">Explorar a central de ajuda</Link>
@@ -95,7 +95,7 @@ export function PublicHomePage() {
           <div className="public-home__hero-visual">
             <div className="public-home__visual-label">A estação de trabalho do seu time <span>↗</span></div>
             <ProductPreview />
-            <GeniusMascot alt="Gênio GeniusOS" pose="present" expression="happy" size="sm" surface="default" />
+            <GeniusMascot alt="Gênio ConfiOne" pose="present" expression="happy" size="sm" surface="default" />
             <div className="public-home__orbit public-home__orbit--one" />
             <div className="public-home__orbit public-home__orbit--two" />
           </div>
@@ -119,11 +119,11 @@ export function PublicHomePage() {
 
         <section className="public-home__cta">
           <div><span className="public-home__kicker"><span /> PRÓXIMO PASSO</span><h2>Abra o ambiente.<br /><em>Veja o que importa.</em></h2></div>
-          <div><p>A operação já está esperando por você.</p><Link className="public-home__primary" to="/login">Acessar GeniusOS <span>→</span></Link></div>
+          <div><p>A operação já está esperando por você.</p><Link className="public-home__primary" to="/login">Acessar ConfiOne <span>→</span></Link></div>
         </section>
       </main>
 
-      <footer className="public-home__footer"><span>✦ GeniusOS</span><small>Sistema operacional de suporte B2B</small><Link to="/help/genius">Central de ajuda ↗</Link></footer>
+      <footer className="public-home__footer"><span>✦ ConfiOne</span><small>Sistema operacional de suporte B2B</small><Link to="/help/genius">Central de ajuda ↗</Link></footer>
     </div>
   );
 }
