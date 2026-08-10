@@ -4,6 +4,9 @@ import { MinimalState } from '../../components/minimal-states';
 import { GeniusSyncOverlay, type SyncSource, type SyncVisualState } from '../../components/GeniusSyncOverlay';
 import { useAuthContext } from '../auth/auth-context';
 import { canManageAnalyticsIntegration } from '../analytics/analytics-permissions.mjs';
+import { PipelineRoleSettings } from './PipelineRoleSettings';
+import { StageMappingSettings } from './StageMappingSettings';
+import { CompanyReconciliationPanel } from './CompanyReconciliationPanel';
 import {
   getAnalyticsSourceStatus,
   getIntegrationSchedule,
@@ -482,6 +485,32 @@ export function DashboardSourcesSettingsPage() {
           {!filteredRows.length ? <UiEmptyState icon="layers" title="Nenhum pipeline nesta área." /> : null}
         </details>
       </UiCard>
+
+      <PipelineRoleSettings />
+
+      <section aria-labelledby="sources-etapas" className="space-y-4 border-t border-[color:var(--one-border-default,#22324D)] pt-4">
+        <div className="border-b border-[color:var(--one-border-default,#22324D)] pb-2">
+          <h2 id="sources-etapas" className="text-base font-semibold text-[color:var(--one-text-primary,#E6ECF5)]">
+            Leitura da fila
+          </h2>
+          <p className="mt-1 text-xs text-[color:var(--one-text-secondary,#A6B2C7)]">
+            O cruzamento de etapas é uma decisão auditável: etapa sem decisão não é agrupada por conveniência.
+          </p>
+        </div>
+        <StageMappingSettings />
+      </section>
+
+      <section aria-labelledby="sources-conciliacao" className="space-y-4 border-t border-[color:var(--one-border-default,#22324D)] pt-4">
+        <div className="border-b border-[color:var(--one-border-default,#22324D)] pb-2">
+          <h2 id="sources-conciliacao" className="text-base font-semibold text-[color:var(--one-text-primary,#E6ECF5)]">
+            Conciliação de empresas
+          </h2>
+          <p className="mt-1 text-xs text-[color:var(--one-text-secondary,#A6B2C7)]">
+            A conciliação manual HubSpot–OMIE entra aqui. Sugestões por nome não valem como vínculo até uma pessoa autorizada confirmar a evidência.
+          </p>
+        </div>
+        <CompanyReconciliationPanel />
+      </section>
 
       <UiHintBand
         description="“A classificar” significa que o HubSpot trouxe o pipeline, mas ainda não há decisão administrativa segura sobre a área. Esses registros permanecem carregados e ativos, porém não entram silenciosamente nos indicadores de Customer Success, Suporte ou Chat."

@@ -150,13 +150,6 @@ function buildReleaseNavigation({
   }
 
   if (allows('settings')) {
-    administration.push({
-      id: 'admin-cockpit',
-      label: 'Cockpit gerencial',
-      to: '/admin/cockpit',
-      icon: 'workflow',
-      matches: (path) => matchesBase(path, '/admin/cockpit'),
-    });
     for (const entry of RELEASE_SETTINGS_SUBMENU) {
       if (!canOpenSettingsSection(entry.sectionId, { isPlatformAdmin, screenKeys })) continue;
       administration.push({
@@ -267,7 +260,7 @@ export function resolveMinimalRouteLabel(pathname: string) {
     ['/admin/build-journal', 'Diário de construção'],
     ['/admin/product-docs', 'Documentos'],
   ];
-  return routes.find(([basePath]) => matchesBase(pathname, basePath))?.[1] ?? 'GeniusOS';
+  return routes.find(([basePath]) => matchesBase(pathname, basePath))?.[1] ?? 'Confi One';
 }
 
 export type MinimalBreadcrumbSegment = {
@@ -284,7 +277,7 @@ export type MinimalBreadcrumbSegment = {
  * segment is always the current surface and carries no link.
  */
 export function resolveMinimalBreadcrumb(pathname: string): MinimalBreadcrumbSegment[] {
-  const root: MinimalBreadcrumbSegment = { label: 'GeniusOS', to: '/' };
+  const root: MinimalBreadcrumbSegment = { label: 'Confi One', to: '/' };
   const routeLabel = resolveMinimalRouteLabel(pathname);
 
   if (matchesBase(pathname, '/admin/settings')) {
@@ -299,6 +292,6 @@ export function resolveMinimalBreadcrumb(pathname: string): MinimalBreadcrumbSeg
     return [root, { label: 'Configurações', to: '/admin/settings' }, { label: 'Usuários e acessos' }];
   }
 
-  if (routeLabel === 'GeniusOS') return [root];
+  if (routeLabel === 'Confi One') return [root];
   return [root, { label: routeLabel }];
 }

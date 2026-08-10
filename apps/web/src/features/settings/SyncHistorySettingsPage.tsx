@@ -158,7 +158,8 @@ export function SyncHistorySettingsPage() {
     let failed = 0;
     let running = 0;
     for (const group of list) {
-      const bucket = statusBucket(resolveGroupStatus(group));
+      const status = resolveGroupStatus(group);
+      const bucket = statusBucket(status);
       if (bucket === 'success') success += 1;
       else if (bucket === 'partial') partial += 1;
       else if (bucket === 'failed') failed += 1;
@@ -166,9 +167,13 @@ export function SyncHistorySettingsPage() {
     }
     return { total: list.length, success, partial, failed, running };
   }, [visibleGroups]);
-  const pageInfo = useMemo(() => paginate(visibleGroups, page, pageSize), [visibleGroups, page, pageSize]);
 
-  const updateFilter = (key: keyof HistoryFilters, value: string) => {
+  const totalPages = Math.max(1, Math.ceil(visibleGroups.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageInfo = useMemo(() => paginate(visibleGroups, currentPage, pageSize), [visibleGroups, currentPage, pageSize]);
+  const filtersActive = useMemo(() => hasActiveHistoryFilters(filters), [filters]);
+
+  const updateFilter = <K extends keyof HistoryFilters>(key: K, value: HistoryFilters[K]) => {
     setFilters((current) => ({ ...current, [key]: value }));
     setPage(1);
   };
@@ -176,7 +181,6 @@ export function SyncHistorySettingsPage() {
     setFilters(DEFAULT_HISTORY_FILTERS);
     setPage(1);
   };
-  const filtersActive = hasActiveHistoryFilters(filters);
 
   if (loading && !rows.length) return <MinimalState loading title="Carregando histórico" description="Consultando os ciclos e etapas registrados das fontes." />;
   if (error && !rows.length) return <MinimalState tone="critical" title="Não foi possível carregar o histórico" description={error} />;

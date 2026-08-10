@@ -199,10 +199,6 @@ const SettingsPage = lazyRouteModule(
   () => import('../features/settings/SettingsPage'),
   'SettingsPage',
 );
-const ManagementCockpitPage = lazyRouteModule(
-  () => import('../features/settings/ManagementCockpitPage'),
-  'ManagementCockpitPage',
-);
 
 function SettingsLegacyRedirect() {
   const [searchParams] = useSearchParams();
@@ -467,7 +463,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'cockpit',
-            element: withSuspense(<ManagementCockpitPage />),
+            element: <Navigate to="/admin/settings/dashboard-sources" replace />,
           },
           {
             path: 'settings/brands',
