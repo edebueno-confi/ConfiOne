@@ -278,7 +278,6 @@ function SidebarIconButton({
       title={label}
       type="button"
     >
-      {children}
     </button>
   );
 }
@@ -302,16 +301,37 @@ function GeniusSidebar({
       className={cx('gso-ui gso-sidebar hidden shrink-0 lg:grid', collapsed ? 'gso-sidebar--collapsed' : 'gso-sidebar--open')}
       data-collapsed={collapsed}
     >
-      <div className="gso-sidebar-header">
+      <div className="gso-sidebar-header flex h-[52px] items-center justify-between px-3.5 border-b border-[color:var(--one-border-default,#22324D)] bg-[color:var(--one-shell-bg,#0F1A2E)]">
         {collapsed ? (
-          <SidebarIconButton label="Expandir menu lateral" onClick={onCollapse}>
-            <GeniusLamp animated={false} size="sm" />
-          </SidebarIconButton>
+          <button
+            aria-label="Expandir menu lateral"
+            className="flex h-8 w-8 items-center justify-center rounded-[7px] border border-[color:var(--one-border-default,#22324D)] bg-transparent text-[color:var(--one-text-secondary,#A6B2C7)] hover:border-[color:var(--one-border-strong,#2F4869)] hover:bg-[color:var(--one-surface-2,#18263F)] hover:text-[color:var(--one-text-primary,#E6ECF5)] transition-colors"
+            onClick={onCollapse}
+            title="Expandir menu (Ctrl+B)"
+            type="button"
+          >
+            <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24">
+              <path d="m9 6 6 6-6 6" />
+            </svg>
+          </button>
         ) : (
-          <Link aria-label="GeniusOS" className="gso-brand-lockup" to="/">
-            <GeniusLamp animated={false} size="sm" />
-            <span>Genius<span className="text-[color:var(--gso-brand-pink,#FF4FA3)]">OS</span></span>
-          </Link>
+          <>
+            <Link aria-label="Confi One" className="gso-brand-lockup flex items-center gap-2.5 text-base font-bold tracking-tight text-[color:var(--one-text-primary,#E6ECF5)]" to="/">
+              <GeniusLamp animated={false} size="sm" />
+              <span>Confi <span className="text-[color:var(--one-genius-pink,#FF4FA3)]">One</span></span>
+            </Link>
+            <button
+              aria-label="Recolher menu lateral"
+              className="flex h-8 w-8 items-center justify-center rounded-[7px] border border-[color:var(--one-border-default,#22324D)] bg-transparent text-[color:var(--one-text-secondary,#A6B2C7)] hover:border-[color:var(--one-border-strong,#2F4869)] hover:bg-[color:var(--one-surface-2,#18263F)] hover:text-[color:var(--one-text-primary,#E6ECF5)] transition-colors"
+              onClick={onCollapse}
+              title="Recolher menu (Ctrl+B)"
+              type="button"
+            >
+              <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24">
+                <path d="m15 6-6 6 6 6" />
+              </svg>
+            </button>
+          </>
         )}
       </div>
 
@@ -319,20 +339,7 @@ function GeniusSidebar({
         <ShellNavigation collapsed={collapsed} onNavigate={onNavigate} pathname={pathname} permissions={permissions} />
       </div>
 
-      <div className="gso-sidebar-footer flex items-center justify-start p-2 border-t border-[color:var(--gso-border,#22324D)]">
-        <button
-          aria-label={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
-          className="gso-sidebar-collapse-action flex items-center gap-2 rounded-md p-2 text-xs text-[color:var(--minimal-text-secondary)] hover:bg-[color:var(--minimal-surface-muted)] hover:text-[color:var(--minimal-text)] transition-colors w-full"
-          onClick={onCollapse}
-          title="Atalho: Ctrl/Cmd+B"
-          type="button"
-        >
-          <svg aria-hidden="true" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24">
-            <path d={collapsed ? 'm9 6 6 6-6 6' : 'm15 6-6 6 6 6'} />
-          </svg>
-          {!collapsed ? <span>Recolher menu</span> : null}
-        </button>
-      </div>
+      <div className="gso-sidebar-footer border-t border-[color:var(--one-border-default,#22324D)] p-2 min-h-[16px]" />
     </aside>
   );
 }
@@ -348,21 +355,21 @@ function PreferencesModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-[color:var(--minimal-overlay)]" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/56" onClick={onClose} />
       <div
         aria-label="Preferências do usuário"
         aria-modal="true"
-        className="relative w-full max-w-md rounded-2xl border border-[color:var(--gso-border,#22324D)] bg-[color:var(--gso-surface-secondary,#18263F)] p-6 shadow-2xl z-10 text-[color:var(--gso-text-primary,#E6ECF5)] space-y-5"
+        className="relative w-full max-w-md rounded-[12px] border border-[color:var(--one-border-default,#22324D)] bg-[color:var(--one-surface-2,#18263F)] p-6 shadow-[0_20px_48px_rgba(0,0,0,0.45)] z-10 text-[color:var(--one-text-primary,#E6ECF5)] space-y-5"
         role="dialog"
       >
-        <div className="flex items-center justify-between border-b border-[color:var(--gso-border,#22324D)] pb-4">
+        <div className="flex items-center justify-between border-b border-[color:var(--one-border-default,#22324D)] pb-4">
           <div>
-            <h3 className="text-base font-semibold text-[color:var(--gso-text-primary)]">Preferências</h3>
-            <p className="text-xs text-[color:var(--gso-text-secondary,#A6B2C7)]">Personalize a sua experiência visual individual.</p>
+            <h3 className="text-base font-semibold text-[color:var(--one-text-primary,#E6ECF5)]">Preferências</h3>
+            <p className="text-xs text-[color:var(--one-text-secondary,#A6B2C7)]">Personalize a sua experiência visual individual.</p>
           </div>
           <button
             aria-label="Fechar preferências"
-            className="rounded-lg p-1 text-[color:var(--gso-text-secondary)] hover:bg-[color:var(--gso-surface-primary)] hover:text-[color:var(--gso-text-primary)]"
+            className="rounded-lg p-1 text-[color:var(--one-text-secondary,#A6B2C7)] hover:bg-[color:var(--one-surface-1,#131E33)] hover:text-[color:var(--one-text-primary,#E6ECF5)]"
             onClick={onClose}
             type="button"
           >
@@ -372,38 +379,38 @@ function PreferencesModal({
 
         <div className="space-y-4">
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-[color:var(--gso-text-secondary)] mb-2">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-[color:var(--one-text-secondary,#A6B2C7)] mb-2">
               Aparência
             </h4>
-            <div className="flex items-center justify-between rounded-xl border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-primary,#131E33)] p-3">
+            <div className="flex items-center justify-between rounded-[8px] border border-[color:var(--one-border-default,#22324D)] bg-[color:var(--one-surface-1,#131E33)] p-3">
               <div>
-                <p className="text-xs font-medium text-[color:var(--gso-text-primary)]">Tema da interface</p>
-                <p className="text-[11px] text-[color:var(--gso-text-secondary)]">Selecione claro, escuro ou automático.</p>
+                <p className="text-xs font-medium text-[color:var(--one-text-primary,#E6ECF5)]">Tema da interface</p>
+                <p className="text-[11px] text-[color:var(--one-text-secondary,#A6B2C7)]">Selecione claro, escuro ou automático.</p>
               </div>
               <ThemeToggle />
             </div>
           </div>
 
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-[color:var(--gso-text-secondary)] mb-2">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-[color:var(--one-text-secondary,#A6B2C7)] mb-2">
               Atalhos de teclado
             </h4>
-            <div className="rounded-xl border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-primary)] p-3 space-y-2 text-xs">
+            <div className="rounded-[8px] border border-[color:var(--one-border-default,#22324D)] bg-[color:var(--one-surface-1,#131E33)] p-3 space-y-2 text-xs">
               <div className="flex justify-between items-center text-[11px]">
-                <span className="text-[color:var(--gso-text-secondary)]">Recolher/Expandir menu</span>
-                <kbd className="px-2 py-0.5 rounded border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-secondary)] font-mono text-[10px]">Ctrl/Cmd + B</kbd>
+                <span className="text-[color:var(--one-text-secondary,#A6B2C7)]">Recolher/Expandir menu</span>
+                <kbd className="px-2 py-0.5 rounded border border-[color:var(--one-border-default,#22324D)] bg-[color:var(--one-surface-2,#18263F)] font-mono text-[10px] text-[color:var(--one-text-primary,#E6ECF5)]">Ctrl/Cmd + B</kbd>
               </div>
               <div className="flex justify-between items-center text-[11px]">
-                <span className="text-[color:var(--gso-text-secondary)]">Busca global "Pergunte ao Gênio"</span>
-                <kbd className="px-2 py-0.5 rounded border border-[color:var(--gso-border)] bg-[color:var(--gso-surface-secondary)] font-mono text-[10px]">Ctrl/Cmd + K</kbd>
+                <span className="text-[color:var(--one-text-secondary,#A6B2C7)]">Busca global "Pergunte ao Gênio"</span>
+                <kbd className="px-2 py-0.5 rounded border border-[color:var(--one-border-default,#22324D)] bg-[color:var(--one-surface-2,#18263F)] font-mono text-[10px] text-[color:var(--one-text-primary,#E6ECF5)]">Ctrl/Cmd + K</kbd>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end pt-2 border-t border-[color:var(--gso-border,#22324D)]">
+        <div className="flex justify-end pt-2 border-t border-[color:var(--one-border-default,#22324D)]">
           <button
-            className="rounded-lg bg-[color:var(--gso-action-blue,#2D7CFF)] px-4 py-2 text-xs font-semibold text-white hover:bg-blue-600 transition-colors"
+            className="rounded-[7px] bg-[color:var(--one-action-primary,#2D7CFF)] px-4 py-2 text-xs font-semibold text-white hover:bg-[color:var(--one-action-primary-hover,#428AFF)] transition-colors"
             onClick={onClose}
             type="button"
           >
@@ -418,10 +425,12 @@ function PreferencesModal({
 /**
  * Shared topbar primitive for the administrative shell.
  *
- * The Configuration PO blueprint puts a single horizontal band above the canvas
- * carrying the back affordance, the breadcrumb trail, the global search, the
- * theme control and the signed-in identity. It is declared once here so no page
- * reimplements its own header band.
+ * Height: 52px. Background: #0F1A2E (--one-shell-bg).
+ * Bottom border: 1px solid #22324D (--one-border-default).
+ * Padding: 16px horizontal.
+ * Left: Breadcrumb (32px height)
+ * Center: Global search / Pergunte ao Gênio
+ * Right: Single User Menu Trigger & Popover
  */
 function ShellTopbar({
   breadcrumb,
@@ -480,101 +489,104 @@ function ShellTopbar({
   }, [userMenuOpen]);
 
   return (
-    <header className="gso-topbar relative z-40 bg-[color:var(--gso-topbar-bg,#0E1627)] border-b border-[color:var(--gso-border,#22324D)]">
-      <button
-        ref={mobileMenuButtonRef}
-        aria-expanded={mobileNavigationOpen}
-        aria-controls="gso-mobile-navigation"
-        aria-label="Abrir navegação"
-        className="gso-topbar-icon-button gso-topbar-menu-button"
-        onClick={onToggleMobileNavigation}
-        type="button"
-      >
-        <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" viewBox="0 0 24 24">
-          <path d="M5 7h14M5 12h14M5 17h14" />
-        </svg>
-      </button>
-      {canGoBack ? (
+    <header className="gso-topbar relative z-40 flex h-[52px] items-center justify-between px-4 bg-[color:var(--one-shell-bg,#0F1A2E)] border-b border-[color:var(--one-border-default,#22324D)]">
+      <div className="flex items-center gap-3 min-w-0">
         <button
-          aria-label="Voltar para a superfície anterior"
-          className="gso-topbar-icon-button gso-topbar-back-button"
-          onClick={() => navigate(-1)}
+          ref={mobileMenuButtonRef}
+          aria-expanded={mobileNavigationOpen}
+          aria-controls="gso-mobile-navigation"
+          aria-label="Abrir navegação"
+          className="gso-topbar-icon-button gso-topbar-menu-button lg:hidden"
+          onClick={onToggleMobileNavigation}
           type="button"
         >
-          <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24">
-            <path d="m15 6-6 6 6 6" />
+          <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" viewBox="0 0 24 24">
+            <path d="M5 7h14M5 12h14M5 17h14" />
           </svg>
         </button>
-      ) : null}
-      <nav aria-label="Trilha de navegação" className="gso-topbar-breadcrumb">
-        <ol>
-          {breadcrumb.map((segment, index) => {
-            const isLast = index === breadcrumb.length - 1;
-            return (
-              <li key={`${segment.label}-${index}`}>
-                {segment.to && !isLast ? (
-                  <Link to={segment.to}>{segment.label}</Link>
-                ) : (
-                  <span aria-current={isLast ? 'page' : undefined} data-current={isLast ? 'true' : undefined}>
-                    {segment.label}
-                  </span>
-                )}
-                {!isLast ? <span aria-hidden="true" className="gso-topbar-breadcrumb-separator">/</span> : null}
-              </li>
-            );
-          })}
-        </ol>
-      </nav>
+        {canGoBack ? (
+          <button
+            aria-label="Voltar para a superfície anterior"
+            className="gso-topbar-icon-button gso-topbar-back-button"
+            onClick={() => navigate(-1)}
+            type="button"
+          >
+            <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24">
+              <path d="m15 6-6 6 6 6" />
+            </svg>
+          </button>
+        ) : null}
+        <nav aria-label="Trilha de navegação" className="gso-topbar-breadcrumb h-[32px] flex items-center">
+          <ol className="flex items-center gap-2 text-xs">
+            {breadcrumb.map((segment, index) => {
+              const isLast = index === breadcrumb.length - 1;
+              return (
+                <li className="flex items-center gap-2" key={`${segment.label}-${index}`}>
+                  {segment.to && !isLast ? (
+                    <Link className="text-[color:var(--one-text-secondary,#A6B2C7)] hover:text-[color:var(--one-text-primary,#E6ECF5)] transition-colors" to={segment.to}>{segment.label}</Link>
+                  ) : (
+                    <span aria-current={isLast ? 'page' : undefined} className={isLast ? 'font-medium text-[color:var(--one-text-primary,#E6ECF5)]' : 'text-[color:var(--one-text-secondary,#A6B2C7)]'}>
+                      {segment.label}
+                    </span>
+                  )}
+                  {!isLast ? <span aria-hidden="true" className="text-[color:var(--one-text-muted,#7789A6)]">/</span> : null}
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
+      </div>
+
       {/* Busca global do Gênio */}
-      <div className="gso-topbar-search">
+      <div className="gso-topbar-search max-w-[420px] w-full flex justify-center mx-3">
         <GeniusGlobalSearch permissions={searchPermissions} />
       </div>
 
-      {/* Extremo direito: MENU DO USUÁRIO ÚNICO */}
-      <div className="gso-topbar-actions relative z-50" ref={userMenuRef}>
+      {/* Extremo direito: ÚNICO USER MENU TRIGGER GLOBAL */}
+      <div className="gso-topbar-actions relative z-50 flex items-center gap-2" ref={userMenuRef}>
         <button
           aria-expanded={userMenuOpen}
           aria-haspopup="menu"
           aria-label={`Menu de ${userTitle}`}
-          className="flex items-center gap-2 rounded-lg p-1.5 hover:bg-[color:var(--gso-surface-secondary,#18263F)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--minimal-focus)]"
+          className="flex h-[36px] items-center gap-2 rounded-[7px] px-2 py-1 bg-transparent hover:bg-[color:var(--one-surface-2,#18263F)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--one-action-primary,#2D7CFF)]"
           onClick={() => setUserMenuOpen((curr) => !curr)}
           type="button"
         >
           <Avatar email={email} name={fullName} size="sm" label={`Perfil de ${userTitle}`} />
           <div className="hidden sm:grid min-w-0 text-left leading-tight">
-            <span className="truncate text-xs font-semibold text-[color:var(--gso-text-primary,#E6ECF5)]">
+            <span className="truncate text-xs font-semibold text-[color:var(--one-text-primary,#E6ECF5)]">
               {userTitle}
             </span>
-            <span className="truncate text-[10px] text-[color:var(--gso-text-secondary,#A6B2C7)]">
+            <span className="truncate text-[10px] text-[color:var(--one-text-secondary,#A6B2C7)]">
               {userSubtitle}
             </span>
           </div>
-          <svg aria-hidden="true" className={cx('h-4 w-4 text-[color:var(--gso-text-secondary)] transition-transform', userMenuOpen && 'rotate-180')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" className={cx('h-3.5 w-3.5 text-[color:var(--one-text-secondary,#A6B2C7)] transition-transform', userMenuOpen && 'rotate-180')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path d="m7 10 5 5 5-5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
           </svg>
         </button>
 
         {userMenuOpen ? (
           <div
-            className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-[color:var(--gso-border,#22324D)] bg-[color:var(--gso-surface-secondary,#18263F)] p-3 shadow-xl z-50 text-xs text-[color:var(--gso-text-primary,#E6ECF5)]"
+            className="absolute right-0 top-full mt-2 w-[300px] rounded-[10px] border border-[color:var(--one-border-strong,#2F4869)] bg-[color:var(--one-surface-2,#18263F)] p-2 shadow-[0_12px_32px_rgba(0,0,0,0.35)] z-50 text-xs text-[color:var(--one-text-primary,#E6ECF5)]"
             role="menu"
           >
             {/* Header do Menu */}
-            <div className="flex items-center gap-3 pb-3 border-b border-[color:var(--gso-border,#22324D)]">
+            <div className="flex items-center gap-2.5 p-2.5 pb-3 border-b border-[color:var(--one-border-default,#22324D)]">
               <Avatar email={email} name={fullName} size="md" />
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-sm text-[color:var(--gso-text-primary)]">{userTitle}</p>
-                <p className="truncate text-xs text-[color:var(--gso-text-secondary)]">{email ?? 'email@geniusos.com'}</p>
-                <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[color:var(--gso-surface-primary)] text-[color:var(--gso-text-secondary)] border border-[color:var(--gso-border)]">
+                <p className="truncate font-semibold text-xs text-[color:var(--one-text-primary,#E6ECF5)]">{userTitle}</p>
+                <p className="truncate text-[11px] text-[color:var(--one-text-secondary,#A6B2C7)]">{email ?? 'operador@confione.local'}</p>
+                <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[color:var(--one-surface-1,#131E33)] text-[color:var(--one-text-secondary,#A6B2C7)] border border-[color:var(--one-border-default,#22324D)]">
                   {userSubtitle}
                 </span>
               </div>
             </div>
 
             {/* Opções de Menu */}
-            <div className="py-2 space-y-1">
+            <div className="py-1.5 space-y-0.5">
               <button
-                className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left hover:bg-[color:var(--gso-surface-primary,#131E33)] transition-colors"
+                className="flex h-[36px] w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-xs text-[color:var(--one-text-primary,#E6ECF5)] hover:bg-[color:var(--one-surface-interactive,#1C2D49)] transition-colors"
                 onClick={() => {
                   setUserMenuOpen(false);
                   navigate('/meu-perfil');
@@ -582,12 +594,12 @@ function ShellTopbar({
                 role="menuitem"
                 type="button"
               >
-                <svg className="h-4 w-4 text-[color:var(--gso-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" /></svg>
+                <svg className="h-4 w-4 text-[color:var(--one-text-secondary,#A6B2C7)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" /></svg>
                 <span>Meu perfil</span>
               </button>
 
               <button
-                className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left hover:bg-[color:var(--gso-surface-primary,#131E33)] transition-colors"
+                className="flex h-[36px] w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-xs text-[color:var(--one-text-primary,#E6ECF5)] hover:bg-[color:var(--one-surface-interactive,#1C2D49)] transition-colors"
                 onClick={() => {
                   setUserMenuOpen(false);
                   onOpenPreferences();
@@ -595,17 +607,17 @@ function ShellTopbar({
                 role="menuitem"
                 type="button"
               >
-                <svg className="h-4 w-4 text-[color:var(--gso-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" /><circle cx="12" cy="12" r="3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" /></svg>
+                <svg className="h-4 w-4 text-[color:var(--one-text-secondary,#A6B2C7)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" /><circle cx="12" cy="12" r="3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" /></svg>
                 <span>Preferências</span>
               </button>
             </div>
 
             {/* Separador */}
-            <div className="my-1 border-t border-[color:var(--gso-border,#22324D)]" />
+            <div className="my-1 border-t border-[color:var(--one-border-default,#22324D)]" />
 
             {/* Encerramento de Sessão */}
             <button
-              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[color:var(--gso-danger,#EF4444)] hover:bg-[color:var(--gso-surface-primary,#131E33)] transition-colors"
+              className="flex h-[36px] w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-xs text-[color:var(--one-danger,#EF4444)] hover:bg-[color:var(--one-surface-interactive,#1C2D49)] transition-colors"
               onClick={() => {
                 setUserMenuOpen(false);
                 void signOut();
@@ -614,7 +626,7 @@ function ShellTopbar({
               type="button"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" /></svg>
-              <span>Sair da sessão</span>
+              <span>Sair da plataforma</span>
             </button>
           </div>
         ) : null}

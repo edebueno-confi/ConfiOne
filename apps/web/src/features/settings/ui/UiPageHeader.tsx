@@ -12,12 +12,14 @@ import type { ReactNode } from 'react';
 export function UiPageHeader({
   actions,
   description,
+  eyebrow,
   meta,
   title,
   titleId,
 }: {
   actions?: ReactNode;
   description?: string;
+  eyebrow?: string;
   meta?: ReactNode;
   parentHref?: string;
   parentLabel?: string;
@@ -27,6 +29,11 @@ export function UiPageHeader({
   return (
     <header className="gso-ui-header">
       <div className="gso-ui-header-heading">
+        {eyebrow ? (
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[color:var(--one-info,#4DA3FF)]">
+            {eyebrow}
+          </p>
+        ) : null}
         <h2 id={titleId}>{title}</h2>
         {description ? <p>{description}</p> : null}
       </div>
