@@ -1249,6 +1249,50 @@
 .gso-sidebar-account[data-collapsed='true'] [role='radiogroup'] {
   flex-direction: column;
 }
+/* Custom UI Tabs for Confi One Shell Header */
+.gso-ui-tabs {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  border-bottom: 1px solid var(--gso-border);
+  padding: 0 var(--gso-gutter, clamp(1rem, 2.5vw, 2.5rem));
+  background: var(--gso-topbar-bg);
+  min-height: 42px;
+  flex-shrink: 0;
+}
+.gso-ui-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 42px;
+  padding: 0 0.25rem;
+  border: 0;
+  background: transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--one-text-secondary);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.gso-ui-tab:hover {
+  color: var(--one-text-primary);
+}
+.gso-ui-tab[aria-current='page'] {
+  font-weight: 600;
+  color: var(--one-text-primary);
+}
+.gso-ui-tab[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--selection-accent, #ff6cbe);
+  border-radius: 2px 2px 0 0;
+}
+
 /* Configuration PO V2.1: a topbar aprovada e transversal as seis telas e por
    isso volta a existir em desktop. A busca global e o controle de tema migraram
    da sidebar para ca, conforme o blueprint. */
