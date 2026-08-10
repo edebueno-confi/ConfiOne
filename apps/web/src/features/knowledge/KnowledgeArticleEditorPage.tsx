@@ -4662,11 +4662,11 @@ export function KnowledgeArticleEditorPage() {
 
   return (
     <form
-      className="knowledge-editor-page h-full min-h-0 overflow-hidden bg-[color:var(--minimal-surface)]"
+      className="knowledge-editor-page h-full min-h-0 overflow-hidden bg-[color:var(--one-canvas-bg)]"
       onSubmit={handleSaveDraft}
     >
       <div className="flex h-full min-h-0 flex-col">
-        <header className="knowledge-editor-header z-20 flex h-[52px] shrink-0 items-center justify-between gap-5 border-b border-[color:var(--minimal-border)] bg-[color:var(--minimal-surface)] px-5 py-2">
+        <header className="knowledge-editor-header z-20 flex h-[52px] shrink-0 items-center justify-between gap-5 border-b border-[color:var(--minimal-border)] bg-[color:var(--one-canvas-bg)] px-5 py-2">
           <div className="min-w-0 space-y-2">
             <nav className="flex items-center gap-2 text-xs font-semibold text-[color:var(--color-muted)]">
               <Link className="hover:text-[color:var(--color-brand-blue)]" to="/admin/knowledge">
