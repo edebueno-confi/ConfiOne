@@ -850,37 +850,21 @@ function GroupDetail({
   const isIntegrations = group.id === 'integracoes';
 
   return (
-    <article className="min-h-0 bg-[color:var(--minimal-surface)]">
+    <article className="min-h-0 bg-transparent">
       {DASHBOARD_SECTION_IDS.includes(group.id) ? (
-        // As duas telas do eixo de dados trazem o próprio cabeçalho de página,
-        // com breadcrumb, metadado de leitura e ações da seção.
-        <div className="px-5 py-5 sm:px-6">
-          {group.id === 'dashboard-fontes' ? <DashboardSourcesSettingsPage /> : <SyncHistorySettingsPage />}
-        </div>
+        group.id === 'dashboard-fontes' ? <DashboardSourcesSettingsPage /> : <SyncHistorySettingsPage />
       ) : isIntegrations ? (
-        // Integrações traz o próprio cabeçalho de página: título, contexto de
-        // leitura e a ação de reler o estado ficam na composição da tela.
-        <div className="px-5 py-5 sm:px-6">
-          {integrations.phase === 'ready' ? (
-            <SettingsIntegrationsPanel busy={mutating} error={mutationError} integrations={integrations.items} onReload={onReloadIntegrations} onSave={onSaveIntegration} />
-          ) : integrations.phase === 'error' ? (
-            <div className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] px-4 py-3 text-sm text-[color:var(--color-danger-text)]">Não foi possível carregar as integrações agora.</div>
-          ) : (
-            <p className="text-sm text-[color:var(--minimal-text-secondary)]">Carregando integrações…</p>
-          )}
-        </div>
+        integrations.phase === 'ready' ? (
+          <SettingsIntegrationsPanel busy={mutating} error={mutationError} integrations={integrations.items} onReload={onReloadIntegrations} onSave={onSaveIntegration} />
+        ) : integrations.phase === 'error' ? (
+          <div className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] px-4 py-3 text-sm text-[color:var(--color-danger-text)]">Não foi possível carregar as integrações agora.</div>
+        ) : (
+          <p className="text-sm text-[color:var(--minimal-text-secondary)]">Carregando integrações…</p>
+        )
       ) : isBrands ? (
-        // Marcas traz o próprio cabeçalho de página: título, contagem de marcas
-        // ativas e a ação de cadastro ficam na composição da tela.
-        <div className="px-5 py-5 sm:px-6">
-          <BrandsSettingsPage mutating={mutating} mutationError={mutationError} onArchive={onArchiveBrand} onCreate={onCreateBrand} state={brands} />
-        </div>
+        <BrandsSettingsPage mutating={mutating} mutationError={mutationError} onArchive={onArchiveBrand} onCreate={onCreateBrand} state={brands} />
       ) : isHelpCenter ? (
-        // Central de ajuda também responde pelo próprio cabeçalho, com a ação de
-        // abrir a central pública.
-        <div className="px-5 py-5 sm:px-6">
-          <HelpCenterSettingsPage mutating={mutating} mutationError={mutationError} onSave={onSaveHelpCenterSupportContacts} state={helpCenterSupportContacts} />
-        </div>
+        <HelpCenterSettingsPage mutating={mutating} mutationError={mutationError} onSave={onSaveHelpCenterSupportContacts} state={helpCenterSupportContacts} />
       ) : (
       <>
       <header className="border-b border-[color:var(--minimal-border)] px-5 py-5 sm:px-6">
@@ -1278,7 +1262,7 @@ export function SettingsPage() {
   );
 
   return (
-    <div className="gso-settings-shell gso-visual-v1-settings-shell gso-high-density-ui flex h-full min-h-0 flex-col bg-[color:var(--minimal-surface)]">
+    <div className="gso-settings-shell gso-visual-v1-settings-shell gso-high-density-ui flex h-full min-h-0 flex-col bg-transparent">
       {/* A navegação das seções de Configurações vive na sidebar global. Aqui
           resta apenas o conteúdo da seção pedida pela rota, em uma coluna
           única, e cada seção responde pelo próprio cabeçalho. */}

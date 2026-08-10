@@ -317,7 +317,6 @@ export function InternalControlPlanePage() {
         <UiPageHeader
           actions={<UiButton icon="plus" onClick={startCreate} variant="primary">Criar usuário</UiButton>}
           description="Crie contas internas, defina área, função e perfil, e acompanhe as permissões efetivas calculadas pelo backend."
-          parentHref="/admin/settings"
           title="Usuários e acessos"
           titleId="access-title"
         />
@@ -763,6 +762,7 @@ function UsersPanel(props: {
                           disabled={busy}
                           icon="key"
                           onClick={() => void onResetPassword(user)}
+                          variant="secondary"
                         >
                           Redefinir senha
                         </UiButton>
@@ -770,7 +770,7 @@ function UsersPanel(props: {
                           compact
                           disabled={busy}
                           onClick={() => void onAction(() => setAdminInternalUserStatus(user.user_id, user.access_status !== 'active'), user.access_status === 'active' ? 'Usuário suspenso.' : 'Usuário reativado.')}
-                          variant={user.access_status === 'active' ? 'danger' : 'secondary'}
+                          variant="ghost"
                         >
                           {user.access_status === 'active' ? 'Suspender' : 'Reativar'}
                         </UiButton>

@@ -54,3 +54,11 @@
 3. **Sidebar Footer**: Limpo e enxuto. Não possui botão de recolher, avatar, e-mail ou botões redundantes.
 4. **Topbar Global (52px)**: Fundo `#0F1A2E`. Limite estrito em `y = 52px`. Centro: Busca global "Pergunte ao Gênio" (altura 32px, Surface 1 `#131E33`). Extremo direito: ÚNICO trigger global de menu do usuário (`36px` altura, popover `300px` em Surface 2 `#18263F`).
 5. **Page Header**: Transparente sobre Canvas `#081220`. Pertence ao conteúdo da página, não à topbar.
+
+---
+
+## 4. Regras de Layering & Hierarquia de Superfícies
+
+- **Page wrappers are structural, not visual surfaces.** Wrappers de página devem ser estruturais e transparentes (`background: transparent`, `border: none`, `box-shadow: none`), sem atribuir cor de superfície ou sombra ao container inteiro da página.
+- **The Canvas must remain visually exposed between primary content regions.** O fundo Canvas (`#081220`) deve permanecer visível ao redor do Page Header, nas margens da página (24px laterais, 20px topo) e no espaço entre cartões e tabelas primárias.
+- **Anti-Pattern Proibido — Redundant Page Surface:** Envolver toda a página ou todas as seções em um grande cartão/container escuro único criando o efeito indesejado de "uma tela dentro de outra tela". Os cartões primários (`Surface 1 #131E33`) e secundários (`Surface 2 #18263F`) devem assentar-se diretamente sobre o Canvas `#081220`.
