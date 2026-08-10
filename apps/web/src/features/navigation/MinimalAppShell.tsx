@@ -235,27 +235,30 @@ function ShellNavigation({
         );
       })}
       {collapsed && openFlyoutSection ? (
-        <aside
-          aria-label={`Submenu ${openFlyoutSection.label}`}
-          aria-modal="false"
-          className="gso-nav-flyout z-[80]"
-          id={`gso-nav-flyout-${openFlyoutSection.id}`}
-          ref={flyoutRef}
-          role="region"
-          style={{ top: flyoutAnchor.top, left: flyoutAnchor.left }}
-          onMouseEnter={cancelFlyoutClose}
-          onMouseLeave={scheduleFlyoutClose}
-        >
-          <div className="gso-nav-flyout-heading flex items-center justify-between px-3 py-2 border-b border-[color:var(--minimal-border,#22324D)] bg-[color:var(--minimal-surface-muted,#18263F)]">
-            <p className="text-xs font-bold uppercase tracking-wider text-[color:var(--gso-brand-pink,#FF4FA3)]">{openFlyoutSection.label}</p>
-            <button aria-label={`Fechar submenu ${openFlyoutSection.label}`} className="text-xs text-[color:var(--minimal-text-tertiary)] hover:text-[color:var(--minimal-text)]" onClick={() => closeFlyout()} type="button">✕</button>
-          </div>
-          <div className="gso-nav-flyout-items p-1.5 grid gap-1">
-            {openFlyoutSection.items.map((item) => (
-              <SidebarNavigationLink item={item} key={item.id} onNavigate={closeFlyout} />
-            ))}
-          </div>
-        </aside>
+        <>
+          <div aria-hidden="true" className="gso-nav-flyout-scrim" />
+          <aside
+            aria-label={`Submenu ${openFlyoutSection.label}`}
+            aria-modal="false"
+            className="gso-nav-flyout z-[80]"
+            id={`gso-nav-flyout-${openFlyoutSection.id}`}
+            ref={flyoutRef}
+            role="region"
+            style={{ top: flyoutAnchor.top, left: flyoutAnchor.left }}
+            onMouseEnter={cancelFlyoutClose}
+            onMouseLeave={scheduleFlyoutClose}
+          >
+            <div className="gso-nav-flyout-heading flex items-center justify-between px-3 py-2 border-b border-[color:var(--minimal-border,#22324D)] bg-[color:var(--minimal-surface-muted,#18263F)]">
+              <p className="text-xs font-bold uppercase tracking-wider text-[color:var(--gso-brand-pink,#FF4FA3)]">{openFlyoutSection.label}</p>
+              <button aria-label={`Fechar submenu ${openFlyoutSection.label}`} className="text-xs text-[color:var(--minimal-text-tertiary)] hover:text-[color:var(--minimal-text)]" onClick={() => closeFlyout()} type="button">✕</button>
+            </div>
+            <div className="gso-nav-flyout-items p-1.5 grid gap-1">
+              {openFlyoutSection.items.map((item) => (
+                <SidebarNavigationLink item={item} key={item.id} onNavigate={closeFlyout} />
+              ))}
+            </div>
+          </aside>
+        </>
       ) : null}
     </nav>
   );

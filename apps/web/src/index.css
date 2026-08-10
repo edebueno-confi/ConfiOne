@@ -7135,10 +7135,17 @@ table {
 
 .gso-nav-flyout-scrim {
   position: fixed;
-  z-index: 70;
+  z-index: 75;
   inset: 0;
   border: 0;
-  background: rgba(3, 12, 32, .28);
+  background: var(--one-overlay-scrim, rgba(2, 8, 18, 0.56));
+  pointer-events: none;
+  animation: gso-scrim-fade-in 140ms ease-out both;
+}
+
+@keyframes gso-scrim-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 .gso-nav-flyout {
   position: fixed;
@@ -7180,7 +7187,6 @@ table {
 .gso-nav-flyout-items { display: grid; gap: 4px; padding: 8px; }
 .gso-nav-flyout-items .gso-nav-link { min-height: 38px; height: 38px; padding-inline: 10px; font-size: 12px; }
 @keyframes gso-nav-flyout-enter { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
-@media (prefers-reduced-motion: reduce) { .gso-nav-flyout { animation: none; } }
 
 /* Sidebar blueprint V1: a navegação é uma coluna integrada ao shell, não um
    card solto. Este bloco final também neutraliza regras históricas que ainda
