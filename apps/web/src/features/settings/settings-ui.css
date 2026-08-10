@@ -101,9 +101,13 @@
    Header e sidebar usam a surface; o canvas de trabalho fica um degrau abaixo.
    Isso remove o fundo concorrente que fazia cada tela de Configuracoes parecer
    pertencer a um produto diferente. */
+/* O respiro vertical do topo pertence ao canvas (--one-space-page-y), nunca ao
+   cabecalho. Sem o !important, uma regra de densidade injetava padding-block
+   de 0.55rem em Integracoes e o titulo caia para y=77 enquanto as demais telas
+   ficavam em y=68. Medido em 1440x900. */
 .gso-ui-page > .gso-ui-header {
   margin: 0 0 1rem 0;
-  padding: 0;
+  padding: 0 !important;
   border-bottom: none !important;
   background: transparent !important;
 }
@@ -116,7 +120,9 @@
 /* O chrome do shell nao tinha regua horizontal: o titulo de /admin/access
    comecava em x=240 (colado na sidebar) enquanto Configuracoes e Dashboard
    comecavam em x=266. Medido no QA de 2026-08-10. */
-.gso-ui-shell-chrome .gso-ui-header { padding: 0 var(--one-space-page-x) 1rem; }
+.gso-ui-shell-chrome .gso-ui-header {
+  padding: var(--one-space-page-y) var(--one-space-page-x) 1rem;
+}
 @media (max-width: 760px) {
   .gso-ui-page > .gso-ui-header { margin: -1rem -1rem 0; padding: 0.8rem 1rem; }
   .gso-ui-shell-chrome .gso-ui-header { padding-inline: 1rem; }
@@ -149,9 +155,15 @@
 /* -------------------------------------------------------------------------
    2. UiPageHeader — trilha, título grande, descrição e ações
    ------------------------------------------------------------------------- */
+/* O titulo de qualquer tela interna comeca SEMPRE na mesma coordenada vertical.
+   Ate 2026-08-10 este bloco usava `align-items: flex-end`: quando a coluna de
+   acoes era mais alta (meta + botao), ela empurrava o titulo para baixo. Medido
+   em 1440x900: Central de ajuda 68px, Integracoes 77px, Fontes/Historico/Marcas
+   85px — tres coordenadas para o mesmo papel. Com flex-start o topo do titulo
+   deixa de depender do conteudo da coluna de acoes. */
 .gso-ui-header {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 1.5rem;
   min-width: 0;

@@ -78,8 +78,33 @@ async function measure(page) {
       h1Count: document.querySelectorAll('h1').length,
       h1Text: heading?.textContent?.trim().slice(0, 60) ?? null,
       h1Left: headingRect ? Math.round(headingRect.left) : null,
+      h1Top: headingRect ? Math.round(headingRect.top) : null,
       h1FontSize: headingStyle?.fontSize ?? null,
       h1FontWeight: headingStyle?.fontWeight ?? null,
+      // Subtitulo imediatamente abaixo do titulo.
+      subtitle: (() => {
+        const node = heading?.parentElement?.querySelector('p');
+        if (!node) return null;
+        const style = window.getComputedStyle(node);
+        return { fontSize: style.fontSize, color: style.color, top: Math.round(node.getBoundingClientRect().top) };
+      })(),
+      // Primeira superficie de conteudo abaixo do cabecalho: card, painel ou tabela.
+      firstPanel: (() => {
+        const node = document.querySelector(
+          '.gso-ui-card, .gso-ui-table-frame, .gso-hd-canvas, .gso-knowledge-filter-deck, .knowledge-editor-shell',
+        );
+        if (!node) return null;
+        const style = window.getComputedStyle(node);
+        const rect = node.getBoundingClientRect();
+        return {
+          cls: node.className.toString().split(' ')[0],
+          top: Math.round(rect.top),
+          left: Math.round(rect.left),
+          border: style.borderTopWidth + ' ' + style.borderTopStyle,
+          radius: style.borderTopLeftRadius,
+          background: style.backgroundColor,
+        };
+      })(),
       sidebar: read('.gso-sidebar', ['background-color', 'border-right-color']),
       topbar: read('.gso-topbar', ['background-color', 'height']),
       accountTrigger: read('.gso-sidebar-account-trigger', ['background-color']),

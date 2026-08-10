@@ -1351,6 +1351,31 @@
 .gso-sidebar-account[data-collapsed='true'] [role='radiogroup'] {
   flex-direction: column;
 }
+/* Conhecimento / Artigos (Macro-lote 01).
+   A lista era full-bleed: sem margem lateral, sem margem superior e sem
+   contorno, enquanto todas as demais telas internas apresentam o conteudo em
+   painel com borda de 1px e raio de 10px sobre o canvas. Normalizado por CSS,
+   sem reestruturar o JSX da tela. */
+.gso-knowledge-cockpit-header {
+  border-bottom: 0 !important;
+}
+.gso-knowledge-articles-pane,
+.gso-knowledge-cockpit-grid > aside {
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--one-border-default);
+  border-radius: var(--one-radius-panel);
+  background: var(--one-panel-bg);
+  overflow: hidden;
+}
+.gso-knowledge-cockpit-grid {
+  gap: var(--one-space-component-gap);
+  padding-inline: var(--one-space-page-x);
+}
+.gso-knowledge-articles-pane > .gso-knowledge-filter-deck {
+  border-bottom: 1px solid var(--one-border-default) !important;
+  background: var(--one-panel-elevated-bg) !important;
+}
+
 /* Rodape de identidade da barra lateral (Macro-lote 01).
    A sidebar declara `isolation: isolate`, entao o popover de conta e
    renderizado em portal no body. Estilo estrutural fica aqui, tokenizado. */
