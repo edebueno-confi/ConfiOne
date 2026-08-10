@@ -1,6 +1,15 @@
 # Estado corrente do checkout canônico — Interface High-Density V1 — 2026-08-03
 
-> **Configuration PO Visual Lock V2 (em execução local, 2026-08-09).** As seis referências aprovadas estão versionadas em `docs/design/blueprint/Configuration PO/v2/`; a precedência operacional e visual desta rodada é `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md`, atualizado com o lock V2. O escopo inclui Central de ajuda e a visão geral de Configurações, sem alterar Dashboard Analytics, contratos, banco, RLS, sincronização ou credenciais.
+> **Configuration PO Visual Lock V2 & Handoff Claude (2026-08-10).** As referências aprovadas estão versionadas em `docs/design/blueprint/Configuration PO/v2/`; a precedência operacional e visual é `docs/specs/ADMIN_CONFIGURATION_VISUAL_CONTRACT_V1.md` e `docs/specs/CONFI_ONE_BRAND_SYSTEM_V1.md`. Relatório de Handoff para Claude disponível em `docs/reports/2026-08-10_handoff-claude-confi-one-v1.md`.
+
+## Atualização corrente — Confi One V1 Blueprint Alignment & Handoff Claude — 2026-08-10
+
+- **Brand Migration ConfiOne**: Nome público do sistema alterado de GeniusOS para ConfiOne em todas as telas visíveis do frontend.
+- **Fidelidade Visual aos Blueprints**: Ordem dos blocos padronizada (Header → Summary Rail → Abas → Filtros compactos → Tabela dominante + Paginação).
+- **Indicador de Aba Ativa**: Traço inferior de 2-3px em rosa Genius Pink (`#FF4FA3`) configurado em `.gso-ui-tabs` e `.gso-ui-tab[aria-current='page']::after`.
+- **Hierarquia de Fundo Shell vs Canvas**: Fundo da página de Conhecimento (`/admin/knowledge`) e Novo Artigo (`/admin/knowledge/new`) ajustado para Dark Blue Canvas (`#081220`), garantindo contraste com o Shell (`#0F1A2E`) e Cartões (`#131E33`).
+- **Remoção de Elementos Obsoletos**: Aba `Convites / Histórico` removida do painel de Acessos; imagens legadas de blueprint excluídas.
+- **Governança & QA**: Typecheck (0 erros), Vite Build (0 erros), Playwright QA de 22 rotas executado. Handoff documentado em `docs/reports/2026-08-10_handoff-claude-confi-one-v1.md`.
 
 ## Atualização corrente — Confi One V1 Global Surface Sweep & Remoção do Cockpit — 2026-08-09
 

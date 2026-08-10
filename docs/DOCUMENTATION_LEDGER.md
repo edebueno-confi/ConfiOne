@@ -1,5 +1,14 @@
 # Estado corrente — Interface High-Density V1 — 2026-08-03
 
+## CONFI-ONE-V1 — Blueprint Alignment & Claude Handoff — 2026-08-10
+
+- **Handoff Claude:** Relatório completo gerado em `docs/reports/2026-08-10_handoff-claude-confi-one-v1.md`.
+- **Fidelidade Visual:** Ordem estrita de blocos mantida (Header → Summary Rail → Abas → Filtros → Tabela + Paginação).
+- **Abas e Seleção:** Linha ativa de 2-3px em Genius Pink (`#FF4FA3`) adicionada globalmente em `.gso-ui-tabs`.
+- **Canvas de Conhecimento:** Fundo de `/admin/knowledge` e `/admin/knowledge/new` alinhado ao Canvas Azul Escuro (`#081220`).
+- **Limpeza de Artefatos:** Removidas imagens obsoletas e aba legada `Convites / Histórico`.
+- **Qualidade:** Typecheck (0 erros), Build Vite (0 erros), 22 rotas validadas em QA Playwright.
+
 ## CONFI-ONE-V1 — Surface Sweep, Cockpit Removal & Brand Canonization — 2026-08-09
 
 - **Brand System Canônico:** `docs/specs/CONFI_ONE_BRAND_SYSTEM_V1.md` (58 seções). O documento legados `docs/GENIUS_GLOBAL_SHELL_VISUAL_CONTRACT_V1.md` é mantido como historicamente SUPERSEDED. A cópia duplicada `docs/CONFI_ONE_BRAND_SYSTEM_V1.md` foi removida.
