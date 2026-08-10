@@ -40,6 +40,123 @@
   --one-danger: #DC2626;
   --one-info: #2D7CFF;
 
+  /* ==========================================================================
+     CONFI ONE V1 — CONTRATO SEMANTICO ESTRUTURAL (Macro-lote 01)
+     Fonte unica das decisoes visuais estruturais do sistema interno.
+     Extraido do Dashboard Gerencial (golden reference). Paginas consomem;
+     paginas nao definem.
+     ========================================================================== */
+
+  /* -- Surfaces derivadas (papel, nao cor) ---------------------------------- */
+  --one-sidebar-bg: var(--one-shell-bg);
+  --one-topbar-bg: #F7FAFD;
+  --one-page-header-bg: var(--one-surface-1);
+  --one-panel-bg: var(--one-surface-1);
+  --one-panel-elevated-bg: var(--one-surface-2);
+  --one-control-bg: var(--one-surface-1);
+  --one-surface-hover: var(--one-surface-interactive);
+  --one-surface-selected: rgba(45, 124, 255, 0.10);
+  --one-overlay-scrim: rgba(15, 26, 46, 0.42);
+
+  /* -- Texto ----------------------------------------------------------------- */
+  --one-text-subtle: #A3B3C7;
+  --one-text-inverted: #FFFFFF;
+  --one-text-link: #1A63D8;
+
+  /* -- Bordas ---------------------------------------------------------------- */
+  --one-border-focus: rgba(45, 124, 255, 0.45);
+
+  /* -- Spacing estrutural ----------------------------------------------------
+     A regua horizontal canonica e a do CONTEUDO do Dashboard Gerencial
+     (high-density.css: clamp(1rem, 1.8vw, 1.75rem)), nao a do cabecalho.
+     Ate 2026-08-10 o cabecalho do Dashboard usava --app-gutter (2.5vw/2.5rem)
+     e o conteudo usava 1.8vw/1.75rem: titulo e tabela nao comecavam na mesma
+     coordenada. --app-gutter passa a derivar desta regua. */
+  --one-space-page-x: clamp(1rem, 1.8vw, 1.75rem);
+  --one-space-page-y: 1rem;
+  --one-space-section-gap: 1rem;
+  --one-space-component-gap: 0.75rem;
+  --one-space-control-gap: 0.5rem;
+
+  /* -- Layout ---------------------------------------------------------------- */
+  --one-layout-sidebar-expanded: var(--shell-sidebar-width);
+  --one-layout-sidebar-collapsed: var(--shell-sidebar-collapsed);
+  --one-layout-topbar-height: var(--shell-topbar-height);
+  --one-layout-page-header-pad-y: 0.85rem;
+  --one-layout-page-header-pad-bottom: 0.55rem;
+  --one-layout-control-height: 36px;
+  --one-layout-control-height-sm: 32px;
+  --one-layout-tabs-height: 40px;
+  --one-layout-detail-panel: 400px;
+
+  /* -- Radius ---------------------------------------------------------------- */
+  --one-radius-control: 0px;
+  --one-radius-panel: 10px;
+  --one-radius-modal: 12px;
+  --one-radius-pill: 999px;
+
+  /* -- Elevacao -------------------------------------------------------------- */
+  --one-shadow-panel: 0 18px 44px rgba(22, 36, 67, 0.08);
+  --one-shadow-modal: 0 20px 48px rgba(22, 36, 67, 0.18);
+
+  /* -- Escala de z ----------------------------------------------------------- */
+  --one-z-base: 1;
+  --one-z-sticky: 20;
+  --one-z-topbar: 40;
+  --one-z-dropdown: 50;
+  --one-z-flyout: 80;
+  --one-z-overlay: 100;
+
+  /* -- Tipografia canonica (ver secao 12 do DS) ------------------------------
+     Contrato ancorado no Dashboard Gerencial: Page Title e 18px/600, nao 24px.
+     Registrado como excecao consciente em CONFI_ONE_BRAND_SYSTEM_V1. */
+  --one-font-page-title: 18px;
+  --one-line-page-title: 24px;
+  --one-weight-page-title: 600;
+
+  --one-font-page-subtitle: 12px;
+  --one-line-page-subtitle: 18px;
+  --one-weight-page-subtitle: 400;
+
+  --one-font-eyebrow: 10px;
+  --one-line-eyebrow: 14px;
+  --one-weight-eyebrow: 600;
+
+  --one-font-section-title: 16px;
+  --one-line-section-title: 22px;
+  --one-weight-section-title: 600;
+
+  --one-font-card-title: 14px;
+  --one-line-card-title: 20px;
+  --one-weight-card-title: 600;
+
+  --one-font-body: 12px;
+  --one-line-body: 18px;
+  --one-weight-body: 400;
+
+  --one-font-label: 11px;
+  --one-line-label: 16px;
+  --one-weight-label: 500;
+
+  --one-font-helper: 11px;
+  --one-line-helper: 16px;
+  --one-weight-helper: 400;
+
+  --one-font-table-header: 11px;
+  --one-line-table-header: 16px;
+  --one-weight-table-header: 600;
+
+  --one-font-metric: 24px;
+  --one-line-metric: 28px;
+  --one-weight-metric: 700;
+
+  --one-font-meta: 10px;
+  --one-line-meta: 14px;
+  --one-weight-meta: 400;
+
+  /* Alias legado consumido por .gso-ui-tabs; nunca fora definido. */
+  --gso-gutter: var(--app-gutter);
+
   --color-app-bg: var(--one-canvas-bg);
   --color-surface-elevated: var(--one-surface-1);
   --color-divider: var(--one-border-default);
@@ -78,13 +195,13 @@
   /* Indicador de posicao ("voce esta aqui"). Magenta da marca, separado do azul
      de acao: azul age, magenta localiza. Vale para aba, trilho da barra lateral
      e marcador de linha selecionada. */
-  --selection-accent: var(--color-brand-magenta);
-  --selection-accent-soft: color-mix(in srgb, var(--color-brand-magenta) 12%, transparent);
+  --selection-accent: var(--one-genius-pink);
+  --selection-accent-soft: color-mix(in srgb, var(--one-genius-pink) 12%, transparent);
 
   /* Margem lateral unica do produto. Regua definida pelo Dashboard Gerencial em
      2026-08-07: toda superficie autenticada encosta na barra lateral a esta
      distancia, em qualquer largura. Nao declarar padding lateral proprio. */
-  --app-gutter: clamp(1rem, 2.5vw, 2.5rem);
+  --app-gutter: var(--one-space-page-x);
 
   --color-surface: #f4f7fc;
   --color-surface-strong: #ffffff;
@@ -103,20 +220,27 @@
   --color-danger-border: rgba(239, 68, 68, 0.2);
   --color-danger-ink: #b91c1c;
   --color-danger-text: #ef4444;
-  --help-surface: var(--gso-canvas-bg, #081220);
-  --help-surface-strong: var(--gso-surface-1, #131E33);
-  --help-panel: var(--gso-surface-2, #18263F);
-  --help-ink: var(--one-text-primary, #E6ECF5);
-  --help-ink-strong: #ffffff;
-  --help-muted: var(--one-text-secondary, #A6B2C7);
-  --help-border: var(--one-border-default, #22324D);
-  --help-accent: var(--gso-brand-pink, #FF4FA3);
-  --help-accent-strong: var(--one-action-primary, #2D7CFF);
-  --help-accent-soft: rgba(255, 79, 163, 0.14);
-  --help-link: var(--one-info, #4DA3FF);
-  --help-link-hover: #66B2FF;
-  --help-focus: rgba(48, 127, 226, 0.28);
-  --help-skeleton: #dfeaff;
+  /* CENTRAL PUBLICA — contrato proprio de tema CLARO (LIGHT ONLY, DS secao 18).
+     Nao deriva de token do shell interno: e outra experiencia, mesma marca.
+     Correcao 2026-08-10: estes tokens apontavam para --gso-surface-1 e
+     --gso-surface-2, que NUNCA existiram no repositorio. O fallback escuro
+     (#131E33 / #18263F) vazava para o modo claro e produzia texto escuro
+     sobre superficie escura em /help. */
+  --help-surface: #F1F5FB;
+  --help-surface-strong: #FFFFFF;
+  --help-panel: #F7FAFE;
+  --help-ink: #13233A;
+  --help-ink-strong: #0B182C;
+  --help-muted: #5E728C;
+  --help-border: #DCE6F2;
+  --help-border-strong: #C3D3E6;
+  --help-accent: #FF4FA3;
+  --help-accent-strong: #2D7CFF;
+  --help-accent-soft: rgba(255, 79, 163, 0.12);
+  --help-link: #1A63D8;
+  --help-link-hover: #124BA8;
+  --help-focus: rgba(45, 124, 255, 0.35);
+  --help-skeleton: #E4EDF8;
   --help-hero: #071859;
   --help-hero-soft: #0b1f69;
   --help-hero-text: #f5f8ff;
@@ -414,38 +538,27 @@
   --one-danger: #EF4444;
   --one-info: #4DA3FF;
 
-  /* Confi One V1 Canonical Typography Tokens */
-  --one-font-page-title: 24px;
-  --one-line-page-title: 30px;
-  --one-weight-page-title: 700;
+  /* CONTRATO SEMANTICO ESTRUTURAL — overrides do tema escuro.
+     A tipografia, o spacing, o layout, o radius e a escala de z sao
+     invariantes de tema e vivem apenas em :root. Aqui so muda cor. */
+  --one-sidebar-bg: var(--one-shell-bg);
+  --one-topbar-bg: var(--one-shell-bg);
+  --one-page-header-bg: var(--one-surface-1);
+  --one-panel-bg: var(--one-surface-1);
+  --one-panel-elevated-bg: var(--one-surface-2);
+  --one-control-bg: var(--one-surface-2);
+  --one-surface-hover: var(--one-surface-interactive);
+  --one-surface-selected: rgba(45, 124, 255, 0.16);
+  --one-overlay-scrim: rgba(4, 10, 20, 0.62);
 
-  --one-font-page-subtitle: 12px;
-  --one-line-page-subtitle: 18px;
-  --one-weight-page-subtitle: 400;
+  --one-text-subtle: #586A85;
+  --one-text-inverted: #0B182C;
+  --one-text-link: #7FB4FF;
 
-  --one-font-eyebrow: 10px;
-  --one-line-eyebrow: 14px;
-  --one-weight-eyebrow: 600;
+  --one-border-focus: rgba(45, 124, 255, 0.55);
 
-  --one-font-section-title: 16px;
-  --one-line-section-title: 22px;
-  --one-weight-section-title: 600;
-
-  --one-font-card-title: 14px;
-  --one-line-card-title: 20px;
-  --one-weight-card-title: 600;
-
-  --one-font-body: 12px;
-  --one-line-body: 18px;
-  --one-weight-body: 400;
-
-  --one-font-label: 11px;
-  --one-line-label: 16px;
-  --one-weight-label: 500;
-
-  --one-font-meta: 10px;
-  --one-line-meta: 14px;
-  --one-weight-meta: 400;
+  --one-shadow-panel: 0 18px 44px rgba(8, 18, 32, 0.65);
+  --one-shadow-modal: 0 20px 48px rgba(0, 0, 0, 0.45);
 
   /* Aliases para retrocompatibilidade */
   --gso-canvas-bg: var(--one-canvas-bg);
@@ -631,22 +744,11 @@
   --warning-weak: #2A1F08;
   --danger: var(--gso-danger);
   --danger-weak: #2A1416;
-  --focus: rgba(45, 124, 255, 0.4);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.55);
-  --radius-sm: 0px;
-  --radius: 0px;
-  --radius-lg: 0px;
-  --text: #e7ecf5;
-  --text-2: #9fb0c9;
-  --text-3: #64748b;
-  --success: #22c55e;
-  --success-weak: #0f2a1c;
-  --warning: #f59e0b;
-  --warning-weak: #2a1f08;
-  --danger: #f87171;
-  --danger-weak: #2a1416;
-  --focus: color-mix(in srgb, var(--brand-500) 40%, transparent);
+  /* Correcao 2026-08-10: este bloco era declarado duas vezes dentro do mesmo
+     seletor. A segunda copia vencia a cascata e reintroduzia valores fora do
+     Brand System (--danger #f87171, --text-3 #64748b, --text #e7ecf5).
+     Mantida uma unica declaracao, derivada dos tokens canonicos --one-*. */
+  --focus: var(--one-border-focus);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
   --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.55);
   --radius-sm: 0px;
@@ -1249,48 +1351,72 @@
 .gso-sidebar-account[data-collapsed='true'] [role='radiogroup'] {
   flex-direction: column;
 }
-/* Custom UI Tabs for Confi One Shell Header */
+/* ===========================================================================
+   PAGE TABS — DEFINICAO UNICA (Macro-lote 01)
+   Ate 2026-08-10 estas mesmas classes eram declaradas duas vezes: aqui e em
+   features/settings/settings-ui.css, com alturas (42px vs 40px), pesos e cores
+   de sublinhado diferentes, e !important na copia de Configuracoes. Quem vencia
+   dependia da ordem de import. A copia foi removida; esta e a fonte unica.
+   Consumida pelo primitive React <PageTabs>.
+   =========================================================================== */
 .gso-ui-tabs {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  border-bottom: 1px solid var(--gso-border);
-  padding: 0 var(--gso-gutter, clamp(1rem, 2.5vw, 2.5rem));
-  background: var(--gso-topbar-bg);
-  min-height: 42px;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--one-border-default);
+  background: transparent;
+  min-height: var(--one-layout-tabs-height);
   flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.gso-ui-tabs::-webkit-scrollbar { display: none; }
+
+/* Quando as abas pertencem ao chrome do shell (faixa colada na topbar), elas
+   herdam a regua horizontal do produto e a superficie da topbar. */
+.gso-ui-shell-chrome > .gso-ui-tabs,
+.gso-topbar + .gso-ui-tabs {
+  padding-inline: var(--one-space-page-x);
+  background: var(--one-topbar-bg);
+}
+
 .gso-ui-tab {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  height: 42px;
-  padding: 0 0.25rem;
+  gap: 0.4rem;
+  flex: none;
+  white-space: nowrap;
+  min-height: var(--one-layout-tabs-height);
+  padding: 0 0.75rem;
   border: 0;
+  border-bottom: 2px solid transparent;
   background: transparent;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 550;
   color: var(--one-text-secondary);
   cursor: pointer;
-  transition: color 0.15s ease;
+  transition: color 150ms ease, border-color 150ms ease;
 }
 .gso-ui-tab:hover {
   color: var(--one-text-primary);
 }
-.gso-ui-tab[aria-current='page'] {
+.gso-ui-tab:focus-visible {
+  outline: 2px solid var(--one-border-focus);
+  outline-offset: -2px;
+}
+.gso-ui-tab[disabled],
+.gso-ui-tab[aria-disabled='true'] {
+  color: var(--one-text-disabled);
+  cursor: not-allowed;
+}
+/* Rosa localiza ("voce esta aqui"); azul age. Microacento de 2px. */
+.gso-ui-tab[aria-current='page'],
+.gso-ui-tab[aria-selected='true'] {
   font-weight: 600;
   color: var(--one-text-primary);
-}
-.gso-ui-tab[aria-current='page']::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--selection-accent, #ff6cbe);
-  border-radius: 2px 2px 0 0;
+  border-bottom-color: var(--selection-accent);
 }
 
 /* Configuration PO V2.1: a topbar aprovada e transversal as seis telas e por

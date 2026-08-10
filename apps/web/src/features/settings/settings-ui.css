@@ -9,43 +9,48 @@
  * declaração do token, nunca espalhados pelas regras.
  */
 
+/* Correcao Macro-lote 01 (2026-08-10): esta camada declarava uma paleta neutra
+   PROPRIA no tema claro (cinza #F8F9FB, azul #2563EB, roxo #7C3AED), divergente
+   do Confi One Brand System. No escuro derivava de --one-*; no claro, nao. O
+   resultado era Configuracoes parecendo outro produto no modo claro.
+   Agora --ui-* e estritamente uma projecao de --one-* nos dois temas. */
 .gso-ui {
   /* Superfícies e traço */
-  --ui-canvas: #F8F9FB;
-  --ui-surface: #FFFFFF;
-  --ui-surface-muted: #F5F6F8;
-  --ui-border: #E8EAF0;
-  --ui-border-strong: #D7DAE3;
+  --ui-canvas: var(--one-canvas-bg);
+  --ui-surface: var(--one-surface-1);
+  --ui-surface-muted: var(--one-surface-2);
+  --ui-border: var(--one-border-default);
+  --ui-border-strong: var(--one-border-strong);
 
   /* Texto */
-  --ui-text: #111827;
-  --ui-text-secondary: #4B5563;
-  --ui-text-tertiary: #9AA1AE;
+  --ui-text: var(--one-text-primary);
+  --ui-text-secondary: var(--one-text-secondary);
+  --ui-text-tertiary: var(--one-text-muted);
 
   /* Tons. O sufixo `-ink` é a cor do texto/ícone sobre o fundo tonal: no claro
      coincide com o tom, no escuro é clareado para manter contraste. */
-  --ui-primary: #2563EB;
-  --ui-primary-soft: #EEF2FF;
+  --ui-primary: var(--one-action-primary);
+  --ui-primary-soft: color-mix(in srgb, var(--one-action-primary) 10%, transparent);
   --ui-primary-ink: var(--ui-primary);
-  --ui-accent: #7C3AED;
-  --ui-accent-soft: #F3E8FF;
+  --ui-accent: var(--one-genius-pink);
+  --ui-accent-soft: color-mix(in srgb, var(--one-genius-pink) 12%, transparent);
   --ui-accent-ink: var(--ui-accent);
-  --ui-success: var(--success, #16A34A);
-  --ui-success-soft: var(--success-weak, #DCFCE7);
+  --ui-success: var(--one-success);
+  --ui-success-soft: color-mix(in srgb, var(--one-success) 12%, transparent);
   --ui-success-ink: var(--ui-success);
-  --ui-warning: #D97706;
-  --ui-warning-soft: var(--warning-weak, #FEF3C7);
+  --ui-warning: var(--one-warning);
+  --ui-warning-soft: color-mix(in srgb, var(--one-warning) 14%, transparent);
   --ui-warning-ink: var(--ui-warning);
-  --ui-danger: var(--danger, #DC2626);
-  --ui-danger-soft: var(--danger-weak, #FEE2E2);
+  --ui-danger: var(--one-danger);
+  --ui-danger-soft: color-mix(in srgb, var(--one-danger) 12%, transparent);
   --ui-danger-ink: var(--ui-danger);
   --ui-neutral-soft: var(--ui-surface-muted);
   --ui-neutral-ink: var(--ui-text-secondary);
 
   /* Geometria e elevação */
-  --ui-radius-sm: var(--radius-sm, 8px);
-  --ui-radius: var(--radius, 12px);
-  --ui-radius-lg: var(--radius-lg, 16px);
+  --ui-radius-sm: var(--one-radius-control);
+  --ui-radius: var(--one-radius-panel);
+  --ui-radius-lg: var(--one-radius-panel);
   --ui-shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 1px 3px rgba(16, 24, 40, .06);
   --ui-shadow-lifted: 0 4px 12px rgba(16, 24, 40, .06);
   --ui-focus: color-mix(in srgb, var(--ui-primary) 34%, transparent);
@@ -59,23 +64,17 @@
    ThemeProvider já alterna; os tons continuam sendo os mesmos do claro, com o
    fundo tonal virando mistura translúcida e a tinta clareada. */
 [data-theme='dark'] .gso-ui {
-  --ui-canvas: var(--one-canvas-bg, #081220);
-  --ui-surface: var(--one-surface-1, #131E33);
-  --ui-surface-muted: var(--one-surface-2, #18263F);
-  --ui-border: var(--one-border-default, #22324D);
-  --ui-border-strong: var(--one-border-strong, #2F4869);
-
-  --ui-text: var(--one-text-primary, #E6ECF5);
-  --ui-text-secondary: var(--one-text-secondary, #A6B2C7);
-  --ui-text-tertiary: var(--one-text-muted, #7789A6);
-
-  --ui-primary: var(--one-action-primary, #2D7CFF);
+  /* Superficie, traco e texto ja vem de --one-*, que o ThemeProvider alterna.
+     Aqui restam apenas as diferencas reais do escuro: fundo tonal mais
+     presente, tinta clareada sobre tonal e elevacao. */
   --ui-primary-soft: color-mix(in srgb, var(--ui-primary) 20%, transparent);
   --ui-primary-ink: #FFFFFF;
   --ui-accent-soft: color-mix(in srgb, var(--ui-accent) 22%, transparent);
   --ui-accent-ink: color-mix(in srgb, var(--ui-accent) 42%, #FFFFFF);
-  --ui-warning: var(--one-warning, #F59E0B);
-  --ui-neutral-soft: var(--one-surface-2, #18263F);
+  --ui-success-soft: color-mix(in srgb, var(--ui-success) 18%, transparent);
+  --ui-warning-soft: color-mix(in srgb, var(--ui-warning) 18%, transparent);
+  --ui-danger-soft: color-mix(in srgb, var(--ui-danger) 18%, transparent);
+  --ui-neutral-soft: var(--one-surface-2);
 
   --ui-shadow: none;
   --ui-shadow-lifted: 0 12px 32px rgba(0, 0, 0, .35);
@@ -89,10 +88,12 @@
    cima, porque o cabeçalho já traz folga própria). */
 .gso-ui-page {
   display: grid;
-  gap: 1rem;
+  gap: var(--one-space-section-gap);
   align-content: start;
   min-width: 0;
-  padding: 1.15rem 1.5rem 1.5rem;
+  /* Mesma regua horizontal do Dashboard Gerencial: o titulo de qualquer tela
+     interna comeca na mesma coordenada. Nao declarar padding lateral proprio. */
+  padding: var(--one-space-page-y) var(--one-space-page-x) 1.5rem;
   background: var(--ui-canvas);
 }
 
@@ -107,7 +108,7 @@
   background: transparent !important;
 }
 .gso-ui-shell,
-.gso-ui-shell-body { background: var(--gso-canvas-bg, #081220) !important; }
+.gso-ui-shell-body { background: var(--one-canvas-bg) !important; }
 .gso-ui-shell-chrome {
   border-bottom: none !important;
   background: transparent !important;
@@ -165,23 +166,25 @@
 .gso-ui-crumbs a { color: var(--ui-text-secondary); border-radius: var(--ui-radius-sm); }
 .gso-ui-crumbs a:hover { color: var(--ui-primary-ink); text-decoration: underline; }
 .gso-ui-crumbs [aria-current='page'] { color: var(--ui-primary-ink); font-weight: 600; }
+/* Page Title canonico: mesma escala do Dashboard Gerencial (golden reference).
+   Tokenizado em --one-font-page-title / --one-line-page-title. */
 .gso-ui-header-heading h1,
 .gso-ui-header-heading h2 {
   margin: 0;
-  color: var(--one-text-primary, #E6ECF5);
+  color: var(--one-text-primary);
   font-family: inherit;
-  font-size: 1.125rem;
-  font-weight: 600;
-  line-height: 1.35;
+  font-size: var(--one-font-page-title);
+  font-weight: var(--one-weight-page-title);
+  line-height: var(--one-line-page-title);
   letter-spacing: -0.02em;
 }
 .gso-ui-header-heading > p {
   margin: 2px 0 0;
   max-width: 92ch;
-  color: var(--one-text-secondary, #A6B2C7);
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.4;
+  color: var(--one-text-secondary);
+  font-size: var(--one-font-page-subtitle);
+  font-weight: var(--one-weight-page-subtitle);
+  line-height: var(--one-line-page-subtitle);
 }
 .gso-ui-header-side { display: grid; justify-items: end; gap: 0.5rem; }
 .gso-ui-header-meta {
@@ -206,8 +209,8 @@
   min-width: 0;
   padding: 16px;
   border: 1px solid var(--ui-border);
-  border-radius: 10px;
-  background: var(--ui-surface);
+  border-radius: var(--one-radius-panel);
+  background: var(--one-panel-bg);
   box-shadow: none;
 }
 .gso-ui-card--flush { padding: 0; overflow: hidden; }
@@ -553,32 +556,12 @@
 .gso-ui-rowselect:hover { color: var(--ui-primary-ink); text-decoration: underline; }
 
 /* -------------------------------------------------------------------------
-   12. UiTabs — sublinhado de 2px na aba ativa (primitiva de CSS)
+   12. UiTabs — REMOVIDO (Macro-lote 01)
+   As classes .gso-ui-tabs / .gso-ui-tab eram declaradas aqui E em index.css,
+   com geometrias e cores divergentes. A definicao unica agora vive em
+   apps/web/src/index.css, na secao "PAGE TABS — DEFINICAO UNICA", e e
+   consumida pelo primitive React <PageTabs>. Nao redeclarar aqui.
    ------------------------------------------------------------------------- */
-.gso-ui-tabs { display: flex; flex-wrap: wrap; gap: 0.25rem; border-bottom: 1px solid var(--ui-border); }
-.gso-ui-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  min-height: 2.5rem;
-  padding: 0 0.75rem;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: none;
-  color: var(--ui-text-secondary);
-  font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 550;
-  cursor: pointer;
-  transition: color 150ms ease, border-color 150ms ease;
-}
-.gso-ui-tab:hover { color: var(--ui-text); }
-.gso-ui-tab[aria-current='page'],
-.gso-ui-tab[aria-selected='true'] {
-  border-bottom-color: var(--gso-brand-pink, #FF4FA3) !important;
-  color: var(--one-text-primary, #E6ECF5) !important;
-  font-weight: 600;
-}
 
 /* -------------------------------------------------------------------------
    13. UiEmptyState
