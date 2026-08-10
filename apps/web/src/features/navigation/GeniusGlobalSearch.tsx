@@ -227,20 +227,20 @@ export function GeniusGlobalSearch({
         ref={triggerRef}
         aria-haspopup="dialog"
         className={cx(
-          'gso-genius-trigger group hidden h-[32px] w-full items-center gap-2 rounded-[7px] border border-[color:var(--one-border-default,#22324D)] bg-[color:var(--one-surface-1,#131E33)] px-2.5 text-left transition hover:border-[color:var(--one-border-strong,#2F4869)] hover:bg-[color:var(--one-surface-2,#18263F)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--one-action-primary,#2D7CFF)] md:flex',
+          'gso-genius-trigger group hidden h-[32px] w-full items-center gap-2 rounded-[7px] border border-[color:var(--one-border-default)] bg-[color:var(--one-surface-1)] px-2.5 text-left transition hover:border-[color:var(--one-border-strong)] hover:bg-[color:var(--one-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--one-action-primary)] md:flex',
           compact && 'gso-genius-trigger--compact justify-center px-1.5',
         )}
         onClick={() => setOpen(true)}
         title="Pergunte ao Gênio · Ctrl+K"
         type="button"
       >
-        <svg aria-hidden="true" className="h-4 w-4 shrink-0 text-[color:var(--one-action-primary,#2D7CFF)]" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" viewBox="0 0 24 24">
+        <svg aria-hidden="true" className="h-4 w-4 shrink-0 text-[color:var(--one-action-primary)]" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" viewBox="0 0 24 24">
           <path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13ZM15.5 15.5 20 20" />
         </svg>
-        <span className="truncate text-xs text-[color:var(--one-text-muted,#7789A6)] group-hover:text-[color:var(--one-text-primary,#E6ECF5)] transition-colors">
+        <span className="truncate text-xs text-[color:var(--one-text-muted)] group-hover:text-[color:var(--one-text-primary)] transition-colors">
           Pergunte ao Gênio
         </span>
-        <kbd className="ml-auto hidden shrink-0 rounded border border-[color:var(--one-border-default,#22324D)] bg-[color:var(--one-surface-2,#18263F)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--one-text-muted,#7789A6)] lg:inline">
+        <kbd className="ml-auto hidden shrink-0 rounded border border-[color:var(--one-border-default)] bg-[color:var(--one-surface-2)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--one-text-muted)] lg:inline">
           Ctrl K
         </kbd>
       </button>

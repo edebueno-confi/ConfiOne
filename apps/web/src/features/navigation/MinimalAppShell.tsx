@@ -492,7 +492,7 @@ function ShellTopbar({
   }, [userMenuOpen]);
 
   return (
-    <header className="gso-topbar relative z-40 flex h-[52px] items-center justify-between px-4 bg-[color:var(--one-shell-bg,#0F1A2E)] border-b border-[color:var(--one-border-default,#22324D)]">
+    <header className="gso-topbar relative z-40 flex h-[52px] items-center justify-between px-4 bg-[color:var(--gso-topbar-bg)] border-b border-[color:var(--gso-border)]">
       <div className="flex items-center gap-3 min-w-0">
         <button
           ref={mobileMenuButtonRef}
@@ -526,13 +526,13 @@ function ShellTopbar({
               return (
                 <li className="flex items-center gap-2" key={`${segment.label}-${index}`}>
                   {segment.to && !isLast ? (
-                    <Link className="text-[color:var(--one-text-secondary,#A6B2C7)] hover:text-[color:var(--one-text-primary,#E6ECF5)] transition-colors" to={segment.to}>{segment.label}</Link>
+                    <Link className="text-[color:var(--one-text-secondary)] hover:text-[color:var(--one-text-primary)] transition-colors" to={segment.to}>{segment.label}</Link>
                   ) : (
-                    <span aria-current={isLast ? 'page' : undefined} className={isLast ? 'font-medium text-[color:var(--one-text-primary,#E6ECF5)]' : 'text-[color:var(--one-text-secondary,#A6B2C7)]'}>
+                    <span aria-current={isLast ? 'page' : undefined} className={isLast ? 'font-medium text-[color:var(--one-text-primary)]' : 'text-[color:var(--one-text-secondary)]'}>
                       {segment.label}
                     </span>
                   )}
-                  {!isLast ? <span aria-hidden="true" className="text-[color:var(--one-text-muted,#7789A6)]">/</span> : null}
+                  {!isLast ? <span aria-hidden="true" className="text-[color:var(--one-text-muted)]">/</span> : null}
                 </li>
               );
             })}
@@ -551,36 +551,36 @@ function ShellTopbar({
           aria-expanded={userMenuOpen}
           aria-haspopup="menu"
           aria-label={`Menu de ${userTitle}`}
-          className="flex h-[36px] items-center gap-2 rounded-[7px] px-2 py-1 bg-transparent hover:bg-[color:var(--one-surface-2,#18263F)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--one-action-primary,#2D7CFF)]"
+          className="flex h-[36px] items-center gap-2 rounded-[7px] px-2 py-1 bg-transparent hover:bg-[color:var(--one-surface-2)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--one-action-primary)]"
           onClick={() => setUserMenuOpen((curr) => !curr)}
           type="button"
         >
           <Avatar email={email} name={fullName} size="sm" label={`Perfil de ${userTitle}`} />
           <div className="hidden sm:grid min-w-0 text-left leading-tight">
-            <span className="truncate text-xs font-semibold text-[color:var(--one-text-primary,#E6ECF5)]">
+            <span className="truncate text-xs font-semibold text-[color:var(--one-text-primary)]">
               {userTitle}
             </span>
-            <span className="truncate text-[10px] text-[color:var(--one-text-secondary,#A6B2C7)]">
+            <span className="truncate text-[10px] text-[color:var(--one-text-secondary)]">
               {userSubtitle}
             </span>
           </div>
-          <svg aria-hidden="true" className={cx('h-3.5 w-3.5 text-[color:var(--one-text-secondary,#A6B2C7)] transition-transform', userMenuOpen && 'rotate-180')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" className={cx('h-3.5 w-3.5 text-[color:var(--one-text-secondary)] transition-transform', userMenuOpen && 'rotate-180')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path d="m7 10 5 5 5-5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
           </svg>
         </button>
 
         {userMenuOpen ? (
           <div
-            className="absolute right-0 top-full mt-2 w-[300px] rounded-[10px] border border-[color:var(--one-border-strong,#2F4869)] bg-[color:var(--one-surface-2,#18263F)] p-2 shadow-[0_12px_32px_rgba(0,0,0,0.35)] z-50 text-xs text-[color:var(--one-text-primary,#E6ECF5)]"
+            className="absolute right-0 top-full mt-2 w-[300px] rounded-[10px] border border-[color:var(--one-border-strong)] bg-[color:var(--one-surface-1)] p-2 shadow-lg z-50 text-xs text-[color:var(--one-text-primary)]"
             role="menu"
           >
             {/* Header do Menu */}
-            <div className="flex items-center gap-2.5 p-2.5 pb-3 border-b border-[color:var(--one-border-default,#22324D)]">
+            <div className="flex items-center gap-2.5 p-2.5 pb-3 border-b border-[color:var(--one-border-default)]">
               <Avatar email={email} name={fullName} size="md" />
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-xs text-[color:var(--one-text-primary,#E6ECF5)]">{userTitle}</p>
-                <p className="truncate text-[11px] text-[color:var(--one-text-secondary,#A6B2C7)]">{email ?? 'operador@confione.local'}</p>
-                <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[color:var(--one-surface-1,#131E33)] text-[color:var(--one-text-secondary,#A6B2C7)] border border-[color:var(--one-border-default,#22324D)]">
+                <p className="truncate font-semibold text-xs text-[color:var(--one-text-primary)]">{userTitle}</p>
+                <p className="truncate text-[11px] text-[color:var(--one-text-secondary)]">{email ?? 'operador@confione.local'}</p>
+                <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[color:var(--one-surface-2)] text-[color:var(--one-text-secondary)] border border-[color:var(--one-border-default)]">
                   {userSubtitle}
                 </span>
               </div>

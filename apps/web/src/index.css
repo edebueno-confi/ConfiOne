@@ -297,6 +297,82 @@
   background-color: var(--color-app-bg);
 }
 
+:root[data-theme='light'] {
+  /*
+   * CONFI ONE BRAND SYSTEM V1 — Canonical Tokens (Light Baseline)
+   * Shell (Sidebar + Topbar continuous L-shell): #EEF3FA / #F7FAFD
+   * Canvas (Workspace background): #F4F7FB
+   * Surface 1 (Cards, tables, filters, panels): #FFFFFF
+   * Surface 2 (Detail rails, inner areas, contextual selection): #F5F8FC
+   * Surface Interactive (Hover / Focus): #EBF1F9
+   * Borders: Subtle #E2E9F3 | Default #D7E1EE | Strong #BDCBE0
+   * Text: Primary #13233A | Secondary #5E728C | Muted #8295AD | Disabled #A3B3C7
+   * Action Primary: #2D7CFF (Hover #1A6AF0)
+   * Genius Pink (Microaccent signature): #FF4FA3
+   * States: Success #16A34A | Warning #D97706 | Danger #DC2626 | Info #2D7CFF
+   */
+  --one-shell-bg: #EEF3FA;
+  --one-shell-border: #D7E1EE;
+  --one-canvas-bg: #F4F7FB;
+  --one-surface-1: #FFFFFF;
+  --one-surface-2: #F5F8FC;
+  --one-surface-interactive: #EBF1F9;
+  --one-border-subtle: #E2E9F3;
+  --one-border-default: #D7E1EE;
+  --one-border-strong: #BDCBE0;
+  --one-text-primary: #13233A;
+  --one-text-secondary: #5E728C;
+  --one-text-muted: #8295AD;
+  --one-text-disabled: #A3B3C7;
+  --one-action-primary: #2D7CFF;
+  --one-action-primary-hover: #1A6AF0;
+  --one-genius-pink: #FF4FA3;
+  --one-success: #16A34A;
+  --one-warning: #D97706;
+  --one-danger: #DC2626;
+  --one-info: #2D7CFF;
+
+  --gso-canvas-bg: #F4F7FB;
+  --gso-sidebar-bg: #EEF3FA;
+  --gso-topbar-bg: #F7FAFD;
+  --gso-surface-primary: #FFFFFF;
+  --gso-surface-secondary: #F5F8FC;
+  --gso-border: #D7E1EE;
+  --gso-text-primary: #13233A;
+  --gso-text-secondary: #5E728C;
+  --gso-action-blue: #2D7CFF;
+  --gso-brand-pink: #FF4FA3;
+  --gso-success: #16A34A;
+  --gso-warning: #D97706;
+  --gso-danger: #DC2626;
+
+  --minimal-canvas: #F4F7FB;
+  --minimal-surface: #FFFFFF;
+  --minimal-sidebar: #EEF3FA;
+  --minimal-surface-muted: #F5F8FC;
+  --minimal-text: #13233A;
+  --minimal-text-secondary: #5E728C;
+  --minimal-text-tertiary: #8295AD;
+  --minimal-border: #D7E1EE;
+  --minimal-border-strong: #BDCBE0;
+
+  --color-app-bg: #F4F7FB;
+  --color-surface-elevated: #FFFFFF;
+  --color-divider: #D7E1EE;
+  --color-text-primary: #13233A;
+  --color-text-secondary: #5E728C;
+  --color-text-muted: #8295AD;
+  --color-text-label: #5E728C;
+  --color-text-caption: #8295AD;
+
+  --sidebar-text: #5E728C;
+  --sidebar-text-strong: #13233A;
+  --sidebar-text-muted: #8295AD;
+  --sidebar-item-hover: rgba(45, 124, 255, 0.08);
+
+  color-scheme: light;
+}
+
 /*
  * Tema escuro - Design System V3 (secao 7).
  * Mesma hierarquia, spacing e comportamento do light; apenas os tokens mudam.
@@ -1185,8 +1261,9 @@
   max-height: 52px !important;
   flex-shrink: 0;
   padding: 0 16px;
-  border-bottom: 1px solid var(--gso-border, #22324D) !important;
-  background: var(--gso-topbar-bg, #0E1627) !important;
+  border-bottom: 1px solid var(--gso-border) !important;
+  background: var(--gso-topbar-bg) !important;
+  color: var(--one-text-primary) !important;
   position: relative;
   z-index: 40;
 }
@@ -1198,18 +1275,18 @@
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  color: var(--minimal-text-tertiary);
+  color: var(--one-text-secondary);
 }
 .gso-topbar-icon-button > svg {
   height: 16px;
   width: 16px;
 }
 .gso-topbar-icon-button:hover {
-  background: var(--minimal-surface-muted);
-  color: var(--minimal-text);
+  background: var(--one-surface-interactive);
+  color: var(--one-text-primary);
 }
 .gso-topbar-icon-button:focus-visible {
-  outline: 2px solid var(--minimal-focus);
+  outline: 2px solid var(--one-action-primary);
   outline-offset: 2px;
 }
 .gso-topbar-breadcrumb {
@@ -1238,22 +1315,22 @@
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--minimal-text-secondary);
+  color: var(--one-text-secondary);
 }
 .gso-topbar-breadcrumb a:hover {
-  color: var(--minimal-text);
+  color: var(--one-text-primary);
   text-decoration: underline;
 }
 .gso-topbar-breadcrumb a:focus-visible {
-  outline: 2px solid var(--minimal-focus);
+  outline: 2px solid var(--one-action-primary);
   outline-offset: 2px;
 }
 .gso-topbar-breadcrumb [data-current='true'] {
   font-weight: 600;
-  color: var(--minimal-text);
+  color: var(--one-text-primary);
 }
 .gso-topbar-breadcrumb-separator {
-  color: var(--minimal-text-tertiary);
+  color: var(--one-text-muted);
 }
 .gso-topbar-search {
   min-width: 0;

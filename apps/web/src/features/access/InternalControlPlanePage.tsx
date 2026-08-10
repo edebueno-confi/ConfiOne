@@ -61,20 +61,14 @@ import type {
 import { classifyAdminError } from '../admin/admin-errors';
 import { useAuthContext } from '../auth/auth-context';
 
-type Tab = 'users' | 'invites' | 'structure' | 'permissions';
+type Tab = 'users' | 'structure' | 'permissions';
 type LoadPhase = 'loading' | 'ready' | 'error' | 'denied';
 type Tone = 'positive' | 'warning' | 'critical';
 
-/**
- * A aba de convites permanece apenas como histórico auditável. A liberação de
- * acesso interno passou a ser feita por "Criar usuário", que provisiona a conta
- * e o vínculo no servidor sem usar `internal_invites`.
- */
 const tabs: Array<{ key: Tab; label: string }> = [
   { key: 'users', label: 'Usuários' },
   { key: 'structure', label: 'Estrutura' },
   { key: 'permissions', label: 'Perfis' },
-  { key: 'invites', label: 'Convites (histórico)' },
 ];
 
 const STATUS_LABELS: Record<string, string> = {
@@ -101,7 +95,7 @@ function statusTone(status: string) {
 }
 
 function isTab(value: string | null): value is Tab {
-  return value === 'users' || value === 'invites' || value === 'structure' || value === 'permissions';
+  return value === 'users' || value === 'structure' || value === 'permissions';
 }
 
 function firstOrMatchingArea(user: AdminInternalAccessUserRow, areaKey?: string) {
@@ -414,15 +408,6 @@ export function InternalControlPlanePage() {
                 users={filteredUsers}
               />
             </>
-          ) : null}
-
-          {tab === 'invites' ? (
-            <InviteHistoryPanel
-              busy={busy}
-              invites={invites}
-              onCreateUser={startCreate}
-              onRevoke={(id) => void runAction(() => revokeAdminInternalInvitation(id), 'Convite revogado.')}
-            />
           ) : null}
 
           {tab === 'structure' ? (
@@ -937,74 +922,7 @@ function UsersPanel(props: {
  * liberação de acesso; os registros permanecem para auditoria e a única ação
  * disponível é revogar um convite que ainda esteja aberto.
  */
-function InviteHistoryPanel(props: {
-  busy: boolean;
-  invites: AdminInternalInviteRow[];
-  onCreateUser: () => void;
-  onRevoke: (id: string) => void;
-}) {
-  const { busy, invites, onCreateUser, onRevoke } = props;
-  const open = invites.filter((invite) => invite.status === 'pending' || invite.status === 'sent');
 
-  return (
-    <>
-      <UiHintBand
-        description="O convite deixou de ser o caminho de liberação de acesso interno. Novos acessos são criados diretamente em “Criar usuário”, com a conta provisionada no servidor. Este histórico continua aqui apenas para auditoria e para encerrar convites que ficaram abertos."
-        title="Convites: histórico auditável"
-      />
-      <UiCard flush labelledBy="invite-history-title">
-        <div className="gso-ui-card-body">
-          <UiCardHeader
-            actions={<UiButton icon="plus" onClick={onCreateUser} variant="primary">Criar usuário</UiButton>}
-            description={`${invites.length} registro(s) preservado(s) · ${open.length} ainda em aberto. Tokens nunca são retornados nas listagens.`}
-            icon="archive"
-            title="Convites (histórico)"
-            titleId="invite-history-title"
-            tone="neutral"
-          />
-        </div>
-        <UiTable labelledBy="invite-history-title">
-          <thead>
-            <tr>
-              <th scope="col">Pessoa</th>
-              <th scope="col">Área</th>
-              <th scope="col">Perfil</th>
-              <th scope="col">Status</th>
-              <th className="gso-ui-table-actions--head" scope="col">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {invites.map((invite) => (
-              <tr key={invite.invite_id}>
-                <td>
-                  <strong>{invite.full_name}</strong>
-                  <small>{invite.email}</small>
-                </td>
-                <td>{invite.area_label}</td>
-                <td>{invite.access_profile_name || 'Personalizado'}</td>
-                <td><UiBadge dot tone={statusTone(invite.status)}>{statusLabel(invite.status)}</UiBadge></td>
-                <td>
-                  <div className="gso-ui-table-actions">
-                    {invite.status === 'pending' || invite.status === 'sent' ? (
-                      <UiButton compact disabled={busy} onClick={() => onRevoke(invite.invite_id)} variant="danger">Revogar</UiButton>
-                    ) : null}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </UiTable>
-        {invites.length === 0 ? (
-          <UiEmptyState
-            description="Nenhum convite foi preparado neste ambiente. O caminho oficial de liberação é a criação direta de usuário."
-            icon="archive"
-            title="Sem histórico de convites"
-          />
-        ) : null}
-      </UiCard>
-    </>
-  );
-}
 
 function StructurePanel(props: {
   areaForm: { areaKey: string; displayName: string; description: string };

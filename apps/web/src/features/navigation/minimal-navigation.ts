@@ -141,7 +141,7 @@ function buildReleaseNavigation({
   if (allows('access')) {
     administration.push({
       id: 'admin-access',
-      label: 'Usuários e acesso',
+      label: 'Usuários e acessos',
       to: '/admin/access',
       icon: 'shield',
       settingsSection: 'access',
@@ -229,7 +229,7 @@ export function buildMinimalNavigation({
   // quem também pode abrir Configurações criava um beco sem saída na sidebar:
   // a rota continuava protegida e disponível, mas não era alcançável pelo menu.
   if (isPlatformAdmin || hasScreen('access')) {
-    administration.push({ id: 'admin-access', label: 'Acessos e áreas', to: '/admin/access', icon: 'shield', matches: (path) => matchesBase(path, '/admin/access') || matchesBase(path, '/admin/internal-areas') });
+    administration.push({ id: 'admin-access', label: 'Usuários e acessos', to: '/admin/access', icon: 'shield', matches: (path) => matchesBase(path, '/admin/access') || matchesBase(path, '/admin/internal-areas') });
   }
   if (administration.length) sections.push({ id: 'administration', label: 'Administração', items: administration });
   return sections;
@@ -242,8 +242,8 @@ export function resolveMinimalRouteLabel(pathname: string) {
     ['/admin/analytics', 'Dashboard gerencial'],
     ['/admin/knowledge', 'Conhecimento'],
     ['/admin/settings', 'Configurações'],
-    ['/admin/internal-areas', 'Acessos e áreas'],
-    ['/admin/access', 'Acessos e áreas'],
+    ['/admin/internal-areas', 'Usuários e acessos'],
+    ['/admin/access', 'Usuários e acessos'],
     ['/inicio', 'Início'],
     ['/support/inbox', 'Atendimento'],
     ['/support/queue', 'Fila operacional'],
